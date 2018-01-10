@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.monitor
+package yaooqinn.kyuubi.ui
 
 object ExecutionState extends Enumeration {
   val STARTED, COMPILED, FAILED, FINISHED = Value

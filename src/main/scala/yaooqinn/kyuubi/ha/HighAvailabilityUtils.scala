@@ -36,7 +36,7 @@ import org.apache.zookeeper._
 import org.apache.zookeeper.data.ACL
 
 import yaooqinn.kyuubi.Logging
-import yaooqinn.kyuubi.server.{KyuubiClientCLIService, KyuubiServer}
+import yaooqinn.kyuubi.server.{FrontendService, KyuubiServer}
 
 object HighAvailabilityUtils extends Logging {
 
@@ -58,7 +58,7 @@ object HighAvailabilityUtils extends Logging {
     val conf = kyuubiServer.getConf
     val zooKeeperEnsemble = getQuorumServers(conf)
     val rootNamespace = conf.get(KyuubiConf.KYUUBI_ZOOKEEPER_NAMESPACE.key, "kyuubiserver")
-    val instanceURI = getServerInstanceURI(kyuubiServer.clientCLIService)
+    val instanceURI = getServerInstanceURI(kyuubiServer.feService)
 
     setUpZooKeeperAuth(conf)
 
@@ -145,7 +145,7 @@ object HighAvailabilityUtils extends Logging {
     quorum.stripSuffix(",")
   }
 
-  private class DeRegisterWatcher(kyuubiThriftServer: KyuubiServer) extends Watcher {
+  private class DeRegisterWatcher(kyuubiServer: KyuubiServer) extends Watcher {
     override def process(event: WatchedEvent): Unit = {
       if (event.getType == Watcher.Event.EventType.NodeDeleted) {
         if (znode != null) {
@@ -159,11 +159,11 @@ object HighAvailabilityUtils extends Logging {
           } finally {
             setDeregisteredWithZooKeeper(true)
             // If there are no more active client sessions, stop the server
-            if (kyuubiThriftServer.cliService.getSessionManager.getOpenSessionCount == 0) {
+            if (kyuubiServer.beService.getSessionManager.getOpenSessionCount == 0) {
               warn("This Kyuubi instance  has been removed from the list of " +
                 "server instances available for dynamic service discovery. The last client " +
                 "session has ended - will shutdown now.")
-              kyuubiThriftServer.stop()
+              kyuubiServer.stop()
             }
           }
         }
@@ -194,11 +194,11 @@ object HighAvailabilityUtils extends Logging {
   }
 
   @throws[Exception]
-  private def getServerInstanceURI(clientCLIService: KyuubiClientCLIService): String = {
-    if ((clientCLIService == null) || (clientCLIService.getServerIPAddress == null)) {
+  private def getServerInstanceURI(service: FrontendService): String = {
+    if ((service == null) || (service.getServerIPAddress == null)) {
       throw new Exception("Unable to get the server address; it hasn't been initialized yet.")
     }
-    clientCLIService.getServerIPAddress.getHostName + ":" + clientCLIService.getPortNumber
+    service.getServerIPAddress.getHostName + ":" + service.getPortNumber
   }
 
   /**

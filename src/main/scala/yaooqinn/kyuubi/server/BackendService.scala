@@ -19,31 +19,28 @@ package yaooqinn.kyuubi.server
 
 import java.util.{List => JList, Map => JMap}
 
-import org.apache.hive.service.auth.HiveAuthFactory
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
-import org.apache.spark.{SparkConf, SparkException}
+import org.apache.spark.SparkConf
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.operation.KyuubiSQLOperation
 import yaooqinn.kyuubi.service.CompositeService
 import yaooqinn.kyuubi.session.KyuubiSessionManager
 
-private[server] class KyuubiServerCLIService private(
-    name: String,
-    private val thriftServer: KyuubiServer)
+private[server] class BackendService private(name: String, server: KyuubiServer)
   extends CompositeService(name) with ICLIService with Logging {
 
   private[this] var sessionManager: KyuubiSessionManager = _
   def getSessionManager: KyuubiSessionManager = sessionManager
 
   def this(thriftServer: KyuubiServer) = {
-    this(classOf[KyuubiServerCLIService].getSimpleName, thriftServer)
+    this(classOf[BackendService].getSimpleName, thriftServer)
   }
 
   override def init(conf: SparkConf): Unit = synchronized {
     this.conf = conf
-    sessionManager = new KyuubiSessionManager(thriftServer)
+    sessionManager = new KyuubiSessionManager(server)
     addService(sessionManager)
     super.init(conf)
   }
@@ -169,6 +166,6 @@ private[server] class KyuubiServerCLIService private(
   }
 }
 
-object KyuubiServerCLIService {
+object BackendService {
   final val SERVER_VERSION = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8
 }

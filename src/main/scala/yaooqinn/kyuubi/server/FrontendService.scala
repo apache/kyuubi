@@ -40,11 +40,11 @@ import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.service.{AbstractService, ServiceException, ServiceUtils}
 
 /**
- * KyuubiClientCLIService keeps compatible with all kinds of Hive JDBC/ Thrift Client Connections
+ * FrontendService keeps compatible with all kinds of Hive JDBC/Thrift Client Connections
  *
  * It use Hive configurations to configure itself.
  */
-class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLIService)
+private[kyuubi] class FrontendService private(name: String, beService: BackendService)
   extends AbstractService(name) with TCLIService.Iface with Runnable with Logging {
 
   private[this] var hiveConf: HiveConf = _
@@ -69,7 +69,13 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
 
   private[this] var realUser: String = _
 
-  class ThriftClientCLIServerContext extends ServerContext {
+  def this(cliService: BackendService) = {
+    this(classOf[FrontendService].getSimpleName, cliService)
+    currentServerContext = new ThreadLocal[ServerContext]()
+    serverEventHandler = new FeTServerEventHandler
+  }
+
+  class FeServiceServerContext extends ServerContext {
     private var sessionHandle: SessionHandle = _
 
     def setSessionHandle(sessionHandle: SessionHandle): Unit = {
@@ -79,23 +85,17 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
     def getSessionHandle: SessionHandle = sessionHandle
   }
 
-  def this(cliService: KyuubiServerCLIService) = {
-    this(classOf[KyuubiClientCLIService].getSimpleName, cliService)
-    currentServerContext = new ThreadLocal[ServerContext]()
-    serverEventHandler = new ClientTServerEventHandler
-  }
-
-  class ClientTServerEventHandler extends TServerEventHandler {
+  class FeTServerEventHandler extends TServerEventHandler {
     override def deleteContext(
         serverContext: ServerContext, tProtocol: TProtocol, tProtocol1: TProtocol): Unit = {
-      Option(serverContext.asInstanceOf[ThriftClientCLIServerContext]
-        .getSessionHandle).foreach { sessionHandle =>
-        warn(s"Session [$sessionHandle] disconnected without closing properly, " +
+      Option(serverContext.asInstanceOf[FeServiceServerContext].getSessionHandle)
+        .foreach { sessionHandle =>
+          warn(s"Session [$sessionHandle] disconnected without closing properly, " +
           s"close it now")
-        Try {cliService.closeSession(sessionHandle)} match {
-          case Failure(exception) =>
+          Try {beService.closeSession(sessionHandle)} match {
+            case Failure(exception) =>
             warn("Failed closing session " + exception, exception)
-          case _ =>
+            case _ =>
         }
       }
     }
@@ -108,7 +108,7 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
     override def preServe(): Unit = ()
 
     override def createContext(tProtocol: TProtocol, tProtocol1: TProtocol): ServerContext = {
-      new ThriftClientCLIServerContext()
+      new FeServiceServerContext()
     }
   }
 
@@ -122,14 +122,11 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
     try {
       if (serverHost != null && !serverHost.isEmpty) {
         serverIPAddress = InetAddress.getByName(serverHost)
-      }
-      else {
+      } else {
         serverIPAddress = InetAddress.getLocalHost
       }
-    }
-    catch {
-      case e: UnknownHostException =>
-        throw new ServiceException(e)
+    } catch {
+      case e: UnknownHostException => throw new ServiceException(e)
     }
     minWorkerThreads = hiveConf.getIntVar(ConfVars.HIVE_SERVER2_THRIFT_MIN_WORKER_THREADS)
     maxWorkerThreads = hiveConf.getIntVar(ConfVars.HIVE_SERVER2_THRIFT_MAX_WORKER_THREADS)
@@ -150,10 +147,8 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
 
   override def stop(): Unit = {
     if (isStarted) {
-      server.foreach { s =>
-        s.stop()
-        info(this.name + " has stopped")
-      }
+      server.foreach(_.stop())
+      info(this.name + " has stopped")
       isStarted = false
     }
     super.stop()
@@ -168,7 +163,7 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
       .equalsIgnoreCase(HiveAuthFactory.AuthTypes.KERBEROS.toString)
   }
 
-  private def getUserName(req: TOpenSessionReq) = {
+  private[this] def getUserName(req: TOpenSessionReq) = {
     // Kerberos
     if (isKerberosAuthMode) {
       realUser = hiveAuthFactory.getRemoteUser
@@ -185,16 +180,12 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
   }
 
   private[this] def getShortName(userName: String): String = {
-    var ret: String = null
-    if (userName != null) {
-      val indexOfDomainMatch = ServiceUtils.indexOfDomainMatch(userName)
-      ret = if (indexOfDomainMatch <= 0) {
-        userName
-      } else {
-        userName.substring(0, indexOfDomainMatch)
-      }
+    val indexOfDomainMatch = ServiceUtils.indexOfDomainMatch(userName)
+    if (indexOfDomainMatch <= 0) {
+      userName
+    } else {
+      userName.substring(0, indexOfDomainMatch)
     }
-    ret
   }
 
   @throws[HiveSQLException]
@@ -248,13 +239,13 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
   private[this] def getSessionHandle(req: TOpenSessionReq, res: TOpenSessionResp) = {
     val userName = getUserName(req)
     val ipAddress = getIpAddress
-    val protocol = getMinVersion(KyuubiServerCLIService.SERVER_VERSION, req.getClient_protocol)
+    val protocol = getMinVersion(BackendService.SERVER_VERSION, req.getClient_protocol)
     val sessionHandle =
     if (hiveConf.getBoolVar(ConfVars.HIVE_SERVER2_ENABLE_DOAS) && (userName != null)) {
-      cliService.openSessionWithImpersonation(
+      beService.openSessionWithImpersonation(
         protocol, userName, req.getPassword, ipAddress, req.getConfiguration, null)
     } else {
-      cliService.openSession(
+      beService.openSession(
         protocol, userName, req.getPassword, ipAddress, req.getConfiguration)
     }
     res.setServerProtocolVersion(protocol)
@@ -270,7 +261,7 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
       resp.setConfiguration(new JHashMap[String, String])
       resp.setStatus(OK_STATUS)
       val context = currentServerContext.get
-        .asInstanceOf[KyuubiClientCLIService#ThriftClientCLIServerContext]
+        .asInstanceOf[FrontendService#FeServiceServerContext]
       if (context != null) {
         context.setSessionHandle(sessionHandle)
       }
@@ -280,17 +271,16 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
         resp.setStatus(HiveSQLException.toTStatus(e))
     }
     resp
-
   }
 
   override def CloseSession(req: TCloseSessionReq): TCloseSessionResp = {
     val resp = new TCloseSessionResp
     try {
       val sessionHandle = new SessionHandle(req.getSessionHandle)
-      cliService.closeSession(sessionHandle)
+      beService.closeSession(sessionHandle)
       resp.setStatus(OK_STATUS)
       val context = currentServerContext.get
-        .asInstanceOf[ThriftClientCLIServerContext]
+        .asInstanceOf[FeServiceServerContext]
       if (context != null) {
         context.setSessionHandle(null)
       }
@@ -305,7 +295,7 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
   override def GetInfo(req: TGetInfoReq): TGetInfoResp = {
     val resp = new TGetInfoResp
     try {
-      val getInfoValue = cliService.getInfo(
+      val getInfoValue = beService.getInfo(
         new SessionHandle(req.getSessionHandle), GetInfoType.getGetInfoType(req.getInfoType))
       resp.setInfoValue(getInfoValue.toTGetInfoValue)
       resp.setStatus(OK_STATUS)
@@ -325,9 +315,9 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
       val confOverlay = req.getConfOverlay
       val runAsync = req.isRunAsync
       val operationHandle = if (runAsync) {
-        cliService.executeStatementAsync(sessionHandle, statement, confOverlay)
+        beService.executeStatementAsync(sessionHandle, statement, confOverlay)
       } else {
-        cliService.executeStatement(sessionHandle, statement, confOverlay)
+        beService.executeStatement(sessionHandle, statement, confOverlay)
       }
       resp.setOperationHandle(operationHandle.toTOperationHandle)
       resp.setStatus(OK_STATUS)
@@ -342,7 +332,7 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
   override def GetTypeInfo(req: TGetTypeInfoReq): TGetTypeInfoResp = {
     val resp = new TGetTypeInfoResp
     try {
-      val operationHandle = cliService.getTypeInfo(new SessionHandle(req.getSessionHandle))
+      val operationHandle = beService.getTypeInfo(new SessionHandle(req.getSessionHandle))
       resp.setOperationHandle(operationHandle.toTOperationHandle)
       resp.setStatus(OK_STATUS)
     } catch {
@@ -356,7 +346,7 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
   override def GetCatalogs(req: TGetCatalogsReq): TGetCatalogsResp = {
     val resp = new TGetCatalogsResp
     try {
-      val opHandle = cliService.getCatalogs(new SessionHandle(req.getSessionHandle))
+      val opHandle = beService.getCatalogs(new SessionHandle(req.getSessionHandle))
       resp.setOperationHandle(opHandle.toTOperationHandle)
       resp.setStatus(OK_STATUS)
     } catch {
@@ -370,7 +360,7 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
   override def GetSchemas(req: TGetSchemasReq): TGetSchemasResp = {
     val resp = new TGetSchemasResp
     try {
-      val opHandle = cliService.getSchemas(
+      val opHandle = beService.getSchemas(
         new SessionHandle(req.getSessionHandle), req.getCatalogName, req.getSchemaName)
       resp.setOperationHandle(opHandle.toTOperationHandle)
       resp.setStatus(OK_STATUS)
@@ -385,7 +375,7 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
   override def GetTables(req: TGetTablesReq): TGetTablesResp = {
     val resp = new TGetTablesResp
     try {
-      val opHandle = cliService.getTables(new SessionHandle(req.getSessionHandle),
+      val opHandle = beService.getTables(new SessionHandle(req.getSessionHandle),
         req.getCatalogName, req.getSchemaName, req.getTableName, req.getTableTypes)
       resp.setOperationHandle(opHandle.toTOperationHandle)
       resp.setStatus(OK_STATUS)
@@ -400,7 +390,7 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
   override def GetTableTypes(req: TGetTableTypesReq): TGetTableTypesResp = {
     val resp = new TGetTableTypesResp
     try {
-      val opHandle = cliService.getTableTypes(new SessionHandle(req.getSessionHandle))
+      val opHandle = beService.getTableTypes(new SessionHandle(req.getSessionHandle))
       resp.setOperationHandle(opHandle.toTOperationHandle)
       resp.setStatus(OK_STATUS)
     } catch {
@@ -414,7 +404,7 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
   override def GetColumns(req: TGetColumnsReq): TGetColumnsResp = {
     val resp = new TGetColumnsResp
     try {
-      val opHandle = cliService.getColumns(
+      val opHandle = beService.getColumns(
         new SessionHandle(req.getSessionHandle),
         req.getCatalogName, req.getSchemaName, req.getTableName, req.getColumnName)
       resp.setOperationHandle(opHandle.toTOperationHandle)
@@ -430,7 +420,7 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
   override def GetFunctions(req: TGetFunctionsReq): TGetFunctionsResp = {
     val resp = new TGetFunctionsResp
     try {
-      val opHandle = cliService.getFunctions(
+      val opHandle = beService.getFunctions(
         new SessionHandle(req.getSessionHandle),
         req.getCatalogName, req.getSchemaName, req.getFunctionName)
       resp.setOperationHandle(opHandle.toTOperationHandle)
@@ -446,7 +436,7 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
   override def GetOperationStatus(req: TGetOperationStatusReq): TGetOperationStatusResp = {
     val resp = new TGetOperationStatusResp
     try {
-      val operationStatus = cliService.getOperationStatus(
+      val operationStatus = beService.getOperationStatus(
         new OperationHandle(req.getOperationHandle))
       resp.setOperationState(operationStatus.getState.toTOperationState)
       val opException = operationStatus.getOperationException
@@ -467,7 +457,7 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
   override def CancelOperation(req: TCancelOperationReq): TCancelOperationResp = {
     val resp = new TCancelOperationResp
     try {
-      cliService.cancelOperation(new OperationHandle(req.getOperationHandle))
+      beService.cancelOperation(new OperationHandle(req.getOperationHandle))
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
@@ -480,7 +470,7 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
   override def CloseOperation(req: TCloseOperationReq): TCloseOperationResp = {
     val resp = new TCloseOperationResp
     try {
-      cliService.closeOperation(new OperationHandle(req.getOperationHandle))
+      beService.closeOperation(new OperationHandle(req.getOperationHandle))
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
@@ -493,7 +483,7 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
   override def GetResultSetMetadata(req: TGetResultSetMetadataReq): TGetResultSetMetadataResp = {
     val resp = new TGetResultSetMetadataResp
     try {
-      val schema = cliService.getResultSetMetadata(new OperationHandle(req.getOperationHandle))
+      val schema = beService.getResultSetMetadata(new OperationHandle(req.getOperationHandle))
       resp.setSchema(schema.toTTableSchema)
       resp.setStatus(OK_STATUS)
     } catch {
@@ -507,7 +497,7 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
   override def FetchResults(req: TFetchResultsReq): TFetchResultsResp = {
     val resp = new TFetchResultsResp
     try {
-      val rowSet = cliService.fetchResults(
+      val rowSet = beService.fetchResults(
         new OperationHandle(req.getOperationHandle),
         FetchOrientation.getFetchOrientation(req.getOrientation),
         req.getMaxRows,
@@ -588,14 +578,13 @@ class KyuubiClientCLIService private(name: String, cliService: KyuubiServerCLISe
       // TCP Server
       server = Some(new TThreadPoolServer(sargs))
       server.foreach(_.setServerEventHandler(serverEventHandler))
-      val msg = "Starting " + classOf[KyuubiClientCLIService].getSimpleName + " on port " +
+      val msg = "Starting " + classOf[FrontendService].getSimpleName + " on port " +
         portNum + " with " + minWorkerThreads + "..." + maxWorkerThreads + " worker threads"
       info(msg)
       server.foreach(_.serve())
     } catch {
       case t: Throwable =>
-        error("Error starting KyuubiServer: could not start "
-          + classOf[KyuubiClientCLIService].getSimpleName, t)
+        error("Error starting " + classOf[FrontendService].getSimpleName +  " for KyuubiServer", t)
         System.exit(-1)
     }
   }

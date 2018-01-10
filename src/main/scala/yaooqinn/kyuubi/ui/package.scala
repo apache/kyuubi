@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,21 +15,10 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.monitor
+package yaooqinn.kyuubi
 
+package object ui {
 
-class SessionInfo(
-    val sessionId: String,
-    val startTimestamp: Long,
-    val ip: String,
-    val userName: String) {
-  var finishTimestamp: Long = 0L
-  var totalExecution: Int = 0
-  def totalTime: Long = {
-    if (finishTimestamp == 0L) {
-      System.currentTimeMillis - startTimestamp
-    } else {
-      finishTimestamp - startTimestamp
-    }
-  }
+  type User = String
+
 }

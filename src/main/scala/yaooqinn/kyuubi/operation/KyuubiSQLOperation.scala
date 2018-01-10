@@ -37,7 +37,7 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSQLUtils}
 import org.apache.spark.sql.types._
 
 import yaooqinn.kyuubi.Logging
-import yaooqinn.kyuubi.monitor.ThriftServerMonitor
+import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 import yaooqinn.kyuubi.session.KyuubiSession
 
 class KyuubiSQLOperation(parentSession: KyuubiSession, statement: String) extends Logging {
@@ -356,7 +356,7 @@ class KyuubiSQLOperation(parentSession: KyuubiSession, statement: String) extend
     info(s"Running query '$statement' with $statementId")
     setState(OperationState.RUNNING)
     // Always use the latest class loader provided by executionHive's state.
-    ThriftServerMonitor.getListener(parentSession.getUserName).onStatementStart(
+    KyuubiServerMonitor.getListener(parentSession.getUserName).onStatementStart(
       statementId,
       parentSession.getSessionHandle.getSessionId.toString,
       statement,
@@ -365,7 +365,7 @@ class KyuubiSQLOperation(parentSession: KyuubiSession, statement: String) extend
     parentSession.sparkSession().sparkContext.setJobGroup(statementId, statement)
     try {
       result = parentSession.sparkSession().sql(statement)
-      ThriftServerMonitor.getListener(parentSession.getUserName)
+      KyuubiServerMonitor.getListener(parentSession.getUserName)
         .onStatementParsed(statementId, result.queryExecution.toString())
       debug(result.queryExecution.toString())
       iter = result.collect().iterator
@@ -377,7 +377,7 @@ class KyuubiSQLOperation(parentSession: KyuubiSession, statement: String) extend
           return
         } else {
           setState(OperationState.ERROR)
-          ThriftServerMonitor.getListener(parentSession.getUserName).onStatementError(
+          KyuubiServerMonitor.getListener(parentSession.getUserName).onStatementError(
             statementId, e.getMessage, SparkUtils.exceptionString(e))
           throw e
         }
@@ -391,7 +391,7 @@ class KyuubiSQLOperation(parentSession: KyuubiSession, statement: String) extend
           return
         } else {
           setState(OperationState.ERROR)
-          ThriftServerMonitor.getListener(parentSession.getUserName).onStatementError(
+          KyuubiServerMonitor.getListener(parentSession.getUserName).onStatementError(
             statementId, e.getMessage, SparkUtils.exceptionString(e))
           throw new HiveSQLException(e.toString)
         }
@@ -401,7 +401,7 @@ class KyuubiSQLOperation(parentSession: KyuubiSession, statement: String) extend
       }
     }
     setState(OperationState.FINISHED)
-    ThriftServerMonitor.getListener(parentSession.getUserName).onStatementFinish(statementId)
+    KyuubiServerMonitor.getListener(parentSession.getUserName).onStatementFinish(statementId)
   }
 
   private def cleanup(state: OperationState) {

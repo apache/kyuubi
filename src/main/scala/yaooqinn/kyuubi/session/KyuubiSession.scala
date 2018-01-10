@@ -31,10 +31,10 @@ import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.ui.ThriftServerTab
+import org.apache.spark.ui.KyuubiServerTab
 
 import yaooqinn.kyuubi.Logging
-import yaooqinn.kyuubi.monitor.{ThriftServerListener, ThriftServerMonitor}
+import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
 import yaooqinn.kyuubi.operation.KyuubiOperationManager
 import yaooqinn.kyuubi.utils.ReflectUtils
 
@@ -99,7 +99,7 @@ class KyuubiSession(
   private[this] def createSparkSession(): Unit = {
     val userName = sessionUGI.getShortUserName
     info(s"------ Create new SparkSession for $userName -------")
-    conf.setAppName(s"SparkThriftServer[$userName]")
+    conf.setAppName(s"Kyuubi Session 4 [$userName]")
     try {
       sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
         override def run() = {
@@ -112,10 +112,10 @@ class KyuubiSession(
       sessionManager.setSparkSession(userName, _sparkSession)
       // set sc fully constructed immediately
       sessionManager.setSCFullyConstructed(userName)
-      ThriftServerMonitor.setListener(userName, new ThriftServerListener(conf))
-      _sparkSession.sparkContext.addSparkListener(ThriftServerMonitor.getListener(userName))
-      val uiTab = new ThriftServerTab(userName, _sparkSession.sparkContext)
-      ThriftServerMonitor.addUITab(_sparkSession.sparkContext.sparkUser, uiTab)
+      KyuubiServerMonitor.setListener(userName, new KyuubiServerListener(conf))
+      _sparkSession.sparkContext.addSparkListener(KyuubiServerMonitor.getListener(userName))
+      val uiTab = new KyuubiServerTab(userName, _sparkSession.sparkContext)
+      KyuubiServerMonitor.addUITab(_sparkSession.sparkContext.sparkUser, uiTab)
     } catch {
       case e: Exception =>
         val hiveSQLException =

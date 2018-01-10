@@ -18,26 +18,26 @@
 package org.apache.spark.ui
 
 import org.apache.spark.{SparkContext, SparkException}
-import org.apache.spark.ui.ThriftServerTab._
+import org.apache.spark.ui.KyuubiServerTab._
 
-import yaooqinn.kyuubi.monitor.ThriftServerMonitor
+import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 
 /**
  * Spark Web UI tab that shows statistics of jobs running in the thrift server.
  * This assumes the given SparkContext has enabled its SparkUI.
  */
-class ThriftServerTab(userName: String, sparkContext: SparkContext)
+class KyuubiServerTab(userName: String, sparkContext: SparkContext)
   extends SparkUITab(getSparkUI(sparkContext), "sqlserver") {
 
-  override val name = "JDBC/ODBC Server"
+  override val name = "Kyuubi Server"
 
   val parent = getSparkUI(sparkContext)
 
-  // ThriftServerTab renders by different listener's content, identified by user.
-  val listener = ThriftServerMonitor.getListener(userName)
+  // KyuubiServerTab renders by different listener's content, identified by user.
+  val listener = KyuubiServerMonitor.getListener(userName)
 
-  attachPage(new ThriftServerPage(this))
-  attachPage(new ThriftServerSessionPage(this))
+  attachPage(new KyuubiServerPage(this))
+  attachPage(new KyuubiServerSessionPage(this))
   parent.attachTab(this)
 
   def detach() {
@@ -45,7 +45,7 @@ class ThriftServerTab(userName: String, sparkContext: SparkContext)
   }
 }
 
-object ThriftServerTab {
+object KyuubiServerTab {
   def getSparkUI(sparkContext: SparkContext): SparkUI = {
     sparkContext.ui.getOrElse {
       throw new SparkException("Parent SparkUI to attach this tab to not found!")

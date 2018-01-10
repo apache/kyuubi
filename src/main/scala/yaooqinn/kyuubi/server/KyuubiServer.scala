@@ -26,14 +26,15 @@ import org.apache.spark.{SparkConf, SparkUtils}
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.ha.HighAvailabilityUtils
 import yaooqinn.kyuubi.service.CompositeService
+import yaooqinn.kyuubi.utils.VersionUtils
 
 private[kyuubi] class KyuubiServer private(name: String)
   extends CompositeService(name) with Logging {
 
-  private[this] var _cliService: KyuubiServerCLIService = _
-  def cliService: KyuubiServerCLIService = _cliService
-  private[this] var _clientCLIService: KyuubiClientCLIService = _
-  def clientCLIService: KyuubiClientCLIService = _clientCLIService
+  private[this] var _beService: BackendService = _
+  def beService: BackendService = _beService
+  private[this] var _feService: FrontendService = _
+  def feService: FrontendService = _feService
 
   private[this] val started = new AtomicBoolean(false)
 
@@ -43,10 +44,10 @@ private[kyuubi] class KyuubiServer private(name: String)
 
   override def init(conf: SparkConf): Unit = synchronized {
     this.conf = conf
-    _cliService = new KyuubiServerCLIService(this)
-    _clientCLIService = new KyuubiClientCLIService(_cliService)
-    addService(_cliService)
-    addService(_clientCLIService)
+    _beService = new BackendService(this)
+    _feService = new FrontendService(_beService)
+    addService(_beService)
+    addService(_feService)
     super.init(conf)
     SparkUtils.addShutdownHook {
       () => this.stop()
@@ -104,8 +105,10 @@ object KyuubiServer extends Logging {
     conf.set("spark.sql.catalogImplementation", "hive")
 
     // When use User ClassPath First, will cause ClassNotFound exception,
-    // see https://github.com/apache/spark/pull/20145,
-    conf.set("spark.sql.hive.metastore.jars",
-      sys.env("SPARK_HOME") + File.separator + "jars" + File.separator + "*")
+    // see https://github.com/apache/spark/pull/20145
+    if (!VersionUtils.isSpark23OrLater()) {
+      conf.set("spark.sql.hive.metastore.jars",
+        sys.env("SPARK_HOME") + File.separator + "jars" + File.separator + "*")
+    }
   }
 }
