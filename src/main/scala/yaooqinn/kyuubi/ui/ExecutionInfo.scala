@@ -15,26 +15,26 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.monitor
+package yaooqinn.kyuubi.ui
 
 import scala.collection.mutable.ArrayBuffer
 
 class ExecutionInfo(
-      val statement: String,
-      val sessionId: String,
-      val startTimestamp: Long,
-      val userName: String) {
-    var finishTimestamp: Long = 0L
-    var executePlan: String = ""
-    var detail: String = ""
-    var state: ExecutionState.Value = ExecutionState.STARTED
-    val jobId: ArrayBuffer[String] = ArrayBuffer[String]()
-    var groupId: String = ""
-    def totalTime: Long = {
-      if (finishTimestamp == 0L) {
-        System.currentTimeMillis - startTimestamp
-      } else {
-        finishTimestamp - startTimestamp
-      }
+    val statement: String,
+    val sessionId: String,
+    val startTimestamp: Long,
+    val userName: User) {
+  var finishTimestamp: Long = 0L
+  var executePlan: String = ""
+  var detail: String = ""
+  var state: ExecutionState.Value = ExecutionState.STARTED
+  val jobId: ArrayBuffer[String] = ArrayBuffer[String]()
+  var groupId: String = ""
+  def totalTime: Long = {
+    if (finishTimestamp == 0L) {
+      System.currentTimeMillis - startTimestamp
+    } else {
+      finishTimestamp - startTimestamp
     }
   }
+}

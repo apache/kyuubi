@@ -15,32 +15,33 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.monitor
+package yaooqinn.kyuubi.ui
 
 import scala.collection.mutable.HashMap
 
 import org.apache.spark.SparkException
-import org.apache.spark.ui.ThriftServerTab
+import org.apache.spark.ui.KyuubiServerTab
 
-object ThriftServerMonitor {
 
-  private[this] val uiTabs = new HashMap[String, ThriftServerTab]()
+object KyuubiServerMonitor {
 
-  private[this] val listeners = new HashMap[String, ThriftServerListener]()
+  private[this] val uiTabs = new HashMap[User, KyuubiServerTab]()
 
-  def setListener(user: String, sparkListener: ThriftServerListener): Unit = {
+  private[this] val listeners = new HashMap[User, KyuubiServerListener]()
+
+  def setListener(user: User, sparkListener: KyuubiServerListener): Unit = {
     listeners.put(user, sparkListener)
   }
 
-  def getListener(user: String): ThriftServerListener = {
+  def getListener(user: User): KyuubiServerListener = {
     listeners.getOrElse(user, throw new SparkException(s"Listener does not init for user[$user]"))
   }
 
-  def addUITab(user: String, ui: ThriftServerTab): Unit = {
+  def addUITab(user: User, ui: KyuubiServerTab): Unit = {
     uiTabs.put(user, ui)
   }
 
-  def detachUITab(user: String): Unit = {
+  def detachUITab(user: User): Unit = {
     listeners.remove(user)
     uiTabs.get(user).foreach(_.detach())
   }

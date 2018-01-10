@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.monitor
+package yaooqinn.kyuubi.ui
 
 import scala.collection.mutable
 import scala.collection.JavaConverters._
@@ -24,14 +24,15 @@ import org.apache.spark.{SparkConf, SparkUtils}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerJobStart}
 import org.apache.spark.sql.internal.SQLConf
 
-class ThriftServerListener(conf: SparkConf) extends SparkListener {
+class KyuubiServerListener(conf: SparkConf) extends SparkListener {
 
-  protected var onlineSessionNum: Int = 0
-  protected val sessionList = new mutable.LinkedHashMap[String, SessionInfo]
-  protected val executionList = new mutable.LinkedHashMap[String, ExecutionInfo]
-  protected val retainedStatements = conf.getInt(SQLConf.THRIFTSERVER_UI_STATEMENT_LIMIT.key, 200)
-  protected val retainedSessions = conf.getInt(SQLConf.THRIFTSERVER_UI_SESSION_LIMIT.key, 200)
-  protected var totalRunning = 0
+  private[this] var onlineSessionNum: Int = 0
+  private[this] val sessionList = new mutable.LinkedHashMap[String, SessionInfo]
+  private[this] val executionList = new mutable.LinkedHashMap[String, ExecutionInfo]
+  private[this] val retainedStatements =
+    conf.getInt(SQLConf.THRIFTSERVER_UI_STATEMENT_LIMIT.key, 200)
+  private[this] val retainedSessions = conf.getInt(SQLConf.THRIFTSERVER_UI_SESSION_LIMIT.key, 200)
+  private[this] var totalRunning = 0
 
   def getOnlineSessionNum: Int = synchronized { onlineSessionNum }
 

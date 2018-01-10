@@ -25,11 +25,10 @@ import scala.xml.Node
 import org.apache.commons.lang3.StringEscapeUtils
 import org.apache.spark.ui.UIUtils._
 
-import yaooqinn.kyuubi.monitor.{ExecutionInfo, ExecutionState, SessionInfo}
+import yaooqinn.kyuubi.ui.{ExecutionInfo, ExecutionState, SessionInfo}
 
-
-/** Page for Spark Web UI that shows statistics of the thrift server */
-class ThriftServerPage(parent: ThriftServerTab) extends WebUIPage("") {
+/** Page for Spark Web UI that shows statistics of the kyuubi server */
+class KyuubiServerPage(parent: KyuubiServerTab) extends WebUIPage("") {
 
   private val listener = parent.listener
   private val startTime = Calendar.getInstance().getTime()
@@ -48,10 +47,10 @@ class ThriftServerPage(parent: ThriftServerTab) extends WebUIPage("") {
         generateSessionStatsTable() ++
         generateSQLStatsTable()
       }
-    UIUtils.headerSparkPage("JDBC/ODBC Server", content, parent, Some(5000))
+    UIUtils.headerSparkPage("Kyuubi Server", content, parent, Some(5000))
   }
 
-  /** Generate basic stats of the thrift server program */
+  /** Generate basic stats of the kyuubi server program */
   private def generateBasicStats(): Seq[Node] = {
     val timeSinceStart = System.currentTimeMillis() - startTime.getTime
     <ul class ="unstyled">
@@ -64,7 +63,7 @@ class ThriftServerPage(parent: ThriftServerTab) extends WebUIPage("") {
     </ul>
   }
 
-  /** Generate stats of batch statements of the thrift server program */
+  /** Generate stats of batch statements of the kyuubi server program */
   private def generateSQLStatsTable(): Seq[Node] = {
     val numStatement = listener.getExecutionList.size
     val table = if (numStatement > 0) {
@@ -135,7 +134,7 @@ class ThriftServerPage(parent: ThriftServerTab) extends WebUIPage("") {
     <td>{errorSummary}{details}</td>
   }
 
-  /** Generate stats of batch sessions of the thrift server program */
+  /** Generate stats of batch sessions of the kyuubi server program */
   private def generateSessionStatsTable(): Seq[Node] = {
     val sessionList = listener.getSessionList
     val numBatches = sessionList.size

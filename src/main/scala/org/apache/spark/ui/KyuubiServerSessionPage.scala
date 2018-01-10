@@ -25,10 +25,10 @@ import scala.xml.Node
 import org.apache.commons.lang3.StringEscapeUtils
 import org.apache.spark.ui.UIUtils._
 
-import yaooqinn.kyuubi.monitor.{ExecutionInfo, ExecutionState}
+import yaooqinn.kyuubi.ui.{ExecutionInfo, ExecutionState}
 
 /** Page for Spark Web UI that shows statistics of jobs running in the thrift server */
-class ThriftServerSessionPage(parent: ThriftServerTab) extends WebUIPage("session") {
+class KyuubiServerSessionPage(parent: KyuubiServerTab) extends WebUIPage("session") {
 
   private val listener = parent.listener
   private val startTime = Calendar.getInstance().getTime
@@ -54,10 +54,10 @@ class ThriftServerSessionPage(parent: ThriftServerTab) extends WebUIPage("sessio
         </h4> ++
         generateSQLStatsTable(sessionStat.sessionId)
       }
-    UIUtils.headerSparkPage("JDBC/ODBC Session", content, parent, Some(5000))
+    UIUtils.headerSparkPage("Kyuubi Session", content, parent, Some(5000))
   }
 
-  /** Generate basic stats of the thrift server program */
+  /** Generate basic stats of the kyuubi server program */
   private def generateBasicStats(): Seq[Node] = {
     val timeSinceStart = System.currentTimeMillis() - startTime.getTime
     <ul class ="unstyled">
@@ -70,7 +70,7 @@ class ThriftServerSessionPage(parent: ThriftServerTab) extends WebUIPage("sessio
     </ul>
   }
 
-  /** Generate stats of batch statements of the thrift server program */
+  /** Generate stats of batch statements of the kyuubi server program */
   private def generateSQLStatsTable(sessionID: String): Seq[Node] = {
     val executionList = listener.getExecutionList
       .filter(_.sessionId == sessionID)

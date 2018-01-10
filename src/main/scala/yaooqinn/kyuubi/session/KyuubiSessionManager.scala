@@ -33,7 +33,7 @@ import org.apache.spark.{KyuubiConf, SparkConf, SparkException}
 import org.apache.spark.sql.SparkSession
 
 import yaooqinn.kyuubi.Logging
-import yaooqinn.kyuubi.monitor.ThriftServerMonitor
+import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 import yaooqinn.kyuubi.operation.KyuubiOperationManager
 import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.service.CompositeService
@@ -186,7 +186,7 @@ private[kyuubi] class KyuubiSessionManager private(
             case (user, (session, times)) =>
               if (times.get() <= 0 || session.sparkContext.isStopped) {
                 removeSparkSession(user)
-                ThriftServerMonitor.detachUITab(user)
+                KyuubiServerMonitor.detachUITab(user)
                 session.stop()
               }
             case _ =>
@@ -240,7 +240,7 @@ private[kyuubi] class KyuubiSessionManager private(
     handleToSession.put(sessionHandle, kyuubiSession)
     handleToSessionUser.put(sessionHandle, username)
 
-    ThriftServerMonitor.getListener(username).onSessionCreated(
+    KyuubiServerMonitor.getListener(username).onSessionCreated(
       kyuubiSession.getIpAddress,
       sessionHandle.getSessionId.toString,
       kyuubiSession.getUserName)
@@ -250,7 +250,7 @@ private[kyuubi] class KyuubiSessionManager private(
 
   def closeSession(sessionHandle: SessionHandle) {
     val sessionUser = handleToSessionUser.remove(sessionHandle)
-    ThriftServerMonitor.getListener(sessionUser)
+    KyuubiServerMonitor.getListener(sessionUser)
       .onSessionClosed(sessionHandle.getSessionId.toString)
     val sessionAndTimes = userToSparkSession.get(sessionUser)
     if (sessionAndTimes != null) {
