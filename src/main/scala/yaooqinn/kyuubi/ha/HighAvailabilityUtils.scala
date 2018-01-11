@@ -31,7 +31,8 @@ import org.apache.curator.retry.ExponentialBackoffRetry
 import org.apache.hadoop.security.{SecurityUtil, UserGroupInformation}
 import org.apache.hadoop.security.authentication.util.KerberosUtil
 import org.apache.hive.common.util.HiveVersionInfo
-import org.apache.spark.{KyuubiConf, SparkConf}
+import org.apache.spark.KyuubiConf._
+import org.apache.spark.SparkConf
 import org.apache.zookeeper._
 import org.apache.zookeeper.data.ACL
 
@@ -49,22 +50,22 @@ object HighAvailabilityUtils extends Logging {
   private[this] var deregisteredWithZooKeeper = false
 
   def isSupportDynamicServiceDiscovery(conf: SparkConf): Boolean = {
-    conf.getBoolean(KyuubiConf.SUPPORT_DYNAMIC_SERVICE_DISCOVERY.key, defaultValue = false) &&
-      conf.get(KyuubiConf.KYUUBI_ZOOKEEPER_QUORUM.key, "").split(",").nonEmpty
+    conf.getBoolean(SUPPORT_DYNAMIC_SERVICE_DISCOVERY.key, defaultValue = false) &&
+      conf.get(KYUUBI_ZOOKEEPER_QUORUM.key, "").split(",").nonEmpty
   }
 
   @throws[Exception]
   def addServerInstanceToZooKeeper(kyuubiServer: KyuubiServer): Unit = {
     val conf = kyuubiServer.getConf
     val zooKeeperEnsemble = getQuorumServers(conf)
-    val rootNamespace = conf.get(KyuubiConf.KYUUBI_ZOOKEEPER_NAMESPACE.key, "kyuubiserver")
+    val rootNamespace = conf.get(KYUUBI_ZOOKEEPER_NAMESPACE.key, "kyuubiserver")
     val instanceURI = getServerInstanceURI(kyuubiServer.feService)
 
     setUpZooKeeperAuth(conf)
 
-    val sessionTimeout = conf.getInt(KyuubiConf.KYUUBI_ZOOKEEPER_SESSION_TIMEOUT.key, 1200000)
-    val baseSleepTime = conf.getInt(KyuubiConf.KYUUBI_ZOOKEEPER_CONNECTION_BASESLEEPTIME.key, 1000)
-    val maxRetries = conf.getInt(KyuubiConf.KYUUBI_ZOOKEEPER_CONNECTION_MAX_RETRIES.key, 3)
+    val sessionTimeout = conf.getInt(KYUUBI_ZOOKEEPER_SESSION_TIMEOUT.key, 1200000)
+    val baseSleepTime = conf.getInt(KYUUBI_ZOOKEEPER_CONNECTION_BASESLEEPTIME.key, 1000)
+    val maxRetries = conf.getInt(KYUUBI_ZOOKEEPER_CONNECTION_MAX_RETRIES.key, 3)
     // Create a CuratorFramework instance to be used as the ZooKeeper client
     // Use the zooKeeperAclProvider to create appropriate ACLs
     zooKeeperClient =
@@ -131,8 +132,8 @@ object HighAvailabilityUtils extends Logging {
    * @param conf SparkConf
    */
   private def getQuorumServers(conf: SparkConf): String = {
-    val hosts = conf.get(KyuubiConf.KYUUBI_ZOOKEEPER_QUORUM.key, "").split(",")
-    val port = conf.get(KyuubiConf.KYUUBI_ZOOKEEPER_CLIENT_PORT.key, "2181")
+    val hosts = conf.get(KYUUBI_ZOOKEEPER_QUORUM.key, "").split(",")
+    val port = conf.get(KYUUBI_ZOOKEEPER_CLIENT_PORT.key, "2181")
     val quorum = new StringBuilder
     hosts.foreach { host =>
       quorum.append(host)

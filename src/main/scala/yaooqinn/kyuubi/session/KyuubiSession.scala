@@ -131,9 +131,7 @@ private[kyuubi] class KyuubiSession(
 
   }
 
-  def removeSparkSession(): Unit = _sparkSession = null
-
-  def getSessionUgi: UserGroupInformation = this.sessionUGI
+  def ugi: UserGroupInformation = this.sessionUGI
 
   private[this] def acquire(userAccess: Boolean): Unit = {
     if (userAccess) {
@@ -241,7 +239,7 @@ private[kyuubi] class KyuubiSession(
       opHandleSet.clear()
       // Cleanup session log directory.
       cleanupSessionLogDir()
-      removeSparkSession()
+      _sparkSession = null
     } finally {
       release(true)
       try {
@@ -331,7 +329,7 @@ private[kyuubi] class KyuubiSession(
    *
    * @return a file representing the parent directory of operation logs
    */
-  def getOperationLogSessionDir: File = sessionLogDir
+  def getSessionLogDir: File = sessionLogDir
 
   /**
    * Set the session dir, which is the parent dir of operation logs
