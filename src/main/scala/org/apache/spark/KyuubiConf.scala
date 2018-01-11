@@ -109,7 +109,6 @@ object KyuubiConf {
         s"${sys.env.getOrElse("SPARK_LOG_DIR", System.getProperty("java.io.tmpdir"))}"
           + File.separator + "operation_logs")
 
-
   //////////////////////////////////////////////////////
   //             background exec thread               //
   //////////////////////////////////////////////////////

@@ -26,21 +26,23 @@ import org.apache.spark.SparkConf
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.operation.KyuubiSQLOperation
 import yaooqinn.kyuubi.service.CompositeService
-import yaooqinn.kyuubi.session.KyuubiSessionManager
+import yaooqinn.kyuubi.session.SessionManager
 
-private[server] class BackendService private(name: String, server: KyuubiServer)
+/**
+ * [[BackendService]] holds an instance of [[SessionManager]] which manages
+ * `KyuubiSession` for execution
+ */
+private[server] class BackendService private(name: String)
   extends CompositeService(name) with ICLIService with Logging {
 
-  private[this] var sessionManager: KyuubiSessionManager = _
-  def getSessionManager: KyuubiSessionManager = sessionManager
+  private[this] var sessionManager: SessionManager = _
+  def getSessionManager: SessionManager = sessionManager
 
-  def this(thriftServer: KyuubiServer) = {
-    this(classOf[BackendService].getSimpleName, thriftServer)
-  }
+  def this() = this(classOf[BackendService].getSimpleName)
 
   override def init(conf: SparkConf): Unit = synchronized {
     this.conf = conf
-    sessionManager = new KyuubiSessionManager(server)
+    sessionManager = new SessionManager()
     addService(sessionManager)
     super.init(conf)
   }
@@ -135,19 +137,19 @@ private[server] class BackendService private(name: String, server: KyuubiServer)
   }
 
   override def getOperationStatus(opHandle: OperationHandle): OperationStatus = {
-    sessionManager.getOperationManager.getOperation(opHandle).getStatus
+    sessionManager.getOperationMgr.getOperation(opHandle).getStatus
   }
 
   override def cancelOperation(opHandle: OperationHandle): Unit = {
-    sessionManager.getOperationManager.getOperation(opHandle).cancel()
+    sessionManager.getOperationMgr.getOperation(opHandle).cancel()
   }
 
   override def closeOperation(opHandle: OperationHandle): Unit = {
-    sessionManager.getOperationManager.getOperation(opHandle).close()
+    sessionManager.getOperationMgr.getOperation(opHandle).close()
   }
 
   override def getResultSetMetadata(opHandle: OperationHandle): TableSchema = {
-    sessionManager.getOperationManager.getOperation(opHandle).getResultSetSchema
+    sessionManager.getOperationMgr.getOperation(opHandle).getResultSetSchema
   }
 
   override def fetchResults(opHandle: OperationHandle): RowSet = {
@@ -160,8 +162,8 @@ private[server] class BackendService private(name: String, server: KyuubiServer)
       orientation: FetchOrientation,
       maxRows: Long,
       fetchType: FetchType): RowSet = {
-    sessionManager.getOperationManager.getOperation(opHandle)
-      .getParentSession.fetchResults(opHandle, orientation, maxRows, fetchType)
+    sessionManager.getOperationMgr.getOperation(opHandle)
+      .getSession.fetchResults(opHandle, orientation, maxRows, fetchType)
 
   }
 }

@@ -18,7 +18,7 @@
 package yaooqinn.kyuubi.operation
 
 import java.sql.SQLException
-import java.util.{ArrayList, HashMap => JMap, List => JList}
+import java.util.{HashMap => JMap}
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
@@ -33,10 +33,10 @@ import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.service.AbstractService
 import yaooqinn.kyuubi.session.KyuubiSession
 
-private[kyuubi] class KyuubiOperationManager private(name: String)
+private[kyuubi] class OperationManager private(name: String)
   extends AbstractService(name) with Logging {
 
-  def this() = this(classOf[KyuubiOperationManager].getSimpleName)
+  def this() = this(classOf[OperationManager].getSimpleName)
 
   private[this] val handleToOperation = new JMap[OperationHandle, KyuubiSQLOperation]
 
@@ -145,22 +145,21 @@ private[kyuubi] class KyuubiOperationManager private(name: String)
     if (operationLog == null) {
       throw new HiveSQLException("Couldn't find log associated with operation handle: " + opHandle)
     }
-    // read logs
-    var logs: JList[String] = new ArrayList[String]()
-    try
-      logs = operationLog.readOperationLog(isFetchFirst(orientation), maxRows)
-    catch {
+    try {
+      // read logs
+      val logs = operationLog.readOperationLog(isFetchFirst(orientation), maxRows)
+      // convert logs to RowSet
+      val tableSchema: TableSchema = new TableSchema(getLogSchema)
+      val rowSet: RowSet =
+        RowSetFactory.create(tableSchema, getOperation(opHandle).getProtocolVersion)
+      for (log <- logs.asScala) {
+        rowSet.addRow(Array[AnyRef](log))
+      }
+      rowSet
+    } catch {
       case e: SQLException =>
         throw new HiveSQLException(e.getMessage, e.getCause)
     }
-    // convert logs to RowSet
-    val tableSchema: TableSchema = new TableSchema(getLogSchema)
-    val rowSet: RowSet =
-      RowSetFactory.create(tableSchema, getOperation(opHandle).getProtocolVersion)
-    for (log <- logs.asScala) {
-      rowSet.addRow(Array[AnyRef](log))
-    }
-    rowSet
   }
 
   private[this] def isFetchFirst(fetchOrientation: FetchOrientation): Boolean = {

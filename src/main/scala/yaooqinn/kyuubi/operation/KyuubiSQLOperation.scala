@@ -37,14 +37,14 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSQLUtils}
 import org.apache.spark.sql.types._
 
 import yaooqinn.kyuubi.Logging
-import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 import yaooqinn.kyuubi.session.KyuubiSession
+import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 
-class KyuubiSQLOperation(parentSession: KyuubiSession, statement: String) extends Logging {
+class KyuubiSQLOperation(session: KyuubiSession, statement: String) extends Logging {
 
   private[this] var state = OperationState.INITIALIZED
   private[this] val opHandle: OperationHandle =
-    new OperationHandle(OperationType.EXECUTE_STATEMENT, parentSession.getProtocolVersion)
+    new OperationHandle(OperationType.EXECUTE_STATEMENT, session.getProtocolVersion)
 
   private[this] var hasResultSet = false
   private[this] var operationException: HiveSQLException = _
@@ -75,7 +75,7 @@ class KyuubiSQLOperation(parentSession: KyuubiSession, statement: String) extend
     this.backgroundHandle = backgroundHandle
   }
 
-  def getParentSession: KyuubiSession = parentSession
+  def getSession: KyuubiSession = session
 
   def getHandle: OperationHandle = opHandle
 
@@ -103,9 +103,9 @@ class KyuubiSQLOperation(parentSession: KyuubiSession, statement: String) extend
   }
 
   private[this] def createOperationLog(): Unit = {
-    if (parentSession.isOperationLogEnabled) {
+    if (session.isOperationLogEnabled) {
       val logFile =
-        new File(parentSession.getOperationLogSessionDir, opHandle.getHandleIdentifier.toString)
+        new File(session.getOperationLogSessionDir, opHandle.getHandleIdentifier.toString)
       val logFilePath = logFile.getAbsolutePath
       isOperationLogEnabled = true
       // create log file
@@ -146,8 +146,8 @@ class KyuubiSQLOperation(parentSession: KyuubiSession, statement: String) extend
           return
       }
       // register this operationLog
-      parentSession.getSessionManager.getOperationManager
-        .setOperationLog(parentSession.getUserName, operationLog)
+      session.getSessionMgr.getOperationMgr
+        .setOperationLog(session.getUserName, operationLog)
     }
   }
 
@@ -158,16 +158,16 @@ class KyuubiSQLOperation(parentSession: KyuubiSession, statement: String) extend
           + getHandle.getHandleIdentifier)
         isOperationLogEnabled = false
       } else {
-        parentSession.getSessionManager.getOperationManager
-          .setOperationLog(parentSession.getUserName, operationLog)
+        session.getSessionMgr.getOperationMgr
+          .setOperationLog(session.getUserName, operationLog)
       }
     }
   }
 
   private[this] def unregisterOperationLog(): Unit = {
     if (isOperationLogEnabled) {
-      parentSession.getSessionManager.getOperationManager
-        .unregisterOperationLog(parentSession.getUserName)
+      session.getSessionMgr.getOperationMgr
+        .unregisterOperationLog(session.getUserName)
     }
   }
 
@@ -197,7 +197,7 @@ class KyuubiSQLOperation(parentSession: KyuubiSession, statement: String) extend
     debug(s"CLOSING $statementId")
     cleanup(OperationState.CLOSED)
     cleanupOperationLog()
-    parentSession.sparkSession().sparkContext.clearJobGroup()
+    session.sparkSession().sparkContext.clearJobGroup()
   }
 
   def cancel(): Unit = {
@@ -313,7 +313,7 @@ class KyuubiSQLOperation(parentSession: KyuubiSession, statement: String) extend
     val backgroundOperation = new Runnable() {
       override def run(): Unit = {
         try {
-          parentSession.getSessionUgi.doAs(new PrivilegedExceptionAction[Unit]() {
+          session.getSessionUgi.doAs(new PrivilegedExceptionAction[Unit]() {
             registerCurrentOperationLog()
             override def run(): Unit = {
               try {
@@ -329,7 +329,7 @@ class KyuubiSQLOperation(parentSession: KyuubiSession, statement: String) extend
           case e: Exception =>
             setOperationException(new HiveSQLException(e))
             error("Error running hive query as user : " +
-              parentSession.getUserName, e)
+              session.getUserName, e)
         }
       }
     }
@@ -337,7 +337,7 @@ class KyuubiSQLOperation(parentSession: KyuubiSession, statement: String) extend
     try {
       // This submit blocks if no background threads are available to run this operation
       val backgroundHandle =
-        parentSession.getSessionManager.submitBackgroundOperation(backgroundOperation)
+        session.getSessionMgr.submitBackgroundOperation(backgroundOperation)
       setBackgroundHandle(backgroundHandle)
     } catch {
       case rejected: RejectedExecutionException =>
@@ -356,16 +356,16 @@ class KyuubiSQLOperation(parentSession: KyuubiSession, statement: String) extend
     info(s"Running query '$statement' with $statementId")
     setState(OperationState.RUNNING)
     // Always use the latest class loader provided by executionHive's state.
-    KyuubiServerMonitor.getListener(parentSession.getUserName).onStatementStart(
+    KyuubiServerMonitor.getListener(session.getUserName).onStatementStart(
       statementId,
-      parentSession.getSessionHandle.getSessionId.toString,
+      session.getSessionHandle.getSessionId.toString,
       statement,
       statementId,
-      parentSession.getUserName)
-    parentSession.sparkSession().sparkContext.setJobGroup(statementId, statement)
+      session.getUserName)
+    session.sparkSession().sparkContext.setJobGroup(statementId, statement)
     try {
-      result = parentSession.sparkSession().sql(statement)
-      KyuubiServerMonitor.getListener(parentSession.getUserName)
+      result = session.sparkSession().sql(statement)
+      KyuubiServerMonitor.getListener(session.getUserName)
         .onStatementParsed(statementId, result.queryExecution.toString())
       debug(result.queryExecution.toString())
       iter = result.collect().iterator
@@ -377,7 +377,7 @@ class KyuubiSQLOperation(parentSession: KyuubiSession, statement: String) extend
           return
         } else {
           setState(OperationState.ERROR)
-          KyuubiServerMonitor.getListener(parentSession.getUserName).onStatementError(
+          KyuubiServerMonitor.getListener(session.getUserName).onStatementError(
             statementId, e.getMessage, SparkUtils.exceptionString(e))
           throw e
         }
@@ -391,17 +391,17 @@ class KyuubiSQLOperation(parentSession: KyuubiSession, statement: String) extend
           return
         } else {
           setState(OperationState.ERROR)
-          KyuubiServerMonitor.getListener(parentSession.getUserName).onStatementError(
+          KyuubiServerMonitor.getListener(session.getUserName).onStatementError(
             statementId, e.getMessage, SparkUtils.exceptionString(e))
           throw new HiveSQLException(e.toString)
         }
     } finally {
       if (statementId != null) {
-        parentSession.sparkSession().sparkContext.cancelJobGroup(statementId)
+        session.sparkSession().sparkContext.cancelJobGroup(statementId)
       }
     }
     setState(OperationState.FINISHED)
-    KyuubiServerMonitor.getListener(parentSession.getUserName).onStatementFinish(statementId)
+    KyuubiServerMonitor.getListener(session.getUserName).onStatementFinish(statementId)
   }
 
   private def cleanup(state: OperationState) {
@@ -413,7 +413,7 @@ class KyuubiSQLOperation(parentSession: KyuubiSession, statement: String) extend
       backgroundHandle.cancel(true)
     }
     if (statementId != null) {
-      parentSession.sparkSession().sparkContext.cancelJobGroup(statementId)
+      session.sparkSession().sparkContext.cancelJobGroup(statementId)
     }
   }
 }

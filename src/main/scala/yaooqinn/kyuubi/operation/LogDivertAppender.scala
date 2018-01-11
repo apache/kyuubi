@@ -29,10 +29,10 @@ import yaooqinn.kyuubi.Logging
 
 class LogDivertAppender extends WriterAppender with Logging {
 
-  private var operationManager: KyuubiOperationManager = _
+  private var operationManager: OperationManager = _
 
   private class NameFilter(
-       var operationManager: KyuubiOperationManager) extends Filter {
+       var operationManager: OperationManager) extends Filter {
     override def decide(ev: LoggingEvent): Int = {
       val log = operationManager.getOperationLog
       if (log == null) return Filter.DENY
@@ -56,7 +56,7 @@ class LogDivertAppender extends WriterAppender with Logging {
       Option(layout).getOrElse(new PatternLayout("%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n"))
   }
 
-  def this(operationManager: KyuubiOperationManager) {
+  def this(operationManager: OperationManager) {
     this()
     initLayout()
     setWriter(writer)

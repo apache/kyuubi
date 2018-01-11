@@ -40,7 +40,7 @@ import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.service.{AbstractService, ServiceException, ServiceUtils}
 
 /**
- * FrontendService keeps compatible with all kinds of Hive JDBC/Thrift Client Connections
+ * [[FrontendService]] keeps compatible with all kinds of Hive JDBC/Thrift Client Connections
  *
  * It use Hive configurations to configure itself.
  */
@@ -69,8 +69,8 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
 
   private[this] var realUser: String = _
 
-  def this(cliService: BackendService) = {
-    this(classOf[FrontendService].getSimpleName, cliService)
+  def this(beService: BackendService) = {
+    this(classOf[FrontendService].getSimpleName, beService)
     currentServerContext = new ThreadLocal[ServerContext]()
     serverEventHandler = new FeTServerEventHandler
   }
