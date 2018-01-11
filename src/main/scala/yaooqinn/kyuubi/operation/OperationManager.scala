@@ -27,7 +27,8 @@ import org.apache.hadoop.hive.metastore.api.{FieldSchema, Schema}
 import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.hive.service.cli._
 import org.apache.log4j.Logger
-import org.apache.spark.{KyuubiConf, SparkConf, SparkUtils}
+import org.apache.spark.{SparkConf, SparkUtils}
+import org.apache.spark.KyuubiConf._
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.service.AbstractService
@@ -38,12 +39,12 @@ private[kyuubi] class OperationManager private(name: String)
 
   def this() = this(classOf[OperationManager].getSimpleName)
 
-  private[this] val handleToOperation = new JMap[OperationHandle, KyuubiSQLOperation]
+  private[this] val handleToOperation = new JMap[OperationHandle, KyuubiOperation]
 
   val userToOperationLog = new ConcurrentHashMap[String, OperationLog]()
 
   override def init(conf: SparkConf): Unit = synchronized {
-    if (conf.getBoolean(KyuubiConf.KYUUBI_LOGGING_OPERATION_ENABLED.key, defaultValue = true)) {
+    if (conf.getBoolean(KYUUBI_LOGGING_OPERATION_ENABLED.key, defaultValue = true)) {
       initOperationLogCapture()
     } else {
       debug("Operation level logging is turned off")
@@ -83,13 +84,13 @@ private[kyuubi] class OperationManager private(name: String)
 
   def newExecuteStatementOperation(
       parentSession: KyuubiSession,
-      statement: String): KyuubiSQLOperation = synchronized {
-    val operation = new KyuubiSQLOperation(parentSession, statement)
+      statement: String): KyuubiOperation = synchronized {
+    val operation = new KyuubiOperation(parentSession, statement)
     addOperation(operation)
     operation
   }
 
-  def getOperation(operationHandle: OperationHandle): KyuubiSQLOperation = {
+  def getOperation(operationHandle: OperationHandle): KyuubiOperation = {
     val operation = getOperationInternal(operationHandle)
     if (operation == null) throw new HiveSQLException("Invalid OperationHandle: " + operationHandle)
     operation
@@ -98,7 +99,7 @@ private[kyuubi] class OperationManager private(name: String)
   private[this] def getOperationInternal(operationHandle: OperationHandle) =
     handleToOperation.get(operationHandle)
 
-  private[this] def addOperation(operation: KyuubiSQLOperation): Unit = {
+  private[this] def addOperation(operation: KyuubiOperation): Unit = {
     handleToOperation.put(operation.getHandle, operation)
   }
 

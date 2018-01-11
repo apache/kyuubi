@@ -40,13 +40,13 @@ import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.session.KyuubiSession
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 
-class KyuubiSQLOperation(session: KyuubiSession, statement: String) extends Logging {
+class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging {
 
   private[this] var state = OperationState.INITIALIZED
   private[this] val opHandle: OperationHandle =
     new OperationHandle(OperationType.EXECUTE_STATEMENT, session.getProtocolVersion)
 
-  private[this] var hasResultSet = false
+  private[this] var hasResultSet: Boolean = false
   private[this] var operationException: HiveSQLException = _
   private[this] var backgroundHandle: Future[_] = _
   private[this] var operationLog: OperationLog = _
@@ -62,7 +62,7 @@ class KyuubiSQLOperation(session: KyuubiSession, statement: String) extends Logg
       new TableSchema(Arrays.asList(new FieldSchema("Result", "string", "")))
     } else {
       info(s"Result Schema: ${result.schema}")
-      KyuubiSQLOperation.getTableSchema(result.schema)
+      KyuubiOperation.getTableSchema(result.schema)
     }
   }
 
@@ -105,7 +105,7 @@ class KyuubiSQLOperation(session: KyuubiSession, statement: String) extends Logg
   private[this] def createOperationLog(): Unit = {
     if (session.isOperationLogEnabled) {
       val logFile =
-        new File(session.getOperationLogSessionDir, opHandle.getHandleIdentifier.toString)
+        new File(session.getSessionLogDir, opHandle.getHandleIdentifier.toString)
       val logFilePath = logFile.getAbsolutePath
       isOperationLogEnabled = true
       // create log file
@@ -313,7 +313,7 @@ class KyuubiSQLOperation(session: KyuubiSession, statement: String) extends Logg
     val backgroundOperation = new Runnable() {
       override def run(): Unit = {
         try {
-          session.getSessionUgi.doAs(new PrivilegedExceptionAction[Unit]() {
+          session.ugi.doAs(new PrivilegedExceptionAction[Unit]() {
             registerCurrentOperationLog()
             override def run(): Unit = {
               try {
@@ -418,7 +418,7 @@ class KyuubiSQLOperation(session: KyuubiSession, statement: String) extends Logg
   }
 }
 
-object KyuubiSQLOperation {
+object KyuubiOperation {
   def getTableSchema(structType: StructType): TableSchema = {
     val schema = structType.map { field =>
       val attrTypeString = if (field.dataType == NullType) "void" else field.dataType.catalogString

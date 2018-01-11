@@ -29,7 +29,8 @@ import org.apache.commons.io.FileUtils
 import org.apache.hive.service.cli.{HiveSQLException, SessionHandle}
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.hive.service.server.ThreadFactoryWithGarbageCleanup
-import org.apache.spark.{KyuubiConf, SparkConf, SparkException}
+import org.apache.spark.{SparkConf, SparkException}
+import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.SparkSession
 
 import yaooqinn.kyuubi.Logging
@@ -62,7 +63,7 @@ private[kyuubi] class SessionManager private(
   override def init(conf: SparkConf): Unit = synchronized {
     this.conf = conf
     // Create operation log root directory, if operation logging is enabled
-    if (conf.getBoolean(KyuubiConf.KYUUBI_LOGGING_OPERATION_ENABLED.key, defaultValue = true)) {
+    if (conf.getBoolean(KYUUBI_LOGGING_OPERATION_ENABLED.key, defaultValue = true)) {
       initOperationLogRootDir()
     }
     createBackgroundOperationPool()
@@ -71,11 +72,11 @@ private[kyuubi] class SessionManager private(
   }
 
   private[this] def createBackgroundOperationPool(): Unit = {
-    val poolSize = conf.getInt(KyuubiConf.KYUUBI_ASYNC_EXEC_THREADS.key, 100)
+    val poolSize = conf.getInt(KYUUBI_ASYNC_EXEC_THREADS.key, 100)
     info("Background operation thread pool size: " + poolSize)
-    val poolQueueSize = conf.getInt(KyuubiConf.KYUUBI_ASYNC_EXEC_WAIT_QUEUE_SIZE.key, 100)
+    val poolQueueSize = conf.getInt(KYUUBI_ASYNC_EXEC_WAIT_QUEUE_SIZE.key, 100)
     info("Background operation thread wait queue size: " + poolQueueSize)
-    val keepAliveTime = conf.getTimeAsMs(KyuubiConf.KYUUBI_EXEC_KEEPALIVE_TIME.key, "10s")
+    val keepAliveTime = conf.getTimeAsMs(KYUUBI_EXEC_KEEPALIVE_TIME.key, "10s")
     info("Background operation thread keepalive time: " + keepAliveTime + " seconds")
     val threadPoolName = "SparkThriftServer-Background-Pool"
     backgroundOperationPool =
@@ -87,15 +88,15 @@ private[kyuubi] class SessionManager private(
         new LinkedBlockingQueue[Runnable](poolQueueSize),
         new ThreadFactoryWithGarbageCleanup(threadPoolName))
     backgroundOperationPool.allowCoreThreadTimeOut(true)
-    checkInterval = conf.getTimeAsMs(KyuubiConf.KYUUBI_SESSION_CHECK_INTERVAL.key, "6h")
-    sessionTimeout = conf.getTimeAsMs(KyuubiConf.KYUUBI_IDLE_SESSION_TIMEOUT.key, "8h")
-    checkOperation = conf.getBoolean(KyuubiConf.KYUUBI_IDLE_SESSION_CHECK_OPERATION.key,
+    checkInterval = conf.getTimeAsMs(KYUUBI_SESSION_CHECK_INTERVAL.key, "6h")
+    sessionTimeout = conf.getTimeAsMs(KYUUBI_IDLE_SESSION_TIMEOUT.key, "8h")
+    checkOperation = conf.getBoolean(KYUUBI_IDLE_SESSION_CHECK_OPERATION.key,
       defaultValue = true)
   }
 
   private[this] def initOperationLogRootDir(): Unit = {
     operationLogRootDir =
-      new File(conf.get(KyuubiConf.KYUUBI_LOGGING_OPERATION_LOG_LOCATION.key,
+      new File(conf.get(KYUUBI_LOGGING_OPERATION_LOG_LOCATION.key,
         s"${sys.env.getOrElse("SPARK_LOG_DIR", System.getProperty("java.io.tmpdir"))}"
           + File.separator + "operation_logs"))
     isOperationLogEnabled = true
@@ -175,7 +176,7 @@ private[kyuubi] class SessionManager private(
   private[this] def startSparkSessionCleaner(): Unit = {
     // at least 10 min
     val interval = math.max(
-      conf.getTimeAsMs(KyuubiConf.KYUUBI_SPARK_SESSION_CHECK_INTERVAL.key, "20min"),
+      conf.getTimeAsMs(KYUUBI_SPARK_SESSION_CHECK_INTERVAL.key, "20min"),
       10 * 60 * 1000L)
     val sessionCleaner = new Runnable {
       override def run(): Unit = {
@@ -280,7 +281,7 @@ private[kyuubi] class SessionManager private(
     shutdown = true
     if (backgroundOperationPool != null) {
       backgroundOperationPool.shutdown()
-      val timeout = conf.getTimeAsSeconds(KyuubiConf.KYUUBI_ASYNC_EXEC_SHUTDOWN_TIMEOUT.key, "10s")
+      val timeout = conf.getTimeAsSeconds(KYUUBI_ASYNC_EXEC_SHUTDOWN_TIMEOUT.key, "10s")
       try {
         backgroundOperationPool.awaitTermination(timeout, TimeUnit.SECONDS)
       } catch {

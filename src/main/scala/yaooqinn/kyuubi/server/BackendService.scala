@@ -24,7 +24,7 @@ import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.SparkConf
 
 import yaooqinn.kyuubi.Logging
-import yaooqinn.kyuubi.operation.KyuubiSQLOperation
+import yaooqinn.kyuubi.operation.KyuubiOperation
 import yaooqinn.kyuubi.service.CompositeService
 import yaooqinn.kyuubi.session.SessionManager
 
@@ -153,8 +153,8 @@ private[server] class BackendService private(name: String)
   }
 
   override def fetchResults(opHandle: OperationHandle): RowSet = {
-    fetchResults(opHandle, KyuubiSQLOperation.DEFAULT_FETCH_ORIENTATION,
-      KyuubiSQLOperation.DEFAULT_FETCH_MAX_ROWS, FetchType.QUERY_OUTPUT)
+    fetchResults(opHandle, KyuubiOperation.DEFAULT_FETCH_ORIENTATION,
+      KyuubiOperation.DEFAULT_FETCH_MAX_ROWS, FetchType.QUERY_OUTPUT)
   }
 
   override def fetchResults(
