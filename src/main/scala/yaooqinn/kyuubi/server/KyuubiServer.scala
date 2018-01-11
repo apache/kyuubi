@@ -21,7 +21,7 @@ import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 
 import org.apache.hadoop.hive.cli.OptionsProcessor
-import org.apache.spark.{SparkConf, SparkUtils}
+import org.apache.spark.{KyuubiConf, SparkConf, SparkUtils}
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.ha.HighAvailabilityUtils
@@ -104,6 +104,8 @@ object KyuubiServer extends Logging {
       error("SET spark.driver.userClassPathFirst to true")
       System.exit(-1)
     }
+    // overwrite later for each SparkC
+    conf.set("spark.app.name", classOf[KyuubiServer].getSimpleName)
     // avoid max port retries reached
     conf.set("spark.ui.port", "0")
     conf.set("spark.driver.allowMultipleContexts", "true")
@@ -119,5 +121,7 @@ object KyuubiServer extends Logging {
     // but for the later [[SparkContext]] must be set to client mode
     conf.set("spark.submit.deployMode", "client")
 
+    // Set missing Kyuubi configs to SparkConf
+    KyuubiConf.getAllDefaults.foreach(kv => conf.setIfMissing(kv._1, kv._2))
   }
 }

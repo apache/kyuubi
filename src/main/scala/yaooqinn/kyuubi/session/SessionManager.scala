@@ -35,6 +35,7 @@ import org.apache.spark.sql.SparkSession
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.operation.OperationManager
+import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.service.CompositeService
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 
@@ -58,12 +59,12 @@ private[kyuubi] class SessionManager private(
 
   private[this] var shutdown: Boolean = false
 
-  def this() = this(getClass.getSimpleName)
+  def this() = this(classOf[SessionManager].getSimpleName)
 
   override def init(conf: SparkConf): Unit = synchronized {
     this.conf = conf
     // Create operation log root directory, if operation logging is enabled
-    if (conf.getBoolean(KYUUBI_LOGGING_OPERATION_ENABLED.key, defaultValue = true)) {
+    if (conf.get(KYUUBI_LOGGING_OPERATION_ENABLED.key).toBoolean) {
       initOperationLogRootDir()
     }
     createBackgroundOperationPool()
@@ -72,33 +73,29 @@ private[kyuubi] class SessionManager private(
   }
 
   private[this] def createBackgroundOperationPool(): Unit = {
-    val poolSize = conf.getInt(KYUUBI_ASYNC_EXEC_THREADS.key, 100)
+    val poolSize = conf.get(KYUUBI_ASYNC_EXEC_THREADS.key).toInt
     info("Background operation thread pool size: " + poolSize)
-    val poolQueueSize = conf.getInt(KYUUBI_ASYNC_EXEC_WAIT_QUEUE_SIZE.key, 100)
+    val poolQueueSize = conf.get(KYUUBI_ASYNC_EXEC_WAIT_QUEUE_SIZE.key).toInt
     info("Background operation thread wait queue size: " + poolQueueSize)
-    val keepAliveTime = conf.getTimeAsMs(KYUUBI_EXEC_KEEPALIVE_TIME.key, "10s")
+    val keepAliveTime = conf.getTimeAsSeconds(KYUUBI_EXEC_KEEPALIVE_TIME.key)
     info("Background operation thread keepalive time: " + keepAliveTime + " seconds")
-    val threadPoolName = "SparkThriftServer-Background-Pool"
+    val threadPoolName = classOf[KyuubiServer].getSimpleName + "-Background-Pool"
     backgroundOperationPool =
       new ThreadPoolExecutor(
         poolSize,
         poolSize,
         keepAliveTime,
-        TimeUnit.MILLISECONDS,
+        TimeUnit.SECONDS,
         new LinkedBlockingQueue[Runnable](poolQueueSize),
         new ThreadFactoryWithGarbageCleanup(threadPoolName))
     backgroundOperationPool.allowCoreThreadTimeOut(true)
-    checkInterval = conf.getTimeAsMs(KYUUBI_SESSION_CHECK_INTERVAL.key, "6h")
-    sessionTimeout = conf.getTimeAsMs(KYUUBI_IDLE_SESSION_TIMEOUT.key, "8h")
-    checkOperation = conf.getBoolean(KYUUBI_IDLE_SESSION_CHECK_OPERATION.key,
-      defaultValue = true)
+    checkInterval = conf.getTimeAsMs(KYUUBI_SESSION_CHECK_INTERVAL.key)
+    sessionTimeout = conf.getTimeAsMs(KYUUBI_IDLE_SESSION_TIMEOUT.key)
+    checkOperation = conf.get(KYUUBI_IDLE_SESSION_CHECK_OPERATION.key).toBoolean
   }
 
   private[this] def initOperationLogRootDir(): Unit = {
-    operationLogRootDir =
-      new File(conf.get(KYUUBI_LOGGING_OPERATION_LOG_LOCATION.key,
-        s"${sys.env.getOrElse("SPARK_LOG_DIR", System.getProperty("java.io.tmpdir"))}"
-          + File.separator + "operation_logs"))
+    operationLogRootDir = new File(conf.get(KYUUBI_LOGGING_OPERATION_LOG_LOCATION.key))
     isOperationLogEnabled = true
     if (operationLogRootDir.exists && !operationLogRootDir.isDirectory) {
       info("The operation log root directory exists, but it is not a directory: "
@@ -176,8 +173,7 @@ private[kyuubi] class SessionManager private(
   private[this] def startSparkSessionCleaner(): Unit = {
     // at least 10 min
     val interval = math.max(
-      conf.getTimeAsMs(KYUUBI_SPARK_SESSION_CHECK_INTERVAL.key, "20min"),
-      10 * 60 * 1000L)
+      conf.getTimeAsMs(KYUUBI_SPARK_SESSION_CHECK_INTERVAL.key), 10 * 60 * 1000L)
     val sessionCleaner = new Runnable {
       override def run(): Unit = {
         sleepInterval(interval)
@@ -281,7 +277,7 @@ private[kyuubi] class SessionManager private(
     shutdown = true
     if (backgroundOperationPool != null) {
       backgroundOperationPool.shutdown()
-      val timeout = conf.getTimeAsSeconds(KYUUBI_ASYNC_EXEC_SHUTDOWN_TIMEOUT.key, "10s")
+      val timeout = conf.getTimeAsSeconds(KYUUBI_ASYNC_EXEC_SHUTDOWN_TIMEOUT.key)
       try {
         backgroundOperationPool.awaitTermination(timeout, TimeUnit.SECONDS)
       } catch {
