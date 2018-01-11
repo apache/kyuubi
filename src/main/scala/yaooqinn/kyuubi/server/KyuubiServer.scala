@@ -28,6 +28,9 @@ import yaooqinn.kyuubi.ha.HighAvailabilityUtils
 import yaooqinn.kyuubi.service.CompositeService
 import yaooqinn.kyuubi.utils.VersionUtils
 
+/**
+ * Main entrance of Kyuubi Server
+ */
 private[kyuubi] class KyuubiServer private(name: String)
   extends CompositeService(name) with Logging {
 
@@ -38,13 +41,11 @@ private[kyuubi] class KyuubiServer private(name: String)
 
   private[this] val started = new AtomicBoolean(false)
 
-  def this() = {
-    this(classOf[KyuubiServer].getSimpleName)
-  }
+  def this() = this(classOf[KyuubiServer].getSimpleName)
 
   override def init(conf: SparkConf): Unit = synchronized {
     this.conf = conf
-    _beService = new BackendService(this)
+    _beService = new BackendService()
     _feService = new FrontendService(_beService)
     addService(_beService)
     addService(_feService)
@@ -89,13 +90,17 @@ object KyuubiServer extends Logging {
       }
     } catch {
       case e: Exception =>
-        error("Error starting KyuubiServer", e)
+        error("Error starting Kyuubi Server", e)
         System.exit(-1)
     }
   }
 
+  /**
+   *
+   * @param conf the default [[SparkConf]]
+   */
   private[this] def setupCommonConfig(conf: SparkConf): Unit = {
-    if (!conf.getBoolean("spark.driver.userClassPathFirst", false)) {
+    if (!conf.getBoolean("spark.driver.userClassPathFirst", defaultValue = false)) {
       error("SET spark.driver.userClassPathFirst to true")
       System.exit(-1)
     }
@@ -110,5 +115,9 @@ object KyuubiServer extends Logging {
       conf.set("spark.sql.hive.metastore.jars",
         sys.env("SPARK_HOME") + File.separator + "jars" + File.separator + "*")
     }
+    // For the server itself the deploy mode could be either client or cluster,
+    // but for the later [[SparkContext]] must be set to client mode
+    conf.set("spark.submit.deployMode", "client")
+
   }
 }

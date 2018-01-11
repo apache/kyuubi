@@ -34,19 +34,22 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.ui.KyuubiServerTab
 
 import yaooqinn.kyuubi.Logging
+import yaooqinn.kyuubi.operation.OperationManager
 import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
-import yaooqinn.kyuubi.operation.KyuubiOperationManager
 import yaooqinn.kyuubi.utils.ReflectUtils
 
-class KyuubiSession(
+/**
+ * An Execution Session with [[SparkSession]] instance inside
+ */
+private[kyuubi] class KyuubiSession(
     protocol: TProtocolVersion,
     username: String,
     password: String,
     conf: SparkConf,
     ipAddress: String,
     withImpersonation: Boolean,
-    sessionManager: KyuubiSessionManager,
-    operationManager: KyuubiOperationManager) extends Logging {
+    sessionManager: SessionManager,
+    operationManager: OperationManager) extends Logging {
 
   private[this] var _sparkSession: SparkSession = _
   private[this] val sessionHandle: SessionHandle = new SessionHandle(protocol)
@@ -102,7 +105,7 @@ class KyuubiSession(
     conf.setAppName(s"Kyuubi Session 4 [$userName]")
     try {
       sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
-        override def run() = {
+        override def run(): Unit = {
           val sc = new SparkContext(conf)
           _sparkSession = ReflectUtils.instantiateClass(classOf[SparkSession].getName,
             Seq(classOf[SparkContext]), Seq(sc)).asInstanceOf[SparkSession]
@@ -360,7 +363,7 @@ class KyuubiSession(
 
   def getUserName: String = username
 
-  def getSessionManager: KyuubiSessionManager = sessionManager
+  def getSessionMgr: SessionManager = sessionManager
 
   private[this] def configureSession(sessionConfMap: JMap[String, String]): Unit = {
     for (entry <- sessionConfMap.entrySet.asScala) {

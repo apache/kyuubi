@@ -33,15 +33,16 @@ import org.apache.spark.{KyuubiConf, SparkConf, SparkException}
 import org.apache.spark.sql.SparkSession
 
 import yaooqinn.kyuubi.Logging
-import yaooqinn.kyuubi.ui.KyuubiServerMonitor
-import yaooqinn.kyuubi.operation.KyuubiOperationManager
-import yaooqinn.kyuubi.server.KyuubiServer
+import yaooqinn.kyuubi.operation.OperationManager
 import yaooqinn.kyuubi.service.CompositeService
+import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 
-private[kyuubi] class KyuubiSessionManager private(
-    name: String,
-    thriftServer: KyuubiServer) extends CompositeService(name) with Logging {
-  private[this] val operationManager = new KyuubiOperationManager()
+/**
+ * A SessionManager for managing [[KyuubiSession]]s
+ */
+private[kyuubi] class SessionManager private(
+    name: String) extends CompositeService(name) with Logging {
+  private[this] val operationManager = new OperationManager()
   private[this] val handleToSession = new ConcurrentHashMap[SessionHandle, KyuubiSession]
   private[this] val handleToSessionUser = new ConcurrentHashMap[SessionHandle, String]
   private[this] val userToSparkSession =
@@ -52,13 +53,11 @@ private[kyuubi] class KyuubiSessionManager private(
   private[this] var operationLogRootDir: File = _
   private[this] var checkInterval: Long = _
   private[this] var sessionTimeout: Long = _
-  private[this] var checkOperation = false
+  private[this] var checkOperation: Boolean = false
 
-  private[this] var shutdown = false
+  private[this] var shutdown: Boolean = false
 
-  def this(thriftServer: KyuubiServer) = {
-    this(getClass.getSimpleName, thriftServer)
-  }
+  def this() = this(getClass.getSimpleName)
 
   override def init(conf: SparkConf): Unit = synchronized {
     this.conf = conf
@@ -225,7 +224,7 @@ private[kyuubi] class KyuubiSessionManager private(
         protocol,
         username,
         password,
-        thriftServer.getConf.clone,
+        conf.clone(),
         ipAddress,
         withImpersonation,
         this,
@@ -274,7 +273,7 @@ private[kyuubi] class KyuubiSessionManager private(
     session
   }
 
-  def getOperationManager: KyuubiOperationManager = operationManager
+  def getOperationMgr: OperationManager = operationManager
 
   override def stop(): Unit = {
     super.stop()
