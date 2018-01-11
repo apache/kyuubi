@@ -44,7 +44,7 @@ private[kyuubi] class OperationManager private(name: String)
   val userToOperationLog = new ConcurrentHashMap[String, OperationLog]()
 
   override def init(conf: SparkConf): Unit = synchronized {
-    if (conf.getBoolean(KYUUBI_LOGGING_OPERATION_ENABLED.key, defaultValue = true)) {
+    if (conf.get(KYUUBI_LOGGING_OPERATION_ENABLED.key).toBoolean) {
       initOperationLogCapture()
     } else {
       debug("Operation level logging is turned off")

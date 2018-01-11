@@ -18,28 +18,30 @@
 package org.apache.spark
 
 import java.io.File
+import java.util.HashMap
 import java.util.concurrent.TimeUnit
+
+import scala.collection.JavaConverters._
 
 import org.apache.spark.internal.config.{ConfigBuilder, ConfigEntry}
 
 object KyuubiConf {
 
-  private val kyuubiConfEntries = java.util.Collections.synchronizedMap(
-    new java.util.HashMap[String, ConfigEntry[_]]())
+  private[this] val kyuubiConfEntries = new HashMap[String, ConfigEntry[_]]()
 
-  def register(entry: ConfigEntry[_]): Unit = kyuubiConfEntries.synchronized {
+  def register(entry: ConfigEntry[_]): Unit = {
     require(!kyuubiConfEntries.containsKey(entry.key),
       s"Duplicate SQLConfigEntry. ${entry.key} has been registered")
     kyuubiConfEntries.put(entry.key, entry)
   }
 
-  object KyuubiConfigBuilder {
+  private[this] object KyuubiConfigBuilder {
     def apply(key: String): ConfigBuilder = ConfigBuilder(key).onCreate(register)
   }
 
-  //////////////////////////////////////////////////////
-  //                       ha                         //
-  //////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //                                High Availability by ZooKeeper                               //
+  /////////////////////////////////////////////////////////////////////////////////////////////////
 
   val SUPPORT_DYNAMIC_SERVICE_DISCOVERY =
     KyuubiConfigBuilder("spark.kyuubi.support.dynamic.service.discovery")
@@ -85,14 +87,14 @@ object KyuubiConf {
       .createWithDefault(TimeUnit.SECONDS.toMillis(1L))
 
   val KYUUBI_ZOOKEEPER_CONNECTION_MAX_RETRIES =
-    KyuubiConfigBuilder("")
-      .doc("")
+    KyuubiConfigBuilder("spark.kyuubi.zookeeper.connection.max.retries")
+      .doc("max retry time connecting to the zk server")
       .intConf
       .createWithDefault(3)
 
-  //////////////////////////////////////////////////////
-  //                      log                         //
-  //////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //                                      Operation Log                                          //
+  /////////////////////////////////////////////////////////////////////////////////////////////////
 
   val KYUUBI_LOGGING_OPERATION_ENABLED =
     KyuubiConfigBuilder("spark.kyuubi.logging.operation.enabled")
@@ -109,9 +111,9 @@ object KyuubiConf {
         s"${sys.env.getOrElse("SPARK_LOG_DIR", System.getProperty("java.io.tmpdir"))}"
           + File.separator + "operation_logs")
 
-  //////////////////////////////////////////////////////
-  //             background exec thread               //
-  //////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //                              Background Execution Thread Pool                               //
+  /////////////////////////////////////////////////////////////////////////////////////////////////
 
   val KYUUBI_ASYNC_EXEC_THREADS =
     KyuubiConfigBuilder("spark.kyuubi.async.exec.threads")
@@ -139,9 +141,9 @@ object KyuubiConf {
       .timeConf(TimeUnit.MILLISECONDS)
       .createWithDefault(TimeUnit.SECONDS.toMillis(10L))
 
-  //////////////////////////////////////////////////////
-  //              checking idle session               //
-  //////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //                                    Session Idle Check                                       //
+  /////////////////////////////////////////////////////////////////////////////////////////////////
 
   val KYUUBI_SESSION_CHECK_INTERVAL =
     KyuubiConfigBuilder("spark.kyuubi.session.check.interval")
@@ -173,20 +175,13 @@ object KyuubiConf {
       .timeConf(TimeUnit.MILLISECONDS)
       .createWithDefault(TimeUnit.MINUTES.toMillis(20L))
 
-  //////////////////////////////////////////////////////
-  //                   security                       //
-  //////////////////////////////////////////////////////
-
-  val KYUUBI_ENABLE_DOAS =
-    KyuubiConfigBuilder("spark.kyuubi.enable.doAs")
-      .doc("enable proxying of running Spark")
-      .booleanConf
-      .createWithDefault(true)
-
-  val KYUUBI_AUTHENTICATION =
-    KyuubiConfigBuilder("spark.kyuubi.authentication")
-      .doc("Client authentication types. NONE: no authentication check;" +
-        " KERBEROS: Kerberos/GSSAPI authentication")
-      .stringConf
-      .createWithDefault("NONE")
+  /**
+   * Return all the configuration definitions that have been defined in [[KyuubiConf]]. Each
+   * definition contains key, defaultValue.
+   */
+  def getAllDefaults: Map[String, String] = {
+    kyuubiConfEntries.entrySet().asScala.map {kv =>
+      (kv.getKey, kv.getValue.defaultValueString)
+    }.toMap
+  }
 }

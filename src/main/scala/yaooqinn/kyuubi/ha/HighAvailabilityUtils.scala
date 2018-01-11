@@ -50,22 +50,22 @@ object HighAvailabilityUtils extends Logging {
   private[this] var deregisteredWithZooKeeper = false
 
   def isSupportDynamicServiceDiscovery(conf: SparkConf): Boolean = {
-    conf.getBoolean(SUPPORT_DYNAMIC_SERVICE_DISCOVERY.key, defaultValue = false) &&
-      conf.get(KYUUBI_ZOOKEEPER_QUORUM.key, "").split(",").nonEmpty
+    conf.get(SUPPORT_DYNAMIC_SERVICE_DISCOVERY.key).toBoolean &&
+      conf.get(KYUUBI_ZOOKEEPER_QUORUM.key).split(",").nonEmpty
   }
 
   @throws[Exception]
-  def addServerInstanceToZooKeeper(kyuubiServer: KyuubiServer): Unit = {
-    val conf = kyuubiServer.getConf
+  def addServerInstanceToZooKeeper(server: KyuubiServer): Unit = {
+    val conf = server.getConf
     val zooKeeperEnsemble = getQuorumServers(conf)
-    val rootNamespace = conf.get(KYUUBI_ZOOKEEPER_NAMESPACE.key, "kyuubiserver")
-    val instanceURI = getServerInstanceURI(kyuubiServer.feService)
+    val rootNamespace = conf.get(KYUUBI_ZOOKEEPER_NAMESPACE.key)
+    val instanceURI = getServerInstanceURI(server.feService)
 
     setUpZooKeeperAuth(conf)
 
-    val sessionTimeout = conf.getInt(KYUUBI_ZOOKEEPER_SESSION_TIMEOUT.key, 1200000)
-    val baseSleepTime = conf.getInt(KYUUBI_ZOOKEEPER_CONNECTION_BASESLEEPTIME.key, 1000)
-    val maxRetries = conf.getInt(KYUUBI_ZOOKEEPER_CONNECTION_MAX_RETRIES.key, 3)
+    val sessionTimeout = conf.getTimeAsMs(KYUUBI_ZOOKEEPER_SESSION_TIMEOUT.key).toInt
+    val baseSleepTime = conf.getTimeAsMs(KYUUBI_ZOOKEEPER_CONNECTION_BASESLEEPTIME.key).toInt
+    val maxRetries = conf.get(KYUUBI_ZOOKEEPER_CONNECTION_MAX_RETRIES.key).toInt
     // Create a CuratorFramework instance to be used as the ZooKeeper client
     // Use the zooKeeperAclProvider to create appropriate ACLs
     zooKeeperClient =
@@ -111,7 +111,7 @@ object HighAvailabilityUtils extends Logging {
       setDeregisteredWithZooKeeper(false)
       znodePath = znode.getActualPath
       // Set a watch on the znode
-      if (zooKeeperClient.checkExists.usingWatcher(new DeRegisterWatcher(kyuubiServer))
+      if (zooKeeperClient.checkExists.usingWatcher(new DeRegisterWatcher(server))
         .forPath(znodePath) == null) {
         // No node exists, throw exception
         throw new Exception("Unable to create znode for this KyuubiServer instance on ZooKeeper.")
