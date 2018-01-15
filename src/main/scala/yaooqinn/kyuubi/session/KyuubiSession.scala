@@ -107,8 +107,10 @@ private[kyuubi] class KyuubiSession(
       sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
         override def run(): Unit = {
           val sc = new SparkContext(conf)
-          _sparkSession = ReflectUtils.instantiateClass(classOf[SparkSession].getName,
-            Seq(classOf[SparkContext]), Seq(sc)).asInstanceOf[SparkSession]
+         _sparkSession = ReflectUtils.instantiateClass(
+           classOf[SparkSession].getName,
+           Seq(classOf[SparkContext]),
+           Seq(sc)).asInstanceOf[SparkSession]
         }
       })
 

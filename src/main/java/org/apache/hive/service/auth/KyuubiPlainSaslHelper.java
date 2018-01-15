@@ -41,7 +41,7 @@ import org.apache.thrift.transport.TSaslServerTransport;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportFactory;
 
-public final class PlainSaslHelper {
+public final class KyuubiPlainSaslHelper {
 
   public static TProcessorFactory getPlainProcessorFactory(TCLIService.Iface service) {
     return new SQLPlainProcessorFactory(service);
@@ -64,13 +64,7 @@ public final class PlainSaslHelper {
     return saslFactory;
   }
 
-  public static TTransport getPlainTransport(String username, String password,
-    TTransport underlyingTransport) throws SaslException {
-    return new TSaslClientTransport("PLAIN", null, null, null, new HashMap<String, String>(),
-      new PlainCallbackHandler(username, password), underlyingTransport);
-  }
-
-  private PlainSaslHelper() {
+  private KyuubiPlainSaslHelper() {
     throw new UnsupportedOperationException("Can't initialize class");
   }
 

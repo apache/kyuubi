@@ -26,7 +26,7 @@ import scala.util.{Failure, Try}
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 import org.apache.hadoop.hive.ql.session.SessionState
-import org.apache.hive.service.auth.{HiveAuthFactory, TSetIpAddressProcessor}
+import org.apache.hive.service.auth.{KyuubiAuthFactory, TSetIpAddressProcessor}
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift._
 import org.apache.hive.service.server.ThreadFactoryWithGarbageCleanup
@@ -48,7 +48,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   extends AbstractService(name) with TCLIService.Iface with Runnable with Logging {
 
   private[this] var hiveConf: HiveConf = _
-  private[this] var hiveAuthFactory: HiveAuthFactory = _
+  private[this] var hiveAuthFactory: KyuubiAuthFactory = _
 
   private[this] val OK_STATUS = new TStatus(TStatusCode.SUCCESS_STATUS)
 
@@ -60,7 +60,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   private[this] var portNum = 0
   private[this] var serverIPAddress: InetAddress = _
 
-  private[this] val threadPoolName = "KyuubiServer-Handler-Pool"
+  private[this] val threadPoolName = classOf[KyuubiServer].getSimpleName + "-Handler-Pool"
   private[this] var minWorkerThreads = 0
   private[this] var maxWorkerThreads = 0
   private[this] var workerKeepAliveTime = 0L
@@ -160,7 +160,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
 
   private[this] def isKerberosAuthMode = {
     hiveConf.getVar(ConfVars.HIVE_SERVER2_AUTHENTICATION)
-      .equalsIgnoreCase(HiveAuthFactory.AuthTypes.KERBEROS.toString)
+      .equalsIgnoreCase(KyuubiAuthFactory.AuthTypes.KERBEROS.toString)
   }
 
   private[this] def getUserName(req: TOpenSessionReq) = {
@@ -191,8 +191,8 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   @throws[HiveSQLException]
   private[this] def getProxyUser(sessionConf: JMap[String, String], ipAddress: String): String = {
     var proxyUser: String = null
-    if (sessionConf != null && sessionConf.containsKey(HiveAuthFactory.HS2_PROXY_USER)) {
-      proxyUser = sessionConf.get(HiveAuthFactory.HS2_PROXY_USER)
+    if (sessionConf != null && sessionConf.containsKey(KyuubiAuthFactory.HS2_PROXY_USER)) {
+      proxyUser = sessionConf.get(KyuubiAuthFactory.HS2_PROXY_USER)
     }
     if (proxyUser == null) {
       return realUser
@@ -202,12 +202,12 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
       throw new HiveSQLException("Proxy user substitution is not allowed")
     }
     // If there's no authentication, then directly substitute the user
-    if (HiveAuthFactory.AuthTypes.NONE.toString
+    if (KyuubiAuthFactory.AuthTypes.NONE.toString
       .equalsIgnoreCase(hiveConf.getVar(ConfVars.HIVE_SERVER2_AUTHENTICATION))) {
       return proxyUser
     }
     // Verify proxy user privilege of the realUser for the proxyUser
-    HiveAuthFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hiveConf)
+    KyuubiAuthFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hiveConf)
     proxyUser
   }
 
@@ -549,10 +549,10 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
         new ThreadFactoryWithGarbageCleanup(threadPoolName))
 
       // Thrift configs
-      hiveAuthFactory = new HiveAuthFactory(hiveConf)
+      hiveAuthFactory = new KyuubiAuthFactory(hiveConf)
       val transportFactory = hiveAuthFactory.getAuthTransFactory
       val processorFactory = hiveAuthFactory.getAuthProcFactory(this)
-      val serverSocket: TServerSocket = HiveAuthFactory.getServerSocket(serverHost, portNum)
+      val serverSocket: TServerSocket = KyuubiAuthFactory.getServerSocket(serverHost, portNum)
       val sslVersionBlacklist = new JList[String]
       for (sslVersion <- hiveConf.getVar(ConfVars.HIVE_SSL_PROTOCOL_BLACKLIST).split(",")) {
         sslVersionBlacklist.add(sslVersion)

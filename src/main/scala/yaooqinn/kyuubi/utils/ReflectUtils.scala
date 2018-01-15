@@ -22,7 +22,6 @@ import scala.util.{Failure, Success, Try}
 import yaooqinn.kyuubi.Logging
 
 object ReflectUtils extends Logging {
-
   /**
    * Init a class via Reflection
    * @param className class name
@@ -33,15 +32,16 @@ object ReflectUtils extends Logging {
   def instantiateClass(
       className: String,
       argTypes: Seq[Class[_]],
-      params: Seq[AnyRef]): Any = {
+      params: Seq[AnyRef],
+      classLoader: ClassLoader = Thread.currentThread().getContextClassLoader): Any = {
     require(className != null, "class name could not be null!")
     try {
       if (argTypes!= null && argTypes.nonEmpty) {
         require(argTypes.length == params.length, "each params should have a class type!")
-        this.getClass.getClassLoader.loadClass(className).getConstructor(argTypes: _*)
+        classLoader.loadClass(className).getConstructor(argTypes: _*)
           .newInstance(params: _*)
       } else {
-        this.getClass.getClassLoader.loadClass(className).getConstructor().newInstance()
+        classLoader.loadClass(className).getConstructor().newInstance()
       }
     } catch {
       case e: Exception => throw e
@@ -53,8 +53,10 @@ object ReflectUtils extends Logging {
    * @param className class name
    * @return
    */
-  def instantiateClass(className: String): Any = {
-    instantiateClass(className, Seq.empty, Seq.empty)
+  def instantiateClassByName(
+      className: String,
+      classLoader: ClassLoader = Thread.currentThread().getContextClassLoader): Any = {
+    instantiateClass(className, Seq.empty, Seq.empty, classLoader)
   }
 
   /**

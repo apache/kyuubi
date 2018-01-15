@@ -24,14 +24,14 @@ import org.apache.thrift.TProcessor;
 import org.apache.thrift.TProcessorFactory;
 import org.apache.thrift.transport.TTransport;
 
-public final class KerberosSaslHelper {
+public final class KyuubiKerberosSaslHelper {
 
   public static TProcessorFactory getKerberosProcessorFactory(Server saslServer,
     TCLIService.Iface service) {
     return new CLIServiceProcessorFactory(saslServer, service);
   }
 
-  private KerberosSaslHelper() {
+  private KyuubiKerberosSaslHelper() {
     throw new UnsupportedOperationException("Can't initialize class");
   }
 

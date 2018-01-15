@@ -45,7 +45,7 @@ object SparkUtils {
     Utils.getCurrentUserName()
   }
 
-  def getSparkClassLoader(): ClassLoader = {
+  def getContextOrSparkClassLoader(): ClassLoader = {
     Utils.getContextOrSparkClassLoader
   }
 

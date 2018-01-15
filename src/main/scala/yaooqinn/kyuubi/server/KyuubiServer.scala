@@ -100,10 +100,10 @@ object KyuubiServer extends Logging {
    * @param conf the default [[SparkConf]]
    */
   private[this] def setupCommonConfig(conf: SparkConf): Unit = {
-    if (!conf.getBoolean("spark.driver.userClassPathFirst", defaultValue = false)) {
-      error("SET spark.driver.userClassPathFirst to true")
-      System.exit(-1)
-    }
+//    if (!conf.getBoolean("spark.driver.userClassPathFirst", defaultValue = false)) {
+//      error("SET spark.driver.userClassPathFirst to true")
+//      System.exit(-1)
+//    }
     // overwrite later for each SparkC
     conf.set("spark.app.name", classOf[KyuubiServer].getSimpleName)
     // avoid max port retries reached
