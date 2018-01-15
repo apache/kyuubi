@@ -29,7 +29,7 @@ class ReflectUtilsSuite extends SparkFunSuite {
   test("reflect utils init class without param") {
     try {
       val testClassInstance =
-        ReflectUtils.instantiateClass(classOf[TestClass0].getName)
+        ReflectUtils.instantiateClassByName(classOf[TestClass0].getName)
       assert(testClassInstance.asInstanceOf[TestClass0].isInstanceOf[TestClass0])
     } catch {
       case e: Exception => throw e
@@ -62,7 +62,7 @@ class ReflectUtilsSuite extends SparkFunSuite {
 
   test("reflect utils fail init class not exist ") {
     intercept[ClassNotFoundException](
-      ReflectUtils.instantiateClass("yaooqinn.kyuubi.NonExistTestClass"))
+      ReflectUtils.instantiateClassByName("yaooqinn.kyuubi.NonExistTestClass"))
   }
 
   test("find class by name") {

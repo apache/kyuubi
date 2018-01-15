@@ -19,14 +19,9 @@ package org.apache.hive.service.auth;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import javax.net.ssl.SSLServerSocket;
 import javax.security.auth.login.LoginException;
 import javax.security.sasl.Sasl;
 
@@ -40,26 +35,20 @@ import org.apache.hadoop.hive.shims.ShimLoader;
 import org.apache.hadoop.hive.thrift.DBTokenStore;
 import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge;
 import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge.Server.ServerMode;
-import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.authorize.ProxyUsers;
 import org.apache.hive.service.cli.HiveSQLException;
 import org.apache.hive.service.cli.thrift.TCLIService;
 import org.apache.thrift.TProcessorFactory;
-import org.apache.thrift.transport.TSSLTransportFactory;
 import org.apache.thrift.transport.TServerSocket;
-import org.apache.thrift.transport.TSocket;
-import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.apache.thrift.transport.TTransportFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This class helps in some aspects of authentication. It creates the proper Thrift classes for the
  * given configuration as well as helps with authenticating requests.
  */
-public class HiveAuthFactory {
+public class KyuubiAuthFactory {
   public enum AuthTypes {
     NOSASL("NOSASL"),
     NONE("NONE"),
@@ -85,7 +74,7 @@ public class HiveAuthFactory {
 
   public static final String HS2_PROXY_USER = "hive.server2.proxy.user";
 
-  public HiveAuthFactory(HiveConf conf) throws TTransportException {
+  public KyuubiAuthFactory(HiveConf conf) throws TTransportException {
     this.conf = conf;
     authTypeStr = conf.getVar(HiveConf.ConfVars.HIVE_SERVER2_AUTHENTICATION);
 
@@ -134,15 +123,15 @@ public class HiveAuthFactory {
         throw new LoginException(e.getMessage());
       }
     } else if (authTypeStr.equalsIgnoreCase(AuthTypes.NONE.getAuthName())) {
-      transportFactory = PlainSaslHelper.getPlainTransportFactory(authTypeStr);
+      transportFactory = KyuubiPlainSaslHelper.getPlainTransportFactory(authTypeStr);
     } else if (authTypeStr.equalsIgnoreCase(AuthTypes.LDAP.getAuthName())) {
-      transportFactory = PlainSaslHelper.getPlainTransportFactory(authTypeStr);
+      transportFactory = KyuubiPlainSaslHelper.getPlainTransportFactory(authTypeStr);
     } else if (authTypeStr.equalsIgnoreCase(AuthTypes.PAM.getAuthName())) {
-      transportFactory = PlainSaslHelper.getPlainTransportFactory(authTypeStr);
+      transportFactory = KyuubiPlainSaslHelper.getPlainTransportFactory(authTypeStr);
     } else if (authTypeStr.equalsIgnoreCase(AuthTypes.NOSASL.getAuthName())) {
       transportFactory = new TTransportFactory();
     } else if (authTypeStr.equalsIgnoreCase(AuthTypes.CUSTOM.getAuthName())) {
-      transportFactory = PlainSaslHelper.getPlainTransportFactory(authTypeStr);
+      transportFactory = KyuubiPlainSaslHelper.getPlainTransportFactory(authTypeStr);
     } else {
       throw new LoginException("Unsupported authentication type " + authTypeStr);
     }
@@ -157,9 +146,9 @@ public class HiveAuthFactory {
    */
   public TProcessorFactory getAuthProcFactory(TCLIService.Iface service) throws LoginException {
     if (authTypeStr.equalsIgnoreCase(AuthTypes.KERBEROS.getAuthName())) {
-      return KerberosSaslHelper.getKerberosProcessorFactory(saslServer, service);
+      return KyuubiKerberosSaslHelper.getKerberosProcessorFactory(saslServer, service);
     } else {
-      return PlainSaslHelper.getPlainProcessorFactory(service);
+      return KyuubiPlainSaslHelper.getPlainProcessorFactory(service);
     }
   }
 

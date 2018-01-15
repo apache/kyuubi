@@ -35,7 +35,7 @@ class SparkContextReflectionSuite extends SparkFunSuite {
 
   test("SparkContext initialization with this()") {
     intercept[InvocationTargetException](ReflectUtils
-      .instantiateClass(classOf[SparkContext].getName)
+      .instantiateClassByName(classOf[SparkContext].getName)
       .asInstanceOf[SparkContext])
   }
 
