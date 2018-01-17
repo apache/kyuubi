@@ -86,14 +86,14 @@ private[server] class BackendService private(name: String)
       sessionHandle: SessionHandle,
       statement: String,
       confOverlay: JMap[String, String]): OperationHandle = {
-    sessionManager.getSession(sessionHandle).executeStatement(statement, confOverlay)
+    sessionManager.getSession(sessionHandle).executeStatement(statement)
   }
 
   override def executeStatementAsync(
       sessionHandle: SessionHandle,
       statement: String,
       confOverlay: JMap[String, String]): OperationHandle = {
-    sessionManager.getSession(sessionHandle).executeStatementAsync(statement, confOverlay)
+    sessionManager.getSession(sessionHandle).executeStatementAsync(statement)
   }
 
   override def getTypeInfo(sessionHandle: SessionHandle): OperationHandle = {

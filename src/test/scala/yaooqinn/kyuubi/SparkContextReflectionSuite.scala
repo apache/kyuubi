@@ -28,7 +28,7 @@ class SparkContextReflectionSuite extends SparkFunSuite {
   test("SparkContext initialization with default constructor") {
     val conf = new SparkConf(loadDefaults = true).setMaster("local").setAppName("sc_init")
     val sc = ReflectUtils
-      .instantiateClass(classOf[SparkContext].getName, Seq(classOf[SparkConf]), Seq(conf))
+      .newInstance(classOf[SparkContext].getName, Seq(classOf[SparkConf]), Seq(conf))
       .asInstanceOf[SparkContext]
     assert(sc.isInstanceOf[SparkContext])
   }
@@ -42,7 +42,7 @@ class SparkContextReflectionSuite extends SparkFunSuite {
   test("SparkContext initialization with app name & master & conf") {
     val conf = new SparkConf(loadDefaults = true)
     val sc = ReflectUtils
-      .instantiateClass(
+      .newInstance(
         classOf[SparkContext].getName,
         Seq(classOf[String], classOf[String], classOf[SparkConf]),
         Seq("local", "sc_init", conf))
@@ -54,12 +54,12 @@ class SparkContextReflectionSuite extends SparkFunSuite {
     val conf1 = new SparkConf(loadDefaults = true)
       .setMaster("local").setAppName("sc1").set("spark.driver.allowMultipleContexts", "true")
     val sc1 = ReflectUtils
-      .instantiateClass(classOf[SparkContext].getName, Seq(classOf[SparkConf]), Seq(conf1))
+      .newInstance(classOf[SparkContext].getName, Seq(classOf[SparkConf]), Seq(conf1))
       .asInstanceOf[SparkContext]
     val conf2 = new SparkConf(loadDefaults = true)
       .setMaster("local").setAppName("sc2").set("spark.driver.allowMultipleContexts", "true")
     val sc2 = ReflectUtils
-      .instantiateClass(classOf[SparkContext].getName, Seq(classOf[SparkConf]), Seq(conf2))
+      .newInstance(classOf[SparkContext].getName, Seq(classOf[SparkConf]), Seq(conf2))
       .asInstanceOf[SparkContext]
 
     assert(sc1 !== sc2)

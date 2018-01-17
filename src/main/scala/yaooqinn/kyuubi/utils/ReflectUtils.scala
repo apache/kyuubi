@@ -29,7 +29,7 @@ object ReflectUtils extends Logging {
    * @param params arguments objects
    * @return instance of className
    */
-  def instantiateClass(
+  def newInstance(
       className: String,
       argTypes: Seq[Class[_]],
       params: Seq[AnyRef],
@@ -56,7 +56,7 @@ object ReflectUtils extends Logging {
   def instantiateClassByName(
       className: String,
       classLoader: ClassLoader = Thread.currentThread().getContextClassLoader): Any = {
-    instantiateClass(className, Seq.empty, Seq.empty, classLoader)
+    newInstance(className, Seq.empty, Seq.empty, classLoader)
   }
 
   /**
