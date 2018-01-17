@@ -27,10 +27,10 @@ class SparkSessionReflectionSuite extends SparkFunSuite {
   test("SparkSession initialization with sc in reflecting") {
     val conf = new SparkConf(loadDefaults = true).setMaster("local").setAppName("sc_init")
     val sc = ReflectUtils
-      .instantiateClass(classOf[SparkContext].getName, Seq(classOf[SparkConf]), Seq(conf))
+      .newInstance(classOf[SparkContext].getName, Seq(classOf[SparkConf]), Seq(conf))
       .asInstanceOf[SparkContext]
 
-    val ss = ReflectUtils.instantiateClass(
+    val ss = ReflectUtils.newInstance(
       classOf[SparkSession].getName,
       Seq(classOf[SparkContext]),
       Seq(sc)).asInstanceOf[SparkSession]

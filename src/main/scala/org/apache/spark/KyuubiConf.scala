@@ -175,6 +175,17 @@ object KyuubiConf {
       .timeConf(TimeUnit.MILLISECONDS)
       .createWithDefault(TimeUnit.MINUTES.toMillis(20L))
 
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //                                   On Spark Session Init                                     //
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+
+  val KYUUBI_REPORT_TIMES_ON_START =
+    KyuubiConfigBuilder("spark.kyuubi.report.times.on.start")
+      .doc("How many times to check when another session with the same user is " +
+        "initializing SparkContext. Total Time will be times by `spark.yarn.report.interval`")
+      .intConf
+      .createWithDefault(60)
+
   /**
    * Return all the configuration definitions that have been defined in [[KyuubiConf]]. Each
    * definition contains key, defaultValue.

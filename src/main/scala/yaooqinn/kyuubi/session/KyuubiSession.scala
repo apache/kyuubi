@@ -18,11 +18,15 @@
 package yaooqinn.kyuubi.session
 
 import java.io.{File, IOException}
+import java.lang.reflect.UndeclaredThrowableException
 import java.security.PrivilegedExceptionAction
-import java.util.{Map => JMap}
+import java.util.{Map => JMap, UUID}
+import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.HashSet
+import scala.collection.mutable.{HashSet => MHSet}
+import scala.concurrent.{Await, Promise, TimeoutException}
+import scala.concurrent.duration.Duration
 
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.FileSystem
@@ -32,14 +36,23 @@ import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.ui.KyuubiServerTab
+import org.apache.spark.KyuubiConf._
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.operation.OperationManager
 import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
-import yaooqinn.kyuubi.utils.ReflectUtils
+import yaooqinn.kyuubi.utils.{HadoopUtils, ReflectUtils}
 
 /**
- * An Execution Session with [[SparkSession]] instance inside
+ * An Execution Session with [[SparkSession]] instance inside, which shares [[SparkContext]]
+ * with other sessions create by the same user.
+ *
+ * One user, one [[SparkContext]]
+ * One user, multi [[KyuubiSession]]s
+ *
+ * One [[KyuubiSession]], one [[SparkSession]]
+ * One [[SparkContext]], multi [[SparkSession]]s
+ *
  */
 private[kyuubi] class KyuubiSession(
     protocol: TProtocolVersion,
@@ -51,9 +64,12 @@ private[kyuubi] class KyuubiSession(
     sessionManager: SessionManager,
     operationManager: OperationManager) extends Logging {
 
+  import KyuubiSession._
+
   private[this] var _sparkSession: SparkSession = _
+  private[this] val promisedSparkContext = Promise[SparkContext]()
   private[this] val sessionHandle: SessionHandle = new SessionHandle(protocol)
-  private[this] val opHandleSet = new HashSet[OperationHandle]
+  private[this] val opHandleSet = new MHSet[OperationHandle]
   private[this] var _isOperationLogEnabled = false
   private[this] var sessionLogDir: File = _
   private[this] var lastAccessTime = 0L
@@ -73,12 +89,11 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
-  def sparkSession(): SparkSession = this._sparkSession
-
   private[this] def getOrCreateSparkSession(): Unit = synchronized {
     val userName = sessionUGI.getShortUserName
-    var checkRound = math.max(conf.getInt("spark.yarn.report.times.on.start", 60), 15)
-    val interval = conf.getTimeAsMs("spark.yarn.report.interval", "1s")
+    var checkRound = math.max(conf.get(KYUUBI_REPORT_TIMES_ON_START.key).toInt, 15)
+    val interval = conf.getTimeAsMs(REPORT_INTERVAL, "1s")
+    // if user's sc is being constructed by another
     while (sessionManager.isSCPartiallyConstructed(userName)) {
       wait(interval)
       checkRound -= 1
@@ -99,41 +114,57 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
+  private[this] def startSparkContextInNewThread(): Unit = {
+    new Thread("name") {
+      override def run(): Unit = {
+        promisedSparkContext.trySuccess(new SparkContext(conf))
+      }
+    }.start()
+  }
+
   private[this] def createSparkSession(): Unit = {
-    val userName = sessionUGI.getShortUserName
-    info(s"------ Create new SparkSession for $userName -------")
-    conf.setAppName(s"Kyuubi Session 4 [$userName]")
+    val user = sessionUGI.getShortUserName
+    info(s"------ Create new SparkSession for $user -------")
+    val appName = s"KyuubiSession[$user]:${UUID.randomUUID().toString}"
+    conf.setAppName(appName)
+    val totalWaitTime: Long = conf.getTimeAsSeconds(AM_MAX_WAIT_TIME, "60s")
     try {
       sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
         override def run(): Unit = {
-          val sc = new SparkContext(conf)
-         _sparkSession = ReflectUtils.instantiateClass(
-           classOf[SparkSession].getName,
-           Seq(classOf[SparkContext]),
-           Seq(sc)).asInstanceOf[SparkSession]
+          startSparkContextInNewThread()
+          val context =
+            Await.result(promisedSparkContext.future, Duration(totalWaitTime, TimeUnit.SECONDS))
+          _sparkSession = ReflectUtils.newInstance(
+            classOf[SparkSession].getName,
+            Seq(classOf[SparkContext]),
+            Seq(context)).asInstanceOf[SparkSession]
         }
       })
 
-      sessionManager.setSparkSession(userName, _sparkSession)
+      sessionManager.setSparkSession(user, _sparkSession)
       // set sc fully constructed immediately
-      sessionManager.setSCFullyConstructed(userName)
-      KyuubiServerMonitor.setListener(userName, new KyuubiServerListener(conf))
-      _sparkSession.sparkContext.addSparkListener(KyuubiServerMonitor.getListener(userName))
-      val uiTab = new KyuubiServerTab(userName, _sparkSession.sparkContext)
+      sessionManager.setSCFullyConstructed(user)
+      KyuubiServerMonitor.setListener(user, new KyuubiServerListener(conf))
+      _sparkSession.sparkContext.addSparkListener(KyuubiServerMonitor.getListener(user))
+      val uiTab = new KyuubiServerTab(user, _sparkSession.sparkContext)
       KyuubiServerMonitor.addUITab(_sparkSession.sparkContext.sparkUser, uiTab)
     } catch {
+      case ute: UndeclaredThrowableException =>
+        ute.getCause match {
+          case te: TimeoutException =>
+            sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
+              override def run(): Unit = HadoopUtils.killYarnAppByName(appName)
+            })
+            throw new HiveSQLException(s"Get SparkSession for [$user] failed: " + te, te)
+          case _ =>
+            throw new HiveSQLException(ute.toString, ute.getCause)
+        }
       case e: Exception =>
-        val hiveSQLException =
-          new HiveSQLException(
-            s"Failed initializing SparkSession for user[$userName]" + e.getMessage, e)
-        throw hiveSQLException
+        throw new HiveSQLException(s"Get SparkSession for [$user] failed: " + e, e)
     } finally {
-      sessionManager.setSCFullyConstructed(userName)
+      sessionManager.setSCFullyConstructed(user)
     }
-
   }
-
-  def ugi: UserGroupInformation = this.sessionUGI
 
   private[this] def acquire(userAccess: Boolean): Unit = {
     if (userAccess) {
@@ -153,8 +184,7 @@ private[kyuubi] class KyuubiSession(
   }
 
   @throws[HiveSQLException]
-  private[this] def executeStatementInternal(
-      statement: String, confOverlay: JMap[String, String], runAsync: Boolean) = {
+  private[this] def executeStatementInternal(statement: String) = {
     acquire(true)
     val operation =
       operationManager.newExecuteStatementOperation(this, statement)
@@ -171,6 +201,42 @@ private[kyuubi] class KyuubiSession(
       release(true)
     }
   }
+
+  private[this] def cleanupSessionLogDir(): Unit = {
+    if (_isOperationLogEnabled) {
+      try {
+        FileUtils.forceDelete(sessionLogDir)
+      } catch {
+        case e: Exception =>
+          error("Failed to cleanup session log dir: " + sessionLogDir, e)
+      }
+    }
+  }
+
+  private[this] def configureSession(sessionConfMap: JMap[String, String]): Unit = {
+    for (entry <- sessionConfMap.entrySet.asScala) {
+      val key = entry.getKey
+      if (key == "set:hivevar:mapred.job.queue.name") {
+        conf.set("spark.yarn.queue", entry.getValue)
+      } else if (key.startsWith("set:hivevar:")) {
+        val realKey = key.substring(12)
+        if (realKey.startsWith("spark.")) {
+          conf.set(realKey, entry.getValue)
+        } else {
+          conf.set("spark.hadoop." + realKey, entry.getValue)
+        }
+      } else if (key.startsWith("use:")) {
+        // deal with database later after sparkSession initialized
+        initialDatabase = "use " + entry.getValue
+      } else {
+
+      }
+    }
+  }
+
+  def sparkSession(): SparkSession = this._sparkSession
+
+  def ugi: UserGroupInformation = this.sessionUGI
 
   def open(sessionConfMap: JMap[String, String]): Unit = {
     configureSession(sessionConfMap)
@@ -205,26 +271,22 @@ private[kyuubi] class KyuubiSession(
    * execute operation handler
    *
    * @param statement sql statement
-   * @param confOverlay overlay configuration
    * @return
    */
   @throws[HiveSQLException]
-  def executeStatement(
-      statement: String, confOverlay: JMap[String, String]): OperationHandle = {
-    executeStatementInternal(statement, confOverlay, runAsync = false)
+  def executeStatement(statement: String): OperationHandle = {
+    executeStatementInternal(statement)
   }
 
   /**
    * execute operation handler
    *
    * @param statement sql statement
-   * @param confOverlay overlay configuration
    * @return
    */
   @throws[HiveSQLException]
-  def executeStatementAsync(
-      statement: String, confOverlay: JMap[String, String]): OperationHandle = {
-    executeStatementInternal(statement, confOverlay, runAsync = true)
+  def executeStatementAsync(statement: String): OperationHandle = {
+    executeStatementInternal(statement)
   }
 
   /**
@@ -250,17 +312,6 @@ private[kyuubi] class KyuubiSession(
         case ioe: IOException =>
           throw new HiveSQLException("Could not clean up file-system handles for UGI: "
             + sessionUGI, ioe)
-      }
-    }
-  }
-
-  private[this] def cleanupSessionLogDir(): Unit = {
-    if (_isOperationLogEnabled) {
-      try {
-        FileUtils.forceDelete(sessionLogDir)
-      } catch {
-        case e: Exception =>
-          error("Failed to cleanup session log dir: " + sessionLogDir, e)
       }
     }
   }
@@ -361,28 +412,13 @@ private[kyuubi] class KyuubiSession(
 
   def getLastAccessTime: Long = lastAccessTime
 
-  def getUserName: String = username
+  def getUserName: String = sessionUGI.getShortUserName
 
   def getSessionMgr: SessionManager = sessionManager
+}
 
-  private[this] def configureSession(sessionConfMap: JMap[String, String]): Unit = {
-    for (entry <- sessionConfMap.entrySet.asScala) {
-      val key = entry.getKey
-      if (key == "set:hivevar:mapred.job.queue.name") {
-        conf.set("spark.yarn.queue", entry.getValue)
-      } else if (key.startsWith("set:hivevar:")) {
-        val realKey = key.substring(12)
-        if (realKey.startsWith("spark.")) {
-          conf.set(realKey, entry.getValue)
-        } else {
-          conf.set("spark.hadoop." + realKey, entry.getValue)
-        }
-      } else if (key.startsWith("use:")) {
-        // deal with database later after sparkSession initialized
-        initialDatabase = "use " + entry.getValue
-      } else {
-
-      }
-    }
-  }
+object KyuubiSession {
+  val SPARK_APP_ID = "spark.app.id"
+  val AM_MAX_WAIT_TIME = "spark.yarn.am.waitTime"
+  val REPORT_INTERVAL = "spark.yarn.report.interval"
 }

@@ -39,7 +39,7 @@ class ReflectUtilsSuite extends SparkFunSuite {
   test("reflect utils init class with one param") {
     try {
       val testClassInstance =
-        ReflectUtils.instantiateClass(
+        ReflectUtils.newInstance(
           classOf[TestClass1].getName, Seq(classOf[TestClass0]), Seq(new TestClass0))
       assert(testClassInstance.asInstanceOf[TestClass1].isInstanceOf[TestClass1])
     } catch {
@@ -50,7 +50,7 @@ class ReflectUtilsSuite extends SparkFunSuite {
   test("reflect utils init class with multiple params") {
     try {
       val testClassInstance =
-        ReflectUtils.instantiateClass(
+        ReflectUtils.newInstance(
           classOf[TestClass2].getName,
           Seq(classOf[String], classOf[TestClass0]),
           Seq("arg1", new TestClass0))

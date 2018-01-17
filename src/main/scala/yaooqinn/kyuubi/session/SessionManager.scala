@@ -26,6 +26,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.HashSet
 
 import org.apache.commons.io.FileUtils
+import org.apache.hadoop.yarn.client.api.YarnClient
 import org.apache.hive.service.cli.{HiveSQLException, SessionHandle}
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.hive.service.server.ThreadFactoryWithGarbageCleanup
@@ -195,9 +196,9 @@ private[kyuubi] class SessionManager private(
   }
 
   private[this] def sleepInterval(interval: Long): Unit = {
-    try
+    try {
       Thread.sleep(interval)
-    catch {
+    } catch {
       case _: InterruptedException =>
       // ignore
     }
@@ -330,5 +331,4 @@ private[kyuubi] class SessionManager private(
   def setSCFullyConstructed(user: String): Unit = {
     userSparkContextBeingConstruct.remove(user)
   }
-
 }
