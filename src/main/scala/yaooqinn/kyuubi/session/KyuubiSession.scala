@@ -232,6 +232,10 @@ private[kyuubi] class KyuubiSession(
         case _ =>
       }
     }
+
+    // proxy user does not have rights to get token as realuser
+    conf.remove("spark.yarn.keytab")
+    conf.remove("spark.yarn.principal")
   }
 
   /**

@@ -107,7 +107,6 @@ object KyuubiServer extends Logging {
     // For the server itself the deploy mode could be either client or cluster,
     // but for the later [[SparkContext]] must be set to client mode
     conf.set("spark.submit.deployMode", "client")
-
     // Set missing Kyuubi configs to SparkConf
     KyuubiConf.getAllDefaults.foreach(kv => conf.setIfMissing(kv._1, kv._2))
   }
