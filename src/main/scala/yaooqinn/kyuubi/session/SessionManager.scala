@@ -18,12 +18,12 @@
 package yaooqinn.kyuubi.session
 
 import java.io.{File, IOException}
-import java.util.{Date, Map => JMap}
+import java.util.Date
 import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.HashSet
+import scala.collection.mutable.{HashSet => MHSet}
 
 import org.apache.commons.io.FileUtils
 import org.apache.hive.service.cli.{HiveSQLException, SessionHandle}
@@ -49,7 +49,7 @@ private[kyuubi] class SessionManager private(
   private[this] val handleToSessionUser = new ConcurrentHashMap[SessionHandle, String]
   private[this] val userToSparkSession =
     new ConcurrentHashMap[String, (SparkSession, AtomicInteger)]
-  private[this] val userSparkContextBeingConstruct = new HashSet[String]()
+  private[this] val userSparkContextBeingConstruct = new MHSet[String]()
   private[this] var execPool: ThreadPoolExecutor = _
   private[this] var isOperationLogEnabled = false
   private[this] var operationLogRootDir: File = _

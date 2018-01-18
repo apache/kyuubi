@@ -141,15 +141,15 @@ private[server] class BackendService private(name: String)
   }
 
   override def cancelOperation(opHandle: OperationHandle): Unit = {
-    sessionManager.getOperationMgr.getOperation(opHandle).cancel()
+    sessionManager.getOperationMgr.getOperation(opHandle).getSession.cancelOperation(opHandle)
   }
 
   override def closeOperation(opHandle: OperationHandle): Unit = {
-    sessionManager.getOperationMgr.getOperation(opHandle).close()
+    sessionManager.getOperationMgr.getOperation(opHandle).getSession.closeOperation(opHandle)
   }
 
   override def getResultSetMetadata(opHandle: OperationHandle): TableSchema = {
-    sessionManager.getOperationMgr.getOperation(opHandle).getResultSetSchema
+    sessionManager.getOperationMgr.getOperation(opHandle).getSession.getResultSetMetadata(opHandle)
   }
 
   override def fetchResults(opHandle: OperationHandle): RowSet = {

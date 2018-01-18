@@ -148,12 +148,12 @@ private[kyuubi] class OperationManager private(name: String)
     }
     try {
       // read logs
-      val logs = operationLog.readOperationLog(isFetchFirst(orientation), maxRows)
+      val logs = operationLog.readOperationLog(isFetchFirst(orientation), maxRows).asScala
       // convert logs to RowSet
       val tableSchema: TableSchema = new TableSchema(getLogSchema)
       val rowSet: RowSet =
         RowSetFactory.create(tableSchema, getOperation(opHandle).getProtocolVersion)
-      for (log <- logs.asScala) {
+      for (log <- logs) {
         rowSet.addRow(Array[AnyRef](log))
       }
       rowSet
@@ -161,6 +161,10 @@ private[kyuubi] class OperationManager private(name: String)
       case e: SQLException =>
         throw new HiveSQLException(e.getMessage, e.getCause)
     }
+  }
+
+  def getResultSetSchema(opHandle: OperationHandle): TableSchema = {
+    getOperation(opHandle).getResultSetSchema
   }
 
   private[this] def isFetchFirst(fetchOrientation: FetchOrientation): Boolean = {
