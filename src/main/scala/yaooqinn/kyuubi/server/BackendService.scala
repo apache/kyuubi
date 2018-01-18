@@ -56,7 +56,7 @@ private[server] class BackendService private(name: String)
       username: String,
       password: String,
       ipAddress: String,
-      configuration: JMap[String, String]): SessionHandle = {
+      configuration: Map[String, String]): SessionHandle = {
     val sessionHandle = sessionManager.openSession(
       protocol, username, password, ipAddress, configuration, withImpersonation = false)
     sessionHandle
@@ -67,7 +67,7 @@ private[server] class BackendService private(name: String)
       username: String,
       password: String,
       ipAddress: String,
-      configuration: JMap[String, String],
+      configuration: Map[String, String],
       delegationToken: String): SessionHandle = {
     val sessionHandle = sessionManager.openSession(
       protocol, username, password, ipAddress, configuration, withImpersonation = true)
