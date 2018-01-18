@@ -77,10 +77,13 @@ private[kyuubi] class KyuubiSession(
   private[this] var initialDatabase: String = "use default"
 
   private[this] val sessionUGI: UserGroupInformation = {
-    val currentUser = UserGroupInformation.getLoginUser
+    val currentUser = UserGroupInformation.getCurrentUser
     if (withImpersonation) {
       if (UserGroupInformation.isSecurityEnabled) {
-          UserGroupInformation.createProxyUser(username, currentUser)
+        if (conf.contains(PRINCIPAL) && conf.contains(KEYTAB)) {
+          currentUser.reloginFromKeytab()
+        }
+        UserGroupInformation.createProxyUser(username, currentUser)
       } else {
         UserGroupInformation.createRemoteUser(username)
       }
@@ -446,7 +449,10 @@ object KyuubiSession {
   val SPARK_APP_ID: String = "spark.app.id"
   val DEPRECATED_QUEUE = "mapred.job.queue.name"
   val QUEUE = "spark.yarn.queue"
+  val KEYTAB = "spark.yarn.keytab"
+  val PRINCIPAL = "spark.yarn.principal"
 
   val SPARK_PREFIX = "spark."
   val SPARK_HADOOP_PREFIX = "spark.hadoop."
+
 }
