@@ -116,7 +116,7 @@ private[kyuubi] class KyuubiSession(
   }
 
   private[this] def startSparkContextInNewThread(): Unit = {
-    new Thread("name") {
+    new Thread(s"Start-SparkContext-$getUserName") {
       override def run(): Unit = {
         promisedSparkContext.trySuccess(new SparkContext(conf))
       }
@@ -316,7 +316,7 @@ private[kyuubi] class KyuubiSession(
     try {
       // Iterate through the opHandles and close their operations
       for (opHandle <- opHandleSet) {
-        operationManager.closeOperation(opHandle)
+        closeOperation(opHandle)
       }
       opHandleSet.clear()
       // Cleanup session log directory.
@@ -338,8 +338,7 @@ private[kyuubi] class KyuubiSession(
     acquire(true)
     try {
       operationManager.cancelOperation(opHandle)
-    }
-    finally {
+    } finally {
       release(true)
     }
   }
@@ -357,7 +356,7 @@ private[kyuubi] class KyuubiSession(
   def getResultSetMetadata(opHandle: OperationHandle): TableSchema = {
     acquire(true)
     try {
-      operationManager.getOperation(opHandle).getResultSetSchema
+      operationManager.getResultSetSchema(opHandle)
     } finally {
       release(true)
     }
@@ -408,7 +407,8 @@ private[kyuubi] class KyuubiSession(
    * @param operationLogRootDir the parent dir of the session dir
    */
   def setOperationLogSessionDir(operationLogRootDir: File): Unit = {
-    sessionLogDir = new File(operationLogRootDir, sessionHandle.getHandleIdentifier.toString)
+    sessionLogDir = new File(operationLogRootDir,
+      username + File.separator + sessionHandle.getHandleIdentifier.toString)
     _isOperationLogEnabled = true
     if (!sessionLogDir.exists) {
       if (!sessionLogDir.mkdirs) {
