@@ -81,6 +81,8 @@ private[kyuubi] class KyuubiSession(
     if (withImpersonation) {
       if (UserGroupInformation.isSecurityEnabled) {
         if (conf.contains(PRINCIPAL) && conf.contains(KEYTAB)) {
+          // If principal and keytab are configured, do re-login in case of token expiry.
+          // Do not check keytab file existing as spark-submit has it done
           currentUser.reloginFromKeytab()
         }
         UserGroupInformation.createProxyUser(username, currentUser)
