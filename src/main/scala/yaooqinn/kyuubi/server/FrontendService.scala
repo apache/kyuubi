@@ -21,6 +21,7 @@ import java.net.{InetAddress, UnknownHostException}
 import java.util.{ArrayList => JList, HashMap => JHashMap, Map => JMap}
 import java.util.concurrent.{SynchronousQueue, ThreadPoolExecutor, TimeUnit}
 
+import scala.collection.JavaConverters._
 import scala.util.{Failure, Try}
 
 import org.apache.hadoop.hive.conf.HiveConf
@@ -243,10 +244,10 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     val sessionHandle =
     if (hiveConf.getBoolVar(ConfVars.HIVE_SERVER2_ENABLE_DOAS) && (userName != null)) {
       beService.openSessionWithImpersonation(
-        protocol, userName, req.getPassword, ipAddress, req.getConfiguration, null)
+        protocol, userName, req.getPassword, ipAddress, req.getConfiguration.asScala.toMap, null)
     } else {
       beService.openSession(
-        protocol, userName, req.getPassword, ipAddress, req.getConfiguration)
+        protocol, userName, req.getPassword, ipAddress, req.getConfiguration.asScala.toMap)
     }
     res.setServerProtocolVersion(protocol)
     sessionHandle

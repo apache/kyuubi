@@ -20,20 +20,20 @@ package yaooqinn.kyuubi.session
 import java.io.{File, IOException}
 import java.lang.reflect.UndeclaredThrowableException
 import java.security.PrivilegedExceptionAction
-import java.util.{Map => JMap, UUID}
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable.{HashSet => MHSet}
 import scala.concurrent.{Await, Promise, TimeoutException}
 import scala.concurrent.duration.Duration
+import scala.util.matching.Regex
 
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.{KyuubiConf, SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.ui.KyuubiServerTab
 import org.apache.spark.KyuubiConf._
@@ -89,28 +89,29 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
-  private[this] def getOrCreateSparkSession(): Unit = synchronized {
-    val userName = sessionUGI.getShortUserName
-    var checkRound = math.max(conf.get(KYUUBI_REPORT_TIMES_ON_START.key).toInt, 15)
-    val interval = conf.getTimeAsMs(REPORT_INTERVAL, "1s")
+  private[this] def getOrCreateSparkSession(sessionConf: Map[String, String]): Unit = synchronized {
+    var checkRound = math.max(conf.get(BACKEND_SESSION_WAIT_OTHER_TIMES.key).toInt, 15)
+    val interval = conf.getTimeAsMs(BACKEND_SESSION_WAIT_OTHER_INTERVAL.key)
     // if user's sc is being constructed by another
-    while (sessionManager.isSCPartiallyConstructed(userName)) {
+    while (sessionManager.isSCPartiallyConstructed(getUserName)) {
       wait(interval)
       checkRound -= 1
       if (checkRound <= 0) {
-        throw new HiveSQLException(s"A partially constructed SparkContext for [$userName] " +
+        throw new HiveSQLException(s"A partially constructed SparkContext for [$getUserName] " +
           s"has last more than ${checkRound * interval} seconds")
       }
+      info(s"A partially constructed SparkContext for [$getUserName], $checkRound times countdown.")
     }
 
-    sessionManager.getExistSparkSession(userName) match {
+    sessionManager.getSparkSession(getUserName) match {
       case Some((ss, times)) if !ss.sparkContext.isStopped =>
-        info(s"SparkSession for [$userName] is reused " + times.incrementAndGet() + "times")
+        info(s"SparkSession for [$getUserName] is reused " + times.incrementAndGet() + "times")
         _sparkSession = ss.newSession()
+        configureSparkSession(sessionConf)
       case _ =>
-        sessionManager.setSCPartiallyConstructed(userName)
+        sessionManager.setSCPartiallyConstructed(getUserName)
         notifyAll()
-        createSparkSession()
+        createSparkSession(sessionConf)
     }
   }
 
@@ -122,12 +123,12 @@ private[kyuubi] class KyuubiSession(
     }.start()
   }
 
-  private[this] def createSparkSession(): Unit = {
-    val user = sessionUGI.getShortUserName
-    info(s"------ Create new SparkSession for $user -------")
-    val appName = s"KyuubiSession[$user]:${UUID.randomUUID().toString}"
+  private[this] def createSparkSession(sessionConf: Map[String, String]): Unit = {
+    info(s"------ Create new SparkSession for $getUserName -------")
+    val appName = s"KyuubiSession[$getUserName]:${UUID.randomUUID().toString}"
     conf.setAppName(appName)
-    val totalWaitTime: Long = conf.getTimeAsSeconds(AM_MAX_WAIT_TIME, "60s")
+    configureSparkConf(sessionConf)
+    val totalWaitTime: Long = conf.getTimeAsSeconds(KyuubiConf.BACKEND_SESSTION_INIT_TIMEOUT.key)
     try {
       sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
         override def run(): Unit = {
@@ -141,12 +142,12 @@ private[kyuubi] class KyuubiSession(
         }
       })
 
-      sessionManager.setSparkSession(user, _sparkSession)
+      sessionManager.setSparkSession(getUserName, _sparkSession)
       // set sc fully constructed immediately
-      sessionManager.setSCFullyConstructed(user)
-      KyuubiServerMonitor.setListener(user, new KyuubiServerListener(conf))
-      _sparkSession.sparkContext.addSparkListener(KyuubiServerMonitor.getListener(user))
-      val uiTab = new KyuubiServerTab(user, _sparkSession.sparkContext)
+      sessionManager.setSCFullyConstructed(getUserName)
+      KyuubiServerMonitor.setListener(getUserName, new KyuubiServerListener(conf))
+      _sparkSession.sparkContext.addSparkListener(KyuubiServerMonitor.getListener(getUserName))
+      val uiTab = new KyuubiServerTab(getUserName, _sparkSession.sparkContext)
       KyuubiServerMonitor.addUITab(_sparkSession.sparkContext.sparkUser, uiTab)
     } catch {
       case ute: UndeclaredThrowableException =>
@@ -155,14 +156,14 @@ private[kyuubi] class KyuubiSession(
             sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
               override def run(): Unit = HadoopUtils.killYarnAppByName(appName)
             })
-            throw new HiveSQLException(s"Get SparkSession for [$user] failed: " + te, te)
+            throw new HiveSQLException(s"Get SparkSession for [$getUserName] failed: " + te, te)
           case _ =>
             throw new HiveSQLException(ute.toString, ute.getCause)
         }
       case e: Exception =>
-        throw new HiveSQLException(s"Get SparkSession for [$user] failed: " + e, e)
+        throw new HiveSQLException(s"Get SparkSession for [$getUserName] failed: " + e, e)
     } finally {
-      sessionManager.setSCFullyConstructed(user)
+      sessionManager.setSCFullyConstructed(getUserName)
     }
   }
 
@@ -213,23 +214,41 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
-  private[this] def configureSession(sessionConfMap: JMap[String, String]): Unit = {
-    for (entry <- sessionConfMap.entrySet.asScala) {
-      val key = entry.getKey
-      if (key == "set:hivevar:mapred.job.queue.name") {
-        conf.set("spark.yarn.queue", entry.getValue)
-      } else if (key.startsWith("set:hivevar:")) {
-        val realKey = key.substring(12)
-        if (realKey.startsWith("spark.")) {
-          conf.set(realKey, entry.getValue)
-        } else {
-          conf.set("spark.hadoop." + realKey, entry.getValue)
-        }
-      } else if (key.startsWith("use:")) {
-        // deal with database later after sparkSession initialized
-        initialDatabase = "use " + entry.getValue
-      } else {
+  /**
+   * Setting configuration from connection strings before SparkConext init.
+   * @param sessionConf configurations for user connection string
+   */
+  private[this] def configureSparkConf(sessionConf: Map[String, String]): Unit = {
+    for ((key, value) <- sessionConf) {
+      key match {
+        case HIVE_VAR_PREFIX(DEPRECATED_QUEUE) => conf.set(QUEUE, value)
+        case HIVE_VAR_PREFIX(k) =>
+          if (k.startsWith(SPARK_PREFIX)) {
+            conf.set(k, value)
+          } else {
+            conf.set(SPARK_HADOOP_PREFIX + k, value)
+          }
+        case "use:database" => initialDatabase = "use " + value
+        case _ =>
+      }
+    }
+  }
 
+  /**
+   * Setting configuration from connection strings for existing SparkSession
+   * @param sessionConf configurations for user connection string
+   */
+  private[this] def configureSparkSession(sessionConf: Map[String, String]): Unit = {
+    for ((key, value) <- sessionConf) {
+      key match {
+        case HIVE_VAR_PREFIX(k) =>
+          if (k.startsWith(SPARK_PREFIX)) {
+            _sparkSession.conf.set(k, value)
+          } else {
+            _sparkSession.conf.set(SPARK_HADOOP_PREFIX + k, value)
+          }
+        case "use:database" => initialDatabase = "use " + value
+        case _ =>
       }
     }
   }
@@ -238,9 +257,8 @@ private[kyuubi] class KyuubiSession(
 
   def ugi: UserGroupInformation = this.sessionUGI
 
-  def open(sessionConfMap: JMap[String, String]): Unit = {
-    configureSession(sessionConfMap)
-    getOrCreateSparkSession()
+  def open(sessionConf: Map[String, String]): Unit = {
+    getOrCreateSparkSession(sessionConf)
     assert(_sparkSession != null)
 
     sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
@@ -418,7 +436,13 @@ private[kyuubi] class KyuubiSession(
 }
 
 object KyuubiSession {
-  val SPARK_APP_ID = "spark.app.id"
-  val AM_MAX_WAIT_TIME = "spark.yarn.am.waitTime"
-  val REPORT_INTERVAL = "spark.yarn.report.interval"
+  val HIVE_VAR_PREFIX: Regex = """set:hivevar:([^=]+)""".r
+  val USE_DB: Regex = """use:([^=]+)""".r
+
+  val SPARK_APP_ID: String = "spark.app.id"
+  val DEPRECATED_QUEUE = "mapred.job.queue.name"
+  val QUEUE = "spark.yarn.queue"
+
+  val SPARK_PREFIX = "spark."
+  val SPARK_HADOOP_PREFIX = "spark.hadoop."
 }

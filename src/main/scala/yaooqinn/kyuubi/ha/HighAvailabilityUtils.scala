@@ -50,22 +50,21 @@ object HighAvailabilityUtils extends Logging {
   private[this] var deregisteredWithZooKeeper = false
 
   def isSupportDynamicServiceDiscovery(conf: SparkConf): Boolean = {
-    conf.get(SUPPORT_DYNAMIC_SERVICE_DISCOVERY.key).toBoolean &&
-      conf.get(KYUUBI_ZOOKEEPER_QUORUM.key).split(",").nonEmpty
+    conf.get(HA_ENABLED.key).toBoolean && conf.get(HA_ZOOKEEPER_QUORUM.key).split(",").nonEmpty
   }
 
   @throws[Exception]
   def addServerInstanceToZooKeeper(server: KyuubiServer): Unit = {
     val conf = server.getConf
     val zooKeeperEnsemble = getQuorumServers(conf)
-    val rootNamespace = conf.get(KYUUBI_ZOOKEEPER_NAMESPACE.key)
+    val rootNamespace = conf.get(HA_ZOOKEEPER_NAMESPACE.key)
     val instanceURI = getServerInstanceURI(server.feService)
 
     setUpZooKeeperAuth(conf)
 
-    val sessionTimeout = conf.getTimeAsMs(KYUUBI_ZOOKEEPER_SESSION_TIMEOUT.key).toInt
-    val baseSleepTime = conf.getTimeAsMs(KYUUBI_ZOOKEEPER_CONNECTION_BASESLEEPTIME.key).toInt
-    val maxRetries = conf.get(KYUUBI_ZOOKEEPER_CONNECTION_MAX_RETRIES.key).toInt
+    val sessionTimeout = conf.getTimeAsMs(HA_ZOOKEEPER_SESSION_TIMEOUT.key).toInt
+    val baseSleepTime = conf.getTimeAsMs(HA_ZOOKEEPER_CONNECTION_BASESLEEPTIME.key).toInt
+    val maxRetries = conf.get(HA_ZOOKEEPER_CONNECTION_MAX_RETRIES.key).toInt
     // Create a CuratorFramework instance to be used as the ZooKeeper client
     // Use the zooKeeperAclProvider to create appropriate ACLs
     zooKeeperClient =
@@ -132,8 +131,8 @@ object HighAvailabilityUtils extends Logging {
    * @param conf SparkConf
    */
   private def getQuorumServers(conf: SparkConf): String = {
-    val hosts = conf.get(KYUUBI_ZOOKEEPER_QUORUM.key, "").split(",")
-    val port = conf.get(KYUUBI_ZOOKEEPER_CLIENT_PORT.key, "2181")
+    val hosts = conf.get(HA_ZOOKEEPER_QUORUM.key, "").split(",")
+    val port = conf.get(HA_ZOOKEEPER_CLIENT_PORT.key, "2181")
     val quorum = new StringBuilder
     hosts.foreach { host =>
       quorum.append(host)

@@ -26,7 +26,6 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.HashSet
 
 import org.apache.commons.io.FileUtils
-import org.apache.hadoop.yarn.client.api.YarnClient
 import org.apache.hive.service.cli.{HiveSQLException, SessionHandle}
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.hive.service.server.ThreadFactoryWithGarbageCleanup
@@ -65,7 +64,7 @@ private[kyuubi] class SessionManager private(
   override def init(conf: SparkConf): Unit = synchronized {
     this.conf = conf
     // Create operation log root directory, if operation logging is enabled
-    if (conf.get(KYUUBI_LOGGING_OPERATION_ENABLED.key).toBoolean) {
+    if (conf.get(LOGGING_OPERATION_ENABLED.key).toBoolean) {
       initOperationLogRootDir()
     }
     createExecPool()
@@ -74,11 +73,11 @@ private[kyuubi] class SessionManager private(
   }
 
   private[this] def createExecPool(): Unit = {
-    val poolSize = conf.get(KYUUBI_ASYNC_EXEC_THREADS.key).toInt
+    val poolSize = conf.get(ASYNC_EXEC_THREADS.key).toInt
     info("Background operation thread pool size: " + poolSize)
-    val poolQueueSize = conf.get(KYUUBI_ASYNC_EXEC_WAIT_QUEUE_SIZE.key).toInt
+    val poolQueueSize = conf.get(ASYNC_EXEC_WAIT_QUEUE_SIZE.key).toInt
     info("Background operation thread wait queue size: " + poolQueueSize)
-    val keepAliveTime = conf.getTimeAsSeconds(KYUUBI_EXEC_KEEPALIVE_TIME.key)
+    val keepAliveTime = conf.getTimeAsSeconds(EXEC_KEEPALIVE_TIME.key)
     info("Background operation thread keepalive time: " + keepAliveTime + " seconds")
     val threadPoolName = classOf[KyuubiServer].getSimpleName + "-Background-Pool"
     execPool =
@@ -90,13 +89,13 @@ private[kyuubi] class SessionManager private(
         new LinkedBlockingQueue[Runnable](poolQueueSize),
         new ThreadFactoryWithGarbageCleanup(threadPoolName))
     execPool.allowCoreThreadTimeOut(true)
-    checkInterval = conf.getTimeAsMs(KYUUBI_SESSION_CHECK_INTERVAL.key)
-    sessionTimeout = conf.getTimeAsMs(KYUUBI_IDLE_SESSION_TIMEOUT.key)
-    checkOperation = conf.get(KYUUBI_IDLE_SESSION_CHECK_OPERATION.key).toBoolean
+    checkInterval = conf.getTimeAsMs(FRONTEND_SESSION_CHECK_INTERVAL.key)
+    sessionTimeout = conf.getTimeAsMs(FRONTEND_IDLE_SESSION_TIMEOUT.key)
+    checkOperation = conf.get(FRONTEND_IDLE_SESSION_CHECK_OPERATION.key).toBoolean
   }
 
   private[this] def initOperationLogRootDir(): Unit = {
-    operationLogRootDir = new File(conf.get(KYUUBI_LOGGING_OPERATION_LOG_LOCATION.key))
+    operationLogRootDir = new File(conf.get(LOGGING_OPERATION_LOG_DIR.key))
     isOperationLogEnabled = true
     if (operationLogRootDir.exists && !operationLogRootDir.isDirectory) {
       info("The operation log root directory exists, but it is not a directory: "
@@ -174,7 +173,7 @@ private[kyuubi] class SessionManager private(
   private[this] def startSparkSessionCleaner(): Unit = {
     // at least 10 min
     val interval = math.max(
-      conf.getTimeAsMs(KYUUBI_SPARK_SESSION_CHECK_INTERVAL.key), 10 * 60 * 1000L)
+      conf.getTimeAsMs(BACKEND_SESSION_CHECK_INTERVAL.key), 10 * 60 * 1000L)
     val sessionCleaner = new Runnable {
       override def run(): Unit = {
         sleepInterval(interval)
@@ -185,6 +184,9 @@ private[kyuubi] class SessionManager private(
                 removeSparkSession(user)
                 KyuubiServerMonitor.detachUITab(user)
                 session.stop()
+                if (conf.get("spark.master").startsWith("yarn")) {
+                  System.setProperty("SPARK_YARN_MODE", "true")
+                }
               }
             case _ =>
           }
@@ -215,7 +217,7 @@ private[kyuubi] class SessionManager private(
       username: String,
       password: String,
       ipAddress: String,
-      sessionConf: JMap[String, String],
+      sessionConf: Map[String, String],
       withImpersonation: Boolean): SessionHandle = {
     val kyuubiSession =
       new KyuubiSession(
@@ -278,12 +280,12 @@ private[kyuubi] class SessionManager private(
     shutdown = true
     if (execPool != null) {
       execPool.shutdown()
-      val timeout = conf.getTimeAsSeconds(KYUUBI_ASYNC_EXEC_SHUTDOWN_TIMEOUT.key)
+      val timeout = conf.getTimeAsSeconds(ASYNC_EXEC_SHUTDOWN_TIMEOUT.key)
       try {
         execPool.awaitTermination(timeout, TimeUnit.SECONDS)
       } catch {
         case e: InterruptedException =>
-          warn("KYUUBI_ASYNC_EXEC_SHUTDOWN_TIMEOUT = " + timeout +
+          warn("ASYNC_EXEC_SHUTDOWN_TIMEOUT = " + timeout +
             " seconds has been exceeded. RUNNING background operations will be shut down", e)
       }
       execPool = null
@@ -309,7 +311,7 @@ private[kyuubi] class SessionManager private(
 
   def submitBackgroundOperation(r: Runnable): Future[_] = execPool.submit(r)
 
-  def getExistSparkSession(user: String): Option[(SparkSession, AtomicInteger)] = {
+  def getSparkSession(user: String): Option[(SparkSession, AtomicInteger)] = {
     Some(userToSparkSession.get(user))
   }
 
