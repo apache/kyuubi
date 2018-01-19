@@ -26,7 +26,7 @@ shift
 SPARK_OPTIONS=$@
 
 function usage {
-  echo "Usage: ./bin/start-kyuubi.sh (start|stop) [spark-submit options]"
+  echo "Usage: ./bin/kyuubi.sh (start|stop) [spark submit options]"
 }
 
 if [[ "$@" = *--help ]] || [[ "$@" = *-h ]]; then
