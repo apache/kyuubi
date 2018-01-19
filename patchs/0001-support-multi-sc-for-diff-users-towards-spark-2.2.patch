@@ -1,0 +1,61 @@
+From 0813b0fede8821708df7f03f585e856bbd8d2fb9 Mon Sep 17 00:00:00 2001
+From: Kent Yao <yaooqinn@hotmail.com>
+Date: Fri, 19 Jan 2018 16:50:35 +0800
+Subject: [PATCH] support multi sc for diff users towards spark 2.2
+
+---
+ core/src/main/scala/org/apache/spark/SparkEnv.scala | 14 +++++++++++---
+ 1 file changed, 11 insertions(+), 3 deletions(-)
+
+diff --git a/core/src/main/scala/org/apache/spark/SparkEnv.scala b/core/src/main/scala/org/apache/spark/SparkEnv.scala
+index f4a59f0..a32e2fb 100644
+--- a/core/src/main/scala/org/apache/spark/SparkEnv.scala
++++ b/core/src/main/scala/org/apache/spark/SparkEnv.scala
+@@ -19,12 +19,14 @@ package org.apache.spark
+ 
+ import java.io.File
+ import java.net.Socket
++import java.util.concurrent.ConcurrentHashMap
+ import java.util.Locale
+ 
+ import scala.collection.mutable
+ import scala.util.Properties
+ 
+ import com.google.common.collect.MapMaker
++import org.apache.hadoop.security.UserGroupInformation
+ 
+ import org.apache.spark.annotation.DeveloperApi
+ import org.apache.spark.api.python.PythonWorkerFactory
+@@ -136,20 +138,26 @@ class SparkEnv (
+ }
+ 
+ object SparkEnv extends Logging {
+-  @volatile private var env: SparkEnv = _
++  private val env = new ConcurrentHashMap[String, SparkEnv]()
+ 
+   private[spark] val driverSystemName = "sparkDriver"
+   private[spark] val executorSystemName = "sparkExecutor"
+ 
++  private[this] def user = UserGroupInformation.getCurrentUser.getShortUserName
++
+   def set(e: SparkEnv) {
+-    env = e
++    if (e == null) {
++      env.remove(user)
++    } else {
++      env.put(user, e)
++    }
+   }
+ 
+   /**
+    * Returns the SparkEnv.
+    */
+   def get: SparkEnv = {
+-    env
++    env.get(user)
+   }
+ 
+   /**
+-- 
+2.6.2
+
