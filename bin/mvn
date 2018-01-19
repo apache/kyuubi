@@ -102,6 +102,7 @@ install_scala() {
 
 install_scala
 install_mvn
+
 cd "${_CALLING_DIR}"
 echo "Using \`mvn\` from path: $MVN_BIN" 1>&2
 ${MVN_BIN} "$@"
