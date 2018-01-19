@@ -49,6 +49,7 @@
         <java.version>1.7</java.version>
         <scala.version>2.11.8</scala.version>
         <scala.binary.version>2.11</scala.binary.version>
+        <maven.version>3.3.9</maven.version>
         <spark.group>org.apache.spark</spark.group>
         <spark.version>2.1.2</spark.version>
         <spark.scope>provided</spark.scope>
