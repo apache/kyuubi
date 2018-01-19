@@ -20,8 +20,8 @@
 .pydevproject
 .scala_dependencies
 .settings
-bin/apache-maven*
-bin/scala*
-logs/
+build/apache-maven*
+build/scala*
 target/
+logs/
 out/
