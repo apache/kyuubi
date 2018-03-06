@@ -1,0 +1,12 @@
+language: scala
+scala:
+  - 2.11.8
+
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN
+  email: yaooqinn@hotmail.com
+  name: Kent Yao
+  on:
+    branch: master
