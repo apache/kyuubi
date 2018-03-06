@@ -73,7 +73,7 @@ object KyuubiConf {
   val HA_ZOOKEEPER_CLIENT_PORT: ConfigEntry[String] =
     KyuubiConfigBuilder("spark.kyuubi.ha.zk.client.port")
       .doc("The port of ZooKeeper servers to talk to. If the list of Zookeeper servers specified" +
-        " in spark.kyuubi.zookeeper.quorum does not contain port numbers, this value is used")
+        " in spark.kyuubi.zookeeper.quorum does not contain port numbers, this value is used.")
       .stringConf
       .createWithDefault("2181")
 
@@ -93,7 +93,7 @@ object KyuubiConf {
 
   val HA_ZOOKEEPER_CONNECTION_MAX_RETRIES: ConfigEntry[Int] =
     KyuubiConfigBuilder("spark.kyuubi.ha.zk.connection.max.retries")
-      .doc("max retry time connecting to the zk server")
+      .doc("Max retry times for connecting to the zk server")
       .intConf
       .createWithDefault(3)
 
@@ -136,7 +136,7 @@ object KyuubiConf {
 
   val EXEC_KEEPALIVE_TIME: ConfigEntry[Long] =
     KyuubiConfigBuilder("spark.kyuubi.async.exec.keep.alive.time")
-      .doc("Time that an idle KyuubiServer async thread (from the thread pool) will wait for" +
+      .doc("Time (in milliseconds) that an idle KyuubiServer async thread (from the thread pool) will wait for" +
         " a new task to arrive before terminating")
       .timeConf(TimeUnit.MILLISECONDS)
       .createWithDefault(TimeUnit.SECONDS.toMillis(10L))
@@ -170,8 +170,8 @@ object KyuubiConf {
     KyuubiConfigBuilder("spark.kyuubi.frontend.session.check.operation")
       .doc("Session will be considered to be idle only if there is no activity, and there is no" +
         " pending operation. This setting takes effect only if session idle timeout" +
-        " (spark.kyuubi.idle.session.timeout) and checking (spark.kyuubi.session.check.interval)" +
-        " are enabled.")
+        " (spark.kyuubi.frontend.session.timeout) and checking" +
+        " (spark.kyuubi.frontend.session.check.interval) are enabled.")
       .booleanConf
       .createWithDefault(true)
 
@@ -195,13 +195,14 @@ object KyuubiConf {
 
   val BACKEND_SESSION_WAIT_OTHER_INTERVAL: ConfigEntry[Long] =
     KyuubiConfigBuilder("spark.kyuubi.backend.session.wait.other.interval")
-      .doc("")
+      .doc("The interval for checking whether other thread with the same user has completed" +
+      " SparkContext instantiation.")
       .timeConf(TimeUnit.MILLISECONDS)
       .createWithDefault(TimeUnit.SECONDS.toMillis(1L))
 
   val BACKEND_SESSTION_INIT_TIMEOUT =
     KyuubiConfigBuilder("spark.kyuubi.backend.session.init.timeout")
-    .doc("")
+    .doc("How long we suggest the server to give up instantiating SparkContext")
     .timeConf(TimeUnit.SECONDS)
     .createWithDefault(TimeUnit.SECONDS.toSeconds(60L))
 

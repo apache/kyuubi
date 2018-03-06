@@ -14,7 +14,7 @@
  |:---:|:---:|:---:|---|
  |SparkContext多实例|✘|√|Apache Spark对于单个JVM中实例化多个SparkContext一直有较多的尝试，可以参见[这里](https://www.jianshu.com/p/e1cfcaece8f1)；</br> 而其多实例特性可以通过`spark.driver.allowMultipleContexts`开启，也不过是SparkContext被实例化多次，并公用一套调度和执行环境而已，有点像java对象的一次浅拷贝。 </br> Kyuubi附带的Patch提供了一种以用户隔离调度和执行环境的方法。|
  |SparkContext动态实例化|✘|√|Thrift JDBC/ODBC Server在启动时初始化一个SparkContext实例，而Kyuubi则在用户会话创建时去缓存中获取或新建SparkContext|
- |SparkContext动态回收|✘|√|Thrift JDBC/ODBC Server再用户断开会话后会回收SparkSession，而SparkContext则是常驻的变量；</br> Kyuubi对于SparkSession亦如是，不同的是由于SparkContext是动态新增的，从而对应的会有相应的回收机制。|
+ |SparkContext动态回收|✘|√|Thrift JDBC/ODBC Server在用户断开会话后会回收SparkSession，而SparkContext则是常驻的变量；</br> Kyuubi对于SparkSession亦如是，不同的是由于SparkContext是动态新增的，从而对应的会有相应的回收机制。|
  |动态Yarn队列|✘|√|Spark on Yarn可以通过spark.yarn.queue指定队列，Thrift JDBC/ODBC Server指定这个队列后并无法修改这个队列，</br> HiveServer2可以`set mapred.job.queue.name=thequeue`来指定执行队列， </br> Kyuubi采取了折中方案，可以将spark.yarn.queue设置连接串中。|
  |动态参数设置|仅支持`spark.sql.`开头的动态参数|√|Kyuubi支持在连接串中指定`spark.executor.cores/memory`等参数动态设置对应SparkContext所能调度的资源|
  |权限控制|✘|✘|Kyuubi后续会增加[Spark Authorizer](https://github.com/yaooqinn/spark-authorizer)的支持。|
