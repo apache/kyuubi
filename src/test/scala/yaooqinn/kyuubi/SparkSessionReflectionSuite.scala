@@ -35,5 +35,6 @@ class SparkSessionReflectionSuite extends SparkFunSuite {
       Seq(classOf[SparkContext]),
       Seq(sc)).asInstanceOf[SparkSession]
     assert(ss.isInstanceOf[SparkSession])
+    ss.stop()
   }
 }

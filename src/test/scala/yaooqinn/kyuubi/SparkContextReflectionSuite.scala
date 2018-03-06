@@ -31,6 +31,7 @@ class SparkContextReflectionSuite extends SparkFunSuite {
       .newInstance(classOf[SparkContext].getName, Seq(classOf[SparkConf]), Seq(conf))
       .asInstanceOf[SparkContext]
     assert(sc.isInstanceOf[SparkContext])
+    sc.stop()
   }
 
   test("SparkContext initialization with this()") {
@@ -48,6 +49,7 @@ class SparkContextReflectionSuite extends SparkFunSuite {
         Seq("local", "sc_init", conf))
       .asInstanceOf[SparkContext]
     assert(sc.isInstanceOf[SparkContext])
+    sc.stop()
   }
 
   test("Initializing 2 SparkContext with Reflection") {
@@ -63,5 +65,7 @@ class SparkContextReflectionSuite extends SparkFunSuite {
       .asInstanceOf[SparkContext]
 
     assert(sc1 !== sc2)
+    sc1.stop()
+    sc2.stop()
   }
 }
