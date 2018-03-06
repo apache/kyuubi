@@ -1,4 +1,4 @@
-# Kyuubi
+# Kyuubi  [![Build Status](https://travis-ci.org/yaooqinn/kyuubi.svg?branch=master)](https://travis-ci.org/yaooqinn/kyuubi)
 
 **Kyuubi** is an enhanced version of [Apache Spark](http://spark.apache.org)'s primordial [Thrift JDBC/ODBC Server](http://spark.apache.org/docs/latest/sql-programming-guide.html#running-the-thrift-jdbcodbc-server).    
 
