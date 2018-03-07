@@ -1,6 +1,33 @@
-# Configurations
+# Configuration Guide 
+
+Kyuubi provides several kinds of properites to configure the system:
+
+**Kyuubi properties:** control most Kyuui server's own behaviors. Most of them determined on server starting. They can be treat like normal Spark properties by setting them in `spark-defaults.conf` file or via `--conf` parameter in server starting scripts.     
+
+**Spark properties:** become session level options, which are used to generate a SparkContext instances and passed to Kyuubi Server by JDBC/ODBC connection strings. Setting them in `$SPARKHOME/conf/spark-defaults.conf` supplies with default values for each session.     
+
+**Hive properties:**             
+1. Hive client options which are used for SparkSessin to talk to Hive MetaStore Server could be configured in a `hive-site.xml`  and placed it in `$SPARKHOME/conf` directory, or treating them as Spark properties with `spark.hadoop.` prefix.           
+2. Kyuubi Frontend Service options is a small part of HiveServer2.     
+
+**Hadoop properties:** specifying `HADOOP_CONF_DIR` or `YARN_CONF_DIR` to the directory contains hadoop configuration files.
+
+**Logging** can be configured through `$SPARKHOME/conf/log4j.properties`.
 
 ## Kyuubi Configurations
+
+Kyuubi properties control most Kyuui server's own behaviors. Most of them determined on server starting. They can be treat like normal Spark properties by setting them in `spark-defaults.conf` file or via `--conf` parameter in server starting scripts.     
+
+For instance, start Kyuubi with HA enabled.
+```bash
+$ bin/start-kyuubi.sh \ 
+    --master yarn \
+    --deploy-mode client \
+    --driver-memory 10g \
+    --conf spark.kyuubi.ha.enabled=true \
+    --conf spark.kyuubi.ha.zk.quorum=zk1.server.url,zk2.server.url
+```
+
 #### High Availability
 Name|Default|Description
 ---|---|---
@@ -43,14 +70,41 @@ spark.kyuubi.backend.session.init.timeout|60s|How long we suggest the server to 
 
 ---
 
-## Hive Configurations
+## Spark Configurations
+
+Spark properties become session level options, which are used to generate a SparkContext instances and passed to Kyuubi Server by JDBC/ODBC connection strings. Setting them in `$SPARKHOME/conf/spark-defaults.conf` supplies with default values for each session.     
 
 Name|Default|Description
 ---|---|---
-hive.server2.logging.operation.enabled | true | When true, Kyuubi Server will save operation logs and make them available for clients
+spark.driver.memory| 1g | Amount of memory to use for the Kyuubi Server instance. Set this through the --driver-memory command line option or in your default properties file.
+spark.driver.extraJavaOptions| (none) | A string of extra JVM options to pass to the Kyuubi Server instance. For instance, GC settings or other logging. Set this through the --driver-java-options command line option or in your default properties file.
 
-## [Spark Configurations]()
+Spark properties for [Driver](http://spark.apache.org/docs/latest/configuration.html#runtime-environment) like those above controls Kyuubi Server's own behaviors, while other properies could be set in JDBC/ODBC connection strings.
 
+Please refer to the [Configuration Guide](http://spark.apache.org/docs/latest/configuration.html) in the online documentation for an overview on how to configure Spark.
+
+## Hive Configurations
+
+### Hive client options
+These configurations are used for SparkSessin to talk to Hive MetaStore Server could be configured in a `hive-site.xml`  and placed it in `$SPARKHOME/conf` directory, or treating them as Spark properties with `spark.hadoop.` prefix.
+### Kyuubi Frontend Service options   
+
+Name|Default|Description
+---|---|---
+hive.server2.thrift.bind.host | (none) | Bind host on which to run the Kyuubi Frontend service.
+hive.server2.thrift.port| 10000 | Port number of Kyuubi Frontend service.
+hive.server2.thrift.min.worker.threads| 5 | Minimum number of Thrift worker threads.
+hive.server2.thrift.max.worker.threads| 500 | Maximum number of Thrift worker threads
+hive.server2.thrift.worker.keepalive.time | 60s| Keepalive time (in seconds) for an idle worker thread. When the number of workers exceeds min workers, excessive threads are killed after this time interval.
+hive.server2.authentication | NONE | Client authentication types. NONE: no authentication check  KERBEROS: Kerberos/GSSAPI authentication.
+hive.server2.allow.user.substitution | true | Allow alternate user to be specified as part of Kyuubi open connection request.
+hive.server2.enable.doAs | true | Set true to have Kyuubi execute SQL operations as the user making the calls to it.
+hive.server2.authentication.kerberos.keytab | (none) | Kerberos keytab file for server principal
+hive.server2.authentication.kerberos.principal | (none) | Kerberos server principal
+hive.server2.thrift.max.message.size | 104857600 | Maximum message size in bytes a Kyuubi server will accept.
 
 ## Hadoop Configurations
+Please refer to the [Apache Hadoop](http://hadoop.apache.org)'s online documentation for an overview on how to configure Hadoop.
+
+
 
