@@ -75,6 +75,7 @@ public class KyuubiAuthFactory {
   public static final String HS2_PROXY_USER = "hive.server2.proxy.user";
 
   public KyuubiAuthFactory(HiveConf conf) throws TTransportException {
+    // TODO:(hzyaoqin) check whether this logic need or not for kyuubi
     this.conf = conf;
     authTypeStr = conf.getVar(HiveConf.ConfVars.HIVE_SERVER2_AUTHENTICATION);
 
@@ -106,7 +107,7 @@ public class KyuubiAuthFactory {
 
   }
 
-  public Map<String, String> getSaslProperties() {
+  private Map<String, String> getSaslProperties() {
     Map<String, String> saslProps = new HashMap<>();
     SaslQOP saslQOP = SaslQOP.fromString(conf.getVar(ConfVars.HIVE_SERVER2_THRIFT_SASL_QOP));
     saslProps.put(Sasl.QOP, saslQOP.toString());
@@ -142,9 +143,8 @@ public class KyuubiAuthFactory {
    * Returns the thrift processor factory for HiveServer2 running in binary mode
    * @param service
    * @return
-   * @throws LoginException
    */
-  public TProcessorFactory getAuthProcFactory(TCLIService.Iface service) throws LoginException {
+  public TProcessorFactory getAuthProcFactory(TCLIService.Iface service) {
     if (authTypeStr.equalsIgnoreCase(AuthTypes.KERBEROS.getAuthName())) {
       return KyuubiKerberosSaslHelper.getKerberosProcessorFactory(saslServer, service);
     } else {
