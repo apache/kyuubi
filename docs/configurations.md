@@ -1,5 +1,7 @@
 # Configuration Guide 
 
+[TOC]
+
 Kyuubi provides several kinds of properites to configure the system:
 
 **Kyuubi properties:** control most Kyuui server's own behaviors. Most of them determined on server starting. They can be treat like normal Spark properties by setting them in `spark-defaults.conf` file or via `--conf` parameter in server starting scripts.     
@@ -29,6 +31,7 @@ $ bin/start-kyuubi.sh \
 ```
 
 #### High Availability
+
 Name|Default|Description
 ---|---|---
 spark.kyuubi.ha.enabled|false|Whether KyuubiServer supports dynamic service discovery for its clients. To support this, each instance of KyuubiServer currently uses ZooKeeper to register itself, when it is brought up. JDBC/ODBC clients should use the ZooKeeper ensemble: spark.kyuubi.ha.zk.quorum in their connection string.
@@ -40,12 +43,14 @@ spark.kyuubi.ha.zk.connection.basesleeptime|1,000|Initial amount of time (in mil
 spark.kyuubi.ha.zk.connection.max.retries|3|Max retry times for connecting to the zk server
 
 #### Operation Log
+
 Name|Default|Description
 ---|---|---
 spark.kyuubi.logging.operation.enabled|true|When true, KyuubiServer will save operation logs and make them available for clients
 spark.kyuubi.logging.operation.log.dir|`SPARK_LOG_DIR` -> `SPARK_HOME`/operation_logs -> `java.io.tmpdir`/operation_logs|Top level directory where operation logs are stored if logging functionality is enabled
 
 #### Background Execution Thread Pool
+
 Name|Default|Description
 ---|---|---
 spark.kyuubi.async.exec.threads|100|Number of threads in the async thread pool for KyuubiServer.
@@ -54,6 +59,7 @@ spark.kyuubi.async.exec.keep.alive.time|10,000|Time (in milliseconds) that an id
 spark.kyuubi.async.exec.shutdown.timeout|10,000|How long KyuubiServer shutdown will wait for async threads to terminate.
 
 #### Session Idle Check
+
 Name|Default|Description
 ---|---|---
 spark.kyuubi.frontend.session.check.interval|6h|The check interval for frontend session/operation timeout, which can be disabled by setting to zero or negative value.
@@ -62,6 +68,7 @@ spark.kyuubi.frontend.session.check.operation| true |Session will be considered 
 spark.kyuubi.backend.session.check.interval|20min|The check interval for backend session a.k.a SparkSession timeout.
 
 #### On Spark Session Init
+
 Name|Default|Description
 ---|---|---
 spark.kyuubi.backend.session.wait.other.times | 60 | How many times to check when another session with the same user is initializing SparkContext. Total Time will be times by `spark.kyuubi.backend.session.wait.other.interval`.
@@ -87,6 +94,7 @@ Please refer to the [Configuration Guide](http://spark.apache.org/docs/latest/co
 
 ### Hive client options
 These configurations are used for SparkSessin to talk to Hive MetaStore Server could be configured in a `hive-site.xml`  and placed it in `$SPARKHOME/conf` directory, or treating them as Spark properties with `spark.hadoop.` prefix.
+
 ### Kyuubi Frontend Service options   
 
 Name|Default|Description
@@ -105,6 +113,3 @@ hive.server2.thrift.max.message.size | 104857600 | Maximum message size in bytes
 
 ## Hadoop Configurations
 Please refer to the [Apache Hadoop](http://hadoop.apache.org)'s online documentation for an overview on how to configure Hadoop.
-
-
-
