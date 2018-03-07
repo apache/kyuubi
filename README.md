@@ -9,12 +9,10 @@ In this mode, end-users or applications can interact with Spark SQL directly to 
 
 But unfortunately, due to the limitations of Spark's own architecture，to be used as an enterprise-class product, there are a number of problems compared with HiveServer2，such as multi-tenant isolation, authentication/authorization, high concurrency, high availability, and so on. And the Apache Spark community's support for this module has been in a state of prolonged stagnation.         
 
-**Kyuubi** has enhanced the Thrift JDBC/ODBC Server in some ways for these existing problems, as shown in the following table,     
+**Kyuubi** has enhanced the Thrift JDBC/ODBC Server in some ways for these existing problems, as shown in the following table.     
 
----
-
- |---|**Thrift JDBC/ODBC Server**|**Kyuubi**|Comments|   
- |:---:|:---:|:---:|---|
+ |---|**Thrift Server**|**Kyuubi**|Comments|   
+ |---|---|---|---|
  |Multi SparkContext Instances| ✘ | ✔ |Apache Spark has several [issues](https://www.jianshu.com/p/e1cfcaece8f1) to have multiple SparkContext instances in one single JVM. Option `spark.driver.allowMultipleContexts=true` only enables SparkContext to be instantiated many times but these instance can only share and use the scheduler and execution environments of the last initialized one, which is kind of like a shallow copy of a Java object. The patches of Kyuubi provides a way of isolating these components by user to avoid overlapping.|
  |Dynamic SparkContext Initialization| ✘ | ✔ |Each SparkContext initialization is delayed to the phase of first session of a particular user's creation in Kyuubi, while Thrift JDBC/ODBC Server create one only when it starts.|
  |Dynamic SparkContext Recycling| ✘ | ✔ | In Thrift JDBC/ODBC Server, SparkContext is a resident variable. Kyuubi will cache SparkContext instances for a while after session closed before the server terminating them.|
@@ -27,8 +25,6 @@ But unfortunately, due to the limitations of Spark's own architecture，to be us
  |High Availability| ✘ | ✔ |Based on ZooKeeper |
  |cluster deploy mode| ✘ | ✘ |yarn cluster mode will be supported soon|
  
----
-
 ## Getting Started
 
 ### Packaging
