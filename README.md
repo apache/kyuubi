@@ -32,7 +32,7 @@ But unfortunately, due to the limitations of Spark's own architecture，to be us
 **Kyuubi** server is built based on [Apache Maven](http://maven.apache.org), 
 
 ```sbtshell
-build/mvn clean package
+build/mvn clean package -DskipTests
 ```
 
 Running the code above in the Kyuubi project directory is all we need to build a runnable Kyuubi server.
@@ -101,7 +101,7 @@ bin/stop-kyuubi.sh
 
 ### Prerequisites
 
-Kyuubi may works with different deployments such as non-secured Yarn, Standalone, Mesos or even local mode, but it is mainly designed for a secured HDFS/Yarn Cluster on which Kyuubi will play well with multi tenant and secure features.
+Kyuubi may work well with different deployments such as non-secured Yarn, Standalone, Mesos or even local mode, but it is mainly designed for a secured HDFS/Yarn Cluster on which Kyuubi will play well with multi tenant and secure features.
 
 Suppose that you already have a secured HDFS cluster for deploying Spark, Hive or other applications.
 
