@@ -19,13 +19,12 @@ package yaooqinn.kyuubi.server
 
 import java.util.{List => JList, Map => JMap}
 
-import org.apache.hive.service.auth.KyuubiAuthFactory
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.SparkConf
 
 import yaooqinn.kyuubi.Logging
-import yaooqinn.kyuubi.operation.KyuubiOperation
+import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.service.CompositeService
 import yaooqinn.kyuubi.session.SessionManager
 
@@ -34,7 +33,7 @@ import yaooqinn.kyuubi.session.SessionManager
  * `KyuubiSession` for execution
  */
 private[server] class BackendService private(name: String)
-  extends CompositeService(name) with ICLIService with Logging {
+  extends CompositeService(name) with Logging {
 
   private[this] var sessionManager: SessionManager = _
   def getSessionManager: SessionManager = sessionManager
@@ -75,42 +74,42 @@ private[server] class BackendService private(name: String)
     sessionHandle
   }
 
-  override def closeSession(sessionHandle: SessionHandle): Unit = {
+  def closeSession(sessionHandle: SessionHandle): Unit = {
     sessionManager.closeSession(sessionHandle)
   }
 
-  override def getInfo(sessionHandle: SessionHandle, infoType: GetInfoType): GetInfoValue = {
+  def getInfo(sessionHandle: SessionHandle, infoType: GetInfoType): GetInfoValue = {
     sessionManager.getSession(sessionHandle).getInfo(infoType)
   }
 
-  override def executeStatement(
+  def executeStatement(
       sessionHandle: SessionHandle,
       statement: String,
       confOverlay: JMap[String, String]): OperationHandle = {
     sessionManager.getSession(sessionHandle).executeStatement(statement)
   }
 
-  override def executeStatementAsync(
+  def executeStatementAsync(
       sessionHandle: SessionHandle,
       statement: String,
       confOverlay: JMap[String, String]): OperationHandle = {
     sessionManager.getSession(sessionHandle).executeStatementAsync(statement)
   }
 
-  override def getTypeInfo(sessionHandle: SessionHandle): OperationHandle = {
+  def getTypeInfo(sessionHandle: SessionHandle): OperationHandle = {
     throw new HiveSQLException("Method Not Implemented!")
   }
 
-  override def getCatalogs(sessionHandle: SessionHandle): OperationHandle = {
+  def getCatalogs(sessionHandle: SessionHandle): OperationHandle = {
     throw new HiveSQLException("Method Not Implemented!")
   }
 
-  override def getSchemas(
+  def getSchemas(
       sessionHandle: SessionHandle, catalogName: String, schemaName: String): OperationHandle = {
     throw new HiveSQLException("Method Not Implemented!")
   }
 
-  override def getTables(
+  def getTables(
       sessionHandle: SessionHandle,
       catalogName: String,
       schemaName: String,
@@ -119,41 +118,41 @@ private[server] class BackendService private(name: String)
     throw new HiveSQLException("Method Not Implemented!")
   }
 
-  override def getTableTypes(sessionHandle: SessionHandle): OperationHandle = {
+  def getTableTypes(sessionHandle: SessionHandle): OperationHandle = {
     throw new HiveSQLException("Method Not Implemented!")
   }
 
-  override def getColumns(
+  def getColumns(
       sessionHandle: SessionHandle,
       catalogName: String,
       schemaName: String, tableName: String, columnName: String): OperationHandle = {
     throw new HiveSQLException("Method Not Implemented!")
   }
 
-  override def getFunctions(
+  def getFunctions(
       sessionHandle: SessionHandle,
       catalogName: String,
       schemaName: String, functionName: String): OperationHandle = {
     throw new HiveSQLException("Method Not Implemented!")
   }
 
-  override def getOperationStatus(opHandle: OperationHandle): OperationStatus = {
+  def getOperationStatus(opHandle: OperationHandle): OperationStatus = {
     sessionManager.getOperationMgr.getOperation(opHandle).getStatus
   }
 
-  override def cancelOperation(opHandle: OperationHandle): Unit = {
+  def cancelOperation(opHandle: OperationHandle): Unit = {
     sessionManager.getOperationMgr.getOperation(opHandle).getSession.cancelOperation(opHandle)
   }
 
-  override def closeOperation(opHandle: OperationHandle): Unit = {
+  def closeOperation(opHandle: OperationHandle): Unit = {
     sessionManager.getOperationMgr.getOperation(opHandle).getSession.closeOperation(opHandle)
   }
 
-  override def getResultSetMetadata(opHandle: OperationHandle): TableSchema = {
+  def getResultSetMetadata(opHandle: OperationHandle): TableSchema = {
     sessionManager.getOperationMgr.getOperation(opHandle).getSession.getResultSetMetadata(opHandle)
   }
 
-  override def fetchResults(
+  def fetchResults(
       opHandle: OperationHandle,
       orientation: FetchOrientation,
       maxRows: Long,
@@ -162,7 +161,7 @@ private[server] class BackendService private(name: String)
       .getSession.fetchResults(opHandle, orientation, maxRows, fetchType)
   }
 
-  override def getDelegationToken(
+  def getDelegationToken(
       sessionHandle: SessionHandle,
       authFactory: KyuubiAuthFactory,
       owner: String,
@@ -171,7 +170,7 @@ private[server] class BackendService private(name: String)
     sessionManager.getSession(sessionHandle).getDelegationToken(authFactory, owner, renewer)
   }
 
-  override def cancelDelegationToken(
+  def cancelDelegationToken(
       sessionHandle: SessionHandle,
       authFactory: KyuubiAuthFactory,
       tokenStr: String): Unit = {
@@ -179,7 +178,7 @@ private[server] class BackendService private(name: String)
     sessionManager.getSession(sessionHandle).cancelDelegationToken(authFactory, tokenStr)
   }
 
-  override def renewDelegationToken(
+  def renewDelegationToken(
       sessionHandle: SessionHandle,
       authFactory: KyuubiAuthFactory,
       tokenStr: String): Unit = {

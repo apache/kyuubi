@@ -27,16 +27,17 @@ import scala.util.{Failure, Try}
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 import org.apache.hadoop.hive.ql.session.SessionState
-import org.apache.hive.service.auth.{KyuubiAuthFactory, TSetIpAddressProcessor}
+import org.apache.hive.service.auth.TSetIpAddressProcessor
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift._
 import org.apache.hive.service.server.ThreadFactoryWithGarbageCleanup
-import org.apache.spark.{SparkConf, SparkUtils}
+import org.apache.spark.{KyuubiConf, SparkConf, SparkUtils}
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TThreadPoolServer}
 import org.apache.thrift.transport.{TServerSocket, TTransport}
 
 import yaooqinn.kyuubi.Logging
+import yaooqinn.kyuubi.auth.{KERBEROS, KyuubiAuthFactory, NONE}
 import yaooqinn.kyuubi.service.{AbstractService, ServiceException, ServiceUtils}
 
 /**
@@ -159,14 +160,13 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   def getServerIPAddress: InetAddress = serverIPAddress
 
   private[this] def isKerberosAuthMode = {
-    hiveConf.getVar(ConfVars.HIVE_SERVER2_AUTHENTICATION)
-      .equalsIgnoreCase(KyuubiAuthFactory.AuthTypes.KERBEROS.toString)
+    conf.get(KyuubiConf.AUTHENTICATION_METHOD.key).equalsIgnoreCase(KERBEROS.name)
   }
 
   private[this] def getUserName(req: TOpenSessionReq) = {
     // Kerberos
     if (isKerberosAuthMode) {
-      realUser = kyuubiAuthFactory.getRemoteUser
+      realUser = kyuubiAuthFactory.getRemoteUser.orNull
     }
     // Except kerberos
     if (realUser == null) {
@@ -202,8 +202,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
       throw new HiveSQLException("Proxy user substitution is not allowed")
     }
     // If there's no authentication, then directly substitute the user
-    if (KyuubiAuthFactory.AuthTypes.NONE.toString
-      .equalsIgnoreCase(hiveConf.getVar(ConfVars.HIVE_SERVER2_AUTHENTICATION))) {
+    if (!isKerberosAuthMode) {
       return proxyUser
     }
     // Verify proxy user privilege of the realUser for the proxyUser
@@ -213,7 +212,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
 
   private[this] def getIpAddress: String = {
     if (isKerberosAuthMode) {
-      kyuubiAuthFactory.getIpAddress
+      kyuubiAuthFactory.getIpAddress.orNull
     } else {
       TSetIpAddressProcessor.getUserIpAddress
     }
@@ -571,7 +570,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
       try {
         beService.renewDelegationToken(
           new SessionHandle(req.getSessionHandle),
-          KyuubiAuthFactory,
+          kyuubiAuthFactory,
           req.getDelegationToken)
         resp.setStatus(OK_STATUS)
       } catch {

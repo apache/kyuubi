@@ -218,18 +218,6 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("NONE")
 
-  val KEYTAB =
-    KyuubiConfigBuilder("spark.yarn.keytab")
-      .doc("The full path to the file that contains the keytab for the principal specified above.")
-      .stringConf
-      .createOptional
-
-  val PRINCIPAL =
-    KyuubiConfigBuilder("spark.yarn.principal")
-      .doc("Principal to be used to login to KDC, while running on secure HDFS.")
-      .stringConf
-      .createOptional
-
   val SASL_QOP =
     KyuubiConfigBuilder("spark.kyuubi.sasl.qop")
       .doc("Sasl QOP enable higher levels of protection for Kyuubi communication with clients." +

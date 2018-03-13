@@ -68,7 +68,4 @@ object SparkUtils {
   def newConfiguration(conf: SparkConf): Configuration = {
     SparkHadoopUtil.get.newConfiguration(conf)
   }
-
-
-
 }
