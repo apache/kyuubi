@@ -19,11 +19,13 @@ package org.apache.spark
 
 import java.io.File
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.util.{ShutdownHookManager, Utils}
 import org.slf4j.Logger
 
 /**
- * Wrapper for [[Utils]]
+ * Wrapper for [[Utils]] and [[SparkHadoopUtil]]
  */
 object SparkUtils {
 
@@ -62,6 +64,11 @@ object SparkUtils {
   def getUserJars(conf: SparkConf): Seq[String] = {
     Utils.getUserJars(conf)
   }
+
+  def newConfiguration(conf: SparkConf): Configuration = {
+    SparkHadoopUtil.get.newConfiguration(conf)
+  }
+
 
 
 }

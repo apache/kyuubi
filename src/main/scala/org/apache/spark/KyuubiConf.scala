@@ -136,8 +136,8 @@ object KyuubiConf {
 
   val EXEC_KEEPALIVE_TIME: ConfigEntry[Long] =
     KyuubiConfigBuilder("spark.kyuubi.async.exec.keep.alive.time")
-      .doc("Time (in milliseconds) that an idle KyuubiServer async thread (from the thread pool) will wait for" +
-        " a new task to arrive before terminating")
+      .doc("Time (in milliseconds) that an idle KyuubiServer async thread (from the thread pool)" +
+        " will wait for a new task to arrive before terminating")
       .timeConf(TimeUnit.MILLISECONDS)
       .createWithDefault(TimeUnit.SECONDS.toMillis(10L))
 
@@ -202,9 +202,43 @@ object KyuubiConf {
 
   val BACKEND_SESSTION_INIT_TIMEOUT =
     KyuubiConfigBuilder("spark.kyuubi.backend.session.init.timeout")
-    .doc("How long we suggest the server to give up instantiating SparkContext")
-    .timeConf(TimeUnit.SECONDS)
-    .createWithDefault(TimeUnit.SECONDS.toSeconds(60L))
+      .doc("How long we suggest the server to give up instantiating SparkContext")
+      .timeConf(TimeUnit.SECONDS)
+      .createWithDefault(TimeUnit.SECONDS.toSeconds(60L))
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //                                      Authentication                                         //
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+
+  val AUTHENTICATION_METHOD =
+    KyuubiConfigBuilder("spark.kyuubi.authentication")
+      .doc("Client authentication types." +
+        " NONE: no authentication check." +
+        " KERBEROS: Kerberos/GSSAPI authentication")
+      .stringConf
+      .createWithDefault("NONE")
+
+  val KEYTAB =
+    KyuubiConfigBuilder("spark.yarn.keytab")
+      .doc("The full path to the file that contains the keytab for the principal specified above.")
+      .stringConf
+      .createOptional
+
+  val PRINCIPAL =
+    KyuubiConfigBuilder("spark.yarn.principal")
+      .doc("Principal to be used to login to KDC, while running on secure HDFS.")
+      .stringConf
+      .createOptional
+
+  val SASL_QOP =
+    KyuubiConfigBuilder("spark.kyuubi.sasl.qop")
+      .doc("Sasl QOP enable higher levels of protection for Kyuubi communication with clients." +
+        " auth - authentication only (default)" +
+        " auth-int - authentication plus integrity protection" +
+        " auth-conf - authentication plus integrity and confidentiality protectionThis is" +
+        " applicable only if Kyuubi is configured to use Kerberos authentication.")
+      .stringConf
+      .createWithDefault("auth")
 
   /**
    * Return all the configuration definitions that have been defined in [[KyuubiConf]]. Each

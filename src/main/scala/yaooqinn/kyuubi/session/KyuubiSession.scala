@@ -31,6 +31,7 @@ import scala.util.matching.Regex
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hive.service.auth.KyuubiAuthFactory
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.{KyuubiConf, SparkConf, SparkContext}
@@ -371,6 +372,7 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
+  @throws[HiveSQLException]
   def fetchResults(
       opHandle: OperationHandle,
       orientation: FetchOrientation,
@@ -386,6 +388,24 @@ private[kyuubi] class KyuubiSession(
     } finally {
       release(true)
     }
+  }
+
+  @throws[HiveSQLException]
+  def getDelegationToken(
+      authFactory: KyuubiAuthFactory,
+      owner: String,
+      renewer: String): String = {
+    authFactory.getDelegationToken(owner, renewer)
+  }
+
+  @throws[HiveSQLException]
+  def cancelDelegationToken(authFactory: KyuubiAuthFactory, tokenStr: String): Unit = {
+    authFactory.cancelDelegationToken(tokenStr)
+  }
+
+  @throws[HiveSQLException]
+  def renewDelegationToken(authFactory: KyuubiAuthFactory, tokenStr: String): Unit = {
+    authFactory.renewDelegationToken(tokenStr)
   }
 
   def getNoOperationTime: Long = {

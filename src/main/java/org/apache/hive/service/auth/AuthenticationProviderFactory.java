@@ -25,9 +25,6 @@ import javax.security.sasl.AuthenticationException;
 public final class AuthenticationProviderFactory {
 
   public enum AuthMethods {
-    LDAP("LDAP"),
-    PAM("PAM"),
-    CUSTOM("CUSTOM"),
     NONE("NONE");
 
     private final String authMethod;
@@ -56,13 +53,7 @@ public final class AuthenticationProviderFactory {
 
   public static PasswdAuthenticationProvider getAuthenticationProvider(AuthMethods authMethod)
     throws AuthenticationException {
-    if (authMethod == AuthMethods.LDAP) {
-      return new LdapAuthenticationProviderImpl();
-    } else if (authMethod == AuthMethods.PAM) {
-      return new PamAuthenticationProviderImpl();
-    } else if (authMethod == AuthMethods.CUSTOM) {
-      return new CustomAuthenticationProviderImpl();
-    } else if (authMethod == AuthMethods.NONE) {
+    if (authMethod == AuthMethods.NONE) {
       return new AnonymousAuthenticationProviderImpl();
     } else {
       throw new AuthenticationException("Unsupported authentication method");
