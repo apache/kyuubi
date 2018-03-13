@@ -2,6 +2,10 @@ language: scala
 scala:
   - 2.11.8
 
+cache:
+directories:
+  - $HOME/.m2
+
 deploy:
   provider: pages
   skip_cleanup: true
@@ -10,3 +14,9 @@ deploy:
   name: Kent Yao
   on:
     branch: master
+
+install:
+  - ./build/mvn install -q -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+
+script:
+  - ./build/mvn package -q -Dmaven.javadoc.skip=true -B -V
