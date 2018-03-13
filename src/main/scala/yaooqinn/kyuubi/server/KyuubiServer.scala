@@ -118,7 +118,6 @@ object KyuubiServer extends Logging {
     conf.setIfMissing("spark.hadoop.hive.cluster.delegation.token.renew-interval", "7200000")
     // 1 hours
     conf.setIfMissing("spark.hadoop.hive.cluster.delegation.token.gc-interval", "3600000")
-
     // Set missing Kyuubi configs to SparkConf
     KyuubiConf.getAllDefaults.foreach(kv => conf.setIfMissing(kv._1, kv._2))
   }

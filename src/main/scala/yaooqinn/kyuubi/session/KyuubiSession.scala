@@ -31,15 +31,15 @@ import scala.util.matching.Regex
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.hive.service.auth.KyuubiAuthFactory
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
-import org.apache.spark.{KyuubiConf, SparkConf, SparkContext}
+import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.ui.KyuubiServerTab
-import org.apache.spark.KyuubiConf._
 
 import yaooqinn.kyuubi.Logging
+import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.operation.OperationManager
 import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
 import yaooqinn.kyuubi.utils.{HadoopUtils, ReflectUtils}
@@ -134,7 +134,7 @@ private[kyuubi] class KyuubiSession(
     val appName = s"KyuubiSession[$getUserName]:${UUID.randomUUID().toString}"
     conf.setAppName(appName)
     configureSparkConf(sessionConf)
-    val totalWaitTime: Long = conf.getTimeAsSeconds(KyuubiConf.BACKEND_SESSTION_INIT_TIMEOUT.key)
+    val totalWaitTime: Long = conf.getTimeAsSeconds(BACKEND_SESSTION_INIT_TIMEOUT.key)
     try {
       sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
         override def run(): Unit = {

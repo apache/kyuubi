@@ -141,25 +141,27 @@ private[kyuubi] class SessionManager private(
   private[this] def startTimeoutChecker(): Unit = {
     val interval: Long = math.max(checkInterval, 3000L)
     // minimum 3 seconds
-    val timeoutChecker: Runnable = () => {
-      sleepInterval(interval)
-      while (!shutdown) {
-        val current: Long = System.currentTimeMillis
-        handleToSession.values.asScala.foreach { session =>
-          if (sessionTimeout > 0 && session.getLastAccessTime + sessionTimeout <= current
-            && (!checkOperation || session.getNoOperationTime > sessionTimeout)) {
-            val handle: SessionHandle = session.getSessionHandle
-            warn("Session " + handle + " is Timed-out (last access: "
-              + new Date(session.getLastAccessTime) + ") and will be closed")
-            try {
-              closeSession(handle)
-            } catch {
-              case e: HiveSQLException =>
-                warn("Exception is thrown closing idle session " + handle, e)
+    val timeoutChecker: Runnable = new Runnable() {
+      override def run(): Unit = {
+        sleepInterval(interval)
+        while (!shutdown) {
+          val current: Long = System.currentTimeMillis
+          handleToSession.values.asScala.foreach { session =>
+            if (sessionTimeout > 0 && session.getLastAccessTime + sessionTimeout <= current
+              && (!checkOperation || session.getNoOperationTime > sessionTimeout)) {
+              val handle: SessionHandle = session.getSessionHandle
+              warn("Session " + handle + " is Timed-out (last access: "
+                + new Date(session.getLastAccessTime) + ") and will be closed")
+              try {
+                closeSession(handle)
+              } catch {
+                case e: HiveSQLException =>
+                  warn("Exception is thrown closing idle session " + handle, e)
+              }
             }
           }
+          sleepInterval(interval)
         }
-        sleepInterval(interval)
       }
     }
     execPool.execute(timeoutChecker)
