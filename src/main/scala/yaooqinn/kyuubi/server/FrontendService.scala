@@ -31,8 +31,7 @@ import org.apache.hive.service.auth.{KyuubiAuthFactory, TSetIpAddressProcessor}
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift._
 import org.apache.hive.service.server.ThreadFactoryWithGarbageCleanup
-import org.apache.spark.SparkConf
-import org.apache.spark.deploy.SparkHadoopUtil
+import org.apache.spark.{SparkConf, SparkUtils}
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TThreadPoolServer}
 import org.apache.thrift.transport.{TServerSocket, TTransport}
@@ -49,7 +48,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   extends AbstractService(name) with TCLIService.Iface with Runnable with Logging {
 
   private[this] var hiveConf: HiveConf = _
-  private[this] var hiveAuthFactory: KyuubiAuthFactory = _
+  private[this] var kyuubiAuthFactory: KyuubiAuthFactory = _
 
   private[this] val OK_STATUS = new TStatus(TStatusCode.SUCCESS_STATUS)
 
@@ -116,7 +115,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   override def init(conf: SparkConf): Unit = synchronized {
     this.conf = conf
     this.hiveConf = new HiveConf(classOf[SessionState])
-    hiveConf.addResource(SparkHadoopUtil.get.newConfiguration(conf))
+    hiveConf.addResource(SparkUtils.newConfiguration(conf))
 
     serverHost = sys.env.getOrElse("HIVE_SERVER2_THRIFT_BIND_HOST",
       hiveConf.getVar(ConfVars.HIVE_SERVER2_THRIFT_BIND_HOST))
@@ -167,9 +166,9 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   private[this] def getUserName(req: TOpenSessionReq) = {
     // Kerberos
     if (isKerberosAuthMode) {
-      realUser = hiveAuthFactory.getRemoteUser
+      realUser = kyuubiAuthFactory.getRemoteUser
     }
-    // Except kerberos, NOSASL
+    // Except kerberos
     if (realUser == null) {
       realUser = TSetIpAddressProcessor.getUserName
     }
@@ -214,7 +213,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
 
   private[this] def getIpAddress: String = {
     if (isKerberosAuthMode) {
-      hiveAuthFactory.getIpAddress
+      kyuubiAuthFactory.getIpAddress
     } else {
       TSetIpAddressProcessor.getUserIpAddress
     }
@@ -516,7 +515,25 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
 
   override def GetDelegationToken(req: TGetDelegationTokenReq): TGetDelegationTokenResp = {
     val resp = new TGetDelegationTokenResp
-    resp.setStatus(notSupportTokenErrorStatus)
+    if (kyuubiAuthFactory == null) {
+      resp.setStatus(notSupportTokenErrorStatus)
+    } else {
+      try {
+        val token = beService.getDelegationToken(
+          new SessionHandle(req.getSessionHandle),
+          kyuubiAuthFactory,
+          req.getOwner,
+          req.getRenewer)
+        resp.setDelegationToken(token)
+        resp.setStatus(OK_STATUS)
+      } catch {
+        case e: HiveSQLException =>
+          error("Error obtaining delegation token", e)
+          val tokenErrorStatus = HiveSQLException.toTStatus(e)
+          tokenErrorStatus.setSqlState("42000")
+          resp.setStatus(tokenErrorStatus)
+      }
+    }
     resp
   }
 
@@ -528,13 +545,41 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
 
   override def CancelDelegationToken(req: TCancelDelegationTokenReq): TCancelDelegationTokenResp = {
     val resp = new TCancelDelegationTokenResp
-    resp.setStatus(notSupportTokenErrorStatus)
+    if (kyuubiAuthFactory == null) {
+      resp.setStatus(notSupportTokenErrorStatus)
+    } else {
+      try {
+        beService.cancelDelegationToken(
+          new SessionHandle(req.getSessionHandle),
+          kyuubiAuthFactory,
+          req.getDelegationToken)
+        resp.setStatus(OK_STATUS)
+      } catch {
+        case e: HiveSQLException =>
+          error("Error canceling delegation token", e)
+          resp.setStatus(HiveSQLException.toTStatus(e))
+      }
+    }
     resp
   }
 
   override def RenewDelegationToken(req: TRenewDelegationTokenReq): TRenewDelegationTokenResp = {
     val resp = new TRenewDelegationTokenResp
-    resp.setStatus(notSupportTokenErrorStatus)
+    if (kyuubiAuthFactory == null) {
+      resp.setStatus(notSupportTokenErrorStatus)
+    } else {
+      try {
+        beService.renewDelegationToken(
+          new SessionHandle(req.getSessionHandle),
+          KyuubiAuthFactory,
+          req.getDelegationToken)
+        resp.setStatus(OK_STATUS)
+      } catch {
+        case e: HiveSQLException =>
+          error("Error obtaining renewing token", e)
+          resp.setStatus(HiveSQLException.toTStatus(e))
+      }
+    }
     resp
   }
 
@@ -550,9 +595,9 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
         new ThreadFactoryWithGarbageCleanup(threadPoolName))
 
       // Thrift configs
-      hiveAuthFactory = new KyuubiAuthFactory(hiveConf)
-      val transportFactory = hiveAuthFactory.getAuthTransFactory
-      val processorFactory = hiveAuthFactory.getAuthProcFactory(this)
+      kyuubiAuthFactory = new KyuubiAuthFactory(conf)
+      val transportFactory = kyuubiAuthFactory.getAuthTransFactory
+      val processorFactory = kyuubiAuthFactory.getAuthProcFactory(this)
       val serverSocket: TServerSocket = KyuubiAuthFactory.getServerSocket(serverHost, portNum)
       val sslVersionBlacklist = new JList[String]
       for (sslVersion <- hiveConf.getVar(ConfVars.HIVE_SSL_PROTOCOL_BLACKLIST).split(",")) {

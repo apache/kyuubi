@@ -19,6 +19,7 @@ package yaooqinn.kyuubi.server
 
 import java.util.{List => JList, Map => JMap}
 
+import org.apache.hive.service.auth.KyuubiAuthFactory
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.SparkConf
@@ -152,11 +153,6 @@ private[server] class BackendService private(name: String)
     sessionManager.getOperationMgr.getOperation(opHandle).getSession.getResultSetMetadata(opHandle)
   }
 
-  override def fetchResults(opHandle: OperationHandle): RowSet = {
-    fetchResults(opHandle, KyuubiOperation.DEFAULT_FETCH_ORIENTATION,
-      KyuubiOperation.DEFAULT_FETCH_MAX_ROWS, FetchType.QUERY_OUTPUT)
-  }
-
   override def fetchResults(
       opHandle: OperationHandle,
       orientation: FetchOrientation,
@@ -164,7 +160,31 @@ private[server] class BackendService private(name: String)
       fetchType: FetchType): RowSet = {
     sessionManager.getOperationMgr.getOperation(opHandle)
       .getSession.fetchResults(opHandle, orientation, maxRows, fetchType)
+  }
 
+  override def getDelegationToken(
+      sessionHandle: SessionHandle,
+      authFactory: KyuubiAuthFactory,
+      owner: String,
+      renewer: String): String = {
+    info(sessionHandle + ": getDelegationToken()")
+    sessionManager.getSession(sessionHandle).getDelegationToken(authFactory, owner, renewer)
+  }
+
+  override def cancelDelegationToken(
+      sessionHandle: SessionHandle,
+      authFactory: KyuubiAuthFactory,
+      tokenStr: String): Unit = {
+    info(sessionHandle + ": cancelDelegationToken()")
+    sessionManager.getSession(sessionHandle).cancelDelegationToken(authFactory, tokenStr)
+  }
+
+  override def renewDelegationToken(
+      sessionHandle: SessionHandle,
+      authFactory: KyuubiAuthFactory,
+      tokenStr: String): Unit = {
+    info(sessionHandle + ": renewDelegationToken()")
+    sessionManager.getSession(sessionHandle).renewDelegationToken(authFactory, tokenStr)
   }
 }
 

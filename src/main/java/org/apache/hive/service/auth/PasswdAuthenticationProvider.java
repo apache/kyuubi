@@ -27,7 +27,6 @@ public interface PasswdAuthenticationProvider {
    * If a user is to be granted, return nothing/throw nothing.
    * When a user is to be disallowed, throw an appropriate {@link AuthenticationException}.
    * <p/>
-   * For an example implementation, see {@link LdapAuthenticationProviderImpl}.
    *
    * @param user     The username received over the connection request
    * @param password The password received over the connection request

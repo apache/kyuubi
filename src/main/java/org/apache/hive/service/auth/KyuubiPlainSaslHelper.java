@@ -104,32 +104,6 @@ public final class KyuubiPlainSaslHelper {
     }
   }
 
-  public static class PlainCallbackHandler implements CallbackHandler {
-
-    private final String username;
-    private final String password;
-
-    public PlainCallbackHandler(String username, String password) {
-      this.username = username;
-      this.password = password;
-    }
-
-    @Override
-    public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
-      for (Callback callback : callbacks) {
-        if (callback instanceof NameCallback) {
-          NameCallback nameCallback = (NameCallback) callback;
-          nameCallback.setName(username);
-        } else if (callback instanceof PasswordCallback) {
-          PasswordCallback passCallback = (PasswordCallback) callback;
-          passCallback.setPassword(password.toCharArray());
-        } else {
-          throw new UnsupportedCallbackException(callback);
-        }
-      }
-    }
-  }
-
   private static final class SQLPlainProcessorFactory extends TProcessorFactory {
 
     private final TCLIService.Iface service;

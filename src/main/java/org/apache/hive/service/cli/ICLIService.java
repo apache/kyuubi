@@ -17,6 +17,8 @@
  */
 package org.apache.hive.service.cli;
 
+import org.apache.hive.service.auth.KyuubiAuthFactory;
+
 import java.util.List;
 import java.util.Map;
 
@@ -73,9 +75,15 @@ public interface ICLIService {
   TableSchema getResultSetMetadata(OperationHandle opHandle)
       throws HiveSQLException;
 
-  RowSet fetchResults(OperationHandle opHandle)
-      throws HiveSQLException;
-
   RowSet fetchResults(OperationHandle opHandle, FetchOrientation orientation,
       long maxRows, FetchType fetchType) throws HiveSQLException;
+
+  String getDelegationToken(SessionHandle sessionHandle, KyuubiAuthFactory authFactory,
+                            String owner, String renewer) throws HiveSQLException;
+
+  void cancelDelegationToken(SessionHandle sessionHandle, KyuubiAuthFactory authFactory,
+                             String tokenStr) throws HiveSQLException;
+
+  void renewDelegationToken(SessionHandle sessionHandle, KyuubiAuthFactory authFactory,
+                            String tokenStr) throws HiveSQLException;
 }
