@@ -219,16 +219,15 @@ private[kyuubi] class SessionManager private(
       ipAddress: String,
       sessionConf: Map[String, String],
       withImpersonation: Boolean): SessionHandle = {
-    val kyuubiSession =
-      new KyuubiSession(
-        protocol,
-        username,
-        password,
-        conf.clone(),
-        ipAddress,
-        withImpersonation,
-        this,
-        operationManager)
+    val kyuubiSession = new KyuubiSession(
+      protocol,
+      username,
+      password,
+      conf.clone(),
+      ipAddress,
+      withImpersonation,
+      this,
+      operationManager)
     kyuubiSession.open(sessionConf)
 
     if (isOperationLogEnabled) {
