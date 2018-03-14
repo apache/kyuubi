@@ -59,7 +59,10 @@ private[kyuubi] object TokenProviders extends Logging {
       conf: SparkConf): Set[Token[_ <: TokenIdentifier]] = {
     try {
       info("getting token from service hadoop file systems")
-      hadoopFSsToAccess(conf).map(_.getDelegationToken(owner))
+      hadoopFSsToAccess(conf).map { fs =>
+        info("getting token for namenode: " + fs)
+        fs.getDelegationToken(owner)
+      }
     } catch {
       case e: Exception =>
         error(s"Failed to get token from service hadoop file systems", e)
