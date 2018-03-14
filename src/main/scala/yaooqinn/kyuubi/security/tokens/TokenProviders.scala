@@ -68,14 +68,8 @@ private[kyuubi] object TokenProviders extends Logging {
   /** The filesystems for which YARN should fetch delegation tokens. */
   private[this] def hadoopFSsToAccess(
       sparkConf: SparkConf): Set[FileSystem] = {
-    val hadoopConf = SparkUtils.newConfiguration(sparkConf)
-    val filesystemsToAccess = sparkConf.getOption(SparkUtils.FILESYSTEMS_TO_ACCESS)
-      .map(new Path(_).getFileSystem(hadoopConf))
-      .toSet
-    val stagingFS = sparkConf.getOption(SparkUtils.STAGING_DIR)
-      .map(new Path(_).getFileSystem(hadoopConf))
-      .getOrElse(FileSystem.get(hadoopConf))
-    filesystemsToAccess + stagingFS
+    sparkConf.getOption(SparkUtils.FILESYSTEMS_TO_ACCESS)
+      .map(new Path(_).getFileSystem(SparkUtils.newConfiguration(sparkConf))).toSet
   }
 
   def obtainDelegationTokens(owner: String, conf: SparkConf): Set[Token[_ <: TokenIdentifier]] = {
