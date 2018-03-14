@@ -31,16 +31,17 @@ import scala.util.matching.Regex
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hadoop.security.token.{Token, TokenIdentifier}
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.{SparkConf, SparkContext, SparkUtils}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.ui.KyuubiServerTab
 
 import yaooqinn.kyuubi.Logging
-import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.operation.OperationManager
+import yaooqinn.kyuubi.security.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
 import yaooqinn.kyuubi.utils.{HadoopUtils, ReflectUtils}
 
@@ -81,7 +82,7 @@ private[kyuubi] class KyuubiSession(
     val currentUser = UserGroupInformation.getCurrentUser
     if (withImpersonation) {
       if (UserGroupInformation.isSecurityEnabled) {
-        if (conf.contains(PRINCIPAL) && conf.contains(KEYTAB)) {
+        if (conf.contains(SparkUtils.PRINCIPAL) && conf.contains(SparkUtils.KEYTAB)) {
           // If principal and keytab are configured, do re-login in case of token expiry.
           // Do not check keytab file existing as spark-submit has it done
           currentUser.reloginFromKeytab()
@@ -239,9 +240,9 @@ private[kyuubi] class KyuubiSession(
       }
     }
 
-    // proxy user does not have rights to get token as realuser
-    conf.remove("spark.yarn.keytab")
-    conf.remove("spark.yarn.principal")
+    // proxy user does not have rights to get token as real user
+    conf.remove(SparkUtils.KEYTAB)
+    conf.remove(SparkUtils.PRINCIPAL)
   }
 
   /**
@@ -278,6 +279,10 @@ private[kyuubi] class KyuubiSession(
     })
     lastAccessTime = System.currentTimeMillis
     lastIdleTime = lastAccessTime
+  }
+
+  def setDelegationToken(tokens: Set[Token[_ <: TokenIdentifier]]): Unit = {
+    tokens.foreach(sessionUGI.addToken)
   }
 
   def getInfo(getInfoType: GetInfoType): GetInfoValue = {
@@ -471,8 +476,6 @@ object KyuubiSession {
   val SPARK_APP_ID: String = "spark.app.id"
   val DEPRECATED_QUEUE = "mapred.job.queue.name"
   val QUEUE = "spark.yarn.queue"
-  val KEYTAB = "spark.yarn.keytab"
-  val PRINCIPAL = "spark.yarn.principal"
 
   val SPARK_PREFIX = "spark."
   val SPARK_HADOOP_PREFIX = "spark.hadoop."

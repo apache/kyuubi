@@ -27,6 +27,7 @@ import scala.util.{Failure, Try}
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 import org.apache.hadoop.hive.ql.session.SessionState
+import org.apache.hadoop.security.token.{Token, TokenIdentifier}
 import org.apache.hive.service.auth.TSetIpAddressProcessor
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift._
@@ -37,7 +38,7 @@ import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TT
 import org.apache.thrift.transport.{TServerSocket, TTransport}
 
 import yaooqinn.kyuubi.Logging
-import yaooqinn.kyuubi.auth.{KERBEROS, KyuubiAuthFactory, NONE}
+import yaooqinn.kyuubi.security.auth.{KERBEROS, KyuubiAuthFactory}
 import yaooqinn.kyuubi.service.{AbstractService, ServiceException, ServiceUtils}
 
 /**
@@ -241,8 +242,9 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     val protocol = getMinVersion(BackendService.SERVER_VERSION, req.getClient_protocol)
     val sessionHandle =
     if (hiveConf.getBoolVar(ConfVars.HIVE_SERVER2_ENABLE_DOAS) && (userName != null)) {
+      val tokens = getDelegationToken(userName)
       beService.openSessionWithImpersonation(
-        protocol, userName, req.getPassword, ipAddress, req.getConfiguration.asScala.toMap, null)
+        protocol, userName, req.getPassword, ipAddress, req.getConfiguration.asScala.toMap, tokens)
     } else {
       beService.openSession(
         protocol, userName, req.getPassword, ipAddress, req.getConfiguration.asScala.toMap)
@@ -250,6 +252,9 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     res.setServerProtocolVersion(protocol)
     sessionHandle
   }
+
+  private[this] def getDelegationToken(user: String): Set[Token[_ <: TokenIdentifier]] =
+    beService.obtainNecessaryTokens(user)
 
   override def OpenSession(req: TOpenSessionReq): TOpenSessionResp = {
     info("Client protocol version: " + req.getClient_protocol)

@@ -19,12 +19,14 @@ package yaooqinn.kyuubi.server
 
 import java.util.{List => JList, Map => JMap}
 
+import org.apache.hadoop.security.token.{Token, TokenIdentifier}
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.SparkConf
 
 import yaooqinn.kyuubi.Logging
-import yaooqinn.kyuubi.auth.KyuubiAuthFactory
+import yaooqinn.kyuubi.security.auth.KyuubiAuthFactory
+import yaooqinn.kyuubi.security.tokens.TokenProviders
 import yaooqinn.kyuubi.service.CompositeService
 import yaooqinn.kyuubi.session.SessionManager
 
@@ -68,9 +70,9 @@ private[server] class BackendService private(name: String)
       password: String,
       ipAddress: String,
       configuration: Map[String, String],
-      delegationToken: String): SessionHandle = {
+      tokens: Set[Token[_ <: TokenIdentifier]]): SessionHandle = {
     val sessionHandle = sessionManager.openSession(
-      protocol, username, password, ipAddress, configuration, withImpersonation = true)
+      protocol, username, password, ipAddress, configuration, withImpersonation = true, tokens)
     sessionHandle
   }
 
@@ -161,6 +163,16 @@ private[server] class BackendService private(name: String)
       .getSession.fetchResults(opHandle, orientation, maxRows, fetchType)
   }
 
+  /**
+   * As token getter
+   */
+  def obtainNecessaryTokens(owner: String): Set[Token[_ <: TokenIdentifier]] = {
+    TokenProviders.obtainDelegationTokens(owner, conf)
+  }
+
+  /**
+   * As a token supplier
+   */
   def getDelegationToken(
       sessionHandle: SessionHandle,
       authFactory: KyuubiAuthFactory,
