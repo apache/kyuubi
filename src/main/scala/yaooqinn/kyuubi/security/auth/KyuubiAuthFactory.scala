@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.auth
+package yaooqinn.kyuubi.security.auth
 
 import java.io.IOException
 import java.net.InetSocketAddress
@@ -41,7 +41,7 @@ import org.apache.thrift.transport.{TServerSocket, TTransportException, TTranspo
 import yaooqinn.kyuubi.KyuubiExecption
 
 /**
- * Authentication
+ * Authentication between Kyuubi which as server and clients
  */
 class KyuubiAuthFactory(conf: SparkConf) {
   private[this] val KYUUBI_CLIENT_TOKEN = "kyuubiClientToken"
@@ -49,8 +49,8 @@ class KyuubiAuthFactory(conf: SparkConf) {
   private[this] val saslServer: Option[HadoopThriftAuthBridge.Server] =
     conf.get(AUTHENTICATION_METHOD.key).toUpperCase match {
       case KERBEROS.name =>
-        val principal: String = conf.get("spark.yarn.principal", "")
-        val keytab: String = conf.get("spark.yarn.keytab", "")
+        val principal: String = conf.get(SparkUtils.PRINCIPAL, "")
+        val keytab: String = conf.get(SparkUtils.KEYTAB, "")
         require(principal.nonEmpty && keytab.nonEmpty,
           "keytab and principal are not configured properly")
         val server = ShimLoader.getHadoopThriftAuthBridge.createServer(keytab, principal)

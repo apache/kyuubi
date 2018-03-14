@@ -26,6 +26,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.{HashSet => MHSet}
 
 import org.apache.commons.io.FileUtils
+import org.apache.hadoop.security.token.{Token, TokenIdentifier}
 import org.apache.hive.service.cli.{HiveSQLException, SessionHandle}
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.hive.service.server.ThreadFactoryWithGarbageCleanup
@@ -218,7 +219,8 @@ private[kyuubi] class SessionManager private(
       password: String,
       ipAddress: String,
       sessionConf: Map[String, String],
-      withImpersonation: Boolean): SessionHandle = {
+      withImpersonation: Boolean,
+      tokens: Set[Token[_ <: TokenIdentifier]] = Set.empty): SessionHandle = {
     val kyuubiSession = new KyuubiSession(
       protocol,
       username,
@@ -228,6 +230,7 @@ private[kyuubi] class SessionManager private(
       withImpersonation,
       this,
       operationManager)
+    kyuubiSession.setDelegationToken(tokens)
     kyuubiSession.open(sessionConf)
 
     if (isOperationLogEnabled) {

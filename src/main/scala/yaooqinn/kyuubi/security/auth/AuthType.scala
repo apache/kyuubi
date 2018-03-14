@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.auth
+package yaooqinn.kyuubi.security.auth
 
 abstract class AuthType {
   def name: String
