@@ -40,6 +40,7 @@ private[kyuubi] object TokenProviders extends Logging {
         Hive.get(SparkUtils.newConfiguration(conf), classOf[HiveConf])
           .getDelegationToken(owner, owner)
       }
+      info("getting token from service hive " + tokenStr)
       val token = new Token[DelegationTokenIdentifier]()
       token.decodeFromUrlString(tokenStr)
     Set(token)
@@ -57,6 +58,7 @@ private[kyuubi] object TokenProviders extends Logging {
       owner: String,
       conf: SparkConf): Set[Token[_ <: TokenIdentifier]] = {
     try {
+      info("getting token from service hadoop file systems")
       hadoopFSsToAccess(conf).map(_.getDelegationToken(owner))
     } catch {
       case e: Exception =>
@@ -68,8 +70,11 @@ private[kyuubi] object TokenProviders extends Logging {
   /** The filesystems for which YARN should fetch delegation tokens. */
   private[this] def hadoopFSsToAccess(
       sparkConf: SparkConf): Set[FileSystem] = {
-    sparkConf.getOption(SparkUtils.FILESYSTEMS_TO_ACCESS)
-      .map(new Path(_).getFileSystem(SparkUtils.newConfiguration(sparkConf))).toSet
+    val hadoopConf = SparkUtils.newConfiguration(sparkConf)
+    val filesystemsToAccess = sparkConf.getOption(SparkUtils.FILESYSTEMS_TO_ACCESS)
+      .map(new Path(_).getFileSystem(hadoopConf))
+      .toSet
+    filesystemsToAccess
   }
 
   def obtainDelegationTokens(owner: String, conf: SparkConf): Set[Token[_ <: TokenIdentifier]] = {
