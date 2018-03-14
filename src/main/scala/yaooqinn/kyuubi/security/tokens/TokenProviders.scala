@@ -74,7 +74,7 @@ private[kyuubi] object TokenProviders extends Logging {
   private[this] def hadoopFSsToAccess(
       sparkConf: SparkConf): Set[FileSystem] = {
     val hadoopConf = SparkUtils.newConfiguration(sparkConf)
-    val filesystemsToAccess = sparkConf.getOption(SparkUtils.FILESYSTEMS_TO_ACCESS)
+    val filesystemsToAccess = sparkConf.getOption(SparkUtils.NAMENODES_TO_ACCESS)
       .map(new Path(_).getFileSystem(hadoopConf))
       .toSet
     filesystemsToAccess
