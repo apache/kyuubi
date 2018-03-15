@@ -387,8 +387,9 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
         }
       case e: ParseException =>
         if (!isClosedOrCanceled) {
-          onStatementError(statementId, e.getMessage, SparkUtils.exceptionString(e))
-          throw new HiveSQLException(e.getMessage(), "ParseException", e)
+          onStatementError(
+            statementId, e.withCommand(statement).getMessage, SparkUtils.exceptionString(e))
+          throw new HiveSQLException(e.withCommand(statement).getMessage(), "ParseException", e)
         }
       case e: AnalysisException =>
         if (!isClosedOrCanceled) {
@@ -410,7 +411,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
 
   private[this] def onStatementError(
       id: String, errorMessage: String, errorTrace: String): Unit = {
-    error(s"Error executing query, currentState ${getStatus.getState}, $errorMessage")
+    error(s"Error executing query, currentState ${getStatus.getState}, $errorTrace")
     setState(OperationState.ERROR)
     KyuubiServerMonitor.getListener(session.getUserName)
       .onStatementError(id, errorMessage, errorTrace)
