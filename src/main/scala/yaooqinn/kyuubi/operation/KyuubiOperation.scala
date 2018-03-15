@@ -29,6 +29,7 @@ import scala.util.control.NonFatal
 
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.metastore.api.FieldSchema
+import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAccessControlException
 import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
@@ -328,16 +329,12 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
               try {
                 execute()
               } catch {
-                case e: HiveSQLException =>
-                  setOperationException(e)
+                case e: HiveSQLException => setOperationException(e)
               }
             }
           })
         } catch {
-          case e: Exception =>
-            setOperationException(new HiveSQLException(e))
-            error("Error running hive query as user : " +
-              session.getUserName, e)
+          case e: Exception => setOperationException(new HiveSQLException(e))
         }
       }
     }
@@ -389,18 +386,23 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
         if (!isClosedOrCanceled) {
           onStatementError(
             statementId, e.withCommand(statement).getMessage, SparkUtils.exceptionString(e))
-          throw new HiveSQLException(e.withCommand(statement).getMessage(), "ParseException", e)
+          throw new HiveSQLException(
+            e.withCommand(statement).getMessage, "ParseException", 2000, e)
         }
       case e: AnalysisException =>
         if (!isClosedOrCanceled) {
           onStatementError(statementId, e.getMessage, SparkUtils.exceptionString(e))
-          throw new HiveSQLException(e.getMessage(), "AnalysisException", e)
+          throw new HiveSQLException(e.getMessage, "AnalysisException", 2001, e)
         }
-
+      case e: HiveAccessControlException =>
+        if (!isClosedOrCanceled) {
+          onStatementError(statementId, e.getMessage, SparkUtils.exceptionString(e))
+          throw new HiveSQLException(e.getMessage, "HiveAccessControlException", 3000, e)
+        }
       case e: Throwable =>
         if (!isClosedOrCanceled) {
           onStatementError(statementId, e.getMessage, SparkUtils.exceptionString(e))
-          throw new HiveSQLException(e.toString)
+          throw new HiveSQLException(e.toString, "<unknown>", 10000, e)
         }
     } finally {
       if (statementId != null) {
@@ -409,21 +411,19 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     }
   }
 
-  private[this] def onStatementError(
-      id: String, errorMessage: String, errorTrace: String): Unit = {
+  private[this] def onStatementError(id: String, message: String, trace: String): Unit = {
     error(
       s"""
-         |Error executing query,
+         |Error executing query as ${session.getUserName},
          |$statement
          |Current operation state ${this.state},
-         |$errorTrace
+         |$trace
        """.stripMargin)
     setState(OperationState.ERROR)
-    KyuubiServerMonitor.getListener(session.getUserName)
-      .onStatementError(id, errorMessage, errorTrace)
+    KyuubiServerMonitor.getListener(session.getUserName).onStatementError(id, message, trace)
   }
 
-  private def cleanup(state: OperationState) {
+  private[this] def cleanup(state: OperationState) {
     if (this.state != OperationState.CLOSED) {
       setState(state)
     }
