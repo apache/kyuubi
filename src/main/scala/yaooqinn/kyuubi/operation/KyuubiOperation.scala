@@ -29,11 +29,13 @@ import scala.util.control.NonFatal
 
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.metastore.api.FieldSchema
+import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAccessControlException
 import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.SparkUtils
-import org.apache.spark.sql.{DataFrame, Row, SparkSQLUtils}
+import org.apache.spark.sql.{AnalysisException, DataFrame, Row, SparkSQLUtils}
+import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.types._
 
 import yaooqinn.kyuubi.Logging
@@ -93,6 +95,14 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
   private[this] def setState(newState: OperationState): Unit = {
     state.validateTransition(newState)
     this.state = newState
+  }
+
+  private[this] def checkState(state: OperationState): Boolean = {
+    this.state == state
+  }
+  
+  private[this] def isClosedOrCanceled: Boolean = {
+    checkState(OperationState.CLOSED) || checkState(OperationState.CANCELED)
   }
 
   @throws[HiveSQLException]
@@ -319,17 +329,12 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
               try {
                 execute()
               } catch {
-                case e: HiveSQLException =>
-                  setOperationException(e)
-                  error("Error running hive query: ", e)
+                case e: HiveSQLException => setOperationException(e)
               }
             }
           })
         } catch {
-          case e: Exception =>
-            setOperationException(new HiveSQLException(e))
-            error("Error running hive query as user : " +
-              session.getUserName, e)
+          case e: Exception => setOperationException(new HiveSQLException(e))
         }
       }
     }
@@ -352,60 +357,74 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
   }
 
   private def execute(): Unit = {
-    statementId = UUID.randomUUID().toString
-    info(s"Running query '$statement' with $statementId")
-    setState(OperationState.RUNNING)
-    // Always use the latest class loader provided by executionHive's state.
-    KyuubiServerMonitor.getListener(session.getUserName).onStatementStart(
-      statementId,
-      session.getSessionHandle.getSessionId.toString,
-      statement,
-      statementId,
-      session.getUserName)
-    session.sparkSession().sparkContext.setJobGroup(statementId, statement)
     try {
+      statementId = UUID.randomUUID().toString
+      info(s"Running query '$statement' with $statementId")
+      setState(OperationState.RUNNING)
+      KyuubiServerMonitor.getListener(session.getUserName).onStatementStart(
+        statementId,
+        session.getSessionHandle.getSessionId.toString,
+        statement,
+        statementId,
+        session.getUserName)
+      session.sparkSession().sparkContext.setJobGroup(statementId, statement)
       result = session.sparkSession().sql(statement)
       KyuubiServerMonitor.getListener(session.getUserName)
         .onStatementParsed(statementId, result.queryExecution.toString())
       debug(result.queryExecution.toString())
       iter = result.collect().iterator
       dataTypes = result.queryExecution.analyzed.output.map(_.dataType).toArray
+      setState(OperationState.FINISHED)
+      KyuubiServerMonitor.getListener(session.getUserName).onStatementFinish(statementId)
     } catch {
       case e: HiveSQLException =>
-        if (getStatus.getState == OperationState.CANCELED
-          || getStatus.getState == OperationState.CLOSED) {
-          return
-        } else {
-          setState(OperationState.ERROR)
-          KyuubiServerMonitor.getListener(session.getUserName).onStatementError(
-            statementId, e.getMessage, SparkUtils.exceptionString(e))
+        if (!isClosedOrCanceled) {
+          onStatementError(statementId, e.getMessage, SparkUtils.exceptionString(e))
           throw e
         }
-      // Actually do need to catch Throwable as some failures don't inherit from Exception and
-      // HiveServer will silently swallow them.
+      case e: ParseException =>
+        if (!isClosedOrCanceled) {
+          onStatementError(
+            statementId, e.withCommand(statement).getMessage, SparkUtils.exceptionString(e))
+          throw new HiveSQLException(
+            e.withCommand(statement).getMessage, "ParseException", 2000, e)
+        }
+      case e: AnalysisException =>
+        if (!isClosedOrCanceled) {
+          onStatementError(statementId, e.getMessage, SparkUtils.exceptionString(e))
+          throw new HiveSQLException(e.getMessage, "AnalysisException", 2001, e)
+        }
+      case e: HiveAccessControlException =>
+        if (!isClosedOrCanceled) {
+          onStatementError(statementId, e.getMessage, SparkUtils.exceptionString(e))
+          throw new HiveSQLException(e.getMessage, "HiveAccessControlException", 3000, e)
+        }
       case e: Throwable =>
-        val currentState = getStatus.getState
-        error(s"Error executing query, currentState $currentState, ", e)
-        if (currentState == OperationState.CANCELED
-          || currentState == OperationState.CLOSED) {
-          return
-        } else {
-          setState(OperationState.ERROR)
-          KyuubiServerMonitor.getListener(session.getUserName).onStatementError(
-            statementId, e.getMessage, SparkUtils.exceptionString(e))
-          throw new HiveSQLException(e.toString)
+        if (!isClosedOrCanceled) {
+          onStatementError(statementId, e.getMessage, SparkUtils.exceptionString(e))
+          throw new HiveSQLException(e.toString, "<unknown>", 10000, e)
         }
     } finally {
       if (statementId != null) {
         session.sparkSession().sparkContext.cancelJobGroup(statementId)
       }
     }
-    setState(OperationState.FINISHED)
-    KyuubiServerMonitor.getListener(session.getUserName).onStatementFinish(statementId)
   }
 
-  private def cleanup(state: OperationState) {
-    if (getStatus.getState != OperationState.CLOSED) {
+  private[this] def onStatementError(id: String, message: String, trace: String): Unit = {
+    error(
+      s"""
+         |Error executing query as ${session.getUserName},
+         |$statement
+         |Current operation state ${this.state},
+         |$trace
+       """.stripMargin)
+    setState(OperationState.ERROR)
+    KyuubiServerMonitor.getListener(session.getUserName).onStatementError(id, message, trace)
+  }
+
+  private[this] def cleanup(state: OperationState) {
+    if (this.state != OperationState.CLOSED) {
       setState(state)
     }
     val backgroundHandle = getBackgroundHandle
