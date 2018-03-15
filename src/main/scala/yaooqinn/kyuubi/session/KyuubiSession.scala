@@ -30,12 +30,14 @@ import scala.util.matching.Regex
 
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.FileSystem
+import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAccessControlException
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 import org.apache.spark.ui.KyuubiServerTab
 
 import yaooqinn.kyuubi.Logging
@@ -75,7 +77,7 @@ private[kyuubi] class KyuubiSession(
   private[this] var sessionLogDir: File = _
   private[this] var lastAccessTime = 0L
   private[this] var lastIdleTime = 0L
-  private[this] var initialDatabase: String = "use default"
+  private[this] var initialDatabase: Option[String] = None
 
   private[this] val sessionUGI: UserGroupInformation = {
     val currentUser = UserGroupInformation.getCurrentUser
@@ -234,7 +236,7 @@ private[kyuubi] class KyuubiSession(
           } else {
             conf.set(SPARK_HADOOP_PREFIX + k, value)
           }
-        case "use:database" => initialDatabase = "use " + value
+        case "use:database" => initialDatabase = Some("use " + value)
         case _ =>
       }
     }
@@ -257,7 +259,7 @@ private[kyuubi] class KyuubiSession(
           } else {
             _sparkSession.conf.set(SPARK_HADOOP_PREFIX + k, value)
           }
-        case "use:database" => initialDatabase = "use " + value
+        case "use:database" => initialDatabase = Some("use " + value)
         case _ =>
       }
     }
@@ -271,11 +273,17 @@ private[kyuubi] class KyuubiSession(
     getOrCreateSparkSession(sessionConf)
     assert(_sparkSession != null)
 
-    sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
-      override def run(): Unit = {
-        _sparkSession.sql(initialDatabase)
+    try {
+      initialDatabase.foreach(executeStatement)
+    } catch {
+      case ute: UndeclaredThrowableException => ute.getCause match {
+        case e: HiveAccessControlException =>
+          throw new HiveSQLException(e.getMessage, "08S01", e.getCause)
+        case e: NoSuchDatabaseException =>
+          throw new HiveSQLException(e.getMessage, "08S01", e.getCause)
+        case e: HiveSQLException => throw e
       }
-    })
+    }
     lastAccessTime = System.currentTimeMillis
     lastIdleTime = lastAccessTime
   }
