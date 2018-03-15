@@ -34,6 +34,7 @@ import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.SparkUtils
 import org.apache.spark.sql.{AnalysisException, DataFrame, Row, SparkSQLUtils}
+import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.types._
 
 import yaooqinn.kyuubi.Logging
@@ -381,20 +382,21 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     } catch {
       case e: HiveSQLException =>
         if (!isClosedOrCanceled) {
-          setState(OperationState.ERROR)
           onStatementError(statementId, e.getMessage, SparkUtils.exceptionString(e))
           throw e
         }
-      case e: AnalysisException =>
-        error(s"Error executing query, currentState ${getStatus.getState}, ", e)
+      case e: ParseException =>
         if (!isClosedOrCanceled) {
-          setState(OperationState.ERROR)
+          onStatementError(statementId, e.getMessage, SparkUtils.exceptionString(e))
+          throw new HiveSQLException(e.getMessage(), "ParseException", e)
+        }
+      case e: AnalysisException =>
+        if (!isClosedOrCanceled) {
           onStatementError(statementId, e.getMessage, SparkUtils.exceptionString(e))
           throw new HiveSQLException(e.getMessage(), "AnalysisException", e)
         }
 
       case e: Throwable =>
-        error(s"Error executing query, currentState ${getStatus.getState}, ", e)
         if (!isClosedOrCanceled) {
           onStatementError(statementId, e.getMessage, SparkUtils.exceptionString(e))
           throw new HiveSQLException(e.toString)
@@ -408,6 +410,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
 
   private[this] def onStatementError(
       id: String, errorMessage: String, errorTrace: String): Unit = {
+    error(s"Error executing query, currentState ${getStatus.getState}, $errorMessage")
     setState(OperationState.ERROR)
     KyuubiServerMonitor.getListener(session.getUserName)
       .onStatementError(id, errorMessage, errorTrace)
