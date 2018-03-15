@@ -97,7 +97,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
   }
 
   private[this] def checkState(state: OperationState): Boolean = {
-    getStatus.getState == state
+    this.state == state
   }
   
   private[this] def isClosedOrCanceled: Boolean = {
@@ -411,14 +411,20 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
 
   private[this] def onStatementError(
       id: String, errorMessage: String, errorTrace: String): Unit = {
-    error(s"Error executing query, currentState ${getStatus.getState}, $errorTrace")
+    error(
+      s"""
+         |Error executing query,
+         |$statement
+         |Current operation state ${this.state},
+         |$errorTrace
+       """.stripMargin)
     setState(OperationState.ERROR)
     KyuubiServerMonitor.getListener(session.getUserName)
       .onStatementError(id, errorMessage, errorTrace)
   }
 
   private def cleanup(state: OperationState) {
-    if (getStatus.getState != OperationState.CLOSED) {
+    if (this.state != OperationState.CLOSED) {
       setState(state)
     }
     val backgroundHandle = getBackgroundHandle
