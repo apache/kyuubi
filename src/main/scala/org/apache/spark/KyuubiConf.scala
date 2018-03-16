@@ -234,7 +234,7 @@ object KyuubiConf {
 
   val OPERATION_IDLE_TIMEOUT =
     KyuubiConfigBuilder("spark.kyuubi.operation.idle.timeout")
-      .doc("How long we suggest the server to give up instantiating SparkContext")
+      .doc("Operation will be closed when it's not accessed for this duration of time")
       .timeConf(TimeUnit.MILLISECONDS)
       .createWithDefault(TimeUnit.HOURS.toMillis(6L))
 
