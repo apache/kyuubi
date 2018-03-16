@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit
 
 import scala.collection.mutable.{HashSet => MHSet}
 import scala.concurrent.{Await, Promise, TimeoutException}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.util.matching.Regex
 
