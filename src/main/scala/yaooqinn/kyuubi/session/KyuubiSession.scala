@@ -171,6 +171,7 @@ private[kyuubi] class KyuubiSession(
       case e: Exception =>
         throw new HiveSQLException(s"Get SparkSession for [$getUserName] failed: " + e, e)
     } finally {
+      newContext().interrupt()
       newContext().join()
       sessionManager.setSCFullyConstructed(getUserName)
     }
