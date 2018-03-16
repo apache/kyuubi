@@ -353,9 +353,7 @@ private[kyuubi] class KyuubiSession(
     acquire(true)
     try {
       // Iterate through the opHandles and close their operations
-      for (opHandle <- opHandleSet) {
-        closeOperation(opHandle)
-      }
+      opHandleSet.foreach(closeOperation)
       opHandleSet.clear()
       // Cleanup session log directory.
       cleanupSessionLogDir()
@@ -408,10 +406,11 @@ private[kyuubi] class KyuubiSession(
       fetchType: FetchType): RowSet = {
     acquire(true)
     try {
-      if (fetchType == FetchType.QUERY_OUTPUT) {
-        operationManager.getOperationNextRowSet(opHandle, orientation, maxRows)
-      } else {
-        operationManager.getOperationLogRowSet(opHandle, orientation, maxRows)
+      fetchType match {
+        case FetchType.QUERY_OUTPUT =>
+          operationManager.getOperationNextRowSet(opHandle, orientation, maxRows)
+        case _ =>
+          operationManager.getOperationLogRowSet(opHandle, orientation, maxRows)
       }
     } finally {
       release(true)
