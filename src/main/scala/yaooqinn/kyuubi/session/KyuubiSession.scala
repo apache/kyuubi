@@ -25,7 +25,9 @@ import java.util.concurrent.TimeUnit
 
 import scala.collection.mutable.{HashSet => MHSet}
 import scala.concurrent.{Await, Promise, TimeoutException}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
+import scala.util.control.NonFatal
 import scala.util.matching.Regex
 
 import org.apache.commons.io.FileUtils
@@ -34,7 +36,7 @@ import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAccessControl
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.{SparkConf, SparkContext, SparkUtils}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
@@ -123,16 +125,28 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
-  private[this] def startSparkContextInNewThread(): Unit = {
+  private[this] def newContext(): Thread = {
     new Thread(s"Start-SparkContext-$getUserName") {
       override def run(): Unit = {
-        promisedSparkContext.trySuccess(new SparkContext(conf))
+        try {
+          promisedSparkContext.trySuccess(new SparkContext(conf))
+        } catch {
+          case NonFatal(e) => throw e
+        }
       }
-    }.start()
+    }
+  }
+
+  private[this] def stopContext(): Unit = {
+    promisedSparkContext.future.map { sc =>
+      warn(s"Error occurred during initializing SparkContext for $getUserName, stopping")
+      sc.stop
+      System.setProperty("SPARK_YARN_MODE", "true")
+    }
   }
 
   private[this] def createSparkSession(sessionConf: Map[String, String]): Unit = {
-    info(s"------ Create new SparkSession for $getUserName -------")
+    info(s"--------- Create new SparkSession for $getUserName ----------")
     val appName = s"KyuubiSession[$getUserName]:${UUID.randomUUID().toString}"
     conf.setAppName(appName)
     configureSparkConf(sessionConf)
@@ -140,7 +154,7 @@ private[kyuubi] class KyuubiSession(
     try {
       sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
         override def run(): Unit = {
-          startSparkContextInNewThread()
+          newContext().start()
           val context =
             Await.result(promisedSparkContext.future, Duration(totalWaitTime, TimeUnit.SECONDS))
           _sparkSession = ReflectUtils.newInstance(
@@ -149,30 +163,37 @@ private[kyuubi] class KyuubiSession(
             Seq(context)).asInstanceOf[SparkSession]
         }
       })
-
       sessionManager.setSparkSession(getUserName, _sparkSession)
-      // set sc fully constructed immediately
-      sessionManager.setSCFullyConstructed(getUserName)
-      KyuubiServerMonitor.setListener(getUserName, new KyuubiServerListener(conf))
-      _sparkSession.sparkContext.addSparkListener(KyuubiServerMonitor.getListener(getUserName))
-      val uiTab = new KyuubiServerTab(getUserName, _sparkSession.sparkContext)
-      KyuubiServerMonitor.addUITab(_sparkSession.sparkContext.sparkUser, uiTab)
     } catch {
       case ute: UndeclaredThrowableException =>
         ute.getCause match {
           case te: TimeoutException =>
-            sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
-              override def run(): Unit = HadoopUtils.killYarnAppByName(appName)
-            })
-            throw new HiveSQLException(s"Get SparkSession for [$getUserName] failed: " + te, te)
+            stopContext()
+            SparkUtils.tryLogNonFatalError {
+              sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
+                override def run(): Unit = HadoopUtils.killYarnAppByName(appName)
+              })
+            }
+            throw new HiveSQLException(
+              s"Get SparkSession for [$getUserName] failed: " + te, "08S01", te)
           case _ =>
-            throw new HiveSQLException(ute.toString, ute.getCause)
+            stopContext()
+            throw new HiveSQLException(ute.toString, "08S01", ute.getCause)
         }
       case e: Exception =>
-        throw new HiveSQLException(s"Get SparkSession for [$getUserName] failed: " + e, e)
+        stopContext()
+        throw new HiveSQLException(
+          s"Get SparkSession for [$getUserName] failed: " + e, "08S01", e)
     } finally {
       sessionManager.setSCFullyConstructed(getUserName)
+      newContext().join()
     }
+
+    KyuubiServerMonitor.setListener(getUserName, new KyuubiServerListener(conf))
+    KyuubiServerMonitor.getListener(getUserName)
+      .foreach(_sparkSession.sparkContext.addSparkListener)
+    val uiTab = new KyuubiServerTab(getUserName, _sparkSession.sparkContext)
+    KyuubiServerMonitor.addUITab(_sparkSession.sparkContext.sparkUser, uiTab)
   }
 
   private[this] def acquire(userAccess: Boolean): Unit = {
@@ -269,11 +290,10 @@ private[kyuubi] class KyuubiSession(
 
   def ugi: UserGroupInformation = this.sessionUGI
 
+  @throws[HiveSQLException]
   def open(sessionConf: Map[String, String]): Unit = {
-    getOrCreateSparkSession(sessionConf)
-    assert(_sparkSession != null)
-
     try {
+      getOrCreateSparkSession(sessionConf)
       initialDatabase.foreach(executeStatement)
     } catch {
       case ute: UndeclaredThrowableException => ute.getCause match {
