@@ -228,6 +228,7 @@ private[kyuubi] class SessionManager private(
       withImpersonation,
       this,
       operationManager)
+    info(s"Opening session for $username")
     kyuubiSession.open(sessionConf)
 
     if (isOperationLogEnabled) {
