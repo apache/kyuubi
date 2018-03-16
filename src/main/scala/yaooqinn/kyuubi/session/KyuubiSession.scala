@@ -137,6 +137,13 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
+  private[this] def stopContext(): Unit = {
+    promisedSparkContext.future.map { sc =>
+      sc.stop
+      System.setProperty("SPARK_YARN_MODE", "true")
+    }
+  }
+
   private[this] def createSparkSession(sessionConf: Map[String, String]): Unit = {
     info(s"------ Create new SparkSession for $getUserName -------")
     val appName = s"KyuubiSession[$getUserName]:${UUID.randomUUID().toString}"
@@ -168,16 +175,18 @@ private[kyuubi] class KyuubiSession(
       case ute: UndeclaredThrowableException =>
         ute.getCause match {
           case te: TimeoutException =>
-            promisedSparkContext.future.map(_.stop)
+            stopContext()
             sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
               override def run(): Unit = HadoopUtils.killYarnAppByName(appName)
             })
             throw new HiveSQLException(
               s"Get SparkSession for [$getUserName] failed: " + te, "08S01", te)
           case _ =>
+            stopContext()
             throw new HiveSQLException(ute.toString, "08S01", ute.getCause)
         }
       case e: Exception =>
+        stopContext()
         throw new HiveSQLException(
           s"Get SparkSession for [$getUserName] failed: " + e, "08S01", e)
     } finally {
