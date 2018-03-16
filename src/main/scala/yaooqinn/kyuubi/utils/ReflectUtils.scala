@@ -37,7 +37,7 @@ object ReflectUtils extends Logging {
     require(className != null, "class name could not be null!")
     try {
       if (argTypes!= null && argTypes.nonEmpty) {
-        require(argTypes.length == params.length, "each params should have a class type!")
+        require(argTypes.lengthCompare(params.length) == 0, "each params should have a class type!")
         classLoader.loadClass(className).getConstructor(argTypes: _*)
           .newInstance(params: _*)
       } else {

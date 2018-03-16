@@ -361,21 +361,24 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       statementId = UUID.randomUUID().toString
       info(s"Running query '$statement' with $statementId")
       setState(OperationState.RUNNING)
-      KyuubiServerMonitor.getListener(session.getUserName).onStatementStart(
-        statementId,
-        session.getSessionHandle.getSessionId.toString,
-        statement,
-        statementId,
-        session.getUserName)
+      KyuubiServerMonitor.getListener(session.getUserName).foreach {
+        _.onStatementStart(
+          statementId,
+          session.getSessionHandle.getSessionId.toString,
+          statement,
+          statementId,
+          session.getUserName)
+      }
       session.sparkSession().sparkContext.setJobGroup(statementId, statement)
       result = session.sparkSession().sql(statement)
-      KyuubiServerMonitor.getListener(session.getUserName)
-        .onStatementParsed(statementId, result.queryExecution.toString())
+      KyuubiServerMonitor.getListener(session.getUserName).foreach {
+        _.onStatementParsed(statementId, result.queryExecution.toString())
+      }
       debug(result.queryExecution.toString())
       iter = result.collect().iterator
       dataTypes = result.queryExecution.analyzed.output.map(_.dataType).toArray
       setState(OperationState.FINISHED)
-      KyuubiServerMonitor.getListener(session.getUserName).onStatementFinish(statementId)
+      KyuubiServerMonitor.getListener(session.getUserName).foreach(_.onStatementFinish(statementId))
     } catch {
       case e: HiveSQLException =>
         if (!isClosedOrCanceled) {
@@ -420,7 +423,8 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
          |$trace
        """.stripMargin)
     setState(OperationState.ERROR)
-    KyuubiServerMonitor.getListener(session.getUserName).onStatementError(id, message, trace)
+    KyuubiServerMonitor.getListener(session.getUserName)
+      .foreach(_.onStatementError(id, message, trace))
   }
 
   private[this] def cleanup(state: OperationState) {
