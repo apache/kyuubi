@@ -161,6 +161,7 @@ private[kyuubi] class KyuubiSession(
       case ute: UndeclaredThrowableException =>
         ute.getCause match {
           case te: TimeoutException =>
+            promisedSparkContext.future.map(_.stop)
             sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
               override def run(): Unit = HadoopUtils.killYarnAppByName(appName)
             })
