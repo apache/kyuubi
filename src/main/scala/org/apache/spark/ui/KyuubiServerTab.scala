@@ -20,7 +20,7 @@ package org.apache.spark.ui
 import org.apache.spark.{SparkContext, SparkException}
 import org.apache.spark.ui.KyuubiServerTab._
 
-import yaooqinn.kyuubi.ui.KyuubiServerMonitor
+import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
 
 /**
  * Spark Web UI tab that shows statistics of jobs running in the thrift server.
@@ -34,7 +34,11 @@ class KyuubiServerTab(userName: String, sparkContext: SparkContext)
   val parent = getSparkUI(sparkContext)
 
   // KyuubiServerTab renders by different listener's content, identified by user.
-  val listener = KyuubiServerMonitor.getListener(userName)
+  val listener = KyuubiServerMonitor.getListener(userName).getOrElse {
+    val lr = new KyuubiServerListener(sparkContext.conf)
+    KyuubiServerMonitor.setListener(userName, lr)
+    lr
+  }
 
   attachPage(new KyuubiServerPage(this))
   attachPage(new KyuubiServerSessionPage(this))

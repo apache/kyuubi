@@ -27,6 +27,7 @@ import scala.collection.mutable.{HashSet => MHSet}
 import scala.concurrent.{Await, Promise, TimeoutException}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
+import scala.util.control.NonFatal
 import scala.util.matching.Regex
 
 import org.apache.commons.io.FileUtils
@@ -124,12 +125,18 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
-  private[this] def newContext(): Thread = {
-    new Thread(s"Start-SparkContext-$getUserName") {
+  private[this] def newContext(): Unit = {
+    val thread = new Thread(s"Start-SparkContext-$getUserName") {
       override def run(): Unit = {
-        promisedSparkContext.trySuccess(new SparkContext(conf))
+        try {
+          promisedSparkContext.trySuccess(new SparkContext(conf))
+        } catch {
+          case NonFatal(e) => throw e
+        }
       }
     }
+    thread.start()
+    thread.join()
   }
 
   private[this] def createSparkSession(sessionConf: Map[String, String]): Unit = {
@@ -141,7 +148,7 @@ private[kyuubi] class KyuubiSession(
     try {
       sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
         override def run(): Unit = {
-          newContext().start()
+          newContext()
           val context =
             Await.result(promisedSparkContext.future, Duration(totalWaitTime, TimeUnit.SECONDS))
           _sparkSession = ReflectUtils.newInstance(
@@ -155,7 +162,8 @@ private[kyuubi] class KyuubiSession(
       // set sc fully constructed immediately
       sessionManager.setSCFullyConstructed(getUserName)
       KyuubiServerMonitor.setListener(getUserName, new KyuubiServerListener(conf))
-      _sparkSession.sparkContext.addSparkListener(KyuubiServerMonitor.getListener(getUserName))
+      KyuubiServerMonitor.getListener(getUserName)
+        .foreach(_sparkSession.sparkContext.addSparkListener)
       val uiTab = new KyuubiServerTab(getUserName, _sparkSession.sparkContext)
       KyuubiServerMonitor.addUITab(_sparkSession.sparkContext.sparkUser, uiTab)
     } catch {
@@ -173,8 +181,6 @@ private[kyuubi] class KyuubiSession(
       case e: Exception =>
         throw new HiveSQLException(s"Get SparkSession for [$getUserName] failed: " + e, e)
     } finally {
-      newContext().interrupt()
-      newContext().join()
       sessionManager.setSCFullyConstructed(getUserName)
     }
   }

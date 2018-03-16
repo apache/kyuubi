@@ -238,18 +238,21 @@ private[kyuubi] class SessionManager private(
     handleToSession.put(sessionHandle, kyuubiSession)
     handleToSessionUser.put(sessionHandle, username)
 
-    KyuubiServerMonitor.getListener(username).onSessionCreated(
-      kyuubiSession.getIpAddress,
-      sessionHandle.getSessionId.toString,
-      kyuubiSession.getUserName)
+    KyuubiServerMonitor.getListener(username).foreach {
+      _.onSessionCreated(
+        kyuubiSession.getIpAddress,
+        sessionHandle.getSessionId.toString,
+        kyuubiSession.getUserName)
+    }
 
     sessionHandle
   }
 
   def closeSession(sessionHandle: SessionHandle) {
     val sessionUser = handleToSessionUser.remove(sessionHandle)
-    KyuubiServerMonitor.getListener(sessionUser)
-      .onSessionClosed(sessionHandle.getSessionId.toString)
+    KyuubiServerMonitor.getListener(sessionUser).foreach {
+      _.onSessionClosed(sessionHandle.getSessionId.toString)
+    }
     val sessionAndTimes = userToSparkSession.get(sessionUser)
     if (sessionAndTimes != null) {
       sessionAndTimes._2.decrementAndGet()

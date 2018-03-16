@@ -33,8 +33,8 @@ object KyuubiServerMonitor {
     listeners.put(user, sparkListener)
   }
 
-  def getListener(user: User): KyuubiServerListener = {
-    listeners.getOrElse(user, throw new SparkException(s"Listener does not init for user[$user]"))
+  def getListener(user: User): Option[KyuubiServerListener] = {
+    listeners.get(user)
   }
 
   def addUITab(user: User, ui: KyuubiServerTab): Unit = {
