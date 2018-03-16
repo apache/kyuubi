@@ -136,7 +136,7 @@ private[kyuubi] class SessionManager private(
   }
 
   /**
-   * Periodically close idle sessions in 'hive.server2.session.check.interval(default 6h)'
+   * Periodically close idle sessions in 'spark.kyuubi.frontend.session.check.interval(default 6h)'
    */
   private[this] def startTimeoutChecker(): Unit = {
     val interval: Long = math.max(checkInterval, 3000L)
@@ -158,6 +158,8 @@ private[kyuubi] class SessionManager private(
                 case e: HiveSQLException =>
                   warn("Exception is thrown closing idle session " + handle, e)
               }
+            } else {
+              session.closeExpiredOperations
             }
           }
           sleepInterval(interval)

@@ -228,6 +228,16 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("auth")
 
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //                                         Operation                                           //
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+
+  val OPERATION_IDLE_TIMEOUT =
+    KyuubiConfigBuilder("spark.kyuubi.operation.idle.timeout")
+      .doc("How long we suggest the server to give up instantiating SparkContext")
+      .timeConf(TimeUnit.MILLISECONDS)
+      .createWithDefault(TimeUnit.HOURS.toMillis(6L))
+
   /**
    * Return all the configuration definitions that have been defined in [[KyuubiConf]]. Each
    * definition contains key, defaultValue.

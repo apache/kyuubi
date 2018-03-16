@@ -97,16 +97,22 @@ private[kyuubi] class OperationManager private(name: String)
   }
 
   private[this] def getOperationInternal(operationHandle: OperationHandle) =
-    handleToOperation.get(operationHandle)
+    synchronized(handleToOperation.get(operationHandle))
 
   private[this] def addOperation(operation: KyuubiOperation): Unit = {
-    handleToOperation.put(operation.getHandle, operation)
+    synchronized(handleToOperation.put(operation.getHandle, operation))
   }
 
   private[this] def removeOperation(opHandle: OperationHandle) =
-    handleToOperation.remove(opHandle)
+    synchronized(handleToOperation.remove(opHandle))
 
-  @throws[HiveSQLException]
+  private def removeTimedOutOperation(
+      operationHandle: OperationHandle): Option[KyuubiOperation] = synchronized {
+    Some(handleToOperation.get(operationHandle))
+      .filter(_.isTimedOut)
+      .map(_ => handleToOperation.remove(operationHandle))
+  }
+
   def cancelOperation(opHandle: OperationHandle): Unit = {
     val operation = getOperation(opHandle)
     val opState = operation.getStatus.getState
@@ -178,5 +184,12 @@ private[kyuubi] class OperationManager private(name: String)
     fieldSchema.setType("string")
     schema.addToFieldSchemas(fieldSchema)
     schema
+  }
+
+  def removeExpiredOperations(handles: Seq[OperationHandle]): Seq[KyuubiOperation] = {
+    handles.flatMap(removeTimedOutOperation).map { op =>
+      warn("Operation " + op.getHandle + " is timed-out and will be closed")
+      op
+    }
   }
 }
