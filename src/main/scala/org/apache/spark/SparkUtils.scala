@@ -68,4 +68,9 @@ object SparkUtils {
   def newConfiguration(conf: SparkConf): Configuration = {
     SparkHadoopUtil.get.newConfiguration(conf)
   }
+
+  /** Executes the given block. Log non-fatal errors if any, and only throw fatal errors */
+  def tryLogNonFatalError(block: => Unit): Unit = {
+    Utils.tryLogNonFatalError(block)
+  }
 }
