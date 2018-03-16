@@ -44,7 +44,7 @@ import org.apache.spark.ui.KyuubiServerTab
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
-import yaooqinn.kyuubi.operation.OperationManager
+import yaooqinn.kyuubi.operation.{KyuubiOperation, OperationManager}
 import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
 import yaooqinn.kyuubi.utils.{HadoopUtils, ReflectUtils}
 
@@ -434,6 +434,29 @@ private[kyuubi] class KyuubiSession(
   @throws[HiveSQLException]
   def renewDelegationToken(authFactory: KyuubiAuthFactory, tokenStr: String): Unit = {
     authFactory.renewDelegationToken(tokenStr)
+  }
+
+  def closeExpiredOperations: Unit = {
+    if (opHandleSet.nonEmpty) {
+      closeTimedOutOperations(operationManager.removeExpiredOperations(opHandleSet.toSeq))
+    }
+  }
+
+  private[this] def closeTimedOutOperations(operations: Seq[KyuubiOperation]): Unit = {
+    acquire(false)
+    try {
+      operations.foreach { op =>
+        opHandleSet.remove(op.getHandle)
+        try {
+          op.close()
+        } catch {
+          case e: Exception =>
+            warn("Exception is thrown closing timed-out operation " + op.getHandle, e)
+        }
+      }
+    } finally {
+      release(false)
+    }
   }
 
   def getNoOperationTime: Long = {

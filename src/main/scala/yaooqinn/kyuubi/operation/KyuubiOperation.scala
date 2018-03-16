@@ -33,6 +33,7 @@ import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAccessControl
 import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
+import org.apache.spark.KyuubiConf._
 import org.apache.spark.SparkUtils
 import org.apache.spark.sql.{AnalysisException, DataFrame, Row, SparkSQLUtils}
 import org.apache.spark.sql.catalyst.parser.ParseException
@@ -47,6 +48,10 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
   private[this] var state = OperationState.INITIALIZED
   private[this] val opHandle: OperationHandle =
     new OperationHandle(OperationType.EXECUTE_STATEMENT, session.getProtocolVersion)
+
+  private[this] val operationTimeout =
+    session.sparkSession().conf.get(OPERATION_IDLE_TIMEOUT.key).toLong
+  private[this] var lastAccessTime = System.currentTimeMillis()
 
   private[this] var hasResultSet: Boolean = false
   private[this] var operationException: HiveSQLException = _
@@ -95,6 +100,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
   private[this] def setState(newState: OperationState): Unit = {
     state.validateTransition(newState)
     this.state = newState
+    this.lastAccessTime = System.currentTimeMillis()
   }
 
   private[this] def checkState(state: OperationState): Boolean = {
@@ -110,6 +116,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     if (this.state ne state) {
       throw new HiveSQLException("Expected state " + state + ", but found " + this.state)
     }
+    this.lastAccessTime = System.currentTimeMillis()
   }
 
   private[this] def createOperationLog(): Unit = {
@@ -117,7 +124,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       val logFile =
         new File(session.getSessionLogDir, opHandle.getHandleIdentifier.toString)
       val logFilePath = logFile.getAbsolutePath
-      isOperationLogEnabled = true
+      this.isOperationLogEnabled = true
       // create log file
       try {
         if (logFile.exists) {
@@ -136,32 +143,32 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
                  |The already existed operation log file cannot be recreated,
                  |and it cannot be read or written: $logFilePath"
                """.stripMargin)
-            isOperationLogEnabled = false
+            this.isOperationLogEnabled = false
             return
           }
         }
       } catch {
         case e: Exception =>
           warn("Unable to create operation log file: " + logFilePath, e)
-          isOperationLogEnabled = false
+          this.isOperationLogEnabled = false
           return
       }
       // create OperationLog object with above log file
       try {
-        operationLog = new OperationLog(opHandle.toString, logFile, new HiveConf())
+        this.operationLog = new OperationLog(this.opHandle.toString, logFile, new HiveConf())
       } catch {
         case e: FileNotFoundException =>
-          warn("Unable to instantiate OperationLog object for operation: " + opHandle, e)
-          isOperationLogEnabled = false
+          warn("Unable to instantiate OperationLog object for operation: " + this.opHandle, e)
+          this.isOperationLogEnabled = false
           return
       }
       // register this operationLog
       session.getSessionMgr.getOperationMgr
-        .setOperationLog(session.getUserName, operationLog)
+        .setOperationLog(session.getUserName, this.operationLog)
     }
   }
 
-  private def registerCurrentOperationLog(): Unit = {
+  private[this] def registerCurrentOperationLog(): Unit = {
     if (isOperationLogEnabled) {
       if (operationLog == null) {
         warn("Failed to get current OperationLog object of Operation: "
@@ -356,7 +363,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     }
   }
 
-  private def execute(): Unit = {
+  private[this] def execute(): Unit = {
     try {
       statementId = UUID.randomUUID().toString
       info(s"Running query '$statement' with $statementId")
@@ -437,6 +444,15 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     }
     if (statementId != null) {
       session.sparkSession().sparkContext.cancelJobGroup(statementId)
+    }
+  }
+
+  def isTimedOut: Boolean = {
+    if (operationTimeout <= 0) {
+      false
+    } else {
+      // check only when it's in terminal state
+      state.isTerminal && lastAccessTime + operationTimeout <= System.currentTimeMillis()
     }
   }
 }
