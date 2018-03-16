@@ -44,7 +44,7 @@ import org.apache.spark.ui.KyuubiServerTab
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
-import yaooqinn.kyuubi.operation.OperationManager
+import yaooqinn.kyuubi.operation.{KyuubiOperation, OperationManager}
 import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
 import yaooqinn.kyuubi.utils.{HadoopUtils, ReflectUtils}
 
@@ -353,9 +353,7 @@ private[kyuubi] class KyuubiSession(
     acquire(true)
     try {
       // Iterate through the opHandles and close their operations
-      for (opHandle <- opHandleSet) {
-        closeOperation(opHandle)
-      }
+      opHandleSet.foreach(closeOperation)
       opHandleSet.clear()
       // Cleanup session log directory.
       cleanupSessionLogDir()
@@ -408,10 +406,11 @@ private[kyuubi] class KyuubiSession(
       fetchType: FetchType): RowSet = {
     acquire(true)
     try {
-      if (fetchType == FetchType.QUERY_OUTPUT) {
-        operationManager.getOperationNextRowSet(opHandle, orientation, maxRows)
-      } else {
-        operationManager.getOperationLogRowSet(opHandle, orientation, maxRows)
+      fetchType match {
+        case FetchType.QUERY_OUTPUT =>
+          operationManager.getOperationNextRowSet(opHandle, orientation, maxRows)
+        case _ =>
+          operationManager.getOperationLogRowSet(opHandle, orientation, maxRows)
       }
     } finally {
       release(true)
@@ -434,6 +433,29 @@ private[kyuubi] class KyuubiSession(
   @throws[HiveSQLException]
   def renewDelegationToken(authFactory: KyuubiAuthFactory, tokenStr: String): Unit = {
     authFactory.renewDelegationToken(tokenStr)
+  }
+
+  def closeExpiredOperations: Unit = {
+    if (opHandleSet.nonEmpty) {
+      closeTimedOutOperations(operationManager.removeExpiredOperations(opHandleSet.toSeq))
+    }
+  }
+
+  private[this] def closeTimedOutOperations(operations: Seq[KyuubiOperation]): Unit = {
+    acquire(false)
+    try {
+      operations.foreach { op =>
+        opHandleSet.remove(op.getHandle)
+        try {
+          op.close()
+        } catch {
+          case e: Exception =>
+            warn("Exception is thrown closing timed-out operation " + op.getHandle, e)
+        }
+      }
+    } finally {
+      release(false)
+    }
   }
 
   def getNoOperationTime: Long = {
