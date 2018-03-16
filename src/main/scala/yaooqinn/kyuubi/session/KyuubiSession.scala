@@ -125,8 +125,8 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
-  private[this] def newContext(): Unit = {
-    val thread = new Thread(s"Start-SparkContext-$getUserName") {
+  private[this] def newContext(): Thread = {
+    new Thread(s"Start-SparkContext-$getUserName") {
       override def run(): Unit = {
         try {
           promisedSparkContext.trySuccess(new SparkContext(conf))
@@ -135,8 +135,6 @@ private[kyuubi] class KyuubiSession(
         }
       }
     }
-    thread.start()
-    thread.join()
   }
 
   private[this] def createSparkSession(sessionConf: Map[String, String]): Unit = {
@@ -148,7 +146,7 @@ private[kyuubi] class KyuubiSession(
     try {
       sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
         override def run(): Unit = {
-          newContext()
+          newContext().start()
           val context =
             Await.result(promisedSparkContext.future, Duration(totalWaitTime, TimeUnit.SECONDS))
           _sparkSession = ReflectUtils.newInstance(
@@ -174,13 +172,16 @@ private[kyuubi] class KyuubiSession(
             sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
               override def run(): Unit = HadoopUtils.killYarnAppByName(appName)
             })
-            throw new HiveSQLException(s"Get SparkSession for [$getUserName] failed: " + te, te)
+            throw new HiveSQLException(
+              s"Get SparkSession for [$getUserName] failed: " + te, "08S01", te)
           case _ =>
-            throw new HiveSQLException(ute.toString, ute.getCause)
+            throw new HiveSQLException(ute.toString, "08S01", ute.getCause)
         }
       case e: Exception =>
-        throw new HiveSQLException(s"Get SparkSession for [$getUserName] failed: " + e, e)
+        throw new HiveSQLException(
+          s"Get SparkSession for [$getUserName] failed: " + e, "08S01", e)
     } finally {
+      newContext().join()
       sessionManager.setSCFullyConstructed(getUserName)
     }
   }
