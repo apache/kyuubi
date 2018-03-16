@@ -123,12 +123,12 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
-  private[this] def startSparkContextInNewThread(): Unit = {
+  private[this] def newContext(): Thread = {
     new Thread(s"Start-SparkContext-$getUserName") {
       override def run(): Unit = {
         promisedSparkContext.trySuccess(new SparkContext(conf))
       }
-    }.start()
+    }
   }
 
   private[this] def createSparkSession(sessionConf: Map[String, String]): Unit = {
@@ -140,7 +140,7 @@ private[kyuubi] class KyuubiSession(
     try {
       sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
         override def run(): Unit = {
-          startSparkContextInNewThread()
+          newContext().start()
           val context =
             Await.result(promisedSparkContext.future, Duration(totalWaitTime, TimeUnit.SECONDS))
           _sparkSession = ReflectUtils.newInstance(
@@ -171,6 +171,7 @@ private[kyuubi] class KyuubiSession(
       case e: Exception =>
         throw new HiveSQLException(s"Get SparkSession for [$getUserName] failed: " + e, e)
     } finally {
+      newContext().join()
       sessionManager.setSCFullyConstructed(getUserName)
     }
   }
