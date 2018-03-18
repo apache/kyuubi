@@ -42,11 +42,6 @@ public enum OperationState {
     this.terminal = terminal;
   }
 
-  // must be sync with TOperationState in order
-  public static OperationState getOperationState(TOperationState tOperationState) {
-    return OperationState.values()[tOperationState.getValue()];
-  }
-
   public static void validateTransition(OperationState oldState,
       OperationState newState)
           throws HiveSQLException {

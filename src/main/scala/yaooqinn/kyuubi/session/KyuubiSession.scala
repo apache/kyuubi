@@ -44,7 +44,7 @@ import org.apache.spark.ui.KyuubiServerTab
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
-import yaooqinn.kyuubi.operation.{KyuubiOperation, OperationManager}
+import yaooqinn.kyuubi.operation.{KyuubiOperation, OperationHandle, OperationManager}
 import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
 import yaooqinn.kyuubi.utils.{HadoopUtils, ReflectUtils}
 
@@ -294,7 +294,7 @@ private[kyuubi] class KyuubiSession(
   def open(sessionConf: Map[String, String]): Unit = {
     try {
       getOrCreateSparkSession(sessionConf)
-      initialDatabase.foreach(executeStatement)
+      initialDatabase.foreach(sparkSession().sql)
     } catch {
       case ute: UndeclaredThrowableException => ute.getCause match {
         case e: HiveAccessControlException =>

@@ -25,8 +25,9 @@ import org.apache.spark.SparkConf
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
+import yaooqinn.kyuubi.operation.OperationHandle
 import yaooqinn.kyuubi.service.CompositeService
-import yaooqinn.kyuubi.session.SessionManager
+import yaooqinn.kyuubi.session.{SessionHandle, SessionManager}
 
 /**
  * [[BackendService]] holds an instance of [[SessionManager]] which manages
