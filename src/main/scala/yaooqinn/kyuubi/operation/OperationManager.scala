@@ -116,11 +116,11 @@ private[kyuubi] class OperationManager private(name: String)
   def cancelOperation(opHandle: OperationHandle): Unit = {
     val operation = getOperation(opHandle)
     val opState = operation.getStatus.getState
-    if ((opState eq OperationState.CANCELED)
-      || (opState eq OperationState.CLOSED)
-      || (opState eq OperationState.FINISHED)
-      || (opState eq OperationState.ERROR)
-      || (opState eq OperationState.UNKNOWN)) {
+    if ((opState eq CANCELED)
+      || (opState eq CLOSED)
+      || (opState eq FINISHED)
+      || (opState eq ERROR)
+      || (opState eq UNKNOWN)) {
       // Cancel should be a no-op in either cases
       debug(opHandle + ": Operation is already aborted in state - " + opState)
     }
