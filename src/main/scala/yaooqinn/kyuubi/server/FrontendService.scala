@@ -38,7 +38,9 @@ import org.apache.thrift.transport.{TServerSocket, TTransport}
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.auth.{KERBEROS, KyuubiAuthFactory, NONE}
+import yaooqinn.kyuubi.operation.OperationHandle
 import yaooqinn.kyuubi.service.{AbstractService, ServiceException, ServiceUtils}
+import yaooqinn.kyuubi.session.SessionHandle
 
 /**
  * [[FrontendService]] keeps compatible with all kinds of Hive JDBC/Thrift Client Connections
