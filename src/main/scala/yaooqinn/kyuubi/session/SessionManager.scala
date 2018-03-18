@@ -26,7 +26,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.{HashSet => MHSet}
 
 import org.apache.commons.io.FileUtils
-import org.apache.hive.service.cli.{HiveSQLException, SessionHandle}
+import org.apache.hive.service.cli.HiveSQLException
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.hive.service.server.ThreadFactoryWithGarbageCleanup
 import org.apache.spark.{SparkConf, SparkException}
