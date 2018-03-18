@@ -294,7 +294,7 @@ private[kyuubi] class KyuubiSession(
   def open(sessionConf: Map[String, String]): Unit = {
     try {
       getOrCreateSparkSession(sessionConf)
-      initialDatabase.foreach(executeStatement)
+      initialDatabase.foreach(sparkSession().sql)
     } catch {
       case ute: UndeclaredThrowableException => ute.getCause match {
         case e: HiveAccessControlException =>
