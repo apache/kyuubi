@@ -50,7 +50,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     new OperationHandle(EXECUTE_STATEMENT, session.getProtocolVersion)
 
   private[this] val operationTimeout =
-    session.sparkSession().sparkContext.getConf.getTimeAsMs(OPERATION_IDLE_TIMEOUT.key)
+    session.sparkSession.sparkContext.getConf.getTimeAsMs(OPERATION_IDLE_TIMEOUT.key)
   private[this] var lastAccessTime = System.currentTimeMillis()
 
   private[this] var hasResultSet: Boolean = false
@@ -214,7 +214,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     debug(s"CLOSING $statementId")
     cleanup(CLOSED)
     cleanupOperationLog()
-    session.sparkSession().sparkContext.clearJobGroup()
+    session.sparkSession.sparkContext.clearJobGroup()
   }
 
   def cancel(): Unit = {
@@ -376,8 +376,8 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
           statementId,
           session.getUserName)
       }
-      session.sparkSession().sparkContext.setJobGroup(statementId, statement)
-      result = session.sparkSession().sql(statement)
+      session.sparkSession.sparkContext.setJobGroup(statementId, statement)
+      result = session.sparkSession.sql(statement)
       KyuubiServerMonitor.getListener(session.getUserName).foreach {
         _.onStatementParsed(statementId, result.queryExecution.toString())
       }
@@ -416,7 +416,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
         }
     } finally {
       if (statementId != null) {
-        session.sparkSession().sparkContext.cancelJobGroup(statementId)
+        session.sparkSession.sparkContext.cancelJobGroup(statementId)
       }
     }
   }
@@ -443,7 +443,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       backgroundHandle.cancel(true)
     }
     if (statementId != null) {
-      session.sparkSession().sparkContext.cancelJobGroup(statementId)
+      session.sparkSession.sparkContext.cancelJobGroup(statementId)
     }
   }
 
