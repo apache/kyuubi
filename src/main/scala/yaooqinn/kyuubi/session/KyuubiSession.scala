@@ -44,6 +44,7 @@ import org.apache.spark.ui.KyuubiServerTab
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
+import yaooqinn.kyuubi.cli._
 import yaooqinn.kyuubi.operation.{KyuubiOperation, OperationHandle, OperationManager}
 import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
 import yaooqinn.kyuubi.utils.{HadoopUtils, ReflectUtils}
@@ -316,9 +317,9 @@ private[kyuubi] class KyuubiSession(
     acquire(true)
     try {
       getInfoType match {
-        case GetInfoType.CLI_SERVER_NAME => new GetInfoValue("Spark SQL")
-        case GetInfoType.CLI_DBMS_NAME => new GetInfoValue("Spark SQL")
-        case GetInfoType.CLI_DBMS_VER => new GetInfoValue(this._sparkSession.version)
+        case ServerName => new GetInfoValue("Kyuubi Server")
+        case DBMSName => new GetInfoValue("Spark SQL")
+        case DBMSVesion => new GetInfoValue(this._sparkSession.version)
         case _ =>
           throw new HiveSQLException("Unrecognized GetInfoType value: " + getInfoType.toString)
       }
