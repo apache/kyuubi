@@ -20,7 +20,7 @@ package yaooqinn.kyuubi.operation
 import java.io.{File, FileNotFoundException}
 import java.security.PrivilegedExceptionAction
 import java.sql.{Date, Timestamp}
-import java.util.{Arrays, EnumSet, UUID}
+import java.util.{Arrays, UUID}
 import java.util.concurrent.{Future, RejectedExecutionException}
 
 import scala.collection.JavaConverters._
@@ -40,6 +40,7 @@ import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.types._
 
 import yaooqinn.kyuubi.Logging
+import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.session.KyuubiSession
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 
@@ -73,8 +74,8 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     }
   }
 
-  private[this] val DEFAULT_FETCH_ORIENTATION_SET: EnumSet[FetchOrientation] =
-    EnumSet.of(FetchOrientation.FETCH_NEXT, FetchOrientation.FETCH_FIRST)
+  private[this] val DEFAULT_FETCH_ORIENTATION_SET: Set[FetchOrientation] =
+    Set(FetchOrientation.FETCH_NEXT, FetchOrientation.FETCH_FIRST)
 
   def getBackgroundHandle: Future[_] = backgroundHandle
 
@@ -315,7 +316,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
   @throws[HiveSQLException]
   private[this] def validateFetchOrientation(
       orientation: FetchOrientation,
-      supportedOrientations: EnumSet[FetchOrientation]): Unit = {
+      supportedOrientations: Set[FetchOrientation]): Unit = {
     if (!supportedOrientations.contains(orientation)) {
       throw new HiveSQLException(
         "The fetch type " + orientation.toString + " is not supported for this resultset", "HY106")

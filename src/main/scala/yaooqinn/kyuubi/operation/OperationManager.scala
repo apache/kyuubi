@@ -31,6 +31,7 @@ import org.apache.spark.{SparkConf, SparkUtils}
 import org.apache.spark.KyuubiConf._
 
 import yaooqinn.kyuubi.Logging
+import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.service.AbstractService
 import yaooqinn.kyuubi.session.KyuubiSession
 
