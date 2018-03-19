@@ -38,7 +38,7 @@ import org.apache.thrift.transport.{TServerSocket, TTransport}
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.auth.{KERBEROS, KyuubiAuthFactory, NONE}
-import yaooqinn.kyuubi.cli.GetInfoType
+import yaooqinn.kyuubi.cli.{FetchType, GetInfoType}
 import yaooqinn.kyuubi.operation.OperationHandle
 import yaooqinn.kyuubi.service.{AbstractService, ServiceException, ServiceUtils}
 import yaooqinn.kyuubi.session.SessionHandle
