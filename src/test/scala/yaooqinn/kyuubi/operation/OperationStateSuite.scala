@@ -53,7 +53,6 @@ class OperationStateSuite extends SparkFunSuite {
     intercept[HiveSQLException](FINISHED.validateTransition(FINISHED))
     intercept[HiveSQLException](FINISHED.validateTransition(ERROR))
     intercept[HiveSQLException](FINISHED.validateTransition(CANCELED))
-    intercept[HiveSQLException](FINISHED.validateTransition(CLOSED))
     intercept[HiveSQLException](FINISHED.validateTransition(UNKNOWN))
   }
 
@@ -67,7 +66,6 @@ class OperationStateSuite extends SparkFunSuite {
     intercept[HiveSQLException](CANCELED.validateTransition(FINISHED))
     intercept[HiveSQLException](CANCELED.validateTransition(ERROR))
     intercept[HiveSQLException](CANCELED.validateTransition(CANCELED))
-    intercept[HiveSQLException](CANCELED.validateTransition(CLOSED))
     intercept[HiveSQLException](CANCELED.validateTransition(UNKNOWN))
   }
 
