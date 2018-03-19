@@ -78,7 +78,7 @@ private[kyuubi] class KyuubiSession(
   private[this] val opHandleSet = new MHSet[OperationHandle]
   private[this] var _isOperationLogEnabled = false
   private[this] var sessionLogDir: File = _
-  private[this] var lastAccessTime = 0L
+  @volatile private[this] var lastAccessTime: Long = System.currentTimeMillis()
   private[this] var lastIdleTime = 0L
   private[this] var initialDatabase: Option[String] = None
 
