@@ -38,7 +38,7 @@ import org.apache.thrift.transport.{TServerSocket, TTransport}
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.auth.{KERBEROS, KyuubiAuthFactory, NONE}
-import yaooqinn.kyuubi.cli.{FetchType, GetInfoType}
+import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType}
 import yaooqinn.kyuubi.operation.OperationHandle
 import yaooqinn.kyuubi.service.{AbstractService, ServiceException, ServiceUtils}
 import yaooqinn.kyuubi.session.SessionHandle
@@ -314,12 +314,11 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     try {
       val sessionHandle = new SessionHandle(req.getSessionHandle)
       val statement = req.getStatement
-      val confOverlay = req.getConfOverlay
       val runAsync = req.isRunAsync
       val operationHandle = if (runAsync) {
-        beService.executeStatementAsync(sessionHandle, statement, confOverlay)
+        beService.executeStatementAsync(sessionHandle, statement)
       } else {
-        beService.executeStatement(sessionHandle, statement, confOverlay)
+        beService.executeStatement(sessionHandle, statement)
       }
       resp.setOperationHandle(operationHandle.toTOperationHandle)
       resp.setStatus(OK_STATUS)
