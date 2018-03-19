@@ -28,7 +28,6 @@ import scala.collection.mutable.{HashSet => MHSet}
 import org.apache.commons.io.FileUtils
 import org.apache.hive.service.cli.HiveSQLException
 import org.apache.hive.service.cli.thrift.TProtocolVersion
-import org.apache.hive.service.server.ThreadFactoryWithGarbageCleanup
 import org.apache.spark.{SparkConf, SparkException}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.SparkSession
@@ -38,6 +37,7 @@ import yaooqinn.kyuubi.operation.OperationManager
 import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.service.CompositeService
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
+import yaooqinn.kyuubi.utils.NamedThreadFactory
 
 /**
  * A SessionManager for managing [[KyuubiSession]]s
@@ -87,7 +87,7 @@ private[kyuubi] class SessionManager private(
         keepAliveTime,
         TimeUnit.SECONDS,
         new LinkedBlockingQueue[Runnable](poolQueueSize),
-        new ThreadFactoryWithGarbageCleanup(threadPoolName))
+        new NamedThreadFactory(threadPoolName))
     execPool.allowCoreThreadTimeOut(true)
     checkInterval = conf.getTimeAsMs(FRONTEND_SESSION_CHECK_INTERVAL.key)
     sessionTimeout = conf.getTimeAsMs(FRONTEND_IDLE_SESSION_TIMEOUT.key)
@@ -141,7 +141,7 @@ private[kyuubi] class SessionManager private(
   private[this] def startTimeoutChecker(): Unit = {
     val interval: Long = math.max(checkInterval, 3000L)
     // minimum 3 seconds
-    val timeoutChecker: Runnable = new Runnable() {
+    val timeoutChecker = new Runnable() {
       override def run(): Unit = {
         sleepInterval(interval)
         while (!shutdown) {

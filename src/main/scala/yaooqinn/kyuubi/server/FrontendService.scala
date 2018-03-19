@@ -30,18 +30,18 @@ import org.apache.hadoop.hive.ql.session.SessionState
 import org.apache.hive.service.auth.TSetIpAddressProcessor
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift._
-import org.apache.hive.service.server.ThreadFactoryWithGarbageCleanup
 import org.apache.spark.{KyuubiConf, SparkConf, SparkUtils}
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TThreadPoolServer}
 import org.apache.thrift.transport.{TServerSocket, TTransport}
 
 import yaooqinn.kyuubi.Logging
-import yaooqinn.kyuubi.auth.{KERBEROS, KyuubiAuthFactory, NONE}
+import yaooqinn.kyuubi.auth.{KERBEROS, KyuubiAuthFactory}
 import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType}
 import yaooqinn.kyuubi.operation.OperationHandle
 import yaooqinn.kyuubi.service.{AbstractService, ServiceException, ServiceUtils}
 import yaooqinn.kyuubi.session.SessionHandle
+import yaooqinn.kyuubi.utils.NamedThreadFactory
 
 /**
  * [[FrontendService]] keeps compatible with all kinds of Hive JDBC/Thrift Client Connections
@@ -593,7 +593,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
         workerKeepAliveTime,
         TimeUnit.SECONDS,
         new SynchronousQueue[Runnable],
-        new ThreadFactoryWithGarbageCleanup(threadPoolName))
+        new NamedThreadFactory(threadPoolName))
 
       // Thrift configs
       kyuubiAuthFactory = new KyuubiAuthFactory(conf)
