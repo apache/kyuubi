@@ -27,7 +27,8 @@ trait OperationState {
   @throws[HiveSQLException]
   def validateTransition(newState: OperationState): Unit = ex(newState)
 
-  def ex(state: OperationState): Unit = throw new HiveSQLException(
+  @throws[HiveSQLException]
+  protected def ex(state: OperationState): Unit = throw new HiveSQLException(
     "Illegal Operation state transition " + this + " -> " + state, "KyuubiException", 1000)
 }
 
@@ -50,11 +51,19 @@ case object RUNNING extends OperationState {
 case object FINISHED extends OperationState {
   override def toTOperationState(): TOperationState = TOperationState.FINISHED_STATE
   override def isTerminal(): Boolean = true
+  override def validateTransition(newState: OperationState): Unit = newState match {
+    case CLOSED =>
+    case _ => ex(newState)
+  }
 }
 
 case object CANCELED extends OperationState {
   override def toTOperationState(): TOperationState = TOperationState.CANCELED_STATE
   override def isTerminal(): Boolean = true
+  override def validateTransition(newState: OperationState): Unit = newState match {
+    case CLOSED =>
+    case _ => ex(newState)
+  }
 }
 
 case object CLOSED extends OperationState {
