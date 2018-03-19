@@ -23,23 +23,24 @@ trait GetInfoType {
   def tInfoType: TGetInfoType = null
 }
 
-case object DBMSName extends GetInfoType {
-  override val tInfoType: TGetInfoType = TGetInfoType.CLI_DBMS_NAME
-}
-
-case object ServerName extends GetInfoType {
-  override val tInfoType: TGetInfoType = TGetInfoType.CLI_SERVER_NAME
-}
-
-case object DBMSVesion extends  GetInfoType {
-  override val tInfoType: TGetInfoType = TGetInfoType.CLI_DBMS_VER
-}
-
 object GetInfoType {
+
+  case object DBMS_NAME extends GetInfoType {
+    override val tInfoType: TGetInfoType = TGetInfoType.CLI_DBMS_NAME
+  }
+
+  case object SERVER_NAME extends GetInfoType {
+    override val tInfoType: TGetInfoType = TGetInfoType.CLI_SERVER_NAME
+  }
+
+  case object DBMS_VERSION extends  GetInfoType {
+    override val tInfoType: TGetInfoType = TGetInfoType.CLI_DBMS_VER
+  }
+
   def getGetInfoType(tGetInfoType: TGetInfoType): GetInfoType = tGetInfoType match {
-    case DBMSName.tInfoType => DBMSName
-    case ServerName.tInfoType => ServerName
-    case DBMSVesion.tInfoType => DBMSVesion
+    case DBMS_NAME.tInfoType => DBMS_NAME
+    case SERVER_NAME.tInfoType => SERVER_NAME
+    case DBMS_VERSION.tInfoType => DBMS_VERSION
     case _ =>
       throw new IllegalArgumentException("Unrecognized Thrift TGetInfoType value: " + tGetInfoType)
   }

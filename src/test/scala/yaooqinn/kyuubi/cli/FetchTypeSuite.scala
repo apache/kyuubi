@@ -17,18 +17,15 @@
 
 package yaooqinn.kyuubi.cli
 
-import org.apache.hive.service.cli.thrift.TGetInfoType
 import org.apache.spark.SparkFunSuite
 
-class GetInfoTypeSuite extends SparkFunSuite {
+class FetchTypeSuite extends SparkFunSuite {
 
-  test("Get Info Type basic tests") {
-    assert(GetInfoType.getGetInfoType(TGetInfoType.CLI_DBMS_NAME) === GetInfoType.DBMS_NAME)
-    assert(GetInfoType.getGetInfoType(TGetInfoType.CLI_DBMS_VER) === GetInfoType.DBMS_VERSION)
-    assert(GetInfoType.getGetInfoType(TGetInfoType.CLI_SERVER_NAME) === GetInfoType.SERVER_NAME)
-
-    intercept[IllegalArgumentException](
-      GetInfoType.getGetInfoType(TGetInfoType.CLI_ACCESSIBLE_PROCEDURES))
+  test("fetch type basic tests") {
+    assert(FetchType.getFetchType(0) === FetchType.QUERY_OUTPUT)
+    assert(FetchType.getFetchType(1) === FetchType.LOG)
+    assert(FetchType.getFetchType(2) === FetchType.QUERY_OUTPUT)
+    assert(FetchType.getFetchType(3) === FetchType.QUERY_OUTPUT)
   }
 
 }

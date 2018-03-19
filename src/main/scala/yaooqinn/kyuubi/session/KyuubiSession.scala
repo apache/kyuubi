@@ -317,9 +317,9 @@ private[kyuubi] class KyuubiSession(
     acquire(true)
     try {
       getInfoType match {
-        case ServerName => new GetInfoValue("Kyuubi Server")
-        case DBMSName => new GetInfoValue("Spark SQL")
-        case DBMSVesion => new GetInfoValue(this._sparkSession.version)
+        case GetInfoType.SERVER_NAME => new GetInfoValue("Kyuubi Server")
+        case GetInfoType.DBMS_NAME => new GetInfoValue("Spark SQL")
+        case GetInfoType.DBMS_VERSION => new GetInfoValue(this._sparkSession.version)
         case _ =>
           throw new HiveSQLException("Unrecognized GetInfoType value: " + getInfoType.toString)
       }
