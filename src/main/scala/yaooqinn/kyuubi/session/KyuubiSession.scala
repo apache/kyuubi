@@ -286,7 +286,7 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
-  def sparkSession(): SparkSession = this._sparkSession
+  def sparkSession: SparkSession = this._sparkSession
 
   def ugi: UserGroupInformation = this.sessionUGI
 
@@ -294,7 +294,11 @@ private[kyuubi] class KyuubiSession(
   def open(sessionConf: Map[String, String]): Unit = {
     try {
       getOrCreateSparkSession(sessionConf)
-      initialDatabase.foreach(sparkSession().sql)
+      initialDatabase.foreach { db =>
+        sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
+          override def run(): Unit = sparkSession.sql(db)
+        })
+      }
     } catch {
       case ute: UndeclaredThrowableException => ute.getCause match {
         case e: HiveAccessControlException =>
