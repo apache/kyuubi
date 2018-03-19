@@ -25,7 +25,7 @@ import org.apache.spark.SparkConf
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
-import yaooqinn.kyuubi.cli.{FetchType, GetInfoType, GetInfoValue}
+import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType, GetInfoValue}
 import yaooqinn.kyuubi.operation.{OperationHandle, OperationStatus}
 import yaooqinn.kyuubi.service.CompositeService
 import yaooqinn.kyuubi.session.{SessionHandle, SessionManager}
@@ -86,15 +86,13 @@ private[server] class BackendService private(name: String)
 
   def executeStatement(
       sessionHandle: SessionHandle,
-      statement: String,
-      confOverlay: JMap[String, String]): OperationHandle = {
+      statement: String): OperationHandle = {
     sessionManager.getSession(sessionHandle).executeStatement(statement)
   }
 
   def executeStatementAsync(
       sessionHandle: SessionHandle,
-      statement: String,
-      confOverlay: JMap[String, String]): OperationHandle = {
+      statement: String): OperationHandle = {
     sessionManager.getSession(sessionHandle).executeStatementAsync(statement)
   }
 
@@ -117,7 +115,7 @@ private[server] class BackendService private(name: String)
       schemaName: String,
       tableName: String,
       tableTypes: JList[String]): OperationHandle = {
-    throw new HiveSQLException("Method Not Implemented!")
+    executeStatement(sessionHandle, "show tables")
   }
 
   def getTableTypes(sessionHandle: SessionHandle): OperationHandle = {
