@@ -25,7 +25,7 @@ import org.apache.spark.SparkConf
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
-import yaooqinn.kyuubi.operation.OperationHandle
+import yaooqinn.kyuubi.operation.{OperationHandle, OperationStatus}
 import yaooqinn.kyuubi.service.CompositeService
 import yaooqinn.kyuubi.session.{SessionHandle, SessionManager}
 

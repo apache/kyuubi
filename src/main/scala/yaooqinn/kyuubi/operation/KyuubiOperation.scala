@@ -45,12 +45,12 @@ import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 
 class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging {
 
-  private[this] var state = OperationState.INITIALIZED
+  private[this] var state: OperationState = INITIALIZED
   private[this] val opHandle: OperationHandle =
     new OperationHandle(EXECUTE_STATEMENT, session.getProtocolVersion)
 
   private[this] val operationTimeout =
-    session.sparkSession().sparkContext.getConf.getTimeAsMs(OPERATION_IDLE_TIMEOUT.key)
+    session.sparkSession.sparkContext.getConf.getTimeAsMs(OPERATION_IDLE_TIMEOUT.key)
   private[this] var lastAccessTime = System.currentTimeMillis()
 
   private[this] var hasResultSet: Boolean = false
@@ -108,7 +108,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
   }
   
   private[this] def isClosedOrCanceled: Boolean = {
-    checkState(OperationState.CLOSED) || checkState(OperationState.CANCELED)
+    checkState(CLOSED) || checkState(CANCELED)
   }
 
   @throws[HiveSQLException]
@@ -212,14 +212,14 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
   def close(): Unit = {
     // RDDs will be cleaned automatically upon garbage collection.
     debug(s"CLOSING $statementId")
-    cleanup(OperationState.CLOSED)
+    cleanup(CLOSED)
     cleanupOperationLog()
-    session.sparkSession().sparkContext.clearJobGroup()
+    session.sparkSession.sparkContext.clearJobGroup()
   }
 
   def cancel(): Unit = {
     info(s"Cancel '$statement' with $statementId")
-    cleanup(OperationState.CANCELED)
+    cleanup(CANCELED)
   }
 
   def addNonNullColumnValue(from: Row, to: ArrayBuffer[Any], ordinal: Int) {
@@ -258,7 +258,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
 
   def getNextRowSet(order: FetchOrientation, maxRowsL: Long): RowSet = {
     validateDefaultFetchOrientation(order)
-    assertState(OperationState.FINISHED)
+    assertState(FINISHED)
     setHasResultSet(true)
     val resultRowSet: RowSet = RowSetFactory.create(getResultSetSchema, getProtocolVersion)
 
@@ -323,7 +323,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
   }
 
   private[this] def runInternal(): Unit = {
-    setState(OperationState.PENDING)
+    setState(PENDING)
     setHasResultSet(true)
 
     // Runnable impl to call runInternal asynchronously, from a different thread
@@ -353,12 +353,12 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       setBackgroundHandle(backgroundHandle)
     } catch {
       case rejected: RejectedExecutionException =>
-        setState(OperationState.ERROR)
+        setState(ERROR)
         throw new HiveSQLException("The background threadpool cannot accept" +
           " new task for execution, please retry the operation", rejected)
       case NonFatal(e) =>
         error(s"Error executing query in background", e)
-        setState(OperationState.ERROR)
+        setState(ERROR)
         throw e
     }
   }
@@ -367,7 +367,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     try {
       statementId = UUID.randomUUID().toString
       info(s"Running query '$statement' with $statementId")
-      setState(OperationState.RUNNING)
+      setState(RUNNING)
       KyuubiServerMonitor.getListener(session.getUserName).foreach {
         _.onStatementStart(
           statementId,
@@ -376,15 +376,15 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
           statementId,
           session.getUserName)
       }
-      session.sparkSession().sparkContext.setJobGroup(statementId, statement)
-      result = session.sparkSession().sql(statement)
+      session.sparkSession.sparkContext.setJobGroup(statementId, statement)
+      result = session.sparkSession.sql(statement)
       KyuubiServerMonitor.getListener(session.getUserName).foreach {
         _.onStatementParsed(statementId, result.queryExecution.toString())
       }
       debug(result.queryExecution.toString())
       iter = result.collect().iterator
       dataTypes = result.queryExecution.analyzed.output.map(_.dataType).toArray
-      setState(OperationState.FINISHED)
+      setState(FINISHED)
       KyuubiServerMonitor.getListener(session.getUserName).foreach(_.onStatementFinish(statementId))
     } catch {
       case e: HiveSQLException =>
@@ -416,7 +416,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
         }
     } finally {
       if (statementId != null) {
-        session.sparkSession().sparkContext.cancelJobGroup(statementId)
+        session.sparkSession.sparkContext.cancelJobGroup(statementId)
       }
     }
   }
@@ -429,13 +429,13 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
          |Current operation state ${this.state},
          |$trace
        """.stripMargin)
-    setState(OperationState.ERROR)
+    setState(ERROR)
     KyuubiServerMonitor.getListener(session.getUserName)
       .foreach(_.onStatementError(id, message, trace))
   }
 
   private[this] def cleanup(state: OperationState) {
-    if (this.state != OperationState.CLOSED) {
+    if (this.state != CLOSED) {
       setState(state)
     }
     val backgroundHandle = getBackgroundHandle
@@ -443,7 +443,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       backgroundHandle.cancel(true)
     }
     if (statementId != null) {
-      session.sparkSession().sparkContext.cancelJobGroup(statementId)
+      session.sparkSession.sparkContext.cancelJobGroup(statementId)
     }
   }
 
