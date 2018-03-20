@@ -20,3 +20,7 @@ install:
 
 script:
   - ./build/mvn package -q -Dmaven.javadoc.skip=true -B -V
+
+language: java
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
