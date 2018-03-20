@@ -383,7 +383,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
         _.onStatementParsed(statementId, result.queryExecution.toString())
       }
       debug(result.queryExecution.toString())
-      iter = result.collect().iterator
+      iter = result.toLocalIterator().asScala
       dataTypes = result.queryExecution.analyzed.output.map(_.dataType).toArray
       setState(FINISHED)
       KyuubiServerMonitor.getListener(session.getUserName).foreach(_.onStatementFinish(statementId))
