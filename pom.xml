@@ -373,9 +373,6 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.0</version>
-                <configuration>
-                    <destFile>${project.build.directory}/codecov-reports</destFile>
-                </configuration>
                 <executions>
                     <execution>
                         <goals>
