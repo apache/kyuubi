@@ -25,3 +25,5 @@ build/scala*
 target/
 logs/
 out/
+hs_err_pid*
+
