@@ -21,7 +21,7 @@ import org.apache.hive.service.cli.thrift.{TPrimitiveTypeEntry, TTypeDesc, TType
 import org.apache.spark.sql.types.{DataType, DecimalType}
 
 class TypeDescriptor(typ: DataType) {
-  private val typeQualifiers: Option[TypeQualifiers] = typ match {
+  private[this] val typeQualifiers: Option[TypeQualifiers] = typ match {
     case d: DecimalType => Some(TypeQualifiers.fromTypeInfo(d))
     case _ => None
   }
