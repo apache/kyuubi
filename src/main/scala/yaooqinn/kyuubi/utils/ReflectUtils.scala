@@ -139,7 +139,22 @@ object ReflectUtils extends Logging {
       name: String,
       argTypes: Seq[Class[_]], params: Seq[AnyRef]): Any = {
     require(o != null, "object could not be null!")
-    Try {o.getClass.getMethod(name, argTypes: _*).invoke(o, params: _*) } match {
+    Try {
+      val method = o.getClass.getDeclaredMethod(name, argTypes: _*)
+      method.setAccessible(true)
+      method.invoke(o, params: _*)
+    } match {
+      case Success(value) => value
+      case Failure(exception) => throw exception
+    }
+  }
+
+  def getObject(o: Any, name: String): Any = {
+    Try {
+      val field = o.getClass.getDeclaredField(name)
+      field.setAccessible(true)
+      field.get(o)
+    } match {
       case Success(value) => value
       case Failure(exception) => throw exception
     }
