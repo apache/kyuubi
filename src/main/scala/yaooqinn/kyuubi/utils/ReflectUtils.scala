@@ -149,7 +149,7 @@ object ReflectUtils extends Logging {
     }
   }
 
-  def getObject(o: Any, name: String): Any = {
+  def getFieldValue(o: Any, name: String): Any = {
     Try {
       val field = o.getClass.getDeclaredField(name)
       field.setAccessible(true)

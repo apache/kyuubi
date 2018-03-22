@@ -29,10 +29,10 @@ class TypeQualifiersSuite extends SparkFunSuite {
     val typeQualifiers1 = TypeQualifiers.fromTypeInfo(new DecimalType(10, 9))
     val typeQualifiers2 = TypeQualifiers.fromTypeInfo(BooleanType)
 
-    assert(ReflectUtils.getObject(typeQualifiers1, "precision") === Some(10))
-    assert(ReflectUtils.getObject(typeQualifiers1, "scale") === Some(9))
-    assert(ReflectUtils.getObject(typeQualifiers2, "precision") === None)
-    assert(ReflectUtils.getObject(typeQualifiers2, "scale") === None)
+    assert(ReflectUtils.getFieldValue(typeQualifiers1, "precision") === Some(10))
+    assert(ReflectUtils.getFieldValue(typeQualifiers1, "scale") === Some(9))
+    assert(ReflectUtils.getFieldValue(typeQualifiers2, "precision") === None)
+    assert(ReflectUtils.getFieldValue(typeQualifiers2, "scale") === None)
 
     assert(typeQualifiers1.toTTypeQualifiers
       .getQualifiers.get(TCLIServiceConstants.PRECISION).getI32Value === 10)
