@@ -39,6 +39,7 @@ import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.auth.{KERBEROS, KyuubiAuthFactory}
 import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType}
 import yaooqinn.kyuubi.operation.OperationHandle
+import yaooqinn.kyuubi.schema.SchemaMapper
 import yaooqinn.kyuubi.service.{AbstractService, ServiceException, ServiceUtils}
 import yaooqinn.kyuubi.session.SessionHandle
 import yaooqinn.kyuubi.utils.NamedThreadFactory
@@ -485,7 +486,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     val resp = new TGetResultSetMetadataResp
     try {
       val schema = beService.getResultSetMetadata(new OperationHandle(req.getOperationHandle))
-      resp.setSchema(schema.toTTableSchema)
+      resp.setSchema(SchemaMapper.toTTableSchema(schema))
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>

@@ -23,15 +23,17 @@ import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
 
-import org.apache.hadoop.hive.metastore.api.{FieldSchema, Schema}
 import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.hive.service.cli._
 import org.apache.log4j.Logger
 import org.apache.spark.{SparkConf, SparkUtils}
 import org.apache.spark.KyuubiConf._
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.types.StructType
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.cli.FetchOrientation
+import yaooqinn.kyuubi.schema.RowSet
 import yaooqinn.kyuubi.service.AbstractService
 import yaooqinn.kyuubi.session.KyuubiSession
 
@@ -154,23 +156,17 @@ private[kyuubi] class OperationManager private(name: String)
       throw new HiveSQLException("Couldn't find log associated with operation handle: " + opHandle)
     }
     try {
-      // read logs
-      val logs = operationLog.readOperationLog(isFetchFirst(orientation), maxRows).asScala
       // convert logs to RowSet
-      val tableSchema: TableSchema = new TableSchema(getLogSchema)
-      val rowSet: RowSet =
-        RowSetFactory.create(tableSchema, getOperation(opHandle).getProtocolVersion)
-      for (log <- logs) {
-        rowSet.addRow(Array[AnyRef](log))
-      }
-      rowSet
+      val logs = operationLog.
+        readOperationLog(isFetchFirst(orientation), maxRows).asScala.map(Row(_)).iterator
+      RowSet(getLogSchema, logs)
     } catch {
       case e: SQLException =>
         throw new HiveSQLException(e.getMessage, e.getCause)
     }
   }
 
-  def getResultSetSchema(opHandle: OperationHandle): TableSchema = {
+  def getResultSetSchema(opHandle: OperationHandle): StructType = {
     getOperation(opHandle).getResultSetSchema
   }
 
@@ -178,14 +174,7 @@ private[kyuubi] class OperationManager private(name: String)
     fetchOrientation == FetchOrientation.FETCH_FIRST
   }
 
-  private[this] def getLogSchema: Schema = {
-    val schema: Schema = new Schema
-    val fieldSchema: FieldSchema = new FieldSchema
-    fieldSchema.setName("operation_log")
-    fieldSchema.setType("string")
-    schema.addToFieldSchemas(fieldSchema)
-    schema
-  }
+  private[this] def getLogSchema: StructType = new StructType().add("operation_log", "string")
 
   def removeExpiredOperations(handles: Seq[OperationHandle]): Seq[KyuubiOperation] = {
     handles.flatMap(removeTimedOutOperation).map { op =>
