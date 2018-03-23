@@ -27,13 +27,12 @@ import org.apache.spark.sql.types._
  * A result set of Spark's [[Row]]s with its [[StructType]] as its schema, with the ability of
  * transform to [[TRowSet]].
  */
-case class RowSet(types: StructType, rows: Iterator[Row]) {
+case class RowSet(types: StructType, rows: Seq[Row]) {
 
   def toTRowSet: TRowSet = new TRowSet(0, toTRows(rows).asJava)
 
-  private[this] def toTRows(rows: Iterator[Row]): List[TRow] = {
-    rows.map(toTRow).toList
-  }
+  private[this] def toTRows(rows: Seq[Row]): Seq[TRow] = rows.map(toTRow)
+
 
   private[this] def toTRow(row: Row): TRow = {
     val tRow = new TRow()

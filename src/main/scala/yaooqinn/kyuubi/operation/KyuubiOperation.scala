@@ -229,7 +229,11 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     } else {
       iter.take(maxRowsL.toInt)
     }
-    RowSet(getResultSetSchema, taken)
+    // if not wrap doas ,it will cause NPE while proxy on
+    session.ugi.doAs(new PrivilegedExceptionAction[RowSet] {
+      override def run(): RowSet = RowSet(getResultSetSchema, taken.toSeq)
+    })
+
   }
 
   private[this] def setHasResultSet(hasResultSet: Boolean): Unit = {

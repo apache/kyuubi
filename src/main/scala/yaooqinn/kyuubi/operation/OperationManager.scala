@@ -142,23 +142,24 @@ private[kyuubi] class OperationManager private(name: String)
   @throws[HiveSQLException]
   def getOperationNextRowSet(
       opHandle: OperationHandle,
-      orientation: FetchOrientation, maxRows: Long): RowSet =
+      orientation: FetchOrientation,
+      maxRows: Long): RowSet =
     getOperation(opHandle).getNextRowSet(orientation, maxRows)
 
   @throws[HiveSQLException]
   def getOperationLogRowSet(
       opHandle: OperationHandle,
-      orientation: FetchOrientation, maxRows: Long): RowSet = {
+      orientation: FetchOrientation,
+      maxRows: Long): RowSet = {
     // get the OperationLog object from the operation
-    val operationLog: OperationLog = getOperation(opHandle).getOperationLog
-    if (operationLog == null) {
+    val opLog: OperationLog = getOperation(opHandle).getOperationLog
+    if (opLog == null) {
       throw new HiveSQLException("Couldn't find log associated with operation handle: " + opHandle)
     }
     try {
       // convert logs to RowSet
-      val logs = operationLog.
-        readOperationLog(isFetchFirst(orientation), maxRows).asScala.map(Row(_)).iterator
-      RowSet(getLogSchema, logs)
+      val logs = opLog.readOperationLog(isFetchFirst(orientation), maxRows).asScala.map(Row(_))
+      RowSet(logSchema, logs)
     } catch {
       case e: SQLException =>
         throw new HiveSQLException(e.getMessage, e.getCause)
@@ -173,7 +174,7 @@ private[kyuubi] class OperationManager private(name: String)
     fetchOrientation == FetchOrientation.FETCH_FIRST
   }
 
-  private[this] def getLogSchema: StructType = new StructType().add("operation_log", "string")
+  private[this] def logSchema: StructType = new StructType().add("operation_log", "string")
 
   def removeExpiredOperations(handles: Seq[OperationHandle]): Seq[KyuubiOperation] = {
     handles.flatMap(removeTimedOutOperation).map { op =>
