@@ -220,9 +220,11 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     validateDefaultFetchOrientation(order)
     assertState(FINISHED)
     setHasResultSet(true)
-    val taken = iter.take(maxRowsL.toInt)
-    val remained = iter.drop(maxRowsL.toInt)
-    iter = if (order == FetchOrientation.FETCH_FIRST) taken else remained
+    val taken = if (order == FetchOrientation.FETCH_FIRST) {
+      result.toLocalIterator().asScala.take(maxRowsL.toInt)
+    } else {
+      iter.take(maxRowsL.toInt)
+    }
     RowSet(getResultSetSchema, taken)
   }
 
