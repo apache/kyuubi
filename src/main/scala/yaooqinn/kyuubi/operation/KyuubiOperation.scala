@@ -214,7 +214,11 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     cleanup(CANCELED)
   }
 
-  def getResultSetSchema: StructType = result.schema
+  def getResultSetSchema: StructType = if (result == null || result.schema.isEmpty) {
+    new StructType().add("Result", "string")
+  } else {
+    result.schema
+  }
 
   def getNextRowSet(order: FetchOrientation, maxRowsL: Long): RowSet = {
     validateDefaultFetchOrientation(order)
