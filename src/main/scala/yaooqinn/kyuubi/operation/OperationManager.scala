@@ -18,7 +18,6 @@
 package yaooqinn.kyuubi.operation
 
 import java.sql.SQLException
-import java.util.{HashMap => JMap}
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
@@ -42,9 +41,9 @@ private[kyuubi] class OperationManager private(name: String)
 
   def this() = this(classOf[OperationManager].getSimpleName)
 
-  private[this] val handleToOperation = new JMap[OperationHandle, KyuubiOperation]
+  private[this] val handleToOperation = new ConcurrentHashMap[OperationHandle, KyuubiOperation]
 
-  val userToOperationLog = new ConcurrentHashMap[String, OperationLog]()
+  private[this] val userToOperationLog = new ConcurrentHashMap[String, OperationLog]()
 
   override def init(conf: SparkConf): Unit = synchronized {
     if (conf.get(LOGGING_OPERATION_ENABLED.key).toBoolean) {
@@ -100,14 +99,14 @@ private[kyuubi] class OperationManager private(name: String)
   }
 
   private[this] def getOperationInternal(operationHandle: OperationHandle) =
-    synchronized(handleToOperation.get(operationHandle))
+    handleToOperation.get(operationHandle)
 
   private[this] def addOperation(operation: KyuubiOperation): Unit = {
-    synchronized(handleToOperation.put(operation.getHandle, operation))
+    handleToOperation.put(operation.getHandle, operation)
   }
 
   private[this] def removeOperation(opHandle: OperationHandle) =
-    synchronized(handleToOperation.remove(opHandle))
+    handleToOperation.remove(opHandle)
 
   private def removeTimedOutOperation(
       operationHandle: OperationHandle): Option[KyuubiOperation] = synchronized {

@@ -17,8 +17,6 @@
 
 package yaooqinn.kyuubi.server
 
-import java.util.{List => JList, Map => JMap}
-
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.SparkConf
@@ -116,8 +114,8 @@ private[server] class BackendService private(name: String)
       catalogName: String,
       schemaName: String,
       tableName: String,
-      tableTypes: JList[String]): OperationHandle = {
-    executeStatement(sessionHandle, "show tables")
+      tableTypes: Seq[String]): OperationHandle = {
+    throw new HiveSQLException("Method Not Implemented!")
   }
 
   def getTableTypes(sessionHandle: SessionHandle): OperationHandle = {
