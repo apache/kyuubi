@@ -50,5 +50,4 @@ object TypeQualifiers {
     }
     result
   }
-
 }

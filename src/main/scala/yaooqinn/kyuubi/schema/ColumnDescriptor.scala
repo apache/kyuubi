@@ -20,16 +20,19 @@ package yaooqinn.kyuubi.schema
 import org.apache.hive.service.cli.thrift.TColumnDesc
 import org.apache.spark.sql.types.StructField
 
-class ColumnDescriptor private(name: String, comment: String, typeDesc: TypeDescriptor, pos: Int) {
-
-  def this(filed: StructField, pos: Int) =
-    this(filed.name, filed.getComment().getOrElse(""), new TypeDescriptor(filed.dataType), pos)
-
+/**
+ * A wrapper class for Spark's [[StructField]] with a column position, and can be transform to
+ * [[TColumnDesc]]
+ */
+case class ColumnDescriptor(field: StructField, pos: Int) {
+  /**
+   * Transform a [[ColumnDescriptor]] to a [[TColumnDesc]] instance.
+   */
   def toTColumnDesc: TColumnDesc = {
     val tColumnDesc = new TColumnDesc
-    tColumnDesc.setColumnName(name)
-    tColumnDesc.setComment(comment)
-    tColumnDesc.setTypeDesc(typeDesc.toTTypeDesc)
+    tColumnDesc.setColumnName(field.name)
+    tColumnDesc.setComment(field.getComment().getOrElse(""))
+    tColumnDesc.setTypeDesc(TypeDescriptor(field.dataType).toTTypeDesc)
     tColumnDesc.setPosition(pos)
     tColumnDesc
   }
