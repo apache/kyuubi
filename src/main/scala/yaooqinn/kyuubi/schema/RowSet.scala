@@ -23,6 +23,10 @@ import org.apache.hive.service.cli.thrift._
 import org.apache.spark.sql.{Row, SparkSQLUtils}
 import org.apache.spark.sql.types._
 
+/**
+ * A result set of Spark's [[Row]]s with its [[StructType]] as its schema, with the ability of
+ * transform to [[TRowSet]].
+ */
 case class RowSet(types: StructType, rows: Iterator[Row]) {
 
   def toTRowSet: TRowSet = new TRowSet(0, toTRows(rows).asJava)
