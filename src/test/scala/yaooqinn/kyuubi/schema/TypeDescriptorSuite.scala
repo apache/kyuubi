@@ -19,7 +19,7 @@ package yaooqinn.kyuubi.schema
 
 import org.apache.hive.service.cli.thrift.{TCLIServiceConstants, TTypeId}
 import org.apache.spark.SparkFunSuite
-import org.apache.spark.sql.types.{ByteType, DecimalType, NullType}
+import org.apache.spark.sql.types.{ByteType, DecimalType}
 
 import yaooqinn.kyuubi.utils.ReflectUtils
 

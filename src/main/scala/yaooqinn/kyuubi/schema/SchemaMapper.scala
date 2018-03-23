@@ -25,7 +25,7 @@ object SchemaMapper {
   def toTTableSchema(fields: StructType): TTableSchema = {
     val tTableSchema = new TTableSchema
     fields.zipWithIndex.map {
-      case (field, i) => new ColumnDescriptor(field, i)
+      case (field, i) => ColumnDescriptor(field, i)
     }.map(_.toTColumnDesc).foreach(tTableSchema.addToColumns)
     tTableSchema
   }
