@@ -30,8 +30,8 @@ import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAccessControl
 import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
-import org.apache.spark.SparkUtils
 import org.apache.spark.KyuubiConf._
+import org.apache.spark.SparkUtils
 import org.apache.spark.sql.{AnalysisException, DataFrame, Row}
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.types._
@@ -59,6 +59,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
   private[this] var isOperationLogEnabled: Boolean = false
 
   private[this] var result: DataFrame = _
+  private[this] var resultList: Array[Row] = _
   private[this] var iter: Iterator[Row] = _
   private[this] var statementId: String = _
 
@@ -221,7 +222,11 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     validateDefaultFetchOrientation(order)
     assertState(FINISHED)
     setHasResultSet(true)
-    val taken = iter.take(maxRowsL.toInt)
+    val taken = if (order == FetchOrientation.FETCH_FIRST) {
+      resultList.take(maxRowsL.toInt).iterator
+    } else {
+      iter.take(maxRowsL.toInt)
+    }
     RowSetBuilder.create(getResultSetSchema, taken.toSeq, session.getProtocolVersion)
   }
 
@@ -311,7 +316,8 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
         _.onStatementParsed(statementId, result.queryExecution.toString())
       }
       debug(result.queryExecution.toString())
-      iter = result.collect().iterator
+      resultList = result.collect()
+      iter = resultList.iterator
       setState(FINISHED)
       KyuubiServerMonitor.getListener(session.getUserName).foreach(_.onStatementFinish(statementId))
     } catch {
