@@ -60,7 +60,6 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
 
   private[this] var result: DataFrame = _
   private[this] var iter: Iterator[Row] = _
-  private[this] var dataTypes: Array[DataType] = _
   private[this] var statementId: String = _
 
   private[this] val DEFAULT_FETCH_ORIENTATION_SET: Set[FetchOrientation] =
@@ -222,18 +221,8 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     validateDefaultFetchOrientation(order)
     assertState(FINISHED)
     setHasResultSet(true)
-
-    // if not wrap doas ,it will cause NPE while proxy on
-    session.ugi.doAs(new PrivilegedExceptionAction[RowSet] {
-      override def run(): RowSet = {
-        val taken = if (order == FetchOrientation.FETCH_FIRST) {
-          result.toLocalIterator().asScala.take(maxRowsL.toInt)
-        } else {
-          iter.take(maxRowsL.toInt)
-        }
-        RowSetBuilder.create(getResultSetSchema, taken.toSeq, session.getProtocolVersion)
-      }
-    })
+    val taken = iter.take(maxRowsL.toInt)
+    RowSetBuilder.create(getResultSetSchema, taken.toSeq, session.getProtocolVersion)
   }
 
   private[this] def setHasResultSet(hasResultSet: Boolean): Unit = {
@@ -322,8 +311,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
         _.onStatementParsed(statementId, result.queryExecution.toString())
       }
       debug(result.queryExecution.toString())
-      iter = result.toLocalIterator().asScala
-      dataTypes = result.queryExecution.analyzed.output.map(_.dataType).toArray
+      iter = result.collect().iterator
       setState(FINISHED)
       KyuubiServerMonitor.getListener(session.getUserName).foreach(_.onStatementFinish(statementId))
     } catch {
