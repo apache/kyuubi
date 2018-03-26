@@ -21,7 +21,7 @@ import org.apache.spark.SparkFunSuite
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
-class RowSetSuite extends SparkFunSuite {
+class RowBasedSetSuite extends SparkFunSuite {
 
   test("row set basic suites") {
     val maxRows: Int = 5
@@ -49,7 +49,7 @@ class RowSetSuite extends SparkFunSuite {
     // fetch next
     val rowIterator = rows.iterator
     var taken = rowIterator.take(maxRows).toSeq
-    var tRowSet = RowSet(schema, taken).toTRowSet
+    var tRowSet = RowBasedSet(schema, taken).toTRowSet
     assert(tRowSet.getRowsSize === 5)
     assert(tRowSet.getRows.get(0).getColVals.get(1).getStringVal.getValue === "11")
     assert(tRowSet.getRows.get(1).getColVals.get(1).getStringVal.getValue === "22")
@@ -58,7 +58,7 @@ class RowSetSuite extends SparkFunSuite {
     assert(tRowSet.getRows.get(4).getColVals.get(1).getStringVal.getValue === "55")
 
     taken = rowIterator.take(maxRows).toSeq
-    tRowSet = RowSet(schema, taken).toTRowSet
+    tRowSet = RowBasedSet(schema, taken).toTRowSet
     assert(tRowSet.getRowsSize === 5)
     assert(tRowSet.getRows.get(0).getColVals.get(1).getStringVal.getValue === "66")
     assert(tRowSet.getRows.get(1).getColVals.get(1).getStringVal.getValue === "77")
@@ -67,7 +67,7 @@ class RowSetSuite extends SparkFunSuite {
     assert(tRowSet.getRows.get(4).getColVals.get(1).getStringVal.getValue === "000")
 
     taken = rowIterator.take(maxRows).toSeq
-    tRowSet = RowSet(schema, taken).toTRowSet
+    tRowSet = RowBasedSet(schema, taken).toTRowSet
     assert(tRowSet.getRowsSize === 5)
     assert(tRowSet.getRows.get(0).getColVals.get(1).getStringVal.getValue === "111")
     assert(tRowSet.getRows.get(1).getColVals.get(1).getStringVal.getValue === "222")
@@ -76,7 +76,7 @@ class RowSetSuite extends SparkFunSuite {
     assert(tRowSet.getRows.get(4).getColVals.get(1).getStringVal.getValue === "555")
 
     taken = rowIterator.take(maxRows).toSeq
-    tRowSet = RowSet(schema, taken).toTRowSet
+    tRowSet = RowBasedSet(schema, taken).toTRowSet
     assert(tRowSet.getRowsSize === 1)
     assert(tRowSet.getRows.get(0).getColVals.get(1).getStringVal.getValue === "666")
     intercept[IndexOutOfBoundsException](tRowSet.getRows.get(1))
@@ -90,7 +90,7 @@ class RowSetSuite extends SparkFunSuite {
     val resultList = itr2.toList
 
     taken = itr1.toSeq
-    tRowSet = RowSet(schema, taken).toTRowSet
+    tRowSet = RowBasedSet(schema, taken).toTRowSet
     assert(tRowSet.getRowsSize === 5)
     assert(tRowSet.getRows.get(0).getColVals.get(1).getStringVal.getValue === "11")
     assert(tRowSet.getRows.get(1).getColVals.get(1).getStringVal.getValue === "22")
@@ -99,7 +99,7 @@ class RowSetSuite extends SparkFunSuite {
     assert(tRowSet.getRows.get(4).getColVals.get(1).getStringVal.getValue === "55")
 
     taken = resultList
-    tRowSet = RowSet(schema, taken).toTRowSet
+    tRowSet = RowBasedSet(schema, taken).toTRowSet
     assert(tRowSet.getRowsSize === 5)
     assert(tRowSet.getRows.get(0).getColVals.get(1).getStringVal.getValue === "11")
     assert(tRowSet.getRows.get(1).getColVals.get(1).getStringVal.getValue === "22")
@@ -108,7 +108,7 @@ class RowSetSuite extends SparkFunSuite {
     assert(tRowSet.getRows.get(4).getColVals.get(1).getStringVal.getValue === "55")
 
     taken = resultList
-    tRowSet = RowSet(schema, taken).toTRowSet
+    tRowSet = RowBasedSet(schema, taken).toTRowSet
     assert(tRowSet.getRowsSize === 5)
     assert(tRowSet.getRows.get(0).getColVals.get(1).getStringVal.getValue === "11")
     assert(tRowSet.getRows.get(1).getColVals.get(1).getStringVal.getValue === "22")
@@ -116,5 +116,4 @@ class RowSetSuite extends SparkFunSuite {
     assert(tRowSet.getRows.get(3).getColVals.get(1).getStringVal.getValue === "44")
     assert(tRowSet.getRows.get(4).getColVals.get(1).getStringVal.getValue === "55")
   }
-
 }

@@ -47,7 +47,7 @@ import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.cli._
 import yaooqinn.kyuubi.operation.{KyuubiOperation, OperationHandle, OperationManager}
-import yaooqinn.kyuubi.schema.RowSet
+import yaooqinn.kyuubi.schema.{RowBasedSet, RowSet}
 import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
 import yaooqinn.kyuubi.utils.{HadoopUtils, ReflectUtils}
 

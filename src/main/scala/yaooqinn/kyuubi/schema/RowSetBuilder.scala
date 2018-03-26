@@ -17,8 +17,18 @@
 
 package yaooqinn.kyuubi.schema
 
-import org.apache.hive.service.cli.thrift.TRowSet
+import org.apache.hive.service.cli.thrift.TProtocolVersion
+import org.apache.hive.service.cli.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.types.StructType
 
-trait RowSet {
-  def toTRowSet: TRowSet
+object RowSetBuilder {
+
+  def create(types: StructType, rows: Seq[Row], version: TProtocolVersion): RowSet = {
+    if (version.getValue >= HIVE_CLI_SERVICE_PROTOCOL_V6.getValue) {
+      ColumnBasedSet(types, rows)
+    } else {
+      RowBasedSet(types, rows)
+    }
+  }
 }
