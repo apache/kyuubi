@@ -19,12 +19,10 @@ package yaooqinn.kyuubi.operation
 
 import java.io.{File, FileNotFoundException}
 import java.security.PrivilegedExceptionAction
-import java.sql.{Date, Timestamp}
 import java.util.UUID
 import java.util.concurrent.{Future, RejectedExecutionException}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
 import scala.util.control.NonFatal
 
 import org.apache.hadoop.hive.conf.HiveConf
@@ -32,15 +30,15 @@ import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAccessControl
 import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
-import org.apache.spark.KyuubiConf._
 import org.apache.spark.SparkUtils
-import org.apache.spark.sql.{AnalysisException, DataFrame, Row, SparkSQLUtils}
+import org.apache.spark.KyuubiConf._
+import org.apache.spark.sql.{AnalysisException, DataFrame, Row}
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.types._
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.cli.FetchOrientation
-import yaooqinn.kyuubi.schema.RowSet
+import yaooqinn.kyuubi.schema.{RowSet, RowSetBuilder}
 import yaooqinn.kyuubi.session.KyuubiSession
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 
@@ -231,7 +229,8 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     }
     // if not wrap doas ,it will cause NPE while proxy on
     session.ugi.doAs(new PrivilegedExceptionAction[RowSet] {
-      override def run(): RowSet = RowSet(getResultSetSchema, taken.toSeq)
+      override def run(): RowSet =
+        RowSetBuilder.create(getResultSetSchema, taken.toSeq, session.getProtocolVersion)
     })
 
   }
@@ -243,10 +242,6 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
 
   /**
    * Verify if the given fetch orientation is part of the default orientation types.
-   *
-   * @param orientation
-   *
-   * @throws HiveSQLException
    */
   @throws[HiveSQLException]
   private[this] def validateDefaultFetchOrientation(orientation: FetchOrientation): Unit = {
@@ -255,11 +250,6 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
 
   /**
    * Verify if the given fetch orientation is part of the supported orientation types.
-   *
-   * @param orientation
-   * @param supportedOrientations
-   *
-   * @throws HiveSQLException
    */
   @throws[HiveSQLException]
   private[this] def validateFetchOrientation(

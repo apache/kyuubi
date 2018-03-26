@@ -32,7 +32,7 @@ import org.apache.spark.sql.types.StructType
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.cli.FetchOrientation
-import yaooqinn.kyuubi.schema.RowSet
+import yaooqinn.kyuubi.schema.{RowSet, RowSetBuilder}
 import yaooqinn.kyuubi.service.AbstractService
 import yaooqinn.kyuubi.session.KyuubiSession
 
@@ -157,9 +157,9 @@ private[kyuubi] class OperationManager private(name: String)
       throw new HiveSQLException("Couldn't find log associated with operation handle: " + opHandle)
     }
     try {
-      // convert logs to RowSet
+      // convert logs to RowBasedSet
       val logs = opLog.readOperationLog(isFetchFirst(orientation), maxRows).asScala.map(Row(_))
-      RowSet(logSchema, logs)
+      RowSetBuilder.create(logSchema, logs, opHandle.getProtocolVersion)
     } catch {
       case e: SQLException =>
         throw new HiveSQLException(e.getMessage, e.getCause)

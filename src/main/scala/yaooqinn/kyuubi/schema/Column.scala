@@ -17,8 +17,6 @@
 
 package yaooqinn.kyuubi.schema
 
-import org.apache.hive.service.cli.thrift.TRowSet
+class Column {
 
-trait RowSet {
-  def toTRowSet: TRowSet
 }
