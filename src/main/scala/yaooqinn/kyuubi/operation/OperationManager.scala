@@ -159,7 +159,7 @@ private[kyuubi] class OperationManager private(name: String)
     try {
       // convert logs to RowBasedSet
       val logs = opLog.readOperationLog(isFetchFirst(orientation), maxRows).asScala.map(Row(_))
-      RowSetBuilder.create(logSchema, logs, opHandle.getProtocolVersion)
+      RowSetBuilder.create(logSchema, logs, getOperation(opHandle).getProtocolVersion)
     } catch {
       case e: SQLException =>
         throw new HiveSQLException(e.getMessage, e.getCause)
