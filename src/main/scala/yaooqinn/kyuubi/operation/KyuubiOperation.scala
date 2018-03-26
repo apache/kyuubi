@@ -222,17 +222,18 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     validateDefaultFetchOrientation(order)
     assertState(FINISHED)
     setHasResultSet(true)
-    val taken = if (order == FetchOrientation.FETCH_FIRST) {
-      result.toLocalIterator().asScala.take(maxRowsL.toInt)
-    } else {
-      iter.take(maxRowsL.toInt)
-    }
+
     // if not wrap doas ,it will cause NPE while proxy on
     session.ugi.doAs(new PrivilegedExceptionAction[RowSet] {
-      override def run(): RowSet =
+      override def run(): RowSet = {
+        val taken = if (order == FetchOrientation.FETCH_FIRST) {
+          result.toLocalIterator().asScala.take(maxRowsL.toInt)
+        } else {
+          iter.take(maxRowsL.toInt)
+        }
         RowSetBuilder.create(getResultSetSchema, taken.toSeq, session.getProtocolVersion)
+      }
     })
-
   }
 
   private[this] def setHasResultSet(hasResultSet: Boolean): Unit = {
