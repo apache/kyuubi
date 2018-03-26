@@ -431,7 +431,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     try {
       val operationStatus = beService.getOperationStatus(
         new OperationHandle(req.getOperationHandle))
-      resp.setOperationState(operationStatus.getState.toTOperationState)
+      resp.setOperationState(operationStatus.getState.toTOperationState())
       val opException = operationStatus.getOperationException
       if (opException != null) {
         resp.setSqlState(opException.getSQLState)
