@@ -17,35 +17,33 @@
 
 package yaooqinn.kyuubi.schema
 
+import org.apache.hive.service.cli
 import org.apache.spark.SparkFunSuite
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
 class RowBasedSetSuite extends SparkFunSuite {
+  val maxRows: Int = 5
+  val schema = new StructType().add("a", "int").add("b", "string")
+  val rows = Seq(
+    Row(1, "11"),
+    Row(2, "22"),
+    Row(3, "33"),
+    Row(4, "44"),
+    Row(5, "55"),
+    Row(6, "66"),
+    Row(7, "77"),
+    Row(8, "88"),
+    Row(9, "99"),
+    Row(10, "000"),
+    Row(11, "111"),
+    Row(12, "222"),
+    Row(13, "333"),
+    Row(14, "444"),
+    Row(15, "555"),
+    Row(16, "666"))
 
   test("row set basic suites") {
-    val maxRows: Int = 5
-
-    val schema = new StructType().add("a", "int").add("b", "string")
-
-    val rows = Seq(
-      Row(1, "11"),
-      Row(2, "22"),
-      Row(3, "33"),
-      Row(4, "44"),
-      Row(5, "55"),
-      Row(6, "66"),
-      Row(7, "77"),
-      Row(8, "88"),
-      Row(9, "99"),
-      Row(10, "000"),
-      Row(11, "111"),
-      Row(12, "222"),
-      Row(13, "333"),
-      Row(14, "444"),
-      Row(15, "555"),
-      Row(16, "666"))
-
     // fetch next
     val rowIterator = rows.iterator
     var taken = rowIterator.take(maxRows).toSeq
@@ -115,5 +113,31 @@ class RowBasedSetSuite extends SparkFunSuite {
     assert(tRowSet.getRows.get(2).getColVals.get(1).getStringVal.getValue === "33")
     assert(tRowSet.getRows.get(3).getColVals.get(1).getStringVal.getValue === "44")
     assert(tRowSet.getRows.get(4).getColVals.get(1).getStringVal.getValue === "55")
+  }
+
+  test("kyuubi row set to TRowSet then to hive row set") {
+    val rowIterator = rows.iterator
+    val taken = rowIterator.take(maxRows).toSeq
+    val tRowSet = RowBasedSet(schema, taken).toTRowSet
+
+    val hiveSet = new cli.RowBasedSet(tRowSet)
+    assert(hiveSet.numRows() === 5)
+    assert(hiveSet.numColumns() === 2)
+    val hiveRowIter = hiveSet.iterator()
+    val row1 = hiveRowIter.next().iterator
+    assert(row1.next().asInstanceOf[Int] === 1)
+    assert(row1.next().equals("11"))
+    val row2 = hiveRowIter.next().iterator
+    assert(row2.next().asInstanceOf[Int] === 2)
+    assert(row2.next().equals("22"))
+    val row3 = hiveRowIter.next().iterator
+    assert(row3.next().asInstanceOf[Int] === 3)
+    assert(row3.next().equals("33"))
+    val row4 = hiveRowIter.next().iterator
+    assert(row4.next().asInstanceOf[Int] === 4)
+    assert(row4.next().equals("44"))
+    val row5 = hiveRowIter.next().iterator
+    assert(row5.next().asInstanceOf[Int] === 5)
+    assert(row5.next().equals("55"))
   }
 }
