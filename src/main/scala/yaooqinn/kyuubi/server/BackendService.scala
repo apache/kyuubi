@@ -22,7 +22,7 @@ import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.types.StructType
 
-import yaooqinn.kyuubi.Logging
+import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType, GetInfoValue}
 import yaooqinn.kyuubi.operation.{OperationHandle, OperationStatus}
@@ -97,16 +97,16 @@ private[server] class BackendService private(name: String)
   }
 
   def getTypeInfo(sessionHandle: SessionHandle): OperationHandle = {
-    throw new HiveSQLException("Method Not Implemented!")
+    throw new KyuubiSQLException("Method Not Implemented!")
   }
 
   def getCatalogs(sessionHandle: SessionHandle): OperationHandle = {
-    throw new HiveSQLException("Method Not Implemented!")
+    throw new KyuubiSQLException("Method Not Implemented!")
   }
 
   def getSchemas(
       sessionHandle: SessionHandle, catalogName: String, schemaName: String): OperationHandle = {
-    throw new HiveSQLException("Method Not Implemented!")
+    throw new KyuubiSQLException("Method Not Implemented!")
   }
 
   def getTables(
@@ -115,25 +115,25 @@ private[server] class BackendService private(name: String)
       schemaName: String,
       tableName: String,
       tableTypes: Seq[String]): OperationHandle = {
-    throw new HiveSQLException("Method Not Implemented!")
+    throw new KyuubiSQLException("Method Not Implemented!")
   }
 
   def getTableTypes(sessionHandle: SessionHandle): OperationHandle = {
-    throw new HiveSQLException("Method Not Implemented!")
+    throw new KyuubiSQLException("Method Not Implemented!")
   }
 
   def getColumns(
       sessionHandle: SessionHandle,
       catalogName: String,
       schemaName: String, tableName: String, columnName: String): OperationHandle = {
-    throw new HiveSQLException("Method Not Implemented!")
+    throw new KyuubiSQLException("Method Not Implemented!")
   }
 
   def getFunctions(
       sessionHandle: SessionHandle,
       catalogName: String,
       schemaName: String, functionName: String): OperationHandle = {
-    throw new HiveSQLException("Method Not Implemented!")
+    throw new KyuubiSQLException("Method Not Implemented!")
   }
 
   def getOperationStatus(opHandle: OperationHandle): OperationStatus = {

@@ -30,7 +30,7 @@ import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
-import yaooqinn.kyuubi.Logging
+import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.schema.{RowSet, RowSetBuilder}
 import yaooqinn.kyuubi.service.AbstractService
@@ -94,7 +94,9 @@ private[kyuubi] class OperationManager private(name: String)
 
   def getOperation(operationHandle: OperationHandle): KyuubiOperation = {
     val operation = getOperationInternal(operationHandle)
-    if (operation == null) throw new HiveSQLException("Invalid OperationHandle: " + operationHandle)
+    if (operation == null) {
+      throw new KyuubiSQLException("Invalid OperationHandle: " + operationHandle)
+    }
     operation
   }
 
@@ -132,21 +134,21 @@ private[kyuubi] class OperationManager private(name: String)
     }
   }
 
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   def closeOperation(opHandle: OperationHandle): Unit = {
     val operation = removeOperation(opHandle)
-    if (operation == null) throw new HiveSQLException("Operation does not exist!")
+    if (operation == null) throw new KyuubiSQLException("Operation does not exist!")
     operation.close()
   }
 
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   def getOperationNextRowSet(
       opHandle: OperationHandle,
       orientation: FetchOrientation,
       maxRows: Long): RowSet =
     getOperation(opHandle).getNextRowSet(orientation, maxRows)
 
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   def getOperationLogRowSet(
       opHandle: OperationHandle,
       orientation: FetchOrientation,
@@ -154,7 +156,7 @@ private[kyuubi] class OperationManager private(name: String)
     // get the OperationLog object from the operation
     val opLog: OperationLog = getOperation(opHandle).getOperationLog
     if (opLog == null) {
-      throw new HiveSQLException("Couldn't find log associated with operation handle: " + opHandle)
+      throw new KyuubiSQLException("Couldn't find log associated with operation handle: " + opHandle)
     }
     try {
       // convert logs to RowBasedSet
@@ -162,7 +164,7 @@ private[kyuubi] class OperationManager private(name: String)
       RowSetBuilder.create(logSchema, logs, getOperation(opHandle).getProtocolVersion)
     } catch {
       case e: SQLException =>
-        throw new HiveSQLException(e.getMessage, e.getCause)
+        throw new KyuubiSQLException(e.getMessage, e.getCause)
     }
   }
 

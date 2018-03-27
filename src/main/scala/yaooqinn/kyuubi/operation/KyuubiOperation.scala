@@ -22,13 +22,11 @@ import java.security.PrivilegedExceptionAction
 import java.util.UUID
 import java.util.concurrent.{Future, RejectedExecutionException}
 
-import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAccessControlException
 import org.apache.hadoop.hive.ql.session.OperationLog
-import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.SparkUtils
@@ -36,7 +34,7 @@ import org.apache.spark.sql.{AnalysisException, DataFrame, Row}
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.types._
 
-import yaooqinn.kyuubi.Logging
+import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.schema.{RowSet, RowSetBuilder}
 import yaooqinn.kyuubi.session.KyuubiSession
@@ -53,7 +51,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
   private[this] var lastAccessTime = System.currentTimeMillis()
 
   private[this] var hasResultSet: Boolean = false
-  private[this] var operationException: HiveSQLException = _
+  private[this] var operationException: KyuubiSQLException = _
   private[this] var backgroundHandle: Future[_] = _
   private[this] var operationLog: OperationLog = _
   private[this] var isOperationLogEnabled: Boolean = false
@@ -82,11 +80,11 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
 
   def getOperationLog: OperationLog = operationLog
 
-  private[this] def setOperationException(opEx: HiveSQLException): Unit = {
+  private[this] def setOperationException(opEx: KyuubiSQLException): Unit = {
     this.operationException = opEx
   }
 
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   private[this] def setState(newState: OperationState): Unit = {
     state.validateTransition(newState)
     this.state = newState
@@ -101,10 +99,10 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     checkState(CLOSED) || checkState(CANCELED)
   }
 
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   private[this] def assertState(state: OperationState): Unit = {
     if (this.state ne state) {
-      throw new HiveSQLException("Expected state " + state + ", but found " + this.state)
+      throw new KyuubiSQLException("Expected state " + state + ", but found " + this.state)
     }
     this.lastAccessTime = System.currentTimeMillis()
   }
@@ -178,7 +176,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     }
   }
 
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   def run(): Unit = {
     createOperationLog()
     try {
@@ -238,7 +236,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
   /**
    * Verify if the given fetch orientation is part of the default orientation types.
    */
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   private[this] def validateDefaultFetchOrientation(orientation: FetchOrientation): Unit = {
     validateFetchOrientation(orientation, DEFAULT_FETCH_ORIENTATION_SET)
   }
@@ -246,12 +244,12 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
   /**
    * Verify if the given fetch orientation is part of the supported orientation types.
    */
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   private[this] def validateFetchOrientation(
       orientation: FetchOrientation,
       supportedOrientations: Set[FetchOrientation]): Unit = {
     if (!supportedOrientations.contains(orientation)) {
-      throw new HiveSQLException(
+      throw new KyuubiSQLException(
         "The fetch type " + orientation.toString + " is not supported for this resultset", "HY106")
     }
   }
@@ -270,12 +268,12 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
               try {
                 execute()
               } catch {
-                case e: HiveSQLException => setOperationException(e)
+                case e: KyuubiSQLException => setOperationException(e)
               }
             }
           })
         } catch {
-          case e: Exception => setOperationException(new HiveSQLException(e))
+          case e: Exception => setOperationException(new KyuubiSQLException(e))
         }
       }
     }
@@ -288,7 +286,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     } catch {
       case rejected: RejectedExecutionException =>
         setState(ERROR)
-        throw new HiveSQLException("The background threadpool cannot accept" +
+        throw new KyuubiSQLException("The background threadpool cannot accept" +
           " new task for execution, please retry the operation", rejected)
       case NonFatal(e) =>
         error(s"Error executing query in background", e)
@@ -321,7 +319,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       setState(FINISHED)
       KyuubiServerMonitor.getListener(session.getUserName).foreach(_.onStatementFinish(statementId))
     } catch {
-      case e: HiveSQLException =>
+      case e: KyuubiSQLException =>
         if (!isClosedOrCanceled) {
           onStatementError(statementId, e.getMessage, SparkUtils.exceptionString(e))
           throw e
@@ -330,23 +328,23 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
         if (!isClosedOrCanceled) {
           onStatementError(
             statementId, e.withCommand(statement).getMessage, SparkUtils.exceptionString(e))
-          throw new HiveSQLException(
+          throw new KyuubiSQLException(
             e.withCommand(statement).getMessage, "ParseException", 2000, e)
         }
       case e: AnalysisException =>
         if (!isClosedOrCanceled) {
           onStatementError(statementId, e.getMessage, SparkUtils.exceptionString(e))
-          throw new HiveSQLException(e.getMessage, "AnalysisException", 2001, e)
+          throw new KyuubiSQLException(e.getMessage, "AnalysisException", 2001, e)
         }
       case e: HiveAccessControlException =>
         if (!isClosedOrCanceled) {
           onStatementError(statementId, e.getMessage, SparkUtils.exceptionString(e))
-          throw new HiveSQLException(e.getMessage, "HiveAccessControlException", 3000, e)
+          throw new KyuubiSQLException(e.getMessage, "HiveAccessControlException", 3000, e)
         }
       case e: Throwable =>
         if (!isClosedOrCanceled) {
           onStatementError(statementId, e.getMessage, SparkUtils.exceptionString(e))
-          throw new HiveSQLException(e.toString, "<unknown>", 10000, e)
+          throw new KyuubiSQLException(e.toString, "<unknown>", 10000, e)
         }
     } finally {
       if (statementId != null) {
