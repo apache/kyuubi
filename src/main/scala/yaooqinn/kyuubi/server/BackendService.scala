@@ -17,16 +17,16 @@
 
 package yaooqinn.kyuubi.server
 
-import java.util.{List => JList, Map => JMap}
-
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.SparkConf
+import org.apache.spark.sql.types.StructType
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType, GetInfoValue}
 import yaooqinn.kyuubi.operation.{OperationHandle, OperationStatus}
+import yaooqinn.kyuubi.schema.RowSet
 import yaooqinn.kyuubi.service.CompositeService
 import yaooqinn.kyuubi.session.{SessionHandle, SessionManager}
 
@@ -114,8 +114,8 @@ private[server] class BackendService private(name: String)
       catalogName: String,
       schemaName: String,
       tableName: String,
-      tableTypes: JList[String]): OperationHandle = {
-    executeStatement(sessionHandle, "show tables")
+      tableTypes: Seq[String]): OperationHandle = {
+    throw new HiveSQLException("Method Not Implemented!")
   }
 
   def getTableTypes(sessionHandle: SessionHandle): OperationHandle = {
@@ -148,7 +148,7 @@ private[server] class BackendService private(name: String)
     sessionManager.getOperationMgr.getOperation(opHandle).getSession.closeOperation(opHandle)
   }
 
-  def getResultSetMetadata(opHandle: OperationHandle): TableSchema = {
+  def getResultSetMetadata(opHandle: OperationHandle): StructType = {
     sessionManager.getOperationMgr.getOperation(opHandle).getSession.getResultSetMetadata(opHandle)
   }
 

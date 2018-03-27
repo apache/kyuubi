@@ -40,12 +40,14 @@ import org.apache.spark.{SparkConf, SparkContext, SparkUtils}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
+import org.apache.spark.sql.types.StructType
 import org.apache.spark.ui.KyuubiServerTab
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.cli._
 import yaooqinn.kyuubi.operation.{KyuubiOperation, OperationHandle, OperationManager}
+import yaooqinn.kyuubi.schema.{RowBasedSet, RowSet}
 import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
 import yaooqinn.kyuubi.utils.{HadoopUtils, ReflectUtils}
 
@@ -394,7 +396,7 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
-  def getResultSetMetadata(opHandle: OperationHandle): TableSchema = {
+  def getResultSetMetadata(opHandle: OperationHandle): StructType = {
     acquire(true)
     try {
       operationManager.getResultSetSchema(opHandle)

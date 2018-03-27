@@ -18,20 +18,21 @@
 package yaooqinn.kyuubi.operation
 
 import java.sql.SQLException
-import java.util.{HashMap => JMap}
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
 
-import org.apache.hadoop.hive.metastore.api.{FieldSchema, Schema}
 import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.hive.service.cli._
 import org.apache.log4j.Logger
 import org.apache.spark.{SparkConf, SparkUtils}
 import org.apache.spark.KyuubiConf._
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.types.StructType
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.cli.FetchOrientation
+import yaooqinn.kyuubi.schema.{RowSet, RowSetBuilder}
 import yaooqinn.kyuubi.service.AbstractService
 import yaooqinn.kyuubi.session.KyuubiSession
 
@@ -40,9 +41,9 @@ private[kyuubi] class OperationManager private(name: String)
 
   def this() = this(classOf[OperationManager].getSimpleName)
 
-  private[this] val handleToOperation = new JMap[OperationHandle, KyuubiOperation]
+  private[this] val handleToOperation = new ConcurrentHashMap[OperationHandle, KyuubiOperation]
 
-  val userToOperationLog = new ConcurrentHashMap[String, OperationLog]()
+  private[this] val userToOperationLog = new ConcurrentHashMap[String, OperationLog]()
 
   override def init(conf: SparkConf): Unit = synchronized {
     if (conf.get(LOGGING_OPERATION_ENABLED.key).toBoolean) {
@@ -98,14 +99,14 @@ private[kyuubi] class OperationManager private(name: String)
   }
 
   private[this] def getOperationInternal(operationHandle: OperationHandle) =
-    synchronized(handleToOperation.get(operationHandle))
+    handleToOperation.get(operationHandle)
 
   private[this] def addOperation(operation: KyuubiOperation): Unit = {
-    synchronized(handleToOperation.put(operation.getHandle, operation))
+    handleToOperation.put(operation.getHandle, operation)
   }
 
   private[this] def removeOperation(opHandle: OperationHandle) =
-    synchronized(handleToOperation.remove(opHandle))
+    handleToOperation.remove(opHandle)
 
   private def removeTimedOutOperation(
       operationHandle: OperationHandle): Option[KyuubiOperation] = synchronized {
@@ -141,36 +142,31 @@ private[kyuubi] class OperationManager private(name: String)
   @throws[HiveSQLException]
   def getOperationNextRowSet(
       opHandle: OperationHandle,
-      orientation: FetchOrientation, maxRows: Long): RowSet =
+      orientation: FetchOrientation,
+      maxRows: Long): RowSet =
     getOperation(opHandle).getNextRowSet(orientation, maxRows)
 
   @throws[HiveSQLException]
   def getOperationLogRowSet(
       opHandle: OperationHandle,
-      orientation: FetchOrientation, maxRows: Long): RowSet = {
+      orientation: FetchOrientation,
+      maxRows: Long): RowSet = {
     // get the OperationLog object from the operation
-    val operationLog: OperationLog = getOperation(opHandle).getOperationLog
-    if (operationLog == null) {
+    val opLog: OperationLog = getOperation(opHandle).getOperationLog
+    if (opLog == null) {
       throw new HiveSQLException("Couldn't find log associated with operation handle: " + opHandle)
     }
     try {
-      // read logs
-      val logs = operationLog.readOperationLog(isFetchFirst(orientation), maxRows).asScala
-      // convert logs to RowSet
-      val tableSchema: TableSchema = new TableSchema(getLogSchema)
-      val rowSet: RowSet =
-        RowSetFactory.create(tableSchema, getOperation(opHandle).getProtocolVersion)
-      for (log <- logs) {
-        rowSet.addRow(Array[AnyRef](log))
-      }
-      rowSet
+      // convert logs to RowBasedSet
+      val logs = opLog.readOperationLog(isFetchFirst(orientation), maxRows).asScala.map(Row(_))
+      RowSetBuilder.create(logSchema, logs, getOperation(opHandle).getProtocolVersion)
     } catch {
       case e: SQLException =>
         throw new HiveSQLException(e.getMessage, e.getCause)
     }
   }
 
-  def getResultSetSchema(opHandle: OperationHandle): TableSchema = {
+  def getResultSetSchema(opHandle: OperationHandle): StructType = {
     getOperation(opHandle).getResultSetSchema
   }
 
@@ -178,14 +174,7 @@ private[kyuubi] class OperationManager private(name: String)
     fetchOrientation == FetchOrientation.FETCH_FIRST
   }
 
-  private[this] def getLogSchema: Schema = {
-    val schema: Schema = new Schema
-    val fieldSchema: FieldSchema = new FieldSchema
-    fieldSchema.setName("operation_log")
-    fieldSchema.setType("string")
-    schema.addToFieldSchemas(fieldSchema)
-    schema
-  }
+  private[this] def logSchema: StructType = new StructType().add("operation_log", "string")
 
   def removeExpiredOperations(handles: Seq[OperationHandle]): Seq[KyuubiOperation] = {
     handles.flatMap(removeTimedOutOperation).map { op =>
