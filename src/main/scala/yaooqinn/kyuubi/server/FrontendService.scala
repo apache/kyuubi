@@ -18,7 +18,6 @@
 package yaooqinn.kyuubi.server
 
 import java.net.{InetAddress, UnknownHostException}
-import java.util.{ArrayList => JList, HashMap => JHashMap, Map => JMap}
 import java.util.concurrent.{SynchronousQueue, ThreadPoolExecutor, TimeUnit}
 
 import scala.collection.JavaConverters._
@@ -39,6 +38,7 @@ import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.auth.{KERBEROS, KyuubiAuthFactory}
 import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType}
 import yaooqinn.kyuubi.operation.OperationHandle
+import yaooqinn.kyuubi.schema.SchemaMapper
 import yaooqinn.kyuubi.service.{AbstractService, ServiceException, ServiceUtils}
 import yaooqinn.kyuubi.session.SessionHandle
 import yaooqinn.kyuubi.utils.NamedThreadFactory
@@ -179,7 +179,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
       realUser = req.getUsername
     }
     realUser = getShortName(realUser)
-    getProxyUser(req.getConfiguration, getIpAddress)
+    getProxyUser(req.getConfiguration.asScala.toMap, getIpAddress)
   }
 
   private[this] def getShortName(userName: String): String = {
@@ -192,25 +192,17 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   }
 
   @throws[HiveSQLException]
-  private[this] def getProxyUser(sessionConf: JMap[String, String], ipAddress: String): String = {
-    var proxyUser: String = null
-    if (sessionConf != null && sessionConf.containsKey(KyuubiAuthFactory.HS2_PROXY_USER)) {
-      proxyUser = sessionConf.get(KyuubiAuthFactory.HS2_PROXY_USER)
+  private[this] def getProxyUser(sessionConf: Map[String, String], ipAddress: String): String = {
+    Option(sessionConf).flatMap(_.get(KyuubiAuthFactory.HS2_PROXY_USER)) match {
+      case None => realUser
+      case Some(_)
+        if !hiveConf.getBoolVar(HiveConf.ConfVars.HIVE_SERVER2_ALLOW_USER_SUBSTITUTION) =>
+        throw new HiveSQLException("Proxy user substitution is not allowed")
+      case Some(p) if !isKerberosAuthMode => p
+      case Some(p) => // Verify proxy user privilege of the realUser for the proxyUser
+        KyuubiAuthFactory.verifyProxyAccess(realUser, p, ipAddress, hiveConf)
+        p
     }
-    if (proxyUser == null) {
-      return realUser
-    }
-    // check whether substitution is allowed
-    if (!hiveConf.getBoolVar(HiveConf.ConfVars.HIVE_SERVER2_ALLOW_USER_SUBSTITUTION)) {
-      throw new HiveSQLException("Proxy user substitution is not allowed")
-    }
-    // If there's no authentication, then directly substitute the user
-    if (!isKerberosAuthMode) {
-      return proxyUser
-    }
-    // Verify proxy user privilege of the realUser for the proxyUser
-    KyuubiAuthFactory.verifyProxyAccess(realUser, proxyUser, ipAddress, hiveConf)
-    proxyUser
   }
 
   private[this] def getIpAddress: String = {
@@ -260,7 +252,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     try {
       val sessionHandle = getSessionHandle(req, resp)
       resp.setSessionHandle(sessionHandle.toTSessionHandle)
-      resp.setConfiguration(new JHashMap[String, String])
+      // resp.setConfiguration(new Map[String, String]())
       resp.setStatus(OK_STATUS)
       val context = currentServerContext.get
         .asInstanceOf[FrontendService#FeServiceServerContext]
@@ -377,7 +369,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     val resp = new TGetTablesResp
     try {
       val opHandle = beService.getTables(new SessionHandle(req.getSessionHandle),
-        req.getCatalogName, req.getSchemaName, req.getTableName, req.getTableTypes)
+        req.getCatalogName, req.getSchemaName, req.getTableName, req.getTableTypes.asScala)
       resp.setOperationHandle(opHandle.toTOperationHandle)
       resp.setStatus(OK_STATUS)
     } catch {
@@ -439,7 +431,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     try {
       val operationStatus = beService.getOperationStatus(
         new OperationHandle(req.getOperationHandle))
-      resp.setOperationState(operationStatus.getState.toTOperationState)
+      resp.setOperationState(operationStatus.getState.toTOperationState())
       val opException = operationStatus.getOperationException
       if (opException != null) {
         resp.setSqlState(opException.getSQLState)
@@ -485,7 +477,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     val resp = new TGetResultSetMetadataResp
     try {
       val schema = beService.getResultSetMetadata(new OperationHandle(req.getOperationHandle))
-      resp.setSchema(schema.toTTableSchema)
+      resp.setSchema(SchemaMapper.toTTableSchema(schema))
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
@@ -600,10 +592,6 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
       val transportFactory = kyuubiAuthFactory.getAuthTransFactory
       val processorFactory = kyuubiAuthFactory.getAuthProcFactory(this)
       val serverSocket: TServerSocket = KyuubiAuthFactory.getServerSocket(serverHost, portNum)
-      val sslVersionBlacklist = new JList[String]
-      for (sslVersion <- hiveConf.getVar(ConfVars.HIVE_SSL_PROTOCOL_BLACKLIST).split(",")) {
-        sslVersionBlacklist.add(sslVersion)
-      }
 
       // Server args
       val maxMessageSize = hiveConf.getIntVar(HiveConf.ConfVars.HIVE_SERVER2_THRIFT_MAX_MESSAGE_SIZE)

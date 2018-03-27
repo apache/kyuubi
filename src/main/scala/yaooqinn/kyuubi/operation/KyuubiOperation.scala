@@ -19,28 +19,26 @@ package yaooqinn.kyuubi.operation
 
 import java.io.{File, FileNotFoundException}
 import java.security.PrivilegedExceptionAction
-import java.sql.{Date, Timestamp}
-import java.util.{Arrays, UUID}
+import java.util.UUID
 import java.util.concurrent.{Future, RejectedExecutionException}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
 import scala.util.control.NonFatal
 
 import org.apache.hadoop.hive.conf.HiveConf
-import org.apache.hadoop.hive.metastore.api.FieldSchema
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAccessControlException
 import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.SparkUtils
-import org.apache.spark.sql.{AnalysisException, DataFrame, Row, SparkSQLUtils}
+import org.apache.spark.sql.{AnalysisException, DataFrame, Row}
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.types._
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.cli.FetchOrientation
+import yaooqinn.kyuubi.schema.{RowSet, RowSetBuilder}
 import yaooqinn.kyuubi.session.KyuubiSession
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 
@@ -61,18 +59,9 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
   private[this] var isOperationLogEnabled: Boolean = false
 
   private[this] var result: DataFrame = _
+  private[this] var resultList: Array[Row] = _
   private[this] var iter: Iterator[Row] = _
-  private[this] var dataTypes: Array[DataType] = _
   private[this] var statementId: String = _
-
-  private[this] lazy val resultSchema: TableSchema = {
-    if (result == null || result.schema.isEmpty) {
-      new TableSchema(Arrays.asList(new FieldSchema("Result", "string", "")))
-    } else {
-      info(s"Result Schema: ${result.schema}")
-      KyuubiOperation.getTableSchema(result.schema)
-    }
-  }
 
   private[this] val DEFAULT_FETCH_ORIENTATION_SET: Set[FetchOrientation] =
     Set(FetchOrientation.FETCH_NEXT, FetchOrientation.FETCH_FIRST)
@@ -223,69 +212,22 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     cleanup(CANCELED)
   }
 
-  def addNonNullColumnValue(from: Row, to: ArrayBuffer[Any], ordinal: Int) {
-    dataTypes(ordinal) match {
-      case StringType =>
-        to += from.getString(ordinal)
-      case IntegerType =>
-        to += from.getInt(ordinal)
-      case BooleanType =>
-        to += from.getBoolean(ordinal)
-      case DoubleType =>
-        to += from.getDouble(ordinal)
-      case FloatType =>
-        to += from.getFloat(ordinal)
-      case DecimalType() =>
-        to += from.getDecimal(ordinal)
-      case LongType =>
-        to += from.getLong(ordinal)
-      case ByteType =>
-        to += from.getByte(ordinal)
-      case ShortType =>
-        to += from.getShort(ordinal)
-      case DateType =>
-        to += from.getAs[Date](ordinal)
-      case TimestampType =>
-        to += from.getAs[Timestamp](ordinal)
-      case BinaryType =>
-        to += from.getAs[Array[Byte]](ordinal)
-      case _: ArrayType | _: StructType | _: MapType =>
-        val hiveString = SparkSQLUtils.toHiveString((from.get(ordinal), dataTypes(ordinal)))
-        to += hiveString
-    }
+  def getResultSetSchema: StructType = if (result == null || result.schema.isEmpty) {
+    new StructType().add("Result", "string")
+  } else {
+    result.schema
   }
-
-  def getResultSetSchema: TableSchema = resultSchema
 
   def getNextRowSet(order: FetchOrientation, maxRowsL: Long): RowSet = {
     validateDefaultFetchOrientation(order)
     assertState(FINISHED)
     setHasResultSet(true)
-    val resultRowSet: RowSet = RowSetFactory.create(getResultSetSchema, getProtocolVersion)
-
-    if (!iter.hasNext) {
-      resultRowSet
+    val taken = if (order == FetchOrientation.FETCH_FIRST) {
+      resultList.take(maxRowsL.toInt).iterator
     } else {
-      // maxRowsL here typically maps to java.sql.Statement.getFetchSize, which is an int
-      val maxRows = maxRowsL.toInt
-      var curRow = 0
-      while (curRow < maxRows && iter.hasNext) {
-        val Row = iter.next()
-        val row = ArrayBuffer[Any]()
-        var curCol = 0
-        while (curCol < Row.length) {
-          if (Row.isNullAt(curCol)) {
-            row += null
-          } else {
-            addNonNullColumnValue(Row, row, curCol)
-          }
-          curCol += 1
-        }
-        resultRowSet.addRow(row.toArray.asInstanceOf[Array[Object]])
-        curRow += 1
-      }
-      resultRowSet
+      iter.take(maxRowsL.toInt)
     }
+    RowSetBuilder.create(getResultSetSchema, taken.toSeq, session.getProtocolVersion)
   }
 
   private[this] def setHasResultSet(hasResultSet: Boolean): Unit = {
@@ -295,10 +237,6 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
 
   /**
    * Verify if the given fetch orientation is part of the default orientation types.
-   *
-   * @param orientation
-   *
-   * @throws HiveSQLException
    */
   @throws[HiveSQLException]
   private[this] def validateDefaultFetchOrientation(orientation: FetchOrientation): Unit = {
@@ -307,11 +245,6 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
 
   /**
    * Verify if the given fetch orientation is part of the supported orientation types.
-   *
-   * @param orientation
-   * @param supportedOrientations
-   *
-   * @throws HiveSQLException
    */
   @throws[HiveSQLException]
   private[this] def validateFetchOrientation(
@@ -383,8 +316,8 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
         _.onStatementParsed(statementId, result.queryExecution.toString())
       }
       debug(result.queryExecution.toString())
-      iter = result.toLocalIterator().asScala
-      dataTypes = result.queryExecution.analyzed.output.map(_.dataType).toArray
+      resultList = result.collect()
+      iter = resultList.iterator
       setState(FINISHED)
       KyuubiServerMonitor.getListener(session.getUserName).foreach(_.onStatementFinish(statementId))
     } catch {
@@ -459,15 +392,6 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
 }
 
 object KyuubiOperation {
-  def getTableSchema(structType: StructType): TableSchema = {
-    val schema = structType.map { field =>
-      val attrTypeString = if (field.dataType == NullType) "void" else field.dataType.catalogString
-      new FieldSchema(field.name, attrTypeString, field.getComment().getOrElse(""))
-    }
-    new TableSchema(schema.asJava)
-  }
-
   val DEFAULT_FETCH_ORIENTATION: FetchOrientation = FetchOrientation.FETCH_NEXT
   val DEFAULT_FETCH_MAX_ROWS = 100
-
 }
