@@ -31,14 +31,13 @@ import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge.Server.ServerMode
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.authorize.ProxyUsers
 import org.apache.hive.service.auth.{KyuubiKerberosSaslHelper, KyuubiPlainSaslHelper, SaslQOP}
-import org.apache.hive.service.cli.HiveSQLException
 import org.apache.hive.service.cli.thrift.TCLIService
 import org.apache.spark.{SparkConf, SparkUtils}
 import org.apache.spark.KyuubiConf._
 import org.apache.thrift.TProcessorFactory
 import org.apache.thrift.transport.{TServerSocket, TTransportException, TTransportFactory}
 
-import yaooqinn.kyuubi.KyuubiExecption
+import yaooqinn.kyuubi.{KyuubiExecption, KyuubiSQLException}
 
 /**
  * Authentication
@@ -102,56 +101,56 @@ class KyuubiAuthFactory(conf: SparkConf) {
   def getIpAddress: Option[String] = saslServer.map(_.getRemoteAddress).map(_.getHostAddress)
 
   // retrieve delegation token for the given user
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   def getDelegationToken(owner: String, renewer: String): String = saslServer match {
     case Some(server) =>
       try {
         val tokenStr = server.getDelegationTokenWithService(owner, renewer, KYUUBI_CLIENT_TOKEN)
         if (tokenStr == null || tokenStr.isEmpty) {
-          throw new HiveSQLException(
+          throw new KyuubiSQLException(
             "Received empty retrieving delegation token for user " + owner, "08S01")
         }
         tokenStr
       } catch {
         case e: IOException =>
-          throw new HiveSQLException(
+          throw new KyuubiSQLException(
             "Error retrieving delegation token for user " + owner, "08S01", e)
         case e: InterruptedException =>
-          throw new HiveSQLException("delegation token retrieval interrupted", "08S01", e)
+          throw new KyuubiSQLException("delegation token retrieval interrupted", "08S01", e)
       }
     case None =>
-      throw new HiveSQLException(
+      throw new KyuubiSQLException(
         "Delegation token only supported over kerberos authentication", "08S01")
   }
 
   // cancel given delegation token
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   def cancelDelegationToken(delegationToken: String): Unit = saslServer match {
     case Some(server) =>
       try {
         server.cancelDelegationToken(delegationToken)
       } catch {
         case e: IOException =>
-          throw new HiveSQLException(
+          throw new KyuubiSQLException(
             "Error canceling delegation token " + delegationToken, "08S01", e)
       }
     case None =>
-      throw new HiveSQLException(
+      throw new KyuubiSQLException(
         "Delegation token only supported over kerberos authentication", "08S01")
   }
 
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   def renewDelegationToken(delegationToken: String): Unit = saslServer match {
     case Some(server) =>
       try {
         server.renewDelegationToken(delegationToken)
       } catch {
         case e: IOException =>
-          throw new HiveSQLException(
+          throw new KyuubiSQLException(
             "Error renewing delegation token " + delegationToken, "08S01", e)
       }
     case None =>
-      throw new HiveSQLException(
+      throw new KyuubiSQLException(
         "Delegation token only supported over kerberos authentication", "08S01")
   }
 }
@@ -168,7 +167,7 @@ object KyuubiAuthFactory {
     }
   )
 
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   def verifyProxyAccess(
       realUser: String,
       proxyUser: String,
@@ -195,7 +194,7 @@ object KyuubiAuthFactory {
       }
     } catch {
       case e: IOException =>
-        throw new HiveSQLException(
+        throw new KyuubiSQLException(
           "Failed to validate proxy privilege of " + realUser + " for " + proxyUser, "08S01", e)
     }
   }

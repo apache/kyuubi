@@ -43,7 +43,7 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.ui.KyuubiServerTab
 
-import yaooqinn.kyuubi.Logging
+import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.cli._
 import yaooqinn.kyuubi.operation.{KyuubiOperation, OperationHandle, OperationManager}
@@ -110,7 +110,7 @@ private[kyuubi] class KyuubiSession(
       wait(interval)
       checkRound -= 1
       if (checkRound <= 0) {
-        throw new HiveSQLException(s"A partially constructed SparkContext for [$getUserName] " +
+        throw new KyuubiSQLException(s"A partially constructed SparkContext for [$getUserName] " +
           s"has last more than ${checkRound * interval} seconds")
       }
       info(s"A partially constructed SparkContext for [$getUserName], $checkRound times countdown.")
@@ -177,15 +177,15 @@ private[kyuubi] class KyuubiSession(
                 override def run(): Unit = HadoopUtils.killYarnAppByName(appName)
               })
             }
-            throw new HiveSQLException(
-              s"Get SparkSession for [$getUserName] failed: " + te, "08S01", te)
+            throw new KyuubiSQLException(
+              s"Get SparkSession for [$getUserName] failed: " + te, "08S01", 1001, te)
           case _ =>
             stopContext()
-            throw new HiveSQLException(ute.toString, "08S01", ute.getCause)
+            throw new KyuubiSQLException(ute.toString, "08S01", ute.getCause)
         }
       case e: Exception =>
         stopContext()
-        throw new HiveSQLException(
+        throw new KyuubiSQLException(
           s"Get SparkSession for [$getUserName] failed: " + e, "08S01", e)
     } finally {
       sessionManager.setSCFullyConstructed(getUserName)
@@ -216,7 +216,7 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   private[this] def executeStatementInternal(statement: String) = {
     acquire(true)
     val operation =
@@ -227,7 +227,7 @@ private[kyuubi] class KyuubiSession(
       opHandleSet.add(opHandle)
       opHandle
     } catch {
-      case e: HiveSQLException =>
+      case e: KyuubiSQLException =>
         operationManager.closeOperation(opHandle)
         throw e
     } finally {
@@ -293,7 +293,7 @@ private[kyuubi] class KyuubiSession(
 
   def ugi: UserGroupInformation = this.sessionUGI
 
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   def open(sessionConf: Map[String, String]): Unit = {
     try {
       getOrCreateSparkSession(sessionConf)
@@ -305,10 +305,10 @@ private[kyuubi] class KyuubiSession(
     } catch {
       case ute: UndeclaredThrowableException => ute.getCause match {
         case e: HiveAccessControlException =>
-          throw new HiveSQLException(e.getMessage, "08S01", e.getCause)
+          throw new KyuubiSQLException(e.getMessage, "08S01", e.getCause)
         case e: NoSuchDatabaseException =>
-          throw new HiveSQLException(e.getMessage, "08S01", e.getCause)
-        case e: HiveSQLException => throw e
+          throw new KyuubiSQLException(e.getMessage, "08S01", e.getCause)
+        case e: KyuubiSQLException => throw e
       }
     }
     lastAccessTime = System.currentTimeMillis
@@ -323,7 +323,7 @@ private[kyuubi] class KyuubiSession(
         case GetInfoType.DBMS_NAME => new GetInfoValue("Spark SQL")
         case GetInfoType.DBMS_VERSION => new GetInfoValue(this._sparkSession.version)
         case _ =>
-          throw new HiveSQLException("Unrecognized GetInfoType value: " + getInfoType.toString)
+          throw new KyuubiSQLException("Unrecognized GetInfoType value: " + getInfoType.toString)
       }
     } finally {
       release(true)
@@ -336,7 +336,7 @@ private[kyuubi] class KyuubiSession(
    * @param statement sql statement
    * @return
    */
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   def executeStatement(statement: String): OperationHandle = {
     executeStatementInternal(statement)
   }
@@ -347,7 +347,7 @@ private[kyuubi] class KyuubiSession(
    * @param statement sql statement
    * @return
    */
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   def executeStatementAsync(statement: String): OperationHandle = {
     executeStatementInternal(statement)
   }
@@ -355,7 +355,7 @@ private[kyuubi] class KyuubiSession(
   /**
    * close the session
    */
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   def close(): Unit = {
     acquire(true)
     try {
@@ -371,7 +371,7 @@ private[kyuubi] class KyuubiSession(
         FileSystem.closeAllForUGI(sessionUGI)
       } catch {
         case ioe: IOException =>
-          throw new HiveSQLException("Could not clean up file-system handles for UGI: "
+          throw new KyuubiSQLException("Could not clean up file-system handles for UGI: "
             + sessionUGI, ioe)
       }
     }
@@ -405,7 +405,7 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   def fetchResults(
       opHandle: OperationHandle,
       orientation: FetchOrientation,
@@ -424,7 +424,7 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   def getDelegationToken(
       authFactory: KyuubiAuthFactory,
       owner: String,
@@ -432,12 +432,12 @@ private[kyuubi] class KyuubiSession(
     authFactory.getDelegationToken(owner, renewer)
   }
 
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   def cancelDelegationToken(authFactory: KyuubiAuthFactory, tokenStr: String): Unit = {
     authFactory.cancelDelegationToken(tokenStr)
   }
 
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   def renewDelegationToken(authFactory: KyuubiAuthFactory, tokenStr: String): Unit = {
     authFactory.renewDelegationToken(tokenStr)
   }
