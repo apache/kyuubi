@@ -223,7 +223,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     assertState(FINISHED)
     setHasResultSet(true)
     val taken = if (order == FetchOrientation.FETCH_FIRST) {
-      resultList.take(maxRowsL.toInt).iterator
+      resultList.iterator.take(maxRowsL.toInt)
     } else {
       iter.take(maxRowsL.toInt)
     }
@@ -317,7 +317,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       }
       debug(result.queryExecution.toString())
       resultList = result.collect()
-      iter = resultList.iterator
+      iter = resultList.toList.iterator
       setState(FINISHED)
       KyuubiServerMonitor.getListener(session.getUserName).foreach(_.onStatementFinish(statementId))
     } catch {

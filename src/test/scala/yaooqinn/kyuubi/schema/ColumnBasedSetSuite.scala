@@ -17,6 +17,7 @@
 
 package yaooqinn.kyuubi.schema
 
+import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.SparkFunSuite
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
@@ -42,10 +43,15 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     Row(15, "555"),
     Row(16, "666"))
 
-  test("row set basic suites") {
+  val listIter = rows.iterator
+
+  var arrayIter = rows.toArray.iterator
+
+
+  test("row set basic suites with list to iterator") {
     // fetch next
-    val rowIterator = rows.iterator
-    var taken = rowIterator.take(maxRows).toSeq
+
+    var taken = listIter.take(maxRows).toSeq
     var tRowSet = ColumnBasedSet(schema, taken).toTRowSet
     assert(tRowSet.getColumns.size() === 2)
     assert(tRowSet.getRowsSize === 0)
@@ -56,7 +62,7 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(tRowSet.getColumns.get(1).getStringVal.getValues.get(3) === "44")
     assert(tRowSet.getColumns.get(1).getStringVal.getValues.get(4) === "55")
 
-    taken = rowIterator.take(maxRows).toSeq
+    taken = listIter.take(maxRows).toSeq
     tRowSet = ColumnBasedSet(schema, taken).toTRowSet
     assert(tRowSet.getColumns.get(0).getI32Val.getValues.get(0).intValue() === 6)
     assert(tRowSet.getColumns.get(1).getStringVal.getValues.get(1) === "77")
@@ -64,7 +70,7 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(tRowSet.getColumns.get(1).getStringVal.getValues.get(3) === "99")
     assert(tRowSet.getColumns.get(1).getStringVal.getValues.get(4) === "000")
 
-    taken = rowIterator.take(maxRows).toSeq
+    taken = listIter.take(maxRows).toSeq
     tRowSet = ColumnBasedSet(schema, taken).toTRowSet
     assert(tRowSet.getColumns.get(0).getI32Val.getValues.get(0).intValue() === 11)
     assert(tRowSet.getColumns.get(1).getStringVal.getValues.get(1) === "222")
@@ -72,12 +78,12 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(tRowSet.getColumns.get(1).getStringVal.getValues.get(3) === "444")
     assert(tRowSet.getColumns.get(1).getStringVal.getValues.get(4) === "555")
 
-    taken = rowIterator.take(maxRows).toSeq
+    taken = listIter.take(maxRows).toSeq
     tRowSet = ColumnBasedSet(schema, taken).toTRowSet
     assert(tRowSet.getColumns.get(0).getI32Val.getValues.get(0).intValue() === 16)
     intercept[IndexOutOfBoundsException](tRowSet.getColumns.get(1).getStringVal.getValues.get(1))
 
-    assert(rowIterator.isEmpty)
+    assert(listIter.isEmpty)
   }
 
   test("kyuubi set to TRowSet then to Hive Row Set") {
@@ -89,5 +95,35 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(hiveRowSet.getColumns.get(0).get(0).asInstanceOf[Int] === 1)
     assert(hiveRowSet.getColumns.get(1).get(0).equals("11"))
     assert(hiveRowSet.getColumns.get(1).get(4).equals("55"))
+  }
+
+
+
+  test("get global row iterator with array to iterator") {
+
+    def getNextRowSet(maxRowsL: Long, ifDrop: Boolean = false): RowSet = {
+      val taken = arrayIter.take(maxRowsL.toInt)
+      if (ifDrop) arrayIter = arrayIter.drop(maxRowsL.toInt)
+      RowSetBuilder.create(schema, taken.toList, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8)
+    }
+
+    var tRowSet = getNextRowSet(5).toTRowSet
+    assert(tRowSet.getColumns.size() === 2)
+    assert(tRowSet.getRowsSize === 0)
+    assert(tRowSet.getColumns.get(0).getI32Val.getValuesSize === 5)
+    assert(tRowSet.getColumns.get(0).getI32Val.getValues.get(0).intValue() === 1)
+    assert(tRowSet.getColumns.get(1).getStringVal.getValues.get(1) === "22")
+    assert(tRowSet.getColumns.get(1).getStringVal.getValues.get(2) === "33")
+    assert(tRowSet.getColumns.get(1).getStringVal.getValues.get(3) === "44")
+    assert(tRowSet.getColumns.get(1).getStringVal.getValues.get(4) === "55")
+
+    tRowSet = getNextRowSet(5).toTRowSet
+    assert(tRowSet.getColumns.get(0).getI32Val.getValues.get(0).intValue() === 1)
+
+    tRowSet = getNextRowSet(5, ifDrop = true).toTRowSet
+    assert(tRowSet.getColumns.get(0).getI32Val.getValues.get(0).intValue() === 1)
+
+    tRowSet = getNextRowSet(5, ifDrop = true).toTRowSet
+    assert(tRowSet.getColumns.get(0).getI32Val.getValues.get(0).intValue() === 6)
   }
 }
