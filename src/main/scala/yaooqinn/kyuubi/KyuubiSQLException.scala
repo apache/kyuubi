@@ -25,7 +25,6 @@ import org.apache.hive.service.cli.thrift.{TStatus, TStatusCode}
 class KyuubiSQLException(reason: String, sqlState: String, vendorCode: Int, cause: Throwable)
   extends SQLException(reason, sqlState, vendorCode, cause) {
 
-
   def this(reason: String, sqlState: String, cause: Throwable) = this(reason, sqlState, 0, cause)
 
   def this(reason: String, sqlState: String, vendorCode: Int) =
@@ -76,7 +75,7 @@ object KyuubiSQLException {
     } else {
       trace.length - 1
     }
-    enroll(cause, trace, m) ++ (if (cause.getCause != null) toString(cause, trace) else Nil)
+    enroll(cause, trace, m) ++ Option(cause.getCause).map(toString(_, trace)).getOrElse(Nil)
   }
 
   private[this] def enroll(
