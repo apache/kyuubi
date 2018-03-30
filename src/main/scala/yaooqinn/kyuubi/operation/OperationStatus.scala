@@ -17,9 +17,9 @@
 
 package yaooqinn.kyuubi.operation
 
-import org.apache.hive.service.cli.HiveSQLException
+import yaooqinn.kyuubi.KyuubiSQLException
 
-class OperationStatus(state: OperationState, operationException: HiveSQLException) {
+class OperationStatus(state: OperationState, operationException: KyuubiSQLException) {
   def getState: OperationState = state
-  def getOperationException: HiveSQLException = operationException
+  def getOperationException: KyuubiSQLException = operationException
 }

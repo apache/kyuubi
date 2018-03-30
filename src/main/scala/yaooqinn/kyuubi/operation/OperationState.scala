@@ -17,19 +17,20 @@
 
 package yaooqinn.kyuubi.operation
 
-import org.apache.hive.service.cli.HiveSQLException
 import org.apache.hive.service.cli.thrift.TOperationState
+
+import yaooqinn.kyuubi.KyuubiSQLException
 
 trait OperationState {
   def toTOperationState(): TOperationState
   def isTerminal(): Boolean = false
 
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   def validateTransition(newState: OperationState): Unit = ex(newState)
 
-  @throws[HiveSQLException]
-  protected def ex(state: OperationState): Unit = throw new HiveSQLException(
-    "Illegal Operation state transition " + this + " -> " + state, "KyuubiException", 1000)
+  @throws[KyuubiSQLException]
+  protected def ex(state: OperationState): Unit = throw new KyuubiSQLException(
+    "Illegal Operation state transition " + this + " -> " + state, "ServerError", 1000)
 }
 
 case object INITIALIZED extends OperationState {
