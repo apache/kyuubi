@@ -34,7 +34,7 @@ import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TThreadPoolServer}
 import org.apache.thrift.transport.{TServerSocket, TTransport}
 
-import yaooqinn.kyuubi.Logging
+import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.auth.{KERBEROS, KyuubiAuthFactory}
 import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType}
 import yaooqinn.kyuubi.operation.OperationHandle
@@ -191,13 +191,13 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     }
   }
 
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   private[this] def getProxyUser(sessionConf: Map[String, String], ipAddress: String): String = {
     Option(sessionConf).flatMap(_.get(KyuubiAuthFactory.HS2_PROXY_USER)) match {
       case None => realUser
       case Some(_)
         if !hiveConf.getBoolVar(HiveConf.ConfVars.HIVE_SERVER2_ALLOW_USER_SUBSTITUTION) =>
-        throw new HiveSQLException("Proxy user substitution is not allowed")
+        throw new KyuubiSQLException("Proxy user substitution is not allowed")
       case Some(p) if !isKerberosAuthMode => p
       case Some(p) => // Verify proxy user privilege of the realUser for the proxyUser
         KyuubiAuthFactory.verifyProxyAccess(realUser, p, ipAddress, hiveConf)
@@ -229,7 +229,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     throw new IllegalArgumentException("never")
   }
 
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   private[this] def getSessionHandle(req: TOpenSessionReq, res: TOpenSessionResp) = {
     val userName = getUserName(req)
     val ipAddress = getIpAddress
@@ -262,7 +262,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     } catch {
       case e: Exception =>
         warn("Error opening session: ", e)
-        resp.setStatus(HiveSQLException.toTStatus(e))
+        resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -281,7 +281,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     } catch {
       case e: Exception =>
         warn("Error closing session: ", e)
-        resp.setStatus(HiveSQLException.toTStatus(e))
+        resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -296,7 +296,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     } catch {
       case e: Exception =>
         warn("Error getting info: ", e)
-        resp.setStatus(HiveSQLException.toTStatus(e))
+        resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -317,7 +317,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     } catch {
       case e: Exception =>
         warn("Error executing statement: ", e)
-        resp.setStatus(HiveSQLException.toTStatus(e))
+        resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -331,7 +331,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     } catch {
       case e: Exception =>
         warn("Error getting type info: ", e)
-        resp.setStatus(HiveSQLException.toTStatus(e))
+        resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -345,7 +345,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     } catch {
       case e: Exception =>
         warn("Error getting catalogs: ", e)
-        resp.setStatus(HiveSQLException.toTStatus(e))
+        resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -360,7 +360,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     } catch {
       case e: Exception =>
         warn("Error getting schemas: ", e)
-        resp.setStatus(HiveSQLException.toTStatus(e))
+        resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -375,7 +375,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     } catch {
       case e: Exception =>
         warn("Error getting tables: ", e)
-        resp.setStatus(HiveSQLException.toTStatus(e))
+        resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -389,7 +389,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     } catch {
       case e: Exception =>
         warn("Error getting table types: ", e)
-        resp.setStatus(HiveSQLException.toTStatus(e))
+        resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -405,7 +405,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     } catch {
       case e: Exception =>
         warn("Error getting columns: ", e)
-        resp.setStatus(HiveSQLException.toTStatus(e))
+        resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -421,7 +421,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     } catch {
       case e: Exception =>
         warn("Error getting functions: ", e)
-        resp.setStatus(HiveSQLException.toTStatus(e))
+        resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -442,7 +442,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     } catch {
       case e: Exception =>
         warn("Error getting operation status: ", e)
-        resp.setStatus(HiveSQLException.toTStatus(e))
+        resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -455,7 +455,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     } catch {
       case e: Exception =>
         warn("Error cancelling operation: ", e)
-        resp.setStatus(HiveSQLException.toTStatus(e))
+        resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -468,7 +468,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     } catch {
       case e: Exception =>
         warn("Error closing operation: ", e)
-        resp.setStatus(HiveSQLException.toTStatus(e))
+        resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -482,7 +482,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     } catch {
       case e: Exception =>
         warn("Error getting result set metadata: ", e)
-        resp.setStatus(HiveSQLException.toTStatus(e))
+        resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -501,7 +501,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     } catch {
       case e: Exception =>
         warn("Error fetching results: ", e)
-        resp.setStatus(HiveSQLException.toTStatus(e))
+        resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -520,9 +520,9 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
         resp.setDelegationToken(token)
         resp.setStatus(OK_STATUS)
       } catch {
-        case e: HiveSQLException =>
+        case e: KyuubiSQLException =>
           error("Error obtaining delegation token", e)
-          val tokenErrorStatus = HiveSQLException.toTStatus(e)
+          val tokenErrorStatus = KyuubiSQLException.toTStatus(e)
           tokenErrorStatus.setSqlState("42000")
           resp.setStatus(tokenErrorStatus)
       }
@@ -548,9 +548,9 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
           req.getDelegationToken)
         resp.setStatus(OK_STATUS)
       } catch {
-        case e: HiveSQLException =>
+        case e: KyuubiSQLException =>
           error("Error canceling delegation token", e)
-          resp.setStatus(HiveSQLException.toTStatus(e))
+          resp.setStatus(KyuubiSQLException.toTStatus(e))
       }
     }
     resp
@@ -568,9 +568,9 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
           req.getDelegationToken)
         resp.setStatus(OK_STATUS)
       } catch {
-        case e: HiveSQLException =>
+        case e: KyuubiSQLException =>
           error("Error obtaining renewing token", e)
-          resp.setStatus(HiveSQLException.toTStatus(e))
+          resp.setStatus(KyuubiSQLException.toTStatus(e))
       }
     }
     resp

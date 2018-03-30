@@ -26,13 +26,12 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.{HashSet => MHSet}
 
 import org.apache.commons.io.FileUtils
-import org.apache.hive.service.cli.HiveSQLException
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.{SparkConf, SparkException}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.SparkSession
 
-import yaooqinn.kyuubi.Logging
+import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.operation.OperationManager
 import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.service.CompositeService
@@ -155,7 +154,7 @@ private[kyuubi] class SessionManager private(
               try {
                 closeSession(handle)
               } catch {
-                case e: HiveSQLException =>
+                case e: KyuubiSQLException =>
                   warn("Exception is thrown closing idle session " + handle, e)
               }
             } else {
@@ -260,20 +259,20 @@ private[kyuubi] class SessionManager private(
     if (sessionAndTimes != null) {
       sessionAndTimes._2.decrementAndGet()
     } else {
-      throw new SparkException(s"SparkSession for [$sessionUser] does not exist")
+      throw new KyuubiSQLException(s"SparkSession for [$sessionUser] does not exist")
     }
     val session = handleToSession.remove(sessionHandle)
     if (session == null) {
-      throw new HiveSQLException(s"Session for [$sessionUser] does not exist!")
+      throw new KyuubiSQLException(s"Session for [$sessionUser] does not exist!")
     }
     session.close()
   }
 
-  @throws[HiveSQLException]
+  @throws[KyuubiSQLException]
   def getSession(sessionHandle: SessionHandle): KyuubiSession = {
     val session = handleToSession.get(sessionHandle)
     if (session == null) {
-      throw new HiveSQLException("Invalid SessionHandle: " + sessionHandle)
+      throw new KyuubiSQLException("Invalid SessionHandle: " + sessionHandle)
     }
     session
   }

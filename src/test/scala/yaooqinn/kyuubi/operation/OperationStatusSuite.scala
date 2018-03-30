@@ -17,13 +17,14 @@
 
 package yaooqinn.kyuubi.operation
 
-import org.apache.hive.service.cli.HiveSQLException
 import org.apache.spark.SparkFunSuite
+
+import yaooqinn.kyuubi.KyuubiSQLException
 
 class OperationStatusSuite extends SparkFunSuite {
 
   test("operation status basic tests") {
-    val status = new OperationStatus(INITIALIZED, new HiveSQLException("test"))
+    val status = new OperationStatus(INITIALIZED, new KyuubiSQLException("test"))
     assert(status.getState === INITIALIZED)
     assert(!status.getState.isTerminal())
     assert(status.getOperationException.getMessage === "test")
