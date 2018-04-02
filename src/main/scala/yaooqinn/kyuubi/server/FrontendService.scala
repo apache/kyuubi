@@ -26,7 +26,6 @@ import scala.util.{Failure, Try}
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 import org.apache.hadoop.hive.ql.session.SessionState
-import org.apache.hive.service.auth.TSetIpAddressProcessor
 import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift._
 import org.apache.spark.{KyuubiConf, SparkConf, SparkUtils}
@@ -35,7 +34,7 @@ import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TT
 import org.apache.thrift.transport.{TServerSocket, TTransport}
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
-import yaooqinn.kyuubi.auth.{KERBEROS, KyuubiAuthFactory}
+import yaooqinn.kyuubi.auth.{KERBEROS, KyuubiAuthFactory, TSetIpAddressProcessor}
 import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType}
 import yaooqinn.kyuubi.operation.OperationHandle
 import yaooqinn.kyuubi.schema.SchemaMapper

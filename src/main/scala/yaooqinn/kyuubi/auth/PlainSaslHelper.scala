@@ -24,7 +24,7 @@ import javax.security.sasl.{AuthenticationException, AuthorizeCallback}
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.auth.{AuthenticationProviderFactory, TSetIpAddressProcessor}
+import org.apache.hive.service.auth.AuthenticationProviderFactory
 import org.apache.hive.service.auth.AuthenticationProviderFactory.AuthMethods
 import org.apache.hive.service.auth.PlainSaslServer.SaslPlainProvider
 import org.apache.hive.service.cli.thrift.TCLIService.Iface
@@ -35,7 +35,7 @@ object PlainSaslHelper {
 
   // Register Plain SASL server provider
 
-  Security.addProvider(new SaslPlainProvider());
+  Security.addProvider(new SaslPlainProvider())
 
   def getProcessFactory(service: Iface): TProcessorFactory = {
     SQLPlainProcessorFactory(service)
