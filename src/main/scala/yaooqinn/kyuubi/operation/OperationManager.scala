@@ -156,7 +156,8 @@ private[kyuubi] class OperationManager private(name: String)
     // get the OperationLog object from the operation
     val opLog: OperationLog = getOperation(opHandle).getOperationLog
     if (opLog == null) {
-      throw new KyuubiSQLException("Couldn't find log associated with operation handle: " + opHandle)
+      throw new KyuubiSQLException(
+        "Couldn't find log associated with operation handle: " + opHandle)
     }
     try {
       // convert logs to RowBasedSet
