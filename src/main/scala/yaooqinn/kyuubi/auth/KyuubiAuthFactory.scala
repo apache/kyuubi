@@ -37,7 +37,7 @@ import org.apache.spark.KyuubiConf._
 import org.apache.thrift.TProcessorFactory
 import org.apache.thrift.transport.{TServerSocket, TTransportException, TTransportFactory}
 
-import yaooqinn.kyuubi.{KyuubiExecption, KyuubiSQLException}
+import yaooqinn.kyuubi.{KyuubiServerException, KyuubiSQLException}
 
 /**
  * Authentication
@@ -65,7 +65,7 @@ class KyuubiAuthFactory(conf: SparkConf) {
         }
         Some(server)
       case NONE.name => None
-      case other => throw new KyuubiExecption("Unsupported authentication method: " + other)
+      case other => throw new KyuubiServerException("Unsupported authentication method: " + other)
     }
 
   private[this] def getSaslProperties: Map[String, String] = {
