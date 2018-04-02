@@ -17,10 +17,16 @@
 
 package yaooqinn.kyuubi.schema
 
+import java.nio.ByteBuffer
+import java.sql.Timestamp
+import java.util.BitSet
+
+import scala.collection.mutable
+
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.SparkFunSuite
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.{Row, SparkSQLUtils}
+import org.apache.spark.sql.types._
 
 class ColumnBasedSetSuite extends SparkFunSuite {
   val maxRows: Int = 5
@@ -126,4 +132,252 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     tRowSet = getNextRowSet(5, ifDrop = true).toTRowSet
     assert(tRowSet.getColumns.get(0).getI32Val.getValues.get(0).intValue() === 6)
   }
+
+  test("bool type null value tests") {
+    val schema1 = new StructType().add("c1", "boolean")
+    val rows = Seq(Row(null), Row(true), Row(false), Row(null))
+    val tRowSet = ColumnBasedSet(schema1, rows).toTRowSet
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getBoolVal.getNulls).get(0))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getBoolVal.getNulls).get(1))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getBoolVal.getNulls).get(2))
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getBoolVal.getNulls).get(3))
+
+    assert(tRowSet.getColumns.get(0).getBoolVal.getValues.get(0).booleanValue())
+    assert(tRowSet.getColumns.get(0).getBoolVal.getValues.get(1).booleanValue())
+    assert(!tRowSet.getColumns.get(0).getBoolVal.getValues.get(2).booleanValue())
+    assert(tRowSet.getColumns.get(0).getBoolVal.getValues.get(3).booleanValue())
+  }
+
+  test("byte type null value tests") {
+    val schema1 = new StructType().add("c1", "byte")
+    val rows = Seq(Row(null), Row(1.toByte), Row(2.toByte), Row(null))
+    val tRowSet = ColumnBasedSet(schema1, rows).toTRowSet
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getByteVal.getNulls).get(0))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getByteVal.getNulls).get(1))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getByteVal.getNulls).get(2))
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getByteVal.getNulls).get(3))
+
+    assert(tRowSet.getColumns.get(0).getByteVal.getValues.get(0).byteValue() === 0)
+    assert(tRowSet.getColumns.get(0).getByteVal.getValues.get(1).byteValue() === 1)
+    assert(tRowSet.getColumns.get(0).getByteVal.getValues.get(2).byteValue() === 2)
+    assert(tRowSet.getColumns.get(0).getByteVal.getValues.get(3).byteValue() === 0)
+  }
+
+  test("short type null value tests") {
+    val schema1 = new StructType().add("c1", "short")
+    val rows = Seq(Row(null), Row(1.toShort), Row(2.toShort), Row(null))
+    val tRowSet = ColumnBasedSet(schema1, rows).toTRowSet
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getI16Val.getNulls).get(0))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getI16Val.getNulls).get(1))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getI16Val.getNulls).get(2))
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getI16Val.getNulls).get(3))
+
+    assert(tRowSet.getColumns.get(0).getI16Val.getValues.get(0).byteValue() === 0)
+    assert(tRowSet.getColumns.get(0).getI16Val.getValues.get(1).byteValue() === 1)
+    assert(tRowSet.getColumns.get(0).getI16Val.getValues.get(2).byteValue() === 2)
+    assert(tRowSet.getColumns.get(0).getI16Val.getValues.get(3).byteValue() === 0)
+  }
+
+  test("int type null value tests") {
+    val schema1 = new StructType().add("c1", "int")
+    val rows = Seq(Row(null), Row(1), Row(2), Row(null))
+    val tRowSet = ColumnBasedSet(schema1, rows).toTRowSet
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getI32Val.getNulls).get(0))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getI32Val.getNulls).get(1))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getI32Val.getNulls).get(2))
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getI32Val.getNulls).get(3))
+
+    assert(tRowSet.getColumns.get(0).getI32Val.getValues.get(0).byteValue() === 0)
+    assert(tRowSet.getColumns.get(0).getI32Val.getValues.get(1).byteValue() === 1)
+    assert(tRowSet.getColumns.get(0).getI32Val.getValues.get(2).byteValue() === 2)
+    assert(tRowSet.getColumns.get(0).getI32Val.getValues.get(3).byteValue() === 0)
+  }
+
+  test("long type null value tests") {
+    val schema1 = new StructType().add("c1", "long")
+    val rows = Seq(Row(null), Row(1L), Row(2L), Row(null))
+    val tRowSet = ColumnBasedSet(schema1, rows).toTRowSet
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getI64Val.getNulls).get(0))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getI64Val.getNulls).get(1))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getI64Val.getNulls).get(2))
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getI64Val.getNulls).get(3))
+
+    assert(tRowSet.getColumns.get(0).getI64Val.getValues.get(0).byteValue() === 0)
+    assert(tRowSet.getColumns.get(0).getI64Val.getValues.get(1).byteValue() === 1)
+    assert(tRowSet.getColumns.get(0).getI64Val.getValues.get(2).byteValue() === 2)
+    assert(tRowSet.getColumns.get(0).getI64Val.getValues.get(3).byteValue() === 0)
+  }
+
+  test("float type null value tests") {
+    val schema1 = new StructType().add("c1", "float")
+    val rows = Seq(Row(null), Row(1.0f), Row(2.0f), Row(null))
+    val tRowSet = ColumnBasedSet(schema1, rows).toTRowSet
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getDoubleVal.getNulls).get(0))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getDoubleVal.getNulls).get(1))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getDoubleVal.getNulls).get(2))
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getDoubleVal.getNulls).get(3))
+
+    assert(tRowSet.getColumns.get(0).getDoubleVal.getValues.get(0).byteValue() === 0)
+    assert(tRowSet.getColumns.get(0).getDoubleVal.getValues.get(1).byteValue() === 1)
+    assert(tRowSet.getColumns.get(0).getDoubleVal.getValues.get(2).byteValue() === 2)
+    assert(tRowSet.getColumns.get(0).getDoubleVal.getValues.get(3).byteValue() === 0)
+  }
+
+  test("double type null value tests") {
+    val schema1 = new StructType().add("c1", "double")
+    val rows = Seq(Row(null), Row(1.0d), Row(2.0d), Row(null))
+    val tRowSet = ColumnBasedSet(schema1, rows).toTRowSet
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getDoubleVal.getNulls).get(0))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getDoubleVal.getNulls).get(1))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getDoubleVal.getNulls).get(2))
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getDoubleVal.getNulls).get(3))
+
+    assert(tRowSet.getColumns.get(0).getDoubleVal.getValues.get(0).byteValue() === 0)
+    assert(tRowSet.getColumns.get(0).getDoubleVal.getValues.get(1).byteValue() === 1)
+    assert(tRowSet.getColumns.get(0).getDoubleVal.getValues.get(2).byteValue() === 2)
+    assert(tRowSet.getColumns.get(0).getDoubleVal.getValues.get(3).byteValue() === 0)
+  }
+
+  test("string type null value tests") {
+    val schema1 = new StructType().add("c1", "string")
+    val rows = Seq(Row(null), Row("a"), Row(""), Row(null))
+    val tRowSet = ColumnBasedSet(schema1, rows).toTRowSet
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(0))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(1))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(2))
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(3))
+
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(0) === "")
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(1) === "a")
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(2) === "")
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(3) === "")
+  }
+
+  test("binary type null value tests") {
+    val schema1 = new StructType().add("c1", BinaryType)
+    val v1 = Array(1.toByte)
+    val v2 = Array(2.toByte)
+    val rows = Seq(Row(null), Row(v1), Row(v2), Row(null))
+    val tRowSet = ColumnBasedSet(schema1, rows).toTRowSet
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getBinaryVal.getNulls).get(0))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getBinaryVal.getNulls).get(1))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getBinaryVal.getNulls).get(2))
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getBinaryVal.getNulls).get(3))
+
+    assert(tRowSet.getColumns.get(0).getBinaryVal.getValues.get(0) === ByteBuffer.allocate(0))
+    assert(tRowSet.getColumns.get(0).getBinaryVal.getValues.get(1) === ByteBuffer.wrap(v1))
+    assert(tRowSet.getColumns.get(0).getBinaryVal.getValues.get(2) === ByteBuffer.wrap(v2))
+    assert(tRowSet.getColumns.get(0).getBinaryVal.getValues.get(3) === ByteBuffer.allocate(0))
+  }
+
+  test("date type null value tests") {
+    val schema1 = new StructType().add("c1", DateType)
+    val v1 = "2018-03-12"
+    val v2 = "2010-03-13"
+    val rows = Seq(Row(null), Row(v1), Row(v2), Row(null))
+    val tRowSet = ColumnBasedSet(schema1, rows).toTRowSet
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(0))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(1))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(2))
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(3))
+
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(0) === "")
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(1) === v1)
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(2) === v2)
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(3) === "")
+  }
+
+  test("timestamp type null value tests") {
+    val schema1 = new StructType().add("c1", TimestampType)
+    val v1 = new Timestamp(System.currentTimeMillis())
+    val v2 = "2018-03-30 17:59:59"
+    val rows = Seq(Row(null), Row(v1), Row(v2), Row(null))
+    val tRowSet = ColumnBasedSet(schema1, rows).toTRowSet
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(0))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(1))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(2))
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(3))
+
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(0) === "")
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(1) === v1.toString)
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(2) === v2)
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(3) === "")
+  }
+
+  test("decimal type null value tests") {
+    val schema1 = new StructType().add("c1", "decimal(5, 1)")
+    val v1 = new java.math.BigDecimal("100.12")
+    val v2 = new java.math.BigDecimal("200.34")
+    val rows = Seq(Row(null), Row(v1), Row(v2), Row(null))
+    val tRowSet = ColumnBasedSet(schema1, rows).toTRowSet
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(0))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(1))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(2))
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(3))
+
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(0) === "")
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(1) ===
+      SparkSQLUtils.toHiveString((v1, schema1.head.dataType)))
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(2) ===
+      SparkSQLUtils.toHiveString((v2, schema1.head.dataType)))
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(3) === "")
+  }
+
+  test("array type null value tests") {
+    val schema1 = new StructType().add("c1", "array<int>")
+    val v1 = mutable.WrappedArray.make(Array(1, 2))
+    val v2 = mutable.WrappedArray.make(Array(3, 4))
+    val rows = Seq(Row(null), Row(v1), Row(v2), Row(null))
+    val tRowSet = ColumnBasedSet(schema1, rows).toTRowSet
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(0))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(1))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(2))
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(3))
+
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(0) === "")
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(1) ===
+      SparkSQLUtils.toHiveString((v1, schema1.head.dataType)))
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(2) ===
+      SparkSQLUtils.toHiveString((v2, schema1.head.dataType)))
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(3) === "")
+  }
+
+  test("map type null value tests") {
+    val schema1 = new StructType().add("c1", "map<int, array<string>>")
+    val v1 = Map(1 -> mutable.WrappedArray.make(Array(1, 2)))
+    val v2 = Map(2 -> mutable.WrappedArray.make(Array(3, 4)))
+    val rows = Seq(Row(null), Row(v1), Row(v2), Row(null))
+    val tRowSet = ColumnBasedSet(schema1, rows).toTRowSet
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(0))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(1))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(2))
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(3))
+
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(0) === "")
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(1) ===
+      SparkSQLUtils.toHiveString((v1, schema1.head.dataType)))
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(2) ===
+      SparkSQLUtils.toHiveString((v2, schema1.head.dataType)))
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(3) === "")
+  }
+
+  test("ss type null value tests") {
+    val schema1 = new StructType().add("c1", "struct<a: int, b:string>")
+    val v1 = Row(1, "12")
+    val v2 = Row(2, "22")
+    val rows = Seq(Row(null), Row(v1), Row(v2), Row(null))
+    val tRowSet = ColumnBasedSet(schema1, rows).toTRowSet
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(0))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(1))
+    assert(!BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(2))
+    assert(BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(3))
+
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(0) === "")
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(1) ===
+      SparkSQLUtils.toHiveString((v1, schema1.head.dataType)))
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(2) ===
+      SparkSQLUtils.toHiveString((v2, schema1.head.dataType)))
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(3) === "")
+  }
+
 }

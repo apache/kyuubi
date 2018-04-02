@@ -17,8 +17,6 @@
 
 package yaooqinn.kyuubi
 
-class KyuubiExecption(message: String, cause: Throwable)
-  extends Exception(message, cause) {
-
+class KyuubiServerException(message: String, cause: Throwable) extends Exception(message, cause) {
   def this(message: String) = this(message, null)
 }
