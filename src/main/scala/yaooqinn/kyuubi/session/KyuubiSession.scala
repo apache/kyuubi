@@ -34,9 +34,8 @@ import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAccessControlException
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
-import org.apache.spark.{SparkConf, SparkContext, SparkUtils}
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
@@ -47,9 +46,9 @@ import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.cli._
 import yaooqinn.kyuubi.operation.{KyuubiOperation, OperationHandle, OperationManager}
-import yaooqinn.kyuubi.schema.{RowBasedSet, RowSet}
+import yaooqinn.kyuubi.schema.RowSet
 import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
-import yaooqinn.kyuubi.utils.{HadoopUtils, ReflectUtils}
+import yaooqinn.kyuubi.utils.ReflectUtils
 
 /**
  * An Execution Session with [[SparkSession]] instance inside, which shares [[SparkContext]]
@@ -172,11 +171,6 @@ private[kyuubi] class KyuubiSession(
         ute.getCause match {
           case te: TimeoutException =>
             stopContext()
-            SparkUtils.tryLogNonFatalError {
-              sessionUGI.doAs(new PrivilegedExceptionAction[Unit] {
-                override def run(): Unit = HadoopUtils.killYarnAppByName(appName)
-              })
-            }
             throw new KyuubiSQLException(
               s"Get SparkSession for [$getUserName] failed: " + te, "08S01", 1001, te)
           case _ =>
