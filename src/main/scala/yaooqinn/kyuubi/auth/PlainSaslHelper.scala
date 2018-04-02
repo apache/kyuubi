@@ -17,6 +17,7 @@
 package yaooqinn.kyuubi.auth
 
 import java.io.IOException
+import java.security.Security
 import javax.security.auth.callback._
 import javax.security.auth.login.LoginException
 import javax.security.sasl.{AuthenticationException, AuthorizeCallback}
@@ -25,13 +26,18 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.auth.{AuthenticationProviderFactory, TSetIpAddressProcessor}
 import org.apache.hive.service.auth.AuthenticationProviderFactory.AuthMethods
-import org.apache.hive.service.cli.thrift.TCLIService
+import org.apache.hive.service.auth.PlainSaslServer.SaslPlainProvider
+import org.apache.hive.service.cli.thrift.TCLIService.Iface
 import org.apache.thrift.{TProcessor, TProcessorFactory}
 import org.apache.thrift.transport.{TSaslServerTransport, TTransport, TTransportFactory}
 
 object PlainSaslHelper {
 
-  def getProcessFactory(service: TCLIService.Iface): TProcessorFactory = {
+  // Register Plain SASL server provider
+
+  Security.addProvider(new SaslPlainProvider());
+
+  def getProcessFactory(service: Iface): TProcessorFactory = {
     SQLPlainProcessorFactory(service)
   }
 
@@ -49,7 +55,8 @@ object PlainSaslHelper {
     saslFactory
   }
 
-  class PlainServerCallbackHandler private(authMethod: AuthMethods) extends CallbackHandler {
+  private class PlainServerCallbackHandler private(authMethod: AuthMethods)
+    extends CallbackHandler {
     @throws[AuthenticationException]
     def this(authMethodStr: String) = this(AuthMethods.getValidAuthMethod(authMethodStr))
 
@@ -75,8 +82,8 @@ object PlainSaslHelper {
     }
   }
 
-  case class SQLPlainProcessorFactory(service: TCLIService.Iface) extends TProcessorFactory(null) {
+  private case class SQLPlainProcessorFactory(service: Iface) extends TProcessorFactory(null) {
     override def getProcessor(trans: TTransport): TProcessor =
-      new TSetIpAddressProcessor[TCLIService.Iface](service)
+      new TSetIpAddressProcessor[Iface](service)
   }
 }

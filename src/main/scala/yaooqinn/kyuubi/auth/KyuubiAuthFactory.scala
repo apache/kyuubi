@@ -30,7 +30,6 @@ import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge
 import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge.Server.ServerMode
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.authorize.ProxyUsers
-import org.apache.hive.service.auth.KyuubiKerberosSaslHelper
 import org.apache.hive.service.cli.thrift.TCLIService
 import org.apache.spark.{SparkConf, SparkUtils}
 import org.apache.spark.KyuubiConf._
@@ -94,7 +93,7 @@ class KyuubiAuthFactory(conf: SparkConf) extends Logging {
    */
   def getAuthProcFactory(
       service: TCLIService.Iface): TProcessorFactory = saslServer.map {
-    KyuubiKerberosSaslHelper.getKerberosProcessorFactory(_, service)
+    KerberosSaslHelper.getProcessorFactory(_, service)
   }.getOrElse {
     PlainSaslHelper.getProcessFactory(service)
   }
