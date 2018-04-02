@@ -30,7 +30,7 @@ import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge
 import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge.Server.ServerMode
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.authorize.ProxyUsers
-import org.apache.hive.service.auth.{KyuubiKerberosSaslHelper, KyuubiPlainSaslHelper}
+import org.apache.hive.service.auth.KyuubiKerberosSaslHelper
 import org.apache.hive.service.cli.thrift.TCLIService
 import org.apache.spark.{SparkConf, SparkUtils}
 import org.apache.spark.KyuubiConf._
@@ -86,7 +86,7 @@ class KyuubiAuthFactory(conf: SparkConf) extends Logging {
         case e: TTransportException =>
           throw new LoginException(e.getMessage)
       }
-    case _ => KyuubiPlainSaslHelper.getPlainTransportFactory(NONE.name)
+    case _ => PlainSaslHelper.getTransportFactory(NONE.name)
   }
 
   /**
@@ -96,7 +96,7 @@ class KyuubiAuthFactory(conf: SparkConf) extends Logging {
       service: TCLIService.Iface): TProcessorFactory = saslServer.map {
     KyuubiKerberosSaslHelper.getKerberosProcessorFactory(_, service)
   }.getOrElse {
-    KyuubiPlainSaslHelper.getPlainProcessorFactory(service)
+    PlainSaslHelper.getProcessFactory(service)
   }
 
   def getRemoteUser: Option[String] = saslServer.map(_.getRemoteUser)
