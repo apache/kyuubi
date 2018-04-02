@@ -32,7 +32,7 @@ import org.apache.hadoop.security.{SecurityUtil, UserGroupInformation}
 import org.apache.hadoop.security.authentication.util.KerberosUtil
 import org.apache.hive.common.util.HiveVersionInfo
 import org.apache.spark.KyuubiConf._
-import org.apache.spark.SparkConf
+import org.apache.spark.{SparkConf, SparkUtils}
 import org.apache.zookeeper._
 import org.apache.zookeeper.data.ACL
 
@@ -180,8 +180,8 @@ object HighAvailabilityUtils extends Logging {
   @throws[Exception]
   private def setUpZooKeeperAuth(conf: SparkConf): Unit = {
     if (UserGroupInformation.isSecurityEnabled) {
-      var principal = conf.get("spark.yarn.principal")
-      val keyTabFile = conf.get("spark.yarn.keytab")
+      var principal = conf.get(SparkUtils.PRINCIPAL)
+      val keyTabFile = conf.get(SparkUtils.KEYTAB)
       if (!new File(keyTabFile).exists()) {
         throw new IOException("key tab does not exists")
       }

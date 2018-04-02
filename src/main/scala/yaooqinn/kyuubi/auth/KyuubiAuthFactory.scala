@@ -30,30 +30,33 @@ import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge
 import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge.Server.ServerMode
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.authorize.ProxyUsers
-import org.apache.hive.service.auth.{KyuubiKerberosSaslHelper, KyuubiPlainSaslHelper, SaslQOP}
+import org.apache.hive.service.auth.{KyuubiKerberosSaslHelper, KyuubiPlainSaslHelper}
 import org.apache.hive.service.cli.thrift.TCLIService
 import org.apache.spark.{SparkConf, SparkUtils}
 import org.apache.spark.KyuubiConf._
 import org.apache.thrift.TProcessorFactory
 import org.apache.thrift.transport.{TServerSocket, TTransportException, TTransportFactory}
 
-import yaooqinn.kyuubi.{KyuubiServerException, KyuubiSQLException}
+import yaooqinn.kyuubi.{KyuubiServerException, KyuubiSQLException, Logging}
 
 /**
  * Authentication
  */
-class KyuubiAuthFactory(conf: SparkConf) {
+class KyuubiAuthFactory(conf: SparkConf) extends Logging {
   private[this] val KYUUBI_CLIENT_TOKEN = "kyuubiClientToken"
 
   private[this] val saslServer: Option[HadoopThriftAuthBridge.Server] =
     conf.get(AUTHENTICATION_METHOD.key).toUpperCase match {
       case KERBEROS.name =>
-        val principal: String = conf.get("spark.yarn.principal", "")
-        val keytab: String = conf.get("spark.yarn.keytab", "")
-        require(principal.nonEmpty && keytab.nonEmpty,
-          "keytab and principal are not configured properly")
+        val principal: String = conf.get(SparkUtils.KEYTAB, "")
+        val keytab: String = conf.get(SparkUtils.PRINCIPAL, "")
+        if (principal.nonEmpty && keytab.nonEmpty) {
+          val msg = s"${SparkUtils.KEYTAB} and ${SparkUtils.PRINCIPAL} are not configured" +
+            s" properly for ${KERBEROS.name} Authentication method"
+          throw new KyuubiServerException(msg)
+        }
         val server = ShimLoader.getHadoopThriftAuthBridge.createServer(keytab, principal)
-        // start delegation token manager
+        info("Starting Kyuubi client token manager")
         try {
           server.startDelegationTokenSecretManager(
             SparkUtils.newConfiguration(conf),

@@ -28,6 +28,11 @@ import org.slf4j.Logger
  * Wrapper for [[Utils]] and [[SparkHadoopUtil]]
  */
 object SparkUtils {
+  val SPARK_PREFIX = "spark."
+  val YARN_PREFIX = "yarn."
+
+  val KEYTAB = SPARK_PREFIX + YARN_PREFIX + "keytab"
+  val PRINCIPAL = SPARK_PREFIX + YARN_PREFIX + "principal"
 
   def addShutdownHook(f: () => Unit): Unit = {
     ShutdownHookManager.addShutdownHook(f)
