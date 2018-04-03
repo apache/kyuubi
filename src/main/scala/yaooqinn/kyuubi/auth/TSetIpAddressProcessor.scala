@@ -33,7 +33,6 @@ import yaooqinn.kyuubi.Logging
  * </p>
  *
  */
-
 class TSetIpAddressProcessor[I <: Iface](iface: Iface)
   extends Processor[Iface](iface) with Logging {
 
