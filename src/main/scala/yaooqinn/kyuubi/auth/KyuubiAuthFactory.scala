@@ -46,12 +46,12 @@ class KyuubiAuthFactory(conf: SparkConf) extends Logging {
 
   private[this] val saslServer: Option[HadoopThriftAuthBridge.Server] =
     conf.get(AUTHENTICATION_METHOD.key).toUpperCase match {
-      case KERBEROS.name =>
+      case AuthType.KERBEROS.name =>
         val principal: String = conf.get(SparkUtils.KEYTAB, "")
         val keytab: String = conf.get(SparkUtils.PRINCIPAL, "")
         if (principal.nonEmpty && keytab.nonEmpty) {
           val msg = s"${SparkUtils.KEYTAB} and ${SparkUtils.PRINCIPAL} are not configured" +
-            s" properly for ${KERBEROS.name} Authentication method"
+            s" properly for ${AuthType.KERBEROS.name} Authentication method"
           throw new KyuubiServerException(msg)
         }
         val server = ShimLoader.getHadoopThriftAuthBridge.createServer(keytab, principal)
@@ -66,7 +66,7 @@ class KyuubiAuthFactory(conf: SparkConf) extends Logging {
             throw new TTransportException("Failed to start token manager", e)
         }
         Some(server)
-      case NONE.name => None
+      case AuthType.NONE.name => None
       case other => throw new KyuubiServerException("Unsupported authentication method: " + other)
     }
 
@@ -85,7 +85,7 @@ class KyuubiAuthFactory(conf: SparkConf) extends Logging {
         case e: TTransportException =>
           throw new LoginException(e.getMessage)
       }
-    case _ => PlainSaslHelper.getTransportFactory(NONE.name)
+    case _ => PlainSaslHelper.getTransportFactory(AuthType.NONE.name)
   }
 
   /**

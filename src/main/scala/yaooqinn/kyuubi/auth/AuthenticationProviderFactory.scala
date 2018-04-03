@@ -14,20 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package yaooqinn.kyuubi.auth
 
-abstract class AuthType {
-  def name: String
-}
+import javax.security.sasl.AuthenticationException
 
-object AuthType {
+/**
+ * This class helps select a [[PasswdAuthenticationProvider]] for a given [[AuthMethods]]
+ */
+object AuthenticationProviderFactory {
+  @throws[AuthenticationException]
+  def getAuthenticationProvider(method: AuthMethods): PasswdAuthenticationProvider = method match {
+    case AuthMethods.NONE => new AnonymousAuthenticationProviderImpl
+    case _ => throw new AuthenticationException("Not a valid authentication method")
 
-  case object NONE extends AuthType {
-    override val name: String = "NONE"
-  }
-
-  case object KERBEROS extends AuthType {
-    override val name: String = "KERBEROS"
   }
 }

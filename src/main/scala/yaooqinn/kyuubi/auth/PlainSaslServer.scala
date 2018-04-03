@@ -22,8 +22,6 @@ import java.util.{ArrayDeque => JDeque, Map => JMap}
 import javax.security.auth.callback._
 import javax.security.sasl.{AuthorizeCallback, SaslException, SaslServer, SaslServerFactory}
 
-import org.apache.hive.service.auth.AuthenticationProviderFactory.AuthMethods
-
 object PlainSaslServer {
   val PLAIN_METHOD = "PLAIN"
 

@@ -14,20 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package yaooqinn.kyuubi.auth
 
-abstract class AuthType {
-  def name: String
-}
+import javax.security.sasl.AuthenticationException
 
-object AuthType {
-
-  case object NONE extends AuthType {
-    override val name: String = "NONE"
-  }
-
-  case object KERBEROS extends AuthType {
-    override val name: String = "KERBEROS"
-  }
+trait PasswdAuthenticationProvider {
+  /**
+   * The authenticate method is called by the HiveServer2 authentication layer
+   * to authenticate users for their requests.
+   * If a user is to be granted, return nothing/throw nothing.
+   * When a user is to be disallowed, throw an appropriate [[AuthenticationException]].
+   *
+   * @param user     The username received over the connection request
+   * @param password The password received over the connection request
+   *
+   * @throws AuthenticationException When a user is found to be invalid by the implementation
+   */
+    @throws[AuthenticationException]
+    def authenticate(user: String, password: String): Unit
 }

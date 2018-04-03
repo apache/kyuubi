@@ -51,5 +51,4 @@ object SaslQOP {
       throw new IllegalArgumentException(
         s"Unknown auth type: $str only ${SaslQOP.toString} allowed.")
   }
-
 }

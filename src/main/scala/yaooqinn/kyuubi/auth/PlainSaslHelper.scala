@@ -24,8 +24,6 @@ import javax.security.sasl.{AuthenticationException, AuthorizeCallback}
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.auth.AuthenticationProviderFactory
-import org.apache.hive.service.auth.AuthenticationProviderFactory.AuthMethods
 import org.apache.hive.service.cli.thrift.TCLIService.Iface
 import org.apache.thrift.{TProcessor, TProcessorFactory}
 import org.apache.thrift.transport.{TSaslServerTransport, TTransport, TTransportFactory}
@@ -78,7 +76,7 @@ object PlainSaslHelper {
         }
       }
       val provider = AuthenticationProviderFactory.getAuthenticationProvider(authMethod)
-      provider.Authenticate(username, password)
+      provider.authenticate(username, password)
       if (ac != null) ac.setAuthorized(true)
     }
   }
