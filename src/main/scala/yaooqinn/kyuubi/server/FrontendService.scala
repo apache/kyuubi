@@ -17,7 +17,7 @@
 
 package yaooqinn.kyuubi.server
 
-import java.net.{InetAddress, UnknownHostException}
+import java.net.{InetAddress, ServerSocket, UnknownHostException}
 import java.util.concurrent.{SynchronousQueue, ThreadPoolExecutor, TimeUnit}
 
 import scala.collection.JavaConverters._
@@ -30,7 +30,7 @@ import org.apache.spark.KyuubiConf._
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TThreadPoolServer}
-import org.apache.thrift.transport.{TServerSocket, TTransport}
+import org.apache.thrift.transport.{TServerSocket, TTransport, TTransportException}
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.auth.{AuthType, KyuubiAuthFactory, TSetIpAddressProcessor}
@@ -58,7 +58,6 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   private[this] var currentServerContext: ThreadLocal[ServerContext] = _
 
   private[this] var server: Option[TServer] = _
-  private[this] var serverHost: String = _
   private[this] var portNum = 0
   private[this] var serverIPAddress: InetAddress = _
 
@@ -114,7 +113,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   override def init(conf: SparkConf): Unit = synchronized {
     this.conf = conf
     hadoopConf = SparkHadoopUtil.get.newConfiguration(conf)
-    serverHost = conf.get(FRONTEND_BIND_HOST.key)
+    val serverHost = conf.get(FRONTEND_BIND_HOST.key)
     try {
       if (serverHost != null && !serverHost.isEmpty) {
         serverIPAddress = InetAddress.getByName(serverHost)
@@ -190,10 +189,20 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
         p
     }
   }
+  @throws[TTransportException]
+  private[this] def getServerSocket(serverAddr: InetAddress, port: Int): TServerSocket = {
+    try {
+      val serverSocket = new ServerSocket(port, 1, serverAddr)
+      this.portNum = serverSocket.getLocalPort
+      new TServerSocket(serverSocket)
+    } catch {
+      case e: Exception => throw new ServiceException(e)
+    }
+  }
 
   private[this] def getIpAddress: String = {
     if (isKerberosAuthMode) {
-      authFactory.getIpAddress.orNull
+      this.authFactory.getIpAddress.orNull
     } else {
       TSetIpAddressProcessor.getUserIpAddress
     }
@@ -579,7 +588,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
       authFactory = new KyuubiAuthFactory(conf)
       val transportFactory = authFactory.getAuthTransFactory
       val processorFactory = authFactory.getAuthProcFactory(this)
-      val serverSocket: TServerSocket = KyuubiAuthFactory.getServerSocket(serverHost, portNum)
+      val serverSocket: TServerSocket = getServerSocket(serverIPAddress, portNum)
 
       // Server args
       val maxMessageSize = conf.get(FRONTEND_MAX_MESSAGE_SIZE.key).toInt
