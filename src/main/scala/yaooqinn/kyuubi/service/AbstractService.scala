@@ -59,14 +59,14 @@ abstract class AbstractService(name: String) extends Service with Logging {
     ensureCurrentState(State.NOT_INITED)
     this.conf = conf
     changeState(State.INITED)
-    info("Service:" + getName + " is inited.")
+    info("Service: [" + getName + "] is initialized.")
   }
 
   override def start(): Unit = {
     startTime = System.currentTimeMillis
     ensureCurrentState(State.INITED)
     changeState(State.STARTED)
-    info("Service:" + getName + " is started.")
+    info("Service: [" + getName + "] is started.")
   }
 
   override def stop(): Unit = {
@@ -77,7 +77,7 @@ abstract class AbstractService(name: String) extends Service with Logging {
       case _ =>
         ensureCurrentState(State.STARTED)
         changeState(State.STOPPED)
-        info("Service:" + getName + " is stopped.")
+        info("Service: [" + getName + "] is stopped.")
     }
   }
 
