@@ -299,7 +299,8 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(BitSet.valueOf(tRowSet.getColumns.get(0).getStringVal.getNulls).get(3))
 
     assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(0) === "")
-    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(1) === v1.toString)
+    assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(1) ===
+      SparkSQLUtils.toHiveString((v1, schema1.head.dataType)))
     assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(2) === v2)
     assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(3) === "")
   }
