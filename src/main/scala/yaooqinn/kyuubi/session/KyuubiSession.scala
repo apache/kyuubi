@@ -149,7 +149,7 @@ private[kyuubi] class KyuubiSession(
 
   private[this] def createSparkSession(sessionConf: Map[String, String]): Unit = {
     info(s"--------- Create new SparkSession for $getUserName ----------")
-    val appName = s"KyuubiSession[$getUserName]@" + conf.get(SparkUtils.DRIVER_BIND_ADDR)
+    val appName = s"KyuubiSession[$getUserName]@" + conf.get(FRONTEND_BIND_HOST.key)
     conf.setAppName(appName)
     configureSparkConf(sessionConf)
     val totalWaitTime: Long = conf.getTimeAsSeconds(BACKEND_SESSTION_INIT_TIMEOUT.key)
