@@ -78,4 +78,6 @@ object SparkUtils {
   def tryLogNonFatalError(block: => Unit): Unit = {
     Utils.tryLogNonFatalError(block)
   }
+
+  def localHostName(): String = Utils.localHostName()
 }
