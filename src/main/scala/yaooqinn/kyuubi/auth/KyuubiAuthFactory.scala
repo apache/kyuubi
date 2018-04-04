@@ -18,12 +18,10 @@
 package yaooqinn.kyuubi.auth
 
 import java.io.IOException
-import java.net.{InetAddress, InetSocketAddress, ServerSocket}
 import javax.security.auth.login.LoginException
 import javax.security.sasl.Sasl
 
 import scala.collection.JavaConverters._
-import scala.tools.util.SocketServer
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hive.shims.ShimLoader
@@ -35,7 +33,7 @@ import org.apache.hive.service.cli.thrift.TCLIService
 import org.apache.spark.{SparkConf, SparkUtils}
 import org.apache.spark.KyuubiConf._
 import org.apache.thrift.TProcessorFactory
-import org.apache.thrift.transport.{TServerSocket, TTransportException, TTransportFactory}
+import org.apache.thrift.transport.{TTransportException, TTransportFactory}
 
 import yaooqinn.kyuubi.{KyuubiServerException, KyuubiSQLException, Logging}
 
@@ -161,10 +159,6 @@ class KyuubiAuthFactory(conf: SparkConf) extends Logging {
 
 object KyuubiAuthFactory {
   val HS2_PROXY_USER = "hive.server2.proxy.user"
-  @throws[TTransportException]
-  def getServerSocket(serverAddr: InetAddress, portNum: Int): TServerSocket = {
-    new TServerSocket(new ServerSocket(portNum, 1, serverAddr))
-  }
 
   @throws[KyuubiSQLException]
   def verifyProxyAccess(
