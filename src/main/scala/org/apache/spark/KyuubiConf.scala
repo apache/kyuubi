@@ -242,7 +242,7 @@ object KyuubiConf {
 
   val FRONTEND_LOGIN_BEBACKOFF_SLOT_LENGTH: ConfigEntry[Long] =
     KyuubiConfigBuilder("spark.kyuubi.frontend.backoff.slot.length")
-      .doc("Timeout for Thrift clients during login to Kyuubi Server.")
+      .doc("Time to back off during login to Kyuubi Server.")
       .timeConf(TimeUnit.MILLISECONDS)
       .createWithDefault(TimeUnit.MILLISECONDS.toSeconds(100L))
 
