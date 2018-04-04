@@ -123,7 +123,7 @@ class PlainSaslServer(handler: CallbackHandler, authMethod: AuthMethods) extends
     throw new UnsupportedOperationException
   }
 
-  override def getNegotiatedProperty (propName: String): AnyRef = null
+  override def getNegotiatedProperty(propName: String): AnyRef = null
 
-  override def dispose (): Unit = {}
+  override def dispose(): Unit = {}
 }

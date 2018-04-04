@@ -14,24 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package yaooqinn.kyuubi.auth
 
-import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge.Server
-import org.apache.hive.service.cli.thrift.TCLIService.{Iface, Processor}
-import org.apache.thrift.TProcessor
-import org.apache.thrift.TProcessorFactory
-import org.apache.thrift.transport.TTransport
+import org.apache.spark.SparkFunSuite
 
-object KerberosSaslHelper {
+class AuthTypeSuite extends SparkFunSuite {
 
-  def getProcessorFactory(saslServer: Server, service: Iface): TProcessorFactory =
-    CLIServiceProcessorFactory(saslServer, service)
+  test("testName") {
 
-  case class CLIServiceProcessorFactory(saslServer: Server, service: Iface)
-    extends TProcessorFactory(null) {
-    override def getProcessor(trans: TTransport): TProcessor = {
-      val sqlProcessor = new Processor[Iface](service)
-      saslServer.wrapNonAssumingProcessor(sqlProcessor)
-    }
+    assert(AuthType.NONE.name === "NONE")
+    assert(AuthType.KERBEROS.name === "KERBEROS")
   }
+
 }

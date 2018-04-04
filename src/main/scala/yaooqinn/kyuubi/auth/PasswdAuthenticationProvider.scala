@@ -20,7 +20,7 @@ import javax.security.sasl.AuthenticationException
 
 trait PasswdAuthenticationProvider {
   /**
-   * The authenticate method is called by the HiveServer2 authentication layer
+   * The authenticate method is called by the Kyuubi Server authentication layer
    * to authenticate users for their requests.
    * If a user is to be granted, return nothing/throw nothing.
    * When a user is to be disallowed, throw an appropriate [[AuthenticationException]].

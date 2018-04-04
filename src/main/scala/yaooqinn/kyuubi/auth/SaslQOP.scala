@@ -49,6 +49,6 @@ object SaslQOP {
     case AUTH_CONF.toString => AUTH_CONF
     case _ =>
       throw new IllegalArgumentException(
-        s"Unknown auth type: $str only ${SaslQOP.toString} allowed.")
+        s"Unknown auth type: $str, only ${SaslQOP.toString} allowed.")
   }
 }

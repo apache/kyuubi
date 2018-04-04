@@ -60,6 +60,7 @@
         <hive.version.short>1.2.1</hive.version.short>
         <hive.deps.scope>provided</hive.deps.scope>
         <jpam.version>1.1</jpam.version>
+        <apacheds.version>2.0.0-M15</apacheds.version>
     </properties>
 
     <repositories>
@@ -270,6 +271,64 @@
             <version>${hive.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-minikdc</artifactId>
+            <version>${hadoop.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.directory.api</groupId>
+                    <artifactId>api-all</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.directory.jdbm</groupId>
+                    <artifactId>apacheds-jdbm1</artifactId>
+                </exclusion>
+        </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-core-annotations</artifactId>
+            <version>${apacheds.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.directory.api</groupId>
+                    <artifactId>api-ldap-schema-data</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-server-annotations</artifactId>
+            <version>${apacheds.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-service</artifactId>
+            <version>${apacheds.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>bouncycastle</groupId>
+                    <artifactId>bcprov-jdk15</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
     </dependencies>
 
     <build>
