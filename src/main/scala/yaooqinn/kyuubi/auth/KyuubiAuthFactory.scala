@@ -18,11 +18,12 @@
 package yaooqinn.kyuubi.auth
 
 import java.io.IOException
-import java.net.InetSocketAddress
+import java.net.{InetAddress, InetSocketAddress, ServerSocket}
 import javax.security.auth.login.LoginException
 import javax.security.sasl.Sasl
 
 import scala.collection.JavaConverters._
+import scala.tools.util.SocketServer
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hive.shims.ShimLoader
@@ -161,14 +162,9 @@ class KyuubiAuthFactory(conf: SparkConf) extends Logging {
 object KyuubiAuthFactory {
   val HS2_PROXY_USER = "hive.server2.proxy.user"
   @throws[TTransportException]
-  def getServerSocket(hiveHost: String, portNum: Int): TServerSocket = new TServerSocket(
-    if (hiveHost == null || hiveHost.isEmpty) {
-      // Wildcard bind
-      new InetSocketAddress(portNum)
-    } else {
-      new InetSocketAddress(hiveHost, portNum)
-    }
-  )
+  def getServerSocket(serverAddr: InetAddress, portNum: Int): TServerSocket = {
+    new TServerSocket(new ServerSocket(portNum, 1, serverAddr))
+  }
 
   @throws[KyuubiSQLException]
   def verifyProxyAccess(

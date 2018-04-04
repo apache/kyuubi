@@ -58,7 +58,6 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   private[this] var currentServerContext: ThreadLocal[ServerContext] = _
 
   private[this] var server: Option[TServer] = _
-  private[this] var serverHost: String = _
   private[this] var portNum = 0
   private[this] var serverIPAddress: InetAddress = _
 
@@ -114,7 +113,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   override def init(conf: SparkConf): Unit = synchronized {
     this.conf = conf
     hadoopConf = SparkHadoopUtil.get.newConfiguration(conf)
-    serverHost = conf.get(FRONTEND_BIND_HOST.key)
+    val serverHost = conf.get(FRONTEND_BIND_HOST.key)
     try {
       if (serverHost != null && !serverHost.isEmpty) {
         serverIPAddress = InetAddress.getByName(serverHost)
@@ -579,7 +578,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
       authFactory = new KyuubiAuthFactory(conf)
       val transportFactory = authFactory.getAuthTransFactory
       val processorFactory = authFactory.getAuthProcFactory(this)
-      val serverSocket: TServerSocket = KyuubiAuthFactory.getServerSocket(serverHost, portNum)
+      val serverSocket: TServerSocket = KyuubiAuthFactory.getServerSocket(serverIPAddress, portNum)
 
       // Server args
       val maxMessageSize = conf.get(FRONTEND_MAX_MESSAGE_SIZE.key).toInt
