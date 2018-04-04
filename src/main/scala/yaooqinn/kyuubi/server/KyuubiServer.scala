@@ -98,8 +98,8 @@ object KyuubiServer extends Logging {
    * @param conf the default [[SparkConf]]
    */
   private[this] def setupCommonConfig(conf: SparkConf): Unit = {
-    // overwrite later for each SparkC
-    conf.set("spark.app.name", classOf[KyuubiServer].getSimpleName)
+    // will be overwritten later for each SparkContext
+    conf.setAppName(classOf[KyuubiServer].getSimpleName)
     // avoid max port retries reached
     conf.set("spark.ui.port", "0")
     conf.set("spark.driver.allowMultipleContexts", "true")
