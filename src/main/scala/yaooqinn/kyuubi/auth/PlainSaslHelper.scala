@@ -49,7 +49,7 @@ object PlainSaslHelper {
       saslFactory.addServerDefinition("PLAIN", authTypeStr, null, props.asJava, handler)
     } catch {
       case e: AuthenticationException =>
-      throw new LoginException("Error setting callback handler" + e);
+        throw new LoginException("Error setting callback handler" + e);
     }
     saslFactory
   }
