@@ -49,6 +49,20 @@ Name|Default|Description
 spark.kyuubi.logging.operation.enabled|true|When true, KyuubiServer will save operation logs and make them available for clients
 spark.kyuubi.logging.operation.log.dir|`SPARK_LOG_DIR` -> `SPARK_HOME`/operation_logs -> `java.io.tmpdir`/operation_logs|Top level directory where operation logs are stored if logging functionality is enabled
 
+#### Frontend Service options
+
+Name|Default|Description
+---|---|---
+spark.kyuubi.frontend.bind.host | localhost | Bind host on which to run the Kyuubi Frontend service.
+spark.kyuubi.frontend.bind.port| 10009 | Port number of Kyuubi Frontend service. set 0 will get a random available one
+spark.kyuubi.frontend.min.worker.threads| 50 | Minimum number of Thrift worker threads.
+spark.kyuubi.frontend.max.worker.threads| 500 | Maximum number of Thrift worker threads
+spark.kyuubi.frontend.worker.keepalive.time | 60s| Keepalive time (in seconds) for an idle worker thread. When the number of workers exceeds min workers, excessive threads are killed after this time interval.
+spark.kyuubi.authentication | NONE | Client authentication types. NONE: no authentication check  KERBEROS: Kerberos/GSSAPI authentication.
+spark.kyuubi.frontend.allow.user.substitution | true | Allow alternate user to be specified as part of Kyuubi open connection request.
+spark.kyuubi.frontend.enable.doAs | true | Set true to have Kyuubi execute SQL operations as the user making the calls to it.
+spark.kyuubi.frontend.max.message.size | 104857600 | Maximum message size in bytes a Kyuubi server will accept.
+
 #### Background Execution Thread Pool
 
 Name|Default|Description
@@ -92,24 +106,8 @@ Please refer to the [Configuration Guide](http://spark.apache.org/docs/latest/co
 
 ## Hive Configurations
 
-### Hive client options
+#### Hive client options
 These configurations are used for SparkSessin to talk to Hive MetaStore Server could be configured in a `hive-site.xml`  and placed it in `$SPARKHOME/conf` directory, or treating them as Spark properties with `spark.hadoop.` prefix.
-
-### Kyuubi Frontend Service options   
-
-Name|Default|Description
----|---|---
-hive.server2.thrift.bind.host | (none) | Bind host on which to run the Kyuubi Frontend service.
-hive.server2.thrift.port| 10000 | Port number of Kyuubi Frontend service.
-hive.server2.thrift.min.worker.threads| 5 | Minimum number of Thrift worker threads.
-hive.server2.thrift.max.worker.threads| 500 | Maximum number of Thrift worker threads
-hive.server2.thrift.worker.keepalive.time | 60s| Keepalive time (in seconds) for an idle worker thread. When the number of workers exceeds min workers, excessive threads are killed after this time interval.
-hive.server2.authentication | NONE | Client authentication types. NONE: no authentication check  KERBEROS: Kerberos/GSSAPI authentication.
-hive.server2.allow.user.substitution | true | Allow alternate user to be specified as part of Kyuubi open connection request.
-hive.server2.enable.doAs | true | Set true to have Kyuubi execute SQL operations as the user making the calls to it.
-hive.server2.authentication.kerberos.keytab | (none) | Kerberos keytab file for server principal
-hive.server2.authentication.kerberos.principal | (none) | Kerberos server principal
-hive.server2.thrift.max.message.size | 104857600 | Maximum message size in bytes a Kyuubi server will accept.
 
 ## Hadoop Configurations
 Please refer to the [Apache Hadoop](http://hadoop.apache.org)'s online documentation for an overview on how to configure Hadoop.
