@@ -14,20 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package yaooqinn.kyuubi.auth
 
-abstract class AuthType {
-  def name: String
-}
+import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge.Server
+import org.apache.hive.service.cli.thrift.TCLIService.{Iface, Processor}
+import org.apache.thrift.TProcessor
+import org.apache.thrift.TProcessorFactory
+import org.apache.thrift.transport.TTransport
 
-object AuthType {
+object KerberosSaslHelper {
 
-  case object NONE extends AuthType {
-    override val name: String = "NONE"
-  }
+  def getProcessorFactory(saslServer: Server, service: Iface): TProcessorFactory =
+    CLIServiceProcessorFactory(saslServer, service)
 
-  case object KERBEROS extends AuthType {
-    override val name: String = "KERBEROS"
+  case class CLIServiceProcessorFactory(saslServer: Server, service: Iface)
+    extends TProcessorFactory(null) {
+    override def getProcessor(trans: TTransport): TProcessor = {
+      val sqlProcessor = new Processor[Iface](service)
+      saslServer.wrapNonAssumingProcessor(sqlProcessor)
+    }
   }
 }

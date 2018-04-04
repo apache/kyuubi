@@ -17,17 +17,14 @@
 
 package yaooqinn.kyuubi.auth
 
-abstract class AuthType {
-  def name: String
-}
+import org.apache.spark.SparkFunSuite
 
-object AuthType {
+class AuthTypeSuite extends SparkFunSuite {
 
-  case object NONE extends AuthType {
-    override val name: String = "NONE"
+  test("testName") {
+
+    assert(AuthType.NONE.name === "NONE")
+    assert(AuthType.KERBEROS.name === "KERBEROS")
   }
 
-  case object KERBEROS extends AuthType {
-    override val name: String = "KERBEROS"
-  }
 }

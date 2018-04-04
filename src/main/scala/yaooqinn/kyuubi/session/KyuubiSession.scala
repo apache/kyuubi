@@ -35,7 +35,7 @@ import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAccessControlException
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.cli.thrift.TProtocolVersion
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.{SparkConf, SparkContext, SparkUtils}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
@@ -87,7 +87,7 @@ private[kyuubi] class KyuubiSession(
     val currentUser = UserGroupInformation.getCurrentUser
     if (withImpersonation) {
       if (UserGroupInformation.isSecurityEnabled) {
-        if (conf.contains(PRINCIPAL) && conf.contains(KEYTAB)) {
+        if (conf.contains(SparkUtils.PRINCIPAL) && conf.contains(SparkUtils.KEYTAB)) {
           // If principal and keytab are configured, do re-login in case of token expiry.
           // Do not check keytab file existing as spark-submit has it done
           currentUser.reloginFromKeytab()
@@ -260,8 +260,8 @@ private[kyuubi] class KyuubiSession(
     }
 
     // proxy user does not have rights to get token as realuser
-    conf.remove("spark.yarn.keytab")
-    conf.remove("spark.yarn.principal")
+    conf.remove(SparkUtils.KEYTAB)
+    conf.remove(SparkUtils.PRINCIPAL)
   }
 
   /**
@@ -522,10 +522,7 @@ object KyuubiSession {
   val SPARK_APP_ID: String = "spark.app.id"
   val DEPRECATED_QUEUE = "mapred.job.queue.name"
   val QUEUE = "spark.yarn.queue"
-  val KEYTAB = "spark.yarn.keytab"
-  val PRINCIPAL = "spark.yarn.principal"
 
   val SPARK_PREFIX = "spark."
   val SPARK_HADOOP_PREFIX = "spark.hadoop."
-
 }
