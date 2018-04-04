@@ -598,8 +598,8 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
       // TCP Server
       server = Some(new TThreadPoolServer(args))
       server.foreach(_.setServerEventHandler(serverEventHandler))
-      info("Starting " + name + " on port " + portNum + " with [" + minThreads + "..." +
-        maxThreads + "] worker threads")
+      info(s"Starting $name on host ${serverIPAddress.getCanonicalHostName} at port $portNum with" +
+        s" [$minThreads, $maxThreads] worker threads")
       server.foreach(_.serve())
     } catch {
       case t: Throwable =>
