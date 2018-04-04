@@ -19,7 +19,6 @@ package yaooqinn.kyuubi.server
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-import org.apache.hadoop.hive.cli.OptionsProcessor
 import org.apache.spark.{KyuubiConf, SparkConf, SparkUtils}
 
 import yaooqinn.kyuubi.Logging
@@ -69,11 +68,6 @@ object KyuubiServer extends Logging {
 
   def main(args: Array[String]): Unit = {
     SparkUtils.initDaemon(logger)
-    val op = new OptionsProcessor()
-    if (!op.process_stage1(args)) {
-      System.exit(1)
-    }
-
     val conf = new SparkConf(loadDefaults = true)
     setupCommonConfig(conf)
 
@@ -98,8 +92,8 @@ object KyuubiServer extends Logging {
    * @param conf the default [[SparkConf]]
    */
   private[this] def setupCommonConfig(conf: SparkConf): Unit = {
-    // overwrite later for each SparkC
-    conf.set("spark.app.name", classOf[KyuubiServer].getSimpleName)
+    // will be overwritten later for each SparkContext
+    conf.setAppName(classOf[KyuubiServer].getSimpleName)
     // avoid max port retries reached
     conf.set("spark.ui.port", "0")
     conf.set("spark.driver.allowMultipleContexts", "true")

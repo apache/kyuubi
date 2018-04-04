@@ -121,13 +121,6 @@
 
         <dependency>
             <groupId>${spark.group}</groupId>
-            <artifactId>spark-core_${scala.binary.version}</artifactId>
-            <version>${spark.version}</version>
-            <scope>${spark.scope}</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>${spark.group}</groupId>
             <artifactId>spark-hive_${scala.binary.version}</artifactId>
             <version>${spark.version}</version>
             <scope>${spark.scope}</scope>
@@ -215,19 +208,6 @@
             <artifactId>guava</artifactId>
             <version>14.0.1</version>
             <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>${hive.group}</groupId>
-            <artifactId>hive-cli</artifactId>
-            <version>${hive.version}</version>
-            <scope>${hive.deps.scope}</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>

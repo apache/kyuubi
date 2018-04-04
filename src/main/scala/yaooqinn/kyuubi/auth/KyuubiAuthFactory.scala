@@ -24,7 +24,7 @@ import javax.security.sasl.Sasl
 
 import scala.collection.JavaConverters._
 
-import org.apache.hadoop.hive.conf.HiveConf
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hive.shims.ShimLoader
 import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge
 import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge.Server.ServerMode
@@ -175,7 +175,7 @@ object KyuubiAuthFactory {
       realUser: String,
       proxyUser: String,
       ipAddress: String,
-      hiveConf: HiveConf): Unit = {
+      hadoopConf: Configuration): Unit = {
     try {
       val sessionUgi = {
         if (UserGroupInformation.isSecurityEnabled) {
@@ -189,11 +189,11 @@ object KyuubiAuthFactory {
       }
 
       if (!proxyUser.equalsIgnoreCase(realUser)) {
-        ProxyUsers.refreshSuperUserGroupsConfiguration(hiveConf)
+        ProxyUsers.refreshSuperUserGroupsConfiguration(hadoopConf)
         ProxyUsers.authorize(
           UserGroupInformation.createProxyUser(proxyUser, sessionUgi),
           ipAddress,
-          hiveConf)
+          hadoopConf)
       }
     } catch {
       case e: IOException =>

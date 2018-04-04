@@ -30,9 +30,11 @@ import org.slf4j.Logger
 object SparkUtils {
   val SPARK_PREFIX = "spark."
   val YARN_PREFIX = "yarn."
+  val DRIVER_PREFIX = "driver."
 
   val KEYTAB = SPARK_PREFIX + YARN_PREFIX + "keytab"
   val PRINCIPAL = SPARK_PREFIX + YARN_PREFIX + "principal"
+  val DRIVER_BIND_ADDR = SPARK_PREFIX + DRIVER_PREFIX + "bindAddress"
 
   def addShutdownHook(f: () => Unit): Unit = {
     ShutdownHookManager.addShutdownHook(f)
@@ -78,4 +80,6 @@ object SparkUtils {
   def tryLogNonFatalError(block: => Unit): Unit = {
     Utils.tryLogNonFatalError(block)
   }
+
+  def localHostName(): String = Utils.localHostName()
 }
