@@ -17,7 +17,7 @@
 
 package yaooqinn.kyuubi.server
 
-import java.net.{InetAddress, UnknownHostException}
+import java.net.{InetAddress, ServerSocket, UnknownHostException}
 import java.util.concurrent.{SynchronousQueue, ThreadPoolExecutor, TimeUnit}
 
 import scala.collection.JavaConverters._
@@ -30,7 +30,7 @@ import org.apache.spark.KyuubiConf._
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TThreadPoolServer}
-import org.apache.thrift.transport.{TServerSocket, TTransport}
+import org.apache.thrift.transport.{TServerSocket, TTransport, TTransportException}
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.auth.{AuthType, KyuubiAuthFactory, TSetIpAddressProcessor}
@@ -189,10 +189,20 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
         p
     }
   }
+  @throws[TTransportException]
+  private[this] def getServerSocket(serverAddr: InetAddress, port: Int): TServerSocket = {
+    try {
+      val serverSocket = new ServerSocket(port, 1, serverAddr)
+      this.portNum = serverSocket.getLocalPort
+      new TServerSocket(serverSocket)
+    } catch {
+      case e: Exception => throw new ServiceException(e)
+    }
+  }
 
   private[this] def getIpAddress: String = {
     if (isKerberosAuthMode) {
-      authFactory.getIpAddress.orNull
+      this.authFactory.getIpAddress.orNull
     } else {
       TSetIpAddressProcessor.getUserIpAddress
     }
@@ -578,7 +588,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
       authFactory = new KyuubiAuthFactory(conf)
       val transportFactory = authFactory.getAuthTransFactory
       val processorFactory = authFactory.getAuthProcFactory(this)
-      val serverSocket: TServerSocket = KyuubiAuthFactory.getServerSocket(serverIPAddress, portNum)
+      val serverSocket: TServerSocket = getServerSocket(serverIPAddress, portNum)
 
       // Server args
       val maxMessageSize = conf.get(FRONTEND_MAX_MESSAGE_SIZE.key).toInt
