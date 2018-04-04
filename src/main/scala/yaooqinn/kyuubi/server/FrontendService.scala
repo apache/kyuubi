@@ -26,8 +26,6 @@ import scala.util.{Failure, Try}
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 import org.apache.hadoop.hive.ql.session.SessionState
-import org.apache.hive.service.auth.TSetIpAddressProcessor
-import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift._
 import org.apache.spark.{KyuubiConf, SparkConf, SparkUtils}
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
@@ -35,7 +33,7 @@ import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TT
 import org.apache.thrift.transport.{TServerSocket, TTransport}
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
-import yaooqinn.kyuubi.auth.{KERBEROS, KyuubiAuthFactory}
+import yaooqinn.kyuubi.auth.{AuthType, KyuubiAuthFactory, TSetIpAddressProcessor}
 import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType}
 import yaooqinn.kyuubi.operation.OperationHandle
 import yaooqinn.kyuubi.schema.SchemaMapper
@@ -163,7 +161,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   def getServerIPAddress: InetAddress = serverIPAddress
 
   private[this] def isKerberosAuthMode = {
-    conf.get(KyuubiConf.AUTHENTICATION_METHOD.key).equalsIgnoreCase(KERBEROS.name)
+    conf.get(KyuubiConf.AUTHENTICATION_METHOD.key).equalsIgnoreCase(AuthType.KERBEROS.name)
   }
 
   private[this] def getUserName(req: TOpenSessionReq) = {

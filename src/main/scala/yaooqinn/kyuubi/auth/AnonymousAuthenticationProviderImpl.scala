@@ -14,20 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package yaooqinn.kyuubi.auth
 
-abstract class AuthType {
-  def name: String
-}
-
-object AuthType {
-
-  case object NONE extends AuthType {
-    override val name: String = "NONE"
-  }
-
-  case object KERBEROS extends AuthType {
-    override val name: String = "KERBEROS"
+/**
+ * This authentication provider allows any combination of username and password.
+ */
+class AnonymousAuthenticationProviderImpl extends PasswdAuthenticationProvider {
+  override def authenticate(user: String, password: String): Unit = {
+    // no-op authentication
   }
 }

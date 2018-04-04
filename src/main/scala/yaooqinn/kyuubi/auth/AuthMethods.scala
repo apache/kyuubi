@@ -17,17 +17,20 @@
 
 package yaooqinn.kyuubi.auth
 
-abstract class AuthType {
-  def name: String
+import javax.security.sasl.AuthenticationException
+
+trait AuthMethods {
+  def authMethodStr: String = null
 }
 
-object AuthType {
+object AuthMethods {
 
-  case object NONE extends AuthType {
-    override val name: String = "NONE"
+  case object NONE extends AuthMethods {
+    override val authMethodStr = "NONE"
   }
 
-  case object KERBEROS extends AuthType {
-    override val name: String = "KERBEROS"
+  def getValidAuthMethod(authMethodStr: String): AuthMethods = authMethodStr match {
+    case NONE.authMethodStr => NONE
+    case _ => throw new AuthenticationException("Not a valid authentication method")
   }
 }

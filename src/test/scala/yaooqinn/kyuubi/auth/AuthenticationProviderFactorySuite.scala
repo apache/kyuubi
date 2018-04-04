@@ -17,17 +17,19 @@
 
 package yaooqinn.kyuubi.auth
 
-abstract class AuthType {
-  def name: String
-}
+import javax.security.sasl.AuthenticationException
 
-object AuthType {
+import org.apache.spark.SparkFunSuite
 
-  case object NONE extends AuthType {
-    override val name: String = "NONE"
+class AuthenticationProviderFactorySuite extends SparkFunSuite {
+
+  test("testGetAuthenticationProvider") {
+    AuthenticationProviderFactory
+      .getAuthenticationProvider(AuthMethods.NONE).authenticate("test", "test")
+    intercept[AuthenticationException](AuthenticationProviderFactory
+      .getAuthenticationProvider(new AuthMethods {
+        override def authMethodStr: String = "TEST"
+      }))
   }
 
-  case object KERBEROS extends AuthType {
-    override val name: String = "KERBEROS"
-  }
 }

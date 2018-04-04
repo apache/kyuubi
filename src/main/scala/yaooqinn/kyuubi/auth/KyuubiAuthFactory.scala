@@ -30,30 +30,32 @@ import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge
 import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge.Server.ServerMode
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.authorize.ProxyUsers
-import org.apache.hive.service.auth.{KyuubiKerberosSaslHelper, KyuubiPlainSaslHelper, SaslQOP}
 import org.apache.hive.service.cli.thrift.TCLIService
 import org.apache.spark.{SparkConf, SparkUtils}
 import org.apache.spark.KyuubiConf._
 import org.apache.thrift.TProcessorFactory
 import org.apache.thrift.transport.{TServerSocket, TTransportException, TTransportFactory}
 
-import yaooqinn.kyuubi.{KyuubiServerException, KyuubiSQLException}
+import yaooqinn.kyuubi.{KyuubiServerException, KyuubiSQLException, Logging}
 
 /**
  * Authentication
  */
-class KyuubiAuthFactory(conf: SparkConf) {
+class KyuubiAuthFactory(conf: SparkConf) extends Logging {
   private[this] val KYUUBI_CLIENT_TOKEN = "kyuubiClientToken"
 
   private[this] val saslServer: Option[HadoopThriftAuthBridge.Server] =
     conf.get(AUTHENTICATION_METHOD.key).toUpperCase match {
-      case KERBEROS.name =>
-        val principal: String = conf.get("spark.yarn.principal", "")
-        val keytab: String = conf.get("spark.yarn.keytab", "")
-        require(principal.nonEmpty && keytab.nonEmpty,
-          "keytab and principal are not configured properly")
+      case AuthType.KERBEROS.name =>
+        val principal: String = conf.get(SparkUtils.PRINCIPAL, "")
+        val keytab: String = conf.get(SparkUtils.KEYTAB, "")
+        if (principal.isEmpty || keytab.isEmpty) {
+          val msg = s"${SparkUtils.KEYTAB} and ${SparkUtils.PRINCIPAL} are not configured" +
+            s" properly for ${AuthType.KERBEROS.name} Authentication method"
+          throw new KyuubiServerException(msg)
+        }
         val server = ShimLoader.getHadoopThriftAuthBridge.createServer(keytab, principal)
-        // start delegation token manager
+        info("Starting Kyuubi client token manager")
         try {
           server.startDelegationTokenSecretManager(
             SparkUtils.newConfiguration(conf),
@@ -64,7 +66,7 @@ class KyuubiAuthFactory(conf: SparkConf) {
             throw new TTransportException("Failed to start token manager", e)
         }
         Some(server)
-      case NONE.name => None
+      case AuthType.NONE.name => None
       case other => throw new KyuubiServerException("Unsupported authentication method: " + other)
     }
 
@@ -83,22 +85,23 @@ class KyuubiAuthFactory(conf: SparkConf) {
         case e: TTransportException =>
           throw new LoginException(e.getMessage)
       }
-    case _ => KyuubiPlainSaslHelper.getPlainTransportFactory(NONE.name)
+    case _ => PlainSaslHelper.getTransportFactory(AuthType.NONE.name)
   }
 
   /**
-   * Returns the thrift processor factory for HiveServer2 running in binary mode
+   * Returns the thrift processor factory for Kyuubi running in binary mode
    */
-  def getAuthProcFactory(
-      service: TCLIService.Iface): TProcessorFactory = saslServer.map {
-    KyuubiKerberosSaslHelper.getKerberosProcessorFactory(_, service)
+  def getAuthProcFactory(service: TCLIService.Iface): TProcessorFactory = saslServer.map {
+    KerberosSaslHelper.getProcessorFactory(_, service)
   }.getOrElse {
-    KyuubiPlainSaslHelper.getPlainProcessorFactory(service)
+    PlainSaslHelper.getProcessFactory(service)
   }
 
   def getRemoteUser: Option[String] = saslServer.map(_.getRemoteUser)
 
-  def getIpAddress: Option[String] = saslServer.map(_.getRemoteAddress).map(_.getHostAddress)
+  def getIpAddress: Option[String] = {
+    saslServer.map(_.getRemoteAddress).filter(_ != null).map(_.getHostAddress)
+  }
 
   // retrieve delegation token for the given user
   @throws[KyuubiSQLException]
