@@ -19,7 +19,6 @@ package yaooqinn.kyuubi.server
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-import org.apache.hadoop.hive.cli.OptionsProcessor
 import org.apache.spark.{KyuubiConf, SparkConf, SparkUtils}
 
 import yaooqinn.kyuubi.Logging
@@ -69,11 +68,6 @@ object KyuubiServer extends Logging {
 
   def main(args: Array[String]): Unit = {
     SparkUtils.initDaemon(logger)
-    val op = new OptionsProcessor()
-    if (!op.process_stage1(args)) {
-      System.exit(1)
-    }
-
     val conf = new SparkConf(loadDefaults = true)
     setupCommonConfig(conf)
 
