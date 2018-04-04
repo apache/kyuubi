@@ -23,11 +23,11 @@ import java.util.concurrent.{SynchronousQueue, ThreadPoolExecutor, TimeUnit}
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Try}
 
-import org.apache.hadoop.hive.conf.HiveConf
-import org.apache.hadoop.hive.conf.HiveConf.ConfVars
-import org.apache.hadoop.hive.ql.session.SessionState
+import org.apache.hadoop.conf.Configuration
 import org.apache.hive.service.cli.thrift._
-import org.apache.spark.{KyuubiConf, SparkConf, SparkUtils}
+import org.apache.spark.{KyuubiConf, SparkConf}
+import org.apache.spark.KyuubiConf._
+import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TThreadPoolServer}
 import org.apache.thrift.transport.{TServerSocket, TTransport}
@@ -49,8 +49,8 @@ import yaooqinn.kyuubi.utils.NamedThreadFactory
 private[kyuubi] class FrontendService private(name: String, beService: BackendService)
   extends AbstractService(name) with TCLIService.Iface with Runnable with Logging {
 
-  private[this] var hiveConf: HiveConf = _
-  private[this] var kyuubiAuthFactory: KyuubiAuthFactory = _
+  private[this] var hadoopConf: Configuration = _
+  private[this] var authFactory: KyuubiAuthFactory = _
 
   private[this] val OK_STATUS = new TStatus(TStatusCode.SUCCESS_STATUS)
 
@@ -62,10 +62,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   private[this] var portNum = 0
   private[this] var serverIPAddress: InetAddress = _
 
-  private[this] val threadPoolName = classOf[KyuubiServer].getSimpleName + "-Handler-Pool"
-  private[this] var minWorkerThreads = 0
-  private[this] var maxWorkerThreads = 0
-  private[this] var workerKeepAliveTime = 0L
+  private[this] val threadPoolName = name + "-Handler-Pool"
 
   private[this] var isStarted = false
 
@@ -116,11 +113,8 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
 
   override def init(conf: SparkConf): Unit = synchronized {
     this.conf = conf
-    this.hiveConf = new HiveConf(classOf[SessionState])
-    hiveConf.addResource(SparkUtils.newConfiguration(conf))
-
-    serverHost = sys.env.getOrElse("HIVE_SERVER2_THRIFT_BIND_HOST",
-      hiveConf.getVar(ConfVars.HIVE_SERVER2_THRIFT_BIND_HOST))
+    hadoopConf = SparkHadoopUtil.get.newConfiguration(conf)
+    serverHost = conf.get(FRONTEND_BIND_HOST.key)
     try {
       if (serverHost != null && !serverHost.isEmpty) {
         serverIPAddress = InetAddress.getByName(serverHost)
@@ -130,12 +124,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     } catch {
       case e: UnknownHostException => throw new ServiceException(e)
     }
-    minWorkerThreads = hiveConf.getIntVar(ConfVars.HIVE_SERVER2_THRIFT_MIN_WORKER_THREADS)
-    maxWorkerThreads = hiveConf.getIntVar(ConfVars.HIVE_SERVER2_THRIFT_MAX_WORKER_THREADS)
-    workerKeepAliveTime =
-      hiveConf.getTimeVar(ConfVars.HIVE_SERVER2_THRIFT_WORKER_KEEPALIVE_TIME, TimeUnit.SECONDS)
-    portNum = sys.env.getOrElse("HIVE_SERVER2_THRIFT_PORT",
-      hiveConf.getVar(ConfVars.HIVE_SERVER2_THRIFT_PORT)).toInt
+    portNum = conf.get(FRONTEND_BIND_PORT.key).toInt
     super.init(conf)
   }
 
@@ -167,7 +156,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   private[this] def getUserName(req: TOpenSessionReq) = {
     // Kerberos
     if (isKerberosAuthMode) {
-      realUser = kyuubiAuthFactory.getRemoteUser.orNull
+      realUser = authFactory.getRemoteUser.orNull
     }
     // Except kerberos
     if (realUser == null) {
@@ -193,19 +182,18 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   private[this] def getProxyUser(sessionConf: Map[String, String], ipAddress: String): String = {
     Option(sessionConf).flatMap(_.get(KyuubiAuthFactory.HS2_PROXY_USER)) match {
       case None => realUser
-      case Some(_)
-        if !hiveConf.getBoolVar(HiveConf.ConfVars.HIVE_SERVER2_ALLOW_USER_SUBSTITUTION) =>
+      case Some(_) if !conf.get(FRONTEND_ALLOW_USER_SUBSTITUTION.key).toBoolean =>
         throw new KyuubiSQLException("Proxy user substitution is not allowed")
       case Some(p) if !isKerberosAuthMode => p
       case Some(p) => // Verify proxy user privilege of the realUser for the proxyUser
-        KyuubiAuthFactory.verifyProxyAccess(realUser, p, ipAddress, hiveConf)
+        KyuubiAuthFactory.verifyProxyAccess(realUser, p, ipAddress, hadoopConf)
         p
     }
   }
 
   private[this] def getIpAddress: String = {
     if (isKerberosAuthMode) {
-      kyuubiAuthFactory.getIpAddress.orNull
+      authFactory.getIpAddress.orNull
     } else {
       TSetIpAddressProcessor.getUserIpAddress
     }
@@ -233,7 +221,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     val ipAddress = getIpAddress
     val protocol = getMinVersion(BackendService.SERVER_VERSION, req.getClient_protocol)
     val sessionHandle =
-    if (hiveConf.getBoolVar(ConfVars.HIVE_SERVER2_ENABLE_DOAS) && (userName != null)) {
+    if (conf.get(FRONTEND_ENABLE_DOAS.key).toBoolean && (userName != null)) {
       beService.openSessionWithImpersonation(
         protocol, userName, req.getPassword, ipAddress, req.getConfiguration.asScala.toMap, null)
     } else {
@@ -506,13 +494,13 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
 
   override def GetDelegationToken(req: TGetDelegationTokenReq): TGetDelegationTokenResp = {
     val resp = new TGetDelegationTokenResp
-    if (kyuubiAuthFactory == null) {
+    if (authFactory == null) {
       resp.setStatus(notSupportTokenErrorStatus)
     } else {
       try {
         val token = beService.getDelegationToken(
           new SessionHandle(req.getSessionHandle),
-          kyuubiAuthFactory,
+          authFactory,
           req.getOwner,
           req.getRenewer)
         resp.setDelegationToken(token)
@@ -536,13 +524,13 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
 
   override def CancelDelegationToken(req: TCancelDelegationTokenReq): TCancelDelegationTokenResp = {
     val resp = new TCancelDelegationTokenResp
-    if (kyuubiAuthFactory == null) {
+    if (authFactory == null) {
       resp.setStatus(notSupportTokenErrorStatus)
     } else {
       try {
         beService.cancelDelegationToken(
           new SessionHandle(req.getSessionHandle),
-          kyuubiAuthFactory,
+          authFactory,
           req.getDelegationToken)
         resp.setStatus(OK_STATUS)
       } catch {
@@ -556,13 +544,13 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
 
   override def RenewDelegationToken(req: TRenewDelegationTokenReq): TRenewDelegationTokenResp = {
     val resp = new TRenewDelegationTokenResp
-    if (kyuubiAuthFactory == null) {
+    if (authFactory == null) {
       resp.setStatus(notSupportTokenErrorStatus)
     } else {
       try {
         beService.renewDelegationToken(
           new SessionHandle(req.getSessionHandle),
-          kyuubiAuthFactory,
+          authFactory,
           req.getDelegationToken)
         resp.setStatus(OK_STATUS)
       } catch {
@@ -577,28 +565,27 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   override def run(): Unit = {
     try {
       // Server thread pool
+      val minThreads = conf.get(FRONTEND_MIN_WORKER_THREADS.key).toInt
+      val maxThreads = conf.get(FRONTEND_MAX_WORKER_THREADS.key).toInt
       val executorService = new ThreadPoolExecutor(
-        minWorkerThreads,
-        maxWorkerThreads,
-        workerKeepAliveTime,
+        minThreads,
+        maxThreads,
+        conf.getTimeAsSeconds(FRONTEND_WORKER_KEEPALIVE_TIME.key),
         TimeUnit.SECONDS,
         new SynchronousQueue[Runnable],
         new NamedThreadFactory(threadPoolName))
 
       // Thrift configs
-      kyuubiAuthFactory = new KyuubiAuthFactory(conf)
-      val transportFactory = kyuubiAuthFactory.getAuthTransFactory
-      val processorFactory = kyuubiAuthFactory.getAuthProcFactory(this)
+      authFactory = new KyuubiAuthFactory(conf)
+      val transportFactory = authFactory.getAuthTransFactory
+      val processorFactory = authFactory.getAuthProcFactory(this)
       val serverSocket: TServerSocket = KyuubiAuthFactory.getServerSocket(serverHost, portNum)
 
       // Server args
-      val maxMessageSize = hiveConf.getIntVar(HiveConf.ConfVars.HIVE_SERVER2_THRIFT_MAX_MESSAGE_SIZE)
-      val requestTimeout = hiveConf.getTimeVar(HiveConf.ConfVars.HIVE_SERVER2_THRIFT_LOGIN_TIMEOUT,
-        TimeUnit.SECONDS).toInt
-      val beBackoffSlotLength = hiveConf.getTimeVar(
-        HiveConf.ConfVars.HIVE_SERVER2_THRIFT_LOGIN_BEBACKOFF_SLOT_LENGTH,
-        TimeUnit.MILLISECONDS).toInt
-      val sargs = new TThreadPoolServer.Args(serverSocket)
+      val maxMessageSize = conf.get(FRONTEND_MAX_MESSAGE_SIZE.key).toInt
+      val requestTimeout = conf.getTimeAsSeconds(FRONTEND_LOGIN_TIMEOUT.key).toInt
+      val beBackoffSlotLength = conf.getTimeAsMs(FRONTEND_LOGIN_BEBACKOFF_SLOT_LENGTH.key).toInt
+      val args = new TThreadPoolServer.Args(serverSocket)
         .processorFactory(processorFactory)
         .transportFactory(transportFactory)
         .protocolFactory(new TBinaryProtocol.Factory)
@@ -609,15 +596,14 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
         .beBackoffSlotLengthUnit(TimeUnit.MILLISECONDS)
         .executorService(executorService)
       // TCP Server
-      server = Some(new TThreadPoolServer(sargs))
+      server = Some(new TThreadPoolServer(args))
       server.foreach(_.setServerEventHandler(serverEventHandler))
-      val msg = "Starting " + classOf[FrontendService].getSimpleName + " on port " +
-        portNum + " with " + minWorkerThreads + "..." + maxWorkerThreads + " worker threads"
-      info(msg)
+      info("Starting " + name + " on port " + portNum + " with [" + minThreads + "..." +
+        maxThreads + "] worker threads")
       server.foreach(_.serve())
     } catch {
       case t: Throwable =>
-        error("Error starting " + classOf[FrontendService].getSimpleName +  " for KyuubiServer", t)
+        error("Error starting " + name +  " for KyuubiServer", t)
         System.exit(-1)
     }
   }
