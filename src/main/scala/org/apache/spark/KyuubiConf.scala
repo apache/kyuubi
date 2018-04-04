@@ -182,6 +182,71 @@ object KyuubiConf {
       .createWithDefault(TimeUnit.MINUTES.toMillis(20L))
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
+  //                              Frontend Service Configuration                                 //
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+
+  val FRONTEND_BIND_HOST: ConfigEntry[String] =
+    KyuubiConfigBuilder("spark.kyuubi.frontend.bind.host")
+      .doc("Bind host on which to run the Kyuubi Server.")
+      .stringConf
+      .createWithDefault(SparkUtils.localHostName())
+
+  val FRONTEND_BIND_PORT: ConfigEntry[Int] =
+    KyuubiConfigBuilder("spark.kyuubi.frontend.bind.port")
+      .doc("Bind port on which to run the Kyuubi Server.")
+      .intConf
+      .createWithDefault(10009)
+
+  val FRONTEND_WORKER_KEEPALIVE_TIME: ConfigEntry[Long] =
+    KyuubiConfigBuilder("spark.kyuubi.frontend.worker.keepalive.time")
+      .doc("Keep-alive time (in seconds) for an idle worker thread")
+      .timeConf(TimeUnit.SECONDS)
+      .createWithDefault(TimeUnit.SECONDS.toSeconds(60L))
+
+  val FRONTEND_MIN_WORKER_THREADS: ConfigEntry[Int] =
+    KyuubiConfigBuilder("spark.kyuubi.frontend.min.worker.threads")
+      .doc("Minimum number of threads in the of frontend worker thread pool for KyuubiServer")
+      .intConf
+      .createWithDefault(50)
+
+  val FRONTEND_MAX_WORKER_THREADS: ConfigEntry[Int] =
+    KyuubiConfigBuilder("spark.kyuubi.frontend.max.worker.threads")
+      .doc("Maximum number of threads in the of frontend worker thread pool for KyuubiServer")
+      .intConf
+      .createWithDefault(500)
+
+  val FRONTEND_ALLOW_USER_SUBSTITUTION: ConfigEntry[Boolean] =
+    KyuubiConfigBuilder("spark.kyuubi.frontend.allow.user.substitution")
+      .doc("Allow alternate user to be specified as part of open connection request.")
+      .booleanConf
+      .createWithDefault(true)
+
+  val FRONTEND_ENABLE_DOAS: ConfigEntry[Boolean] =
+    KyuubiConfigBuilder("spark.kyuubi.frontend.enable.doAs")
+      .doc("Setting this property to true enables executing operations as the user making the" +
+        " calls to it.")
+      .booleanConf
+      .createWithDefault(true)
+
+  val FRONTEND_MAX_MESSAGE_SIZE: ConfigEntry[Int] =
+    KyuubiConfigBuilder("spark.kyuubi.frontend.max.message.size")
+      .doc("Maximum message size in bytes a Kyuubi server will accept.")
+      .intConf
+      .createWithDefault(104857600)
+
+  val FRONTEND_LOGIN_TIMEOUT: ConfigEntry[Long] =
+    KyuubiConfigBuilder("spark.kyuubi.frontend.login.timeout")
+      .doc("Timeout for Thrift clients during login to Kyuubi Server.")
+      .timeConf(TimeUnit.SECONDS)
+      .createWithDefault(TimeUnit.SECONDS.toSeconds(20L))
+
+  val FRONTEND_LOGIN_BEBACKOFF_SLOT_LENGTH: ConfigEntry[Long] =
+    KyuubiConfigBuilder("spark.kyuubi.frontend.backoff.slot.length")
+      .doc("Time to back off during login to Kyuubi Server.")
+      .timeConf(TimeUnit.MILLISECONDS)
+      .createWithDefault(TimeUnit.MILLISECONDS.toSeconds(100L))
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                   On Spark Session Init                                     //
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -200,7 +265,7 @@ object KyuubiConf {
       .timeConf(TimeUnit.MILLISECONDS)
       .createWithDefault(TimeUnit.SECONDS.toMillis(1L))
 
-  val BACKEND_SESSTION_INIT_TIMEOUT =
+  val BACKEND_SESSTION_INIT_TIMEOUT: ConfigEntry[Long] =
     KyuubiConfigBuilder("spark.kyuubi.backend.session.init.timeout")
       .doc("How long we suggest the server to give up instantiating SparkContext")
       .timeConf(TimeUnit.SECONDS)
@@ -210,7 +275,7 @@ object KyuubiConf {
   //                                      Authentication                                         //
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
-  val AUTHENTICATION_METHOD =
+  val AUTHENTICATION_METHOD: ConfigEntry[String] =
     KyuubiConfigBuilder("spark.kyuubi.authentication")
       .doc("Client authentication types." +
         " NONE: no authentication check." +
@@ -218,7 +283,7 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("NONE")
 
-  val SASL_QOP =
+  val SASL_QOP: ConfigEntry[String] =
     KyuubiConfigBuilder("spark.kyuubi.sasl.qop")
       .doc("Sasl QOP enable higher levels of protection for Kyuubi communication with clients." +
         " auth - authentication only (default)" +
@@ -232,7 +297,7 @@ object KyuubiConf {
   //                                         Operation                                           //
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
-  val OPERATION_IDLE_TIMEOUT =
+  val OPERATION_IDLE_TIMEOUT: ConfigEntry[Long] =
     KyuubiConfigBuilder("spark.kyuubi.operation.idle.timeout")
       .doc("Operation will be closed when it's not accessed for this duration of time")
       .timeConf(TimeUnit.MILLISECONDS)
