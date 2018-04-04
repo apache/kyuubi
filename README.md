@@ -24,6 +24,7 @@ But unfortunately, due to the limitations of Spark's own architecture，to be us
  |SQL Operaton Log| ✘ | ✔ |Kyuubi redirect sql operation log to local file which has an interface for the client to fetch.|
  |High Availability| ✘ | ✔ |Based on ZooKeeper |
  |cluster deploy mode| ✘ | ✘ |yarn cluster mode will be supported soon|
+ |Type Mapping| ✘ | ✔ |Kyuubi support Spark result/schema to be directly converted to Thrift result/schemas bypassing Hive format results|
  
 ## Getting Started
 
@@ -48,7 +49,7 @@ $ $SPARK_HOME/bin/spark-submit \
     --master yarn \
     --deploy-mode client \
     --driver-memory 10g \
-    --conf spark.hadoop.hive.server2.thrift.port=10009 \
+    --conf spark.kyuubi.frontend.bind.port=10009 \
     $KYUUBI_HOME/target/kyuubi-1.0.0-SNAPSHOT.jar
 ```
 
@@ -62,7 +63,7 @@ $ nohup $SPARK_HOME/bin/spark-submit \
     --master yarn \
     --deploy-mode client \
     --driver-memory 10g \
-    --conf spark.hadoop.hive.server2.thrift.port=10009 \
+    --conf spark.kyuubi.frontend.bind.port=10009 \
     $KYUUBI_HOME/target/kyuubi-1.0.0-SNAPSHOT.jar &
 ```
 
@@ -81,7 +82,7 @@ $ bin/start-kyuubi.sh \
     --master yarn \
     --deploy-mode client \
     --driver-memory 10g \
-    --conf spark.hadoop.hive.server2.thrift.port=10009
+    --conf spark.kyuubi.frontend.bind.port=10009
 ```
 
 ### Run Spark SQL on Kyuubi
