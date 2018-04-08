@@ -1,16 +1,12 @@
 # Configuration Guide 
 
-[TOC]
-
 Kyuubi provides several kinds of properites to configure the system:
 
 **Kyuubi properties:** control most Kyuui server's own behaviors. Most of them determined on server starting. They can be treat like normal Spark properties by setting them in `spark-defaults.conf` file or via `--conf` parameter in server starting scripts.     
 
 **Spark properties:** become session level options, which are used to generate a SparkContext instances and passed to Kyuubi Server by JDBC/ODBC connection strings. Setting them in `$SPARKHOME/conf/spark-defaults.conf` supplies with default values for each session.     
 
-**Hive properties:**             
-1. Hive client options which are used for SparkSessin to talk to Hive MetaStore Server could be configured in a `hive-site.xml`  and placed it in `$SPARKHOME/conf` directory, or treating them as Spark properties with `spark.hadoop.` prefix.           
-2. Kyuubi Frontend Service options is a small part of HiveServer2.     
+**Hive properties:** are used for SparkSession to talk to the Hive MetaStore Server could be configured in a `hive-site.xml`  and placed it in `$SPARKHOME/conf` directory, or treating them as Spark properties with `spark.hadoop.` prefix.           
 
 **Hadoop properties:** specifying `HADOOP_CONF_DIR` or `YARN_CONF_DIR` to the directory contains hadoop configuration files.
 
@@ -58,7 +54,7 @@ spark.kyuubi.frontend.bind.port| 10009 | Port number of Kyuubi Frontend service.
 spark.kyuubi.frontend.min.worker.threads| 50 | Minimum number of Thrift worker threads.
 spark.kyuubi.frontend.max.worker.threads| 500 | Maximum number of Thrift worker threads
 spark.kyuubi.frontend.worker.keepalive.time | 60s| Keepalive time (in seconds) for an idle worker thread. When the number of workers exceeds min workers, excessive threads are killed after this time interval.
-spark.kyuubi.authentication | NONE | Client authentication types. NONE: no authentication check  KERBEROS: Kerberos/GSSAPI authentication.
+spark.kyuubi.authentication | NONE | Client authentication types. NONE: no authentication check; NOSASL: no authentication check  KERBEROS: Kerberos/GSSAPI authentication.
 spark.kyuubi.frontend.allow.user.substitution | true | Allow alternate user to be specified as part of Kyuubi open connection request.
 spark.kyuubi.frontend.enable.doAs | true | Set true to have Kyuubi execute SQL operations as the user making the calls to it.
 spark.kyuubi.frontend.max.message.size | 104857600 | Maximum message size in bytes a Kyuubi server will accept.

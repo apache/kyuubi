@@ -22,11 +22,9 @@ package yaooqinn.kyuubi.service
  * ServiceException.
  *
  */
-class ServiceException(message: String, cause: Throwable) extends RuntimeException {
+class ServiceException(message: String, cause: Throwable) extends RuntimeException(message, cause) {
 
-  def this(cause: Throwable) {
-    this("", cause)
-  }
+  def this(cause: Throwable) = this("", cause)
 
   def this(message: String) = this(message, null)
 }
