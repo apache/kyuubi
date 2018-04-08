@@ -27,4 +27,6 @@ class ServiceException(message: String, cause: Throwable) extends RuntimeExcepti
   def this(cause: Throwable) {
     this("", cause)
   }
+
+  def this(message: String) = this(message, null)
 }
