@@ -35,39 +35,39 @@ import org.apache.spark.KyuubiConf._
 import org.apache.thrift.TProcessorFactory
 import org.apache.thrift.transport.{TTransportException, TTransportFactory}
 
-import yaooqinn.kyuubi.{KyuubiServerException, KyuubiSQLException, Logging}
+import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
+import yaooqinn.kyuubi.service.ServiceException
 
 /**
  * Authentication
  */
 class KyuubiAuthFactory(conf: SparkConf) extends Logging {
   private[this] val KYUUBI_CLIENT_TOKEN = "kyuubiClientToken"
-
-  private[this] val saslServer: Option[HadoopThriftAuthBridge.Server] =
-    conf.get(AUTHENTICATION_METHOD.key).toUpperCase match {
-      case AuthType.KERBEROS.name =>
-        val principal: String = conf.get(SparkUtils.PRINCIPAL, "")
-        val keytab: String = conf.get(SparkUtils.KEYTAB, "")
-        if (principal.isEmpty || keytab.isEmpty) {
-          val msg = s"${SparkUtils.KEYTAB} and ${SparkUtils.PRINCIPAL} are not configured" +
-            s" properly for ${AuthType.KERBEROS.name} Authentication method"
-          throw new KyuubiServerException(msg)
-        }
-        val server = ShimLoader.getHadoopThriftAuthBridge.createServer(keytab, principal)
-        info("Starting Kyuubi client token manager")
-        try {
-          server.startDelegationTokenSecretManager(
-            SparkUtils.newConfiguration(conf),
-            null,
-            ServerMode.HIVESERVER2)
-        } catch {
-          case e: IOException =>
-            throw new TTransportException("Failed to start token manager", e)
-        }
-        Some(server)
-      case AuthType.NONE.name => None
-      case other => throw new KyuubiServerException("Unsupported authentication method: " + other)
-    }
+  private[this] val authMethod = AuthType.toAuthType(conf.get(AUTHENTICATION_METHOD.key))
+  private[this] val saslServer: Option[HadoopThriftAuthBridge.Server] = authMethod match {
+    case AuthType.KERBEROS =>
+      val principal: String = conf.get(SparkUtils.PRINCIPAL, "")
+      val keytab: String = conf.get(SparkUtils.KEYTAB, "")
+      if (principal.isEmpty || keytab.isEmpty) {
+        val msg = s"${SparkUtils.KEYTAB} and ${SparkUtils.PRINCIPAL} are not configured" +
+          s" properly for ${AuthType.KERBEROS} Authentication method"
+        throw new ServiceException(msg)
+      }
+      val server = ShimLoader.getHadoopThriftAuthBridge.createServer(keytab, principal)
+      info("Starting Kyuubi client token manager")
+      try {
+        server.startDelegationTokenSecretManager(
+          SparkUtils.newConfiguration(conf),
+          null,
+          ServerMode.HIVESERVER2)
+      } catch {
+        case e: IOException =>
+          throw new TTransportException("Failed to start token manager", e)
+      }
+      Some(server)
+    case AuthType.NONE | AuthType.NOSASL => None
+    case other => throw new ServiceException("Unsupported authentication method: " + other)
+  }
 
   private[this] def getSaslProperties: Map[String, String] = {
     Map(
@@ -84,7 +84,10 @@ class KyuubiAuthFactory(conf: SparkConf) extends Logging {
         case e: TTransportException =>
           throw new LoginException(e.getMessage)
       }
-    case _ => PlainSaslHelper.getTransportFactory(AuthType.NONE.name)
+    case _ => authMethod match {
+      case AuthType.NOSASL => new TTransportFactory
+      case _ => PlainSaslHelper.getTransportFactory(authMethod.name)
+    }
   }
 
   /**
