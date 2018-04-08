@@ -127,3 +127,6 @@ Suppose that you already have a secured HDFS cluster for deploying Spark, Hive o
 
 Please refer to the [Configuration Guide](docs/configurations.md) in the online documentation for an overview on how to configure Kyuubi.
   
+## Authentication
+
+Please refer to the [Authentication/Security Guide](docs/authentication.md) in the online documentation for an overview on how to enable security for Kyuubi.
