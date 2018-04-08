@@ -19,12 +19,20 @@ package yaooqinn.kyuubi.auth
 
 import org.apache.spark.SparkFunSuite
 
+import yaooqinn.kyuubi.service.ServiceException
+
 class AuthTypeSuite extends SparkFunSuite {
 
   test("testName") {
-
     assert(AuthType.NONE.name === "NONE")
     assert(AuthType.KERBEROS.name === "KERBEROS")
+    assert(AuthType.NOSASL.name === "NOSASL")
   }
 
+  test("to auth type") {
+    assert(AuthType.toAuthType("NONE") === AuthType.NONE)
+    assert(AuthType.toAuthType("KERBEROS") === AuthType.KERBEROS)
+    assert(AuthType.toAuthType("NOSASL") === AuthType.NOSASL)
+    intercept[ServiceException](AuthType.toAuthType("ELSE"))
+  }
 }
