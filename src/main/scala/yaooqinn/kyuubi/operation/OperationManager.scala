@@ -41,8 +41,8 @@ private[kyuubi] class OperationManager private(name: String)
 
   def this() = this(classOf[OperationManager].getSimpleName)
 
+  private[this] lazy val logSchema: StructType = new StructType().add("operation_log", "string")
   private[this] val handleToOperation = new ConcurrentHashMap[OperationHandle, KyuubiOperation]
-
   private[this] val userToOperationLog = new ConcurrentHashMap[String, OperationLog]()
 
   override def init(conf: SparkConf): Unit = synchronized {
@@ -176,8 +176,6 @@ private[kyuubi] class OperationManager private(name: String)
   private[this] def isFetchFirst(fetchOrientation: FetchOrientation): Boolean = {
     fetchOrientation == FetchOrientation.FETCH_FIRST
   }
-
-  private[this] def logSchema: StructType = new StructType().add("operation_log", "string")
 
   def removeExpiredOperations(handles: Seq[OperationHandle]): Seq[KyuubiOperation] = {
     handles.flatMap(removeTimedOutOperation).map { op =>
