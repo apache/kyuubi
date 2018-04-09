@@ -24,6 +24,8 @@ build/apache-maven*
 build/scala*
 target/
 dist/
+kyuubi-*-bin-*
+*.gz
 logs/
 out/
 hs_err_pid*
