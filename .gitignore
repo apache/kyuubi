@@ -23,6 +23,7 @@
 build/apache-maven*
 build/scala*
 target/
+dist/
 logs/
 out/
 hs_err_pid*
