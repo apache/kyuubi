@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#
+# Script to create a binary distribution for easy deploys of Spark.
+# The distribution directory defaults to dist/ but can be overridden below.
+# The distribution contains fat (assembly) jars that include the Scala library,
+# so it is completely self contained.
+# It does not contain source or *.class files.
+
+set -o pipefail
+set -e
+
+KYUUBI_HOME="$(cd "`dirname "$0"`/.."; pwd)"
+DISTDIR="$KYUUBI_HOME/dist"
+MAKE_TGZ=false
+NAME=none
+MVN="$KYUUBI_HOME/build/mvn"
+
+function usage {
+  echo "./build/dist - Tool for making binary distributions of Kyuubi Server"
+  echo ""
+  echo "Usage:"
+  echo "+------------------------------------------------------+"
+  echo "| ./build/dist [--name] [--tgz] <maven build options>  |"
+  echo "+------------------------------------------------------+"
+  echo "name: -  custom binary name"
+  echo "tgz:  -  whether to make a whole bundled package"
+  echo ""
+}
+
+function exit_with_usage {
+  usage
+  exit 1
+}
+
+
+# Parse arguments
+while (( "$#" )); do
+  case $1 in
+    --tgz)
+      MAKE_TGZ=true
+      ;;
+    --name)
+      NAME="$2"
+      shift
+      ;;
+    --help)
+      exit_with_usage
+      ;;
+    --*)
+      echo "Error: $1 is not supported"
+      exit_with_usage
+      ;;
+    -*)
+      break
+      ;;
+    *)
+      echo "Error: $1 is not supported"
+      exit_with_usage
+      ;;
+  esac
+  shift
+done
+# Setup java
+if [ -z "$JAVA_HOME" ]; then
+  if [ `command -v java` ]; then
+    # If java is in /usr/bin/java, we want /usr
+    JAVA_HOME="$(dirname $(dirname $(which java)))"
+  fi
+fi
+
+if [ -z "$JAVA_HOME" ]; then
+  echo "Error: JAVA_HOME is not set, cannot proceed."
+  exit -1
+fi
+
+echo "JAVA_HOME is set to $JAVA_HOME"
+
+if [ $(command -v git) ]; then
+    GITREV=$(git rev-parse --short HEAD 2>/dev/null || :)
+    if [ ! -z "$GITREV" ]; then
+        GITREVSTRING="(git revision $GITREV)"
+    fi
+    unset GITREV
+fi
+
+VERSION=$("$MVN" help:evaluate -Dexpression=project.version $@ 2>/dev/null\
+    | grep -v "INFO"\
+    | grep -v "WARNING"\
+    | tail -n 1)
+
+SPARK_VERSION=$("$MVN" help:evaluate -Dexpression=spark.version $@ 2>/dev/null\
+    | grep -v "INFO"\
+    | grep -v "WARNING"\
+    | tail -n 1)
+
+echo "Building Kyuubi package of version $VERSION against Spark version - $SPARK_VERSION"
+
+if [ "$NAME" == "none" ]; then
+  NAME="spark-"$SPARK_VERSION
+fi
+
+if [ "$MAKE_TGZ" == "true" ]; then
+  echo "Making kyuubi-$VERSION-bin-$NAME.tar.gz"
+else
+  echo "Making distribution for Kyuubi $VERSION named $NAME in '$DISTDIR'..."
+fi
+
+BUILD_COMMAND=("$MVN" -T 1C clean package -DskipTests $@)
+
+echo -e "\nBuilding with..."
+echo -e "\$ ${BUILD_COMMAND[@]}\n"
+
+"${BUILD_COMMAND[@]}"
+
+# Make directories
+rm -rf "$DISTDIR"
+mkdir -p "$DISTDIR/lib"
+echo "Kyuubi $VERSION $GITREVSTRING built for Spark $SPARK_VERSION" > "$DISTDIR/RELEASE"
+echo "Build flags: $@" >> "$DISTDIR/RELEASE"
+
+# Copy jar
+cp "$KYUUBI_HOME/target/kyuubi-$VERSION.jar" "$DISTDIR/lib/"
+# Copy license and ASF files
+cp "$KYUUBI_HOME/LICENSE" "$DISTDIR"
+cp -r "$KYUUBI_HOME/bin" "$DISTDIR"
+cp -r "$KYUUBI_HOME/docs" "$DISTDIR"
+
+
+if [ "$MAKE_TGZ" == "true" ]; then
+  TARDIR_NAME=kyuubi-$VERSION-bin-$NAME
+  TARDIR="$KYUUBI_HOME/$TARDIR_NAME"
+  rm -rf "$TARDIR"
+  cp -r "$DISTDIR" "$TARDIR"
+  tar czf "$TARDIR_NAME.tar.gz" -C "$KYUUBI_HOME" "$TARDIR_NAME"
+  rm -rf "$TARDIR"
+fi
