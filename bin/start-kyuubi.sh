@@ -35,7 +35,14 @@ if [[ "$@" = *--help ]] || [[ "$@" = *-h ]]; then
 fi
 
 ## Find the Kyuubi Jar
-KYUUBI_JAR_DIR="$KYUUBI_HOME/target"
+if [ -z "$KYUUBI_JAR_DIR" ]; then
+  KYUUBI_JAR_DIR="$KYUUBI_HOME/lib"
+  if [ ! -d $KYUUBI_JAR_DIR ]; then
+  echo -e "\nCandidate Kyuubi lib $KYUUBI_JAR_DIR doesn't exist, searching development environment..."
+    KYUUBI_JAR_DIR="$KYUUBI_HOME/target"
+  fi
+fi
+
 KYUUBI_JAR_NUM="$(ls ${KYUUBI_JAR_DIR} | grep kyuubi- | grep .jar | wc -l)"
 
 if [ ${KYUUBI_JAR_NUM} = "0" ]; then

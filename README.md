@@ -30,13 +30,7 @@ But unfortunately, due to the limitations of Spark's own architecture，to be us
 
 ### Packaging
 
-**Kyuubi** server is built based on [Apache Maven](http://maven.apache.org), 
-
-```sbtshell
-build/mvn clean package -DskipTests
-```
-
-Running the code above in the Kyuubi project directory is all we need to build a runnable Kyuubi server.
+Please refer to the [Building Kyuubi](docs/building.md) in the online documentation for an overview on how to build Kyuubi.
 
 ### Start Kyuubi
 
@@ -94,8 +88,6 @@ Now you can use [beeline](https://cwiki.apache.org/confluence/display/Hive/HiveS
 ```bash
 bin/stop-kyuubi.sh
 ```
-
-
 **Notes:** Obviously，without the patches we supplied, Kyuubi is mostly same with the Thrift JDBC/ODBC Server as an non-mutli-tenancy server. 
 
 ## Multi Tenancy Support
