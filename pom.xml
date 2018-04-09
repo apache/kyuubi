@@ -467,31 +467,32 @@
 
     <profiles>
         <profile>
-            <id>hadoop-2.4</id>
+            <id>spark-2.0</id>
             <properties>
-                <hadoop.version>2.4.1</hadoop.version>
-                <jets3t.version>0.9.3</jets3t.version>
+                <spark.version>2.0.2</spark.version>
             </properties>
         </profile>
 
         <profile>
-            <id>hadoop-2.6</id>
+            <id>spark-2.1</id>
             <properties>
-                <hadoop.version>2.6.4</hadoop.version>
-                <jets3t.version>0.9.3</jets3t.version>
-                <zookeeper.version>3.4.6</zookeeper.version>
-                <curator.version>2.6.0</curator.version>
+                <spark.version>2.1.2</spark.version>
             </properties>
         </profile>
 
         <profile>
-            <id>hadoop-2.7</id>
+            <id>spark-2.2</id>
             <properties>
-                <hadoop.version>2.7.3</hadoop.version>
-                <jets3t.version>0.9.3</jets3t.version>
-                <zookeeper.version>3.4.6</zookeeper.version>
-                <curator.version>2.6.0</curator.version>
+                <spark.version>2.2.1</spark.version>
             </properties>
         </profile>
+
+        <profile>
+            <id>spark-2.3</id>
+            <properties>
+                <spark.version>2.3.0</spark.version>
+            </properties>
+        </profile>
+
     </profiles>
 </project>
