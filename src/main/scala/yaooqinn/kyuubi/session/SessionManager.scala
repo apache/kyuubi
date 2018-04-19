@@ -23,18 +23,18 @@ import java.util.concurrent._
 import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.{HashSet => MHSet}
 
 import org.apache.commons.io.FileUtils
 import org.apache.hive.service.cli.thrift.TProtocolVersion
-import org.apache.spark.{SparkConf, SparkException}
 import org.apache.spark.KyuubiConf._
+import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.operation.OperationManager
 import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.service.CompositeService
+import yaooqinn.kyuubi.spark.SparkSessionCacheManager
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 import yaooqinn.kyuubi.utils.NamedThreadFactory
 
@@ -48,7 +48,7 @@ private[kyuubi] class SessionManager private(
   private[this] val handleToSessionUser = new ConcurrentHashMap[SessionHandle, String]
   private[this] val userToSparkSession =
     new ConcurrentHashMap[String, (SparkSession, AtomicInteger)]
-  private[this] val userSparkContextBeingConstruct = new MHSet[String]()
+
   private[this] var execPool: ThreadPoolExecutor = _
   private[this] var isOperationLogEnabled = false
   private[this] var operationLogRootDir: File = _
@@ -131,7 +131,7 @@ private[kyuubi] class SessionManager private(
     if (checkInterval > 0) {
       startTimeoutChecker()
     }
-    startSparkSessionCleaner()
+    SparkSessionCacheManager.startCacheManager(conf)
   }
 
   /**
@@ -166,36 +166,6 @@ private[kyuubi] class SessionManager private(
       }
     }
     execPool.execute(timeoutChecker)
-  }
-
-  /**
-   * Periodically close idle SparkSessions in 'spark.kyuubi.session.clean.interval(default 20min)'
-   */
-  private[this] def startSparkSessionCleaner(): Unit = {
-    // at least 10 min
-    val interval = math.max(
-      conf.getTimeAsMs(BACKEND_SESSION_CHECK_INTERVAL.key), 10 * 60 * 1000L)
-    val sessionCleaner = new Runnable {
-      override def run(): Unit = {
-        sleepInterval(interval)
-        while(!shutdown) {
-          userToSparkSession.asScala.foreach {
-            case (user, (session, times)) =>
-              if (times.get() <= 0 || session.sparkContext.isStopped) {
-                removeSparkSession(user)
-                KyuubiServerMonitor.detachUITab(user)
-                session.stop()
-                if (conf.get("spark.master").startsWith("yarn")) {
-                  System.setProperty("SPARK_YARN_MODE", "true")
-                }
-              }
-            case _ =>
-          }
-          sleepInterval(interval)
-        }
-      }
-    }
-    execPool.execute(sessionCleaner)
   }
 
   private[this] def sleepInterval(interval: Long): Unit = {
@@ -255,12 +225,7 @@ private[kyuubi] class SessionManager private(
     KyuubiServerMonitor.getListener(sessionUser).foreach {
       _.onSessionClosed(sessionHandle.getSessionId.toString)
     }
-    val sessionAndTimes = userToSparkSession.get(sessionUser)
-    if (sessionAndTimes != null) {
-      sessionAndTimes._2.decrementAndGet()
-    } else {
-      throw new KyuubiSQLException(s"SparkSession for [$sessionUser] does not exist")
-    }
+    SparkSessionCacheManager.get.getSparkSession(sessionUser).foreach(_._2.decrementAndGet())
     val session = handleToSession.remove(sessionHandle)
     if (session == null) {
       throw new KyuubiSQLException(s"Session for [$sessionUser] does not exist!")
@@ -295,8 +260,7 @@ private[kyuubi] class SessionManager private(
       execPool = null
     }
     cleanupLoggingRootDir()
-    userToSparkSession.asScala.values.foreach { kv => kv._1.stop() }
-    userToSparkSession.clear()
+    SparkSessionCacheManager.get.stop()
   }
 
   private[this] def cleanupLoggingRootDir(): Unit = {
@@ -314,27 +278,4 @@ private[kyuubi] class SessionManager private(
   def getOpenSessionCount: Int = handleToSession.size
 
   def submitBackgroundOperation(r: Runnable): Future[_] = execPool.submit(r)
-
-  def getSparkSession(user: String): Option[(SparkSession, AtomicInteger)] = {
-    Some(userToSparkSession.get(user))
-  }
-
-  def setSparkSession(user: String, sparkSession: SparkSession): Unit = {
-    userToSparkSession.put(user, (sparkSession, new AtomicInteger(1)))
-  }
-
-  def removeSparkSession(user: String): Unit = userToSparkSession.remove(user)
-
-  def setSCPartiallyConstructed(user: String): Unit = {
-    removeSparkSession(user)
-    userSparkContextBeingConstruct.add(user)
-  }
-
-  def isSCPartiallyConstructed(user: String): Boolean = {
-    userSparkContextBeingConstruct.contains(user)
-  }
-
-  def setSCFullyConstructed(user: String): Unit = {
-    userSparkContextBeingConstruct.remove(user)
-  }
 }

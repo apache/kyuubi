@@ -247,7 +247,7 @@ object KyuubiConf {
       .createWithDefault(TimeUnit.MILLISECONDS.toSeconds(100L))
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
-  //                                   On Spark Session Init                                     //
+  //                                        SparkSession                                         //
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
   val BACKEND_SESSION_WAIT_OTHER_TIMES: ConfigEntry[Int] =
@@ -270,6 +270,7 @@ object KyuubiConf {
       .doc("How long we suggest the server to give up instantiating SparkContext")
       .timeConf(TimeUnit.SECONDS)
       .createWithDefault(TimeUnit.SECONDS.toSeconds(60L))
+
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                      Authentication                                         //
