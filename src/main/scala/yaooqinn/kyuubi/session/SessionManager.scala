@@ -45,31 +45,15 @@ private[kyuubi] class SessionManager private(
     name: String) extends CompositeService(name) with Logging {
   private[this] val operationManager = new OperationManager()
   private[this] val handleToSession = new ConcurrentHashMap[SessionHandle, KyuubiSession]
-  private[this] val handleToSessionUser = new ConcurrentHashMap[SessionHandle, String]
-  private[this] val userToSparkSession =
-    new ConcurrentHashMap[String, (SparkSession, AtomicInteger)]
-
   private[this] var execPool: ThreadPoolExecutor = _
   private[this] var isOperationLogEnabled = false
   private[this] var operationLogRootDir: File = _
   private[this] var checkInterval: Long = _
   private[this] var sessionTimeout: Long = _
   private[this] var checkOperation: Boolean = false
-
   private[this] var shutdown: Boolean = false
 
   def this() = this(classOf[SessionManager].getSimpleName)
-
-  override def init(conf: SparkConf): Unit = synchronized {
-    this.conf = conf
-    // Create operation log root directory, if operation logging is enabled
-    if (conf.get(LOGGING_OPERATION_ENABLED.key).toBoolean) {
-      initOperationLogRootDir()
-    }
-    createExecPool()
-    addService(operationManager)
-    super.init(conf)
-  }
 
   private[this] def createExecPool(): Unit = {
     val poolSize = conf.get(ASYNC_EXEC_THREADS.key).toInt
@@ -126,14 +110,6 @@ private[kyuubi] class SessionManager private(
     }
   }
 
-  override def start(): Unit = {
-    super.start()
-    if (checkInterval > 0) {
-      startTimeoutChecker()
-    }
-    SparkSessionCacheManager.startCacheManager(conf)
-  }
-
   /**
    * Periodically close idle sessions in 'spark.kyuubi.frontend.session.check.interval(default 6h)'
    */
@@ -177,12 +153,63 @@ private[kyuubi] class SessionManager private(
     }
   }
 
+  private[this] def cleanupLoggingRootDir(): Unit = {
+    if (isOperationLogEnabled) {
+      try {
+        FileUtils.forceDelete(operationLogRootDir)
+      } catch {
+        case e: Exception =>
+          warn("Failed to cleanup root dir of KyuubiServer logging: "
+            + operationLogRootDir.getAbsolutePath, e)
+      }
+    }
+  }
+
+  override def init(conf: SparkConf): Unit = synchronized {
+    this.conf = conf
+    // Create operation log root directory, if operation logging is enabled
+    if (conf.get(LOGGING_OPERATION_ENABLED.key).toBoolean) {
+      initOperationLogRootDir()
+    }
+    createExecPool()
+    addService(operationManager)
+    super.init(conf)
+  }
+
+  override def start(): Unit = {
+    super.start()
+    if (checkInterval > 0) {
+      startTimeoutChecker()
+    }
+    SparkSessionCacheManager.startCacheManager(conf)
+  }
+
+  override def stop(): Unit = {
+    super.stop()
+    shutdown = true
+    if (execPool != null) {
+      execPool.shutdown()
+      val timeout = conf.getTimeAsSeconds(ASYNC_EXEC_SHUTDOWN_TIMEOUT.key)
+      try {
+        execPool.awaitTermination(timeout, TimeUnit.SECONDS)
+      } catch {
+        case e: InterruptedException =>
+          warn("ASYNC_EXEC_SHUTDOWN_TIMEOUT = " + timeout +
+            " seconds has been exceeded. RUNNING background operations will be shut down", e)
+      }
+      execPool = null
+    }
+    cleanupLoggingRootDir()
+    SparkSessionCacheManager.get.stop()
+  }
+
   /**
    * Opens a new session and creates a session handle.
    * The username passed to this method is the effective username.
    * If withImpersonation is true (==doAs true) we wrap all the calls in HiveSession
    * within a UGI.doAs, where UGI corresponds to the effective user.
    */
+  @throws[KyuubiSQLException]
   def openSession(
       protocol: TProtocolVersion,
       username: String,
@@ -208,8 +235,6 @@ private[kyuubi] class SessionManager private(
 
     val sessionHandle = kyuubiSession.getSessionHandle
     handleToSession.put(sessionHandle, kyuubiSession)
-    handleToSessionUser.put(sessionHandle, username)
-
     KyuubiServerMonitor.getListener(username).foreach {
       _.onSessionCreated(
         kyuubiSession.getIpAddress,
@@ -218,19 +243,6 @@ private[kyuubi] class SessionManager private(
     }
 
     sessionHandle
-  }
-
-  def closeSession(sessionHandle: SessionHandle) {
-    val sessionUser = handleToSessionUser.remove(sessionHandle)
-    KyuubiServerMonitor.getListener(sessionUser).foreach {
-      _.onSessionClosed(sessionHandle.getSessionId.toString)
-    }
-    SparkSessionCacheManager.get.getSparkSession(sessionUser).foreach(_._2.decrementAndGet())
-    val session = handleToSession.remove(sessionHandle)
-    if (session == null) {
-      throw new KyuubiSQLException(s"Session for [$sessionUser] does not exist!")
-    }
-    session.close()
   }
 
   @throws[KyuubiSQLException]
@@ -242,38 +254,21 @@ private[kyuubi] class SessionManager private(
     session
   }
 
+  @throws[KyuubiSQLException]
+  def closeSession(sessionHandle: SessionHandle) {
+    val session = handleToSession.remove(sessionHandle)
+    if (session == null) {
+      throw new KyuubiSQLException(s"Session $sessionHandle does not exist!")
+    }
+    val sessionUser = session.getUserName
+    KyuubiServerMonitor.getListener(sessionUser).foreach {
+      _.onSessionClosed(sessionHandle.getSessionId.toString)
+    }
+    SparkSessionCacheManager.get.decrease(sessionUser)
+    session.close()
+  }
+
   def getOperationMgr: OperationManager = operationManager
-
-  override def stop(): Unit = {
-    super.stop()
-    shutdown = true
-    if (execPool != null) {
-      execPool.shutdown()
-      val timeout = conf.getTimeAsSeconds(ASYNC_EXEC_SHUTDOWN_TIMEOUT.key)
-      try {
-        execPool.awaitTermination(timeout, TimeUnit.SECONDS)
-      } catch {
-        case e: InterruptedException =>
-          warn("ASYNC_EXEC_SHUTDOWN_TIMEOUT = " + timeout +
-            " seconds has been exceeded. RUNNING background operations will be shut down", e)
-      }
-      execPool = null
-    }
-    cleanupLoggingRootDir()
-    SparkSessionCacheManager.get.stop()
-  }
-
-  private[this] def cleanupLoggingRootDir(): Unit = {
-    if (isOperationLogEnabled) {
-      try {
-        FileUtils.forceDelete(operationLogRootDir)
-      } catch {
-        case e: Exception =>
-          warn("Failed to cleanup root dir of KyuubiServer logging: "
-            + operationLogRootDir.getAbsolutePath, e)
-      }
-    }
-  }
 
   def getOpenSessionCount: Int = handleToSession.size
 

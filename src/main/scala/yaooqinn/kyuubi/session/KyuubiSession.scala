@@ -57,7 +57,6 @@ private[kyuubi] class KyuubiSession(
     sessionManager: SessionManager,
     operationManager: OperationManager) extends Logging {
 
-  private[this] var _sparkSession: SparkSessionWithUGI = _
   private[this] val sessionHandle: SessionHandle = new SessionHandle(protocol)
   private[this] val opHandleSet = new MHSet[OperationHandle]
   private[this] var _isOperationLogEnabled = false
@@ -82,6 +81,7 @@ private[kyuubi] class KyuubiSession(
       currentUser
     }
   }
+  private[this] lazy val sparkSessionWithUGI = new SparkSessionWithUGI(sessionUGI, conf)
 
   private[this] def acquire(userAccess: Boolean): Unit = {
     if (userAccess) {
@@ -130,14 +130,13 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
-  def sparkSession: SparkSession = this._sparkSession.sparkSession
+  def sparkSession: SparkSession = this.sparkSessionWithUGI.sparkSession
 
   def ugi: UserGroupInformation = this.sessionUGI
 
   @throws[KyuubiSQLException]
   def open(sessionConf: Map[String, String]): Unit = {
-    _sparkSession = new SparkSessionWithUGI(sessionUGI, conf)
-    _sparkSession.init(sessionConf)
+    sparkSessionWithUGI.init(sessionConf)
     lastAccessTime = System.currentTimeMillis
     lastIdleTime = lastAccessTime
   }
@@ -148,7 +147,8 @@ private[kyuubi] class KyuubiSession(
       getInfoType match {
         case GetInfoType.SERVER_NAME => new GetInfoValue("Kyuubi Server")
         case GetInfoType.DBMS_NAME => new GetInfoValue("Spark SQL")
-        case GetInfoType.DBMS_VERSION => new GetInfoValue(this._sparkSession.sparkSession.version)
+        case GetInfoType.DBMS_VERSION =>
+          new GetInfoValue(this.sparkSessionWithUGI.sparkSession.version)
         case _ =>
           throw new KyuubiSQLException("Unrecognized GetInfoType value: " + getInfoType.toString)
       }
@@ -191,7 +191,6 @@ private[kyuubi] class KyuubiSession(
       opHandleSet.clear()
       // Cleanup session log directory.
       cleanupSessionLogDir()
-      _sparkSession = null
     } finally {
       release(true)
       try {
