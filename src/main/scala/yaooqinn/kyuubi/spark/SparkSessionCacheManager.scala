@@ -39,12 +39,33 @@ class SparkSessionCacheManager(conf: SparkConf) extends Logging {
   private[this] val userToSparkSession =
     new ConcurrentHashMap[String, (SparkSession, AtomicInteger)]
 
-  def setSparkSession(user: String, sparkSession: SparkSession): Unit = {
+  private[this] val userLatestLogout = new ConcurrentHashMap[String, Long]
+  private[this] val idleTimeout =
+    math.max(conf.getTimeAsMs(BACKEND_SESSION_IDLE_TIMEOUT.key), 60 * 1000)
+
+  def set(user: String, sparkSession: SparkSession): Unit = {
     userToSparkSession.put(user, (sparkSession, new AtomicInteger(1)))
   }
 
-  def getSparkSession(user: String): Option[(SparkSession, AtomicInteger)] = {
-    Some(userToSparkSession.get(user))
+  def getAndIncrease(user: String): Option[SparkSession] = {
+    Some(userToSparkSession.get(user)) match {
+      case Some((ss, times)) if !ss.sparkContext.isStopped =>
+        info(s"SparkSession for [$user] is reused for ${times.incrementAndGet()} times.")
+        Some(ss)
+      case _ =>
+        info(s"SparkSession for [$user] isn't cached, will create a new one.")
+        None
+    }
+  }
+
+  def decrease(user: String): Unit = {
+    Some(userToSparkSession.get(user)) match {
+      case Some((ss, times)) if !ss.sparkContext.isStopped =>
+        userLatestLogout.put(user, System.currentTimeMillis())
+        info(s"SparkSession for [$user] is reused for ${times.decrementAndGet()} times.")
+      case _ =>
+        warn(s"SparkSession for [$user] was not found in the cache.")
+    }
   }
 
   def removeSparkSession(user: String): Unit = userToSparkSession.remove(user)
@@ -53,7 +74,10 @@ class SparkSessionCacheManager(conf: SparkConf) extends Logging {
     override def run(): Unit = {
       userToSparkSession.asScala.foreach {
         case (user, (session, times)) =>
-          if (times.get() <= 0 || session.sparkContext.isStopped) {
+          if ((times.get() <= 0 && userLatestLogout.containsKey(user) &&
+            userLatestLogout.get(user) + idleTimeout > System.currentTimeMillis())||
+            session.sparkContext.isStopped) {
+            info(s"Stopping idle SparkSession for user [$user].")
             removeSparkSession(user)
             KyuubiServerMonitor.detachUITab(user)
             session.stop()
@@ -66,16 +90,17 @@ class SparkSessionCacheManager(conf: SparkConf) extends Logging {
     }
   }
   /**
-   * Periodically close idle SparkSessions in 'spark.kyuubi.session.clean.interval(default 20min)'
+   * Periodically close idle SparkSessions in 'spark.kyuubi.session.clean.interval(default 5min)'
    */
   def start(): Unit = {
-    // at least 10 min
-    val interval = math.max(conf.getTimeAsSeconds(BACKEND_SESSION_CHECK_INTERVAL.key), 10 * 60)
+    // at least 1 minutes
+    val interval = math.max(conf.getTimeAsSeconds(BACKEND_SESSION_CHECK_INTERVAL.key), 60)
     info(s"Scheduling SparkSession cache cleaning every $interval seconds")
     cacheManager.scheduleAtFixedRate(sessionCleaner, interval, interval, TimeUnit.SECONDS)
   }
 
   def stop(): Unit = {
+    info("Stopping SparkSession Cache Manager")
     cacheManager.shutdown()
     userToSparkSession.asScala.values.foreach { kv => kv._1.stop() }
     userToSparkSession.clear()
@@ -83,6 +108,9 @@ class SparkSessionCacheManager(conf: SparkConf) extends Logging {
 }
 
 object SparkSessionCacheManager {
+
+  type Usage = AtomicInteger
+
   private[this] var sparkSessionCacheManager: SparkSessionCacheManager = _
 
   def startCacheManager(conf: SparkConf): Unit = {

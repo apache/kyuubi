@@ -41,7 +41,6 @@ import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
 import yaooqinn.kyuubi.utils.ReflectUtils
 
 class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends Logging {
-
   private[this] var _sparkSession: SparkSession = _
   def sparkSession: SparkSession = _sparkSession
   private[this] val promisedSparkContext = Promise[SparkContext]()
@@ -59,6 +58,9 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
     }
   }
 
+  /**
+   * Invoke SparkContext.stop() if not succeed initializing it
+   */
   private[this] def stopContext(): Unit = {
     promisedSparkContext.future.map { sc =>
       warn(s"Error occurred during initializing SparkContext for $userName, stopping")
@@ -86,7 +88,7 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
       }
     }
 
-    // proxy user does not have rights to get token as realuser
+    // proxy user does not have rights to get token as real user
     conf.remove(SparkUtils.KEYTAB)
     conf.remove(SparkUtils.PRINCIPAL)
   }
@@ -124,9 +126,8 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
       info(s"A partially constructed SparkContext for [$userName], $checkRound times countdown.")
     }
 
-    SparkSessionCacheManager.get.getSparkSession(userName) match {
-      case Some((ss, times)) if !ss.sparkContext.isStopped =>
-        info(s"SparkSession for [$userName] is reused " + times.incrementAndGet() + "times")
+    SparkSessionCacheManager.get.getAndIncrease(userName) match {
+      case Some(ss) =>
         _sparkSession = ss.newSession()
         configureSparkSession(sessionConf)
       case _ =>
@@ -154,7 +155,7 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
             Seq(context)).asInstanceOf[SparkSession]
         }
       })
-      SparkSessionCacheManager.get.setSparkSession(userName, _sparkSession)
+      SparkSessionCacheManager.get.set(userName, _sparkSession)
     } catch {
       case ute: UndeclaredThrowableException =>
         ute.getCause match {

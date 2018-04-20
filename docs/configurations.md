@@ -68,23 +68,23 @@ spark.kyuubi.async.exec.wait.queue.size|100|Size of the wait queue for async thr
 spark.kyuubi.async.exec.keep.alive.time|10,000|Time (in milliseconds) that an idle KyuubiServer async thread (from the thread pool) will wait for a new task to arrive before terminating.
 spark.kyuubi.async.exec.shutdown.timeout|10,000|How long KyuubiServer shutdown will wait for async threads to terminate.
 
-#### Session Idle Check
+#### KyuubiSession
 
 Name|Default|Description
 ---|---|---
 spark.kyuubi.frontend.session.check.interval|6h|The check interval for frontend session/operation timeout, which can be disabled by setting to zero or negative value.
 spark.kyuubi.frontend.session.timeout|8h|The check interval for session/operation timeout, which can be disabled by setting  to zero or negative value.
 spark.kyuubi.frontend.session.check.operation| true |Session will be considered to be idle only if there is no activity, and there is no pending operation. This setting takes effect only if session idle timeout `spark.kyuubi.frontend.session.timeout` and checking `spark.kyuubi.frontend.session.check.interval` are enabled.
-spark.kyuubi.backend.session.check.interval|20min|The check interval for backend session a.k.a SparkSession timeout.
 
-#### On Spark Session Init
+#### SparkSession
 
 Name|Default|Description
 ---|---|---
 spark.kyuubi.backend.session.wait.other.times | 60 | How many times to check when another session with the same user is initializing SparkContext. Total Time will be times by `spark.kyuubi.backend.session.wait.other.interval`.
 spark.kyuubi.backend.session.wait.other.interval|1s|The interval for checking whether other thread with the same user has completed SparkContext instantiation.
 spark.kyuubi.backend.session.init.timeout|60s|How long we suggest the server to give up instantiating SparkContext.
-
+spark.kyuubi.backend.session.check.interval|5min|The check interval for backend session a.k.a SparkSession timeout.
+spark.kyuubi.backend.session.idle.timeout|30min|SparkSession timeout.
 ---
 
 ## Spark Configurations
