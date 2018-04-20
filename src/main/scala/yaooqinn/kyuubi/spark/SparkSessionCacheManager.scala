@@ -68,22 +68,29 @@ class SparkSessionCacheManager(conf: SparkConf) extends Logging {
     }
   }
 
-  def removeSparkSession(user: String): Unit = userToSparkSession.remove(user)
+  private[this] def removeSparkSession(user: String): Unit = {
+    userToSparkSession.remove(user)
+    KyuubiServerMonitor.detachUITab(user)
+  }
 
   private[this] val sessionCleaner = new Runnable {
     override def run(): Unit = {
       userToSparkSession.asScala.foreach {
-        case (user, (session, times)) =>
-          if ((times.get() <= 0 && userLatestLogout.containsKey(user) &&
-            userLatestLogout.get(user) + idleTimeout > System.currentTimeMillis())||
-            session.sparkContext.isStopped) {
-            info(s"Stopping idle SparkSession for user [$user].")
-            removeSparkSession(user)
-            KyuubiServerMonitor.detachUITab(user)
-            session.stop()
-            if (conf.get("spark.master").startsWith("yarn")) {
-              System.setProperty("SPARK_YARN_MODE", "true")
-            }
+        case (user, (session, _)) if session.sparkContext.isStopped =>
+          warn(s"SparkSession for $user might already be stopped by forces outside Kyuubi," +
+            s" cleaning it..")
+          removeSparkSession(user)
+        case (user, (_, times)) if times.get() > 0 =>
+          debug(s"There are $times active connection(s) bound to the SparkSession instance" +
+            s" of $user ")
+        case (user, (_, _)) if !userLatestLogout.containsKey(user) =>
+        case (user, (session, _))
+          if userLatestLogout.get(user) + idleTimeout <= System.currentTimeMillis() =>
+          info(s"Stopping idle SparkSession for user [$user].")
+          removeSparkSession(user)
+          session.stop()
+          if (conf.get("spark.master").startsWith("yarn")) {
+            System.setProperty("SPARK_YARN_MODE", "true")
           }
         case _ =>
       }
