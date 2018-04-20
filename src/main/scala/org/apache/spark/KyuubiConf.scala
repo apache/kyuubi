@@ -148,7 +148,7 @@ object KyuubiConf {
       .createWithDefault(TimeUnit.SECONDS.toMillis(10L))
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
-  //                                    Session Idle Check                                       //
+  //                                       KyuubiSession                                         //
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
   val FRONTEND_SESSION_CHECK_INTERVAL: ConfigEntry[Long] =
@@ -174,12 +174,6 @@ object KyuubiConf {
         " (spark.kyuubi.frontend.session.check.interval) are enabled.")
       .booleanConf
       .createWithDefault(true)
-
-  val BACKEND_SESSION_CHECK_INTERVAL: ConfigEntry[Long] =
-    KyuubiConfigBuilder("spark.kyuubi.backend.session.check.interval")
-      .doc("The check interval for backend session a.k.a SparkSession timeout")
-      .timeConf(TimeUnit.MILLISECONDS)
-      .createWithDefault(TimeUnit.MINUTES.toMillis(20L))
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                              Frontend Service Configuration                                 //
@@ -247,7 +241,7 @@ object KyuubiConf {
       .createWithDefault(TimeUnit.MILLISECONDS.toSeconds(100L))
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
-  //                                   On Spark Session Init                                     //
+  //                                        SparkSession                                         //
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
   val BACKEND_SESSION_WAIT_OTHER_TIMES: ConfigEntry[Int] =
@@ -270,6 +264,18 @@ object KyuubiConf {
       .doc("How long we suggest the server to give up instantiating SparkContext")
       .timeConf(TimeUnit.SECONDS)
       .createWithDefault(TimeUnit.SECONDS.toSeconds(60L))
+
+  val BACKEND_SESSION_CHECK_INTERVAL: ConfigEntry[Long] =
+    KyuubiConfigBuilder("spark.kyuubi.backend.session.check.interval")
+      .doc("The check interval for backend session a.k.a SparkSession timeout")
+      .timeConf(TimeUnit.MILLISECONDS)
+      .createWithDefault(TimeUnit.MINUTES.toMillis(5L))
+
+  val BACKEND_SESSION_IDLE_TIMEOUT: ConfigEntry[Long] =
+    KyuubiConfigBuilder("spark.kyuubi.backend.session.idle.timeout")
+      .doc("SparkSession timeout")
+      .timeConf(TimeUnit.MILLISECONDS)
+      .createWithDefault(TimeUnit.MINUTES.toMillis(30L))
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                      Authentication                                         //

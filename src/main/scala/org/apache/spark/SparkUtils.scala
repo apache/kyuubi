@@ -19,6 +19,8 @@ package org.apache.spark
 
 import java.io.File
 
+import scala.util.matching.Regex
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.util.{ShutdownHookManager, Utils}
@@ -30,11 +32,18 @@ import org.slf4j.Logger
 object SparkUtils {
   val SPARK_PREFIX = "spark."
   val YARN_PREFIX = "yarn."
+  val HADOOP_PRFIX = "hadoop."
+  val SPARK_HADOOP_PREFIX = SPARK_PREFIX + HADOOP_PRFIX
   val DRIVER_PREFIX = "driver."
 
   val KEYTAB = SPARK_PREFIX + YARN_PREFIX + "keytab"
   val PRINCIPAL = SPARK_PREFIX + YARN_PREFIX + "principal"
   val DRIVER_BIND_ADDR = SPARK_PREFIX + DRIVER_PREFIX + "bindAddress"
+
+  val HIVE_VAR_PREFIX: Regex = """set:hivevar:([^=]+)""".r
+  val USE_DB: Regex = """use:([^=]+)""".r
+  val QUEUE = SPARK_PREFIX + YARN_PREFIX + "queue"
+  val DEPRECATED_QUEUE = "mapred.job.queue.name"
 
   def addShutdownHook(f: () => Unit): Unit = {
     ShutdownHookManager.addShutdownHook(f)
