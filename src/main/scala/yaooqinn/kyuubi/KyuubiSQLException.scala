@@ -39,7 +39,7 @@ class KyuubiSQLException(reason: String, sqlState: String, vendorCode: Int, caus
   def this(cause: Throwable) = this(reason = null, cause)
 
   /**
-   * Converts current object to a {@link TStatus} object
+   * Converts current object to a [[TStatus]] object
    *
    * @return a { @link TStatus} object
    */
@@ -64,29 +64,22 @@ object KyuubiSQLException {
       tStatus
   }
 
-  def toString(ex: Throwable): List[String] = toString(ex, null)
-
-  private[this] def toString(cause: Throwable, parent: Array[StackTraceElement]): List[String] = {
+  def toString(
+      cause: Throwable,
+      parent: Array[StackTraceElement] = Array.empty): List[String] = {
     val trace = cause.getStackTrace
-    val m = if (parent != null) {
-      trace.length - 1 - trace.take(parent.length).zipWithIndex.count { kv =>
-        kv._1.equals(parent(kv._2))
-      }
-    } else {
-      trace.length - 1
-    }
-    enroll(cause, trace, m) ++ Option(cause.getCause).map(toString(_, trace)).getOrElse(Nil)
+    enroll(cause, trace.diff(parent)) ++
+      Option(cause.getCause).map(toString(_, trace)).getOrElse(Nil)
   }
 
   private[this] def enroll(
       ex: Throwable,
-      trace: Array[StackTraceElement],
-      max: Int): List[String] = {
+      trace: Array[StackTraceElement]): List[String] = {
     val builder = new StringBuilder
     builder.append('*').append(ex.getClass.getName).append(':')
-    builder.append(ex.getMessage).append(':')
-    builder.append(trace.length).append(':').append(max)
-    List(builder.toString) ++ trace.take(max).map { t =>
+    builder.append(ex.getMessage.stripSuffix(";")).append(':')
+    builder.append(trace.length).append(':').append(trace.length - 1)
+    List(builder.toString) ++ trace.map { t =>
       builder.setLength(0)
       builder.append(t.getClassName).append(":").append(t.getMethodName).append(":")
       Option(t.getFileName).foreach(builder.append)
