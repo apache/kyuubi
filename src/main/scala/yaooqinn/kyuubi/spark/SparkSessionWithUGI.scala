@@ -195,13 +195,8 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
         })
       }
     } catch {
-      case ute: UndeclaredThrowableException => ute.getCause match {
-        case e: HiveAccessControlException =>
-          throw new KyuubiSQLException(e.getMessage, "08S01", e.getCause)
-        case e: NoSuchDatabaseException =>
-          throw new KyuubiSQLException(e.getMessage, "08S01", e.getCause)
-        case e: KyuubiSQLException => throw e
-      }
+      case ute: UndeclaredThrowableException => throw ute.getCause
+      case e: Exception => throw e
     }
   }
 }
