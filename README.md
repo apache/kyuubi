@@ -1,7 +1,9 @@
 # Kyuubi  [![codecov](https://codecov.io/gh/yaooqinn/kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/yaooqinn/kyuubi) [![Build Status](https://travis-ci.org/yaooqinn/kyuubi.svg?branch=master)](https://travis-ci.org/yaooqinn/kyuubi)[![HitCount](http://hits.dwyl.io/yaooqinn/kyuubi.svg)](http://hits.dwyl.io/yaooqinn/kyuubi)
 
+ <img style="zoom: 0.3141592653589" src="docs/imgs/kyuubi.png" />
+
 **Kyuubi** is an enhanced edition of the [Apache Spark](http://spark.apache.org)'s primordial
- [Thrift JDBC/ODBC Server](http://spark.apache.org/docs/latest/sql-programming-guide.html#running-the-thrift-jdbcodbc-server). It is mainly designed for directly running SQL towards a cluster with all components including HDFS, YARN, Hive MetaStore, and itself secured.    
+ [Thrift JDBC/ODBC Server](http://spark.apache.org/docs/latest/sql-programming-guide.html#running-the-thrift-jdbcodbc-server). It is mainly designed for directly running SQL towards a cluster with all components including HDFS, YARN, Hive MetaStore, and itself secured.
 
 Basicaly, the Thrift JDBC/ODBC Server as a similar ad-hoc SQL query service of [Apache Hive](https://hive.apache.org)'s [HiveServer2](https://cwiki.apache.org/confluence/display/Hive/HiveServer2+Overview) for Spark SQL, acts as a distributed query engine using its JDBC/ODBC or command-line interface.
 In this mode, end-users or applications can interact with Spark SQL directly to run SQL queries, without the need to write any code. We can make pretty business reports with massive data using some BI tools which supported JDBC/ODBC connections, such as [Tableau](https://www.tableau.com), [NetEase YouData](https://youdata.163.com) and so on. Benefitting from Apache Spark's capability, we can archive much more performance improvement than Apache Hive as a SQL on Hadoop service.    
@@ -121,3 +123,7 @@ Please refer to the [Configuration Guide](docs/configurations.md) in the online 
 ## Authentication
 
 Please refer to the [Authentication/Security Guide](docs/authentication.md) in the online documentation for an overview on how to enable security for Kyuubi.
+
+## Additional Documentation
+
+[Kyuubi Architecture](./docs/architecture.md)
