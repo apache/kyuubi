@@ -61,7 +61,7 @@ All connections belong to the same user shares this `SparkContext` to generate t
 
 <h4 id="1.2.3">Spark Dynamic Resource Allocation</h4>
 
-Spark provides a mechanism to dynamically adjust the resources your application occupies based on the workload. This means
+Spark provides a mechanism to dynamically adjust the resources your application occupies based on the workload. It means
 that your application may give resources back to the cluster if they are no longer used and request them again later when
 there is demand. This feature is particularly useful if multiple applications share resources in your Spark cluster.
 
@@ -75,7 +75,7 @@ With these features, Kyuubi allows us to use computing resources more efficientl
 
 <h4 id="1.3.1">Authentication</h4>
 
-Please refer to the [Authentication/Security Guide](docs/authentication.md) in the online documentation for an overview on how to enable security for Kyuubi.
+Please refer to the [Authentication/Security Guide](authentication.md) in the online documentation for an overview on how to enable security for Kyuubi.
 
 <h4 id="1.3.2">Authorization</h4>
 
