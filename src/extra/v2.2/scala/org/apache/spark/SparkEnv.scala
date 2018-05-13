@@ -20,6 +20,7 @@ package org.apache.spark
 import java.io.File
 import java.net.Socket
 import java.util.concurrent.ConcurrentHashMap
+import java.util.Locale
 
 import scala.collection.mutable
 import scala.util.Properties
@@ -243,7 +244,7 @@ object SparkEnv extends Logging {
 
     val securityManager = new SecurityManager(conf, ioEncryptionKey)
     ioEncryptionKey.foreach { _ =>
-      if (!securityManager.isSaslEncryptionEnabled()) {
+      if (!securityManager.isEncryptionEnabled()) {
         logWarning("I/O encryption enabled without RPC encryption: keys will be visible on the " +
           "wire.")
       }
@@ -298,8 +299,8 @@ object SparkEnv extends Logging {
     val closureSerializer = new JavaSerializer(conf)
 
     def registerOrLookupEndpoint(
-        name: String, endpointCreator: => RpcEndpoint):
-      RpcEndpointRef = {
+                                  name: String, endpointCreator: => RpcEndpoint):
+    RpcEndpointRef = {
       if (isDriver) {
         logInfo("Registering " + name)
         rpcEnv.setupEndpoint(name, endpointCreator)
@@ -327,7 +328,8 @@ object SparkEnv extends Logging {
       "sort" -> classOf[org.apache.spark.shuffle.sort.SortShuffleManager].getName,
       "tungsten-sort" -> classOf[org.apache.spark.shuffle.sort.SortShuffleManager].getName)
     val shuffleMgrName = conf.get("spark.shuffle.manager", "sort")
-    val shuffleMgrClass = shortShuffleMgrNames.getOrElse(shuffleMgrName.toLowerCase, shuffleMgrName)
+    val shuffleMgrClass =
+      shortShuffleMgrNames.getOrElse(shuffleMgrName.toLowerCase(Locale.ROOT), shuffleMgrName)
     val shuffleManager = instantiateClass[ShuffleManager](shuffleMgrClass)
 
     val useLegacyMemoryManager = conf.getBoolean("spark.memory.useLegacyMode", false)
@@ -429,11 +431,11 @@ object SparkEnv extends Logging {
     // Spark properties
     // This includes the scheduling mode whether or not it is configured (used by SparkUI)
     val schedulerMode =
-      if (!conf.contains("spark.scheduler.mode")) {
-        Seq(("spark.scheduler.mode", schedulingMode))
-      } else {
-        Seq[(String, String)]()
-      }
+    if (!conf.contains("spark.scheduler.mode")) {
+      Seq(("spark.scheduler.mode", schedulingMode))
+    } else {
+      Seq[(String, String)]()
+    }
     val sparkProperties = (conf.getAll ++ schedulerMode).sorted
 
     // System properties that are not java classpaths

@@ -21,6 +21,8 @@ import java.security.PrivilegedExceptionAction
 
 import org.apache.hadoop.security.UserGroupInformation
 
+import yaooqinn.kyuubi._
+
 class SparkUtilsSuite extends SparkFunSuite {
 
   test("get current user name") {
@@ -41,8 +43,7 @@ class SparkUtilsSuite extends SparkFunSuite {
     })
   }
 
-  test("Spark version")
-  {
-    assert(SPARK_VERSION === "2.1.2")
+  test("Spark version test") {
+    assert(SPARK_VERSION === SPARK_COMPILE_VERSION)
   }
 }
