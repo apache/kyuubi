@@ -48,10 +48,12 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.7</java.version>
         <scala.version>2.11.8</scala.version>
+        <scalatest.version>2.2.6</scalatest.version>
         <scala.binary.version>2.11</scala.binary.version>
         <maven.version>3.3.9</maven.version>
         <spark.group>org.apache.spark</spark.group>
         <spark.version>2.1.2</spark.version>
+        <spark.branch>2.1</spark.branch>
         <spark.scope>provided</spark.scope>
         <hadoop.version>2.7.3</hadoop.version>
         <hadoop.deps.scope>provided</hadoop.deps.scope>
@@ -220,7 +222,7 @@
         <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_${scala.binary.version}</artifactId>
-            <version>2.2.6</version>
+            <version>${scalatest.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -314,7 +316,42 @@
     <build>
         <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
         <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
+        <resources>
+            <resource>
+                <directory>${project.basedir}/src/main/resources</directory>
+            </resource>
+            <resource>
+                <!-- Include the properties file to provide the build information. -->
+                <directory>${project.build.directory}/extra-resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.8</version>
+                <executions>
+                    <execution>
+                        <id>build-info</id>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <target>
+                                <exec executable="bash">
+                                    <arg value="${project.basedir}/build/kyuubi-build-info"/>
+                                    <arg value="${project.build.directory}/extra-resources"/>
+                                    <arg value="${project.version}"/>
+                                    <arg value="${spark.version}"/>
+                                </exec>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -411,28 +448,21 @@
                             </sources>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>add-overwrite-spark-source</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>src/extra/v${spark.branch}/scala</source>
+                            </sources>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
 
-            <plugin>
-                <groupId>org.jacoco</groupId>
-                <artifactId>jacoco-maven-plugin</artifactId>
-                <version>0.8.0</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>report</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
             <!-- disable surefire -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -462,6 +492,26 @@
                 </executions>
             </plugin>
 
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
     </build>
 
@@ -470,6 +520,7 @@
             <id>spark-2.0</id>
             <properties>
                 <spark.version>2.0.2</spark.version>
+                <spark.branch>2.0</spark.branch>
             </properties>
         </profile>
 
@@ -477,6 +528,7 @@
             <id>spark-2.1</id>
             <properties>
                 <spark.version>2.1.2</spark.version>
+                <spark.branch>2.1</spark.branch>
             </properties>
         </profile>
 
@@ -484,6 +536,7 @@
             <id>spark-2.2</id>
             <properties>
                 <spark.version>2.2.1</spark.version>
+                <spark.branch>2.2</spark.branch>
             </properties>
         </profile>
 
@@ -491,6 +544,8 @@
             <id>spark-2.3</id>
             <properties>
                 <spark.version>2.3.0</spark.version>
+                <spark.branch>2.3</spark.branch>
+                <scalatest.version>3.0.3</scalatest.version>
             </properties>
         </profile>
 
