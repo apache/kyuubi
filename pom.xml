@@ -48,6 +48,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.7</java.version>
         <scala.version>2.11.8</scala.version>
+        <scalatest.version>2.2.6</scalatest.version>
         <scala.binary.version>2.11</scala.binary.version>
         <maven.version>3.3.9</maven.version>
         <spark.group>org.apache.spark</spark.group>
@@ -221,7 +222,7 @@
         <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_${scala.binary.version}</artifactId>
-            <version>2.2.6</version>
+            <version>${scalatest.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -519,6 +520,7 @@
             <id>spark-2.0</id>
             <properties>
                 <spark.version>2.0.2</spark.version>
+                <spark.branch>2.0</spark.branch>
             </properties>
         </profile>
 
@@ -526,6 +528,7 @@
             <id>spark-2.1</id>
             <properties>
                 <spark.version>2.1.2</spark.version>
+                <spark.branch>2.1</spark.branch>
             </properties>
         </profile>
 
@@ -533,6 +536,7 @@
             <id>spark-2.2</id>
             <properties>
                 <spark.version>2.2.1</spark.version>
+                <spark.branch>2.2</spark.branch>
             </properties>
         </profile>
 
@@ -540,6 +544,8 @@
             <id>spark-2.3</id>
             <properties>
                 <spark.version>2.3.0</spark.version>
+                <spark.branch>2.3</spark.branch>
+                <scalatest.version>3.0.3</scalatest.version>
             </properties>
         </profile>
 

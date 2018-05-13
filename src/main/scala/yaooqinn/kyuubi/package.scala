@@ -17,7 +17,6 @@
 
 package yaooqinn
 
-import java.io.FileNotFoundException
 import java.util.Properties
 
 package object kyuubi {
@@ -42,19 +41,16 @@ package object kyuubi {
               props.getProperty("date", unknown)
             )
           } catch {
-            case e: Exception => throw e
+            case e: Exception => throw new KyuubiServerException(e)
           } finally {
             try {
               res.close()
             } catch {
-              case e: Exception => throw e
+              case e: Exception => throw new KyuubiServerException(e)
             }
           }
 
-        case _ =>
-          val msg = s"Could not find $buildFile"
-          error(msg)
-          throw new FileNotFoundException(msg)
+        case _ => throw new KyuubiServerException(s"Could not find $buildFile")
       }
     }
   }
