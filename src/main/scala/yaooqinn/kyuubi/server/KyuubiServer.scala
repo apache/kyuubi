@@ -119,15 +119,15 @@ object KyuubiServer extends Logging {
     info(s"Starting Kyuubi Server version ${KYUUBI_VERSION} compiled with Spark version:" +
       s" ${SPARK_COMPILE_VERSION}, and run with Spark Version ${SparkUtils.SPARK_VERSION}")
     if (SPARK_COMPILE_VERSION != SparkUtils.SPARK_VERSION) {
-      warn(s"Running Kyuubi with Spark(${SparkUtils.SPARK_VERSION}, which is compiled by" +
-        s" $SPARK_COMPILE_VERSION. Please be aware of possible incompatibility issues...")
+      warn(s"Running Kyuubi with Spark ${SparkUtils.SPARK_VERSION}, which is compiled by" +
+        s" $SPARK_COMPILE_VERSION. PLEASE be aware of possible incompatibility issues")
     }
 
     if (UserGroupInformation.isSecurityEnabled) {
       if (HadoopUtils.isProxyUser(UserGroupInformation.getCurrentUser)) {
-        warn(s"Kyuubi Server itself is started by proxying. Please be aware that Kyuubi now can " +
+        warn(s"Kyuubi Server itself is started by proxying. PLEASE be aware that Kyuubi now can " +
           s"not impersonating and only for ${UserGroupInformation.getCurrentUser.
-            getShortUserName} to connect...")
+            getShortUserName} to connect")
       }
     }
   }
