@@ -19,11 +19,13 @@ package yaooqinn.kyuubi.server
 
 import java.util.concurrent.atomic.AtomicBoolean
 
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.{KyuubiConf, SparkConf, SparkUtils}
 
-import yaooqinn.kyuubi.Logging
+import yaooqinn.kyuubi._
 import yaooqinn.kyuubi.ha.HighAvailabilityUtils
 import yaooqinn.kyuubi.service.CompositeService
+import yaooqinn.kyuubi.utils.HadoopUtils
 
 /**
  * Main entrance of Kyuubi Server
@@ -68,6 +70,7 @@ object KyuubiServer extends Logging {
 
   def main(args: Array[String]): Unit = {
     SparkUtils.initDaemon(logger)
+    validate()
     val conf = new SparkConf(loadDefaults = true)
     setupCommonConfig(conf)
 
@@ -106,5 +109,26 @@ object KyuubiServer extends Logging {
       "org.apache.hadoop.hive.thrift.MemoryTokenStore")
     // Set missing Kyuubi configs to SparkConf
     KyuubiConf.getAllDefaults.foreach(kv => conf.setIfMissing(kv._1, kv._2))
+  }
+
+  private[this] def validate(): Unit = {
+    if (SparkUtils.majorVersion(SparkUtils.SPARK_VERSION) < 2) {
+      throw new KyuubiServerException(s"${SparkUtils.SPARK_VERSION} is too old for Kyuubi Server.")
+    }
+
+    info(s"Starting Kyuubi Server version ${KYUUBI_VERSION} compiled with Spark version:" +
+      s" ${SPARK_COMPILE_VERSION}, and run with Spark Version ${SparkUtils.SPARK_VERSION}")
+    if (SPARK_COMPILE_VERSION != SparkUtils.SPARK_VERSION) {
+      warn(s"Running Kyuubi with Spark(${SparkUtils.SPARK_VERSION}, which is compiled by" +
+        s" $SPARK_COMPILE_VERSION. Please be aware of possible incompatibility issues...")
+    }
+
+    if (UserGroupInformation.isSecurityEnabled) {
+      if (HadoopUtils.isProxyUser(UserGroupInformation.getCurrentUser)) {
+        warn(s"Kyuubi Server itself is started by proxying. Please be aware that Kyuubi now can " +
+          s"not impersonating and only for ${UserGroupInformation.getCurrentUser.
+            getShortUserName} to connect...")
+      }
+    }
   }
 }
