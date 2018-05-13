@@ -23,7 +23,7 @@ import scala.util.matching.Regex
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.util.{ShutdownHookManager, Utils}
+import org.apache.spark.util.{ShutdownHookManager, Utils, VersionUtils}
 import org.slf4j.Logger
 
 /**
@@ -44,6 +44,8 @@ object SparkUtils {
   val USE_DB: Regex = """use:([^=]+)""".r
   val QUEUE = SPARK_PREFIX + YARN_PREFIX + "queue"
   val DEPRECATED_QUEUE = "mapred.job.queue.name"
+
+  val SPARK_VERSION = org.apache.spark.SPARK_VERSION
 
   def addShutdownHook(f: () => Unit): Unit = {
     ShutdownHookManager.addShutdownHook(f)
@@ -91,4 +93,11 @@ object SparkUtils {
   }
 
   def localHostName(): String = Utils.localHostName()
+
+  // org.apache.spark.util.VersionUtils: Utilities for working with Spark version strings
+
+  def majorVersion(sparkVersion: String): Int = VersionUtils.majorVersion(sparkVersion)
+
+  def minorVersion(sparkVersion: String): Int = VersionUtils.minorVersion(sparkVersion)
+
 }

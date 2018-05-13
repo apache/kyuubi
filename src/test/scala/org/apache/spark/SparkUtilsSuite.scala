@@ -23,7 +23,6 @@ import org.apache.hadoop.security.UserGroupInformation
 
 class SparkUtilsSuite extends SparkFunSuite {
 
-
   test("get current user name") {
     val user = SparkUtils.getCurrentUserName()
     assert(user === System.getProperty("user.name"))
@@ -40,5 +39,10 @@ class SparkUtilsSuite extends SparkFunSuite {
         assert(user2 === remoteUser.getShortUserName)
       }
     })
+  }
+
+  test("Spark version")
+  {
+    assert(SPARK_VERSION === "2.1.2")
   }
 }

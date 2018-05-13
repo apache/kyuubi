@@ -19,6 +19,7 @@ package yaooqinn.kyuubi.utils
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.client.api.YarnClient
 import org.apache.hadoop.yarn.conf.YarnConfiguration
@@ -44,5 +45,9 @@ object HadoopUtils {
 
   def killYarnAppByName(appName: String): Unit = {
     listYarnApps().filter(app => app.getName.equals(appName)).foreach(killYarnApp)
+  }
+
+  def isProxyUser(ugi: UserGroupInformation): Boolean = {
+    ugi.getAuthenticationMethod == UserGroupInformation.AuthenticationMethod.PROXY
   }
 }
