@@ -70,6 +70,7 @@ object SparkUtils {
   }
 
   def getKyuubiFirstClassLoader(): KyuubiFirstClassLoader = {
+    // get kyuubi jar
     val url = this.getClass.getProtectionDomain.getCodeSource.getLocation
     new KyuubiFirstClassLoader(Array(url), getContextOrSparkClassLoader())
   }
