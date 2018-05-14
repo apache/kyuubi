@@ -69,6 +69,11 @@ object SparkUtils {
     Utils.getContextOrSparkClassLoader
   }
 
+  def getKyuubiFirstClassLoader(): KyuubiFirstClassLoader = {
+    val url = this.getClass.getProtectionDomain.getCodeSource.getLocation
+    new KyuubiFirstClassLoader(Array(url), getContextOrSparkClassLoader())
+  }
+
   def getLocalDir(conf: SparkConf): String = {
     Utils.getLocalDir(conf)
   }

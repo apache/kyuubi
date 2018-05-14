@@ -46,4 +46,21 @@ class SparkUtilsSuite extends SparkFunSuite {
   test("Spark version test") {
     assert(SPARK_VERSION === SPARK_COMPILE_VERSION)
   }
+
+  test("get Kyuubi first classloader") {
+
+    val urls2 = List(TestUtils.createJarWithClasses(
+      classNames = Seq("FakeClass1", "FakeClass2", "FakeClass3"),
+      toStringValue = "2")).toArray
+    val urls = List(TestUtils.createJarWithClasses(
+      classNames = Seq("FakeClass1"),
+      classNamesWithBase = Seq(("FakeClass2", "FakeClass3")), // FakeClass3 is in parent
+      toStringValue = "1",
+      classpathUrls = urls2)).toArray
+
+    val classloader = SparkUtils.getKyuubiFirstClassLoader()
+    val class1 = classloader.loadClass("org.apache.spark.KyuubiConfSuite")
+    assert(class1.getClassLoader === classloader)
+//    assert(class1.newInstance().isInstanceOf[KyuubiConfSuite])
+  }
 }
