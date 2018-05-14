@@ -496,8 +496,14 @@
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.0</version>
+                <configuration>
+                    <excludes>
+                        <exclude>org.apache.hive.service.cli.thrift.*</exclude>
+                    </excludes>
+                </configuration>
                 <executions>
                     <execution>
+                        <id>pre-test</id>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
@@ -508,9 +514,6 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
-                        <configuration>
-                            <excludes>org.apache.hive.service.cli.thrift.*</excludes>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
