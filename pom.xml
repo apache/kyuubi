@@ -508,6 +508,9 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
+                        <configuration>
+                            <excludes>org.apache.hive.service.cli.thrift.*</excludes>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
