@@ -498,7 +498,7 @@
                 <version>0.8.0</version>
                 <configuration>
                     <excludes>
-                        <exclude>org.apache.hive.service.cli.thrift.*</exclude>
+                        <exclude>**/org/apache/hive/service/cli/thrift/*.class</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -514,11 +514,6 @@
                         <goals>
                             <goal>report</goal>
                         </goals>
-                        <configuration>
-                            <excludes>
-                                <exclude>org.apache.hive.service.cli.thrift.*</exclude>
-                            </excludes>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
