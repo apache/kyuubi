@@ -20,7 +20,7 @@ package yaooqinn.kyuubi.server
 import java.util.concurrent.atomic.AtomicBoolean
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.{KyuubiConf, SparkConf, SparkUtils}
+import org.apache.spark.{KyuubiConf, SparkConf, KyuubiSparkUtil}
 
 import yaooqinn.kyuubi._
 import yaooqinn.kyuubi.ha.HighAvailabilityUtils
@@ -49,7 +49,7 @@ private[kyuubi] class KyuubiServer private(name: String)
     addService(_beService)
     addService(_feService)
     super.init(conf)
-    SparkUtils.addShutdownHook {
+    KyuubiSparkUtil.addShutdownHook {
       () => this.stop()
     }
   }
@@ -69,14 +69,13 @@ private[kyuubi] class KyuubiServer private(name: String)
 object KyuubiServer extends Logging {
 
   def main(args: Array[String]): Unit = {
-    SparkUtils.initDaemon(logger)
+    KyuubiSparkUtil.initDaemon(logger)
     validate()
     val conf = new SparkConf(loadDefaults = true)
     setupCommonConfig(conf)
 
-    val classLoader = SparkUtils.getKyuubiFirstClassLoader()
+    Thread.currentThread().setContextClassLoader(KyuubiSparkUtil.kyuubiFirstClassLoader)
 
-    classLoader.loadClass("org.apache.spark.SparkEnv")
     try {
       val server = new KyuubiServer()
       server.init(conf)
@@ -115,14 +114,14 @@ object KyuubiServer extends Logging {
   }
 
   private[this] def validate(): Unit = {
-    if (SparkUtils.majorVersion(SparkUtils.SPARK_VERSION) < 2) {
-      throw new KyuubiServerException(s"${SparkUtils.SPARK_VERSION} is too old for Kyuubi Server.")
+    if (KyuubiSparkUtil.majorVersion(KyuubiSparkUtil.SPARK_VERSION) < 2) {
+      throw new KyuubiServerException(s"${KyuubiSparkUtil.SPARK_VERSION} is too old for Kyuubi Server.")
     }
 
     info(s"Starting Kyuubi Server version ${KYUUBI_VERSION} compiled with Spark version:" +
-      s" ${SPARK_COMPILE_VERSION}, and run with Spark Version ${SparkUtils.SPARK_VERSION}")
-    if (SPARK_COMPILE_VERSION != SparkUtils.SPARK_VERSION) {
-      warn(s"Running Kyuubi with Spark ${SparkUtils.SPARK_VERSION}, which is compiled by" +
+      s" ${SPARK_COMPILE_VERSION}, and run with Spark Version ${KyuubiSparkUtil.SPARK_VERSION}")
+    if (SPARK_COMPILE_VERSION != KyuubiSparkUtil.SPARK_VERSION) {
+      warn(s"Running Kyuubi with Spark ${KyuubiSparkUtil.SPARK_VERSION}, which is compiled by" +
         s" $SPARK_COMPILE_VERSION. PLEASE be aware of possible incompatibility issues")
     }
 

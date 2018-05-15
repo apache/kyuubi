@@ -26,7 +26,7 @@ import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge
 import org.apache.hadoop.minikdc.MiniKdc
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.cli.thrift.TCLIService.Client
-import org.apache.spark.{KyuubiConf, SparkConf, SparkFunSuite, SparkUtils}
+import org.apache.spark.{KyuubiConf, SparkConf, SparkFunSuite, KyuubiSparkUtil}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
@@ -37,7 +37,7 @@ import yaooqinn.kyuubi.utils.ReflectUtils
 class KerberosTest extends SparkFunSuite {
 
   var kdc: MiniKdc = _
-  val baseDir = SparkUtils.createTempDir(namePrefix = "kyuubi-kdc")
+  val baseDir = KyuubiSparkUtil.createTempDir(namePrefix = "kyuubi-kdc")
 
   override def beforeAll() {
     super.beforeAll()
@@ -86,8 +86,8 @@ class KerberosTest extends SparkFunSuite {
     val conf = new SparkConf()
 
     conf.set(KyuubiConf.AUTHENTICATION_METHOD.key, "KERBEROS")
-    conf.set(SparkUtils.KEYTAB, keytab)
-    conf.set(SparkUtils.PRINCIPAL, princ)
+    conf.set(KyuubiSparkUtil.KEYTAB, keytab)
+    conf.set(KyuubiSparkUtil.PRINCIPAL, princ)
     conf.set("spark.hadoop.hadoop.security.authentication", "KERBEROS")
     val hadoopConf = SparkHadoopUtil.get.newConfiguration(conf)
     UserGroupInformation.setConfiguration(hadoopConf)

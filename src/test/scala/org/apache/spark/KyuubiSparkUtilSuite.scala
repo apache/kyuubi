@@ -20,24 +20,25 @@ package org.apache.spark
 import java.security.PrivilegedExceptionAction
 
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.spark.util.MutableURLClassLoader
 
 import yaooqinn.kyuubi._
 
-class SparkUtilsSuite extends SparkFunSuite {
+class KyuubiSparkUtilSuite extends SparkFunSuite {
 
   test("get current user name") {
-    val user = SparkUtils.getCurrentUserName()
+    val user = KyuubiSparkUtil.getCurrentUserName()
     assert(user === System.getProperty("user.name"))
   }
 
   test("get user with impersonation") {
     val currentUser = UserGroupInformation.getCurrentUser
-    val user1 = SparkUtils.getCurrentUserName()
+    val user1 = KyuubiSparkUtil.getCurrentUserName()
     assert(user1 === currentUser.getShortUserName)
     val remoteUser = UserGroupInformation.createRemoteUser("test")
     remoteUser.doAs(new PrivilegedExceptionAction[Unit] {
       override def run(): Unit = {
-        val user2 = SparkUtils.getCurrentUserName()
+        val user2 = KyuubiSparkUtil.getCurrentUserName()
         assert(user2 === remoteUser.getShortUserName)
       }
     })
@@ -47,20 +48,21 @@ class SparkUtilsSuite extends SparkFunSuite {
     assert(SPARK_VERSION === SPARK_COMPILE_VERSION)
   }
 
+  test("spark version major minor test") {
+    assert(KyuubiSparkUtil.majorVersion("2.1.2") === 2)
+    assert(KyuubiSparkUtil.majorVersion("2.1.2-SNAPSHOT") === 2)
+    assert(KyuubiSparkUtil.minorVersion("2.1.2-SNAPSHOT") === 1)
+    assert(KyuubiSparkUtil.minorVersion("2.3") === 3)
+  }
+
   test("get Kyuubi first classloader") {
-
-    val urls2 = List(TestUtils.createJarWithClasses(
-      classNames = Seq("FakeClass1", "FakeClass2", "FakeClass3"),
-      toStringValue = "2")).toArray
-    val urls = List(TestUtils.createJarWithClasses(
-      classNames = Seq("FakeClass1"),
-      classNamesWithBase = Seq(("FakeClass2", "FakeClass3")), // FakeClass3 is in parent
-      toStringValue = "1",
-      classpathUrls = urls2)).toArray
-
-    val classloader = SparkUtils.getKyuubiFirstClassLoader()
-    val class1 = classloader.loadClass("org.apache.spark.KyuubiConfSuite")
-    assert(class1.getClassLoader === classloader)
-//    assert(class1.newInstance().isInstanceOf[KyuubiConfSuite])
+    val classloader = KyuubiSparkUtil.kyuubiFirstClassLoader
+    assert(classloader.isInstanceOf[MutableURLClassLoader])
+    assert(classloader !== this.getClass.getClassLoader)
+    assert(classloader.getURLs().length === 1)
+    assert(classloader.loadClass(classOf[Test1].getCanonicalName).getClassLoader ===
+      this.getClass.getClassLoader)
   }
 }
+
+class Test1

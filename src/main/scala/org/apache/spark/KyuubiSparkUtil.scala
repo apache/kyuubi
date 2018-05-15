@@ -26,10 +26,12 @@ import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.util.{ShutdownHookManager, Utils, VersionUtils}
 import org.slf4j.Logger
 
+import yaooqinn.kyuubi.Logging
+
 /**
  * Wrapper for [[Utils]] and [[SparkHadoopUtil]]
  */
-object SparkUtils {
+object KyuubiSparkUtil extends Logging {
   val SPARK_PREFIX = "spark."
   val YARN_PREFIX = "yarn."
   val HADOOP_PRFIX = "hadoop."
@@ -46,6 +48,13 @@ object SparkUtils {
   val DEPRECATED_QUEUE = "mapred.job.queue.name"
 
   val SPARK_VERSION = org.apache.spark.SPARK_VERSION
+
+  lazy val kyuubiFirstClassLoader: KyuubiFirstClassLoader = {
+    // get kyuubi jar
+    val url = this.getClass.getProtectionDomain.getCodeSource.getLocation
+    info(s"Initializing KyuubiFirstClassLoader instance with url $url as first class members")
+    new KyuubiFirstClassLoader(Array(url), getContextOrSparkClassLoader())
+  }
 
   def addShutdownHook(f: () => Unit): Unit = {
     ShutdownHookManager.addShutdownHook(f)
@@ -67,12 +76,6 @@ object SparkUtils {
 
   def getContextOrSparkClassLoader(): ClassLoader = {
     Utils.getContextOrSparkClassLoader
-  }
-
-  def getKyuubiFirstClassLoader(): KyuubiFirstClassLoader = {
-    // get kyuubi jar
-    val url = this.getClass.getProtectionDomain.getCodeSource.getLocation
-    new KyuubiFirstClassLoader(Array(url), getContextOrSparkClassLoader())
   }
 
   def getLocalDir(conf: SparkConf): String = {

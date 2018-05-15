@@ -25,7 +25,7 @@ import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.cli.thrift.TProtocolVersion
-import org.apache.spark.{SparkConf, SparkContext, SparkUtils}
+import org.apache.spark.{SparkConf, SparkContext, KyuubiSparkUtil}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.StructType
 
@@ -68,7 +68,7 @@ private[kyuubi] class KyuubiSession(
     val currentUser = UserGroupInformation.getCurrentUser
     if (withImpersonation) {
       if (UserGroupInformation.isSecurityEnabled) {
-        if (conf.contains(SparkUtils.PRINCIPAL) && conf.contains(SparkUtils.KEYTAB)) {
+        if (conf.contains(KyuubiSparkUtil.PRINCIPAL) && conf.contains(KyuubiSparkUtil.KEYTAB)) {
           // If principal and keytab are configured, do re-login in case of token expiry.
           // Do not check keytab file existing as spark-submit has it done
           currentUser.reloginFromKeytab()
