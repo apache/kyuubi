@@ -24,7 +24,11 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.util.{MutableURLClassLoader, ParentClassLoader}
 
-class KyuubiFirstClassLoader(urls: Array[URL], parent: ClassLoader)
+/**
+ * A Copy of ChildFirstURLClassLoader from Spark, renamed for avoiding patten match
+ * It is used to overwrite some Spark class in runtime.
+ */
+private[spark] class KyuubiFirstClassLoader(urls: Array[URL], parent: ClassLoader)
   extends MutableURLClassLoader(urls, null) {
 
   private val parentClassLoader = new ParentClassLoader(parent)

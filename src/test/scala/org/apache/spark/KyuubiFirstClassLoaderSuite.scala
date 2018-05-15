@@ -21,23 +21,43 @@ import java.net.URLClassLoader
 
 class KyuubiFirstClassLoaderSuite extends SparkFunSuite {
 
-  val urls2 = List(TestUtils.createJarWithClasses(
+  val urls1 = List(TestUtils.createJarWithClasses(
     classNames = Seq("FakeClass1", "FakeClass2", "FakeClass3"),
     toStringValue = "2")).toArray
-  val urls = List(TestUtils.createJarWithClasses(
+  val urls2 = List(TestUtils.createJarWithClasses(
     classNames = Seq("FakeClass1"),
     classNamesWithBase = Seq(("FakeClass2", "FakeClass3")), // FakeClass3 is in parent
     toStringValue = "1",
-    classpathUrls = urls2)).toArray
+    classpathUrls = urls1)).toArray
 
   test("kyuubi class loader first") {
-    val parentLoader = new URLClassLoader(urls2, null)
-    val classLoader = new KyuubiFirstClassLoader(urls, parentLoader)
+    val parentLoader = new URLClassLoader(urls1, null)
+    val classLoader = new KyuubiFirstClassLoader(urls2, parentLoader)
     val fakeClass = classLoader.loadClass("FakeClass2").newInstance()
     val fakeClassVersion = fakeClass.toString
     assert(fakeClassVersion === "1")
     val fakeClass2 = classLoader.loadClass("FakeClass2").newInstance()
     assert(fakeClass.getClass === fakeClass2.getClass)
+    classLoader.close()
+    parentLoader.close()
+  }
+
+  test("kyuubi class loader first can fall back") {
+    val parentLoader = new URLClassLoader(urls1, null)
+    val classLoader = new KyuubiFirstClassLoader(urls2, parentLoader)
+    val fakeClass = classLoader.loadClass("FakeClass3").newInstance()
+    val fakeClassVersion = fakeClass.toString
+    assert(fakeClassVersion === "2")
+    classLoader.close()
+    parentLoader.close()
+  }
+
+  test("kyuubi class loader first can fail") {
+    val parentLoader = new URLClassLoader(urls1, null)
+    val classLoader = new KyuubiFirstClassLoader(urls2, parentLoader)
+    intercept[java.lang.ClassNotFoundException] {
+      classLoader.loadClass("FakeClassDoesNotExist").newInstance()
+    }
     classLoader.close()
     parentLoader.close()
   }

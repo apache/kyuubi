@@ -28,8 +28,8 @@ import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAccessControlException
 import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.hive.service.cli.thrift.TProtocolVersion
+import org.apache.spark.KyuubiSparkUtil
 import org.apache.spark.KyuubiConf._
-import org.apache.spark.SparkUtils
 import org.apache.spark.sql.{AnalysisException, DataFrame, Row}
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.types._
@@ -308,6 +308,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
           statementId,
           session.getUserName)
       }
+      Thread.currentThread().setContextClassLoader(KyuubiSparkUtil.kyuubiFirstClassLoader)
       session.sparkSession.sparkContext.setJobGroup(statementId, statement)
       result = session.sparkSession.sql(statement)
       KyuubiServerMonitor.getListener(session.getUserName).foreach {
@@ -321,29 +322,29 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     } catch {
       case e: KyuubiSQLException =>
         if (!isClosedOrCanceled) {
-          onStatementError(statementId, e.getMessage, SparkUtils.exceptionString(e))
+          onStatementError(statementId, e.getMessage, KyuubiSparkUtil.exceptionString(e))
           throw e
         }
       case e: ParseException =>
         if (!isClosedOrCanceled) {
           onStatementError(
-            statementId, e.withCommand(statement).getMessage, SparkUtils.exceptionString(e))
+            statementId, e.withCommand(statement).getMessage, KyuubiSparkUtil.exceptionString(e))
           throw new KyuubiSQLException(
             e.withCommand(statement).getMessage, "ParseException", 2000, e)
         }
       case e: AnalysisException =>
         if (!isClosedOrCanceled) {
-          onStatementError(statementId, e.getMessage, SparkUtils.exceptionString(e))
+          onStatementError(statementId, e.getMessage, KyuubiSparkUtil.exceptionString(e))
           throw new KyuubiSQLException(e.getMessage, "AnalysisException", 2001, e)
         }
       case e: HiveAccessControlException =>
         if (!isClosedOrCanceled) {
-          onStatementError(statementId, e.getMessage, SparkUtils.exceptionString(e))
+          onStatementError(statementId, e.getMessage, KyuubiSparkUtil.exceptionString(e))
           throw new KyuubiSQLException(e.getMessage, "HiveAccessControlException", 3000, e)
         }
       case e: Throwable =>
         if (!isClosedOrCanceled) {
-          onStatementError(statementId, e.getMessage, SparkUtils.exceptionString(e))
+          onStatementError(statementId, e.getMessage, KyuubiSparkUtil.exceptionString(e))
           throw new KyuubiSQLException(e.toString, "<unknown>", 10000, e)
         }
     } finally {

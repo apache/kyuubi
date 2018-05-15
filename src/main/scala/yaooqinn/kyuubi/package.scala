@@ -19,6 +19,8 @@ package yaooqinn
 
 import java.util.Properties
 
+import org.apache.spark.KyuubiSparkUtil
+
 package object kyuubi {
 
   private object BuildInfo extends Logging {
@@ -33,7 +35,7 @@ package object kyuubi {
       repo_url,
       build_date) = {
       val buildFile = "kyuubi-version-info.properties"
-      Option(Thread.currentThread().getContextClassLoader.getResourceAsStream(buildFile)) match {
+      Option(KyuubiSparkUtil.kyuubiFirstClassLoader.getResourceAsStream(buildFile)) match {
         case Some(res) =>
           try {
             val unknown = "<unknown>"
