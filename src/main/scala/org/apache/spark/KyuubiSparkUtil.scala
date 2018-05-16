@@ -42,6 +42,9 @@ object KyuubiSparkUtil extends Logging {
   private[this] val SQL_PREFIX = "sql."
   private[this] val HIVE_PREFIX = "hive."
 
+  val SPARK_HOME = System.getenv("SPARK_HOME")
+  val SPARK_JARS_DIR = SPARK_HOME + File.separator + "jars"
+
   val KEYTAB = SPARK_PREFIX + YARN_PREFIX + "keytab"
   val PRINCIPAL = SPARK_PREFIX + YARN_PREFIX + "principal"
   val DRIVER_BIND_ADDR = SPARK_PREFIX + DRIVER_PREFIX + "bindAddress"
@@ -65,6 +68,7 @@ object KyuubiSparkUtil extends Logging {
   val QUEUE = SPARK_PREFIX + YARN_PREFIX + "queue"
   val DEPRECATED_QUEUE = "mapred.job.queue.name"
 
+  // Runtime Spark Version
   val SPARK_VERSION = org.apache.spark.SPARK_VERSION
 
   lazy val kyuubiFirstClassLoader: KyuubiFirstClassLoader = {
