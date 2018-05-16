@@ -75,7 +75,10 @@ object KyuubiSparkUtil extends Logging {
     // get kyuubi jar
     val url = this.getClass.getProtectionDomain.getCodeSource.getLocation
     info(s"Initializing KyuubiFirstClassLoader instance with url $url as first class members")
-    new KyuubiFirstClassLoader(Array(url), getContextOrSparkClassLoader())
+    val classLoader = new KyuubiFirstClassLoader(Array(url), getContextOrSparkClassLoader())
+    classLoader.loadClass("org.apache.spark.SparkEnv", true)
+    classLoader.loadClass("org.apache.spark.SparkEnv$", true)
+    classLoader
   }
 
   def addShutdownHook(f: () => Unit): Unit = {
