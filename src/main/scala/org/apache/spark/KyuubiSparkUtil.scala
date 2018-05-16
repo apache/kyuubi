@@ -32,15 +32,33 @@ import yaooqinn.kyuubi.Logging
  * Wrapper for [[Utils]] and [[SparkHadoopUtil]]
  */
 object KyuubiSparkUtil extends Logging {
+  // PREFIXES
   val SPARK_PREFIX = "spark."
-  val YARN_PREFIX = "yarn."
-  val HADOOP_PRFIX = "hadoop."
+  private[this] val YARN_PREFIX = "yarn."
+  private[this] val HADOOP_PRFIX = "hadoop."
   val SPARK_HADOOP_PREFIX = SPARK_PREFIX + HADOOP_PRFIX
-  val DRIVER_PREFIX = "driver."
+  private[this] val DRIVER_PREFIX = "driver."
+  private[this] val UI_PREFIX = "ui."
+  private[this] val SQL_PREFIX = "sql."
+  private[this] val HIVE_PREFIX = "hive."
 
   val KEYTAB = SPARK_PREFIX + YARN_PREFIX + "keytab"
   val PRINCIPAL = SPARK_PREFIX + YARN_PREFIX + "principal"
   val DRIVER_BIND_ADDR = SPARK_PREFIX + DRIVER_PREFIX + "bindAddress"
+
+  val SPARK_UI_PORT = SPARK_PREFIX + UI_PREFIX + "port"
+  val SPARK_UI_PORT_DEFAULT = "0"
+
+  val MULTIPLE_CONTEXTS = SPARK_PREFIX + DRIVER_PREFIX + "allowMultipleContexts"
+  val MULTIPLE_CONTEXTS_DEFAULT = "true"
+
+  val CATALOG_IMPL = SPARK_PREFIX + SQL_PREFIX + "catalogImplementation"
+  val CATALOG_IMPL_DEFAULT = "hive"
+
+  val DEPLOY_MODE = SPARK_PREFIX + "submit.deployMode"
+  val DEPLOY_MODE_DEFAULT = "client"
+
+  val METASTORE_JARS = SPARK_PREFIX + SQL_PREFIX + HIVE_PREFIX + "metastore.jars"
 
   val HIVE_VAR_PREFIX: Regex = """set:hivevar:([^=]+)""".r
   val USE_DB: Regex = """use:([^=]+)""".r

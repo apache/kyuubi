@@ -20,7 +20,7 @@ package yaooqinn.kyuubi.server
 import java.util.concurrent.atomic.AtomicBoolean
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.{KyuubiConf, SparkConf, KyuubiSparkUtil}
+import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf}
 
 import yaooqinn.kyuubi._
 import yaooqinn.kyuubi.ha.HighAvailabilityUtils
@@ -100,22 +100,30 @@ object KyuubiServer extends Logging {
     // will be overwritten later for each SparkContext
     conf.setAppName(classOf[KyuubiServer].getSimpleName)
     // avoid max port retries reached
-    conf.set("spark.ui.port", "0")
-    conf.set("spark.driver.allowMultipleContexts", "true")
-    conf.set("spark.sql.catalogImplementation", "hive")
+    conf.set(KyuubiSparkUtil.SPARK_UI_PORT, KyuubiSparkUtil.SPARK_UI_PORT_DEFAULT)
+    conf.set(KyuubiSparkUtil.MULTIPLE_CONTEXTS, KyuubiSparkUtil.MULTIPLE_CONTEXTS_DEFAULT)
+    conf.set(KyuubiSparkUtil.CATALOG_IMPL, KyuubiSparkUtil.CATALOG_IMPL_DEFAULT)
     // For the server itself the deploy mode could be either client or cluster,
     // but for the later [[SparkContext]] must be set to client mode
-    conf.set("spark.submit.deployMode", "client")
+    conf.set(KyuubiSparkUtil.DEPLOY_MODE, KyuubiSparkUtil.DEPLOY_MODE_DEFAULT)
     // The delegation token store implementation. Set to MemoryTokenStore always.
     conf.set("spark.hadoop.hive.cluster.delegation.token.store.class",
       "org.apache.hadoop.hive.thrift.MemoryTokenStore")
+
+    conf.getOption(KyuubiSparkUtil.METASTORE_JARS) match {
+      case None | Some("builtin") =>
+        val sparkHome = sys.env.get("SPARK_HOME")
+        info(sparkHome.get)
+      case _ =>
+    }
     // Set missing Kyuubi configs to SparkConf
     KyuubiConf.getAllDefaults.foreach(kv => conf.setIfMissing(kv._1, kv._2))
   }
 
   private[this] def validate(): Unit = {
     if (KyuubiSparkUtil.majorVersion(KyuubiSparkUtil.SPARK_VERSION) < 2) {
-      throw new KyuubiServerException(s"${KyuubiSparkUtil.SPARK_VERSION} is too old for Kyuubi Server.")
+      throw new KyuubiServerException(s"${KyuubiSparkUtil.SPARK_VERSION} is too old for Kyuubi" +
+        s" Server.")
     }
 
     info(s"Starting Kyuubi Server version ${KYUUBI_VERSION} compiled with Spark version:" +
