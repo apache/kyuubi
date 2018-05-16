@@ -35,7 +35,7 @@ private[spark] class KyuubiFirstClassLoader(urls: Array[URL], parent: ClassLoade
 
   override def loadClass(name: String, resolve: Boolean): Class[_] = {
     try {
-      super.loadClass(name, resolve)
+      super.loadClass(name, true)
     } catch {
       case _: ClassNotFoundException =>
         parentClassLoader.loadClass(name, resolve)
