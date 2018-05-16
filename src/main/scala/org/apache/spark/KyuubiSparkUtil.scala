@@ -27,6 +27,7 @@ import org.apache.spark.util.{ShutdownHookManager, Utils, VersionUtils}
 import org.slf4j.Logger
 
 import yaooqinn.kyuubi.Logging
+import yaooqinn.kyuubi.utils.ReflectUtils
 
 /**
  * Wrapper for [[Utils]] and [[SparkHadoopUtil]]
@@ -77,7 +78,8 @@ object KyuubiSparkUtil extends Logging {
     info(s"Initializing KyuubiFirstClassLoader instance with url $url as first class members")
     val classLoader = new KyuubiFirstClassLoader(Array(url), getContextOrSparkClassLoader())
     classLoader.loadClass("org.apache.spark.SparkEnv", true)
-    classLoader.loadClass("org.apache.spark.SparkEnv$", true)
+    val sparkEnvClass = classLoader.loadClass("org.apache.spark.SparkEnv$", true)
+    ReflectUtils.invokeStaticMethod(sparkEnvClass, "set", Seq(classOf[String]), null)
     classLoader
   }
 
