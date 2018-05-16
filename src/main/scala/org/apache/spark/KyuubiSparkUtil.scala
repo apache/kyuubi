@@ -79,7 +79,7 @@ object KyuubiSparkUtil extends Logging {
     val classLoader = new KyuubiFirstClassLoader(Array(url), getContextOrSparkClassLoader())
     val envCls = classLoader.loadClass("org.apache.spark.SparkEnv", true)
     val envObj = classLoader.loadClass("org.apache.spark.SparkEnv$", true)
-    ReflectUtils.invokeStaticMethod(envObj, "set", Seq(envCls), null)
+    ReflectUtils.invokeStaticMethod(envCls, "set", Seq(envCls), null)
     classLoader
   }
 
