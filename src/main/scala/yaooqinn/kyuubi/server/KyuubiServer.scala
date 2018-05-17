@@ -75,8 +75,6 @@ object KyuubiServer extends Logging {
     val conf = new SparkConf(loadDefaults = true)
     setupCommonConfig(conf)
 
-    Thread.currentThread().setContextClassLoader(KyuubiSparkUtil.kyuubiFirstClassLoader)
-
     try {
       val server = new KyuubiServer()
       server.init(conf)
