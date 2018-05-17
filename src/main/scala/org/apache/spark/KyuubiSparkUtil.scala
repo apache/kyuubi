@@ -77,8 +77,10 @@ object KyuubiSparkUtil extends Logging {
     val url = this.getClass.getProtectionDomain.getCodeSource.getLocation
     info(s"Initializing KyuubiFirstClassLoader instance with url $url as first class members")
     val classLoader = new KyuubiFirstClassLoader(Array(url), getContextOrSparkClassLoader())
+    Thread.currentThread().setContextClassLoader(classLoader)
     val envCls = classLoader.loadClass("org.apache.spark.SparkEnv", true)
     ReflectUtils.invokeStaticMethod(envCls, "get")
+    val contextCls = classLoader.loadClass("org.apache.spark.SparkContext", true)
     classLoader
   }
 
