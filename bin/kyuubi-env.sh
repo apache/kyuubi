@@ -25,5 +25,3 @@ if [ -z "$SPARK_HOME" ]; then
   echo "Kyuubi Server: SPARK_HOME IS NOT SET!" >&2
   exit 1
 fi
-
-export KYUUBI_HOME="$(cd "`dirname "$0"`"/..; pwd)"
