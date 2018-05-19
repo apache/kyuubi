@@ -26,3 +26,4 @@ if [ -z "$SPARK_HOME" ]; then
   exit 1
 fi
 
+export KYUUBI_HOME="$(cd "`dirname "$0"`"/..; pwd)"
