@@ -68,11 +68,6 @@ export SPARK_PRINT_LAUNCH_COMMAND="1"
 log="$KYUUBI_LOG_DIR/kyuubi-$USER-$command-$instance-$HOSTNAME.out"
 pid="$KYUUBI_PID_DIR/kyuubi-$USER-$command-$instance.pid"
 
-# Set default scheduling priority
-if [ "$KYUUBI_NICENESS" = "" ]; then
-    export ${KYUUBI_NICENESS}=0
-fi
-
 execute_command() {
     nohup -- "$@" >> ${log} 2>&1 < /dev/null &
     newpid="$!"
@@ -112,7 +107,7 @@ case ${option} in
 
     rotate_log "$log"
     echo "starting $command, logging to $log"
-    execute_command nice -n "$KYUUBI_NICENESS" bash "${KYUUBI_HOME}"/bin/kyuubi-class org.apache.spark.KyuubiSubmit --class "$command" "$@"
+    execute_command bash "${KYUUBI_HOME}"/bin/kyuubi-class org.apache.spark.KyuubiSubmit --class "$command" "$@"
     ;;
 
   (stop)
@@ -131,7 +126,7 @@ case ${option} in
     ;;
 
   (*)
-    echo $usage
+    echo ${usage}
     exit 1
     ;;
 
