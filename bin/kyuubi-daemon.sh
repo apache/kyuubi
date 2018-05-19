@@ -107,7 +107,7 @@ case ${option} in
 
     rotate_log "$log"
     echo "starting $command, logging to $log"
-    execute_command bash "${KYUUBI_HOME}"/bin/kyuubi-class org.apache.spark.KyuubiSubmit --class "$command" "$@"
+    execute_command bash "${KYUUBI_HOME}"/bin/kyuubi-class.sh org.apache.spark.KyuubiSubmit --class "$command" "$@"
     ;;
 
   (stop)
