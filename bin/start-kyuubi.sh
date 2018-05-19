@@ -37,7 +37,7 @@ fi
 ## Find the Kyuubi Jar
 if [ -z "$KYUUBI_JAR_DIR" ]; then
   KYUUBI_JAR_DIR="$KYUUBI_HOME/lib"
-  if [ ! -d $KYUUBI_JAR_DIR ]; then
+  if [ ! -d ${KYUUBI_JAR_DIR} ]; then
   echo -e "\nCandidate Kyuubi lib $KYUUBI_JAR_DIR doesn't exist, searching development environment..."
     KYUUBI_JAR_DIR="$KYUUBI_HOME/target"
   fi
@@ -55,9 +55,9 @@ if [ ${KYUUBI_JAR_NUM} != "1" ]; then
   exit 1
 fi
 
-KYUUBI_JAR=${KYUUBI_JAR_DIR}/"$(ls ${KYUUBI_JAR_DIR} |grep kyuubi- | grep .jar)"
+export KYUUBI_JAR=${KYUUBI_JAR_DIR}/"$(ls ${KYUUBI_JAR_DIR} |grep kyuubi- | grep .jar)"
 
 echo "Kyuubi Server: jar founded:" ${KYUUBI_JAR} >&2
 
-exec "${SPARK_HOME}"/sbin/spark-daemon.sh submit ${CLASS} 1 "$@" "$KYUUBI_JAR"
+exec "${KYUUBI_HOME}"/bin/kyuubi-daemon.sh start ${CLASS} 1 "$@" "$KYUUBI_JAR"
 
