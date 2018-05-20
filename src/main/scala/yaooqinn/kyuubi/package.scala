@@ -35,7 +35,7 @@ package object kyuubi {
       repo_url,
       build_date) = {
       val buildFile = "kyuubi-version-info.properties"
-      Option(KyuubiSparkUtil.kyuubiFirstClassLoader.getResourceAsStream(buildFile)) match {
+      Option(Thread.currentThread().getContextClassLoader.getResourceAsStream(buildFile)) match {
         case Some(res) =>
           try {
             val unknown = "<unknown>"

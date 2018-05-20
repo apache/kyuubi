@@ -54,15 +54,4 @@ class KyuubiSparkUtilSuite extends SparkFunSuite {
     assert(KyuubiSparkUtil.minorVersion("2.1.2-SNAPSHOT") === 1)
     assert(KyuubiSparkUtil.minorVersion("2.3") === 3)
   }
-
-  test("get Kyuubi first classloader") {
-    val classloader = KyuubiSparkUtil.kyuubiFirstClassLoader
-    assert(classloader.isInstanceOf[MutableURLClassLoader])
-    assert(classloader !== this.getClass.getClassLoader)
-    assert(classloader.getURLs().length === 1)
-    assert(classloader.loadClass(classOf[Test1].getCanonicalName).getClassLoader ===
-      this.getClass.getClassLoader)
-  }
 }
-
-class Test1

@@ -27,7 +27,6 @@ import org.apache.spark.util.{ShutdownHookManager, Utils, VersionUtils}
 import org.slf4j.Logger
 
 import yaooqinn.kyuubi.Logging
-import yaooqinn.kyuubi.utils.ReflectUtils
 
 /**
  * Wrapper for [[Utils]] and [[SparkHadoopUtil]]
@@ -71,18 +70,6 @@ object KyuubiSparkUtil extends Logging {
 
   // Runtime Spark Version
   val SPARK_VERSION = org.apache.spark.SPARK_VERSION
-
-  lazy val kyuubiFirstClassLoader: KyuubiFirstClassLoader = {
-    // get kyuubi jar
-    val url = this.getClass.getProtectionDomain.getCodeSource.getLocation
-    info(s"Initializing KyuubiFirstClassLoader instance with url $url as first class members")
-    val classLoader = new KyuubiFirstClassLoader(Array(url), getContextOrSparkClassLoader())
-    Thread.currentThread().setContextClassLoader(classLoader)
-    val envCls = classLoader.loadClass("org.apache.spark.SparkEnv", true)
-    ReflectUtils.invokeStaticMethod(envCls, "get")
-    val contextCls = classLoader.loadClass("org.apache.spark.SparkContext", true)
-    classLoader
-  }
 
   def addShutdownHook(f: () => Unit): Unit = {
     ShutdownHookManager.addShutdownHook(f)
