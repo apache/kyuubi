@@ -52,7 +52,6 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
       override def run(): Unit = {
         try {
           promisedSparkContext.trySuccess {
-            Thread.currentThread().setContextClassLoader(KyuubiSparkUtil.kyuubiFirstClassLoader)
             new SparkContext(conf)
           }
         } catch {

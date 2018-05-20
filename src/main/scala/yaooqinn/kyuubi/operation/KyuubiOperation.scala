@@ -308,7 +308,6 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
           statementId,
           session.getUserName)
       }
-      Thread.currentThread().setContextClassLoader(KyuubiSparkUtil.kyuubiFirstClassLoader)
       session.sparkSession.sparkContext.setJobGroup(statementId, statement)
       result = session.sparkSession.sql(statement)
       KyuubiServerMonitor.getListener(session.getUserName).foreach {

@@ -17,20 +17,7 @@
 # limitations under the License.
 #
 
-# Runs a Spark command as a daemon.
-#
-# Environment Variables
-#
-#   SPARK_CONF_DIR  Alternate conf dir. Default is ${SPARK_HOME}/conf.
-#   SPARK_LOG_DIR   Where log files are stored. ${SPARK_HOME}/logs by default.
-#   SPARK_MASTER    host:path where spark code should be rsync'd from
-#   SPARK_PID_DIR   The pid files are stored. /tmp by default.
-#   SPARK_IDENT_STRING   A string representing this instance of spark. $USER by default
-#   SPARK_NICENESS The scheduling priority for daemons. Defaults to 0.
-#   SPARK_NO_DAEMONIZE   If set, will run the proposed command in the foreground. It will not output a PID file.
-##
-
-usage="Usage: spark-daemon.sh (start|stop) <spark-command> <spark-instance-number> <args...>"
+usage="Usage: kyuubi-daemon.sh (start|stop) <kyuubi main class> <instance-number> <args...>"
 
 . "${SPARK_HOME}/sbin/spark-config.sh"
 
@@ -107,7 +94,7 @@ case ${option} in
 
     rotate_log "$log"
     echo "starting $command, logging to $log"
-    execute_command bash "${KYUUBI_HOME}"/bin/kyuubi-class.sh org.apache.spark.KyuubiSubmit --class "$command" "$@"
+    execute_command bash "${KYUUBI_HOME}"/bin/kyuubi-class.sh --class "$command" "$@"
     ;;
 
   (stop)
