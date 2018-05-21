@@ -17,6 +17,7 @@
 
 package org.apache.spark.launcher
 
+import java.io.File
 import java.util.{List => JList, Map => JMap}
 
 import org.apache.spark.launcher.CommandBuilderUtils._
@@ -25,7 +26,9 @@ class KyuubiSubmitCommandBuilder(args: JList[String]) extends SparkSubmitCommand
 
   override def buildCommand(env: JMap[String, String]): JList[String] = {
     val config = getEffectiveConfig
-    val extraClassPath = config.get(SparkLauncher.DRIVER_EXTRA_CLASSPATH)
+    val kyuubiJar = System.getenv("KYUUBI_JAR")
+    val extraClassPath = kyuubiJar + File.pathSeparator +
+      config.get(SparkLauncher.DRIVER_EXTRA_CLASSPATH)
     val cmd = buildJavaCommand(extraClassPath)
 
     val driverExtraJavaOptions = config.get(SparkLauncher.DRIVER_EXTRA_JAVA_OPTIONS)
