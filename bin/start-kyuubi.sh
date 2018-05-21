@@ -20,8 +20,10 @@
 ## Kyuubi Server Main Entrance
 CLASS="yaooqinn.kyuubi.server.KyuubiServer"
 
+BIN_DIR="$(cd "`dirname "$0"`"; pwd)"
+
 set -a
-. "${PWD}/kyuubi-env.sh"
+. "${BIN_DIR}/kyuubi-env.sh"
 set +a
 
 function usage {
