@@ -25,4 +25,9 @@ set -a
 . "${KYUUBI_HOME}/bin/kyuubi-env.sh"
 set +a
 
-"${SPARK_HOME}/sbin"/spark-daemon.sh stop "$CLASS" 1
+
+if [ "$KYUUBI_SUBMIT_ENABLE" == "true" ]; then
+  "${KYUUBI_HOME}"/bin/kyuubi-daemon.sh stop ${CLASS} 1
+else
+  "${SPARK_HOME}/sbin"/spark-daemon.sh stop "$CLASS" 1
+fi
