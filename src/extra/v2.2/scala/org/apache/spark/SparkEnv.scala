@@ -138,6 +138,7 @@ class SparkEnv (
 }
 
 object SparkEnv extends Logging {
+  logInfo("Loaded Kyuubi Supplied SparkEnv Class...")
   private val env = new ConcurrentHashMap[String, SparkEnv]()
 
   private[spark] val driverSystemName = "sparkDriver"
@@ -147,8 +148,10 @@ object SparkEnv extends Logging {
 
   def set(e: SparkEnv) {
     if (e == null) {
+      logDebug(s"Kyuubi: Removing SparkEnv for $user")
       env.remove(user)
     } else {
+      logDebug(s"Kyuubi: Registering SparkEnv for $user")
       env.put(user, e)
     }
   }
@@ -157,6 +160,7 @@ object SparkEnv extends Logging {
    * Returns the SparkEnv.
    */
   def get: SparkEnv = {
+    logDebug(s"Kyuubi: Get SparkEnv for $user")
     env.get(user)
   }
 

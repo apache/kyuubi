@@ -19,14 +19,13 @@ package yaooqinn.kyuubi.auth
 
 
 import java.io.{File, IOException}
-import java.util.UUID
 
 import org.apache.hadoop.hive.shims.ShimLoader
 import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge
 import org.apache.hadoop.minikdc.MiniKdc
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.cli.thrift.TCLIService.Client
-import org.apache.spark.{KyuubiConf, SparkConf, SparkFunSuite, KyuubiSparkUtil}
+import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
