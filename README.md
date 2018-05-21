@@ -31,7 +31,7 @@ But unfortunately, due to the limitations of Spark's own architecture，to be us
 
 ### Packaging
 
-Please refer to the [Building Kyuubi](docs/building.md) in the online documentation for an overview on how to build Kyuubi.
+Please refer to the [Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html) in the online documentation for an overview on how to build Kyuubi.
 
 ### Start Kyuubi
 
@@ -45,9 +45,10 @@ $ $SPARK_HOME/bin/spark-submit \
     --deploy-mode client \
     --driver-memory 10g \
     --conf spark.kyuubi.frontend.bind.port=10009 \
-    $KYUUBI_HOME/target/kyuubi-1.0.0-SNAPSHOT.jar
+    $KYUUBI_HOME/target/kyuubi-<version>.jar
 ```
 
+**NOTE:** No multi tenancy guarantee if without [Patch](https://github.com/yaooqinn/kyuubi/tree/master/patches)
 
 #### 2. As a long running service
 
@@ -59,8 +60,9 @@ $ nohup $SPARK_HOME/bin/spark-submit \
     --deploy-mode client \
     --driver-memory 10g \
     --conf spark.kyuubi.frontend.bind.port=10009 \
-    $KYUUBI_HOME/target/kyuubi-1.0.0-SNAPSHOT.jar &
+    $KYUUBI_HOME/target/kyuubi-<version>.jar &
 ```
+**NOTE:** No multi tenancy guarantee if without [Patch](https://github.com/yaooqinn/kyuubi/tree/master/patches)
 
 #### 3. With built-in startup script
 
@@ -68,7 +70,7 @@ The more recommended way is through the built-in startup script `bin/start-kyuub
 First of all, export `SPARK_HOME` in $KYUUBI_HOME/bin/kyuubi-env.sh`
 
 ```bash
-export SPARK_HOME=/the/path/to/an/runable/spark/binary/dir
+export SPARK_HOME=/the/path/to/a/runable/spark/binary/dir
 ```
 
 And then the last, start Kyuubi with  `bin/start-kyuubi.sh`
@@ -79,6 +81,7 @@ $ bin/start-kyuubi.sh \
     --driver-memory 10g \
     --conf spark.kyuubi.frontend.bind.port=10009
 ```
+**NOTE:** Full multi tenancy guarantee by default on YARN.
 
 ### Run Spark SQL on Kyuubi
 
@@ -112,18 +115,18 @@ Suppose that you already have a secured HDFS cluster for deploying Spark, Hive o
 
 - Configuration of Hive is done by placing your `hive-site.xml`, `core-site.xml` and `hdfs-site.xml` files in `$SPARK_HOME/conf`.
 
-#### Patch Spark
+#### Patch Spark (Deprecated)
 -  Apply a simple patch from [Patches Directory](https://github.com/yaooqinn/kyuubi/tree/master/patches) to specified Spark version
 -  [Build Spark](http://spark.apache.org/docs/latest/building-spark.html) of your own.
 
 ## Configuration
 
-Please refer to the [Configuration Guide](docs/configurations.md) in the online documentation for an overview on how to configure Kyuubi.
+Please refer to the [Configuration Guide](https://yaooqinn.github.io/kyuubi/docs/configurations.html) in the online documentation for an overview on how to configure Kyuubi.
   
 ## Authentication
 
-Please refer to the [Authentication/Security Guide](docs/authentication.md) in the online documentation for an overview on how to enable security for Kyuubi.
+Please refer to the [Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html) in the online documentation for an overview on how to enable security for Kyuubi.
 
 ## Additional Documentation
 
-[Kyuubi Architecture](./docs/architecture.md)
+[Kyuubi Architecture](https://yaooqinn.github.io/kyuubi/docs/architecture.html)

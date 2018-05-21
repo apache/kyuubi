@@ -45,3 +45,5 @@ $KYUUBI_HOME/bin/start-kyuubi.sh --conf spark.kyuubi.authentication=KERBEROS
 ```bash
 $SPARK_HOME/bin/beeline -u "jdbc:hive2://${replace with spark.kyuubi.frontend.bind.host}:10000/;principal=${replace with spark.yarn.principal};hive.server2.proxy.user=hzyaoqin"
 ```
+
+[Home Page](https://yaooqinn.github.io/kyuubi/)
