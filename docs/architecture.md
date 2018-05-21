@@ -38,10 +38,10 @@ is not any active session interacting with a `SparkContext`. And also with the a
 it also allows us to dynamically allocating resources within a `SparkContext` a.k.a a Yarn Application.
 
 <h4 id="1.2.1">Kyuubi Dynamic Resource Requesting</h4>
-- Session Level Resource Configurations    
+- Session Level Resource Configurations        
     Kyuubi supports all Spark/Hive/Hadoop configurations, such as `spark.executor.cores/memory`, to be set in the connection
-    string which will be used to initialize SparkContext.
-- Example    
+    string which will be used to initialize SparkContext.    
+- Example        
     ```
     jdbc:hive2://<host>:<port>/;hive.server2.proxy.user=tom#spark.yarn.queue=theque;spark.executor.instances=3;spark.executor.cores=3;spark.executor.memory=10g
     ```
@@ -75,7 +75,7 @@ With these features, Kyuubi allows us to use computing resources more efficientl
 
 <h4 id="1.3.1">Authentication</h4>
 
-Please refer to the [Authentication/Security Guide](authentication.md) in the online documentation for an overview on how to enable security for Kyuubi.
+Please refer to the [Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html) in the online documentation for an overview on how to enable security for Kyuubi.
 
 <h4 id="1.3.2">Authorization</h4>
 
@@ -116,3 +116,5 @@ Kyuubi's internal is very simple to understand, which is shown as the picture be
 <div style="text-align: center">
     <img style="zoom: 1.00" src="./imgs/kyuubi_internal.png" />
 </div>
+
+[Home Page](https://yaooqinn.github.io/kyuubi/)

@@ -36,3 +36,5 @@ With Maven, you can use the -DwildcardSuites flag to run individual Scala tests:
 ```
 
 For more information about the ScalaTest Maven Plugin, refer to the [ScalaTest documentation](http://www.scalatest.org/user_guide/using_the_scalatest_maven_plugin).
+
+[Home Page](https://yaooqinn.github.io/kyuubi/)
