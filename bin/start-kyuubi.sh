@@ -59,5 +59,10 @@ export KYUUBI_JAR=${KYUUBI_JAR_DIR}/"$(ls ${KYUUBI_JAR_DIR} |grep kyuubi- | grep
 
 echo "Kyuubi Server: jar founded:" ${KYUUBI_JAR} >&2
 
-exec "${KYUUBI_HOME}"/bin/kyuubi-daemon.sh start ${CLASS} 1 "$@" "$KYUUBI_JAR"
+if [ "$KYUUBI_SUBMIT_ENABLE" == "true" ]; then
+  exec "${KYUUBI_HOME}"/bin/kyuubi-daemon.sh start ${CLASS} 1 "$@" "$KYUUBI_JAR"
+else
+  exec "${SPARK_HOME}"/sbin/spark-daemon.sh start ${CLASS} 1 "$@" "$KYUUBI_JAR"
+fi
+
 
