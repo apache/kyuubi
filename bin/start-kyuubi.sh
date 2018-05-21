@@ -19,10 +19,9 @@
 
 ## Kyuubi Server Main Entrance
 CLASS="yaooqinn.kyuubi.server.KyuubiServer"
-export KYUUBI_HOME="$(cd "`dirname "$0"`"/..; pwd)"
 
 set -a
-. "${KYUUBI_HOME}/bin/kyuubi-env.sh"
+. "${PWD}/kyuubi-env.sh"
 set +a
 
 function usage {
