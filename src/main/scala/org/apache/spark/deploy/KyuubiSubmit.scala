@@ -156,7 +156,7 @@ object KyuubiSubmit {
       OptionAssigner(args.keytab, YARN, CLIENT, sysProp = "spark.yarn.keytab"),
       OptionAssigner(args.executorCores, YARN, CLIENT, sysProp = "spark.executor.cores"),
       OptionAssigner(args.executorMemory, YARN, CLIENT, sysProp = "spark.executor.memory")
-    ).foreach(opt => sysProps.put(opt.sysProp, opt.value))
+    ).filter(_.value != null).foreach(opt => sysProps.put(opt.sysProp, opt.value))
 
     childClasspath += args.primaryResource
     if (args.jars != null) { childClasspath ++= args.jars.split(",") }
