@@ -20,7 +20,7 @@ package yaooqinn.kyuubi.ui
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-import org.apache.spark.{SparkConf, KyuubiSparkUtil}
+import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerJobStart}
 import org.apache.spark.sql.internal.SQLConf
 
