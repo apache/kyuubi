@@ -63,7 +63,7 @@ echo "Kyuubi Server: jar founded:" ${KYUUBI_JAR} >&2
 if [ "$KYUUBI_SUBMIT_ENABLE" == "true" ]; then
   exec "${KYUUBI_HOME}"/bin/kyuubi-daemon.sh start ${CLASS} 1 "$@" "$KYUUBI_JAR"
 else
-  exec "${SPARK_HOME}"/sbin/spark-daemon.sh start ${CLASS} 1 "$@" "$KYUUBI_JAR"
+  exec "${SPARK_HOME}"/sbin/spark-daemon.sh submit ${CLASS} 1 "$@" "$KYUUBI_JAR"
 fi
 
 
