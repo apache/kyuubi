@@ -502,6 +502,8 @@
                 <configuration>
                     <excludes>
                         <exclude>**/org/apache/hive/service/cli/thrift/*.class</exclude>
+                        <exclude>**/org/apache/spark/launcher/*.class</exclude>
+                        <exclude>**/org/apache/spark/deploy/*.class</exclude>
                     </excludes>
                 </configuration>
                 <executions>
