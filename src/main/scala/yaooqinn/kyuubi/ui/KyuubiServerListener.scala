@@ -20,7 +20,7 @@ package yaooqinn.kyuubi.ui
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-import org.apache.spark.{SparkConf, SparkUtils}
+import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerJobStart}
 import org.apache.spark.sql.internal.SQLConf
 
@@ -50,7 +50,7 @@ class KyuubiServerListener(conf: SparkConf) extends SparkListener {
     for {
       props <- Option(jobStart.properties)
       groupIdKey <- props.stringPropertyNames().asScala.
-        filter(_.startsWith(SparkUtils.getJobGroupIDKey()))
+        filter(_.startsWith(KyuubiSparkUtil.getJobGroupIDKey()))
       groupId <- Option(props.getProperty(groupIdKey))
       (_, info) <- executionList if info.groupId == groupId
     } {

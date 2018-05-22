@@ -30,7 +30,7 @@ import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge.Server.ServerMode
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.authorize.ProxyUsers
 import org.apache.hive.service.cli.thrift.TCLIService
-import org.apache.spark.{SparkConf, SparkUtils}
+import org.apache.spark.{SparkConf, KyuubiSparkUtil}
 import org.apache.spark.KyuubiConf._
 import org.apache.thrift.TProcessorFactory
 import org.apache.thrift.transport.{TTransportException, TTransportFactory}
@@ -46,10 +46,10 @@ class KyuubiAuthFactory(conf: SparkConf) extends Logging {
   private[this] val authMethod = AuthType.toAuthType(conf.get(AUTHENTICATION_METHOD.key))
   private[this] val saslServer: Option[HadoopThriftAuthBridge.Server] = authMethod match {
     case AuthType.KERBEROS =>
-      val principal: String = conf.get(SparkUtils.PRINCIPAL, "")
-      val keytab: String = conf.get(SparkUtils.KEYTAB, "")
+      val principal: String = conf.get(KyuubiSparkUtil.PRINCIPAL, "")
+      val keytab: String = conf.get(KyuubiSparkUtil.KEYTAB, "")
       if (principal.isEmpty || keytab.isEmpty) {
-        val msg = s"${SparkUtils.KEYTAB} and ${SparkUtils.PRINCIPAL} are not configured" +
+        val msg = s"${KyuubiSparkUtil.KEYTAB} and ${KyuubiSparkUtil.PRINCIPAL} are not configured" +
           s" properly for ${AuthType.KERBEROS} Authentication method"
         throw new ServiceException(msg)
       }
@@ -57,7 +57,7 @@ class KyuubiAuthFactory(conf: SparkConf) extends Logging {
       info("Starting Kyuubi client token manager")
       try {
         server.startDelegationTokenSecretManager(
-          SparkUtils.newConfiguration(conf),
+          KyuubiSparkUtil.newConfiguration(conf),
           null,
           ServerMode.HIVESERVER2)
       } catch {

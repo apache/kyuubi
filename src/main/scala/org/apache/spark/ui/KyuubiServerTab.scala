@@ -27,9 +27,9 @@ import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
  * This assumes the given SparkContext has enabled its SparkUI.
  */
 class KyuubiServerTab(userName: String, sparkContext: SparkContext)
-  extends SparkUITab(getSparkUI(sparkContext), "sqlserver") {
+  extends SparkUITab(getSparkUI(sparkContext), userName) {
 
-  override val name = "Kyuubi Server"
+  override val name = s"Kyuubi Tab 4 $userName"
 
   val parent = getSparkUI(sparkContext)
 

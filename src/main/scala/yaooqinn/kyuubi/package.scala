@@ -19,11 +19,21 @@ package yaooqinn
 
 import java.util.Properties
 
+import org.apache.spark.KyuubiSparkUtil
+
 package object kyuubi {
 
   private object BuildInfo extends Logging {
 
-    val (kyuubi_version, spark_version, branch, revision, user, repo_url, build_date) = {
+    val (
+      kyuubi_version,
+      spark_version,
+      branch,
+      kyuubi_jar,
+      revision,
+      user,
+      repo_url,
+      build_date) = {
       val buildFile = "kyuubi-version-info.properties"
       Option(Thread.currentThread().getContextClassLoader.getResourceAsStream(buildFile)) match {
         case Some(res) =>
@@ -35,6 +45,7 @@ package object kyuubi {
               props.getProperty("kyuubi_version", unknown),
               props.getProperty("spark_version", unknown),
               props.getProperty("branch", unknown),
+              props.getProperty("kyuubi_jar", unknown),
               props.getProperty("revision", unknown),
               props.getProperty("user", unknown),
               props.getProperty("url", unknown),
@@ -58,8 +69,10 @@ package object kyuubi {
   val KYUUBI_VERSION = BuildInfo.kyuubi_version
   val SPARK_COMPILE_VERSION = BuildInfo.spark_version
   val BRANCH = BuildInfo.branch
+  val JAR_NAME = BuildInfo.kyuubi_jar
   val REVISION = BuildInfo.revision
   val BUILD_USER = BuildInfo.user
+
   val REPO_URL = BuildInfo.repo_url
   val BUILD_DATE = BuildInfo.build_date
 }

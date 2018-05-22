@@ -110,7 +110,11 @@ object ReflectUtils extends Logging {
       c: Class[_],
       name: String,
       argTypes: Seq[Class[_]], params: Seq[AnyRef]): Any = {
-    Try { c.getMethod(name, argTypes: _*).invoke(null, params: _*) } match {
+    Try {
+      val method = c.getMethod(name, argTypes: _*)
+      method.setAccessible(true)
+      method.invoke(null, params: _*)
+    } match {
       case Success(value) => value
       case Failure(exception) => throw exception
     }
@@ -158,5 +162,27 @@ object ReflectUtils extends Logging {
       case Success(value) => value
       case Failure(exception) => throw exception
     }
+  }
+
+  def setAncestorField(obj: AnyRef, level: Int, fieldName: String, fieldValue: AnyRef) {
+    val ancestor = Iterator.iterate[Class[_]](obj.getClass)(_.getSuperclass).drop(level).next()
+    val field = ancestor.getDeclaredField(fieldName)
+    field.setAccessible(true)
+    field.set(obj, fieldValue)
+  }
+
+  def setSuperField(obj : Object, fieldName: String, fieldValue: Object) {
+    setAncestorField(obj, 1, fieldName, fieldValue)
+  }
+
+  def getSuperField[T](obj: AnyRef, fieldName: String): T = {
+    getAncestorField[T](obj, 1, fieldName)
+  }
+
+  def getAncestorField[T](clazz: Object, level: Int, fieldName: String): T = {
+    val ancestor = Iterator.iterate[Class[_]](clazz.getClass)(_.getSuperclass).drop(level).next()
+    val field = ancestor.getDeclaredField(fieldName)
+    field.setAccessible(true)
+    field.get(clazz).asInstanceOf[T]
   }
 }

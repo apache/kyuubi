@@ -27,6 +27,7 @@ dist/
 kyuubi-*-bin-*
 *.gz
 logs/
+pid/
 out/
 hs_err_pid*
 
