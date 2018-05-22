@@ -17,7 +17,6 @@
 
 package yaooqinn.kyuubi.server
 
-import org.apache.hive.service.cli._
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.types.StructType

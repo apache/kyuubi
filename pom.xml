@@ -481,6 +481,9 @@
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                     <junitxml>.</junitxml>
                     <filereports>TestSuite.txt</filereports>
+                    <environmentVariables>
+                        <SPARK_LOCAL_HOSTNAME>127.0.0.1</SPARK_LOCAL_HOSTNAME>
+                    </environmentVariables>
                 </configuration>
                 <executions>
                     <execution>
@@ -499,6 +502,8 @@
                 <configuration>
                     <excludes>
                         <exclude>**/org/apache/hive/service/cli/thrift/*.class</exclude>
+                        <exclude>**/org/apache/spark/launcher/*.class</exclude>
+                        <exclude>**/org/apache/spark/deploy/*.class</exclude>
                     </excludes>
                 </configuration>
                 <executions>

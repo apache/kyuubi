@@ -29,14 +29,15 @@ import scala.util.control.NonFatal
 
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAccessControlException
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.{SparkConf, SparkContext, SparkUtils}
+import org.apache.spark.{SparkConf, SparkContext, KyuubiSparkUtil}
 import org.apache.spark.KyuubiConf._
-import org.apache.spark.SparkUtils._
+import org.apache.spark.KyuubiSparkUtil._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 import org.apache.spark.ui.KyuubiServerTab
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
+import yaooqinn.kyuubi.server.BackendService
 import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
 import yaooqinn.kyuubi.utils.ReflectUtils
 
@@ -50,7 +51,9 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
     new Thread(s"Start-SparkContext-$userName") {
       override def run(): Unit = {
         try {
-          promisedSparkContext.trySuccess(new SparkContext(conf))
+          promisedSparkContext.trySuccess {
+            new SparkContext(conf)
+          }
         } catch {
           case NonFatal(e) => throw e
         }
@@ -89,8 +92,8 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
     }
 
     // proxy user does not have rights to get token as real user
-    conf.remove(SparkUtils.KEYTAB)
-    conf.remove(SparkUtils.PRINCIPAL)
+    conf.remove(KyuubiSparkUtil.KEYTAB)
+    conf.remove(KyuubiSparkUtil.PRINCIPAL)
   }
 
   /**

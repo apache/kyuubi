@@ -26,25 +26,49 @@ import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.util.{ShutdownHookManager, Utils, VersionUtils}
 import org.slf4j.Logger
 
+import yaooqinn.kyuubi.Logging
+
 /**
  * Wrapper for [[Utils]] and [[SparkHadoopUtil]]
  */
-object SparkUtils {
+object KyuubiSparkUtil extends Logging {
+  // PREFIXES
   val SPARK_PREFIX = "spark."
-  val YARN_PREFIX = "yarn."
-  val HADOOP_PRFIX = "hadoop."
+  private[this] val YARN_PREFIX = "yarn."
+  private[this] val HADOOP_PRFIX = "hadoop."
   val SPARK_HADOOP_PREFIX = SPARK_PREFIX + HADOOP_PRFIX
-  val DRIVER_PREFIX = "driver."
+  private[this] val DRIVER_PREFIX = "driver."
+  private[this] val UI_PREFIX = "ui."
+  private[this] val SQL_PREFIX = "sql."
+  private[this] val HIVE_PREFIX = "hive."
+
+  val SPARK_HOME = System.getenv("SPARK_HOME")
+  val SPARK_JARS_DIR = SPARK_HOME + File.separator + "jars"
 
   val KEYTAB = SPARK_PREFIX + YARN_PREFIX + "keytab"
   val PRINCIPAL = SPARK_PREFIX + YARN_PREFIX + "principal"
   val DRIVER_BIND_ADDR = SPARK_PREFIX + DRIVER_PREFIX + "bindAddress"
+
+  val SPARK_UI_PORT = SPARK_PREFIX + UI_PREFIX + "port"
+  val SPARK_UI_PORT_DEFAULT = "0"
+
+  val MULTIPLE_CONTEXTS = SPARK_PREFIX + DRIVER_PREFIX + "allowMultipleContexts"
+  val MULTIPLE_CONTEXTS_DEFAULT = "true"
+
+  val CATALOG_IMPL = SPARK_PREFIX + SQL_PREFIX + "catalogImplementation"
+  val CATALOG_IMPL_DEFAULT = "hive"
+
+  val DEPLOY_MODE = SPARK_PREFIX + "submit.deployMode"
+  val DEPLOY_MODE_DEFAULT = "client"
+
+  val METASTORE_JARS = SPARK_PREFIX + SQL_PREFIX + HIVE_PREFIX + "metastore.jars"
 
   val HIVE_VAR_PREFIX: Regex = """set:hivevar:([^=]+)""".r
   val USE_DB: Regex = """use:([^=]+)""".r
   val QUEUE = SPARK_PREFIX + YARN_PREFIX + "queue"
   val DEPRECATED_QUEUE = "mapred.job.queue.name"
 
+  // Runtime Spark Version
   val SPARK_VERSION = org.apache.spark.SPARK_VERSION
 
   def addShutdownHook(f: () => Unit): Unit = {
@@ -69,27 +93,14 @@ object SparkUtils {
     Utils.getContextOrSparkClassLoader
   }
 
-  def getLocalDir(conf: SparkConf): String = {
-    Utils.getLocalDir(conf)
-  }
-
   def createTempDir(
       root: String = System.getProperty("java.io.tmpdir"),
       namePrefix: String = "spark"): File = {
     Utils.createTempDir(root, namePrefix)
   }
 
-  def getUserJars(conf: SparkConf): Seq[String] = {
-    Utils.getUserJars(conf)
-  }
-
   def newConfiguration(conf: SparkConf): Configuration = {
     SparkHadoopUtil.get.newConfiguration(conf)
-  }
-
-  /** Executes the given block. Log non-fatal errors if any, and only throw fatal errors */
-  def tryLogNonFatalError(block: => Unit): Unit = {
-    Utils.tryLogNonFatalError(block)
   }
 
   def localHostName(): String = Utils.localHostName()

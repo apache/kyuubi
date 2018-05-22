@@ -25,7 +25,7 @@ import scala.collection.JavaConverters._
 import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.hive.service.cli._
 import org.apache.log4j.Logger
-import org.apache.spark.{SparkConf, SparkUtils}
+import org.apache.spark.{SparkConf, KyuubiSparkUtil}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
@@ -64,7 +64,7 @@ private[kyuubi] class OperationManager private(name: String)
 
   private[this] def getOperationLogByName: OperationLog = {
     if (!userToOperationLog.isEmpty) {
-      userToOperationLog.get(SparkUtils.getCurrentUserName())
+      userToOperationLog.get(KyuubiSparkUtil.getCurrentUserName())
     } else {
       null
     }
@@ -76,7 +76,7 @@ private[kyuubi] class OperationManager private(name: String)
 
   def setOperationLog(user: String, log: OperationLog): Unit = {
     OperationLog.setCurrentOperationLog(log)
-    userToOperationLog.put(Option(user).getOrElse(SparkUtils.getCurrentUserName()), log)
+    userToOperationLog.put(Option(user).getOrElse(KyuubiSparkUtil.getCurrentUserName()), log)
   }
 
   def unregisterOperationLog(user: String): Unit = {

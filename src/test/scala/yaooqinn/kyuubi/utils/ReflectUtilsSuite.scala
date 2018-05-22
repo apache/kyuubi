@@ -77,14 +77,29 @@ class ReflectUtilsSuite extends SparkFunSuite {
       assert(ReflectUtils.invokeStaticMethod(clz, "staticTest").asInstanceOf[Int] === 1)
   }
 
+  test("testSuperField") {
+    val t = new TestClass3
+    ReflectUtils.setSuperField(t, "name", "child")
+    assert(ReflectUtils.getSuperField(t, "name").asInstanceOf[String] === "child")
+    ReflectUtils.setAncestorField(t, 1, "name", "child2")
+    assert(ReflectUtils.getAncestorField(t, 1, "name").asInstanceOf[String] === "child2")
+  }
+
 }
 
+class TestTrait {
+  private val name: String = "super"
+}
 
 class TestClass0()
 class TestClass1(arg1: TestClass0)
 class TestClass2(arg1: String, arg2: TestClass0)
+class TestClass3 extends TestTrait
 
 object TestClass0 {
   def staticTest(): Int = 1
 }
+
+
+
 

@@ -183,7 +183,7 @@ object KyuubiConf {
     KyuubiConfigBuilder("spark.kyuubi.frontend.bind.host")
       .doc("Bind host on which to run the Kyuubi Server.")
       .stringConf
-      .createWithDefault(SparkUtils.localHostName())
+      .createWithDefault(KyuubiSparkUtil.localHostName())
 
   val FRONTEND_BIND_PORT: ConfigEntry[Int] =
     KyuubiConfigBuilder("spark.kyuubi.frontend.bind.port")

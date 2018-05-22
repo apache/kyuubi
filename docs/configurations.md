@@ -107,3 +107,5 @@ These configurations are used for SparkSessin to talk to Hive MetaStore Server c
 
 ## Hadoop Configurations
 Please refer to the [Apache Hadoop](http://hadoop.apache.org)'s online documentation for an overview on how to configure Hadoop.
+
+[Home Page](https://yaooqinn.github.io/kyuubi/)

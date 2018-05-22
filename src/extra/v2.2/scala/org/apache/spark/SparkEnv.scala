@@ -138,6 +138,7 @@ class SparkEnv (
 }
 
 object SparkEnv extends Logging {
+  logInfo("Loaded Kyuubi Supplied SparkEnv Class...")
   private val env = new ConcurrentHashMap[String, SparkEnv]()
 
   private[spark] val driverSystemName = "sparkDriver"
@@ -147,8 +148,10 @@ object SparkEnv extends Logging {
 
   def set(e: SparkEnv) {
     if (e == null) {
+      logDebug(s"Kyuubi: Removing SparkEnv for $user")
       env.remove(user)
     } else {
+      logDebug(s"Kyuubi: Registering SparkEnv for $user")
       env.put(user, e)
     }
   }
@@ -157,6 +160,7 @@ object SparkEnv extends Logging {
    * Returns the SparkEnv.
    */
   def get: SparkEnv = {
+    logDebug(s"Kyuubi: Get SparkEnv for $user")
     env.get(user)
   }
 
@@ -299,8 +303,8 @@ object SparkEnv extends Logging {
     val closureSerializer = new JavaSerializer(conf)
 
     def registerOrLookupEndpoint(
-                                  name: String, endpointCreator: => RpcEndpoint):
-    RpcEndpointRef = {
+        name: String, endpointCreator: => RpcEndpoint):
+      RpcEndpointRef = {
       if (isDriver) {
         logInfo("Registering " + name)
         rpcEnv.setupEndpoint(name, endpointCreator)
@@ -431,11 +435,11 @@ object SparkEnv extends Logging {
     // Spark properties
     // This includes the scheduling mode whether or not it is configured (used by SparkUI)
     val schedulerMode =
-    if (!conf.contains("spark.scheduler.mode")) {
-      Seq(("spark.scheduler.mode", schedulingMode))
-    } else {
-      Seq[(String, String)]()
-    }
+      if (!conf.contains("spark.scheduler.mode")) {
+        Seq(("spark.scheduler.mode", schedulingMode))
+      } else {
+        Seq[(String, String)]()
+      }
     val sparkProperties = (conf.getAll ++ schedulerMode).sorted
 
     // System properties that are not java classpaths
