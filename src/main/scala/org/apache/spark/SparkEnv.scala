@@ -282,7 +282,7 @@ object SparkEnv extends Logging {
       val p = port.getOrElse(-1).asInstanceOf[Integer]
 
       val isNotDriver = (!isDriver).asInstanceOf[java.lang.Boolean]
-      if (KyuubiSparkUtil.isSparkVersionOrLater("2.3")) {
+      if (KyuubiSparkUtil.equalOrHigherThan("2.3")) {
         ReflectUtils.invokeStaticMethod(
           classOf[RpcEnv],
           "create",
