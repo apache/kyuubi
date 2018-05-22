@@ -481,6 +481,9 @@
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                     <junitxml>.</junitxml>
                     <filereports>TestSuite.txt</filereports>
+                    <environmentVariables>
+                        <SPARK_LOCAL_HOSTNAME>127.0.0.1</SPARK_LOCAL_HOSTNAME>
+                    </environmentVariables>
                 </configuration>
                 <executions>
                     <execution>
