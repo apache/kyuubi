@@ -48,9 +48,8 @@ class KyuubiSparkUtilSuite extends SparkFunSuite {
   }
 
   test("testLocalHostName") {
-    val host = System.getenv("SPARK_LOCAL_HOSTNAME")
     val hostname = KyuubiSparkUtil.localHostName()
-    assert(host === hostname)
+    assert("localhost" === hostname)
   }
 
   test("testHIVE_VAR_PREFIX") {
