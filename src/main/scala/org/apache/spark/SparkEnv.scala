@@ -19,15 +19,14 @@ package org.apache.spark
 
 import java.io.File
 import java.net.Socket
-import java.util.concurrent.ConcurrentHashMap
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.mutable
 import scala.util.Properties
 
 import com.google.common.collect.MapMaker
 import org.apache.hadoop.security.UserGroupInformation
-
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.api.python.PythonWorkerFactory
 import org.apache.spark.broadcast.BroadcastManager
@@ -44,6 +43,8 @@ import org.apache.spark.serializer.{JavaSerializer, Serializer, SerializerManage
 import org.apache.spark.shuffle.ShuffleManager
 import org.apache.spark.storage._
 import org.apache.spark.util.{RpcUtils, Utils}
+
+import yaooqinn.kyuubi.utils.ReflectUtils
 
 /**
  * :: DeveloperApi ::
@@ -189,7 +190,7 @@ object SparkEnv extends Logging {
       SparkContext.DRIVER_IDENTIFIER,
       bindAddress,
       advertiseAddress,
-      port,
+      Option(port),
       isLocal,
       numCores,
       ioEncryptionKey,
@@ -201,6 +202,7 @@ object SparkEnv extends Logging {
   /**
    * Create a SparkEnv for an executor.
    * In coarse-grained mode, the executor provides an RpcEnv that is already instantiated.
+   * @since 2.2
    */
   private[spark] def createExecutorEnv(
       conf: SparkConf,
@@ -215,7 +217,33 @@ object SparkEnv extends Logging {
       executorId,
       hostname,
       hostname,
-      port,
+      Some(port),
+      isLocal,
+      numCores,
+      ioEncryptionKey
+    )
+    SparkEnv.set(env)
+    env
+  }
+
+  /**
+   * Create a SparkEnv for an executor.
+   * In coarse-grained mode, the executor provides an RpcEnv that is already instantiated.
+   * @since 2.3
+   */
+  private[spark] def createExecutorEnv(
+      conf: SparkConf,
+      executorId: String,
+      hostname: String,
+      numCores: Int,
+      ioEncryptionKey: Option[Array[Byte]],
+      isLocal: Boolean): SparkEnv = {
+    val env = create(
+      conf,
+      executorId,
+      hostname,
+      hostname,
+      None,
       isLocal,
       numCores,
       ioEncryptionKey
@@ -232,7 +260,7 @@ object SparkEnv extends Logging {
       executorId: String,
       bindAddress: String,
       advertiseAddress: String,
-      port: Int,
+      port: Option[Int],
       isLocal: Boolean,
       numUsableCores: Int,
       ioEncryptionKey: Option[Array[Byte]],
@@ -247,25 +275,34 @@ object SparkEnv extends Logging {
     }
 
     val securityManager = new SecurityManager(conf, ioEncryptionKey)
-    ioEncryptionKey.foreach { _ =>
-      if (!securityManager.isEncryptionEnabled()) {
-        logWarning("I/O encryption enabled without RPC encryption: keys will be visible on the " +
-          "wire.")
-      }
-    }
 
     val systemName = if (isDriver) driverSystemName else executorSystemName
-    val rpcEnv = RpcEnv.create(systemName, bindAddress, advertiseAddress, port, conf,
-      securityManager, clientMode = !isDriver)
+
+    val rpcEnv = {
+      val p = port.getOrElse(-1).asInstanceOf[Integer]
+
+      val isNotDriver = (!isDriver).asInstanceOf[java.lang.Boolean]
+      if (KyuubiSparkUtil.isSparkVersionOrLater("2.3")) {
+        ReflectUtils.invokeStaticMethod(
+          classOf[RpcEnv],
+          "create",
+          Seq(classOf[String], classOf[String], classOf[String], classOf[Int],
+            classOf[SparkConf], classOf[SecurityManager], classOf[Int], classOf[Boolean]),
+          Seq(systemName, bindAddress, advertiseAddress, p, conf,
+            securityManager, numUsableCores.asInstanceOf[Integer], isNotDriver))
+      } else {
+        ReflectUtils.invokeStaticMethod(
+          classOf[RpcEnv],
+          "create",
+          Seq(classOf[String], classOf[String], classOf[String], classOf[Int],
+            classOf[SparkConf], classOf[SecurityManager], classOf[Boolean]),
+          Seq(systemName, bindAddress, advertiseAddress, p, conf, securityManager, isNotDriver))
+      }
+    }.asInstanceOf[RpcEnv]
 
     // Figure out which port RpcEnv actually bound to in case the original port is 0 or occupied.
-    // In the non-driver case, the RPC env's address may be null since it may not be listening
-    // for incoming connections.
     if (isDriver) {
       conf.set("spark.driver.port", rpcEnv.address.port.toString)
-    } else if (rpcEnv.address != null) {
-      conf.set("spark.executor.port", rpcEnv.address.port.toString)
-      logInfo(s"Setting spark.executor.port to: ${rpcEnv.address.port.toString}")
     }
 
     // Create an instance of the class with the given name, possibly initializing it with our conf
@@ -438,7 +475,7 @@ object SparkEnv extends Logging {
       if (!conf.contains("spark.scheduler.mode")) {
         Seq(("spark.scheduler.mode", schedulingMode))
       } else {
-        Seq[(String, String)]()
+        Seq.empty[(String, String)]
       }
     val sparkProperties = (conf.getAll ++ schedulerMode).sorted
 

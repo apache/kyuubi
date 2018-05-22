@@ -111,4 +111,15 @@ object KyuubiSparkUtil extends Logging {
 
   def minorVersion(sparkVersion: String): Int = VersionUtils.minorVersion(sparkVersion)
 
+  /**
+   * Check whether the runtime version of Spark is >= the specified one.
+   */
+  def isSparkVersionOrLater(version: String): Boolean = {
+    val tMajor = majorVersion(SPARK_VERSION)
+    val tMinor = minorVersion(SPARK_VERSION)
+    val sMajor = majorVersion(version)
+    val sMinor = minorVersion(version)
+    tMajor > sMajor || (tMajor == sMajor && tMinor >= sMinor)
+  }
+
 }

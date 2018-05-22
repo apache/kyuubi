@@ -20,6 +20,8 @@ package org.apache.spark.launcher
 import java.io.File
 import java.util.{List => JList, Map => JMap}
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.launcher.CommandBuilderUtils._
 
 class KyuubiSubmitCommandBuilder(args: JList[String]) extends SparkSubmitCommandBuilder(args) {
@@ -55,9 +57,29 @@ class KyuubiSubmitCommandBuilder(args: JList[String]) extends SparkSubmitCommand
     cmd.add("-Xmx" + memory)
     addOptionString(cmd, driverExtraJavaOptions)
     mergeEnvPathList(env, getLibPathEnvName, config.get(SparkLauncher.DRIVER_EXTRA_LIBRARY_PATH))
-    addPermGenSizeOpt(cmd)
+    addPermSize(cmd)
     cmd.add("org.apache.spark.deploy.KyuubiSubmit")
     cmd.addAll(buildSparkSubmitArgs)
     cmd
+  }
+
+  /**
+   * Adds the default perm gen size option for Spark if the VM requires it and the user hasn't
+   * set it.
+   */
+  private def addPermSize(cmd: JList[String]): Unit = {
+    // Don't set MaxPermSize for IBM Java, or Oracle Java 8 and later.
+    if (getJavaVendor eq JavaVendor.IBM) {
+      return
+    }
+    if (javaMajorVersion(System.getProperty("java.version")) > 7) {
+      return
+    }
+    cmd.asScala.foreach { arg =>
+      if (arg.contains("-XX:MaxPermSize=")) {
+        return
+      }
+    }
+    cmd.add("-XX:MaxPermSize=256m")
   }
 }
