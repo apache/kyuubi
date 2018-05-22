@@ -53,7 +53,6 @@
         <maven.version>3.3.9</maven.version>
         <spark.group>org.apache.spark</spark.group>
         <spark.version>2.1.2</spark.version>
-        <spark.branch>2.1</spark.branch>
         <spark.scope>provided</spark.scope>
         <hadoop.version>2.7.3</hadoop.version>
         <hadoop.deps.scope>provided</hadoop.deps.scope>
@@ -327,7 +326,6 @@
             </resource>
         </resources>
         <plugins>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
@@ -448,18 +446,6 @@
                             </sources>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>add-overwrite-spark-source</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>add-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <source>src/extra/v${spark.branch}/scala</source>
-                            </sources>
-                        </configuration>
-                    </execution>
                 </executions>
             </plugin>
 
@@ -504,6 +490,7 @@
                         <exclude>**/org/apache/hive/service/cli/thrift/*.class</exclude>
                         <exclude>**/org/apache/spark/launcher/*.class</exclude>
                         <exclude>**/org/apache/spark/deploy/*.class</exclude>
+                        <exclude>**/org/apache/spark/SparkEnv.class</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -528,18 +515,9 @@
 
     <profiles>
         <profile>
-            <id>spark-2.0</id>
-            <properties>
-                <spark.version>2.0.2</spark.version>
-                <spark.branch>2.0</spark.branch>
-            </properties>
-        </profile>
-
-        <profile>
             <id>spark-2.1</id>
             <properties>
                 <spark.version>2.1.2</spark.version>
-                <spark.branch>2.1</spark.branch>
             </properties>
         </profile>
 
@@ -547,7 +525,6 @@
             <id>spark-2.2</id>
             <properties>
                 <spark.version>2.2.1</spark.version>
-                <spark.branch>2.2</spark.branch>
             </properties>
         </profile>
 
@@ -555,7 +532,6 @@
             <id>spark-2.3</id>
             <properties>
                 <spark.version>2.3.0</spark.version>
-                <spark.branch>2.3</spark.branch>
                 <scalatest.version>3.0.3</scalatest.version>
             </properties>
         </profile>
