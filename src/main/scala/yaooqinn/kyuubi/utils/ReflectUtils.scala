@@ -174,4 +174,15 @@ object ReflectUtils extends Logging {
   def setSuperField(obj : Object, fieldName: String, fieldValue: Object) {
     setAncestorField(obj, 1, fieldName, fieldValue)
   }
+
+  def getSuperField[T](obj: AnyRef, fieldName: String): T = {
+    getAncestorField[T](obj, 1, fieldName)
+  }
+
+  def getAncestorField[T](clazz: Object, level: Int, fieldName: String): T = {
+    val ancestor = Iterator.iterate[Class[_]](clazz.getClass)(_.getSuperclass).drop(level).next()
+    val field = ancestor.getDeclaredField(fieldName)
+    field.setAccessible(true)
+    field.get(clazz).asInstanceOf[T]
+  }
 }
