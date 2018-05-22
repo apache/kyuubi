@@ -20,9 +20,8 @@ package org.apache.spark
 import java.security.PrivilegedExceptionAction
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.util.MutableURLClassLoader
 
-import yaooqinn.kyuubi._
+import yaooqinn.kyuubi.{KyuubiServerException, SPARK_COMPILE_VERSION}
 
 class KyuubiSparkUtilSuite extends SparkFunSuite {
 
@@ -48,10 +47,100 @@ class KyuubiSparkUtilSuite extends SparkFunSuite {
     assert(SPARK_VERSION === SPARK_COMPILE_VERSION)
   }
 
-  test("spark version major minor test") {
+  test("testLocalHostName") {
+    val host = System.getenv("SPARK_LOCAL_HOSTNAME")
+    val hostname = KyuubiSparkUtil.localHostName()
+    assert(host === hostname)
+  }
+
+  test("testHIVE_VAR_PREFIX") {
+    val conf = "spark.foo"
+    val hiveConf = "set:hivevar:" + conf
+    hiveConf match {
+      case KyuubiSparkUtil.HIVE_VAR_PREFIX(c) =>
+        assert(c === conf)
+    }
+  }
+
+  test("testMajorVersion") {
     assert(KyuubiSparkUtil.majorVersion("2.1.2") === 2)
     assert(KyuubiSparkUtil.majorVersion("2.1.2-SNAPSHOT") === 2)
+  }
+
+  test("testMinorVersion") {
     assert(KyuubiSparkUtil.minorVersion("2.1.2-SNAPSHOT") === 1)
     assert(KyuubiSparkUtil.minorVersion("2.3") === 3)
   }
+
+  test("testDEPLOY_MODE_DEFAULT") {
+    assert(KyuubiSparkUtil.DEPLOY_MODE=== "spark.submit.deployMode")
+    assert(KyuubiSparkUtil.DEPLOY_MODE_DEFAULT === "client")
+  }
+
+  test("testPRINCIPAL") {
+    assert(KyuubiSparkUtil.PRINCIPAL === "spark.yarn.principal")
+  }
+
+  test("testKEYTAB") {
+    assert(KyuubiSparkUtil.KEYTAB === "spark.yarn.keytab")
+  }
+
+  test("testNewConfiguration") {
+    val conf = new SparkConf(loadDefaults = true).setMaster("local").setAppName("test")
+    conf.set("spark.hadoop.foo", "bar")
+    assert(KyuubiSparkUtil.newConfiguration(conf).get("foo") === "bar")
+  }
+
+  test("testGetJobGroupIDKey") {
+    assert(KyuubiSparkUtil.getJobGroupIDKey() === "spark.jobGroup.id")
+  }
+
+  test("testMULTIPLE_CONTEXTS_DEFAULT") {
+    assert(KyuubiSparkUtil.MULTIPLE_CONTEXTS === "spark.driver.allowMultipleContexts")
+    assert(KyuubiSparkUtil.MULTIPLE_CONTEXTS_DEFAULT === "true")
+  }
+
+  test("testCreateTempDir") {
+    val tmpDir = KyuubiSparkUtil.createTempDir(namePrefix = "test_kyuubi")
+    assert(tmpDir.exists())
+    assert(tmpDir.isDirectory)
+  }
+
+  test("testExceptionString") {
+    val e1: Throwable = null
+    assert(KyuubiSparkUtil.exceptionString(e1) === "")
+    val msg = "test exception"
+    val e2 = new KyuubiServerException(msg, e1)
+    assert(KyuubiSparkUtil.exceptionString(e2).contains(msg))
+  }
+
+  test("testMETASTORE_JARS") {
+    assert(KyuubiSparkUtil.METASTORE_JARS === "spark.sql.hive.metastore.jars")
+  }
+
+  test("testDRIVER_BIND_ADDR") {
+    assert(KyuubiSparkUtil.DRIVER_BIND_ADDR === "spark.driver.bindAddress")
+
+  }
+
+  test("testCATALOG_IMPL") {
+    assert(KyuubiSparkUtil.CATALOG_IMPL === "spark.sql.catalogImplementation")
+    assert(KyuubiSparkUtil.CATALOG_IMPL_DEFAULT === "hive")
+
+  }
+
+  test("testSPARK_HADOOP_PREFIX") {
+    assert(KyuubiSparkUtil.SPARK_HADOOP_PREFIX === "spark.hadoop.")
+  }
+
+  test("testSPARK_UI_PORT") {
+    assert(KyuubiSparkUtil.SPARK_UI_PORT === "spark.ui.port")
+    assert(KyuubiSparkUtil.SPARK_UI_PORT_DEFAULT === "0")
+
+  }
+
+  test("testSPARK_PREFIX") {
+    assert(KyuubiSparkUtil.SPARK_PREFIX === "spark.")
+  }
+
 }
