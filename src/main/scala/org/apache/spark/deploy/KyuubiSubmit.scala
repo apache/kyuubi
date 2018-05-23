@@ -135,28 +135,24 @@ object KyuubiSubmit {
     // Special flag to avoid deprecation warnings at the client
     sysProps("SPARK_SUBMIT") = "true"
 
-    Seq[OptionAssigner](
-      OptionAssigner(args.master, YARN, CLIENT, sysProp = "spark.master"),
-      OptionAssigner(args.deployMode, YARN, CLIENT, sysProp = "spark.submit.deployMode"),
-      OptionAssigner(args.name, YARN, CLIENT, sysProp = "spark.app.name"),
-      OptionAssigner(args.driverMemory, YARN, CLIENT, sysProp = "spark.driver.memory"),
-      OptionAssigner(args.driverExtraClassPath, YARN, CLIENT,
-        sysProp = "spark.driver.extraClassPath"),
-      OptionAssigner(args.driverExtraJavaOptions, YARN, CLIENT,
-        sysProp = "spark.driver.extraJavaOptions"),
-      OptionAssigner(args.driverExtraLibraryPath, YARN, CLIENT,
-        sysProp = "spark.driver.extraLibraryPath"),
-      OptionAssigner(args.queue, YARN, CLIENT, sysProp = "spark.yarn.queue"),
-      OptionAssigner(args.numExecutors, YARN, CLIENT,
-        sysProp = "spark.executor.instances"),
-      OptionAssigner(args.jars, YARN, CLIENT, sysProp = "spark.yarn.dist.jars"),
-      OptionAssigner(args.files, YARN, CLIENT, sysProp = "spark.yarn.dist.files"),
-      OptionAssigner(args.archives, YARN, CLIENT, sysProp = "spark.yarn.dist.archives"),
-      OptionAssigner(args.principal, YARN, CLIENT, sysProp = "spark.yarn.principal"),
-      OptionAssigner(args.keytab, YARN, CLIENT, sysProp = "spark.yarn.keytab"),
-      OptionAssigner(args.executorCores, YARN, CLIENT, sysProp = "spark.executor.cores"),
-      OptionAssigner(args.executorMemory, YARN, CLIENT, sysProp = "spark.executor.memory")
-    ).filter(_.value != null).foreach(opt => sysProps.put(opt.sysProp, opt.value))
+    Seq(
+      "spark.master" ->  args.master,
+      "spark.submit.deployMode" -> args.deployMode,
+      "spark.app.name" -> args.name,
+      "spark.driver.memory" -> args.driverMemory,
+      "spark.driver.extraClassPath" -> args.driverExtraClassPath,
+      "spark.driver.extraJavaOptions" -> args.driverExtraJavaOptions,
+      "spark.driver.extraLibraryPath" -> args.driverExtraLibraryPath,
+      "spark.yarn.queue" -> args.queue,
+      "spark.executor.instances" -> args.numExecutors,
+      "spark.yarn.dist.jars" -> args.jars,
+      "spark.yarn.dist.files" -> args.files,
+      "spark.yarn.dist.archives" -> args.archives,
+      "spark.yarn.principal" -> args.principal,
+      "spark.yarn.keytab" -> args.keytab,
+      "spark.executor.cores" -> args.executorCores,
+      "spark.executor.memory" -> args.executorMemory
+    ).filter(_._2 != null).foreach(o => sysProps.put(o._1, o._2))
 
     childClasspath += args.primaryResource
     if (args.jars != null) { childClasspath ++= args.jars.split(",") }

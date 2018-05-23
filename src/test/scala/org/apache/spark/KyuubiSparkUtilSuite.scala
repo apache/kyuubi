@@ -142,4 +142,10 @@ class KyuubiSparkUtilSuite extends SparkFunSuite {
     assert(KyuubiSparkUtil.SPARK_PREFIX === "spark.")
   }
 
+  test("testIsSparkVersionOrHigher") {
+    assert(KyuubiSparkUtil.equalOrHigherThan("2.0.2"))
+    assert(KyuubiSparkUtil.equalOrHigherThan(SPARK_COMPILE_VERSION))
+    assert(!KyuubiSparkUtil.equalOrHigherThan("2.4.1"))
+    assert(!KyuubiSparkUtil.equalOrHigherThan("3.0.0"))
+  }
 }
