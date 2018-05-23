@@ -19,6 +19,9 @@ package yaooqinn.kyuubi.server
 
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
 
+import yaooqinn.kyuubi.KyuubiServerException
+import yaooqinn.kyuubi.utils.ReflectUtils
+
 class KyuubiServerSuite extends SparkFunSuite {
 
   test("testSetupCommonConfig") {
@@ -47,5 +50,18 @@ class KyuubiServerSuite extends SparkFunSuite {
     assert(conf.get(name) === "KyuubiServer") // app name will be overwritten
     assert(conf2.get(KyuubiSparkUtil.SPARK_UI_PORT) === KyuubiSparkUtil.SPARK_UI_PORT_DEFAULT)
     assert(conf2.get(foo) === bar)
+  }
+
+  test("testValidate") {
+    KyuubiServer.validate()
+    val oldVersion = KyuubiSparkUtil.SPARK_VERSION
+    val version = "1.6.3"
+    ReflectUtils.setFieldValue(KyuubiSparkUtil, "SPARK_VERSION", version)
+    assert(KyuubiSparkUtil.SPARK_VERSION === version)
+    val e = intercept[KyuubiServerException](KyuubiServer.validate())
+    assert(e.getMessage.startsWith(version))
+    ReflectUtils.setFieldValue(KyuubiSparkUtil, "SPARK_VERSION", oldVersion)
+    assert(KyuubiSparkUtil.SPARK_VERSION === oldVersion)
+
   }
 }
