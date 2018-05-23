@@ -95,7 +95,7 @@ object KyuubiServer extends Logging {
    * Generate proper configurations before server starts
    * @param conf the default [[SparkConf]]
    */
-  private[this] def setupCommonConfig(conf: SparkConf): Unit = {
+  private[kyuubi] def setupCommonConfig(conf: SparkConf): Unit = {
     // will be overwritten later for each SparkContext
     conf.setAppName(classOf[KyuubiServer].getSimpleName)
     // avoid max port retries reached
@@ -122,9 +122,12 @@ object KyuubiServer extends Logging {
     }
     // Set missing Kyuubi configs to SparkConf
     KyuubiConf.getAllDefaults.foreach(kv => conf.setIfMissing(kv._1, kv._2))
+
+    conf.setIfMissing(
+      KyuubiSparkUtil.SPARK_LOCAL_DIR, conf.get(KyuubiConf.BACKEND_SESSION_LOCAL_DIR.key))
   }
 
-  private[this] def validate(): Unit = {
+  private[kyuubi] def validate(): Unit = {
     if (KyuubiSparkUtil.majorVersion(KyuubiSparkUtil.SPARK_VERSION) < 2) {
       throw new KyuubiServerException(s"${KyuubiSparkUtil.SPARK_VERSION} is too old for Kyuubi" +
         s" Server.")
