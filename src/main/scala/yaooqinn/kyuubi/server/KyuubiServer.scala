@@ -127,7 +127,7 @@ object KyuubiServer extends Logging {
       KyuubiSparkUtil.SPARK_LOCAL_DIR, conf.get(KyuubiConf.BACKEND_SESSION_LOCAL_DIR.key))
   }
 
-  private[this] def validate(): Unit = {
+  private[kyuubi] def validate(): Unit = {
     if (KyuubiSparkUtil.majorVersion(KyuubiSparkUtil.SPARK_VERSION) < 2) {
       throw new KyuubiServerException(s"${KyuubiSparkUtil.SPARK_VERSION} is too old for Kyuubi" +
         s" Server.")

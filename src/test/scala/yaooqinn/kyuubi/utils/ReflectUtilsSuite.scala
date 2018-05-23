@@ -21,9 +21,6 @@ package yaooqinn.kyuubi.utils
 
 import org.apache.spark.SparkFunSuite
 
-/**
- *
- */
 class ReflectUtilsSuite extends SparkFunSuite {
 
   test("reflect utils init class without param") {
@@ -85,10 +82,36 @@ class ReflectUtilsSuite extends SparkFunSuite {
     assert(ReflectUtils.getAncestorField(t, 1, "name").asInstanceOf[String] === "child2")
   }
 
+  test("testGetFieldValue") {
+    val o = new TestTrait
+    assert(ReflectUtils.getFieldValue(o, "name") === "super")
+    assert(ReflectUtils.getFieldValue(TestClass0, "testObj") === "1")
+    assert(ReflectUtils.getFieldValue(TestClass0, "testInt") === 1)
+  }
+
+  test("testSetFieldValue") {
+    val o = new TestTrait
+    ReflectUtils.setFieldValue(o, "name", "test")
+    ReflectUtils.setFieldValue(o, "num", 2)
+
+    assert(ReflectUtils.getFieldValue(o, "name") === "test")
+    assert(ReflectUtils.getFieldValue(o, "num") === 2)
+
+    ReflectUtils.setFieldValue(TestClass0, "testObj", "test")
+    ReflectUtils.setFieldValue(TestClass0, "testInt", 2)
+
+    assert(ReflectUtils.getFieldValue(TestClass0, "testObj") === "test")
+    assert(ReflectUtils.getFieldValue(TestClass0, "testInt") === 2)
+    assert(TestClass0.testObj === "test")
+    assert(TestClass0.testInt === 2)
+
+  }
+
 }
 
 class TestTrait {
   private val name: String = "super"
+  private val num: Int = 1
 }
 
 class TestClass0()
@@ -98,6 +121,8 @@ class TestClass3 extends TestTrait
 
 object TestClass0 {
   def staticTest(): Int = 1
+  val testInt = 1
+  val testObj = "1"
 }
 
 
