@@ -164,6 +164,20 @@ object ReflectUtils extends Logging {
     }
   }
 
+  /**
+   * Set field for an object
+   */
+  def setFieldValue(o: Any, name: String, value: Any): Unit = {
+    Try {
+      val field = o.getClass.getDeclaredField(name)
+      field.setAccessible(true)
+      field.set(o, value.asInstanceOf[AnyRef])
+    } match {
+      case Failure(exception) => throw exception
+      case _ =>
+    }
+  }
+
   def setAncestorField(obj: AnyRef, level: Int, fieldName: String, fieldValue: AnyRef) {
     val ancestor = Iterator.iterate[Class[_]](obj.getClass)(_.getSuperclass).drop(level).next()
     val field = ancestor.getDeclaredField(fieldName)

@@ -63,6 +63,8 @@ object KyuubiSparkUtil extends Logging {
 
   val METASTORE_JARS = SPARK_PREFIX + SQL_PREFIX + HIVE_PREFIX + "metastore.jars"
 
+  val SPARK_LOCAL_DIR = SPARK_PREFIX + "local.dir"
+
   val HIVE_VAR_PREFIX: Regex = """set:hivevar:([^=]+)""".r
   val USE_DB: Regex = """use:([^=]+)""".r
   val QUEUE = SPARK_PREFIX + YARN_PREFIX + "queue"
@@ -121,5 +123,4 @@ object KyuubiSparkUtil extends Logging {
     val sMinor = minorVersion(version)
     tMajor > sMajor || (tMajor == sMajor && tMinor >= sMinor)
   }
-
 }
