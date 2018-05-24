@@ -31,8 +31,8 @@ import org.apache.curator.retry.ExponentialBackoffRetry
 import org.apache.hadoop.security.{SecurityUtil, UserGroupInformation}
 import org.apache.hadoop.security.authentication.util.KerberosUtil
 import org.apache.hive.common.util.HiveVersionInfo
+import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
-import org.apache.spark.{SparkConf, KyuubiSparkUtil}
 import org.apache.zookeeper._
 import org.apache.zookeeper.data.ACL
 

@@ -22,14 +22,15 @@ import java.security.PrivilegedExceptionAction
 import java.util.UUID
 import java.util.concurrent.{Future, RejectedExecutionException}
 
+import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAccessControlException
 import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.hive.service.cli.thrift.TProtocolVersion
-import org.apache.spark.KyuubiSparkUtil
 import org.apache.spark.KyuubiConf._
+import org.apache.spark.KyuubiSparkUtil
 import org.apache.spark.sql.{AnalysisException, DataFrame, Row}
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.types._
@@ -57,7 +58,6 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
   private[this] var isOperationLogEnabled: Boolean = false
 
   private[this] var result: DataFrame = _
-  private[this] var resultList: Array[Row] = _
   private[this] var iter: Iterator[Row] = _
   private[this] var statementId: String = _
 
@@ -221,7 +221,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     assertState(FINISHED)
     setHasResultSet(true)
     val taken = if (order == FetchOrientation.FETCH_FIRST) {
-      resultList.iterator.take(maxRowsL.toInt)
+      result.toLocalIterator().asScala.take(maxRowsL.toInt)
     } else {
       iter.take(maxRowsL.toInt)
     }
@@ -286,7 +286,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     } catch {
       case rejected: RejectedExecutionException =>
         setState(ERROR)
-        throw new KyuubiSQLException("The background threadpool cannot accept" +
+        throw new KyuubiSQLException("The background thread pool can not accept" +
           " new task for execution, please retry the operation", rejected)
       case NonFatal(e) =>
         error(s"Error executing query in background", e)
@@ -314,8 +314,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
         _.onStatementParsed(statementId, result.queryExecution.toString())
       }
       debug(result.queryExecution.toString())
-      resultList = result.collect()
-      iter = resultList.toList.iterator
+      iter = result.toLocalIterator().asScala
       setState(FINISHED)
       KyuubiServerMonitor.getListener(session.getUserName).foreach(_.onStatementFinish(statementId))
     } catch {

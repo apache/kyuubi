@@ -23,9 +23,8 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.hive.ql.session.OperationLog
-import org.apache.hive.service.cli._
 import org.apache.log4j.Logger
-import org.apache.spark.{SparkConf, KyuubiSparkUtil}
+import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
