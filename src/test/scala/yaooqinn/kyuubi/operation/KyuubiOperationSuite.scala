@@ -45,7 +45,6 @@ class KyuubiOperationSuite extends SparkFunSuite with BeforeAndAfterEach {
   val passwd = ""
   val statement = "show tables"
   var session: KyuubiSession = _
-
   var spark: SparkSession = _
   var sparkWithUgi: SparkSessionWithUGI = _
 
@@ -53,16 +52,13 @@ class KyuubiOperationSuite extends SparkFunSuite with BeforeAndAfterEach {
     val sc = ReflectUtils
       .newInstance(classOf[SparkContext].getName, Seq(classOf[SparkConf]), Seq(conf))
       .asInstanceOf[SparkContext]
-
     spark = ReflectUtils.newInstance(
       classOf[SparkSession].getName,
       Seq(classOf[SparkContext]),
       Seq(sc)).asInstanceOf[SparkSession]
-
     sparkWithUgi = new SparkSessionWithUGI(user, conf)
     ReflectUtils.setFieldValue(sparkWithUgi,
       "yaooqinn$kyuubi$spark$SparkSessionWithUGI$$_sparkSession", spark)
-
     sessionMgr = new SessionManager()
     sessionMgr.init(conf)
     sessionMgr.start()
@@ -105,17 +101,13 @@ class KyuubiOperationSuite extends SparkFunSuite with BeforeAndAfterEach {
   test("testIsTimedOut") {
     val op = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, statement)
     assert(!op.isTimedOut)
-
   }
 
   test("testGetNextRowSet") {
     val op = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, statement)
-
     val ds = spark.sql(statement)
     ReflectUtils.invokeMethod(op, "setState", Seq(classOf[OperationState]), Seq(RUNNING))
-
     ReflectUtils.invokeMethod(op, "setState", Seq(classOf[OperationState]), Seq(FINISHED))
-
     ReflectUtils.setFieldValue(op,
       "iter", ds.toLocalIterator().asScala)
     val rowSet = op.getNextRowSet(FETCH_NEXT, 10)
@@ -125,7 +117,6 @@ class KyuubiOperationSuite extends SparkFunSuite with BeforeAndAfterEach {
   test("testGetProtocolVersion") {
     val op = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, statement)
     assert(op.getProtocolVersion === proto)
-
   }
 
   test("testGetOperationLog") {
@@ -152,7 +143,6 @@ class KyuubiOperationSuite extends SparkFunSuite with BeforeAndAfterEach {
   }
 
   test("testDEFAULT_FETCH_MAX_ROWS") {
-
     assert(KyuubiOperation.DEFAULT_FETCH_MAX_ROWS === 100)
   }
 }
