@@ -25,7 +25,7 @@ import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.cli.thrift.TProtocolVersion
-import org.apache.spark.{SparkConf, SparkContext, KyuubiSparkUtil}
+import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.StructType
 
@@ -81,7 +81,7 @@ private[kyuubi] class KyuubiSession(
       currentUser
     }
   }
-  private[this] lazy val sparkSessionWithUGI = new SparkSessionWithUGI(sessionUGI, conf)
+  private[this] val sparkSessionWithUGI = new SparkSessionWithUGI(sessionUGI, conf)
 
   private[this] def acquire(userAccess: Boolean): Unit = {
     if (userAccess) {
