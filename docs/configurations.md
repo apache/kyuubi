@@ -1,20 +1,20 @@
 # Configuration Guide 
 
-Kyuubi provides several kinds of properites to configure the system:
+Kyuubi provides several kinds of properties to configure the system:
 
-**Kyuubi properties:** control most Kyuui server's own behaviors. Most of them determined on server starting. They can be treat like normal Spark properties by setting them in `spark-defaults.conf` file or via `--conf` parameter in server starting scripts.     
+**Kyuubi properties:** control most Kyuubi server's own behaviors. Most of them determined on server starting. They can be treat like normal Spark properties by setting them in `spark-defaults.conf` file or via `--conf` parameter in server starting scripts.
 
-**Spark properties:** become session level options, which are used to generate a SparkContext instances and passed to Kyuubi Server by JDBC/ODBC connection strings. Setting them in `$SPARKHOME/conf/spark-defaults.conf` supplies with default values for each session.     
+**Spark properties:** become session level options, which are used to generate a SparkContext instances and passed to Kyuubi Server by JDBC/ODBC connection strings. Setting them in `$SPARK_HOME/conf/spark-defaults.conf` supplies with default values for each session.
 
-**Hive properties:** are used for SparkSession to talk to the Hive MetaStore Server could be configured in a `hive-site.xml`  and placed it in `$SPARKHOME/conf` directory, or treating them as Spark properties with `spark.hadoop.` prefix.           
+**Hive properties:** are used for SparkSession to talk to the Hive MetaStore Server could be configured in a `hive-site.xml`  and placed it in `$SPARK_HOME/conf` directory, or treating them as Spark properties with `spark.hadoop.` prefix.
 
 **Hadoop properties:** specifying `HADOOP_CONF_DIR` or `YARN_CONF_DIR` to the directory contains hadoop configuration files.
 
-**Logging** can be configured through `$SPARKHOME/conf/log4j.properties`.
+**Logging** can be configured through `$SPARK_HOME/conf/log4j.properties`.
 
 ## Kyuubi Configurations
 
-Kyuubi properties control most Kyuui server's own behaviors. Most of them determined on server starting. They can be treat like normal Spark properties by setting them in `spark-defaults.conf` file or via `--conf` parameter in server starting scripts.     
+Kyuubi properties control most Kyuubi server's own behaviors. Most of them determined on server starting. They can be treat like normal Spark properties by setting them in `spark-defaults.conf` file or via `--conf` parameter in server starting scripts.     
 
 For instance, start Kyuubi with HA enabled.
 ```bash
@@ -42,8 +42,8 @@ spark.kyuubi.ha.zk.connection.max.retries|3|Max retry times for connecting to th
 
 Name|Default|Description
 ---|---|---
-spark.kyuubi.logging.operation.enabled|true|When true, KyuubiServer will save operation logs and make them available for clients
-spark.kyuubi.logging.operation.log.dir|`SPARK_LOG_DIR` -> `SPARK_HOME`/operation_logs -> `java.io.tmpdir`/operation_logs|Top level directory where operation logs are stored if logging functionality is enabled
+spark.kyuubi.logging.operation.enabled|true|When true, Kyuubi Server will save operation logs and make them available for clients
+spark.kyuubi.logging.operation.log.dir|`KYUUBI_LOG_DIR` -> `java.io.tmpdir`/operation_logs|Top level directory where operation logs are stored if logging functionality is enabled
 
 #### Frontend Service options
 
@@ -68,7 +68,7 @@ spark.kyuubi.async.exec.wait.queue.size|100|Size of the wait queue for async thr
 spark.kyuubi.async.exec.keep.alive.time|10,000|Time (in milliseconds) that an idle KyuubiServer async thread (from the thread pool) will wait for a new task to arrive before terminating.
 spark.kyuubi.async.exec.shutdown.timeout|10,000|How long KyuubiServer shutdown will wait for async threads to terminate.
 
-#### KyuubiSession
+#### Kyuubi Session
 
 Name|Default|Description
 ---|---|---
@@ -76,7 +76,7 @@ spark.kyuubi.frontend.session.check.interval|6h|The check interval for frontend 
 spark.kyuubi.frontend.session.timeout|8h|The check interval for session/operation timeout, which can be disabled by setting  to zero or negative value.
 spark.kyuubi.frontend.session.check.operation| true |Session will be considered to be idle only if there is no activity, and there is no pending operation. This setting takes effect only if session idle timeout `spark.kyuubi.frontend.session.timeout` and checking `spark.kyuubi.frontend.session.check.interval` are enabled.
 
-#### SparkSession
+#### Spark Session
 
 Name|Default|Description
 ---|---|---
@@ -85,11 +85,20 @@ spark.kyuubi.backend.session.wait.other.interval|1s|The interval for checking wh
 spark.kyuubi.backend.session.init.timeout|60s|How long we suggest the server to give up instantiating SparkContext.
 spark.kyuubi.backend.session.check.interval|5min|The check interval for backend session a.k.a SparkSession timeout.
 spark.kyuubi.backend.session.idle.timeout|30min|SparkSession timeout.
+
+
+#### Operation
+
+Name|Default|Description
+---|---|---
+spark.kyuubi.operation.idle.timeout|6h|Operation will be closed when it's not accessed for this duration of time.
+spark.kyuubi.operation.incremental.collect|false|Whether to use incremental result collection from Spark executor side to Kyuubi server side.
+
 ---
 
 ## Spark Configurations
 
-Spark properties become session level options, which are used to generate a SparkContext instances and passed to Kyuubi Server by JDBC/ODBC connection strings. Setting them in `$SPARKHOME/conf/spark-defaults.conf` supplies with default values for each session.     
+Spark properties become session level options, which are used to generate a SparkContext instances and passed to Kyuubi Server by JDBC/ODBC connection strings. Setting them in `$SPARK_HOME/conf/spark-defaults.conf` supplies with default values for each session.     
 
 Name|Default|Description
 ---|---|---
@@ -103,7 +112,7 @@ Please refer to the [Configuration Guide](http://spark.apache.org/docs/latest/co
 ## Hive Configurations
 
 #### Hive client options
-These configurations are used for SparkSessin to talk to Hive MetaStore Server could be configured in a `hive-site.xml`  and placed it in `$SPARKHOME/conf` directory, or treating them as Spark properties with `spark.hadoop.` prefix.
+These configurations are used for SparkSessin to talk to Hive MetaStore Server could be configured in a `hive-site.xml`  and placed it in `$SPARK_HOME/conf` directory, or treating them as Spark properties with `spark.hadoop.` prefix.
 
 ## Hadoop Configurations
 Please refer to the [Apache Hadoop](http://hadoop.apache.org)'s online documentation for an overview on how to configure Hadoop.
