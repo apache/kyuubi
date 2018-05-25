@@ -316,6 +316,13 @@ object KyuubiConf {
       .timeConf(TimeUnit.MILLISECONDS)
       .createWithDefault(TimeUnit.HOURS.toMillis(6L))
 
+  val OPERATION_INCREMENTAL_COLLECT: ConfigEntry[Boolean] =
+    KyuubiConfigBuilder("spark.kyuubi.operation.incremental.collect")
+      .doc("whether to use incremental result collection from Spark executor side to Kyuubi server" +
+        " side")
+      .booleanConf
+    .createWithDefault(false)
+
   /**
    * Return all the configuration definitions that have been defined in [[KyuubiConf]]. Each
    * definition contains key, defaultValue.
