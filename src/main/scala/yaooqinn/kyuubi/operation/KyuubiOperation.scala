@@ -49,7 +49,8 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
 
   private[this] val conf = session.sparkSession.conf
 
-  private[this] val operationTimeout = conf.get(OPERATION_IDLE_TIMEOUT.key).toLong
+  private[this] val operationTimeout =
+    KyuubiSparkUtil.timeStringAsMs(conf.get(OPERATION_IDLE_TIMEOUT.key))
   private[this] var lastAccessTime = System.currentTimeMillis()
 
   private[this] var hasResultSet: Boolean = false
