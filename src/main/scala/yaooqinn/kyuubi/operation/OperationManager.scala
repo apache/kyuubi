@@ -23,9 +23,8 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.hive.ql.session.OperationLog
-import org.apache.hive.service.cli._
 import org.apache.log4j.Logger
-import org.apache.spark.{SparkConf, KyuubiSparkUtil}
+import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
@@ -145,8 +144,12 @@ private[kyuubi] class OperationManager private(name: String)
   def getOperationNextRowSet(
       opHandle: OperationHandle,
       orientation: FetchOrientation,
-      maxRows: Long): RowSet =
+      maxRows: Long): RowSet = {
+    while (opHandle.isHasLogSet) {
+      Thread.sleep(1000)
+    }
     getOperation(opHandle).getNextRowSet(orientation, maxRows)
+  }
 
   @throws[KyuubiSQLException]
   def getOperationLogRowSet(
@@ -160,8 +163,11 @@ private[kyuubi] class OperationManager private(name: String)
         "Couldn't find log associated with operation handle: " + opHandle)
     }
     try {
-      // convert logs to RowBasedSet
+      // convert logs to RowSet
       val logs = opLog.readOperationLog(isFetchFirst(orientation), maxRows).asScala.map(Row(_))
+      if (logs.isEmpty) {
+        opHandle.setHasLogSet(false)
+      }
       RowSetBuilder.create(logSchema, logs, getOperation(opHandle).getProtocolVersion)
     } catch {
       case e: SQLException =>
