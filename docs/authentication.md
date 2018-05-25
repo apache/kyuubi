@@ -14,7 +14,7 @@ $KYUUBI_HOME/bin/start-kyuubi.sh --conf spark.kyuubi.authentication=NONE
 ```
 ###### Client
 ```bash
-$SPARK_HOME/bin/beeline -u "jdbc:hive2://${replace with spark.kyuubi.frontend.bind.host}:10009/;hive.server2.proxy.user=hzyaoqin"
+$SPARK_HOME/bin/beeline -u "jdbc:hive2://${replace with spark.kyuubi.frontend.bind.host}:10009/;hive.server2.proxy.user=yaooqinn"
 ```
 
 #### NOSASL
@@ -43,7 +43,7 @@ $KYUUBI_HOME/bin/start-kyuubi.sh --conf spark.kyuubi.authentication=KERBEROS
 ```
 ###### Client
 ```bash
-$SPARK_HOME/bin/beeline -u "jdbc:hive2://${replace with spark.kyuubi.frontend.bind.host}:10000/;principal=${replace with spark.yarn.principal};hive.server2.proxy.user=hzyaoqin"
+$SPARK_HOME/bin/beeline -u "jdbc:hive2://${replace with spark.kyuubi.frontend.bind.host}:10000/;principal=${replace with spark.yarn.principal};hive.server2.proxy.user=yaooqinn"
 ```
 
 [Home Page](https://yaooqinn.github.io/kyuubi/)

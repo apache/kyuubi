@@ -123,4 +123,12 @@ object KyuubiSparkUtil extends Logging {
     val sMinor = minorVersion(version)
     tMajor > sMajor || (tMajor == sMajor && tMinor >= sMinor)
   }
+
+  /**
+   * Convert a time parameter such as (50s, 100ms, or 250us) to microseconds for internal use. If
+   * no suffix is provided, the passed number is assumed to be in ms.
+   */
+  def timeStringAsMs(str: String): Long = {
+    Utils.timeStringAsMs(str)
+  }
 }
