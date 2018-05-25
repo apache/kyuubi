@@ -30,7 +30,7 @@ import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAccessControl
 import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.KyuubiConf._
-import org.apache.spark.{KyuubiSparkUtil, SparkConf}
+import org.apache.spark.KyuubiSparkUtil
 import org.apache.spark.sql.{AnalysisException, DataFrame, Row}
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.types._
@@ -47,9 +47,9 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
   private[this] val opHandle: OperationHandle =
     new OperationHandle(EXECUTE_STATEMENT, session.getProtocolVersion)
 
-  private[this] val conf: SparkConf = session.sparkSession.sparkContext.getConf
+  private[this] val conf = session.sparkSession.conf
 
-  private[this] val operationTimeout = conf.getTimeAsMs(OPERATION_IDLE_TIMEOUT.key)
+  private[this] val operationTimeout = conf.get(OPERATION_IDLE_TIMEOUT.key).toLong
   private[this] var lastAccessTime = System.currentTimeMillis()
 
   private[this] var hasResultSet: Boolean = false
@@ -319,6 +319,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       }
       debug(result.queryExecution.toString())
       iter = if (incrementalCollect) {
+        info("Executing query in incremental collection mode")
         result.toLocalIterator().asScala
       } else {
         result.collect().toList.iterator

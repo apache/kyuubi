@@ -318,8 +318,8 @@ object KyuubiConf {
 
   val OPERATION_INCREMENTAL_COLLECT: ConfigEntry[Boolean] =
     KyuubiConfigBuilder("spark.kyuubi.operation.incremental.collect")
-      .doc("whether to use incremental result collection from Spark executor side to Kyuubi server" +
-        " side")
+      .doc("Whether to use incremental result collection from Spark executor side to Kyuubi" +
+        " server side")
       .booleanConf
     .createWithDefault(false)
 
