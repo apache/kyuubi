@@ -19,8 +19,6 @@ package yaooqinn
 
 import java.util.Properties
 
-import org.apache.spark.KyuubiSparkUtil
-
 package object kyuubi {
 
   private object BuildInfo extends Logging {

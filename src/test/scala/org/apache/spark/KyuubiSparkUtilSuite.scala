@@ -148,4 +148,10 @@ class KyuubiSparkUtilSuite extends SparkFunSuite {
     assert(!KyuubiSparkUtil.equalOrHigherThan("2.4.1"))
     assert(!KyuubiSparkUtil.equalOrHigherThan("3.0.0"))
   }
+
+  test("testTimeStringAsMs") {
+    assert(KyuubiSparkUtil.timeStringAsMs("50s") === 50000L)
+    assert(KyuubiSparkUtil.timeStringAsMs("50min") === 50 * 60 * 1000L)
+    assert(KyuubiSparkUtil.timeStringAsMs("100ms") === 100L)
+  }
 }
