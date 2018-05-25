@@ -30,7 +30,7 @@ import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAccessControl
 import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.KyuubiConf._
-import org.apache.spark.KyuubiSparkUtil
+import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.sql.{AnalysisException, DataFrame, Row}
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.types._
@@ -47,8 +47,9 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
   private[this] val opHandle: OperationHandle =
     new OperationHandle(EXECUTE_STATEMENT, session.getProtocolVersion)
 
-  private[this] val operationTimeout =
-    session.sparkSession.sparkContext.getConf.getTimeAsMs(OPERATION_IDLE_TIMEOUT.key)
+  private[this] val conf: SparkConf = session.sparkSession.sparkContext.getConf
+
+  private[this] val operationTimeout = conf.getTimeAsMs(OPERATION_IDLE_TIMEOUT.key)
   private[this] var lastAccessTime = System.currentTimeMillis()
 
   private[this] var hasResultSet: Boolean = false
@@ -63,6 +64,9 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
 
   private[this] val DEFAULT_FETCH_ORIENTATION_SET: Set[FetchOrientation] =
     Set(FetchOrientation.FETCH_NEXT, FetchOrientation.FETCH_FIRST)
+
+  private[this] val incrementalCollect: Boolean =
+    conf.get(OPERATION_INCREMENTAL_COLLECT.key).toBoolean
 
   def getBackgroundHandle: Future[_] = backgroundHandle
 
@@ -314,7 +318,11 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
         _.onStatementParsed(statementId, result.queryExecution.toString())
       }
       debug(result.queryExecution.toString())
-      iter = result.toLocalIterator().asScala
+      iter = if (incrementalCollect) {
+        result.toLocalIterator().asScala
+      } else {
+        result.collect().toList.iterator
+      }
       setState(FINISHED)
       KyuubiServerMonitor.getListener(session.getUserName).foreach(_.onStatementFinish(statementId))
     } catch {
