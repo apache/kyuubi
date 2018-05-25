@@ -27,7 +27,6 @@ class OperationHandle private(
     handleId: HandleIdentifier) extends Handle(handleId) {
 
   private[this] var hasResultSet: Boolean = false
-  private[this] var hasLogSet: Boolean = true
 
   def this(opType: OperationType, protocol: TProtocolVersion) =
     this(opType, protocol, new HandleIdentifier)
@@ -59,12 +58,6 @@ class OperationHandle private(
 
   def isHasResultSet: Boolean = this.hasResultSet
 
-  def setHasLogSet(hasLogSet: Boolean): Unit = {
-    this.hasLogSet = hasLogSet
-  }
-
-  def isHasLogSet: Boolean = this.hasLogSet
-
   def getProtocolVersion: TProtocolVersion = protocol
 
   override def hashCode: Int = {
@@ -87,4 +80,5 @@ class OperationHandle private(
 
   override def toString: String =
     "OperationHandle [opType=" + opType + ", getHandleIdentifier()=" + getHandleIdentifier + "]"
+
 }
