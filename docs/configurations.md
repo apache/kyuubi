@@ -1,4 +1,4 @@
-# Configuration Guide 
+# Kyuubi Configuration Guide 
 
 Kyuubi provides several kinds of properties to configure the system:
 
@@ -97,13 +97,22 @@ spark.kyuubi.operation.incremental.collect|false|Whether to use incremental resu
 ---
 
 ## Spark Configurations
+All properties of Spark can be set as servel level ones. Some of them only work for Kyuubi server itself and become unchangable, such as `spark.driver.memory` specifying the heap memory of server. Session level Spark properties take Server lever ones as default values and can be changed with session connection strings. And obviously, all sql properties of Spark can be set via `set` statement at runtime, such as `set spark.sql.autoBroadcastJoinThreshold=-1`
 
-Spark properties become session level options, which are used to generate a SparkContext instances and passed to Kyuubi Server by JDBC/ODBC connection strings. Setting them in `$SPARK_HOME/conf/spark-defaults.conf` supplies with default values for each session.     
+#### Session Level
+Spark properties which becomes session level options, which are used to generate a `SparkContext` instances and passed to Kyuubi Server by JDBC/ODBC connection strings. Setting them in `$SPARK_HOME/conf/spark-defaults.conf` supplies with default values for each session.     
 
+#### Server Level
 Name|Default|Description
 ---|---|---
 spark.driver.memory| 1g | Amount of memory to use for the Kyuubi Server instance. Set this through the --driver-memory command line option or in your default properties file.
 spark.driver.extraJavaOptions| (none) | A string of extra JVM options to pass to the Kyuubi Server instance. For instance, GC settings or other logging. Set this through the --driver-java-options command line option or in your default properties file.
+
+Spark use netty as RPC between driver and executor, Kyuubi Server may need much bigger directory memory size.
+
+```properties
+spark.driver.extraJavaOptions -XX:PermSize=1024m -XX:MaxPermSize=1024m  -XX:MaxDirectMemorySize=4096m
+```
 
 Spark properties for [Driver](http://spark.apache.org/docs/latest/configuration.html#runtime-environment) like those above controls Kyuubi Server's own behaviors, while other properies could be set in JDBC/ODBC connection strings.
 
@@ -117,4 +126,9 @@ These configurations are used for SparkSessin to talk to Hive MetaStore Server c
 ## Hadoop Configurations
 Please refer to the [Apache Hadoop](http://hadoop.apache.org)'s online documentation for an overview on how to configure Hadoop.
 
+## Additional Documentations
+
+[Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)   
+[Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html)  
+[Kyuubi Architecture](https://yaooqinn.github.io/kyuubi/docs/architecture.html)  
 [Home Page](https://yaooqinn.github.io/kyuubi/)

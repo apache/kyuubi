@@ -17,13 +17,18 @@
 
 package org.apache.spark
 
+import java.net.URL
 import java.security.PrivilegedExceptionAction
 
+import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
+
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.spark.util.SignalUtils
 
-import yaooqinn.kyuubi.{KyuubiServerException, SPARK_COMPILE_VERSION}
+import yaooqinn.kyuubi.{KyuubiServerException, Logging, SPARK_COMPILE_VERSION}
+import yaooqinn.kyuubi.utils.ReflectUtils
 
-class KyuubiSparkUtilSuite extends SparkFunSuite {
+class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
 
   test("get current user name") {
     val user = KyuubiSparkUtil.getCurrentUserName()
@@ -101,8 +106,11 @@ class KyuubiSparkUtilSuite extends SparkFunSuite {
 
   test("testCreateTempDir") {
     val tmpDir = KyuubiSparkUtil.createTempDir(namePrefix = "test_kyuubi")
+    val tmpDir2 = KyuubiSparkUtil.createTempDir()
     assert(tmpDir.exists())
     assert(tmpDir.isDirectory)
+    assert(tmpDir2.exists())
+    assert(tmpDir2.isDirectory)
   }
 
   test("testExceptionString") {
@@ -153,5 +161,34 @@ class KyuubiSparkUtilSuite extends SparkFunSuite {
     assert(KyuubiSparkUtil.timeStringAsMs("50s") === 50000L)
     assert(KyuubiSparkUtil.timeStringAsMs("50min") === 50 * 60 * 1000L)
     assert(KyuubiSparkUtil.timeStringAsMs("100ms") === 100L)
+  }
+
+  test("testGetContextClassLoader") {
+    val origin = Thread.currentThread().getContextClassLoader
+    try {
+      assert(KyuubiSparkUtil.getContextOrSparkClassLoader() === origin)
+
+      val classloader = new URLClassLoader(Seq.empty[URL], origin)
+      Thread.currentThread().setContextClassLoader(classloader)
+      assert(KyuubiSparkUtil.getContextOrSparkClassLoader() === classloader)
+    } finally {
+      Thread.currentThread().setContextClassLoader(origin)
+    }
+  }
+
+  test("testInitDaemon") {
+    KyuubiSparkUtil.initDaemon(logger)
+    assert(ReflectUtils.getFieldValue(SignalUtils, "loggerRegistered") === true)
+  }
+
+  test("testAddShutdownHook") {
+    val x = 1
+    var y: Int = 0
+    def f(): Int = {
+      y = x * 2
+      y
+    }
+    KyuubiSparkUtil.addShutdownHook(f)
+    assert(y === 0)
   }
 }
