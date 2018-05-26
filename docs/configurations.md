@@ -1,4 +1,4 @@
-# Configuration Guide 
+# Kyuubi Configuration Guide 
 
 Kyuubi provides several kinds of properties to configure the system:
 
@@ -117,4 +117,9 @@ These configurations are used for SparkSessin to talk to Hive MetaStore Server c
 ## Hadoop Configurations
 Please refer to the [Apache Hadoop](http://hadoop.apache.org)'s online documentation for an overview on how to configure Hadoop.
 
+## Additional Documentations
+
+[Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)   
+[Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html)  
+[Kyuubi Architecture](https://yaooqinn.github.io/kyuubi/docs/architecture.html)
 [Home Page](https://yaooqinn.github.io/kyuubi/)

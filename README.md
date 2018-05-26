@@ -14,17 +14,17 @@ But unfortunately, due to the limitations of Spark's own architecture，to be us
 
  |Features|Thrift Server|Kyuubi|Comments|
  |:---:|:---:|:---:|:---|
- |multiple `SparkContext`| ✘ | ✔ |Spark has several [issues](https://www.jianshu.com/p/e1cfcaece8f1) to have multiple SparkContext instances in one single JVM. Option `spark.driver.allowMultipleContexts=true` only enables `SparkContext` to be instantiated many times but these instances can only share and use the scheduler and execution environments of the last initialized one, which is kind of like a shallow copy of a Java object. The patches of Kyuubi provides a way of isolating these components by user to avoid overlapping.|
- |"lazy" `SparkContext`| ✘ | ✔ |Each `SparkContext` initialization is delayed to the phase of first session of a particular user's creation in Kyuubi, while Thrift JDBC/ODBC Server create one only when it starts.|
- |dynamic `SparkContext` recycling| ✘ | ✔ | In Thrift JDBC/ODBC Server, SparkContext is a resident variable. Kyuubi will cache SparkContext instances for a while after session closed before the server terminating them.|
- |dynamic Yarn queue| ✘ | ✔ |We use `spark.yarn.queue` to specifying the queue that Spark on Yarn applications run into. Once Thrift JDBC/ODBC Server started, it becomes unchangeable, while HiveServer2 could switch queue by`set mapred.job.queue.name=thequeue`. Kyuubi adopts a compromise method which could identify and use `spark.yarn.queue` in the connection string.|
- |dynamic configuring|`spark.  <br/>sql.*`| ✔ |Kyuubi supports all Spark/Hive/Hadoop configurations, such as `spark.executor.cores/memory`, to be set in the connection string which will be used to initialize SparkContext. |
+ |multiple `SparkContext`| ✘ | ✔ |Spark has several [issues](https://www.jianshu.com/p/e1cfcaece8f1) to have multiple `SparkContext` instances in one single JVM. Option `spark.driver.allowMultipleContexts=true` only enables `SparkContext` to be instantiated many times but these instances can only share and use the scheduler and execution environments of the last initialized one, which is kind of like a shallow copy of a Java object. Kyuubi provides a way of isolating these components by user to avoid overlapping.|
+ |["lazy" `SparkContext`](https://yaooqinn.github.io/kyuubi/docs/architecture.html#1.2.1)| ✘ | ✔ |Each `SparkContext` initialization is delayed to the phase of first session of a particular user's creation in Kyuubi, while Thrift JDBC/ODBC Server create one only when it starts.|
+ |[`SparkContext` cache](https://yaooqinn.github.io/kyuubi/docs/architecture.html#1.2.2)| ✘ | ✔ | In Thrift JDBC/ODBC Server, `SparkContext` is a resident variable. Kyuubi will cache `SparkContext` instances for a while after session closed before the server terminating them.|
+ |dynamic queue| ✘ | ✔ |We use `spark.yarn.queue` to specifying the queue that Spark on Yarn applications run into. Once Thrift JDBC/ODBC Server started, it becomes unchangeable, while HiveServer2 could switch queue by`set mapred.job.queue.name=thequeue`. Kyuubi adopts a compromise method which could identify and use `spark.yarn.queue` in the connection string.|
+ |[session level configurations](https://yaooqinn.github.io/kyuubi/docs/architecture.html#1.2.1)|`spark.sql.*`| ✔ |Kyuubi supports all Spark/Hive/Hadoop configurations, such as `spark.executor.cores/memory`, to be set in the connection string which will be used to initialize `SparkContext`. |
  |authentication| ✔ | ✔ |Please refer to the [Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html) |
  |authorization| ✘ | ✘ |[Spark Authorizer](https://github.com/yaooqinn/spark-authorizer) will be add to Kyuubi soon.|
- |impersonation|`--proxy-user singleuser`| ✔ |Kyuubi fully support `hive.server2.proxy.user` and `hive.server2.doAs`|
+ |impersonation| ✘ | ✔ |Kyuubi fully support `hive.server2.proxy.user` and `hive.server2.doAs`|
  |multi tenancy| ✘ | ✔ |Based on the above features，Kyuubi is able to run as a multi-tenant server on a LCE supported Yarn cluster.|
  |operation log| ✘ | ✔ |Kyuubi redirect sql operation log to local file which has an interface for the client to fetch.|
- |high availability| ✘ | ✔ |Based on ZooKeeper service discovery |
+ |[high availability](https://yaooqinn.github.io/kyuubi/docs/architecture.html#1.4)| ✘ | ✔ |Based on ZooKeeper service discovery |
  |cluster mode| ✘ | ✘ |yarn cluster mode will be supported soon|
  |type mapping| ✘ | ✔ |Kyuubi support Spark result/schema to be directly converted to Thrift result/schemas bypassing Hive format results|
  
@@ -36,8 +36,8 @@ Please refer to the [Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/bui
 
 ### Start Kyuubi
 
-The more recommended way is through the built-in startup script `bin/start-kyuubi.sh`
-First of all, export `SPARK_HOME` in $KYUUBI_HOME/bin/kyuubi-env.sh`
+We can start Kyuubi with the built-in startup script `bin/start-kyuubi.sh`.
+First of all, export `SPARK_HOME` in `$KYUUBI_HOME/bin/kyuubi-env.sh`
 
 ```bash
 export SPARK_HOME=/the/path/to/a/runable/spark/binary/dir
@@ -51,7 +51,6 @@ $ bin/start-kyuubi.sh \
     --driver-memory 10g \
     --conf spark.kyuubi.frontend.bind.port=10009
 ```
-**NOTE:** Full multi tenancy guarantee by default on YARN.
 
 ### Run Spark SQL on Kyuubi
 
@@ -62,7 +61,6 @@ Now you can use [beeline](https://cwiki.apache.org/confluence/display/Hive/HiveS
 ```bash
 bin/stop-kyuubi.sh
 ```
-**Notes:** Obviously，without the patches we supplied, Kyuubi is mostly same with the Thrift JDBC/ODBC Server as an non-multi-tenancy server. 
 
 ## Multi Tenancy Support
 
@@ -79,15 +77,11 @@ Suppose that you already have a secured HDFS cluster for deploying Spark, Hive o
       + Queues(Optional), please refer to [Capacity Scheduler](https://hadoop.apache.org/docs/r2.7.2/hadoop-yarn/hadoop-yarn-site/CapacityScheduler.html) or [Fair Scheduler](https://hadoop.apache.org/docs/r2.7.2/hadoop-yarn/hadoop-yarn-site/FairScheduler.html) to see more.
 
 #### Spark on Yarn    
--  Setup for [Spark On Yarn](http://spark.apache.org/docs/latest/running-on-yarn.html)         
+-  Setup for [Spark On Yarn](http://spark.apache.org/docs/latest/running-on-yarn.html) Ensure that `HADOOP_CONF_DIR` or `YARN_CONF_DIR` points to the directory which contains the (client side) configuration files for the Hadoop cluster.
 
 #### Configure Hive    
 
 - Configuration of Hive is done by placing your `hive-site.xml`, `core-site.xml` and `hdfs-site.xml` files in `$SPARK_HOME/conf`.
-
-#### Patch Spark (Deprecated)
--  Apply a simple patch from [Patches Directory](https://github.com/yaooqinn/kyuubi/tree/master/patches) to specified Spark version
--  [Build Spark](http://spark.apache.org/docs/latest/building-spark.html) of your own.
 
 ## Configuration
 
@@ -97,6 +91,8 @@ Please refer to the [Configuration Guide](https://yaooqinn.github.io/kyuubi/docs
 
 Please refer to the [Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html) in the online documentation for an overview on how to enable security for Kyuubi.
 
-## Additional Documentation
-
+## Additional Documentations
+[Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)  
+[Configuration Guide](https://yaooqinn.github.io/kyuubi/docs/configurations.html)  
+[Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html)  
 [Kyuubi Architecture](https://yaooqinn.github.io/kyuubi/docs/architecture.html)

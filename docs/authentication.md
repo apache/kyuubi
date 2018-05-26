@@ -1,4 +1,4 @@
-# Authentication/Security Guide
+# Kyuubi Authentication/Security Guide
 Kyuubi supports Anonymous (no authentication) with and without SASL, Kerberos (GSSAPI), pass through LDAP between the Thrift client and itself.
 
 ## Configuration
@@ -46,4 +46,9 @@ $KYUUBI_HOME/bin/start-kyuubi.sh --conf spark.kyuubi.authentication=KERBEROS
 $SPARK_HOME/bin/beeline -u "jdbc:hive2://${replace with spark.kyuubi.frontend.bind.host}:10000/;principal=${replace with spark.yarn.principal};hive.server2.proxy.user=yaooqinn"
 ```
 
+## Additional Documentations
+
+[Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)  
+[Configuration Guide](https://yaooqinn.github.io/kyuubi/docs/configurations.html)   
+[Kyuubi Architecture](https://yaooqinn.github.io/kyuubi/docs/architecture.html)
 [Home Page](https://yaooqinn.github.io/kyuubi/)
