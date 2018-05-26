@@ -31,4 +31,5 @@ pid/
 local/
 out/
 hs_err_pid*
+spark-warehouse/
 
