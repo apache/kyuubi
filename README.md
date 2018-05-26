@@ -24,7 +24,7 @@ But unfortunately, due to the limitations of Spark's own architecture，to be us
  |impersonation| ✘ | ✔ |Kyuubi fully support `hive.server2.proxy.user` and `hive.server2.doAs`|
  |multi tenancy| ✘ | ✔ |Based on the above features，Kyuubi is able to run as a multi-tenant server on a LCE supported Yarn cluster.|
  |operation log| ✘ | ✔ |Kyuubi redirect sql operation log to local file which has an interface for the client to fetch.|
- |[high availability](https://yaooqinn.github.io/kyuubi/docs/architecture.html#1.4)| ✘ | ✔ |Based on ZooKeeper service discovery |
+ |[high availability](https://yaooqinn.github.io/kyuubi/docs/architecture.html#1.4)| ✘ | ✔ |Based on ZooKeeper dynamic service discovery |
  |cluster mode| ✘ | ✘ |yarn cluster mode will be supported soon|
  |type mapping| ✘ | ✔ |Kyuubi support Spark result/schema to be directly converted to Thrift result/schemas bypassing Hive format results|
  

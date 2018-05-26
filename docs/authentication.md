@@ -50,5 +50,5 @@ $SPARK_HOME/bin/beeline -u "jdbc:hive2://${replace with spark.kyuubi.frontend.bi
 
 [Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)  
 [Configuration Guide](https://yaooqinn.github.io/kyuubi/docs/configurations.html)   
-[Kyuubi Architecture](https://yaooqinn.github.io/kyuubi/docs/architecture.html)
+[Kyuubi Architecture](https://yaooqinn.github.io/kyuubi/docs/architecture.html)  
 [Home Page](https://yaooqinn.github.io/kyuubi/)
