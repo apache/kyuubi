@@ -195,8 +195,12 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
         })
       }
     } catch {
-      case ute: UndeclaredThrowableException => throw ute.getCause
-      case e: Exception => throw e
+      case ute: UndeclaredThrowableException =>
+        SparkSessionCacheManager.get.decrease(userName)
+        throw ute.getCause
+      case e: Exception =>
+        SparkSessionCacheManager.get.decrease(userName)
+        throw e
     }
   }
 }
