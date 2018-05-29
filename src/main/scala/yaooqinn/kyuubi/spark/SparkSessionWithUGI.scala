@@ -70,7 +70,7 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
   }
 
   /**
-   * Setting configuration from connection strings before SparkConext init.
+   * Setting configuration from connection strings before SparkContext init.
    * @param sessionConf configurations for user connection string
    */
   private[this] def configureSparkConf(sessionConf: Map[String, String]): Unit = {
@@ -187,8 +187,8 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
 
   @throws[KyuubiSQLException]
   def init(sessionConf: Map[String, String]): Unit = {
+    getOrCreate(sessionConf)
     try {
-      getOrCreate(sessionConf)
       initialDatabase.foreach { db =>
         user.doAs(new PrivilegedExceptionAction[Unit] {
           override def run(): Unit = _sparkSession.sql(db)
@@ -198,9 +198,6 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
       case ute: UndeclaredThrowableException =>
         SparkSessionCacheManager.get.decrease(userName)
         throw ute.getCause
-      case e: Exception =>
-        SparkSessionCacheManager.get.decrease(userName)
-        throw e
     }
   }
 }
