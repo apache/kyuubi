@@ -50,7 +50,7 @@ class SparkSessionCacheManager(conf: SparkConf) extends Logging {
   def getAndIncrease(user: String): Option[SparkSession] = {
     Some(userToSparkSession.get(user)) match {
       case Some((ss, times)) if !ss.sparkContext.isStopped =>
-        info(s"SparkSession for [$user] is reused for ${times.incrementAndGet()} times.")
+        info(s"SparkSession for [$user] is reused for ${times.incrementAndGet()} time(s) after + 1")
         Some(ss)
       case _ =>
         info(s"SparkSession for [$user] isn't cached, will create a new one.")
@@ -62,7 +62,7 @@ class SparkSessionCacheManager(conf: SparkConf) extends Logging {
     Some(userToSparkSession.get(user)) match {
       case Some((ss, times)) if !ss.sparkContext.isStopped =>
         userLatestLogout.put(user, System.currentTimeMillis())
-        info(s"SparkSession for [$user] is reused for ${times.decrementAndGet()} times.")
+        info(s"SparkSession for [$user] is reused for ${times.decrementAndGet()} time(s) after -1")
       case _ =>
         warn(s"SparkSession for [$user] was not found in the cache.")
     }
