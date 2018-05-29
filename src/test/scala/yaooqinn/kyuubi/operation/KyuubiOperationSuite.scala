@@ -32,7 +32,7 @@ import yaooqinn.kyuubi.session.{KyuubiSession, SessionManager}
 import yaooqinn.kyuubi.spark.SparkSessionWithUGI
 import yaooqinn.kyuubi.utils.ReflectUtils
 
-class KyuubiOperationSuite extends SparkFunSuite with BeforeAndAfterEach {
+class KyuubiOperationSuite extends SparkFunSuite {
 
   val conf = new SparkConf(loadDefaults = true).setAppName("operation test")
   KyuubiServer.setupCommonConfig(conf)
