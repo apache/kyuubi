@@ -17,7 +17,8 @@
 
 package yaooqinn.kyuubi.spark
 
-import scala.concurrent.TimeoutException
+import scala.concurrent.{Promise, TimeoutException}
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark._
@@ -26,6 +27,7 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.server.KyuubiServer
+import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 import yaooqinn.kyuubi.utils.ReflectUtils
 
 class SparkSessionWithUGISuite extends SparkFunSuite {
@@ -68,11 +70,17 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
     val se = e.getSuppressed.head
     assert(se.isInstanceOf[SparkException])
     assert(se.getMessage.startsWith("Only one SparkContext"))
+    assert(sparkSessionWithUGI.sparkSession === null)
+    assert(System.getProperty("SPARK_YARN_MODE") === null)
+    assert(SparkSessionCacheManager.get.getAndIncrease(userName1).isEmpty)
   }
 
   test("test init failed with no such database") {
     val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf)
     intercept[NoSuchDatabaseException](sparkSessionWithUGI.init(Map("use:database" -> "fakedb")))
+    assert(ReflectUtils.getFieldValue(sparkSessionWithUGI,
+      "yaooqinn$kyuubi$spark$SparkSessionWithUGI$$initialDatabase") === Some("use fakedb"))
+    assert(SparkSessionCacheManager.get.getAndIncrease(userName).nonEmpty)
   }
 
   test("test init success with empty session conf") {
@@ -105,6 +113,7 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
     assert(sparkSessionWithUGI.sparkSession.conf.get("spark.foo") === "bar")
     assert(sparkSessionWithUGI.sparkSession.conf.get("spark.hadoop.foo") === "bar")
     assert(!sparkSessionWithUGI.sparkSession.sparkContext.getConf.contains(KyuubiSparkUtil.KEYTAB))
+    assert(KyuubiServerMonitor.getListener(userName1).nonEmpty)
     sparkSessionWithUGI.sparkSession.stop()
   }
 
@@ -143,5 +152,18 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
 
   test("testIsPartiallyConstructed") {
     assert(!SparkSessionWithUGI.isPartiallyConstructed(userName))
+  }
+
+  test("stop sparkcontext") {
+    val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf)
+    sparkSessionWithUGI.init(Map.empty)
+    val promise = ReflectUtils.getFieldValue(sparkSessionWithUGI,
+      "yaooqinn$kyuubi$spark$SparkSessionWithUGI$$promisedSparkContext")
+      .asInstanceOf[Promise[SparkContext]]
+    val future = promise.future
+    ReflectUtils.invokeMethod(sparkSessionWithUGI, "stopContext")
+    future.foreach { sc =>
+      assert(sc.isStopped)
+    }
   }
 }
