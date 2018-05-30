@@ -129,6 +129,8 @@ object KyuubiServer extends Logging {
     if (UserGroupInformation.isSecurityEnabled) {
       conf.setIfMissing(KyuubiSparkUtil.HDFS_CLIENT_CACHE,
         KyuubiSparkUtil.HDFS_CLIENT_CACHE_DEFAULT)
+      conf.setIfMissing(KyuubiSparkUtil.FILE_CLIENT_CACHE,
+        KyuubiSparkUtil.FILE_CLIENT_CACHE_DEFAULT)
     }
   }
 
