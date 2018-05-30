@@ -17,8 +17,10 @@
 
 package yaooqinn.kyuubi.server
 
+import java.io.{File, IOException}
 import java.util.concurrent.atomic.AtomicBoolean
 
+import org.apache.hadoop.minikdc.MiniKdc
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import org.apache.spark.deploy.SparkHadoopUtil
@@ -86,14 +88,37 @@ class KyuubiServerSuite extends SparkFunSuite {
   }
 
   test("disable fs caches for secured cluster") {
+
+    var kdc: MiniKdc = null
+    val baseDir = KyuubiSparkUtil.createTempDir(namePrefix = "kyuubi-kdc")
+    try {
+      val kdcConf = MiniKdc.createConf()
+      kdcConf.setProperty(MiniKdc.INSTANCE, "KyuubiKrbServer")
+      kdcConf.setProperty(MiniKdc.ORG_NAME, "KYUUBI")
+      kdcConf.setProperty(MiniKdc.ORG_DOMAIN, "COM")
+
+      if (kdc == null) {
+        kdc = new MiniKdc(kdcConf, baseDir)
+        kdc.start()
+      }
+    } catch {
+      case e: IOException =>
+        throw new AssertionError("unable to create temporary directory: " + e.getMessage)
+    }
+
     assert(!UserGroupInformation.isSecurityEnabled)
     val conf = new SparkConf(true)
     conf.set("spark.hadoop.hadoop.security.authentication", "KERBEROS")
+    System.setProperty("java.security.krb5.realm", kdc.getRealm)
     val hadoopConf = SparkHadoopUtil.get.newConfiguration(conf)
     UserGroupInformation.setConfiguration(hadoopConf)
     KyuubiServer.setupCommonConfig(conf)
     assert(conf.contains(KyuubiSparkUtil.HDFS_CLIENT_CACHE))
     assert(conf.get(KyuubiSparkUtil.HDFS_CLIENT_CACHE) === "true")
     assert(conf.get(KyuubiSparkUtil.HDFS_CLIENT_CACHE) === "true")
+    System.clearProperty("java.security.krb5.realm")
+    if (kdc !== null) {
+      kdc.stop()
+    }
   }
 }
