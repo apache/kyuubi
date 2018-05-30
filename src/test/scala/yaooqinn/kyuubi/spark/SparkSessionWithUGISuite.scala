@@ -55,6 +55,21 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
     spark.stop()
   }
 
+  test("test init failed with sc init failing") {
+    assert(!spark.sparkContext.isStopped)
+    val confClone = conf.clone().remove(KyuubiSparkUtil.MULTIPLE_CONTEXTS)
+      .set(KyuubiConf.BACKEND_SESSTION_INIT_TIMEOUT.key, "3")
+    val userName1 = "test1"
+    val ru = UserGroupInformation.createRemoteUser(userName1)
+    val sparkSessionWithUGI = new SparkSessionWithUGI(ru, confClone)
+    assert(!SparkSessionWithUGI.isPartiallyConstructed(userName1))
+    val e = intercept[KyuubiSQLException](sparkSessionWithUGI.init(Map.empty))
+    assert(e.getCause.isInstanceOf[TimeoutException])
+    val se = e.getSuppressed.head
+    assert(se.isInstanceOf[SparkException])
+    assert(se.getMessage.startsWith("Only one SparkContext"))
+  }
+
   test("test init failed with no such database") {
     val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf)
     intercept[NoSuchDatabaseException](sparkSessionWithUGI.init(Map("use:database" -> "fakedb")))
@@ -103,6 +118,7 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
     assert(e.getMessage.contains("has last more than 15 seconds"))
     assert(SparkSessionWithUGI.isPartiallyConstructed(userName))
     assert(!SparkSessionWithUGI.isPartiallyConstructed("Kent Yao"))
+    SparkSessionWithUGI.setFullyConstructed(userName)
   }
 
   test("test init failed with time out exception") {
