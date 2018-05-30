@@ -22,7 +22,7 @@ import java.security.PrivilegedExceptionAction
 import java.util.concurrent.TimeUnit
 
 import scala.collection.mutable.{HashSet => MHSet}
-import scala.concurrent.{Await, Promise, TimeoutException}
+import scala.concurrent.{Await, Promise}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
@@ -43,6 +43,7 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
   def sparkSession: SparkSession = _sparkSession
   private[this] val promisedSparkContext = Promise[SparkContext]()
   private[this] var initialDatabase: Option[String] = None
+  private[this] var sparkException: Option[Throwable] = None
 
   private[this] def newContext(): Thread = {
     new Thread(s"Start-SparkContext-$userName") {
@@ -52,7 +53,7 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
             new SparkContext(conf)
           }
         } catch {
-          case NonFatal(e) => throw e
+          case NonFatal(e) => sparkException = Some(e)
         }
       }
     }
@@ -64,13 +65,18 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
   private[this] def stopContext(): Unit = {
     promisedSparkContext.future.map { sc =>
       warn(s"Error occurred during initializing SparkContext for $userName, stopping")
-      sc.stop
-      System.setProperty("SPARK_YARN_MODE", "true")
+      try {
+        sc.stop
+      } catch {
+        case NonFatal(e) => error(s"Error Stopping $userName's SparkContext", e)
+      } finally {
+        System.setProperty("SPARK_YARN_MODE", "true")
+      }
     }
   }
 
   /**
-   * Setting configuration from connection strings before SparkConext init.
+   * Setting configuration from connection strings before SparkContext init.
    * @param sessionConf configurations for user connection string
    */
   private[this] def configureSparkConf(sessionConf: Map[String, String]): Unit = {
@@ -113,7 +119,8 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
   }
 
   private[this] def getOrCreate(sessionConf: Map[String, String]): Unit = synchronized {
-    var checkRound = math.max(conf.get(BACKEND_SESSION_WAIT_OTHER_TIMES.key).toInt, 15)
+    val totalRounds = math.max(conf.get(BACKEND_SESSION_WAIT_OTHER_TIMES.key).toInt, 15)
+    var checkRound = totalRounds
     val interval = conf.getTimeAsMs(BACKEND_SESSION_WAIT_OTHER_INTERVAL.key)
     // if user's sc is being constructed by another
     while (SparkSessionWithUGI.isPartiallyConstructed(userName)) {
@@ -121,7 +128,7 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
       checkRound -= 1
       if (checkRound <= 0) {
         throw new KyuubiSQLException(s"A partially constructed SparkContext for [$userName] " +
-          s"has last more than ${checkRound * interval} seconds")
+          s"has last more than ${totalRounds * interval / 1000} seconds")
       }
       info(s"A partially constructed SparkContext for [$userName], $checkRound times countdown.")
     }
@@ -158,15 +165,11 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
       SparkSessionCacheManager.get.set(userName, _sparkSession)
     } catch {
       case ute: UndeclaredThrowableException =>
-        ute.getCause match {
-          case te: TimeoutException =>
-            stopContext()
-            throw new KyuubiSQLException(
-              s"Get SparkSession for [$userName] failed: " + te, "08S01", 1001, te)
-          case _ =>
-            stopContext()
-            throw new KyuubiSQLException(ute.toString, "08S01", ute.getCause)
-        }
+        stopContext()
+        val ke = new KyuubiSQLException(
+          s"Get SparkSession for [$userName] failed: " + ute.getCause, "08S01", 1001, ute.getCause)
+        sparkException.foreach(ke.addSuppressed)
+        throw ke
       case e: Exception =>
         stopContext()
         throw new KyuubiSQLException(
@@ -187,16 +190,17 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
 
   @throws[KyuubiSQLException]
   def init(sessionConf: Map[String, String]): Unit = {
+    getOrCreate(sessionConf)
     try {
-      getOrCreate(sessionConf)
       initialDatabase.foreach { db =>
         user.doAs(new PrivilegedExceptionAction[Unit] {
           override def run(): Unit = _sparkSession.sql(db)
         })
       }
     } catch {
-      case ute: UndeclaredThrowableException => throw ute.getCause
-      case e: Exception => throw e
+      case ute: UndeclaredThrowableException =>
+        SparkSessionCacheManager.get.decrease(userName)
+        throw ute.getCause
     }
   }
 }
