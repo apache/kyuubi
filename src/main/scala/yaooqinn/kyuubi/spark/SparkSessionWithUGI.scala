@@ -113,7 +113,8 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
   }
 
   private[this] def getOrCreate(sessionConf: Map[String, String]): Unit = synchronized {
-    var checkRound = math.max(conf.get(BACKEND_SESSION_WAIT_OTHER_TIMES.key).toInt, 15)
+    val totalRounds = math.max(conf.get(BACKEND_SESSION_WAIT_OTHER_TIMES.key).toInt, 15)
+    var checkRound = totalRounds
     val interval = conf.getTimeAsMs(BACKEND_SESSION_WAIT_OTHER_INTERVAL.key)
     // if user's sc is being constructed by another
     while (SparkSessionWithUGI.isPartiallyConstructed(userName)) {
@@ -121,7 +122,7 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
       checkRound -= 1
       if (checkRound <= 0) {
         throw new KyuubiSQLException(s"A partially constructed SparkContext for [$userName] " +
-          s"has last more than ${checkRound * interval} seconds")
+          s"has last more than ${totalRounds * interval / 1000} seconds")
       }
       info(s"A partially constructed SparkContext for [$userName], $checkRound times countdown.")
     }
