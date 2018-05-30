@@ -69,6 +69,10 @@ object KyuubiSparkUtil extends Logging {
   val USE_DB: Regex = """use:([^=]+)""".r
   val QUEUE = SPARK_PREFIX + YARN_PREFIX + "queue"
   val DEPRECATED_QUEUE = "mapred.job.queue.name"
+  val HDFS_CLIENT_CACHE = SPARK_HADOOP_PREFIX + "fs.hdfs.impl.disable.cache"
+  val HDFS_CLIENT_CACHE_DEFAULT = "true"
+  val FILE_CLIENT_CACHE = SPARK_HADOOP_PREFIX + "fs.file.impl.disable.cache"
+  val FILE_CLIENT_CACHE_DEFAULT = "true"
 
   // Runtime Spark Version
   val SPARK_VERSION = org.apache.spark.SPARK_VERSION
