@@ -23,7 +23,6 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 
 import yaooqinn.kyuubi.server.KyuubiServer
-import yaooqinn.kyuubi.session.{KyuubiSession, SessionManager}
 import yaooqinn.kyuubi.utils.ReflectUtils
 
 class SparkSessionWithUGISuite extends SparkFunSuite {
@@ -34,8 +33,6 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
   conf.remove(KyuubiSparkUtil.CATALOG_IMPL)
   conf.setMaster("local")
   val userName = user.getShortUserName
-  val passwd = ""
-  val statement = "show tables"
   var spark: SparkSession = _
 
   override protected def beforeAll(): Unit = {
@@ -55,17 +52,42 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
     spark.stop()
   }
 
-  test("testInit failed with no such database") {
+  test("test init failed with no such database") {
     val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf)
     intercept[NoSuchDatabaseException](sparkSessionWithUGI.init(Map("use:database" -> "fakedb")))
-
   }
 
-  test("testInit success") {
+  test("test init success with empty session conf") {
     val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf)
     sparkSessionWithUGI.init(Map.empty)
     assert(sparkSessionWithUGI.sparkSession.sparkContext.sparkUser === userName)
     assert(sparkSessionWithUGI.userName === userName)
+  }
+
+  test("test init success with spark properties") {
+    val sessionConf = Map("set:hivevar:spark.foo" -> "bar")
+    val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf)
+    sparkSessionWithUGI.init(sessionConf)
+    assert(sparkSessionWithUGI.sparkSession.conf.get("spark.foo") === "bar")
+  }
+
+  test("test init success with hive/hadoop/extra properties") {
+    val sessionConf = Map("set:hivevar:foo" -> "bar")
+    val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf)
+    sparkSessionWithUGI.init(sessionConf)
+    assert(sparkSessionWithUGI.sparkSession.conf.get("spark.hadoop.foo") === "bar")
+  }
+
+  test("test init with new spark context") {
+    val userName1 = "test"
+    val ru = UserGroupInformation.createRemoteUser(userName1)
+    val sessionConf = Map("set:hivevar:spark.foo" -> "bar", "set:hivevar:foo" -> "bar")
+    val sparkSessionWithUGI = new SparkSessionWithUGI(ru, conf)
+    sparkSessionWithUGI.init(sessionConf)
+    assert(sparkSessionWithUGI.sparkSession.conf.get("spark.foo") === "bar")
+    assert(sparkSessionWithUGI.sparkSession.conf.get("spark.hadoop.foo") === "bar")
+    assert(!sparkSessionWithUGI.sparkSession.sparkContext.getConf.contains(KyuubiSparkUtil.KEYTAB))
+    sparkSessionWithUGI.sparkSession.stop()
   }
 
   test("testSetPartiallyConstructed") {
