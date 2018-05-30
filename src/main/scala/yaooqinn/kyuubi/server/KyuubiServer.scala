@@ -125,6 +125,11 @@ object KyuubiServer extends Logging {
 
     conf.setIfMissing(
       KyuubiSparkUtil.SPARK_LOCAL_DIR, conf.get(KyuubiConf.BACKEND_SESSION_LOCAL_DIR.key))
+
+    if (UserGroupInformation.isSecurityEnabled) {
+      conf.setIfMissing(KyuubiSparkUtil.HDFS_CLIENT_CACHE,
+        KyuubiSparkUtil.HDFS_CLIENT_CACHE_DEFAULT)
+    }
   }
 
   private[kyuubi] def validate(): Unit = {

@@ -191,4 +191,9 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
     KyuubiSparkUtil.addShutdownHook(f)
     assert(y === 0)
   }
+
+  test("testHDFS_CLIENT_CACHE") {
+    assert(KyuubiSparkUtil.HDFS_CLIENT_CACHE === "spark.hadoop.fs.hdfs.impl.disable.cache")
+    assert(KyuubiSparkUtil.HDFS_CLIENT_CACHE_DEFAULT.toBoolean)
+  }
 }
