@@ -1,10 +1,16 @@
-## Expected behavior
+### expected behavior
 
-## Actual behavior.
+### actual behavior
 
-## Steps to reproduce the problem.
+### steps to reproduce
 
-## Specifications like the version of the project, operating system, or hardware.
+### specifications 
+
+ - version of the project
+ 
+ - operating system
+ 
+ - hardware
 
 
 
