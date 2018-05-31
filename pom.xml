@@ -23,7 +23,7 @@
     <groupId>yaooqinn</groupId>
     <artifactId>kyuubi</artifactId>
     <name>Kyuubi Thrift Server</name>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
     <packaging>jar</packaging>
 
     <licenses>
@@ -40,7 +40,7 @@
             <name>Kent Yao</name>
             <email>hzyaoqin@corp.netease.com</email>
             <organization>yaooqinn</organization>
-            <url>http://www.jianshu.com/u/14effefbbf32</url>
+            <url>https://github.com/yaooqinn</url>
         </developer>
     </developers>
 

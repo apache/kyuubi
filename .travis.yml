@@ -6,14 +6,24 @@ cache:
 directories:
   - $HOME/.m2
 
+before_deploy:
+  - ./build/dist --tgz
+
 deploy:
-  provider: pages
-  skip_cleanup: true
-  github_token: $GITHUB_TOKEN
-  email: yaooqinn@hotmail.com
-  name: Kent Yao
-  on:
-    branch: master
+  - provider: pages
+    skip_cleanup: true
+    github_token: $GITHUB_TOKEN
+    email: yaooqinn@hotmail.com
+    name: Kent Yao
+    on:
+      branch: master
+  - provider: releases
+    api_key: $GITHUB_TOKEN
+    file_glob: true
+    file: kyuubi-*.tar.gz
+    skip_cleanup: true
+    on:
+      tags: true
 
 install:
   - ./build/mvn install -q -DskipTests=true -Dmaven.javadoc.skip=true -B -V
@@ -22,7 +32,6 @@ script:
   - ./build/mvn package -q -Dmaven.javadoc.skip=true -B -V
   - ./build/mvn package -Pspark-2.2 -q -Dmaven.javadoc.skip=true -B -V
   - ./build/mvn package -Pspark-2.3 -q -Dmaven.javadoc.skip=true -B -V
-
 
 language: java
 after_success:
