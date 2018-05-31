@@ -30,7 +30,6 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.api.python.PythonWorkerFactory
 import org.apache.spark.broadcast.BroadcastManager
-import org.apache.spark.internal.Logging
 import org.apache.spark.internal.config._
 import org.apache.spark.memory.{MemoryManager, StaticMemoryManager, UnifiedMemoryManager}
 import org.apache.spark.metrics.MetricsSystem
@@ -44,6 +43,7 @@ import org.apache.spark.shuffle.ShuffleManager
 import org.apache.spark.storage._
 import org.apache.spark.util.{RpcUtils, Utils}
 
+import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.utils.ReflectUtils
 
 /**
@@ -106,7 +106,7 @@ class SparkEnv (
             Utils.deleteRecursively(new File(path))
           } catch {
             case e: Exception =>
-              logWarning(s"Exception while deleting Spark temp dir: $path", e)
+              warn(s"Exception while deleting Spark temp dir: $path", e)
           }
         case None => // We just need to delete tmp dir created by driver, so do nothing on executor
       }
@@ -139,7 +139,7 @@ class SparkEnv (
 }
 
 object SparkEnv extends Logging {
-  logInfo("Loaded Kyuubi Supplied SparkEnv Class...")
+  info("Loaded Kyuubi Supplied SparkEnv Class...")
   private val env = new ConcurrentHashMap[String, SparkEnv]()
 
   private[spark] val driverSystemName = "sparkDriver"
@@ -149,10 +149,10 @@ object SparkEnv extends Logging {
 
   def set(e: SparkEnv) {
     if (e == null) {
-      logDebug(s"Kyuubi: Removing SparkEnv for $user")
+      debug(s"Kyuubi: Removing SparkEnv for $user")
       env.remove(user)
     } else {
-      logDebug(s"Kyuubi: Registering SparkEnv for $user")
+      debug(s"Kyuubi: Registering SparkEnv for $user")
       env.put(user, e)
     }
   }
@@ -161,7 +161,7 @@ object SparkEnv extends Logging {
    * Returns the SparkEnv.
    */
   def get: SparkEnv = {
-    logDebug(s"Kyuubi: Get SparkEnv for $user")
+    debug(s"Kyuubi: Get SparkEnv for $user")
     env.get(user)
   }
 
@@ -333,7 +333,7 @@ object SparkEnv extends Logging {
 
     val serializer = instantiateClassFromConf[Serializer](
       "spark.serializer", "org.apache.spark.serializer.JavaSerializer")
-    logDebug(s"Using serializer: ${serializer.getClass}")
+    debug(s"Using serializer: ${serializer.getClass}")
 
     val serializerManager = new SerializerManager(serializer, conf, ioEncryptionKey)
 
@@ -343,7 +343,7 @@ object SparkEnv extends Logging {
         name: String, endpointCreator: => RpcEndpoint):
       RpcEndpointRef = {
       if (isDriver) {
-        logInfo("Registering " + name)
+        info("Registering " + name)
         rpcEnv.setupEndpoint(name, endpointCreator)
       } else {
         RpcUtils.makeDriverRef(name, conf, rpcEnv)
