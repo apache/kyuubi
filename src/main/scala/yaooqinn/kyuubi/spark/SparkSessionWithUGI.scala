@@ -205,10 +205,9 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
         throw ute.getCause
     }
     val authRule =
-      ReflectUtils.findClass("org.apache.spark.sql.catalyst.optimizer.Authorizer", true)
-    if (authRule != null) {
-      _sparkSession.experimental.extraOptimizations ++=
-        Seq(authRule.asInstanceOf[Rule[LogicalPlan]])
+      ReflectUtils.reflectModule("org.apache.spark.sql.catalyst.optimizer.Authorizer", true)
+    authRule.foreach {
+      r => _sparkSession.experimental.extraOptimizations ++= Seq(r.asInstanceOf[Rule[LogicalPlan]])
     }
   }
 }

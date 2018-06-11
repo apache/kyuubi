@@ -17,7 +17,10 @@
 
 package yaooqinn.kyuubi.utils
 
+import scala.reflect.runtime.{universe => ru}
 import scala.util.{Failure, Success, Try}
+
+import org.apache.spark.KyuubiSparkUtil
 
 import yaooqinn.kyuubi.Logging
 
@@ -198,5 +201,24 @@ object ReflectUtils extends Logging {
     val field = ancestor.getDeclaredField(fieldName)
     field.setAccessible(true)
     field.get(clazz).asInstanceOf[T]
+  }
+
+  /**
+   *
+   * @param className fully qualified class name
+   */
+  def reflectModule(className: String, silent: Boolean): Option[Any] = {
+    Try {
+      val mirror = ru.runtimeMirror(KyuubiSparkUtil.getContextOrSparkClassLoader())
+      val clazz = mirror.staticModule(className)
+      val module = mirror.reflectModule(clazz)
+      module.instance
+    } match {
+      case Success(value) => Some(value)
+      case Failure(e) if silent =>
+        error(e.getMessage, e)
+        None
+      case Failure(e) => throw e
+    }
   }
 }
