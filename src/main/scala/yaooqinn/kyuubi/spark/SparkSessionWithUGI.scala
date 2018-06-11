@@ -32,6 +32,8 @@ import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil._
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.ui.KyuubiServerTab
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
@@ -201,6 +203,12 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
       case ute: UndeclaredThrowableException =>
         SparkSessionCacheManager.get.decrease(userName)
         throw ute.getCause
+    }
+    val authRule =
+      ReflectUtils.findClass("org.apache.spark.sql.catalyst.optimizer.Authorizer", true)
+    if (authRule != null) {
+      _sparkSession.experimental.extraOptimizations ++=
+        Seq(authRule.asInstanceOf[Rule[LogicalPlan]])
     }
   }
 }
