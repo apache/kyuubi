@@ -31,6 +31,19 @@ import yaooqinn.kyuubi.Logging
 /**
  * A Hacking Class for [[IsolatedClientLoader]] to be not isolated
  */
+private[hive] object IsolatedClientLoader {
+  def hiveVersion(version: String): HiveVersion = version match {
+    case "12" | "0.12" | "0.12.0" => hive.v12
+    case "13" | "0.13" | "0.13.0" | "0.13.1" => hive.v13
+    case "14" | "0.14" | "0.14.0" => hive.v14
+    case "1.0" | "1.0.0" => hive.v1_0
+    case "1.1" | "1.1.0" => hive.v1_1
+    case "1.2" | "1.2.0" | "1.2.1" | "1.2.2" => hive.v1_2
+    case "2.0" | "2.0.0" | "2.0.1" => hive.v2_0
+    case "2.1" | "2.1.0" | "2.1.1" => hive.v2_1
+  }
+}
+
 private[hive] class IsolatedClientLoader(
     val version: HiveVersion,
     val sparkConf: SparkConf,
