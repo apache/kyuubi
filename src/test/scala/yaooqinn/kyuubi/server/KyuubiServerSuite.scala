@@ -17,7 +17,7 @@
 
 package yaooqinn.kyuubi.server
 
-import java.io.{File, IOException}
+import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 
 import org.apache.hadoop.minikdc.MiniKdc
