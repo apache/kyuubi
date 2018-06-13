@@ -26,6 +26,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 
 import yaooqinn.kyuubi.KyuubiSQLException
+import yaooqinn.kyuubi.author.AuthzHelper
 import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 import yaooqinn.kyuubi.utils.ReflectUtils
@@ -88,6 +89,17 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
     sparkSessionWithUGI.init(Map.empty)
     assert(sparkSessionWithUGI.sparkSession.sparkContext.sparkUser === userName)
     assert(sparkSessionWithUGI.userName === userName)
+  }
+
+  test("test init with authorization configured.") {
+    val confClone = conf.clone()
+      .set(KyuubiConf.AUTHORIZATION_METHOD.key, "yaooqinn.kyuubi.TestRule")
+      .set(KyuubiConf.AUTHORIZATION_ENABLE.key, "true")
+
+    AuthzHelper.init(confClone)
+    val sparkSessionWithUGI = new SparkSessionWithUGI(user, confClone)
+    sparkSessionWithUGI.init(Map.empty)
+    assert(sparkSessionWithUGI.sparkSession.experimental.extraOptimizations.nonEmpty)
   }
 
   test("test init success with spark properties") {

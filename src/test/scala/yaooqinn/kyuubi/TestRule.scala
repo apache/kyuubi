@@ -23,3 +23,5 @@ import org.apache.spark.sql.catalyst.rules.Rule
 object TestRule extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = plan
 }
+
+object TestWrongRule

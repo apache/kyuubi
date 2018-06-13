@@ -32,13 +32,11 @@ private[kyuubi] class AuthzHelper(conf: SparkConf) extends Logging {
       val authzMethod = conf.get(AUTHORIZATION_METHOD.key)
       val maybeRule = ReflectUtils.reflectModule(authzMethod, silent = true)
       maybeRule match {
-        case Some(authz) => Seq(authz.asInstanceOf[Rule[LogicalPlan]])
+        case Some(authz) if authz.isInstanceOf[Rule[LogicalPlan]] =>
+          Seq(authz.asInstanceOf[Rule[LogicalPlan]])
         case _ => Nil
       }
     } catch {
-      case e: ClassCastException =>
-        error(e.getMessage, e)
-        Nil
       case _: NoSuchElementException =>
         error(s"${AUTHORIZATION_METHOD.key} is not configured")
         Nil

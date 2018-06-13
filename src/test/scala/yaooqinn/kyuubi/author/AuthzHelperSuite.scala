@@ -27,17 +27,25 @@ class AuthzHelperSuite extends SparkFunSuite {
 
   test("test Rule") {
 
+    // NoSuchElementException
     val conf = new SparkConf(loadDefaults = true)
     val authzHelper1 = new AuthzHelper(conf)
     assert(authzHelper1.rule.isEmpty)
+    // reflect failure
     KyuubiServer.setupCommonConfig(conf)
     val authzHelper2 = new AuthzHelper(conf)
     assert(authzHelper2.rule.isEmpty)
+
+    // success
     conf.set(KyuubiConf.AUTHORIZATION_METHOD.key, "yaooqinn.kyuubi.TestRule")
     val authzHelper3 = new AuthzHelper(conf)
     assert(authzHelper3.rule.nonEmpty)
     assert(authzHelper3.rule.head.isInstanceOf[Rule[LogicalPlan]])
 
+    // type miss match
+    conf.set(KyuubiConf.AUTHORIZATION_METHOD.key, "yaooqinn.kyuubi.TestWrongRule")
+    val authzHelper4 = new AuthzHelper(conf)
+    assert(authzHelper4.rule.isEmpty)
   }
 
   test("test Get") {
