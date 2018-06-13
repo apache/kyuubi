@@ -32,17 +32,18 @@ import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil._
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.ui.KyuubiServerTab
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
+import yaooqinn.kyuubi.author.AuthzHelper
 import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
 import yaooqinn.kyuubi.utils.ReflectUtils
 
 class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends Logging {
   private[this] var _sparkSession: SparkSession = _
+
   def sparkSession: SparkSession = _sparkSession
+
   private[this] val promisedSparkContext = Promise[SparkContext]()
   private[this] var initialDatabase: Option[String] = None
   private[this] var sparkException: Option[Throwable] = None
@@ -79,6 +80,7 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
 
   /**
    * Setting configuration from connection strings before SparkContext init.
+   *
    * @param sessionConf configurations for user connection string
    */
   private[this] def configureSparkConf(sessionConf: Map[String, String]): Unit = {
@@ -103,6 +105,7 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
 
   /**
    * Setting configuration from connection strings for existing SparkSession
+   *
    * @param sessionConf configurations for user connection string
    */
   private[this] def configureSparkSession(sessionConf: Map[String, String]): Unit = {
@@ -204,10 +207,9 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
         SparkSessionCacheManager.get.decrease(userName)
         throw ute.getCause
     }
-    val authRule =
-      ReflectUtils.reflectModule("org.apache.spark.sql.catalyst.optimizer.Authorizer", true)
-    authRule.foreach {
-      r => _sparkSession.experimental.extraOptimizations ++= Seq(r.asInstanceOf[Rule[LogicalPlan]])
+    AuthzHelper.get match {
+      case Some(authz) => _sparkSession.experimental.extraOptimizations ++= authz.getAuthzRule
+      case _ =>
     }
   }
 }

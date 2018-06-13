@@ -23,6 +23,7 @@ import org.apache.spark.sql.types.StructType
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
+import yaooqinn.kyuubi.author.AuthzHelper
 import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType, GetInfoValue}
 import yaooqinn.kyuubi.operation.{OperationHandle, OperationStatus}
 import yaooqinn.kyuubi.schema.RowSet
@@ -43,6 +44,7 @@ private[server] class BackendService private(name: String)
 
   override def init(conf: SparkConf): Unit = synchronized {
     this.conf = conf
+    AuthzHelper.init(conf)
     sessionManager = new SessionManager()
     addService(sessionManager)
     super.init(conf)
