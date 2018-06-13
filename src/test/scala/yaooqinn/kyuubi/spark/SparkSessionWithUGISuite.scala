@@ -89,8 +89,6 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
     sparkSessionWithUGI.init(Map.empty)
     assert(sparkSessionWithUGI.sparkSession.sparkContext.sparkUser === userName)
     assert(sparkSessionWithUGI.userName === userName)
-    assert(sparkSessionWithUGI.sparkSession.experimental.extraOptimizations.isEmpty)
-
   }
 
   test("test init with authorization configured.") {
