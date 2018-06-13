@@ -207,10 +207,7 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
         SparkSessionCacheManager.get.decrease(userName)
         throw ute.getCause
     }
-    AuthzHelper.get match {
-      case Some(authz) => _sparkSession.experimental.extraOptimizations ++= authz.rule
-      case _ =>
-    }
+    AuthzHelper.get.foreach(_sparkSession.experimental.extraOptimizations ++= _.rule)
   }
 }
 
