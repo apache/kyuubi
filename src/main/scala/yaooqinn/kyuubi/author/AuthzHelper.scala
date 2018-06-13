@@ -53,6 +53,7 @@ private[kyuubi] object AuthzHelper extends Logging {
   def init(conf: SparkConf): Unit = {
     if (conf.get(AUTHORIZATION_ENABLE.key).toBoolean) {
       instance = Some(new AuthzHelper(conf))
+      debug("AuthzHelper inited.")
     }
   }
 }
