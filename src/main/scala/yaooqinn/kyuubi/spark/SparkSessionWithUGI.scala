@@ -208,7 +208,7 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
         throw ute.getCause
     }
     AuthzHelper.get match {
-      case Some(authz) => _sparkSession.experimental.extraOptimizations ++= authz.getAuthzRule
+      case Some(authz) => _sparkSession.experimental.extraOptimizations ++= authz.rule
       case _ =>
     }
   }

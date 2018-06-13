@@ -74,8 +74,6 @@ object KyuubiSparkUtil extends Logging {
   val FILE_CLIENT_CACHE = SPARK_HADOOP_PREFIX + "fs.file.impl.disable.cache"
   val FILE_CLIENT_CACHE_DEFAULT = "true"
 
-  val RANGER_POLICY_CACHE_DIR = "ranger.plugin.hive.policy.cache.dir"
-
   // Runtime Spark Version
   val SPARK_VERSION = org.apache.spark.SPARK_VERSION
 
