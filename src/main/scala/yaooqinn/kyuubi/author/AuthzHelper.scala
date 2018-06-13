@@ -27,7 +27,7 @@ import yaooqinn.kyuubi.utils.ReflectUtils
 
 private[kyuubi] class AuthzHelper(conf: SparkConf) extends Logging {
 
-  def getAuthzRule: Seq[Rule[LogicalPlan]] = {
+  val rule: Seq[Rule[LogicalPlan]] = {
     try {
       val authzMethod = conf.get(AUTHORIZATION_METHOD.key)
       val maybeRule = ReflectUtils.reflectModule(authzMethod, silent = true)
