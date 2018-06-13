@@ -20,6 +20,9 @@
 package yaooqinn.kyuubi.utils
 
 import org.apache.spark.SparkFunSuite
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.rules.Rule
+import org.junit.rules.TestRule
 
 class ReflectUtilsSuite extends SparkFunSuite {
 
@@ -107,6 +110,18 @@ class ReflectUtilsSuite extends SparkFunSuite {
 
   }
 
+  test("test reflect module") {
+    val rule1 =
+      ReflectUtils.reflectModule(className = "yaooqinn.kyuubi.TestRule", silent = true)
+    assert(rule1.get.isInstanceOf[Rule[LogicalPlan]])
+    val rule2 =
+      ReflectUtils.reflectModule(className = "yaooqinn.kyuubi.TestRule2", silent = true)
+    assert(rule2.isEmpty)
+
+    val e = intercept[ScalaReflectionException](
+      ReflectUtils.reflectModule(className = "yaooqinn.kyuubi.TestRule2", silent = false))
+    assert(e.getMessage.contains("not found"))
+  }
 }
 
 class TestTrait {
@@ -124,7 +139,3 @@ object TestClass0 {
   val testInt = 1
   val testObj = "1"
 }
-
-
-
-
