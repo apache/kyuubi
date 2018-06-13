@@ -31,7 +31,7 @@ import yaooqinn.kyuubi.utils.ReflectUtils
 class KyuubiServerSuite extends SparkFunSuite {
 
   test("testSetupCommonConfig") {
-    val conf = new SparkConf(true)
+    val conf = new SparkConf(true).set(KyuubiSparkUtil.METASTORE_JARS, "maven")
     KyuubiServer.setupCommonConfig(conf)
     val name = "spark.app.name"
     assert(conf.get(name) === "KyuubiServer")
@@ -40,7 +40,7 @@ class KyuubiServerSuite extends SparkFunSuite {
       KyuubiSparkUtil.MULTIPLE_CONTEXTS_DEFAULT)
     assert(conf.get(KyuubiSparkUtil.CATALOG_IMPL) === KyuubiSparkUtil.CATALOG_IMPL_DEFAULT)
     assert(conf.get(KyuubiSparkUtil.DEPLOY_MODE) === KyuubiSparkUtil.DEPLOY_MODE_DEFAULT)
-    assert(conf.get(KyuubiSparkUtil.METASTORE_JARS) !== "builtin")
+    assert(conf.get(KyuubiSparkUtil.METASTORE_JARS) === "builtin")
     assert(conf.get(KyuubiSparkUtil.SPARK_UI_PORT) === KyuubiSparkUtil.SPARK_UI_PORT_DEFAULT)
     assert(conf.get(KyuubiSparkUtil.SPARK_LOCAL_DIR)
       .startsWith(System.getProperty("java.io.tmpdir")))
