@@ -31,6 +31,10 @@ import yaooqinn.kyuubi.utils.ReflectUtils
 class KyuubiAuthFactorySuite extends SparkFunSuite {
 
   test("testVerifyProxyAccess") {
+    val conf = new SparkConf(true)
+    val hadoopConf = KyuubiSparkUtil.newConfiguration(conf)
+    val user = UserGroupInformation.getCurrentUser.getShortUserName
+    KyuubiAuthFactory.verifyProxyAccess(user, user, "localhost", hadoopConf)
 
   }
 
