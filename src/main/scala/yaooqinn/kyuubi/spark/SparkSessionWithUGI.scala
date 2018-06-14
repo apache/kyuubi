@@ -196,6 +196,9 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
   @throws[KyuubiSQLException]
   def init(sessionConf: Map[String, String]): Unit = {
     getOrCreate(sessionConf)
+    AuthzHelper.get.foreach { auth =>
+      _sparkSession.experimental.extraOptimizations ++= auth.rule
+    }
     try {
       initialDatabase.foreach { db =>
         user.doAs(new PrivilegedExceptionAction[Unit] {
@@ -207,7 +210,6 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
         SparkSessionCacheManager.get.decrease(userName)
         throw ute.getCause
     }
-    AuthzHelper.get.foreach(_sparkSession.experimental.extraOptimizations ++= _.rule)
   }
 }
 
