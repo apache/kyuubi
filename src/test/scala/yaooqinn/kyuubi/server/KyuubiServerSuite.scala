@@ -112,6 +112,7 @@ class KyuubiServerSuite extends SparkFunSuite {
     System.setProperty("java.security.krb5.realm", kdc.getRealm)
     val hadoopConf = SparkHadoopUtil.get.newConfiguration(conf)
     UserGroupInformation.setConfiguration(hadoopConf)
+    assert(UserGroupInformation.isSecurityEnabled)
     KyuubiServer.setupCommonConfig(conf)
     assert(conf.contains(KyuubiSparkUtil.HDFS_CLIENT_CACHE))
     assert(conf.get(KyuubiSparkUtil.HDFS_CLIENT_CACHE) === "true")
