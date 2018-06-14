@@ -22,7 +22,6 @@ package yaooqinn.kyuubi.utils
 import org.apache.spark.SparkFunSuite
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.junit.rules.TestRule
 
 class ReflectUtilsSuite extends SparkFunSuite {
 
@@ -37,14 +36,16 @@ class ReflectUtilsSuite extends SparkFunSuite {
   }
 
   test("reflect utils init class with one param") {
-    try {
-      val testClassInstance =
-        ReflectUtils.newInstance(
-          classOf[TestClass1].getName, Seq(classOf[TestClass0]), Seq(new TestClass0))
-      assert(testClassInstance.asInstanceOf[TestClass1].isInstanceOf[TestClass1])
-    } catch {
-      case e: Exception => throw e
-    }
+    val testClassInstance =
+      ReflectUtils.newInstance(
+        classOf[TestClass1].getName, Seq(classOf[TestClass0]), Seq(new TestClass0))
+    assert(testClassInstance.asInstanceOf[TestClass1].isInstanceOf[TestClass1])
+    val e = intercept[IllegalArgumentException](ReflectUtils.newInstance(null, null, null))
+    assert(e.getMessage.contains("class name could not be null!"))
+    val e2 = intercept[IllegalArgumentException](
+      ReflectUtils.newInstance(
+        classOf[TestClass1].getName, Seq(classOf[TestClass0]), Seq(new TestClass0, "dummy")))
+    assert(e2.getMessage.contains("each params should have a class type!"))
   }
 
   test("reflect utils init class with multiple params") {
@@ -70,11 +71,19 @@ class ReflectUtilsSuite extends SparkFunSuite {
       ReflectUtils.findClass("yaooqinn.kyuubi.NonExistTestClass"))
 
     assert(ReflectUtils.findClass(classOf[TestClass0].getName) == classOf[TestClass0])
+    assert(ReflectUtils.findClass("yaooqinn.kyuubi.NonExistTestClass", silence = true) === null)
   }
 
   test("invoke static method") {
       val clz = ReflectUtils.findClass(className = classOf[TestClass0].getName)
       assert(ReflectUtils.invokeStaticMethod(clz, "staticTest").asInstanceOf[Int] === 1)
+    intercept[NoSuchMethodException](ReflectUtils.invokeStaticMethod(clz, "dummy"))
+  }
+
+  test("invoke method") {
+    val t = new TestClass3
+    assert(ReflectUtils.invokeMethod(t, "test") === 1)
+    intercept[NoSuchMethodException](ReflectUtils.invokeMethod(t, "dummy"))
   }
 
   test("testSuperField") {
@@ -108,6 +117,8 @@ class ReflectUtilsSuite extends SparkFunSuite {
     assert(TestClass0.testObj === "test")
     assert(TestClass0.testInt === 2)
 
+    intercept[NoSuchFieldException](ReflectUtils.setFieldValue(o, "nume", "test"))
+    intercept[IllegalArgumentException](ReflectUtils.setFieldValue(o, "num", "test"))
   }
 
   test("test reflect module") {
@@ -132,7 +143,9 @@ class TestTrait {
 class TestClass0()
 class TestClass1(arg1: TestClass0)
 class TestClass2(arg1: String, arg2: TestClass0)
-class TestClass3 extends TestTrait
+class TestClass3 extends TestTrait {
+  def test: Long = 1L
+}
 
 object TestClass0 {
   def staticTest(): Int = 1
