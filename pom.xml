@@ -491,6 +491,7 @@
                         <exclude>**/org/apache/spark/launcher/*.class</exclude>
                         <exclude>**/org/apache/spark/deploy/*.class</exclude>
                         <exclude>**/org/apache/spark/SparkEnv.class</exclude>
+                        <exclude>**/org/apache/spark/sql/hive/client/*.class</exclude>
                     </excludes>
                 </configuration>
                 <executions>
