@@ -94,7 +94,7 @@ class KyuubiAuthFactorySuite extends SparkFunSuite {
 
     val user = UserGroupInformation.getCurrentUser.getShortUserName
     val e = intercept[KyuubiSQLException](auth.getDelegationToken(user, user))
-    assert(e.getMessage.contains("Error retrieving delegation token for user Kent"))
+    assert(e.getMessage.contains(s"Error retrieving delegation token for user $user"))
     assert(e.toTStatus.getSqlState === "08S01")
     val e1 = intercept[KyuubiSQLException](auth.cancelDelegationToken(""))
     assert(e1.getMessage.contains("Error canceling delegation token"))
