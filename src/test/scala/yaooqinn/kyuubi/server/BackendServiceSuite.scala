@@ -21,9 +21,8 @@ import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
 
 import yaooqinn.kyuubi.KyuubiSQLException
-import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType}
-import yaooqinn.kyuubi.cli.FetchOrientation.FETCH_FIRST
-import yaooqinn.kyuubi.operation.{CANCELED, CLOSED, RUNNING}
+import yaooqinn.kyuubi.cli.GetInfoType
+import yaooqinn.kyuubi.operation.{CANCELED, RUNNING}
 
 class BackendServiceSuite extends SparkFunSuite {
 
@@ -31,7 +30,7 @@ class BackendServiceSuite extends SparkFunSuite {
     assert(BackendService.SERVER_VERSION === TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8)
   }
 
-  test("a") {
+  test("backend service function tests") {
     val backendService = new BackendService()
     val conf = new SparkConf(loadDefaults = true).setAppName("spark session test")
     conf.remove(KyuubiSparkUtil.CATALOG_IMPL)
@@ -68,7 +67,8 @@ class BackendServiceSuite extends SparkFunSuite {
         session,
         GetInfoType.DBMS_VERSION).toTGetInfoValue.getStringValue === KyuubiSparkUtil.SPARK_VERSION)
 
-    val op1 = backendService.executeStatement(session, "show tables")
+    val showTables = "show tables"
+    val op1 = backendService.executeStatement(session, showTables)
     val op2 = backendService.executeStatementAsync(session, "show databases")
     val e1 = intercept[KyuubiSQLException](backendService.getTypeInfo(session))
     assert(e1.toTStatus.getErrorMessage === "Method Not Implemented!")
@@ -84,6 +84,5 @@ class BackendServiceSuite extends SparkFunSuite {
     assert(backendService.getResultSetMetadata(op1).head.name === "Result")
     backendService.cancelOperation(op1)
     assert(backendService.getOperationStatus(op1).getState === CANCELED)
-    backendService.closeOperation(op2)
   }
 }
