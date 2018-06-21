@@ -20,12 +20,14 @@ package yaooqinn.kyuubi
 import org.apache.spark.{SparkConf, SparkContext, SparkFunSuite}
 import org.apache.spark.sql.SparkSession
 
+import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.utils.ReflectUtils
 
 class SparkSessionReflectionSuite extends SparkFunSuite {
 
   test("SparkSession initialization with sc in reflecting") {
     val conf = new SparkConf(loadDefaults = true).setMaster("local").setAppName("sc_init")
+    KyuubiServer.setupCommonConfig(conf)
     val sc = ReflectUtils
       .newInstance(classOf[SparkContext].getName, Seq(classOf[SparkConf]), Seq(conf))
       .asInstanceOf[SparkContext]
