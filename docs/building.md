@@ -59,5 +59,6 @@ For more information about the ScalaTest Maven Plugin, refer to the [ScalaTest d
 
 [Configuration Guide](https://yaooqinn.github.io/kyuubi/docs/configurations.html)  
 [Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html)  
+[Kyuubi ACL Management Guide](https://yaooqinn.github.io/kyuubi/docs/authorization.html)  
 [Kyuubi Architecture](https://yaooqinn.github.io/kyuubi/docs/architecture.html)  
 [Home Page](https://yaooqinn.github.io/kyuubi/)
