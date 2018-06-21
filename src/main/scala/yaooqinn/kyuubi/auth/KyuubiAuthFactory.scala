@@ -30,7 +30,7 @@ import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge.Server.ServerMode
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.authorize.ProxyUsers
 import org.apache.hive.service.cli.thrift.TCLIService
-import org.apache.spark.{SparkConf, KyuubiSparkUtil}
+import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
 import org.apache.thrift.TProcessorFactory
 import org.apache.thrift.transport.{TTransportException, TTransportFactory}

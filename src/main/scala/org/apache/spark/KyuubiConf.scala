@@ -307,6 +307,22 @@ object KyuubiConf {
       .createWithDefault("auth")
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
+  //                                      Authorization                                          //
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+
+  val AUTHORIZATION_METHOD: ConfigEntry[String] =
+  KyuubiConfigBuilder("spark.kyuubi.authorization.class")
+    .doc("A Rule[LogicalPlan] to support Kyuubi with Authorization.")
+    .stringConf
+    .createWithDefault("org.apache.spark.sql.catalyst.optimizer.Authorizer")
+
+  val AUTHORIZATION_ENABLE: ConfigEntry[Boolean] =
+    KyuubiConfigBuilder("spark.kyuubi.authorization.enabled")
+      .doc("When true, Kyuubi authorization is enabled.")
+      .booleanConf
+      .createWithDefault(false)
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                         Operation                                           //
   /////////////////////////////////////////////////////////////////////////////////////////////////
 

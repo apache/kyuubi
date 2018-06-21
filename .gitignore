@@ -32,4 +32,6 @@ local/
 out/
 hs_err_pid*
 spark-warehouse/
+metastore_db
+derby.log
 

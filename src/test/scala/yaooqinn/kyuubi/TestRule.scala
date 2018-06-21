@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,37 +17,11 @@
 
 package yaooqinn.kyuubi
 
-import org.slf4j.LoggerFactory
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.rules.Rule
 
-trait Logging {
-  lazy val logger = LoggerFactory.getLogger(this.getClass)
-
-  def debug(message: => Any): Unit = {
-    if (logger.isDebugEnabled) {
-      logger.debug(message.toString)
-    }
-  }
-
-  def info(message: => Any): Unit = {
-    if (logger.isInfoEnabled) {
-      logger.info(message.toString)
-    }
-  }
-
-  def warn(message: => Any): Unit = {
-    logger.warn(message.toString)
-  }
-
-  def warn(message: => Any, t: Throwable): Unit = {
-    logger.warn(message.toString, t)
-  }
-
-  def error(message: => Any, t: Throwable): Unit = {
-    logger.error(message.toString, t)
-  }
-
-  def error(message: => Any): Unit = {
-    logger.error(message.toString)
-  }
+object TestRule extends Rule[LogicalPlan] {
+  override def apply(plan: LogicalPlan): LogicalPlan = plan
 }
 
+object TestWrongRule
