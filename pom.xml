@@ -23,7 +23,7 @@
     <groupId>yaooqinn</groupId>
     <artifactId>kyuubi</artifactId>
     <name>Kyuubi Thrift Server</name>
-    <version>0.2.0</version>
+    <version>0.3.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <licenses>
@@ -491,6 +491,7 @@
                         <exclude>**/org/apache/spark/launcher/*.class</exclude>
                         <exclude>**/org/apache/spark/deploy/*.class</exclude>
                         <exclude>**/org/apache/spark/SparkEnv.class</exclude>
+                        <exclude>**/org/apache/spark/sql/hive/client/*.class</exclude>
                     </excludes>
                 </configuration>
                 <executions>

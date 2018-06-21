@@ -109,16 +109,11 @@ object KyuubiServer extends Logging {
     conf.set("spark.hadoop.hive.cluster.delegation.token.store.class",
       "org.apache.hadoop.hive.thrift.MemoryTokenStore")
 
-    // Spark' hive metastore client uses Isolated ClassLoader for instantiation, which is conflict
-    // with [[KyuubiFirstClassLoader]] while using default builtin hive jars. This may be a Spark's
-    // bug, so we bypassing it here by directly setting it to the builtin dir.
     conf.getOption(KyuubiSparkUtil.METASTORE_JARS) match {
       case None | Some("builtin") =>
-        val metastoreJars = KyuubiSparkUtil.SPARK_JARS_DIR + File.separator + "*"
-        info(s"Using Spark's bulitin ones for ${KyuubiSparkUtil.METASTORE_JARS}")
-        conf.set(KyuubiSparkUtil.METASTORE_JARS, metastoreJars)
-      case Some(other) =>
-        info(s"Using user specified ${KyuubiSparkUtil.METASTORE_JARS}=$other")
+      case _ =>
+        conf.set(KyuubiSparkUtil.METASTORE_JARS, "builtin")
+        info(s"Kyuubi prefer ${KyuubiSparkUtil.METASTORE_JARS} to be builtin ones")
     }
     // Set missing Kyuubi configs to SparkConf
     KyuubiConf.getAllDefaults.foreach(kv => conf.setIfMissing(kv._1, kv._2))

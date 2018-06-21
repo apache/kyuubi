@@ -77,7 +77,7 @@ object KyuubiSQLException {
       trace: Array[StackTraceElement]): List[String] = {
     val builder = new StringBuilder
     builder.append('*').append(ex.getClass.getName).append(':')
-    builder.append(ex.getMessage.stripSuffix(";")).append(':')
+    Option(ex.getMessage).map(_.stripSuffix(";")).foreach(msg => builder.append(msg).append(":"))
     builder.append(trace.length).append(':').append(trace.length - 1)
     List(builder.toString) ++ trace.map { t =>
       builder.setLength(0)
