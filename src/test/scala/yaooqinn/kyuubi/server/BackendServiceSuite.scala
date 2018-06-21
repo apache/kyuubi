@@ -26,16 +26,23 @@ import yaooqinn.kyuubi.operation.{CANCELED, RUNNING}
 
 class BackendServiceSuite extends SparkFunSuite {
 
-  test("verify default cli service protocol") {
-    assert(BackendService.SERVER_VERSION === TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8)
+  var backendService: BackendService = _
+  val user = KyuubiSparkUtil.getCurrentUserName()
+  val conf = new SparkConf(loadDefaults = true).setAppName("be test")
+  KyuubiServer.setupCommonConfig(conf)
+  conf.remove(KyuubiSparkUtil.CATALOG_IMPL)
+  conf.setMaster("local")
+
+  override protected def beforeAll(): Unit = {
+    backendService = new BackendService()
+  }
+
+  protected override def afterAll(): Unit = {
+    backendService.stop()
+    backendService = null
   }
 
   test("backend service function tests") {
-    val backendService = new BackendService()
-    val conf = new SparkConf(loadDefaults = true).setAppName("spark session test")
-    conf.remove(KyuubiSparkUtil.CATALOG_IMPL)
-    conf.setMaster("local")
-    KyuubiServer.setupCommonConfig(conf)
     assert(backendService.getName === classOf[BackendService].getSimpleName)
     // before init
     assert(backendService.getSessionManager === null)
@@ -47,7 +54,6 @@ class BackendServiceSuite extends SparkFunSuite {
     assert(backendService.getConf !== null)
     backendService.start()
 
-    val user = KyuubiSparkUtil.getCurrentUserName()
     val session = backendService.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8,
       user,
