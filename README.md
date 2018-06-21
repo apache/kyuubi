@@ -2,7 +2,7 @@
 
  <img style="zoom: 0.3141592653589" src="docs/imgs/kyuubi.png" />
 
-**Kyuubi** is an enhanced edition of the [Apache Spark](http://spark.apache.org)'s primordial
+Kyuubi is an enhanced edition of the [Apache Spark](http://spark.apache.org)'s primordial
  [Thrift JDBC/ODBC Server](http://spark.apache.org/docs/latest/sql-programming-guide.html#running-the-thrift-jdbcodbc-server). It is mainly designed for directly running SQL towards a cluster with all components including HDFS, YARN, Hive MetaStore, and itself secured. Kyuubi is a Spark SQL thrift service with end-to-end multi tenant guaranteed. Please go to [Kyuubi Architecture](https://yaooqinn.github.io/kyuubi/docs/architecture.html) to learn more if you are interested.
 
 Basically, the Thrift JDBC/ODBC Server as a similar ad-hoc SQL query service of [Apache Hive](https://hive.apache.org)'s [HiveServer2](https://cwiki.apache.org/confluence/display/Hive/HiveServer2+Overview) for Spark SQL, acts as a distributed query engine using its JDBC/ODBC or command-line interface.
@@ -10,7 +10,7 @@ In this mode, end-users or applications can interact with Spark SQL directly to 
 
 But unfortunately, due to the limitations of Spark's own architecture，to be used as an enterprise-class product, there are a number of problems compared with HiveServer2，such as multi-tenant isolation, authentication/authorization, high concurrency, high availability, and so on. And the Apache Spark community's support for this module has been in a state of prolonged stagnation.         
 
-**Kyuubi** has enhanced the Thrift JDBC/ODBC Server in some ways for solving these existing problems, as shown in the following table.
+Kyuubi has enhanced the Thrift JDBC/ODBC Server in some ways for solving these existing problems, as shown in the following table.
 
 Features|Spark Thrift Server|Kyuubi|Comments
  ---|---|---|---
