@@ -84,5 +84,7 @@ class BackendServiceSuite extends SparkFunSuite {
     assert(backendService.getResultSetMetadata(op1).head.name === "Result")
     backendService.cancelOperation(op1)
     assert(backendService.getOperationStatus(op1).getState === CANCELED)
+
+    backendService.getSessionManager.getSession(session).sparkSession.stop()
   }
 }
