@@ -130,5 +130,6 @@ Please refer to the [Apache Hadoop](http://hadoop.apache.org)'s online documenta
 
 [Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)   
 [Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html)  
+[Kyuubi ACL Management Guide](https://yaooqinn.github.io/kyuubi/docs/authorization.html)  
 [Kyuubi Architecture](https://yaooqinn.github.io/kyuubi/docs/architecture.html)  
 [Home Page](https://yaooqinn.github.io/kyuubi/)
