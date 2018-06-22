@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,23 +25,23 @@ import org.apache.spark.ui.KyuubiServerTab
 
 object KyuubiServerMonitor {
 
-  private[this] val uiTabs = new HashMap[User, KyuubiServerTab]()
+  private[this] val uiTabs = new HashMap[String, KyuubiServerTab]()
 
-  private[this] val listeners = new HashMap[User, KyuubiServerListener]()
+  private[this] val listeners = new HashMap[String, KyuubiServerListener]()
 
-  def setListener(user: User, sparkListener: KyuubiServerListener): Unit = {
+  def setListener(user: String, sparkListener: KyuubiServerListener): Unit = {
     listeners.put(user, sparkListener)
   }
 
-  def getListener(user: User): Option[KyuubiServerListener] = {
+  def getListener(user: String): Option[KyuubiServerListener] = {
     listeners.get(user)
   }
 
-  def addUITab(user: User, ui: KyuubiServerTab): Unit = {
+  def addUITab(user: String, ui: KyuubiServerTab): Unit = {
     uiTabs.put(user, ui)
   }
 
-  def detachUITab(user: User): Unit = {
+  def detachUITab(user: String): Unit = {
     listeners.remove(user)
     uiTabs.get(user).foreach(_.detach())
   }
