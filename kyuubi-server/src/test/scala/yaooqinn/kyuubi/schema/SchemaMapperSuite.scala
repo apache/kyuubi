@@ -26,6 +26,7 @@ import org.apache.spark.sql.catalyst.expressions.GenericRowWithSchema
 import org.apache.spark.sql.types._
 
 class SchemaMapperSuite extends SparkFunSuite {
+
   test("spark row schema to thrift type id and table schema") {
     val value = Array(null,
       true,
@@ -87,6 +88,7 @@ class SchemaMapperSuite extends SparkFunSuite {
     assert(SchemaMapper.toTTypeId(row.schema(13).dataType) === TTypeId.ARRAY_TYPE)
     assert(SchemaMapper.toTTypeId(row.schema(14).dataType) === TTypeId.MAP_TYPE)
     assert(SchemaMapper.toTTypeId(row.schema(15).dataType) === TTypeId.STRUCT_TYPE)
+    intercept[IllegalArgumentException](SchemaMapper.toTTypeId(ObjectType(classOf[Row])))
 
     assert(SchemaMapper.toTTableSchema(row.schema).getColumnsSize === 16)
     assert(SchemaMapper.toTTableSchema(row.schema).getColumns.get(0).getColumnName === "c0")
