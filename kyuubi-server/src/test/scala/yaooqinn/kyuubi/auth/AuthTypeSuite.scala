@@ -23,7 +23,8 @@ import yaooqinn.kyuubi.service.ServiceException
 
 class AuthTypeSuite extends SparkFunSuite {
 
-  test("testName") {
+  test("test name") {
+    assert(new AuthType {}.name === "")
     assert(AuthType.NONE.name === "NONE")
     assert(AuthType.KERBEROS.name === "KERBEROS")
     assert(AuthType.NOSASL.name === "NOSASL")
