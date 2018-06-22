@@ -32,7 +32,7 @@ private[kyuubi] class AuthzHelper(conf: SparkConf) extends Logging {
       val authzMethod = conf.get(AUTHORIZATION_METHOD.key)
       val maybeRule = ReflectUtils.reflectModule(authzMethod, silent = true)
       maybeRule match {
-        case Some(authz) if authz.isInstanceOf[Rule[LogicalPlan]] =>
+        case Some(authz) if authz.isInstanceOf[Rule[_]] =>
           Seq(authz.asInstanceOf[Rule[LogicalPlan]])
         case _ => Nil
       }

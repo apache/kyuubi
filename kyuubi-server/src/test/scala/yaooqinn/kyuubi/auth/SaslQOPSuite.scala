@@ -19,27 +19,24 @@ package yaooqinn.kyuubi.auth
 
 import org.apache.spark.SparkFunSuite
 
-import yaooqinn.kyuubi.service.ServiceException
+class SaslQOPSuite extends SparkFunSuite {
 
-class AuthTypeSuite extends SparkFunSuite {
-
-  test("test name") {
-    assert(new AuthType {}.name === "")
-    assert(AuthType.NONE.name === "NONE")
-    assert(AuthType.KERBEROS.name === "KERBEROS")
-    assert(AuthType.NOSASL.name === "NOSASL")
+  test("SaslQOP toString") {
+    assert(new SaslQOP {}.toString === "auth, auth-int, auth-conf")
+    assert(SaslQOP.AUTH.toString === "auth")
+    assert(SaslQOP.AUTH_INT.toString === "auth-int")
+    assert(SaslQOP.AUTH_CONF.toString === "auth-conf")
   }
 
-  test("to auth type") {
-    assert(AuthType.toAuthType("NONE") === AuthType.NONE)
-    assert(AuthType.toAuthType(AuthType.NONE.name) === AuthType.NONE)
-
-    assert(AuthType.toAuthType("KERBEROS") === AuthType.KERBEROS)
-    assert(AuthType.toAuthType(AuthType.KERBEROS.name) === AuthType.KERBEROS)
-
-    assert(AuthType.toAuthType("NOSASL") === AuthType.NOSASL)
-    assert(AuthType.toAuthType(AuthType.NOSASL.name) === AuthType.NOSASL)
-
-    intercept[ServiceException](AuthType.toAuthType("ELSE"))
+  test("SaslQOP fromString") {
+    assert(SaslQOP.fromString("auth") === SaslQOP.AUTH)
+    assert(SaslQOP.fromString(SaslQOP.AUTH.toString) === SaslQOP.AUTH)
+    assert(SaslQOP.fromString("auth-int") === SaslQOP.AUTH_INT)
+    assert(SaslQOP.fromString(SaslQOP.AUTH_INT.toString) === SaslQOP.AUTH_INT)
+    assert(SaslQOP.fromString("auth-conf") === SaslQOP.AUTH_CONF)
+    assert(SaslQOP.fromString(SaslQOP.AUTH_CONF.toString) === SaslQOP.AUTH_CONF)
+    val e = intercept[IllegalArgumentException](SaslQOP.fromString("xxx"))
+    assert(e.getMessage.contains("xxx"))
   }
+
 }

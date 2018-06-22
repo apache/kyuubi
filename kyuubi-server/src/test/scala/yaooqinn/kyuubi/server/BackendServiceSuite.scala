@@ -80,6 +80,8 @@ class BackendServiceSuite extends SparkFunSuite {
     assert(e1.toTStatus.getErrorMessage === "Method Not Implemented!")
     val e2 = intercept[KyuubiSQLException](backendService.getCatalogs(session))
     assert(e2.toTStatus.getErrorMessage === "Method Not Implemented!")
+    assert(KyuubiSQLException.toTStatus(e2).getErrorMessage === "Method Not Implemented!")
+
     intercept[KyuubiSQLException](backendService.getSchemas(session, "", ""))
     intercept[KyuubiSQLException](backendService.getTables(session, "", "", "", null))
     intercept[KyuubiSQLException](backendService.getTableTypes(session))
