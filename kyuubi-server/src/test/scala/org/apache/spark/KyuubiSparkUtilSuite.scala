@@ -25,7 +25,8 @@ import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.util.SignalUtils
 
-import yaooqinn.kyuubi.{KyuubiServerException, Logging, SPARK_COMPILE_VERSION}
+import yaooqinn.kyuubi.{Logging, SPARK_COMPILE_VERSION}
+import yaooqinn.kyuubi.service.ServiceException
 import yaooqinn.kyuubi.utils.ReflectUtils
 
 class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
@@ -117,7 +118,7 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
     val e1: Throwable = null
     assert(KyuubiSparkUtil.exceptionString(e1) === "")
     val msg = "test exception"
-    val e2 = new KyuubiServerException(msg, e1)
+    val e2 = new ServiceException(msg, e1)
     assert(KyuubiSparkUtil.exceptionString(e2).contains(msg))
   }
 

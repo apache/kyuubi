@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,6 +18,8 @@
 package yaooqinn
 
 import java.util.Properties
+
+import yaooqinn.kyuubi.service.ServiceException
 
 package object kyuubi {
 
@@ -50,16 +52,16 @@ package object kyuubi {
               props.getProperty("date", unknown)
             )
           } catch {
-            case e: Exception => throw new KyuubiServerException(e)
+            case e: Exception => throw new ServiceException(e)
           } finally {
             try {
               res.close()
             } catch {
-              case e: Exception => throw new KyuubiServerException(e)
+              case e: Exception => throw new ServiceException(e)
             }
           }
 
-        case _ => throw new KyuubiServerException(s"Could not find $buildFile")
+        case _ => throw new ServiceException(s"Could not find $buildFile")
       }
     }
   }

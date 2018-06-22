@@ -25,7 +25,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import org.apache.spark.deploy.SparkHadoopUtil
 
-import yaooqinn.kyuubi.KyuubiServerException
+import yaooqinn.kyuubi.service.ServiceException
 import yaooqinn.kyuubi.utils.ReflectUtils
 
 class KyuubiServerSuite extends SparkFunSuite {
@@ -65,7 +65,7 @@ class KyuubiServerSuite extends SparkFunSuite {
     val version = "1.6.3"
     ReflectUtils.setFieldValue(KyuubiSparkUtil, "SPARK_VERSION", version)
     assert(KyuubiSparkUtil.SPARK_VERSION === version)
-    val e = intercept[KyuubiServerException](KyuubiServer.validate())
+    val e = intercept[ServiceException](KyuubiServer.validate())
     assert(e.getMessage.startsWith(version))
     ReflectUtils.setFieldValue(KyuubiSparkUtil, "SPARK_VERSION", oldVersion)
     assert(KyuubiSparkUtil.SPARK_VERSION === oldVersion)

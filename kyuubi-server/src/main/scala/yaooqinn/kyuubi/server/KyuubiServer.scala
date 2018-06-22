@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,7 +25,7 @@ import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf}
 
 import yaooqinn.kyuubi._
 import yaooqinn.kyuubi.ha.HighAvailabilityUtils
-import yaooqinn.kyuubi.service.CompositeService
+import yaooqinn.kyuubi.service.{CompositeService, ServiceException}
 import yaooqinn.kyuubi.utils.HadoopUtils
 
 /**
@@ -131,12 +131,12 @@ object KyuubiServer extends Logging {
 
   private[kyuubi] def validate(): Unit = {
     if (KyuubiSparkUtil.majorVersion(KyuubiSparkUtil.SPARK_VERSION) < 2) {
-      throw new KyuubiServerException(s"${KyuubiSparkUtil.SPARK_VERSION} is too old for Kyuubi" +
+      throw new ServiceException(s"${KyuubiSparkUtil.SPARK_VERSION} is too old for Kyuubi" +
         s" Server.")
     }
 
-    info(s"Starting Kyuubi Server version ${KYUUBI_VERSION} compiled with Spark version:" +
-      s" ${SPARK_COMPILE_VERSION}, and run with Spark Version ${KyuubiSparkUtil.SPARK_VERSION}")
+    info(s"Starting Kyuubi Server version $KYUUBI_VERSION compiled with Spark version:" +
+      s" $SPARK_COMPILE_VERSION, and run with Spark Version ${KyuubiSparkUtil.SPARK_VERSION}")
     if (SPARK_COMPILE_VERSION != KyuubiSparkUtil.SPARK_VERSION) {
       warn(s"Running Kyuubi with Spark ${KyuubiSparkUtil.SPARK_VERSION}, which is compiled by" +
         s" $SPARK_COMPILE_VERSION. PLEASE be aware of possible incompatibility issues")
