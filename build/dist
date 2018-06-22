@@ -26,6 +26,7 @@
 
 set -o pipefail
 set -e
+set -x
 
 KYUUBI_HOME="$(cd "`dirname "$0"`/.."; pwd)"
 DISTDIR="$KYUUBI_HOME/dist"
@@ -137,7 +138,7 @@ echo "Kyuubi $VERSION $GITREVSTRING built for Spark $SPARK_VERSION" > "$DISTDIR/
 echo "Build flags: $@" >> "$DISTDIR/RELEASE"
 
 # Copy jar
-cp "$KYUUBI_HOME/target/kyuubi-$VERSION.jar" "$DISTDIR/lib/"
+cp "$KYUUBI_HOME/target/kyuubi-server-$VERSION.jar" "$DISTDIR/lib/"
 # Copy license and ASF files
 cp "$KYUUBI_HOME/LICENSE" "$DISTDIR"
 cp -r "$KYUUBI_HOME/bin" "$DISTDIR"
