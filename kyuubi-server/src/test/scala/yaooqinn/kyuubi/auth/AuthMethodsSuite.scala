@@ -24,8 +24,9 @@ import org.apache.spark.SparkFunSuite
 class AuthMethodsSuite extends SparkFunSuite {
 
   test("testGetValidAuthMethod") {
+    assert(new AuthMethods{}.authMethodStr === null)
     assert(AuthMethods.getValidAuthMethod("NONE") === AuthMethods.NONE)
+    assert(AuthMethods.NONE.authMethodStr === "NONE")
     intercept[AuthenticationException](AuthMethods.getValidAuthMethod("ELSE"))
   }
-
 }
