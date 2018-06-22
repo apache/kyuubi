@@ -97,6 +97,7 @@ class ReflectUtilsSuite extends SparkFunSuite {
     assert(ReflectUtils.getFieldValue(o, "name") === "super")
     assert(ReflectUtils.getFieldValue(TestClass0, "testObj") === "1")
     assert(ReflectUtils.getFieldValue(TestClass0, "testInt") === 1)
+    intercept[NoSuchFieldException](ReflectUtils.getFieldValue(o, "age"))
   }
 
   test("testSetFieldValue") {
