@@ -88,17 +88,20 @@ case class RowBasedSet(types: StructType, rows: Seq[Row]) extends RowSet {
 
       case DateType =>
         val tStringValue = new TStringValue
-        if (!row.isNullAt(ordinal)) tStringValue.setValue(row.getDate(ordinal).toString)
+        if (!row.isNullAt(ordinal)) tStringValue.setValue(row.get(ordinal).toString)
         TColumnValue.stringVal(tStringValue)
 
       case TimestampType =>
         val tStringValue = new TStringValue
-        if (!row.isNullAt(ordinal)) tStringValue.setValue(row.getTimestamp(ordinal).toString)
+        if (!row.isNullAt(ordinal)) tStringValue.setValue(row.get(ordinal).toString)
         TColumnValue.stringVal(tStringValue)
 
       case BinaryType =>
         val tStringValue = new TStringValue
-        if (!row.isNullAt(ordinal)) tStringValue.setValue(row.getAs[Array[Byte]](ordinal).toString)
+        if (!row.isNullAt(ordinal)) {
+          val bytes = row.getAs[Array[Byte]](ordinal)
+          tStringValue.setValue(SparkSQLUtils.toHiveString((bytes, types(ordinal).dataType)))
+        }
         TColumnValue.stringVal(tStringValue)
 
       case _: ArrayType | _: StructType | _: MapType =>

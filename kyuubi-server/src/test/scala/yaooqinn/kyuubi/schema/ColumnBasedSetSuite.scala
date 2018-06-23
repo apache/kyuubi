@@ -103,8 +103,6 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(hiveRowSet.getColumns.get(1).get(4).equals("55"))
   }
 
-
-
   test("get global row iterator with array to iterator") {
 
     def getNextRowSet(maxRowsL: Long, ifDrop: Boolean = false): RowSet = {
