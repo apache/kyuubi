@@ -49,8 +49,8 @@ class KyuubiServerListener(conf: SparkConf) extends SparkListener {
   override def onJobStart(jobStart: SparkListenerJobStart): Unit = synchronized {
     for {
       props <- Option(jobStart.properties)
-      groupIdKey <- props.stringPropertyNames().asScala.
-        filter(_.startsWith(KyuubiSparkUtil.getJobGroupIDKey()))
+      groupIdKey <- props.stringPropertyNames().asScala
+        .filter(_.startsWith(KyuubiSparkUtil.getJobGroupIDKey()))
       groupId <- Option(props.getProperty(groupIdKey))
       (_, info) <- executionList if info.groupId == groupId
     } {
