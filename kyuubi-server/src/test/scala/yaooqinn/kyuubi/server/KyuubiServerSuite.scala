@@ -25,7 +25,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import org.apache.spark.deploy.SparkHadoopUtil
 
-import yaooqinn.kyuubi.service.ServiceException
+import yaooqinn.kyuubi.service.{ServiceException, State}
 import yaooqinn.kyuubi.utils.ReflectUtils
 
 class KyuubiServerSuite extends SparkFunSuite {
@@ -77,13 +77,19 @@ class KyuubiServerSuite extends SparkFunSuite {
     KyuubiServer.setupCommonConfig(conf)
     val server = new KyuubiServer()
     server.init(conf)
+    assert(server.getServiceState === State.INITED)
     assert(server.feService !== null)
     assert(server.beService !== null)
     assert(server.beService.getSessionManager !== null)
     assert(server.beService.getSessionManager.getOperationMgr !== null)
+    assert(server.getStartTime === 0)
     server.start()
+    assert(server.getServices.nonEmpty)
+    assert(server.getStartTime !== 0)
+    assert(server.getServiceState === State.STARTED)
     assert(ReflectUtils.getFieldValue(server, "started").asInstanceOf[AtomicBoolean].get)
     server.stop()
+    assert(server.getServiceState === State.STOPPED)
     assert(!ReflectUtils.getFieldValue(server, "started").asInstanceOf[AtomicBoolean].get)
   }
 
