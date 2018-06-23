@@ -17,7 +17,6 @@
 
 package yaooqinn.kyuubi.server
 
-import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 
 import org.apache.hadoop.security.UserGroupInformation
@@ -25,8 +24,7 @@ import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf}
 
 import yaooqinn.kyuubi._
 import yaooqinn.kyuubi.ha.HighAvailabilityUtils
-import yaooqinn.kyuubi.service.{CompositeService, ServiceException}
-import yaooqinn.kyuubi.utils.HadoopUtils
+import yaooqinn.kyuubi.service.{CompositeService, ServiceException, ServiceUtils}
 
 /**
  * Main entrance of Kyuubi Server
@@ -143,7 +141,7 @@ object KyuubiServer extends Logging {
     }
 
     if (UserGroupInformation.isSecurityEnabled) {
-      if (HadoopUtils.isProxyUser(UserGroupInformation.getCurrentUser)) {
+      if (ServiceUtils.isProxyUser(UserGroupInformation.getCurrentUser)) {
         warn(s"Kyuubi Server itself is started by proxying. PLEASE be aware that Kyuubi now can " +
           s"not impersonating and only for ${UserGroupInformation.getCurrentUser.
             getShortUserName} to connect")

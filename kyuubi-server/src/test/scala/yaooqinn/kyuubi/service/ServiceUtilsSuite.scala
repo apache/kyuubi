@@ -17,6 +17,7 @@
 
 package yaooqinn.kyuubi.service
 
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SparkFunSuite
 
 class ServiceUtilsSuite extends SparkFunSuite {
@@ -39,6 +40,13 @@ class ServiceUtilsSuite extends SparkFunSuite {
     assert(ServiceUtils.indexOfDomainMatch(user7) === 4)
     val user8 = "Kent*xxx/xxx"
     assert(ServiceUtils.indexOfDomainMatch(user8) === 8)
+  }
+
+  test(" is proxy user") {
+    val ugi = UserGroupInformation.getCurrentUser
+    assert(!ServiceUtils.isProxyUser(ugi))
+    val ugi2 = UserGroupInformation.createProxyUser("p", ugi)
+    assert(ServiceUtils.isProxyUser(ugi2))
   }
 
 }
