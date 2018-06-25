@@ -24,10 +24,22 @@ import yaooqinn.kyuubi.KyuubiSQLException
 
 class OperationStateSuite extends SparkFunSuite {
 
+  test("test Operation State") {
+    val state = new OperationState {
+      override def toTOperationState(): TOperationState = TOperationState.UKNOWN_STATE
+    }
+    assert(!state.isTerminal())
+    intercept[KyuubiSQLException](state.validateTransition(INITIALIZED))
+  }
+
   test("OperationState INITIALIZED") {
     val tOpState = TOperationState.INITIALIZED_STATE
     assert(INITIALIZED.toTOperationState() === tOpState)
     assert(!INITIALIZED.isTerminal())
+    INITIALIZED.validateTransition(PENDING)
+    INITIALIZED.validateTransition(RUNNING)
+    INITIALIZED.validateTransition(CANCELED)
+    INITIALIZED.validateTransition(CLOSED)
     intercept[KyuubiSQLException](INITIALIZED.validateTransition(INITIALIZED))
     intercept[KyuubiSQLException](INITIALIZED.validateTransition(FINISHED))
     intercept[KyuubiSQLException](INITIALIZED.validateTransition(ERROR))
@@ -38,6 +50,10 @@ class OperationStateSuite extends SparkFunSuite {
     val tOpState = TOperationState.RUNNING_STATE
     assert(RUNNING.toTOperationState() === tOpState)
     assert(!RUNNING.isTerminal())
+    RUNNING.validateTransition(FINISHED)
+    RUNNING.validateTransition(ERROR)
+    RUNNING.validateTransition(CANCELED)
+    RUNNING.validateTransition(CLOSED)
     intercept[KyuubiSQLException](RUNNING.validateTransition(INITIALIZED))
     intercept[KyuubiSQLException](RUNNING.validateTransition(PENDING))
     intercept[KyuubiSQLException](RUNNING.validateTransition(RUNNING))
@@ -48,6 +64,7 @@ class OperationStateSuite extends SparkFunSuite {
     val tOpState = TOperationState.FINISHED_STATE
     assert(FINISHED.toTOperationState() === tOpState)
     assert(FINISHED.isTerminal())
+    FINISHED.validateTransition(CLOSED)
     intercept[KyuubiSQLException](FINISHED.validateTransition(INITIALIZED))
     intercept[KyuubiSQLException](FINISHED.validateTransition(PENDING))
     intercept[KyuubiSQLException](FINISHED.validateTransition(RUNNING))
@@ -61,6 +78,7 @@ class OperationStateSuite extends SparkFunSuite {
     val tOpState = TOperationState.CANCELED_STATE
     assert(CANCELED.toTOperationState() === tOpState)
     assert(CANCELED.isTerminal())
+    CANCELED.validateTransition(CLOSED)
     intercept[KyuubiSQLException](CANCELED.validateTransition(INITIALIZED))
     intercept[KyuubiSQLException](CANCELED.validateTransition(PENDING))
     intercept[KyuubiSQLException](CANCELED.validateTransition(RUNNING))
@@ -88,6 +106,7 @@ class OperationStateSuite extends SparkFunSuite {
     val tOpState = TOperationState.ERROR_STATE
     assert(ERROR.toTOperationState() === tOpState)
     assert(ERROR.isTerminal())
+    ERROR.validateTransition(CLOSED)
     intercept[KyuubiSQLException](ERROR.validateTransition(INITIALIZED))
     intercept[KyuubiSQLException](ERROR.validateTransition(PENDING))
     intercept[KyuubiSQLException](ERROR.validateTransition(RUNNING))
@@ -115,6 +134,11 @@ class OperationStateSuite extends SparkFunSuite {
     val tOpState = TOperationState.PENDING_STATE
     assert(PENDING.toTOperationState() === tOpState)
     assert(!PENDING.isTerminal())
+    PENDING.validateTransition(RUNNING)
+    PENDING.validateTransition(FINISHED)
+    PENDING.validateTransition(CANCELED)
+    PENDING.validateTransition(ERROR)
+    PENDING.validateTransition(CLOSED)
     intercept[KyuubiSQLException](PENDING.validateTransition(INITIALIZED))
     intercept[KyuubiSQLException](PENDING.validateTransition(PENDING))
     intercept[KyuubiSQLException](PENDING.validateTransition(UNKNOWN))
