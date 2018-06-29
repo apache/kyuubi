@@ -17,6 +17,8 @@
 
 package yaooqinn.kyuubi.ha
 
+import java.net.UnknownHostException
+
 import org.apache.curator.test.TestingServer
 import org.apache.spark.{KyuubiConf, SparkConf, SparkFunSuite}
 import org.apache.spark.KyuubiConf.HA_ZOOKEEPER_CONNECTION_MAX_RETRIES
@@ -92,8 +94,7 @@ class HighAvailabilityUtilsSuite extends SparkFunSuite with BeforeAndAfterEach {
     conf.set(KyuubiConf.HA_ZOOKEEPER_CLIENT_PORT.key, "2181")
     server.init(conf)
     server.start()
-    val e = intercept[ServiceException](HighAvailabilityUtils.addServerInstanceToZooKeeper(server))
-    assert(e.getCause.isInstanceOf[ConnectionLossException])
+    intercept[UnknownHostException](HighAvailabilityUtils.addServerInstanceToZooKeeper(server))
   }
 
   test("Is Support Dynamic Service Discovery") {
