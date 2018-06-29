@@ -86,6 +86,7 @@ class HighAvailabilityUtilsSuite extends SparkFunSuite with BeforeAndAfterEach {
     server.start()
     val e = intercept[ServiceException](HighAvailabilityUtils.addServerInstanceToZooKeeper(server))
     assert(e.getCause.isInstanceOf[ConnectionLossException])
+    assert(e.getMessage.contains("ZooKeeper is still unreachable"))
   }
 
   test("Add Server Instance To ZooKeeper with wrong host and right port") {

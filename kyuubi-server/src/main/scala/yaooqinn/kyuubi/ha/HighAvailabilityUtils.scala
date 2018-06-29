@@ -105,7 +105,7 @@ private[kyuubi] object HighAvailabilityUtils extends Logging {
         znodeDataUTF8)
       znode.start()
       if (!znode.waitForInitialCreate(znodeTimeout, TimeUnit.SECONDS)) {
-        throw new ServiceException("Max znode creation wait time: " + znodeTimeout + "s exhausted")
+        throwServiceEx(s"Max znode creation wait time $znodeTimeout s exhausted")
       }
       setDeregisteredWithZooKeeper(false)
       znodePath = znode.getActualPath
@@ -231,8 +231,8 @@ private[kyuubi] object HighAvailabilityUtils extends Logging {
     this.deregisteredWithZooKeeper = deregisteredWithZooKeeper
   }
 
-  class JaasConfiguration(loginContextName: String, principal: String, keyTabFile: String)
-    extends Configuration {
+  private[this] class JaasConfiguration(
+      loginContextName: String, principal: String, keyTabFile: String) extends Configuration {
 
     final private val baseConfig: Configuration = Configuration.getConfiguration
 
