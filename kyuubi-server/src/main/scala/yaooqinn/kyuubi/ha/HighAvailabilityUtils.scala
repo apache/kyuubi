@@ -31,8 +31,8 @@ import org.apache.curator.retry.ExponentialBackoffRetry
 import org.apache.hadoop.security.{SecurityUtil, UserGroupInformation}
 import org.apache.hadoop.security.authentication.util.KerberosUtil
 import org.apache.hive.common.util.HiveVersionInfo
+import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
-import org.apache.spark.{SparkConf, KyuubiSparkUtil}
 import org.apache.zookeeper._
 import org.apache.zookeeper.data.ACL
 
@@ -41,7 +41,7 @@ import yaooqinn.kyuubi.server.{FrontendService, KyuubiServer}
 
 object HighAvailabilityUtils extends Logging {
 
-  val ZOOKEEPER_PATH_SEPARATOR = "/"
+  private[this] val ZOOKEEPER_PATH_SEPARATOR = "/"
 
   private[this] var zooKeeperClient: CuratorFramework = _
   private[this] var znode: PersistentEphemeralNode = _
@@ -59,9 +59,7 @@ object HighAvailabilityUtils extends Logging {
     val zooKeeperEnsemble = getQuorumServers(conf)
     val rootNamespace = conf.get(HA_ZOOKEEPER_NAMESPACE.key)
     val instanceURI = getServerInstanceURI(server.feService)
-
     setUpZooKeeperAuth(conf)
-
     val sessionTimeout = conf.getTimeAsMs(HA_ZOOKEEPER_SESSION_TIMEOUT.key).toInt
     val baseSleepTime = conf.getTimeAsMs(HA_ZOOKEEPER_CONNECTION_BASESLEEPTIME.key).toInt
     val maxRetries = conf.get(HA_ZOOKEEPER_CONNECTION_MAX_RETRIES.key).toInt
@@ -83,9 +81,11 @@ object HighAvailabilityUtils extends Logging {
         .forPath(ZOOKEEPER_PATH_SEPARATOR + rootNamespace)
       info("Created the root name space: " + rootNamespace + " on ZooKeeper for KyuubiServer")
     } catch {
-      case e: KeeperException if e.code ne KeeperException.Code.NODEEXISTS =>
-        error("Unable to create KyuubiServer namespace: " + rootNamespace + " on ZooKeeper", e)
-        throw e
+      case e: KeeperException =>
+        if (e.code ne KeeperException.Code.NODEEXISTS) {
+          error("Unable to create KyuubiServer namespace: " + rootNamespace + " on ZooKeeper", e)
+          throw e
+        }
     }
     // Create a znode under the rootNamespace parent for this instance of the server
     // Znode name: serverUri=host:port;version=versionInfo;sequence=sequenceNumber
@@ -178,7 +178,7 @@ object HighAvailabilityUtils extends Logging {
    * @return
    */
   @throws[Exception]
-  private def setUpZooKeeperAuth(conf: SparkConf): Unit = {
+  private[this] def setUpZooKeeperAuth(conf: SparkConf): Unit = {
     if (UserGroupInformation.isSecurityEnabled) {
       var principal = conf.get(KyuubiSparkUtil.PRINCIPAL)
       val keyTabFile = conf.get(KyuubiSparkUtil.KEYTAB)
@@ -227,10 +227,8 @@ object HighAvailabilityUtils extends Logging {
     this.deregisteredWithZooKeeper = deregisteredWithZooKeeper
   }
 
-  class JaasConfiguration(
-    loginContextName: String,
-    principal: String,
-    keyTabFile: String) extends Configuration {
+  class JaasConfiguration(loginContextName: String, principal: String, keyTabFile: String)
+    extends Configuration {
 
     final private val baseConfig: Configuration = Configuration.getConfiguration
 
@@ -250,11 +248,9 @@ object HighAvailabilityUtils extends Logging {
             krbOptions)
 
         Array[AppConfigurationEntry](kyuubiZooKeeperClientEntry)
-      }
-      else if (this.baseConfig != null) {
+      } else if (this.baseConfig != null) {
         this.baseConfig.getAppConfigurationEntry(appName)
-      }
-      else {
+      } else {
         null
       }
     }
