@@ -114,7 +114,8 @@ class KyuubiServerSuite extends SparkFunSuite {
 
     assert(!UserGroupInformation.isSecurityEnabled)
     val conf = new SparkConf(true)
-    conf.set("spark.hadoop.hadoop.security.authentication", "KERBEROS")
+    val authType = "spark.hadoop.hadoop.security.authentication"
+    conf.set(authType, "KERBEROS")
     System.setProperty("java.security.krb5.realm", kdc.getRealm)
     val hadoopConf = SparkHadoopUtil.get.newConfiguration(conf)
     UserGroupInformation.setConfiguration(hadoopConf)
@@ -127,5 +128,8 @@ class KyuubiServerSuite extends SparkFunSuite {
     if (kdc !== null) {
       kdc.stop()
     }
+    conf.remove(authType)
+    UserGroupInformation.setConfiguration(SparkHadoopUtil.get.newConfiguration(conf))
+    assert(!UserGroupInformation.isSecurityEnabled)
   }
 }
