@@ -35,12 +35,12 @@ class HighAvailabilityUtilsSuite extends SparkFunSuite with BeforeAndAfterEach {
   conf.set(KyuubiConf.FRONTEND_BIND_PORT.key, "0")
   var server: KyuubiServer = _
 
-  override def beforeAll(configMap: ConfigMap): Unit = {
+  override def beforeAll(): Unit = {
     zkServer = new TestingServer(2181, true)
     connectString = zkServer.getConnectString
     conf.set(KyuubiConf.HA_ZOOKEEPER_QUORUM.key, connectString)
     conf.set(KyuubiConf.HA_ZOOKEEPER_ZNODE_CREATION_TIMEOUT.key, "1s")
-    conf.set(KyuubiConf.HA_ZOOKEEPER_SESSION_TIMEOUT.key, "3s")
+    conf.set(KyuubiConf.HA_ZOOKEEPER_SESSION_TIMEOUT.key, "15s")
     conf.set(HA_ZOOKEEPER_CONNECTION_MAX_RETRIES.key, "1")
   }
 
@@ -88,7 +88,7 @@ class HighAvailabilityUtilsSuite extends SparkFunSuite with BeforeAndAfterEach {
 
   test("Add Server Instance To ZooKeeper with wrong host and right port") {
     server = new KyuubiServer()
-    conf.set(KyuubiConf.HA_ZOOKEEPER_QUORUM.key, connectString.split(":")(0) + "1")
+    conf.set(KyuubiConf.HA_ZOOKEEPER_QUORUM.key, connectString + "xxx")
     conf.set(KyuubiConf.HA_ZOOKEEPER_CLIENT_PORT.key, "2181")
     server.init(conf)
     server.start()
