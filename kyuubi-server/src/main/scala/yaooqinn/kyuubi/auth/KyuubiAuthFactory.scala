@@ -183,10 +183,7 @@ object KyuubiAuthFactory {
 
       if (!proxyUser.equalsIgnoreCase(realUser)) {
         ProxyUsers.refreshSuperUserGroupsConfiguration(hadoopConf)
-        ProxyUsers.authorize(
-          UserGroupInformation.createProxyUser(proxyUser, sessionUgi),
-          ipAddress,
-          hadoopConf)
+        ProxyUsers.authorize(UserGroupInformation.createProxyUser(proxyUser, sessionUgi), ipAddress)
       }
     } catch {
       case e: IOException =>
