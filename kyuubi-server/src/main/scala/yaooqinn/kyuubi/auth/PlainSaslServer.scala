@@ -23,6 +23,7 @@ import javax.security.auth.callback._
 import javax.security.sasl.{AuthorizeCallback, SaslException, SaslServer, SaslServerFactory}
 
 object PlainSaslServer {
+
   val PLAIN_METHOD = "PLAIN"
 
   class SaslPlainServerFactory extends SaslServerFactory {
@@ -41,11 +42,10 @@ object PlainSaslServer {
       case _ => null
     }
 
-    override def getMechanismNames(
-        props: JMap[String, _]): Array[String] = Array(PLAIN_METHOD)
+    override def getMechanismNames(props: JMap[String, _]): Array[String] = Array(PLAIN_METHOD)
   }
 
-  class SaslPlainProvider() extends Provider("HiveSaslPlain", 1.0, "Hive Plain SASL provider") {
+  class SaslPlainProvider() extends Provider("KyuubiSaslPlain", 1.0, "Kyuubi Plain SASL provider") {
     put("SaslServerFactory.PLAIN", classOf[SaslPlainServerFactory].getName)
   }
 }
@@ -55,7 +55,7 @@ class PlainSaslServer(handler: CallbackHandler, authMethod: AuthMethods) extends
   def this(handler: CallbackHandler, authMethodStr: String) = this(
     handler, AuthMethods.getValidAuthMethod(authMethodStr))
 
-  private var user: String = _
+  private[this] var user: String = _
 
   override def getMechanismName: String = PlainSaslServer.PLAIN_METHOD
 
