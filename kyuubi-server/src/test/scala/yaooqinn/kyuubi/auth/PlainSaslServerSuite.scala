@@ -34,8 +34,6 @@ class PlainSaslServerSuite extends SparkFunSuite {
 
   test("Sasl Plain Server Factory ") {
     val saslPlainServerFactory = new auth.PlainSaslServer.SaslPlainServerFactory
-    val tTransportFactory = PlainSaslHelper.getTransportFactory("NONE")
-
     val emp = Map.empty[String, String].asJava
     assert(saslPlainServerFactory.getMechanismNames(emp).head ===
       PlainSaslServer.PLAIN_METHOD)
@@ -68,6 +66,52 @@ class PlainSaslServerSuite extends SparkFunSuite {
     assert(e3.getCause.getMessage === "No password name provided")
     val res4 = Array(1, 0, 1)
     server.evaluateResponse(res4.map(_.toByte))
+    assert(server.isComplete)
+    assert(server.getAuthorizationID === "1")
+    intercept[UnsupportedOperationException](server.wrap(res4.map(_.toByte), 0, 3))
+    intercept[UnsupportedOperationException](server.unwrap(res4.map(_.toByte), 0, 3))
+    assert(server.getNegotiatedProperty("name") === null)
+    val res5 = Array(1, 0, 1, 0, 1, 0)
+    val e5 = intercept[SaslException](server.evaluateResponse(res5.map(_.toByte)))
+    assert(e5.getMessage === "Error validating the login")
+    assert(e5.getCause.getMessage === "Invalid message format")
+    assert(server.dispose().isInstanceOf[Unit])
+
+    assert(saslPlainServerFactory.createSaslServer(
+      "ELSE",
+      "NONE",
+      "KYUUBI",
+      emp, new CallbackHandler {
+        override def handle(callbacks: Array[Callback]): Unit = callbacks.foreach {
+          case ac: AuthorizeCallback => ac.setAuthorized(true)
+          case _ =>
+        }
+      }
+    ) === null)
+
+    assert(saslPlainServerFactory.createSaslServer(
+      "PLAIN",
+      "ELSE",
+      "KYUUBI",
+      emp, new CallbackHandler {
+        override def handle(callbacks: Array[Callback]): Unit = callbacks.foreach {
+          case ac: AuthorizeCallback => ac.setAuthorized(true)
+          case _ =>
+        }
+      }
+    ) === null)
+
+    val server2 = saslPlainServerFactory.createSaslServer(
+      "PLAIN",
+      "NONE",
+      "KYUUBI",
+      emp, new CallbackHandler {
+        override def handle(callbacks: Array[Callback]): Unit = {}
+      }
+    )
+    val e6 = intercept[SaslException](server2.evaluateResponse(res4.map(_.toByte)))
+    assert(e6.getMessage === "Error validating the login")
+    assert(e6.getCause.getMessage === "Authentication failed")
 
   }
 
