@@ -21,6 +21,7 @@ import javax.security.auth.login.LoginException
 
 import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hadoop.security.authorize.AuthorizationException
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
 
 import yaooqinn.kyuubi.KyuubiSQLException
@@ -35,7 +36,18 @@ class KyuubiAuthFactorySuite extends SparkFunSuite {
     val hadoopConf = KyuubiSparkUtil.newConfiguration(conf)
     val user = UserGroupInformation.getCurrentUser.getShortUserName
     KyuubiAuthFactory.verifyProxyAccess(user, user, "localhost", hadoopConf)
-
+    val e = intercept[KyuubiSQLException](
+      KyuubiAuthFactory.verifyProxyAccess(user, "proxy-user", "localhost", hadoopConf))
+    val msg = "Failed to validate proxy privilege"
+    assert(e.getMessage.contains(msg))
+    assert(e.getCause.isInstanceOf[AuthorizationException])
+    hadoopConf.set(s"hadoop.proxyuser.$user.groups", "*")
+    val e2 = intercept[KyuubiSQLException](
+      KyuubiAuthFactory.verifyProxyAccess(user, "proxy-user", "localhost", hadoopConf))
+    assert(e2.getMessage.contains(msg))
+    assert(e2.getCause.getMessage.contains("Unauthorized connection for super-user"))
+    hadoopConf.set(s"hadoop.proxyuser.$user.hosts", "*")
+    KyuubiAuthFactory.verifyProxyAccess(user, "proxy-user", "localhost", hadoopConf)
   }
 
   test("test HS2_PROXY_USER") {

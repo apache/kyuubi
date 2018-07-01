@@ -97,6 +97,12 @@ object KyuubiConf {
       .intConf
       .createWithDefault(3)
 
+  val HA_ZOOKEEPER_ZNODE_CREATION_TIMEOUT: ConfigEntry[Long] =
+    KyuubiConfigBuilder("spark.kyuubi.ha.zk.znode.creation.timeout")
+      .doc("ZooKeeper znode's creatation timeout (in milliseconds).")
+      .timeConf(TimeUnit.MILLISECONDS)
+      .createWithDefault(TimeUnit.SECONDS.toMillis(120L))
+
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                      Operation Log                                          //
   /////////////////////////////////////////////////////////////////////////////////////////////////
