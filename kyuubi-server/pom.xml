@@ -105,8 +105,11 @@
             <groupId>org.apache.directory.server</groupId>
             <artifactId>apacheds-service</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-test</artifactId>
+        </dependency>
     </dependencies>
-
 
     <build>
         <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
