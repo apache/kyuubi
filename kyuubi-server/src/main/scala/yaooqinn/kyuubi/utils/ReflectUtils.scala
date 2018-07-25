@@ -209,7 +209,7 @@ object ReflectUtils extends Logging {
    */
   def reflectModule(className: String, silent: Boolean): Option[Any] = {
     Try {
-      val mirror = ru.runtimeMirror(KyuubiSparkUtil.getContextOrSparkClassLoader())
+      val mirror = ru.runtimeMirror(KyuubiSparkUtil.getContextOrSparkClassLoader)
       val clazz = mirror.staticModule(className)
       val module = mirror.reflectModule(clazz)
       module.instance

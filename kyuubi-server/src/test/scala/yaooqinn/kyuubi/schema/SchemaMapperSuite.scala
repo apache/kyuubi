@@ -96,5 +96,7 @@ class SchemaMapperSuite extends SparkFunSuite {
       TypeDescriptor(NullType).toTTypeDesc)
     assert(SchemaMapper.toTTableSchema(row.schema).getColumns.get(15).getTypeDesc ===
       TypeDescriptor(innerSchema).toTTypeDesc)
+    assert(SchemaMapper.toTTableSchema(new StructType()).getColumnsSize === 0)
+    assert(SchemaMapper.toTTableSchema(null).getColumnsSize === 0)
   }
 }

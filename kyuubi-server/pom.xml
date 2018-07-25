@@ -30,6 +30,12 @@
     <name>Kyuubi Server</name>
 
     <dependencies>
+
+        <dependency>
+            <groupId>${spark.group}</groupId>
+            <artifactId>spark-yarn_${scala.binary.version}</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>${spark.group}</groupId>
             <artifactId>spark-hive_${scala.binary.version}</artifactId>
@@ -95,19 +101,15 @@
         </dependency>
         <dependency>
             <groupId>org.apache.directory.server</groupId>
-            <artifactId>apacheds-core-annotations</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.directory.server</groupId>
-            <artifactId>apacheds-server-annotations</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.directory.server</groupId>
             <artifactId>apacheds-service</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-test</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
         </dependency>
     </dependencies>
 
@@ -138,6 +140,23 @@
                                 <exec executable="bash">
                                     <arg value="${project.basedir}/../build/kyuubi-build-info"/>
                                     <arg value="${project.build.directory}/extra-resources"/>
+                                    <arg value="${project.version}"/>
+                                    <arg value="${spark.version}"/>
+                                </exec>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>build-info-test</id>
+                        <phase>generate-test-resources</phase>
+                        <configuration>
+                            <target>
+                                <exec executable="bash">
+                                    <arg value="${project.basedir}/../build/kyuubi-build-info"/>
+                                    <arg value="${build.testOutputDirectory}"/>
                                     <arg value="${project.version}"/>
                                     <arg value="${spark.version}"/>
                                 </exec>
@@ -266,6 +285,14 @@
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                     <junitxml>.</junitxml>
                     <filereports>TestSuite.txt</filereports>
+                    <argLine>-Xmx3g -Xss4m -XX:ReservedCodeCacheSize=512m</argLine>
+                    <stderr/>
+                    <environmentVariables>
+                        <KYUUBI_JAR>${project.build.testOutputDirectory}/kyuubi-fake.jar</KYUUBI_JAR>
+                    </environmentVariables>
+                    <systemProperties>
+                        <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
+                    </systemProperties>
                 </configuration>
                 <executions>
                     <execution>

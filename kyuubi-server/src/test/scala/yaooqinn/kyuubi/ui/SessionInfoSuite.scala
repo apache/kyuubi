@@ -27,7 +27,7 @@ class SessionInfoSuite extends SparkFunSuite {
     val sessionId = UUID.randomUUID().toString
     val ip = KyuubiSparkUtil.localHostName()
     val startTimeStamp = System.currentTimeMillis() - 1000L
-    val user = KyuubiSparkUtil.getCurrentUserName()
+    val user = KyuubiSparkUtil.getCurrentUserName
     val info = new SessionInfo(sessionId, startTimeStamp, ip, user)
     assert(info.finishTimestamp === 0L)
     assert(info.totalExecution === 0)

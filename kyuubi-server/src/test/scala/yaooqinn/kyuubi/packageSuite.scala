@@ -15,29 +15,27 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.service
+package yaooqinn.kyuubi
 
-object ServiceUtils {
+import java.util.Properties
 
-  /**
-   * Get the index separating the user name from domain name (the user's name up
-   * to the first '/' or '@').
-   *
-   * @param userName full user name.
-   * @return index of domain match or -1 if not found
-   */
-  def indexOfDomainMatch(userName: String): Int = {
-    if (userName == null) {
-      return -1
-    }
-    val idx = userName.indexOf('/')
-    val idx2 = userName.indexOf('@')
-    var endIdx = Math.min(idx, idx2) // Use the earlier match.
-    // Unless at least one of '/' or '@' was not found, in
-    // which case, user the latter match.
-    if (endIdx == -1) {
-      endIdx = Math.max(idx, idx2)
-    }
-    endIdx
+import org.apache.spark.SparkFunSuite
+
+class packageSuite extends SparkFunSuite {
+  test("build info") {
+    val buildFile = "kyuubi-version-info.properties"
+    val str = Thread.currentThread().getContextClassLoader.getResourceAsStream(buildFile)
+    val props = new Properties()
+    assert(str !== null)
+    props.load(str)
+    str.close()
+    assert(props.getProperty("kyuubi_version") === KYUUBI_VERSION)
+    assert(props.getProperty("spark_version") === SPARK_COMPILE_VERSION)
+    assert(props.getProperty("branch") === BRANCH)
+    assert(props.getProperty("jar") === KYUUBI_JAR_NAME)
+    assert(props.getProperty("revision") === REVISION)
+    assert(props.getProperty("user") === BUILD_USER)
+    assert(props.getProperty("url") === REPO_URL)
   }
+
 }

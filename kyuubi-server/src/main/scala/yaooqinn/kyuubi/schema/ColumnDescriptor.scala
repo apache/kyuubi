@@ -30,9 +30,11 @@ case class ColumnDescriptor(field: StructField, pos: Int) {
    */
   def toTColumnDesc: TColumnDesc = {
     val tColumnDesc = new TColumnDesc
-    tColumnDesc.setColumnName(field.name)
-    tColumnDesc.setComment(field.getComment().getOrElse(""))
-    tColumnDesc.setTypeDesc(TypeDescriptor(field.dataType).toTTypeDesc)
+    if (field != null) {
+      tColumnDesc.setColumnName(field.name)
+      tColumnDesc.setComment(field.getComment().getOrElse(""))
+      tColumnDesc.setTypeDesc(TypeDescriptor(field.dataType).toTTypeDesc)
+    }
     tColumnDesc.setPosition(pos)
     tColumnDesc
   }

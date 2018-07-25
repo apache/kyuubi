@@ -23,7 +23,7 @@ import java.security.PrivilegedExceptionAction
 import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.util.SignalUtils
+import org.apache.spark.util.{ChildFirstURLClassLoader, SignalUtils}
 
 import yaooqinn.kyuubi.{Logging, SPARK_COMPILE_VERSION}
 import yaooqinn.kyuubi.service.ServiceException
@@ -32,18 +32,18 @@ import yaooqinn.kyuubi.utils.ReflectUtils
 class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
 
   test("get current user name") {
-    val user = KyuubiSparkUtil.getCurrentUserName()
+    val user = KyuubiSparkUtil.getCurrentUserName
     assert(user === System.getProperty("user.name"))
   }
 
   test("get user with impersonation") {
     val currentUser = UserGroupInformation.getCurrentUser
-    val user1 = KyuubiSparkUtil.getCurrentUserName()
+    val user1 = KyuubiSparkUtil.getCurrentUserName
     assert(user1 === currentUser.getShortUserName)
     val remoteUser = UserGroupInformation.createRemoteUser("test")
     remoteUser.doAs(new PrivilegedExceptionAction[Unit] {
       override def run(): Unit = {
-        val user2 = KyuubiSparkUtil.getCurrentUserName()
+        val user2 = KyuubiSparkUtil.getCurrentUserName
         assert(user2 === remoteUser.getShortUserName)
       }
     })
@@ -67,7 +67,11 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
     }
   }
 
-  test("testMajorVersion") {
+  test("major version") {
+    assert(KyuubiSparkUtil.majorVersion("2.1") === 2)
+    intercept[IllegalArgumentException](KyuubiSparkUtil.majorVersion(".2"))
+    intercept[IllegalArgumentException](KyuubiSparkUtil.majorVersion("-2"))
+    intercept[IllegalArgumentException](KyuubiSparkUtil.majorVersion("x-2"))
     assert(KyuubiSparkUtil.majorVersion("2.1.2") === 2)
     assert(KyuubiSparkUtil.majorVersion("2.1.2-SNAPSHOT") === 2)
   }
@@ -97,7 +101,7 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
   }
 
   test("testGetJobGroupIDKey") {
-    assert(KyuubiSparkUtil.getJobGroupIDKey() === "spark.jobGroup.id")
+    assert(KyuubiSparkUtil.getJobGroupIDKey === "spark.jobGroup.id")
   }
 
   test("testMULTIPLE_CONTEXTS_DEFAULT") {
@@ -152,6 +156,7 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
   }
 
   test("testIsSparkVersionOrHigher") {
+    assert(KyuubiSparkUtil.equalOrHigherThan("1.6.3"))
     assert(KyuubiSparkUtil.equalOrHigherThan("2.0.2"))
     assert(KyuubiSparkUtil.equalOrHigherThan(SPARK_COMPILE_VERSION))
     assert(!KyuubiSparkUtil.equalOrHigherThan("2.4.1"))
@@ -159,6 +164,7 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
   }
 
   test("testTimeStringAsMs") {
+    assert(KyuubiSparkUtil.timeStringAsMs("-1") === -1)
     assert(KyuubiSparkUtil.timeStringAsMs("50s") === 50000L)
     assert(KyuubiSparkUtil.timeStringAsMs("50min") === 50 * 60 * 1000L)
     assert(KyuubiSparkUtil.timeStringAsMs("100ms") === 100L)
@@ -167,11 +173,11 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
   test("testGetContextClassLoader") {
     val origin = Thread.currentThread().getContextClassLoader
     try {
-      assert(KyuubiSparkUtil.getContextOrSparkClassLoader() === origin)
+      assert(KyuubiSparkUtil.getContextOrSparkClassLoader === origin)
 
       val classloader = new URLClassLoader(Seq.empty[URL], origin)
       Thread.currentThread().setContextClassLoader(classloader)
-      assert(KyuubiSparkUtil.getContextOrSparkClassLoader() === classloader)
+      assert(KyuubiSparkUtil.getContextOrSparkClassLoader === classloader)
     } finally {
       Thread.currentThread().setContextClassLoader(origin)
     }
@@ -198,5 +204,76 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
     assert(KyuubiSparkUtil.HDFS_CLIENT_CACHE_DEFAULT.toBoolean)
     assert(KyuubiSparkUtil.FILE_CLIENT_CACHE === "spark.hadoop.fs.file.impl.disable.cache")
     assert(KyuubiSparkUtil.FILE_CLIENT_CACHE_DEFAULT.toBoolean)
+  }
+
+  test("resolve uri") {
+    val path1 = "test"
+    val resolvedPath1 = KyuubiSparkUtil.resolveURI(path1)
+    assert(resolvedPath1.getScheme === "file")
+    val path2 = "hdfs://cluster-test/user/kent/"
+    val resolvedPath2 = KyuubiSparkUtil.resolveURI(path2)
+    assert(resolvedPath2.getScheme === "hdfs")
+  }
+
+  test("get local dir") {
+    val conf = new SparkConf()
+    val dir1 = KyuubiSparkUtil.getLocalDir(conf)
+    assert(dir1.contains(System.getProperty("java.io.tmpdir")))
+    conf.set(KyuubiSparkUtil.SPARK_LOCAL_DIR, "test")
+    val dir2 = KyuubiSparkUtil.getLocalDir(conf)
+    assert(dir2 === dir1)
+  }
+
+  test("split command string") {
+    val cmd = "-XX:PermSize=1024m -XX:MaxPermSize=1024m  -XX:MaxDirectMemorySize=4096m" +
+      " -XX:+HeapDumpOnOutOfMemoryError -XX:OnOutOfMemoryError=\"kill -9 %p\"" +
+      " -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution" +
+      " -Xloggc:/home/hadoop/logs/kyuubi-server.gc -XX:+UseGCLogFileRotation" +
+      " -XX:NumberOfGCLogFiles=5 -XX:GCLogFileSize=256M" +
+      " -Djava.security.krb5.conf=/home/hadoop/krb5/krb5.conf"
+    val cmds = KyuubiSparkUtil.splitCommandString(cmd)
+    assert(cmds.size === 14)
+    assert(cmds.contains("-XX:OnOutOfMemoryError=kill -9 %p"))
+  }
+
+  test("substitute app id") {
+    val symbol = "{{APP_ID}}"
+    val cmd = "bin/java -server Main " + symbol
+    val id1 = "application_id_1"
+    val substituted = KyuubiSparkUtil.substituteAppId(cmd, id1)
+    assert(!substituted.contains(symbol))
+    assert(substituted.contains(id1))
+  }
+
+  test("escape for shell") {
+    val cmd = "bash -c \"command arg1 arg2\""
+    val escaped = KyuubiSparkUtil.escapeForShell(cmd)
+    assert(escaped === "'bash -c \\\"command arg1 arg2\\\"'")
+    val cmd2 = "bash -c \"command $1 arg1 arg2\""
+    val escaped2 = KyuubiSparkUtil.escapeForShell(cmd2)
+    assert(escaped2 === "'bash -c \\\"command \\$1 arg1 arg2\\\"'")
+    val cmd3 = "bash -c \"command \' arg1 arg2\""
+    val escaped3 = KyuubiSparkUtil.escapeForShell(cmd3)
+    assert(escaped3 === "'bash -c \\\"command '\\'' arg1 arg2\\\"'")
+  }
+
+  test("get properties from file") {
+    val file = "kyuubi-test.conf"
+    val url = KyuubiSparkUtil.getContextOrSparkClassLoader.getResource(file)
+    val path = url.getPath
+    val props = KyuubiSparkUtil.getPropertiesFromFile(path)
+    assert(props.get("spark.kyuubi.test") === Some("1"))
+  }
+
+  test("get and set kyuubi first classloader") {
+    val loader = KyuubiSparkUtil.getAndSetKyuubiFirstClassLoader
+    assert(loader === Thread.currentThread().getContextClassLoader)
+    assert(loader.getParent === null)
+    assert(loader.getURLs().length === 1)
+    assert(loader.isInstanceOf[ChildFirstURLClassLoader])
+    assert(loader.getURLs()(0) ===
+      KyuubiSparkUtil.getClass.getProtectionDomain.getCodeSource.getLocation)
+    assert(loader.loadClass(classOf[SparkEnv].getName).getClassLoader === loader)
+    assert(loader.loadClass(classOf[SparkContext].getName).getClassLoader !== loader)
   }
 }

@@ -31,7 +31,9 @@ case class ColumnBasedSet(types: StructType, rows: Seq[Row]) extends RowSet {
 
   override def toTRowSet: TRowSet = {
     val tRowSet = new TRowSet(0, Seq[TRow]().asJava)
-    (0 until types.length).map(i => toTColumn(i, types(i).dataType)).foreach(tRowSet.addToColumns)
+    if (rows != null) {
+      (0 until types.length).map(i => toTColumn(i, types(i).dataType)).foreach(tRowSet.addToColumns)
+    }
     tRowSet
   }
 

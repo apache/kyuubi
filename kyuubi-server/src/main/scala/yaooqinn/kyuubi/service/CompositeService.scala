@@ -36,6 +36,7 @@ class CompositeService(name: String) extends AbstractService(name) with Logging 
 
   protected def addService(service: Service): Unit = {
     serviceList.+=(service)
+    info(s"Service: ${service.getName} is added.")
   }
 
   override def init(conf: SparkConf): Unit = {
@@ -64,7 +65,7 @@ class CompositeService(name: String) extends AbstractService(name) with Logging 
       case State.STOPPED =>
       case _ =>
         if (serviceList.nonEmpty) {
-          stop(serviceList.size - 1)
+          stop(serviceList.size)
         }
         super.stop()
     }
@@ -72,12 +73,13 @@ class CompositeService(name: String) extends AbstractService(name) with Logging 
 
   /**
    * stop in reserve order of start
-   * @param numOfServicesStarted
+   * @param numOfServicesStarted num of services which at start state
    */
   private def stop(numOfServicesStarted: Int): Unit = {
     // stop in reserve order of start
-    serviceList.toList.slice(0, numOfServicesStarted).reverse.foreach { service =>
+    serviceList.toList.take(numOfServicesStarted).reverse.foreach { service =>
       try {
+        info(s"Service: [${service.getName}] is stopping.")
         service.stop()
       } catch {
         case _: Throwable =>

@@ -27,7 +27,7 @@ import yaooqinn.kyuubi.operation.{CANCELED, RUNNING}
 class BackendServiceSuite extends SparkFunSuite {
 
   var backendService: BackendService = _
-  val user = KyuubiSparkUtil.getCurrentUserName()
+  val user = KyuubiSparkUtil.getCurrentUserName
   val conf = new SparkConf(loadDefaults = true).setAppName("be test")
   KyuubiServer.setupCommonConfig(conf)
   conf.remove(KyuubiSparkUtil.CATALOG_IMPL)

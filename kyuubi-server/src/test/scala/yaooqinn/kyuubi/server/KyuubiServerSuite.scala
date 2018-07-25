@@ -22,15 +22,26 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import org.apache.hadoop.minikdc.MiniKdc
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
+import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import org.apache.spark.deploy.SparkHadoopUtil
+import org.scalatest.BeforeAndAfterEach
 
 import yaooqinn.kyuubi.service.{ServiceException, State}
 import yaooqinn.kyuubi.utils.ReflectUtils
 
-class KyuubiServerSuite extends SparkFunSuite {
+class KyuubiServerSuite extends SparkFunSuite with BeforeAndAfterEach {
 
-  test("testSetupCommonConfig") {
+  override def beforeEach(): Unit = {
+    System.setProperty(KyuubiConf.FRONTEND_BIND_PORT.key, "0")
+    super.beforeEach()
+  }
+
+  override def afterEach(): Unit = {
+    System.clearProperty(KyuubiConf.FRONTEND_BIND_PORT.key)
+    super.afterEach()
+  }
+
+  test("test setup common kyuubi config") {
     val conf = new SparkConf(true).set(KyuubiSparkUtil.METASTORE_JARS, "maven")
     KyuubiServer.setupCommonConfig(conf)
     val name = "spark.app.name"
@@ -59,7 +70,7 @@ class KyuubiServerSuite extends SparkFunSuite {
     assert(conf2.get(foo) === bar)
   }
 
-  test("testValidate") {
+  test("validate spark requirements for kyuubi") {
     KyuubiServer.validate()
     val oldVersion = KyuubiSparkUtil.SPARK_VERSION
     val version = "1.6.3"
@@ -73,7 +84,7 @@ class KyuubiServerSuite extends SparkFunSuite {
   }
 
   test("init KyuubiServer") {
-    val conf = new SparkConf(true)
+    val conf = new SparkConf(true).set(KyuubiConf.FRONTEND_BIND_PORT.key, "0")
     KyuubiServer.setupCommonConfig(conf)
     val server = new KyuubiServer()
     server.init(conf)
@@ -91,6 +102,19 @@ class KyuubiServerSuite extends SparkFunSuite {
     server.stop()
     assert(server.getServiceState === State.STOPPED)
     assert(!ReflectUtils.getFieldValue(server, "started").asInstanceOf[AtomicBoolean].get)
+  }
+
+  test("start kyuubi server") {
+    val server = KyuubiServer.startKyuubiServer()
+    assert(server.getServiceState === State.STARTED)
+    val conf = server.getConf
+    KyuubiConf.getAllDefaults.filter(_._1 != KyuubiConf.FRONTEND_BIND_PORT.key)
+      .foreach { case (k, v) =>
+        assert(conf.get(k) === v)
+      }
+    assert(server.feService.getServiceState === State.STARTED)
+    assert(server.beService.getServiceState === State.STARTED)
+    server.stop()
   }
 
   test("disable fs caches for secured cluster") {
