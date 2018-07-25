@@ -29,9 +29,18 @@ import org.apache.spark.sql.types._
  */
 case class RowBasedSet(types: StructType, rows: Seq[Row]) extends RowSet {
 
-  override def toTRowSet: TRowSet = new TRowSet(0, toTRows(rows).asJava)
+  override def toTRowSet: TRowSet = new TRowSet(0, toTRows.asJava)
 
-  private[this] def toTRows(rows: Seq[Row]): Seq[TRow] = rows.map(toTRow)
+  private[this] def toTRows: Seq[TRow] = {
+    if (rows != null) {
+      if (types == null || (rows.nonEmpty && rows.head.size != types.size)) {
+        throw new IllegalArgumentException("The given schema does't match the given row")
+      }
+      rows.map(toTRow)
+    } else {
+      Nil
+    }
+  }
 
   private[this] def toTRow(row: Row): TRow = {
     val tRow = new TRow()

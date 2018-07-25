@@ -17,10 +17,7 @@
 
 package yaooqinn.kyuubi.schema
 
-import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
 import java.sql.Timestamp
-import java.util.BitSet
 
 import scala.collection.mutable
 
@@ -310,5 +307,27 @@ class RowBasedSetSuite extends SparkFunSuite {
       SparkSQLUtils.toHiveString((v1, schema1.head.dataType)))
     assert(tRowSet.getRows.get(2).getColVals.get(0).getStringVal.getValue ===
       SparkSQLUtils.toHiveString((v2, schema1.head.dataType)))
+  }
+
+  test("the given row set is null") {
+    assert(RowBasedSet(schema, null).toTRowSet.getRows.size() === 0)
+    assert(RowBasedSet(null, null).toTRowSet.getRows.size() === 0)
+
+  }
+
+  test("the given schema is null") {
+    intercept[IllegalArgumentException](RowBasedSet(null, rows).toTRowSet)
+  }
+
+  test("the give schema does match row schema") {
+    intercept[IllegalArgumentException](RowBasedSet(new StructType(), rows).toTRowSet)
+
+  }
+
+  test("empty row") {
+    val tRowSet = RowBasedSet(new StructType(), Seq(Row())).toTRowSet
+    assert(tRowSet.getRows.size() === 1)
+    assert(!tRowSet.getRows.get(0).isSetColVals)
+
   }
 }

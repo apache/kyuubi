@@ -144,6 +144,8 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(tRowSet.getColumns.get(0).getBoolVal.getValues.get(1).booleanValue())
     assert(!tRowSet.getColumns.get(0).getBoolVal.getValues.get(2).booleanValue())
     assert(tRowSet.getColumns.get(0).getBoolVal.getValues.get(3).booleanValue())
+    val tRowSet2 = ColumnBasedSet(schema1, Seq.empty[Row]).toTRowSet
+    assert(tRowSet2.getColumns.get(0).getBoolVal.getValues.size() === 0)
   }
 
   test("byte type null value tests") {
@@ -159,6 +161,8 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(tRowSet.getColumns.get(0).getByteVal.getValues.get(1).byteValue() === 1)
     assert(tRowSet.getColumns.get(0).getByteVal.getValues.get(2).byteValue() === 2)
     assert(tRowSet.getColumns.get(0).getByteVal.getValues.get(3).byteValue() === 0)
+    val tRowSet2 = ColumnBasedSet(schema1, Seq.empty[Row]).toTRowSet
+    assert(tRowSet2.getColumns.get(0).getByteVal.getValues.size() === 0)
   }
 
   test("short type null value tests") {
@@ -174,6 +178,9 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(tRowSet.getColumns.get(0).getI16Val.getValues.get(1).byteValue() === 1)
     assert(tRowSet.getColumns.get(0).getI16Val.getValues.get(2).byteValue() === 2)
     assert(tRowSet.getColumns.get(0).getI16Val.getValues.get(3).byteValue() === 0)
+
+    val tRowSet2 = ColumnBasedSet(schema1, Seq.empty[Row]).toTRowSet
+    assert(tRowSet2.getColumns.get(0).getI16Val.getValues.size() === 0)
   }
 
   test("int type null value tests") {
@@ -189,6 +196,8 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(tRowSet.getColumns.get(0).getI32Val.getValues.get(1).byteValue() === 1)
     assert(tRowSet.getColumns.get(0).getI32Val.getValues.get(2).byteValue() === 2)
     assert(tRowSet.getColumns.get(0).getI32Val.getValues.get(3).byteValue() === 0)
+    val tRowSet2 = ColumnBasedSet(schema1, Seq.empty[Row]).toTRowSet
+    assert(tRowSet2.getColumns.get(0).getI32Val.getValues.size() === 0)
   }
 
   test("long type null value tests") {
@@ -204,6 +213,8 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(tRowSet.getColumns.get(0).getI64Val.getValues.get(1).byteValue() === 1)
     assert(tRowSet.getColumns.get(0).getI64Val.getValues.get(2).byteValue() === 2)
     assert(tRowSet.getColumns.get(0).getI64Val.getValues.get(3).byteValue() === 0)
+    val tRowSet2 = ColumnBasedSet(schema1, Seq.empty[Row]).toTRowSet
+    assert(tRowSet2.getColumns.get(0).getI64Val.getValues.size() === 0)
   }
 
   test("float type null value tests") {
@@ -219,6 +230,8 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(tRowSet.getColumns.get(0).getDoubleVal.getValues.get(1).byteValue() === 1)
     assert(tRowSet.getColumns.get(0).getDoubleVal.getValues.get(2).byteValue() === 2)
     assert(tRowSet.getColumns.get(0).getDoubleVal.getValues.get(3).byteValue() === 0)
+    val tRowSet2 = ColumnBasedSet(schema1, Seq.empty[Row]).toTRowSet
+    assert(tRowSet2.getColumns.get(0).getDoubleVal.getValues.size() === 0)
   }
 
   test("double type null value tests") {
@@ -234,6 +247,8 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(tRowSet.getColumns.get(0).getDoubleVal.getValues.get(1).byteValue() === 1)
     assert(tRowSet.getColumns.get(0).getDoubleVal.getValues.get(2).byteValue() === 2)
     assert(tRowSet.getColumns.get(0).getDoubleVal.getValues.get(3).byteValue() === 0)
+    val tRowSet2 = ColumnBasedSet(schema1, Seq.empty[Row]).toTRowSet
+    assert(tRowSet2.getColumns.get(0).getDoubleVal.getValues.size() === 0)
   }
 
   test("string type null value tests") {
@@ -249,6 +264,8 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(1) === "a")
     assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(2) === "")
     assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(3) === "")
+    val tRowSet2 = ColumnBasedSet(schema1, Seq.empty[Row]).toTRowSet
+    assert(tRowSet2.getColumns.get(0).getStringVal.getValues.size() === 0)
   }
 
   test("binary type null value tests") {
@@ -266,6 +283,8 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(tRowSet.getColumns.get(0).getBinaryVal.getValues.get(1) === ByteBuffer.wrap(v1))
     assert(tRowSet.getColumns.get(0).getBinaryVal.getValues.get(2) === ByteBuffer.wrap(v2))
     assert(tRowSet.getColumns.get(0).getBinaryVal.getValues.get(3) === ByteBuffer.allocate(0))
+    val tRowSet2 = ColumnBasedSet(schema1, Seq.empty[Row]).toTRowSet
+    assert(tRowSet2.getColumns.get(0).getBinaryVal.getValues.size() === 0)
   }
 
   test("date type null value tests") {
@@ -283,6 +302,8 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(1) === v1)
     assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(2) === v2)
     assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(3) === "")
+    val tRowSet2 = ColumnBasedSet(schema1, Seq.empty[Row]).toTRowSet
+    assert(tRowSet2.getColumns.get(0).getStringVal.getValues.size() === 0)
   }
 
   test("timestamp type null value tests") {
@@ -301,6 +322,8 @@ class ColumnBasedSetSuite extends SparkFunSuite {
       SparkSQLUtils.toHiveString((v1, schema1.head.dataType)))
     assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(2) === v2)
     assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(3) === "")
+    val tRowSet2 = ColumnBasedSet(schema1, Seq.empty[Row]).toTRowSet
+    assert(tRowSet2.getColumns.get(0).getStringVal.getValues.size() === 0)
   }
 
   test("decimal type null value tests") {
@@ -320,6 +343,8 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(2) ===
       SparkSQLUtils.toHiveString((v2, schema1.head.dataType)))
     assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(3) === "")
+    val tRowSet2 = ColumnBasedSet(schema1, Seq.empty[Row]).toTRowSet
+    assert(tRowSet2.getColumns.get(0).getStringVal.getValues.size() === 0)
   }
 
   test("array type null value tests") {
@@ -339,6 +364,8 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(2) ===
       SparkSQLUtils.toHiveString((v2, schema1.head.dataType)))
     assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(3) === "")
+    val tRowSet2 = ColumnBasedSet(schema1, Seq.empty[Row]).toTRowSet
+    assert(tRowSet2.getColumns.get(0).getStringVal.getValues.size() === 0)
   }
 
   test("map type null value tests") {
@@ -358,6 +385,8 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(2) ===
       SparkSQLUtils.toHiveString((v2, schema1.head.dataType)))
     assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(3) === "")
+    val tRowSet2 = ColumnBasedSet(schema1, Seq.empty[Row]).toTRowSet
+    assert(tRowSet2.getColumns.get(0).getStringVal.getValues.size() === 0)
   }
 
   test("ss type null value tests") {
@@ -377,6 +406,11 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(2) ===
       SparkSQLUtils.toHiveString((v2, schema1.head.dataType)))
     assert(tRowSet.getColumns.get(0).getStringVal.getValues.get(3) === "")
+    val tRowSet2 = ColumnBasedSet(schema1, Seq.empty[Row]).toTRowSet
+    assert(tRowSet2.getColumns.get(0).getStringVal.getValues.size() === 0)
   }
 
+  test("row is null") {
+    assert(!ColumnBasedSet(new StructType(), null).toTRowSet.isSetColumns)
+  }
 }

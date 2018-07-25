@@ -24,7 +24,7 @@ import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf}
 
 import yaooqinn.kyuubi._
 import yaooqinn.kyuubi.ha.HighAvailabilityUtils
-import yaooqinn.kyuubi.service.{CompositeService, ServiceException, ServiceUtils}
+import yaooqinn.kyuubi.service.{CompositeService, ServiceException}
 
 /**
  * Main entrance of Kyuubi Server
@@ -48,9 +48,6 @@ private[kyuubi] class KyuubiServer private(name: String)
     addService(_beService)
     addService(_feService)
     super.init(conf)
-    KyuubiSparkUtil.addShutdownHook {
-      () => this.stop()
-    }
   }
 
   override def start(): Unit = {
@@ -67,14 +64,16 @@ private[kyuubi] class KyuubiServer private(name: String)
 
 object KyuubiServer extends Logging {
 
-  def main(args: Array[String]): Unit = {
-    KyuubiSparkUtil.initDaemon(logger)
-    validate()
-    val conf = new SparkConf(loadDefaults = true)
-    setupCommonConfig(conf)
-
+  def startKyuubiServer(): KyuubiServer = {
     try {
+      KyuubiSparkUtil.initDaemon(logger)
+      validate()
+      val conf = new SparkConf(loadDefaults = true)
+      setupCommonConfig(conf)
       val server = new KyuubiServer()
+      KyuubiSparkUtil.addShutdownHook {
+        () => server.stop()
+      }
       server.init(conf)
       server.start()
       info(server.getName + " started!")
@@ -82,10 +81,9 @@ object KyuubiServer extends Logging {
         info(s"HA mode: start to add this ${server.getName} instance to Zookeeper...")
         HighAvailabilityUtils.addServerInstanceToZooKeeper(server)
       }
+      server
     } catch {
-      case e: Exception =>
-        error("Error starting Kyuubi Server", e)
-        System.exit(-1)
+      case e: Exception => throw e
     }
   }
 
@@ -138,14 +136,6 @@ object KyuubiServer extends Logging {
     if (SPARK_COMPILE_VERSION != KyuubiSparkUtil.SPARK_VERSION) {
       warn(s"Running Kyuubi with Spark ${KyuubiSparkUtil.SPARK_VERSION}, which is compiled by" +
         s" $SPARK_COMPILE_VERSION. PLEASE be aware of possible incompatibility issues")
-    }
-
-    if (UserGroupInformation.isSecurityEnabled) {
-      if (ServiceUtils.isProxyUser(UserGroupInformation.getCurrentUser)) {
-        warn(s"Kyuubi Server itself is started by proxying. PLEASE be aware that Kyuubi now can " +
-          s"not impersonating and only for ${UserGroupInformation.getCurrentUser.
-            getShortUserName} to connect")
-      }
     }
   }
 }
