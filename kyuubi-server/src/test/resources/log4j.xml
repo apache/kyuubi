@@ -23,7 +23,7 @@
     </logger>
     <logger name="org.apache.zookeeper.ClientCnxn" additivity="false">
         <level value="ERROR" />
-        <appender-ref ref="Console" />
+        <appender-ref ref="console" />
     </logger>
     <root>
         <level value="WARN" />

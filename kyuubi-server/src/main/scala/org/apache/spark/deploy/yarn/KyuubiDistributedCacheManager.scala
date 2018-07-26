@@ -54,6 +54,6 @@ object KyuubiDistributedCacheManager {
       link: String,
       statCache: Map[URI, FileStatus]): Unit = {
     cacheManager.addResource(fs, conf, destPath,
-      localResources, resourceType, link, statCache, true)
+      localResources, resourceType, link, statCache, appMasterOnly = true)
   }
 }

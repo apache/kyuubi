@@ -17,6 +17,7 @@
 
 package yaooqinn.kyuubi.yarn
 
+
 import java.net.URI
 
 import scala.collection.mutable
@@ -26,7 +27,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.MRJobConfig
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment
 import org.apache.hadoop.yarn.api.protocolrecords.GetNewApplicationResponse
-import org.apache.hadoop.yarn.api.records.{ApplicationId, ApplicationSubmissionContext}
+import org.apache.hadoop.yarn.api.records.{ApplicationId, ApplicationSubmissionContext, Resource}
 import org.apache.hadoop.yarn.client.api.{YarnClient, YarnClientApplication}
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
@@ -34,7 +35,7 @@ import org.mockito.Mockito.{doNothing, when}
 import org.scalatest.Matchers
 import org.scalatest.mock.MockitoSugar
 
-import yaooqinn.kyuubi.service.ServiceException
+import yaooqinn.kyuubi.KYUUBI_JAR_NAME
 import yaooqinn.kyuubi.utils.ReflectUtils
 
 class KyuubiYarnClientSuite extends SparkFunSuite with Matchers with MockitoSugar {
@@ -90,7 +91,7 @@ class KyuubiYarnClientSuite extends SparkFunSuite with Matchers with MockitoSuga
     val cp = classpath(env)
     cp should contain("{{PWD}}")
     cp should contain(Environment.PWD.$$() + Path.SEPARATOR + SPARK_CONF_DIR)
-    cp should contain(KyuubiYarnClient.buildPath(Environment.PWD.$$(), "kyuubi-fake.jar"))
+    cp should contain(KyuubiYarnClient.buildPath(Environment.PWD.$$(), KYUUBI_JAR_NAME))
     cp should contain(KyuubiYarnClient.buildPath(Environment.PWD.$$(), SPARK_LIB_DIR, "*"))
     cp should contain(yarnDefCP.head)
     cp should contain(mrDefCP.head)
@@ -124,7 +125,6 @@ class KyuubiYarnClientSuite extends SparkFunSuite with Matchers with MockitoSuga
     val uri3 = KyuubiSparkUtil.resolveURI("hdfs://1")
     val path3 = KyuubiYarnClient.getQualifiedLocalPath(uri3, conf)
     path3.toUri should be(uri3)
-
   }
 
   test("kyuubi yarn client init") {
@@ -140,36 +140,65 @@ class KyuubiYarnClientSuite extends SparkFunSuite with Matchers with MockitoSuga
     assert(ReflectUtils.getFieldValue(client2, "loginFromKeytab").asInstanceOf[Boolean])
   }
 
-  /**
-   * test with mavne. not ide
-   */
-  test("submit application") {
-    val conf = new SparkConf()
-    val client = new KyuubiYarnClient(conf)
-    val yarnClient = mock[YarnClient]
-    ReflectUtils.setFieldValue(client, "yarnClient", yarnClient)
-    doNothing().when(yarnClient).start()
-    val app = mock[YarnClientApplication]
-    when(yarnClient.createApplication()).thenReturn(app)
-    intercept[NullPointerException](client.submit()) // app res = null
-    val appRes = mock[GetNewApplicationResponse]
-    when(app.getNewApplicationResponse).thenReturn(appRes)
-    intercept[NullPointerException](client.submit()) // appid = null
-    val appId = mock[ApplicationId]
-    when(appRes.getApplicationId).thenReturn(appId)
-    when(appId.toString).thenReturn("appId1")
-    val jarName = "kyuubi-fake.jar"
-    val kyuubiJar = this.getClass.getClassLoader.getResource(jarName).getPath
-    ReflectUtils.setFieldValue(KyuubiSparkUtil, "SPARK_JARS_DIR", kyuubiJar.stripSuffix(jarName))
-    val appContext = mock[ApplicationSubmissionContext]
-    when(app.getApplicationSubmissionContext).thenReturn(appContext)
-    intercept[ServiceException](client.submit())
+  test("submit with exceeded memory") {
+    withClient { (c, kc) =>
+      val app = mock[YarnClientApplication]
+      when(c.createApplication()).thenReturn(app)
+      val appRes = mock[GetNewApplicationResponse]
+      when(app.getNewApplicationResponse).thenReturn(appRes)
+      val resource = mock[Resource]
+      when(appRes.getMaximumResourceCapability).thenReturn(resource)
+      when(resource.getMemory).thenReturn(10)
+      val appId = mock[ApplicationId]
+      when(appRes.getApplicationId).thenReturn(appId)
+      when(appId.toString).thenReturn("appId1")
+      val appContext = mock[ApplicationSubmissionContext]
+      when(app.getApplicationSubmissionContext).thenReturn(appContext)
+      kc.submit()
+      ReflectUtils.getFieldValue(kc, "yaooqinn$kyuubi$yarn$KyuubiYarnClient$$memory") should be(9)
+      ReflectUtils.getFieldValue(kc,
+        "yaooqinn$kyuubi$yarn$KyuubiYarnClient$$memoryOverhead") should be(1)
+    }
+  }
+
+  test("submit with suitable memory") {
+    withClient { (c, kc) =>
+      val app = mock[YarnClientApplication]
+      when(c.createApplication()).thenReturn(app)
+      val appRes = mock[GetNewApplicationResponse]
+      when(app.getNewApplicationResponse).thenReturn(appRes)
+      val resource = mock[Resource]
+      when(appRes.getMaximumResourceCapability).thenReturn(resource)
+      when(resource.getMemory).thenReturn(2048 *1024)
+      val appId = mock[ApplicationId]
+      when(appRes.getApplicationId).thenReturn(appId)
+      when(appId.toString).thenReturn("appId1")
+      val appContext = mock[ApplicationSubmissionContext]
+      when(app.getApplicationSubmissionContext).thenReturn(appContext)
+      kc.submit()
+      ReflectUtils.getFieldValue(kc,
+        "yaooqinn$kyuubi$yarn$KyuubiYarnClient$$memory") should be(1024)
+      ReflectUtils.getFieldValue(kc,
+        "yaooqinn$kyuubi$yarn$KyuubiYarnClient$$memoryOverhead") should be(102)
+    }
   }
 
   def withConf(map: Map[String, String] = Map.empty)(testCode: Configuration => Any): Unit = {
     val conf = new Configuration()
     map.foreach { case (k, v) => conf.set(k, v) }
     testCode(conf)
+  }
+
+  def withClient(f: (YarnClient, KyuubiYarnClient) => Any): Unit = {
+    val conf = new SparkConf()
+    val client = new KyuubiYarnClient(conf)
+    val yarnClient = mock[YarnClient]
+    ReflectUtils.setFieldValue(client, "yarnClient", yarnClient)
+    doNothing().when(yarnClient).start()
+    val kyuubiJar = this.getClass.getClassLoader.getResource(KYUUBI_JAR_NAME).getPath
+    ReflectUtils.setFieldValue(KyuubiSparkUtil,
+      "SPARK_JARS_DIR", kyuubiJar.stripSuffix(KYUUBI_JAR_NAME))
+    f(yarnClient, client)
   }
 
   def classpath(env: mutable.HashMap[String, String]): Array[String] =

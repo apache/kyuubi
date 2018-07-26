@@ -39,6 +39,9 @@ import yaooqinn.kyuubi.ha.HighAvailabilityUtils
 import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.service.CompositeService
 
+/**
+ * The ApplicationMaster which runs Kyuubi Server inside it.
+ */
 class KyuubiAppMaster private(name: String) extends CompositeService(name)
   with Logging {
 
