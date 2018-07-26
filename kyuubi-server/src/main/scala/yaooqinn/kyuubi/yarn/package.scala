@@ -20,12 +20,10 @@ package yaooqinn.kyuubi
 import scala.collection.mutable.HashMap
 
 import org.apache.hadoop.fs.permission.FsPermission
-import org.apache.hadoop.yarn.api.records.LocalResource
 
 package object yarn {
 
-  type ENV = HashMap[String, String]
-  type RESOURCES = HashMap[String, LocalResource]
+  type EnvMap = HashMap[String, String]
 
   val KYUUBI_YARN_APP_NAME = "KYUUBI SERVER"
   val KYUUBI_YARN_APP_TYPE = "KYUUBI"
