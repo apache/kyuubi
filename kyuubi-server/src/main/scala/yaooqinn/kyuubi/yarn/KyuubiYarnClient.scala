@@ -65,7 +65,8 @@ private[yarn] class KyuubiYarnClient(conf: SparkConf) extends Logging {
   private[this] var memory = conf.getSizeAsMb(KyuubiSparkUtil.DRIVER_MEM, "1024m").toInt
   private[this] var memoryOverhead =
     conf.getSizeAsMb(KyuubiSparkUtil.DRIVER_MEM_OVERHEAD, (memory * 0.1).toInt + "m").toInt
-  private[this] val cores = conf.getInt(KyuubiSparkUtil.DRIVER_CORES, 1)
+  private[this] val cores = conf.getInt(KyuubiSparkUtil.DRIVER_CORES,
+    YarnConfiguration.DEFAULT_RM_SCHEDULER_MAXIMUM_ALLOCATION_VCORES)
   private[this] val principal = conf.get(KyuubiSparkUtil.PRINCIPAL, "")
   private[this] val keytabOrigin = conf.get(KyuubiSparkUtil.KEYTAB, "")
   private[this] val loginFromKeytab = principal.nonEmpty && keytabOrigin.nonEmpty
@@ -75,7 +76,8 @@ private[yarn] class KyuubiYarnClient(conf: SparkConf) extends Logging {
     null
   }
 
-  private[this] val creds = UserGroupInformation.getCurrentUser.getCredentials
+  private[this] val user: UserGroupInformation = UserGroupInformation.getCurrentUser
+  private[this] val creds = user.getCredentials
   private[this] val stagingHome = FileSystem.get(hadoopConf).getHomeDirectory
   private[this] var appId: ApplicationId = _
   private[this] var appStagingDir: Path = _
@@ -167,7 +169,6 @@ private[yarn] class KyuubiYarnClient(conf: SparkConf) extends Logging {
     val amArgs = Seq(amClass) ++
       Seq("--properties-file", buildPath(Environment.PWD.$$(), SPARK_CONF_DIR, SPARK_CONF_FILE))
 
-    // Command for the ApplicationMaster
     val commands =
       Seq(Environment.JAVA_HOME.$$() + "/bin/java", "-server") ++
       javaOpts ++ amArgs ++
@@ -177,9 +178,26 @@ private[yarn] class KyuubiYarnClient(conf: SparkConf) extends Logging {
 
     val printableCommands = commands.map(s => if (s == null) "null" else s).toList
     amContainer.setCommands(printableCommands.asJava)
+    info(List.fill(100)("=").mkString)
+    info("Kyuubi Application Master launch context:")
+    info(s"    Main class: $amClass")
+    info("    Environments:")
+    launchEnv.foreach { case (k, v) =>
+        info(s"        $k -> $v")
+    }
+    info("    Resources:")
+    localResources.foreach { case (k, v) =>
+        info(s"        $k -> $v")
+    }
+    info("    Command:")
+    info(s"        ${printableCommands.mkString(" ")}")
+    info(List.fill(100)("=").mkString)
+
     val dob = new DataOutputBuffer()
     creds.writeTokenStorageToStream(dob)
     amContainer.setTokens(ByteBuffer.wrap(dob.getData))
+
+    amContainer.setApplicationACLs(getACLs.toMap.asJava)
     amContainer
   }
 
@@ -204,6 +222,25 @@ private[yarn] class KyuubiYarnClient(conf: SparkConf) extends Logging {
     capability.setVirtualCores(cores)
     appContext.setResource(capability)
     appContext
+  }
+
+  /**
+   * Get acls for Kyuubi Application Master
+   */
+  private[this] def getACLs: Seq[(ApplicationAccessType, String)] = {
+    val yarnAcls = hadoopConf.get(YarnConfiguration.YARN_ADMIN_ACL)
+    val adminAcl = if (yarnAcls == null) {
+      user.getShortUserName
+    } else if (yarnAcls == "*") {
+      "*"
+    } else {
+      (yarnAcls.split(',').map(_.trim).filter(_.nonEmpty).toSet +
+        user.getShortUserName).mkString(",")
+    }
+
+    Seq(
+      ApplicationAccessType.MODIFY_APP -> adminAcl,
+      ApplicationAccessType.VIEW_APP -> adminAcl)
   }
 
   /**
@@ -418,7 +455,6 @@ private[yarn] class KyuubiYarnClient(conf: SparkConf) extends Logging {
 }
 
 object KyuubiYarnClient {
-
   /**
    * Load kyuubi server jar, choose the specified kyuubi jar first, try the default compiled one
    * if not found
