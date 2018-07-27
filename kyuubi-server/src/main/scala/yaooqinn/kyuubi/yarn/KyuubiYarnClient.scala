@@ -23,10 +23,12 @@ import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.security.PrivilegedExceptionAction
 import java.util.{Locale, Properties, UUID}
+import java.util.concurrent.Callable
 import java.util.zip.{ZipEntry, ZipOutputStream}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.{HashMap, ListBuffer, Map}
+import scala.util.control.NonFatal
 
 import com.google.common.io.Files
 import org.apache.hadoop.conf.Configuration
@@ -42,9 +44,9 @@ import org.apache.hadoop.yarn.api.ApplicationConstants.Environment
 import org.apache.hadoop.yarn.api.records._
 import org.apache.hadoop.yarn.client.api.{YarnClient, YarnClientApplication}
 import org.apache.hadoop.yarn.conf.YarnConfiguration
-import org.apache.hadoop.yarn.exceptions.YarnException
+import org.apache.hadoop.yarn.exceptions.{ApplicationNotFoundException, YarnException}
 import org.apache.hadoop.yarn.util.Records
-import org.apache.spark.{KyuubiSparkUtil, SparkConf}
+import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf}
 import org.apache.spark.deploy.yarn.KyuubiDistributedCacheManager
 
 import yaooqinn.kyuubi.{Logging, _}
@@ -103,6 +105,9 @@ private[yarn] class KyuubiYarnClient(conf: SparkConf) extends Logging {
       val appContext = createApplicationSubmissionContext(app, containerContext)
       info(s"Submitting application $appId to ResourceManager")
       yarnClient.submitApplication(appContext)
+      while(stateChecker.call()) {
+        Thread.sleep(1000)
+      }
     } catch {
       case e: Throwable =>
         if (appId != null) cleanupStagingDir()
@@ -123,6 +128,17 @@ private[yarn] class KyuubiYarnClient(conf: SparkConf) extends Logging {
       } catch {
         case ioe: IOException =>
           warn("Failed to cleanup staging dir " + appStagingDir, ioe)
+      } finally {
+        killApplication
+      }
+    }
+
+    def killApplication: Unit = {
+      try {
+        yarnClient.killApplication(appId)
+      } catch {
+        case NonFatal(e) =>
+          error(s"Failed to kill application $appId", e)
       }
     }
 
@@ -452,6 +468,58 @@ private[yarn] class KyuubiYarnClient(conf: SparkConf) extends Logging {
     })
     new Path(resolvedDestDir, qualifiedDestPath.getName)
   }
+
+  private[this] val stateChecker: Callable[Boolean] = new Callable[Boolean] {
+    private val timeout = conf.getTimeAsMs(KyuubiConf.YARN_CONTAINER_TIMEOUT.key)
+
+    import YarnApplicationState._
+
+    override def call(): Boolean = {
+      try {
+        val report = yarnClient.getApplicationReport(appId)
+        info(formatReportDetails(report))
+        report.getYarnApplicationState match {
+          case RUNNING => false
+          case ACCEPTED | NEW | NEW_SAVING | SUBMITTED =>
+            if (System.currentTimeMillis - report.getStartTime < timeout) {
+              true
+            } else {
+              error(s"Application $appId failed to start after ${timeout}ms")
+              cleanupStagingDir()
+              false
+            }
+          case _ => false
+        }
+      } catch {
+        case _: ApplicationNotFoundException =>
+          error(s"Application $appId not found.")
+          cleanupStagingDir()
+          false
+        case NonFatal(e) =>
+          error(s"Failed to contact YARN for application $appId.", e)
+          false
+      }
+    }
+
+    def formatReportDetails(report: ApplicationReport): String = {
+      val details = Seq[(String, String)](
+        ("Client token", Option(report.getClientToAMToken).map(_.toString).getOrElse("")),
+        ("Diagnostics", report.getDiagnostics),
+        ("Kyuubi server host", report.getHost),
+        ("Bind port", report.getRpcPort.toString),
+        ("Queue", report.getQueue),
+        ("Start time", report.getStartTime.toString),
+        ("Final status", Option(report.getFinalApplicationStatus).map(_.toString).getOrElse("")),
+        ("Tracking URL", report.getTrackingUrl),
+        ("User", report.getUser)
+      )
+      details.map { case (k, v) =>
+        val newValue = Option(v).filter(_.nonEmpty).getOrElse("N/A")
+        s"\n\t $k: $newValue"
+      }.mkString("")
+    }
+  }
+
 }
 
 object KyuubiYarnClient {
@@ -546,9 +614,12 @@ object KyuubiYarnClient {
   private[yarn] def getDefaultMRApplicationClasspath: Seq[String] =
     StringUtils.getStrings(MRJobConfig.DEFAULT_MAPREDUCE_APPLICATION_CLASSPATH).toSeq
 
-
+  /**
+   * Entrance for Kyuubi On Yarn
+   */
   def startKyuubiAppMaster(): Unit = {
     val conf = new SparkConf()
+    KyuubiConf.getAllDefaults.foreach(kv => conf.setIfMissing(kv._1, kv._2))
     new KyuubiYarnClient(conf).submit()
   }
 }

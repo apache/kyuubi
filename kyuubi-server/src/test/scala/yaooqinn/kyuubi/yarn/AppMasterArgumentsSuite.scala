@@ -38,6 +38,4 @@ class AppMasterArgumentsSuite extends SparkFunSuite {
     val e2 = intercept[IllegalArgumentException](AppMasterArguments(arg5))
     assert(e2.getMessage.contains(arg5.toList.takeRight(2).toString()))
   }
-
-
 }

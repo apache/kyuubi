@@ -17,6 +17,7 @@
 
 package yaooqinn.kyuubi.ha
 
+import com.google.common.io.Files
 import org.apache.curator.test.TestingServer
 import org.apache.spark.{KyuubiConf, SparkConf, SparkFunSuite}
 import org.apache.spark.KyuubiConf._
@@ -36,13 +37,13 @@ class HighAvailabilityUtilsSuite extends SparkFunSuite with BeforeAndAfterEach {
   var server: KyuubiServer = _
 
   override def beforeAll(): Unit = {
-    zkServer = new TestingServer(2181, true)
+    zkServer = new TestingServer(2181, Files.createTempDir(), true)
     connectString = zkServer.getConnectString
     conf.set(HA_ZOOKEEPER_QUORUM.key, connectString)
     conf.set(HA_ZOOKEEPER_CONNECTION_BASESLEEPTIME.key, "100ms")
     conf.set(HA_ZOOKEEPER_ZNODE_CREATION_TIMEOUT.key, "1s")
     conf.set(HA_ZOOKEEPER_SESSION_TIMEOUT.key, "15s")
-    conf.set(HA_ZOOKEEPER_CONNECTION_MAX_RETRIES.key, "1")
+    conf.set(HA_ZOOKEEPER_CONNECTION_MAX_RETRIES.key, "0")
   }
 
   override def afterAll(): Unit = {

@@ -36,6 +36,7 @@ class packageSuite extends SparkFunSuite {
     assert(props.getProperty("revision") === REVISION)
     assert(props.getProperty("user") === BUILD_USER)
     assert(props.getProperty("url") === REPO_URL)
+    assert(props.getProperty("date") === BUILD_DATE)
   }
 
 }
