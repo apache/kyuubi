@@ -126,12 +126,6 @@
                 <filtering>true</filtering>
             </resource>
         </resources>
-        <testResources>
-            <testResource>
-                <directory>${project.build.directory}/extra-resources</directory>
-                <filtering>true</filtering>
-            </testResource>
-        </testResources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -146,6 +140,23 @@
                                 <exec executable="bash">
                                     <arg value="${project.basedir}/../build/kyuubi-build-info"/>
                                     <arg value="${project.build.directory}/extra-resources"/>
+                                    <arg value="${project.version}"/>
+                                    <arg value="${spark.version}"/>
+                                </exec>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>build-info-test</id>
+                        <phase>generate-test-resources</phase>
+                        <configuration>
+                            <target>
+                                <exec executable="bash">
+                                    <arg value="${project.basedir}/../build/kyuubi-build-info"/>
+                                    <arg value="${project.build.testOutputDirectory}"/>
                                     <arg value="${project.version}"/>
                                     <arg value="${spark.version}"/>
                                 </exec>
@@ -244,18 +255,6 @@
                 <version>3.0.0</version>
                 <executions>
                     <execution>
-                        <id>add-default-sources</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>add-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <source>v${hive.version.short}/src/main/scala</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                    <execution>
                         <id>add-source</id>
                         <phase>generate-sources</phase>
                         <goals>
@@ -288,14 +287,9 @@
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                     <junitxml>.</junitxml>
                     <filereports>TestSuite.txt</filereports>
-                    <argLine>-Xmx3g -Xss4m -XX:ReservedCodeCacheSize=512m</argLine>
-                    <stderr/>
                     <environmentVariables>
                         <KYUUBI_JAR>${project.build.testOutputDirectory}/kyuubi-server-${project.version}.jar</KYUUBI_JAR>
                     </environmentVariables>
-                    <systemProperties>
-                        <java.io.tmpdir>${project.build.testOutputDirectory}/tmp</java.io.tmpdir>
-                    </systemProperties>
                 </configuration>
                 <executions>
                     <execution>

@@ -22,6 +22,7 @@ import java.net.URI
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.security.PrivilegedExceptionAction
+import java.text.SimpleDateFormat
 import java.util.{Locale, Properties, UUID}
 import java.util.concurrent.Callable
 import java.util.zip.{ZipEntry, ZipOutputStream}
@@ -129,11 +130,11 @@ private[yarn] class KyuubiYarnClient(conf: SparkConf) extends Logging {
         case ioe: IOException =>
           warn("Failed to cleanup staging dir " + appStagingDir, ioe)
       } finally {
-        killApplication
+        killApplication()
       }
     }
 
-    def killApplication: Unit = {
+    def killApplication(): Unit = {
       try {
         yarnClient.killApplication(appId)
       } catch {
@@ -290,8 +291,8 @@ private[yarn] class KyuubiYarnClient(conf: SparkConf) extends Logging {
     }
     val localResources = new HashMap[String, LocalResource]
     FileSystem.mkdirs(fs, appStagingDir, new FsPermission(STAGING_DIR_PERMISSION))
-    val symlinkCache: Map[URI, Path] = HashMap[URI, Path]()
-    val statCache: Map[URI, FileStatus] = HashMap[URI, FileStatus]()
+    val symlinkCache = HashMap[URI, Path]()
+    val statCache = HashMap[URI, FileStatus]()
 
     /**
      * Copy the non-local file to HDFS (if not already there) and add it to the Application Master's
@@ -470,15 +471,17 @@ private[yarn] class KyuubiYarnClient(conf: SparkConf) extends Logging {
   }
 
   private[this] val stateChecker: Callable[Boolean] = new Callable[Boolean] {
-    private val timeout = conf.getTimeAsMs(KyuubiConf.YARN_CONTAINER_TIMEOUT.key)
+    private val timeout = conf.getTimeAsMs(KyuubiConf.YARN_CONTAINER_TIMEOUT.key, "60s")
 
     import YarnApplicationState._
 
     override def call(): Boolean = {
       try {
         val report = yarnClient.getApplicationReport(appId)
-        info(formatReportDetails(report))
-        report.getYarnApplicationState match {
+        val state = report.getYarnApplicationState
+        if (state != ACCEPTED) info(formatReportDetails(report))
+        info(s"Application report for $appId[$state]")
+        state match {
           case RUNNING => false
           case ACCEPTED | NEW | NEW_SAVING | SUBMITTED =>
             if (System.currentTimeMillis - report.getStartTime < timeout) {
@@ -502,18 +505,17 @@ private[yarn] class KyuubiYarnClient(conf: SparkConf) extends Logging {
     }
 
     def formatReportDetails(report: ApplicationReport): String = {
-      val details = Seq[(String, String)](
+      Seq(
         ("Client token", Option(report.getClientToAMToken).map(_.toString).getOrElse("")),
         ("Diagnostics", report.getDiagnostics),
         ("Kyuubi server host", report.getHost),
         ("Bind port", report.getRpcPort.toString),
         ("Queue", report.getQueue),
-        ("Start time", report.getStartTime.toString),
+        ("Start time", new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(report.getStartTime)),
         ("Final status", Option(report.getFinalApplicationStatus).map(_.toString).getOrElse("")),
         ("Tracking URL", report.getTrackingUrl),
         ("User", report.getUser)
-      )
-      details.map { case (k, v) =>
+      ).map { case (k, v) =>
         val newValue = Option(v).filter(_.nonEmpty).getOrElse("N/A")
         s"\n\t $k: $newValue"
       }.mkString("")
@@ -619,7 +621,6 @@ object KyuubiYarnClient {
    */
   def startKyuubiAppMaster(): Unit = {
     val conf = new SparkConf()
-    KyuubiConf.getAllDefaults.foreach(kv => conf.setIfMissing(kv._1, kv._2))
     new KyuubiYarnClient(conf).submit()
   }
 }

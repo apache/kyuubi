@@ -131,8 +131,6 @@ class KyuubiYarnClientSuite extends SparkFunSuite with Matchers with MockitoSuga
 
   test("kyuubi yarn client init") {
     val conf = new SparkConf()
-    KyuubiConf.getAllDefaults.foreach(kv => conf.setIfMissing(kv._1, kv._2))
-
     val client = new KyuubiYarnClient(conf)
     assert(ReflectUtils.getFieldValue(client,
       "yaooqinn$kyuubi$yarn$KyuubiYarnClient$$hadoopConf").isInstanceOf[YarnConfiguration])
@@ -242,7 +240,6 @@ class KyuubiYarnClientSuite extends SparkFunSuite with Matchers with MockitoSuga
 
   def withClientBase(f: (YarnClient, KyuubiYarnClient) => Any): Unit = {
     val conf = new SparkConf()
-    KyuubiConf.getAllDefaults.foreach(kv => conf.setIfMissing(kv._1, kv._2))
     val client = new KyuubiYarnClient(conf)
     val yarnClient = mock[YarnClient]
     ReflectUtils.setFieldValue(client,
