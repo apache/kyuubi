@@ -18,6 +18,7 @@
 package yaooqinn.kyuubi.yarn
 
 
+import java.io.IOException
 import java.net.URI
 
 import scala.collection.mutable
@@ -27,10 +28,11 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.MRJobConfig
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment
 import org.apache.hadoop.yarn.api.protocolrecords.GetNewApplicationResponse
-import org.apache.hadoop.yarn.api.records.{ApplicationId, ApplicationSubmissionContext, Resource}
+import org.apache.hadoop.yarn.api.records._
 import org.apache.hadoop.yarn.client.api.{YarnClient, YarnClientApplication}
 import org.apache.hadoop.yarn.conf.YarnConfiguration
-import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
+import org.apache.hadoop.yarn.exceptions.ApplicationNotFoundException
+import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import org.mockito.Mockito.{doNothing, when}
 import org.scalatest.Matchers
 import org.scalatest.mock.MockitoSugar
@@ -129,6 +131,8 @@ class KyuubiYarnClientSuite extends SparkFunSuite with Matchers with MockitoSuga
 
   test("kyuubi yarn client init") {
     val conf = new SparkConf()
+    KyuubiConf.getAllDefaults.foreach(kv => conf.setIfMissing(kv._1, kv._2))
+
     val client = new KyuubiYarnClient(conf)
     assert(ReflectUtils.getFieldValue(client,
       "yaooqinn$kyuubi$yarn$KyuubiYarnClient$$hadoopConf").isInstanceOf[YarnConfiguration])
@@ -141,19 +145,14 @@ class KyuubiYarnClientSuite extends SparkFunSuite with Matchers with MockitoSuga
   }
 
   test("submit with exceeded memory") {
-    withClient { (c, kc) =>
-      val app = mock[YarnClientApplication]
-      when(c.createApplication()).thenReturn(app)
-      val appRes = mock[GetNewApplicationResponse]
-      when(app.getNewApplicationResponse).thenReturn(appRes)
+    withAppBase { (c, kc, appRes) =>
       val resource = mock[Resource]
       when(appRes.getMaximumResourceCapability).thenReturn(resource)
       when(resource.getMemory).thenReturn(10)
       val appId = mock[ApplicationId]
       when(appRes.getApplicationId).thenReturn(appId)
       when(appId.toString).thenReturn("appId1")
-      val appContext = mock[ApplicationSubmissionContext]
-      when(app.getApplicationSubmissionContext).thenReturn(appContext)
+      when(c.getApplicationReport(appId)).thenThrow(classOf[IOException])
       kc.submit()
       ReflectUtils.getFieldValue(kc, "yaooqinn$kyuubi$yarn$KyuubiYarnClient$$memory") should be(9)
       ReflectUtils.getFieldValue(kc,
@@ -162,24 +161,76 @@ class KyuubiYarnClientSuite extends SparkFunSuite with Matchers with MockitoSuga
   }
 
   test("submit with suitable memory") {
-    withClient { (c, kc) =>
-      val app = mock[YarnClientApplication]
-      when(c.createApplication()).thenReturn(app)
-      val appRes = mock[GetNewApplicationResponse]
-      when(app.getNewApplicationResponse).thenReturn(appRes)
+    withAppBase { (c, kc, appRes) =>
       val resource = mock[Resource]
       when(appRes.getMaximumResourceCapability).thenReturn(resource)
       when(resource.getMemory).thenReturn(2048 *1024)
       val appId = mock[ApplicationId]
       when(appRes.getApplicationId).thenReturn(appId)
       when(appId.toString).thenReturn("appId1")
-      val appContext = mock[ApplicationSubmissionContext]
-      when(app.getApplicationSubmissionContext).thenReturn(appContext)
+      when(c.getApplicationReport(appId)).thenThrow(classOf[ApplicationNotFoundException])
       kc.submit()
       ReflectUtils.getFieldValue(kc,
         "yaooqinn$kyuubi$yarn$KyuubiYarnClient$$memory") should be(1024)
       ReflectUtils.getFieldValue(kc,
         "yaooqinn$kyuubi$yarn$KyuubiYarnClient$$memoryOverhead") should be(102)
+    }
+  }
+
+  test("submit accepted") {
+    withAppReport { (kc, report) =>
+      when(report.getYarnApplicationState).thenReturn(YarnApplicationState.ACCEPTED)
+      val currentTime = System.currentTimeMillis()
+      when(report.getStartTime).thenReturn(currentTime).thenReturn(currentTime - 100 *1000L)
+      kc.submit()
+    }
+  }
+
+  test("submit running") {
+    withAppReport { (kc, report) =>
+      when(report.getYarnApplicationState).thenReturn(YarnApplicationState.RUNNING)
+      kc.submit()
+    }
+  }
+
+  test("submit new") {
+    withAppReport { (kc, report) =>
+      when(report.getYarnApplicationState).thenReturn(YarnApplicationState.NEW)
+      val currentTime = System.currentTimeMillis()
+      when(report.getStartTime).thenReturn(currentTime).thenReturn(currentTime - 100 *1000L)
+      kc.submit()
+    }
+  }
+
+  test("submit submitted") {
+    withAppReport { (kc, report) =>
+      when(report.getYarnApplicationState).thenReturn(YarnApplicationState.SUBMITTED)
+      val currentTime = System.currentTimeMillis()
+      when(report.getStartTime).thenReturn(currentTime).thenReturn(currentTime - 100 *1000L)
+      kc.submit()
+    }
+  }
+
+  test("submit killed") {
+    withAppReport { (kc, report) =>
+      when(report.getYarnApplicationState).thenReturn(YarnApplicationState.KILLED)
+      kc.submit()
+    }
+  }
+
+  test("submit finished") {
+    withAppReport { (kc, report) =>
+      when(report.getYarnApplicationState).thenReturn(YarnApplicationState.FINISHED)
+      kc.submit()
+    }
+  }
+
+  test("submit new saving") {
+    withAppReport { (kc, report) =>
+      when(report.getYarnApplicationState).thenReturn(YarnApplicationState.NEW_SAVING)
+      val currentTime = System.currentTimeMillis()
+      when(report.getStartTime).thenReturn(currentTime).thenReturn(currentTime - 100 *1000L)
+      kc.submit()
     }
   }
 
@@ -189,16 +240,54 @@ class KyuubiYarnClientSuite extends SparkFunSuite with Matchers with MockitoSuga
     testCode(conf)
   }
 
-  def withClient(f: (YarnClient, KyuubiYarnClient) => Any): Unit = {
+  def withClientBase(f: (YarnClient, KyuubiYarnClient) => Any): Unit = {
     val conf = new SparkConf()
+    KyuubiConf.getAllDefaults.foreach(kv => conf.setIfMissing(kv._1, kv._2))
     val client = new KyuubiYarnClient(conf)
     val yarnClient = mock[YarnClient]
-    ReflectUtils.setFieldValue(client, "yarnClient", yarnClient)
+    ReflectUtils.setFieldValue(client,
+      "yaooqinn$kyuubi$yarn$KyuubiYarnClient$$yarnClient", yarnClient)
     doNothing().when(yarnClient).start()
     val kyuubiJar = this.getClass.getClassLoader.getResource(KYUUBI_JAR_NAME).getPath
     ReflectUtils.setFieldValue(KyuubiSparkUtil,
       "SPARK_JARS_DIR", kyuubiJar.stripSuffix(KYUUBI_JAR_NAME))
     f(yarnClient, client)
+  }
+
+  def withAppBase(f: (YarnClient, KyuubiYarnClient, GetNewApplicationResponse) => Any): Unit = {
+    withClientBase { (c, kc) =>
+      val app = mock[YarnClientApplication]
+      when(c.createApplication()).thenReturn(app)
+      val appRes = mock[GetNewApplicationResponse]
+      when(app.getNewApplicationResponse).thenReturn(appRes)
+      val appContext = mock[ApplicationSubmissionContext]
+      when(app.getApplicationSubmissionContext).thenReturn(appContext)
+      f(c, kc, appRes)
+    }
+  }
+
+  def withAppReport(f: (KyuubiYarnClient, ApplicationReport) => Any): Unit = {
+    withAppBase { (c, kc, appRes) =>
+      val resource = mock[Resource]
+      when(appRes.getMaximumResourceCapability).thenReturn(resource)
+      when(resource.getMemory).thenReturn(2048 *1024)
+      val appId = mock[ApplicationId]
+      when(appRes.getApplicationId).thenReturn(appId)
+      when(appId.toString).thenReturn("appId1")
+      val report = mock[ApplicationReport]
+      when(c.getApplicationReport(appId)).thenReturn(report)
+      val token = mock[Token]
+      when(report.getClientToAMToken).thenReturn(token)
+      when(token.toString).thenReturn("")
+      when(report.getHost).thenReturn("")
+      when(report.getRpcPort).thenReturn(1)
+      when(report.getQueue).thenReturn("default")
+      when(report.getStartTime).thenReturn(0)
+      when(report.getFinalApplicationStatus).thenReturn(FinalApplicationStatus.SUCCEEDED)
+      when(report.getTrackingUrl).thenReturn("")
+      when(report.getUser).thenReturn(KyuubiSparkUtil.getCurrentUserName)
+      f(kc, report)
+    }
   }
 
   def classpath(env: mutable.HashMap[String, String]): Array[String] =

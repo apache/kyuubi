@@ -126,6 +126,12 @@
                 <filtering>true</filtering>
             </resource>
         </resources>
+        <testResources>
+            <testResource>
+                <directory>${project.build.directory}/extra-resources</directory>
+                <filtering>true</filtering>
+            </testResource>
+        </testResources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -150,29 +156,12 @@
                         </goals>
                     </execution>
                     <execution>
-                        <id>build-info-test</id>
-                        <phase>generate-test-resources</phase>
-                        <configuration>
-                            <target>
-                                <exec executable="bash">
-                                    <arg value="${project.basedir}/../build/kyuubi-build-info"/>
-                                    <arg value="${build.testOutputDirectory}"/>
-                                    <arg value="${project.version}"/>
-                                    <arg value="${spark.version}"/>
-                                </exec>
-                            </target>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                    <execution>
                         <id>fake-jar-test</id>
                         <phase>generate-test-resources</phase>
                         <configuration>
                             <target>
                                 <exec executable="touch">
-                                    <arg value="${project.build.testOutputDirectory}/kyuubi-server-${version}.jar"/>
+                                    <arg value="${project.build.testOutputDirectory}/kyuubi-server-${project.version}.jar"/>
                                 </exec>
                             </target>
                         </configuration>
@@ -302,10 +291,10 @@
                     <argLine>-Xmx3g -Xss4m -XX:ReservedCodeCacheSize=512m</argLine>
                     <stderr/>
                     <environmentVariables>
-                        <KYUUBI_JAR>${project.build.testOutputDirectory}/kyuubi-server-${version}.jar</KYUUBI_JAR>
+                        <KYUUBI_JAR>${project.build.testOutputDirectory}/kyuubi-server-${project.version}.jar</KYUUBI_JAR>
                     </environmentVariables>
                     <systemProperties>
-                        <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
+                        <java.io.tmpdir>${project.build.testOutputDirectory}/tmp</java.io.tmpdir>
                     </systemProperties>
                 </configuration>
                 <executions>
