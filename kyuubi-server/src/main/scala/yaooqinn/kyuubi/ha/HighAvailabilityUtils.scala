@@ -199,7 +199,7 @@ private[kyuubi] object HighAvailabilityUtils extends Logging {
 
   @throws[Exception]
   private def getServerInstanceURI(service: FrontendService): String = {
-    if ((service == null) || (service.getServerIPAddress == null)) {
+    if (service == null || service.getServerIPAddress == null) {
       throw new Exception("Unable to get the server address; it hasn't been initialized yet.")
     }
     service.getServerIPAddress.getHostName + ":" + service.getPortNumber
