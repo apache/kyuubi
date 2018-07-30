@@ -17,13 +17,12 @@
 
 package yaooqinn.kyuubi.ha
 
-import java.net.UnknownHostException
-
+import com.google.common.io.Files
 import org.apache.curator.test.TestingServer
 import org.apache.spark.{KyuubiConf, SparkConf, SparkFunSuite}
-import org.apache.spark.KyuubiConf.HA_ZOOKEEPER_CONNECTION_MAX_RETRIES
+import org.apache.spark.KyuubiConf._
 import org.apache.zookeeper.KeeperException.ConnectionLossException
-import org.scalatest.{BeforeAndAfterEach, ConfigMap}
+import org.scalatest.BeforeAndAfterEach
 
 import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.service.ServiceException
@@ -38,16 +37,19 @@ class HighAvailabilityUtilsSuite extends SparkFunSuite with BeforeAndAfterEach {
   var server: KyuubiServer = _
 
   override def beforeAll(): Unit = {
-    zkServer = new TestingServer(2181, true)
+    zkServer = new TestingServer(2181, Files.createTempDir(), true)
     connectString = zkServer.getConnectString
-    conf.set(KyuubiConf.HA_ZOOKEEPER_QUORUM.key, connectString)
-    conf.set(KyuubiConf.HA_ZOOKEEPER_ZNODE_CREATION_TIMEOUT.key, "1s")
-    conf.set(KyuubiConf.HA_ZOOKEEPER_SESSION_TIMEOUT.key, "15s")
-    conf.set(HA_ZOOKEEPER_CONNECTION_MAX_RETRIES.key, "1")
+    conf.set(HA_ZOOKEEPER_QUORUM.key, connectString)
+    conf.set(HA_ZOOKEEPER_CONNECTION_BASESLEEPTIME.key, "100ms")
+    conf.set(HA_ZOOKEEPER_ZNODE_CREATION_TIMEOUT.key, "1s")
+    conf.set(HA_ZOOKEEPER_SESSION_TIMEOUT.key, "15s")
+    conf.set(HA_ZOOKEEPER_CONNECTION_MAX_RETRIES.key, "0")
   }
 
   override def afterAll(): Unit = {
     zkServer.stop()
+    System.clearProperty(HA_ZOOKEEPER_QUORUM.key)
+    System.clearProperty(HA_ENABLED.key)
   }
 
   override def afterEach(): Unit = {
@@ -55,34 +57,35 @@ class HighAvailabilityUtilsSuite extends SparkFunSuite with BeforeAndAfterEach {
   }
 
   test("Add Server Instance To ZooKeeper with host:port") {
+    val conf1 = conf.clone
     server = new KyuubiServer()
-    server.init(conf)
+    server.init(conf1)
     server.start()
     HighAvailabilityUtils.addServerInstanceToZooKeeper(server)
   }
 
   test("Add Server Instance To ZooKeeper with wrong port") {
     server = new KyuubiServer()
-    conf.set(KyuubiConf.HA_ZOOKEEPER_CLIENT_PORT.key, "2000")
-    server.init(conf)
+    val conf1 = conf.clone().set(HA_ZOOKEEPER_CLIENT_PORT.key, "2000")
+    server.init(conf1)
     server.start()
     HighAvailabilityUtils.addServerInstanceToZooKeeper(server)
   }
 
   test("Add Server Instance To ZooKeeper with host and port") {
     server = new KyuubiServer()
-    conf.set(KyuubiConf.HA_ZOOKEEPER_QUORUM.key, connectString.split(":")(0))
-    conf.set(KyuubiConf.HA_ZOOKEEPER_CLIENT_PORT.key, "2181")
-    server.init(conf)
+    val conf1 = conf.clone().set(HA_ZOOKEEPER_QUORUM.key, connectString.split(":")(0))
+      .set(HA_ZOOKEEPER_CLIENT_PORT.key, "2181")
+    server.init(conf1)
     server.start()
     HighAvailabilityUtils.addServerInstanceToZooKeeper(server)
   }
 
   test("Add Server Instance To ZooKeeper with host and wrong port") {
     server = new KyuubiServer()
-    conf.set(KyuubiConf.HA_ZOOKEEPER_QUORUM.key, connectString.split(":")(0))
-    conf.set(KyuubiConf.HA_ZOOKEEPER_CLIENT_PORT.key, "2000")
-    server.init(conf)
+    val conf1 = conf.clone().set(HA_ZOOKEEPER_QUORUM.key, connectString.split(":")(0))
+      .set(KyuubiConf.HA_ZOOKEEPER_CLIENT_PORT.key, "2000")
+    server.init(conf1)
     server.start()
     val e = intercept[ServiceException](HighAvailabilityUtils.addServerInstanceToZooKeeper(server))
     assert(e.getCause.isInstanceOf[ConnectionLossException])
@@ -91,21 +94,32 @@ class HighAvailabilityUtilsSuite extends SparkFunSuite with BeforeAndAfterEach {
 
   test("Add Server Instance To ZooKeeper with wrong host and right port") {
     server = new KyuubiServer()
-    conf.set(KyuubiConf.HA_ZOOKEEPER_QUORUM.key, "unknown")
-    conf.set(KyuubiConf.HA_ZOOKEEPER_CLIENT_PORT.key, "2181")
-    server.init(conf)
+    val conf1 = conf.clone().set(HA_ZOOKEEPER_QUORUM.key, "github.com")
+      .set(HA_ZOOKEEPER_CLIENT_PORT.key, "2181")
+    server.init(conf1)
     server.start()
-    intercept[UnknownHostException](HighAvailabilityUtils.addServerInstanceToZooKeeper(server))
+    intercept[ServiceException](HighAvailabilityUtils.addServerInstanceToZooKeeper(server))
   }
 
   test("Is Support Dynamic Service Discovery") {
-    val conf = new SparkConf(loadDefaults = true)
-    assert(!HighAvailabilityUtils.isSupportDynamicServiceDiscovery(conf))
-    KyuubiServer.setupCommonConfig(conf)
-    assert(!HighAvailabilityUtils.isSupportDynamicServiceDiscovery(conf))
-    conf.set(KyuubiConf.HA_ENABLED.key, "true")
-    assert(!HighAvailabilityUtils.isSupportDynamicServiceDiscovery(conf))
-    conf.set(KyuubiConf.HA_ZOOKEEPER_QUORUM.key, "localhost")
-    assert(HighAvailabilityUtils.isSupportDynamicServiceDiscovery(conf))
+    val conf1 = new SparkConf(loadDefaults = true)
+    assert(!HighAvailabilityUtils.isSupportDynamicServiceDiscovery(conf1))
+    KyuubiServer.setupCommonConfig(conf1)
+    assert(!HighAvailabilityUtils.isSupportDynamicServiceDiscovery(conf1))
+    conf1.set(KyuubiConf.HA_ENABLED.key, "true")
+    assert(!HighAvailabilityUtils.isSupportDynamicServiceDiscovery(conf1))
+    conf1.set(KyuubiConf.HA_ZOOKEEPER_QUORUM.key, "localhost")
+    assert(HighAvailabilityUtils.isSupportDynamicServiceDiscovery(conf1))
+  }
+
+  test("start kyuubi server") {
+    val conf1 = conf.clone().set(HA_ENABLED.key, "true")
+    conf1.getAll.foreach { case (k, v) =>
+      sys.props(k) = v
+    }
+    server = KyuubiServer.startKyuubiServer()
+    val conf2 = server.getConf
+    assert(conf2.get(HA_ZOOKEEPER_QUORUM.key) === connectString)
+    assert(HighAvailabilityUtils.isSupportDynamicServiceDiscovery(conf1))
   }
 }

@@ -18,7 +18,7 @@
 package yaooqinn.kyuubi.schema
 
 import org.apache.hive.service.cli.thrift.{TCLIServiceConstants, TTypeId}
-import org.apache.spark.SparkFunSuite
+import org.apache.spark.{MyDataType, SparkFunSuite}
 import org.apache.spark.sql.types.{ByteType, DecimalType}
 
 import yaooqinn.kyuubi.utils.ReflectUtils
@@ -26,7 +26,7 @@ import yaooqinn.kyuubi.utils.ReflectUtils
 class TypeDescriptorSuite extends SparkFunSuite {
 
   test("TypeDescriptor basic tests") {
-    val typeDescriptor = new TypeDescriptor(new DecimalType(10, 9))
+    val typeDescriptor = TypeDescriptor(new DecimalType(10, 9))
     val tTypeDesc = typeDescriptor.toTTypeDesc
     assert(tTypeDesc.getTypesSize === 1)
     assert(
@@ -47,6 +47,9 @@ class TypeDescriptorSuite extends SparkFunSuite {
       .asInstanceOf[Option[TypeDescriptor]].isDefined)
     assert(ReflectUtils.getFieldValue(typeDescriptor2, "typeQualifiers")
       .asInstanceOf[Option[TypeDescriptor]].isEmpty)
+    val e = intercept[IllegalArgumentException](TypeDescriptor(null).toTTypeDesc)
+    assert(e.getMessage === "Unrecognized type name: null")
+    val e2 = intercept[IllegalArgumentException](TypeDescriptor(new MyDataType).toTTypeDesc)
+    assert(e2.getMessage === "Unrecognized type name: mydata")
   }
-
 }

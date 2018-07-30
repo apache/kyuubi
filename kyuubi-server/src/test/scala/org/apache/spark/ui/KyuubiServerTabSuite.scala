@@ -19,7 +19,7 @@ package org.apache.spark.ui
 
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext, SparkFunSuite}
 
-import yaooqinn.kyuubi.ui.KyuubiServerListener
+import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
 
 class KyuubiServerTabSuite extends SparkFunSuite {
 
@@ -30,7 +30,7 @@ class KyuubiServerTabSuite extends SparkFunSuite {
   override def beforeAll(): Unit = {
     val conf = new SparkConf(loadDefaults = true).setMaster("local").setAppName("test")
     sc = new SparkContext(conf)
-    user = KyuubiSparkUtil.getCurrentUserName()
+    user = KyuubiSparkUtil.getCurrentUserName
     tab = new KyuubiServerTab(user, sc)
   }
 
@@ -38,16 +38,23 @@ class KyuubiServerTabSuite extends SparkFunSuite {
     sc.stop()
   }
 
-  test("testParent") {
+  test("test parent") {
     assert(tab.parent === sc.ui.get)
   }
 
-  test("testListener") {
+  test("test listener") {
     assert(tab.listener !== null)
-    assert(tab.listener.isInstanceOf[KyuubiServerListener])
+    val lr = new KyuubiServerListener(sc.conf)
+    assert(tab.listener !== lr)
+    assert(KyuubiServerMonitor.getListener(user).get === tab.listener)
+    KyuubiServerMonitor.setListener("user1", lr)
+    val tab2 = new KyuubiServerTab("user1", sc)
+    assert(tab2.listener === lr)
+    val tab3 = new KyuubiServerTab("user2", sc)
+    assert(tab3.listener === KyuubiServerMonitor.getListener("user2").get)
   }
 
-  test("testName") {
+  test("test name") {
     assert(tab.name === "Kyuubi Tab 4 " + user)
 
   }

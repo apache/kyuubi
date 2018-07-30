@@ -120,6 +120,7 @@ Kyuubi's internal is very simple to understand, which is shown as the picture be
 ## Additional Documentations
 
 [Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)  
+[Kyuubi Deployment Guide](https://yaooqinn.github.io/kyuubi/docs/deploy.html)   
 [Configuration Guide](https://yaooqinn.github.io/kyuubi/docs/configurations.html)  
 [Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html)  
 [Kyuubi ACL Management Guide](https://yaooqinn.github.io/kyuubi/docs/authorization.html)   

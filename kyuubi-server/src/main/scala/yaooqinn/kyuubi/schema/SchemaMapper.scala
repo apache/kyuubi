@@ -24,9 +24,11 @@ object SchemaMapper {
 
   def toTTableSchema(fields: StructType): TTableSchema = {
     val tTableSchema = new TTableSchema
-    fields.zipWithIndex.map {
-      case (field, i) => ColumnDescriptor(field, i)
-    }.map(_.toTColumnDesc).foreach(tTableSchema.addToColumns)
+    if (fields != null) {
+      fields.zipWithIndex.map {
+        case (field, i) => ColumnDescriptor(field, i)
+      }.map(_.toTColumnDesc).foreach(tTableSchema.addToColumns)
+    }
     tTableSchema
   }
 
@@ -48,6 +50,7 @@ object SchemaMapper {
     case _: MapType => TTypeId.MAP_TYPE
     case _: StructType => TTypeId.STRUCT_TYPE
     case other =>
-      throw new IllegalArgumentException("Unrecognized type name: " + other.catalogString)
+      val catalogString = if (other != null) other.catalogString else null
+      throw new IllegalArgumentException("Unrecognized type name: " + catalogString)
   }
 }

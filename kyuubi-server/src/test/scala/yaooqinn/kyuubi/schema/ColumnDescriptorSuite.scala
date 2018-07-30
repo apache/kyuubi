@@ -65,4 +65,12 @@ class ColumnDescriptorSuite extends SparkFunSuite {
       .getPrimitiveEntry.getType === TTypeId.DECIMAL_TYPE)
 
   }
+
+  test("field is null") {
+    val tColumnDesc = ColumnDescriptor(null, 0).toTColumnDesc
+    assert(tColumnDesc.isSetPosition)
+    assert(!tColumnDesc.isSetColumnName)
+    assert(!tColumnDesc.isSetTypeDesc)
+    assert(!tColumnDesc.isSetComment)
+  }
 }

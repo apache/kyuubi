@@ -37,7 +37,7 @@ class KyuubiServerMonitorSuite extends SparkFunSuite {
 
   test("kyuubi server monitor") {
     val li = new KyuubiServerListener(conf)
-    val user = KyuubiSparkUtil.getCurrentUserName()
+    val user = KyuubiSparkUtil.getCurrentUserName
     KyuubiServerMonitor.setListener(user, li)
     val liOp = KyuubiServerMonitor.getListener(user)
     assert(liOp.get === li)

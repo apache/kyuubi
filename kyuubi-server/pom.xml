@@ -30,6 +30,12 @@
     <name>Kyuubi Server</name>
 
     <dependencies>
+
+        <dependency>
+            <groupId>${spark.group}</groupId>
+            <artifactId>spark-yarn_${scala.binary.version}</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>${spark.group}</groupId>
             <artifactId>spark-hive_${scala.binary.version}</artifactId>
@@ -95,19 +101,15 @@
         </dependency>
         <dependency>
             <groupId>org.apache.directory.server</groupId>
-            <artifactId>apacheds-core-annotations</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.directory.server</groupId>
-            <artifactId>apacheds-server-annotations</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.directory.server</groupId>
             <artifactId>apacheds-service</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-test</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
         </dependency>
     </dependencies>
 
@@ -140,6 +142,37 @@
                                     <arg value="${project.build.directory}/extra-resources"/>
                                     <arg value="${project.version}"/>
                                     <arg value="${spark.version}"/>
+                                </exec>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>build-info-test</id>
+                        <phase>generate-test-resources</phase>
+                        <configuration>
+                            <target>
+                                <exec executable="bash">
+                                    <arg value="${project.basedir}/../build/kyuubi-build-info"/>
+                                    <arg value="${project.build.testOutputDirectory}"/>
+                                    <arg value="${project.version}"/>
+                                    <arg value="${spark.version}"/>
+                                </exec>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>fake-jar-test</id>
+                        <phase>generate-test-resources</phase>
+                        <configuration>
+                            <target>
+                                <exec executable="touch">
+                                    <arg value="${project.build.testOutputDirectory}/kyuubi-server-${project.version}.jar"/>
                                 </exec>
                             </target>
                         </configuration>
@@ -222,18 +255,6 @@
                 <version>3.0.0</version>
                 <executions>
                     <execution>
-                        <id>add-default-sources</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>add-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <source>v${hive.version.short}/src/main/scala</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                    <execution>
                         <id>add-source</id>
                         <phase>generate-sources</phase>
                         <goals>
@@ -266,6 +287,9 @@
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                     <junitxml>.</junitxml>
                     <filereports>TestSuite.txt</filereports>
+                    <environmentVariables>
+                        <KYUUBI_JAR>${project.build.testOutputDirectory}/kyuubi-server-${project.version}.jar</KYUUBI_JAR>
+                    </environmentVariables>
                 </configuration>
                 <executions>
                     <execution>
