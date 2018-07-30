@@ -156,7 +156,7 @@ private[kyuubi] object HighAvailabilityUtils extends Logging {
           try {
             znode.close()
             warn("This Kyuubi instance is now de-registered from ZooKeeper. " +
-              "The server will be shut down after the last client sesssion completes.")
+              "The server will be shut down after the last client session completes.")
           } catch {
             case e: IOException =>
               error("Failed to close the persistent ephemeral znode", e)
@@ -199,7 +199,7 @@ private[kyuubi] object HighAvailabilityUtils extends Logging {
 
   @throws[Exception]
   private def getServerInstanceURI(service: FrontendService): String = {
-    if ((service == null) || (service.getServerIPAddress == null)) {
+    if (service == null || service.getServerIPAddress == null) {
       throw new Exception("Unable to get the server address; it hasn't been initialized yet.")
     }
     service.getServerIPAddress.getHostName + ":" + service.getPortNumber

@@ -17,8 +17,6 @@
 
 package yaooqinn.kyuubi.service
 
-import org.apache.hadoop.security.UserGroupInformation
-
 object ServiceUtils {
 
   /**
@@ -41,12 +39,5 @@ object ServiceUtils {
       endIdx = Math.max(idx, idx2)
     }
     endIdx
-  }
-
-  /**
-   * Check a user is a proxy user or not
-   */
-  def isProxyUser(ugi: UserGroupInformation): Boolean = {
-    ugi.getAuthenticationMethod == UserGroupInformation.AuthenticationMethod.PROXY
   }
 }

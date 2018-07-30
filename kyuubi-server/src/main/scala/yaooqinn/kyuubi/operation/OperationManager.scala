@@ -63,7 +63,7 @@ private[kyuubi] class OperationManager private(name: String)
 
   private[this] def getOperationLogByName: OperationLog = {
     if (!userToOperationLog.isEmpty) {
-      userToOperationLog.get(KyuubiSparkUtil.getCurrentUserName())
+      userToOperationLog.get(KyuubiSparkUtil.getCurrentUserName)
     } else {
       null
     }
@@ -75,7 +75,7 @@ private[kyuubi] class OperationManager private(name: String)
 
   def setOperationLog(user: String, log: OperationLog): Unit = {
     OperationLog.setCurrentOperationLog(log)
-    userToOperationLog.put(Option(user).getOrElse(KyuubiSparkUtil.getCurrentUserName()), log)
+    userToOperationLog.put(Option(user).getOrElse(KyuubiSparkUtil.getCurrentUserName), log)
   }
 
   def unregisterOperationLog(user: String): Unit = {

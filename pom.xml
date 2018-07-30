@@ -57,11 +57,10 @@
         <spark.group>org.apache.spark</spark.group>
         <spark.version>2.1.2</spark.version>
         <spark.scope>provided</spark.scope>
-        <hadoop.version>2.7.3</hadoop.version>
+        <hadoop.version>2.6.5</hadoop.version>
         <hadoop.deps.scope>provided</hadoop.deps.scope>
         <hive.group>org.spark-project.hive</hive.group>
         <hive.version>1.2.1.spark2</hive.version>
-        <hive.version.short>1.2.1</hive.version.short>
         <hive.deps.scope>provided</hive.deps.scope>
         <jpam.version>1.1</jpam.version>
         <apacheds.version>2.0.0-M15</apacheds.version>
@@ -123,6 +122,18 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>${spark.group}</groupId>
+                <artifactId>spark-yarn_${scala.binary.version}</artifactId>
+                <version>${spark.version}</version>
+                <scope>${spark.scope}</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
             <dependency>
                 <groupId>${spark.group}</groupId>
                 <artifactId>spark-hive_${scala.binary.version}</artifactId>
@@ -222,6 +233,13 @@
             </dependency>
 
             <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-yarn-client</artifactId>
+                <version>${hadoop.version}</version>
+                <scope>${hadoop.deps.scope}</scope>
+            </dependency>
+
+            <dependency>
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest_${scala.binary.version}</artifactId>
                 <version>${scalatest.version}</version>
@@ -275,34 +293,6 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.directory.server</groupId>
-                <artifactId>apacheds-core-annotations</artifactId>
-                <version>${apacheds.version}</version>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.directory.api</groupId>
-                        <artifactId>api-ldap-schema-data</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>bouncycastle</groupId>
-                        <artifactId>bcprov-jdk15</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.directory.server</groupId>
-                <artifactId>apacheds-server-annotations</artifactId>
-                <version>${apacheds.version}</version>
-                <scope>test</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>bouncycastle</groupId>
-                        <artifactId>bcprov-jdk15</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.directory.server</groupId>
                 <artifactId>apacheds-service</artifactId>
                 <version>${apacheds.version}</version>
                 <scope>test</scope>
@@ -317,6 +307,12 @@
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-test</artifactId>
                 <version>2.6.0</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>1.10.19</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>
@@ -342,6 +338,14 @@
             <properties>
                 <spark.version>2.3.0</spark.version>
                 <scalatest.version>3.0.3</scalatest.version>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>hadoop-2.7</id>
+            <properties>
+                <hadoop.version>2.7.3</hadoop.version>
+                <curator.version>2.7.1</curator.version>
             </properties>
         </profile>
     </profiles>

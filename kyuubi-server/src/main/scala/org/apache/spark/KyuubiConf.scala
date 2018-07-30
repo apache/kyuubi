@@ -345,6 +345,16 @@ object KyuubiConf {
       .booleanConf
     .createWithDefault(false)
 
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //                                   Containerization                                          //
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+
+  val YARN_CONTAINER_TIMEOUT: ConfigEntry[Long] =
+    KyuubiConfigBuilder("spark.kyuubi.yarn.container.timeout")
+      .doc("Timeout for client to wait Kyuubi successfully initialising itself")
+      .timeConf(TimeUnit.MILLISECONDS)
+      .createWithDefault(TimeUnit.SECONDS.toMillis(60L))
+
   /**
    * Return all the configuration definitions that have been defined in [[KyuubiConf]]. Each
    * definition contains key, defaultValue.

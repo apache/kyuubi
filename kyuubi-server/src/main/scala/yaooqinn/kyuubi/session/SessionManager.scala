@@ -100,7 +100,7 @@ private[kyuubi] class SessionManager private(
           FileUtils.forceDeleteOnExit(operationLogRootDir)
         } catch {
           case e: IOException =>
-            warn("Failed to schedule cleanup Spark Thrift Server's operation logging root" +
+            warn("Failed to schedule cleanup Kyuubi Server's operation logging root" +
               " dir: " + operationLogRootDir.getAbsolutePath, e)
         }
       } else {
@@ -173,6 +173,7 @@ private[kyuubi] class SessionManager private(
     }
     createExecPool()
     addService(operationManager)
+    SparkSessionCacheManager.startCacheManager(conf)
     super.init(conf)
   }
 
@@ -181,7 +182,6 @@ private[kyuubi] class SessionManager private(
     if (checkInterval > 0) {
       startTimeoutChecker()
     }
-    SparkSessionCacheManager.startCacheManager(conf)
   }
 
   override def stop(): Unit = {

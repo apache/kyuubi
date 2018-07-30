@@ -50,7 +50,7 @@ class KyuubiServerListener(conf: SparkConf) extends SparkListener {
     for {
       props <- Option(jobStart.properties)
       groupIdKey <- props.stringPropertyNames().asScala
-        .filter(_.startsWith(KyuubiSparkUtil.getJobGroupIDKey()))
+        .filter(_.startsWith(KyuubiSparkUtil.getJobGroupIDKey))
       groupId <- Option(props.getProperty(groupIdKey))
       (_, info) <- executionList if info.groupId == groupId
     } {
@@ -111,7 +111,7 @@ class KyuubiServerListener(conf: SparkConf) extends SparkListener {
     trimExecutionIfNecessary()
   }
 
-  private def trimExecutionIfNecessary() = {
+  private def trimExecutionIfNecessary(): Unit = {
     if (executionList.size > retainedStatements) {
       val toRemove = math.max(retainedStatements / 10, 1)
       executionList.filter(_._2.finishTimestamp != 0).take(toRemove).foreach { s =>
@@ -120,7 +120,7 @@ class KyuubiServerListener(conf: SparkConf) extends SparkListener {
     }
   }
 
-  private def trimSessionIfNecessary() = {
+  private def trimSessionIfNecessary(): Unit = {
     if (sessionList.size > retainedSessions) {
       val toRemove = math.max(retainedSessions / 10, 1)
       sessionList.filter(_._2.finishTimestamp != 0).take(toRemove).foreach { s =>

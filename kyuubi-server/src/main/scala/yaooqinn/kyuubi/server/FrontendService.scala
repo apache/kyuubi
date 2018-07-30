@@ -17,7 +17,7 @@
 
 package yaooqinn.kyuubi.server
 
-import java.net.{InetAddress, ServerSocket, UnknownHostException}
+import java.net.{InetAddress, ServerSocket}
 import java.util.concurrent.{SynchronousQueue, ThreadPoolExecutor, TimeUnit}
 
 import scala.collection.JavaConverters._
@@ -30,7 +30,7 @@ import org.apache.spark.KyuubiConf._
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TThreadPoolServer}
-import org.apache.thrift.transport.{TServerSocket, TTransport, TTransportException}
+import org.apache.thrift.transport.{TServerSocket, TTransport}
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.auth.{AuthType, KyuubiAuthFactory, TSetIpAddressProcessor}
@@ -60,6 +60,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   private[this] var server: Option[TServer] = _
   private[this] var portNum = 0
   private[this] var serverIPAddress: InetAddress = _
+  private[this] var serverSocket: ServerSocket = _
 
   private[this] val threadPoolName = name + "-Handler-Pool"
 
@@ -120,10 +121,12 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
       } else {
         serverIPAddress = InetAddress.getLocalHost
       }
+      portNum = conf.get(FRONTEND_BIND_PORT.key).toInt
+      serverSocket = new ServerSocket(portNum, 1, serverIPAddress)
     } catch {
-      case e: UnknownHostException => throw new ServiceException(e)
+      case e: Exception => throw new ServiceException(e)
     }
-    portNum = conf.get(FRONTEND_BIND_PORT.key).toInt
+    portNum = serverSocket.getLocalPort
     super.init(conf)
   }
 
@@ -187,16 +190,6 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
       case Some(p) => // Verify proxy user privilege of the realUser for the proxyUser
         KyuubiAuthFactory.verifyProxyAccess(realUser, p, ipAddress, hadoopConf)
         p
-    }
-  }
-  @throws[TTransportException]
-  private[this] def getServerSocket(serverAddr: InetAddress, port: Int): TServerSocket = {
-    try {
-      val serverSocket = new ServerSocket(port, 1, serverAddr)
-      this.portNum = serverSocket.getLocalPort
-      new TServerSocket(serverSocket)
-    } catch {
-      case e: Exception => throw new ServiceException(e)
     }
   }
 
@@ -588,13 +581,13 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
       authFactory = new KyuubiAuthFactory(conf)
       val transportFactory = authFactory.getAuthTransFactory
       val processorFactory = authFactory.getAuthProcFactory(this)
-      val serverSocket: TServerSocket = getServerSocket(serverIPAddress, portNum)
+      val tSocket = new TServerSocket(serverSocket)
 
       // Server args
       val maxMessageSize = conf.get(FRONTEND_MAX_MESSAGE_SIZE.key).toInt
       val requestTimeout = conf.getTimeAsSeconds(FRONTEND_LOGIN_TIMEOUT.key).toInt
       val beBackoffSlotLength = conf.getTimeAsMs(FRONTEND_LOGIN_BEBACKOFF_SLOT_LENGTH.key).toInt
-      val args = new TThreadPoolServer.Args(serverSocket)
+      val args = new TThreadPoolServer.Args(tSocket)
         .processorFactory(processorFactory)
         .transportFactory(transportFactory)
         .protocolFactory(new TBinaryProtocol.Factory)
