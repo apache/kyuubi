@@ -25,7 +25,7 @@ Features|Spark Thrift Server|Kyuubi|Comments
  multi tenancy| ✘ | ✔ |Based on the above features，Kyuubi is able to run as a multi-tenant server on a LCE supported Yarn cluster.|
  operation log| ✘ | ✔ |Kyuubi redirect sql operation log to local file which has an interface for the client to fetch.|
  high availability| ✘ | ✔ |[ZooKeeper Dynamic Service Discovery](https://yaooqinn.github.io/kyuubi/docs/architecture.html#1.4) |
- cluster mode| ✘ | ✘ |yarn cluster mode will be supported soon|
+ containerization| ✘ | ✔ | [Kyuubi Containerization Guide](https://yaooqinn.github.io/kyuubi/docs/containerization.html)|
  type mapping| ✘ | ✔ |Kyuubi support Spark result/schema to be directly converted to Thrift result/schemas bypassing Hive format results|
  
 ## Getting Started
@@ -93,6 +93,7 @@ Please refer to the [Authentication/Security Guide](https://yaooqinn.github.io/k
 
 ## Additional Documentations
 [Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)  
+[Kyuubi Deployment Guide](https://yaooqinn.github.io/kyuubi/docs/deploy.html)  
 [Configuration Guide](https://yaooqinn.github.io/kyuubi/docs/configurations.html)  
 [Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html)  
 [Kyuubi ACL Management Guide](https://yaooqinn.github.io/kyuubi/docs/authorization.html)  
