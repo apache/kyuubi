@@ -35,7 +35,8 @@ Please refer to the [Spark SQL Ranger Security Support Guide](https://yaooqinn.g
 
 ## Additional Documentations
 
-[Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)   
+[Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)  
+[Kyuubi Deployment Guide](https://yaooqinn.github.io/kyuubi/docs/deploy.html)    
 [Configuration Guide](https://yaooqinn.github.io/kyuubi/docs/configurations.html)  
 [Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html)  
 [Kyuubi Architecture](https://yaooqinn.github.io/kyuubi/docs/architecture.html)  
