@@ -24,14 +24,14 @@ We can use the `Client` to fire a number ofr Kyuubi servers that meet our needs.
 
 Name|Description
 ---|---
-Client| Kyuubi YARN Client, with all informations we need to [deploy](https://yaooqinn.github.io/kyuubi/docs/deploy.html) Kyuubi
+Client| Kyuubi YARN Client, with all information we need to [deploy](https://yaooqinn.github.io/kyuubi/docs/deploy.html) Kyuubi
 ResourceManager | YARN ResourceManager
 NodeManager | YARN NodeManager
-Kyuubi Server | Kyuubi server istance wrapped as KyuubiAppMaster launched by YARN as an ApplicationMaster container
+Kyuubi Server | Kyuubi server instance wrapped as KyuubiAppMaster launched by YARN as an ApplicationMaster container
 Spark AM | Spark's ApplicationMaster, here as the role of ExecutorLauncher
 Spark Executor | A process launched on a NodeManager, that runs tasks and keeps data in memory or disk storage across them. Each SparkContext has its own executors.
-Zookeeper Service Discovery | [ZooKeeper Dynamic Service Discovery](https://yaooqinn.github.io/kyuubi/docs/architecture.html#1.4), which is useful in Kyuubi containerization because the port of KyuubiServer fontend service is random picked.
-JDBC/OBBC/Thrift Client | Various kinds of clients talk to Kyuubi Server
+Zookeeper Service Discovery | [ZooKeeper Dynamic Service Discovery](https://yaooqinn.github.io/kyuubi/docs/architecture.html#1.4), which is useful in Kyuubi containerization because the port of KyuubiServer frontend service is random picked.
+JDBC/ODBC/Thrift Client | Various kinds of clients talk to Kyuubi Server
 
 <h4 id="1.2">Configurations</h4>
 
