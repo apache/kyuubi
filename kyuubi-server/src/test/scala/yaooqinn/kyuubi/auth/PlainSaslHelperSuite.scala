@@ -20,7 +20,7 @@ package yaooqinn.kyuubi.auth
 import java.security.Security
 import javax.security.auth.login.LoginException
 
-import org.apache.spark.{SparkConf, SparkFunSuite}
+import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import org.apache.thrift.transport.{TSaslServerTransport, TSocket}
 
 import yaooqinn.kyuubi.auth.PlainSaslServer.SaslPlainProvider
@@ -30,7 +30,7 @@ class PlainSaslHelperSuite extends SparkFunSuite {
 
   test("Plain Sasl Helper") {
     val conf = new SparkConf(loadDefaults = true)
-    KyuubiServer.setupCommonConfig(conf)
+    KyuubiSparkUtil.setupCommonConfig(conf)
     val server = new KyuubiServer()
     val fe = server.feService
     val tProcessorFactory = PlainSaslHelper.getProcessFactory(fe)

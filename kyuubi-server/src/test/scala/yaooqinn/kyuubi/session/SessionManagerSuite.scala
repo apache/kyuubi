@@ -24,9 +24,7 @@ import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
 
 import yaooqinn.kyuubi.KyuubiSQLException
-import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.service.State
-import yaooqinn.kyuubi.spark.SparkSessionCacheManager
 import yaooqinn.kyuubi.utils.ReflectUtils
 
 class SessionManagerSuite extends SparkFunSuite {
@@ -38,7 +36,7 @@ class SessionManagerSuite extends SparkFunSuite {
       .set(KyuubiConf.LOGGING_OPERATION_ENABLED.key, "false")
         .set(KyuubiConf.LOGGING_OPERATION_LOG_DIR.key, logRoot)
 
-    KyuubiServer.setupCommonConfig(conf)
+    KyuubiSparkUtil.setupCommonConfig(conf)
 
     val sessionManager = new SessionManager()
     assert(sessionManager.getName === classOf[SessionManager].getSimpleName)
@@ -72,7 +70,7 @@ class SessionManagerSuite extends SparkFunSuite {
   test("start timeout checker") {
     val conf = new SparkConf().set(KyuubiConf.FRONTEND_SESSION_CHECK_INTERVAL.key, "-1")
     val sessionManager = new SessionManager()
-    KyuubiServer.setupCommonConfig(conf)
+    KyuubiSparkUtil.setupCommonConfig(conf)
     sessionManager.init(conf)
     sessionManager.start()
     assert(ReflectUtils.getFieldValue(sessionManager, "checkInterval") === -1)
@@ -83,13 +81,13 @@ class SessionManagerSuite extends SparkFunSuite {
     val conf = new SparkConf()
     val sessionManager = new SessionManager()
     intercept[NoSuchElementException](sessionManager.init(conf))
-    KyuubiServer.setupCommonConfig(conf)
+    KyuubiSparkUtil.setupCommonConfig(conf)
     assert(sessionManager.getServiceState === State.NOT_INITED)
     assert(sessionManager.getOperationMgr.getServiceState === State.NOT_INITED)
     sessionManager.init(conf)
     assert(sessionManager.getServiceState === State.INITED)
     assert(sessionManager.getOperationMgr.getServiceState === State.INITED)
-    assert(SparkSessionCacheManager.get !== null)
+    assert(sessionManager.getCacheMgr !== null)
     intercept[IllegalStateException](sessionManager.init(conf))
     sessionManager.stop()
   }
@@ -97,7 +95,7 @@ class SessionManagerSuite extends SparkFunSuite {
   test("start session manager") {
     val conf = new SparkConf()
     val sessionManager = new SessionManager()
-    KyuubiServer.setupCommonConfig(conf)
+    KyuubiSparkUtil.setupCommonConfig(conf)
     sessionManager.init(conf)
     sessionManager.start()
     assert(sessionManager.getServiceState === State.STARTED)
@@ -108,7 +106,7 @@ class SessionManagerSuite extends SparkFunSuite {
   test("stop session manager") {
     val conf = new SparkConf()
     val sessionManager = new SessionManager()
-    KyuubiServer.setupCommonConfig(conf)
+    KyuubiSparkUtil.setupCommonConfig(conf)
     sessionManager.init(conf)
     sessionManager.start()
     sessionManager.stop()
@@ -131,7 +129,7 @@ class SessionManagerSuite extends SparkFunSuite {
       .set(KyuubiConf.LOGGING_OPERATION_ENABLED.key, "false")
       .set(KyuubiConf.LOGGING_OPERATION_LOG_DIR.key, logRoot)
 
-    KyuubiServer.setupCommonConfig(conf)
+    KyuubiSparkUtil.setupCommonConfig(conf)
     val sessionManager = new SessionManager()
 
     sessionManager.init(conf)

@@ -276,4 +276,38 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
     assert(loader.loadClass(classOf[SparkEnv].getName).getClassLoader === loader)
     assert(loader.loadClass(classOf[SparkContext].getName).getClassLoader !== loader)
   }
+
+  test("test setup common kyuubi config") {
+    val conf = new SparkConf(true).set(KyuubiSparkUtil.METASTORE_JARS, "maven")
+    KyuubiSparkUtil.setupCommonConfig(conf)
+    val name = "spark.app.name"
+    assert(conf.get(name) === "Kyuubi Server")
+    assert(conf.get(KyuubiSparkUtil.SPARK_UI_PORT) === KyuubiSparkUtil.SPARK_UI_PORT_DEFAULT)
+    assert(conf.get(KyuubiSparkUtil.MULTIPLE_CONTEXTS) ===
+      KyuubiSparkUtil.MULTIPLE_CONTEXTS_DEFAULT)
+    assert(conf.get(KyuubiSparkUtil.CATALOG_IMPL) === KyuubiSparkUtil.CATALOG_IMPL_DEFAULT)
+    assert(conf.get(KyuubiSparkUtil.DEPLOY_MODE) === KyuubiSparkUtil.DEPLOY_MODE_DEFAULT)
+    assert(conf.get(KyuubiSparkUtil.METASTORE_JARS) === "builtin")
+    assert(conf.get(KyuubiSparkUtil.SPARK_UI_PORT) === KyuubiSparkUtil.SPARK_UI_PORT_DEFAULT)
+    assert(conf.get(KyuubiSparkUtil.SPARK_LOCAL_DIR)
+      .startsWith(System.getProperty("java.io.tmpdir")))
+    assert(!conf.contains(KyuubiSparkUtil.HDFS_CLIENT_CACHE))
+    val foo = "spark.foo"
+    val e = intercept[NoSuchElementException](conf.get(foo))
+    assert(e.getMessage === foo)
+    val bar = "bar"
+    val conf2 = new SparkConf(loadDefaults = true)
+      .set(name, "test")
+      .set(foo, bar)
+      .set(KyuubiSparkUtil.SPARK_UI_PORT, "1234")
+    KyuubiSparkUtil.setupCommonConfig(conf2)
+    assert(conf.get(name) === "Kyuubi Server") // app name will be overwritten
+    assert(conf2.get(KyuubiSparkUtil.SPARK_UI_PORT) === KyuubiSparkUtil.SPARK_UI_PORT_DEFAULT)
+    assert(conf2.get(foo) === bar)
+
+    val conf3 = new SparkConf(loadDefaults = true).set(KyuubiSparkUtil.METASTORE_JARS, "builtin")
+    KyuubiSparkUtil.setupCommonConfig(conf3)
+    assert(conf.get(KyuubiSparkUtil.METASTORE_JARS) === "builtin")
+
+  }
 }

@@ -27,7 +27,6 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.author.AuthzHelper
-import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 import yaooqinn.kyuubi.utils.ReflectUtils
 
@@ -35,11 +34,12 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
 
   val user = UserGroupInformation.getCurrentUser
   val conf = new SparkConf(loadDefaults = true).setAppName("spark session test")
-  KyuubiServer.setupCommonConfig(conf)
+  KyuubiSparkUtil.setupCommonConfig(conf)
   conf.remove(KyuubiSparkUtil.CATALOG_IMPL)
   conf.setMaster("local")
   val userName = user.getShortUserName
   var spark: SparkSession = _
+  val cache = new SparkSessionCacheManager()
 
   override protected def beforeAll(): Unit = {
     val sc = ReflectUtils
@@ -49,12 +49,14 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
       classOf[SparkSession].getName,
       Seq(classOf[SparkContext]),
       Seq(sc)).asInstanceOf[SparkSession]
-    SparkSessionCacheManager.startCacheManager(conf)
-    SparkSessionCacheManager.get.set(userName, spark)
+    
+    cache.init(conf)
+    cache.start()
+    cache.set(userName, spark)
   }
 
   protected override def afterAll(): Unit = {
-    SparkSessionCacheManager.get.stop()
+    cache.stop()
     spark.stop()
   }
 
@@ -64,7 +66,7 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
       .set(KyuubiConf.BACKEND_SESSTION_INIT_TIMEOUT.key, "3")
     val userName1 = "test1"
     val ru = UserGroupInformation.createRemoteUser(userName1)
-    val sparkSessionWithUGI = new SparkSessionWithUGI(ru, confClone)
+    val sparkSessionWithUGI = new SparkSessionWithUGI(ru, confClone, cache)
     assert(!SparkSessionWithUGI.isPartiallyConstructed(userName1))
     val e = intercept[KyuubiSQLException](sparkSessionWithUGI.init(Map.empty))
     assert(e.getCause.isInstanceOf[TimeoutException])
@@ -73,22 +75,21 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
     assert(se.getMessage.startsWith("Only one SparkContext"))
     assert(sparkSessionWithUGI.sparkSession === null)
     assert(System.getProperty("SPARK_YARN_MODE") === null)
-    assert(SparkSessionCacheManager.get.getAndIncrease(userName1).isEmpty)
+    assert(cache.getAndIncrease(userName1).isEmpty)
   }
 
   test("test init failed with no such database") {
-    val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf)
+    val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf, cache)
     intercept[NoSuchDatabaseException](sparkSessionWithUGI.init(Map("use:database" -> "fakedb")))
     assert(ReflectUtils.getFieldValue(sparkSessionWithUGI,
       "yaooqinn$kyuubi$spark$SparkSessionWithUGI$$initialDatabase") === Some("use fakedb"))
-    assert(SparkSessionCacheManager.get.getAndIncrease(userName).nonEmpty)
+    assert(cache.getAndIncrease(userName).nonEmpty)
   }
 
   test("test init success with empty session conf") {
-    val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf)
+    val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf, cache)
     sparkSessionWithUGI.init(Map.empty)
     assert(sparkSessionWithUGI.sparkSession.sparkContext.sparkUser === userName)
-    assert(sparkSessionWithUGI.userName === userName)
   }
 
   test("test init with authorization configured.") {
@@ -97,21 +98,21 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
       .set(KyuubiConf.AUTHORIZATION_ENABLE.key, "true")
 
     AuthzHelper.init(confClone)
-    val sparkSessionWithUGI = new SparkSessionWithUGI(user, confClone)
+    val sparkSessionWithUGI = new SparkSessionWithUGI(user, confClone, cache)
     sparkSessionWithUGI.init(Map.empty)
     assert(sparkSessionWithUGI.sparkSession.experimental.extraOptimizations.nonEmpty)
   }
 
   test("test init success with spark properties") {
     val sessionConf = Map("set:hivevar:spark.foo" -> "bar")
-    val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf)
+    val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf, cache)
     sparkSessionWithUGI.init(sessionConf)
     assert(sparkSessionWithUGI.sparkSession.conf.get("spark.foo") === "bar")
   }
 
   test("test init success with hive/hadoop/extra properties") {
     val sessionConf = Map("set:hivevar:foo" -> "bar")
-    val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf)
+    val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf, cache)
     sparkSessionWithUGI.init(sessionConf)
     assert(sparkSessionWithUGI.sparkSession.conf.get("spark.hadoop.foo") === "bar")
   }
@@ -120,7 +121,7 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
     val userName1 = "test"
     val ru = UserGroupInformation.createRemoteUser(userName1)
     val sessionConf = Map("set:hivevar:spark.foo" -> "bar", "set:hivevar:foo" -> "bar")
-    val sparkSessionWithUGI = new SparkSessionWithUGI(ru, conf)
+    val sparkSessionWithUGI = new SparkSessionWithUGI(ru, conf, cache)
     sparkSessionWithUGI.init(sessionConf)
     assert(sparkSessionWithUGI.sparkSession.conf.get("spark.foo") === "bar")
     assert(sparkSessionWithUGI.sparkSession.conf.get("spark.hadoop.foo") === "bar")
@@ -132,7 +133,7 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
   test("testSetPartiallyConstructed") {
     val confClone = conf.clone().set(KyuubiConf.BACKEND_SESSION_WAIT_OTHER_TIMES.key, "3")
     SparkSessionWithUGI.setPartiallyConstructed(userName)
-    val sparkSessionWithUGI = new SparkSessionWithUGI(user, confClone)
+    val sparkSessionWithUGI = new SparkSessionWithUGI(user, confClone, cache)
     val e = intercept[KyuubiSQLException](sparkSessionWithUGI.init(Map.empty))
     assert(e.getMessage.startsWith("A partially constructed SparkContext for"))
     assert(e.getMessage.contains(userName))
@@ -148,7 +149,7 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
       .set(KyuubiConf.BACKEND_SESSTION_INIT_TIMEOUT.key, "3")
     val userName1 = "test"
     val ru = UserGroupInformation.createRemoteUser(userName1)
-    val sparkSessionWithUGI = new SparkSessionWithUGI(ru, confClone)
+    val sparkSessionWithUGI = new SparkSessionWithUGI(ru, confClone, cache)
     assert(!SparkSessionWithUGI.isPartiallyConstructed(userName1))
     val e = intercept[KyuubiSQLException](sparkSessionWithUGI.init(Map.empty))
     assert(e.getCause.isInstanceOf[TimeoutException])
@@ -167,7 +168,7 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
   }
 
   test("stop sparkcontext") {
-    val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf)
+    val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf, cache)
     sparkSessionWithUGI.init(Map.empty)
     val promise = ReflectUtils.getFieldValue(sparkSessionWithUGI,
       "yaooqinn$kyuubi$spark$SparkSessionWithUGI$$promisedSparkContext")
