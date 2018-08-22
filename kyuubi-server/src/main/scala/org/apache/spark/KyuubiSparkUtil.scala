@@ -19,12 +19,12 @@ package org.apache.spark
 
 import java.io.File
 import java.net.URI
-import javax.print.DocFlavor.STRING
 
 import scala.collection.Map
 import scala.util.matching.Regex
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.util._
 import org.slf4j.Logger
@@ -240,5 +240,39 @@ object KyuubiSparkUtil extends Logging {
     Thread.currentThread.setContextClassLoader(loader)
     info(s"Kyuubi first classloader is set to $url")
     loader
+  }
+
+  /**
+   * Generate proper configurations before server starts
+   * @param conf the default [[SparkConf]]
+   */
+  def setupCommonConfig(conf: SparkConf): Unit = {
+    conf.setAppName("Kyuubi Server")
+    // avoid max port retries reached
+    conf.set(SPARK_UI_PORT, SPARK_UI_PORT_DEFAULT)
+    conf.set(MULTIPLE_CONTEXTS, MULTIPLE_CONTEXTS_DEFAULT)
+    conf.set(CATALOG_IMPL, CATALOG_IMPL_DEFAULT)
+    // For the server itself the deploy mode could be either client or cluster,
+    // but for the later [[SparkContext]] must be set to client mode
+    conf.set(DEPLOY_MODE, DEPLOY_MODE_DEFAULT)
+    // The delegation token store implementation. Set to MemoryTokenStore always.
+    conf.set("spark.hadoop.hive.cluster.delegation.token.store.class",
+      "org.apache.hadoop.hive.thrift.MemoryTokenStore")
+
+    conf.getOption(METASTORE_JARS) match {
+      case None | Some("builtin") =>
+      case _ =>
+        conf.set(METASTORE_JARS, "builtin")
+        info(s"Kyuubi prefer ${METASTORE_JARS} to be builtin ones")
+    }
+    // Set missing Kyuubi configs to SparkConf
+    KyuubiConf.getAllDefaults.foreach(kv => conf.setIfMissing(kv._1, kv._2))
+
+    conf.setIfMissing(SPARK_LOCAL_DIR, conf.get(KyuubiConf.BACKEND_SESSION_LOCAL_DIR.key))
+
+    if (UserGroupInformation.isSecurityEnabled) {
+      conf.setIfMissing(HDFS_CLIENT_CACHE, HDFS_CLIENT_CACHE_DEFAULT)
+      conf.setIfMissing(FILE_CLIENT_CACHE, FILE_CLIENT_CACHE_DEFAULT)
+    }
   }
 }

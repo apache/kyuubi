@@ -23,11 +23,9 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext, SparkFunSuite}
 import org.apache.spark.sql.SparkSession
-import org.scalatest.BeforeAndAfterEach
 
 import yaooqinn.kyuubi.cli.FetchOrientation.FETCH_NEXT
 import yaooqinn.kyuubi.schema.ColumnBasedSet
-import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.session.{KyuubiSession, SessionManager}
 import yaooqinn.kyuubi.spark.SparkSessionWithUGI
 import yaooqinn.kyuubi.utils.ReflectUtils
@@ -35,7 +33,7 @@ import yaooqinn.kyuubi.utils.ReflectUtils
 class KyuubiOperationSuite extends SparkFunSuite {
 
   val conf = new SparkConf(loadDefaults = true).setAppName("operation test")
-  KyuubiServer.setupCommonConfig(conf)
+  KyuubiSparkUtil.setupCommonConfig(conf)
   conf.remove(KyuubiSparkUtil.CATALOG_IMPL)
   conf.setMaster("local")
   var sessionMgr: SessionManager = _
@@ -56,12 +54,12 @@ class KyuubiOperationSuite extends SparkFunSuite {
       classOf[SparkSession].getName,
       Seq(classOf[SparkContext]),
       Seq(sc)).asInstanceOf[SparkSession]
-    sparkWithUgi = new SparkSessionWithUGI(user, conf)
-    ReflectUtils.setFieldValue(sparkWithUgi,
-      "yaooqinn$kyuubi$spark$SparkSessionWithUGI$$_sparkSession", spark)
     sessionMgr = new SessionManager()
     sessionMgr.init(conf)
     sessionMgr.start()
+    sparkWithUgi = new SparkSessionWithUGI(user, conf, sessionMgr.getCacheMgr)
+    ReflectUtils.setFieldValue(sparkWithUgi,
+      "yaooqinn$kyuubi$spark$SparkSessionWithUGI$$_sparkSession", spark)
     session = new KyuubiSession(
       proto, userName, passwd, conf, "", false, sessionMgr, sessionMgr.getOperationMgr)
     ReflectUtils.setFieldValue(session, "sparkSessionWithUGI", sparkWithUgi)
