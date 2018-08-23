@@ -28,7 +28,6 @@ import org.mockito.Mockito.{doNothing, when}
 import org.scalatest.Matchers
 import org.scalatest.mock.MockitoSugar
 
-import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.service.State
 import yaooqinn.kyuubi.utils.ReflectUtils
 
@@ -49,7 +48,7 @@ class KyuubiAppMasterSuite extends SparkFunSuite with MockitoSugar with Matchers
       }
       case _ =>
     }
-    KyuubiServer.setupCommonConfig(conf)
+    KyuubiSparkUtil.setupCommonConfig(conf)
     super.beforeAll()
   }
 

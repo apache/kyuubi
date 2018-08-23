@@ -39,11 +39,12 @@ import yaooqinn.kyuubi.author.AuthzHelper
 import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
 import yaooqinn.kyuubi.utils.ReflectUtils
 
-class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends Logging {
+class SparkSessionWithUGI(
+    user: UserGroupInformation,
+    conf: SparkConf,
+    cache: SparkSessionCacheManager) extends Logging {
   private[this] var _sparkSession: SparkSession = _
-
-  def sparkSession: SparkSession = _sparkSession
-
+  private[this] val userName: String = user.getShortUserName
   private[this] val promisedSparkContext = Promise[SparkContext]()
   private[this] var initialDatabase: Option[String] = None
   private[this] var sparkException: Option[Throwable] = None
@@ -138,7 +139,7 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
       info(s"A partially constructed SparkContext for [$userName], $checkRound times countdown.")
     }
 
-    SparkSessionCacheManager.get.getAndIncrease(userName) match {
+    cache.getAndIncrease(userName) match {
       case Some(ss) =>
         _sparkSession = ss.newSession()
         configureSparkSession(sessionConf)
@@ -167,7 +168,7 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
             Seq(context)).asInstanceOf[SparkSession]
         }
       })
-      SparkSessionCacheManager.get.set(userName, _sparkSession)
+      cache.set(userName, _sparkSession)
     } catch {
       case ute: UndeclaredThrowableException =>
         stopContext()
@@ -191,8 +192,6 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
     KyuubiServerMonitor.addUITab(_sparkSession.sparkContext.sparkUser, uiTab)
   }
 
-  def userName: String = user.getShortUserName
-
   @throws[KyuubiSQLException]
   def init(sessionConf: Map[String, String]): Unit = {
     getOrCreate(sessionConf)
@@ -207,13 +206,16 @@ class SparkSessionWithUGI(user: UserGroupInformation, conf: SparkConf) extends L
       }
     } catch {
       case ute: UndeclaredThrowableException =>
-        SparkSessionCacheManager.get.decrease(userName)
+        cache.decrease(userName)
         throw ute.getCause
     }
   }
+
+  def sparkSession: SparkSession = _sparkSession
+
 }
 
-object SparkSessionWithUGI extends Logging {
+object SparkSessionWithUGI {
   private[this] val userSparkContextBeingConstruct = new MHSet[String]()
 
   def setPartiallyConstructed(user: String): Unit = {

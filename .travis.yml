@@ -3,8 +3,8 @@ scala:
   - 2.11.8
 
 cache:
-directories:
-  - $HOME/.m2
+  directories:
+    - $HOME/.m2
 
 before_deploy:
   - ./build/dist --tgz
