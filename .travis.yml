@@ -29,9 +29,9 @@ install:
   - ./build/mvn install -q -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 
 script:
-  - ./build/mvn package -q -Dmaven.javadoc.skip=true -B -V
-  - ./build/mvn package -Pspark-2.2 -q -Dmaven.javadoc.skip=true -B -V
-  - ./build/mvn package -Pspark-2.3 -q -Dmaven.javadoc.skip=true -B -V
+  - ./build/mvn package -Pspark-2.1 -Dmaven.javadoc.skip=true -B -V
+  - ./build/mvn package -Pspark-2.2 -Dmaven.javadoc.skip=true -B -V
+  - ./build/mvn package -Pspark-2.3 -Dmaven.javadoc.skip=true -B -V
 
 language: java
 after_success:

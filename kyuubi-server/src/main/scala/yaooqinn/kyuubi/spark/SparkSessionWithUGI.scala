@@ -48,6 +48,7 @@ class SparkSessionWithUGI(
   private[this] val promisedSparkContext = Promise[SparkContext]()
   private[this] var initialDatabase: Option[String] = None
   private[this] var sparkException: Option[Throwable] = None
+  private[this] val shallInitDB = conf.getBoolean(AUTHORIZATION_INITIAL_DB.key, defaultValue = true)
 
   private[this] def newContext(): Thread = {
     new Thread(s"Start-SparkContext-$userName") {
@@ -94,7 +95,8 @@ class SparkSessionWithUGI(
           } else {
             conf.set(SPARK_HADOOP_PREFIX + k, value)
           }
-        case "use:database" => initialDatabase = Some("use " + value)
+        case USE_DB if shallInitDB => initialDatabase = Some("use " + value)
+        case USE_DB => initialDatabase = None
         case _ =>
       }
     }
@@ -118,7 +120,8 @@ class SparkSessionWithUGI(
           } else {
             _sparkSession.conf.set(SPARK_HADOOP_PREFIX + k, value)
           }
-        case "use:database" => initialDatabase = Some("use " + value)
+        case USE_DB if shallInitDB => initialDatabase = Some("use " + value)
+        case USE_DB => initialDatabase = None
         case _ =>
       }
     }
