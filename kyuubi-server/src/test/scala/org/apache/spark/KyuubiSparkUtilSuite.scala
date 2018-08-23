@@ -58,7 +58,7 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
     assert("localhost" === hostname)
   }
 
-  test("testHIVE_VAR_PREFIX") {
+  test("test HIVE_VAR_PREFIX") {
     val conf = "spark.foo"
     val hiveConf = "set:hivevar:" + conf
     hiveConf match {
@@ -295,6 +295,7 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
     val foo = "spark.foo"
     val e = intercept[NoSuchElementException](conf.get(foo))
     assert(e.getMessage === foo)
+
     val bar = "bar"
     val conf2 = new SparkConf(loadDefaults = true)
       .set(name, "test")
@@ -304,6 +305,7 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
     assert(conf.get(name) === "Kyuubi Server") // app name will be overwritten
     assert(conf2.get(KyuubiSparkUtil.SPARK_UI_PORT) === KyuubiSparkUtil.SPARK_UI_PORT_DEFAULT)
     assert(conf2.get(foo) === bar)
+    assert(conf2.getOption(KyuubiSparkUtil.METASTORE_JARS).isEmpty)
 
     val conf3 = new SparkConf(loadDefaults = true).set(KyuubiSparkUtil.METASTORE_JARS, "builtin")
     KyuubiSparkUtil.setupCommonConfig(conf3)
