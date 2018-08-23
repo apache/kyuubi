@@ -81,7 +81,9 @@ private[kyuubi] class KyuubiSession(
       currentUser
     }
   }
-  private[this] val sparkSessionWithUGI = new SparkSessionWithUGI(sessionUGI, conf)
+
+  private[this] val sparkSessionWithUGI =
+    new SparkSessionWithUGI(sessionUGI, conf, sessionManager.getCacheMgr)
 
   private[this] def acquire(userAccess: Boolean): Unit = {
     if (userAccess) {

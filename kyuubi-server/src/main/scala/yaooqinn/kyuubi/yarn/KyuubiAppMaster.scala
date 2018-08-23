@@ -197,7 +197,7 @@ object KyuubiAppMaster extends Logging {
         }
         case _ => warn("Failed to load property file.")
       }
-      KyuubiServer.setupCommonConfig(conf)
+      KyuubiSparkUtil.setupCommonConfig(conf)
 
       val master = new KyuubiAppMaster()
       KyuubiSparkUtil.addShutdownHook(() => master.stop())

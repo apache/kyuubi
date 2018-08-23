@@ -19,7 +19,7 @@ package yaooqinn.kyuubi.ha
 
 import com.google.common.io.Files
 import org.apache.curator.test.TestingServer
-import org.apache.spark.{KyuubiConf, SparkConf, SparkFunSuite}
+import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import org.apache.spark.KyuubiConf._
 import org.apache.zookeeper.KeeperException.ConnectionLossException
 import org.scalatest.BeforeAndAfterEach
@@ -32,7 +32,7 @@ class HighAvailabilityUtilsSuite extends SparkFunSuite with BeforeAndAfterEach {
   var zkServer: TestingServer = _
   var connectString: String = _
   val conf = new SparkConf(loadDefaults = true)
-  KyuubiServer.setupCommonConfig(conf)
+  KyuubiSparkUtil.setupCommonConfig(conf)
   conf.set(KyuubiConf.FRONTEND_BIND_PORT.key, "0")
   var server: KyuubiServer = _
 
@@ -90,6 +90,7 @@ class HighAvailabilityUtilsSuite extends SparkFunSuite with BeforeAndAfterEach {
     val e = intercept[ServiceException](HighAvailabilityUtils.addServerInstanceToZooKeeper(server))
     assert(e.getCause.isInstanceOf[ConnectionLossException])
     assert(e.getMessage.contains("ZooKeeper is still unreachable"))
+    KyuubiServer.startKyuubiServer()
   }
 
   test("Add Server Instance To ZooKeeper with wrong host and right port") {
@@ -104,7 +105,7 @@ class HighAvailabilityUtilsSuite extends SparkFunSuite with BeforeAndAfterEach {
   test("Is Support Dynamic Service Discovery") {
     val conf1 = new SparkConf(loadDefaults = true)
     assert(!HighAvailabilityUtils.isSupportDynamicServiceDiscovery(conf1))
-    KyuubiServer.setupCommonConfig(conf1)
+    KyuubiSparkUtil.setupCommonConfig(conf1)
     assert(!HighAvailabilityUtils.isSupportDynamicServiceDiscovery(conf1))
     conf1.set(KyuubiConf.HA_ENABLED.key, "true")
     assert(!HighAvailabilityUtils.isSupportDynamicServiceDiscovery(conf1))
@@ -121,5 +122,11 @@ class HighAvailabilityUtilsSuite extends SparkFunSuite with BeforeAndAfterEach {
     val conf2 = server.getConf
     assert(conf2.get(HA_ZOOKEEPER_QUORUM.key) === connectString)
     assert(HighAvailabilityUtils.isSupportDynamicServiceDiscovery(conf1))
+    Map(HA_ZOOKEEPER_QUORUM.key -> connectString.split(":")(0),
+      KyuubiConf.HA_ZOOKEEPER_CLIENT_PORT.key -> "2000").foreach { case (k, v) =>
+      sys.props(k) = v
+    }
+    intercept[ServiceException](KyuubiServer.startKyuubiServer())
+
   }
 }

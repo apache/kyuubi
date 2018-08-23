@@ -29,7 +29,7 @@ class BackendServiceSuite extends SparkFunSuite {
   var backendService: BackendService = _
   val user = KyuubiSparkUtil.getCurrentUserName
   val conf = new SparkConf(loadDefaults = true).setAppName("be test")
-  KyuubiServer.setupCommonConfig(conf)
+  KyuubiSparkUtil.setupCommonConfig(conf)
   conf.remove(KyuubiSparkUtil.CATALOG_IMPL)
   conf.setMaster("local")
 

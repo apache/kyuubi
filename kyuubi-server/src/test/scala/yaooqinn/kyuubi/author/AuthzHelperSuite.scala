@@ -17,11 +17,9 @@
 
 package yaooqinn.kyuubi.author
 
-import org.apache.spark.{KyuubiConf, SparkConf, SparkFunSuite}
+import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
-
-import yaooqinn.kyuubi.server.KyuubiServer
 
 class AuthzHelperSuite extends SparkFunSuite {
 
@@ -32,7 +30,7 @@ class AuthzHelperSuite extends SparkFunSuite {
     val authzHelper1 = new AuthzHelper(conf)
     assert(authzHelper1.rule.isEmpty)
     // reflect failure
-    KyuubiServer.setupCommonConfig(conf)
+    KyuubiSparkUtil.setupCommonConfig(conf)
     val authzHelper2 = new AuthzHelper(conf)
     assert(authzHelper2.rule.isEmpty)
 

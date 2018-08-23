@@ -20,7 +20,6 @@ package yaooqinn.kyuubi.session
 import java.io.{File, IOException}
 import java.util.Date
 import java.util.concurrent._
-import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.JavaConverters._
 
@@ -28,7 +27,6 @@ import org.apache.commons.io.FileUtils
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.SparkSession
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.operation.OperationManager
@@ -44,6 +42,7 @@ import yaooqinn.kyuubi.utils.NamedThreadFactory
 private[kyuubi] class SessionManager private(
     name: String) extends CompositeService(name) with Logging {
   private[this] val operationManager = new OperationManager()
+  private[this] val cacheManager = new SparkSessionCacheManager()
   private[this] val handleToSession = new ConcurrentHashMap[SessionHandle, KyuubiSession]
   private[this] var execPool: ThreadPoolExecutor = _
   private[this] var isOperationLogEnabled = false
@@ -173,7 +172,7 @@ private[kyuubi] class SessionManager private(
     }
     createExecPool()
     addService(operationManager)
-    SparkSessionCacheManager.startCacheManager(conf)
+    addService(cacheManager)
     super.init(conf)
   }
 
@@ -200,7 +199,6 @@ private[kyuubi] class SessionManager private(
       execPool = null
     }
     cleanupLoggingRootDir()
-    SparkSessionCacheManager.get.stop()
   }
 
   /**
@@ -264,11 +262,13 @@ private[kyuubi] class SessionManager private(
     KyuubiServerMonitor.getListener(sessionUser).foreach {
       _.onSessionClosed(sessionHandle.getSessionId.toString)
     }
-    SparkSessionCacheManager.get.decrease(sessionUser)
+    cacheManager.decrease(sessionUser)
     session.close()
   }
 
   def getOperationMgr: OperationManager = operationManager
+
+  def getCacheMgr: SparkSessionCacheManager = cacheManager
 
   def getOpenSessionCount: Int = handleToSession.size
 

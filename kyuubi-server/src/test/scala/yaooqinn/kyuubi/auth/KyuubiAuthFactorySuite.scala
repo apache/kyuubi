@@ -56,7 +56,7 @@ class KyuubiAuthFactorySuite extends SparkFunSuite {
 
   test("AuthType NONE") {
     val conf = new SparkConf(true)
-    KyuubiServer.setupCommonConfig(conf)
+    KyuubiSparkUtil.setupCommonConfig(conf)
     val auth = new KyuubiAuthFactory(conf)
     val saslServer = ReflectUtils.getFieldValue(auth, "saslServer")
     assert(saslServer === None)
@@ -76,14 +76,14 @@ class KyuubiAuthFactorySuite extends SparkFunSuite {
 
   test("AuthType Other") {
     val conf = new SparkConf(true).set(KyuubiConf.AUTHENTICATION_METHOD.key, "other")
-    KyuubiServer.setupCommonConfig(conf)
+    KyuubiSparkUtil.setupCommonConfig(conf)
     val e = intercept[ServiceException](new KyuubiAuthFactory(conf))
     assert(e.getMessage === "Unsupported authentication method: OTHER")
   }
 
   test("AuthType KERBEROS without keytab/principal") {
     val conf = new SparkConf(true).set(KyuubiConf.AUTHENTICATION_METHOD.key, "KERBEROS")
-    KyuubiServer.setupCommonConfig(conf)
+    KyuubiSparkUtil.setupCommonConfig(conf)
     val e = intercept[ServiceException](new KyuubiAuthFactory(conf))
     assert(e.getMessage === "spark.yarn.keytab and spark.yarn.principal are not configured " +
       "properly for KERBEROS Authentication method")
@@ -94,7 +94,7 @@ class KyuubiAuthFactorySuite extends SparkFunSuite {
       .set(KyuubiConf.AUTHENTICATION_METHOD.key, "KERBEROS")
         .set(KyuubiSparkUtil.KEYTAB, "kent.keytab")
         .set(KyuubiSparkUtil.PRINCIPAL, "kent")
-    KyuubiServer.setupCommonConfig(conf)
+    KyuubiSparkUtil.setupCommonConfig(conf)
     val auth = new KyuubiAuthFactory(conf)
     val saslServer = ReflectUtils.getFieldValue(auth, "saslServer")
     saslServer match {

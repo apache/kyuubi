@@ -21,12 +21,16 @@
         <level value="INFO" />
         <appender-ref ref="console" />
     </logger>
-    <logger name="org.apache.zookeeper.ClientCnxn" additivity="false">
+    <logger name="org.apache.zookeeper" additivity="false">
         <level value="ERROR" />
         <appender-ref ref="console" />
     </logger>
+    <logger name="org.apache.curator.framework.imps" additivity="false">
+        <level value="OFF" />
+        <appender-ref ref="console" />
+    </logger>
     <root>
-        <level value="WARN" />
+        <level value="ERROR" />
         <appender-ref ref="console" />
     </root>
 </log4j:configuration>
