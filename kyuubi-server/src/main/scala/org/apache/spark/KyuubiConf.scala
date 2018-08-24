@@ -328,13 +328,6 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
-  val AUTHORIZATION_INITIAL_DB: ConfigEntry[Boolean] =
-    KyuubiConfigBuilder("spark.kyuubi.authorization.initial.db.enabled")
-      .doc("When true, Kyuubi run `use:database` statement which will check the privileges for" +
-        " the user connecting.")
-      .booleanConf
-      .createWithDefault(true)
-
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                         Operation                                           //
   /////////////////////////////////////////////////////////////////////////////////////////////////

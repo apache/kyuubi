@@ -18,8 +18,10 @@
 package org.apache.spark
 
 import java.io.File
+import java.lang.reflect.{InvocationTargetException, UndeclaredThrowableException}
 import java.net.URI
 
+import scala.annotation.tailrec
 import scala.collection.Map
 import scala.util.matching.Regex
 
@@ -263,7 +265,7 @@ object KyuubiSparkUtil extends Logging {
       case None | Some("builtin") =>
       case _ =>
         conf.set(METASTORE_JARS, "builtin")
-        info(s"Kyuubi prefer ${METASTORE_JARS} to be builtin ones")
+        info(s"Kyuubi prefer $METASTORE_JARS to be builtin ones")
     }
     // Set missing Kyuubi configs to SparkConf
     KyuubiConf.getAllDefaults.foreach(kv => conf.setIfMissing(kv._1, kv._2))
@@ -274,5 +276,14 @@ object KyuubiSparkUtil extends Logging {
       conf.setIfMissing(HDFS_CLIENT_CACHE, HDFS_CLIENT_CACHE_DEFAULT)
       conf.setIfMissing(FILE_CLIENT_CACHE, FILE_CLIENT_CACHE_DEFAULT)
     }
+  }
+
+  @tailrec
+  def findCause(t: Throwable): Throwable = t match {
+    case e: UndeclaredThrowableException =>
+      if (e.getCause != null) findCause(e.getCause) else e
+    case e: InvocationTargetException =>
+      if (e.getCause != null) findCause(e.getCause) else e
+    case e: Throwable => e
   }
 }

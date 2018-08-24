@@ -47,7 +47,7 @@ object ReflectUtils extends Logging {
         classLoader.loadClass(className).getConstructor().newInstance()
       }
     } catch {
-      case e: Exception => throw e
+      case e: Exception => throw KyuubiSparkUtil.findCause(e)
     }
   }
 
@@ -74,7 +74,7 @@ object ReflectUtils extends Logging {
     } catch {
       case e: Exception =>
         if (!silence) {
-          throw e
+          throw KyuubiSparkUtil.findCause(e)
         } else {
           error(e.getMessage, e)
           null
@@ -119,7 +119,7 @@ object ReflectUtils extends Logging {
       method.invoke(null, params: _*)
     } match {
       case Success(value) => value
-      case Failure(exception) => throw exception
+      case Failure(e) => throw KyuubiSparkUtil.findCause(e)
     }
   }
 
@@ -152,7 +152,7 @@ object ReflectUtils extends Logging {
       method.invoke(o, params: _*)
     } match {
       case Success(value) => value
-      case Failure(exception) => throw exception
+      case Failure(e) => throw KyuubiSparkUtil.findCause(e)
     }
   }
 
@@ -163,7 +163,7 @@ object ReflectUtils extends Logging {
       field.get(o)
     } match {
       case Success(value) => value
-      case Failure(exception) => throw exception
+      case Failure(e) => throw KyuubiSparkUtil.findCause(e)
     }
   }
 
@@ -176,19 +176,19 @@ object ReflectUtils extends Logging {
       field.setAccessible(true)
       field.set(o, value.asInstanceOf[AnyRef])
     } match {
-      case Failure(exception) => throw exception
+      case Failure(e) => throw KyuubiSparkUtil.findCause(e)
       case _ =>
     }
   }
 
-  def setAncestorField(obj: AnyRef, level: Int, fieldName: String, fieldValue: AnyRef) {
+  def setAncestorField(obj: AnyRef, level: Int, fieldName: String, fieldValue: AnyRef): Unit = {
     val ancestor = Iterator.iterate[Class[_]](obj.getClass)(_.getSuperclass).drop(level).next()
     val field = ancestor.getDeclaredField(fieldName)
     field.setAccessible(true)
     field.set(obj, fieldValue)
   }
 
-  def setSuperField(obj : Object, fieldName: String, fieldValue: Object) {
+  def setSuperField(obj : Object, fieldName: String, fieldValue: Object): Unit = {
     setAncestorField(obj, 1, fieldName, fieldValue)
   }
 
@@ -218,7 +218,7 @@ object ReflectUtils extends Logging {
       case Failure(e) if silent =>
         error(e.getMessage, e)
         None
-      case Failure(e) => throw e
+      case Failure(e) => throw KyuubiSparkUtil.findCause(e)
     }
   }
 }
