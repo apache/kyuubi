@@ -48,7 +48,6 @@ class SparkSessionWithUGI(
   private[this] val promisedSparkContext = Promise[SparkContext]()
   private[this] var initialDatabase: Option[String] = None
   private[this] var sparkException: Option[Throwable] = None
-  private[this] val shallInitDB = conf.getBoolean(AUTHORIZATION_INITIAL_DB.key, defaultValue = true)
 
   private[this] def newContext(): Thread = {
     new Thread(s"Start-SparkContext-$userName") {
@@ -95,8 +94,7 @@ class SparkSessionWithUGI(
           } else {
             conf.set(SPARK_HADOOP_PREFIX + k, value)
           }
-        case USE_DB if shallInitDB => initialDatabase = Some("use " + value)
-        case USE_DB => initialDatabase = None
+        case USE_DB => initialDatabase = Some("use " + value)
         case _ =>
       }
     }
@@ -120,8 +118,7 @@ class SparkSessionWithUGI(
           } else {
             _sparkSession.conf.set(SPARK_HADOOP_PREFIX + k, value)
           }
-        case USE_DB if shallInitDB => initialDatabase = Some("use " + value)
-        case USE_DB => initialDatabase = None
+        case USE_DB => initialDatabase = Some("use " + value)
         case _ =>
       }
     }
@@ -173,16 +170,12 @@ class SparkSessionWithUGI(
       })
       cache.set(userName, _sparkSession)
     } catch {
-      case ute: UndeclaredThrowableException =>
-        stopContext()
-        val ke = new KyuubiSQLException(
-          s"Get SparkSession for [$userName] failed: " + ute.getCause, "08S01", 1001, ute.getCause)
-        sparkException.foreach(ke.addSuppressed)
-        throw ke
       case e: Exception =>
         stopContext()
-        throw new KyuubiSQLException(
-          s"Get SparkSession for [$userName] failed: " + e, "08S01", e)
+        val ke = new KyuubiSQLException(
+          s"Get SparkSession for [$userName] failed", "08S01", 1001, findCause(e))
+        sparkException.foreach(ke.addSuppressed)
+        throw ke
     } finally {
       SparkSessionWithUGI.setFullyConstructed(userName)
       newContext().join()
@@ -198,9 +191,7 @@ class SparkSessionWithUGI(
   @throws[KyuubiSQLException]
   def init(sessionConf: Map[String, String]): Unit = {
     getOrCreate(sessionConf)
-    AuthzHelper.get.foreach { auth =>
-      _sparkSession.experimental.extraOptimizations ++= auth.rule
-    }
+
     try {
       initialDatabase.foreach { db =>
         user.doAs(new PrivilegedExceptionAction[Unit] {
@@ -208,9 +199,14 @@ class SparkSessionWithUGI(
         })
       }
     } catch {
-      case ute: UndeclaredThrowableException =>
+      case e: Exception =>
         cache.decrease(userName)
-        throw ute.getCause
+        throw findCause(e)
+    }
+
+    // KYUUBI-99: Add authorizer support after use initial db
+    AuthzHelper.get.foreach { auth =>
+      _sparkSession.experimental.extraOptimizations ++= auth.rule
     }
   }
 

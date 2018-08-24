@@ -17,9 +17,7 @@
 
 package yaooqinn.kyuubi
 
-import java.lang.reflect.InvocationTargetException
-
-import org.apache.spark.{SparkConf, SparkContext, SparkFunSuite}
+import org.apache.spark.{SparkConf, SparkContext, SparkException, SparkFunSuite}
 
 import yaooqinn.kyuubi.utils.ReflectUtils
 
@@ -35,7 +33,7 @@ class SparkContextReflectionSuite extends SparkFunSuite {
   }
 
   test("SparkContext initialization with this()") {
-    intercept[InvocationTargetException](ReflectUtils
+    intercept[SparkException](ReflectUtils
       .instantiateClassByName(classOf[SparkContext].getName)
       .asInstanceOf[SparkContext])
   }

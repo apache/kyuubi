@@ -17,6 +17,7 @@
 
 package org.apache.spark
 
+import java.lang.reflect.{InvocationTargetException, UndeclaredThrowableException}
 import java.net.URL
 import java.security.PrivilegedExceptionAction
 
@@ -310,6 +311,28 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
     val conf3 = new SparkConf(loadDefaults = true).set(KyuubiSparkUtil.METASTORE_JARS, "builtin")
     KyuubiSparkUtil.setupCommonConfig(conf3)
     assert(conf.get(KyuubiSparkUtil.METASTORE_JARS) === "builtin")
+  }
 
+  test("find cause") {
+    val msg = "message"
+    val e0 = new Exception(msg)
+    val e1 = new UndeclaredThrowableException(null)
+    val e2 = KyuubiSparkUtil.findCause(e1)
+    assert(e1 === e2)
+
+    val e3 = new UndeclaredThrowableException(e0)
+    val e4 = KyuubiSparkUtil.findCause(e3)
+    assert(e4 === e0)
+
+    val e5 = new InvocationTargetException(null)
+    val e6 = KyuubiSparkUtil.findCause(e5)
+    assert(e5 === e6)
+
+    val e7 = new InvocationTargetException(e0)
+    val e8 = KyuubiSparkUtil.findCause(e7)
+    assert(e8 === e0)
+    
+    val e9 = KyuubiSparkUtil.findCause(e0)
+    assert(e9 === e0)
   }
 }
