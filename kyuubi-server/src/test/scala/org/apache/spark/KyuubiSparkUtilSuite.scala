@@ -331,7 +331,7 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
     val e7 = new InvocationTargetException(e0)
     val e8 = KyuubiSparkUtil.findCause(e7)
     assert(e8 === e0)
-    
+
     val e9 = KyuubiSparkUtil.findCause(e0)
     assert(e9 === e0)
   }
