@@ -63,8 +63,8 @@ abstract class AbstractService(name: String) extends Service with Logging {
   }
 
   override def start(): Unit = {
-    startTime = System.currentTimeMillis
     ensureCurrentState(State.INITED)
+    startTime = System.currentTimeMillis
     changeState(State.STARTED)
     info("Service: [" + getName + "] is started.")
   }

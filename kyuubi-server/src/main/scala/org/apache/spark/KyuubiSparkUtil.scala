@@ -118,7 +118,7 @@ object KyuubiSparkUtil extends Logging {
   }
 
   def getCurrentUserName: String = {
-    Utils.getCurrentUserName()
+    UserGroupInformation.getCurrentUser.getShortUserName
   }
 
   def getContextOrSparkClassLoader: ClassLoader = {

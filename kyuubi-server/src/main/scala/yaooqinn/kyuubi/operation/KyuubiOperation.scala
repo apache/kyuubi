@@ -100,7 +100,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     this.state == state
   }
   
-  private[this] def isClosedOrCanceled: Boolean = {
+  def isClosedOrCanceled: Boolean = {
     checkState(CLOSED) || checkState(CANCELED)
   }
 
