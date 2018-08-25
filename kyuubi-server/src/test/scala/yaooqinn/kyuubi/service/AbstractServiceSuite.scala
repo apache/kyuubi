@@ -35,7 +35,7 @@ class AbstractServiceSuite extends SparkFunSuite {
     val conf = new SparkConf()
     service.init(conf)
     assert(service.getConf === conf)
-    assert(service.getStartTime !== 0L)
+    assert(service.getStartTime === 0L)
     assert(service.getServiceState === State.INITED)
     service.stop()
     assert(service.getServiceState === State.INITED)
