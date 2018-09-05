@@ -3,9 +3,6 @@ cache:
     - $HOME/.m2
     - ./build
 
-install:
-  - ./build/mvn install -q -DskipTests=true -Dmaven.javadoc.skip=true -B -V
-
 jobs:
   include:
     - stage: spark2.3-package-test
@@ -19,6 +16,7 @@ jobs:
       script: ./build/mvn package -Pspark-2.1 -Dmaven.javadoc.skip=true -B -V
       after_success: bash <(curl -s https://codecov.io/bash)
     - stage: pages
+      language: scala
       deploy:
         - provider: pages
           skip_cleanup: true
@@ -28,6 +26,7 @@ jobs:
           on:
             branch: master
     - stage: releases
+      language: scala
       before_deploy: ./build/dist --tgz
       deploy:
         - provider: releases
