@@ -28,13 +28,13 @@ deploy:
 
 jobs:
   include:
-    - stage: spark2.3-package-test
+    - stage: spark2.3
       language: scala
-      script: ./build/mvn package -Pspark-2.3 -Dmaven.javadoc.skip=true -B -V
-    - stage: spark2.2-package-test
+      script: ./build/mvn install -Pspark-2.3 -Dmaven.javadoc.skip=true -B -V
+    - stage: spark2.2
       language: scala
-      script: ./build/mvn package -Pspark-2.2 -Dmaven.javadoc.skip=true -B -V
-    - stage: spark2.1-package-test
+      script: ./build/mvn install -Pspark-2.2 -Dmaven.javadoc.skip=true -B -V
+    - stage: spark2.1
       language: scala
-      script: ./build/mvn package -Pspark-2.1 -Dmaven.javadoc.skip=true -B -V
+      script: ./build/mvn install -Pspark-2.1 -Dmaven.javadoc.skip=true -B -V
       after_success: bash <(curl -s https://codecov.io/bash)
