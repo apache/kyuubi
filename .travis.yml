@@ -28,10 +28,14 @@ deploy:
 install:
   - ./build/mvn install -q -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 
-script:
-  - ./build/mvn package -Pspark-2.1 -Dmaven.javadoc.skip=true -B -V
-  - ./build/mvn package -Pspark-2.2 -Dmaven.javadoc.skip=true -B -V
-  - ./build/mvn package -Pspark-2.3 -Dmaven.javadoc.skip=true -B -V
+jobs:
+  include:
+    - stage: spark2.3
+      script: ./build/mvn package -Pspark-2.3 -Dmaven.javadoc.skip=true -B -V
+    - stage: spark2.2
+      script: ./build/mvn package -Pspark-2.2 -Dmaven.javadoc.skip=true -B -V
+    - stage: spark2.1
+      script: ./build/mvn package -Pspark-2.1 -Dmaven.javadoc.skip=true -B -V
 
 language: java
 after_success:
