@@ -1,42 +1,39 @@
-language: scala
-scala:
-  - 2.11.8
-
 cache:
   directories:
     - $HOME/.m2
-
-before_deploy:
-  - ./build/dist --tgz
-
-deploy:
-  - provider: pages
-    skip_cleanup: true
-    github_token: $GITHUB_TOKEN
-    email: yaooqinn@hotmail.com
-    name: Kent Yao
-    on:
-      branch: master
-  - provider: releases
-    api_key: $GITHUB_TOKEN
-    file_glob: true
-    file: kyuubi-*.tar.gz
-    skip_cleanup: true
-    on:
-      tags: true
+    - ./build
 
 install:
   - ./build/mvn install -q -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 
 jobs:
   include:
-    - stage: spark2.3
+    - stage: spark2.3-package-test
+      language: scala
       script: ./build/mvn package -Pspark-2.3 -Dmaven.javadoc.skip=true -B -V
-    - stage: spark2.2
+    - stage: spark2.2-package-test
+      language: scala
       script: ./build/mvn package -Pspark-2.2 -Dmaven.javadoc.skip=true -B -V
-    - stage: spark2.1
+    - stage: spark2.1-package-test
+      language: scala
       script: ./build/mvn package -Pspark-2.1 -Dmaven.javadoc.skip=true -B -V
-
-language: java
-after_success:
-  - bash <(curl -s https://codecov.io/bash)
+      after_success: bash <(curl -s https://codecov.io/bash)
+    - stage: pages
+      deploy:
+        - provider: pages
+          skip_cleanup: true
+          github_token: $GITHUB_TOKEN
+          email: yaooqinn@hotmail.com
+          name: Kent Yao
+          on:
+            branch: master
+    - stage: releases
+      before_deploy: ./build/dist --tgz
+      deploy:
+        - provider: releases
+          api_key: $GITHUB_TOKEN
+          file_glob: true
+          file: kyuubi-*.tar.gz
+          skip_cleanup: true
+          on:
+            tags: true
