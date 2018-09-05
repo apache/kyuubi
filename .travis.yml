@@ -1,7 +1,30 @@
+language: scala
+scala:
+  - 2.11.8
+
 cache:
   directories:
     - $HOME/.m2
     - ./build
+
+before_deploy:
+  - ./build/dist --tgz
+
+deploy:
+  - provider: pages
+    skip_cleanup: true
+    github_token: $GITHUB_TOKEN
+    email: yaooqinn@hotmail.com
+    name: Kent Yao
+    on:
+      branch: master
+  - provider: releases
+    api_key: $GITHUB_TOKEN
+    file_glob: true
+    file: kyuubi-*.tar.gz
+    skip_cleanup: true
+    on:
+      tags: true
 
 jobs:
   include:
@@ -15,24 +38,3 @@ jobs:
       language: scala
       script: ./build/mvn package -Pspark-2.1 -Dmaven.javadoc.skip=true -B -V
       after_success: bash <(curl -s https://codecov.io/bash)
-    - stage: pages
-      language: scala
-      deploy:
-        - provider: pages
-          skip_cleanup: true
-          github_token: $GITHUB_TOKEN
-          email: yaooqinn@hotmail.com
-          name: Kent Yao
-          on:
-            branch: master
-    - stage: releases
-      language: scala
-      before_deploy: ./build/dist --tgz
-      deploy:
-        - provider: releases
-          api_key: $GITHUB_TOKEN
-          file_glob: true
-          file: kyuubi-*.tar.gz
-          skip_cleanup: true
-          on:
-            tags: true
