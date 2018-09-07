@@ -37,4 +37,6 @@ jobs:
     - stage: spark2.1
       language: scala
       script: ./build/mvn install -Pspark-2.1 -Dmaven.javadoc.skip=true -B -V
-      after_success: bash <(curl -s https://codecov.io/bash)
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
