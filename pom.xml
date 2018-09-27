@@ -64,6 +64,7 @@
         <hive.deps.scope>provided</hive.deps.scope>
         <jpam.version>1.1</jpam.version>
         <apacheds.version>2.0.0-M15</apacheds.version>
+        <curator.version>2.6.0</curator.version>
     </properties>
 
     <repositories>
@@ -224,6 +225,27 @@
                 <artifactId>hadoop-yarn-client</artifactId>
                 <version>${hadoop.version}</version>
                 <scope>${hadoop.deps.scope}</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-framework</artifactId>
+                <version>${curator.version}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-recipes</artifactId>
+                <version>${curator.version}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.curator</groupId>
+                <artifactId>curator-client</artifactId>
+                <version>${curator.version}</version>
+                <scope>provided</scope>
             </dependency>
 
             <dependency>
