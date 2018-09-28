@@ -31,7 +31,7 @@ import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
 import org.apache.zookeeper.{KeeperException, WatchedEvent, Watcher}
 import org.apache.zookeeper.CreateMode.PERSISTENT
-import org.apache.zookeeper.KeeperException.{ConnectionLossException, NodeExistsException}
+import org.apache.zookeeper.KeeperException.NodeExistsException
 
 import yaooqinn.kyuubi.{KYUUBI_VERSION, Logging}
 import yaooqinn.kyuubi.server.{FrontendService, KyuubiServer}
@@ -81,7 +81,7 @@ private[kyuubi] abstract class HighAvailableService(name: String, server: Kyuubi
       }
       servicePath = serviceNode.getActualPath
       // Set a watch on the serviceNode
-      val watcher = new DeRegisterWatcher(server)
+      val watcher = new DeRegisterWatcher
       if (zkClient.checkExists.usingWatcher(watcher).forPath(servicePath) == null) {
         // No node exists, throw exception
         throw new ServiceException("Unable to create znode for this Kyuubi instance on ZooKeeper.")
@@ -122,8 +122,6 @@ private[kyuubi] abstract class HighAvailableService(name: String, server: Kyuubi
         .withMode(PERSISTENT)
         .forPath(serviceRootNamespace)
     } catch {
-      case e: ConnectionLossException =>
-        throw new ServiceException("ZooKeeper is still unreachable", e)
       case _: NodeExistsException =>  // do nothing
       case e: KeeperException =>
         throw new ServiceException(s"Unable to create Kyuubi namespace $serviceRootNamespace" +
@@ -132,7 +130,7 @@ private[kyuubi] abstract class HighAvailableService(name: String, server: Kyuubi
     super.init(conf)
   }
 
-  class DeRegisterWatcher(kyuubiServer: KyuubiServer) extends Watcher {
+  class DeRegisterWatcher extends Watcher {
     override def process(event: WatchedEvent): Unit = {
       if (event.getType == Watcher.Event.EventType.NodeDeleted) {
         if (serviceNode != null) {
@@ -158,7 +156,7 @@ object HighAvailableService {
   /**
    * ACLProvider for providing appropriate ACLs to CuratorFrameworkFactory
    */
-  lazy val aclProvider: ACLProvider = new ZooKeeperACLProvider
+  val aclProvider: ACLProvider = new ZooKeeperACLProvider
 
   /**
    * Get the ensemble server addresses from the configuration. The format is: host1:port,
@@ -170,8 +168,8 @@ object HighAvailableService {
     val port = conf.get(HA_ZOOKEEPER_CLIENT_PORT.key, "2181")
 
     conf.getOption(HA_ZOOKEEPER_QUORUM.key) match {
-      case Some(h) if h.trim.nonEmpty =>
-        h.trim.split(",").map {
+      case Some(h) if h.nonEmpty =>
+        h.split(",").map {
           host => if (!host.contains(":")) host + ":" + port else host
         }.mkString(",")
       case _ =>

@@ -196,7 +196,7 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
       y = x * 2
       y
     }
-    KyuubiSparkUtil.addShutdownHook(f)
+    KyuubiSparkUtil.addShutdownHook(f())
     assert(y === 0)
   }
 

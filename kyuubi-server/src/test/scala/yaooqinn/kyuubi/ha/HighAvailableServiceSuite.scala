@@ -21,15 +21,46 @@ import java.io.{File, IOException}
 
 import org.apache.curator.framework.imps.CuratorFrameworkState
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
-import org.apache.zookeeper.ZooDefs
-import org.scalatest.Matchers
+import org.apache.zookeeper.{WatchedEvent, Watcher, ZooDefs}
+import org.apache.zookeeper.KeeperException.ConnectionLossException
+import org.apache.zookeeper.Watcher.Event.KeeperState
+import org.scalatest.{BeforeAndAfterEach, Matchers}
 
 import yaooqinn.kyuubi.SecuredFunSuite
+import yaooqinn.kyuubi.server.{FrontendService, KyuubiServer}
+import yaooqinn.kyuubi.service.ServiceException
 
 class HighAvailableServiceSuite extends SparkFunSuite
   with Matchers
   with SecuredFunSuite
-  with ZookeeperFunSuite {
+  with ZookeeperFunSuite
+  with BeforeAndAfterEach {
+
+  private var server: KyuubiServer = _
+
+  private var haService: HighAvailableService = _
+
+  conf.set(KyuubiConf.HA_MODE.key, "failover")
+
+  override def beforeEach(): Unit = {
+    server = new KyuubiServer()
+    haService = new HighAvailableService("test", server) {
+      override protected def reset(): Unit = {}
+    }
+    super.beforeEach()
+  }
+
+  override def afterEach(): Unit = {
+    if (server != null) {
+      server.stop()
+    }
+
+    if (haService != null) {
+      haService.stop()
+    }
+
+    super.afterEach()
+  }
 
   test("ACL Provider") {
     val aclProvider = HighAvailableService.aclProvider
@@ -62,6 +93,17 @@ class HighAvailableServiceSuite extends SparkFunSuite
     HighAvailableService.getQuorumServers(conf) should be(host1 + "," + host2 + ":" + port)
   }
 
+  test("get service instance uri") {
+    val fe = new FrontendService(server.beService)
+    intercept[ServiceException](HighAvailableService.getServerInstanceURI(null))
+    fe.getServerIPAddress
+    intercept[ServiceException](HighAvailableService.getServerInstanceURI(fe))
+
+    fe.init(conf)
+    HighAvailableService.getServerInstanceURI(fe) should startWith(
+      fe.getServerIPAddress.getHostName)
+  }
+
   test("set up zookeeper auth") {
     tryWithSecurityEnabled {
       val keytab = File.createTempFile("user", "keytab")
@@ -78,5 +120,32 @@ class HighAvailableServiceSuite extends SparkFunSuite
 
       e.getMessage should startWith(KyuubiSparkUtil.KEYTAB)
     }
+  }
+
+  test("init") {
+    // connect to right zk
+    haService.init(conf)
+
+    // connect to wrong zk
+    val confClone = conf.clone()
+      .set(KyuubiConf.HA_ZOOKEEPER_QUORUM.key, connectString.split(":")(0))
+      .set(KyuubiConf.HA_ZOOKEEPER_CLIENT_PORT.key, "2000")
+    val e1 = intercept[ServiceException](haService.init(confClone))
+    e1.getMessage should startWith("Unable to create Kyuubi namespace")
+    assert(e1.getCause.isInstanceOf[ConnectionLossException])
+  }
+
+  test("deregister watcher") {
+
+    val ha = new HighAvailableService("ha", server) { self =>
+      override protected def reset(): Unit = {}
+    }
+
+    import Watcher.Event.EventType._
+
+    val watcher = new ha.DeRegisterWatcher
+    val nodeDel = new WatchedEvent(NodeDeleted, KeeperState.Expired, "")
+    watcher.process(nodeDel)
+    watcher.process(new WatchedEvent(NodeCreated, KeeperState.Expired, ""))
   }
 }

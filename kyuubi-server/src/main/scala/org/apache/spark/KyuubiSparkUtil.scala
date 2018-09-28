@@ -103,8 +103,8 @@ object KyuubiSparkUtil extends Logging {
   // Runtime Spark Version
   val SPARK_VERSION: String = org.apache.spark.SPARK_VERSION
 
-  def addShutdownHook(f: () => Unit): Unit = {
-    ShutdownHookManager.addShutdownHook(f)
+  def addShutdownHook(f: => Unit): Unit = {
+    ShutdownHookManager.addShutdownHook(() => f)
   }
 
   def initDaemon(log: Logger): Unit = {

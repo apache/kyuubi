@@ -195,7 +195,7 @@ object KyuubiAppMaster extends Logging {
       KyuubiSparkUtil.setupCommonConfig(conf)
 
       val master = new KyuubiAppMaster()
-      KyuubiSparkUtil.addShutdownHook(() => master.stop())
+      KyuubiSparkUtil.addShutdownHook(master.stop())
       master.init(conf)
       master.start()
     } catch {

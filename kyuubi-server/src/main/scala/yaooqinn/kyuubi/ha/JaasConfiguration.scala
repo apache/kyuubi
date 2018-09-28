@@ -17,9 +17,10 @@
 
 package yaooqinn.kyuubi.ha
 
-import java.util.HashMap
 import javax.security.auth.login.{AppConfigurationEntry, Configuration}
 import javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag
+
+import scala.collection.JavaConverters._
 
 import org.apache.hadoop.security.authentication.util.KerberosUtil
 
@@ -28,29 +29,24 @@ private[ha] class JaasConfiguration(
     principal: String,
     keyTabFile: String) extends Configuration {
 
-  final private val baseConfig: Configuration = Configuration.getConfiguration
+  final private[this] val baseConfig: Configuration = Configuration.getConfiguration
 
   override def getAppConfigurationEntry(appName: String): Array[AppConfigurationEntry] = {
-    if (this.loginContextName == appName) {
-      val krbOptions = new HashMap[String, String]
-      krbOptions.put("doNotPrompt", "true")
-      krbOptions.put("storeKey", "true")
-      krbOptions.put("useKeyTab", "true")
-      krbOptions.put("principal", this.principal)
-      krbOptions.put("keyTab", this.keyTabFile)
-      krbOptions.put("refreshKrb5Config", "true")
-
-      val entry = new AppConfigurationEntry(
-        KerberosUtil.getKrb5LoginModuleName,
-        LoginModuleControlFlag.REQUIRED,
-        krbOptions)
-
-      Array(entry)
-    } else if (this.baseConfig != null) {
-      this.baseConfig.getAppConfigurationEntry(appName)
-    } else {
-      null
+    appName match {
+      case `loginContextName` =>
+        val krbOptions = Map(
+          "doNotPrompt" -> "true",
+          "storeKey" -> "true",
+          "useKeyTab" -> "true",
+          "principal" -> this.principal,
+          "keyTab" -> this.keyTabFile,
+          "refreshKrb5Config" -> "true").asJava
+        val entry = new AppConfigurationEntry(
+          KerberosUtil.getKrb5LoginModuleName,
+          LoginModuleControlFlag.REQUIRED,
+          krbOptions)
+        Array(entry)
+      case _ => baseConfig.getAppConfigurationEntry(appName)
     }
   }
-
 }
