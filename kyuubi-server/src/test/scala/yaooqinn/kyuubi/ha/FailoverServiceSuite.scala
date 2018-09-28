@@ -19,9 +19,9 @@ package yaooqinn.kyuubi.ha
 
 import java.io.IOException
 
-import org.apache.spark.{KyuubiSparkUtil, SparkFunSuite}
+import org.apache.curator.framework.recipes.leader.LeaderLatchListener
+import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkFunSuite}
 import org.scalatest.{BeforeAndAfterEach, Matchers}
-import org.scalatest.mock.MockitoSugar
 
 import yaooqinn.kyuubi.SecuredFunSuite
 import yaooqinn.kyuubi.server.KyuubiServer
@@ -31,12 +31,13 @@ class FailoverServiceSuite extends SparkFunSuite
   with ZookeeperFunSuite
   with Matchers
   with SecuredFunSuite
-  with MockitoSugar
   with BeforeAndAfterEach {
 
   private var server: KyuubiServer = _
 
   private var haService: HighAvailableService = _
+
+  conf.set(KyuubiConf.HA_MODE.key, "failover")
 
   override def beforeEach(): Unit = {
     server = new KyuubiServer()
@@ -74,7 +75,6 @@ class FailoverServiceSuite extends SparkFunSuite
   }
 
   test("Start") {
-
     server.init(conf)
     val e2 = intercept[NullPointerException](haService.start())
     e2.getMessage should be("client cannot be null")
@@ -82,6 +82,8 @@ class FailoverServiceSuite extends SparkFunSuite
     haService.start()
     haService.getServiceState should be(STARTED)
     haService.getStartTime should not be 0
+    haService.asInstanceOf[LeaderLatchListener].isLeader()
+    haService.asInstanceOf[LeaderLatchListener].notLeader()
   }
 
   test("Stop before init") {

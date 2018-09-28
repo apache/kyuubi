@@ -19,6 +19,7 @@ package yaooqinn.kyuubi.ha
 
 import javax.security.auth.login.Configuration
 
+import org.apache.hadoop.security.authentication.util.KerberosUtil
 import org.apache.spark.{KyuubiSparkUtil, SparkFunSuite}
 import org.scalatest.Matchers
 
@@ -29,18 +30,27 @@ class JaasConfigurationSuite extends SparkFunSuite with Matchers {
     val loginContext = "KYUUBI_AS_CLIENT"
     val principal = KyuubiSparkUtil.getCurrentUserName
     val keytab = ""
+
     val conf = new JaasConfiguration(loginContext, principal, keytab)
-    val options = conf.getAppConfigurationEntry(loginContext).head.getOptions
+    val entry = conf.getAppConfigurationEntry(loginContext).head
+    entry.getLoginModuleName should be(KerberosUtil.getKrb5LoginModuleName)
+    val options = entry.getOptions
     options.get("principal") should be(principal)
+    options.get("keyTab") should be(keytab)
+
     conf.getAppConfigurationEntry("no name") should be(null)
 
     Configuration.setConfiguration(conf)
-    val conf2 = new JaasConfiguration(loginContext, principal, keytab)
 
+    val conf2 = new JaasConfiguration(loginContext, principal, keytab)
     conf2.getAppConfigurationEntry("no name") should be(null)
 
     val options2 = conf2.getAppConfigurationEntry(loginContext).head.getOptions
     options2.get("principal") should be(principal)
+
+    Configuration.setConfiguration(null)
+    val conf3 = new JaasConfiguration(loginContext, principal, keytab)
+    conf3.getAppConfigurationEntry("no name") should be(null)
   }
 
 }

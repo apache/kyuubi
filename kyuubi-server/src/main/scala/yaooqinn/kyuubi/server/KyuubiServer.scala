@@ -50,12 +50,10 @@ private[kyuubi] class KyuubiServer private(name: String)
     addService(_beService)
     addService(_feService)
     if (conf.getBoolean(HA_ENABLED.key, defaultValue = false)) {
-      info(s"HA mode: start to add this $name instance to Zookeeper...")
       _haService = if (conf.getOption(HA_MODE.key).exists(_.equalsIgnoreCase("failover"))) {
         new FailoverService(this)
       } else {
         new LoadBalanceService(this)
-
       }
       addService(_haService)
     }
@@ -68,7 +66,7 @@ private[kyuubi] class KyuubiServer private(name: String)
   }
 
   override def stop(): Unit = {
-    info(s"Shutting down $name")
+    info("Shutting down " + name)
     if (started.getAndSet(false)) {
       super.stop()
     }
@@ -84,9 +82,7 @@ object KyuubiServer extends Logging {
       val conf = new SparkConf(loadDefaults = true)
       KyuubiSparkUtil.setupCommonConfig(conf)
       val server = new KyuubiServer()
-      KyuubiSparkUtil.addShutdownHook {
-        () => server.stop()
-      }
+      KyuubiSparkUtil.addShutdownHook(server.stop())
       server.init(conf)
       server.start()
       info(server.getName + " started!")
