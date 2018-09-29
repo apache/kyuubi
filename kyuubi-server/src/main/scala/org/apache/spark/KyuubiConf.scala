@@ -56,6 +56,13 @@ object KyuubiConf {
     .booleanConf
     .createWithDefault(false)
 
+  val HA_MODE: ConfigEntry[String] =
+    KyuubiConfigBuilder("spark.kyuubi.ha.mode")
+      .doc("High availability mode, one is load-balance which is used by default, another is " +
+        "failover as master-slave mode")
+      .stringConf
+      .createWithDefault("load-balance")
+
   val HA_ZOOKEEPER_QUORUM: ConfigEntry[String] =
     KyuubiConfigBuilder("spark.kyuubi.ha.zk.quorum")
       .doc("Comma separated list of ZooKeeper servers to talk to, when KyuubiServer supports" +
@@ -96,12 +103,6 @@ object KyuubiConf {
       .doc("Max retry times for connecting to the zk server")
       .intConf
       .createWithDefault(3)
-
-  val HA_ZOOKEEPER_ZNODE_CREATION_TIMEOUT: ConfigEntry[Long] =
-    KyuubiConfigBuilder("spark.kyuubi.ha.zk.znode.creation.timeout")
-      .doc("ZooKeeper znode's creatation timeout (in milliseconds).")
-      .timeConf(TimeUnit.MILLISECONDS)
-      .createWithDefault(TimeUnit.SECONDS.toMillis(120L))
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                      Operation Log                                          //

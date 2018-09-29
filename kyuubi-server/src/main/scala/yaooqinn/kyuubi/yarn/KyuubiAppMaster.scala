@@ -35,7 +35,6 @@ import org.apache.hadoop.yarn.util.ConverterUtils
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf}
 
 import yaooqinn.kyuubi.Logging
-import yaooqinn.kyuubi.ha.HighAvailabilityUtils
 import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.service.CompositeService
 
@@ -160,10 +159,6 @@ class KyuubiAppMaster private(name: String) extends CompositeService(name)
       executor.scheduleAtFixedRate(heartbeatTask, interval, interval, TimeUnit.MILLISECONDS)
       super.start()
       info(server.getName + " started!")
-      if (HighAvailabilityUtils.isSupportDynamicServiceDiscovery(conf)) {
-        info(s"HA mode: start to add this ${server.getName} instance to Zookeeper...")
-        HighAvailabilityUtils.addServerInstanceToZooKeeper(server)
-      }
     } catch {
       case e: Exception =>
         val msg = "Error starting Kyuubi Server: "
@@ -200,7 +195,7 @@ object KyuubiAppMaster extends Logging {
       KyuubiSparkUtil.setupCommonConfig(conf)
 
       val master = new KyuubiAppMaster()
-      KyuubiSparkUtil.addShutdownHook(() => master.stop())
+      KyuubiSparkUtil.addShutdownHook(master.stop())
       master.init(conf)
       master.start()
     } catch {

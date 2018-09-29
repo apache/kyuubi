@@ -29,4 +29,7 @@ object State extends Enumeration {
   /** started and not stopped */ STARTED,
   /** stopped. No further state transitions are permitted */ STOPPED = Value
 
+  type State = Value
+
+
 }
