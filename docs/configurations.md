@@ -16,7 +16,7 @@ Kyuubi provides several kinds of properties to configure the system:
 
 Kyuubi properties control most Kyuubi server's own behaviors. Most of them determined on server starting. They can be treat like normal Spark properties by setting them in `spark-defaults.conf` file or via `--conf` parameter in server starting scripts.     
 
-For instance, start Kyuubi with HA enabled.
+For instance, start Kyuubi with HA (load balance) enabled.
 ```bash
 $ bin/start-kyuubi.sh \ 
     --master yarn \
@@ -31,6 +31,7 @@ $ bin/start-kyuubi.sh \
 Name|Default|Description
 ---|---|---
 spark.kyuubi.ha.enabled|false|Whether KyuubiServer supports dynamic service discovery for its clients. To support this, each instance of KyuubiServer currently uses ZooKeeper to register itself, when it is brought up. JDBC/ODBC clients should use the ZooKeeper ensemble: spark.kyuubi.ha.zk.quorum in their connection string.
+spark.kyuubi.ha.mode|load-balance|High availability mode, one is load-balance which is used by default, another is failover as master-slave mode.
 spark.kyuubi.ha.zk.quorum|none|Comma separated list of ZooKeeper servers to talk to, when KyuubiServer supports service discovery via Zookeeper.
 spark.kyuubi.ha.zk.namespace|kyuubiserver|The parent node in ZooKeeper used by KyuubiServer when supporting dynamic service discovery.
 spark.kyuubi.ha.zk.client.port|2181|The port of ZooKeeper servers to talk to. If the list of Zookeeper servers specified in spark.kyuubi.zookeeper.quorum does not contain port numbers, this value is used.
@@ -135,6 +136,8 @@ Please refer to the [Apache Hadoop](http://hadoop.apache.org)'s online documenta
 
 [Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)  
 [Kyuubi Deployment Guide](https://yaooqinn.github.io/kyuubi/docs/deploy.html)   
+[Kyuubi Containerization Guide](https://yaooqinn.github.io/kyuubi/docs/containerization.html)   
+[High Availability Guide](https://yaooqinn.github.io/kyuubi/docs/high_availability_guide.html)  
 [Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html)  
 [Kyuubi ACL Management Guide](https://yaooqinn.github.io/kyuubi/docs/authorization.html)  
 [Kyuubi Architecture](https://yaooqinn.github.io/kyuubi/docs/architecture.html)  

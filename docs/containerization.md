@@ -74,6 +74,7 @@ And also, the server log is available to look up through the ApplicationMaster p
 ## Additional Documentations
 [Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)  
 [Kyuubi Deployment Guide](https://yaooqinn.github.io/kyuubi/docs/deploy.html)  
+[High Availability Guide](https://yaooqinn.github.io/kyuubi/docs/high_availability_guide.html)  
 [Configuration Guide](https://yaooqinn.github.io/kyuubi/docs/configurations.html)  
 [Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html)  
 [Kyuubi ACL Management Guide](https://yaooqinn.github.io/kyuubi/docs/authorization.html)  
