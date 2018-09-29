@@ -4,7 +4,7 @@ This document gives you a brief description about how Kyuubi submits itself.
 
 Kyuubi supports "client" mode by default, which means that Kyuubi launches a server process on the local machine node and serves
 client side JDBC/ODBC connections. We need to setup all environments and other preparations for each node for launching Kyuubi
-server. This is very discommodious to deploy Kyuubi server, especially in HA mode, and even worse when running on different
+server. This is very discommodious to deploy Kyuubi server, especially in [HA](https://yaooqinn.github.io/kyuubi/docs/high_availability_guide.html) mode, and even worse when running on different
 releases of Linux.
 
 Kyuubi containerization is a much more easy for Kyuubi deployment, which makes Kyuubi server instance a containerized, server-less
@@ -35,7 +35,7 @@ JDBC/ODBC/Thrift Client | Various kinds of clients talk to Kyuubi Server
 
 <h4 id="1.2">Configurations</h4>
 
-The table below contains the server side configurations used by the Kyuubi containter itself for launching and sizing itself. 
+The table below contains the server side configurations used by the Kyuubi container itself for launching and sizing itself. 
 
 Name|Default|Description
 ---|---|---
@@ -47,7 +47,7 @@ spark.yarn.am.extraJavaOptions| (none) | Extra jvm options for Kyuubi container
 
 <h2 id="2">Launching Kyuubi on Yarn</h2>
 
-Firstly, please refer to the [Kyuubi Deployment Guide](https://yaooqinn.github.io/kyuubi/docs/deploy.html) on line documentation to learn how to configure the Kyuubi Client.
+Firstly, please refer to the [Kyuubi Deployment Guide](https://yaooqinn.github.io/kyuubi/docs/deploy.html) on line documentation to learn how to configure the Kyuubi client.
 
 Then, the only thing we need to do is to launch Kyuubi with  `bin/start-kyuubi.sh` and specify the deploy mode to "cluster".
 
@@ -74,6 +74,7 @@ And also, the server log is available to look up through the ApplicationMaster p
 ## Additional Documentations
 [Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)  
 [Kyuubi Deployment Guide](https://yaooqinn.github.io/kyuubi/docs/deploy.html)  
+[High Availability Guide](https://yaooqinn.github.io/kyuubi/docs/high_availability_guide.html)  
 [Configuration Guide](https://yaooqinn.github.io/kyuubi/docs/configurations.html)  
 [Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html)  
 [Kyuubi ACL Management Guide](https://yaooqinn.github.io/kyuubi/docs/authorization.html)  

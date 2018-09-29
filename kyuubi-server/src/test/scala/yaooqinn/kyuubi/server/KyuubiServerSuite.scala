@@ -86,6 +86,16 @@ class KyuubiServerSuite extends SparkFunSuite with BeforeAndAfterEach {
     assert(server.feService.getServiceState === State.STARTED)
     assert(server.beService.getServiceState === State.STARTED)
     server.stop()
+
+    try {
+      System.setProperty(KyuubiConf.HA_ENABLED.key, "true")
+      intercept[IllegalArgumentException](KyuubiServer.startKyuubiServer())
+      System.setProperty(KyuubiConf.HA_MODE.key, "failover")
+      intercept[IllegalArgumentException](KyuubiServer.startKyuubiServer())
+    } finally {
+      System.clearProperty(KyuubiConf.HA_ENABLED.key)
+      System.clearProperty(KyuubiConf.HA_MODE.key)
+    }
   }
 
   test("disable fs caches for secured cluster") {

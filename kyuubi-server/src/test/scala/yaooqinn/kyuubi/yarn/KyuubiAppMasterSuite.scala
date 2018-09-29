@@ -92,7 +92,6 @@ class KyuubiAppMasterSuite extends SparkFunSuite with MockitoSugar with Matchers
     conf1.set(KyuubiConf.HA_ENABLED.key, "true")
     conf1.set(HA_ZOOKEEPER_QUORUM.key, connectString)
     conf1.set(HA_ZOOKEEPER_CONNECTION_BASESLEEPTIME.key, "100ms")
-    conf1.set(HA_ZOOKEEPER_ZNODE_CREATION_TIMEOUT.key, "1s")
     conf1.set(HA_ZOOKEEPER_SESSION_TIMEOUT.key, "15s")
     conf1.set(HA_ZOOKEEPER_CONNECTION_MAX_RETRIES.key, "1")
 

@@ -19,11 +19,11 @@ package yaooqinn.kyuubi.server
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf}
+import org.apache.spark.{KyuubiSparkUtil, SparkConf}
+import org.apache.spark.KyuubiConf._
 
 import yaooqinn.kyuubi._
-import yaooqinn.kyuubi.ha.HighAvailabilityUtils
+import yaooqinn.kyuubi.ha.{FailoverService, HighAvailableService, LoadBalanceService}
 import yaooqinn.kyuubi.service.{CompositeService, ServiceException}
 
 /**
@@ -36,6 +36,7 @@ private[kyuubi] class KyuubiServer private(name: String)
   def beService: BackendService = _beService
   private[this] var _feService: FrontendService = _
   def feService: FrontendService = _feService
+  private[this] var _haService: HighAvailableService = _
 
   private[this] val started = new AtomicBoolean(false)
 
@@ -45,8 +46,17 @@ private[kyuubi] class KyuubiServer private(name: String)
     this.conf = conf
     _beService = new BackendService()
     _feService = new FrontendService(_beService)
+
     addService(_beService)
     addService(_feService)
+    if (conf.getBoolean(HA_ENABLED.key, defaultValue = false)) {
+      _haService = if (conf.getOption(HA_MODE.key).exists(_.equalsIgnoreCase("failover"))) {
+        new FailoverService(this)
+      } else {
+        new LoadBalanceService(this)
+      }
+      addService(_haService)
+    }
     super.init(conf)
   }
 
@@ -56,6 +66,7 @@ private[kyuubi] class KyuubiServer private(name: String)
   }
 
   override def stop(): Unit = {
+    info("Shutting down " + name)
     if (started.getAndSet(false)) {
       super.stop()
     }
@@ -71,16 +82,10 @@ object KyuubiServer extends Logging {
       val conf = new SparkConf(loadDefaults = true)
       KyuubiSparkUtil.setupCommonConfig(conf)
       val server = new KyuubiServer()
-      KyuubiSparkUtil.addShutdownHook {
-        () => server.stop()
-      }
+      KyuubiSparkUtil.addShutdownHook(server.stop())
       server.init(conf)
       server.start()
       info(server.getName + " started!")
-      if (HighAvailabilityUtils.isSupportDynamicServiceDiscovery(conf)) {
-        info(s"HA mode: start to add this ${server.getName} instance to Zookeeper...")
-        HighAvailabilityUtils.addServerInstanceToZooKeeper(server)
-      }
       server
     } catch {
       case e: Exception => throw e

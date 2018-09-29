@@ -83,6 +83,8 @@ Please refer to the [Kyuubi Containerization Guide](https://yaooqinn.github.io/k
 ## Additional Documentations
 [Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)  
 [Configuration Guide](https://yaooqinn.github.io/kyuubi/docs/configurations.html)  
+[Kyuubi Containerization Guide](https://yaooqinn.github.io/kyuubi/docs/containerization.html)   
+[High Availability Guide](https://yaooqinn.github.io/kyuubi/docs/high_availability_guide.html)  
 [Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html)  
 [Kyuubi ACL Management Guide](https://yaooqinn.github.io/kyuubi/docs/authorization.html)  
 [Kyuubi Architecture](https://yaooqinn.github.io/kyuubi/docs/architecture.html)  

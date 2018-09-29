@@ -21,7 +21,7 @@ Features|Spark Thrift Server|Kyuubi|Comments
  session level configurations|`spark.sql.*`| ✔ |[Dynamic Resource Requesting](https://yaooqinn.github.io/kyuubi/docs/architecture.html#1.2.1) 
  authentication| ✔ | ✔ |[Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html) |
  authorization| ✘ | ✔ |[Kyuubi ACL Management Guide](https://yaooqinn.github.io/kyuubi/docs/authorization.html)|
- impersonation| ✘ | ✔ |Kyuubi fully support `hive.server2.proxy.user` and `hive.server2.doAs`|
+ impersonation| ✘ | ✔ |Kyuubi fully supports `hive.server2.proxy.user` and `hive.server2.doAs`|
  multi tenancy| ✘ | ✔ |Based on the above features，Kyuubi is able to run as a multi-tenant server on a LCE supported Yarn cluster.|
  operation log| ✘ | ✔ |Kyuubi redirect sql operation log to local file which has an interface for the client to fetch.|
  high availability| ✘ | ✔ |[ZooKeeper Dynamic Service Discovery](https://yaooqinn.github.io/kyuubi/docs/architecture.html#1.4) |
@@ -94,6 +94,8 @@ Please refer to the [Authentication/Security Guide](https://yaooqinn.github.io/k
 ## Additional Documentations
 [Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)  
 [Kyuubi Deployment Guide](https://yaooqinn.github.io/kyuubi/docs/deploy.html)  
+[Kyuubi Containerization Guide](https://yaooqinn.github.io/kyuubi/docs/containerization.html)   
+[High Availability Guide](https://yaooqinn.github.io/kyuubi/docs/high_availability_guide.html)  
 [Configuration Guide](https://yaooqinn.github.io/kyuubi/docs/configurations.html)  
 [Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html)  
 [Kyuubi ACL Management Guide](https://yaooqinn.github.io/kyuubi/docs/authorization.html)  
