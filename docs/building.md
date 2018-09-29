@@ -58,6 +58,8 @@ For more information about the ScalaTest Maven Plugin, refer to the [ScalaTest d
 ## Additional Documentations
 
 [Kyuubi Deployment Guide](https://yaooqinn.github.io/kyuubi/docs/deploy.html)  
+[Kyuubi Containerization Guide](https://yaooqinn.github.io/kyuubi/docs/containerization.html)   
+[High Availability Guide](https://yaooqinn.github.io/kyuubi/docs/high_availability_guide.html)  
 [Configuration Guide](https://yaooqinn.github.io/kyuubi/docs/configurations.html)  
 [Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html)  
 [Kyuubi ACL Management Guide](https://yaooqinn.github.io/kyuubi/docs/authorization.html)  

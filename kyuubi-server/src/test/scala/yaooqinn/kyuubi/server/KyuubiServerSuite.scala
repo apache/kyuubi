@@ -90,8 +90,11 @@ class KyuubiServerSuite extends SparkFunSuite with BeforeAndAfterEach {
     try {
       System.setProperty(KyuubiConf.HA_ENABLED.key, "true")
       intercept[IllegalArgumentException](KyuubiServer.startKyuubiServer())
+      System.setProperty(KyuubiConf.HA_MODE.key, "failover")
+      intercept[IllegalArgumentException](KyuubiServer.startKyuubiServer())
     } finally {
       System.clearProperty(KyuubiConf.HA_ENABLED.key)
+      System.clearProperty(KyuubiConf.HA_MODE.key)
     }
   }
 
