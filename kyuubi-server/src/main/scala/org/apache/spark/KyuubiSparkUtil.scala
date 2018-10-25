@@ -50,7 +50,6 @@ object KyuubiSparkUtil extends Logging {
   private[this] val HIVE_PREFIX = "hive."
   private[this] val METASTORE_PREFIX = "metastore."
 
-
   // ENVIRONMENTS
   val SPARK_HOME: String = System.getenv("SPARK_HOME")
   val SPARK_JARS_DIR: String = SPARK_HOME + File.separator + "jars"
@@ -67,6 +66,9 @@ object KyuubiSparkUtil extends Logging {
   val DRIVER_MEM_OVERHEAD: String = SPARK_PREFIX + YARN_PREFIX + DRIVER_PREFIX + "memoryOverhead"
   val DRIVER_CORES: String = SPARK_PREFIX + DRIVER_PREFIX + "cores"
   val DRIVER_EXTRA_JAVA_OPTIONS: String = SPARK_PREFIX + DRIVER_PREFIX + "extraJavaOptions"
+
+  val GC_INTERVAL: String = SPARK_PREFIX + "cleaner.periodicGC.interval"
+  val GC_INTERVAL_DEFAULT: String = "3min"
 
   val AM_EXTRA_JAVA_OPTIONS: String = AM_PREFIX + "extraJavaOptions"
 
@@ -271,6 +273,7 @@ object KyuubiSparkUtil extends Logging {
     KyuubiConf.getAllDefaults.foreach(kv => conf.setIfMissing(kv._1, kv._2))
 
     conf.setIfMissing(SPARK_LOCAL_DIR, conf.get(KyuubiConf.BACKEND_SESSION_LOCAL_DIR.key))
+    conf.setIfMissing(GC_INTERVAL, GC_INTERVAL_DEFAULT)
 
     if (UserGroupInformation.isSecurityEnabled) {
       conf.setIfMissing(HDFS_CLIENT_CACHE, HDFS_CLIENT_CACHE_DEFAULT)
