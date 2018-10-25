@@ -50,14 +50,12 @@ class KyuubiSubmitCommandBuilder(args: JList[String]) extends SparkSubmitCommand
       throw new IllegalArgumentException(msg)
     }
 
-    val memory = firstNonEmpty(
-      config.get(SparkLauncher.DRIVER_MEMORY),
-      System.getenv("SPARK_DRIVER_MEMORY"),
-      DEFAULT_MEM)
+    val memory = firstNonEmpty(config.get(SparkLauncher.DRIVER_MEMORY), DEFAULT_MEM * 4)
     cmd.add("-Xmx" + memory)
     addOptionString(cmd, driverExtraJavaOptions)
     mergeEnvPathList(env, getLibPathEnvName, config.get(SparkLauncher.DRIVER_EXTRA_LIBRARY_PATH))
     addPermSize(cmd)
+    addMaxDirectMemSize(cmd)
     cmd.add("org.apache.spark.deploy.KyuubiSubmit")
     cmd.addAll(buildSparkSubmitArgs)
     cmd
@@ -80,6 +78,26 @@ class KyuubiSubmitCommandBuilder(args: JList[String]) extends SparkSubmitCommand
         return
       }
     }
-    cmd.add("-XX:MaxPermSize=256m")
+    cmd.add("-XX:MaxPermSize=512m")
+
+    cmd.asScala.foreach { arg =>
+      if (arg.contains("-XX:PermSize=")) {
+        return
+      }
+    }
+    cmd.add("-XX:PermSize=512m")
+  }
+
+  /**
+   * Adds max direct memory size option for Spark if the VM requires it and the user hasn't
+   * set it.
+   */
+  private def addMaxDirectMemSize(cmd: JList[String]): Unit = {
+    cmd.asScala.foreach { arg =>
+      if (arg.contains("-XX:MaxDirectMemorySize=")) {
+        return
+      }
+    }
+    cmd.add("-XX:MaxPermSize=4096m")
   }
 }
