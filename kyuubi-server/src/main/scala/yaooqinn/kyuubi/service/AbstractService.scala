@@ -98,7 +98,7 @@ abstract class AbstractService(name: String) extends Service with Logging {
     if (state ne currentState) {
       throw new IllegalStateException(
         s"""
-           |For this operation, the current service state must be $state instead of $currentState
+           |For this operation, the current service state must be $currentState instead of $state
          """.stripMargin)
     }
   }

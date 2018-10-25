@@ -57,7 +57,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   private[this] var serverEventHandler: TServerEventHandler = _
   private[this] var currentServerContext: ThreadLocal[ServerContext] = _
 
-  private[this] var server: Option[TServer] = _
+  private[this] var server: Option[TServer] = None
   private[this] var portNum = 0
   private[this] var serverIPAddress: InetAddress = _
   private[this] var serverSocket: ServerSocket = _
@@ -116,7 +116,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     hadoopConf = SparkHadoopUtil.get.newConfiguration(conf)
     val serverHost = conf.get(FRONTEND_BIND_HOST.key)
     try {
-      if (serverHost != null && !serverHost.isEmpty) {
+      if (serverHost.nonEmpty) {
         serverIPAddress = InetAddress.getByName(serverHost)
       } else {
         serverIPAddress = InetAddress.getLocalHost
@@ -124,7 +124,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
       portNum = conf.get(FRONTEND_BIND_PORT.key).toInt
       serverSocket = new ServerSocket(portNum, 1, serverIPAddress)
     } catch {
-      case e: Exception => throw new ServiceException(e)
+      case e: Exception => throw new ServiceException(e.getMessage + ": " + portNum, e)
     }
     portNum = serverSocket.getLocalPort
     super.init(conf)
