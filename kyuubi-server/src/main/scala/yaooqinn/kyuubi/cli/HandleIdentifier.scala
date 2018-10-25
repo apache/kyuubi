@@ -22,23 +22,13 @@ import java.util.UUID
 
 import org.apache.hive.service.cli.thrift.THandleIdentifier
 
-case class HandleIdentifier(publicId: UUID, secretId: UUID) {
+class HandleIdentifier(val publicId: UUID, val secretId: UUID) {
 
   def this() = this(UUID.randomUUID(), UUID.randomUUID())
 
   def this(guid: ByteBuffer, secret: ByteBuffer) =
-    this(
-      if (guid == null) {
-        UUID.randomUUID()
-      } else {
-        new UUID(guid.getLong(), guid.getLong())
-      },
-      if (secret == null) {
-        UUID.randomUUID()
-      } else {
-        new UUID(secret.getLong(), secret.getLong())
-      })
-
+    this(Option(guid).map(id => new UUID(id.getLong(), id.getLong())).getOrElse(UUID.randomUUID()),
+      Option(secret).map(id => new UUID(id.getLong(), id.getLong())).getOrElse(UUID.randomUUID()))
 
   def this(tHandleId: THandleIdentifier) =
     this(tHandleId.bufferForGuid(), tHandleId.bufferForSecret())

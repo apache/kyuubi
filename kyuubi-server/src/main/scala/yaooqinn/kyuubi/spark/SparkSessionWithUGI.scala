@@ -17,7 +17,6 @@
 
 package yaooqinn.kyuubi.spark
 
-import java.lang.reflect.UndeclaredThrowableException
 import java.security.PrivilegedExceptionAction
 import java.util.concurrent.TimeUnit
 

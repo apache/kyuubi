@@ -27,6 +27,14 @@ class HandleSuite extends SparkFunSuite {
     val handle3 = TestHandle3(handle2.handleId.toTHandleIdentifier)
     assert(handle1 === handle2)
     assert(handle1 === handle3)
+    val handle4 = TestHandle2(null)
+    assert(handle4.hashCode === 31)
+    assert(!handle4.equals(null))
+    assert(!handle4.equals(new Object))
+    assert(!handle2.equals(handle4))
+    assert(handle4.equals(handle4))
+    assert(!handle4.equals(handle2))
+    assert(handle2.equals(handle2))
   }
 
 }
