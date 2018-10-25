@@ -44,7 +44,7 @@ abstract class Handle(val handleId: HandleIdentifier) {
       if (other.handleId != null) {
         return false
       }
-    } else if (!(handleId == other.handleId)) {
+    } else if (handleId != other.handleId) {
       return false
     }
 
