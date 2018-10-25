@@ -28,7 +28,7 @@ class HandleIdentifierSuite extends SparkFunSuite {
     // default constructor
     val pid = UUID.randomUUID()
     val sid = UUID.randomUUID()
-    val handleId1 = HandleIdentifier(pid, sid)
+    val handleId1 = new HandleIdentifier(pid, sid)
     assert(pid === handleId1.getPublicId)
     assert(sid === handleId1.getSecretId)
     assert(handleId1.toTHandleIdentifier.bufferForGuid() !== null)
