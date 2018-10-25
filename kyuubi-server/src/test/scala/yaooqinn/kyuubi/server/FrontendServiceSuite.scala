@@ -65,7 +65,7 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers {
     getDelegationTokenResp.getStatus.getErrorMessage should be("Delegation token is not supported")
   }
 
-  test("test init fe service") {
+  test("init fe service") {
     val feService = new FrontendService(beService)
     feService.init(conf)
     feService.getConf should be(conf)
@@ -78,7 +78,7 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers {
     feService2.init(conf1)
     feService2.getServerIPAddress should be(InetAddress.getLocalHost)
     intercept[ServiceException](
-      feService2.init(conf1)).getMessage should be("Address already in use: 10009")
+      feService2.init(conf1)).getMessage should include("10009")
   }
 
   test("start fe service") {
