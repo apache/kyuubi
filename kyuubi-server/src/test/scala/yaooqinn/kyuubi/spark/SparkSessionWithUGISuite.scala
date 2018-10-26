@@ -20,8 +20,6 @@ package yaooqinn.kyuubi.spark
 import scala.concurrent.{Promise, TimeoutException}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import com.github.sakserv.minicluster.impl.YarnLocalCluster
-import com.github.sakserv.minicluster.impl.YarnLocalCluster.Builder
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark._
 import org.apache.spark.sql.SparkSession
