@@ -112,21 +112,22 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   }
 
   override def init(conf: SparkConf): Unit = synchronized {
-    this.conf = conf
     hadoopConf = SparkHadoopUtil.get.newConfiguration(conf)
-    val serverHost = conf.get(FRONTEND_BIND_HOST.key)
+    val serverHost = conf.get(FRONTEND_BIND_HOST)
     try {
       if (serverHost.nonEmpty) {
         serverIPAddress = InetAddress.getByName(serverHost)
       } else {
         serverIPAddress = InetAddress.getLocalHost
       }
-      portNum = conf.get(FRONTEND_BIND_PORT.key).toInt
+      portNum = conf.get(FRONTEND_BIND_PORT).toInt
       serverSocket = new ServerSocket(portNum, 1, serverIPAddress)
     } catch {
       case e: Exception => throw new ServiceException(e.getMessage + ": " + portNum, e)
     }
     portNum = serverSocket.getLocalPort
+//    conf.set(FRONTEND_BIND_PORT, portNum.toString)
+//    conf.set(FRONTEND_BIND_HOST, serverIPAddress.getCanonicalHostName)
     super.init(conf)
   }
 
@@ -152,7 +153,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   def getServerIPAddress: InetAddress = serverIPAddress
 
   private[this] def isKerberosAuthMode = {
-    conf.get(KyuubiConf.AUTHENTICATION_METHOD.key).equalsIgnoreCase(AuthType.KERBEROS.name)
+    conf.get(KyuubiConf.AUTHENTICATION_METHOD).equalsIgnoreCase(AuthType.KERBEROS.name)
   }
 
   private[this] def getUserName(req: TOpenSessionReq) = {
@@ -184,7 +185,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   private[this] def getProxyUser(sessionConf: Map[String, String], ipAddress: String): String = {
     Option(sessionConf).flatMap(_.get(KyuubiAuthFactory.HS2_PROXY_USER)) match {
       case None => realUser
-      case Some(_) if !conf.get(FRONTEND_ALLOW_USER_SUBSTITUTION.key).toBoolean =>
+      case Some(_) if !conf.get(FRONTEND_ALLOW_USER_SUBSTITUTION).toBoolean =>
         throw new KyuubiSQLException("Proxy user substitution is not allowed")
       case Some(p) if !isKerberosAuthMode => p
       case Some(p) => // Verify proxy user privilege of the realUser for the proxyUser
@@ -223,7 +224,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     val ipAddress = getIpAddress
     val protocol = getMinVersion(BackendService.SERVER_VERSION, req.getClient_protocol)
     val sessionHandle =
-    if (conf.get(FRONTEND_ENABLE_DOAS.key).toBoolean && (userName != null)) {
+    if (conf.get(FRONTEND_ENABLE_DOAS).toBoolean && (userName != null)) {
       beService.openSessionWithImpersonation(
         protocol, userName, req.getPassword, ipAddress, req.getConfiguration.asScala.toMap, null)
     } else {
@@ -567,12 +568,12 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   override def run(): Unit = {
     try {
       // Server thread pool
-      val minThreads = conf.get(FRONTEND_MIN_WORKER_THREADS.key).toInt
-      val maxThreads = conf.get(FRONTEND_MAX_WORKER_THREADS.key).toInt
+      val minThreads = conf.get(FRONTEND_MIN_WORKER_THREADS).toInt
+      val maxThreads = conf.get(FRONTEND_MAX_WORKER_THREADS).toInt
       val executorService = new ThreadPoolExecutor(
         minThreads,
         maxThreads,
-        conf.getTimeAsSeconds(FRONTEND_WORKER_KEEPALIVE_TIME.key),
+        conf.getTimeAsSeconds(FRONTEND_WORKER_KEEPALIVE_TIME),
         TimeUnit.SECONDS,
         new SynchronousQueue[Runnable],
         new NamedThreadFactory(threadPoolName))
@@ -584,9 +585,9 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
       val tSocket = new TServerSocket(serverSocket)
 
       // Server args
-      val maxMessageSize = conf.get(FRONTEND_MAX_MESSAGE_SIZE.key).toInt
-      val requestTimeout = conf.getTimeAsSeconds(FRONTEND_LOGIN_TIMEOUT.key).toInt
-      val beBackoffSlotLength = conf.getTimeAsMs(FRONTEND_LOGIN_BEBACKOFF_SLOT_LENGTH.key).toInt
+      val maxMessageSize = conf.get(FRONTEND_MAX_MESSAGE_SIZE).toInt
+      val requestTimeout = conf.getTimeAsSeconds(FRONTEND_LOGIN_TIMEOUT).toInt
+      val beBackoffSlotLength = conf.getTimeAsMs(FRONTEND_LOGIN_BEBACKOFF_SLOT_LENGTH).toInt
       val args = new TThreadPoolServer.Args(tSocket)
         .processorFactory(processorFactory)
         .transportFactory(transportFactory)
