@@ -27,7 +27,9 @@ import org.apache.hadoop.yarn.api.records.YarnApplicationState._
 import org.apache.hadoop.yarn.client.api.YarnClient
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 
-private[kyuubi] object KyuubiHadoopUtil {
+import yaooqinn.kyuubi.Logging
+
+private[kyuubi] object KyuubiHadoopUtil extends Logging {
 
   // YarnClient is thread safe. Create once, share it across threads.
   private lazy val yarnClient = {
@@ -38,7 +40,11 @@ private[kyuubi] object KyuubiHadoopUtil {
   }
 
   def killYarnApp(report: ApplicationReport): Unit = {
-    yarnClient.killApplication(report.getApplicationId)
+    try {
+      yarnClient.killApplication(report.getApplicationId)
+    } catch {
+      case e: Exception => error("Failed to kill Application: " + report.getApplicationId, e)
+    }
   }
 
   def getApplications: Seq[ApplicationReport] = {

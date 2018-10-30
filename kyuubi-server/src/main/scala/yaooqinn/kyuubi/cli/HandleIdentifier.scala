@@ -31,7 +31,7 @@ class HandleIdentifier(val publicId: UUID, val secretId: UUID) {
       Option(secret).map(id => new UUID(id.getLong(), id.getLong())).getOrElse(UUID.randomUUID()))
 
   def this(tHandleId: THandleIdentifier) =
-    this(tHandleId.bufferForGuid(), tHandleId.bufferForSecret())
+    this(ByteBuffer.wrap(tHandleId.getGuid), ByteBuffer.wrap(tHandleId.getSecret))
 
   def getPublicId: UUID = this.publicId
   def getSecretId: UUID = this.secretId
@@ -80,5 +80,5 @@ class HandleIdentifier(val publicId: UUID, val secretId: UUID) {
     true
   }
 
-  override def toString: String = publicId.toString
+  override def toString: String = Option(publicId).map(_.toString).getOrElse("")
 }
