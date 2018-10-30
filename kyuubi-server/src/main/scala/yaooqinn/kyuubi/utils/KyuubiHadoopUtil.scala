@@ -23,6 +23,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.records.ApplicationReport
+import org.apache.hadoop.yarn.api.records.YarnApplicationState._
 import org.apache.hadoop.yarn.client.api.YarnClient
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 
@@ -41,7 +42,12 @@ private[kyuubi] object KyuubiHadoopUtil {
   }
 
   def getApplications: Seq[ApplicationReport] = {
-    yarnClient.getApplications(Set("SPARK").asJava).asScala
+    yarnClient.getApplications(Set("SPARK").asJava).asScala.filter { p =>
+      p.getYarnApplicationState match {
+        case ACCEPTED | NEW | NEW_SAVING | SUBMITTED | RUNNING => true
+        case _ => false
+      }
+    }
   }
 
   def killYarnAppByName(appName: String): Unit = {
