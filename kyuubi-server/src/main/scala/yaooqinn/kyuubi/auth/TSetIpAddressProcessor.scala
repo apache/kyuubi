@@ -50,7 +50,7 @@ class TSetIpAddressProcessor[I <: Iface](iface: Iface)
     }
   }
 
-  private def setUserName(in: TProtocol) = {
+  private def setUserName(in: TProtocol): Unit = {
     val transport = in.getTransport
     transport match {
       case transport1: TSaslServerTransport =>

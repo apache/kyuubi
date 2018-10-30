@@ -43,4 +43,10 @@ class KyuubiConfSuite extends SparkFunSuite {
     }
     assert(conf.get(KyuubiConf.AUTHENTICATION_METHOD) === "KERBEROS")
   }
+
+  test("register") {
+    val e = intercept[IllegalArgumentException](
+      KyuubiConf.register(KyuubiConf.AUTHENTICATION_METHOD))
+    assert(e.getMessage.contains("spark.kyuubi.authentication has been registered"))
+  }
 }

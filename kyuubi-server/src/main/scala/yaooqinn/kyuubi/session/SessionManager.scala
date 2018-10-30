@@ -233,7 +233,7 @@ private[kyuubi] class SessionManager private(
 
     val sessionHandle = kyuubiSession.getSessionHandle
     handleToSession.put(sessionHandle, kyuubiSession)
-    KyuubiServerMonitor.getListener(username).foreach {
+    KyuubiServerMonitor.getListener(kyuubiSession.getUserName).foreach {
       _.onSessionCreated(
         kyuubiSession.getIpAddress,
         sessionHandle.getSessionId.toString,

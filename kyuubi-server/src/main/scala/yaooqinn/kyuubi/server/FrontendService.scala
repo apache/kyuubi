@@ -49,24 +49,24 @@ import yaooqinn.kyuubi.utils.NamedThreadFactory
 private[kyuubi] class FrontendService private(name: String, beService: BackendService)
   extends AbstractService(name) with TCLIService.Iface with Runnable with Logging {
 
-  private[this] var hadoopConf: Configuration = _
-  private[this] var authFactory: KyuubiAuthFactory = _
+  private var hadoopConf: Configuration = _
+  private var authFactory: KyuubiAuthFactory = _
 
-  private[this] val OK_STATUS = new TStatus(TStatusCode.SUCCESS_STATUS)
+  private val OK_STATUS = new TStatus(TStatusCode.SUCCESS_STATUS)
 
-  private[this] var serverEventHandler: TServerEventHandler = _
-  private[this] var currentServerContext: ThreadLocal[ServerContext] = _
+  private var serverEventHandler: TServerEventHandler = _
+  private var currentServerContext: ThreadLocal[ServerContext] = _
 
-  private[this] var server: Option[TServer] = None
-  private[this] var portNum = 0
-  private[this] var serverIPAddress: InetAddress = _
-  private[this] var serverSocket: ServerSocket = _
+  private var server: Option[TServer] = None
+  private var portNum = 0
+  private var serverIPAddress: InetAddress = _
+  private var serverSocket: ServerSocket = _
 
-  private[this] val threadPoolName = name + "-Handler-Pool"
+  private val threadPoolName = name + "-Handler-Pool"
 
-  private[this] var isStarted = false
+  private var isStarted = false
 
-  private[this] var realUser: String = _
+  private var realUser: String = _
 
   def this(beService: BackendService) = {
     this(classOf[FrontendService].getSimpleName, beService)
@@ -112,16 +112,15 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   }
 
   override def init(conf: SparkConf): Unit = synchronized {
-    this.conf = conf
     hadoopConf = SparkHadoopUtil.get.newConfiguration(conf)
-    val serverHost = conf.get(FRONTEND_BIND_HOST.key)
+    val serverHost = conf.get(FRONTEND_BIND_HOST)
     try {
       if (serverHost.nonEmpty) {
         serverIPAddress = InetAddress.getByName(serverHost)
       } else {
         serverIPAddress = InetAddress.getLocalHost
       }
-      portNum = conf.get(FRONTEND_BIND_PORT.key).toInt
+      portNum = conf.get(FRONTEND_BIND_PORT).toInt
       serverSocket = new ServerSocket(portNum, 1, serverIPAddress)
     } catch {
       case e: Exception => throw new ServiceException(e.getMessage + ": " + portNum, e)
@@ -151,11 +150,11 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
 
   def getServerIPAddress: InetAddress = serverIPAddress
 
-  private[this] def isKerberosAuthMode = {
-    conf.get(KyuubiConf.AUTHENTICATION_METHOD.key).equalsIgnoreCase(AuthType.KERBEROS.name)
+  private def isKerberosAuthMode: Boolean = {
+    conf.get(KyuubiConf.AUTHENTICATION_METHOD).equalsIgnoreCase(AuthType.KERBEROS.name)
   }
 
-  private[this] def getUserName(req: TOpenSessionReq) = {
+  private def getUserName(req: TOpenSessionReq): String = {
     // Kerberos
     if (isKerberosAuthMode) {
       realUser = authFactory.getRemoteUser.orNull
@@ -168,10 +167,15 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
       realUser = req.getUsername
     }
     realUser = getShortName(realUser)
-    getProxyUser(req.getConfiguration.asScala.toMap, getIpAddress)
+
+    if (req.getConfiguration == null) {
+      realUser
+    } else {
+      getProxyUser(req.getConfiguration.asScala.toMap, getIpAddress)
+    }
   }
 
-  private[this] def getShortName(userName: String): String = {
+  private def getShortName(userName: String): String = {
     val indexOfDomainMatch = ServiceUtils.indexOfDomainMatch(userName)
     if (indexOfDomainMatch <= 0) {
       userName
@@ -181,10 +185,10 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   }
 
   @throws[KyuubiSQLException]
-  private[this] def getProxyUser(sessionConf: Map[String, String], ipAddress: String): String = {
+  private def getProxyUser(sessionConf: Map[String, String], ipAddress: String): String = {
     Option(sessionConf).flatMap(_.get(KyuubiAuthFactory.HS2_PROXY_USER)) match {
       case None => realUser
-      case Some(_) if !conf.get(FRONTEND_ALLOW_USER_SUBSTITUTION.key).toBoolean =>
+      case Some(_) if !conf.get(FRONTEND_ALLOW_USER_SUBSTITUTION).toBoolean =>
         throw new KyuubiSQLException("Proxy user substitution is not allowed")
       case Some(p) if !isKerberosAuthMode => p
       case Some(p) => // Verify proxy user privilege of the realUser for the proxyUser
@@ -193,7 +197,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     }
   }
 
-  private[this] def getIpAddress: String = {
+  private def getIpAddress: String = {
     if (isKerberosAuthMode) {
       this.authFactory.getIpAddress.orNull
     } else {
@@ -201,7 +205,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     }
   }
 
-  private[this] def getMinVersion(versions: TProtocolVersion*): TProtocolVersion = {
+  private def getMinVersion(versions: TProtocolVersion*): TProtocolVersion = {
     val values = TProtocolVersion.values
     var current = values(values.length - 1).getValue
     for (version <- versions) {
@@ -218,17 +222,17 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   }
 
   @throws[KyuubiSQLException]
-  private[this] def getSessionHandle(req: TOpenSessionReq, res: TOpenSessionResp) = {
+  private def getSessionHandle(req: TOpenSessionReq, res: TOpenSessionResp): SessionHandle = {
     val userName = getUserName(req)
     val ipAddress = getIpAddress
     val protocol = getMinVersion(BackendService.SERVER_VERSION, req.getClient_protocol)
-    val sessionHandle =
-    if (conf.get(FRONTEND_ENABLE_DOAS.key).toBoolean && (userName != null)) {
+    val confMap = Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty)
+    val sessionHandle = if (conf.get(FRONTEND_ENABLE_DOAS).toBoolean && (userName != null)) {
       beService.openSessionWithImpersonation(
-        protocol, userName, req.getPassword, ipAddress, req.getConfiguration.asScala.toMap, null)
+        protocol, userName, req.getPassword, ipAddress, confMap, null)
     } else {
       beService.openSession(
-        protocol, userName, req.getPassword, ipAddress, req.getConfiguration.asScala.toMap)
+        protocol, userName, req.getPassword, ipAddress, confMap)
     }
     res.setServerProtocolVersion(protocol)
     sessionHandle
@@ -567,12 +571,12 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   override def run(): Unit = {
     try {
       // Server thread pool
-      val minThreads = conf.get(FRONTEND_MIN_WORKER_THREADS.key).toInt
-      val maxThreads = conf.get(FRONTEND_MAX_WORKER_THREADS.key).toInt
+      val minThreads = conf.get(FRONTEND_MIN_WORKER_THREADS).toInt
+      val maxThreads = conf.get(FRONTEND_MAX_WORKER_THREADS).toInt
       val executorService = new ThreadPoolExecutor(
         minThreads,
         maxThreads,
-        conf.getTimeAsSeconds(FRONTEND_WORKER_KEEPALIVE_TIME.key),
+        conf.getTimeAsSeconds(FRONTEND_WORKER_KEEPALIVE_TIME),
         TimeUnit.SECONDS,
         new SynchronousQueue[Runnable],
         new NamedThreadFactory(threadPoolName))
@@ -584,9 +588,9 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
       val tSocket = new TServerSocket(serverSocket)
 
       // Server args
-      val maxMessageSize = conf.get(FRONTEND_MAX_MESSAGE_SIZE.key).toInt
-      val requestTimeout = conf.getTimeAsSeconds(FRONTEND_LOGIN_TIMEOUT.key).toInt
-      val beBackoffSlotLength = conf.getTimeAsMs(FRONTEND_LOGIN_BEBACKOFF_SLOT_LENGTH.key).toInt
+      val maxMessageSize = conf.get(FRONTEND_MAX_MESSAGE_SIZE).toInt
+      val requestTimeout = conf.getTimeAsSeconds(FRONTEND_LOGIN_TIMEOUT).toInt
+      val beBackoffSlotLength = conf.getTimeAsMs(FRONTEND_LOGIN_BEBACKOFF_SLOT_LENGTH).toInt
       val args = new TThreadPoolServer.Args(tSocket)
         .processorFactory(processorFactory)
         .transportFactory(transportFactory)
