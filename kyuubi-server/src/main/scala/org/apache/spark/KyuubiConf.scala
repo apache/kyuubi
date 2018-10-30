@@ -22,6 +22,7 @@ import java.util.HashMap
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
+import scala.language.implicitConversions
 
 import org.apache.spark.internal.config.{ConfigBuilder, ConfigEntry}
 
@@ -365,4 +366,9 @@ object KyuubiConf {
       (kv.getKey, kv.getValue.defaultValueString)
     }.toMap
   }
+
+  implicit def convertBooleanConf(config: ConfigEntry[Boolean]): String = config.key
+  implicit def convertIntConf(config: ConfigEntry[Int]): String = config.key
+  implicit def convertLongConf(config: ConfigEntry[Long]): String = config.key
+  implicit def convertStringConf(config: ConfigEntry[String]): String = config.key
 }

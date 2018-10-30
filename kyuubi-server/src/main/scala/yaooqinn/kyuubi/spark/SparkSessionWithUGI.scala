@@ -17,7 +17,6 @@
 
 package yaooqinn.kyuubi.spark
 
-import java.security.PrivilegedExceptionAction
 import java.util.concurrent.TimeUnit
 
 import scala.collection.mutable.{HashSet => MHSet}
@@ -36,7 +35,7 @@ import org.apache.spark.ui.KyuubiServerTab
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.author.AuthzHelper
 import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
-import yaooqinn.kyuubi.utils.ReflectUtils
+import yaooqinn.kyuubi.utils.{KyuubiHadoopUtil, ReflectUtils}
 
 class SparkSessionWithUGI(
     user: UserGroupInformation,
@@ -124,9 +123,9 @@ class SparkSessionWithUGI(
   }
 
   private[this] def getOrCreate(sessionConf: Map[String, String]): Unit = synchronized {
-    val totalRounds = math.max(conf.get(BACKEND_SESSION_WAIT_OTHER_TIMES.key).toInt, 15)
+    val totalRounds = math.max(conf.get(BACKEND_SESSION_WAIT_OTHER_TIMES).toInt, 15)
     var checkRound = totalRounds
-    val interval = conf.getTimeAsMs(BACKEND_SESSION_WAIT_OTHER_INTERVAL.key)
+    val interval = conf.getTimeAsMs(BACKEND_SESSION_WAIT_OTHER_INTERVAL)
     // if user's sc is being constructed by another
     while (SparkSessionWithUGI.isPartiallyConstructed(userName)) {
       wait(interval)
@@ -151,25 +150,30 @@ class SparkSessionWithUGI(
 
   private[this] def create(sessionConf: Map[String, String]): Unit = {
     info(s"--------- Create new SparkSession for $userName ----------")
-    val appName = s"KyuubiSession[$userName]@" + conf.get(FRONTEND_BIND_HOST.key)
+    // kyuubi|user name|canonical host name| port
+    val appName = Seq(
+      "kyuubi", userName, conf.get(FRONTEND_BIND_HOST), conf.get(FRONTEND_BIND_PORT)).mkString("|")
     conf.setAppName(appName)
     configureSparkConf(sessionConf)
-    val totalWaitTime: Long = conf.getTimeAsSeconds(BACKEND_SESSTION_INIT_TIMEOUT.key)
+    val totalWaitTime: Long = conf.getTimeAsSeconds(BACKEND_SESSTION_INIT_TIMEOUT)
     try {
-      user.doAs(new PrivilegedExceptionAction[Unit] {
-        override def run(): Unit = {
-          newContext().start()
-          val context =
-            Await.result(promisedSparkContext.future, Duration(totalWaitTime, TimeUnit.SECONDS))
-          _sparkSession = ReflectUtils.newInstance(
-            classOf[SparkSession].getName,
-            Seq(classOf[SparkContext]),
-            Seq(context)).asInstanceOf[SparkSession]
-        }
-      })
+      KyuubiHadoopUtil.doAs(user) {
+        newContext().start()
+        val context =
+          Await.result(promisedSparkContext.future, Duration(totalWaitTime, TimeUnit.SECONDS))
+        _sparkSession = ReflectUtils.newInstance(
+          classOf[SparkSession].getName,
+          Seq(classOf[SparkContext]),
+          Seq(context)).asInstanceOf[SparkSession]
+      }
       cache.set(userName, _sparkSession)
     } catch {
       case e: Exception =>
+        if (conf.getOption("spark.master").contains("yarn")) {
+          KyuubiHadoopUtil.doAs(user) {
+            KyuubiHadoopUtil.killYarnAppByName(appName)
+          }
+        }
         stopContext()
         val ke = new KyuubiSQLException(
           s"Get SparkSession for [$userName] failed", "08S01", 1001, findCause(e))
@@ -193,9 +197,9 @@ class SparkSessionWithUGI(
 
     try {
       initialDatabase.foreach { db =>
-        user.doAs(new PrivilegedExceptionAction[Unit] {
-          override def run(): Unit = _sparkSession.sql(db)
-        })
+        KyuubiHadoopUtil.doAs(user) {
+          _sparkSession.sql(db)
+        }
       }
     } catch {
       case e: Exception =>
