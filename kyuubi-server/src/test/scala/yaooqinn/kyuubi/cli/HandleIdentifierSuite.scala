@@ -17,6 +17,7 @@
 
 package yaooqinn.kyuubi.cli
 
+import java.nio.ByteBuffer
 import java.util.UUID
 
 import org.apache.hive.service.cli.thrift.THandleIdentifier
@@ -46,7 +47,7 @@ class HandleIdentifierSuite extends SparkFunSuite {
     val handleId3 = new HandleIdentifier(handleId1.toTHandleIdentifier)
     assert(handleId1 === handleId3)
 
-    val tHandleId = new THandleIdentifier()
+    val tHandleId = new THandleIdentifier(ByteBuffer.allocate(16), ByteBuffer.allocate(16))
     val handleId4 = new HandleIdentifier(tHandleId)
     assert(handleId1 !== handleId4)
 
