@@ -89,17 +89,26 @@ object KyuubiSubmit extends Logging {
    */
   private[deploy]
   def prepareSubmitEnvironment(args: SparkSubmitArguments): (Seq[String], Map[String, String]) = {
-    // Return values
+    // Make sure YARN is included in our build if we're trying to use it
+    def checkYarnSupport: Unit = {
+      if (!Utils.classIsLoadable("org.apache.spark.deploy.yarn.Client")) {
+        printErrorAndExit(
+          "Could not load YARN classes. Spark may not have been compiled with YARN support.")
+      }
+    }
+
     val childClasspath = new ArrayBuffer[String]()
     val sysProps = new HashMap[String, String]()
 
     args.master match {
-      case "yarn" =>
-      case "yarn-client" =>
+      case "yarn" => checkYarnSupport
+      case "yarn-client" | "yarn-cluster" =>
+        checkYarnSupport
         printWarning(s"Master ${args.master} is deprecated since 2.0." +
           " Please use master \"yarn\" with specified deploy mode instead.")
         args.master = "yarn"
-      case _ => printErrorAndExit("Kyuubi only supports yarn as master.")
+      case m if m.startsWith("local") => args.master = "local"
+      case _ => printErrorAndExit("Kyuubi only supports yarn, local as master.")
     }
 
     args.deployMode match {
@@ -108,12 +117,6 @@ object KyuubiSubmit extends Logging {
       case _ => printWarning("Kyuubi only supports client mode.")
         args.deployMode = "client"
 
-    }
-
-    // Make sure YARN is included in our build if we're trying to use it
-    if (!Utils.classIsLoadable("org.apache.spark.deploy.yarn.Client")) {
-      printErrorAndExit(
-        "Could not load YARN classes. Spark may not have been compiled with YARN support.")
     }
 
     Seq(
