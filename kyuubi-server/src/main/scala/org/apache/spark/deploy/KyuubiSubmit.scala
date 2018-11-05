@@ -108,7 +108,7 @@ object KyuubiSubmit extends Logging {
           " Please use master \"yarn\" with specified deploy mode instead.")
         args.master = "yarn"
       case m if m.startsWith("local") => args.master = "local"
-      case _ => printErrorAndExit("Kyuubi only supports yarn as master.")
+      case _ => printErrorAndExit("Kyuubi only supports yarn, local as master.")
     }
 
     args.deployMode match {
