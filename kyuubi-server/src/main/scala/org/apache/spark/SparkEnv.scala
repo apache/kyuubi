@@ -145,7 +145,7 @@ object SparkEnv extends Logging {
   private[spark] val driverSystemName = "sparkDriver"
   private[spark] val executorSystemName = "sparkExecutor"
 
-  private[this] def user = UserGroupInformation.getCurrentUser.getShortUserName
+  private def user = UserGroupInformation.getCurrentUser.getShortUserName
 
   def set(e: SparkEnv) {
     if (e == null) {
@@ -162,7 +162,7 @@ object SparkEnv extends Logging {
    */
   def get: SparkEnv = {
     debug(s"Kyuubi: Get SparkEnv for $user")
-    env.get(user)
+    env.getOrDefault(user, env.values().iterator().next())
   }
 
   /**

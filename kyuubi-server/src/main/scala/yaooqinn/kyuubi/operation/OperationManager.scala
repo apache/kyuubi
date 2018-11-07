@@ -94,7 +94,7 @@ private[kyuubi] class OperationManager private(name: String)
   def getOperation(operationHandle: OperationHandle): KyuubiOperation = {
     val operation = getOperationInternal(operationHandle)
     if (operation == null) {
-      throw new KyuubiSQLException("Invalid OperationHandle: " + operationHandle)
+      throw new KyuubiSQLException("Invalid OperationHandle " + operationHandle)
     }
     operation
   }

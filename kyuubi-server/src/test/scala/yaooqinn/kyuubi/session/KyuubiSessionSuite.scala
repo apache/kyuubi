@@ -91,7 +91,7 @@ class KyuubiSessionSuite extends SparkFunSuite {
     assert(
       session.getInfo(GetInfoType.DBMS_VERSION).toTGetInfoValue.getStringValue === spark.version)
     val e = intercept[KyuubiSQLException](session.getInfo(new GetInfoType {}))
-    assert(e.getMessage.startsWith("Unrecognized GetInfoType value:"))
+    assert(e.getMessage.startsWith("Unrecognized GetInfoType value"))
   }
 
   test("get last access time") {
