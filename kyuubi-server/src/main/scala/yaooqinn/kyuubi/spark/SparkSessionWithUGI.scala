@@ -41,13 +41,13 @@ class SparkSessionWithUGI(
     user: UserGroupInformation,
     conf: SparkConf,
     cache: SparkSessionCacheManager) extends Logging {
-  private[this] var _sparkSession: SparkSession = _
-  private[this] val userName: String = user.getShortUserName
-  private[this] val promisedSparkContext = Promise[SparkContext]()
-  private[this] var initialDatabase: Option[String] = None
-  private[this] var sparkException: Option[Throwable] = None
+  private var _sparkSession: SparkSession = _
+  private val userName: String = user.getShortUserName
+  private val promisedSparkContext = Promise[SparkContext]()
+  private var initialDatabase: Option[String] = None
+  private var sparkException: Option[Throwable] = None
 
-  private[this] def newContext(): Thread = {
+  private def newContext(): Thread = {
     new Thread(s"Start-SparkContext-$userName") {
       override def run(): Unit = {
         try {
@@ -64,7 +64,7 @@ class SparkSessionWithUGI(
   /**
    * Invoke SparkContext.stop() if not succeed initializing it
    */
-  private[this] def stopContext(): Unit = {
+  private def stopContext(): Unit = {
     promisedSparkContext.future.map { sc =>
       warn(s"Error occurred during initializing SparkContext for $userName, stopping")
       try {
@@ -82,7 +82,7 @@ class SparkSessionWithUGI(
    *
    * @param sessionConf configurations for user connection string
    */
-  private[this] def configureSparkConf(sessionConf: Map[String, String]): Unit = {
+  private def configureSparkConf(sessionConf: Map[String, String]): Unit = {
     for ((key, value) <- sessionConf) {
       key match {
         case HIVE_VAR_PREFIX(DEPRECATED_QUEUE) => conf.set(QUEUE, value)
@@ -107,7 +107,7 @@ class SparkSessionWithUGI(
    *
    * @param sessionConf configurations for user connection string
    */
-  private[this] def configureSparkSession(sessionConf: Map[String, String]): Unit = {
+  private def configureSparkSession(sessionConf: Map[String, String]): Unit = {
     for ((key, value) <- sessionConf) {
       key match {
         case HIVE_VAR_PREFIX(k) =>
@@ -122,7 +122,7 @@ class SparkSessionWithUGI(
     }
   }
 
-  private[this] def getOrCreate(sessionConf: Map[String, String]): Unit = synchronized {
+  private def getOrCreate(sessionConf: Map[String, String]): Unit = synchronized {
     val totalRounds = math.max(conf.get(BACKEND_SESSION_WAIT_OTHER_TIMES).toInt, 15)
     var checkRound = totalRounds
     val interval = conf.getTimeAsMs(BACKEND_SESSION_WAIT_OTHER_INTERVAL)
@@ -148,7 +148,7 @@ class SparkSessionWithUGI(
     }
   }
 
-  private[this] def create(sessionConf: Map[String, String]): Unit = {
+  private def create(sessionConf: Map[String, String]): Unit = {
     info(s"--------- Create new SparkSession for $userName ----------")
     // kyuubi|user name|canonical host name| port
     val appName = Seq(
@@ -218,7 +218,7 @@ class SparkSessionWithUGI(
 }
 
 object SparkSessionWithUGI {
-  private[this] val userSparkContextBeingConstruct = new MHSet[String]()
+  private val userSparkContextBeingConstruct = new MHSet[String]()
 
   def setPartiallyConstructed(user: String): Unit = {
     userSparkContextBeingConstruct.add(user)

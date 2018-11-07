@@ -221,14 +221,14 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     result.schema
   }
 
-  def getNextRowSet(order: FetchOrientation, maxRowsL: Long): RowSet = {
+  def getNextRowSet(order: FetchOrientation, rowSetSize: Long): RowSet = {
     validateDefaultFetchOrientation(order)
     assertState(FINISHED)
     setHasResultSet(true)
     val taken = if (order == FetchOrientation.FETCH_FIRST) {
-      result.toLocalIterator().asScala.take(maxRowsL.toInt)
+      result.toLocalIterator().asScala.take(rowSetSize.toInt)
     } else {
-      iter.take(maxRowsL.toInt)
+      iter.take(rowSetSize.toInt)
     }
     RowSetBuilder.create(getResultSetSchema, taken.toSeq, session.getProtocolVersion)
   }

@@ -57,14 +57,14 @@ private[kyuubi] class KyuubiSession(
     sessionManager: SessionManager,
     operationManager: OperationManager) extends Logging {
 
-  private[this] val sessionHandle: SessionHandle = new SessionHandle(protocol)
-  private[this] val opHandleSet = new MHSet[OperationHandle]
-  private[this] var _isOperationLogEnabled = false
-  private[this] var sessionLogDir: File = _
-  @volatile private[this] var lastAccessTime: Long = System.currentTimeMillis()
-  private[this] var lastIdleTime = 0L
+  private val sessionHandle: SessionHandle = new SessionHandle(protocol)
+  private val opHandleSet = new MHSet[OperationHandle]
+  private var _isOperationLogEnabled = false
+  private var sessionLogDir: File = _
+  @volatile private var lastAccessTime: Long = System.currentTimeMillis()
+  private var lastIdleTime = 0L
 
-  private[this] val sessionUGI: UserGroupInformation = {
+  private val sessionUGI: UserGroupInformation = {
     val currentUser = UserGroupInformation.getCurrentUser
     if (withImpersonation) {
       if (UserGroupInformation.isSecurityEnabled) {
@@ -82,16 +82,16 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
-  private[this] val sparkSessionWithUGI =
+  private val sparkSessionWithUGI =
     new SparkSessionWithUGI(sessionUGI, conf, sessionManager.getCacheMgr)
 
-  private[this] def acquire(userAccess: Boolean): Unit = {
+  private def acquire(userAccess: Boolean): Unit = {
     if (userAccess) {
       lastAccessTime = System.currentTimeMillis
     }
   }
 
-  private[this] def release(userAccess: Boolean): Unit = {
+  private def release(userAccess: Boolean): Unit = {
     if (userAccess) {
       lastAccessTime = System.currentTimeMillis
     }
@@ -103,7 +103,7 @@ private[kyuubi] class KyuubiSession(
   }
 
   @throws[KyuubiSQLException]
-  private[this] def executeStatementInternal(statement: String) = {
+  private def executeStatementInternal(statement: String): OperationHandle = {
     acquire(true)
     val operation =
       operationManager.newExecuteStatementOperation(this, statement)
@@ -121,7 +121,7 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
-  private[this] def cleanupSessionLogDir(): Unit = {
+  private def cleanupSessionLogDir(): Unit = {
     if (_isOperationLogEnabled) {
       try {
         FileUtils.forceDelete(sessionLogDir)
@@ -152,7 +152,7 @@ private[kyuubi] class KyuubiSession(
         case GetInfoType.DBMS_VERSION =>
           new GetInfoValue(this.sparkSessionWithUGI.sparkSession.version)
         case _ =>
-          throw new KyuubiSQLException("Unrecognized GetInfoType value: " + getInfoType.toString)
+          throw new KyuubiSQLException("Unrecognized GetInfoType value " + getInfoType.toString)
       }
     } finally {
       release(true)
@@ -199,7 +199,7 @@ private[kyuubi] class KyuubiSession(
         FileSystem.closeAllForUGI(sessionUGI)
       } catch {
         case ioe: IOException =>
-          throw new KyuubiSQLException("Could not clean up file-system handles for UGI: "
+          throw new KyuubiSQLException("Could not clean up file-system handles for UGI "
             + sessionUGI, ioe)
       }
     }

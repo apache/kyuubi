@@ -102,7 +102,7 @@ class OperationManagerSuite extends SparkFunSuite with Matchers with MockitoSuga
     assert(op === op2)
     val operationHandle = mock[OperationHandle]
     val e = intercept[KyuubiSQLException](operationMgr.getOperation(operationHandle))
-    e.getMessage should startWith("Invalid OperationHandle:")
+    e.getMessage should startWith("Invalid OperationHandle")
 
     val e2 = intercept[KyuubiSQLException](operationMgr.closeOperation(operationHandle))
     e2.getMessage should be("Operation does not exist!")
