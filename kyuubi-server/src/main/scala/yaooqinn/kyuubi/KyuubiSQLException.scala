@@ -36,7 +36,7 @@ class KyuubiSQLException(reason: String, sqlState: String, vendorCode: Int, caus
 
   def this(reason: String) = this(reason, sqlState = null)
 
-  def this(cause: Throwable) = this(reason = null, cause)
+  def this(cause: Throwable) = this(cause.toString, cause)
 
   /**
    * Converts current object to a [[TStatus]] object
@@ -64,26 +64,38 @@ object KyuubiSQLException {
       tStatus
   }
 
-  def toString(
-      cause: Throwable,
-      parent: Array[StackTraceElement] = Array.empty): List[String] = {
+
+  def toString(cause: Throwable): List[String] = {
+    toString(cause, null)
+  }
+
+  def toString(cause: Throwable, parent: Array[StackTraceElement]): List[String] = {
     val trace = cause.getStackTrace
-    enroll(cause, trace.diff(parent)) ++
+    var m = trace.length - 1
+    if (parent != null) {
+      var n = parent.length - 1
+      while (m >= 0 && n >=0 && trace(m).equals(parent(n))) {
+        m = m - 1
+        n = n - 1
+      }
+    }
+
+    enroll(cause, trace, m) ++
       Option(cause.getCause).map(toString(_, trace)).getOrElse(Nil)
   }
 
-  private[this] def enroll(
-      ex: Throwable,
-      trace: Array[StackTraceElement]): List[String] = {
+  private[this] def enroll(ex: Throwable,
+      trace: Array[StackTraceElement], max: Int): List[String] = {
     val builder = new StringBuilder
     builder.append('*').append(ex.getClass.getName).append(':')
-    Option(ex.getMessage).map(_.stripSuffix(";")).foreach(msg => builder.append(msg).append(":"))
-    builder.append(trace.length).append(':').append(trace.length - 1)
-    List(builder.toString) ++ trace.map { t =>
+    builder.append(ex.getMessage).append(':')
+    builder.append(trace.length).append(':').append(max)
+    List(builder.toString) ++ (0 to max).map { i =>
       builder.setLength(0)
-      builder.append(t.getClassName).append(":").append(t.getMethodName).append(":")
-      Option(t.getFileName).foreach(builder.append)
-      builder.append(":").append(t.getLineNumber)
+      builder.append(trace(i).getClassName).append(":")
+      builder.append(trace(i).getMethodName).append(":")
+      builder.append(Option(trace(i).getFileName).getOrElse("")).append(':')
+      builder.append(trace(i).getLineNumber)
       builder.toString
     }.toList
   }
