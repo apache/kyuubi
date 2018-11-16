@@ -34,7 +34,7 @@ import yaooqinn.kyuubi.utils.KyuubiHiveUtil._
 
 private[security] object HiveTokenCollector extends TokenCollector with Logging {
 
-  override def obtainTokens(conf: SparkConf, creds: Credentials): Unit = {
+  override def obtainTokens(conf: SparkConf): Unit = {
     try {
       val c = hiveConf(conf)
       val principal = c.getTrimmed(METASTORE_PRINCIPAL)
@@ -42,13 +42,15 @@ private[security] object HiveTokenCollector extends TokenCollector with Logging 
       require(StringUtils.isNotEmpty(principal), METASTORE_PRINCIPAL + " Undefined")
       require(StringUtils.isNotEmpty(uris), URIS + " Undefined")
       val currentUser = UserGroupInformation.getCurrentUser.getUserName
+      val credentials = new Credentials()
       KyuubiHadoopUtil.doAsRealUser {
         val hive = Hive.get(c, classOf[HiveConf])
         val tokenString = hive.getDelegationToken(currentUser, principal)
         val token = new Token[DelegationTokenIdentifier]
         token.decodeFromUrlString(tokenString)
-        creds.addToken(new Text("hive.metastore.delegation.token"), token)
+        credentials.addToken(new Text("hive.metastore.delegation.token"), token)
       }
+      UserGroupInformation.getCurrentUser.addCredentials(credentials)
     } catch {
       case NonFatal(e) =>
         error("Failed to get token from hive metatore service", e)

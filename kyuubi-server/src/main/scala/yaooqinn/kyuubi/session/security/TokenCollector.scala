@@ -17,12 +17,12 @@
 
 package yaooqinn.kyuubi.session.security
 
-import org.apache.hadoop.security.{Credentials, UserGroupInformation}
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SparkConf
 
 private[security] trait TokenCollector {
 
-  def obtainTokens(conf: SparkConf, creds: Credentials): Unit
+  def obtainTokens(conf: SparkConf): Unit
 
   def tokensRequired(conf: SparkConf): Boolean = UserGroupInformation.isSecurityEnabled
 
@@ -30,9 +30,9 @@ private[security] trait TokenCollector {
 
 private[session] object TokenCollector {
 
-  def obtainTokenIfRequired(conf: SparkConf, creds: Credentials): Unit = {
+  def obtainTokenIfRequired(conf: SparkConf): Unit = {
     Seq(HiveTokenCollector, HDFSTokenCollector).foreach { co =>
-      if (co.tokensRequired(conf)) co.obtainTokens(conf, creds)
+      if (co.tokensRequired(conf)) co.obtainTokens(conf)
     }
   }
 }
