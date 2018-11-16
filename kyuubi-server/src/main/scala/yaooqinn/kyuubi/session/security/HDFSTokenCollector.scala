@@ -20,7 +20,7 @@ package yaooqinn.kyuubi.session.security
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.mapred.Master
-import org.apache.hadoop.security.Credentials
+import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.spark.KyuubiSparkUtil._
 import org.apache.spark.SparkConf
 
@@ -49,11 +49,13 @@ private[security] object HDFSTokenCollector extends TokenCollector with Logging 
     tokenRenewer
   }
 
-  override def obtainTokens(conf: SparkConf, creds: Credentials): Unit = {
+  override def obtainTokens(conf: SparkConf): Unit = {
     val hadoopConf = newConfiguration(conf)
     val tokenRenewer = renewer(hadoopConf)
+    val creds = new Credentials()
     hadoopFStoAccess(conf, hadoopConf).foreach { fs =>
       fs.addDelegationTokens(tokenRenewer, creds)
     }
+    UserGroupInformation.getCurrentUser.addCredentials(creds)
   }
 }

@@ -76,7 +76,7 @@ private[kyuubi] class KyuubiSession(
           currentUser.reloginFromKeytab()
         }
         val user = UserGroupInformation.createProxyUser(username, currentUser)
-        KyuubiHadoopUtil.doAs(user)(TokenCollector.obtainTokenIfRequired(conf, user.getCredentials))
+        KyuubiHadoopUtil.doAs(user)(TokenCollector.obtainTokenIfRequired(conf))
         user
       } else {
         UserGroupInformation.createRemoteUser(username)
@@ -139,11 +139,9 @@ private[kyuubi] class KyuubiSession(
   def sparkSession: SparkSession = this.sparkSessionWithUGI.sparkSession
 
   def ugi: UserGroupInformation = {
-    val creds = new Credentials
     KyuubiHadoopUtil.doAs(sessionUGI) {
-      TokenCollector.obtainTokenIfRequired(conf, creds)
+      TokenCollector.obtainTokenIfRequired(conf)
     }
-    sessionUGI.addCredentials(creds)
     sessionUGI
   }
 
