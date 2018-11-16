@@ -36,6 +36,7 @@ import yaooqinn.kyuubi.operation.{KyuubiOperation, OperationHandle, OperationMan
 import yaooqinn.kyuubi.schema.RowSet
 import yaooqinn.kyuubi.session.security.TokenCollector
 import yaooqinn.kyuubi.spark.SparkSessionWithUGI
+import yaooqinn.kyuubi.utils.KyuubiHadoopUtil
 
 /**
  * An Execution Session with [[SparkSession]] instance inside, which shares [[SparkContext]]
@@ -75,7 +76,7 @@ private[kyuubi] class KyuubiSession(
           currentUser.reloginFromKeytab()
         }
         val user = UserGroupInformation.createProxyUser(username, currentUser)
-        TokenCollector.obtainTokenIfRequired(conf, user.getCredentials)
+        KyuubiHadoopUtil.doAs(user)(TokenCollector.obtainTokenIfRequired(conf, user.getCredentials))
         user
       } else {
         UserGroupInformation.createRemoteUser(username)
@@ -139,7 +140,9 @@ private[kyuubi] class KyuubiSession(
 
   def ugi: UserGroupInformation = {
     val creds = new Credentials
-    TokenCollector.obtainTokenIfRequired(conf, creds)
+    KyuubiHadoopUtil.doAs(sessionUGI) {
+      TokenCollector.obtainTokenIfRequired(conf, creds)
+    }
     sessionUGI.addCredentials(creds)
     sessionUGI
   }
