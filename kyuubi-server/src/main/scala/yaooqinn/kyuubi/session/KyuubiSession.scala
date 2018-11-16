@@ -23,7 +23,7 @@ import scala.collection.mutable.{HashSet => MHSet}
 
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.FileSystem
-import org.apache.hadoop.security.{Credentials, UserGroupInformation}
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
@@ -138,12 +138,7 @@ private[kyuubi] class KyuubiSession(
 
   def sparkSession: SparkSession = this.sparkSessionWithUGI.sparkSession
 
-  def ugi: UserGroupInformation = {
-    KyuubiHadoopUtil.doAs(sessionUGI) {
-      TokenCollector.obtainTokenIfRequired(conf)
-    }
-    sessionUGI
-  }
+  def ugi: UserGroupInformation = this.sessionUGI
 
   @throws[KyuubiSQLException]
   def open(sessionConf: Map[String, String]): Unit = {
