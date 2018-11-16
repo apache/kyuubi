@@ -15,15 +15,23 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.service
+package yaooqinn.kyuubi.utils
 
-/**
- * ServiceException.
- *
- */
-class ServiceException(message: String, cause: Throwable) extends RuntimeException(message, cause) {
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.hive.conf.HiveConf
+import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 
-  def this(cause: Throwable) = this(cause.toString, cause)
+object KyuubiHiveUtil {
 
-  def this(message: String) = this(message, null)
+  private val HIVE_PREFIX = "hive."
+  private val METASTORE_PREFIX = "metastore."
+
+  val URIS: String = HIVE_PREFIX + METASTORE_PREFIX + "uris"
+  val METASTORE_PRINCIPAL: String = HIVE_PREFIX + METASTORE_PREFIX + "kerberos.principal"
+
+  def hiveConf(conf: SparkConf): Configuration = {
+    val hadoopConf = KyuubiSparkUtil.newConfiguration(conf)
+    new HiveConf(hadoopConf, classOf[HiveConf])
+  }
+
 }

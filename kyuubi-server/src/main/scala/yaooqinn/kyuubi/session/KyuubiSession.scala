@@ -23,7 +23,7 @@ import scala.collection.mutable.{HashSet => MHSet}
 
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.FileSystem
-import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
@@ -34,6 +34,7 @@ import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.cli._
 import yaooqinn.kyuubi.operation.{KyuubiOperation, OperationHandle, OperationManager}
 import yaooqinn.kyuubi.schema.RowSet
+import yaooqinn.kyuubi.session.security.TokenCollector
 import yaooqinn.kyuubi.spark.SparkSessionWithUGI
 
 /**
@@ -73,7 +74,9 @@ private[kyuubi] class KyuubiSession(
           // Do not check keytab file existing as spark-submit has it done
           currentUser.reloginFromKeytab()
         }
-        UserGroupInformation.createProxyUser(username, currentUser)
+        val user = UserGroupInformation.createProxyUser(username, currentUser)
+        TokenCollector.obtainTokenIfRequired(conf, user.getCredentials)
+        user
       } else {
         UserGroupInformation.createRemoteUser(username)
       }
@@ -134,7 +137,12 @@ private[kyuubi] class KyuubiSession(
 
   def sparkSession: SparkSession = this.sparkSessionWithUGI.sparkSession
 
-  def ugi: UserGroupInformation = this.sessionUGI
+  def ugi: UserGroupInformation = {
+    val creds = new Credentials
+    TokenCollector.obtainTokenIfRequired(conf, creds)
+    sessionUGI.addCredentials(creds)
+    sessionUGI
+  }
 
   @throws[KyuubiSQLException]
   def open(sessionConf: Map[String, String]): Unit = {

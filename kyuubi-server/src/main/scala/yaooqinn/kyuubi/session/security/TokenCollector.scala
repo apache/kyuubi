@@ -15,15 +15,24 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.service
+package yaooqinn.kyuubi.session.security
 
-/**
- * ServiceException.
- *
- */
-class ServiceException(message: String, cause: Throwable) extends RuntimeException(message, cause) {
+import org.apache.hadoop.security.{Credentials, UserGroupInformation}
+import org.apache.spark.SparkConf
 
-  def this(cause: Throwable) = this(cause.toString, cause)
+private[security] trait TokenCollector {
 
-  def this(message: String) = this(message, null)
+  def obtainTokens(conf: SparkConf, creds: Credentials): Unit
+
+  def tokensRequired(conf: SparkConf): Boolean = UserGroupInformation.isSecurityEnabled
+
+}
+
+private[session] object TokenCollector {
+
+  def obtainTokenIfRequired(conf: SparkConf, creds: Credentials): Unit = {
+    Seq(HiveTokenCollector, HDFSTokenCollector).foreach { co =>
+      if (co.tokensRequired(conf)) co.obtainTokens(conf, creds)
+    }
+  }
 }
