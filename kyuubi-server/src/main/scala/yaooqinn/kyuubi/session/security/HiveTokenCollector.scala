@@ -45,9 +45,11 @@ private[security] object HiveTokenCollector extends TokenCollector with Logging 
       val credentials = new Credentials()
       KyuubiHadoopUtil.doAsRealUser {
         val hive = Hive.get(c, classOf[HiveConf])
+        info(s"Getting token from Hive Metastore for owner $currentUser via $principal")
         val tokenString = hive.getDelegationToken(currentUser, principal)
         val token = new Token[DelegationTokenIdentifier]
         token.decodeFromUrlString(tokenString)
+        info(s"Got " + DelegationTokenIdentifier.stringifyToken(token))
         credentials.addToken(new Text("hive.metastore.delegation.token"), token)
       }
       UserGroupInformation.getCurrentUser.addCredentials(credentials)
