@@ -154,7 +154,7 @@ class KyuubiAppMaster private(name: String) extends CompositeService(name)
         feService.getServerIPAddress.getHostName,
         feService.getPortNumber, "")
       val expiryInterval = yarnConf.getInt(RM_AM_EXPIRY_INTERVAL_MS, 120000)
-      interval = math.max(100, math.min(expiryInterval / 2, 3000))
+      interval = math.max(100 * 1000, math.min(expiryInterval / 2, 3000))
       info(s"Scheduling ApplicationMaster heartbeat in every $interval ms")
       executor.scheduleAtFixedRate(heartbeatTask, interval, interval, TimeUnit.MILLISECONDS)
       super.start()
