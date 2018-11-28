@@ -156,10 +156,9 @@ class SparkSessionWithUGI(
     conf.setAppName(appName)
     configureSparkConf(sessionConf)
     val totalWaitTime: Long = conf.getTimeAsSeconds(BACKEND_SESSTION_INIT_TIMEOUT)
-    var newContextThread: Thread = null
+    val newContextThread = newContext()
     try {
       KyuubiHadoopUtil.doAs(user) {
-        newContextThread = newContext()
         newContextThread.start()
         val context =
           Await.result(promisedSparkContext.future, Duration(totalWaitTime, TimeUnit.SECONDS))
@@ -183,7 +182,7 @@ class SparkSessionWithUGI(
         throw ke
     } finally {
       SparkSessionWithUGI.setFullyConstructed(userName)
-      if (newContextThread != null) {
+      if (newContextThread.isAlive) {
         newContextThread.join()
       }
     }
