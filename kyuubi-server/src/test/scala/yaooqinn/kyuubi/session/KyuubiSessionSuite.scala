@@ -60,6 +60,7 @@ class KyuubiSessionSuite extends SparkFunSuite {
     spark = session.sparkSession
     super.beforeAll()
   }
+
   override def afterAll(): Unit = {
     System.clearProperty(KyuubiConf.FRONTEND_BIND_PORT.key)
     System.clearProperty("spark.master")
