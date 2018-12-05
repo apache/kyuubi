@@ -20,16 +20,32 @@ package yaooqinn.kyuubi.session.security
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.SparkConf
 
+/**
+ * An interface for secured service token collectors
+ */
 private[security] trait TokenCollector {
 
+  /**
+   * Obtain tokens from secured services, such as Hive Metastore Server. HDFS etc.
+   * @param conf a SparkConf
+   */
   def obtainTokens(conf: SparkConf): Unit
 
+  /**
+   * Check whether a service need tokens to visit
+   * @param conf a SparkConf
+   * @return true if the service to visit requires tokens
+   */
   def tokensRequired(conf: SparkConf): Boolean = UserGroupInformation.isSecurityEnabled
 
 }
 
 private[session] object TokenCollector {
 
+  /**
+   * Obtain tokens from all secured services if required.
+   * @param conf a SparkConf
+   */
   def obtainTokenIfRequired(conf: SparkConf): Unit = {
     Seq(HiveTokenCollector, HDFSTokenCollector).foreach { co =>
       if (co.tokensRequired(conf)) co.obtainTokens(conf)
