@@ -77,11 +77,23 @@ class KyuubiHadoopUtilSuite extends SparkFunSuite with BeforeAndAfterEach {
     }
 
     KyuubiHadoopUtil.doAs(user1) {
-      testf(userName1)
+      assert(testf(userName1))
     }
 
     KyuubiHadoopUtil.doAs(user2) {
-      testf(userName2)
+      assert(testf(userName2))
+    }
+
+    KyuubiHadoopUtil.doAs(user1) {
+      KyuubiHadoopUtil.doAsRealUser {
+        assert(testf(userName1))
+      }
+    }
+
+    KyuubiHadoopUtil.doAs(user2) {
+      KyuubiHadoopUtil.doAsRealUser {
+        assert(testf(userName1))
+      }
     }
   }
 

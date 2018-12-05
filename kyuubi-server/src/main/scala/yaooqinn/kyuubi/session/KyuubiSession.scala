@@ -280,7 +280,7 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
-  private[this] def closeTimedOutOperations(operations: Seq[KyuubiOperation]): Unit = {
+  private def closeTimedOutOperations(operations: Seq[KyuubiOperation]): Unit = {
     acquire(false)
     try {
       operations.foreach { op =>

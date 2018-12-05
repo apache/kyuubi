@@ -27,14 +27,21 @@ import org.apache.spark.SparkConf
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.service.ServiceException
 
+/**
+ * Token collector for secured HDFS FileSystems
+ */
 private[security] object HDFSTokenCollector extends TokenCollector with Logging {
 
   private def hadoopFStoAccess(conf: SparkConf, hadoopConf: Configuration): Set[FileSystem] = {
-    conf.getOption(ACCESS_FSS)
-      .orElse(conf.getOption(ACCESS_NNS))
-      .map(new Path(_).getFileSystem(hadoopConf)).toSet +
-      conf.getOption(STAGING_DIR)
-        .map(new Path(_).getFileSystem(hadoopConf)).getOrElse(FileSystem.get(hadoopConf))
+    val fileSystems = conf.getOption(ACCESS_FSS)
+      .orElse(conf.getOption(ACCESS_NNS)) match {
+      case Some(nns) => nns.split(",").map(new Path(_).getFileSystem(hadoopConf)).toSet
+      case _ => Set.empty[FileSystem]
+    }
+
+    fileSystems +
+      conf.getOption(STAGING_DIR).map(new Path(_).getFileSystem(hadoopConf))
+        .getOrElse(FileSystem.get(hadoopConf))
   }
 
   private def renewer(hadoopConf: Configuration): String = {
