@@ -17,6 +17,7 @@
 
 package yaooqinn.kyuubi.utils
 
+import java.lang.reflect.UndeclaredThrowableException
 import java.security.PrivilegedExceptionAction
 
 import scala.collection.JavaConverters._
@@ -61,8 +62,22 @@ private[kyuubi] object KyuubiHadoopUtil extends Logging {
   }
 
   def doAs[T](user: UserGroupInformation)(f: => T): T = {
-    user.doAs(new PrivilegedExceptionAction[T] {
-      override def run(): T = f
-    })
+    try {
+      user.doAs(new PrivilegedExceptionAction[T] {
+        override def run(): T = f
+      })
+    } catch {
+      case e: UndeclaredThrowableException => throw Option(e.getCause).getOrElse(e)
+    }
+  }
+
+  /**
+   * Run some code as the real logged in user (which may differ from the current user, for
+   * example, when using proxying).
+   */
+  def doAsRealUser[T](f: => T): T = {
+    val currentUser = UserGroupInformation.getCurrentUser
+    val realUser = Option(currentUser.getRealUser).getOrElse(currentUser)
+    doAs(realUser)(f)
   }
 }
