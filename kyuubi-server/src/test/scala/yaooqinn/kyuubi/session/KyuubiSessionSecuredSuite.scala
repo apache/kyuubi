@@ -46,7 +46,6 @@ class KyuubiSessionSecuredSuite extends SparkFunSuite with SecuredFunSuite {
     super.afterAll()
   }
 
-
   test("secured ugi test") {
     val be = server.beService
     val sessionMgr = be.getSessionManager
