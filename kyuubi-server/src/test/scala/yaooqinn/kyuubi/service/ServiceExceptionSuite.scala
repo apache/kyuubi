@@ -31,11 +31,11 @@ class ServiceExceptionSuite extends SparkFunSuite {
     val e2 = new ServiceException(e1)
     val tStatus1 = KyuubiSQLException.toTStatus(e2)
     assert(tStatus1.isSetStatusCode)
-    assert(tStatus1.getErrorMessage === "")
+    assert(tStatus1.getErrorMessage === e1.toString)
     assert(tStatus1.getSqlState === null)
     assert(tStatus1.getErrorCode === 0)
     assert(tStatus1.getInfoMessages === KyuubiSQLException.toString(e2).asJava)
-    assert(e2.getMessage.isEmpty)
+    assert(e2.getMessage === e1.toString)
     assert(e2.getCause === e1)
 
     val e3 = new ServiceException(msg)

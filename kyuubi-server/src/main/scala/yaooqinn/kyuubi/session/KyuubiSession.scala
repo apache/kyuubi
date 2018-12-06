@@ -34,7 +34,9 @@ import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.cli._
 import yaooqinn.kyuubi.operation.{KyuubiOperation, OperationHandle, OperationManager}
 import yaooqinn.kyuubi.schema.RowSet
+import yaooqinn.kyuubi.session.security.TokenCollector
 import yaooqinn.kyuubi.spark.SparkSessionWithUGI
+import yaooqinn.kyuubi.utils.KyuubiHadoopUtil
 
 /**
  * An Execution Session with [[SparkSession]] instance inside, which shares [[SparkContext]]
@@ -73,7 +75,9 @@ private[kyuubi] class KyuubiSession(
           // Do not check keytab file existing as spark-submit has it done
           currentUser.reloginFromKeytab()
         }
-        UserGroupInformation.createProxyUser(username, currentUser)
+        val user = UserGroupInformation.createProxyUser(username, currentUser)
+        KyuubiHadoopUtil.doAs(user)(TokenCollector.obtainTokenIfRequired(conf))
+        user
       } else {
         UserGroupInformation.createRemoteUser(username)
       }
@@ -276,7 +280,7 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
-  private[this] def closeTimedOutOperations(operations: Seq[KyuubiOperation]): Unit = {
+  private def closeTimedOutOperations(operations: Seq[KyuubiOperation]): Unit = {
     acquire(false)
     try {
       operations.foreach { op =>

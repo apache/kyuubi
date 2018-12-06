@@ -15,15 +15,27 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.service
+package yaooqinn.kyuubi.utils
 
-/**
- * ServiceException.
- *
- */
-class ServiceException(message: String, cause: Throwable) extends RuntimeException(message, cause) {
+import org.apache.spark.{SparkConf, SparkFunSuite}
 
-  def this(cause: Throwable) = this(cause.toString, cause)
+class KyuubiHiveUtilSuite extends SparkFunSuite {
 
-  def this(message: String) = this(message, null)
+  test("hive conf") {
+    val uris = "thrift://yaooqinn.kyuubi"
+    val conf = new SparkConf()
+      .set("spark.hadoop.hive.metastore.uris", uris)
+    val hiveConf = KyuubiHiveUtil.hiveConf(conf)
+    assert(hiveConf.get(KyuubiHiveUtil.URIS) === uris)
+  }
+
+  test("testURIS") {
+    assert(KyuubiHiveUtil.URIS === "hive.metastore.uris")
+  }
+
+  test("metastore principal") {
+    assert(KyuubiHiveUtil.METASTORE_PRINCIPAL === "hive.metastore.kerberos.principal")
+
+  }
+
 }

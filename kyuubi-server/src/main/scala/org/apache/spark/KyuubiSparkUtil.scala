@@ -39,26 +39,30 @@ import yaooqinn.kyuubi.Logging
 object KyuubiSparkUtil extends Logging {
   // PREFIXES
   val SPARK_PREFIX = "spark."
-  private[this] val YARN_PREFIX = "yarn."
-  private[this] val HADOOP_PRFIX = "hadoop."
+  private val YARN_PREFIX = "yarn."
+  private val HADOOP_PRFIX = "hadoop."
   val SPARK_HADOOP_PREFIX: String = SPARK_PREFIX + HADOOP_PRFIX
-  private[this] val DRIVER_PREFIX = "driver."
-  private[this] val AM_PREFIX = SPARK_PREFIX + YARN_PREFIX + "am."
+  private val SPARK_YARN_PREFIX: String = SPARK_PREFIX + YARN_PREFIX
+  private val DRIVER_PREFIX = "driver."
+  private val AM_PREFIX = SPARK_PREFIX + YARN_PREFIX + "am."
 
-  private[this] val UI_PREFIX = "ui."
-  private[this] val SQL_PREFIX = "sql."
-  private[this] val HIVE_PREFIX = "hive."
-  private[this] val METASTORE_PREFIX = "metastore."
+  private val UI_PREFIX = "ui."
+  private val SQL_PREFIX = "sql."
+  private val HIVE_PREFIX = "hive."
+  private val METASTORE_PREFIX = "metastore."
 
   // ENVIRONMENTS
   val SPARK_HOME: String = System.getenv("SPARK_HOME")
   val SPARK_JARS_DIR: String = SPARK_HOME + File.separator + "jars"
 
   // YARN
-  val KEYTAB: String = SPARK_PREFIX + YARN_PREFIX + "keytab"
-  val PRINCIPAL: String = SPARK_PREFIX + YARN_PREFIX + "principal"
-  val MAX_APP_ATTEMPTS: String = SPARK_PREFIX + YARN_PREFIX + "maxAppAttempts"
-  val SPARK_YARN_JARS: String = SPARK_PREFIX + YARN_PREFIX + "jars"
+  val KEYTAB: String = SPARK_YARN_PREFIX + "keytab"
+  val PRINCIPAL: String = SPARK_YARN_PREFIX + "principal"
+  val MAX_APP_ATTEMPTS: String = SPARK_YARN_PREFIX + "maxAppAttempts"
+  val SPARK_YARN_JARS: String = SPARK_YARN_PREFIX + "jars"
+  val ACCESS_NNS: String = SPARK_YARN_PREFIX + "access.namenodes"
+  val ACCESS_FSS: String = SPARK_YARN_PREFIX + "access.hadoopFileSystems"
+  val STAGING_DIR: String = SPARK_YARN_PREFIX + "stagingDir"
 
   // DRIVER
   val DRIVER_BIND_ADDR: String = SPARK_PREFIX + DRIVER_PREFIX + "bindAddress"
