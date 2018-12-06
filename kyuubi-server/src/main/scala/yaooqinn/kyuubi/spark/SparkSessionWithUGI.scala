@@ -156,9 +156,10 @@ class SparkSessionWithUGI(
     conf.setAppName(appName)
     configureSparkConf(sessionConf)
     val totalWaitTime: Long = conf.getTimeAsSeconds(BACKEND_SESSTION_INIT_TIMEOUT)
+    val newContextThread = newContext()
     try {
       KyuubiHadoopUtil.doAs(user) {
-        newContext().start()
+        newContextThread.start()
         val context =
           Await.result(promisedSparkContext.future, Duration(totalWaitTime, TimeUnit.SECONDS))
         _sparkSession = ReflectUtils.newInstance(
@@ -181,7 +182,9 @@ class SparkSessionWithUGI(
         throw ke
     } finally {
       SparkSessionWithUGI.setFullyConstructed(userName)
-      newContext().join()
+      if (newContextThread.isAlive) {
+        newContextThread.join()
+      }
     }
 
     KyuubiServerMonitor.setListener(userName, new KyuubiServerListener(conf))
