@@ -18,13 +18,16 @@
 package yaooqinn.kyuubi.session
 
 import org.apache.hive.service.cli.thrift.TProtocolVersion
-import org.apache.spark.{KyuubiConf, KyuubiSparkUtil}
+import org.apache.spark.{KyuubiConf, SparkFunSuite}
+import org.apache.spark.sql.SparkSession
 
 import yaooqinn.kyuubi.SecuredFunSuite
 import yaooqinn.kyuubi.server.KyuubiServer
-import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 
-class KyuubiSessionSecuredSuite extends KyuubiSessionSuite with SecuredFunSuite {
+class KyuubiSessionSecuredSuite extends SparkFunSuite with SecuredFunSuite {
+
+  var server: KyuubiServer = _
+  var spark: SparkSession = _
 
   override def beforeAll(): Unit = {
     System.setProperty(KyuubiConf.FRONTEND_BIND_PORT.key, "0")
@@ -32,6 +35,19 @@ class KyuubiSessionSecuredSuite extends KyuubiSessionSuite with SecuredFunSuite 
     System.setProperty("spark.hadoop.yarn.resourcemanager.principal", "yarn/_HOST@KENT.KYUUBI.COM")
 
     server = KyuubiServer.startKyuubiServer()
+    super.beforeAll()
+  }
+
+  override def afterAll(): Unit = {
+    System.clearProperty(KyuubiConf.FRONTEND_BIND_PORT.key)
+    System.clearProperty("spark.master")
+    System.clearProperty("spark.hadoop.yarn.resourcemanager.principal")
+    if (server != null) server.stop()
+    super.afterAll()
+  }
+
+
+  test("secured ugi test") {
     val be = server.beService
     val sessionMgr = be.getSessionManager
     val operationMgr = sessionMgr.getOperationMgr
@@ -41,27 +57,9 @@ class KyuubiSessionSecuredSuite extends KyuubiSessionSuite with SecuredFunSuite 
     val imper = true
     val proto = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8
     tryWithSecurityEnabled {
-      session =
+      val session =
         new KyuubiSession(proto, user, passwd, server.getConf, ip, imper, sessionMgr, operationMgr)
+      assert(session.ugi.getShortUserName === user)
     }
-    session.open(Map.empty)
-    KyuubiServerMonitor.getListener(user)
-      .foreach(_.onSessionCreated(
-        session.getIpAddress, session.getSessionHandle.getSessionId.toString, user))
-    spark = session.sparkSession
-    super.beforeAll()
   }
-
-  override def afterAll(): Unit = {
-    System.clearProperty(KyuubiConf.FRONTEND_BIND_PORT.key)
-    System.clearProperty("spark.master")
-    System.clearProperty("spark.hadoop.yarn.resourcemanager.principal")
-    if (session != null) {
-      if (session.sparkSession != null) session.sparkSession.stop()
-      session.close()
-    }
-    if (server != null) server.stop()
-    super.afterAll()
-  }
-
 }
