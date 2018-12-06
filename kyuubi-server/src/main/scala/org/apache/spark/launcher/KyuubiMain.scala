@@ -16,7 +16,7 @@
  */
 package org.apache.spark.launcher
 
-import java.util.{ArrayList => JAList, List => JList, Map => JMap}
+import java.util.{ArrayList => JAList, HashMap => HMap, List => JList, Map => JMap}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -54,7 +54,7 @@ object KyuubiMain {
         new SparkSubmitCommandBuilder(help.toList.asJava)
     }
 
-    val env = Map.empty[String, String].asJava
+    val env = new HMap[String, String]()
     val cmd = builder.buildCommand(env)
     // scalastyle:off
     printStream.println("Kyuubi Command: " + join(" ", cmd))
