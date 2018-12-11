@@ -48,14 +48,17 @@ class SparkSessionWithUGI(
   private var sparkException: Option[Throwable] = None
 
   private lazy val newContext: Thread = {
-    new Thread(s"Start-SparkContext-$userName") {
+    val threadName = "SparkContext-Starter-" + userName
+    new Thread(threadName) {
       override def run(): Unit = {
         try {
           promisedSparkContext.trySuccess {
             new SparkContext(conf)
           }
         } catch {
-          case NonFatal(e) => sparkException = Some(e)
+          case e: Exception =>
+            sparkException = Some(e)
+            throw e
         }
       }
     }
