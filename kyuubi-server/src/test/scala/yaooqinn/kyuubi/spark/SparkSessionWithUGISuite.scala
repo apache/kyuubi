@@ -49,7 +49,7 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
       classOf[SparkSession].getName,
       Seq(classOf[SparkContext]),
       Seq(sc)).asInstanceOf[SparkSession]
-    
+
     cache.init(conf)
     cache.start()
     cache.set(userName, spark)
@@ -80,9 +80,9 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
 
   test("test init failed with no such database") {
     val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf, cache)
-    intercept[NoSuchDatabaseException](sparkSessionWithUGI.init(Map("use:database" -> "fakedb")))
-    assert(ReflectUtils.getFieldValue(sparkSessionWithUGI,
-      "yaooqinn$kyuubi$spark$SparkSessionWithUGI$$initialDatabase") === Some("use fakedb"))
+    val e = intercept[NoSuchDatabaseException](
+      sparkSessionWithUGI.init(Map("use:database" -> "fakedb")))
+    assert(e.getMessage().contains("fakedb"))
     assert(cache.getAndIncrease(userName).nonEmpty)
   }
 
@@ -178,5 +178,13 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
     future.foreach { sc =>
       assert(sc.isStopped)
     }
+  }
+
+  test("user name should be switched") {
+    val proxyUserName = "Kent"
+    val proxyUser = UserGroupInformation.createProxyUser(proxyUserName, user)
+    val sparkSessionWithUGI = new SparkSessionWithUGI(proxyUser, conf, cache)
+    sparkSessionWithUGI.init(Map.empty)
+    assert(sparkSessionWithUGI.sparkSession.sparkContext.sparkUser === proxyUserName)
   }
 }
