@@ -31,6 +31,10 @@ class AuthenticationProviderFactorySuite extends SparkFunSuite {
     val ldap = AuthenticationProviderFactory.getAuthenticationProvider(AuthMethods.LDAP, conf)
     val exception = intercept[AuthenticationException](ldap.authenticate("test", "test"))
     assert(exception.getMessage.contains("Error validating LDAP user:"))
+
+    val e2 = intercept[AuthenticationException](
+      AuthenticationProviderFactory.getAuthenticationProvider(null, conf))
+    assert(e2.getMessage === "Not a valid authentication method")
   }
 
 }
