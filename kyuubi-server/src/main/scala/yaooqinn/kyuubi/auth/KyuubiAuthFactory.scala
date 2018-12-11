@@ -65,7 +65,7 @@ class KyuubiAuthFactory(conf: SparkConf) extends Logging {
           throw new TTransportException("Failed to start token manager", e)
       }
       Some(server)
-    case AuthType.NONE | AuthType.NOSASL => None
+    case AuthType.NONE | AuthType.NOSASL | AuthType.LDAP => None
     case other => throw new ServiceException("Unsupported authentication method: " + other)
   }
 
