@@ -19,18 +19,15 @@ package yaooqinn.kyuubi.auth
 
 import javax.security.sasl.AuthenticationException
 
-trait AuthMethods {
-  def authMethodStr: String = null
-}
+object AuthMethods extends Enumeration {
 
-object AuthMethods {
+  type AuthMethods = Value
 
-  case object NONE extends AuthMethods {
-    override val authMethodStr = "NONE"
-  }
+  val NONE, LDAP = Value
 
   def getValidAuthMethod(authMethodStr: String): AuthMethods = authMethodStr match {
-    case NONE.authMethodStr => NONE
+    case "NONE" => NONE
+    case "LDAP" => LDAP
     case _ => throw new AuthenticationException("Not a valid authentication method")
   }
 }

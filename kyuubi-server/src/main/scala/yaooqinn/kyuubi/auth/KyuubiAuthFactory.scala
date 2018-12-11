@@ -86,7 +86,7 @@ class KyuubiAuthFactory(conf: SparkConf) extends Logging {
       }
     case _ => authMethod match {
       case AuthType.NOSASL => new TTransportFactory
-      case _ => PlainSaslHelper.getTransportFactory(authMethod.name)
+      case _ => PlainSaslHelper.getTransportFactory(authMethod.toString, conf)
     }
   }
 

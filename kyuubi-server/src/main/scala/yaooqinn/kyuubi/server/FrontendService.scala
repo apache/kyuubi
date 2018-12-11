@@ -151,7 +151,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   def getServerIPAddress: InetAddress = serverIPAddress
 
   private def isKerberosAuthMode: Boolean = {
-    conf.get(KyuubiConf.AUTHENTICATION_METHOD).equalsIgnoreCase(AuthType.KERBEROS.name)
+    conf.get(KyuubiConf.AUTHENTICATION_METHOD).equalsIgnoreCase(AuthType.KERBEROS.toString)
   }
 
   private def getUserName(req: TOpenSessionReq): String = {

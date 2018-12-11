@@ -19,27 +19,24 @@ package yaooqinn.kyuubi.auth
 
 import org.apache.spark.SparkFunSuite
 
+import yaooqinn.kyuubi.auth.AuthType._
 import yaooqinn.kyuubi.service.ServiceException
 
 class AuthTypeSuite extends SparkFunSuite {
 
-  test("test name") {
-    assert(new AuthType {}.name === "")
-    assert(AuthType.NONE.name === "NONE")
-    assert(AuthType.KERBEROS.name === "KERBEROS")
-    assert(AuthType.NOSASL.name === "NOSASL")
-  }
-
   test("to auth type") {
-    assert(AuthType.toAuthType("NONE") === AuthType.NONE)
-    assert(AuthType.toAuthType(AuthType.NONE.name) === AuthType.NONE)
+    assert(toAuthType("NOSASL") === NOSASL)
+    assert(toAuthType(NOSASL.toString) === NOSASL)
 
-    assert(AuthType.toAuthType("KERBEROS") === AuthType.KERBEROS)
-    assert(AuthType.toAuthType(AuthType.KERBEROS.name) === AuthType.KERBEROS)
+    assert(toAuthType("NONE") === NONE)
+    assert(toAuthType(NONE.toString) === NONE)
 
-    assert(AuthType.toAuthType("NOSASL") === AuthType.NOSASL)
-    assert(AuthType.toAuthType(AuthType.NOSASL.name) === AuthType.NOSASL)
+    assert(toAuthType("LDAP") === LDAP)
+    assert(toAuthType(LDAP.toString) === LDAP)
 
-    intercept[ServiceException](AuthType.toAuthType("ELSE"))
+    assert(toAuthType("KERBEROS") === KERBEROS)
+    assert(toAuthType(KERBEROS.toString) === KERBEROS)
+
+    intercept[ServiceException](toAuthType("ELSE"))
   }
 }
