@@ -21,14 +21,17 @@ import javax.security.sasl.AuthenticationException
 
 import org.apache.spark.SparkFunSuite
 
+import yaooqinn.kyuubi.auth.AuthMethods._
+
 class AuthMethodsSuite extends SparkFunSuite {
 
-  test("testGetValidAuthMethod") {
-    assert(new AuthMethods{}.authMethodStr === null)
-    assert(AuthMethods.getValidAuthMethod("NONE") === AuthMethods.NONE)
-    assert(AuthMethods.getValidAuthMethod(AuthMethods.NONE.authMethodStr) === AuthMethods.NONE)
+  test("get valid auth method") {
+    assert(getValidAuthMethod("NONE") === NONE)
+    assert(getValidAuthMethod(NONE.toString) === NONE)
+    assert(getValidAuthMethod("LDAP") === LDAP)
+    assert(getValidAuthMethod(LDAP.toString) === LDAP)
 
-    assert(AuthMethods.NONE.authMethodStr === "NONE")
-    intercept[AuthenticationException](AuthMethods.getValidAuthMethod("ELSE"))
+    assert(NONE.toString === "NONE")
+    intercept[AuthenticationException](getValidAuthMethod("ELSE"))
   }
 }

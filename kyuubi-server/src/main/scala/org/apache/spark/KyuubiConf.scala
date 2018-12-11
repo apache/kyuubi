@@ -314,6 +314,24 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("auth")
 
+  val AUTHENTICATION_LDAP_URL: ConfigEntry[String] =
+    KyuubiConfigBuilder("spark.kyuubi.authentication.ldap.url")
+      .doc("SPACE character separated LDAP connection URL(s).")
+      .stringConf
+      .createWithDefault("")
+
+  val AUTHENTICATION_LDAP_BASEDN: ConfigEntry[String] =
+    KyuubiConfigBuilder("spark.kyuubi.authentication.ldap.baseDN")
+      .doc("LDAP base DN.")
+      .stringConf
+      .createWithDefault("")
+
+  val AUTHENTICATION_LDAP_DOMAIN: ConfigEntry[String] =
+    KyuubiConfigBuilder("spark.kyuubi.authentication.ldap.Domain")
+      .doc("LDAP base DN.")
+      .stringConf
+      .createWithDefault("")
+
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                      Authorization                                          //
   /////////////////////////////////////////////////////////////////////////////////////////////////

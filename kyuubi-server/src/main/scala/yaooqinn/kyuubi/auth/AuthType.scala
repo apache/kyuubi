@@ -19,30 +19,17 @@ package yaooqinn.kyuubi.auth
 
 import yaooqinn.kyuubi.service.ServiceException
 
-abstract class AuthType {
-  def name: String = ""
-  override def toString: String = name
+object AuthType extends Enumeration {
 
-}
+  type AuthType = Value
 
-object AuthType {
-
-  case object NOSASL extends AuthType {
-    override val name: String = "NOSASL"
-  }
-
-  case object NONE extends AuthType {
-    override val name: String = "NONE"
-  }
-
-  case object KERBEROS extends AuthType {
-    override val name: String = "KERBEROS"
-  }
+  val NOSASL, NONE, LDAP, KERBEROS = Value
 
   def toAuthType(authTypeStr: String): AuthType = authTypeStr.toUpperCase match {
-    case NOSASL.name => NOSASL
-    case NONE.name => NONE
-    case KERBEROS.name => KERBEROS
+    case "NOSASL" => NOSASL
+    case "NONE" => NONE
+    case "LDAP" => LDAP
+    case "KERBEROS" => KERBEROS
     case other => throw new ServiceException("Unsupported authentication method: " + other)
   }
 }

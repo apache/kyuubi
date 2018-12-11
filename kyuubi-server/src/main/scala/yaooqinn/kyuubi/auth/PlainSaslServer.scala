@@ -22,6 +22,8 @@ import java.util.{ArrayDeque => JDeque, Map => JMap}
 import javax.security.auth.callback._
 import javax.security.sasl.{AuthorizeCallback, SaslException, SaslServer, SaslServerFactory}
 
+import yaooqinn.kyuubi.auth.AuthMethods.AuthMethods
+
 object PlainSaslServer {
 
   val PLAIN_METHOD = "PLAIN"

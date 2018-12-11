@@ -18,14 +18,20 @@ package yaooqinn.kyuubi.auth
 
 import javax.security.sasl.AuthenticationException
 
+import org.apache.spark.SparkConf
+
+import yaooqinn.kyuubi.auth.AuthMethods.AuthMethods
+
 /**
  * This class helps select a [[PasswdAuthenticationProvider]] for a given [[AuthMethods]]
  */
 object AuthenticationProviderFactory {
   @throws[AuthenticationException]
-  def getAuthenticationProvider(method: AuthMethods): PasswdAuthenticationProvider = method match {
+  def getAuthenticationProvider(
+      method: AuthMethods,
+      conf: SparkConf): PasswdAuthenticationProvider = method match {
     case AuthMethods.NONE => new AnonymousAuthenticationProviderImpl
+    case AuthMethods.LDAP => new LdapAuthenticationProviderImpl(conf)
     case _ => throw new AuthenticationException("Not a valid authentication method")
-
   }
 }
