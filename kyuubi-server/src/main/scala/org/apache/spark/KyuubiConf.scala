@@ -300,7 +300,8 @@ object KyuubiConf {
     KyuubiConfigBuilder("spark.kyuubi.authentication")
       .doc("Client authentication types." +
         " NONE: no authentication check." +
-        " KERBEROS: Kerberos/GSSAPI authentication")
+        " KERBEROS: Kerberos/GSSAPI authentication." +
+        " LDAP: Lightweight Directory Access Protocol authentication.")
       .stringConf
       .createWithDefault("NONE")
 
