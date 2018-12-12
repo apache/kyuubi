@@ -22,6 +22,8 @@ import java.util.{ArrayDeque => JDeque, Map => JMap}
 import javax.security.auth.callback._
 import javax.security.sasl.{AuthorizeCallback, SaslException, SaslServer, SaslServerFactory}
 
+import yaooqinn.kyuubi.auth.AuthMethods.AuthMethods
+
 object PlainSaslServer {
 
   val PLAIN_METHOD = "PLAIN"
@@ -70,7 +72,7 @@ class PlainSaslServer(handler: CallbackHandler, authMethod: AuthMethods) extends
         case 0 =>
           tokenList.addLast(messageToken.toString)
           messageToken.setLength(0)
-        case b: Byte => messageToken.append(b)
+        case b: Byte => messageToken.append(b.toChar)
       }
       tokenList.addLast(messageToken.toString)
       // validate response

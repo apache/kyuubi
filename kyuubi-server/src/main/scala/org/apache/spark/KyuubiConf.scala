@@ -300,7 +300,8 @@ object KyuubiConf {
     KyuubiConfigBuilder("spark.kyuubi.authentication")
       .doc("Client authentication types." +
         " NONE: no authentication check." +
-        " KERBEROS: Kerberos/GSSAPI authentication")
+        " KERBEROS: Kerberos/GSSAPI authentication." +
+        " LDAP: Lightweight Directory Access Protocol authentication.")
       .stringConf
       .createWithDefault("NONE")
 
@@ -313,6 +314,24 @@ object KyuubiConf {
         " applicable only if Kyuubi is configured to use Kerberos authentication.")
       .stringConf
       .createWithDefault("auth")
+
+  val AUTHENTICATION_LDAP_URL: ConfigEntry[String] =
+    KyuubiConfigBuilder("spark.kyuubi.authentication.ldap.url")
+      .doc("SPACE character separated LDAP connection URL(s).")
+      .stringConf
+      .createWithDefault("")
+
+  val AUTHENTICATION_LDAP_BASEDN: ConfigEntry[String] =
+    KyuubiConfigBuilder("spark.kyuubi.authentication.ldap.baseDN")
+      .doc("LDAP base DN.")
+      .stringConf
+      .createWithDefault("")
+
+  val AUTHENTICATION_LDAP_DOMAIN: ConfigEntry[String] =
+    KyuubiConfigBuilder("spark.kyuubi.authentication.ldap.Domain")
+      .doc("LDAP base DN.")
+      .stringConf
+      .createWithDefault("")
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                      Authorization                                          //

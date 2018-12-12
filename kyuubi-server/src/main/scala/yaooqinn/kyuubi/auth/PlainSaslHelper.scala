@@ -25,9 +25,11 @@ import javax.security.sasl.{AuthenticationException, AuthorizeCallback}
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.cli.thrift.TCLIService.Iface
+import org.apache.spark.SparkConf
 import org.apache.thrift.{TProcessor, TProcessorFactory}
 import org.apache.thrift.transport.{TSaslServerTransport, TTransport, TTransportFactory}
 
+import yaooqinn.kyuubi.auth.AuthMethods.AuthMethods
 import yaooqinn.kyuubi.auth.PlainSaslServer.SaslPlainProvider
 
 object PlainSaslHelper {
@@ -41,10 +43,10 @@ object PlainSaslHelper {
   }
 
   @throws[LoginException]
-  def getTransportFactory(authTypeStr: String): TTransportFactory = {
+  def getTransportFactory(authTypeStr: String, conf: SparkConf): TTransportFactory = {
     val saslFactory = new TSaslServerTransport.Factory()
     try {
-      val handler = new PlainServerCallbackHandler(authTypeStr)
+      val handler = new PlainServerCallbackHandler(authTypeStr, conf)
       val props = Map.empty[String, String]
       saslFactory.addServerDefinition("PLAIN", authTypeStr, null, props.asJava, handler)
     } catch {
@@ -54,10 +56,11 @@ object PlainSaslHelper {
     saslFactory
   }
 
-  private class PlainServerCallbackHandler private(authMethod: AuthMethods)
+  private class PlainServerCallbackHandler private(authMethod: AuthMethods, conf: SparkConf)
     extends CallbackHandler {
     @throws[AuthenticationException]
-    def this(authMethodStr: String) = this(AuthMethods.getValidAuthMethod(authMethodStr))
+    def this(authMethodStr: String, conf: SparkConf) =
+      this(AuthMethods.getValidAuthMethod(authMethodStr), conf)
 
     @throws[IOException]
     @throws[UnsupportedCallbackException]
@@ -75,7 +78,7 @@ object PlainSaslHelper {
           case _ => throw new UnsupportedCallbackException(callback)
         }
       }
-      val provider = AuthenticationProviderFactory.getAuthenticationProvider(authMethod)
+      val provider = AuthenticationProviderFactory.getAuthenticationProvider(authMethod, conf)
       provider.authenticate(username, password)
       if (ac != null) ac.setAuthorized(true)
     }
