@@ -25,7 +25,6 @@ import org.apache.hadoop.security.authorize.AuthorizationException
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
 
 import yaooqinn.kyuubi.KyuubiSQLException
-import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.service.ServiceException
 import yaooqinn.kyuubi.utils.ReflectUtils
 
@@ -79,6 +78,13 @@ class KyuubiAuthFactorySuite extends SparkFunSuite {
     KyuubiSparkUtil.setupCommonConfig(conf)
     val e = intercept[ServiceException](new KyuubiAuthFactory(conf))
     assert(e.getMessage === "Unsupported authentication method: OTHER")
+  }
+
+  test("AuthType LDAP") {
+    val conf = new SparkConf(true).set(KyuubiConf.AUTHENTICATION_METHOD.key, "LDAP")
+    KyuubiSparkUtil.setupCommonConfig(conf)
+    val authFactory = new KyuubiAuthFactory(conf)
+    assert(authFactory.getIpAddress.isEmpty)
   }
 
   test("AuthType KERBEROS without keytab/principal") {

@@ -19,17 +19,22 @@ package yaooqinn.kyuubi.auth
 
 import javax.security.sasl.AuthenticationException
 
-import org.apache.spark.SparkFunSuite
+import org.apache.spark.{SparkConf, SparkFunSuite}
 
 class AuthenticationProviderFactorySuite extends SparkFunSuite {
 
   test("testGetAuthenticationProvider") {
-    AuthenticationProviderFactory
-      .getAuthenticationProvider(AuthMethods.NONE).authenticate("test", "test")
-    intercept[AuthenticationException](AuthenticationProviderFactory
-      .getAuthenticationProvider(new AuthMethods {
-        override def authMethodStr: String = "TEST"
-      }))
+    val conf = new SparkConf()
+    val anonymous = AuthenticationProviderFactory.getAuthenticationProvider(AuthMethods.NONE, conf)
+    anonymous.authenticate("test", "test")
+
+    val ldap = AuthenticationProviderFactory.getAuthenticationProvider(AuthMethods.LDAP, conf)
+    val exception = intercept[AuthenticationException](ldap.authenticate("test", "test"))
+    assert(exception.getMessage.contains("Error validating LDAP user:"))
+
+    val e2 = intercept[AuthenticationException](
+      AuthenticationProviderFactory.getAuthenticationProvider(null, conf))
+    assert(e2.getMessage === "Not a valid authentication method")
   }
 
 }

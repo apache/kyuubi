@@ -291,14 +291,14 @@
                 <scope>test</scope>
                 <exclusions>
                     <exclusion>
+                        <groupId>org.apache.directory.server</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>org.apache.directory.api</groupId>
                         <artifactId>api-all</artifactId>
                     </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.directory.jdbm</groupId>
-                        <artifactId>apacheds-jdbm1</artifactId>
-                    </exclusion>
-            </exclusions>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.directory.server</groupId>
