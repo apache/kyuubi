@@ -28,6 +28,7 @@ import scala.util.control.NonFatal
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAccessControlException
 import org.apache.hadoop.hive.ql.session.OperationLog
+import org.apache.hadoop.mapred.JobConf
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil
@@ -40,6 +41,7 @@ import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.schema.{RowSet, RowSetBuilder}
 import yaooqinn.kyuubi.session.KyuubiSession
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
+import yaooqinn.kyuubi.utils.ReflectUtils
 
 class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging {
 
@@ -313,6 +315,10 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
           statementId,
           session.getUserName)
       }
+      val hadoopConf = session.sparkSession.sparkContext.hadoopConfiguration
+      val jobConf = new JobConf(hadoopConf)
+      jobConf.setCredentials(session.ugi.getCredentials)
+      ReflectUtils.setFieldValue(session.sparkSession.sparkContext, "_hadoopConfiguration", jobConf)
       session.sparkSession.sparkContext.setJobGroup(statementId, statement)
       result = session.sparkSession.sql(statement)
       KyuubiServerMonitor.getListener(session.getUserName).foreach {
