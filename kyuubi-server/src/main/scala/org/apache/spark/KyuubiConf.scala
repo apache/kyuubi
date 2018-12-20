@@ -26,8 +26,6 @@ import scala.language.implicitConversions
 
 import org.apache.spark.internal.config.{ConfigBuilder, ConfigEntry}
 
-import yaooqinn.kyuubi.service.ServiceException
-
 /**
  * Kyuubi server level configuration which will be set when at the very beginning of server start.
  *
@@ -45,9 +43,6 @@ object KyuubiConf {
   private[this] object KyuubiConfigBuilder {
     def apply(key: String): ConfigBuilder = ConfigBuilder(key).onCreate(register)
   }
-
-  val KYUUBI_HOME: String =
-    sys.env.getOrElse("KYUUBI_HOME", throw new ServiceException("KYUUBI_HOME is not set!"))
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                High Availability by ZooKeeper                               //
@@ -293,7 +288,9 @@ object KyuubiConf {
     KyuubiConfigBuilder("spark.kyuubi.backend.session.local.dir")
       .doc("Default value to set spark.local.dir")
       .stringConf
-      .createWithDefault(KYUUBI_HOME + File.separator + "local")
+      .createWithDefault(
+        s"${sys.env.getOrElse("KYUUBI_HOME", System.getProperty("java.io.tmpdir"))}"
+        + File.separator + "local")
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                      Authentication                                         //
