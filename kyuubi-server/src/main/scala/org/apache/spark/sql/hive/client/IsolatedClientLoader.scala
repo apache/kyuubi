@@ -22,7 +22,8 @@ import java.net.URL
 import scala.util.Try
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.spark.SparkConf
+import org.apache.hadoop.hive.conf.HiveConf.ConfVars
+import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.sql.internal.NonClosableMutableURLClassLoader
 import org.apache.spark.util.MutableURLClassLoader
 
@@ -56,6 +57,8 @@ private[hive] class IsolatedClientLoader(
     val barrierPrefixes: Seq[String] = Seq.empty)
   extends Logging {
 
+  import KyuubiSparkUtil._
+
   // Check to make sure that the root classloader does not know about Hive.
   assert(Try(rootClassLoader.loadClass("org.apache.hadoop.hive.conf.HiveConf")).isFailure)
 
@@ -75,7 +78,28 @@ private[hive] class IsolatedClientLoader(
 
   /** The isolated client interface to Hive. */
   private[hive] def createClient(): HiveClient = synchronized {
-    new HiveClientImpl(version, sparkConf, hadoopConf, config, baseClassLoader, this)
+
+    val ctor = classOf[HiveClientImpl].getConstructors.head
+    if (majorVersion(SPARK_VERSION) == 2 && minorVersion(SPARK_VERSION) > 3) {
+      val warehouseDir = Option(hadoopConf.get(ConfVars.METASTOREWAREHOUSE.varname))
+      ctor.newInstance(
+        version,
+        warehouseDir,
+        sparkConf,
+        hadoopConf,
+        config,
+        baseClassLoader,
+        this).asInstanceOf[HiveClientImpl]
+    } else {
+      ctor.newInstance(
+        version,
+        sparkConf,
+        hadoopConf,
+        config,
+        baseClassLoader,
+        this).asInstanceOf[HiveClientImpl]
+    }
+
   }
 
   /**

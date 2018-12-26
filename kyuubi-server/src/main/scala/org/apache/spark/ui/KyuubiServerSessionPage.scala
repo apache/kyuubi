@@ -52,9 +52,9 @@ class KyuubiServerSessionPage(parent: KyuubiServerTab) extends WebUIPage("sessio
         Session created at {formatDate(sessionStat.startTimestamp)},
         Total run {sessionStat.totalExecution} SQL
         </h4> ++
-        generateSQLStatsTable(sessionStat.sessionId)
+        generateSQLStatsTable(request, sessionStat.sessionId)
       }
-    UIUtils.headerSparkPage("Kyuubi Session", content, parent, Some(5000))
+    KyuubiUIUtils.headerSparkPage(request, "Kyuubi Session", content, parent, Some(5000))
   }
 
   /** Generate basic stats of the kyuubi server program */
@@ -71,7 +71,7 @@ class KyuubiServerSessionPage(parent: KyuubiServerTab) extends WebUIPage("sessio
   }
 
   /** Generate stats of batch statements of the kyuubi server program */
-  private def generateSQLStatsTable(sessionID: String): Seq[Node] = {
+  private def generateSQLStatsTable(request: HttpServletRequest, sessionID: String): Seq[Node] = {
     val executionList = listener.getExecutionList
       .filter(_.sessionId == sessionID)
     val numStatement = executionList.size
@@ -82,7 +82,8 @@ class KyuubiServerSessionPage(parent: KyuubiServerTab) extends WebUIPage("sessio
 
       def generateDataRow(info: ExecutionInfo): Seq[Node] = {
         val jobLink = info.jobId.map { id: String =>
-          <a href={"%s/jobs/job?id=%s".format(UIUtils.prependBaseUri(parent.basePath), id)}>
+          <a href={"%s/jobs/job?id=%s"
+            .format(KyuubiUIUtils.prependBaseUri(request, parent.basePath), id)}>
             [{id}]
           </a>
         }

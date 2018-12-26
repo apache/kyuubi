@@ -44,10 +44,10 @@ class KyuubiServerPage(parent: KyuubiServerTab) extends WebUIPage("") {
         {listener.getOnlineSessionNum} session(s) are online,
         running {listener.getTotalRunning} SQL statement(s)
         </h4> ++
-        generateSessionStatsTable() ++
-        generateSQLStatsTable()
+        generateSessionStatsTable(request) ++
+        generateSQLStatsTable(request)
       }
-    UIUtils.headerSparkPage("Kyuubi Server", content, parent, Some(5000))
+    KyuubiUIUtils.headerSparkPage(request, "Kyuubi Server", content, parent, Some(5000))
   }
 
   /** Generate basic stats of the kyuubi server program */
@@ -64,7 +64,7 @@ class KyuubiServerPage(parent: KyuubiServerTab) extends WebUIPage("") {
   }
 
   /** Generate stats of batch statements of the kyuubi server program */
-  private def generateSQLStatsTable(): Seq[Node] = {
+  private def generateSQLStatsTable(request: HttpServletRequest): Seq[Node] = {
     val numStatement = listener.getExecutionList.size
     val table = if (numStatement > 0) {
       val headerRow = Seq("User", "JobID", "GroupID", "Start Time", "Finish Time", "Duration",
@@ -73,7 +73,8 @@ class KyuubiServerPage(parent: KyuubiServerTab) extends WebUIPage("") {
 
       def generateDataRow(info: ExecutionInfo): Seq[Node] = {
         val jobLink = info.jobId.map { id: String =>
-          <a href={"%s/jobs/job?id=%s".format(UIUtils.prependBaseUri(parent.basePath), id)}>
+          <a href={"%s/jobs/job?id=%s".format(
+            KyuubiUIUtils.prependBaseUri(request, parent.basePath), id)}>
             [{id}]
           </a>
         }
@@ -135,7 +136,7 @@ class KyuubiServerPage(parent: KyuubiServerTab) extends WebUIPage("") {
   }
 
   /** Generate stats of batch sessions of the kyuubi server program */
-  private def generateSessionStatsTable(): Seq[Node] = {
+  private def generateSessionStatsTable(request: HttpServletRequest): Seq[Node] = {
     val sessionList = listener.getSessionList
     val numBatches = sessionList.size
     val table = if (numBatches > 0) {
@@ -143,8 +144,8 @@ class KyuubiServerPage(parent: KyuubiServerTab) extends WebUIPage("") {
       val headerRow = Seq("User", "IP", "Session ID", "Start Time", "Finish Time", "Duration",
         "Total Execute")
       def generateDataRow(session: SessionInfo): Seq[Node] = {
-        val sessionLink = "%s/%s/session?id=%s"
-          .format(UIUtils.prependBaseUri(parent.basePath), parent.prefix, session.sessionId)
+        val sessionLink = "%s/%s/session?id=%s".format(
+          KyuubiUIUtils.prependBaseUri(request, parent.basePath), parent.prefix, session.sessionId)
         <tr>
           <td> {session.userName} </td>
           <td> {session.ip} </td>
