@@ -56,9 +56,24 @@ object KyuubiMain {
 
     val env = new HMap[String, String]()
     val cmd = builder.buildCommand(env)
+    val msg =
+      """
+        |                    Welcome to
+        |  __  __                           __
+        | /\ \/\ \                         /\ \      __
+        | \ \ \/'/'  __  __  __  __  __  __\ \ \____/\_\
+        |  \ \ , <  /\ \/\ \/\ \/\ \/\ \/\ \\ \ '__`\/\ \
+        |   \ \ \\`\\ \ \_\ \ \ \_\ \ \ \_\ \\ \ \L\ \ \ \
+        |    \ \_\ \_\/`____ \ \____/\ \____/ \ \_,__/\ \_\
+        |     \/_/\/_/`/___/> \/___/  \/___/   \/___/  \/_/
+        |                /\___/
+        |                \/__/
+      """.stripMargin
     // scalastyle:off
+    printStream.println(msg)
+    printStream.println("=" * 69)
     printStream.println("Kyuubi Command: " + join(" ", cmd))
-    printStream.println("========================================")
+    printStream.println("=" * 69)
     // scalastyle:on
     prepareBashCommand(cmd, env).asScala.foreach { c =>
       print(c)
