@@ -22,6 +22,9 @@ CLASS="yaooqinn.kyuubi.server.KyuubiServer"
 
 BIN_DIR="$(cd "`dirname "$0"`"; pwd)"
 
+echo "Welcome to"
+cat $BIN_DIR/kyuubi-logo
+
 set -a
 . "${BIN_DIR}/kyuubi-env.sh"
 set +a
@@ -65,5 +68,3 @@ if [ "$KYUUBI_SUBMIT_ENABLE" == "true" ]; then
 else
   exec "${SPARK_HOME}"/sbin/spark-daemon.sh submit ${CLASS} 1 "$@" "$KYUUBI_JAR"
 fi
-
-
