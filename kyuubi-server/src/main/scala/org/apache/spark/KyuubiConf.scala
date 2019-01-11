@@ -366,6 +366,13 @@ object KyuubiConf {
       .booleanConf
     .createWithDefault(false)
 
+  val OPERATION_RESULT_LIMIT: ConfigEntry[Int] =
+    KyuubiConfigBuilder("spark.kyuubi.operation.result.limit")
+      .doc("In non-incremental result collection mode, set this to a positive value to limit the" +
+        " size of result collected to driver side.")
+      .intConf
+      .createWithDefault(-1)
+
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                   Containerization                                          //
   /////////////////////////////////////////////////////////////////////////////////////////////////
