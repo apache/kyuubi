@@ -94,6 +94,7 @@ Name|Default|Description
 ---|---|---
 spark.kyuubi.operation.idle.timeout|6h|Operation will be closed when it's not accessed for this duration of time.
 spark.kyuubi.operation.incremental.collect|false|Whether to use incremental result collection from Spark executor side to Kyuubi server side.
+spark.kyuubi.operation.result.limit|-1|In non-incremental result collection mode, set this to a positive value to limit the size of result collected to driver side.
 
 ---
 
