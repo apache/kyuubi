@@ -66,8 +66,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
   private[this] val DEFAULT_FETCH_ORIENTATION_SET: Set[FetchOrientation] =
     Set(FetchOrientation.FETCH_NEXT, FetchOrientation.FETCH_FIRST)
 
-  private[this] val incrementalCollect: Boolean =
-    conf.get(OPERATION_INCREMENTAL_COLLECT.key).toBoolean
+  private[this] val incrementalCollect: Boolean = conf.get(OPERATION_INCREMENTAL_COLLECT).toBoolean
 
   def getBackgroundHandle: Future[_] = backgroundHandle
 
@@ -323,7 +322,12 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
         info("Executing query in incremental collection mode")
         result.toLocalIterator().asScala
       } else {
-        result.collect().toList.iterator
+        val resultLimit = conf.get(OPERATION_RESULT_LIMIT).toInt
+        if (resultLimit >= 0) {
+          result.take(resultLimit).toList.toIterator
+        } else {
+          result.collect().toList.iterator
+        }
       }
       setState(FINISHED)
       KyuubiServerMonitor.getListener(session.getUserName).foreach(_.onStatementFinish(statementId))
