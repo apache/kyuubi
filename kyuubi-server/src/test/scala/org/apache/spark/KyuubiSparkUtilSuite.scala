@@ -335,4 +335,17 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
     val e9 = KyuubiSparkUtil.findCause(e0)
     assert(e9 === e0)
   }
+
+  test("set active spark context") {
+    val conf = new SparkConf(true)
+      .setMaster("local")
+      .setAppName("active context")
+      .set(KyuubiSparkUtil.MULTIPLE_CONTEXTS, "true")
+    val sc1 = new SparkContext(conf)
+    assert(SparkContext.getActive.contains(sc1))
+    sc1.stop()
+    assert(SparkContext.getActive.isEmpty)
+    KyuubiSparkUtil.setActiveSparkContext(sc1)
+    assert(SparkContext.getActive.contains(sc1))
+  }
 }

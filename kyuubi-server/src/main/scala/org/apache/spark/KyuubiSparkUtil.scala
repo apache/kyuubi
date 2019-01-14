@@ -238,6 +238,10 @@ object KyuubiSparkUtil extends Logging {
     Utils.getPropertiesFromFile(filename)
   }
 
+  def setActiveSparkContext(sc: SparkContext): Unit = {
+    SparkContext.setActiveContext(sc, allowMultipleContexts = true)
+  }
+
   /**
    * Get and set Kyuubi Jar First ClassLoader
    */
