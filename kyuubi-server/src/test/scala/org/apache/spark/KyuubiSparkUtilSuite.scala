@@ -347,5 +347,6 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
     assert(SparkContext.getActive.isEmpty)
     KyuubiSparkUtil.setActiveSparkContext(sc1)
     assert(SparkContext.getActive.contains(sc1))
+    SparkContext.clearActiveContext()
   }
 }
