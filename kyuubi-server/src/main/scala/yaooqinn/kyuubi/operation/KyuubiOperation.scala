@@ -313,6 +313,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
           session.getUserName)
       }
       session.sparkSession.sparkContext.setJobGroup(statementId, statement)
+      KyuubiSparkUtil.setActiveSparkContext(session.sparkSession.sparkContext)
       result = session.sparkSession.sql(statement)
       KyuubiServerMonitor.getListener(session.getUserName).foreach {
         _.onStatementParsed(statementId, result.queryExecution.toString())
