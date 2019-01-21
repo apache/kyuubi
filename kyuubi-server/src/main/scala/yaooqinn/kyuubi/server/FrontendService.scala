@@ -66,7 +66,6 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
 
   private var isStarted = false
 
-  private var realUser: String = _
 
   def this(beService: BackendService) = {
     this(classOf[FrontendService].getSimpleName, beService)
@@ -155,6 +154,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   }
 
   private def getUserName(req: TOpenSessionReq): String = {
+    var realUser: String = null
     // Kerberos
     if (isKerberosAuthMode) {
       realUser = authFactory.getRemoteUser.orNull
@@ -171,7 +171,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
     if (req.getConfiguration == null) {
       realUser
     } else {
-      getProxyUser(req.getConfiguration.asScala.toMap, getIpAddress)
+      getProxyUser(req.getConfiguration.asScala.toMap, getIpAddress, realUser)
     }
   }
 
@@ -185,7 +185,8 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
   }
 
   @throws[KyuubiSQLException]
-  private def getProxyUser(sessionConf: Map[String, String], ipAddress: String): String = {
+  private def getProxyUser(sessionConf: Map[String, String],
+                           ipAddress: String, realUser: String): String = {
     Option(sessionConf).flatMap(_.get(KyuubiAuthFactory.HS2_PROXY_USER)) match {
       case None => realUser
       case Some(_) if !conf.get(FRONTEND_ALLOW_USER_SUBSTITUTION).toBoolean =>
@@ -609,7 +610,7 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
       server.foreach(_.serve())
     } catch {
       case t: Throwable =>
-        error("Error starting " + name +  " for KyuubiServer", t)
+        error("Error starting " + name + " for KyuubiServer", t)
         System.exit(-1)
     }
   }
