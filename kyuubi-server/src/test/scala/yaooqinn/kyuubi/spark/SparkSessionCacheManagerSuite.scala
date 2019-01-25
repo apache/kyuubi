@@ -93,7 +93,7 @@ class SparkSessionCacheManagerSuite extends SparkFunSuite with Matchers with Moc
     ReflectUtils.setFieldValue(
       cache, "yaooqinn$kyuubi$spark$SparkSessionCacheManager$$idleTimeout", 0)
     runnable.run()
-
+    System.clearProperty("SPARK_YARN_MODE")
     cache.stop()
   }
 
