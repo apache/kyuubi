@@ -70,7 +70,7 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
 
   private def removeSparkSession(user: String): Unit = {
     Option(userLatestLogout.remove(user)) match {
-      case Some(t) => info("User [" + user + "] last time logout at " +
+      case Some(t) => info(s"User [$user] last time logout at " +
         new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(t)))
       case _ =>
     }
@@ -83,9 +83,10 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
   }
 
   def getAndIncrease(user: String): Option[SparkSession] = {
-    Some(userToSession.get(user)) match {
+    Option(userToSession.get(user)) match {
       case Some((ss, times)) if !ss.sparkContext.isStopped =>
-        info(s"SparkSession for [$user] is reused for ${times.incrementAndGet()} time(s) after + 1")
+        val currentTime = times.incrementAndGet()
+        info(s"SparkSession for [$user] is reused for $currentTime time(s) after + 1")
         Some(ss)
       case _ =>
         info(s"SparkSession for [$user] isn't cached, will create a new one.")
@@ -94,10 +95,11 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
   }
 
   def decrease(user: String): Unit = {
-    Some(userToSession.get(user)) match {
+    Option(userToSession.get(user)) match {
       case Some((ss, times)) if !ss.sparkContext.isStopped =>
         userLatestLogout.put(user, System.currentTimeMillis())
-        info(s"SparkSession for [$user] is reused for ${times.decrementAndGet()} time(s) after -1")
+        val currentTime = times.decrementAndGet()
+        info(s"SparkSession for [$user] is reused for $currentTime time(s) after - 1")
       case _ =>
         warn(s"SparkSession for [$user] was not found in the cache.")
     }
