@@ -17,6 +17,8 @@
 
 package yaooqinn.kyuubi.spark
 
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.concurrent.{ConcurrentHashMap, Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -40,11 +42,11 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
       new ThreadFactoryBuilder()
         .setDaemon(true).setNameFormat(getClass.getSimpleName + "-%d").build())
 
-  private[this] val userToSession = new ConcurrentHashMap[String, (SparkSession, AtomicInteger)]
-  private[this] val userLatestLogout = new ConcurrentHashMap[String, Long]
-  private[this] var idleTimeout: Long = _
+  private val userToSession = new ConcurrentHashMap[String, (SparkSession, AtomicInteger)]
+  private val userLatestLogout = new ConcurrentHashMap[String, Long]
+  private var idleTimeout: Long = _
 
-  private[this] val sessionCleaner = new Runnable {
+  private val sessionCleaner = new Runnable {
     override def run(): Unit = {
       userToSession.asScala.foreach {
         case (user, (session, _)) if session.sparkContext.isStopped =>
@@ -66,7 +68,12 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
     }
   }
 
-  private[this] def removeSparkSession(user: String): Unit = {
+  private def removeSparkSession(user: String): Unit = {
+    Option(userLatestLogout.remove(user)) match {
+      case Some(t) => info(s"User [$user] last time logout at " +
+        new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(t)))
+      case _ =>
+    }
     userToSession.remove(user)
     KyuubiServerMonitor.detachUITab(user)
   }
@@ -76,9 +83,10 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
   }
 
   def getAndIncrease(user: String): Option[SparkSession] = {
-    Some(userToSession.get(user)) match {
+    Option(userToSession.get(user)) match {
       case Some((ss, times)) if !ss.sparkContext.isStopped =>
-        info(s"SparkSession for [$user] is reused for ${times.incrementAndGet()} time(s) after + 1")
+        val currentTime = times.incrementAndGet()
+        info(s"SparkSession for [$user] is reused for $currentTime time(s) after + 1")
         Some(ss)
       case _ =>
         info(s"SparkSession for [$user] isn't cached, will create a new one.")
@@ -87,10 +95,11 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
   }
 
   def decrease(user: String): Unit = {
-    Some(userToSession.get(user)) match {
+    Option(userToSession.get(user)) match {
       case Some((ss, times)) if !ss.sparkContext.isStopped =>
         userLatestLogout.put(user, System.currentTimeMillis())
-        info(s"SparkSession for [$user] is reused for ${times.decrementAndGet()} time(s) after -1")
+        val currentTime = times.decrementAndGet()
+        info(s"SparkSession for [$user] is reused for $currentTime time(s) after - 1")
       case _ =>
         warn(s"SparkSession for [$user] was not found in the cache.")
     }

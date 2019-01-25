@@ -24,6 +24,7 @@ import org.scalatest.Matchers
 import org.scalatest.mock.MockitoSugar
 
 import yaooqinn.kyuubi.service.State
+import yaooqinn.kyuubi.utils.ReflectUtils
 
 class SparkSessionCacheManagerSuite extends SparkFunSuite with Matchers with MockitoSugar {
 
@@ -60,13 +61,39 @@ class SparkSessionCacheManagerSuite extends SparkFunSuite with Matchers with Moc
     val userName = KyuubiSparkUtil.getCurrentUserName
     val sc = mock[SparkContext]
     when(ss.sparkContext).thenReturn(sc)
+
+    cache.decrease(userName) // None
+    cache.getAndIncrease(userName) // None
+
+    cache.set(userName, ss)
+    when(sc.isStopped).thenReturn(false)
+    cache.getAndIncrease(userName)
+
+    when(sc.isStopped).thenReturn(true)
+    cache.getAndIncrease(userName)
+
     when(sc.isStopped).thenReturn(false)
     cache.decrease(userName)
-    cache.getAndIncrease(userName)
-    cache.set(userName, ss)
-    cache.getAndIncrease(userName)
+    when(sc.isStopped).thenReturn(true)
     cache.decrease(userName)
+
     Thread.sleep(2000)
+    val field = cache.getClass.getDeclaredField("sessionCleaner")
+    field.setAccessible(true)
+
+    when(sc.isStopped).thenReturn(false)
+    val runnable = field.get(cache).asInstanceOf[Runnable]
+    runnable.run() // > 0
+
+    when(sc.isStopped).thenReturn(false)
+    cache.decrease(userName)
+    when(sc.isStopped).thenReturn(false)
+    runnable.run() // not expiry
+    when(sc.isStopped).thenReturn(false)
+    ReflectUtils.setFieldValue(
+      cache, "yaooqinn$kyuubi$spark$SparkSessionCacheManager$$idleTimeout", 0)
+    runnable.run()
+    System.clearProperty("SPARK_YARN_MODE")
     cache.stop()
   }
 
