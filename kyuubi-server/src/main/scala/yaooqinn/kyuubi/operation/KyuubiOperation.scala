@@ -31,7 +31,7 @@ import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil
-import org.apache.spark.sql.{AnalysisException, DataFrame, Row}
+import org.apache.spark.sql.{AnalysisException, DataFrame, Row, SparkSQLUtils}
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.types._
 
@@ -304,6 +304,10 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       statementId = UUID.randomUUID().toString
       info(s"Running query '$statement' with $statementId")
       setState(RUNNING)
+
+      val classLoader = SparkSQLUtils.getUserJarClassLoader(session.sparkSession)
+      Thread.currentThread().setContextClassLoader(classLoader)
+
       KyuubiServerMonitor.getListener(session.getUserName).foreach {
         _.onStatementStart(
           statementId,
