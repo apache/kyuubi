@@ -311,7 +311,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       val src = new Path(path)
       val destFileName = src.getName
       val destFile =
-        new File(session.getResourcesSessionDir + destFileName).getCanonicalPath
+        new File(session.getResourcesSessionDir, destFileName).getCanonicalPath
       val fs = src.getFileSystem(session.sparkSession.sparkContext.hadoopConfiguration)
       fs.copyToLocalFile(src, new Path(destFile))
       FileUtil.chmod(destFile, "ugo+rx", true)
