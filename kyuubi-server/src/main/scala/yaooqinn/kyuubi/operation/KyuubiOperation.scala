@@ -340,21 +340,23 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       }
       session.sparkSession.sparkContext.setJobGroup(statementId, statement)
       KyuubiSparkUtil.setActiveSparkContext(session.sparkSession.sparkContext)
-      result = session.sparkSession.sql(statement)
-      KyuubiServerMonitor.getListener(session.getUserName).foreach {
-        _.onStatementParsed(statementId, result.queryExecution.toString())
-      }
-      result.queryExecution.logical match {
+
+      val parsedPlan = SparkSQLUtils.parsePlan(session.sparkSession, statement)
+      parsedPlan match {
         case c if c.nodeName == "CreateFunctionCommand" =>
           val resources =
             ReflectUtils.getFieldValue(c, "resources").asInstanceOf[Seq[FunctionResource]]
           resources.foreach { case FunctionResource(_, uri) =>
-              localizeAndAndResource(uri)
+            localizeAndAndResource(uri)
           }
         case a if a.nodeName == "AddJarCommand" =>
           val path = ReflectUtils.getFieldValue(a, "path").asInstanceOf[String]
           localizeAndAndResource(path)
         case _ =>
+      }
+      result = SparkSQLUtils.toDataFrame(session.sparkSession, parsedPlan)
+      KyuubiServerMonitor.getListener(session.getUserName).foreach {
+        _.onStatementParsed(statementId, result.queryExecution.toString())
       }
       debug(result.queryExecution.toString())
       iter = if (incrementalCollect) {
