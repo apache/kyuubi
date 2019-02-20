@@ -21,7 +21,7 @@ import org.apache.spark.SparkFunSuite
 
 class SparkSQLUtilsSuite extends SparkFunSuite {
 
-  test("testGetUserJarClassLoader") {
+  test("get user jar class loader") {
     val sparkSession = SparkSession
       .builder()
       .appName(classOf[SparkSQLUtilsSuite].getSimpleName)
