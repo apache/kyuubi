@@ -63,6 +63,7 @@ private[kyuubi] class KyuubiSession(
   private val opHandleSet = new MHSet[OperationHandle]
   private var _isOperationLogEnabled = false
   private var sessionLogDir: File = _
+  private var sessionResourcesDir: File = _
   @volatile private var lastAccessTime: Long = System.currentTimeMillis()
   private var lastIdleTime = 0L
 
@@ -136,6 +137,15 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
+  private def cleanupSessionResourcesDir(): Unit = {
+    try {
+      FileUtils.forceDelete(sessionResourcesDir)
+    } catch {
+      case e: Exception =>
+        error("Failed to cleanup session log dir: " + sessionResourcesDir, e)
+    }
+  }
+
   def sparkSession: SparkSession = this.sparkSessionWithUGI.sparkSession
 
   def ugi: UserGroupInformation = this.sessionUGI
@@ -195,6 +205,8 @@ private[kyuubi] class KyuubiSession(
       // Iterate through the opHandles and close their operations
       opHandleSet.foreach(closeOperation)
       opHandleSet.clear()
+      // Cleanup session resources directory
+      cleanupSessionResourcesDir()
       // Cleanup session log directory.
       cleanupSessionLogDir()
     } finally {
@@ -313,14 +325,14 @@ private[kyuubi] class KyuubiSession(
   def isOperationLogEnabled: Boolean = _isOperationLogEnabled
 
   /**
-   * Get the session dir, which is the parent dir of operation logs
+   * Get the session log dir, which is the parent dir of operation logs
    *
    * @return a file representing the parent directory of operation logs
    */
   def getSessionLogDir: File = sessionLogDir
 
   /**
-   * Set the session dir, which is the parent dir of operation logs
+   * Set the session log dir, which is the parent dir of operation logs
    *
    * @param operationLogRootDir the parent dir of the session dir
    */
@@ -337,6 +349,32 @@ private[kyuubi] class KyuubiSession(
     }
     if (_isOperationLogEnabled) {
       info("Operation log session directory is created: " + sessionLogDir.getAbsolutePath)
+    }
+  }
+
+  /**
+   * Get the session resource dir, which is the parent dir of operation logs
+   *
+   * @return a file representing the parent directory of operation logs
+   */
+  def getResourcesSessionDir: File = sessionResourcesDir
+
+  /**
+   * Set the session log dir, which is the parent dir of operation logs
+   *
+   * @param resourcesRootDir the parent dir of the session dir
+   */
+  def setResourcesSessionDir(resourcesRootDir: File): Unit = {
+    sessionResourcesDir = new File(resourcesRootDir,
+      username + File.separator + sessionHandle.getHandleIdentifier.toString + "_resources")
+    if (sessionResourcesDir.exists() && !sessionResourcesDir.isDirectory) {
+      throw new RuntimeException("The resources directory exists but is not a directory: " +
+        sessionResourcesDir)
+    }
+
+    if (!sessionResourcesDir.exists() && !sessionResourcesDir.mkdirs()) {
+      throw new RuntimeException("Couldn't create session resources directory " +
+        sessionResourcesDir)
     }
   }
 

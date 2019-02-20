@@ -165,7 +165,6 @@ object KyuubiConf {
       .timeConf(TimeUnit.MILLISECONDS)
       .createWithDefault(TimeUnit.HOURS.toMillis(6L))
 
-
   val FRONTEND_IDLE_SESSION_TIMEOUT: ConfigEntry[Long] =
     KyuubiConfigBuilder("spark.kyuubi.frontend.session.timeout")
       .doc("The check interval for session/operation timeout, which can be disabled by setting" +
@@ -372,6 +371,15 @@ object KyuubiConf {
         " size of result collected to driver side.")
       .intConf
       .createWithDefault(-1)
+
+  val OPERATION_DOWNLOADED_RESOURCES_DIR: ConfigEntry[String] = {
+    KyuubiConfigBuilder("spark.kyuubi.operation.downloaded.resources.dir")
+      .doc("Temporary local directory for added resources in the remote file system.")
+      .stringConf
+      .createWithDefault(
+        s"${sys.env.getOrElse("KYUUBI_HOME", System.getProperty("java.io.tmpdir"))}"
+          + File.separator + "resources")
+  }
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                   Containerization                                          //
