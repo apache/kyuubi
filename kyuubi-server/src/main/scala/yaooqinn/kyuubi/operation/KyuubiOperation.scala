@@ -447,6 +447,6 @@ object KyuubiOperation {
 
   def isResourceDownloadable(resource: String): Boolean = {
     val scheme = new Path(resource).toUri.getScheme
-    StringUtils.equalsIgnoreCase(scheme, "file")
+    StringUtils.equalsIgnoreCase(scheme, "hdfs")
   }
 }
