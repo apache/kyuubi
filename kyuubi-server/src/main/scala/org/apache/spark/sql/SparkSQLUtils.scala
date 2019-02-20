@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql
 
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.hive.HiveUtils
 import org.apache.spark.sql.types.DataType
 
@@ -28,5 +29,13 @@ object SparkSQLUtils {
 
   def getUserJarClassLoader(sparkSession: SparkSession): ClassLoader = {
     sparkSession.sharedState.jarClassLoader
+  }
+
+  def parsePlan(sparkSession: SparkSession, statement: String): LogicalPlan = {
+    sparkSession.sessionState.sqlParser.parsePlan(statement)
+  }
+
+  def toDataFrame(sparkSession: SparkSession, plan: LogicalPlan): DataFrame = {
+    Dataset.ofRows(sparkSession, plan)
   }
 }
