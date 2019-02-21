@@ -114,7 +114,7 @@ private[kyuubi] class SessionManager private(
     resourcesRootDir = new File(conf.get(OPERATION_DOWNLOADED_RESOURCES_DIR))
     if (resourcesRootDir.exists() && !resourcesRootDir.isDirectory) {
       throw new ServiceException("The operation downloaded resources directory exists but is not" +
-        s" a directory + ${resourcesRootDir.getAbsolutePath}")
+        s" a directory ${resourcesRootDir.getAbsolutePath}")
     }
     if (!resourcesRootDir.exists() && !resourcesRootDir.mkdirs()) {
       throw new ServiceException("Unable to create the operation downloaded resources directory" +

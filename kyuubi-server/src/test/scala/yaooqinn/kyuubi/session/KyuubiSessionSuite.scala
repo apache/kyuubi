@@ -22,7 +22,6 @@ import java.io.File
 import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkFunSuite}
-import org.apache.spark.KyuubiConf.LOGGING_OPERATION_LOG_DIR
 import org.apache.spark.sql.SparkSession
 
 import yaooqinn.kyuubi.KyuubiSQLException
@@ -33,6 +32,8 @@ import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 import yaooqinn.kyuubi.utils.ReflectUtils
 
 class KyuubiSessionSuite extends SparkFunSuite {
+
+  import KyuubiConf._
 
   var server: KyuubiServer = _
   var session: KyuubiSession = _
@@ -105,10 +106,8 @@ class KyuubiSessionSuite extends SparkFunSuite {
   }
 
   test("set operation log session dir") {
-    val operationLogRootDir = new File(server.getConf.get(LOGGING_OPERATION_LOG_DIR.key))
-    operationLogRootDir.setReadable(true)
-    operationLogRootDir.setWritable(true)
-    operationLogRootDir.setExecutable(true)
+    val operationLogRootDir = new File(server.getConf.get(LOGGING_OPERATION_LOG_DIR))
+    operationLogRootDir.mkdirs()
     session.setOperationLogSessionDir(operationLogRootDir)
     assert(session.isOperationLogEnabled)
     assert(operationLogRootDir.exists())
@@ -126,6 +125,30 @@ class KyuubiSessionSuite extends SparkFunSuite {
     operationLogRootDir.setReadable(true)
     operationLogRootDir.setWritable(true)
     operationLogRootDir.setExecutable(true)
+  }
+
+  test("set resources session dir") {
+    val resourceRoot = new File(server.getConf.get(OPERATION_DOWNLOADED_RESOURCES_DIR))
+    resourceRoot.mkdirs()
+    resourceRoot.deleteOnExit()
+    assert(resourceRoot.isDirectory)
+    session.setResourcesSessionDir(resourceRoot)
+    val subDir = resourceRoot.listFiles().head
+    assert(subDir.getName === KyuubiSparkUtil.getCurrentUserName)
+    val resourceDir = subDir.listFiles().head
+    assert(resourceDir.getName === session.getSessionHandle.getSessionId + "_resources")
+    session.setResourcesSessionDir(resourceRoot)
+    assert(subDir.listFiles().length === 1, "directory should already exists")
+    assert(resourceDir.delete())
+    resourceDir.createNewFile()
+    assert(resourceDir.isFile)
+    val e1 = intercept[RuntimeException](session.setResourcesSessionDir(resourceRoot))
+    assert(e1.getMessage.startsWith("The resources directory exists but is not a directory"))
+    resourceDir.delete()
+    subDir.setWritable(false)
+    val e2 = intercept[RuntimeException](session.setResourcesSessionDir(resourceRoot))
+    assert(e2.getMessage.startsWith("Couldn't create session resources directory"))
+    subDir.setWritable(true)
   }
 
   test("get no operation time") {
