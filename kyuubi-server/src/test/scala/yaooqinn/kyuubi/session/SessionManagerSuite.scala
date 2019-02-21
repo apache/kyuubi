@@ -24,10 +24,12 @@ import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
 
 import yaooqinn.kyuubi.KyuubiSQLException
-import yaooqinn.kyuubi.service.State
+import yaooqinn.kyuubi.service.{ServiceException, State}
 import yaooqinn.kyuubi.utils.ReflectUtils
 
 class SessionManagerSuite extends SparkFunSuite {
+
+  import KyuubiConf._
 
   test("init operation log") {
     val logRoot = UUID.randomUUID().toString
@@ -65,6 +67,29 @@ class SessionManagerSuite extends SparkFunSuite {
     new File(logRoot).setWritable(true)
     assert(!new File(logRoot2).exists(), "Operation Log fails for not writable")
     sessionManager4.stop()
+  }
+
+  test("init resources root dir") {
+    val conf = new SparkConf(true).set(KyuubiConf.LOGGING_OPERATION_ENABLED.key, "false")
+    KyuubiSparkUtil.setupCommonConfig(conf)
+    val sessionManager = new SessionManager()
+
+    sessionManager.init(conf)
+    val resourcesRoot = new File(conf.get(OPERATION_DOWNLOADED_RESOURCES_DIR))
+    assert(resourcesRoot.exists())
+    assert(resourcesRoot.isDirectory)
+    resourcesRoot.delete()
+    resourcesRoot.createNewFile()
+    val e1 = intercept[ServiceException](sessionManager.init(conf))
+    assert(e1.getMessage.startsWith(
+      "The operation downloaded resources directory exists but is not a directory"))
+    assert(resourcesRoot.delete())
+    resourcesRoot.getParentFile.setWritable(false)
+    try {
+      intercept[Exception](sessionManager.init(conf))
+    } finally {
+      resourcesRoot.getParentFile.setWritable(true)
+    }
   }
 
   test("start timeout checker") {

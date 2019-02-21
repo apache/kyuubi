@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,25 +17,20 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.hive.HiveUtils
-import org.apache.spark.sql.types.DataType
+import org.apache.spark.SparkFunSuite
 
-object SparkSQLUtils {
+class SparkSQLUtilsSuite extends SparkFunSuite {
 
-  def toHiveString(a: (Any, DataType)): String = {
-    HiveUtils.toHiveString(a)
+  test("get user jar class loader") {
+    val sparkSession = SparkSession
+      .builder()
+      .appName(classOf[SparkSQLUtilsSuite].getSimpleName)
+      .master("local")
+      .getOrCreate()
+    sparkSession.sql("add jar udf-test.jar")
+    val loader = SparkSQLUtils.getUserJarClassLoader(sparkSession)
+    assert(loader.getResource("udf-test.jar") !== null)
+    sparkSession.stop()
   }
 
-  def getUserJarClassLoader(sparkSession: SparkSession): ClassLoader = {
-    sparkSession.sharedState.jarClassLoader
-  }
-
-  def parsePlan(sparkSession: SparkSession, statement: String): LogicalPlan = {
-    sparkSession.sessionState.sqlParser.parsePlan(statement)
-  }
-
-  def toDataFrame(sparkSession: SparkSession, plan: LogicalPlan): DataFrame = {
-    Dataset.ofRows(sparkSession, plan)
-  }
 }
