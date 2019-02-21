@@ -136,11 +136,19 @@ class KyuubiOperationSuite extends SparkFunSuite {
     assert(s.getUserName === userName)
   }
 
-  test("testDEFAULT_FETCH_ORIENTATION") {
+  test("DEFAULT_FETCH_ORIENTATION") {
     assert(KyuubiOperation.DEFAULT_FETCH_ORIENTATION === FETCH_NEXT)
   }
 
-  test("testDEFAULT_FETCH_MAX_ROWS") {
+  test("DEFAULT_FETCH_MAX_ROWS") {
     assert(KyuubiOperation.DEFAULT_FETCH_MAX_ROWS === 100)
+  }
+
+  test("is resource downloadable") {
+    intercept[IllegalArgumentException](KyuubiOperation.isResourceDownloadable(null))
+    intercept[IllegalArgumentException](KyuubiOperation.isResourceDownloadable(""))
+    assert(KyuubiOperation.isResourceDownloadable("hdfs://a/b/c.jar"))
+    assert(!KyuubiOperation.isResourceDownloadable("file://a/b/c.jar"))
+    assert(!KyuubiOperation.isResourceDownloadable("dfs://a/b/c.jar"))
   }
 }

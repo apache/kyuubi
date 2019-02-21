@@ -25,14 +25,18 @@ import java.util.concurrent.{Future, RejectedExecutionException}
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
+import org.apache.commons.lang3.StringUtils
+import org.apache.hadoop.fs.{FileUtil, Path}
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAccessControlException
 import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil
-import org.apache.spark.sql.{AnalysisException, DataFrame, Row}
+import org.apache.spark.sql.{AnalysisException, DataFrame, Row, SparkSQLUtils}
+import org.apache.spark.sql.catalyst.catalog.FunctionResource
 import org.apache.spark.sql.catalyst.parser.ParseException
+import org.apache.spark.sql.execution.command.AddJarCommand
 import org.apache.spark.sql.types._
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
@@ -40,8 +44,11 @@ import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.schema.{RowSet, RowSetBuilder}
 import yaooqinn.kyuubi.session.KyuubiSession
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
+import yaooqinn.kyuubi.utils.ReflectUtils
 
 class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging {
+
+  import KyuubiOperation._
 
   private var state: OperationState = INITIALIZED
   private val opHandle: OperationHandle =
@@ -50,7 +57,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
   private val conf = session.sparkSession.conf
 
   private val operationTimeout =
-    KyuubiSparkUtil.timeStringAsMs(conf.get(OPERATION_IDLE_TIMEOUT.key))
+    KyuubiSparkUtil.timeStringAsMs(conf.get(OPERATION_IDLE_TIMEOUT))
   private var lastAccessTime = System.currentTimeMillis()
 
   private var hasResultSet: Boolean = false
@@ -299,11 +306,30 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     }
   }
 
+  private def localizeAndAndResource(path: String): Unit = try {
+    if (isResourceDownloadable(path)) {
+      val src = new Path(path)
+      val destFileName = src.getName
+      val destFile =
+        new File(session.getResourcesSessionDir, destFileName).getCanonicalPath
+      val fs = src.getFileSystem(session.sparkSession.sparkContext.hadoopConfiguration)
+      fs.copyToLocalFile(src, new Path(destFile))
+      FileUtil.chmod(destFile, "ugo+rx", true)
+      AddJarCommand(destFile).run(session.sparkSession)
+    }
+  } catch {
+    case e: Exception => throw new KyuubiSQLException(s"Failed to read external resource: $path", e)
+  }
+
   private def execute(): Unit = {
     try {
       statementId = UUID.randomUUID().toString
       info(s"Running query '$statement' with $statementId")
       setState(RUNNING)
+
+      val classLoader = SparkSQLUtils.getUserJarClassLoader(session.sparkSession)
+      Thread.currentThread().setContextClassLoader(classLoader)
+
       KyuubiServerMonitor.getListener(session.getUserName).foreach {
         _.onStatementStart(
           statementId,
@@ -314,7 +340,21 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       }
       session.sparkSession.sparkContext.setJobGroup(statementId, statement)
       KyuubiSparkUtil.setActiveSparkContext(session.sparkSession.sparkContext)
-      result = session.sparkSession.sql(statement)
+
+      val parsedPlan = SparkSQLUtils.parsePlan(session.sparkSession, statement)
+      parsedPlan match {
+        case c if c.nodeName == "CreateFunctionCommand" =>
+          val resources =
+            ReflectUtils.getFieldValue(c, "resources").asInstanceOf[Seq[FunctionResource]]
+          resources.foreach { case FunctionResource(_, uri) =>
+            localizeAndAndResource(uri)
+          }
+        case a if a.nodeName == "AddJarCommand" =>
+          val path = ReflectUtils.getFieldValue(a, "path").asInstanceOf[String]
+          localizeAndAndResource(path)
+        case _ =>
+      }
+      result = SparkSQLUtils.toDataFrame(session.sparkSession, parsedPlan)
       KyuubiServerMonitor.getListener(session.getUserName).foreach {
         _.onStatementParsed(statementId, result.queryExecution.toString())
       }
@@ -406,4 +446,9 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
 object KyuubiOperation {
   val DEFAULT_FETCH_ORIENTATION: FetchOrientation = FetchOrientation.FETCH_NEXT
   val DEFAULT_FETCH_MAX_ROWS = 100
+
+  def isResourceDownloadable(resource: String): Boolean = {
+    val scheme = new Path(resource).toUri.getScheme
+    StringUtils.equalsIgnoreCase(scheme, "hdfs")
+  }
 }

@@ -31,7 +31,7 @@ import org.apache.spark.SparkConf
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.operation.OperationManager
 import yaooqinn.kyuubi.server.KyuubiServer
-import yaooqinn.kyuubi.service.CompositeService
+import yaooqinn.kyuubi.service.{CompositeService, ServiceException}
 import yaooqinn.kyuubi.spark.SparkSessionCacheManager
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 import yaooqinn.kyuubi.utils.NamedThreadFactory
@@ -41,25 +41,26 @@ import yaooqinn.kyuubi.utils.NamedThreadFactory
  */
 private[kyuubi] class SessionManager private(
     name: String) extends CompositeService(name) with Logging {
-  private[this] val operationManager = new OperationManager()
-  private[this] val cacheManager = new SparkSessionCacheManager()
-  private[this] val handleToSession = new ConcurrentHashMap[SessionHandle, KyuubiSession]
-  private[this] var execPool: ThreadPoolExecutor = _
-  private[this] var isOperationLogEnabled = false
-  private[this] var operationLogRootDir: File = _
-  private[this] var checkInterval: Long = _
-  private[this] var sessionTimeout: Long = _
-  private[this] var checkOperation: Boolean = false
-  private[this] var shutdown: Boolean = false
+  private val operationManager = new OperationManager()
+  private val cacheManager = new SparkSessionCacheManager()
+  private val handleToSession = new ConcurrentHashMap[SessionHandle, KyuubiSession]
+  private var execPool: ThreadPoolExecutor = _
+  private var isOperationLogEnabled = false
+  private var operationLogRootDir: File = _
+  private var resourcesRootDir: File = _
+  private var checkInterval: Long = _
+  private var sessionTimeout: Long = _
+  private var checkOperation: Boolean = false
+  private var shutdown: Boolean = false
 
   def this() = this(classOf[SessionManager].getSimpleName)
 
-  private[this] def createExecPool(): Unit = {
-    val poolSize = conf.get(ASYNC_EXEC_THREADS.key).toInt
+  private def createExecPool(): Unit = {
+    val poolSize = conf.get(ASYNC_EXEC_THREADS).toInt
     info("Background operation thread pool size: " + poolSize)
-    val poolQueueSize = conf.get(ASYNC_EXEC_WAIT_QUEUE_SIZE.key).toInt
+    val poolQueueSize = conf.get(ASYNC_EXEC_WAIT_QUEUE_SIZE).toInt
     info("Background operation thread wait queue size: " + poolQueueSize)
-    val keepAliveTime = conf.getTimeAsSeconds(EXEC_KEEPALIVE_TIME.key)
+    val keepAliveTime = conf.getTimeAsSeconds(EXEC_KEEPALIVE_TIME)
     info("Background operation thread keepalive time: " + keepAliveTime + " seconds")
     val threadPoolName = classOf[KyuubiServer].getSimpleName + "-Background-Pool"
     execPool =
@@ -71,13 +72,13 @@ private[kyuubi] class SessionManager private(
         new LinkedBlockingQueue[Runnable](poolQueueSize),
         new NamedThreadFactory(threadPoolName))
     execPool.allowCoreThreadTimeOut(true)
-    checkInterval = conf.getTimeAsMs(FRONTEND_SESSION_CHECK_INTERVAL.key)
-    sessionTimeout = conf.getTimeAsMs(FRONTEND_IDLE_SESSION_TIMEOUT.key)
-    checkOperation = conf.get(FRONTEND_IDLE_SESSION_CHECK_OPERATION.key).toBoolean
+    checkInterval = conf.getTimeAsMs(FRONTEND_SESSION_CHECK_INTERVAL)
+    sessionTimeout = conf.getTimeAsMs(FRONTEND_IDLE_SESSION_TIMEOUT)
+    checkOperation = conf.get(FRONTEND_IDLE_SESSION_CHECK_OPERATION).toBoolean
   }
 
-  private[this] def initOperationLogRootDir(): Unit = {
-    operationLogRootDir = new File(conf.get(LOGGING_OPERATION_LOG_DIR.key))
+  private def initOperationLogRootDir(): Unit = {
+    operationLogRootDir = new File(conf.get(LOGGING_OPERATION_LOG_DIR))
     isOperationLogEnabled = true
     if (operationLogRootDir.exists && !operationLogRootDir.isDirectory) {
       info("The operation log root directory exists, but it is not a directory: "
@@ -109,10 +110,30 @@ private[kyuubi] class SessionManager private(
     }
   }
 
+  private def initResourcesRootDir(): Unit = {
+    resourcesRootDir = new File(conf.get(OPERATION_DOWNLOADED_RESOURCES_DIR))
+    if (resourcesRootDir.exists() && !resourcesRootDir.isDirectory) {
+      throw new ServiceException("The operation downloaded resources directory exists but is not" +
+        s" a directory ${resourcesRootDir.getAbsolutePath}")
+    }
+    if (!resourcesRootDir.exists() && !resourcesRootDir.mkdirs()) {
+      throw new ServiceException("Unable to create the operation downloaded resources directory" +
+        s" ${resourcesRootDir.getAbsolutePath}")
+    }
+
+    try {
+      FileUtils.forceDeleteOnExit(resourcesRootDir)
+    } catch {
+      case e: IOException =>
+        warn("Failed to schedule clean up Kyuubi Server's root directory for downloaded" +
+          " resources", e)
+    }
+  }
+
   /**
    * Periodically close idle sessions in 'spark.kyuubi.frontend.session.check.interval(default 6h)'
    */
-  private[this] def startTimeoutChecker(): Unit = {
+  private def startTimeoutChecker(): Unit = {
     val interval: Long = math.max(checkInterval, 3000L)
     // minimum 3 seconds
     val timeoutChecker = new Runnable() {
@@ -143,7 +164,7 @@ private[kyuubi] class SessionManager private(
     execPool.execute(timeoutChecker)
   }
 
-  private[this] def sleepInterval(interval: Long): Unit = {
+  private def sleepInterval(interval: Long): Unit = {
     try {
       Thread.sleep(interval)
     } catch {
@@ -152,7 +173,7 @@ private[kyuubi] class SessionManager private(
     }
   }
 
-  private[this] def cleanupLoggingRootDir(): Unit = {
+  private def cleanupLoggingRootDir(): Unit = {
     if (isOperationLogEnabled) {
       try {
         FileUtils.forceDelete(operationLogRootDir)
@@ -164,10 +185,19 @@ private[kyuubi] class SessionManager private(
     }
   }
 
+  private def cleanupResourcesRootDir(): Unit = try {
+    FileUtils.forceDelete(resourcesRootDir)
+  } catch {
+    case e: Exception =>
+      warn("Failed to cleanup root dir of KyuubiServer logging: "
+        + operationLogRootDir.getAbsolutePath, e)
+  }
+
   override def init(conf: SparkConf): Unit = synchronized {
     this.conf = conf
+    initResourcesRootDir()
     // Create operation log root directory, if operation logging is enabled
-    if (conf.get(LOGGING_OPERATION_ENABLED.key).toBoolean) {
+    if (conf.get(LOGGING_OPERATION_ENABLED).toBoolean) {
       initOperationLogRootDir()
     }
     createExecPool()
@@ -188,7 +218,7 @@ private[kyuubi] class SessionManager private(
     shutdown = true
     if (execPool != null) {
       execPool.shutdown()
-      val timeout = conf.getTimeAsSeconds(ASYNC_EXEC_SHUTDOWN_TIMEOUT.key)
+      val timeout = conf.getTimeAsSeconds(ASYNC_EXEC_SHUTDOWN_TIMEOUT)
       try {
         execPool.awaitTermination(timeout, TimeUnit.SECONDS)
       } catch {
@@ -198,6 +228,7 @@ private[kyuubi] class SessionManager private(
       }
       execPool = null
     }
+    cleanupResourcesRootDir()
     cleanupLoggingRootDir()
   }
 
@@ -227,6 +258,7 @@ private[kyuubi] class SessionManager private(
     info(s"Opening session for $username")
     kyuubiSession.open(sessionConf)
 
+    kyuubiSession.setResourcesSessionDir(resourcesRootDir)
     if (isOperationLogEnabled) {
       kyuubiSession.setOperationLogSessionDir(operationLogRootDir)
     }

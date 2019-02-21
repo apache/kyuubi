@@ -279,7 +279,7 @@
                         </goals>
                         <configuration>
                             <sources>
-                                <source>src/gen/</source>
+                                <source>src/gen/java</source>
                             </sources>
                         </configuration>
                     </execution>
