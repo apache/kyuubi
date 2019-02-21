@@ -21,6 +21,7 @@ import java.net.InetAddress
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.hdfs.MiniDFSCluster
 import org.apache.hive.service.cli.thrift._
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import org.apache.spark.KyuubiConf._
@@ -55,7 +56,7 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
     super.afterAll()
   }
 
-  test(" test new fe service") {
+  test("test new fe service") {
     val feService = new FrontendService(beService)
     feService.getConf should be(null)
     feService.getStartTime should be(0)
@@ -206,7 +207,7 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       val req3 = new TGetOperationStatusReq(resp2.getOperationHandle)
       val resp3 = feService.GetOperationStatus(req3)
       resp3.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
-      Thread.sleep(10000)
+      Thread.sleep(5000)
       val req4 = new TFetchResultsReq(resp2.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
       val resp4 = feService.FetchResults(req4)
       resp4.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
@@ -249,6 +250,161 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
         Map("hive.server2.proxy.user" -> "kent").asJava)
       val tOpenSessionResp = feService.OpenSession(tOpenSessionReq)
       tOpenSessionResp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+    } finally {
+      feService.stop()
+    }
+  }
+
+  test("alter database") {
+    withFEServiceAndHandle { (fe, handle) =>
+      val req = new TExecuteStatementReq(handle,
+        "alter database default set dbproperties ('kent'='yao')")
+      val resp = fe.ExecuteStatement(req)
+      resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+
+      val tFetchResultsReq =
+        new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+      Thread.sleep(5000)
+      val tFetchResultsResp = fe.FetchResults(tFetchResultsReq)
+      tFetchResultsResp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+      tFetchResultsResp.getResults.getRows.size() should be(0)
+    }
+  }
+
+  test("alter schema") {
+    withFEServiceAndHandle { (fe, handle) =>
+      val req = new TExecuteStatementReq(handle,
+        "alter schema default set dbproperties ('kent'='yao')")
+      val resp = fe.ExecuteStatement(req)
+      resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+
+      val tFetchResultsReq =
+        new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+
+      Thread.sleep(5000)
+      val tFetchResultsResp = fe.FetchResults(tFetchResultsReq)
+      tFetchResultsResp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+      tFetchResultsResp.getResults.getRows.size() should be(0)
+    }
+  }
+
+  test("alter table name") {
+    withFEServiceAndHandle { (fe, handle) =>
+      val ct = new TExecuteStatementReq(handle, "create table default.src(key int) using parquet")
+      fe.ExecuteStatement(ct)
+      Thread.sleep(5000)
+      val req = new TExecuteStatementReq(handle, "alter table default.src rename to default.src2")
+      val resp = fe.ExecuteStatement(req)
+      resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+
+      val tFetchResultsReq =
+        new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+
+      Thread.sleep(5000)
+      val tFetchResultsResp = fe.FetchResults(tFetchResultsReq)
+      tFetchResultsResp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+      tFetchResultsResp.getResults.getRows.size() should be(0)
+    }
+  }
+
+  test("alter table set properties") {
+    withFEServiceAndHandle { (fe, handle) =>
+      val ct = new TExecuteStatementReq(handle, "create table default.src(key int) using parquet")
+      fe.ExecuteStatement(ct)
+      Thread.sleep(5000)
+      val req = new TExecuteStatementReq(handle,
+        "alter table default.src set tblproperties ('kent'='yao')")
+      val resp = fe.ExecuteStatement(req)
+      resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+
+      val tFetchResultsReq =
+        new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+
+      Thread.sleep(5000)
+      val tFetchResultsResp = fe.FetchResults(tFetchResultsReq)
+      tFetchResultsResp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+      tFetchResultsResp.getResults.getRows.size() should be(0)
+    }
+  }
+
+  test("alter table unset properties") {
+    withFEServiceAndHandle { (fe, handle) =>
+      val ct = new TExecuteStatementReq(handle,
+        "create table default.src(key int) using parquet tblproperties ('kent'='yao')")
+      fe.ExecuteStatement(ct)
+      Thread.sleep(5000)
+      val req = new TExecuteStatementReq(handle,
+        "alter table default.src unset tblproperties if exists ('kent', 'yao')")
+      val resp = fe.ExecuteStatement(req)
+      resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+
+      val tFetchResultsReq =
+        new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+
+      Thread.sleep(5000)
+      val tFetchResultsResp = fe.FetchResults(tFetchResultsReq)
+      tFetchResultsResp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+      tFetchResultsResp.getResults.getRows.size() should be(0)
+    }
+  }
+
+  test("add jar hdfs") {
+    withFEServiceAndHandle { (fe, handle) =>
+      val req = new TExecuteStatementReq(handle, "add jar hdfs://a/b/test.jar")
+      val resp = fe.ExecuteStatement(req)
+      resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+
+      val tFetchResultsReq =
+        new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+
+      Thread.sleep(5000)
+      val tFetchResultsResp = fe.FetchResults(tFetchResultsReq)
+      tFetchResultsResp.getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
+    }
+  }
+
+  test("add jar local") {
+    withFEServiceAndHandle { (fe, handle) =>
+      val req = new TExecuteStatementReq(handle, "add jar file://a/b/test.jar")
+      val resp = fe.ExecuteStatement(req)
+      resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+
+      val tFetchResultsReq =
+        new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+
+      Thread.sleep(5000)
+      val tFetchResultsResp = fe.FetchResults(tFetchResultsReq)
+      tFetchResultsResp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+      tFetchResultsResp.getResults.getRows.get(0).getColVals.get(0).getI32Val.getValue should be(0)
+    }
+  }
+
+  test("create function") {
+    withFEServiceAndHandle { (fe, handle) =>
+      val req = new TExecuteStatementReq(handle,
+        "create temporary function testfunc as 'testClass' using jar 'hdfs://a/b/test.jar'")
+      val resp = fe.ExecuteStatement(req)
+      resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+
+      val tFetchResultsReq =
+        new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+
+      Thread.sleep(5000)
+      val tFetchResultsResp = fe.FetchResults(tFetchResultsReq)
+      tFetchResultsResp.getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
+    }
+  }
+
+  def withFEServiceAndHandle(block: (FrontendService, TSessionHandle) => Unit): Unit = {
+    val feService = new FrontendService(beService)
+    try {
+      feService.init(conf)
+      feService.start()
+      val req = new TOpenSessionReq(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
+      val resp = feService.OpenSession(req)
+      resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+      val handle = resp.getSessionHandle
+      block(feService, handle)
     } finally {
       feService.stop()
     }
