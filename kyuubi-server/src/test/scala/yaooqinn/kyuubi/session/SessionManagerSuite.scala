@@ -83,7 +83,7 @@ class SessionManagerSuite extends SparkFunSuite {
     val e1 = intercept[ServiceException](sessionManager.init(conf))
     assert(e1.getMessage.startsWith(
       "The operation downloaded resources directory exists but is not a directory"))
-    resourcesRoot.delete()
+    assert(resourcesRoot.delete())
     resourcesRoot.getParentFile.setWritable(false)
     val e2 = intercept[ServiceException](sessionManager.init(conf))
     assert(e2.getMessage.startsWith("Unable to create the operation downloaded resources " +
