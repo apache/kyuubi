@@ -34,7 +34,7 @@
         <appender-ref ref="console" />
     </logger>
     <root>
-        <level value="WARN" />
+        <level value="OFF" />
         <appender-ref ref="console" />
     </root>
 </log4j:configuration>
