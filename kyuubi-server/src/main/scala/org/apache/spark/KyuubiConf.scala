@@ -18,12 +18,13 @@
 package org.apache.spark
 
 import java.io.File
-import java.util.HashMap
+import java.util.{HashMap => JMap}
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.internal.config.{ConfigBuilder, ConfigEntry}
 
 /**
@@ -32,7 +33,7 @@ import org.apache.spark.internal.config.{ConfigBuilder, ConfigEntry}
  */
 object KyuubiConf {
 
-  private[this] val kyuubiConfEntries = new HashMap[String, ConfigEntry[_]]()
+  private val kyuubiConfEntries = new JMap[String, ConfigEntry[_]]()
 
   def register(entry: ConfigEntry[_]): Unit = {
     require(!kyuubiConfEntries.containsKey(entry.key),
@@ -40,7 +41,7 @@ object KyuubiConf {
     kyuubiConfEntries.put(entry.key, entry)
   }
 
-  private[this] object KyuubiConfigBuilder {
+  private object KyuubiConfigBuilder {
     def apply(key: String): ConfigBuilder = ConfigBuilder(key).onCreate(register)
   }
 
@@ -265,7 +266,7 @@ object KyuubiConf {
       .timeConf(TimeUnit.MILLISECONDS)
       .createWithDefault(TimeUnit.SECONDS.toMillis(1L))
 
-  val BACKEND_SESSTION_INIT_TIMEOUT: ConfigEntry[Long] =
+  val BACKEND_SESSION_INIT_TIMEOUT: ConfigEntry[Long] =
     KyuubiConfigBuilder("spark.kyuubi.backend.session.init.timeout")
       .doc("How long we suggest the server to give up instantiating SparkContext")
       .timeConf(TimeUnit.SECONDS)
@@ -285,11 +286,29 @@ object KyuubiConf {
 
   val BACKEND_SESSION_LOCAL_DIR: ConfigEntry[String] =
     KyuubiConfigBuilder("spark.kyuubi.backend.session.local.dir")
-      .doc("Default value to set spark.local.dir")
+      .doc("Default value to set `spark.local.dir`, for YARN mode, this only affect the Kyuubi" +
+        " server side settings according to the rule of Spark treating `spark.local.dir`")
       .stringConf
       .createWithDefault(
         s"${sys.env.getOrElse("KYUUBI_HOME", System.getProperty("java.io.tmpdir"))}"
         + File.separator + "local")
+
+  val BACKEND_SESSION_LONG_CACHE: ConfigEntry[Boolean] =
+  KyuubiConfigBuilder("spark.kyuubi.backend.session.long.cache")
+    .doc("Whether to update the tokens of Spark's executor to support long caching SparkSessions" +
+      " iff true && `spark.kyuubi.backend.token.update.class` is loadable. This is used towards" +
+      " kerberized hadoop clusters in case of `spark.kyuubi.backend.session.idle.timeout` is" +
+      " set longer than token expiration time limit or SparkSession never idles. ")
+    .booleanConf
+    .createWithDefault(UserGroupInformation.isSecurityEnabled)
+
+  val BACKEND_SESSION_TOKEN_UPDATE_CLASS: ConfigEntry[String] =
+    KyuubiConfigBuilder("spark.kyuubi.backend.token.update.class")
+      .doc("`CoarseGrainedClusterMessages` for token update message from the driver of Spark to" +
+        " executors, it is loadable only by higher version Spark release(2.3 and later)")
+      .stringConf
+      .createWithDefault(
+        "org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages$UpdateDelegationTokens")
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                      Authentication                                         //

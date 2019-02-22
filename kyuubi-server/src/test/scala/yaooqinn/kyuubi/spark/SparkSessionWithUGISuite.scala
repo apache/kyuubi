@@ -63,7 +63,7 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
   test("test init failed with sc init failing") {
     assert(!spark.sparkContext.isStopped)
     val confClone = conf.clone().remove(KyuubiSparkUtil.MULTIPLE_CONTEXTS)
-      .set(KyuubiConf.BACKEND_SESSTION_INIT_TIMEOUT.key, "3")
+      .set(KyuubiConf.BACKEND_SESSION_INIT_TIMEOUT.key, "3")
     val userName1 = "test1"
     val ru = UserGroupInformation.createRemoteUser(userName1)
     val sparkSessionWithUGI = new SparkSessionWithUGI(ru, confClone, cache)
@@ -146,7 +146,7 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
   test("test init failed with time out exception") {
     // point to an non-exist cluster manager
     val confClone = conf.clone().setMaster("spark://localhost:7077")
-      .set(KyuubiConf.BACKEND_SESSTION_INIT_TIMEOUT.key, "3")
+      .set(KyuubiConf.BACKEND_SESSION_INIT_TIMEOUT.key, "3")
     val userName1 = "test"
     val ru = UserGroupInformation.createRemoteUser(userName1)
     val sparkSessionWithUGI = new SparkSessionWithUGI(ru, confClone, cache)
