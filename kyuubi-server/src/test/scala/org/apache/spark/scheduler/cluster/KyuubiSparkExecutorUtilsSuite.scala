@@ -52,7 +52,7 @@ class KyuubiSparkExecutorUtilsSuite
   }
 
   test("populate tokens for non CoarseGrainedSchedulerBackend") {
-    val taskSchedulerImpl = new TaskSchedulerImpl(sc, 4)
+    val taskSchedulerImpl = new TaskSchedulerImpl(sc)
     val backend = new LocalSchedulerBackend(conf, taskSchedulerImpl, 1)
     ReflectUtils.setFieldValue(sc, "_schedulerBackend", backend)
     val user = UserGroupInformation.getCurrentUser
@@ -60,7 +60,7 @@ class KyuubiSparkExecutorUtilsSuite
   }
 
   test("populate tokens for CoarseGrainedSchedulerBackend") {
-    val taskSchedulerImpl = new TaskSchedulerImpl(sc, 4)
+    val taskSchedulerImpl = new TaskSchedulerImpl(sc)
     val backend = new CoarseGrainedSchedulerBackend(taskSchedulerImpl, sc.env.rpcEnv)
     ReflectUtils.setFieldValue(sc, "_schedulerBackend", backend)
     val user = UserGroupInformation.getCurrentUser
@@ -68,7 +68,7 @@ class KyuubiSparkExecutorUtilsSuite
   }
 
   test("populate tokens for YarnClientSchedulerBackend") {
-    val taskSchedulerImpl = new TaskSchedulerImpl(sc, 4)
+    val taskSchedulerImpl = new TaskSchedulerImpl(sc)
     val backend = new YarnClientSchedulerBackend(taskSchedulerImpl, sc)
     ReflectUtils.setFieldValue(sc, "_schedulerBackend", backend)
     val user = UserGroupInformation.getCurrentUser
@@ -76,7 +76,7 @@ class KyuubiSparkExecutorUtilsSuite
   }
 
   test("populate tokens for YarnClusterSchedulerBackend") {
-    val taskSchedulerImpl = new TaskSchedulerImpl(sc, 4)
+    val taskSchedulerImpl = new TaskSchedulerImpl(sc)
     val backend = new YarnClusterSchedulerBackend(taskSchedulerImpl, sc)
     ReflectUtils.setFieldValue(sc, "_schedulerBackend", backend)
     val user = UserGroupInformation.getCurrentUser
@@ -84,7 +84,7 @@ class KyuubiSparkExecutorUtilsSuite
   }
 
   test("populate tokens for StandaloneSchedulerBackend") {
-    val taskSchedulerImpl = new TaskSchedulerImpl(sc, 4)
+    val taskSchedulerImpl = new TaskSchedulerImpl(sc)
     val backend = new StandaloneSchedulerBackend(taskSchedulerImpl, sc, null)
     ReflectUtils.setFieldValue(sc, "_schedulerBackend", backend)
     val user = UserGroupInformation.getCurrentUser
@@ -92,7 +92,7 @@ class KyuubiSparkExecutorUtilsSuite
   }
 
   test("get executor data map") {
-    val taskSchedulerImpl = new TaskSchedulerImpl(sc, 4)
+    val taskSchedulerImpl = new TaskSchedulerImpl(sc)
     val backend = new CoarseGrainedSchedulerBackend(taskSchedulerImpl, sc.env.rpcEnv)
     val executorDataMap = ReflectUtils.getFieldValue(backend,
       "org$apache$spark$scheduler$cluster$CoarseGrainedSchedulerBackend$$executorDataMap")
