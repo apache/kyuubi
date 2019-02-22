@@ -50,8 +50,14 @@ object KyuubiSparkExecutorUtils {
           val dataStream = new DataOutputStream(byteStream)
           user.getCredentials.writeTokenStorageToStream(dataStream)
           val tokens = byteStream.toByteArray
-          val executors = getFieldValue(backend,
-            classOf[CoarseGrainedSchedulerBackend].getName.replace('.', '$') + "$$executorDataMap")
+          val executorField =
+            classOf[CoarseGrainedSchedulerBackend].getName.replace('.', '$') + "$$executorDataMap"
+          val executors = backend match {
+            case _: YarnClientSchedulerBackend | _: YarnClusterSchedulerBackend |
+                 _: StandaloneSchedulerBackend =>
+              getAncestorField(backend, 2, executorField)
+            case _ => getFieldValue(backend, executorField)
+          }
           val msg = newInstance(sc.conf.get(BACKEND_SESSION_TOKEN_UPDATE_CLASS),
             Seq(classOf[Array[Byte]]), Seq(tokens))
           executors.asInstanceOf[mutable.HashMap[String, ExecutorData]]

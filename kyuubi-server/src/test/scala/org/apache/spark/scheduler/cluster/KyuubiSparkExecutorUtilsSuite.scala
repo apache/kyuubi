@@ -24,12 +24,12 @@ import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext, SparkFunSuite
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.scheduler.TaskSchedulerImpl
 import org.apache.spark.scheduler.local.LocalSchedulerBackend
-import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.BeforeAndAfterEach
 
 import yaooqinn.kyuubi.utils.ReflectUtils
 
-class KyuubiSparkExecutorUtilsSuite extends SparkFunSuite with MockitoSugar {
+class KyuubiSparkExecutorUtilsSuite
+  extends SparkFunSuite with BeforeAndAfterEach {
   import KyuubiSparkUtil._
 
   val conf: SparkConf = new SparkConf(true)
@@ -37,16 +37,29 @@ class KyuubiSparkExecutorUtilsSuite extends SparkFunSuite with MockitoSugar {
     .setMaster("local")
   KyuubiSparkUtil.setupCommonConfig(conf)
 
+  var sc: SparkContext = _
+
+  override def beforeEach(): Unit = {
+    sc = new SparkContext(conf)
+    super.beforeEach()
+  }
+
+  override def afterEach(): Unit = {
+    if (sc != null) {
+      sc.stop()
+    }
+    super.afterEach()
+  }
+
   test("populate tokens for non CoarseGrainedSchedulerBackend") {
-    val sc = mock[SparkContext]
-    val schedulerBackend = mock[LocalSchedulerBackend]
-    when(sc.schedulerBackend).thenReturn(schedulerBackend)
+    val taskSchedulerImpl = new TaskSchedulerImpl(sc, 4)
+    val backend = new LocalSchedulerBackend(conf, taskSchedulerImpl, 1)
+    ReflectUtils.setFieldValue(sc, "_schedulerBackend", backend)
     val user = UserGroupInformation.getCurrentUser
     KyuubiSparkExecutorUtils.populateTokens(sc, user)
   }
 
-  test("populate tokens") {
-    val sc = new SparkContext(conf)
+  test("populate tokens for CoarseGrainedSchedulerBackend") {
     val taskSchedulerImpl = new TaskSchedulerImpl(sc, 4)
     val backend = new CoarseGrainedSchedulerBackend(taskSchedulerImpl, sc.env.rpcEnv)
     ReflectUtils.setFieldValue(sc, "_schedulerBackend", backend)
@@ -54,13 +67,36 @@ class KyuubiSparkExecutorUtilsSuite extends SparkFunSuite with MockitoSugar {
     KyuubiSparkExecutorUtils.populateTokens(sc, user)
   }
 
+  test("populate tokens for YarnClientSchedulerBackend") {
+    val taskSchedulerImpl = new TaskSchedulerImpl(sc, 4)
+    val backend = new YarnClientSchedulerBackend(taskSchedulerImpl, sc)
+    ReflectUtils.setFieldValue(sc, "_schedulerBackend", backend)
+    val user = UserGroupInformation.getCurrentUser
+    KyuubiSparkExecutorUtils.populateTokens(sc, user)
+  }
+
+  test("populate tokens for YarnClusterSchedulerBackend") {
+    val taskSchedulerImpl = new TaskSchedulerImpl(sc, 4)
+    val backend = new YarnClusterSchedulerBackend(taskSchedulerImpl, sc)
+    ReflectUtils.setFieldValue(sc, "_schedulerBackend", backend)
+    val user = UserGroupInformation.getCurrentUser
+    KyuubiSparkExecutorUtils.populateTokens(sc, user)
+  }
+
+  test("populate tokens for StandaloneSchedulerBackend") {
+    val taskSchedulerImpl = new TaskSchedulerImpl(sc, 4)
+    val backend = new StandaloneSchedulerBackend(taskSchedulerImpl, sc, null)
+    ReflectUtils.setFieldValue(sc, "_schedulerBackend", backend)
+    val user = UserGroupInformation.getCurrentUser
+    KyuubiSparkExecutorUtils.populateTokens(sc, user)
+  }
+
   test("get executor data map") {
-    val sc = new SparkContext(conf)
     val taskSchedulerImpl = new TaskSchedulerImpl(sc, 4)
     val backend = new CoarseGrainedSchedulerBackend(taskSchedulerImpl, sc.env.rpcEnv)
     val executorDataMap = ReflectUtils.getFieldValue(backend,
       "org$apache$spark$scheduler$cluster$CoarseGrainedSchedulerBackend$$executorDataMap")
-    assert(executorDataMap.isInstanceOf[mutable.HashMap[String, ExecutorData]])
+    assert(executorDataMap.asInstanceOf[mutable.HashMap[String, ExecutorData]].values.isEmpty)
     sc.stop()
   }
 
