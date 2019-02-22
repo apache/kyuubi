@@ -294,16 +294,17 @@ object KyuubiConf {
         + File.separator + "local")
 
   val BACKEND_SESSION_LONG_CACHE: ConfigEntry[Boolean] =
-  KyuubiConfigBuilder("spark.kyuubi.backend.session.long.cache")
-    .doc("Whether to update the tokens of Spark's executor to support long caching SparkSessions" +
-      " iff true && `spark.kyuubi.backend.token.update.class` is loadable. This is used towards" +
-      " kerberized hadoop clusters in case of `spark.kyuubi.backend.session.idle.timeout` is" +
-      " set longer than token expiration time limit or SparkSession never idles. ")
-    .booleanConf
-    .createWithDefault(UserGroupInformation.isSecurityEnabled)
+    KyuubiConfigBuilder("spark.kyuubi.backend.session.long.cache")
+      .doc("Whether to update the tokens of Spark's executor to support long caching" +
+        " SparkSessions iff this is true && `spark.kyuubi.backend.token.update.class` is" +
+        " loadable. This is used towards kerberized hadoop clusters in case of" +
+        " `spark.kyuubi.backend.session.idle.timeout` is set longer than token expiration time" +
+        " limit or SparkSession never idles.")
+      .booleanConf
+      .createWithDefault(UserGroupInformation.isSecurityEnabled)
 
   val BACKEND_SESSION_TOKEN_UPDATE_CLASS: ConfigEntry[String] =
-    KyuubiConfigBuilder("spark.kyuubi.backend.token.update.class")
+    KyuubiConfigBuilder("spark.kyuubi.backend.session.token.update.class")
       .doc("`CoarseGrainedClusterMessages` for token update message from the driver of Spark to" +
         " executors, it is loadable only by higher version Spark release(2.3 and later)")
       .stringConf
