@@ -18,7 +18,11 @@
         <appender-ref ref="console" />
     </logger>
     <logger name="yaooqinn.kyuubi.service" additivity="false">
-        <level value="INFO" />
+        <level value="ERROR" />
+        <appender-ref ref="console" />
+    </logger>
+    <logger name="org.apache.spark" additivity="false">
+        <level value="ERROR" />
         <appender-ref ref="console" />
     </logger>
     <logger name="org.apache.zookeeper" additivity="false">
@@ -30,7 +34,7 @@
         <appender-ref ref="console" />
     </logger>
     <root>
-        <level value="OFF" />
+        <level value="WARN" />
         <appender-ref ref="console" />
     </root>
 </log4j:configuration>
