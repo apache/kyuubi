@@ -23,6 +23,7 @@ import java.net.URI
 
 import scala.annotation.tailrec
 import scala.collection.Map
+import scala.util.Try
 import scala.util.matching.Regex
 
 import org.apache.hadoop.conf.Configuration
@@ -253,6 +254,11 @@ object KyuubiSparkUtil extends Logging {
     Thread.currentThread.setContextClassLoader(loader)
     info(s"Kyuubi first classloader is set to $url")
     loader
+  }
+
+  /** Determines whether the provided class is loadable in the current thread. */
+  def classIsLoadable(clazz: String): Boolean = {
+    Try { Class.forName(clazz, false, getContextOrSparkClassLoader) }.isSuccess
   }
 
   /**

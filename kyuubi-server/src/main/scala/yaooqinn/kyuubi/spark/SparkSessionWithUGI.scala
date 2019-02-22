@@ -158,7 +158,7 @@ class SparkSessionWithUGI(
       "kyuubi", userName, conf.get(FRONTEND_BIND_HOST), conf.get(FRONTEND_BIND_PORT)).mkString("|")
     conf.setAppName(appName)
     configureSparkConf(sessionConf)
-    val totalWaitTime: Long = conf.getTimeAsSeconds(BACKEND_SESSTION_INIT_TIMEOUT)
+    val totalWaitTime: Long = conf.getTimeAsSeconds(BACKEND_SESSION_INIT_TIMEOUT)
     try {
       KyuubiHadoopUtil.doAs(user) {
         newContext.start()

@@ -33,6 +33,7 @@ import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil
+import org.apache.spark.scheduler.cluster.KyuubiSparkExecutorUtils
 import org.apache.spark.sql.{AnalysisException, DataFrame, Row, SparkSQLUtils}
 import org.apache.spark.sql.catalyst.catalog.FunctionResource
 import org.apache.spark.sql.catalyst.parser.ParseException
@@ -54,7 +55,8 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
   private val opHandle: OperationHandle =
     new OperationHandle(EXECUTE_STATEMENT, session.getProtocolVersion)
 
-  private val conf = session.sparkSession.conf
+  private val sparkSession = session.sparkSession
+  private val conf = sparkSession.conf
 
   private val operationTimeout =
     KyuubiSparkUtil.timeStringAsMs(conf.get(OPERATION_IDLE_TIMEOUT))
@@ -213,7 +215,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     debug(s"CLOSING $statementId")
     cleanup(CLOSED)
     cleanupOperationLog()
-    session.sparkSession.sparkContext.clearJobGroup()
+    sparkSession.sparkContext.clearJobGroup()
   }
 
   def cancel(): Unit = {
@@ -312,7 +314,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       val destFileName = src.getName
       val destFile =
         new File(session.getResourcesSessionDir, destFileName).getCanonicalPath
-      val fs = src.getFileSystem(session.sparkSession.sparkContext.hadoopConfiguration)
+      val fs = src.getFileSystem(sparkSession.sparkContext.hadoopConfiguration)
       fs.copyToLocalFile(src, new Path(destFile))
       FileUtil.chmod(destFile, "ugo+rx", true)
       AddJarCommand(destFile).run(session.sparkSession)
@@ -327,7 +329,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       info(s"Running query '$statement' with $statementId")
       setState(RUNNING)
 
-      val classLoader = SparkSQLUtils.getUserJarClassLoader(session.sparkSession)
+      val classLoader = SparkSQLUtils.getUserJarClassLoader(sparkSession)
       Thread.currentThread().setContextClassLoader(classLoader)
 
       KyuubiServerMonitor.getListener(session.getUserName).foreach {
@@ -338,10 +340,10 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
           statementId,
           session.getUserName)
       }
-      session.sparkSession.sparkContext.setJobGroup(statementId, statement)
-      KyuubiSparkUtil.setActiveSparkContext(session.sparkSession.sparkContext)
+      sparkSession.sparkContext.setJobGroup(statementId, statement)
+      KyuubiSparkUtil.setActiveSparkContext(sparkSession.sparkContext)
 
-      val parsedPlan = SparkSQLUtils.parsePlan(session.sparkSession, statement)
+      val parsedPlan = SparkSQLUtils.parsePlan(sparkSession, statement)
       parsedPlan match {
         case c if c.nodeName == "CreateFunctionCommand" =>
           val resources =
@@ -354,9 +356,14 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
           localizeAndAndResource(path)
         case _ =>
       }
-      result = SparkSQLUtils.toDataFrame(session.sparkSession, parsedPlan)
+      result = SparkSQLUtils.toDataFrame(sparkSession, parsedPlan)
       KyuubiServerMonitor.getListener(session.getUserName).foreach {
         _.onStatementParsed(statementId, result.queryExecution.toString())
+      }
+
+      if (conf.get(BACKEND_SESSION_LONG_CACHE).toBoolean &&
+        KyuubiSparkUtil.classIsLoadable(conf.get(BACKEND_SESSION_TOKEN_UPDATE_CLASS))) {
+        KyuubiSparkExecutorUtils.populateTokens(sparkSession.sparkContext, session.ugi)
       }
       debug(result.queryExecution.toString())
       iter = if (incrementalCollect) {
@@ -402,7 +409,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
         }
     } finally {
       if (statementId != null) {
-        session.sparkSession.sparkContext.cancelJobGroup(statementId)
+        sparkSession.sparkContext.cancelJobGroup(statementId)
       }
     }
   }
@@ -429,7 +436,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       backgroundHandle.cancel(true)
     }
     if (statementId != null) {
-      session.sparkSession.sparkContext.cancelJobGroup(statementId)
+      sparkSession.sparkContext.cancelJobGroup(statementId)
     }
   }
 
