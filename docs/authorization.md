@@ -12,7 +12,7 @@ Three primary modes for Kyuubi authorization are available by [spark-authorizer]
 
 <h4 id="1.1">Storage-Based Authorization</h4>
 
-Enabling Storage Based Authorization in the `Hive Metastore Server` uses the HDFS permissions to act as the main source for verification and allows for consistent data and metadata authorization policy. This allows control over metadata access by verifying if the user has permission to access corresponding directories on the HDFS. Similar with `HiveServer2`, files and directories will be tanslated into hive metadata objects, such as dbs, tables, partitions, and be protected from end user's queries through Kyuubi.
+Enabling Storage Based Authorization in the `Hive Metastore Server` uses the HDFS permissions to act as the main source for verification and allows for consistent data and metadata authorization policy. This allows control over metadata access by verifying if the user has permission to access corresponding directories on the HDFS. Similar with `HiveServer2`, files and directories will be translated into hive metadata objects, such as dbs, tables, partitions, and be protected from end user's queries through Kyuubi.
 
 Storage-Based Authorization offers users with Database, Table and Partition-level coarse-gained access control.
 
