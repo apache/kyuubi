@@ -44,7 +44,7 @@ spark.kyuubi.<br />ha.zk.connection.max.retries|3|Max retry times for connecting
 Name|Default|Description
 ---|---|---
 spark.kyuubi.<br />logging.operation.enabled|true|When true, Kyuubi Server will save operation logs and make them available for clients
-spark.kyuubi.<br />logging.operation.log.dir|`KYUUBI_LOG_DIR` -> `java.io.tmpdir`/operation_logs|Top level directory where operation logs are stored if logging functionality is enabled
+spark.kyuubi.<br />logging.operation.log.dir|KYUUBI_LOG_DIR/<br />operation_logs|Top level directory where operation logs are stored if logging functionality is enabled
 
 #### Frontend Service options
 
@@ -86,8 +86,8 @@ spark.kyuubi.<br />backend.session.wait.other.interval|1s|The interval for check
 spark.kyuubi.<br />backend.session.init.timeout|60s|How long we suggest the server to give up instantiating SparkContext.
 spark.kyuubi.<br />backend.session.check.interval|5min|The check interval for backend session a.k.a SparkSession timeout.
 spark.kyuubi.<br />backend.session.idle.timeout|30min|SparkSession timeout.
-spark.kyuubi.<br />backend.session.local.dir|KYUUBI_HOME/local|Default value to set `spark.local.dir`. For YARN mode, this only affect the Kyuubi server side settings according to the rule of Spark treating `spark.local.dir`.
-spark.kyuubi.<br />backend.session.long.cache|${UserGroupInformation.isSecurityEnabled}|Whether to update the tokens of Spark's executor to support long caching SparkSessions iff this is true && `spark.kyuubi.backend.token.update.class` is loadable. This is used towards kerberized hadoop clusters in case of `spark.kyuubi.backend.session.idle.timeout` is set longer than token expiration time limit or SparkSession never idles.
+spark.kyuubi.<br />backend.session.local.dir|KYUUBI_HOME/<br />local|Default value to set `spark.local.dir`. For YARN mode, this only affect the Kyuubi server side settings according to the rule of Spark treating `spark.local.dir`.
+spark.kyuubi.<br />backend.session.long.cache|${UserGroupInformation.<br />isSecurityEnabled}|Whether to update the tokens of Spark's executor to support long caching SparkSessions iff this is true && `spark.kyuubi.backend.token.update.class` is loadable. This is used towards kerberized hadoop clusters in case of `spark.kyuubi.backend.session.idle.timeout` is set longer than token expiration time limit or SparkSession never idles.
 spark.kyuubi.<br />backend.session.token.update.class|org.apache.spark.<br />scheduler.cluster.<br />CoarseGrainedClusterMessages$<br />UpdateDelegationTokens|`CoarseGrainedClusterMessages` for token update message from the driver of Spark to executors, it is loadable only by higher version Spark release(2.3 and later)
 
 
@@ -119,7 +119,7 @@ spark.driver.extraJavaOptions| (none) | A string of extra JVM options to pass to
 Spark use netty as RPC between driver and executor, Kyuubi Server may need much bigger directory memory size.
 
 ```properties
-spark.driver.extraJavaOptions -XX:PermSize=1024m -XX:MaxPermSize=1024m  -XX:MaxDirectMemorySize=4096m
+spark.driver.extraJavaOptions -XX:+PrintFlagsFinal -XX:+UnlockDiagnosticVMOptions -XX:ParGCCardsPerStrideChunk=4096 -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSConcurrentMTEnabled -XX:CMSInitiatingOccupancyFraction=70 -XX:+UseCMSInitiatingOccupancyOnly -XX:+CMSClassUnloadingEnabled -XX:+CMSParallelRemarkEnabled -XX:+UseCondCardMark -XX:PermSize=1024m -XX:MaxPermSize=1024m -XX:MaxDirectMemorySize=8192m  -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./logs -XX:OnOutOfMemoryError="kill -9 %p" -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution -Xloggc:./logs/kyuubi-server-gc-%t.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=50 -XX:GCLogFileSize=5M  -XX:NewRatio=3 -Dio.netty.noPreferDirect=true -Dio.netty.recycler.maxCapacity=0
 ```
 
 Spark properties for [Driver](http://spark.apache.org/docs/latest/configuration.html#runtime-environment) like those above controls Kyuubi Server's own behaviors, while other properties could be set in JDBC/ODBC connection strings.
