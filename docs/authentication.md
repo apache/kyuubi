@@ -5,7 +5,7 @@ Kyuubi supports Anonymous (no authentication) with and without SASL, Kerberos (G
 
 Name|Default|Description
 ---|---|---
-spark.kyuubi.authentication | NONE | Authentication mode, default NONE. Options are NONE (uses plain SASL), NOSASL, KERBEROS, LDAP.
+spark.kyuubi.<br />authentication | NONE | Authentication mode, default NONE. Options are NONE (uses plain SASL), NOSASL, KERBEROS, LDAP.
 
 #### NONE
 ###### Server
