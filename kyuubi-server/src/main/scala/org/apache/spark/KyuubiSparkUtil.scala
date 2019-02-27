@@ -83,8 +83,15 @@ object KyuubiSparkUtil extends Logging {
   val MULTIPLE_CONTEXTS: String = SPARK_PREFIX + DRIVER_PREFIX + "allowMultipleContexts"
   val MULTIPLE_CONTEXTS_DEFAULT = "true"
 
+  // Spark SQL
   val CATALOG_IMPL: String = SPARK_PREFIX + SQL_PREFIX + "catalogImplementation"
   val CATALOG_IMPL_DEFAULT = "hive"
+  val CONVERT_METASTORE_ORC: String =
+    SPARK_PREFIX + SQL_PREFIX + HIVE_PREFIX + "convertMetastoreOrc"
+  val ORC_IMPL: String = SPARK_PREFIX + SQL_PREFIX + "orc.impl"
+  val ORC_IMPL_DEFAULT = "native"
+  val ORC_VECTORIZED_READER_ENABLED: String =
+    SPARK_PREFIX + SQL_PREFIX + "orc.enableVectorizedReader"
 
   val DEPLOY_MODE: String = SPARK_PREFIX + "submit.deployMode"
   val DEPLOY_MODE_DEFAULT = "client"
@@ -289,6 +296,20 @@ object KyuubiSparkUtil extends Logging {
 
     conf.setIfMissing(SPARK_LOCAL_DIR, conf.get(KyuubiConf.BACKEND_SESSION_LOCAL_DIR.key))
     conf.setIfMissing(GC_INTERVAL, GC_INTERVAL_DEFAULT)
+    if (UserGroupInformation.isSecurityEnabled) {
+      // Spark SQL does not use its internal ORC implementation to r/w hive orc tables by default,
+      // but use hive serde which will cause token expiration issues while getting file splits.
+      // So we force to set CONVERT_METASTORE_ORC to true if we are using Kyuubi with kerberized
+      // hadoop clusters.
+      // see https://github.com/yaooqinn/kyuubi/issues/153
+      conf.set(CONVERT_METASTORE_ORC, "true")
+    } else {
+      // If the cluster is not secured, firstly we respect user's choice if the explicitly set, and
+      // take true as default value for better performance if users are not concerned.
+      conf.setIfMissing(CONVERT_METASTORE_ORC, "true")
+    }
+    conf.setIfMissing(ORC_IMPL, ORC_IMPL_DEFAULT)
+    conf.setIfMissing(ORC_VECTORIZED_READER_ENABLED, "true")
 
     if (UserGroupInformation.isSecurityEnabled) {
       conf.setIfMissing(HDFS_CLIENT_CACHE, HDFS_CLIENT_CACHE_DEFAULT)
