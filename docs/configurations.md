@@ -116,7 +116,7 @@ Name|Default|Description
 spark.driver.memory| 1g | Amount of memory to use for the Kyuubi Server instance. Set this through the --driver-memory command line option or in your default properties file.
 spark.driver.extraJavaOptions| (none) | A string of extra JVM options to pass to the Kyuubi Server instance. For instance, GC settings or other logging. Set this through the --driver-java-options command line option or in your default properties file.
 
-Spark use netty as RPC between driver and executor, Kyuubi Server may need much bigger directory memory size.
+Spark uses netty as RPC between driver and executor, Kyuubi Server may need much bigger directory memory size.
 
 ```properties
 spark.driver.extraJavaOptions -XX:+PrintFlagsFinal -XX:+UnlockDiagnosticVMOptions -XX:ParGCCardsPerStrideChunk=4096 -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSConcurrentMTEnabled -XX:CMSInitiatingOccupancyFraction=70 -XX:+UseCMSInitiatingOccupancyOnly -XX:+CMSClassUnloadingEnabled -XX:+CMSParallelRemarkEnabled -XX:+UseCondCardMark -XX:PermSize=1024m -XX:MaxPermSize=1024m -XX:MaxDirectMemorySize=8192m  -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./logs -XX:OnOutOfMemoryError="kill -9 %p" -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution -Xloggc:./logs/kyuubi-server-gc-%t.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=50 -XX:GCLogFileSize=5M  -XX:NewRatio=3 -Dio.netty.noPreferDirect=true -Dio.netty.recycler.maxCapacity=0
