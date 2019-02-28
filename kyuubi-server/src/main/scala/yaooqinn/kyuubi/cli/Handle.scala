@@ -17,6 +17,8 @@
 
 package yaooqinn.kyuubi.cli
 
+import java.util.Objects
+
 import org.apache.hive.service.cli.thrift.THandleIdentifier
 
 abstract class Handle(val handleId: HandleIdentifier) {
@@ -25,29 +27,12 @@ abstract class Handle(val handleId: HandleIdentifier) {
 
   def getHandleIdentifier: HandleIdentifier = handleId
 
-  override def hashCode: Int = {
-    val prime = 31
-    var result = 1
-    result = prime * result + (if (handleId == null) 0 else handleId.hashCode)
-    result
-  }
+  override def hashCode: Int = 31 * 1 + Objects.hashCode(handleId)
 
   override def equals(obj: Any): Boolean = {
-    if (obj == null) return false
-
-    if (!obj.isInstanceOf[Handle]) return false
-
-    val other = obj.asInstanceOf[Handle]
-    if (this eq other) return true
-
-    if (handleId == null) {
-      if (other.handleId != null) {
-        return false
-      }
-    } else if (handleId != other.handleId) {
-      return false
+    obj match {
+      case o: Handle => Objects.equals(handleId, o.handleId)
+      case _ => false
     }
-
-    true
   }
 }
