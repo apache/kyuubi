@@ -18,10 +18,10 @@
 package yaooqinn.kyuubi.server
 
 import java.net.InetAddress
+import java.util.UUID
 
 import scala.collection.JavaConverters._
 
-import org.apache.hadoop.hdfs.MiniDFSCluster
 import org.apache.hive.service.cli.thrift._
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import org.apache.spark.KyuubiConf._
@@ -299,7 +299,8 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
 
       val tFetchResultsReq =
         new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
-
+      val dt = new TExecuteStatementReq(handle, "drop table src2")
+      fe.ExecuteStatement(dt)
       Thread.sleep(5000)
       val tFetchResultsResp = fe.FetchResults(tFetchResultsReq)
       tFetchResultsResp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)

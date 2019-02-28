@@ -40,6 +40,7 @@ import org.apache.spark.scheduler.OutputCommitCoordinator.OutputCommitCoordinato
 import org.apache.spark.security.CryptoStreamUtils
 import org.apache.spark.serializer.{JavaSerializer, Serializer, SerializerManager}
 import org.apache.spark.shuffle.ShuffleManager
+import org.apache.spark.shuffle.sort.SortShuffleManager
 import org.apache.spark.storage._
 import org.apache.spark.util.{RpcUtils, Utils}
 
@@ -139,8 +140,12 @@ class SparkEnv (
 }
 
 object SparkEnv extends Logging {
+
+  import scala.collection.JavaConverters._
   info("Loaded Kyuubi Supplied SparkEnv Class...")
-  private val env = new ConcurrentHashMap[String, SparkEnv]()
+  @volatile private var env: SparkEnv = _
+
+  private val envs = new ConcurrentHashMap[String, SparkEnv]()
 
   private[spark] val driverSystemName = "sparkDriver"
   private[spark] val executorSystemName = "sparkExecutor"
@@ -150,10 +155,11 @@ object SparkEnv extends Logging {
   def set(e: SparkEnv) {
     if (e == null) {
       debug(s"Kyuubi: Removing SparkEnv for $user")
-      env.remove(user)
+      envs.remove(user)
     } else {
       debug(s"Kyuubi: Registering SparkEnv for $user")
-      env.put(user, e)
+      envs.put(user, e)
+      env = e
     }
   }
 
@@ -162,7 +168,7 @@ object SparkEnv extends Logging {
    */
   def get: SparkEnv = {
     debug(s"Kyuubi: Get SparkEnv for $user")
-    env.getOrDefault(user, env.values().iterator().next())
+    envs.getOrDefault(user, envs.values().asScala.headOption.getOrElse(env))
   }
 
   /**
