@@ -17,7 +17,7 @@
 
 package yaooqinn.kyuubi.operation
 
-import org.apache.hive.service.cli.thrift.TProtocolVersion
+import org.apache.hive.service.cli.thrift.{TOperationType, TProtocolVersion}
 import org.apache.spark.SparkFunSuite
 
 import yaooqinn.kyuubi.cli.HandleIdentifier
@@ -50,7 +50,7 @@ import TProtocolVersion._
     assert(handle3.getProtocolVersion === HIVE_CLI_SERVICE_PROTOCOL_V1)
     assert(handle3 === handle2)
 
-    assert(handle1.toTOperationHandle.getOperationType === EXECUTE_STATEMENT)
+    assert(handle1.toTOperationHandle.getOperationType === TOperationType.EXECUTE_STATEMENT)
     assert(handle1.toString === handle3.toString)
     assert(handle1.toTOperationHandle.getOperationId ===
       handle1.getHandleIdentifier.toTHandleIdentifier)
@@ -105,7 +105,8 @@ import TProtocolVersion._
     val protocol = HIVE_CLI_SERVICE_PROTOCOL_V8
     val handle = new OperationHandle(opType, protocol)
     assert(handle.getProtocolVersion === protocol)
-    assert(new OperationHandle(handle.toTOperationHandle).getProtocolVersion === protocol)
+    assert(new OperationHandle(handle.toTOperationHandle).getProtocolVersion ===
+      HIVE_CLI_SERVICE_PROTOCOL_V1)
     assert(new OperationHandle(handle.toTOperationHandle,
       HIVE_CLI_SERVICE_PROTOCOL_V1).getProtocolVersion === HIVE_CLI_SERVICE_PROTOCOL_V1)
   }
