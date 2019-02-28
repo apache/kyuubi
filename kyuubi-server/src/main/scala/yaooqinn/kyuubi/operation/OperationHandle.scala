@@ -17,16 +17,18 @@
 
 package yaooqinn.kyuubi.operation
 
+import java.util.Objects
+
 import org.apache.hive.service.cli.thrift.{TOperationHandle, TProtocolVersion}
 
 import yaooqinn.kyuubi.cli.{Handle, HandleIdentifier}
 
 class OperationHandle private(
-    val opType: OperationType,
+    opType: OperationType,
     protocol: TProtocolVersion,
     handleId: HandleIdentifier) extends Handle(handleId) {
 
-  private[this] var hasResultSet: Boolean = false
+  private var hasResultSet: Boolean = false
 
   def this(opType: OperationType, protocol: TProtocolVersion) =
     this(opType, protocol, new HandleIdentifier)
@@ -60,22 +62,13 @@ class OperationHandle private(
 
   def getProtocolVersion: TProtocolVersion = protocol
 
-  override def hashCode: Int = {
-    val prime = 31
-    var result = super.hashCode
-    result = prime * result + (if (opType == null) 0 else opType.hashCode)
-    result
-  }
+  override def hashCode: Int = 31 * super.hashCode + Objects.hashCode(opType)
 
   override def equals(obj: Any): Boolean = {
-    if (!super.equals(obj)) return false
-    if (!obj.isInstanceOf[OperationHandle]) return false
-    val other = obj.asInstanceOf[OperationHandle]
-    if (this eq other) return true
-    if (opType != other.opType) {
-      return false
+    obj match {
+      case o: OperationHandle if opType == o.getOperationType && super.equals(o) => true
+      case _ => false
     }
-    true
   }
 
   override def toString: String =

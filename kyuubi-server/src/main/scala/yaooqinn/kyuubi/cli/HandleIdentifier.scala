@@ -18,11 +18,11 @@
 package yaooqinn.kyuubi.cli
 
 import java.nio.ByteBuffer
-import java.util.UUID
+import java.util.{Objects, UUID}
 
 import org.apache.hive.service.cli.thrift.THandleIdentifier
 
-class HandleIdentifier(val publicId: UUID, val secretId: UUID) {
+case class HandleIdentifier(publicId: UUID, secretId: UUID) {
 
   def this() = this(UUID.randomUUID(), UUID.randomUUID())
 
@@ -56,28 +56,11 @@ class HandleIdentifier(val publicId: UUID, val secretId: UUID) {
   }
 
   override def equals(obj: Any): Boolean = {
-    if (obj == null) return false
-    if (!obj.isInstanceOf[HandleIdentifier]) return false
-
-    val other = obj.asInstanceOf[HandleIdentifier]
-    if (this eq other) return true
-
-    if (publicId == null) {
-      if (other.publicId != null) {
-        return false
-      }
-    } else if (!(publicId == other.publicId)) {
-        return false
+    obj match {
+      case HandleIdentifier(pid, sid)
+        if Objects.equals(publicId, pid) && Objects.equals(secretId, sid) => true
+      case _ => false
     }
-
-    if (secretId == null) {
-      if (other.secretId != null) {
-        return false
-      }
-    } else if (!(secretId == other.secretId)) {
-        return false
-    }
-    true
   }
 
   override def toString: String = Option(publicId).map(_.toString).getOrElse("")
