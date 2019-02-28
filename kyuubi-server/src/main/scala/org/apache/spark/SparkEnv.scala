@@ -40,7 +40,6 @@ import org.apache.spark.scheduler.OutputCommitCoordinator.OutputCommitCoordinato
 import org.apache.spark.security.CryptoStreamUtils
 import org.apache.spark.serializer.{JavaSerializer, Serializer, SerializerManager}
 import org.apache.spark.shuffle.ShuffleManager
-import org.apache.spark.shuffle.sort.SortShuffleManager
 import org.apache.spark.storage._
 import org.apache.spark.util.{RpcUtils, Utils}
 
@@ -140,11 +139,10 @@ class SparkEnv (
 }
 
 object SparkEnv extends Logging {
-
   import scala.collection.JavaConverters._
+
   info("Loaded Kyuubi Supplied SparkEnv Class...")
   @volatile private var env: SparkEnv = _
-
   private val envs = new ConcurrentHashMap[String, SparkEnv]()
 
   private[spark] val driverSystemName = "sparkDriver"
