@@ -17,55 +17,34 @@
 
 package org.apache.spark.ui
 
+import javax.servlet.http.HttpServletRequest
+
+import scala.util.Try
+
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext, SparkFunSuite}
+import org.scalatest.mockito.MockitoSugar
 
-import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
-
-class KyuubiServerTabSuite extends SparkFunSuite {
+class KyuubiSessionPageSuite extends SparkFunSuite with MockitoSugar {
 
   var sc: SparkContext = _
   var user: String = _
-  var tab: KyuubiServerTab = _
+  var tab: KyuubiSessionTab = _
 
   override def beforeAll(): Unit = {
     val conf = new SparkConf(loadDefaults = true).setMaster("local").setAppName("test")
     sc = new SparkContext(conf)
     user = KyuubiSparkUtil.getCurrentUserName
-    tab = new KyuubiServerTab(user, sc)
+    tab = new KyuubiSessionTab(user, sc)
   }
 
   override def afterAll(): Unit = {
     sc.stop()
   }
 
-  test("test parent") {
-    assert(tab.parent === sc.ui.get)
+  test("render kyuubi session page") {
+    val page = new KyuubiSessionPage(tab)
+    val request = mock[HttpServletRequest]
+    assert(Try { page.render(request) }.isSuccess )
   }
 
-  test("test listener") {
-    assert(tab.listener !== null)
-    val lr = new KyuubiServerListener(sc.conf)
-    assert(tab.listener !== lr)
-    assert(KyuubiServerMonitor.getListener(user).get === tab.listener)
-    KyuubiServerMonitor.setListener("user1", lr)
-    val tab2 = new KyuubiServerTab("user1", sc)
-    assert(tab2.listener === lr)
-    val tab3 = new KyuubiServerTab("user2", sc)
-    assert(tab3.listener === KyuubiServerMonitor.getListener("user2").get)
-  }
-
-  test("test name") {
-    assert(tab.name === "Kyuubi Tab 4 " + user)
-
-  }
-
-  test("testDetach") {
-    assert(KyuubiServerTab.getSparkUI(sc).getTabs.contains(tab))
-    tab.detach()
-    assert(!KyuubiServerTab.getSparkUI(sc).getTabs.contains(tab))
-  }
-
-  test("testGetSparkUI") {
-    assert(KyuubiServerTab.getSparkUI(sc) === sc.ui.get)
-  }
 }

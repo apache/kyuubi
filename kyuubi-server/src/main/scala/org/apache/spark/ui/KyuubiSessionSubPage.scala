@@ -28,7 +28,7 @@ import org.apache.spark.ui.UIUtils._
 import yaooqinn.kyuubi.ui.{ExecutionInfo, ExecutionState}
 
 /** Page for Spark Web UI that shows statistics of jobs running in the thrift server */
-class KyuubiServerSessionPage(parent: KyuubiServerTab) extends WebUIPage("session") {
+class KyuubiSessionSubPage(parent: KyuubiSessionTab) extends WebUIPage("session") {
 
   private val listener = parent.listener
   private val startTime = Calendar.getInstance().getTime
@@ -54,7 +54,7 @@ class KyuubiServerSessionPage(parent: KyuubiServerTab) extends WebUIPage("sessio
         </h4> ++
         generateSQLStatsTable(request, sessionStat.sessionId)
       }
-    KyuubiUIUtils.headerSparkPage(request, "Kyuubi Session", content, parent, Some(5000))
+    KyuubiUIUtils.headerSparkPage(request, "Kyuubi Session", content, parent)
   }
 
   /** Generate basic stats of the kyuubi server program */
@@ -143,6 +143,7 @@ class KyuubiServerSessionPage(parent: KyuubiServerTab) extends WebUIPage("sessio
     }
     <td>{errorSummary}{details}</td>
   }
+
   /**
    * Returns a human-readable string representing a duration such as "5 second 35 ms"
    */

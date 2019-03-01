@@ -30,7 +30,7 @@ import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil._
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.ui.KyuubiServerTab
+import org.apache.spark.ui.KyuubiSessionTab
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.author.AuthzHelper
@@ -190,7 +190,7 @@ class SparkSessionWithUGI(
     KyuubiServerMonitor.setListener(userName, new KyuubiServerListener(conf))
     KyuubiServerMonitor.getListener(userName)
       .foreach(_sparkSession.sparkContext.addSparkListener)
-    val uiTab = new KyuubiServerTab(userName, _sparkSession.sparkContext)
+    val uiTab = new KyuubiSessionTab(userName, _sparkSession.sparkContext)
     KyuubiServerMonitor.addUITab(_sparkSession.sparkContext.sparkUser, uiTab)
   }
 

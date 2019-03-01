@@ -23,57 +23,25 @@ import scala.xml.Node
 
 import org.apache.spark.KyuubiSparkUtil._
 
+import yaooqinn.kyuubi.utils.ReflectUtils
+
 object KyuubiUIUtils {
+
+  private val className = "org.apache.spark.ui.UIUtils"
 
   /** Returns a spark page with correctly formatted headers */
   def headerSparkPage(
       request: HttpServletRequest,
       title: String,
       content: => Seq[Node],
-      activeTab: SparkUITab,
-      refreshInterval: Option[Int] = None,
-      helpText: Option[String] = None,
-      showVisualization: Boolean = false,
-      useDataTables: Boolean = false): Seq[Node] = {
+      activeTab: SparkUITab): Seq[Node] = {
+    val methodMirror = ReflectUtils.reflectStaticMethodScala(className, "headerSparkPage")
     if (equalOrHigherThan("2.4")) {
-      val method = UIUtils.getClass.getMethod(
-        "headerSparkPage",
-        request.getClass,
-        title.getClass,
-        content.getClass,
-        activeTab.getClass,
-        refreshInterval.getClass,
-        helpText.getClass,
-        java.lang.Boolean.TYPE,
-        java.lang.Boolean.TYPE)
-      method.invoke(null,
-        request,
-        title,
-        content,
-        activeTab,
-        refreshInterval,
-        helpText,
-        new java.lang.Boolean(showVisualization),
-        new java.lang.Boolean(useDataTables)).asInstanceOf[Seq[Node]]
-
+      methodMirror(request, title, content, activeTab, Some(5000), None, false, false)
+        .asInstanceOf[Seq[Node]]
     } else {
-      val method = UIUtils.getClass.getMethod(
-        "headerSparkPage",
-        classOf[String],
-        classOf[() => Seq[Node]],
-        classOf[SparkUITab],
-        refreshInterval.getClass,
-        helpText.getClass,
-        java.lang.Boolean.TYPE,
-        java.lang.Boolean.TYPE)
-      method.invoke(null,
-        title,
-        content,
-        activeTab,
-        refreshInterval,
-        helpText,
-        new java.lang.Boolean(showVisualization),
-        new java.lang.Boolean(useDataTables)).asInstanceOf[Seq[Node]]
+      methodMirror(title, content, activeTab, Some(5000), None, false, false)
+        .asInstanceOf[Seq[Node]]
     }
   }
 
@@ -81,15 +49,11 @@ object KyuubiUIUtils {
       request: HttpServletRequest,
       basePath: String = "",
       resource: String = ""): String = {
+    val method = ReflectUtils.reflectStaticMethodScala(className, "prependBaseUri")
     if (equalOrHigherThan("2.4")) {
-      val method = UIUtils.getClass.getMethod("prependBaseUri",
-        classOf[HttpServletRequest], classOf[String], classOf[String])
-      method.invoke(null, request, basePath, resource).asInstanceOf[String]
+      method(request, basePath, resource).asInstanceOf[String]
     } else {
-      val method = UIUtils.getClass.getMethod("prependBaseUri",
-        classOf[String], classOf[String])
-      method.invoke(null, basePath, resource).asInstanceOf[String]
+      method(basePath, resource).asInstanceOf[String]
     }
   }
-
 }

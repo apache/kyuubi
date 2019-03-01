@@ -132,6 +132,17 @@ class ReflectUtilsSuite extends SparkFunSuite {
       ReflectUtils.reflectModule(className = "yaooqinn.kyuubi.TestRule2", silent = false))
     assert(e.getMessage.contains("not found"))
   }
+
+  test("reflect static method scala") {
+    val m1 = ReflectUtils.reflectStaticMethodScala("yaooqinn.kyuubi.utils.TestClass0", "staticTest")
+    assert(m1() === 1)
+    val m2 =
+      ReflectUtils.reflectStaticMethodScala("yaooqinn.kyuubi.utils.TestClass0", "staticTest2")
+    assert(m2(1) === 2)
+    intercept[IllegalArgumentException](m2("1"))
+    intercept[ScalaReflectionException](ReflectUtils.
+      reflectStaticMethodScala("yaooqinn.kyuubi.utils.TestClass0", "staticTest3"))
+  }
 }
 
 class TestTrait {
@@ -148,6 +159,7 @@ class TestClass3 extends TestTrait {
 
 object TestClass0 {
   def staticTest(): Int = 1
+  def staticTest2(x: Int): Int = x + 1
   val testInt = 1
   val testObj = "1"
 }

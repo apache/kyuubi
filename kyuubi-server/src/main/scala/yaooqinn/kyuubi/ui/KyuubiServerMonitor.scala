@@ -20,12 +20,12 @@ package yaooqinn.kyuubi.ui
 import scala.collection.mutable.HashMap
 
 import org.apache.spark.SparkException
-import org.apache.spark.ui.KyuubiServerTab
+import org.apache.spark.ui.KyuubiSessionTab
 
 
 object KyuubiServerMonitor {
 
-  private[this] val uiTabs = new HashMap[String, KyuubiServerTab]()
+  private[this] val uiTabs = new HashMap[String, KyuubiSessionTab]()
 
   private[this] val listeners = new HashMap[String, KyuubiServerListener]()
 
@@ -37,7 +37,7 @@ object KyuubiServerMonitor {
     listeners.get(user)
   }
 
-  def addUITab(user: String, ui: KyuubiServerTab): Unit = {
+  def addUITab(user: String, ui: KyuubiSessionTab): Unit = {
     uiTabs.put(user, ui)
   }
 

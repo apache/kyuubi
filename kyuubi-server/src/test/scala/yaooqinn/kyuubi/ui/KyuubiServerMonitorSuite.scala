@@ -18,7 +18,7 @@
 package yaooqinn.kyuubi.ui
 
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext, SparkFunSuite}
-import org.apache.spark.ui.KyuubiServerTab
+import org.apache.spark.ui.KyuubiSessionTab
 
 class KyuubiServerMonitorSuite extends SparkFunSuite {
   val conf = new SparkConf(loadDefaults = true).setAppName("monitor").setMaster("local")
@@ -42,7 +42,7 @@ class KyuubiServerMonitorSuite extends SparkFunSuite {
     val liOp = KyuubiServerMonitor.getListener(user)
     assert(liOp.get === li)
     assert(KyuubiServerMonitor.getListener("fake").isEmpty)
-    val tab = new KyuubiServerTab(user, sc)
+    val tab = new KyuubiSessionTab(user, sc)
     KyuubiServerMonitor.addUITab(user, tab)
     KyuubiServerMonitor.detachUITab(user)
     KyuubiServerMonitor.detachAllUITabs()
