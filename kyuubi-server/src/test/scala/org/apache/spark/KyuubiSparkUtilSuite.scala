@@ -160,7 +160,7 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
     assert(KyuubiSparkUtil.equalOrHigherThan("1.6.3"))
     assert(KyuubiSparkUtil.equalOrHigherThan("2.0.2"))
     assert(KyuubiSparkUtil.equalOrHigherThan(SPARK_COMPILE_VERSION))
-    assert(!KyuubiSparkUtil.equalOrHigherThan("2.4.1"))
+    assert(!KyuubiSparkUtil.equalOrHigherThan("2.9.1"))
     assert(!KyuubiSparkUtil.equalOrHigherThan("3.0.0"))
   }
 

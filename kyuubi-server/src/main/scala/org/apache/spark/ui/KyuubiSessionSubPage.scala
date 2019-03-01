@@ -25,29 +25,36 @@ import scala.xml.Node
 import org.apache.commons.lang3.StringEscapeUtils
 import org.apache.spark.ui.UIUtils._
 
-import yaooqinn.kyuubi.ui.{ExecutionInfo, ExecutionState, SessionInfo}
+import yaooqinn.kyuubi.ui.{ExecutionInfo, ExecutionState}
 
-/** Page for Spark Web UI that shows statistics of the kyuubi server */
-class KyuubiServerPage(parent: KyuubiServerTab) extends WebUIPage("") {
+/** Page for Spark Web UI that shows statistics of jobs running in the thrift server */
+class KyuubiSessionSubPage(parent: KyuubiSessionTab) extends WebUIPage("session") {
 
   private val listener = parent.listener
-  private val startTime = Calendar.getInstance().getTime()
+  private val startTime = Calendar.getInstance().getTime
   private val emptyCell = "-"
 
   /** Render the page */
   def render(request: HttpServletRequest): Seq[Node] = {
+    val parameterId = request.getParameter("id")
+    require(parameterId != null && parameterId.nonEmpty, "Missing id parameter")
+
     val content =
       listener.synchronized { // make sure all parts in this page are consistent
+        val sessionStat = listener.getSession(parameterId).orNull
+        require(sessionStat != null, "Invalid sessionID[" + parameterId + "]")
+
         generateBasicStats() ++
         <br/> ++
         <h4>
-        {listener.getOnlineSessionNum} session(s) are online,
-        running {listener.getTotalRunning} SQL statement(s)
+        User {sessionStat.userName},
+        IP {sessionStat.ip},
+        Session created at {formatDate(sessionStat.startTimestamp)},
+        Total run {sessionStat.totalExecution} SQL
         </h4> ++
-        generateSessionStatsTable() ++
-        generateSQLStatsTable()
+        generateSQLStatsTable(request, sessionStat.sessionId)
       }
-    UIUtils.headerSparkPage("Kyuubi Server", content, parent, Some(5000))
+    KyuubiUIUtils.headerSparkPage(request, "Kyuubi Session", content, parent)
   }
 
   /** Generate basic stats of the kyuubi server program */
@@ -55,7 +62,7 @@ class KyuubiServerPage(parent: KyuubiServerTab) extends WebUIPage("") {
     val timeSinceStart = System.currentTimeMillis() - startTime.getTime
     <ul class ="unstyled">
       <li>
-        <strong>Started at: </strong> {formatDate(startTime)}
+        <strong>Started at: </strong> {startTime.toString}
       </li>
       <li>
         <strong>Time since start: </strong>{formatDurationVerbose(timeSinceStart)}
@@ -64,16 +71,19 @@ class KyuubiServerPage(parent: KyuubiServerTab) extends WebUIPage("") {
   }
 
   /** Generate stats of batch statements of the kyuubi server program */
-  private def generateSQLStatsTable(): Seq[Node] = {
-    val numStatement = listener.getExecutionList.size
+  private def generateSQLStatsTable(request: HttpServletRequest, sessionID: String): Seq[Node] = {
+    val executionList = listener.getExecutionList
+      .filter(_.sessionId == sessionID)
+    val numStatement = executionList.size
     val table = if (numStatement > 0) {
       val headerRow = Seq("User", "JobID", "GroupID", "Start Time", "Finish Time", "Duration",
         "Statement", "State", "Detail")
-      val dataRows = listener.getExecutionList
+      val dataRows = executionList.sortBy(_.startTimestamp).reverse
 
       def generateDataRow(info: ExecutionInfo): Seq[Node] = {
         val jobLink = info.jobId.map { id: String =>
-          <a href={"%s/jobs/job?id=%s".format(UIUtils.prependBaseUri(parent.basePath), id)}>
+          <a href={"%s/jobs/job?id=%s"
+            .format(KyuubiUIUtils.prependBaseUri(request, parent.basePath), id)}>
             [{id}]
           </a>
         }
@@ -85,7 +95,7 @@ class KyuubiServerPage(parent: KyuubiServerTab) extends WebUIPage("") {
           </td>
           <td>{info.groupId}</td>
           <td>{formatDate(info.startTimestamp)}</td>
-          <td>{if (info.finishTimestamp > 0) formatDate(info.finishTimestamp)}</td>
+          <td>{formatDate(info.finishTimestamp)}</td>
           <td>{formatDurationOption(Some(info.totalTime))}</td>
           <td>{info.statement}</td>
           <td>{info.state}</td>
@@ -100,7 +110,7 @@ class KyuubiServerPage(parent: KyuubiServerTab) extends WebUIPage("") {
     }
 
     val content =
-      <h5 id="sqlstat">SQL Statistics</h5> ++
+      <h5>SQL Statistics</h5> ++
         <div>
           <ul class="unstyled">
             {table.getOrElse("No statistics have been generated yet.")}
@@ -133,51 +143,6 @@ class KyuubiServerPage(parent: KyuubiServerTab) extends WebUIPage("") {
     }
     <td>{errorSummary}{details}</td>
   }
-
-  /** Generate stats of batch sessions of the kyuubi server program */
-  private def generateSessionStatsTable(): Seq[Node] = {
-    val sessionList = listener.getSessionList
-    val numBatches = sessionList.size
-    val table = if (numBatches > 0) {
-      val dataRows = sessionList
-      val headerRow = Seq("User", "IP", "Session ID", "Start Time", "Finish Time", "Duration",
-        "Total Execute")
-      def generateDataRow(session: SessionInfo): Seq[Node] = {
-        val sessionLink = "%s/%s/session?id=%s"
-          .format(UIUtils.prependBaseUri(parent.basePath), parent.prefix, session.sessionId)
-        <tr>
-          <td> {session.userName} </td>
-          <td> {session.ip} </td>
-          <td> <a href={sessionLink}> {session.sessionId} </a> </td>
-          <td> {formatDate(session.startTimestamp)} </td>
-          <td> {if (session.finishTimestamp > 0) formatDate(session.finishTimestamp)} </td>
-          <td> {formatDurationOption(Some(session.totalTime))} </td>
-          <td> {session.totalExecution.toString} </td>
-        </tr>
-      }
-      Some(UIUtils.listingTable(
-        headerRow,
-        generateDataRow,
-        dataRows,
-        fixedWidth = true,
-        None,
-        Seq(null),
-        stripeRowsWithCss = false))
-    } else {
-      None
-    }
-
-    val content =
-      <h5 id="sessionstat">Session Statistics</h5> ++
-      <div>
-        <ul class="unstyled">
-          {table.getOrElse("No statistics have been generated yet.")}
-        </ul>
-      </div>
-
-    content
-  }
-
 
   /**
    * Returns a human-readable string representing a duration such as "5 second 35 ms"

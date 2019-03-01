@@ -18,7 +18,7 @@
 package org.apache.spark.ui
 
 import org.apache.spark.{SparkContext, SparkException}
-import org.apache.spark.ui.KyuubiServerTab._
+import org.apache.spark.ui.KyuubiSessionTab._
 
 import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
 
@@ -26,22 +26,22 @@ import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
  * Spark Web UI tab that shows statistics of jobs running in the thrift server.
  * This assumes the given SparkContext has enabled its SparkUI.
  */
-class KyuubiServerTab(userName: String, sparkContext: SparkContext)
+class KyuubiSessionTab(userName: String, sparkContext: SparkContext)
   extends SparkUITab(getSparkUI(sparkContext), userName) {
 
   override val name = s"Kyuubi Tab 4 $userName"
 
   val parent = getSparkUI(sparkContext)
 
-  // KyuubiServerTab renders by different listener's content, identified by user.
+  // KyuubiSessionTab renders by different listener's content, identified by user.
   val listener = KyuubiServerMonitor.getListener(userName).getOrElse {
     val lr = new KyuubiServerListener(sparkContext.conf)
     KyuubiServerMonitor.setListener(userName, lr)
     lr
   }
 
-  attachPage(new KyuubiServerPage(this))
-  attachPage(new KyuubiServerSessionPage(this))
+  attachPage(new KyuubiSessionPage(this))
+  attachPage(new KyuubiSessionSubPage(this))
   parent.attachTab(this)
 
   def detach() {
@@ -49,7 +49,7 @@ class KyuubiServerTab(userName: String, sparkContext: SparkContext)
   }
 }
 
-object KyuubiServerTab {
+object KyuubiSessionTab {
   def getSparkUI(sparkContext: SparkContext): SparkUI = {
     sparkContext.ui.getOrElse {
       throw new SparkException("Parent SparkUI to attach this tab to not found!")

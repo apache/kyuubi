@@ -221,4 +221,27 @@ object ReflectUtils extends Logging {
       case Failure(e) => throw KyuubiSparkUtil.findCause(e)
     }
   }
+
+
+  /**
+   * Call a static method of an Scala Object
+   *
+   * @param className scala object fully qualified name
+   * @param methodName the method name
+   * @return
+   */
+  def reflectStaticMethodScala(
+      className: String,
+      methodName: String): scala.reflect.api.Mirrors#MethodMirror = {
+    try {
+      val mirror = ru.runtimeMirror(KyuubiSparkUtil.getContextOrSparkClassLoader)
+      val moduleSymbol = mirror.staticModule(className)
+      val moduleMirror = mirror.reflectModule(moduleSymbol)
+      val method = moduleMirror.symbol.typeSignature.decl(ru.TermName(methodName)).asMethod
+      val instanceMirror = mirror.reflect(moduleMirror.instance)
+      instanceMirror.reflectMethod(method)
+    } catch {
+      case e: Exception => throw KyuubiSparkUtil.findCause(e)
+    }
+  }
 }
