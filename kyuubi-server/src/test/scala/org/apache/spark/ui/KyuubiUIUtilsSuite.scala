@@ -26,13 +26,24 @@ import org.scalatest.mock.MockitoSugar
 
 class KyuubiUIUtilsSuite extends SparkFunSuite with MockitoSugar {
 
+  var sc: SparkContext = _
+  var user: String = _
+  var tab: KyuubiSessionTab = _
+
+  override def beforeAll(): Unit = {
+    val conf = new SparkConf(loadDefaults = true).setMaster("local").setAppName("test")
+    sc = new SparkContext(conf)
+    user = KyuubiSparkUtil.getCurrentUserName
+    tab = new KyuubiSessionTab(user, sc)
+  }
+
+  override def afterAll(): Unit = {
+    sc.stop()
+  }
+
   test("spark page header") {
     val request = mock[HttpServletRequest]
     val title = "KyuubiServer test ui" * 10
-    val user = KyuubiSparkUtil.getCurrentUserName
-    val conf = new SparkConf().setMaster("local").setAppName(title)
-    val sc = new SparkContext(conf)
-    val tab = new KyuubiSessionTab(user, sc)
     val content = <td></td>
     assert(Try { KyuubiUIUtils.headerSparkPage(request, title, content, tab) }.isSuccess)
   }
