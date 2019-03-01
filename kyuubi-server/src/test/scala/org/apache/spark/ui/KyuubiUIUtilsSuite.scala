@@ -32,6 +32,7 @@ class KyuubiUIUtilsSuite extends SparkFunSuite with MockitoSugar {
 
   override def beforeAll(): Unit = {
     val conf = new SparkConf(loadDefaults = true).setMaster("local").setAppName("test")
+    KyuubiSparkUtil.setupCommonConfig(conf)
     sc = new SparkContext(conf)
     user = KyuubiSparkUtil.getCurrentUserName
     tab = new KyuubiSessionTab(user, sc)
