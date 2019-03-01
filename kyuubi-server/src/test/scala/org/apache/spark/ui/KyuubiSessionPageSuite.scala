@@ -22,7 +22,7 @@ import javax.servlet.http.HttpServletRequest
 import scala.util.Try
 
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext, SparkFunSuite}
-import org.scalatest.mockito.MockitoSugar
+import org.scalatest.mock.MockitoSugar
 
 class KyuubiSessionPageSuite extends SparkFunSuite with MockitoSugar {
 

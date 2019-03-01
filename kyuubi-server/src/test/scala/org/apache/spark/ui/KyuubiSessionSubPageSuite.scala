@@ -23,7 +23,7 @@ import scala.util.Try
 
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext, SparkFunSuite}
 import org.mockito.Mockito.when
-import org.scalatest.mockito.MockitoSugar
+import org.scalatest.mock.MockitoSugar
 
 import yaooqinn.kyuubi.ui.{ExecutionInfo, KyuubiServerListener, SessionInfo}
 
