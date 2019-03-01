@@ -28,6 +28,9 @@ deploy:
 
 jobs:
   include:
+    - stage: spark2.4
+      language: scala
+      script: ./build/mvn clean install -Pspark-2.4 -Dmaven.javadoc.skip=true -B -V
     - stage: spark2.3
       language: scala
       script: ./build/mvn clean install -Pspark-2.3 -Dmaven.javadoc.skip=true -B -V

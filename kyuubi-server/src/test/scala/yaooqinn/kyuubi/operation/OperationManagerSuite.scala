@@ -118,6 +118,7 @@ class OperationManagerSuite extends SparkFunSuite with Matchers with MockitoSuga
     val op5 = operationMgr.newExecuteStatementOperation(session, statement)
     op5.cancel()
     operationMgr.cancelOperation(op5.getHandle)
+    ss.stop()
   }
 
   test("rm expired operations") {
@@ -146,6 +147,7 @@ class OperationManagerSuite extends SparkFunSuite with Matchers with MockitoSuga
     operationMgr.cancelOperation(op2.getHandle) // isTerminal=true
     Thread.sleep(1500) // timeout
     operationMgr.removeExpiredOperations(handles) should be(Seq(op2)) // op2 is timeout and terminal
+    ss.stop()
   }
 
   test("get operation next row set") {
@@ -170,6 +172,7 @@ class OperationManagerSuite extends SparkFunSuite with Matchers with MockitoSuga
     op1.close()
     intercept[KyuubiSQLException](
       operationMgr.getOperationNextRowSet(op1.getHandle, FetchOrientation.FETCH_NEXT, 5))
+    ss.stop()
   }
 
   test("get operation log row set") {
@@ -190,6 +193,7 @@ class OperationManagerSuite extends SparkFunSuite with Matchers with MockitoSuga
     val e = intercept[KyuubiSQLException](
       operationMgr.getOperationLogRowSet(op1.getHandle, FetchOrientation.FETCH_NEXT, 5))
     e.getMessage should startWith("Couldn't find log associated with operation handle:")
+    ss.stop()
   }
 
 }

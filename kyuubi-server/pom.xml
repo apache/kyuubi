@@ -307,6 +307,9 @@
                     <environmentVariables>
                         <KYUUBI_JAR>${project.build.testOutputDirectory}/kyuubi-server-${project.version}.jar</KYUUBI_JAR>
                     </environmentVariables>
+                    <systemProperties>
+                        <spark.sql.warehouse.dir>${project.build.testOutputDirectory}/spark-warehouse</spark.sql.warehouse.dir>
+                    </systemProperties>
                 </configuration>
                 <executions>
                     <execution>
