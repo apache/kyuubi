@@ -137,15 +137,6 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
-  private def cleanupSessionResourcesDir(): Unit = {
-    try {
-      FileUtils.forceDelete(sessionResourcesDir)
-    } catch {
-      case e: Exception =>
-        error("Failed to cleanup session log dir: " + sessionResourcesDir, e)
-    }
-  }
-
   def sparkSession: SparkSession = this.sparkSessionWithUGI.sparkSession
 
   def ugi: UserGroupInformation = this.sessionUGI
@@ -205,8 +196,6 @@ private[kyuubi] class KyuubiSession(
       // Iterate through the opHandles and close their operations
       opHandleSet.foreach(closeOperation)
       opHandleSet.clear()
-      // Cleanup session resources directory
-      cleanupSessionResourcesDir()
       // Cleanup session log directory.
       cleanupSessionLogDir()
     } finally {
