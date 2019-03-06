@@ -134,13 +134,13 @@ class SparkSessionWithUGI(
     val interval = conf.getTimeAsMs(BACKEND_SESSION_WAIT_OTHER_INTERVAL)
     // if user's sc is being constructed by another
     while (isPartiallyConstructed(userName)) {
-      Thread.sleep(interval)
       checkRound -= 1
       if (checkRound <= 0) {
         throw new KyuubiSQLException(s"A partially constructed SparkContext for [$userName] " +
           s"has last more than ${totalRounds * interval / 1000} seconds")
       }
       info(s"A partially constructed SparkContext for [$userName], $checkRound times countdown.")
+      SPARK_INSTANTIATION_LOCK.wait(interval)
     }
 
     cache.getAndIncrease(userName) match {
