@@ -68,7 +68,7 @@ private[kyuubi] class KyuubiSession(
   private var lastIdleTime = 0L
 
   private val sessionUGI: UserGroupInformation = {
-    val currentUser = UserGroupInformation.getCurrentUser
+    val currentUser = UserGroupInformation.getLoginUser
     if (withImpersonation) {
       if (UserGroupInformation.isSecurityEnabled) {
         if (conf.contains(KyuubiSparkUtil.PRINCIPAL) && conf.contains(KyuubiSparkUtil.KEYTAB)) {
