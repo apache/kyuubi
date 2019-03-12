@@ -181,8 +181,15 @@ class SparkSessionWithUGI(
           }
         }
         stopContext()
-        val ke = new KyuubiSQLException(
-          s"Get SparkSession for [$userName] failed", "08S01", 1001, findCause(e))
+        val cause = findCause(e)
+        val msg =
+          s"""
+             |Get SparkSession for [$userName] failed
+             |Diagnosis:
+             |${sparkException.map(_.getMessage).getOrElse(cause.getMessage)}
+             |Please check if the yarn queue [${conf.get(QUEUE)}] is quite busy
+           """.stripMargin
+        val ke = new KyuubiSQLException(msg, "08S01", 1001, cause)
         sparkException.foreach(ke.addSuppressed)
         throw ke
     } finally {
