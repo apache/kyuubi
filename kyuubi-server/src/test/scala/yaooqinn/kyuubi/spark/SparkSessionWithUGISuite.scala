@@ -153,7 +153,7 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
     assert(!SparkSessionWithUGI.isPartiallyConstructed(userName1))
     val e = intercept[KyuubiSQLException](sparkSessionWithUGI.init(Map.empty))
     assert(e.getCause.isInstanceOf[TimeoutException])
-    assert(e.getMessage.startsWith("Get SparkSession"))
+    assert(e.getMessage.contains("Get SparkSession"))
   }
 
   test("testSetFullyConstructed") {
