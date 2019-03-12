@@ -187,7 +187,7 @@ class SparkSessionWithUGI(
              |Get SparkSession for [$userName] failed
              |Diagnosis:
              |${sparkException.map(_.getMessage).getOrElse(cause.getMessage)}
-             |Please check if the yarn queue [${conf.get(QUEUE)}] is quite busy
+             |Please check if the yarn queue [${conf.getOption(QUEUE).getOrElse("")}] is quite busy
            """.stripMargin
         val ke = new KyuubiSQLException(msg, "08S01", 1001, cause)
         sparkException.foreach(ke.addSuppressed)
