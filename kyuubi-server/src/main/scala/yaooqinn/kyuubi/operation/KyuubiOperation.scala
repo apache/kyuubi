@@ -324,7 +324,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     case e: Exception => throw new KyuubiSQLException(s"Failed to read external resource: $path", e)
   }
 
-  def transform(plan: LogicalPlan): LogicalPlan = plan match {
+  private[operation] def transform(plan: LogicalPlan): LogicalPlan = plan match {
     case c: CreateFunctionCommand =>
       val resources =
         ReflectUtils.getFieldValue(c, "resources").asInstanceOf[Seq[FunctionResource]]
