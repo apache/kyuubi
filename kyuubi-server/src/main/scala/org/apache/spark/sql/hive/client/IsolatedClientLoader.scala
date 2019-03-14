@@ -70,17 +70,13 @@ private[hive] class IsolatedClientLoader(
    * ANOTHER reason here we close the isolation is because Spark don't expose authorization
    * functions in [[HiveClient]], which is unable to invoke these methods in different classloaders
    *
-   * Besides, [[HiveClient]] in normal Spark applications is globally one instance, so this
-   * classloader could/should be non-closeable. But in Kyuubi, this is a session level object
-   * associated with one KyuubiSession/SparkSession, thus, this classloader should be closeable to
-   * support class unloading.
    *
    * This classloader is a special URLClassLoader that exposes the addURL method.
    * So, when we add jar, we can add this new jar directly through the addURL method
    * instead of stacking a new URLClassLoader on top of it.
    */
   private[hive] val classLoader: MutableURLClassLoader = {
-    new MutableURLClassLoader(Array.empty, baseClassLoader)
+    new NonClosableMutableURLClassLoader(baseClassLoader)
   }
 
   private[hive] def addJar(path: URL): Unit = {
