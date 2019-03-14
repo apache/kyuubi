@@ -123,7 +123,8 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
 
   private def createOperationLog(): Unit = {
     if (session.isOperationLogEnabled) {
-      val logFile = new File(session.getSessionLogDir, opHandle.getHandleIdentifier.toString)
+      val logFile =
+        new File(session.getSessionLogDir, opHandle.getHandleIdentifier.toString)
       val logFilePath = logFile.getAbsolutePath
       this.isOperationLogEnabled = true
       // create log file
@@ -164,7 +165,8 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
           return
       }
       // register this operationLog
-      session.getSessionMgr.getOperationMgr.setOperationLog(session.getUserName, this.operationLog)
+      session.getSessionMgr.getOperationMgr
+        .setOperationLog(session.getUserName, this.operationLog)
     }
   }
 
@@ -333,7 +335,8 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
           localizeAndAndResource(uri).map(path => AddJarCommand(path).run(sparkSession))
         case FunctionResource(FileResource, uri) =>
           localizeAndAndResource(uri).map(path => AddFileCommand(path).run(sparkSession))
-        case _ =>
+        case o =>
+          throw new KyuubiSQLException(s"Resource Type '${o.resourceType}' is not supported.")
       }
       if (resources.isEmpty) {
         c

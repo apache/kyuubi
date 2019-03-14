@@ -184,5 +184,10 @@ class KyuubiOperationSuite extends SparkFunSuite with MockitoSugar {
     assert(plan4 === command)
     assert(plan4.asInstanceOf[CreateFunctionCommand].resources !== resources)
 
+    val plan5 = parser.parsePlan(
+      "create temporary function a as 'a.b.c' using archive 'hdfs://a/b/c.jar'")
+
+    val e3 = intercept[KyuubiSQLException](op.transform(plan5))
+    assert(e3.getMessage.startsWith("Resource Type"))
   }
 }
