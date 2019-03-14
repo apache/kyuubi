@@ -88,7 +88,7 @@ private[hive] class IsolatedClientLoader(
         sparkConf,
         hadoopConf,
         config,
-        baseClassLoader,
+        classLoader,
         this).asInstanceOf[HiveClientImpl]
     } else {
       ctor.newInstance(
@@ -96,7 +96,7 @@ private[hive] class IsolatedClientLoader(
         sparkConf,
         hadoopConf,
         config,
-        baseClassLoader,
+        classLoader,
         this).asInstanceOf[HiveClientImpl]
     }
 
