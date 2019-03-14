@@ -35,9 +35,10 @@ import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil
 import org.apache.spark.scheduler.cluster.KyuubiSparkExecutorUtils
 import org.apache.spark.sql.{AnalysisException, DataFrame, Row, SparkSQLUtils}
-import org.apache.spark.sql.catalyst.catalog.FunctionResource
+import org.apache.spark.sql.catalyst.catalog.{FileResource, FunctionResource, JarResource}
 import org.apache.spark.sql.catalyst.parser.ParseException
-import org.apache.spark.sql.execution.command.AddJarCommand
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.execution.command.{AddFileCommand, AddJarCommand, CreateFunctionCommand}
 import org.apache.spark.sql.types._
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
@@ -122,8 +123,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
 
   private def createOperationLog(): Unit = {
     if (session.isOperationLogEnabled) {
-      val logFile =
-        new File(session.getSessionLogDir, opHandle.getHandleIdentifier.toString)
+      val logFile = new File(session.getSessionLogDir, opHandle.getHandleIdentifier.toString)
       val logFilePath = logFile.getAbsolutePath
       this.isOperationLogEnabled = true
       // create log file
@@ -164,8 +164,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
           return
       }
       // register this operationLog
-      session.getSessionMgr.getOperationMgr
-        .setOperationLog(session.getUserName, this.operationLog)
+      session.getSessionMgr.getOperationMgr.setOperationLog(session.getUserName, this.operationLog)
     }
   }
 
@@ -308,7 +307,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     }
   }
 
-  private def localizeAndAndResource(path: String): Unit = try {
+  private def localizeAndAndResource(path: String): Option[String] = try {
     if (isResourceDownloadable(path)) {
       val src = new Path(path)
       val destFileName = src.getName
@@ -317,10 +316,34 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       val fs = src.getFileSystem(sparkSession.sparkContext.hadoopConfiguration)
       fs.copyToLocalFile(src, new Path(destFile))
       FileUtil.chmod(destFile, "ugo+rx", true)
-      AddJarCommand(destFile).run(session.sparkSession)
+      Some(destFile)
+    } else {
+      None
     }
   } catch {
     case e: Exception => throw new KyuubiSQLException(s"Failed to read external resource: $path", e)
+  }
+
+  def transform(plan: LogicalPlan): LogicalPlan = plan match {
+    case c: CreateFunctionCommand =>
+      val resources =
+        ReflectUtils.getFieldValue(c, "resources").asInstanceOf[Seq[FunctionResource]]
+      resources.foreach {
+        case FunctionResource(JarResource, uri) =>
+          localizeAndAndResource(uri).map(path => AddJarCommand(path).run(sparkSession))
+        case FunctionResource(FileResource, uri) =>
+          localizeAndAndResource(uri).map(path => AddFileCommand(path).run(sparkSession))
+        case _ =>
+      }
+      if (resources.isEmpty) {
+        c
+      } else {
+        ReflectUtils.setFieldValue(c, "resources", Seq.empty[FunctionResource])
+        c
+      }
+    case a: AddJarCommand => localizeAndAndResource(a.path).map(AddJarCommand).getOrElse(a)
+    case a: AddFileCommand => localizeAndAndResource(a.path).map(AddFileCommand).getOrElse(a)
+    case _ => plan
   }
 
   private def execute(): Unit = {
@@ -344,19 +367,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       KyuubiSparkUtil.setActiveSparkContext(sparkSession.sparkContext)
 
       val parsedPlan = SparkSQLUtils.parsePlan(sparkSession, statement)
-      parsedPlan match {
-        case c if c.nodeName == "CreateFunctionCommand" =>
-          val resources =
-            ReflectUtils.getFieldValue(c, "resources").asInstanceOf[Seq[FunctionResource]]
-          resources.foreach { case FunctionResource(_, uri) =>
-            localizeAndAndResource(uri)
-          }
-        case a if a.nodeName == "AddJarCommand" =>
-          val path = ReflectUtils.getFieldValue(a, "path").asInstanceOf[String]
-          localizeAndAndResource(path)
-        case _ =>
-      }
-      result = SparkSQLUtils.toDataFrame(sparkSession, parsedPlan)
+      result = SparkSQLUtils.toDataFrame(sparkSession, transform(parsedPlan))
       KyuubiServerMonitor.getListener(session.getUserName).foreach {
         _.onStatementParsed(statementId, result.queryExecution.toString())
       }
