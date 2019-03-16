@@ -322,6 +322,15 @@ object KyuubiSparkUtil extends Logging {
       // ForkJoinPool which points to another calling context. Turn off parallel listing seems
       // to be a solution to this issue.
       conf.setIfMissing(RDD_PAR_LISTING, Int.MaxValue.toString)
+      val sparkTokenProviders = List("hdfs", "hadoopfs", "hive", "hbase")
+      val tokenProviderPattens = List(
+        "spark.yarn.security.tokens.%s.enabled",
+        "spark.yarn.security.credentials.%s.enabled",
+        "spark.security.credentials.%s.enabled")
+      tokenProviderPattens.map(_.format("kyuubi")).foreach(conf.set(_, "true"))
+      sparkTokenProviders.foreach  { service =>
+          tokenProviderPattens.map(_.format(service)).foreach(conf.set(_, "false"))
+      }
     }
   }
 

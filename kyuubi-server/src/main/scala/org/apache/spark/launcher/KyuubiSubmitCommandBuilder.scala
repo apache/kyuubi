@@ -50,7 +50,7 @@ class KyuubiSubmitCommandBuilder(args: JList[String]) extends SparkSubmitCommand
       throw new IllegalArgumentException(msg)
     }
 
-    val memory = firstNonEmpty(config.get(SparkLauncher.DRIVER_MEMORY), DEFAULT_MEM * 4)
+    val memory = firstNonEmpty(config.get(SparkLauncher.DRIVER_MEMORY), DEFAULT_MEM)
     cmd.add("-Xmx" + memory)
     addOptionString(cmd, driverExtraJavaOptions)
     mergeEnvPathList(env, getLibPathEnvName, config.get(SparkLauncher.DRIVER_EXTRA_LIBRARY_PATH))

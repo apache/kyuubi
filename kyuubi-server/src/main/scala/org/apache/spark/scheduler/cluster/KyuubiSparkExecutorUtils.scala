@@ -26,12 +26,13 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.SparkContext
 
+import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.utils.ReflectUtils._
 
 /**
  * Tool for methods used for Kyuubi to talking to Spark Executors
  */
-object KyuubiSparkExecutorUtils {
+object KyuubiSparkExecutorUtils extends Logging {
 
   /**
    * Populate the tokens contained in the current KyuubiSession's ugi to the all the alive
