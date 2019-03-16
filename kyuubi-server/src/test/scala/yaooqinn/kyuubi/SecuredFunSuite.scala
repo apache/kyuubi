@@ -17,10 +17,30 @@
 
 package yaooqinn.kyuubi
 
+import java.io.IOException
+
+import org.apache.hadoop.minikdc.MiniKdc
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 
 trait SecuredFunSuite {
+
+  var kdc: MiniKdc = null
+  val baseDir = KyuubiSparkUtil.createTempDir("kyuubi-kdc")
+  try {
+    val kdcConf = MiniKdc.createConf()
+    kdcConf.setProperty(MiniKdc.INSTANCE, "KyuubiKrbServer")
+    kdcConf.setProperty(MiniKdc.ORG_NAME, "KYUUBI")
+    kdcConf.setProperty(MiniKdc.ORG_DOMAIN, "COM")
+
+    if (kdc == null) {
+      kdc = new MiniKdc(kdcConf, baseDir)
+      kdc.start()
+    }
+  } catch {
+    case e: IOException =>
+      throw new AssertionError("unable to create temporary directory: " + e.getMessage)
+  }
 
   def tryWithSecurityEnabled(block: => Unit): Unit = {
     val conf = new SparkConf(true)
@@ -28,11 +48,13 @@ trait SecuredFunSuite {
     val authType = "spark.hadoop.hadoop.security.authentication"
     try {
       conf.set(authType, "KERBEROS")
+      System.setProperty("java.security.krb5.realm", kdc.getRealm)
       UserGroupInformation.setConfiguration(KyuubiSparkUtil.newConfiguration(conf))
       assert(UserGroupInformation.isSecurityEnabled)
       block
     } finally {
       conf.remove(authType)
+      System.clearProperty("java.security.krb5.realm")
       UserGroupInformation.setConfiguration(KyuubiSparkUtil.newConfiguration(conf))
       assert(!UserGroupInformation.isSecurityEnabled)
     }

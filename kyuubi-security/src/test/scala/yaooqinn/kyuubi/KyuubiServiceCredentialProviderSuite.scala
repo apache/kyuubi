@@ -34,9 +34,6 @@ class KyuubiServiceCredentialProviderSuite extends SparkFunSuite with MockitoSug
       userName + "/" + InetAddress.getLocalHost.getHostName + "@" + "KYUUBI.ORG")
     val provider = new KyuubiServiceCredentialProvider
     assert(!provider.credentialsRequired(hadoopConf))
-    hadoopConf.set("hadoop.security.authentication", "KERBEROS")
-    UserGroupInformation.setConfiguration(hadoopConf)
-    assert(provider.credentialsRequired(hadoopConf))
     assert(provider.serviceName === "kyuubi")
     val credential = new Credentials()
     val now = System.currentTimeMillis()
