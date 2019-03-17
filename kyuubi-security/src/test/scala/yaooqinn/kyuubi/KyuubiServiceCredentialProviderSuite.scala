@@ -45,6 +45,6 @@ class KyuubiServiceCredentialProviderSuite extends SparkFunSuite with MockitoSug
     assert(renewalTime.isDefined)
     assert(renewalTime.get - now >= 2L * 60 * 60 *100 )
     sparkConf.set("spark.yarn.access.hadoopFileSystems", "hdfs://a/b/c")
-    intercept[ConnectException](provider.obtainCredentials(hadoopConf, sparkConf, credential))
+    intercept[Exception](provider.obtainCredentials(hadoopConf, sparkConf, credential))
   }
 }
