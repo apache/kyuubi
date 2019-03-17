@@ -36,3 +36,4 @@ metastore_db
 derby.log
 ldap
 */dependency-reduced-pom.xml
+kyuubi-server/kyuubi-kdc/
