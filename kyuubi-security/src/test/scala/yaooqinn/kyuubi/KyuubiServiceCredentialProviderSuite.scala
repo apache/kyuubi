@@ -17,12 +17,13 @@
 
 package yaooqinn.kyuubi
 
-import java.net.InetAddress
+import java.net.{ConnectException, InetAddress}
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.spark.{SparkConf, SparkFunSuite}
+import org.apache.spark.deploy.yarn.security.ServiceCredentialProvider
 import org.scalatest.mock.MockitoSugar
 
 class KyuubiServiceCredentialProviderSuite extends SparkFunSuite with MockitoSugar {
@@ -30,16 +31,20 @@ class KyuubiServiceCredentialProviderSuite extends SparkFunSuite with MockitoSug
     val sparkConf = new SparkConf()
     val userName = UserGroupInformation.getCurrentUser.getShortUserName
     val hadoopConf = new Configuration()
-      hadoopConf.set(YarnConfiguration.RM_PRINCIPAL,
-      userName + "/" + InetAddress.getLocalHost.getHostName + "@" + "KYUUBI.ORG")
+    val credential = new Credentials()
     val provider = new KyuubiServiceCredentialProvider
+    intercept[RuntimeException](provider.obtainCredentials(hadoopConf, sparkConf, credential))
+    hadoopConf.set(YarnConfiguration.RM_PRINCIPAL,
+      userName + "/" + InetAddress.getLocalHost.getHostName + "@" + "KYUUBI.ORG")
+    assert(provider.isInstanceOf[ServiceCredentialProvider])
+    assert(provider.isInstanceOf[Logging])
     assert(!provider.credentialsRequired(hadoopConf))
     assert(provider.serviceName === "kyuubi")
-    val credential = new Credentials()
     val now = System.currentTimeMillis()
     val renewalTime = provider.obtainCredentials(hadoopConf, sparkConf, credential)
     assert(renewalTime.isDefined)
     assert(renewalTime.get - now >= 2L * 60 * 60 *100 )
-
+    sparkConf.set("spark.yarn.access.hadoopFileSystems", "hdfs://a/b/c")
+    intercept[ConnectException](provider.obtainCredentials(hadoopConf, sparkConf, credential))
   }
 }
