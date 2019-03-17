@@ -17,7 +17,7 @@
 
 package yaooqinn.kyuubi
 
-import java.net.{ConnectException, InetAddress}
+import java.net.InetAddress
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
@@ -33,7 +33,14 @@ class KyuubiServiceCredentialProviderSuite extends SparkFunSuite with MockitoSug
     val hadoopConf = new Configuration()
     val credential = new Credentials()
     val provider = new KyuubiServiceCredentialProvider
-    intercept[RuntimeException](provider.obtainCredentials(hadoopConf, sparkConf, credential))
+    val e1 =
+      intercept[RuntimeException](provider.obtainCredentials(hadoopConf, sparkConf, credential))
+    assert(e1.getMessage === "Can't get Master Kerberos principal for use as renewer.")
+    hadoopConf.set(YarnConfiguration.RM_PRINCIPAL, "")
+    val e2 =
+      intercept[RuntimeException](provider.obtainCredentials(hadoopConf, sparkConf, credential))
+    assert(e2.getMessage === "Can't get Master Kerberos principal for use as renewer.")
+
     hadoopConf.set(YarnConfiguration.RM_PRINCIPAL,
       userName + "/" + InetAddress.getLocalHost.getHostName + "@" + "KYUUBI.ORG")
     assert(provider.isInstanceOf[ServiceCredentialProvider])
@@ -45,6 +52,8 @@ class KyuubiServiceCredentialProviderSuite extends SparkFunSuite with MockitoSug
     assert(renewalTime.isDefined)
     assert(renewalTime.get - now >= 2L * 60 * 60 *100 )
     sparkConf.set("spark.yarn.access.hadoopFileSystems", "hdfs://a/b/c")
+    intercept[Exception](provider.obtainCredentials(hadoopConf, sparkConf, credential))
+    sparkConf.set("spark.yarn.access.namenodes", "hdfs://a/b/c, hdfs://d/e/f")
     intercept[Exception](provider.obtainCredentials(hadoopConf, sparkConf, credential))
   }
 }

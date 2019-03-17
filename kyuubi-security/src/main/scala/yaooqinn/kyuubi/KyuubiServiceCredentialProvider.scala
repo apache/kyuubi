@@ -48,7 +48,7 @@ class KyuubiServiceCredentialProvider extends ServiceCredentialProvider with Log
       fs.addDelegationTokens(tokenRenewer, creds)
     }
     UserGroupInformation.getCurrentUser.addCredentials(creds)
-    val interval = sparkConf.getTimeAsMs("spark.kyuubi.credential.renew.interval", "2h")
+    val interval = sparkConf.getTimeAsMs("spark.kyuubi.backend.session.token.renew.interval", "2h")
     info(s"Token updated, next renew interval will be $interval")
     Some(System.currentTimeMillis() + interval)
   }

@@ -20,7 +20,14 @@ package yaooqinn.kyuubi
 import org.slf4j.LoggerFactory
 
 trait Logging {
-  lazy val logger = LoggerFactory.getLogger(this.getClass)
+
+  // Method to get the logger name for this object
+  protected def logName: String = {
+    // Ignore trailing $'s in the class names for Scala objects
+    this.getClass.getName.stripSuffix("$")
+  }
+
+  lazy val logger = LoggerFactory.getLogger(logName)
 
   def debug(message: => Any): Unit = {
     if (logger.isDebugEnabled) {
