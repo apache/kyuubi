@@ -335,14 +335,16 @@ object KyuubiSparkUtil extends Logging {
       // in KyuubiServiceCredentialProvider, and those ones in Spark always have impersonation
       // issue while renew tokens
       sparkTokenProviders.foreach  { service =>
-          tokenProviderPattens.map(_.format(service)).foreach(conf.set(_, "false"))
+          tokenProviderPattens.map(_.format(service)).foreach {
+            conf.set(_, "false")
+          }
       }
     }
 
-    val kyuubiJar = System.getenv("KYUUBI_JAR")
+    val kyuubiJar = Option(System.getenv("KYUUBI_JAR")).getOrElse("")
     val distJars = conf.getOption(SPARK_YARN_DIST_JARS) match {
       case Some(jars) if jars.nonEmpty =>
-        if (kyuubiJar != null) jars + "," + kyuubiJar else jars
+        if (kyuubiJar != null && kyuubiJar.nonEmpty) jars + "," + kyuubiJar else jars
       case _ => kyuubiJar
     }
 

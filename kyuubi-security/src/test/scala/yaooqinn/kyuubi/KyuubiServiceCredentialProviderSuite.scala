@@ -35,11 +35,11 @@ class KyuubiServiceCredentialProviderSuite extends SparkFunSuite with MockitoSug
     val provider = new KyuubiServiceCredentialProvider
     val e1 =
       intercept[RuntimeException](provider.obtainCredentials(hadoopConf, sparkConf, credential))
-    assert(e1.getMessage === "Can't get Master Kerberos principal for use as renewer.")
+    assert(e1.getMessage === "Failed to renew token")
     hadoopConf.set(YarnConfiguration.RM_PRINCIPAL, "")
     val e2 =
       intercept[RuntimeException](provider.obtainCredentials(hadoopConf, sparkConf, credential))
-    assert(e2.getMessage === "Can't get Master Kerberos principal for use as renewer.")
+    assert(e2.getMessage === "Failed to renew token")
 
     hadoopConf.set(YarnConfiguration.RM_PRINCIPAL,
       userName + "/" + InetAddress.getLocalHost.getHostName + "@" + "KYUUBI.ORG")
