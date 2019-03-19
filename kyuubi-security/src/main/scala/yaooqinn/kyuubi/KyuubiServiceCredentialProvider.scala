@@ -89,7 +89,7 @@ class KyuubiServiceCredentialProvider extends ServiceCredentialProvider with Log
         throw new RuntimeException("Failed to renew token", e)
     }
     val interval = sparkConf.getTimeAsMs("spark.kyuubi.backend.session.token.renew.interval", "2h")
-    info(s"Token updated, next renew interval will be $interval")
+    info(s"Token updated, next renew interval will be ${interval / 1000} seconds")
     Some(System.currentTimeMillis() + interval)
   }
 
