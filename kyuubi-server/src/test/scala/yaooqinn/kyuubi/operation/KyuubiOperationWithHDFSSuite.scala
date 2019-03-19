@@ -17,39 +17,37 @@
 
 package yaooqinn.kyuubi.operation
 
-import java.net.URL
+import java.io.File
 
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hdfs.{HdfsConfiguration, MiniDFSCluster}
-import org.apache.spark.KyuubiSparkUtil
 import org.apache.spark.sql.catalyst.catalog.FunctionResource
 import org.apache.spark.sql.execution.SparkSqlParser
 import org.apache.spark.sql.internal.SQLConf
 
-import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.utils.ReflectUtils
 
 class KyuubiOperationWithHDFSSuite extends KyuubiOperationSuite {
-
   val hdfsConf = new HdfsConfiguration
-
   var cluster: MiniDFSCluster = new MiniDFSCluster.Builder(hdfsConf).build()
-
   cluster.waitClusterUp()
   val fs = cluster.getFileSystem
   val homeDirectory: Path = fs.getHomeDirectory
-  private val localUDFFile = "udf-test.jar"
-  private val file: URL = KyuubiSparkUtil.getContextOrSparkClassLoader.getResource(localUDFFile)
-  private val remoteUDFFile = new Path(homeDirectory, localUDFFile)
-  fs.copyFromLocalFile(new Path(file.getPath), remoteUDFFile)
+  private val fileName = "example-1.0.0-SNAPSHOT.jar"
+  private val remoteUDFFile = new Path(homeDirectory, fileName)
 
   override def beforeAll(): Unit = {
+    val file = new File(this.getClass.getProtectionDomain.getCodeSource.getLocation + fileName)
+    val localUDFFile = new Path(file.getPath)
+    fs.copyFromLocalFile(localUDFFile, remoteUDFFile)
     super.beforeAll()
   }
 
   override def afterAll(): Unit = {
-    super.afterAll()
+    fs.delete(remoteUDFFile, true)
+    fs.close()
     cluster.shutdown()
+    super.afterAll()
   }
 
   test("transform logical plan") {

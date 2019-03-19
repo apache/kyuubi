@@ -17,10 +17,10 @@
 
 package yaooqinn.kyuubi.utils
 
-import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.records.{ApplicationId, ContainerLaunchContext, Resource, YarnApplicationState}
 import org.apache.hadoop.yarn.client.api.YarnClient
+import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.server.MiniYARNCluster
 import org.apache.hadoop.yarn.util.Records
 import org.apache.spark.SparkFunSuite
@@ -28,26 +28,27 @@ import org.scalatest.BeforeAndAfterEach
 
 class KyuubiHadoopUtilSuite extends SparkFunSuite with BeforeAndAfterEach {
 
-  private var cluster: MiniYARNCluster = _
+  private val cluster: MiniYARNCluster =
+    new MiniYARNCluster(this.getClass.getSimpleName, 1, 1, 1, 1)
   private val yarnClient = YarnClient.createYarnClient()
 
   override def beforeAll(): Unit = {
-    cluster = new MiniYARNCluster(this.getClass.getSimpleName, 1, 1, 1, 1)
-    val hadoopConf = new Configuration()
-    cluster.init(hadoopConf)
+    val yarnConf = new YarnConfiguration()
+    yarnConf.set(YarnConfiguration.IS_MINI_YARN_CLUSTER, "true")
+    cluster.init(yarnConf)
     cluster.start()
-    yarnClient.init(hadoopConf)
+    yarnClient.init(yarnConf)
     yarnClient.start()
     super.beforeAll()
   }
 
   override def afterAll(): Unit = {
+    yarnClient.stop()
     cluster.stop()
     super.afterAll()
   }
 
   override def beforeEach(): Unit = {
-
     super.beforeEach()
   }
 
