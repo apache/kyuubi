@@ -26,7 +26,7 @@ import scala.concurrent.duration.Duration
 import scala.util.control.NonFatal
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext}
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil._
 import org.apache.spark.sql.SparkSession
@@ -101,10 +101,6 @@ class SparkSessionWithUGI(
         case _ =>
       }
     }
-
-    // proxy user does not have rights to get token as real user
-    conf.remove(KyuubiSparkUtil.KEYTAB)
-    conf.remove(KyuubiSparkUtil.PRINCIPAL)
   }
 
   /**

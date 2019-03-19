@@ -39,31 +39,31 @@ if [[ "$@" = *--help ]] || [[ "$@" = *-h ]]; then
 fi
 
 ## Find the Kyuubi Jar
-if [ -z "$KYUUBI_JAR_DIR" ]; then
+if [[ -z "$KYUUBI_JAR_DIR" ]]; then
   KYUUBI_JAR_DIR="$KYUUBI_HOME/lib"
-  if [ ! -d ${KYUUBI_JAR_DIR} ]; then
+  if [[ ! -d ${KYUUBI_JAR_DIR} ]]; then
   echo -e "\nCandidate Kyuubi lib $KYUUBI_JAR_DIR doesn't exist, searching development environment..."
     KYUUBI_JAR_DIR="$KYUUBI_HOME/kyuubi-server/target"
   fi
 fi
 
-KYUUBI_JAR_NUM="$(ls ${KYUUBI_JAR_DIR} | grep kyuubi-server | grep .jar | wc -l)"
+KYUUBI_JAR_NUM="$(ls ${KYUUBI_JAR_DIR} | grep kyuubi-server | grep .jar | grep -v original | wc -l)"
 
-if [ ${KYUUBI_JAR_NUM} = "0" ]; then
-  echo "Kyuubi Server: need to build kyuubi first. Run ./bin/mvn clean package" >&2
+if [[ ${KYUUBI_JAR_NUM} = "0" ]]; then
+  echo "Kyuubi Server: need to build kyuubi first. Run ./build/mvn clean package" >&2
   exit 1
 fi
 
-if [ ${KYUUBI_JAR_NUM} != "1" ]; then
-  echo "Kyuubi Server: duplicated kyuubi jars found. Run ./bin/mvn clean package" >&2
+if [[ ${KYUUBI_JAR_NUM} != "1" ]]; then
+  echo "Kyuubi Server: duplicated kyuubi jars found. Run ./build/mvn clean package" >&2
   exit 1
 fi
 
-export KYUUBI_JAR=${KYUUBI_JAR_DIR}/"$(ls ${KYUUBI_JAR_DIR} |grep kyuubi- | grep .jar)"
+export KYUUBI_JAR=${KYUUBI_JAR_DIR}/"$(ls ${KYUUBI_JAR_DIR} | grep kyuubi-server | grep -v original | grep .jar)"
 
 echo "Kyuubi Server: jar founded:" ${KYUUBI_JAR} >&2
 
-if [ "$KYUUBI_SUBMIT_ENABLE" == "true" ]; then
+if [[ "$KYUUBI_SUBMIT_ENABLE" == "true" ]]; then
   exec "${KYUUBI_HOME}"/bin/kyuubi-daemon.sh start ${CLASS} 1 "$@" "$KYUUBI_JAR"
 else
   exec "${SPARK_HOME}"/sbin/spark-daemon.sh submit ${CLASS} 1 "$@" "$KYUUBI_JAR"

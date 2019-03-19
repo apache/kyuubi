@@ -64,6 +64,7 @@ object KyuubiSparkUtil extends Logging {
   val ACCESS_NNS: String = SPARK_YARN_PREFIX + "access.namenodes"
   val ACCESS_FSS: String = SPARK_YARN_PREFIX + "access.hadoopFileSystems"
   val STAGING_DIR: String = SPARK_YARN_PREFIX + "stagingDir"
+  val SPARK_YARN_DIST_JARS: String = SPARK_YARN_PREFIX + "dist.jars"
 
   // DRIVER
   val DRIVER_BIND_ADDR: String = SPARK_PREFIX + DRIVER_PREFIX + "bindAddress"
@@ -322,7 +323,38 @@ object KyuubiSparkUtil extends Logging {
       // ForkJoinPool which points to another calling context. Turn off parallel listing seems
       // to be a solution to this issue.
       conf.setIfMissing(RDD_PAR_LISTING, Int.MaxValue.toString)
+
+      val sparkTokenProviders = List("hdfs", "hadoopfs", "hive", "hbase")
+      val tokenProviderPattens = List(
+        "spark.yarn.security.tokens.%s.enabled",
+        "spark.yarn.security.credentials.%s.enabled",
+        "spark.security.credentials.%s.enabled")
+      // Set kyuubi credential renewer on, if we do not explicitly turn it off.
+      tokenProviderPattens.map(_.format("kyuubi")).foreach(conf.setIfMissing(_, "true"))
+      // Force to turn off Spark's internal token providers, because all useful works will be done
+      // in KyuubiServiceCredentialProvider, and those ones in Spark always have impersonation
+      // issue while renew tokens
+      sparkTokenProviders.foreach  { service =>
+          tokenProviderPattens.map(_.format(service)).foreach {
+            conf.set(_, "false")
+          }
+      }
     }
+
+    val kyuubiJar = Option(System.getenv("KYUUBI_JAR")).getOrElse("")
+    val distJars = conf.getOption(SPARK_YARN_DIST_JARS) match {
+      case Some(jars) if jars.nonEmpty =>
+        if (kyuubiJar != null && kyuubiJar.nonEmpty) jars + "," + kyuubiJar else jars
+      case _ => kyuubiJar
+    }
+
+    conf.set(SPARK_YARN_DIST_JARS, distJars)
+    // We should obey our client side hadoop settings while running Kyuubi towards HDFS
+    // federations with maybe only on Yarn cluster
+    // see https://github.com/apache/spark/pull/24120
+    val hadoopConf = newConfiguration(conf)
+    Option(hadoopConf.get("fs.defaultFS"))
+      .foreach(conf.setIfMissing("spark.hadoop.fs.defaultFS", _))
   }
 
   @tailrec
