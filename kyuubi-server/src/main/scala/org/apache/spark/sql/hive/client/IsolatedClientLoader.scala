@@ -63,13 +63,24 @@ private[hive] class IsolatedClientLoader(
   assert(Try(rootClassLoader.loadClass("org.apache.hadoop.hive.conf.HiveConf")).isFailure)
 
   /**
-   * The classloader that is used to load an isolated version of Hive.
+   * (Kent Yao) Different with Spark internal which use an isolated classloader to support different
+   * Hive versions, Kyuubi believe that the hive 1.2.1 is capable to support 1.2 or higher version
+   * Hive metastore servers and the elder hive client versions are not worth to support.
+   *
+   * ANOTHER reason here we close the isolation is because Spark don't expose authorization
+   * functions in [[HiveClient]], which is unable to invoke these methods in different classloaders
+   *
+   * Besides, [[HiveClient]] in normal Spark applications is globally one instance, so this
+   * classloader could/should be non-closeable. But in Kyuubi, this is a session level object
+   * associated with one KyuubiSession/SparkSession, thus, this classloader should be closeable to
+   * support class unloading.
+   *
    * This classloader is a special URLClassLoader that exposes the addURL method.
    * So, when we add jar, we can add this new jar directly through the addURL method
    * instead of stacking a new URLClassLoader on top of it.
    */
   private[hive] val classLoader: MutableURLClassLoader = {
-    new NonClosableMutableURLClassLoader(baseClassLoader)
+    new MutableURLClassLoader(Array.empty, baseClassLoader)
   }
 
   private[hive] def addJar(path: URL): Unit = {
@@ -88,7 +99,7 @@ private[hive] class IsolatedClientLoader(
         sparkConf,
         hadoopConf,
         config,
-        baseClassLoader,
+        classLoader,
         this).asInstanceOf[HiveClientImpl]
     } else {
       ctor.newInstance(
@@ -96,7 +107,7 @@ private[hive] class IsolatedClientLoader(
         sparkConf,
         hadoopConf,
         config,
-        baseClassLoader,
+        classLoader,
         this).asInstanceOf[HiveClientImpl]
     }
 
