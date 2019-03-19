@@ -311,6 +311,13 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
     val conf3 = new SparkConf(loadDefaults = true).set(KyuubiSparkUtil.METASTORE_JARS, "builtin")
     KyuubiSparkUtil.setupCommonConfig(conf3)
     assert(conf.get(KyuubiSparkUtil.METASTORE_JARS) === "builtin")
+    assert(conf3.get(KyuubiSparkUtil.SPARK_YARN_DIST_JARS) ===
+      Option(System.getenv("KYUUBI_JAR")).getOrElse(""))
+    conf3.set(KyuubiSparkUtil.SPARK_YARN_DIST_JARS, "1.jar,2.jar")
+    KyuubiSparkUtil.setupCommonConfig(conf3)
+    assert(conf3.get(KyuubiSparkUtil.SPARK_YARN_DIST_JARS).startsWith("1.jar,2.jar"))
+    assert(conf3.get(KyuubiSparkUtil.SPARK_YARN_DIST_JARS)
+      .endsWith(Option(System.getenv("KYUUBI_JAR")).getOrElse("")))
   }
 
   test("find cause") {

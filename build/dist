@@ -80,23 +80,23 @@ while (( "$#" )); do
   shift
 done
 # Setup java
-if [ -z "$JAVA_HOME" ]; then
-  if [ `command -v java` ]; then
+if [[ -z "$JAVA_HOME" ]]; then
+  if [[ `command -v java` ]]; then
     # If java is in /usr/bin/java, we want /usr
     JAVA_HOME="$(dirname $(dirname $(which java)))"
   fi
 fi
 
-if [ -z "$JAVA_HOME" ]; then
+if [[ -z "$JAVA_HOME" ]]; then
   echo "Error: JAVA_HOME is not set, cannot proceed."
   exit -1
 fi
 
 echo "JAVA_HOME is set to $JAVA_HOME"
 
-if [ $(command -v git) ]; then
+if [[ $(command -v git) ]]; then
     GITREV=$(git rev-parse --short HEAD 2>/dev/null || :)
-    if [ ! -z "$GITREV" ]; then
+    if [[ ! -z "$GITREV" ]]; then
         GITREVSTRING="(git revision $GITREV)"
     fi
     unset GITREV
@@ -114,11 +114,11 @@ SPARK_VERSION=$("$MVN" help:evaluate -Dexpression=spark.version $@ 2>/dev/null\
 
 echo "Building Kyuubi package of version $VERSION against Spark version - $SPARK_VERSION"
 
-if [ "$NAME" == "none" ]; then
+if [[ "$NAME" == "none" ]]; then
   NAME="spark-"$SPARK_VERSION
 fi
 
-if [ "$MAKE_TGZ" == "true" ]; then
+if [[ "$MAKE_TGZ" == "true" ]]; then
   echo "Making kyuubi-$VERSION-bin-$NAME.tar.gz"
 else
   echo "Making distribution for Kyuubi $VERSION named $NAME in '$DISTDIR'..."
@@ -139,13 +139,14 @@ echo "Build flags: $@" >> "$DISTDIR/RELEASE"
 
 # Copy jar
 cp "$KYUUBI_HOME/kyuubi-server/target/kyuubi-server-$VERSION.jar" "$DISTDIR/lib/"
+
 # Copy license and ASF files
 cp "$KYUUBI_HOME/LICENSE" "$DISTDIR"
 cp -r "$KYUUBI_HOME/bin" "$DISTDIR"
 cp -r "$KYUUBI_HOME/docs" "$DISTDIR"
 
 
-if [ "$MAKE_TGZ" == "true" ]; then
+if [[ "$MAKE_TGZ" == "true" ]]; then
   TARDIR_NAME=kyuubi-$VERSION-bin-$NAME
   TARDIR="$KYUUBI_HOME/$TARDIR_NAME"
   rm -rf "$TARDIR"

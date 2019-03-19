@@ -27,6 +27,7 @@ import org.apache.spark.scheduler.local.LocalSchedulerBackend
 import org.scalatest.BeforeAndAfterEach
 
 import yaooqinn.kyuubi.utils.ReflectUtils
+import yaooqinn.kyuubi.Logging
 
 class KyuubiSparkExecutorUtilsSuite
   extends SparkFunSuite with BeforeAndAfterEach {
@@ -49,6 +50,10 @@ class KyuubiSparkExecutorUtilsSuite
       sc.stop()
     }
     super.afterEach()
+  }
+
+  test("logging") {
+    assert(KyuubiSparkExecutorUtils.isInstanceOf[Logging])
   }
 
   test("populate tokens for non CoarseGrainedSchedulerBackend") {
