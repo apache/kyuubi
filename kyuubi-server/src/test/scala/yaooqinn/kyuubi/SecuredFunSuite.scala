@@ -26,7 +26,8 @@ import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 trait SecuredFunSuite {
 
   var kdc: MiniKdc = null
-  val baseDir = KyuubiSparkUtil.createTempDir("kyuubi-kdc")
+  val baseDir = KyuubiSparkUtil.createTempDir(
+    this.getClass.getProtectionDomain.getCodeSource.getLocation.getPath, "kyuubi-kdc")
   try {
     val kdcConf = MiniKdc.createConf()
     kdcConf.setProperty(MiniKdc.INSTANCE, "KyuubiKrbServer")

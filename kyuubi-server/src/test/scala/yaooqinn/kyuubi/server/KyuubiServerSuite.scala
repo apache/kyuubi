@@ -101,7 +101,8 @@ class KyuubiServerSuite extends SparkFunSuite with BeforeAndAfterEach {
   test("disable fs caches for secured cluster") {
 
     var kdc: MiniKdc = null
-    val baseDir = KyuubiSparkUtil.createTempDir(namePrefix = "kyuubi-kdc")
+    val baseDir = KyuubiSparkUtil.createTempDir(
+      this.getClass.getProtectionDomain.getCodeSource.getLocation.getPath, "kyuubi-kdc")
     try {
       val kdcConf = MiniKdc.createConf()
       kdcConf.setProperty(MiniKdc.INSTANCE, "KyuubiKrbServer")

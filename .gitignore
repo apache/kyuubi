@@ -22,6 +22,9 @@
 .settings
 build/apache-maven*
 build/scala*
+build/test
+kyuubi-server/build
+kyuubi-server/*example*
 target/
 dist/
 kyuubi-*-bin-*
