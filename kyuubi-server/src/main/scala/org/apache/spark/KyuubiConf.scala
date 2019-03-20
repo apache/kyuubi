@@ -385,6 +385,27 @@ object KyuubiConf {
       .booleanConf
     .createWithDefault(false)
 
+  val OPERATION_INCREMENTAL_COLLECT_PARTITION_ROWS: ConfigEntry[Int] =
+    KyuubiConfigBuilder("spark.kyuubi.operation.incremental.collect.partition.rows")
+      .doc("In incremental result collection, Spark will run job not task on a single partition," +
+        " which sequentially get results one partition by one to the driver. we use this" +
+        " configuration and the total size of the query output to calculate the partition number" +
+        " to coalesce to")
+      .intConf
+      .createWithDefault(20000)
+
+  val OPERATION_INCREMENTAL_COLLECT_COALESCE_LIMIT: ConfigEntry[Int] =
+    KyuubiConfigBuilder("spark.kyuubi.operation.incremental.collect.coalesce.limit")
+      .doc("Use Math.min(`total size of the query output` / `spark.kyuubi.operation.incremental." +
+        "collect.partition.rows`, `spark.kyuubi.operation.incremental.collect.coalesce.limit`) to" +
+        " limit the total number of jobs. In case of OutOfMemoryError happens frequently in" +
+        " executor side which lead to job failures, we suggest to increase this number and may" +
+        " also need to reduce `spark.kyuubi.operation.incremental.collect.partition.rows`." +
+        " Otherwise for performance reasons, limit this setting to control the size of sequential" +
+        " Spark jobs")
+      .intConf
+      .createWithDefault(200)
+
   val OPERATION_RESULT_LIMIT: ConfigEntry[Int] =
     KyuubiConfigBuilder("spark.kyuubi.operation.result.limit")
       .doc("In non-incremental result collection mode, set this to a positive value to limit the" +

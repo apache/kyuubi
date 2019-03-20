@@ -40,6 +40,7 @@ import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.{AddFileCommand, AddJarCommand, CreateFunctionCommand}
 import org.apache.spark.sql.types._
+import org.apache.spark.storage.StorageLevel
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.cli.FetchOrientation
@@ -382,7 +383,11 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       debug(result.queryExecution.toString())
       iter = if (incrementalCollect) {
         info("Executing query in incremental collection mode")
-        result.toLocalIterator().asScala
+        val limit = math.max(conf.get(OPERATION_INCREMENTAL_COLLECT_COALESCE_LIMIT).toInt, 1)
+        val partRows = conf.get(OPERATION_INCREMENTAL_COLLECT_PARTITION_ROWS).toInt
+        val outputSize = result.persist(StorageLevel.MEMORY_AND_DISK).count()
+        val count = math.min(math.max(outputSize / partRows, 1), limit)
+        result.coalesce(count.toInt).toLocalIterator().asScala
       } else {
         val resultLimit = conf.get(OPERATION_RESULT_LIMIT).toInt
         if (resultLimit >= 0) {
