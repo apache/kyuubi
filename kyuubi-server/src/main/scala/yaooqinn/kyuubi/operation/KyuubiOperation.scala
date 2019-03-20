@@ -384,17 +384,17 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       debug(result.queryExecution.toString())
       iter = if (incrementalCollect) {
         info("Executing query in incremental collection mode")
-        val limit = math.max(conf.get(OPERATION_INCREMENTAL_COLLECT_COALESCE_LIMIT).toInt, 1)
+        val limit = result.rdd.getNumPartitions
         val partRows = conf.get(OPERATION_INCREMENTAL_COLLECT_PARTITION_ROWS).toInt
         val count = Try { result.persist(StorageLevel.MEMORY_AND_DISK).count() } match {
           case Success(outputSize) =>
             val num = math.min(math.max(outputSize / partRows, 1), limit)
             info(s"The total query output is $outputSize and will be coalesced to $num of" +
-              s" partitions")
+              s" partitions with $partRows rows on average")
             num
           case _ =>
             warn("Failed to calculate the query output size, do not coalesce")
-            Int.MaxValue
+            limit
         }
         result.coalesce(count.toInt).toLocalIterator().asScala
       } else {

@@ -18,12 +18,11 @@
 package yaooqinn.kyuubi.server
 
 import java.net.InetAddress
-import java.util.UUID
 
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.cli.thrift._
-import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
+import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import org.apache.spark.KyuubiConf._
 import org.scalatest.Matchers
 
@@ -256,7 +255,7 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
   }
 
   test("alter database") {
-    withFEServiceAndHandle { (fe, handle) =>
+    val block: (FrontendService, TSessionHandle) => Unit = (fe, handle) => {
       val req = new TExecuteStatementReq(handle,
         "alter database default set dbproperties ('kent'='yao')")
       val resp = fe.ExecuteStatement(req)
@@ -269,10 +268,12 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       tFetchResultsResp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
       tFetchResultsResp.getResults.getRows.size() should be(0)
     }
+    withFEServiceAndHandle(block)
+    withFEServiceAndHandleInc(block)
   }
 
   test("alter schema") {
-    withFEServiceAndHandle { (fe, handle) =>
+    val block: (FrontendService, TSessionHandle) => Unit = (fe, handle) => {
       val req = new TExecuteStatementReq(handle,
         "alter schema default set dbproperties ('kent'='yao')")
       val resp = fe.ExecuteStatement(req)
@@ -286,10 +287,12 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       tFetchResultsResp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
       tFetchResultsResp.getResults.getRows.size() should be(0)
     }
+    withFEServiceAndHandle(block)
+    withFEServiceAndHandleInc(block)
   }
 
   test("alter table name") {
-    withFEServiceAndHandle { (fe, handle) =>
+    val block: (FrontendService, TSessionHandle) => Unit = (fe, handle) => {
       val ct = new TExecuteStatementReq(handle, "create table default.src(key int) using parquet")
       fe.ExecuteStatement(ct)
       Thread.sleep(5000)
@@ -306,10 +309,12 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       tFetchResultsResp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
       tFetchResultsResp.getResults.getRows.size() should be(0)
     }
+    withFEServiceAndHandle(block)
+    withFEServiceAndHandleInc(block)
   }
 
   test("alter table set properties") {
-    withFEServiceAndHandle { (fe, handle) =>
+    val block: (FrontendService, TSessionHandle) => Unit = (fe, handle) => {
       val ct = new TExecuteStatementReq(handle, "create table default.src(key int) using parquet")
       fe.ExecuteStatement(ct)
       Thread.sleep(5000)
@@ -326,6 +331,8 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       tFetchResultsResp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
       tFetchResultsResp.getResults.getRows.size() should be(0)
     }
+    withFEServiceAndHandle(block)
+    withFEServiceAndHandleInc(block)
   }
 
   test("alter table unset properties") {
@@ -402,6 +409,22 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       feService.init(conf)
       feService.start()
       val req = new TOpenSessionReq(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
+      val resp = feService.OpenSession(req)
+      resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+      val handle = resp.getSessionHandle
+      block(feService, handle)
+    } finally {
+      feService.stop()
+    }
+  }
+
+  def withFEServiceAndHandleInc(block: (FrontendService, TSessionHandle) => Unit): Unit = {
+    val feService = new FrontendService(beService)
+    try {
+      feService.init(conf)
+      feService.start()
+      val req = new TOpenSessionReq(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
+      req.setConfiguration(Map(KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key -> "true").asJava)
       val resp = feService.OpenSession(req)
       resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
       val handle = resp.getSessionHandle
