@@ -23,6 +23,7 @@ import java.util.UUID
 import java.util.concurrent.{Future, RejectedExecutionException}
 
 import scala.collection.JavaConverters._
+import scala.util.{Success, Try}
 import scala.util.control.NonFatal
 
 import org.apache.commons.lang3.StringUtils
@@ -385,8 +386,16 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
         info("Executing query in incremental collection mode")
         val limit = math.max(conf.get(OPERATION_INCREMENTAL_COLLECT_COALESCE_LIMIT).toInt, 1)
         val partRows = conf.get(OPERATION_INCREMENTAL_COLLECT_PARTITION_ROWS).toInt
-        val outputSize = result.persist(StorageLevel.MEMORY_AND_DISK).count()
-        val count = math.min(math.max(outputSize / partRows, 1), limit)
+        val count = Try { result.persist(StorageLevel.MEMORY_AND_DISK).count() } match {
+          case Success(outputSize) =>
+            val num = math.min(math.max(outputSize / partRows, 1), limit)
+            info(s"The total query output is $outputSize and will be coalesced to $num of" +
+              s" partitions")
+            num
+          case _ =>
+            warn("Failed to calculate the query output size, do not coalesce")
+            Int.MaxValue
+        }
         result.coalesce(count.toInt).toLocalIterator().asScala
       } else {
         val resultLimit = conf.get(OPERATION_RESULT_LIMIT).toInt
