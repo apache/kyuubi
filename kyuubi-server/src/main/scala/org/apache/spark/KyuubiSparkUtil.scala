@@ -84,6 +84,10 @@ object KyuubiSparkUtil extends Logging {
   val MULTIPLE_CONTEXTS: String = SPARK_PREFIX + DRIVER_PREFIX + "allowMultipleContexts"
   val MULTIPLE_CONTEXTS_DEFAULT = "true"
 
+  // Shuffle
+  val PREFER_DIRECTBUF: String = SPARK_PREFIX + "shuffle." + "io.preferDirectBufs"
+  val PREFER_DIRECTBUF_DEFAULT = "false"
+
   // Spark SQL
   val CATALOG_IMPL: String = SPARK_PREFIX + SQL_PREFIX + "catalogImplementation"
   val CATALOG_IMPL_DEFAULT = "hive"
@@ -295,6 +299,7 @@ object KyuubiSparkUtil extends Logging {
     // Set missing Kyuubi configs to SparkConf
     KyuubiConf.getAllDefaults.foreach(kv => conf.setIfMissing(kv._1, kv._2))
 
+    conf.setIfMissing(PREFER_DIRECTBUF, PREFER_DIRECTBUF_DEFAULT)
     conf.setIfMissing(SPARK_LOCAL_DIR, conf.get(KyuubiConf.BACKEND_SESSION_LOCAL_DIR.key))
     conf.setIfMissing(GC_INTERVAL, GC_INTERVAL_DEFAULT)
     if (UserGroupInformation.isSecurityEnabled) {
