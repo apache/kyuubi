@@ -248,6 +248,7 @@ object KyuubiSparkUtil extends Logging {
   }
 
   def setActiveSparkContext(sc: SparkContext): Unit = {
+    info(s"Application ${sc.applicationId} has been activated")
     SparkContext.setActiveContext(sc, allowMultipleContexts = true)
   }
 

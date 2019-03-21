@@ -410,7 +410,8 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     } catch {
       case e: KyuubiSQLException =>
         if (!isClosedOrCanceled) {
-          onStatementError(statementId, e.getMessage, KyuubiSparkUtil.exceptionString(e))
+          val err = KyuubiSparkUtil.exceptionString(e)
+          onStatementError(statementId, e.getMessage, err)
           throw e
         }
       case e: ParseException =>
