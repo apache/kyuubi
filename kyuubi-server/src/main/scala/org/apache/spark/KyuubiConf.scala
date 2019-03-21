@@ -385,8 +385,16 @@ object KyuubiConf {
       .booleanConf
     .createWithDefault(false)
 
-  val OPERATION_INCREMENTAL_COLLECT_PARTITION_ROWS: ConfigEntry[Int] =
-    KyuubiConfigBuilder("spark.kyuubi.operation.incremental.collect.partition.rows")
+  val OPERATION_INCREMENTAL_RDD_PARTITIONS_LIMIT: ConfigEntry[Int] =
+    KyuubiConfigBuilder("spark.kyuubi.operation.incremental.rdd.partitions.limit")
+      .doc("In incremental result collection, when the partition number of the rdd underlying the" +
+        " query is great than this setting, Kyuubi will try to coalesce first before calling" +
+        " toLocalIterator")
+      .intConf
+      .createWithDefault(50)
+
+  val OPERATION_INCREMENTAL_PARTITION_ROWS: ConfigEntry[Int] =
+    KyuubiConfigBuilder("spark.kyuubi.operation.incremental.partition.rows")
       .doc("In incremental result collection, Spark will run job not task on a single partition," +
         " which sequentially get results one partition by one to the driver. we use this" +
         " configuration and the total size of the query output to calculate the partition number" +

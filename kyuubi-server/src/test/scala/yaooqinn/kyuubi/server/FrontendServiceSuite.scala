@@ -270,6 +270,7 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
     }
     withFEServiceAndHandle(block)
     withFEServiceAndHandleInc(block)
+    withFEServiceAndHandleIncAndCal(block)
   }
 
   test("alter schema") {
@@ -289,6 +290,7 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
     }
     withFEServiceAndHandle(block)
     withFEServiceAndHandleInc(block)
+    withFEServiceAndHandleIncAndCal(block)
   }
 
   test("alter table name") {
@@ -448,7 +450,28 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       feService.start()
       val req = new TOpenSessionReq(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
       req.setUsername(user)
-      req.setConfiguration(Map(KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key -> "true").asJava)
+      req.setConfiguration(
+        Map("set:hivevar:" + KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key -> "true").asJava)
+      val resp = feService.OpenSession(req)
+      resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+      val handle = resp.getSessionHandle
+      block(feService, handle)
+    } finally {
+      feService.stop()
+    }
+  }
+
+  def withFEServiceAndHandleIncAndCal(block: (FrontendService, TSessionHandle) => Unit): Unit = {
+    val feService = new FrontendService(beService)
+    try {
+      feService.init(conf)
+      feService.start()
+      val req = new TOpenSessionReq(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
+      req.setUsername(user)
+      req.setConfiguration(
+        Map("set:hivevar:" + KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key -> "true",
+          "set:hivevar:" + KyuubiConf.OPERATION_INCREMENTAL_RDD_PARTITIONS_LIMIT.key -> "-1")
+          .asJava)
       val resp = feService.OpenSession(req)
       resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
       val handle = resp.getSessionHandle

@@ -41,7 +41,6 @@ import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.{AddFileCommand, AddJarCommand, CreateFunctionCommand}
 import org.apache.spark.sql.types._
-import org.apache.spark.storage.StorageLevel
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.cli.FetchOrientation
@@ -383,20 +382,27 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       }
       debug(result.queryExecution.toString())
       iter = if (incrementalCollect) {
-        info("Executing query in incremental collection mode")
-        val limit = result.rdd.getNumPartitions
-        val partRows = conf.get(OPERATION_INCREMENTAL_COLLECT_PARTITION_ROWS).toInt
-        val count = Try { result.persist(StorageLevel.MEMORY_AND_DISK).count() } match {
-          case Success(outputSize) =>
-            val num = math.min(math.max(outputSize / partRows, 1), limit)
-            info(s"The total query output is $outputSize and will be coalesced to $num of" +
-              s" partitions with $partRows rows on average")
-            num
-          case _ =>
-            warn("Failed to calculate the query output size, do not coalesce")
-            limit
+        val numParts = result.rdd.getNumPartitions
+        info(s"Executing query in incremental mode, running $numParts jobs before optimization")
+        val limit = conf.get(OPERATION_INCREMENTAL_RDD_PARTITIONS_LIMIT).toInt
+        if (numParts > limit) {
+          val partRows = conf.get(OPERATION_INCREMENTAL_PARTITION_ROWS).toInt
+          val count = Try { result.persist.count() } match {
+            case Success(outputSize) =>
+              val num = math.min(math.max(outputSize / partRows, 1), numParts)
+              info(s"The total query output is $outputSize and will be coalesced to $num of" +
+                s" partitions with $partRows rows on average")
+              num
+            case _ =>
+              warn("Failed to calculate the query output size, do not coalesce")
+              numParts
+          }
+          info(s"Executing query in incremental mode, running $count jobs after optimization")
+          result.coalesce(count.toInt).toLocalIterator().asScala
+        } else {
+          info(s"Executing query in incremental mode, running $numParts jobs without optimization")
+          result.toLocalIterator().asScala
         }
-        result.coalesce(count.toInt).toLocalIterator().asScala
       } else {
         val resultLimit = conf.get(OPERATION_RESULT_LIMIT).toInt
         if (resultLimit >= 0) {
