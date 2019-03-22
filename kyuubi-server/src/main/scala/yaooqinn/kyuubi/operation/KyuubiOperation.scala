@@ -201,7 +201,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     }
   }
 
-  private[this] def cleanupOperationLog(): Unit = {
+  private def cleanupOperationLog(): Unit = {
     if (isOperationLogEnabled) {
       if (operationLog == null) {
         error("Operation [ " + opHandle.getHandleIdentifier + " ] " +

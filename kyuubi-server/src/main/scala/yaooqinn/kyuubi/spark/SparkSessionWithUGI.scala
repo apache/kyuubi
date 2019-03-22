@@ -172,8 +172,13 @@ class SparkSessionWithUGI(
     } catch {
       case e: Exception =>
         if (conf.getOption("spark.master").contains("yarn")) {
-          KyuubiHadoopUtil.doAs(user) {
-            KyuubiHadoopUtil.killYarnAppByName(appName)
+          try {
+            KyuubiHadoopUtil.doAs(user) {
+              KyuubiHadoopUtil.killYarnAppByName(appName)
+            }
+          } catch {
+            case e: Exception =>
+              warn(s"Failed to stop $userName's Application $appName", findCause(e))
           }
         }
         stopContext()
