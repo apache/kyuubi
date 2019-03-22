@@ -77,8 +77,7 @@ private[kyuubi] object KyuubiHadoopUtil extends Logging {
     try {
       doAs(user)(f)
     } catch {
-      case NonFatal(e) =>
-        error(s"Failed to operate as ${user.getShortUserName}", e)
+      case NonFatal(e) => error(s"Failed to operate as ${user.getShortUserName}", e)
     }
   }
 
