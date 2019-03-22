@@ -77,13 +77,18 @@ class KyuubiHadoopUtilSuite extends SparkFunSuite with BeforeAndAfterEach {
       UserGroupInformation.getCurrentUser.getShortUserName == expectedUser
     }
 
-    KyuubiHadoopUtil.doAs(user1) {
-      assert(testf(userName1))
+    def testf2(expectedUser: String): Boolean = {
+      throw new RuntimeException("testf2")
     }
 
-    KyuubiHadoopUtil.doAs(user2) {
-      assert(testf(userName2))
-    }
+    KyuubiHadoopUtil.doAs(user1)(assert(testf(userName1)))
+    val e1 = intercept[RuntimeException](KyuubiHadoopUtil.doAs(user1)(assert(testf2(userName1))))
+    assert(e1.getMessage === "testf2")
+
+    KyuubiHadoopUtil.doAsAndLogNonFatal(user1)(assert(testf(userName1)))
+    KyuubiHadoopUtil.doAsAndLogNonFatal(user1)(assert(testf2(userName1)))
+
+    KyuubiHadoopUtil.doAs(user2)(assert(testf(userName2)))
 
     KyuubiHadoopUtil.doAs(user1) {
       KyuubiHadoopUtil.doAsRealUser {
@@ -97,7 +102,7 @@ class KyuubiHadoopUtilSuite extends SparkFunSuite with BeforeAndAfterEach {
       }
     }
   }
-
+  
   test("get applications") {
     withYarnApplication { id =>
       assert(KyuubiHadoopUtil.getApplications.head.getApplicationId === id)
