@@ -18,7 +18,8 @@
 package yaooqinn.kyuubi.utils
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.hadoop.yarn.api.records.{ApplicationId, ContainerLaunchContext, Resource, YarnApplicationState}
+import org.apache.hadoop.yarn.api.records._
+import org.apache.hadoop.yarn.api.records.impl.pb.ApplicationReportPBImpl
 import org.apache.hadoop.yarn.client.api.YarnClient
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.server.MiniYARNCluster
@@ -52,6 +53,12 @@ class KyuubiHadoopUtilSuite extends SparkFunSuite with BeforeAndAfterEach {
     super.beforeEach()
   }
 
+  test("kill yarn app") {
+    val report = new ApplicationReportPBImpl()
+    KyuubiHadoopUtil.killYarnApp(report)
+    intercept[NullPointerException](KyuubiHadoopUtil.killYarnApp(null))
+  }
+
   test("kill yarn application by name") {
     withYarnApplication { id =>
       KyuubiHadoopUtil.killYarnAppByName(id.toString)
@@ -67,7 +74,6 @@ class KyuubiHadoopUtilSuite extends SparkFunSuite with BeforeAndAfterEach {
   }
 
   test("do as") {
-
     val user1 = UserGroupInformation.getCurrentUser
     val userName1 = user1.getShortUserName
     val userName2 = "test"
@@ -77,13 +83,27 @@ class KyuubiHadoopUtilSuite extends SparkFunSuite with BeforeAndAfterEach {
       UserGroupInformation.getCurrentUser.getShortUserName == expectedUser
     }
 
-    KyuubiHadoopUtil.doAs(user1) {
-      assert(testf(userName1))
+    def testf2(expectedUser: String): Boolean = {
+      throw new RuntimeException("testf2")
     }
 
-    KyuubiHadoopUtil.doAs(user2) {
-      assert(testf(userName2))
+    def testf3(expectedUser: String): Boolean = {
+      throw new OutOfMemoryError("testf3")
     }
+
+    KyuubiHadoopUtil.doAs(user1)(assert(testf(userName1)))
+    val e1 = intercept[RuntimeException](KyuubiHadoopUtil.doAs(user1)(assert(testf2(userName1))))
+    assert(e1.getMessage === "testf2")
+    val e2 = intercept[OutOfMemoryError](KyuubiHadoopUtil.doAs(user1)(assert(testf3(userName1))))
+    assert(e2.getMessage === "testf3")
+
+    KyuubiHadoopUtil.doAsAndLogNonFatal(user1)(assert(testf(userName1)))
+    KyuubiHadoopUtil.doAsAndLogNonFatal(user1)(assert(testf2(userName1)))
+    val e3 = intercept[OutOfMemoryError](
+      KyuubiHadoopUtil.doAsAndLogNonFatal(user1)(assert(testf3(userName1))))
+    assert(e3.getMessage === "testf3")
+
+    KyuubiHadoopUtil.doAs(user2)(assert(testf(userName2)))
 
     KyuubiHadoopUtil.doAs(user1) {
       KyuubiHadoopUtil.doAsRealUser {

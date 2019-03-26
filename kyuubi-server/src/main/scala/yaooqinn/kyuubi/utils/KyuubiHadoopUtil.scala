@@ -21,12 +21,14 @@ import java.lang.reflect.UndeclaredThrowableException
 import java.security.PrivilegedExceptionAction
 
 import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState._
 import org.apache.hadoop.yarn.client.api.YarnClient
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.spark.KyuubiSparkUtil
 
 import yaooqinn.kyuubi.Logging
 
@@ -67,7 +69,15 @@ private[kyuubi] object KyuubiHadoopUtil extends Logging {
         override def run(): T = f
       })
     } catch {
-      case e: UndeclaredThrowableException => throw Option(e.getCause).getOrElse(e)
+      case NonFatal(e) => throw KyuubiSparkUtil.findCause(e)
+    }
+  }
+
+  def doAsAndLogNonFatal(user: UserGroupInformation)(f: => Unit): Unit = {
+    try {
+      doAs(user)(f)
+    } catch {
+      case NonFatal(e) => error(s"Failed to operate as ${user.getShortUserName}", e)
     }
   }
 
