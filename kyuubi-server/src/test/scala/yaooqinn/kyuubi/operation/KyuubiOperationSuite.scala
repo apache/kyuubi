@@ -190,4 +190,21 @@ class KyuubiOperationSuite extends SparkFunSuite with MockitoSugar {
     val e3 = intercept[KyuubiSQLException](op.transform(plan5))
     assert(e3.getMessage.startsWith("Resource Type"))
   }
+
+  test("is closed or canceled") {
+    val op = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, statement)
+    assert(!op.isClosedOrCanceled)
+    op.cancel()
+    assert(op.isClosedOrCanceled)
+    op.close()
+    assert(op.isClosedOrCanceled)
+    val op2 = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, statement)
+    op2.close()
+    assert(op2.isClosedOrCanceled)
+    val op3 = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, null)
+    op3.cancel()
+    op3.close()
+    assert(op3.isClosedOrCanceled)
+
+  }
 }

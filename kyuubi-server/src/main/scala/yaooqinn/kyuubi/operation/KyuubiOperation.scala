@@ -23,6 +23,7 @@ import java.util.UUID
 import java.util.concurrent.{Future, RejectedExecutionException}
 
 import scala.collection.JavaConverters._
+import scala.util.{Success, Try}
 import scala.util.control.NonFatal
 
 import org.apache.commons.lang3.StringUtils
@@ -200,7 +201,7 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     }
   }
 
-  private[this] def cleanupOperationLog(): Unit = {
+  private def cleanupOperationLog(): Unit = {
     if (isOperationLogEnabled) {
       if (operationLog == null) {
         error("Operation [ " + opHandle.getHandleIdentifier + " ] " +
@@ -381,8 +382,27 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
       }
       debug(result.queryExecution.toString())
       iter = if (incrementalCollect) {
-        info("Executing query in incremental collection mode")
-        result.toLocalIterator().asScala
+        val numParts = result.rdd.getNumPartitions
+        info(s"Executing query in incremental mode, running $numParts jobs before optimization")
+        val limit = conf.get(OPERATION_INCREMENTAL_RDD_PARTITIONS_LIMIT).toInt
+        if (numParts > limit) {
+          val partRows = conf.get(OPERATION_INCREMENTAL_PARTITION_ROWS).toInt
+          val count = Try { result.persist.count() } match {
+            case Success(outputSize) =>
+              val num = math.min(math.max(outputSize / partRows, 1), numParts)
+              info(s"The total query output is $outputSize and will be coalesced to $num of" +
+                s" partitions with $partRows rows on average")
+              num
+            case _ =>
+              warn("Failed to calculate the query output size, do not coalesce")
+              numParts
+          }
+          info(s"Executing query in incremental mode, running $count jobs after optimization")
+          result.coalesce(count.toInt).toLocalIterator().asScala
+        } else {
+          info(s"Executing query in incremental mode, running $numParts jobs without optimization")
+          result.toLocalIterator().asScala
+        }
       } else {
         val resultLimit = conf.get(OPERATION_RESULT_LIMIT).toInt
         if (resultLimit >= 0) {
@@ -396,7 +416,8 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
     } catch {
       case e: KyuubiSQLException =>
         if (!isClosedOrCanceled) {
-          onStatementError(statementId, e.getMessage, KyuubiSparkUtil.exceptionString(e))
+          val err = KyuubiSparkUtil.exceptionString(e)
+          onStatementError(statementId, e.getMessage, err)
           throw e
         }
       case e: ParseException =>
