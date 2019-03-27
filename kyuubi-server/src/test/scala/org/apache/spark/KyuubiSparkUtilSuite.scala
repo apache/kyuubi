@@ -17,6 +17,8 @@
 
 package org.apache.spark
 
+import com.google.common.io.Files
+import java.io.File
 import java.lang.reflect.{InvocationTargetException, UndeclaredThrowableException}
 import java.net.URL
 import java.security.PrivilegedExceptionAction
@@ -355,5 +357,18 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
     KyuubiSparkUtil.setActiveSparkContext(sc1)
     assert(SparkContext.getActive.contains(sc1))
     SparkContext.clearActiveContext()
+  }
+
+  test("test delete dir recursively") {
+    val path = KyuubiSparkUtil.createTempDir()
+    assert(path.listFiles().length === 0)
+    val pathPrefix = path.getAbsolutePath + File.separator
+    Files.write("tmpFile".getBytes(), new File(pathPrefix + "tmp"))
+    val tmpDir = new File(pathPrefix + "tmpDir")
+    tmpDir.mkdir()
+    Files.write("tmpDirFile".getBytes(), new File(tmpDir.getAbsolutePath + File.separator + "tmp"))
+    assert(path.listFiles().length === 2)
+    KyuubiSparkUtil.deleteRecursively(path)
+    assert(!path.exists())
   }
 }

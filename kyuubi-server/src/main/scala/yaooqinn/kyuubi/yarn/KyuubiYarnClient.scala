@@ -335,18 +335,7 @@ private[yarn] class KyuubiYarnClient(conf: SparkConf) extends Logging {
       new File(KyuubiSparkUtil.getLocalDir(conf)))
     val jarsStream = new ZipOutputStream(new FileOutputStream(jarsArchive))
 
-    try {
-      jarsStream.setLevel(0)
-      jarsDir.listFiles().foreach { f =>
-        if (f.isFile && f.getName.toLowerCase(Locale.ROOT).endsWith(".jar") && f.canRead) {
-          jarsStream.putNextEntry(new ZipEntry(f.getName))
-          Files.copy(f, jarsStream)
-          jarsStream.closeEntry()
-        }
-      }
-    } finally {
-      jarsStream.close()
-    }
+    putJarsDirToJarsStream(jarsDir, jarsStream)
 
     upload(jarsArchive.toURI.getPath, resType = LocalResourceType.ARCHIVE,
       destName = Some(SPARK_LIB_DIR))
@@ -360,6 +349,40 @@ private[yarn] class KyuubiYarnClient(conf: SparkConf) extends Logging {
     KyuubiDistributedCacheManager.addResource(remoteFs, hadoopConf, remoteConfArchivePath,
       localResources, LocalResourceType.ARCHIVE, SPARK_CONF_DIR, statCache)
     localResources
+  }
+
+  private[this] def putJarsDirToJarsStream(jarsDir: File, jarsStream: ZipOutputStream): Unit = {
+    try {
+      jarsStream.setLevel(0)
+      val jarFiles = jarsDir.listFiles()
+      if (jarFiles.length != 0) {
+        for (f <- jarFiles) {
+          if (f.isFile) {
+            if (f.getName.toLowerCase(Locale.ROOT).endsWith(".jar") && f.canRead) {
+              jarsStream.putNextEntry(new ZipEntry(f.getName))
+              Files.copy(f, jarsStream)
+              jarsStream.closeEntry()
+            }
+          } else if (f.isDirectory && f.canRead) {
+            val basePrefix = f.getName + File.separator
+            val dirJarFiles = f.listFiles()
+            if (dirJarFiles.length != 0) {
+              for (df <- dirJarFiles) {
+                if (df.isFile) {
+                  if (df.getName.toLowerCase(Locale.ROOT).endsWith(".jar") && df.canRead) {
+                    jarsStream.putNextEntry(new ZipEntry(basePrefix + df.getName))
+                    Files.copy(df, jarsStream)
+                    jarsStream.closeEntry()
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } finally {
+      jarsStream.close()
+    }
   }
 
   private[this] def createConfArchive(): File = {

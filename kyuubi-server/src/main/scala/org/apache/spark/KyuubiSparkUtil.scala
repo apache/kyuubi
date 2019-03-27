@@ -151,6 +151,15 @@ object KyuubiSparkUtil extends Logging {
     Utils.createTempDir(root, namePrefix)
   }
 
+  /**
+   * Delete a file or directory and its contents recursively.
+   * Don't follow directories if they are symlinks.
+   * Throws an exception if deletion is unsuccessful.
+   */
+  def deleteRecursively(file: File): Unit = {
+    Utils.deleteRecursively(file)
+  }
+
   def newConfiguration(conf: SparkConf): Configuration = {
     SparkHadoopUtil.get.newConfiguration(conf)
   }

@@ -17,9 +17,10 @@
 
 package yaooqinn.kyuubi.yarn
 
-
-import java.io.IOException
+import com.google.common.io.Files
+import java.io.{File, FileOutputStream, IOException}
 import java.net.URI
+import java.util.zip.{ZipFile, ZipOutputStream}
 
 import scala.collection.mutable
 
@@ -229,6 +230,76 @@ class KyuubiYarnClientSuite extends SparkFunSuite with Matchers with MockitoSuga
       val currentTime = System.currentTimeMillis()
       when(report.getStartTime).thenReturn(currentTime).thenReturn(currentTime - 100 *1000L)
       kc.submit()
+    }
+  }
+
+  test("test prepare local resources") {
+    withTempDir { dir =>
+      withTempJarsDir(dir) { (_, jarName, dirJarName) =>
+        val conf = new SparkConf()
+        val kyc = new KyuubiYarnClient(conf)
+        val stagingDir = new Path(dir.getAbsolutePath, "appStaing")
+        ReflectUtils.setFieldValue(kyc,
+          "yaooqinn$kyuubi$yarn$KyuubiYarnClient$$appStagingDir", stagingDir)
+        val resources = ReflectUtils.invokeMethod(kyc, "prepareLocalResources")
+          .asInstanceOf[mutable.HashMap[String, LocalResource]]
+        val keys = resources.keySet.toIterator
+        assert(keys.next() === "__spark_libs__")
+        assert(keys.next() === "__spark_conf__")
+        assert(keys.next().startsWith("kyuubi-server"))
+        assert(!keys.hasNext)
+        val libResource = resources.get("__spark_libs__").get
+        val libEntries = new ZipFile(libResource.getResource.getFile).entries()
+        assert(libEntries.nextElement().getName === jarName)
+        assert(libEntries.nextElement().getName === dirJarName)
+        assert(!libEntries.hasMoreElements)
+      }
+    }
+  }
+
+  def withTempDir(f: File => Unit): Unit = {
+    val path = KyuubiSparkUtil.createTempDir().getCanonicalFile
+    val sparkHome = Option(System.getenv("SPARK_HOME"))
+    setEnv("SPARK_HOME", Some(path.getAbsolutePath))
+    try {
+      f(path)
+    } finally {
+      setEnv("SPARK_HOME", sparkHome)
+      KyuubiSparkUtil.deleteRecursively(path)
+    }
+  }
+
+  def withTempJarsDir(path: File)(f: (File, String, String) => Unit): Unit = {
+    val jarsDir = path.getAbsolutePath + File.separator + "jars"
+    val libDirName = "libDir"
+    new File(jarsDir).mkdir()
+    new File(jarsDir + File.separator + libDirName).mkdir()
+    val basePath = jarsDir + File.separator
+    val jarName = "KYUUBI_JAR.jar"
+    val dirJarName = libDirName + File.separator + "dirJar.jar"
+    Files.write("JAR".getBytes(), new File(basePath + jarName))
+    Files.write("DIRJAR".getBytes(), new File(basePath + dirJarName))
+    val invalidJar = new File(basePath + "invalidJar.jar")
+    val invalidDirJar = new File(basePath + libDirName + File.separator + "invalidDirJar.jar")
+    Files.write("INVALID".getBytes(), invalidJar)
+    Files.write("INVALID".getBytes(), invalidDirJar)
+    invalidJar.setReadable(false)
+    invalidDirJar.setReadable(false)
+    System.setProperty("KYUUBI_JAR", basePath + jarName)
+    ReflectUtils.setFieldValue(KyuubiSparkUtil, "SPARK_JARS_DIR", jarsDir)
+    try f(new File(jarsDir), jarName, dirJarName) finally System.clearProperty("KYUUBI_JAR")
+  }
+
+  def setEnv(key: String, value: Option[String]): Unit = {
+    val field = System.getenv().getClass.getDeclaredField("m")
+    field.setAccessible(true)
+    val map = field.get(System.getenv())
+      .asInstanceOf[java.util.Map[java.lang.String, java.lang.String]]
+    value match {
+      case Some(v) =>
+        map.put(key, v)
+      case _ =>
+        map.remove(key)
     }
   }
 
