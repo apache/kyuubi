@@ -26,7 +26,6 @@
     <version>0.6.0</version>
     <modules>
         <module>kyuubi-common</module>
-        <module>kyuubi-security</module>
         <module>kyuubi-server</module>
     </modules>
     <packaging>pom</packaging>

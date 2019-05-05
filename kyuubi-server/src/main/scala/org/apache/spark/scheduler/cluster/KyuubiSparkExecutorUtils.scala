@@ -22,7 +22,7 @@ import java.io.{ByteArrayOutputStream, DataOutputStream}
 import scala.collection.mutable
 import scala.util.control.NonFatal
 
-import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.SparkContext
 
@@ -43,13 +43,21 @@ object KyuubiSparkExecutorUtils extends Logging {
    * @param user the UserGroupInformation associated with the current KyuubiSession
    */
   def populateTokens(sc: SparkContext, user: UserGroupInformation): Unit = {
+    populateTokens(sc, user.getCredentials)
+  }
+
+  /**
+   * Populate the tokens contained in the current KyuubiSession's ugi to the all the alive
+   * executors associated with its own SparkContext.
+   */
+  def populateTokens(sc: SparkContext, creds: Credentials): Unit = {
     val schedulerBackend = sc.schedulerBackend
     schedulerBackend match {
       case backend: CoarseGrainedSchedulerBackend =>
         try {
           val byteStream = new ByteArrayOutputStream
           val dataStream = new DataOutputStream(byteStream)
-          user.getCredentials.writeTokenStorageToStream(dataStream)
+          creds.writeTokenStorageToStream(dataStream)
           val tokens = byteStream.toByteArray
           val executorField =
             classOf[CoarseGrainedSchedulerBackend].getName.replace('.', '$') + "$$executorDataMap"
