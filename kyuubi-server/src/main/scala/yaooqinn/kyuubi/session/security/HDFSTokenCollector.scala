@@ -56,7 +56,7 @@ private[security] object HDFSTokenCollector extends TokenCollector with Logging 
     tokenRenewer
   }
 
-  override def obtainTokens(conf: SparkConf): Unit = {
+  override def obtainTokens(conf: SparkConf): Unit = try {
     val hadoopConf = newConfiguration(conf)
     val tokenRenewer = renewer(hadoopConf)
     val creds = new Credentials()
@@ -64,5 +64,8 @@ private[security] object HDFSTokenCollector extends TokenCollector with Logging 
       fs.addDelegationTokens(tokenRenewer, creds)
     }
     UserGroupInformation.getCurrentUser.addCredentials(creds)
+  } catch {
+    case e: Exception =>
+      error("Failed to obtain HDFS tokens", e)
   }
 }

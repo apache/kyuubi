@@ -40,12 +40,6 @@
         </dependency>
 
         <dependency>
-            <groupId>yaooqinn</groupId>
-            <artifactId>kyuubi-security</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
             <groupId>${spark.group}</groupId>
             <artifactId>spark-yarn_${scala.binary.version}</artifactId>
         </dependency>
@@ -257,7 +251,6 @@
                     <artifactSet>
                         <includes>
                             <include>yaooqinn:kyuubi-common</include>
-                            <include>yaooqinn:kyuubi-security</include>
                         </includes>
                     </artifactSet>
                 </configuration>

@@ -101,6 +101,9 @@ class SparkSessionWithUGI(
         case _ =>
       }
     }
+    // proxy user does not have rights to get token as real user
+    conf.remove(KEYTAB)
+    conf.remove(PRINCIPAL)
   }
 
   /**
@@ -203,6 +206,8 @@ class SparkSessionWithUGI(
   @throws[KyuubiSQLException]
   def init(sessionConf: Map[String, String]): Unit = {
     getOrCreate(sessionConf)
+
+    cache.setupCredentials(userName, user.getCredentials)
 
     try {
       initialDatabase.foreach { db =>

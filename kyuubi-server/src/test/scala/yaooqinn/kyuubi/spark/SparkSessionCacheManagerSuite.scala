@@ -18,6 +18,7 @@
 package yaooqinn.kyuubi.spark
 
 import org.apache.spark._
+import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.SparkSession
 import org.mockito.Mockito._
 import org.scalatest.Matchers
@@ -51,6 +52,7 @@ class SparkSessionCacheManagerSuite extends SparkFunSuite with Matchers with Moc
   test("start cache") {
     val cache = new SparkSessionCacheManager()
     val conf = new SparkConf()
+    conf.set(BACKEND_SESSION_LONG_CACHE, "true")
     KyuubiSparkUtil.setupCommonConfig(conf)
     cache.init(conf)
     cache.start()

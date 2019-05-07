@@ -45,7 +45,7 @@ class TokenCollectorSuite extends SparkFunSuite with Matchers with SecuredFunSui
 
     tryWithSecurityEnabled {
 
-      intercept[ServiceException](TokenCollector.obtainTokenIfRequired(conf))
+      TokenCollector.obtainTokenIfRequired(conf)
       conf.set("spark.hadoop.yarn.resourcemanager.principal", "yarn/_HOST@KENT.KYUUBI.COM")
       TokenCollector.obtainTokenIfRequired(conf)
       conf.set("spark.yarn.access.namenodes", "file:///test")
