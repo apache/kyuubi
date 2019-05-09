@@ -48,13 +48,14 @@ if [[ -z "$KYUUBI_JAR_DIR" ]]; then
 fi
 
 KYUUBI_JAR_NUM="$(ls ${KYUUBI_JAR_DIR} | grep kyuubi-server | grep .jar | grep -v original | wc -l)"
+KYUUBI_JAR_NUM=$((${KYUUBI_JAR_NUM}))
 
-if [[ ${KYUUBI_JAR_NUM} = "0" ]]; then
+if [[ ${KYUUBI_JAR_NUM} = 0 ]]; then
   echo "Kyuubi Server: need to build kyuubi first. Run ./build/mvn clean package" >&2
   exit 1
 fi
 
-if [[ ${KYUUBI_JAR_NUM} != "1" ]]; then
+if [[ ${KYUUBI_JAR_NUM} != 1 ]]; then
   echo "Kyuubi Server: duplicated kyuubi jars found. Run ./build/mvn clean package" >&2
   exit 1
 fi
