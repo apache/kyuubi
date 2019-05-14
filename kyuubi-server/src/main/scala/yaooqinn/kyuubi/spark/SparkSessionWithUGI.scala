@@ -207,8 +207,6 @@ class SparkSessionWithUGI(
   def init(sessionConf: Map[String, String]): Unit = {
     getOrCreate(sessionConf)
 
-    cache.setupCredentials(userName, user.getCredentials)
-
     try {
       initialDatabase.foreach { db =>
         KyuubiHadoopUtil.doAs(user) {

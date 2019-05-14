@@ -52,7 +52,6 @@ class SparkSessionCacheManagerSuite extends SparkFunSuite with Matchers with Moc
   test("start cache") {
     val cache = new SparkSessionCacheManager()
     val conf = new SparkConf()
-    conf.set(BACKEND_SESSION_LONG_CACHE, "true")
     KyuubiSparkUtil.setupCommonConfig(conf)
     cache.init(conf)
     cache.start()
