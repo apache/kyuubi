@@ -27,10 +27,11 @@ import org.apache.spark.sql.SparkSession
  *
  * @param spark the original [[SparkSession]] instances
  * @param times times of the original [[SparkSession]] instance has been cloned, start from 1
+ * @param initTime Start time of the SparkSession
  */
-case class SparkSessionCache private (spark: SparkSession, times: AtomicInteger)
+case class SparkSessionCache private (spark: SparkSession, times: AtomicInteger, initTime: Long)
 
 object SparkSessionCache {
   def apply(spark: SparkSession): SparkSessionCache =
-    new SparkSessionCache(spark, new AtomicInteger(1))
+    new SparkSessionCache(spark, new AtomicInteger(1), System.currentTimeMillis)
 }

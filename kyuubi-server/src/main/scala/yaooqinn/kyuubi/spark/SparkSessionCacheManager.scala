@@ -45,7 +45,6 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
         .setDaemon(true).setNameFormat(getClass.getSimpleName + "-%d").build())
 
   private val userToSession = new ConcurrentHashMap[String, SparkSessionCache]
-  private val userFirstCreate = new ConcurrentHashMap[String, Long]
   private val userLatestLogout = new ConcurrentHashMap[String, Long]
   private var idleTimeout: Long = _
   private var maxCacheTime: Long = _
@@ -62,27 +61,23 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
             s" instance of $user")
         case (user, _) if now - userLatestLogout.get(user) >= idleTimeout =>
           info(s"Stopping idle SparkSession for user [$user].")
-          removeAndStopSparkSession(user)
-        case (user, _) if isSessionCleanable(user) =>
+          removeSparkSession(user)
+        case (user, ssc) if isSessionCleanable(ssc) =>
           info(s"Stopping expired SparkSession for user [$user].")
-          removeAndStopSparkSession(user)
+          removeSparkSession(user)
         case _ =>
       }
     }
   }
 
-  private def removeSparkSession(user: String): SparkSessionCache = {
+  private def removeSparkSession(user: String): Unit = {
     Option(userLatestLogout.remove(user)) match {
       case Some(t) => info(s"User [$user] last time logout at " +
         new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(t)))
       case _ =>
     }
     KyuubiServerMonitor.detachUITab(user)
-    userToSession.remove(user)
-  }
-
-  private def removeAndStopSparkSession(user: String): Unit = {
-    val cache = removeSparkSession(user)
+    val cache = userToSession.remove(user)
     cache.spark.stop()
     System.setProperty("SPARK_YARN_MODE", "true")
   }
@@ -94,12 +89,9 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
    * connections linked or jobs running with.
    *
    */
-  private def isSessionCleanable(user: String): Boolean = {
-    val ct = userFirstCreate.get(user)
-    (now - ct >= maxCacheTime && {
-      val cache = userToSession.get(user)
-      cache != null && cache.times.get <= 0
-    }) || (now - ct > maxCacheTime * 1.25)
+  private def isSessionCleanable(cache: SparkSessionCache): Boolean = {
+    (now - cache.initTime >= maxCacheTime && cache.times.get <= 0 ) ||
+      (now - cache.initTime > maxCacheTime * 1.25)
   }
 
   private def now: Long = System.currentTimeMillis()
@@ -107,7 +99,6 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
   def set(user: String, sparkSession: SparkSession): Unit = {
     val sessionCache = SparkSessionCache(sparkSession)
     userToSession.put(user, sessionCache)
-    userFirstCreate.put(user, now)
   }
 
   def getAndIncrease(user: String): Option[SparkSession] = {
