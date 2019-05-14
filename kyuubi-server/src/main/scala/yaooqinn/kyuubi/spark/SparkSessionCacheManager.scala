@@ -57,8 +57,7 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
             s" cleaning it..")
           removeSparkSession(user)
         case (user, ssc) if ssc.times.get > 0 || !userLatestLogout.containsKey(user) =>
-          debug(s"There are ${ssc.times.get} active connection(s) bound to the SparkSession" +
-            s" instance of $user")
+          debug(s"${ssc.times.get} connection(s) bound to the SparkSession of $user")
         case (user, _) if now - userLatestLogout.get(user) >= idleTimeout =>
           info(s"Stopping idle SparkSession for user [$user].")
           removeSparkSession(user)
@@ -70,10 +69,12 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
     }
   }
 
+  private val dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+
   private def removeSparkSession(user: String): Unit = {
     Option(userLatestLogout.remove(user)) match {
-      case Some(t) => info(s"User [$user] last time logout at " +
-        new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(t)))
+      case Some(t) =>
+        info(s"User [$user] last time logout at " + dateFormat.format(new Date(t)))
       case _ =>
     }
     KyuubiServerMonitor.detachUITab(user)

@@ -269,11 +269,6 @@ object KyuubiSparkUtil extends Logging {
     loader
   }
 
-  /** Determines whether the provided class is loadable in the current thread. */
-  def classIsLoadable(clazz: String): Boolean = {
-    Try { Class.forName(clazz, false, getContextOrSparkClassLoader) }.isSuccess
-  }
-
   /**
    * Generate proper configurations before server starts
    * @param conf the default [[SparkConf]]

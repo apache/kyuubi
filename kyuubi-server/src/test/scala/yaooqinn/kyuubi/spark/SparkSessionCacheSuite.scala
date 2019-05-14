@@ -19,20 +19,27 @@ package yaooqinn.kyuubi.spark
 
 import java.util.concurrent.atomic.AtomicInteger
 
+import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import org.apache.spark.sql.SparkSession
 
-/**
- * A recorder for how many client sessions have been cloned by the original [[SparkSession]], which
- * helps the [[SparkSessionCacheManager]] cache and recycle [[SparkSession]] instances.
- *
- * @param spark the original [[SparkSession]] instances
- * @param times times of the original [[SparkSession]] instance has been cloned, start from 1
- * @param initTime Start time of the SparkSession
- */
-private[spark]
-case class SparkSessionCache(spark: SparkSession, times: AtomicInteger, initTime: Long)
+class SparkSessionCacheSuite extends SparkFunSuite {
 
-object SparkSessionCache {
-  def apply(spark: SparkSession): SparkSessionCache =
-    new SparkSessionCache(spark, new AtomicInteger(1), System.currentTimeMillis)
+  test("spark session catch") {
+    val conf = new SparkConf().setMaster("local")
+    KyuubiSparkUtil.setupCommonConfig(conf)
+    val spark = SparkSession.builder().config(conf).getOrCreate()
+
+    val cache = SparkSessionCache(spark)
+    assert(cache.spark === spark)
+    assert(cache.times.get() === 1)
+    assert(cache.times.incrementAndGet() === 2)
+    assert(cache.times.decrementAndGet() === 1)
+    val now = System.currentTimeMillis
+    val cache2 = new SparkSessionCache(spark, new AtomicInteger(1), now)
+    assert(cache.spark === cache2.spark )
+    assert(cache2.initTime === now)
+
+    spark.stop()
+    assert(cache.spark.sparkContext.isStopped)
+  }
 }
