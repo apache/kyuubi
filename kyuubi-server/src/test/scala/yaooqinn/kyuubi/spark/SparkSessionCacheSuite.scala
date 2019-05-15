@@ -17,29 +17,30 @@
 
 package yaooqinn.kyuubi.spark
 
-import java.util.concurrent.atomic.AtomicInteger
-
-import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
+import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import org.apache.spark.sql.SparkSession
 
 class SparkSessionCacheSuite extends SparkFunSuite {
 
-  test("spark session catch") {
-    val conf = new SparkConf().setMaster("local")
+  test("spark session cache") {
+    val conf = new SparkConf()
+      .setMaster("local")
+      .set(KyuubiConf.BACKEND_SESSION_MAX_CACHE_TIME.key, "5s")
     KyuubiSparkUtil.setupCommonConfig(conf)
     val spark = SparkSession.builder().config(conf).getOrCreate()
 
     val cache = SparkSessionCache.init(spark)
     assert(cache.spark === spark)
-    assert(cache.times.get() === 1)
-    assert(cache.times.incrementAndGet() === 2)
-    assert(cache.times.decrementAndGet() === 1)
-    val now = System.currentTimeMillis
-    val cache2 = new SparkSessionCache(spark, new AtomicInteger(1), now)
-    assert(cache.spark === cache2.spark )
-    assert(cache2.initTime === now)
-
+    assert(cache.getReuseTimes === 1)
+    assert(cache.incReuseTimeAndGet === 2)
+    assert(cache.decReuseTimeAndGet === 1)
+    val expired = cache.isExpired
+    assert(!expired, s"spark session cache status [crash:${cache.isCrashed}, expired:${expired}")
+    Thread.sleep(5000)
+    assert(cache.decReuseTimeAndGet === 0)
+    assert(cache.isExpired)
     spark.stop()
-    assert(cache.spark.sparkContext.isStopped)
+    assert(cache.isCrashed)
+    assert(cache.needClear)
   }
 }

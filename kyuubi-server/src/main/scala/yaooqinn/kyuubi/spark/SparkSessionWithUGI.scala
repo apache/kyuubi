@@ -40,7 +40,7 @@ import yaooqinn.kyuubi.utils.{KyuubiHadoopUtil, ReflectUtils}
 class SparkSessionWithUGI(
     user: UserGroupInformation,
     conf: SparkConf,
-    cache: SparkSessionCacheManager) extends Logging {
+    cacheMgr: SparkSessionCacheManager) extends Logging {
   import SparkSessionWithUGI._
 
   private var _sparkSession: SparkSession = _
@@ -142,9 +142,9 @@ class SparkSessionWithUGI(
       SPARK_INSTANTIATION_LOCK.wait(interval)
     }
 
-    cache.getAndIncrease(userName) match {
-      case Some(ss) =>
-        _sparkSession = ss.newSession()
+    cacheMgr.getAndIncrease(userName) match {
+      case Some(ssc) =>
+        _sparkSession = ssc.spark.newSession()
         configureSparkSession(sessionConf)
       case _ =>
         setPartiallyConstructed(userName)
@@ -171,7 +171,7 @@ class SparkSessionWithUGI(
           Seq(classOf[SparkContext]),
           Seq(context)).asInstanceOf[SparkSession]
       }
-      cache.set(userName, _sparkSession)
+      cacheMgr.set(userName, _sparkSession)
     } catch {
       case e: Exception =>
         if (conf.getOption("spark.master").contains("yarn")) {
@@ -215,7 +215,7 @@ class SparkSessionWithUGI(
       }
     } catch {
       case e: Exception =>
-        cache.decrease(userName)
+        cacheMgr.decrease(userName)
         throw findCause(e)
     }
 
