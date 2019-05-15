@@ -110,4 +110,20 @@ class SparkSessionCacheManagerSuite extends SparkFunSuite with Matchers with Moc
     cache.getServiceState should be(State.STOPPED)
   }
 
+  test("max cache time") {
+    val cache = new SparkSessionCacheManager()
+    val conf = new SparkConf().setMaster("local")
+      .set(KyuubiConf.BACKEND_SESSION_MAX_CACHE_TIME.key, "1ms")
+      .set(KyuubiConf.BACKEND_SESSION_CHECK_INTERVAL.key, "1s")
+    KyuubiSparkUtil.setupCommonConfig(conf)
+    val session = SparkSession.builder().config(conf).getOrCreate()
+    cache.init(conf)
+    cache.start()
+    val userName = KyuubiSparkUtil.getCurrentUserName
+    cache.set(userName, session)
+    cache.decrease(userName)
+    Thread.sleep(2000)
+    assert(session.sparkContext.isStopped)
+    cache.stop()
+  }
 }

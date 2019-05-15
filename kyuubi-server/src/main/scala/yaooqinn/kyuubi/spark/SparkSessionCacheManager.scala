@@ -56,13 +56,13 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
           warn(s"SparkSession for $user might already be stopped outside Kyuubi," +
             s" cleaning it..")
           removeSparkSession(user)
+        case (user, ssc) if isSessionCleanable(ssc) =>
+          info(s"Stopping expired SparkSession for user [$user].")
+          removeSparkSession(user)
         case (user, ssc) if ssc.times.get > 0 || !userLatestLogout.containsKey(user) =>
           debug(s"${ssc.times.get} connection(s) bound to the SparkSession of $user")
         case (user, _) if now - userLatestLogout.get(user) >= idleTimeout =>
           info(s"Stopping idle SparkSession for user [$user].")
-          removeSparkSession(user)
-        case (user, ssc) if isSessionCleanable(ssc) =>
-          info(s"Stopping expired SparkSession for user [$user].")
           removeSparkSession(user)
         case _ =>
       }
@@ -98,7 +98,7 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
   private def now: Long = System.currentTimeMillis()
 
   def set(user: String, sparkSession: SparkSession): Unit = {
-    val sessionCache = SparkSessionCache(sparkSession)
+    val sessionCache = SparkSessionCache.init(sparkSession)
     userToSession.put(user, sessionCache)
   }
 

@@ -33,6 +33,6 @@ private[spark]
 case class SparkSessionCache(spark: SparkSession, times: AtomicInteger, initTime: Long)
 
 object SparkSessionCache {
-  def apply(spark: SparkSession): SparkSessionCache =
+  def init(spark: SparkSession): SparkSessionCache =
     new SparkSessionCache(spark, new AtomicInteger(1), System.currentTimeMillis)
 }

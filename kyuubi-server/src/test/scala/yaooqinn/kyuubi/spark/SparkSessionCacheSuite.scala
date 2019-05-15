@@ -29,7 +29,7 @@ class SparkSessionCacheSuite extends SparkFunSuite {
     KyuubiSparkUtil.setupCommonConfig(conf)
     val spark = SparkSession.builder().config(conf).getOrCreate()
 
-    val cache = SparkSessionCache(spark)
+    val cache = SparkSessionCache.init(spark)
     assert(cache.spark === spark)
     assert(cache.times.get() === 1)
     assert(cache.times.incrementAndGet() === 2)
