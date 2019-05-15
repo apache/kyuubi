@@ -18,7 +18,6 @@
 package yaooqinn.kyuubi.spark
 
 import org.apache.spark._
-import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.SparkSession
 import org.mockito.Mockito._
 import org.scalatest.Matchers
@@ -29,6 +28,10 @@ import yaooqinn.kyuubi.utils.ReflectUtils
 
 class SparkSessionCacheManagerSuite extends SparkFunSuite with Matchers with MockitoSugar {
 
+  override def afterAll(): Unit = {
+    System.clearProperty("SPARK_YARN_MODE")
+    super.afterAll()
+  }
   test("new cache") {
     val cache = new SparkSessionCacheManager()
     cache.getStartTime should be(0)
@@ -94,7 +97,6 @@ class SparkSessionCacheManagerSuite extends SparkFunSuite with Matchers with Moc
     ReflectUtils.setFieldValue(
       cache, "yaooqinn$kyuubi$spark$SparkSessionCacheManager$$idleTimeout", 0)
     runnable.run()
-    System.clearProperty("SPARK_YARN_MODE")
     cache.stop()
   }
 
