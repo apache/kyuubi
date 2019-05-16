@@ -76,7 +76,7 @@ class SparkSessionCacheManagerSuite extends SparkFunSuite with Matchers {
   test("spark session cache should be null if max cache time reached") {
     val cache = new SparkSessionCacheManager()
     val conf = new SparkConf().setMaster("local")
-      .set(KyuubiConf.BACKEND_SESSION_MAX_CACHE_TIME.key, "5s")
+      .set(KyuubiConf.BACKEND_SESSION_MAX_CACHE_TIME.key, "10s")
       .set(KyuubiConf.BACKEND_SESSION_CHECK_INTERVAL.key, "1s")
     KyuubiSparkUtil.setupCommonConfig(conf)
     val session = SparkSession.builder().config(conf).getOrCreate()
@@ -86,7 +86,7 @@ class SparkSessionCacheManagerSuite extends SparkFunSuite with Matchers {
     cache.set(userName, session)
     assert(cache.getAndIncrease(userName).nonEmpty)
     cache.decrease(userName)
-    Thread.sleep(7000)
+    Thread.sleep(12500)
     val maybeCache2 = cache.getAndIncrease(userName)
     assert(maybeCache2.isEmpty, s"reason: ${maybeCache2.map(_.isCrashed).mkString}")
     session.stop()

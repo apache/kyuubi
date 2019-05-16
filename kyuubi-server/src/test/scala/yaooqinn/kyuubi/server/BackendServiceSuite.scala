@@ -85,7 +85,7 @@ class BackendServiceSuite extends SparkFunSuite {
     val showTables = "show tables"
     val op1 = backendService.executeStatement(session, showTables)
     val op2 = backendService.executeStatementAsync(session, "show databases")
-    val op3 = backendService.executeStatement(session, showTables)
+    val op3 = backendService.executeStatement(session2, showTables)
     val e1 = intercept[KyuubiSQLException](backendService.getTypeInfo(session))
     assert(e1.toTStatus.getErrorMessage === "Method Not Implemented!")
     val e2 = intercept[KyuubiSQLException](backendService.getCatalogs(session))
