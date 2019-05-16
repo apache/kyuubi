@@ -48,7 +48,6 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
       userToSession.asScala.foreach {
         case (user, ssc) if ssc.isCrashed => removeSparkSession(user, doCheck = true)
         case (user, ssc) => tryStopIdledCached(user, ssc)
-        case _ =>
       }
     }
   }
