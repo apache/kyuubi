@@ -35,7 +35,7 @@ class SparkSessionCacheSuite extends SparkFunSuite {
   test("spark session cache") {
     val cache = SparkSessionCache.init(spark)
     assert(!cache.isCrashed)
-    assert(!cache.isIdled)
+    assert(!cache.isIdle)
     assert(!cache.needClear, s"cache status [crash:${cache.isCrashed}, expired:${cache.isExpired}]")
     assert(!cache.isExpired)
     assert(cache.spark === spark)
@@ -52,14 +52,14 @@ class SparkSessionCacheSuite extends SparkFunSuite {
 
   test("cache status idled") {
     val cache = SparkSessionCache.init(spark)
-    assert(!cache.isIdled, "cache is not idled, reuse time = 1")
+    assert(!cache.isIdle, "cache is not idled, reuse time = 1")
     cache.decReuseTimeAndGet
-    assert(!cache.isIdled, "cache is not idled, reuse time = 0, but latest logout is unset")
+    assert(!cache.isIdle, "cache is not idled, reuse time = 0, but latest logout is unset")
     val latestLogout = System.currentTimeMillis() - 2 * KyuubiSparkUtil.timeStringAsMs(
       spark.conf.get(KyuubiConf.BACKEND_SESSION_IDLE_TIMEOUT.key))
     cache.updateLogoutTime(latestLogout)
-    assert(cache.isIdled, "cache is idled, reuse time = 0, idle timeout exceeded")
+    assert(cache.isIdle, "cache is idled, reuse time = 0, idle timeout exceeded")
     cache.incReuseTimeAndGet
-    assert(!cache.isIdled, "cache is not idled, idle timeout exceeded however reuse time = 1")
+    assert(!cache.isIdle, "cache is not idled, idle timeout exceeded however reuse time = 1")
   }
 }

@@ -50,7 +50,7 @@ class SparkSessionCache private(val spark: SparkSession, times: AtomicInteger, i
    * logout.
    *
    */
-  def isIdled: Boolean = {
+  def isIdle: Boolean = {
     times.get <= 0 && System.currentTimeMillis - latestLogout > idleTimeout
   }
 

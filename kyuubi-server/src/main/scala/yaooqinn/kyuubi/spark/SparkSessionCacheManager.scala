@@ -47,19 +47,19 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
     override def run(): Unit = {
       userToSession.asScala.foreach {
         case (user, ssc) if ssc.isCrashed => removeSparkSession(user, doCheck = true)
-        case (user, ssc) => tryStopIdledCached(user, ssc)
+        case (user, ssc) => tryStopIdleCache(user, ssc)
       }
     }
   }
 
   /**
-   * Stop the idled [[SparkSession]] instance, then it can be cleared by the `sessionCleaner` or
+   * Stop the idle [[SparkSession]] instance, then it can be cleared by the `sessionCleaner` or
    * when the user reconnecting action.
    *
    */
-  private def tryStopIdledCached(user: String, ssc: SparkSessionCache): Unit = this.synchronized {
-    if (ssc.isIdled) {
-      info(s"Stopping idle SparkSession for user [$user].")
+  private def tryStopIdleCache(user: String, ssc: SparkSessionCache): Unit = this.synchronized {
+    if (ssc.isIdle) {
+      info(s"Stopping idle SparkSession for user [$user]")
       ssc.spark.stop()
       KyuubiServerMonitor.detachUITab(user)
       System.setProperty("SPARK_YARN_MODE", "true")
@@ -72,6 +72,7 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
       // SparkSessionCache is removed or not recreated.
       val cache = userToSession.get(user)
       if(cache != null && cache.isCrashed) {
+        info(s"Cleaning stopped SparkSession for user [$user]")
         userToSession.remove(user)
         KyuubiServerMonitor.detachUITab(user)
       }
@@ -92,14 +93,14 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
     Option(userToSession.get(user)) match {
       case Some(ssc) if ssc.needClear =>
         removeSparkSession(user)
-        info(s"SparkSession for [$user] needs to be cleared, will create a new one.")
+        info(s"SparkSession for [$user] needs to be cleared, will create a new one")
         None
       case Some(ssc) if !ssc.needClear =>
         val currentTime = ssc.incReuseTimeAndGet
         info(s"SparkSession for [$user] is reused for $currentTime time(s) after + 1")
         Some(ssc)
       case _ =>
-        info(s"SparkSession for [$user] isn't cached, will create a new one.")
+        info(s"SparkSession for [$user] isn't cached, will create a new one")
         None
     }
   }
