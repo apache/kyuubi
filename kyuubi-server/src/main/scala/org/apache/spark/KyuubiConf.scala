@@ -280,9 +280,23 @@ object KyuubiConf {
 
   val BACKEND_SESSION_IDLE_TIMEOUT: ConfigEntry[Long] =
     KyuubiConfigBuilder("spark.kyuubi.backend.session.idle.timeout")
-      .doc("SparkSession timeout")
+      .doc("How long the SparkSession instance will be cached after user logout. Using cached" +
+        " SparkSession can significantly cut the startup time for SparkContext, which makes" +
+        " sense for queries that are short lived. The timeout is calculated from when all" +
+        " sessions of the user are disconnected")
       .timeConf(TimeUnit.MILLISECONDS)
       .createWithDefault(TimeUnit.MINUTES.toMillis(30L))
+
+  val BACKEND_SESSION_MAX_CACHE_TIME: ConfigEntry[Long] =
+    KyuubiConfigBuilder("spark.kyuubi.backend.session.max.cache.time")
+      .doc("Max cache time for a SparkSession instance when its original copy has been created." +
+        " When `spark.kyuubi.backend.session.idle.timeout` never is reached for user may" +
+        " continuously run queries, we need this configuration to stop the cached SparkSession" +
+        " which may end up with token expiry issue in kerberized clusters. When in the interval" +
+        " of [t, t * 1.25], we will try to stop the SparkSession gracefully util no connections." +
+        " But once it fails stop in that region, we will force to stop it")
+      .timeConf(TimeUnit.MILLISECONDS)
+      .createWithDefault(TimeUnit.DAYS.toMillis(5))
 
   val BACKEND_SESSION_LOCAL_DIR: ConfigEntry[String] =
     KyuubiConfigBuilder("spark.kyuubi.backend.session.local.dir")
@@ -292,24 +306,6 @@ object KyuubiConf {
       .createWithDefault(
         s"${sys.env.getOrElse("KYUUBI_HOME", System.getProperty("java.io.tmpdir"))}"
         + File.separator + "local")
-
-  val BACKEND_SESSION_LONG_CACHE: ConfigEntry[Boolean] =
-    KyuubiConfigBuilder("spark.kyuubi.backend.session.long.cache")
-      .doc("Whether to update the tokens of Spark's executor to support long caching" +
-        " SparkSessions iff this is true && `spark.kyuubi.backend.token.update.class` is" +
-        " loadable. This is used towards kerberized hadoop clusters in case of" +
-        " `spark.kyuubi.backend.session.idle.timeout` is set longer than token expiration time" +
-        " limit or SparkSession never idles.")
-      .booleanConf
-      .createWithDefault(UserGroupInformation.isSecurityEnabled)
-
-  val BACKEND_SESSION_TOKEN_UPDATE_CLASS: ConfigEntry[String] =
-    KyuubiConfigBuilder("spark.kyuubi.backend.session.token.update.class")
-      .doc("`CoarseGrainedClusterMessages` for token update message from the driver of Spark to" +
-        " executors, it is loadable only by higher version Spark release(2.3 and later)")
-      .stringConf
-      .createWithDefault(
-        "org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages$UpdateDelegationTokens")
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                      Authentication                                         //

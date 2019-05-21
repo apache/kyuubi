@@ -34,7 +34,6 @@ import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil
-import org.apache.spark.scheduler.cluster.KyuubiSparkExecutorUtils
 import org.apache.spark.sql.{AnalysisException, DataFrame, Row, SparkSQLUtils}
 import org.apache.spark.sql.catalyst.catalog.{FileResource, FunctionResource, JarResource}
 import org.apache.spark.sql.catalyst.parser.ParseException
@@ -376,10 +375,6 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
         _.onStatementParsed(statementId, result.queryExecution.toString())
       }
 
-      if (conf.get(BACKEND_SESSION_LONG_CACHE).toBoolean &&
-        KyuubiSparkUtil.classIsLoadable(conf.get(BACKEND_SESSION_TOKEN_UPDATE_CLASS))) {
-        KyuubiSparkExecutorUtils.populateTokens(sparkSession.sparkContext, session.ugi)
-      }
       debug(result.queryExecution.toString())
       iter = if (incrementalCollect) {
         val numParts = result.rdd.getNumPartitions
