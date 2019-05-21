@@ -62,13 +62,6 @@ class BackendServiceSuite extends SparkFunSuite {
       "",
       "localhost",
       Map.empty)
-    val session2 = backendService.openSession(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8,
-      user,
-      "",
-      "localhost",
-      Map(OPERATION_RESULT_LIMIT.key -> "1")
-    )
     assert(
       backendService.getInfo(
         session, GetInfoType.SERVER_NAME).toTGetInfoValue.getStringValue === "Kyuubi Server")
@@ -85,7 +78,6 @@ class BackendServiceSuite extends SparkFunSuite {
     val showTables = "show tables"
     val op1 = backendService.executeStatement(session, showTables)
     val op2 = backendService.executeStatementAsync(session, "show databases")
-    val op3 = backendService.executeStatement(session, showTables)
     val e1 = intercept[KyuubiSQLException](backendService.getTypeInfo(session))
     assert(e1.toTStatus.getErrorMessage === "Method Not Implemented!")
     val e2 = intercept[KyuubiSQLException](backendService.getCatalogs(session))
@@ -99,7 +91,6 @@ class BackendServiceSuite extends SparkFunSuite {
 
     assert(backendService.getOperationStatus(op1).getState === RUNNING)
     assert(backendService.getOperationStatus(op2).getState === RUNNING)
-    assert(backendService.getOperationStatus(op3).getState === RUNNING)
 
     assert(backendService.getResultSetMetadata(op1).head.name === "Result")
     backendService.cancelOperation(op1)

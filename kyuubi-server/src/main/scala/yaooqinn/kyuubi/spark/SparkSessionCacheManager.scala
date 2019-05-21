@@ -17,24 +17,22 @@
 
 package yaooqinn.kyuubi.spark
 
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.concurrent.{ConcurrentHashMap, Executors, TimeUnit}
-import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.JavaConverters._
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder
-import org.apache.hadoop.security.Credentials
-import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
-import org.apache.spark.scheduler.cluster.KyuubiSparkExecutorUtils
+import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
 import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.service.AbstractService
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 
+/**
+ * Manager for cached [[SparkSession]]s.
+ */
 class SparkSessionCacheManager private(name: String) extends AbstractService(name) with Logging {
 
   def this() = this(classOf[SparkSessionCacheManager].getSimpleName)
@@ -44,87 +42,81 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
       new ThreadFactoryBuilder()
         .setDaemon(true).setNameFormat(getClass.getSimpleName + "-%d").build())
 
-  private val userToSession = new ConcurrentHashMap[String, (SparkSession, AtomicInteger)]
-  private val userLatestLogout = new ConcurrentHashMap[String, Long]
-  private var idleTimeout: Long = _
-
-  private val userToCredentials = new ConcurrentHashMap[String, Credentials]
-  private var needPopulateToken: Boolean = _
-
+  private val userToSession = new ConcurrentHashMap[String, SparkSessionCache]
   private val sessionCleaner = new Runnable {
     override def run(): Unit = {
       userToSession.asScala.foreach {
-        case (user, (session, _)) if session.sparkContext.isStopped =>
-          warn(s"SparkSession for $user might already be stopped outside Kyuubi," +
-            s" cleaning it..")
-          removeSparkSession(user)
-        case (user, (session, times)) if times.get() > 0 || !userLatestLogout.containsKey(user) =>
-          debug(s"There are $times active connection(s) bound to the SparkSession instance" +
-            s" of $user ")
-          if (needPopulateToken) {
-            val credentials = userToCredentials.getOrDefault(user, new Credentials)
-            KyuubiSparkExecutorUtils.populateTokens(session.sparkContext, credentials)
-          }
-        case (user, (session, _))
-          if userLatestLogout.get(user) + idleTimeout <= System.currentTimeMillis() =>
-          info(s"Stopping idle SparkSession for user [$user].")
-          removeSparkSession(user)
-          session.stop()
-          System.setProperty("SPARK_YARN_MODE", "true")
-        case (user, (session, _)) =>
-          if (needPopulateToken) {
-            val credentials = userToCredentials.getOrDefault(user, new Credentials)
-            KyuubiSparkExecutorUtils.populateTokens(session.sparkContext, credentials)
-          }
+        case (user, ssc) if ssc.isCrashed => removeSparkSession(user, doCheck = true)
+        case (user, ssc) => tryStopIdleCache(user, ssc)
       }
     }
   }
 
-  private def removeSparkSession(user: String): Unit = {
-    Option(userLatestLogout.remove(user)) match {
-      case Some(t) => info(s"User [$user] last time logout at " +
-        new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(t)))
-      case _ =>
+  /**
+   * Stop the idle [[SparkSession]] instance, then it can be cleared by the `sessionCleaner` or
+   * when the user reconnecting action.
+   *
+   */
+  private def tryStopIdleCache(user: String, ssc: SparkSessionCache): Unit = this.synchronized {
+    if (ssc.isIdle) {
+      info(s"Stopping idle SparkSession for user [$user]")
+      ssc.spark.stop()
+      KyuubiServerMonitor.detachUITab(user)
+      System.setProperty("SPARK_YARN_MODE", "true")
     }
-    userToSession.remove(user)
-    KyuubiServerMonitor.detachUITab(user)
+  }
+
+  private def removeSparkSession(user: String, doCheck: Boolean = false): Unit = this.synchronized {
+    if (doCheck) {
+      // if we do remove SparkSession in sessionCleaner thread, we should double check whether the
+      // SparkSessionCache is removed or not recreated.
+      val cache = userToSession.get(user)
+      if(cache != null && cache.isCrashed) {
+        info(s"Cleaning stopped SparkSession for user [$user]")
+        userToSession.remove(user)
+        KyuubiServerMonitor.detachUITab(user)
+      }
+    } else {
+      val cache = userToSession.remove(user)
+      cache.spark.stop()
+      KyuubiServerMonitor.detachUITab(user)
+      System.setProperty("SPARK_YARN_MODE", "true")
+    }
   }
 
   def set(user: String, sparkSession: SparkSession): Unit = {
-    userToSession.put(user, (sparkSession, new AtomicInteger(1)))
+    val sessionCache = SparkSessionCache.init(sparkSession)
+    userToSession.put(user, sessionCache)
   }
 
-  def getAndIncrease(user: String): Option[SparkSession] = {
+  def getAndIncrease(user: String): Option[SparkSessionCache] = this.synchronized {
     Option(userToSession.get(user)) match {
-      case Some((ss, times)) if !ss.sparkContext.isStopped =>
-        val currentTime = times.incrementAndGet()
+      case Some(ssc) if ssc.needClear =>
+        removeSparkSession(user)
+        info(s"SparkSession for [$user] needs to be cleared, will create a new one")
+        None
+      case Some(ssc) if !ssc.needClear =>
+        val currentTime = ssc.incReuseTimeAndGet
         info(s"SparkSession for [$user] is reused for $currentTime time(s) after + 1")
-        Some(ss)
+        Some(ssc)
       case _ =>
-        info(s"SparkSession for [$user] isn't cached, will create a new one.")
+        info(s"SparkSession for [$user] isn't cached, will create a new one")
         None
     }
   }
 
   def decrease(user: String): Unit = {
     Option(userToSession.get(user)) match {
-      case Some((ss, times)) if !ss.sparkContext.isStopped =>
-        userLatestLogout.put(user, System.currentTimeMillis())
-        val currentTime = times.decrementAndGet()
+      case Some(ssc) =>
+        ssc.updateLogoutTime(System.currentTimeMillis)
+        val currentTime = ssc.decReuseTimeAndGet
         info(s"SparkSession for [$user] is reused for $currentTime time(s) after - 1")
       case _ =>
         warn(s"SparkSession for [$user] was not found in the cache.")
     }
   }
 
-  def setupCredentials(user: String, creds: Credentials): Unit = {
-    userToCredentials.put(user, creds)
-  }
-
   override def init(conf: SparkConf): Unit = {
-    idleTimeout = math.max(conf.getTimeAsMs(BACKEND_SESSION_IDLE_TIMEOUT.key), 60 * 1000)
-    needPopulateToken = conf.get(BACKEND_SESSION_LONG_CACHE).toBoolean &&
-      KyuubiSparkUtil.classIsLoadable(conf.get(BACKEND_SESSION_TOKEN_UPDATE_CLASS))
     super.init(conf)
   }
 
@@ -132,7 +124,7 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
    * Periodically close idle SparkSessions in 'spark.kyuubi.session.clean.interval(default 1min)'
    */
   override def start(): Unit = {
-    val interval = math.max(conf.getTimeAsSeconds(BACKEND_SESSION_CHECK_INTERVAL.key), 1)
+    val interval = math.max(conf.getTimeAsSeconds(BACKEND_SESSION_CHECK_INTERVAL), 1)
     info(s"Scheduling SparkSession cache cleaning every $interval seconds")
     cacheManager.scheduleAtFixedRate(sessionCleaner, interval, interval, TimeUnit.SECONDS)
     super.start()
@@ -141,7 +133,7 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
   override def stop(): Unit = {
     info("Stopping SparkSession Cache Manager")
     cacheManager.shutdown()
-    userToSession.asScala.values.foreach { kv => kv._1.stop() }
+    userToSession.asScala.values.foreach(_.spark.stop())
     userToSession.clear()
     super.stop()
   }

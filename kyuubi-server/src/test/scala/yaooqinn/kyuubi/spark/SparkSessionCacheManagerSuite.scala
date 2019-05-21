@@ -18,17 +18,19 @@
 package yaooqinn.kyuubi.spark
 
 import org.apache.spark._
-import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.SparkSession
-import org.mockito.Mockito._
+import org.mockito.Mockito.when
 import org.scalatest.Matchers
 import org.scalatest.mock.MockitoSugar
 
 import yaooqinn.kyuubi.service.State
-import yaooqinn.kyuubi.utils.ReflectUtils
 
 class SparkSessionCacheManagerSuite extends SparkFunSuite with Matchers with MockitoSugar {
 
+  override def afterAll(): Unit = {
+    System.clearProperty("SPARK_YARN_MODE")
+    super.afterAll()
+  }
   test("new cache") {
     val cache = new SparkSessionCacheManager()
     cache.getStartTime should be(0)
@@ -39,76 +41,94 @@ class SparkSessionCacheManagerSuite extends SparkFunSuite with Matchers with Moc
   }
 
   test("init cache") {
-    val cache = new SparkSessionCacheManager()
-    val conf = new SparkConf()
-    KyuubiSparkUtil.setupCommonConfig(conf)
-    cache.init(conf)
-    cache.getStartTime should be(0)
-    cache.getConf should be(conf)
-    cache.getServiceState should be(State.INITED)
-    cache.stop()
+    withCacheMgrInit { (cache, conf) =>
+      cache.getStartTime should be(0)
+      cache.getConf should be(conf)
+      cache.getServiceState should be(State.INITED)
+    }
   }
 
   test("start cache") {
-    val cache = new SparkSessionCacheManager()
-    val conf = new SparkConf()
-    conf.set(BACKEND_SESSION_LONG_CACHE, "true")
-    KyuubiSparkUtil.setupCommonConfig(conf)
-    cache.init(conf)
-    cache.start()
-    cache.getStartTime / 100 should be(System.currentTimeMillis() / 100)
-    cache.getConf should be(conf)
-    cache.getServiceState should be(State.STARTED)
-    val ss = mock[SparkSession]
-    val userName = KyuubiSparkUtil.getCurrentUserName
-    val sc = mock[SparkContext]
-    when(ss.sparkContext).thenReturn(sc)
-
-    cache.decrease(userName) // None
-    cache.getAndIncrease(userName) // None
-
-    cache.set(userName, ss)
-    when(sc.isStopped).thenReturn(false)
-    cache.getAndIncrease(userName)
-
-    when(sc.isStopped).thenReturn(true)
-    cache.getAndIncrease(userName)
-
-    when(sc.isStopped).thenReturn(false)
-    cache.decrease(userName)
-    when(sc.isStopped).thenReturn(true)
-    cache.decrease(userName)
-
-    Thread.sleep(2000)
-    val field = cache.getClass.getDeclaredField("sessionCleaner")
-    field.setAccessible(true)
-
-    when(sc.isStopped).thenReturn(false)
-    val runnable = field.get(cache).asInstanceOf[Runnable]
-    runnable.run() // > 0
-
-    when(sc.isStopped).thenReturn(false)
-    cache.decrease(userName)
-    when(sc.isStopped).thenReturn(false)
-    runnable.run() // not expiry
-    when(sc.isStopped).thenReturn(false)
-    ReflectUtils.setFieldValue(
-      cache, "yaooqinn$kyuubi$spark$SparkSessionCacheManager$$idleTimeout", 0)
-    runnable.run()
-    System.clearProperty("SPARK_YARN_MODE")
-    cache.stop()
+    withCacheMgrStarted { (cache, conf) =>
+      cache.getStartTime / 1000 should be(System.currentTimeMillis() / 1000)
+      cache.getConf should be(conf)
+      cache.getServiceState should be(State.STARTED)
+    }
   }
 
   test("stop cache") {
+    withCacheMgrStarted { (cache, conf) =>
+      cache.stop()
+      cache.getConf should be(conf)
+      cache.getServiceState should be(State.STOPPED)
+    }
+  }
+
+  test("spark session cache should be null if max cache time reached") {
+    withCacheMgrStarted { (cache, conf) =>
+      val session = SparkSession.builder().config(conf).getOrCreate()
+      val userName = KyuubiSparkUtil.getCurrentUserName
+      cache.set(userName, session)
+      assert(cache.getAndIncrease(userName).nonEmpty)
+      cache.decrease(userName)
+      Thread.sleep(10000)
+      val maybeCache2 = cache.getAndIncrease(userName)
+      assert(maybeCache2.isEmpty, s"reason, crash ${maybeCache2.map(_.isCrashed).mkString}")
+      session.stop()
+    }
+  }
+
+  test("spark session cleaner thread test") {
+    withCacheMgrStarted { (cacheManager, conf) =>
+      val session = SparkSession.builder().config(conf).getOrCreate()
+      val ss1 = mock[SparkSession]
+      val sc1 = mock[SparkContext]
+
+      when(ss1.sparkContext).thenReturn(sc1)
+      when(sc1.isStopped).thenReturn(true)
+      when(ss1.conf).thenReturn(session.conf)
+
+      cacheManager.set("alice", ss1)
+      cacheManager.set("bob", session)
+      val latestLogout = System.currentTimeMillis() - 2 * KyuubiSparkUtil.timeStringAsMs(
+        conf.get(KyuubiConf.BACKEND_SESSION_IDLE_TIMEOUT.key))
+      cacheManager.getAndIncrease("bob").foreach { c =>
+        c.updateLogoutTime(latestLogout)
+        c.decReuseTimeAndGet
+        c.decReuseTimeAndGet
+      }
+      Thread.sleep(1000)
+      assert(cacheManager.getAndIncrease("alice").isEmpty)
+      assert(cacheManager.getAndIncrease("bob").isEmpty)
+      assert(cacheManager.getAndIncrease("tom").isEmpty)
+    }
+  }
+
+  def withCacheMgrInit(f: (SparkSessionCacheManager, SparkConf) => Unit): Unit = {
     val cache = new SparkSessionCacheManager()
-    val conf = new SparkConf().set(KyuubiConf.BACKEND_SESSION_CHECK_INTERVAL.key, "1s")
+    val conf = new SparkConf()
+    try {
+      cache.init(conf)
+      f(cache, conf)
+    } finally {
+      cache.stop()
+    }
+  }
+
+  def withCacheMgrStarted(f: (SparkSessionCacheManager, SparkConf) => Unit): Unit = {
+    val cache = new SparkSessionCacheManager()
+    val conf = new SparkConf().setMaster("local")
+      .set(KyuubiConf.BACKEND_SESSION_MAX_CACHE_TIME.key, "5s")
+      .set(KyuubiConf.BACKEND_SESSION_CHECK_INTERVAL.key, "50ms")
     KyuubiSparkUtil.setupCommonConfig(conf)
-    cache.init(conf)
-    cache.start()
-    Thread.sleep(2000)
-    cache.stop()
-    cache.getConf should be(conf)
-    cache.getServiceState should be(State.STOPPED)
+
+    try {
+      cache.init(conf)
+      cache.start()
+      f(cache, conf)
+    } finally {
+      cache.stop()
+    }
   }
 
 }
