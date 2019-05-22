@@ -302,10 +302,6 @@ class KyuubiOperation(session: KyuubiSession, statement: String) extends Logging
         setState(ERROR)
         throw new KyuubiSQLException("The background threadpool cannot accept" +
           " new task for execution, please retry the operation", rejected)
-      case NonFatal(e) =>
-        error(s"Error executing query in background", e)
-        setState(ERROR)
-        throw e
     }
   }
 

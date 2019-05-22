@@ -17,13 +17,15 @@
 
 package yaooqinn.kyuubi.server
 
+import java.util.concurrent.{Executors, RejectedExecutionException}
+
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
 
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.GetInfoType
-import yaooqinn.kyuubi.operation.{CANCELED, CLOSED, FINISHED, RUNNING}
-import yaooqinn.kyuubi.session.{KyuubiSession, SessionHandle}
+import yaooqinn.kyuubi.operation.{FINISHED, OperationHandle}
+import yaooqinn.kyuubi.session.SessionHandle
 
 class BackendServiceSuite extends SparkFunSuite {
 
@@ -42,18 +44,12 @@ class BackendServiceSuite extends SparkFunSuite {
     backendService = new BackendService()
     backendService.init(conf)
     backendService.start()
-    sessionHandle = backendService.openSession(
-      proto,
-      user,
-      "",
-      ip,
-      Map.empty)
+    sessionHandle = backendService.openSession(proto, user, "", ip, Map.empty)
   }
 
   protected override def afterAll(): Unit = {
     backendService.stop()
   }
-
 
   test("open session") {
     val sessionManager = backendService.getSessionManager
@@ -164,5 +160,17 @@ class BackendServiceSuite extends SparkFunSuite {
     val operation = operationMgr.getOperation(operationHandle)
     backendService.closeOperation(operationHandle)
     assert(operation.isClosedOrCanceled || operation.getStatus.getState === FINISHED)
+  }
+
+  test("reject execution exception") {
+    val t = new Thread() {
+      override def run(): Unit = {
+        val exception = intercept[KyuubiSQLException](
+          backendService.executeStatementAsync(sessionHandle, showTables))
+        assert(exception.getCause.isInstanceOf[RejectedExecutionException])
+      }
+    }
+    t.start()
+    t.interrupt()
   }
 }
