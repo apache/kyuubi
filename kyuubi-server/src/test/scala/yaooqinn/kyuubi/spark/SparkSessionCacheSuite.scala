@@ -25,15 +25,24 @@ class SparkSessionCacheSuite extends SparkFunSuite {
     .setMaster("local")
     .set(KyuubiConf.BACKEND_SESSION_MAX_CACHE_TIME.key, "10s")
   KyuubiSparkUtil.setupCommonConfig(conf)
-  private val spark = SparkSession.builder().config(conf).getOrCreate()
+  private var spark: SparkSession = _
 
+  override def beforeAll(): Unit = {
+    spark = SparkSession.builder().config(conf).getOrCreate()
+    spark.sql("show tables")
+    super.beforeAll()
+  }
   override def afterAll(): Unit = {
-    spark.stop()
+    if (spark != null) spark.stop()
     super.afterAll()
   }
 
   test("spark session cache") {
+    val start = System.currentTimeMillis()
     val cache = SparkSessionCache.init(spark)
+    val end = System.currentTimeMillis()
+    print("init cache using " + (end - start))
+    print("\n")
     assert(!cache.isCrashed)
     assert(!cache.isIdle)
     assert(!cache.needClear, s"cache status [crash:${cache.isCrashed}, expired:${cache.isExpired}]")
@@ -51,7 +60,11 @@ class SparkSessionCacheSuite extends SparkFunSuite {
   }
 
   test("cache status idled") {
+    val start = System.currentTimeMillis()
     val cache = SparkSessionCache.init(spark)
+    val end = System.currentTimeMillis()
+    print("init cache using " + (end - start))
+    print("\n")
     assert(!cache.isIdle, "cache is not idled, reuse time = 1")
     cache.decReuseTimeAndGet
     assert(!cache.isIdle, "cache is not idled, reuse time = 0, but latest logout is unset")
