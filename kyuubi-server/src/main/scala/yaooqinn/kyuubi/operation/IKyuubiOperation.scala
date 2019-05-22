@@ -64,11 +64,6 @@ trait IKyuubiOperation {
   def run(): Unit
 
   /**
-   * Check whether this IKyuubiOperation is closed or has been canceled.
-   */
-  def isClosedOrCanceled: Boolean
-
-  /**
    * Close this IKyuubiOperation.
    */
   def close(): Unit

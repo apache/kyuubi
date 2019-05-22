@@ -74,7 +74,7 @@ abstract class AbstractKyuubiOperation(session: KyuubiSession, statement: String
     this.state == state
   }
 
-  override def isClosedOrCanceled: Boolean = {
+  protected def isClosedOrCanceled: Boolean = {
     checkState(CLOSED) || checkState(CANCELED)
   }
 

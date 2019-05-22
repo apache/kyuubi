@@ -109,18 +109,17 @@ abstract class AbstractKyuubiOperationSuite extends SparkFunSuite with MockitoSu
 
   test("is closed or canceled") {
     val op = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, statement)
-    assert(!op.isClosedOrCanceled)
     op.cancel()
-    assert(op.isClosedOrCanceled)
+    assert(ReflectUtils.getSuperField(op, "state").asInstanceOf[OperationState] === CANCELED)
     op.close()
-    assert(op.isClosedOrCanceled)
+    assert(ReflectUtils.getSuperField(op, "state").asInstanceOf[OperationState] === CLOSED)
     val op2 = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, statement)
     op2.close()
-    assert(op2.isClosedOrCanceled)
+    assert(ReflectUtils.getSuperField(op2, "state").asInstanceOf[OperationState] === CLOSED)
     val op3 = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, null)
     op3.cancel()
     op3.close()
-    assert(op3.isClosedOrCanceled)
+    assert(ReflectUtils.getSuperField(op3, "state").asInstanceOf[OperationState] === CLOSED)
   }
 
   test("test set, check and assert state") {

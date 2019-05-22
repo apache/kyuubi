@@ -18,19 +18,16 @@
 package yaooqinn.kyuubi.session
 
 import java.io.File
-import java.util.concurrent.ConcurrentHashMap
 
 import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod
 import org.apache.hive.service.cli.thrift.{TGetInfoType, TProtocolVersion}
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkFunSuite}
 import org.apache.spark.sql.SparkSession
 import org.scalatest.mock.MockitoSugar
-import scala.collection.mutable.{HashSet => MHSet}
-
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType}
-import yaooqinn.kyuubi.operation.{CLOSED, IKyuubiOperation, OperationHandle}
+import yaooqinn.kyuubi.operation.{CANCELED, OperationState}
 import yaooqinn.kyuubi.schema.ColumnBasedSet
 import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
@@ -208,9 +205,8 @@ class KyuubiSessionSuite extends SparkFunSuite with MockitoSugar {
     val opMgr = session.getSessionMgr.getOperationMgr
     val op = opMgr.newExecuteStatementOperation(session, statement)
     val opHandle = op.getHandle
-    assert(!op.isClosedOrCanceled)
     session.cancelOperation(opHandle)
-    assert(op.isClosedOrCanceled)
+    assert(ReflectUtils.getSuperField(op, "state").asInstanceOf[OperationState] === CANCELED)
   }
 
   test("test get info") {
