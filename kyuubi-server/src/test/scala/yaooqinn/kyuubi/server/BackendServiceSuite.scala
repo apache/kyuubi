@@ -22,79 +22,147 @@ import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
 
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.GetInfoType
-import yaooqinn.kyuubi.operation.{CANCELED, FINISHED}
+import yaooqinn.kyuubi.operation.{CANCELED, CLOSED, FINISHED, RUNNING}
+import yaooqinn.kyuubi.session.{KyuubiSession, SessionHandle}
 
 class BackendServiceSuite extends SparkFunSuite {
 
-  var backendService: BackendService = _
-  val user = KyuubiSparkUtil.getCurrentUserName
-  val conf = new SparkConf(loadDefaults = true).setAppName("be test")
+  private var backendService: BackendService = _
+  private val user = KyuubiSparkUtil.getCurrentUserName
+  private val conf = new SparkConf(loadDefaults = true).setAppName("be test")
   KyuubiSparkUtil.setupCommonConfig(conf)
   conf.remove(KyuubiSparkUtil.CATALOG_IMPL)
   conf.setMaster("local")
+  private var sessionHandle: SessionHandle = _
+  private val showTables = "show tables"
+  private val ip = "localhost"
+  private val proto = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8
 
   override protected def beforeAll(): Unit = {
     backendService = new BackendService()
+    backendService.init(conf)
+    backendService.start()
+    sessionHandle = backendService.openSession(
+      proto,
+      user,
+      "",
+      ip,
+      Map.empty)
   }
 
   protected override def afterAll(): Unit = {
     backendService.stop()
-    backendService = null
   }
 
-  test("backend service function tests") {
-    assert(backendService.getName === classOf[BackendService].getSimpleName)
-    // before init
-    assert(backendService.getSessionManager === null)
-    assert(backendService.getConf === null)
 
-    // after init
-    backendService.init(conf)
-    assert(backendService.getSessionManager !== null)
-    assert(backendService.getConf !== null)
-    backendService.start()
+  test("open session") {
+    val sessionManager = backendService.getSessionManager
+    assert(sessionManager.getOpenSessionCount === 1)
+    val kyuubiSession = sessionManager.getSession(sessionHandle)
+    assert(kyuubiSession.getSessionHandle === sessionHandle)
+    assert(kyuubiSession.getUserName === user)
+    assert(!kyuubiSession.sparkSession.sparkContext.isStopped)
+    assert(kyuubiSession.ugi.getShortUserName === user)
+    assert(kyuubiSession.getResourcesSessionDir.exists())
+    assert(kyuubiSession.getIpAddress === ip)
+    assert(kyuubiSession.getPassword.isEmpty)
+    assert(kyuubiSession.isOperationLogEnabled)
+    kyuubiSession.closeExpiredOperations
+    assert(kyuubiSession.getProtocolVersion === proto)
+  }
 
-    val session = backendService.openSession(
-      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8,
-      user,
-      "",
-      "localhost",
-      Map.empty)
+  test("get info") {
     assert(
       backendService.getInfo(
-        session, GetInfoType.SERVER_NAME).toTGetInfoValue.getStringValue === "Kyuubi Server")
-
-    assert(
-      backendService.getInfo(
-        session, GetInfoType.DBMS_NAME).toTGetInfoValue.getStringValue === "Spark SQL")
+        sessionHandle, GetInfoType.SERVER_NAME).toTGetInfoValue.getStringValue === "Kyuubi Server")
 
     assert(
       backendService.getInfo(
-        session,
+        sessionHandle, GetInfoType.DBMS_NAME).toTGetInfoValue.getStringValue === "Spark SQL")
+
+    assert(
+      backendService.getInfo(
+        sessionHandle,
         GetInfoType.DBMS_VERSION).toTGetInfoValue.getStringValue === KyuubiSparkUtil.SPARK_VERSION)
+  }
 
-    val showTables = "show tables"
-    val op1 = backendService.executeStatement(session, showTables)
-    val op2 = backendService.executeStatementAsync(session, "show databases")
-    val e1 = intercept[KyuubiSQLException](backendService.getTypeInfo(session))
+  test("get type info") {
+    val e1 = intercept[KyuubiSQLException](backendService.getTypeInfo(sessionHandle))
     assert(e1.toTStatus.getErrorMessage === "Method Not Implemented!")
-    val e2 = intercept[KyuubiSQLException](backendService.getCatalogs(session))
+  }
+
+  test("get catalogs") {
+    val e2 = intercept[KyuubiSQLException](backendService.getCatalogs(sessionHandle))
     assert(e2.toTStatus.getErrorMessage === "Method Not Implemented!")
     assert(KyuubiSQLException.toTStatus(e2).getErrorMessage === "Method Not Implemented!")
+  }
 
-    intercept[KyuubiSQLException](backendService.getSchemas(session, "", ""))
-    intercept[KyuubiSQLException](backendService.getTables(session, "", "", "", null))
-    intercept[KyuubiSQLException](backendService.getTableTypes(session))
-    intercept[KyuubiSQLException](backendService.getFunctions(session, "", "", ""))
+  test("get schemas") {
+    intercept[KyuubiSQLException](backendService.getSchemas(sessionHandle, "", ""))
+  }
 
-    Thread.sleep(1000)
-    assert(backendService.getOperationStatus(op1).getState === FINISHED)
-    assert(backendService.getOperationStatus(op2).getState === FINISHED)
+  test("get tables") {
+    intercept[KyuubiSQLException](backendService.getTables(sessionHandle, "", "", "", null))
+  }
 
-    assert(backendService.getResultSetMetadata(op1).head.name === "database")
-    backendService.cancelOperation(op1)
-    assert(backendService.getOperationStatus(op1).getState === FINISHED)
+  test("get table types") {
+    intercept[KyuubiSQLException](backendService.getTableTypes(sessionHandle))
+  }
 
-    backendService.getSessionManager.getSession(session).sparkSession.stop()
+  test("get functions") {
+    intercept[KyuubiSQLException](backendService.getFunctions(sessionHandle, "", "", ""))
+  }
+
+  test("execute statement") {
+    val operationHandle = backendService.executeStatement(sessionHandle, showTables)
+    val operationMgr = backendService.getSessionManager.getOperationMgr
+    val kyuubiOperation = operationMgr.getOperation(operationHandle)
+    assert(kyuubiOperation.getHandle === operationHandle)
+    assert(kyuubiOperation.getProtocolVersion === proto)
+    assert(!kyuubiOperation.isTimedOut)
+    assert(!kyuubiOperation.isClosedOrCanceled)
+    var count = 0
+    while (count < 100 && kyuubiOperation.getStatus.getState != FINISHED) {
+      Thread.sleep(50 )
+      count = count + 1
+    }
+    assert(kyuubiOperation.getStatus.getState === FINISHED)
+    assert(backendService.getOperationStatus(operationHandle).getState === FINISHED)
+    assert(backendService.getResultSetMetadata(operationHandle).head.name === "database")
+
+  }
+
+  test("execute statement async") {
+    val operationHandle = backendService.executeStatementAsync(sessionHandle, showTables)
+    val operationMgr = backendService.getSessionManager.getOperationMgr
+    val kyuubiOperation = operationMgr.getOperation(operationHandle)
+    assert(kyuubiOperation.getHandle === operationHandle)
+    assert(kyuubiOperation.getProtocolVersion === proto)
+    assert(!kyuubiOperation.isTimedOut)
+    assert(!kyuubiOperation.isClosedOrCanceled)
+    var count = 0
+    while (count < 100 && kyuubiOperation.getStatus.getState != FINISHED) {
+      Thread.sleep(50 )
+      count = count + 1
+    }
+    assert(kyuubiOperation.getStatus.getState === FINISHED)
+    assert(backendService.getOperationStatus(operationHandle).getState === FINISHED)
+    assert(backendService.getResultSetMetadata(operationHandle).head.name === "database")
+  }
+
+  test("cancel operation") {
+    val operationHandle = backendService.executeStatementAsync(sessionHandle, showTables)
+    val operationMgr = backendService.getSessionManager.getOperationMgr
+    backendService.cancelOperation(operationHandle)
+    val operation = operationMgr.getOperation(operationHandle)
+    assert(operation.isClosedOrCanceled || operation.getStatus.getState === FINISHED)
+  }
+
+  test("close operation") {
+    val operationHandle = backendService.executeStatementAsync(sessionHandle, showTables)
+    val operationMgr = backendService.getSessionManager.getOperationMgr
+    val operation = operationMgr.getOperation(operationHandle)
+    backendService.closeOperation(operationHandle)
+    assert(operation.isClosedOrCanceled || operation.getStatus.getState === FINISHED)
   }
 }
