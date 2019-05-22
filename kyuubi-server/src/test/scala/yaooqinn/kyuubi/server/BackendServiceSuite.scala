@@ -18,15 +18,13 @@
 package yaooqinn.kyuubi.server
 
 import org.apache.hive.service.cli.thrift.TProtocolVersion
-import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
+import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
 
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.GetInfoType
-import yaooqinn.kyuubi.operation.{CANCELED, RUNNING}
+import yaooqinn.kyuubi.operation.{CANCELED, FINISHED}
 
 class BackendServiceSuite extends SparkFunSuite {
-
-  import KyuubiConf._
 
   var backendService: BackendService = _
   val user = KyuubiSparkUtil.getCurrentUserName
@@ -89,12 +87,13 @@ class BackendServiceSuite extends SparkFunSuite {
     intercept[KyuubiSQLException](backendService.getTableTypes(session))
     intercept[KyuubiSQLException](backendService.getFunctions(session, "", "", ""))
 
-    assert(backendService.getOperationStatus(op1).getState === RUNNING)
-    assert(backendService.getOperationStatus(op2).getState === RUNNING)
+    Thread.sleep(1000)
+    assert(backendService.getOperationStatus(op1).getState === FINISHED)
+    assert(backendService.getOperationStatus(op2).getState === FINISHED)
 
-    assert(backendService.getResultSetMetadata(op1).head.name === "Result")
+    assert(backendService.getResultSetMetadata(op1).head.name === "database")
     backendService.cancelOperation(op1)
-    assert(backendService.getOperationStatus(op1).getState === CANCELED)
+    assert(backendService.getOperationStatus(op1).getState === FINISHED)
 
     backendService.getSessionManager.getSession(session).sparkSession.stop()
   }
