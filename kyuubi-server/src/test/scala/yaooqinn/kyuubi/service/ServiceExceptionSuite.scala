@@ -57,5 +57,7 @@ class ServiceExceptionSuite extends SparkFunSuite {
     assert(tStatus3.getSqlState === null)
     assert(tStatus3.getErrorCode === 0)
     assert(tStatus3.getInfoMessages === KyuubiSQLException.toString(e4).asJava)
+    val e5 = new KyuubiSQLException(e4)
+    assert(e5.getMessage === e4.toString)
   }
 }
