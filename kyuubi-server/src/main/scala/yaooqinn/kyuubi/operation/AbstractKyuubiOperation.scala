@@ -18,6 +18,7 @@
 package yaooqinn.kyuubi.operation
 
 import java.security.PrivilegedExceptionAction
+import java.util.UUID
 import java.util.concurrent.{Future, RejectedExecutionException}
 
 import scala.util.control.NonFatal
@@ -40,7 +41,7 @@ abstract class AbstractKyuubiOperation(session: KyuubiSession, statement: String
   protected var hasResultSet: Boolean = false
   protected var operationException: KyuubiSQLException = _
   protected var backgroundHandle: Future[_] = _
-  protected var statementId: String = _
+  protected val statementId = UUID.randomUUID().toString
 
   protected val DEFAULT_FETCH_ORIENTATION_SET: Set[FetchOrientation] =
     Set(FetchOrientation.FETCH_NEXT, FetchOrientation.FETCH_FIRST)

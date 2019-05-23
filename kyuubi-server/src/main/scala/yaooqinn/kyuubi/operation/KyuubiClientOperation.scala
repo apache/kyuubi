@@ -18,7 +18,6 @@
 package yaooqinn.kyuubi.operation
 
 import java.io.{File, FileNotFoundException}
-import java.util.UUID
 
 import scala.collection.JavaConverters._
 import scala.util.{Success, Try}
@@ -222,7 +221,6 @@ class KyuubiClientOperation(session: KyuubiSession, statement: String)
   override protected def execute(): Unit = {
     try {
       registerCurrentOperationLog()
-      statementId = UUID.randomUUID().toString
       info(s"Running query '$statement' with $statementId")
       setState(RUNNING)
 
