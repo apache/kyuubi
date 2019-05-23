@@ -23,7 +23,7 @@
     <groupId>yaooqinn</groupId>
     <artifactId>kyuubi</artifactId>
     <name>Kyuubi Project Parent</name>
-    <version>0.6.1</version>
+    <version>0.6.2</version>
     <modules>
         <module>kyuubi-common</module>
         <module>kyuubi-server</module>
