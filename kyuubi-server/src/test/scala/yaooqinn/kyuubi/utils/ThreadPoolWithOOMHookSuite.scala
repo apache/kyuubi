@@ -49,7 +49,7 @@ class ThreadPoolWithOOMHookSuite extends SparkFunSuite with BeforeAndAfterEach {
   }
 
   test("interrupted exception") {
-    val future = new TestRunnableFuture[Int](new InterruptedException())
+    val future = new TestRunnableFuture[Int](throw new InterruptedException())
     poolWithOOMHook.execute(future)
     wait(future)
     poolWithOOMHook.execute(future)
@@ -57,17 +57,44 @@ class ThreadPoolWithOOMHookSuite extends SparkFunSuite with BeforeAndAfterEach {
   }
 
   test("out of memory in after execute") {
-    val future = new TestRunnableFuture[Int](new OutOfMemoryError())
+    val future = new TestRunnableFuture[Int](throw new OutOfMemoryError())
     poolWithOOMHook.execute(future)
     wait(future)
     assert(flag, "oom occurred in after execute")
   }
 
-  test("no out of memory in after execute either") {
-    val future = new TestRunnableFuture[Int](new Exception)
+  test("non fatal error in after execute either") {
+    val future = new TestRunnableFuture[Int](throw new Exception)
     poolWithOOMHook.execute(future)
     wait(future)
     assert(!flag, "no oom occurred in after execute")
+  }
+
+  test("no exception") {
+    val future = new TestRunnableFuture[Int](1)
+    poolWithOOMHook.execute(future)
+    wait(future)
+    assert(!flag)
+
+    val r = new Runnable {
+      override def run(): Unit = {}
+    }
+    poolWithOOMHook.execute(r)
+    assert(!flag)
+  }
+
+  test("non fatal exception") {
+    val r = new Runnable {
+      override def run(): Unit = throw new Exception()
+    }
+    poolWithOOMHook.execute(r)
+    assert(!flag)
+  }
+
+  test("non fatal exception 2") {
+    val future = new TestRunnableFuture2[Int](1)
+    poolWithOOMHook.execute(future)
+    assert(!flag)
   }
 
   def wait(future: RunnableFuture[Int]): Unit = {
@@ -77,12 +104,22 @@ class ThreadPoolWithOOMHookSuite extends SparkFunSuite with BeforeAndAfterEach {
   }
 }
 
-class TestRunnableFuture[Int](t: Throwable) extends RunnableFuture[Int]{
+class TestRunnableFuture[Int](f: => Int) extends RunnableFuture[Int]{
   private var done = false
   override def run(): Unit = done = true
   override def cancel(mayInterruptIfRunning: Boolean): Boolean = true
   override def isCancelled: Boolean = false
   override def isDone: Boolean = done
-  override def get(): Int = throw t
-  override def get(timeout: Long, unit: TimeUnit): Int = throw t
+  override def get(): Int = f
+  override def get(timeout: Long, unit: TimeUnit): Int = f
+}
+
+class TestRunnableFuture2[Int](f: => Int) extends RunnableFuture[Int]{
+  private var done = false
+  override def run(): Unit = done = true
+  override def cancel(mayInterruptIfRunning: Boolean): Boolean = true
+  override def isCancelled: Boolean = false
+  override def isDone: Boolean = false
+  override def get(): Int = f
+  override def get(timeout: Long, unit: TimeUnit): Int = f
 }
