@@ -27,8 +27,9 @@ import org.apache.spark.sql.internal.SQLConf
 
 import yaooqinn.kyuubi.utils.ReflectUtils
 
-class KyuubiOperationWithHDFSSuite extends KyuubiOperationSuite {
+class KyuubiClientOperationWithHDFSSuite extends KyuubiClientOperationSuite {
   val hdfsConf = new HdfsConfiguration
+  hdfsConf.set("fs.hdfs.impl.disable.cache", "true")
   var cluster: MiniDFSCluster = new MiniDFSCluster.Builder(hdfsConf).build()
   cluster.waitClusterUp()
   val fs = cluster.getFileSystem
@@ -52,6 +53,7 @@ class KyuubiOperationWithHDFSSuite extends KyuubiOperationSuite {
 
   test("transform logical plan") {
     val op = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, statement)
+      .asInstanceOf[KyuubiClientOperation]
     val parser = new SparkSqlParser(new SQLConf)
     val plan0 = parser.parsePlan(
       s"create temporary function a as 'a.b.c' using file '$remoteUDFFile'")

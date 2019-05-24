@@ -24,7 +24,7 @@ import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
 
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.GetInfoType
-import yaooqinn.kyuubi.operation.{FINISHED, OperationHandle}
+import yaooqinn.kyuubi.operation.{CANCELED, CLOSED, FINISHED, OperationHandle}
 import yaooqinn.kyuubi.session.SessionHandle
 
 class BackendServiceSuite extends SparkFunSuite {
@@ -116,7 +116,8 @@ class BackendServiceSuite extends SparkFunSuite {
     assert(kyuubiOperation.getHandle === operationHandle)
     assert(kyuubiOperation.getProtocolVersion === proto)
     assert(!kyuubiOperation.isTimedOut)
-    assert(!kyuubiOperation.isClosedOrCanceled)
+    assert(kyuubiOperation.getStatus.getState !== CANCELED)
+    assert(kyuubiOperation.getStatus.getState !== CLOSED)
     var count = 0
     while (count < 100 && kyuubiOperation.getStatus.getState != FINISHED) {
       Thread.sleep(50 )
@@ -135,7 +136,8 @@ class BackendServiceSuite extends SparkFunSuite {
     assert(kyuubiOperation.getHandle === operationHandle)
     assert(kyuubiOperation.getProtocolVersion === proto)
     assert(!kyuubiOperation.isTimedOut)
-    assert(!kyuubiOperation.isClosedOrCanceled)
+    assert(kyuubiOperation.getStatus.getState !== CANCELED)
+    assert(kyuubiOperation.getStatus.getState !== CLOSED)
     var count = 0
     while (count < 100 && kyuubiOperation.getStatus.getState != FINISHED) {
       Thread.sleep(50 )
@@ -151,7 +153,8 @@ class BackendServiceSuite extends SparkFunSuite {
     val operationMgr = backendService.getSessionManager.getOperationMgr
     backendService.cancelOperation(operationHandle)
     val operation = operationMgr.getOperation(operationHandle)
-    assert(operation.isClosedOrCanceled || operation.getStatus.getState === FINISHED)
+    val opState = operation.getStatus.getState
+    assert(opState === CLOSED || opState === CANCELED || opState === FINISHED)
   }
 
   test("close operation") {
@@ -159,7 +162,8 @@ class BackendServiceSuite extends SparkFunSuite {
     val operationMgr = backendService.getSessionManager.getOperationMgr
     val operation = operationMgr.getOperation(operationHandle)
     backendService.closeOperation(operationHandle)
-    assert(operation.isClosedOrCanceled || operation.getStatus.getState === FINISHED)
+    val opState = operation.getStatus.getState
+    assert(opState === CLOSED || opState === CANCELED || opState === FINISHED)
   }
 
   test("reject execution exception") {

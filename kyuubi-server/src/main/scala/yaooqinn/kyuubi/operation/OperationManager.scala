@@ -41,7 +41,7 @@ private[kyuubi] class OperationManager private(name: String)
   def this() = this(classOf[OperationManager].getSimpleName)
 
   private[this] lazy val logSchema: StructType = new StructType().add("operation_log", "string")
-  private[this] val handleToOperation = new ConcurrentHashMap[OperationHandle, KyuubiOperation]
+  private[this] val handleToOperation = new ConcurrentHashMap[OperationHandle, IKyuubiOperation]
   private[this] val userToOperationLog = new ConcurrentHashMap[String, OperationLog]()
 
   override def init(conf: SparkConf): Unit = synchronized {
@@ -85,13 +85,13 @@ private[kyuubi] class OperationManager private(name: String)
 
   def newExecuteStatementOperation(
       parentSession: KyuubiSession,
-      statement: String): KyuubiOperation = synchronized {
-    val operation = new KyuubiOperation(parentSession, statement)
+      statement: String): IKyuubiOperation = synchronized {
+    val operation = new KyuubiClientOperation(parentSession, statement)
     addOperation(operation)
     operation
   }
 
-  def getOperation(operationHandle: OperationHandle): KyuubiOperation = {
+  def getOperation(operationHandle: OperationHandle): IKyuubiOperation = {
     val operation = getOperationInternal(operationHandle)
     if (operation == null) {
       throw new KyuubiSQLException("Invalid OperationHandle " + operationHandle)
@@ -102,7 +102,7 @@ private[kyuubi] class OperationManager private(name: String)
   private[this] def getOperationInternal(operationHandle: OperationHandle) =
     handleToOperation.get(operationHandle)
 
-  private[this] def addOperation(operation: KyuubiOperation): Unit = {
+  private[this] def addOperation(operation: IKyuubiOperation): Unit = {
     handleToOperation.put(operation.getHandle, operation)
   }
 
@@ -110,7 +110,7 @@ private[kyuubi] class OperationManager private(name: String)
     handleToOperation.remove(opHandle)
 
   private def removeTimedOutOperation(
-      operationHandle: OperationHandle): Option[KyuubiOperation] = synchronized {
+      operationHandle: OperationHandle): Option[IKyuubiOperation] = synchronized {
     Some(handleToOperation.get(operationHandle))
       .filter(_.isTimedOut)
       .map(_ => handleToOperation.remove(operationHandle))
@@ -176,7 +176,7 @@ private[kyuubi] class OperationManager private(name: String)
     fetchOrientation == FetchOrientation.FETCH_FIRST
   }
 
-  def removeExpiredOperations(handles: Seq[OperationHandle]): Seq[KyuubiOperation] = {
+  def removeExpiredOperations(handles: Seq[OperationHandle]): Seq[IKyuubiOperation] = {
     handles.flatMap(removeTimedOutOperation).map { op =>
       warn("Operation " + op.getHandle + " is timed-out and will be closed")
       op

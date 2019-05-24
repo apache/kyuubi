@@ -82,6 +82,8 @@ class ReflectUtilsSuite extends SparkFunSuite {
     val t = new TestClass3
     assert(ReflectUtils.invokeMethod(t, "test") === 1)
     intercept[NoSuchMethodException](ReflectUtils.invokeMethod(t, "dummy"))
+    val t2 = new TestClass4
+    assert(ReflectUtils.invokeMethod(t2, "test") === 1)
   }
 
   test("testSuperField") {
@@ -156,6 +158,7 @@ class TestClass2(arg1: String, arg2: TestClass0)
 class TestClass3 extends TestTrait {
   def test: Long = 1L
 }
+class TestClass4 extends TestClass3
 
 object TestClass0 {
   def staticTest(): Int = 1

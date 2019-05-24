@@ -32,7 +32,7 @@ import org.apache.spark.sql.types.StructType
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.cli._
-import yaooqinn.kyuubi.operation.{KyuubiOperation, OperationHandle, OperationManager}
+import yaooqinn.kyuubi.operation.{IKyuubiOperation, OperationHandle, OperationManager}
 import yaooqinn.kyuubi.schema.RowSet
 import yaooqinn.kyuubi.session.security.TokenCollector
 import yaooqinn.kyuubi.spark.SparkSessionWithUGI
@@ -281,7 +281,7 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
-  private def closeTimedOutOperations(operations: Seq[KyuubiOperation]): Unit = {
+  private def closeTimedOutOperations(operations: Seq[IKyuubiOperation]): Unit = {
     acquire(false)
     try {
       operations.foreach { op =>
