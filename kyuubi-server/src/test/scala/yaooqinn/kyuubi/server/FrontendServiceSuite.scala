@@ -210,7 +210,7 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
         .getOperationState.getValue < TOperationState.FINISHED_STATE.getValue) {
         Thread.sleep(10)
       }
-      Thread.sleep(10)
+      Thread.sleep(2000)
       val req4 = new TFetchResultsReq(resp2.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
       val resp4 = feService.FetchResults(req4)
       resp4.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
