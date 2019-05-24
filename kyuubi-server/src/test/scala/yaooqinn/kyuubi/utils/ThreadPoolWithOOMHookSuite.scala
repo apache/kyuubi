@@ -31,7 +31,7 @@ class ThreadPoolWithOOMHookSuite extends SparkFunSuite with BeforeAndAfterEach {
     }
   }
 
-  private val poolWithOOMHook = new ThreadPoolWithOOMHook(2, 2, 10, TimeUnit.SECONDS,
+  private val poolWithOOMHook = new ThreadPoolWithOOMHook(10, 10, 10, TimeUnit.SECONDS,
     new SynchronousQueue[Runnable], new NamedThreadFactory("oom"), oomHook)
 
 
