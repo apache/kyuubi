@@ -39,14 +39,15 @@ import yaooqinn.kyuubi.operation.OperationHandle
 import yaooqinn.kyuubi.schema.SchemaMapper
 import yaooqinn.kyuubi.service.{AbstractService, ServiceException, ServiceUtils}
 import yaooqinn.kyuubi.session.SessionHandle
-import yaooqinn.kyuubi.utils.NamedThreadFactory
+import yaooqinn.kyuubi.utils.{NamedThreadFactory, ThreadPoolWithOOMHook}
 
 /**
  * [[FrontendService]] keeps compatible with all kinds of Hive JDBC/Thrift Client Connections
  *
  * It use Hive configurations to configure itself.
  */
-private[kyuubi] class FrontendService private(name: String, beService: BackendService)
+private[kyuubi]
+class FrontendService private(name: String, beService: BackendService, OOMHook: Runnable)
   extends AbstractService(name) with TCLIService.Iface with Runnable with Logging {
 
   private var hadoopConf: Configuration = _
@@ -66,11 +67,16 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
 
   private var isStarted = false
 
-
-  def this(beService: BackendService) = {
-    this(classOf[FrontendService].getSimpleName, beService)
+  def this(beService: BackendService, OOMHook: Runnable) = {
+    this(classOf[FrontendService].getSimpleName, beService, OOMHook)
     currentServerContext = new ThreadLocal[ServerContext]()
     serverEventHandler = new FeTServerEventHandler
+  }
+
+  def this(beService: BackendService) = {
+    this(beService, new Runnable {
+      override def run(): Unit = {}
+    })
   }
 
   class FeServiceServerContext extends ServerContext {
@@ -574,13 +580,14 @@ private[kyuubi] class FrontendService private(name: String, beService: BackendSe
       // Server thread pool
       val minThreads = conf.get(FRONTEND_MIN_WORKER_THREADS).toInt
       val maxThreads = conf.get(FRONTEND_MAX_WORKER_THREADS).toInt
-      val executorService = new ThreadPoolExecutor(
+      val executorService = new ThreadPoolWithOOMHook(
         minThreads,
         maxThreads,
         conf.getTimeAsSeconds(FRONTEND_WORKER_KEEPALIVE_TIME),
         TimeUnit.SECONDS,
         new SynchronousQueue[Runnable],
-        new NamedThreadFactory(threadPoolName))
+        new NamedThreadFactory(threadPoolName),
+        OOMHook)
 
       // Thrift configs
       authFactory = new KyuubiAuthFactory(conf)

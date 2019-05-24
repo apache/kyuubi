@@ -25,7 +25,7 @@ import yaooqinn.kyuubi.SecuredFunSuite
 
 class ZooKeeperACLProviderSuite extends SparkFunSuite with Matchers with SecuredFunSuite {
 
-  test("") {
+  test("zk acl provider") {
     val provider = new ZooKeeperACLProvider()
     provider.getDefaultAcl should be(ZooDefs.Ids.OPEN_ACL_UNSAFE)
     provider.getAclForPath("") should be(ZooDefs.Ids.OPEN_ACL_UNSAFE)
