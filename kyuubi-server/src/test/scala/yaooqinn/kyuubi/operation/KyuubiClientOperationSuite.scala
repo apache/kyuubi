@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,43 +17,32 @@
 
 package yaooqinn.kyuubi.operation
 
-import scala.collection.JavaConverters._
+import java.io.File
 
-import org.apache.hadoop.security.UserGroupInformation
-import org.apache.hive.service.cli.thrift.TProtocolVersion
-import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext, SparkFunSuite}
+import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.KyuubiConf.LOGGING_OPERATION_LOG_DIR
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.FunctionResource
 import org.apache.spark.sql.execution.SparkSqlParser
 import org.apache.spark.sql.execution.command.CreateFunctionCommand
 import org.apache.spark.sql.internal.SQLConf
 import org.mockito.Mockito.when
-import org.scalatest.mock.MockitoSugar
+import scala.collection.JavaConverters._
 
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.FetchOrientation.FETCH_NEXT
 import yaooqinn.kyuubi.schema.ColumnBasedSet
-import yaooqinn.kyuubi.session.{KyuubiSession, SessionManager}
+import yaooqinn.kyuubi.session.KyuubiSession
 import yaooqinn.kyuubi.spark.SparkSessionWithUGI
 import yaooqinn.kyuubi.utils.ReflectUtils
 
-class KyuubiOperationSuite extends SparkFunSuite with MockitoSugar {
+class KyuubiClientOperationSuite extends AbstractKyuubiOperationSuite {
 
-  val conf = new SparkConf(loadDefaults = true).setAppName("operation test")
-  KyuubiSparkUtil.setupCommonConfig(conf)
-  conf.remove(KyuubiSparkUtil.CATALOG_IMPL)
-  conf.setMaster("local")
-  var sessionMgr: SessionManager = _
-  val proto = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8
-  val user = UserGroupInformation.getCurrentUser
-  val userName = user.getShortUserName
-  val passwd = ""
-  val statement = "show tables"
-  var session: KyuubiSession = _
   var spark: SparkSession = _
   var sparkWithUgi: SparkSessionWithUGI = _
 
   override protected def beforeAll(): Unit = {
+    super.beforeAll()
     val sc = ReflectUtils
       .newInstance(classOf[SparkContext].getName, Seq(classOf[SparkConf]), Seq(conf))
       .asInstanceOf[SparkContext]
@@ -61,9 +50,6 @@ class KyuubiOperationSuite extends SparkFunSuite with MockitoSugar {
       classOf[SparkSession].getName,
       Seq(classOf[SparkContext]),
       Seq(sc)).asInstanceOf[SparkSession]
-    sessionMgr = new SessionManager()
-    sessionMgr.init(conf)
-    sessionMgr.start()
     sparkWithUgi = new SparkSessionWithUGI(user, conf, sessionMgr.getCacheMgr)
     ReflectUtils.setFieldValue(sparkWithUgi,
       "yaooqinn$kyuubi$spark$SparkSessionWithUGI$$_sparkSession", spark)
@@ -72,40 +58,9 @@ class KyuubiOperationSuite extends SparkFunSuite with MockitoSugar {
     ReflectUtils.setFieldValue(session, "sparkSessionWithUGI", sparkWithUgi)
   }
 
-  protected override def afterAll(): Unit = {
-    session.close()
-    session = null
-    sessionMgr.stop()
+  override protected def afterAll(): Unit = {
     spark.stop()
-  }
-
-  test("testCancel") {
-    val op = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, statement)
-    assert(op.getStatus.getState === INITIALIZED)
-    op.cancel()
-    assert(op.getStatus.getState === CANCELED)
-  }
-
-  test("testGetHandle") {
-    val op = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, statement)
-    assert(!op.getHandle.isHasResultSet)
-    assert(!op.getHandle.toTOperationHandle.isHasResultSet)
-    op.getHandle.setHasResultSet(true)
-    assert(op.getHandle.isHasResultSet)
-    assert(op.getHandle.toTOperationHandle.isHasResultSet)
-    assert(op.getHandle.getProtocolVersion === TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8)
-    assert(op.getHandle.getOperationType === EXECUTE_STATEMENT)
-  }
-
-  test("testGetStatus") {
-    val op = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, statement)
-    assert(op.getStatus.getState === INITIALIZED)
-    assert(op.getStatus.getOperationException === null)
-  }
-
-  test("testIsTimedOut") {
-    val op = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, statement)
-    assert(!op.isTimedOut)
+    super.afterAll()
   }
 
   test("testGetNextRowSet") {
@@ -119,48 +74,25 @@ class KyuubiOperationSuite extends SparkFunSuite with MockitoSugar {
     assert(rowSet.isInstanceOf[ColumnBasedSet])
   }
 
-  test("testGetProtocolVersion") {
-    val op = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, statement)
-    assert(op.getProtocolVersion === proto)
-  }
-
-  test("testGetOperationLog") {
-    // TODO
-  }
-
-  test("testClose") {
-    val op = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, statement)
-    assert(op.getStatus.getState === INITIALIZED)
-    op.close()
-    assert(op.getStatus.getState === CLOSED)
-  }
-
-  test("testGetSession") {
-    val op = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, statement)
-    val s = op.getSession
-    assert(s.sparkSession === spark)
-    assert(s == session)
-    assert(s.getUserName === userName)
-  }
-
   test("DEFAULT_FETCH_ORIENTATION") {
-    assert(KyuubiOperation.DEFAULT_FETCH_ORIENTATION === FETCH_NEXT)
+    assert(DEFAULT_FETCH_ORIENTATION === FETCH_NEXT)
   }
 
   test("DEFAULT_FETCH_MAX_ROWS") {
-    assert(KyuubiOperation.DEFAULT_FETCH_MAX_ROWS === 100)
+    assert(DEFAULT_FETCH_MAX_ROWS === 100)
   }
 
   test("is resource downloadable") {
-    intercept[IllegalArgumentException](KyuubiOperation.isResourceDownloadable(null))
-    intercept[IllegalArgumentException](KyuubiOperation.isResourceDownloadable(""))
-    assert(KyuubiOperation.isResourceDownloadable("hdfs://a/b/c.jar"))
-    assert(!KyuubiOperation.isResourceDownloadable("file://a/b/c.jar"))
-    assert(!KyuubiOperation.isResourceDownloadable("dfs://a/b/c.jar"))
+    intercept[IllegalArgumentException](KyuubiClientOperation.isResourceDownloadable(null))
+    intercept[IllegalArgumentException](KyuubiClientOperation.isResourceDownloadable(""))
+    assert(KyuubiClientOperation.isResourceDownloadable("hdfs://a/b/c.jar"))
+    assert(!KyuubiClientOperation.isResourceDownloadable("file://a/b/c.jar"))
+    assert(!KyuubiClientOperation.isResourceDownloadable("dfs://a/b/c.jar"))
   }
 
   test("transform plan") {
     val op = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, statement)
+      .asInstanceOf[KyuubiClientOperation]
 
     val parser = new SparkSqlParser(new SQLConf)
     val plan0 = parser.parsePlan("create temporary function a as 'a.b.c'")
@@ -191,20 +123,24 @@ class KyuubiOperationSuite extends SparkFunSuite with MockitoSugar {
     assert(e3.getMessage.startsWith("Resource Type"))
   }
 
-  test("is closed or canceled") {
+  test("test get operation log") {
+    val operationLogRootDir = new File(conf.get(LOGGING_OPERATION_LOG_DIR.key))
+    operationLogRootDir.mkdirs()
+    session.setOperationLogSessionDir(operationLogRootDir)
     val op = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, statement)
-    assert(!op.isClosedOrCanceled)
-    op.cancel()
-    assert(op.isClosedOrCanceled)
-    op.close()
-    assert(op.isClosedOrCanceled)
-    val op2 = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, statement)
-    op2.close()
-    assert(op2.isClosedOrCanceled)
-    val op3 = sessionMgr.getOperationMgr.newExecuteStatementOperation(session, null)
-    op3.cancel()
-    op3.close()
-    assert(op3.isClosedOrCanceled)
+    assert(op.getOperationLog === null)
 
+    ReflectUtils.invokeMethod(op, "registerCurrentOperationLog")
+    assert(sessionMgr.getOperationMgr.getOperationLog === null)
+    ReflectUtils.invokeMethod(op, "createOperationLog")
+    assert(op.getOperationLog !== null)
+
+    ReflectUtils.invokeMethod(op, "createOperationLog")
+    assert(op.getOperationLog !== null)
+
+    ReflectUtils.invokeMethod(op, "unregisterOperationLog")
+    assert(sessionMgr.getOperationMgr.getOperationLog === null)
+    operationLogRootDir.delete()
   }
+
 }
