@@ -206,7 +206,11 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       val req3 = new TGetOperationStatusReq(resp2.getOperationHandle)
       val resp3 = feService.GetOperationStatus(req3)
       resp3.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
-      Thread.sleep(5000)
+      while(feService.GetOperationStatus(req3)
+        .getOperationState.getValue < TOperationState.FINISHED_STATE.getValue) {
+        Thread.sleep(10)
+      }
+      Thread.sleep(2000)
       val req4 = new TFetchResultsReq(resp2.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
       val resp4 = feService.FetchResults(req4)
       resp4.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
@@ -225,6 +229,17 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       val req9 = new TCancelOperationReq(resp2.getOperationHandle)
       val resp9 = feService.CancelOperation(req9)
       resp9.getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
+
+      val reqInfo1 = new TGetInfoReq(handle, TGetInfoType.CLI_DBMS_NAME)
+      val respInfo1 = feService.GetInfo(reqInfo1)
+      respInfo1.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+
+      val reqInfo2 = new TGetInfoReq(handle, TGetInfoType.CLI_ACCESSIBLE_PROCEDURES)
+      val respInfo2 = feService.GetInfo(reqInfo2)
+      respInfo2.getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
+      respInfo2.getStatus.getErrorMessage should
+        include(TGetInfoType.CLI_ACCESSIBLE_PROCEDURES.toString)
+
       val req8 = new TCloseSessionReq(handle)
       val resp8 = feService.CloseSession(req8)
       resp8.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)

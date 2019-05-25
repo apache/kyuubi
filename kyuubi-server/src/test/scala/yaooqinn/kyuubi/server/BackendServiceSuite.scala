@@ -17,14 +17,14 @@
 
 package yaooqinn.kyuubi.server
 
-import java.util.concurrent.{Executors, RejectedExecutionException}
+import java.util.concurrent.RejectedExecutionException
 
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
 
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.GetInfoType
-import yaooqinn.kyuubi.operation.{CANCELED, CLOSED, FINISHED, OperationHandle}
+import yaooqinn.kyuubi.operation.{CANCELED, CLOSED, FINISHED}
 import yaooqinn.kyuubi.session.SessionHandle
 
 class BackendServiceSuite extends SparkFunSuite {
@@ -154,7 +154,7 @@ class BackendServiceSuite extends SparkFunSuite {
     backendService.cancelOperation(operationHandle)
     val operation = operationMgr.getOperation(operationHandle)
     val opState = operation.getStatus.getState
-    assert(opState === CLOSED || opState === CANCELED || opState === FINISHED)
+    assert(opState === CANCELED || opState === FINISHED)
   }
 
   test("close operation") {
@@ -163,7 +163,7 @@ class BackendServiceSuite extends SparkFunSuite {
     val operation = operationMgr.getOperation(operationHandle)
     backendService.closeOperation(operationHandle)
     val opState = operation.getStatus.getState
-    assert(opState === CLOSED || opState === CANCELED || opState === FINISHED)
+    assert(opState === CLOSED || opState === FINISHED)
   }
 
   test("reject execution exception") {

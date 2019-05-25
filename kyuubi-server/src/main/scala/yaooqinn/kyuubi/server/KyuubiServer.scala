@@ -44,8 +44,13 @@ private[kyuubi] class KyuubiServer private(name: String)
 
   override def init(conf: SparkConf): Unit = synchronized {
     this.conf = conf
+
+    val OOMHook = new Runnable {
+      override def run(): Unit = KyuubiServer.this.stop()
+    }
+
     _beService = new BackendService()
-    _feService = new FrontendService(_beService)
+    _feService = new FrontendService(_beService, OOMHook)
 
     addService(_beService)
     addService(_feService)
