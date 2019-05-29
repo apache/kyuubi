@@ -39,10 +39,9 @@ trait IKyuubiSession {
   def ugi: UserGroupInformation
 
   /**
-   * Open this IKyuubiSession.
-   * @param sessionConf
-   * @throws KyuubiSQLException
-   * @return
+   * Open this IKyuubiSession with a session configuration.
+   * @param sessionConf session configuration.
+   * @throws KyuubiSQLException if exception occured during IKyuubiSession initialization.
    */
   @throws[KyuubiSQLException]
   def open(sessionConf: Map[String, String]): Unit
@@ -50,62 +49,53 @@ trait IKyuubiSession {
   /**
    * Get session info.
    * @param getInfoType such as SERVER_NAME, DBMS_NAME and DBMS_VERSION.
-   * @return
    */
   def getInfo(getInfoType: GetInfoType): GetInfoValue
 
   /**
    * Execute sql statement.
-   * @param statement sql statement
-   * @return
+   * @param statement sql statement.
    */
   @throws[KyuubiSQLException]
   def executeStatement(statement: String): OperationHandle
 
   /**
    * Execute sql statement asynchronously.
-   * @param statement sql statement
-   * @return
+   * @param statement sql statement.
    */
   @throws[KyuubiSQLException]
   def executeStatementAsync(statement: String): OperationHandle
 
   /**
    * Close this IKyuubiSession.
-   * @throws
+   * @throws KyuubiSQLException if exception occured when closing IKyuubiSession.
    */
   @throws[KyuubiSQLException]
   def close(): Unit
 
   /**
    * Cancel relative IKyuubiOperation.
-   * @param opHandle
-   * @return
    */
   def cancelOperation(opHandle: OperationHandle): Unit
 
   /**
    * Close relative IKyuubiOperation.
-   * @param opHandle
-   * @return
    */
   def closeOperation(opHandle: OperationHandle): Unit
 
   /**
-   * Get schema of result set.
-   * @param opHandle
-   * @return
+   * Get schema of result set of operation.
+   * @param opHandle of relative operation.
    */
   def getResultSetMetadata(opHandle: OperationHandle): StructType
 
   /**
    * Fetch results of relative IKyuubiOperation.
-   * @param opHandle
+   * @param opHandle of relative IKyuubiOperation.
    * @param orientation fetch orientation, FETCH_FIRST or FETCH_NEXT.
    * @param maxRows limit of fetch size.
    * @param fetchType QUERY_OUTPUT or LOG.
-   * @throws KyuubiSQLException
-   * @return
+   * @throws KyuubiSQLException when fetching result.
    */
   @throws[KyuubiSQLException]
   def fetchResults(
@@ -116,29 +106,22 @@ trait IKyuubiSession {
 
   /**
    * Get this IKyuubiSession's delegation token.
-   * @param authFactory
-   * @param owner
-   * @param renewer
-   * @throws KyuubiSQLException
-   * @return
+   * @param authFactory used to process delegation token.
+   * @param owner of delegation token.
+   * @param renewer for renewing delegation token.
+   * @throws KyuubiSQLException when getting delegation token.
    */
   @throws[KyuubiSQLException]
   def getDelegationToken(authFactory: KyuubiAuthFactory, owner: String, renewer: String): String
 
   /**
    * Cancel this IKyuubiSession's delegation token.
-   * @param authFactory
-   * @param tokenStr
-   * @throws KyuubiSQLException
    */
   @throws[KyuubiSQLException]
   def cancelDelegationToken(authFactory: KyuubiAuthFactory, tokenStr: String): Unit
 
   /**
    * Renew this IKyuubiSession's delegation token.
-   * @param authFactory
-   * @param tokenStr
-   * @throws KyuubiSQLException
    */
   @throws[KyuubiSQLException]
   def renewDelegationToken(authFactory: KyuubiAuthFactory, tokenStr: String): Unit
@@ -150,7 +133,6 @@ trait IKyuubiSession {
 
   /**
    * Get the idle duration from last access, return 0 if running operation exists.
-   * @return
    */
   def getNoOperationTime: Long
 
@@ -176,7 +158,6 @@ trait IKyuubiSession {
 
   /**
    * Get relative saslServer ipAddress.
-   * @return
    */
   def getIpAddress: String
 
