@@ -113,6 +113,10 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       val resp2 = fe.FetchResults(req2)
       val rows = resp2.getResults.getRows
       rows.size() should be(0)
+      val closeReq = new TCloseSessionReq(handle)
+      fe.CloseSession(closeReq)
+      val afterCloseResp = fe.GetCatalogs(req)
+      afterCloseResp.getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
     }
   }
 
@@ -126,6 +130,10 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       rows.get(0).getColVals.get(0).getStringVal.getValue should be("MANAGED")
       rows.get(1).getColVals.get(0).getStringVal.getValue should be("VIEW")
       rows.get(2).getColVals.get(0).getStringVal.getValue should be("EXTERNAL")
+      val closeReq = new TCloseSessionReq(handle)
+      fe.CloseSession(closeReq)
+      val afterCloseResp = fe.GetTableTypes(req)
+      afterCloseResp.getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
     }
   }
 
@@ -139,6 +147,10 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       rows.size() should be(15)
       rows.get(0).getColVals.get(0).getStringVal.getValue should be("void")
       rows.get(1).getColVals.get(0).getStringVal.getValue should be("boolean")
+      val closeReq = new TCloseSessionReq(handle)
+      fe.CloseSession(closeReq)
+      val afterCloseResp = fe.GetTypeInfo(req)
+      afterCloseResp.getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
     }
   }
 
@@ -151,6 +163,10 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       val rows = resp2.getResults.getRows
       assert(rows.size() === 50)
       assert(rows.get(0).getColVals.get(2).getStringVal.getValue.nonEmpty)
+      val closeReq = new TCloseSessionReq(handle)
+      fe.CloseSession(closeReq)
+      val afterCloseResp = fe.GetFunctions(req)
+      afterCloseResp.getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
     }
   }
 
@@ -165,6 +181,10 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       val rows = resp2.getResults.getRows
       rows.size() should be(1)
       rows.get(0).getColVals.get(0).getStringVal.getValue should be("default")
+      val closeReq = new TCloseSessionReq(handle)
+      fe.CloseSession(closeReq)
+      val afterCloseResp = fe.GetSchemas(schemasReq)
+      afterCloseResp.getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
     }
   }
 
@@ -213,6 +233,11 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       val resp8 = fe.FetchResults(req8)
       val rows4 = resp8.getResults.getRows
       rows4.size() should be(0)
+
+      val closeReq = new TCloseSessionReq(handle)
+      fe.CloseSession(closeReq)
+      val afterCloseResp = fe.GetTables(req)
+      afterCloseResp.getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
     }
   }
 
@@ -252,6 +277,11 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       val resp4 = fe.FetchResults(req4)
       val rows2 = resp4.getResults.getRows
       rows2.size() should be(1)
+
+      val closeReq = new TCloseSessionReq(handle)
+      fe.CloseSession(closeReq)
+      val afterCloseResp = fe.GetColumns(req)
+      afterCloseResp.getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
     }
   }
 

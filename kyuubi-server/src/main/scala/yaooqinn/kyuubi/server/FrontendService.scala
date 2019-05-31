@@ -535,7 +535,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
     resp
   }
 
-  private[this] def notSupportTokenErrorStatus = {
+  private def notSupportTokenErrorStatus = {
     val errorStatus = new TStatus(TStatusCode.ERROR_STATUS)
     errorStatus.setErrorMessage("Delegation token is not supported")
     errorStatus
