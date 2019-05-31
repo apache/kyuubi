@@ -20,12 +20,9 @@ package yaooqinn.kyuubi.session
 import java.io.{File, IOException}
 
 import scala.collection.mutable.{HashSet => MHSet}
-import scala.util.control.NonFatal
 
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.FileSystem
-import org.apache.hadoop.hive.metastore.IMetaStoreClient
-import org.apache.hadoop.hive.ql.metadata.Hive
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext}
@@ -39,7 +36,7 @@ import yaooqinn.kyuubi.operation.{KyuubiOperation, OperationHandle, OperationMan
 import yaooqinn.kyuubi.schema.RowSet
 import yaooqinn.kyuubi.session.security.TokenCollector
 import yaooqinn.kyuubi.spark.SparkSessionWithUGI
-import yaooqinn.kyuubi.utils.{KyuubiHadoopUtil, KyuubiHiveUtil}
+import yaooqinn.kyuubi.utils.KyuubiHadoopUtil
 
 /**
  * An Execution Session with [[SparkSession]] instance inside, which shares [[SparkContext]]
@@ -517,15 +514,4 @@ private[kyuubi] class KyuubiSession(
   def getSessionMgr: SessionManager = sessionManager
 
   def getConf: SparkConf = conf
-
-  def getMetaStoreClient: IMetaStoreClient = {
-    KyuubiHadoopUtil.doAs(sessionUGI) {
-      try {
-        Hive.get(KyuubiHiveUtil.hiveConf(conf)).getMSC
-      } catch {
-        case NonFatal(e) =>
-          throw new KyuubiSQLException("Failed to get metastore connection" + e)
-      }
-    }
-  }
 }
