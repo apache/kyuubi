@@ -24,10 +24,11 @@ import org.apache.hive.service.cli.thrift.{TGetInfoType, TProtocolVersion}
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkFunSuite}
 import org.apache.spark.sql.SparkSession
 import org.scalatest.mock.MockitoSugar
+
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType}
-import yaooqinn.kyuubi.operation.{CANCELED, OperationState}
+import yaooqinn.kyuubi.operation.CANCELED
 import yaooqinn.kyuubi.schema.ColumnBasedSet
 import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
@@ -206,7 +207,7 @@ class KyuubiSessionSuite extends SparkFunSuite with MockitoSugar {
     val op = opMgr.newExecuteStatementOperation(session, statement)
     val opHandle = op.getHandle
     session.cancelOperation(opHandle)
-    assert(ReflectUtils.getSuperField(op, "state").asInstanceOf[OperationState] === CANCELED)
+    assert(op.getStatus.getState === CANCELED)
   }
 
   test("test get info") {

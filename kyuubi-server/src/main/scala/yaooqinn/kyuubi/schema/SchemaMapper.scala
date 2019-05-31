@@ -53,4 +53,54 @@ object SchemaMapper {
       val catalogString = if (other != null) other.catalogString else null
       throw new IllegalArgumentException("Unrecognized type name: " + catalogString)
   }
+
+  def toJavaSQLType(typ: DataType): Int = typ match {
+    case NullType => java.sql.Types.NULL
+    case BooleanType => java.sql.Types.BOOLEAN
+    case ByteType => java.sql.Types.TINYINT
+    case ShortType => java.sql.Types.SMALLINT
+    case IntegerType => java.sql.Types.INTEGER
+    case LongType => java.sql.Types.BIGINT
+    case FloatType => java.sql.Types.FLOAT
+    case DoubleType => java.sql.Types.DOUBLE
+    case StringType => java.sql.Types.VARCHAR
+    case _: DecimalType => java.sql.Types.DECIMAL
+    case DateType => java.sql.Types.DATE
+    case TimestampType => java.sql.Types.TIMESTAMP
+    case BinaryType => java.sql.Types.BINARY
+    case _: ArrayType => java.sql.Types.ARRAY
+    case _: MapType => java.sql.Types.JAVA_OBJECT
+    case _: StructType => java.sql.Types.STRUCT
+    case _ => java.sql.Types.OTHER
+  }
+
+  def getColumnSize(typ: DataType): Option[Int] = typ match {
+    case ByteType => Some(3)
+    case ShortType => Some(5)
+    case IntegerType => Some(10)
+    case LongType => Some(19)
+    case FloatType => Some(7)
+    case DoubleType => Some(15)
+    case d: DecimalType => Some(d.precision)
+    case StringType | BinaryType | _: ArrayType | _: MapType | _: StructType => Some(Int.MaxValue)
+    case DateType => Some(10)
+    case TimestampType => Some(29)
+    case _ => None
+  }
+
+  def getDecimalDigits(typ: DataType): Option[Int] = typ match {
+    case BooleanType | ByteType | ShortType | IntegerType | LongType => Some(0)
+    case FloatType => Some(7)
+    case DoubleType => Some(15)
+    case d: DecimalType => Some(d.scale)
+    case TimestampType => Some(9)
+    case _ => None
+  }
+
+  def getNumPrecRadix(typ: DataType): Option[Int] = typ match {
+    case ByteType | ShortType | IntegerType | LongType | FloatType | DoubleType | _: DecimalType =>
+      Some(10)
+    case _ => None
+
+  }
 }

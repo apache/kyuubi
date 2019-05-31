@@ -33,13 +33,7 @@ import yaooqinn.kyuubi.session.SessionHandle
 class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSuite {
 
   private val beService = new BackendService()
-  private val sessionHandle = new SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8)
-  private def tHandle: TSessionHandle = sessionHandle.toTSessionHandle
   private val user = KyuubiSparkUtil.getCurrentUserName
-  private val catalog = "test_catalog"
-  private val tbl = "test_tbl"
-  private val schema = "test_schema"
-  private val col = "test_col"
   private val conf = new SparkConf(loadDefaults = true).setAppName("fe test")
   KyuubiSparkUtil.setupCommonConfig(conf)
   conf.remove(KyuubiSparkUtil.CATALOG_IMPL)
@@ -55,7 +49,7 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
     super.afterAll()
   }
 
-  test("test new fe service") {
+  test("new frontend service") {
     val feService = new FrontendService(beService)
     feService.getConf should be(null)
     feService.getStartTime should be(0)
@@ -63,19 +57,6 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
     feService.getName should be(classOf[FrontendService].getSimpleName)
     feService.getServerIPAddress should be(null)
     feService.getPortNumber should be(0)
-    val catalogsResp = feService.GetCatalogs(new TGetCatalogsReq(tHandle))
-    catalogsResp.getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
-    catalogsResp.getStatus.getErrorMessage should be("Method Not Implemented!")
-    val columnsReq = new TGetColumnsReq(tHandle)
-    columnsReq.setCatalogName(catalog)
-    columnsReq.setSchemaName(schema)
-    columnsReq.setTableName(tbl)
-    columnsReq.setColumnName(col)
-    val columnsResp = feService.GetColumns(columnsReq)
-    columnsResp.getStatus.getErrorMessage should be("Method Not Implemented!")
-    val getDelegationTokenResp =
-      feService.GetDelegationToken(new TGetDelegationTokenReq(tHandle, user, user))
-    getDelegationTokenResp.getStatus.getErrorMessage should be("Delegation token is not supported")
   }
 
   test("init fe service") {
@@ -116,48 +97,132 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
     feService.getServiceState should be(State.STOPPED)
   }
 
+  test("get delegation token") {
+    withFEServiceAndHandle { case (fe, handle) =>
+      val resp = fe.GetDelegationToken(new TGetDelegationTokenReq(handle, user, user))
+      resp.getStatus.getErrorMessage should startWith("Delegation token")
+    }
+  }
+
   test("get catalogs") {
-    val feService = new FrontendService(beService)
-    val req = new TGetCatalogsReq(tHandle)
-    val resp = feService.GetCatalogs(req)
-    resp.getStatus.getErrorMessage should be("Method Not Implemented!")
+    withFEServiceAndHandle { case (fe, handle) =>
+      val req = new TGetCatalogsReq(handle)
+      val resp = fe.GetCatalogs(req)
+      val req2 = new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+      val resp2 = fe.FetchResults(req2)
+      val rows = resp2.getResults.getRows
+      rows.size() should be(0)
+    }
   }
 
-  test("get schemas") {
-    val feService = new FrontendService(beService)
-    val schemasReq = new TGetSchemasReq(tHandle)
-    schemasReq.setCatalogName(catalog)
-    schemasReq.setSchemaName(schema)
-    val resp = feService.GetSchemas(schemasReq)
-    resp.getStatus.getErrorMessage should be("Method Not Implemented!")
-  }
-
-  test("get tables") {
-    val feService = new FrontendService(beService)
-    val req = new TGetTablesReq(tHandle)
-    req.setCatalogName(catalog)
-    req.setSchemaName(schema)
-    req.setTableName(tbl)
-    val resp = feService.GetTables(req)
-    resp.getStatus.getErrorMessage should be("Method Not Implemented!")
-  }
-
-  test("get columns") {
-    val feService = new FrontendService(beService)
-    val req = new TGetColumnsReq(tHandle)
-    req.setCatalogName(catalog)
-    req.setSchemaName(schema)
-    req.setTableName(tbl)
-    req.setColumnName(col)
-    val resp = feService.GetColumns(req)
-    resp.getStatus.getErrorMessage should be("Method Not Implemented!")
+  test("get table types") {
+    withFEServiceAndHandle { case (fe, handle) =>
+      val req = new TGetTableTypesReq(handle)
+      val resp = fe.GetTableTypes(req)
+      val req2 = new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+      val resp2 = fe.FetchResults(req2)
+      val rows = resp2.getResults.getRows
+      rows.get(0).getColVals.get(0).getStringVal.getValue should be("MANAGED")
+      rows.get(1).getColVals.get(0).getStringVal.getValue should be("VIEW")
+      rows.get(2).getColVals.get(0).getStringVal.getValue should be("EXTERNAL")
+    }
   }
 
   test("get type info") {
-    val feService = new FrontendService(beService)
-    val req = new TGetTypeInfoReq(tHandle)
-    val resp = feService.GetTypeInfo(req)
-    resp.getStatus.getErrorMessage should be("Method Not Implemented!")
+    withFEServiceAndHandle { case (fe, handle) =>
+      val req = new TGetTypeInfoReq(handle)
+      val resp = fe.GetTypeInfo(req)
+      val req2 = new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+      val resp2 = fe.FetchResults(req2)
+      val rows = resp2.getResults.getRows
+      rows.size() should be(15)
+      rows.get(0).getColVals.get(0).getStringVal.getValue should be("void")
+      rows.get(1).getColVals.get(0).getStringVal.getValue should be("boolean")
+    }
+  }
+
+  test("get functions") {
+    withFEServiceAndHandle { case (fe, handle) =>
+      val req = new TGetFunctionsReq(handle, null)
+      val resp = fe.GetFunctions(req)
+      val req2 = new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+      val resp2 = fe.FetchResults(req2)
+      val rows = resp2.getResults.getRows
+      assert(rows.size() === 50)
+      assert(rows.get(0).getColVals.get(2).getStringVal.getValue.nonEmpty)
+    }
+  }
+
+  test("get schemas") {
+    withFEServiceAndHandle { case (fe, handle) =>
+      val schemasReq = new TGetSchemasReq(handle)
+      schemasReq.setCatalogName("")
+      schemasReq.setSchemaName("*")
+      val resp = fe.GetSchemas(schemasReq)
+      val req2 = new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+      val resp2 = fe.FetchResults(req2)
+      val rows = resp2.getResults.getRows
+      rows.size() should be(1)
+      rows.get(0).getColVals.get(0).getStringVal.getValue should be("default")
+    }
+  }
+
+  test("get tables") {
+    withFEServiceAndHandle { case (fe, handle) =>
+      val req = new TGetTablesReq(handle)
+      req.setCatalogName("")
+      req.setSchemaName("*")
+      req.setTableName("*")
+      val kyuubiSession = beService.getSessionManager.getSession(new SessionHandle(handle))
+      kyuubiSession.sparkSession.sql("create table get_tables(key int, value string) using parquet")
+      val resp = fe.GetTables(req)
+      val req2 = new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+      val resp2 = fe.FetchResults(req2)
+      val rows = resp2.getResults.getRows
+      rows.get(0).getColVals.get(2).getStringVal.getValue should be("get_tables")
+
+      val req3 = new TGetTablesReq(handle)
+      req3.setSchemaName("a")
+      req3.setTableName("*")
+      val resp3 = fe.GetTables(req3)
+      val req4 = new TFetchResultsReq(resp3.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+      val resp4 = fe.FetchResults(req4)
+      val rows2 = resp4.getResults.getRows
+      rows2.size() should be(0)
+
+      val req5 = new TGetTablesReq(handle)
+      req5.setSchemaName("*")
+      req5.setTableName("get_tables_2")
+      val resp5 = fe.GetTables(req3)
+      val req6 = new TFetchResultsReq(resp5.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+      val resp6 = fe.FetchResults(req6)
+      val rows3 = resp6.getResults.getRows
+      rows3.size() should be(0)
+
+    }
+  }
+
+  test("get columns") {
+    withFEServiceAndHandle { case (fe, handle) =>
+      val kyuubiSession = beService.getSessionManager.getSession(new SessionHandle(handle))
+      val tableName = "get_columns"
+      kyuubiSession.sparkSession
+        .sql("create table " + tableName + "(key int, value string) using parquet")
+      val req = new TGetColumnsReq(handle)
+      req.setCatalogName("")
+      req.setSchemaName("*")
+      req.setTableName(tableName)
+      req.setColumnName(null)
+      val resp = fe.GetColumns(req)
+      val req2 = new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+      val resp2 = fe.FetchResults(req2)
+      val rows = resp2.getResults.getRows
+      rows.size() should be(2)
+      rows.get(0).getColVals.get(1).getStringVal.getValue should be("default")
+      rows.get(0).getColVals.get(2).getStringVal.getValue should be(tableName)
+      rows.get(0).getColVals.get(3).getStringVal.getValue should be("key")
+      rows.get(0).getColVals.get(4).getI32Val.getValue should be(java.sql.Types.INTEGER)
+    }
   }
 
   test("get port num") {
@@ -175,20 +240,22 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
   }
 
   test("fe service server context") {
-    val feService = new FrontendService(beService)
-    val context = new feService.FeServiceServerContext()
-    context.setSessionHandle(sessionHandle)
-    context.getSessionHandle should be(sessionHandle)
+    withFEServiceAndHandle { case (fe, handle) =>
+      val context = new fe.FeServiceServerContext()
+      context.setSessionHandle(new SessionHandle(handle))
+      context.getSessionHandle.toTSessionHandle should be(handle)
+    }
   }
 
   test("fe tserver event handler") {
-    val feService = new FrontendService(beService)
-    val handler = new feService.FeTServerEventHandler
-    val context = new feService.FeServiceServerContext()
-    context.setSessionHandle(sessionHandle)
-    handler.createContext(null, null)
-    handler.processContext(context, null, null)
-    handler.deleteContext(context, null, null)
+    withFEServiceAndHandle { case (fe, handle) =>
+      val handler = new fe.FeTServerEventHandler
+      val context = new fe.FeServiceServerContext()
+      context.setSessionHandle(new SessionHandle(handle))
+      handler.createContext(null, null)
+      handler.processContext(context, null, null)
+      handler.deleteContext(context, null, null)
+    }
   }
 
   test("open session, execute sql and get results") {

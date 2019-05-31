@@ -25,7 +25,7 @@ import org.apache.spark.sql.types.{DataType, DecimalType}
  * be transformed to [[TTypeDesc]].
  */
 case class TypeDescriptor(typ: DataType) {
-  private[this] val typeQualifiers: Option[TypeQualifiers] = typ match {
+  private val typeQualifiers: Option[TypeQualifiers] = typ match {
     case d: DecimalType => Some(TypeQualifiers.fromTypeInfo(d))
     case _ => None
   }

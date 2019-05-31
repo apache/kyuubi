@@ -15,22 +15,24 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.utils
+package yaooqinn.kyuubi.operation.metadata
 
-import org.apache.hadoop.hive.conf.HiveConf
-import org.apache.spark.{KyuubiSparkUtil, SparkConf}
+import org.apache.spark.sql.types.StructType
 
-object KyuubiHiveUtil {
+import yaooqinn.kyuubi.operation.{FINISHED, GET_CATALOGS, RUNNING}
+import yaooqinn.kyuubi.session.KyuubiSession
 
-  private val HIVE_PREFIX = "hive."
-  private val METASTORE_PREFIX = "metastore."
+class GetCatalogsOperation(session: KyuubiSession)
+  extends MetadataOperation(session, GET_CATALOGS) {
 
-  val URIS: String = HIVE_PREFIX + METASTORE_PREFIX + "uris"
-  val METASTORE_PRINCIPAL: String = HIVE_PREFIX + METASTORE_PREFIX + "kerberos.principal"
-
-  def hiveConf(conf: SparkConf): HiveConf = {
-    val hadoopConf = KyuubiSparkUtil.newConfiguration(conf)
-    new HiveConf(hadoopConf, classOf[HiveConf])
+  override def runInternal(): Unit = {
+    setState(RUNNING)
+    iter = Iterator.empty
+    setState(FINISHED)
   }
 
+  override val getResultSetSchema: StructType = {
+    new StructType()
+      .add("TABLE_CAT", "string", nullable = true, "Catalog name. NULL if not applicable.")
+  }
 }

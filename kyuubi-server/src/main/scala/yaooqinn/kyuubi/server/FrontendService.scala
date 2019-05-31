@@ -28,6 +28,7 @@ import org.apache.hive.service.cli.thrift._
 import org.apache.spark.{KyuubiConf, SparkConf}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.deploy.SparkHadoopUtil
+import org.apache.spark.sql.catalyst.catalog.CatalogTableType._
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TThreadPoolServer}
 import org.apache.thrift.transport.{TServerSocket, TTransport}
@@ -36,7 +37,7 @@ import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.auth.{AuthType, KyuubiAuthFactory, TSetIpAddressProcessor}
 import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType}
 import yaooqinn.kyuubi.operation.OperationHandle
-import yaooqinn.kyuubi.schema.SchemaMapper
+import yaooqinn.kyuubi.schema.{SchemaMapper, SparkTableTypes}
 import yaooqinn.kyuubi.service.{AbstractService, ServiceException, ServiceUtils}
 import yaooqinn.kyuubi.session.SessionHandle
 import yaooqinn.kyuubi.utils.{NamedThreadFactory, ThreadPoolWithOOMHook}
@@ -367,8 +368,13 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
   override def GetTables(req: TGetTablesReq): TGetTablesResp = {
     val resp = new TGetTablesResp
     try {
+      val catalogName = req.getCatalogName
+      val schemaName = req.getSchemaName
+      val tableName = req.getTableName
+      val tableTypes = Option(req.getTableTypes)
+        .map(_.asScala).getOrElse(SparkTableTypes.tableTypes)
       val opHandle = beService.getTables(new SessionHandle(req.getSessionHandle),
-        req.getCatalogName, req.getSchemaName, req.getTableName, req.getTableTypes.asScala)
+        catalogName, schemaName, tableName, tableTypes)
       resp.setOperationHandle(opHandle.toTOperationHandle)
       resp.setStatus(OK_STATUS)
     } catch {
