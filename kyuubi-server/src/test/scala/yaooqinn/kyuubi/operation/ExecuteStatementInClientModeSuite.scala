@@ -80,14 +80,6 @@ class ExecuteStatementInClientModeSuite extends SparkFunSuite with MockitoSugar 
     assert(rowSet2.toTRowSet.getColumns.get(0).getStringVal.getValues.get(0) === "default")
   }
 
-  test("DEFAULT_FETCH_ORIENTATION") {
-    assert(DEFAULT_FETCH_ORIENTATION === FETCH_NEXT)
-  }
-
-  test("DEFAULT_FETCH_MAX_ROWS") {
-    assert(DEFAULT_FETCH_MAX_ROWS === 100)
-  }
-
   test("is resource downloadable") {
     intercept[IllegalArgumentException](ExecuteStatementInClientMode.isResourceDownloadable(null))
     intercept[IllegalArgumentException](ExecuteStatementInClientMode.isResourceDownloadable(""))

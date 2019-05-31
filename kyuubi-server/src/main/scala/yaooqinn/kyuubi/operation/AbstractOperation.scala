@@ -228,8 +228,3 @@ abstract class AbstractOperation(
     }
   }
 }
-
-object AbstractOperation {
-  val DEFAULT_FETCH_ORIENTATION: FetchOrientation = FetchOrientation.FETCH_NEXT
-  val DEFAULT_FETCH_MAX_ROWS = 100
-}

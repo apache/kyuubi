@@ -26,7 +26,8 @@ import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import org.apache.spark.KyuubiConf._
 import org.scalatest.Matchers
 
-import yaooqinn.kyuubi.SecuredFunSuite
+import yaooqinn.kyuubi.{KyuubiSQLException, SecuredFunSuite}
+import yaooqinn.kyuubi.operation.OperationHandle
 import yaooqinn.kyuubi.service.{ServiceException, State}
 import yaooqinn.kyuubi.session.SessionHandle
 
@@ -181,6 +182,7 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       val rows = resp2.getResults.getRows
       rows.get(0).getColVals.get(2).getStringVal.getValue should be("get_tables")
 
+      // schema not match
       val req3 = new TGetTablesReq(handle)
       req3.setSchemaName("a")
       req3.setTableName("*")
@@ -190,6 +192,7 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       val rows2 = resp4.getResults.getRows
       rows2.size() should be(0)
 
+      // table name not match
       val req5 = new TGetTablesReq(handle)
       req5.setSchemaName("*")
       req5.setTableName("get_tables_2")
@@ -199,6 +202,17 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       val rows3 = resp6.getResults.getRows
       rows3.size() should be(0)
 
+      // table type not match
+      val req7 = new TGetTablesReq(handle)
+      req7.setCatalogName("")
+      req7.setSchemaName("*")
+      req7.setTableName("*")
+      req7.setTableTypes(Seq("VIEW").asJava)
+      val resp7 = fe.GetTables(req7)
+      val req8 = new TFetchResultsReq(resp7.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+      val resp8 = fe.FetchResults(req8)
+      val rows4 = resp8.getResults.getRows
+      rows4.size() should be(0)
     }
   }
 
@@ -214,14 +228,30 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       req.setTableName(tableName)
       req.setColumnName(null)
       val resp = fe.GetColumns(req)
+      val operation = beService.getSessionManager.getOperationMgr
+        .getOperation(new OperationHandle(resp.getOperationHandle))
+      assert(!operation.isTimedOut)
+      assert(!operation.shouldRunAsync)
       val req2 = new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
       val resp2 = fe.FetchResults(req2)
       val rows = resp2.getResults.getRows
+      intercept[KyuubiSQLException](operation.cancel())
       rows.size() should be(2)
       rows.get(0).getColVals.get(1).getStringVal.getValue should be("default")
       rows.get(0).getColVals.get(2).getStringVal.getValue should be(tableName)
       rows.get(0).getColVals.get(3).getStringVal.getValue should be("key")
       rows.get(0).getColVals.get(4).getI32Val.getValue should be(java.sql.Types.INTEGER)
+
+      val req3 = new TGetColumnsReq(handle)
+      req3.setCatalogName("")
+      req3.setSchemaName("*")
+      req3.setTableName(tableName)
+      req3.setColumnName("key")
+      val resp3 = fe.GetColumns(req3)
+      val req4 = new TFetchResultsReq(resp3.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+      val resp4 = fe.FetchResults(req4)
+      val rows2 = resp4.getResults.getRows
+      rows2.size() should be(1)
     }
   }
 

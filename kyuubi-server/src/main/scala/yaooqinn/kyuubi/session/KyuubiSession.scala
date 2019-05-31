@@ -172,10 +172,6 @@ private[kyuubi] class KyuubiSession(
       operation.run()
       opHandleSet.add(handle)
       handle
-    } catch {
-      case e: KyuubiSQLException =>
-        operationManager.closeOperation(handle)
-        throw e
     } finally {
       release(true)
     }
@@ -189,10 +185,6 @@ private[kyuubi] class KyuubiSession(
       operation.run()
       opHandleSet.add(handle)
       handle
-    } catch {
-      case e: KyuubiSQLException =>
-        operationManager.closeOperation(handle)
-        throw e
     } finally {
       release(true)
     }
@@ -206,10 +198,6 @@ private[kyuubi] class KyuubiSession(
       operation.run()
       opHandleSet.add(handle)
       handle
-    } catch {
-      case e: KyuubiSQLException =>
-        operationManager.closeOperation(handle)
-        throw e
     } finally {
       release(true)
     }
