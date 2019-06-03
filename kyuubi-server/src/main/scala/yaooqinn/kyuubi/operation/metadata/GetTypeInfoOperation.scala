@@ -78,7 +78,7 @@ class GetTypeInfoOperation(session: KyuubiSession)
       Row("struct", java.sql.Types.STRUCT, null, null, null, null,
         1.toShort, false, 0.toShort, true, false, false,
         null, 0.toShort, 0.toShort, null, null, null)
-    ).toIterator
+    ).toList.iterator
     setState(FINISHED)
   }
 

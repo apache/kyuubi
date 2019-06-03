@@ -36,9 +36,9 @@ class GetSchemasOperation (
   override protected def runInternal(): Unit = {
     setState(RUNNING)
     try {
-      val cmd = ShowDatabasesCommand(Option(schemaName))
+      val cmd = ShowDatabasesCommand(Option(convertSchemaPattern(schemaName)))
       val sparkRows = cmd.run(session.sparkSession)
-      iter = sparkRows.map(r => Row(r.getString(0), "")).toIterator
+      iter = sparkRows.map(r => Row(r.getString(0), "")).toList.iterator
       setState(FINISHED)
     } catch {
       case e: Exception =>

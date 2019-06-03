@@ -73,11 +73,16 @@ class GetColumnsOperation(
   override protected def runInternal(): Unit = {
     setState(RUNNING)
     try {
+      val columnPattern = if (columnName != null) {
+        convertIdentifierPattern(columnName, datanucleusFormat = false)
+      } else {
+        ".*"
+      }
       val cmd = KyuubiShowColumnsCommand(
         convertSchemaPattern(schemaName),
         convertIdentifierPattern(tableName, datanucleusFormat = true),
-        columnName)
-      iter = cmd.run(session.sparkSession).toIterator
+        columnPattern)
+      iter = cmd.run(session.sparkSession).toList.iterator
       setState(FINISHED)
     } catch {
       case e: Exception =>

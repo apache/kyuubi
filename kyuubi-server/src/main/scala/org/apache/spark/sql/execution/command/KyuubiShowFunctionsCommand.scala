@@ -19,26 +19,23 @@ package org.apache.spark.sql.execution.command
 
 import org.apache.spark.sql.{Row, SparkSession}
 
-case class KyuubiShowTablesCommand(
-    databaseName: String,
-    tableIdentifierPattern: String,
-    tableTypes: Seq[String]) extends RunnableCommand {
-
+case class KyuubiShowFunctionsCommand(
+    databasePattern: String,
+    functionName: String) extends RunnableCommand  {
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val catalog = sparkSession.sessionState.catalog
-    val databases = catalog.listDatabases(databaseName)
-    val tableIdentifiers = databases.flatMap { db => catalog.listTables(db, tableIdentifierPattern)}
-    val types = tableTypes.map(_.toUpperCase)
-
-    val tables = tableIdentifiers.map(catalog.getTempViewOrPermanentTableMetadata)
-    tables.flatMap { table =>
-      val tableType = table.tableType.name
-      if (types.contains(tableType)) {
-        Some(
-          Row("", table.database, table.identifier.table, tableType, table.comment.getOrElse(""))
-        )
-      } else {
-        None
+    val databases = catalog.listDatabases(databasePattern)
+    databases.flatMap { db =>
+      catalog.listFunctions(db, functionName).map { case (f, typ) =>
+        val info = catalog.lookupFunctionInfo(f)
+          Row(
+            null,
+            f.database.orNull,
+            f.funcName,
+            info.getUsage + info.getExtended,
+            null,
+            info.getClassName
+          )
       }
     }
   }

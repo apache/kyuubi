@@ -41,7 +41,7 @@ class GetTablesOperation (
         convertSchemaPattern(schemaName),
         convertIdentifierPattern(tableName, datanucleusFormat = true),
         tableTypes)
-      iter = cmd.run(session.sparkSession).toIterator
+      iter = cmd.run(session.sparkSession).toList.iterator
       setState(FINISHED)
     } catch {
       case e: Exception =>

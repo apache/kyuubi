@@ -32,7 +32,7 @@ class GetTableTypesOperation(session: KyuubiSession)
    */
   override protected def runInternal(): Unit = {
     setState(RUNNING)
-    iter = SparkTableTypes.tableTypes.map(Row(_)).toIterator
+    iter = SparkTableTypes.tableTypes.map(Row(_)).toList.iterator
     setState(FINISHED)
   }
 

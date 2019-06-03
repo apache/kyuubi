@@ -18,7 +18,7 @@
 package yaooqinn.kyuubi.operation.metadata
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.execution.command.ShowFunctionsCommand
+import org.apache.spark.sql.execution.command.{KyuubiShowFunctionsCommand, ShowFunctionsCommand}
 import org.apache.spark.sql.types.StructType
 
 import yaooqinn.kyuubi.KyuubiSQLException
@@ -37,13 +37,25 @@ class GetFunctionsOperation(
   override protected def runInternal(): Unit = {
     setState(RUNNING)
     try {
-      val command = ShowFunctionsCommand(
-        Option(schemaName),
-        Option(functionName),
-        showUserFunctions = true,
-        showSystemFunctions = true)
+      val f = if (functionName == null) {
+        ".*"
+      } else {
+        var escape = false
+        functionName.flatMap {
+          case c if escape =>
+            if (c != '\\') escape = false
+            c.toString
+          case '\\' =>
+            escape = true
+            ""
+          case '%' => ".*"
+          case '_' => "."
+          case c => Character.toLowerCase(c).toString
+        }
+      }
+      val command = KyuubiShowFunctionsCommand(convertSchemaPattern(schemaName), f)
       val sparkRows = command.run(session.sparkSession)
-      iter = sparkRows.map(r => Row(null, null, r.getString(0), null, null, null)).toIterator
+      iter = sparkRows.toList.iterator
       setState(FINISHED)
     } catch {
       case e: Exception =>
@@ -62,7 +74,7 @@ class GetFunctionsOperation(
       .add("FUNCTION_NAME", "string", nullable = true, "Function name. This is the name used to" +
         " invoke the function")
       .add("REMARKS", "string", nullable = true, "Explanatory comment on the function")
-      .add("FUNCTION_TYPE", "string", nullable = true, "Kind of function.")
+      .add("FUNCTION_TYPE", "int", nullable = true, "Kind of function.")
       .add("SPECIFIC_NAME", "string", nullable = true, "The name which uniquely identifies this" +
         " function within its schema")
   }
