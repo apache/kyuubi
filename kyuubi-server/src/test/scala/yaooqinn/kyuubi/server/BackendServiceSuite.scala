@@ -82,31 +82,17 @@ class BackendServiceSuite extends SparkFunSuite {
         GetInfoType.DBMS_VERSION).toTGetInfoValue.getStringValue === KyuubiSparkUtil.SPARK_VERSION)
   }
 
-  test("get type info") {
-    val e1 = intercept[KyuubiSQLException](backendService.getTypeInfo(sessionHandle))
-    assert(e1.toTStatus.getErrorMessage === "Method Not Implemented!")
-  }
-
   test("get catalogs") {
-    val e2 = intercept[KyuubiSQLException](backendService.getCatalogs(sessionHandle))
-    assert(e2.toTStatus.getErrorMessage === "Method Not Implemented!")
-    assert(KyuubiSQLException.toTStatus(e2).getErrorMessage === "Method Not Implemented!")
-  }
-
-  test("get schemas") {
-    intercept[KyuubiSQLException](backendService.getSchemas(sessionHandle, "", ""))
-  }
-
-  test("get tables") {
-    intercept[KyuubiSQLException](backendService.getTables(sessionHandle, "", "", "", null))
-  }
-
-  test("get table types") {
-    intercept[KyuubiSQLException](backendService.getTableTypes(sessionHandle))
-  }
-
-  test("get functions") {
-    intercept[KyuubiSQLException](backendService.getFunctions(sessionHandle, "", "", ""))
+    val operationHandle = backendService.getCatalogs(sessionHandle)
+    val operationMgr = backendService.getSessionManager.getOperationMgr
+    val operation = operationMgr.getOperation(operationHandle)
+    assert(operation.getHandle === operationHandle)
+    assert(operation.getProtocolVersion === proto)
+    assert(!operation.isTimedOut)
+    assert(operation.getStatus.getState === FINISHED)
+    assert(backendService.getOperationStatus(operationHandle).getState === FINISHED)
+    assert(operation.getResultSetSchema.head.name === "TABLE_CAT")
+    assert(backendService.getResultSetMetadata(operationHandle).head.name === "TABLE_CAT")
   }
 
   test("execute statement") {
@@ -126,7 +112,6 @@ class BackendServiceSuite extends SparkFunSuite {
     assert(kyuubiOperation.getStatus.getState === FINISHED)
     assert(backendService.getOperationStatus(operationHandle).getState === FINISHED)
     assert(backendService.getResultSetMetadata(operationHandle).head.name === "database")
-
   }
 
   test("execute statement async") {

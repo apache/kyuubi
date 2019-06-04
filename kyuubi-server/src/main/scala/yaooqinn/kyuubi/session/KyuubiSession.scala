@@ -32,7 +32,7 @@ import org.apache.spark.sql.types.StructType
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.cli._
-import yaooqinn.kyuubi.operation.{IKyuubiOperation, OperationHandle, OperationManager}
+import yaooqinn.kyuubi.operation.{KyuubiOperation, OperationHandle, OperationManager}
 import yaooqinn.kyuubi.schema.RowSet
 import yaooqinn.kyuubi.session.security.TokenCollector
 import yaooqinn.kyuubi.spark.SparkSessionWithUGI
@@ -164,6 +164,128 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
+  def getTableTypes: OperationHandle = {
+    acquire(true)
+    val operation = operationManager.newGetTableTypesOperation(this)
+    val handle = operation.getHandle
+    try {
+      operation.run()
+      opHandleSet.add(handle)
+      handle
+    } finally {
+      release(true)
+    }
+  }
+
+  def getTypeInfo: OperationHandle = {
+    acquire(true)
+    val operation = operationManager.newGetTypeInfoOperation(this)
+    val handle = operation.getHandle
+    try {
+      operation.run()
+      opHandleSet.add(handle)
+      handle
+    } finally {
+      release(true)
+    }
+  }
+
+  def getCatalogs: OperationHandle = {
+    acquire(true)
+    val operation = operationManager.newGetCatalogsOperation(this)
+    val handle = operation.getHandle
+    try {
+      operation.run()
+      opHandleSet.add(handle)
+      handle
+    } finally {
+      release(true)
+    }
+  }
+
+  def getSchemas(catalogName: String, schemaName: String): OperationHandle = {
+    acquire(true)
+    val operation =
+      operationManager.newGetSchemasOperation(this, catalogName, schemaName)
+    val handle = operation.getHandle
+    try {
+      operation.run()
+      opHandleSet.add(handle)
+      handle
+    } catch {
+      case e: KyuubiSQLException =>
+        operationManager.closeOperation(handle)
+        throw e
+    } finally {
+      release(true)
+    }
+  }
+
+  def getTables(
+      catalogName: String,
+      schemaName: String,
+      tableName: String,
+      tableTypes: Seq[String]): OperationHandle = {
+    acquire(true)
+    val operation =
+      operationManager.newGetTablesOperation(this, catalogName, schemaName, tableName, tableTypes)
+    val handle = operation.getHandle
+    try {
+      operation.run()
+      opHandleSet.add(handle)
+      handle
+    } catch {
+      case e: KyuubiSQLException =>
+        operationManager.closeOperation(handle)
+        throw e
+    } finally {
+      release(true)
+    }
+  }
+
+  def getFunctions(
+      catalogName: String,
+      schemaName: String,
+      functionName: String): OperationHandle = {
+    acquire(true)
+    val operation =
+      operationManager.newGetFunctionsOperation(this, catalogName, schemaName, functionName)
+    val handle = operation.getHandle
+    try {
+      operation.run()
+      opHandleSet.add(handle)
+      handle
+    } catch {
+      case e: KyuubiSQLException =>
+        operationManager.closeOperation(handle)
+        throw e
+    } finally {
+      release(true)
+    }
+  }
+
+  def getColumns(
+      catalogName: String,
+      schemaName: String,
+      tableName: String,
+      columnName: String): OperationHandle = {
+    acquire(true)
+    val operation =
+      operationManager.newGetColumnsOperation(this, catalogName, schemaName, tableName, columnName)
+    val handle = operation.getHandle
+    try {
+      operation.run()
+      opHandleSet.add(handle)
+      handle
+    } catch {
+      case e: KyuubiSQLException =>
+        operationManager.closeOperation(handle)
+        throw e
+    } finally {
+      release(true)
+    }
+  }
+
   /**
    * execute operation handler
    *
@@ -281,7 +403,7 @@ private[kyuubi] class KyuubiSession(
     }
   }
 
-  private def closeTimedOutOperations(operations: Seq[IKyuubiOperation]): Unit = {
+  private def closeTimedOutOperations(operations: Seq[KyuubiOperation]): Unit = {
     acquire(false)
     try {
       operations.foreach { op =>
@@ -378,4 +500,6 @@ private[kyuubi] class KyuubiSession(
   def getUserName: String = sessionUGI.getShortUserName
 
   def getSessionMgr: SessionManager = sessionManager
+
+  def getConf: SparkConf = conf
 }

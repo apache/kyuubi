@@ -27,9 +27,9 @@ import yaooqinn.kyuubi.schema.RowSet
 import yaooqinn.kyuubi.session.KyuubiSession
 
 /**
- * Interface class of KyuubiOperation.
+ * Interface class of [[KyuubiOperation]]s.
  */
-trait IKyuubiOperation {
+trait KyuubiOperation {
 
   /**
    * Get relative IKyuubiSession.
@@ -42,12 +42,12 @@ trait IKyuubiOperation {
   def getHandle: OperationHandle
 
   /**
-   * Get the protocol version of this IKyuubiOperation.
+   * Get the protocol version of this KyuubiOperation.
    */
   def getProtocolVersion: TProtocolVersion
 
   /**
-   * Get current status of this IKyuubiOperation.
+   * Get current status of this KyuubiOperation.
    */
   def getStatus: OperationStatus
 
@@ -57,19 +57,17 @@ trait IKyuubiOperation {
   def getOperationLog: OperationLog
 
   /**
-   * Run this IKyuubiOperation.
-   * @throws KyuubiSQLException
+   * Run this KyuubiOperation.
    */
-  @throws[KyuubiSQLException]
   def run(): Unit
 
   /**
-   * Close this IKyuubiOperation.
+   * Close this KyuubiOperation.
    */
   def close(): Unit
 
   /**
-   * Cancel this IKyuubiOperation.
+   * Cancel this KyuubiOperation.
    */
   def cancel(): Unit
 
@@ -82,12 +80,16 @@ trait IKyuubiOperation {
    * Get the operation result set.
    * @param order the fetch orientation, FETCH_FIRST or FETCH_NEXT.
    * @param rowSetSize limit of result set.
-   * @return
    */
   def getNextRowSet(order: FetchOrientation, rowSetSize: Long): RowSet
 
   /**
-   * Check whether this IKyuubiOperation has run more than the configured timeout duration.
+   * Check whether this KyuubiOperation has run more than the configured timeout duration.
    */
-  def isTimedOut: Boolean
+  def isTimedOut: Boolean = false
+
+  /**
+   * Whether to run async
+   */
+  def shouldRunAsync: Boolean = false
 }

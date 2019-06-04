@@ -23,8 +23,8 @@ import org.apache.hive.service.cli.thrift.{TCLIServiceConstants, TTypeQualifiers
 import org.apache.spark.sql.types.{DataType, DecimalType}
 
 class TypeQualifiers private() {
-  private[this] var precision: Option[Int] = None
-  private[this] var scale: Option[Int] = None
+  private var precision: Option[Int] = None
+  private var scale: Option[Int] = None
 
   private def setPrecision(precision: Int): Unit = {
     this.precision = Some(precision)

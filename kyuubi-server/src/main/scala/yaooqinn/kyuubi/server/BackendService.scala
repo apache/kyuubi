@@ -97,15 +97,17 @@ private[server] class BackendService private(name: String)
     sessionManager.getSession(sessionHandle).executeStatementAsync(statement)
   }
 
-  private def methodNotImpl = throw new KyuubiSQLException("Method Not Implemented!")
+  def getTypeInfo(sessionHandle: SessionHandle): OperationHandle = {
+    sessionManager.getSession(sessionHandle).getTypeInfo
+  }
 
-  def getTypeInfo(sessionHandle: SessionHandle): OperationHandle = methodNotImpl
-
-  def getCatalogs(sessionHandle: SessionHandle): OperationHandle = methodNotImpl
+  def getCatalogs(sessionHandle: SessionHandle): OperationHandle = {
+    sessionManager.getSession(sessionHandle).getCatalogs
+  }
 
   def getSchemas(
       sessionHandle: SessionHandle, catalogName: String, schemaName: String): OperationHandle = {
-    methodNotImpl
+    sessionManager.getSession(sessionHandle).getSchemas(catalogName, schemaName)
   }
 
   def getTables(
@@ -113,19 +115,30 @@ private[server] class BackendService private(name: String)
       catalogName: String,
       schemaName: String,
       tableName: String,
-      tableTypes: Seq[String]): OperationHandle = methodNotImpl
+      tableTypes: Seq[String]): OperationHandle = {
+    sessionManager.getSession(sessionHandle)
+      .getTables(catalogName, schemaName, tableName, tableTypes)
+  }
 
-  def getTableTypes(sessionHandle: SessionHandle): OperationHandle = methodNotImpl
+  def getTableTypes(sessionHandle: SessionHandle): OperationHandle = {
+    sessionManager.getSession(sessionHandle).getTableTypes
+  }
 
   def getColumns(
       sessionHandle: SessionHandle,
       catalogName: String,
-      schemaName: String, tableName: String, columnName: String): OperationHandle = methodNotImpl
+      schemaName: String, tableName: String, columnName: String): OperationHandle = {
+    sessionManager.getSession(sessionHandle)
+      .getColumns(catalogName, schemaName, tableName, columnName)
+  }
 
   def getFunctions(
       sessionHandle: SessionHandle,
       catalogName: String,
-      schemaName: String, functionName: String): OperationHandle = methodNotImpl
+      schemaName: String,
+      functionName: String): OperationHandle = {
+    sessionManager.getSession(sessionHandle).getFunctions(catalogName, schemaName, functionName)
+  }
 
   def getOperationStatus(opHandle: OperationHandle): OperationStatus = {
     sessionManager.getOperationMgr.getOperation(opHandle).getStatus
