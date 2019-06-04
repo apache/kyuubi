@@ -421,6 +421,7 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
         .getOperationState.getValue < TOperationState.FINISHED_STATE.getValue) {
         Thread.sleep(10)
       }
+      Thread.sleep(2000)
       val fReq = new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
       val fRes = fe.FetchResults(fReq)
       val rows = fRes.getResults.getRows
