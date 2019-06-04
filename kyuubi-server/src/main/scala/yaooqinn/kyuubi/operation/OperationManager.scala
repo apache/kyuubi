@@ -32,7 +32,7 @@ import org.apache.spark.sql.types.StructType
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.operation.metadata._
-import yaooqinn.kyuubi.operation.statement.ExecuteStatementInClientMode
+import yaooqinn.kyuubi.operation.statement.{ExecuteStatementInClientMode, ExecuteStatementOperation}
 import yaooqinn.kyuubi.schema.{RowSet, RowSetBuilder}
 import yaooqinn.kyuubi.service.AbstractService
 import yaooqinn.kyuubi.session.KyuubiSession
@@ -87,8 +87,9 @@ private[kyuubi] class OperationManager private(name: String)
 
   def newExecuteStatementOperation(
       parentSession: KyuubiSession,
-      statement: String): ExecuteStatementInClientMode = synchronized {
-    val operation = new ExecuteStatementInClientMode(parentSession, statement)
+      statement: String,
+      runAsync: Boolean = true): ExecuteStatementOperation = synchronized {
+    val operation = new ExecuteStatementInClientMode(parentSession, statement, runAsync)
     addOperation(operation)
     operation
   }

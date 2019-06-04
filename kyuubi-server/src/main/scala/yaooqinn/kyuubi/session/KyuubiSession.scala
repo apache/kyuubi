@@ -108,10 +108,10 @@ private[kyuubi] class KyuubiSession(
   }
 
   @throws[KyuubiSQLException]
-  private def executeStatementInternal(statement: String): OperationHandle = {
+  private def executeStatementInternal(statement: String, runAsync: Boolean): OperationHandle = {
     acquire(true)
     val operation =
-      operationManager.newExecuteStatementOperation(this, statement)
+      operationManager.newExecuteStatementOperation(this, statement, runAsync)
     val opHandle = operation.getHandle
     try {
       operation.run()
@@ -294,7 +294,7 @@ private[kyuubi] class KyuubiSession(
    */
   @throws[KyuubiSQLException]
   def executeStatement(statement: String): OperationHandle = {
-    executeStatementInternal(statement)
+    executeStatementInternal(statement, runAsync = false)
   }
 
   /**
@@ -305,7 +305,7 @@ private[kyuubi] class KyuubiSession(
    */
   @throws[KyuubiSQLException]
   def executeStatementAsync(statement: String): OperationHandle = {
-    executeStatementInternal(statement)
+    executeStatementInternal(statement, runAsync = true)
   }
 
   /**

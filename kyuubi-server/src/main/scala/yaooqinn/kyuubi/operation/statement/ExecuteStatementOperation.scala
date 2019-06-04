@@ -30,8 +30,11 @@ import yaooqinn.kyuubi.session.KyuubiSession
  * @param session Parent [[KyuubiSession]]
  * @param statement sql statement
  */
-abstract class ExecuteStatementOperation(session: KyuubiSession, statement: String)
-  extends AbstractOperation(session, EXECUTE_STATEMENT, true) {
+abstract class ExecuteStatementOperation(
+    session: KyuubiSession,
+    statement: String,
+    runAsync: Boolean)
+  extends AbstractOperation(session, EXECUTE_STATEMENT) {
 
   protected val statementId: String = UUID.randomUUID().toString
 
@@ -61,9 +64,7 @@ abstract class ExecuteStatementOperation(session: KyuubiSession, statement: Stri
   override protected def runInternal(): Unit = {
     setState(PENDING)
     setHasResultSet(true)
-
-    // Runnable impl to call runInternal asynchronously, from a different thread
-    val backgroundOperation = new Runnable() {
+    val task = new Runnable() {
       override def run(): Unit = {
         try {
           session.ugi.doAs(new PrivilegedExceptionAction[Unit]() {
@@ -82,16 +83,19 @@ abstract class ExecuteStatementOperation(session: KyuubiSession, statement: Stri
       }
     }
 
-    try {
-      // This submit blocks if no background threads are available to run this operation
-      val backgroundHandle =
-        session.getSessionMgr.submitBackgroundOperation(backgroundOperation)
-      setBackgroundHandle(backgroundHandle)
-    } catch {
-      case rejected: RejectedExecutionException =>
-        setState(ERROR)
-        throw new KyuubiSQLException("The background threadpool cannot accept" +
-          " new task for execution, please retry the operation", rejected)
+    if (shouldRunAsync) {
+      try {
+        // This submit blocks if no background threads are available to run this operation
+        val backgroundHandle = session.getSessionMgr.submitBackgroundOperation(task)
+        setBackgroundHandle(backgroundHandle)
+      } catch {
+        case rejected: RejectedExecutionException =>
+          setState(ERROR)
+          throw new KyuubiSQLException("The background threadpool cannot accept" +
+            " new task for execution, please retry the operation", rejected)
+      }
+    } else {
+      task.run()
     }
   }
 
@@ -107,5 +111,7 @@ abstract class ExecuteStatementOperation(session: KyuubiSession, statement: Stri
       }
     }
   }
+
+  override def shouldRunAsync: Boolean = runAsync
 
 }
