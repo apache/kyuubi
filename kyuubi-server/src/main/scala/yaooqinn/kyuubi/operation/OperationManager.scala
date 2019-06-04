@@ -31,6 +31,8 @@ import org.apache.spark.sql.types.StructType
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.cli.FetchOrientation
+import yaooqinn.kyuubi.operation.metadata._
+import yaooqinn.kyuubi.operation.statement.ExecuteStatementInClientMode
 import yaooqinn.kyuubi.schema.{RowSet, RowSetBuilder}
 import yaooqinn.kyuubi.service.AbstractService
 import yaooqinn.kyuubi.session.KyuubiSession
@@ -40,9 +42,9 @@ private[kyuubi] class OperationManager private(name: String)
 
   def this() = this(classOf[OperationManager].getSimpleName)
 
-  private[this] lazy val logSchema: StructType = new StructType().add("operation_log", "string")
-  private[this] val handleToOperation = new ConcurrentHashMap[OperationHandle, IKyuubiOperation]
-  private[this] val userToOperationLog = new ConcurrentHashMap[String, OperationLog]()
+  private lazy val logSchema: StructType = new StructType().add("operation_log", "string")
+  private val handleToOperation = new ConcurrentHashMap[OperationHandle, KyuubiOperation]
+  private val userToOperationLog = new ConcurrentHashMap[String, OperationLog]()
 
   override def init(conf: SparkConf): Unit = synchronized {
     if (conf.get(LOGGING_OPERATION_ENABLED.key).toBoolean) {
@@ -53,15 +55,15 @@ private[kyuubi] class OperationManager private(name: String)
     super.init(conf)
   }
 
-  private[this] def initOperationLogCapture(): Unit = {
+  private def initOperationLogCapture(): Unit = {
     // Register another Appender (with the same layout) that talks to us.
     val ap = new LogDivertAppender(this)
     Logger.getRootLogger.addAppender(ap)
   }
 
-  private[this] def getOperationLogByThread: OperationLog = OperationLog.getCurrentOperationLog
+  private def getOperationLogByThread: OperationLog = OperationLog.getCurrentOperationLog
 
-  private[this] def getOperationLogByName: OperationLog = {
+  private def getOperationLogByName: OperationLog = {
     if (!userToOperationLog.isEmpty) {
       userToOperationLog.get(KyuubiSparkUtil.getCurrentUserName)
     } else {
@@ -85,13 +87,76 @@ private[kyuubi] class OperationManager private(name: String)
 
   def newExecuteStatementOperation(
       parentSession: KyuubiSession,
-      statement: String): IKyuubiOperation = synchronized {
-    val operation = new KyuubiClientOperation(parentSession, statement)
+      statement: String): ExecuteStatementInClientMode = synchronized {
+    val operation = new ExecuteStatementInClientMode(parentSession, statement)
     addOperation(operation)
     operation
   }
 
-  def getOperation(operationHandle: OperationHandle): IKyuubiOperation = {
+  def newGetCatalogsOperation(session: KyuubiSession): GetCatalogsOperation = {
+    val operation = new GetCatalogsOperation(session)
+    addOperation(operation)
+    operation
+  }
+
+  def newGetTablesOperation(
+      session: KyuubiSession,
+      catalogName: String,
+      schemaName: String,
+      tableName: String,
+      tableTypes: Seq[String]): GetTablesOperation = {
+    val operation =
+      new GetTablesOperation(session, catalogName, schemaName, tableName, tableTypes)
+    addOperation(operation)
+    operation
+  }
+
+  def newGetFunctionsOperation(
+      session: KyuubiSession,
+      catalogName: String,
+      schemaName: String,
+      functionName: String): GetFunctionsOperation = {
+    val operation =
+      new GetFunctionsOperation(session, catalogName, schemaName, functionName)
+    addOperation(operation)
+    operation
+  }
+
+  def newGetColumnsOperation(
+      session: KyuubiSession,
+      catalogName: String,
+      schemaName: String,
+      tableName: String,
+      columnName: String): GetColumnsOperation = {
+    val operation =
+      new GetColumnsOperation(session, catalogName, schemaName, tableName, columnName)
+    addOperation(operation)
+    operation
+  }
+
+  def newGetSchemasOperation(
+      session: KyuubiSession,
+      catalogName: String,
+      schemaName: String): GetSchemasOperation = {
+    val operation =
+      new GetSchemasOperation(session, catalogName, schemaName)
+    addOperation(operation)
+    operation
+  }
+
+  def newGetTableTypesOperation(session: KyuubiSession): GetTableTypesOperation = {
+    val operation = new GetTableTypesOperation(session)
+    addOperation(operation)
+    operation
+  }
+
+  def newGetTypeInfoOperation(session: KyuubiSession): GetTypeInfoOperation = {
+    val operation = new GetTypeInfoOperation(session)
+    addOperation(operation)
+    operation
+  }
+
+  def getOperation(operationHandle: OperationHandle): KyuubiOperation = {
     val operation = getOperationInternal(operationHandle)
     if (operation == null) {
       throw new KyuubiSQLException("Invalid OperationHandle " + operationHandle)
@@ -99,18 +164,18 @@ private[kyuubi] class OperationManager private(name: String)
     operation
   }
 
-  private[this] def getOperationInternal(operationHandle: OperationHandle) =
+  private def getOperationInternal(operationHandle: OperationHandle) =
     handleToOperation.get(operationHandle)
 
-  private[this] def addOperation(operation: IKyuubiOperation): Unit = {
+  private def addOperation(operation: KyuubiOperation): Unit = {
     handleToOperation.put(operation.getHandle, operation)
   }
 
-  private[this] def removeOperation(opHandle: OperationHandle) =
+  private def removeOperation(opHandle: OperationHandle) =
     handleToOperation.remove(opHandle)
 
   private def removeTimedOutOperation(
-      operationHandle: OperationHandle): Option[IKyuubiOperation] = synchronized {
+      operationHandle: OperationHandle): Option[KyuubiOperation] = synchronized {
     Some(handleToOperation.get(operationHandle))
       .filter(_.isTimedOut)
       .map(_ => handleToOperation.remove(operationHandle))
@@ -172,11 +237,11 @@ private[kyuubi] class OperationManager private(name: String)
     getOperation(opHandle).getResultSetSchema
   }
 
-  private[this] def isFetchFirst(fetchOrientation: FetchOrientation): Boolean = {
+  private def isFetchFirst(fetchOrientation: FetchOrientation): Boolean = {
     fetchOrientation == FetchOrientation.FETCH_FIRST
   }
 
-  def removeExpiredOperations(handles: Seq[OperationHandle]): Seq[IKyuubiOperation] = {
+  def removeExpiredOperations(handles: Seq[OperationHandle]): Seq[KyuubiOperation] = {
     handles.flatMap(removeTimedOutOperation).map { op =>
       warn("Operation " + op.getHandle + " is timed-out and will be closed")
       op

@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,21 +15,19 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.operation
+package yaooqinn.kyuubi.operation.statement
 
-import java.io.{File, FileNotFoundException}
+import java.io.File
 
 import scala.collection.JavaConverters._
 import scala.util.{Success, Try}
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.fs.{FileUtil, Path}
-import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAccessControlException
-import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil
-import org.apache.spark.sql.{AnalysisException, DataFrame, Row, SparkSQLUtils}
+import org.apache.spark.sql.{AnalysisException, DataFrame, SparkSQLUtils}
 import org.apache.spark.sql.catalyst.catalog.{FileResource, FunctionResource, JarResource}
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
@@ -38,124 +36,33 @@ import org.apache.spark.sql.types._
 
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.FetchOrientation
+import yaooqinn.kyuubi.operation._
 import yaooqinn.kyuubi.schema.{RowSet, RowSetBuilder}
 import yaooqinn.kyuubi.session.KyuubiSession
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 import yaooqinn.kyuubi.utils.ReflectUtils
 
-class KyuubiClientOperation(session: KyuubiSession, statement: String)
-  extends AbstractKyuubiOperation(session, statement) {
+class ExecuteStatementInClientMode(session: KyuubiSession, statement: String)
+  extends ExecuteStatementOperation(session, statement) {
 
-  import KyuubiClientOperation._
+  import ExecuteStatementInClientMode._
 
   private val sparkSession = session.sparkSession
-  private val conf = sparkSession.conf
-
-  override protected val operationTimeout =
-    KyuubiSparkUtil.timeStringAsMs(conf.get(OPERATION_IDLE_TIMEOUT))
-
-  private var operationLog: OperationLog = _
-  private var isOperationLogEnabled: Boolean = false
-
   private var result: DataFrame = _
-  private var iter: Iterator[Row] = _
-
   private val incrementalCollect: Boolean = conf.get(OPERATION_INCREMENTAL_COLLECT).toBoolean
 
-  override def getOperationLog: OperationLog = operationLog
-
-  private def createOperationLog(): Unit = {
-    if (session.isOperationLogEnabled) {
-      val logFile =
-        new File(session.getSessionLogDir, opHandle.getHandleIdentifier.toString)
-      val logFilePath = logFile.getAbsolutePath
-      this.isOperationLogEnabled = true
-      // create log file
-      try {
-        if (logFile.exists) {
-          warn(
-            s"""
-               |The operation log file should not exist, but it is already there: $logFilePath"
-             """.stripMargin)
-          logFile.delete
-        }
-        if (!logFile.createNewFile) {
-          // the log file already exists and cannot be deleted.
-          // If it can be read/written, keep its contents and use it.
-          if (!logFile.canRead || !logFile.canWrite) {
-            warn(
-              s"""
-                 |The already existed operation log file cannot be recreated,
-                 |and it cannot be read or written: $logFilePath"
-               """.stripMargin)
-            this.isOperationLogEnabled = false
-            return
-          }
-        }
-      } catch {
-        case e: Exception =>
-          warn("Unable to create operation log file: " + logFilePath, e)
-          this.isOperationLogEnabled = false
-          return
-      }
-      // create OperationLog object with above log file
-      try {
-        this.operationLog = new OperationLog(this.opHandle.toString, logFile, new HiveConf())
-      } catch {
-        case e: FileNotFoundException =>
-          warn("Unable to instantiate OperationLog object for operation: " + this.opHandle, e)
-          this.isOperationLogEnabled = false
-          return
-      }
-      // register this operationLog
-      session.getSessionMgr.getOperationMgr
-        .setOperationLog(session.getUserName, this.operationLog)
-    }
-  }
-
-  private def registerCurrentOperationLog(): Unit = {
-    if (isOperationLogEnabled) {
-      if (operationLog == null) {
-        warn("Failed to get current OperationLog object of Operation: "
-          + getHandle.getHandleIdentifier)
-        isOperationLogEnabled = false
-      } else {
-        session.getSessionMgr.getOperationMgr
-          .setOperationLog(session.getUserName, operationLog)
-      }
-    }
-  }
-
-  private def unregisterOperationLog(): Unit = {
-    if (isOperationLogEnabled) {
-      session.getSessionMgr.getOperationMgr
-        .unregisterOperationLog(session.getUserName)
-    }
-  }
-
-  @throws[KyuubiSQLException]
-  override def run(): Unit = {
-    createOperationLog()
-    try {
-      runInternal()
-    } finally {
-      unregisterOperationLog()
-    }
-  }
-
-  private def cleanupOperationLog(): Unit = {
-    if (isOperationLogEnabled) {
-      if (operationLog == null) {
-        error("Operation [ " + opHandle.getHandleIdentifier + " ] " +
-          "logging is enabled, but its OperationLog object cannot be found.")
-      } else {
-        operationLog.close()
-      }
-    }
+  /**
+   * Cancel this KyuubiOperation.
+   */
+  override def cancel(): Unit = {
+    info(s"Cancel '$statement' with $statementId")
+    cleanup(CANCELED)
   }
 
   override def close(): Unit = {
-    super.close()
+    // RDDs will be cleaned automatically upon garbage collection.
+    debug(s"CLOSING $statementId")
+    cleanup(CLOSED)
     cleanupOperationLog()
     sparkSession.sparkContext.clearJobGroup()
   }
@@ -220,7 +127,6 @@ class KyuubiClientOperation(session: KyuubiSession, statement: String)
 
   override protected def execute(): Unit = {
     try {
-      registerCurrentOperationLog()
       info(s"Running query '$statement' with $statementId")
       setState(RUNNING)
 
@@ -330,7 +236,7 @@ class KyuubiClientOperation(session: KyuubiSession, statement: String)
   }
 }
 
-object KyuubiClientOperation {
+object ExecuteStatementInClientMode {
 
   def isResourceDownloadable(resource: String): Boolean = {
     val scheme = new Path(resource).toUri.getScheme

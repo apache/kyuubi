@@ -15,22 +15,28 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.utils
+package org.apache.spark.sql.execution.command
 
-import org.apache.hadoop.hive.conf.HiveConf
-import org.apache.spark.{KyuubiSparkUtil, SparkConf}
+import org.apache.spark.sql.{Row, SparkSession}
 
-object KyuubiHiveUtil {
-
-  private val HIVE_PREFIX = "hive."
-  private val METASTORE_PREFIX = "metastore."
-
-  val URIS: String = HIVE_PREFIX + METASTORE_PREFIX + "uris"
-  val METASTORE_PRINCIPAL: String = HIVE_PREFIX + METASTORE_PREFIX + "kerberos.principal"
-
-  def hiveConf(conf: SparkConf): HiveConf = {
-    val hadoopConf = KyuubiSparkUtil.newConfiguration(conf)
-    new HiveConf(hadoopConf, classOf[HiveConf])
+case class KyuubiShowFunctionsCommand(
+    databasePattern: String,
+    functionName: String) extends RunnableCommand  {
+  override def run(sparkSession: SparkSession): Seq[Row] = {
+    val catalog = sparkSession.sessionState.catalog
+    val databases = catalog.listDatabases(databasePattern)
+    databases.flatMap { db =>
+      catalog.listFunctions(db, functionName).map { case (f, typ) =>
+        val info = catalog.lookupFunctionInfo(f)
+          Row(
+            typ,
+            f.database.orNull,
+            f.funcName,
+            info.getUsage + info.getExtended,
+            null,
+            info.getClassName
+          )
+      }
+    }
   }
-
 }

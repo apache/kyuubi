@@ -50,8 +50,8 @@ private[kyuubi] abstract class HighAvailableService(name: String, server: Kyuubi
   protected var zkClient: CuratorFramework = _
   protected var serviceRootNamespace: String = _
 
-  private[this] var serviceNode: PersistentEphemeralNode = _
-  private[this] var servicePath: String = _
+  private var serviceNode: PersistentEphemeralNode = _
+  private var servicePath: String = _
 
   /**
    * reset current service

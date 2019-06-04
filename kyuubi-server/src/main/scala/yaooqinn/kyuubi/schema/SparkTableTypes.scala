@@ -15,22 +15,16 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.utils
+package yaooqinn.kyuubi.schema
 
-import org.apache.hadoop.hive.conf.HiveConf
-import org.apache.spark.{KyuubiSparkUtil, SparkConf}
+import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 
-object KyuubiHiveUtil {
+object SparkTableTypes {
 
-  private val HIVE_PREFIX = "hive."
-  private val METASTORE_PREFIX = "metastore."
-
-  val URIS: String = HIVE_PREFIX + METASTORE_PREFIX + "uris"
-  val METASTORE_PRINCIPAL: String = HIVE_PREFIX + METASTORE_PREFIX + "kerberos.principal"
-
-  def hiveConf(conf: SparkConf): HiveConf = {
-    val hadoopConf = KyuubiSparkUtil.newConfiguration(conf)
-    new HiveConf(hadoopConf, classOf[HiveConf])
-  }
+  val tableTypes: Seq[String] = Seq(
+    CatalogTableType.MANAGED.name,
+    CatalogTableType.VIEW.name,
+    CatalogTableType.EXTERNAL.name
+  )
 
 }

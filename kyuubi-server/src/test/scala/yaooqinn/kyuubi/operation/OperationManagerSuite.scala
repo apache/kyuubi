@@ -95,6 +95,8 @@ class OperationManagerSuite extends SparkFunSuite with Matchers with MockitoSuga
         .config(conf)
         .getOrCreate()
     when(session.sparkSession).thenReturn(ss)
+    when(session.getConf).thenReturn(conf)
+
     val statement = "show tables"
     val op = operationMgr.newExecuteStatementOperation(session, statement)
 
@@ -135,6 +137,8 @@ class OperationManagerSuite extends SparkFunSuite with Matchers with MockitoSuga
         .config(conf)
         .getOrCreate()
     when(session.sparkSession).thenReturn(ss)
+    when(session.getConf).thenReturn(conf)
+
     val statement = "show tables"
 
     val op1 = operationMgr.newExecuteStatementOperation(session, statement)
@@ -162,6 +166,8 @@ class OperationManagerSuite extends SparkFunSuite with Matchers with MockitoSuga
         .config(conf)
         .getOrCreate()
     when(session.sparkSession).thenReturn(ss)
+    when(session.getConf).thenReturn(conf)
+
     val statement = "show tables"
     val op1 = operationMgr.newExecuteStatementOperation(session, statement)
 
@@ -187,6 +193,7 @@ class OperationManagerSuite extends SparkFunSuite with Matchers with MockitoSuga
         .config(conf)
         .getOrCreate()
     when(session.sparkSession).thenReturn(ss)
+    when(session.getConf).thenReturn(conf)
     val statement = "show tables"
     val op1 = operationMgr.newExecuteStatementOperation(session, statement)
 

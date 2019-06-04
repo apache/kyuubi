@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,11 +15,24 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi
+package yaooqinn.kyuubi.operation.metadata
 
-import yaooqinn.kyuubi.cli.FetchOrientation
+import org.apache.spark.sql.types.StructType
 
-package object operation {
-  val DEFAULT_FETCH_ORIENTATION: FetchOrientation = FetchOrientation.FETCH_NEXT
-  val DEFAULT_FETCH_MAX_ROWS = 100
+import yaooqinn.kyuubi.operation.{FINISHED, GET_CATALOGS, RUNNING}
+import yaooqinn.kyuubi.session.KyuubiSession
+
+class GetCatalogsOperation(session: KyuubiSession)
+  extends MetadataOperation(session, GET_CATALOGS) {
+
+  override def runInternal(): Unit = {
+    setState(RUNNING)
+    iter = Iterator.empty
+    setState(FINISHED)
+  }
+
+  override val getResultSetSchema: StructType = {
+    new StructType()
+      .add("TABLE_CAT", "string", nullable = true, "Catalog name. NULL if not applicable.")
+  }
 }
