@@ -29,7 +29,7 @@ import yaooqinn.kyuubi.schema.{RowSet, RowSetBuilder}
 import yaooqinn.kyuubi.session.KyuubiSession
 
 abstract class MetadataOperation(session: KyuubiSession, opType: OperationType)
-  extends AbstractOperation(session, opType, false) {
+  extends AbstractOperation(session, opType) {
 
   setHasResultSet(true)
 

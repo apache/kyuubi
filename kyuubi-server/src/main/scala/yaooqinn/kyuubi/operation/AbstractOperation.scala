@@ -34,8 +34,7 @@ import yaooqinn.kyuubi.session.KyuubiSession
 
 abstract class AbstractOperation(
     session: KyuubiSession,
-    opType: OperationType,
-    runAsync: Boolean) extends KyuubiOperation with Logging {
+    opType: OperationType) extends KyuubiOperation with Logging {
   private var state: OperationState = INITIALIZED
   private val opHandle: OperationHandle = new OperationHandle(opType, session.getProtocolVersion)
   protected val conf: SparkConf = session.getConf
@@ -56,8 +55,6 @@ abstract class AbstractOperation(
   def setBackgroundHandle(backgroundHandle: Future[_]): Unit = {
     this.backgroundHandle = backgroundHandle
   }
-
-  override def shouldRunAsync: Boolean = runAsync
 
   override def getSession: KyuubiSession = session
 

@@ -396,6 +396,38 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
     }
   }
 
+  test("execute statement sync") {
+    withFEServiceAndHandle { case (fe, handle) =>
+      val req = new TExecuteStatementReq(handle, "show databases")
+      req.setRunAsync(false)
+      val resp = fe.ExecuteStatement(req)
+      val req2 = new TGetOperationStatusReq(resp.getOperationHandle)
+      val statusResp = fe.GetOperationStatus(req2)
+      statusResp.getOperationState should be(TOperationState.FINISHED_STATE)
+      val fReq = new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+      val fRes = fe.FetchResults(fReq)
+      val rows = fRes.getResults.getRows
+      rows.get(0).getColVals.get(0).getStringVal.getValue should be("default")
+    }
+  }
+
+  test("execute statement async") {
+    withFEServiceAndHandle { case (fe, handle) =>
+      val req = new TExecuteStatementReq(handle, "show databases")
+      req.setRunAsync(true)
+      val resp = fe.ExecuteStatement(req)
+      val statusReq = new TGetOperationStatusReq(resp.getOperationHandle)
+      while(fe.GetOperationStatus(statusReq)
+        .getOperationState.getValue < TOperationState.FINISHED_STATE.getValue) {
+        Thread.sleep(10)
+      }
+      val fReq = new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+      val fRes = fe.FetchResults(fReq)
+      val rows = fRes.getResults.getRows
+      rows.get(0).getColVals.get(0).getStringVal.getValue should be("default")
+    }
+  }
+
   test("alter database") {
     val block: (FrontendService, TSessionHandle) => Unit = (fe, handle) => {
       val req = new TExecuteStatementReq(handle,
