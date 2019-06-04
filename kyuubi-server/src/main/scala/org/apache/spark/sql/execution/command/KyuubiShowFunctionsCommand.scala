@@ -29,7 +29,7 @@ case class KyuubiShowFunctionsCommand(
       catalog.listFunctions(db, functionName).map { case (f, typ) =>
         val info = catalog.lookupFunctionInfo(f)
           Row(
-            null,
+            typ,
             f.database.orNull,
             f.funcName,
             info.getUsage + info.getExtended,

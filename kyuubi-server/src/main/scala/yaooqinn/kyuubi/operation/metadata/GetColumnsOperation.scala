@@ -20,8 +20,7 @@ package yaooqinn.kyuubi.operation.metadata
 import org.apache.spark.sql.execution.command.KyuubiShowColumnsCommand
 import org.apache.spark.sql.types.StructType
 
-import yaooqinn.kyuubi.KyuubiSQLException
-import yaooqinn.kyuubi.operation.{ERROR, FINISHED, GET_COLUMNS, RUNNING}
+import yaooqinn.kyuubi.operation.GET_COLUMNS
 import yaooqinn.kyuubi.session.KyuubiSession
 
 class GetColumnsOperation(
@@ -71,8 +70,7 @@ class GetColumnsOperation(
       "Indicates whether this column is auto incremented.")
 
   override protected def runInternal(): Unit = {
-    setState(RUNNING)
-    try {
+    execute {
       val columnPattern = if (columnName != null) {
         convertIdentifierPattern(columnName, datanucleusFormat = false)
       } else {
@@ -83,11 +81,6 @@ class GetColumnsOperation(
         convertIdentifierPattern(tableName, datanucleusFormat = true),
         columnPattern)
       iter = cmd.run(session.sparkSession).toList.iterator
-      setState(FINISHED)
-    } catch {
-      case e: Exception =>
-        setState(ERROR)
-        throw new KyuubiSQLException(e)
     }
   }
 }

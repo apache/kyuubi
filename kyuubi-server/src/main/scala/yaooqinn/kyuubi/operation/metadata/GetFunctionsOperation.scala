@@ -17,12 +17,10 @@
 
 package yaooqinn.kyuubi.operation.metadata
 
-import org.apache.spark.sql.Row
-import org.apache.spark.sql.execution.command.{KyuubiShowFunctionsCommand, ShowFunctionsCommand}
+import org.apache.spark.sql.execution.command.KyuubiShowFunctionsCommand
 import org.apache.spark.sql.types.StructType
 
-import yaooqinn.kyuubi.KyuubiSQLException
-import yaooqinn.kyuubi.operation.{ERROR, FINISHED, GET_FUNCTIONS, RUNNING}
+import yaooqinn.kyuubi.operation.GET_FUNCTIONS
 import yaooqinn.kyuubi.session.KyuubiSession
 
 class GetFunctionsOperation(
@@ -35,8 +33,7 @@ class GetFunctionsOperation(
    * Implemented by subclasses to decide how to execute specific behavior.
    */
   override protected def runInternal(): Unit = {
-    setState(RUNNING)
-    try {
+    execute {
       val f = if (functionName == null) {
         ".*"
       } else {
@@ -56,11 +53,6 @@ class GetFunctionsOperation(
       val command = KyuubiShowFunctionsCommand(convertSchemaPattern(schemaName), f)
       val sparkRows = command.run(session.sparkSession)
       iter = sparkRows.toList.iterator
-      setState(FINISHED)
-    } catch {
-      case e: Exception =>
-        setState(ERROR)
-        throw new KyuubiSQLException(e)
     }
   }
 

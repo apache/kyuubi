@@ -20,8 +20,7 @@ package yaooqinn.kyuubi.operation.metadata
 import org.apache.spark.sql.execution.command.KyuubiShowTablesCommand
 import org.apache.spark.sql.types.StructType
 
-import yaooqinn.kyuubi.KyuubiSQLException
-import yaooqinn.kyuubi.operation.{ERROR, FINISHED, GET_TABLES, RUNNING}
+import yaooqinn.kyuubi.operation.GET_TABLES
 import yaooqinn.kyuubi.session.KyuubiSession
 
 class GetTablesOperation (
@@ -35,18 +34,12 @@ class GetTablesOperation (
    * Implemented by subclasses to decide how to execute specific behavior.
    */
   override protected def runInternal(): Unit = {
-    setState(RUNNING)
-    try {
+    execute {
       val cmd = KyuubiShowTablesCommand(
         convertSchemaPattern(schemaName),
         convertIdentifierPattern(tableName, datanucleusFormat = true),
         tableTypes)
       iter = cmd.run(session.sparkSession).toList.iterator
-      setState(FINISHED)
-    } catch {
-      case e: Exception =>
-        setState(ERROR)
-        throw new KyuubiSQLException(e)
     }
   }
 

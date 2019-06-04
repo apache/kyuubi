@@ -17,10 +17,14 @@
 
 package yaooqinn.kyuubi.operation.metadata
 
-import org.apache.commons.lang3.StringUtils
+import java.security.PrivilegedExceptionAction
 
+import org.apache.commons.lang3.StringUtils
+import org.apache.spark.KyuubiSparkUtil
+
+import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.FetchOrientation
-import yaooqinn.kyuubi.operation.{AbstractOperation, CLOSED, FINISHED, OperationType}
+import yaooqinn.kyuubi.operation._
 import yaooqinn.kyuubi.schema.{RowSet, RowSetBuilder}
 import yaooqinn.kyuubi.session.KyuubiSession
 
@@ -66,6 +70,20 @@ abstract class MetadataOperation(session: KyuubiSession, opType: OperationType)
       .replaceAll("([^\\\\])_", "$1.")
       .replaceAll("\\\\_", "_")
       .replaceAll("^_", ".")
+  }
+
+  protected def execute(block: => Unit): Unit = {
+    setState(RUNNING)
+    try {
+      session.ugi.doAs(new PrivilegedExceptionAction[Unit] {
+        override def run(): Unit = block
+      })
+      setState(FINISHED)
+    } catch {
+      case e: Exception =>
+        setState(ERROR)
+        throw new KyuubiSQLException(KyuubiSparkUtil.findCause(e))
+    }
   }
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Long): RowSet = {
