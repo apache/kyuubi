@@ -27,6 +27,7 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
 import yaooqinn.kyuubi.Logging
+import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.service.AbstractService
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 
@@ -117,6 +118,7 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
   }
 
   override def init(conf: SparkConf): Unit = {
+    MetricsSystem.get.foreach(_.registerGauge("spark_session_cache_size", userToSession.size(), 0))
     super.init(conf)
   }
 
