@@ -428,6 +428,38 @@ object KyuubiConf {
       .timeConf(TimeUnit.MILLISECONDS)
       .createWithDefault(TimeUnit.SECONDS.toMillis(60L))
 
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //                                        Metrics                                              //
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+
+  val METRICS_ENABLE: ConfigEntry[Boolean] =
+    KyuubiConfigBuilder("spark.kyuubi.metrics.enabled")
+      .doc("Whether to enable kyuubi metrics system")
+      .booleanConf
+      .createWithDefault(true)
+
+  val METRICS_REPORTER: ConfigEntry[String] =
+    KyuubiConfigBuilder("spark.kyuubi.metrics.reporter")
+      .doc("Comma separated list of reporters for kyuubi metrics system, candidates:" +
+        " JMX,CONSOLE,JSON")
+      .stringConf
+      .createWithDefault("CONSOLE,JSON")
+
+  val METRICS_REPORT_INTERVAL: ConfigEntry[Long] =
+    KyuubiConfigBuilder("spark.kyuubi.metrics.report.interval")
+      .doc("How often should report metrics to json/console")
+      .timeConf(TimeUnit.SECONDS)
+      .createWithDefault(TimeUnit.SECONDS.toSeconds(5L))
+
+  val METRICS_REPORT_LOCATION: ConfigEntry[String] =
+    KyuubiConfigBuilder("spark.kyuubi.metrics.report.location")
+      .doc("Where the json metrics file located")
+      .stringConf
+      .createWithDefault(
+        s"${sys.env.getOrElse("KYUUBI_HOME", System.getProperty("java.io.tmpdir"))}"
+          + File.separator + "metrics" + File.separator + "report.json")
+
   /**
    * Return all the configuration definitions that have been defined in [[KyuubiConf]]. Each
    * definition contains key, defaultValue.

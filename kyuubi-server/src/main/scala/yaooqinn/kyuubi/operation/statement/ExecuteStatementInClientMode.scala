@@ -36,6 +36,7 @@ import org.apache.spark.sql.types._
 
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.FetchOrientation
+import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.operation._
 import yaooqinn.kyuubi.schema.{RowSet, RowSetBuilder}
 import yaooqinn.kyuubi.session.KyuubiSession
@@ -132,7 +133,7 @@ class ExecuteStatementInClientMode(
     try {
       info(s"Running query '$statement' with $statementId")
       setState(RUNNING)
-
+      MetricsSystem.get.foreach(_.RUNNING_QUERIES.inc)
       val classLoader = SparkSQLUtils.getUserJarClassLoader(sparkSession)
       Thread.currentThread().setContextClassLoader(classLoader)
 
@@ -219,9 +220,11 @@ class ExecuteStatementInClientMode(
           throw new KyuubiSQLException(err, "<unknown>", 10000, e)
         }
     } finally {
-      if (statementId != null) {
-        sparkSession.sparkContext.cancelJobGroup(statementId)
+      MetricsSystem.get.foreach {m =>
+        m.RUNNING_QUERIES.dec()
+        m.TOTAL_QUERIES.inc()
       }
+      sparkSession.sparkContext.cancelJobGroup(statementId)
     }
   }
 
@@ -229,6 +232,7 @@ class ExecuteStatementInClientMode(
     super.onStatementError(id, message, trace)
     KyuubiServerMonitor.getListener(session.getUserName)
       .foreach(_.onStatementError(id, message, trace))
+    MetricsSystem.get.foreach(_.ERROR_QUERIES.inc)
   }
 
   override protected def cleanup(state: OperationState) {

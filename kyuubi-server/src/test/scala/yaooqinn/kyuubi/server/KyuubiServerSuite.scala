@@ -31,6 +31,8 @@ import yaooqinn.kyuubi.utils.ReflectUtils
 
 class KyuubiServerSuite extends SparkFunSuite with BeforeAndAfterEach {
 
+  import KyuubiConf._
+
   override def beforeEach(): Unit = {
     System.setProperty(KyuubiConf.FRONTEND_BIND_PORT.key, "0")
     super.beforeEach()
@@ -79,7 +81,8 @@ class KyuubiServerSuite extends SparkFunSuite with BeforeAndAfterEach {
     val server = KyuubiServer.startKyuubiServer()
     assert(server.getServiceState === State.STARTED)
     val conf = server.getConf
-    KyuubiConf.getAllDefaults.filter(_._1 != KyuubiConf.FRONTEND_BIND_PORT.key)
+    KyuubiConf.getAllDefaults
+      .filter(x => x._1 != FRONTEND_BIND_PORT.key && x._1 != METRICS_REPORTER.key )
       .foreach { case (k, v) =>
         assert(conf.get(k) === v)
       }

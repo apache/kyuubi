@@ -30,6 +30,7 @@ import org.apache.spark.sql.Row
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.cli.FetchOrientation
+import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.session.KyuubiSession
 
 abstract class AbstractOperation(
@@ -219,6 +220,7 @@ abstract class AbstractOperation(
   override def run(): Unit = {
     beforeRun()
     try {
+      MetricsSystem.get.foreach(_.OPEN_OPERATIONS.inc())
       runInternal()
     } finally {
       afterRun()
