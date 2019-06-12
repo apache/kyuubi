@@ -121,6 +121,12 @@ class SessionManagerSuite extends SparkFunSuite {
     assert(sessionManager.getCacheMgr !== null)
     intercept[IllegalStateException](sessionManager.init(conf))
     sessionManager.stop()
+
+    val sessionManager2 = new SessionManager()
+    MetricsSystem.init(conf)
+    sessionManager2.init(conf)
+    MetricsSystem.close()
+    sessionManager2.stop()
   }
 
   test("start session manager") {

@@ -444,7 +444,7 @@ object KyuubiConf {
       .doc("Comma separated list of reporters for kyuubi metrics system, candidates:" +
         " JMX,CONSOLE,JSON")
       .stringConf
-      .createWithDefault("CONSOLE,JSON")
+      .createWithDefault("JSON")
 
   val METRICS_REPORT_INTERVAL: ConfigEntry[Long] =
     KyuubiConfigBuilder("spark.kyuubi.metrics.report.interval")
