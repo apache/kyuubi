@@ -36,6 +36,7 @@ import org.apache.thrift.transport.{TServerSocket, TTransport}
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.auth.{AuthType, KyuubiAuthFactory, TSetIpAddressProcessor}
 import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType}
+import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.operation.OperationHandle
 import yaooqinn.kyuubi.schema.{SchemaMapper, SparkTableTypes}
 import yaooqinn.kyuubi.service.{AbstractService, ServiceException, ServiceUtils}
@@ -56,7 +57,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
 
   private val OK_STATUS = new TStatus(TStatusCode.SUCCESS_STATUS)
 
-  private var serverEventHandler: TServerEventHandler = _
+  private var serverEventHandler: TServerEventHandler =  new FeTServerEventHandler
   private var currentServerContext: ThreadLocal[ServerContext] = _
 
   private var server: Option[TServer] = None
@@ -71,7 +72,6 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
   def this(beService: BackendService, OOMHook: Runnable) = {
     this(classOf[FrontendService].getSimpleName, beService, OOMHook)
     currentServerContext = new ThreadLocal[ServerContext]()
-    serverEventHandler = new FeTServerEventHandler
   }
 
   def this(beService: BackendService) = {
@@ -93,6 +93,10 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
   class FeTServerEventHandler extends TServerEventHandler {
     override def deleteContext(
         serverContext: ServerContext, tProtocol: TProtocol, tProtocol1: TProtocol): Unit = {
+      MetricsSystem.get.foreach { m =>
+        m.OPEN_CONNECTIONS.dec()
+
+      }
       Option(serverContext.asInstanceOf[FeServiceServerContext].getSessionHandle)
         .foreach { sessionHandle =>
           warn(s"Session [$sessionHandle] disconnected without closing properly, " +
@@ -113,6 +117,10 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
     override def preServe(): Unit = ()
 
     override def createContext(tProtocol: TProtocol, tProtocol1: TProtocol): ServerContext = {
+      MetricsSystem.get.foreach { m =>
+        m.OPEN_CONNECTIONS.inc()
+        m.TOTAL_CONNECTIONS.inc()
+      }
       new FeServiceServerContext()
     }
   }

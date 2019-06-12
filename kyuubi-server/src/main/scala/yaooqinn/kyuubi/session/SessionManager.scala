@@ -29,6 +29,7 @@ import org.apache.spark.KyuubiConf._
 import org.apache.spark.SparkConf
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
+import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.operation.OperationManager
 import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.service.{CompositeService, ServiceException}
@@ -75,6 +76,10 @@ private[kyuubi] class SessionManager private(
     checkInterval = conf.getTimeAsMs(FRONTEND_SESSION_CHECK_INTERVAL)
     sessionTimeout = conf.getTimeAsMs(FRONTEND_IDLE_SESSION_TIMEOUT)
     checkOperation = conf.get(FRONTEND_IDLE_SESSION_CHECK_OPERATION).toBoolean
+    MetricsSystem.get.foreach { m =>
+      m.registerGauge("exec_async_queue_size", poolQueueSize, 0)
+      m.registerGauge("exec_async_pool_size", execPool.getPoolSize, 0)
+    }
   }
 
   private def initOperationLogRootDir(): Unit = {
@@ -185,12 +190,16 @@ private[kyuubi] class SessionManager private(
     }
   }
 
-  private def cleanupResourcesRootDir(): Unit = try {
-    FileUtils.forceDelete(resourcesRootDir)
-  } catch {
-    case e: Exception =>
-      warn("Failed to cleanup root dir of KyuubiServer logging: "
-        + operationLogRootDir.getAbsolutePath, e)
+  private def cleanupResourcesRootDir(): Unit = {
+    if (resourcesRootDir != null) {
+      try {
+        FileUtils.forceDelete(resourcesRootDir)
+      } catch {
+        case e: Exception =>
+          warn("Failed to cleanup root dir of KyuubiServer resources: "
+            + resourcesRootDir.getAbsolutePath, e)
+      }
+    }
   }
 
   override def init(conf: SparkConf): Unit = synchronized {

@@ -24,6 +24,7 @@ import org.apache.spark.KyuubiConf._
 
 import yaooqinn.kyuubi._
 import yaooqinn.kyuubi.ha.{FailoverService, HighAvailableService, LoadBalanceService}
+import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.service.{CompositeService, ServiceException}
 
 /**
@@ -32,18 +33,20 @@ import yaooqinn.kyuubi.service.{CompositeService, ServiceException}
 private[kyuubi] class KyuubiServer private(name: String)
   extends CompositeService(name) with Logging {
 
-  private[this] var _beService: BackendService = _
+  private var _beService: BackendService = _
   def beService: BackendService = _beService
-  private[this] var _feService: FrontendService = _
+  private var _feService: FrontendService = _
   def feService: FrontendService = _feService
-  private[this] var _haService: HighAvailableService = _
+  private var _haService: HighAvailableService = _
 
-  private[this] val started = new AtomicBoolean(false)
+  private val started = new AtomicBoolean(false)
 
   def this() = this(classOf[KyuubiServer].getSimpleName)
 
   override def init(conf: SparkConf): Unit = synchronized {
     this.conf = conf
+
+    MetricsSystem.init(conf)
 
     val OOMHook = new Runnable {
       override def run(): Unit = KyuubiServer.this.stop()
@@ -75,6 +78,7 @@ private[kyuubi] class KyuubiServer private(name: String)
     if (started.getAndSet(false)) {
       super.stop()
     }
+    MetricsSystem.close()
   }
 }
 
