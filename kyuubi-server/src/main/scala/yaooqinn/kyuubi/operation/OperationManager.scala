@@ -31,6 +31,7 @@ import org.apache.spark.sql.types.StructType
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.cli.FetchOrientation
+import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.operation.metadata._
 import yaooqinn.kyuubi.operation.statement.{ExecuteStatementInClientMode, ExecuteStatementOperation}
 import yaooqinn.kyuubi.schema.{RowSet, RowSetBuilder}
@@ -177,9 +178,12 @@ private[kyuubi] class OperationManager private(name: String)
 
   private def removeTimedOutOperation(
       operationHandle: OperationHandle): Option[KyuubiOperation] = synchronized {
-    Some(handleToOperation.get(operationHandle))
+    Option(handleToOperation.get(operationHandle))
       .filter(_.isTimedOut)
-      .map(_ => handleToOperation.remove(operationHandle))
+      .map { _ =>
+        MetricsSystem.get.foreach(_.OPEN_OPERATIONS.dec)
+        handleToOperation.remove(operationHandle)
+      }
   }
 
   def cancelOperation(opHandle: OperationHandle): Unit = {
@@ -203,6 +207,7 @@ private[kyuubi] class OperationManager private(name: String)
   def closeOperation(opHandle: OperationHandle): Unit = {
     val operation = removeOperation(opHandle)
     if (operation == null) throw new KyuubiSQLException("Operation does not exist!")
+    MetricsSystem.get.foreach(_.OPEN_OPERATIONS.dec())
     operation.close()
   }
 

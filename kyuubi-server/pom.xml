@@ -80,6 +80,16 @@
         </dependency>
 
         <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-jvm</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_${scala.binary.version}</artifactId>
         </dependency>
@@ -284,6 +294,7 @@
                     </environmentVariables>
                     <systemProperties>
                         <spark.sql.warehouse.dir>${project.build.testOutputDirectory}/spark-warehouse</spark.sql.warehouse.dir>
+                        <spark.kyuubi.metrics.reporter>JMX</spark.kyuubi.metrics.reporter>
                     </systemProperties>
                 </configuration>
                 <executions>

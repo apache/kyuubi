@@ -40,3 +40,5 @@ derby.log
 ldap
 */dependency-reduced-pom.xml
 kyuubi-server/kyuubi-kdc/
+metrics/report.json
+metrics/.report.json.crc

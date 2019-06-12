@@ -24,12 +24,18 @@ import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
 
 import yaooqinn.kyuubi.KyuubiSQLException
+import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.service.{ServiceException, State}
 import yaooqinn.kyuubi.utils.ReflectUtils
 
 class SessionManagerSuite extends SparkFunSuite {
 
   import KyuubiConf._
+
+  override def beforeAll(): Unit = {
+    MetricsSystem.close()
+    super.beforeAll()
+  }
 
   test("init operation log") {
     val logRoot = UUID.randomUUID().toString
@@ -115,6 +121,12 @@ class SessionManagerSuite extends SparkFunSuite {
     assert(sessionManager.getCacheMgr !== null)
     intercept[IllegalStateException](sessionManager.init(conf))
     sessionManager.stop()
+
+    val sessionManager2 = new SessionManager()
+    MetricsSystem.init(conf)
+    sessionManager2.init(conf)
+    MetricsSystem.close()
+    sessionManager2.stop()
   }
 
   test("start session manager") {
@@ -137,12 +149,11 @@ class SessionManagerSuite extends SparkFunSuite {
     sessionManager.stop()
     assert(sessionManager.getServiceState === State.STOPPED)
     assert(sessionManager.getOperationMgr.getServiceState === State.STOPPED)
-    assert(ReflectUtils.getFieldValue(sessionManager, "execPool") === null)
-
+    val r = new Runnable {
+      override def run(): Unit = {}
+    }
+    intercept[NullPointerException](sessionManager.submitBackgroundOperation(r))
     val sessionManager2 = new SessionManager()
-    sessionManager2.init(conf)
-    sessionManager2.start()
-    ReflectUtils.setFieldValue(sessionManager2, "execPool", null)
     sessionManager2.stop()
   }
 

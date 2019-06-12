@@ -124,6 +124,8 @@ class KyuubiAppMasterSuite extends SparkFunSuite with MockitoSugar with Matchers
     appMaster.getServiceState should be(State.STARTED)
     appMaster.getStartTime should not be 0
     appMaster.getConf should be(conf)
+    appMaster.stop()
+
   }
 
   test("heartbeat throws ApplicationAttemptNotFoundException") {
@@ -142,6 +144,8 @@ class KyuubiAppMasterSuite extends SparkFunSuite with MockitoSugar with Matchers
     ReflectUtils.getFieldValue(appMaster, "amStatus") should be(FinalApplicationStatus.FAILED)
     val failureCount = "yaooqinn$kyuubi$yarn$KyuubiAppMaster$$failureCount"
     ReflectUtils.getFieldValue(appMaster, failureCount) should be(1)
+    appMaster.stop()
+
   }
 
   test("heartbeat throws other exceptions") {
@@ -161,6 +165,8 @@ class KyuubiAppMasterSuite extends SparkFunSuite with MockitoSugar with Matchers
     val failureCount = "yaooqinn$kyuubi$yarn$KyuubiAppMaster$$failureCount"
     ReflectUtils.getFieldValue(appMaster, failureCount) should be(
       YarnConfiguration.DEFAULT_RM_AM_MAX_ATTEMPTS + 2)
+    appMaster.stop()
+
   }
 
   test("heartbeat throws fatal") {
@@ -179,6 +185,7 @@ class KyuubiAppMasterSuite extends SparkFunSuite with MockitoSugar with Matchers
     ReflectUtils.getFieldValue(appMaster, "amStatus") should be(FinalApplicationStatus.FAILED)
     val failureCount = "yaooqinn$kyuubi$yarn$KyuubiAppMaster$$failureCount"
     ReflectUtils.getFieldValue(appMaster, failureCount) should be(1)
+    appMaster.stop()
   }
 
   test("start application master without initialization") {
