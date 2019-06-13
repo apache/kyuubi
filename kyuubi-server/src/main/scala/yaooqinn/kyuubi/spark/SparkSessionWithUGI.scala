@@ -229,7 +229,7 @@ object SparkSessionWithUGI {
   }
 
   def isPartiallyConstructed(user: String): Boolean = {
-    userSparkContextBeingConstruct.getOrDefault(user, false)
+    Option(userSparkContextBeingConstruct.get(user)).getOrElse(false)
   }
 
   def setFullyConstructed(user: String): Unit = {
