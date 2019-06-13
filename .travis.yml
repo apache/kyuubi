@@ -1,6 +1,9 @@
 language: scala
 scala:
   - 2.11.8
+jdk:
+  - oraclejdk8
+  - openjdk8
 
 cache:
   directories:
@@ -30,16 +33,24 @@ jobs:
   include:
     - stage: spark2.1
       language: scala
-      script: ./build/mvn clean install -Pspark-2.1 -Dmaven.javadoc.skip=true -B -V
+      script:
+        - jdk_switcher use oraclejdk8
+        - ./build/mvn clean install -Pspark-2.1 -Dmaven.javadoc.skip=true -B -V
     - stage: spark2.2
       language: scala
-      script: ./build/mvn clean install -Pspark-2.2 -Dmaven.javadoc.skip=true -B -V
+      script:
+        - jdk_switcher use oraclejdk8
+        - ./build/mvn clean install -Pspark-2.2 -Dmaven.javadoc.skip=true -B -V
     - stage: spark2.3
       language: scala
-      script: ./build/mvn clean install -Pspark-2.3 -Dmaven.javadoc.skip=true -B -V
+      script:
+        - jdk_switcher use oraclejdk8
+        - ./build/mvn clean install -Pspark-2.3 -Dmaven.javadoc.skip=true -B -V
     - stage: spark2.4
       language: scala
-      script: ./build/mvn clean install -Pspark-2.4 -Dmaven.javadoc.skip=true -B -V
+      script:
+        - jdk_switcher use oraclejdk8
+        - ./build/mvn clean install -Pspark-2.4 -Dmaven.javadoc.skip=true -B -V
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
