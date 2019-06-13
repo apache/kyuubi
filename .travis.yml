@@ -11,6 +11,7 @@ cache:
     - ./build
 
 before_deploy:
+  - jdk_switcher use openjdk8
   - ./build/dist --tgz
 
 deploy:
@@ -34,22 +35,22 @@ jobs:
     - stage: spark2.1
       language: scala
       script:
-        - jdk_switcher use oraclejdk8
+        - jdk_switcher use openjdk8
         - ./build/mvn clean install -Pspark-2.1 -Dmaven.javadoc.skip=true -B -V
     - stage: spark2.2
       language: scala
       script:
-        - jdk_switcher use oraclejdk8
+        - jdk_switcher use openjdk8
         - ./build/mvn clean install -Pspark-2.2 -Dmaven.javadoc.skip=true -B -V
     - stage: spark2.3
       language: scala
       script:
-        - jdk_switcher use oraclejdk8
+        - jdk_switcher use openjdk8
         - ./build/mvn clean install -Pspark-2.3 -Dmaven.javadoc.skip=true -B -V
     - stage: spark2.4
       language: scala
       script:
-        - jdk_switcher use oraclejdk8
+        - jdk_switcher use openjdk8
         - ./build/mvn clean install -Pspark-2.4 -Dmaven.javadoc.skip=true -B -V
 
 after_success:
