@@ -17,7 +17,6 @@
 
 package yaooqinn.kyuubi.utils
 
-import java.lang.reflect.UndeclaredThrowableException
 import java.security.PrivilegedExceptionAction
 
 import scala.collection.JavaConverters._
@@ -34,33 +33,26 @@ import yaooqinn.kyuubi.Logging
 
 private[kyuubi] object KyuubiHadoopUtil extends Logging {
 
-  // YarnClient is thread safe. Create once, share it across threads.
-  private lazy val yarnClient = {
+  private def yarnClient: YarnClient = {
     val c = YarnClient.createYarnClient()
     c.init(new YarnConfiguration())
     c.start()
     c
   }
 
-  def killYarnApp(report: ApplicationReport): Unit = {
-    try {
-      yarnClient.killApplication(report.getApplicationId)
-    } catch {
-      case e: Exception => error("Failed to kill Application: " + report.getApplicationId, e)
-    }
-  }
-
-  def getApplications: Seq[ApplicationReport] = {
-    yarnClient.getApplications(Set("SPARK").asJava).asScala.filter { p =>
-      p.getYarnApplicationState match {
-        case ACCEPTED | NEW | NEW_SAVING | SUBMITTED | RUNNING => true
-        case _ => false
-      }
-    }
+  private def needKill(ar: ApplicationReport): Boolean = ar.getYarnApplicationState match {
+    case ACCEPTED | NEW | NEW_SAVING | SUBMITTED | RUNNING => true
+    case _ => false
   }
 
   def killYarnAppByName(appName: String): Unit = {
-    getApplications.filter(app => app.getName.equals(appName)).foreach(killYarnApp)
+    val client = yarnClient
+    client.getApplications(Set("SPARK").asJava).asScala
+      .filter(needKill)
+      .filter(app => app.getName.equals(appName))
+      .foreach { ar =>
+        client.killApplication(ar.getApplicationId)
+      }
   }
 
   def doAs[T](user: UserGroupInformation)(f: => T): T = {

@@ -17,16 +17,14 @@
 
 package yaooqinn.kyuubi.spark
 
-import java.util.concurrent.TimeUnit
+import java.util.UUID
+import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
-import scala.collection.mutable.{HashSet => MHSet}
 import scala.concurrent.{Await, Promise}
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
-import scala.util.control.NonFatal
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil._
 import org.apache.spark.sql.SparkSession
@@ -48,6 +46,8 @@ class SparkSessionWithUGI(
   private val promisedSparkContext = Promise[SparkContext]()
   private var initialDatabase: Option[String] = None
   private var sparkException: Option[Throwable] = None
+  private val startTime = System.currentTimeMillis()
+  private val timeout = KyuubiSparkUtil.timeStringAsMs(conf.get(BACKEND_SESSION_INIT_TIMEOUT))
 
   private lazy val newContext: Thread = {
     val threadName = "SparkContext-Starter-" + userName
@@ -60,24 +60,8 @@ class SparkSessionWithUGI(
         } catch {
           case e: Exception =>
             sparkException = Some(e)
-            throw e
+            promisedSparkContext.failure(e)
         }
-      }
-    }
-  }
-
-  /**
-   * Invoke SparkContext.stop() if not succeed initializing it
-   */
-  private def stopContext(): Unit = {
-    promisedSparkContext.future.map { sc =>
-      warn(s"Error occurred during initializing SparkContext for $userName, stopping")
-      try {
-        sc.stop
-      } catch {
-        case NonFatal(e) => error(s"Error Stopping $userName's SparkContext", e)
-      } finally {
-        System.setProperty("SPARK_YARN_MODE", "true")
       }
     }
   }
@@ -127,37 +111,43 @@ class SparkSessionWithUGI(
   }
 
   private def getOrCreate(
-      sessionConf: Map[String, String]): Unit = SPARK_INSTANTIATION_LOCK.synchronized {
-    val totalRounds = math.max(conf.get(BACKEND_SESSION_WAIT_OTHER_TIMES).toInt, 15)
-    var checkRound = totalRounds
-    val interval = conf.getTimeAsMs(BACKEND_SESSION_WAIT_OTHER_INTERVAL)
-    // if user's sc is being constructed by another
-    while (isPartiallyConstructed(userName)) {
-      checkRound -= 1
-      if (checkRound <= 0) {
-        throw new KyuubiSQLException(s"A partially constructed SparkContext for [$userName] " +
-          s"has last more than ${totalRounds * interval / 1000} seconds")
-      }
-      info(s"A partially constructed SparkContext for [$userName], $checkRound times countdown.")
-      SPARK_INSTANTIATION_LOCK.wait(interval)
-    }
-
+      sessionConf: Map[String, String]): Unit = {
     cacheMgr.getAndIncrease(userName) match {
       case Some(ssc) =>
         _sparkSession = ssc.spark.newSession()
         configureSparkSession(sessionConf)
+      case _ if isPartiallyConstructed(userName) =>
+        if (System.currentTimeMillis() - startTime > timeout) {
+          throw new KyuubiSQLException(userName + " has a constructing sc, timeout, aborting")
+        } else {
+          SPARK_INSTANTIATION_LOCK.synchronized {
+            SPARK_INSTANTIATION_LOCK.wait(1000)
+          }
+          getOrCreate(sessionConf)
+        }
       case _ =>
-        setPartiallyConstructed(userName)
-        SPARK_INSTANTIATION_LOCK.notifyAll()
-        create(sessionConf)
+        SPARK_INSTANTIATION_LOCK.synchronized {
+          if (isPartiallyConstructed(userName)) {
+            getOrCreate(sessionConf)
+          } else {
+            setPartiallyConstructed(userName)
+          }
+        }
+        if (_sparkSession == null) {
+          create(sessionConf)
+        }
     }
   }
 
   private def create(sessionConf: Map[String, String]): Unit = {
     info(s"--------- Create new SparkSession for $userName ----------")
-    // kyuubi|user name|canonical host name| port
+    // kyuubi|user name|canonical host name|port|uuid
     val appName = Seq(
-      "kyuubi", userName, conf.get(FRONTEND_BIND_HOST), conf.get(FRONTEND_BIND_PORT)).mkString("|")
+      "kyuubi",
+      userName,
+      conf.get(FRONTEND_BIND_HOST),
+      conf.get(FRONTEND_BIND_PORT),
+      UUID.randomUUID().toString).mkString("|")
     conf.setAppName(appName)
     configureSparkConf(sessionConf)
     val totalWaitTime: Long = conf.getTimeAsSeconds(BACKEND_SESSION_INIT_TIMEOUT)
@@ -179,7 +169,6 @@ class SparkSessionWithUGI(
             KyuubiHadoopUtil.killYarnAppByName(appName)
           }
         }
-        stopContext()
         val cause = findCause(e)
         val msg =
           s"""
@@ -233,14 +222,14 @@ object SparkSessionWithUGI {
 
   val SPARK_INSTANTIATION_LOCK = new Object()
 
-  private val userSparkContextBeingConstruct = new MHSet[String]()
+  private val userSparkContextBeingConstruct = new ConcurrentHashMap[String, Boolean]()
 
   def setPartiallyConstructed(user: String): Unit = {
-    userSparkContextBeingConstruct.add(user)
+    userSparkContextBeingConstruct.put(user, true)
   }
 
   def isPartiallyConstructed(user: String): Boolean = {
-    userSparkContextBeingConstruct.contains(user)
+    userSparkContextBeingConstruct.getOrDefault(user, false)
   }
 
   def setFullyConstructed(user: String): Unit = {

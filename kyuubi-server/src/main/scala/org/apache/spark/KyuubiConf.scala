@@ -241,7 +241,7 @@ object KyuubiConf {
       .timeConf(TimeUnit.SECONDS)
       .createWithDefault(TimeUnit.SECONDS.toSeconds(20L))
 
-  val FRONTEND_LOGIN_BEBACKOFF_SLOT_LENGTH: ConfigEntry[Long] =
+  val FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH: ConfigEntry[Long] =
     KyuubiConfigBuilder("spark.kyuubi.frontend.backoff.slot.length")
       .doc("Time to back off during login to Kyuubi Server.")
       .timeConf(TimeUnit.MILLISECONDS)
@@ -250,21 +250,6 @@ object KyuubiConf {
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                        SparkSession                                         //
   /////////////////////////////////////////////////////////////////////////////////////////////////
-
-  val BACKEND_SESSION_WAIT_OTHER_TIMES: ConfigEntry[Int] =
-    KyuubiConfigBuilder("spark.kyuubi.backend.session.wait.other.times")
-      .doc("How many times to check when another session with the same user is initializing " +
-        "SparkContext. Total Time will be times by " +
-        "`spark.kyuubi.backend.session.wait.other.interval`")
-      .intConf
-      .createWithDefault(60)
-
-  val BACKEND_SESSION_WAIT_OTHER_INTERVAL: ConfigEntry[Long] =
-    KyuubiConfigBuilder("spark.kyuubi.backend.session.wait.other.interval")
-      .doc("The interval for checking whether other thread with the same user has completed" +
-      " SparkContext instantiation.")
-      .timeConf(TimeUnit.MILLISECONDS)
-      .createWithDefault(TimeUnit.SECONDS.toMillis(1L))
 
   val BACKEND_SESSION_INIT_TIMEOUT: ConfigEntry[Long] =
     KyuubiConfigBuilder("spark.kyuubi.backend.session.init.timeout")

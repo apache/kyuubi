@@ -69,10 +69,8 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
     val sparkSessionWithUGI = new SparkSessionWithUGI(ru, confClone, cache)
     assert(!SparkSessionWithUGI.isPartiallyConstructed(userName1))
     val e = intercept[KyuubiSQLException](sparkSessionWithUGI.init(Map.empty))
-    assert(e.getCause.isInstanceOf[TimeoutException])
-    val se = e.getSuppressed.head
-    assert(se.isInstanceOf[SparkException])
-    assert(se.getMessage.startsWith("Only one SparkContext"))
+    assert(e.getCause.isInstanceOf[SparkException])
+    assert(e.getMessage.contains("Only one SparkContext"))
     assert(sparkSessionWithUGI.sparkSession === null)
     assert(System.getProperty("SPARK_YARN_MODE") === null)
     assert(cache.getAndIncrease(userName1).isEmpty)
@@ -131,16 +129,16 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
   }
 
   test("testSetPartiallyConstructed") {
-    val confClone = conf.clone().set(KyuubiConf.BACKEND_SESSION_WAIT_OTHER_TIMES.key, "3")
-    SparkSessionWithUGI.setPartiallyConstructed(userName)
-    val sparkSessionWithUGI = new SparkSessionWithUGI(user, confClone, cache)
+    val confClone = conf.clone().set(KyuubiConf.BACKEND_SESSION_INIT_TIMEOUT.key, "1s")
+    val username = "testSetPartiallyConstructed"
+    SparkSessionWithUGI.setPartiallyConstructed(username)
+    val ru = UserGroupInformation.createRemoteUser(username)
+
+    val sparkSessionWithUGI = new SparkSessionWithUGI(ru, confClone, cache)
     val e = intercept[KyuubiSQLException](sparkSessionWithUGI.init(Map.empty))
-    assert(e.getMessage.startsWith("A partially constructed SparkContext for"))
-    assert(e.getMessage.contains(userName))
-    assert(e.getMessage.contains("has last more than 15 seconds"))
-    assert(SparkSessionWithUGI.isPartiallyConstructed(userName))
+    assert(e.getMessage.startsWith(username))
+    assert(!SparkSessionWithUGI.isPartiallyConstructed(userName))
     assert(!SparkSessionWithUGI.isPartiallyConstructed("Kent Yao"))
-    SparkSessionWithUGI.setFullyConstructed(userName)
   }
 
   test("test init failed with time out exception") {
@@ -165,19 +163,6 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
 
   test("testIsPartiallyConstructed") {
     assert(!SparkSessionWithUGI.isPartiallyConstructed(userName))
-  }
-
-  test("stop sparkcontext") {
-    val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf, cache)
-    sparkSessionWithUGI.init(Map.empty)
-    val promise = ReflectUtils.getFieldValue(sparkSessionWithUGI,
-      "yaooqinn$kyuubi$spark$SparkSessionWithUGI$$promisedSparkContext")
-      .asInstanceOf[Promise[SparkContext]]
-    val future = promise.future
-    ReflectUtils.invokeMethod(sparkSessionWithUGI, "stopContext")
-    future.foreach { sc =>
-      assert(sc.isStopped)
-    }
   }
 
   test("user name should be switched") {

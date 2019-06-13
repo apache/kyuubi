@@ -49,27 +49,18 @@ class KyuubiHadoopUtilSuite extends SparkFunSuite with BeforeAndAfterEach {
     super.afterAll()
   }
 
-  override def beforeEach(): Unit = {
-    super.beforeEach()
-  }
-
-  test("kill yarn app") {
-    val report = new ApplicationReportPBImpl()
-    KyuubiHadoopUtil.killYarnApp(report)
-    intercept[NullPointerException](KyuubiHadoopUtil.killYarnApp(null))
-  }
-
-  test("kill yarn application by name") {
-    withYarnApplication { id =>
-      KyuubiHadoopUtil.killYarnAppByName(id.toString)
-      assert(KyuubiHadoopUtil.getApplications.isEmpty)
-    }
-  }
-
-  test("kill yarn application by id") {
-    withYarnApplication { id =>
-      KyuubiHadoopUtil.killYarnApp(yarnClient.getApplicationReport(id))
-      assert(KyuubiHadoopUtil.getApplications.isEmpty)
+  test("kill application by name") {
+    withYarnApplication { app =>
+      assert(yarnClient.getApplications.size() === 1)
+      assert(yarnClient.getApplications.get(0).getYarnApplicationState !==
+        YarnApplicationState.KILLED)
+      KyuubiHadoopUtil.killYarnAppByName(app.toString + "1")
+      assert(yarnClient.getApplications.get(0).getYarnApplicationState !==
+        YarnApplicationState.KILLED)
+      KyuubiHadoopUtil.killYarnAppByName(app.toString)
+      assert(yarnClient.getApplications.get(0).getYarnApplicationState ===
+        YarnApplicationState.KILLED)
+      KyuubiHadoopUtil.killYarnAppByName(app.toString)
     }
   }
 
@@ -118,12 +109,6 @@ class KyuubiHadoopUtilSuite extends SparkFunSuite with BeforeAndAfterEach {
     }
   }
 
-  test("get applications") {
-    withYarnApplication { id =>
-      assert(KyuubiHadoopUtil.getApplications.head.getApplicationId === id)
-    }
-  }
-
   def withYarnApplication(f: ApplicationId => Unit): Unit = {
     val application = yarnClient.createApplication()
     val response = application.getNewApplicationResponse
@@ -137,9 +122,6 @@ class KyuubiHadoopUtilSuite extends SparkFunSuite with BeforeAndAfterEach {
     context.setResource(capability)
     context.setAMContainerSpec(Records.newRecord(classOf[ContainerLaunchContext]))
     yarnClient.submitApplication(context)
-    assert(KyuubiHadoopUtil.getApplications.nonEmpty)
-    assert(KyuubiHadoopUtil.getApplications.head.getYarnApplicationState !==
-      YarnApplicationState.KILLED)
     f(applicationId)
   }
 }

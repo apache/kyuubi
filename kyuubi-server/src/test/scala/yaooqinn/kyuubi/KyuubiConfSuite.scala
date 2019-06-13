@@ -32,9 +32,6 @@ class KyuubiConfSuite extends SparkFunSuite {
     assert(conf.getOption(YARN_CONTAINER_TIMEOUT).nonEmpty)
     assert(conf.get(YARN_CONTAINER_TIMEOUT) === "60000ms")
 
-    assert(conf.getOption(BACKEND_SESSION_WAIT_OTHER_TIMES).nonEmpty)
-    assert(conf.get(BACKEND_SESSION_WAIT_OTHER_TIMES).toInt === 60)
-
     assert(conf.getOption(AUTHENTICATION_METHOD).nonEmpty)
     assert(conf.get(AUTHENTICATION_METHOD) === "NONE")
   }
