@@ -18,12 +18,12 @@
 package yaooqinn.kyuubi.utils
 
 import java.security.PrivilegedExceptionAction
+import java.util.EnumSet
 
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.hadoop.yarn.api.records.ApplicationReport
 import org.apache.hadoop.yarn.api.records.YarnApplicationState._
 import org.apache.hadoop.yarn.client.api.YarnClient
 import org.apache.hadoop.yarn.conf.YarnConfiguration
@@ -33,25 +33,19 @@ import yaooqinn.kyuubi.Logging
 
 private[kyuubi] object KyuubiHadoopUtil extends Logging {
 
-  private def yarnClient: YarnClient = {
+  private def createYarnClient: YarnClient = {
     val c = YarnClient.createYarnClient()
     c.init(new YarnConfiguration())
     c.start()
     c
   }
 
-  private def needKill(ar: ApplicationReport): Boolean = ar.getYarnApplicationState match {
-    case ACCEPTED | NEW | NEW_SAVING | SUBMITTED | RUNNING => true
-    case _ => false
-  }
-
   def killYarnAppByName(appName: String): Unit = {
-    val client = yarnClient
-    client.getApplications(Set("SPARK").asJava).asScala
-      .filter(needKill)
-      .filter(app => app.getName.equals(appName))
-      .foreach { ar =>
-        client.killApplication(ar.getApplicationId)
+    val client = createYarnClient
+    client.getApplications(Set("SPARK").asJava, EnumSet.of(ACCEPTED, SUBMITTED, RUNNING)).asScala
+      .filter(applicationReport => applicationReport.getName.equals(appName))
+      .foreach { applicationReport =>
+        client.killApplication(applicationReport.getApplicationId)
       }
   }
 

@@ -17,8 +17,7 @@
 
 package yaooqinn.kyuubi.spark
 
-import scala.concurrent.{Promise, TimeoutException}
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.TimeoutException
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark._
