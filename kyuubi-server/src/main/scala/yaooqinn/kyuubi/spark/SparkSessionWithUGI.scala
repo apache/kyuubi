@@ -22,6 +22,7 @@ import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
 import scala.concurrent.{Await, Promise}
 import scala.concurrent.duration.Duration
+import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext}
@@ -45,7 +46,6 @@ class SparkSessionWithUGI(
   private val userName: String = user.getShortUserName
   private val promisedSparkContext = Promise[SparkContext]()
   private var initialDatabase: Option[String] = None
-  private var sparkException: Option[Throwable] = None
   private val startTime = System.currentTimeMillis()
   private val timeout = KyuubiSparkUtil.timeStringAsMs(conf.get(BACKEND_SESSION_INIT_TIMEOUT))
 
@@ -54,13 +54,9 @@ class SparkSessionWithUGI(
     new Thread(threadName) {
       override def run(): Unit = {
         try {
-          promisedSparkContext.trySuccess {
-            new SparkContext(conf)
+          promisedSparkContext.complete {
+            Try (new SparkContext(conf))
           }
-        } catch {
-          case e: Exception =>
-            sparkException = Some(e)
-            promisedSparkContext.failure(e)
         }
       }
     }
@@ -173,12 +169,11 @@ class SparkSessionWithUGI(
         val msg =
           s"""
              |Get SparkSession for [$userName] failed
-             |Diagnosis: ${sparkException.map(_.getMessage).getOrElse(cause.getMessage)}
+             |Diagnosis: ${cause.getMessage}
              |Please check if the specified yarn queue [${conf.getOption(QUEUE)
             .getOrElse("")}] is available or has sufficient resources left
            """.stripMargin
         val ke = new KyuubiSQLException(msg, "08S01", 1001, cause)
-        sparkException.foreach(ke.addSuppressed)
         throw ke
     } finally {
       setFullyConstructed(userName)
