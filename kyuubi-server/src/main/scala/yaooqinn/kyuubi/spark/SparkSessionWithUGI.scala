@@ -41,6 +41,7 @@ class SparkSessionWithUGI(
     conf: SparkConf,
     cacheMgr: SparkSessionCacheManager) extends Logging {
   import SparkSessionWithUGI._
+  import KyuubiHadoopUtil._
 
   private var _sparkSession: SparkSession = _
   private val userName: String = user.getShortUserName
@@ -130,7 +131,6 @@ class SparkSessionWithUGI(
   }
 
   private def create(sessionConf: Map[String, String]): Unit = {
-    info(s"--------- Create new SparkSession for $userName ----------")
     // kyuubi|user name|canonical host name|port|uuid
     val appName = Seq(
       "kyuubi",
@@ -140,12 +140,13 @@ class SparkSessionWithUGI(
       UUID.randomUUID().toString).mkString("|")
     conf.setAppName(appName)
     configureSparkConf(sessionConf)
-    val totalWaitTime: Long = conf.getTimeAsSeconds(BACKEND_SESSION_INIT_TIMEOUT)
+    info(s"Create new SparkSession for " + userName + " as " + appName)
+
     try {
-      KyuubiHadoopUtil.doAs(user) {
+      doAs(user) {
         newContext.start()
         val context =
-          Await.result(promisedSparkContext.future, Duration(totalWaitTime, TimeUnit.SECONDS))
+          Await.result(promisedSparkContext.future, Duration(timeout, TimeUnit.SECONDS))
         _sparkSession = ReflectUtils.newInstance(
           classOf[SparkSession].getName,
           Seq(classOf[SparkContext]),
@@ -155,19 +156,16 @@ class SparkSessionWithUGI(
     } catch {
       case e: TimeoutException =>
         if (conf.getOption("spark.master").contains("yarn")) {
-          KyuubiHadoopUtil.doAsAndLogNonFatal(user) {
-            KyuubiHadoopUtil.killYarnAppByName(appName)
-          }
+          doAsAndLogNonFatal(user)(killYarnAppByName(appName))
         }
-        val cause = findCause(e)
         val msg =
           s"""
-             |Get SparkSession for [$userName] failed
-             |Diagnosis: ${cause.getMessage}
-             |Please check if the specified yarn queue [${conf.getOption(QUEUE)
-            .getOrElse("")}] is available or has sufficient resources left
+             |Failed to get SparkSession for [$userName]
+             |Diagnosis: ${e.getMessage}
+             |Please check whether the specified yarn queue [${conf.getOption(QUEUE)
+            .getOrElse("")}] has sufficient resources left
            """.stripMargin
-        throw new KyuubiSQLException(msg, "08S01", 1001, cause)
+        throw new KyuubiSQLException(msg, "08S01", 1001, e)
       case e: Exception => throw new KyuubiSQLException(e)
     } finally {
       setFullyConstructed(userName)
@@ -187,9 +185,7 @@ class SparkSessionWithUGI(
 
     try {
       initialDatabase.foreach { db =>
-        KyuubiHadoopUtil.doAs(user) {
-          _sparkSession.sql(db)
-        }
+        doAs(user)(_sparkSession.sql(db))
       }
     } catch {
       case e: Exception =>

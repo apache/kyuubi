@@ -19,7 +19,6 @@ package yaooqinn.kyuubi.utils
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.records._
-import org.apache.hadoop.yarn.api.records.impl.pb.ApplicationReportPBImpl
 import org.apache.hadoop.yarn.client.api.YarnClient
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.server.MiniYARNCluster
