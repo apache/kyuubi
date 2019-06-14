@@ -20,7 +20,7 @@ package yaooqinn.kyuubi.spark
 import java.util.UUID
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
-import scala.concurrent.{Await, Promise}
+import scala.concurrent.{Await, Promise, TimeoutException}
 import scala.concurrent.duration.Duration
 import scala.util.Try
 
@@ -52,13 +52,7 @@ class SparkSessionWithUGI(
   private lazy val newContext: Thread = {
     val threadName = "SparkContext-Starter-" + userName
     new Thread(threadName) {
-      override def run(): Unit = {
-        try {
-          promisedSparkContext.complete {
-            Try (new SparkContext(conf))
-          }
-        }
-      }
+      override def run(): Unit = promisedSparkContext.complete(Try(new SparkContext(conf)))
     }
   }
 
@@ -159,7 +153,7 @@ class SparkSessionWithUGI(
       }
       cacheMgr.set(userName, _sparkSession)
     } catch {
-      case e: Exception =>
+      case e: TimeoutException =>
         if (conf.getOption("spark.master").contains("yarn")) {
           KyuubiHadoopUtil.doAsAndLogNonFatal(user) {
             KyuubiHadoopUtil.killYarnAppByName(appName)
@@ -175,6 +169,7 @@ class SparkSessionWithUGI(
            """.stripMargin
         val ke = new KyuubiSQLException(msg, "08S01", 1001, cause)
         throw ke
+      case e: Exception => throw new KyuubiSQLException(e)
     } finally {
       setFullyConstructed(userName)
       newContext.join()
