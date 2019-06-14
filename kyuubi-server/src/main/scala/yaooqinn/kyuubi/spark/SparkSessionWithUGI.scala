@@ -167,8 +167,7 @@ class SparkSessionWithUGI(
              |Please check if the specified yarn queue [${conf.getOption(QUEUE)
             .getOrElse("")}] is available or has sufficient resources left
            """.stripMargin
-        val ke = new KyuubiSQLException(msg, "08S01", 1001, cause)
-        throw ke
+        throw new KyuubiSQLException(msg, "08S01", 1001, cause)
       case e: Exception => throw new KyuubiSQLException(e)
     } finally {
       setFullyConstructed(userName)
