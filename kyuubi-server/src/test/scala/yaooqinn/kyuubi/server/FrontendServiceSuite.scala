@@ -260,7 +260,6 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       val req2 = new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
       val resp2 = fe.FetchResults(req2)
       val rows = resp2.getResults.getRows
-      intercept[KyuubiSQLException](operation.cancel())
       rows.size() should be(2)
       rows.get(0).getColVals.get(1).getStringVal.getValue should be("default")
       rows.get(0).getColVals.get(2).getStringVal.getValue should be(tableName)
