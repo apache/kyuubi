@@ -76,8 +76,6 @@ abstract class AbstractOperation(
     }
   }
 
-  override def cancel(): Unit = {}
-
   protected def setHasResultSet(hasResultSet: Boolean): Unit = {
     this.hasResultSet = hasResultSet
     opHandle.setHasResultSet(hasResultSet)

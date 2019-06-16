@@ -33,6 +33,11 @@ abstract class MetadataOperation(session: KyuubiSession, opType: OperationType)
 
   setHasResultSet(true)
 
+  override def cancel(): Unit = {
+    setState(CANCELED)
+    throw new UnsupportedOperationException("MetadataOperation.cancel()")
+  }
+
   override def close(): Unit = {
     setState(CLOSED)
     cleanupOperationLog()
