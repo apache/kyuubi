@@ -18,7 +18,7 @@
 package yaooqinn.kyuubi.server
 
 import java.net.{InetAddress, ServerSocket}
-import java.util.concurrent.{SynchronousQueue, ThreadPoolExecutor, TimeUnit}
+import java.util.concurrent.{SynchronousQueue, TimeUnit}
 
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Try}
@@ -28,7 +28,6 @@ import org.apache.hive.service.cli.thrift._
 import org.apache.spark.{KyuubiConf, SparkConf}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.sql.catalyst.catalog.CatalogTableType._
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TThreadPoolServer}
 import org.apache.thrift.transport.{TServerSocket, TTransport}
@@ -57,7 +56,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
 
   private val OK_STATUS = new TStatus(TStatusCode.SUCCESS_STATUS)
 
-  private var serverEventHandler: TServerEventHandler =  new FeTServerEventHandler
+  private val serverEventHandler: TServerEventHandler = new FeTServerEventHandler
   private var currentServerContext: ThreadLocal[ServerContext] = _
 
   private var server: Option[TServer] = None
@@ -612,7 +611,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
       // Server args
       val maxMessageSize = conf.get(FRONTEND_MAX_MESSAGE_SIZE).toInt
       val requestTimeout = conf.getTimeAsSeconds(FRONTEND_LOGIN_TIMEOUT).toInt
-      val beBackoffSlotLength = conf.getTimeAsMs(FRONTEND_LOGIN_BEBACKOFF_SLOT_LENGTH).toInt
+      val beBackoffSlotLength = conf.getTimeAsMs(FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH).toInt
       val args = new TThreadPoolServer.Args(tSocket)
         .processorFactory(processorFactory)
         .transportFactory(transportFactory)

@@ -113,7 +113,6 @@ object KyuubiSparkUtil extends Logging {
   val HIVE_VAR_PREFIX: Regex = """set:hivevar:([^=]+)""".r
   val USE_DB = "use:database"
   val QUEUE: String = SPARK_PREFIX + YARN_PREFIX + "queue"
-  val DEPRECATED_QUEUE = "mapred.job.queue.name"
   val HDFS_CLIENT_CACHE: String = SPARK_HADOOP_PREFIX + "fs.hdfs.impl.disable.cache"
   val HDFS_CLIENT_CACHE_DEFAULT = "true"
   val FILE_CLIENT_CACHE: String = SPARK_HADOOP_PREFIX + "fs.file.impl.disable.cache"

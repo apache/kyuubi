@@ -76,11 +76,6 @@ abstract class AbstractOperation(
     }
   }
 
-  override def cancel(): Unit = {
-    setState(CANCELED)
-    throw new UnsupportedOperationException("KyuubiOperation.cancel()")
-  }
-
   protected def setHasResultSet(hasResultSet: Boolean): Unit = {
     this.hasResultSet = hasResultSet
     opHandle.setHasResultSet(hasResultSet)
