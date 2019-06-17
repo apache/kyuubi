@@ -166,7 +166,7 @@ object SparkEnv extends Logging {
    */
   def get: SparkEnv = {
     debug(s"Kyuubi: Get SparkEnv for $user")
-    envs.getOrDefault(user, envs.values().asScala.headOption.getOrElse(env))
+    Option(envs.get(user)).getOrElse(envs.values().asScala.headOption.getOrElse(env))
   }
 
   /**

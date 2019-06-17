@@ -17,8 +17,10 @@
 
 package yaooqinn.kyuubi.spark
 
-import scala.concurrent.{Promise, TimeoutException}
-import scala.concurrent.ExecutionContext.Implicits.global
+import java.util.UUID
+import java.util.concurrent.CountDownLatch
+
+import scala.concurrent.TimeoutException
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark._
@@ -28,28 +30,21 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.author.AuthzHelper
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
-import yaooqinn.kyuubi.utils.ReflectUtils
 
 class SparkSessionWithUGISuite extends SparkFunSuite {
 
-  val user = UserGroupInformation.getCurrentUser
-  val conf = new SparkConf(loadDefaults = true).setAppName("spark session test")
+  private val user = UserGroupInformation.getCurrentUser
+  private val conf = new SparkConf(loadDefaults = true)
+    .setMaster("local")
+    .setAppName("spark session test")
   KyuubiSparkUtil.setupCommonConfig(conf)
   conf.remove(KyuubiSparkUtil.CATALOG_IMPL)
-  conf.setMaster("local")
-  val userName = user.getShortUserName
+  private val userName = user.getShortUserName
   var spark: SparkSession = _
   val cache = new SparkSessionCacheManager()
 
   override protected def beforeAll(): Unit = {
-    val sc = ReflectUtils
-      .newInstance(classOf[SparkContext].getName, Seq(classOf[SparkConf]), Seq(conf))
-      .asInstanceOf[SparkContext]
-    spark = ReflectUtils.newInstance(
-      classOf[SparkSession].getName,
-      Seq(classOf[SparkContext]),
-      Seq(sc)).asInstanceOf[SparkSession]
-
+    spark = SparkSession.builder().config(conf).getOrCreate()
     cache.init(conf)
     cache.start()
     cache.set(userName, spark)
@@ -60,22 +55,28 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
     spark.stop()
   }
 
-  test("test init failed with sc init failing") {
-    assert(!spark.sparkContext.isStopped)
+  test("error initializing spark context with an exception") {
     val confClone = conf.clone().remove(KyuubiSparkUtil.MULTIPLE_CONTEXTS)
-      .set(KyuubiConf.BACKEND_SESSION_INIT_TIMEOUT.key, "3")
-    val userName1 = "test1"
-    val ru = UserGroupInformation.createRemoteUser(userName1)
-    val sparkSessionWithUGI = new SparkSessionWithUGI(ru, confClone, cache)
-    assert(!SparkSessionWithUGI.isPartiallyConstructed(userName1))
-    val e = intercept[KyuubiSQLException](sparkSessionWithUGI.init(Map.empty))
-    assert(e.getCause.isInstanceOf[TimeoutException])
-    val se = e.getSuppressed.head
-    assert(se.isInstanceOf[SparkException])
-    assert(se.getMessage.startsWith("Only one SparkContext"))
-    assert(sparkSessionWithUGI.sparkSession === null)
+    val userName = UUID.randomUUID().toString
+    val ugi = UserGroupInformation.createRemoteUser(userName)
+    val sswu = new SparkSessionWithUGI(ugi, confClone, cache)
+    assert(!SparkSessionWithUGI.isPartiallyConstructed(userName))
+    val e = intercept[KyuubiSQLException](sswu.init(Map.empty))
+    assert(e.getCause.isInstanceOf[SparkException])
+    assert(e.getMessage.contains("Only one SparkContext"))
+    assert(sswu.sparkSession === null)
     assert(System.getProperty("SPARK_YARN_MODE") === null)
-    assert(cache.getAndIncrease(userName1).isEmpty)
+    assert(cache.getAndIncrease(userName).isEmpty)
+  }
+
+  test("timeout initializing spark context") {
+    val confClone = conf.clone().set(KyuubiConf.BACKEND_SESSION_INIT_TIMEOUT.key, "0")
+    val userName = UUID.randomUUID().toString
+    val ugi = UserGroupInformation.createRemoteUser(userName)
+    val sswu = new SparkSessionWithUGI(ugi, confClone, cache)
+    assert(!SparkSessionWithUGI.isPartiallyConstructed(userName))
+    val e = intercept[KyuubiSQLException](sswu.init(Map.empty))
+    assert(e.getCause.isInstanceOf[TimeoutException])
   }
 
   test("test init failed with no such database") {
@@ -104,10 +105,12 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
   }
 
   test("test init success with spark properties") {
-    val sessionConf = Map("set:hivevar:spark.foo" -> "bar")
+    val sessionConf = Map("set:hivevar:spark.foo" -> "bar", "abc" -> "xyz")
     val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf, cache)
     sparkSessionWithUGI.init(sessionConf)
     assert(sparkSessionWithUGI.sparkSession.conf.get("spark.foo") === "bar")
+    assert(sparkSessionWithUGI.sparkSession.conf.getOption("abc").isEmpty)
+
   }
 
   test("test init success with hive/hadoop/extra properties") {
@@ -131,29 +134,16 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
   }
 
   test("testSetPartiallyConstructed") {
-    val confClone = conf.clone().set(KyuubiConf.BACKEND_SESSION_WAIT_OTHER_TIMES.key, "3")
-    SparkSessionWithUGI.setPartiallyConstructed(userName)
-    val sparkSessionWithUGI = new SparkSessionWithUGI(user, confClone, cache)
-    val e = intercept[KyuubiSQLException](sparkSessionWithUGI.init(Map.empty))
-    assert(e.getMessage.startsWith("A partially constructed SparkContext for"))
-    assert(e.getMessage.contains(userName))
-    assert(e.getMessage.contains("has last more than 15 seconds"))
-    assert(SparkSessionWithUGI.isPartiallyConstructed(userName))
-    assert(!SparkSessionWithUGI.isPartiallyConstructed("Kent Yao"))
-    SparkSessionWithUGI.setFullyConstructed(userName)
-  }
+    val confClone = conf.clone().set(KyuubiConf.BACKEND_SESSION_INIT_TIMEOUT.key, "1s")
+    val username = "testSetPartiallyConstructed"
+    SparkSessionWithUGI.setPartiallyConstructed(username)
+    val ru = UserGroupInformation.createRemoteUser(username)
 
-  test("test init failed with time out exception") {
-    // point to an non-exist cluster manager
-    val confClone = conf.clone().setMaster("spark://localhost:7077")
-      .set(KyuubiConf.BACKEND_SESSION_INIT_TIMEOUT.key, "3")
-    val userName1 = "test"
-    val ru = UserGroupInformation.createRemoteUser(userName1)
     val sparkSessionWithUGI = new SparkSessionWithUGI(ru, confClone, cache)
-    assert(!SparkSessionWithUGI.isPartiallyConstructed(userName1))
     val e = intercept[KyuubiSQLException](sparkSessionWithUGI.init(Map.empty))
-    assert(e.getCause.isInstanceOf[TimeoutException])
-    assert(e.getMessage.contains("Get SparkSession"))
+    assert(e.getMessage.startsWith(username))
+    assert(!SparkSessionWithUGI.isPartiallyConstructed(userName))
+    assert(!SparkSessionWithUGI.isPartiallyConstructed("Kent Yao"))
   }
 
   test("testSetFullyConstructed") {
@@ -167,24 +157,91 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
     assert(!SparkSessionWithUGI.isPartiallyConstructed(userName))
   }
 
-  test("stop sparkcontext") {
-    val sparkSessionWithUGI = new SparkSessionWithUGI(user, conf, cache)
-    sparkSessionWithUGI.init(Map.empty)
-    val promise = ReflectUtils.getFieldValue(sparkSessionWithUGI,
-      "yaooqinn$kyuubi$spark$SparkSessionWithUGI$$promisedSparkContext")
-      .asInstanceOf[Promise[SparkContext]]
-    val future = promise.future
-    ReflectUtils.invokeMethod(sparkSessionWithUGI, "stopContext")
-    future.foreach { sc =>
-      assert(sc.isStopped)
-    }
-  }
-
   test("user name should be switched") {
     val proxyUserName = "Kent"
     val proxyUser = UserGroupInformation.createProxyUser(proxyUserName, user)
     val sparkSessionWithUGI = new SparkSessionWithUGI(proxyUser, conf, cache)
     sparkSessionWithUGI.init(Map.empty)
     assert(sparkSessionWithUGI.sparkSession.sparkContext.sparkUser === proxyUserName)
+  }
+
+  test("get spark context by diff users") {
+    val userName1 = UUID.randomUUID().toString
+    val userName2 = UUID.randomUUID().toString
+
+    val ugi1 = UserGroupInformation.createRemoteUser(userName1)
+    val ugi2 = UserGroupInformation.createRemoteUser(userName2)
+
+    val sswu1 = new SparkSessionWithUGI(ugi1, conf, cache)
+    val sswu2 = new SparkSessionWithUGI(ugi2, conf, cache)
+
+    val latch = new CountDownLatch(2)
+
+    val t1 = new Thread {
+      override def run(): Unit = {
+        try {
+          Thread.sleep(100)
+          sswu1.init(Map.empty)
+        } finally {
+          latch.countDown()
+        }
+      }
+    }
+
+    val t2 = new Thread {
+      override def run(): Unit = {
+        try {
+          Thread.sleep(100)
+          sswu2.init(Map.empty)
+        } finally {
+          latch.countDown()
+        }
+      }
+    }
+    t1.start()
+    t2.start()
+    latch.await()
+
+    assert(cache.getAndIncrease(userName1).get.getReuseTimes === 2)
+    assert(sswu1.sparkSession !== sswu2.sparkSession)
+    assert(sswu1.sparkSession.sparkContext !== sswu2.sparkSession.sparkContext)
+  }
+
+  test("get spark context by same user") {
+    val userName = UUID.randomUUID().toString
+    val ugi = UserGroupInformation.createRemoteUser(userName)
+    val sswu1 = new SparkSessionWithUGI(ugi, conf, cache)
+    val sswu2 = new SparkSessionWithUGI(ugi, conf, cache)
+
+    val latch = new CountDownLatch(2)
+
+    val t1 = new Thread {
+      override def run(): Unit = {
+        try {
+          Thread.sleep(100)
+          sswu1.init(Map.empty)
+        } finally {
+          latch.countDown()
+        }
+      }
+    }
+
+    val t2 = new Thread {
+      override def run(): Unit = {
+        try {
+          Thread.sleep(100)
+          sswu2.init(Map.empty)
+        } finally {
+          latch.countDown()
+        }
+      }
+    }
+    t1.start()
+    t2.start()
+    latch.await()
+
+    assert(cache.getAndIncrease(userName).get.getReuseTimes === 3)
+    assert(sswu1.sparkSession !== sswu2.sparkSession)
+    assert(sswu1.sparkSession.sparkContext === sswu2.sparkSession.sparkContext)
   }
 }
