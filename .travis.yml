@@ -10,7 +10,6 @@ cache:
     - ./build
 
 before_deploy:
-  - jdk_switcher use openjdk8
   - ./build/dist --tgz
 
 deploy:
