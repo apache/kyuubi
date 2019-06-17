@@ -65,7 +65,6 @@ class SparkSessionWithUGI(
   private def configureSparkConf(sessionConf: Map[String, String]): Unit = {
     for ((key, value) <- sessionConf) {
       key match {
-        case HIVE_VAR_PREFIX(DEPRECATED_QUEUE) => conf.set(QUEUE, value)
         case HIVE_VAR_PREFIX(k) =>
           if (k.startsWith(SPARK_PREFIX)) {
             conf.set(k, value)

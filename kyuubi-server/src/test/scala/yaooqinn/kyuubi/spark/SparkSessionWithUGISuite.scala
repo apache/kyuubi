@@ -18,6 +18,7 @@
 package yaooqinn.kyuubi.spark
 
 import java.util.UUID
+import java.util.concurrent.CountDownLatch
 
 import scala.concurrent.TimeoutException
 
@@ -174,8 +175,33 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
     val sswu1 = new SparkSessionWithUGI(ugi1, conf, cache)
     val sswu2 = new SparkSessionWithUGI(ugi2, conf, cache)
 
-    sswu1.init(Map.empty)
-    sswu2.init(Map.empty)
+    val latch = new CountDownLatch(2)
+
+    val t1 = new Thread {
+      override def run(): Unit = {
+        try {
+          Thread.sleep(100)
+          sswu1.init(Map.empty)
+        } finally {
+          latch.countDown()
+        }
+      }
+    }
+
+    val t2 = new Thread {
+      override def run(): Unit = {
+        try {
+          Thread.sleep(100)
+          sswu2.init(Map.empty)
+        } finally {
+          latch.countDown()
+        }
+      }
+    }
+    t1.start()
+    t2.start()
+    latch.await()
+
     assert(cache.getAndIncrease(userName1).get.getReuseTimes === 2)
     assert(sswu1.sparkSession !== sswu2.sparkSession)
     assert(sswu1.sparkSession.sparkContext !== sswu2.sparkSession.sparkContext)
@@ -187,8 +213,33 @@ class SparkSessionWithUGISuite extends SparkFunSuite {
     val sswu1 = new SparkSessionWithUGI(ugi, conf, cache)
     val sswu2 = new SparkSessionWithUGI(ugi, conf, cache)
 
-    sswu1.init(Map.empty)
-    sswu2.init(Map.empty)
+    val latch = new CountDownLatch(2)
+
+    val t1 = new Thread {
+      override def run(): Unit = {
+        try {
+          Thread.sleep(100)
+          sswu1.init(Map.empty)
+        } finally {
+          latch.countDown()
+        }
+      }
+    }
+
+    val t2 = new Thread {
+      override def run(): Unit = {
+        try {
+          Thread.sleep(100)
+          sswu2.init(Map.empty)
+        } finally {
+          latch.countDown()
+        }
+      }
+    }
+    t1.start()
+    t2.start()
+    latch.await()
+
     assert(cache.getAndIncrease(userName).get.getReuseTimes === 3)
     assert(sswu1.sparkSession !== sswu2.sparkSession)
     assert(sswu1.sparkSession.sparkContext === sswu2.sparkSession.sparkContext)
