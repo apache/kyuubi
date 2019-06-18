@@ -17,8 +17,6 @@
 
 package yaooqinn.kyuubi.server
 
-import java.net.InetAddress
-
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.cli.thrift._
@@ -28,74 +26,23 @@ import org.scalatest.Matchers
 
 import yaooqinn.kyuubi.{KyuubiSQLException, SecuredFunSuite}
 import yaooqinn.kyuubi.operation.OperationHandle
-import yaooqinn.kyuubi.service.{ServiceException, State}
 import yaooqinn.kyuubi.session.SessionHandle
 
 class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSuite {
 
-  private val beService = new BackendService()
+  private val server: KyuubiServer = new KyuubiServer()
   private val user = KyuubiSparkUtil.getCurrentUserName
   private val conf = new SparkConf(loadDefaults = true).setAppName("fe test")
   KyuubiSparkUtil.setupCommonConfig(conf)
   conf.remove(KyuubiSparkUtil.CATALOG_IMPL)
   conf.setMaster("local").set(FRONTEND_BIND_PORT.key, "0")
 
-  override def beforeAll(): Unit = {
-    beService.init(conf)
-    beService.start()
-    super.beforeAll()
-  }
+  server.init(conf)
+  server.start()
+
   override def afterAll(): Unit = {
-    beService.stop()
+    Option(server).foreach(_.stop())
     super.afterAll()
-  }
-
-  test("new frontend service") {
-    val feService = new FrontendService(beService)
-    feService.getConf should be(null)
-    feService.getStartTime should be(0)
-    feService.getServiceState should be(State.NOT_INITED)
-    feService.getName should be(classOf[FrontendService].getSimpleName)
-    feService.getServerIPAddress should be(null)
-    feService.getPortNumber should be(0)
-  }
-
-  test("init fe service") {
-    val feService = new FrontendService(beService)
-    feService.init(conf)
-    feService.getConf should be(conf)
-    feService.getServiceState should be(State.INITED)
-    feService.getPortNumber should not be 0
-    val conf1 = new SparkConf(loadDefaults = true)
-      .set(FRONTEND_BIND_HOST.key, "")
-        .set(FRONTEND_BIND_PORT.key, "10009")
-    val feService2 = new FrontendService(beService)
-    feService2.init(conf1)
-    feService2.getServerIPAddress should be(InetAddress.getLocalHost)
-    intercept[ServiceException](
-      feService2.init(conf1)).getMessage should include("10009")
-  }
-
-  test("start fe service") {
-    val feService = new FrontendService(beService)
-    intercept[IllegalStateException](feService.start())
-    feService.init(conf)
-    feService.start()
-    feService.getConf should be(conf)
-    feService.getStartTime should not be 0
-    feService.getServiceState should be(State.STARTED)
-  }
-
-  test("stop fe service") {
-    val feService = new FrontendService(beService)
-    feService.stop()
-    feService.getServiceState should be(State.NOT_INITED)
-    feService.init(conf)
-    feService.stop()
-    feService.getServiceState should be(State.INITED)
-    feService.start()
-    feService.stop()
-    feService.getServiceState should be(State.STOPPED)
   }
 
   test("get delegation token") {
@@ -194,7 +141,7 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       req.setCatalogName("")
       req.setSchemaName("*")
       req.setTableName("*")
-      val kyuubiSession = beService.getSessionManager.getSession(new SessionHandle(handle))
+      val kyuubiSession = server.beService.getSessionManager.getSession(new SessionHandle(handle))
       kyuubiSession.sparkSession.sql("create table get_tables(key int, value string) using parquet")
       val resp = fe.GetTables(req)
       val req2 = new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
@@ -243,7 +190,7 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
 
   test("get columns") {
     withFEServiceAndHandle { case (fe, handle) =>
-      val kyuubiSession = beService.getSessionManager.getSession(new SessionHandle(handle))
+      val kyuubiSession = server.beService.getSessionManager.getSession(new SessionHandle(handle))
       val tableName = "get_columns"
       kyuubiSession.sparkSession
         .sql("create table " + tableName + "(key int, value string) using parquet")
@@ -253,7 +200,7 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       req.setTableName(tableName)
       req.setColumnName(null)
       val resp = fe.GetColumns(req)
-      val operation = beService.getSessionManager.getOperationMgr
+      val operation = server.beService.getSessionManager.getOperationMgr
         .getOperation(new OperationHandle(resp.getOperationHandle))
       assert(!operation.isTimedOut)
       assert(!operation.shouldRunAsync)
@@ -286,17 +233,15 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
   }
 
   test("get port num") {
-    val feService = new FrontendService(beService)
-    feService.getPortNumber should be(0)
-    feService.init(conf)
-    feService.getPortNumber should not be 0
+    withFEServiceAndHandle { case (fe, _) =>
+      fe.getPortNumber should not be 0
+    }
   }
 
   test("get server ip addr") {
-    val feService = new FrontendService(beService)
-    feService.getServerIPAddress should be(null)
-    feService.init(conf)
-    feService.getServerIPAddress should not be null
+    withFEServiceAndHandle { case (fe, _) =>
+      fe.getServerIPAddress should not be null
+    }
   }
 
   test("fe service server context") {
@@ -319,80 +264,72 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
   }
 
   test("open session, execute sql and get results") {
-    val feService = new FrontendService(beService)
-    try {
-      feService.init(conf)
-      feService.start()
-      val req = new TOpenSessionReq(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
-      val resp = feService.OpenSession(req)
-      resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
-      val handle = resp.getSessionHandle
+
+    withFEServiceAndHandle { case (fe, handle) =>
       val req2 = new TExecuteStatementReq(handle, "show databases")
-      val resp2 = feService.ExecuteStatement(req2)
+      val resp2 = fe.ExecuteStatement(req2)
       resp2.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
       val req3 = new TGetOperationStatusReq(resp2.getOperationHandle)
-      val resp3 = feService.GetOperationStatus(req3)
+      val resp3 = fe.GetOperationStatus(req3)
       resp3.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
-      while(feService.GetOperationStatus(req3)
+      while(fe.GetOperationStatus(req3)
         .getOperationState.getValue < TOperationState.FINISHED_STATE.getValue) {
         Thread.sleep(10)
       }
       Thread.sleep(2000)
       val req4 = new TFetchResultsReq(resp2.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
-      val resp4 = feService.FetchResults(req4)
+      val resp4 = fe.FetchResults(req4)
       resp4.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
       resp4.getResults.getRows.get(0).getColVals.get(0).getStringVal.getValue should be("default")
       assert(!resp4.getResults.isSetColumns)
       val req5 = new TGetResultSetMetadataReq(resp2.getOperationHandle)
-      val resp5 = feService.GetResultSetMetadata(req5)
+      val resp5 = fe.GetResultSetMetadata(req5)
       resp5.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
       resp5.getSchema.getColumns.get(0).getColumnName should be("databaseName")
       val req7 = new TCancelOperationReq(resp2.getOperationHandle)
-      val resp7 = feService.CancelOperation(req7)
+      val resp7 = fe.CancelOperation(req7)
       resp7.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
       val req6 = new TCloseOperationReq(resp2.getOperationHandle)
-      val resp6 = feService.CloseOperation(req6)
+      val resp6 = fe.CloseOperation(req6)
       resp6.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
       val req9 = new TCancelOperationReq(resp2.getOperationHandle)
-      val resp9 = feService.CancelOperation(req9)
+      val resp9 = fe.CancelOperation(req9)
       resp9.getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
 
       val reqInfo1 = new TGetInfoReq(handle, TGetInfoType.CLI_DBMS_NAME)
-      val respInfo1 = feService.GetInfo(reqInfo1)
+      val respInfo1 = fe.GetInfo(reqInfo1)
       respInfo1.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
 
       val reqInfo2 = new TGetInfoReq(handle, TGetInfoType.CLI_ACCESSIBLE_PROCEDURES)
-      val respInfo2 = feService.GetInfo(reqInfo2)
+      val respInfo2 = fe.GetInfo(reqInfo2)
       respInfo2.getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
       respInfo2.getStatus.getErrorMessage should
         include(TGetInfoType.CLI_ACCESSIBLE_PROCEDURES.toString)
 
       val req8 = new TCloseSessionReq(handle)
-      val resp8 = feService.CloseSession(req8)
+      val resp8 = fe.CloseSession(req8)
       resp8.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
 
       // after session closed
-      val resp10 = feService.CloseSession(req8)
+      val resp10 = fe.CloseSession(req8)
       resp10.getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
       resp10.getStatus.getErrorMessage should include("does not exist!")
-      val resp11 = feService.ExecuteStatement(req2)
+      val resp11 = fe.ExecuteStatement(req2)
       resp11.getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
-      feService.GetOperationStatus(req3).getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
-      feService.FetchResults(req4).getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
-      feService.GetResultSetMetadata(req5)
+      fe.GetOperationStatus(req3).getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
+      fe.FetchResults(req4).getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
+      fe.GetResultSetMetadata(req5)
         .getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
-      feService.CancelOperation(req7).getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
-      feService.CloseOperation(req6).getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
+      fe.CancelOperation(req7).getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
+      fe.CloseOperation(req6).getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
 
       val tOpenSessionReq = new TOpenSessionReq(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
       tOpenSessionReq.setUsername("yaooqinn")
       tOpenSessionReq.setPassword("passwd")
       tOpenSessionReq.setConfiguration(
         Map("hive.server2.proxy.user" -> "kent").asJava)
-      val tOpenSessionResp = feService.OpenSession(tOpenSessionReq)
+      val tOpenSessionResp = fe.OpenSession(tOpenSessionReq)
       tOpenSessionResp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
-    } finally {
-      feService.stop()
     }
   }
 
@@ -603,56 +540,38 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
   }
 
   def withFEServiceAndHandle(block: (FrontendService, TSessionHandle) => Unit): Unit = {
-    val feService = new FrontendService(beService)
-    try {
-      feService.init(conf)
-      feService.start()
-      val req = new TOpenSessionReq(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
-      req.setUsername(user)
-      val resp = feService.OpenSession(req)
-      resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
-      val handle = resp.getSessionHandle
-      block(feService, handle)
-    } finally {
-      feService.stop()
-    }
+    val feService = server.feService
+    val req = new TOpenSessionReq(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
+    req.setUsername(user)
+    val resp = feService.OpenSession(req)
+    resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+    val handle = resp.getSessionHandle
+    block(feService, handle)
   }
 
   def withFEServiceAndHandleInc(block: (FrontendService, TSessionHandle) => Unit): Unit = {
-    val feService = new FrontendService(beService)
-    try {
-      feService.init(conf)
-      feService.start()
-      val req = new TOpenSessionReq(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
-      req.setUsername(user)
-      req.setConfiguration(
-        Map("set:hivevar:" + KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key -> "true").asJava)
-      val resp = feService.OpenSession(req)
-      resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
-      val handle = resp.getSessionHandle
-      block(feService, handle)
-    } finally {
-      feService.stop()
-    }
+    val feService = server.feService
+    val req = new TOpenSessionReq(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
+    req.setUsername(user)
+    req.setConfiguration(
+      Map("set:hivevar:" + KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key -> "true").asJava)
+    val resp = feService.OpenSession(req)
+    resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+    val handle = resp.getSessionHandle
+    block(feService, handle)
   }
 
   def withFEServiceAndHandleIncAndCal(block: (FrontendService, TSessionHandle) => Unit): Unit = {
-    val feService = new FrontendService(beService)
-    try {
-      feService.init(conf)
-      feService.start()
-      val req = new TOpenSessionReq(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
-      req.setUsername(user)
-      req.setConfiguration(
-        Map("set:hivevar:" + KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key -> "true",
-          "set:hivevar:" + KyuubiConf.OPERATION_INCREMENTAL_RDD_PARTITIONS_LIMIT.key -> "-1")
-          .asJava)
-      val resp = feService.OpenSession(req)
-      resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
-      val handle = resp.getSessionHandle
-      block(feService, handle)
-    } finally {
-      feService.stop()
-    }
+    val feService = server.feService
+    val req = new TOpenSessionReq(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
+    req.setUsername(user)
+    req.setConfiguration(
+      Map("set:hivevar:" + KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key -> "true",
+        "set:hivevar:" + KyuubiConf.OPERATION_INCREMENTAL_RDD_PARTITIONS_LIMIT.key -> "-1")
+        .asJava)
+    val resp = feService.OpenSession(req)
+    resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+    val handle = resp.getSessionHandle
+    block(feService, handle)
   }
 }

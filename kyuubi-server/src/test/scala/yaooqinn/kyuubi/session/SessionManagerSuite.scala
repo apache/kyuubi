@@ -25,12 +25,19 @@ import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
 
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.metrics.MetricsSystem
+import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.service.{ServiceException, State}
 import yaooqinn.kyuubi.utils.ReflectUtils
 
 class SessionManagerSuite extends SparkFunSuite {
 
   import KyuubiConf._
+
+  private val conf = new SparkConf()
+  KyuubiSparkUtil.setupCommonConfig(conf)
+  private val server = new KyuubiServer()
+  server.init(conf)
+  server.start()
 
   override def beforeAll(): Unit = {
     MetricsSystem.close()
@@ -40,35 +47,35 @@ class SessionManagerSuite extends SparkFunSuite {
   test("init operation log") {
     val logRoot = UUID.randomUUID().toString
     val logRoot2 = logRoot + "/sub"
-    val conf = new SparkConf()
+    val confClone = conf.clone()
       .set(KyuubiConf.LOGGING_OPERATION_ENABLED.key, "false")
         .set(KyuubiConf.LOGGING_OPERATION_LOG_DIR.key, logRoot)
 
-    KyuubiSparkUtil.setupCommonConfig(conf)
+    KyuubiSparkUtil.setupCommonConfig(confClone)
 
-    val sessionManager = new SessionManager()
+    val sessionManager = new SessionManager(server)
     assert(sessionManager.getName === classOf[SessionManager].getSimpleName)
-    sessionManager.init(conf)
+    sessionManager.init(confClone)
     assert(!new File(logRoot).exists(), "Operation Log should be off")
     sessionManager.stop()
 
-    val sessionManager2 = new SessionManager()
-    conf.set(KyuubiConf.LOGGING_OPERATION_ENABLED.key, "true")
-    sessionManager2.init(conf)
+    val sessionManager2 = new SessionManager(server)
+    confClone.set(KyuubiConf.LOGGING_OPERATION_ENABLED.key, "true")
+    sessionManager2.init(confClone)
     assert(new File(logRoot).exists(), "Operation Log should be on")
     new File(logRoot).delete()
     sessionManager2.stop()
 
     new File(logRoot).createNewFile()
-    val sessionManager3 = new SessionManager()
-    sessionManager3.init(conf)
+    val sessionManager3 = new SessionManager(server)
+    sessionManager3.init(confClone)
     assert(ReflectUtils.getFieldValue(sessionManager3, "isOperationLogEnabled") === false)
     sessionManager3.stop()
 
-    conf.set(KyuubiConf.LOGGING_OPERATION_LOG_DIR.key, logRoot2)
+    confClone.set(KyuubiConf.LOGGING_OPERATION_LOG_DIR.key, logRoot2)
     new File(logRoot).setWritable(false)
-    val sessionManager4 = new SessionManager()
-    sessionManager4.init(conf)
+    val sessionManager4 = new SessionManager(server)
+    sessionManager4.init(confClone)
     assert(ReflectUtils.getFieldValue(sessionManager4, "isOperationLogEnabled") === false)
     new File(logRoot).setWritable(true)
     assert(!new File(logRoot2).exists(), "Operation Log fails for not writable")
@@ -76,23 +83,22 @@ class SessionManagerSuite extends SparkFunSuite {
   }
 
   test("init resources root dir") {
-    val conf = new SparkConf(true).set(KyuubiConf.LOGGING_OPERATION_ENABLED.key, "false")
-    KyuubiSparkUtil.setupCommonConfig(conf)
-    val sessionManager = new SessionManager()
+    val confClone = conf.clone().set(KyuubiConf.LOGGING_OPERATION_ENABLED.key, "false")
+    val sessionManager = new SessionManager(server)
 
-    sessionManager.init(conf)
-    val resourcesRoot = new File(conf.get(OPERATION_DOWNLOADED_RESOURCES_DIR))
+    sessionManager.init(confClone)
+    val resourcesRoot = new File(confClone.get(OPERATION_DOWNLOADED_RESOURCES_DIR))
     assert(resourcesRoot.exists())
     assert(resourcesRoot.isDirectory)
     resourcesRoot.delete()
     resourcesRoot.createNewFile()
-    val e1 = intercept[ServiceException](sessionManager.init(conf))
+    val e1 = intercept[ServiceException](sessionManager.init(confClone))
     assert(e1.getMessage.startsWith(
       "The operation downloaded resources directory exists but is not a directory"))
     assert(resourcesRoot.delete())
     resourcesRoot.getParentFile.setWritable(false)
     try {
-      intercept[Exception](sessionManager.init(conf))
+      intercept[Exception](sessionManager.init(confClone))
     } finally {
       resourcesRoot.getParentFile.setWritable(true)
     }
@@ -100,7 +106,7 @@ class SessionManagerSuite extends SparkFunSuite {
 
   test("start timeout checker") {
     val conf = new SparkConf().set(KyuubiConf.FRONTEND_SESSION_CHECK_INTERVAL.key, "-1")
-    val sessionManager = new SessionManager()
+    val sessionManager = new SessionManager(server)
     KyuubiSparkUtil.setupCommonConfig(conf)
     sessionManager.init(conf)
     sessionManager.start()
@@ -110,7 +116,7 @@ class SessionManagerSuite extends SparkFunSuite {
 
   test("init session manager") {
     val conf = new SparkConf()
-    val sessionManager = new SessionManager()
+    val sessionManager = new SessionManager(server)
     intercept[NoSuchElementException](sessionManager.init(conf))
     KyuubiSparkUtil.setupCommonConfig(conf)
     assert(sessionManager.getServiceState === State.NOT_INITED)
@@ -122,7 +128,7 @@ class SessionManagerSuite extends SparkFunSuite {
     intercept[IllegalStateException](sessionManager.init(conf))
     sessionManager.stop()
 
-    val sessionManager2 = new SessionManager()
+    val sessionManager2 = new SessionManager(server)
     MetricsSystem.init(conf)
     sessionManager2.init(conf)
     MetricsSystem.close()
@@ -131,7 +137,7 @@ class SessionManagerSuite extends SparkFunSuite {
 
   test("start session manager") {
     val conf = new SparkConf()
-    val sessionManager = new SessionManager()
+    val sessionManager = new SessionManager(server)
     KyuubiSparkUtil.setupCommonConfig(conf)
     sessionManager.init(conf)
     sessionManager.start()
@@ -142,7 +148,7 @@ class SessionManagerSuite extends SparkFunSuite {
 
   test("stop session manager") {
     val conf = new SparkConf()
-    val sessionManager = new SessionManager()
+    val sessionManager = new SessionManager(server)
     KyuubiSparkUtil.setupCommonConfig(conf)
     sessionManager.init(conf)
     sessionManager.start()
@@ -153,7 +159,7 @@ class SessionManagerSuite extends SparkFunSuite {
       override def run(): Unit = {}
     }
     intercept[NullPointerException](sessionManager.submitBackgroundOperation(r))
-    val sessionManager2 = new SessionManager()
+    val sessionManager2 = new SessionManager(server)
     sessionManager2.stop()
   }
 
@@ -166,7 +172,7 @@ class SessionManagerSuite extends SparkFunSuite {
       .set(KyuubiConf.LOGGING_OPERATION_LOG_DIR.key, logRoot)
 
     KyuubiSparkUtil.setupCommonConfig(conf)
-    val sessionManager = new SessionManager()
+    val sessionManager = new SessionManager(server)
 
     sessionManager.init(conf)
     assert(!new File(logRoot).exists(), "Operation Log should be off")

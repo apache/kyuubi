@@ -43,6 +43,7 @@ private[kyuubi] class LoadBalanceService private(name: String, server: KyuubiSer
   }
 
   override def reset(): Unit = {
+    server.deregisterWithZK()
     // If there are no more active client sessions, stop the server
     if (server.beService.getSessionManager.getOpenSessionCount == 0) {
       warn("This Kyuubi instance has been removed from the list of " +

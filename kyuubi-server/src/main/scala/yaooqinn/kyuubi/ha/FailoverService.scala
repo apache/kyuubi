@@ -84,7 +84,5 @@ private[kyuubi] class FailoverService(name: String, server: KyuubiServer)
     }
   }
 
-  override def reset(): Unit = {
-    closeLeaderLatch()
-  }
+  override def reset(): Unit = {}
 }
