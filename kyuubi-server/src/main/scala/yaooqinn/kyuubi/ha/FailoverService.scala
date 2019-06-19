@@ -31,15 +31,23 @@ import yaooqinn.kyuubi.server.KyuubiServer
 private[kyuubi] class FailoverService(name: String, server: KyuubiServer)
   extends HighAvailableService(name, server) with LeaderLatchListener with Logging {
 
-  private var leaderLatch: LeaderLatch = _
+  @volatile private var leaderLatch: LeaderLatch = _
   @volatile private var zkServiceStarted = false
 
   private def closeLeaderLatch(): Unit = Option(leaderLatch).foreach { latch =>
     try {
       latch.close()
+      info("Close Zookeeper leader latch")
     } catch {
       case e: Exception => error("Error close leader latch", e)
     }
+  }
+
+  private def startLeaderLatch(): Unit = {
+    info("Start Zookeeper leader latch")
+    leaderLatch = new LeaderLatch(zkClient, serviceRootNamespace + "-latch")
+    leaderLatch.addListener(this)
+    leaderLatch.start()
   }
 
   def this(server: KyuubiServer) = {
@@ -47,9 +55,7 @@ private[kyuubi] class FailoverService(name: String, server: KyuubiServer)
   }
 
   override def start(): Unit = {
-    leaderLatch = new LeaderLatch(zkClient, serviceRootNamespace + "-latch")
-    leaderLatch.addListener(this)
-    leaderLatch.start()
+    startLeaderLatch()
     super.start()
   }
 
@@ -84,5 +90,9 @@ private[kyuubi] class FailoverService(name: String, server: KyuubiServer)
     }
   }
 
-  override def reset(): Unit = {}
+  override def reset(): Unit = {
+    info("Reset Zookeeper leader latch")
+    closeLeaderLatch()
+    startLeaderLatch()
+  }
 }

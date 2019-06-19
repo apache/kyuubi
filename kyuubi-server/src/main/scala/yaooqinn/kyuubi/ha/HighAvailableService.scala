@@ -47,8 +47,8 @@ private[kyuubi] abstract class HighAvailableService(name: String, server: Kyuubi
 
   import HighAvailableService._
 
-  protected var zkClient: CuratorFramework = _
-  protected var serviceRootNamespace: String = _
+  protected final var zkClient: CuratorFramework = _
+  protected final var serviceRootNamespace: String = _
 
   private var serviceNode: PersistentEphemeralNode = _
   private var servicePath: String = _

@@ -280,6 +280,7 @@ private[kyuubi] class SessionManager private(
         sessionHandle.getSessionId.toString,
         kyuubiSession.getUserName)
     }
+    info(s"Session [$sessionHandle] opened, current opening sessions: $getOpenSessionCount")
 
     sessionHandle
   }
@@ -304,6 +305,7 @@ private[kyuubi] class SessionManager private(
       _.onSessionClosed(sessionHandle.getSessionId.toString)
     }
     cacheManager.decrease(sessionUser)
+    info(s"Session [$sessionHandle] closed, current opening sessions: $getOpenSessionCount")
     try {
       session.close()
     } finally {
@@ -311,8 +313,11 @@ private[kyuubi] class SessionManager private(
         info("This instance of KyuubiServer is offline from HA service discovery layer previously" +
           ", the last client is disconnected, shut down now")
         if (getOpenSessionCount == 0) {
-          new Thread {
-            override def run(): Unit = server.stop()
+          new Thread("StopServerAfterSessionCleared") {
+            override def run(): Unit = {
+              info("All Sessions closed, will invoke Kyuubi server stop")
+              server.stop()
+            }
           }.start()
         }
       }

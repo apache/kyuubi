@@ -34,6 +34,8 @@ class SessionManagerSuite extends SparkFunSuite {
   import KyuubiConf._
 
   private val conf = new SparkConf()
+    .setMaster("local")
+    .set(KyuubiConf.FRONTEND_BIND_PORT.key, "0")
   KyuubiSparkUtil.setupCommonConfig(conf)
   private val server = new KyuubiServer()
   server.init(conf)
@@ -194,5 +196,24 @@ class SessionManagerSuite extends SparkFunSuite {
     assert(e1.getMessage.contains(sessionHandle.toString))
     val e2 = intercept[KyuubiSQLException](sessionManager.getSession(sessionHandle))
     assert(e2.getMessage.contains(sessionHandle.toString))
+  }
+
+  test("close session and stop server if it is deregistered") {
+    val server = new KyuubiServer()
+    server.init(conf)
+    server.start()
+    server.stop()
+    val sessionHandle = server.beService.getSessionManager.openSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8,
+      KyuubiSparkUtil.getCurrentUserName,
+      "",
+      "",
+      Map.empty[String, String],
+      withImpersonation = true)
+
+    server.deregisterWithZK()
+    server.beService.getSessionManager.closeSession(sessionHandle)
+    assert(server.beService.getSessionManager.getOpenSessionCount === 0)
+    assert(server.feService.getServiceState === State.STOPPED)
   }
 }
