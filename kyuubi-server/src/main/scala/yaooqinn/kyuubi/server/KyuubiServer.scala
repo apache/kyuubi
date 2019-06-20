@@ -41,6 +41,10 @@ private[kyuubi] class KyuubiServer private(name: String)
 
   private val started = new AtomicBoolean(false)
 
+  private var _isDeregisterWithZK = false
+  def deregisterWithZK(): Unit = _isDeregisterWithZK = true
+  def isDeregisterWithZk: Boolean = _isDeregisterWithZK
+
   def this() = this(classOf[KyuubiServer].getSimpleName)
 
   override def init(conf: SparkConf): Unit = synchronized {
@@ -52,7 +56,7 @@ private[kyuubi] class KyuubiServer private(name: String)
       override def run(): Unit = KyuubiServer.this.stop()
     }
 
-    _beService = new BackendService()
+    _beService = new BackendService(this)
     _feService = new FrontendService(_beService, OOMHook)
 
     addService(_beService)

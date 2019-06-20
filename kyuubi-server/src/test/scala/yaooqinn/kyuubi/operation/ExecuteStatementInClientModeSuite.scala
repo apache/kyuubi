@@ -22,7 +22,7 @@ import java.io.File
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.cli.thrift.{TFetchOrientation, TProtocolVersion}
 import org.apache.spark._
-import org.apache.spark.KyuubiConf.LOGGING_OPERATION_LOG_DIR
+import org.apache.spark.KyuubiConf.{FRONTEND_BIND_PORT, LOGGING_OPERATION_LOG_DIR}
 import org.apache.spark.sql.catalyst.catalog.FunctionResource
 import org.apache.spark.sql.execution.SparkSqlParser
 import org.apache.spark.sql.execution.command.CreateFunctionCommand
@@ -34,15 +34,17 @@ import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.cli.FetchOrientation.{FETCH_FIRST, FETCH_NEXT}
 import yaooqinn.kyuubi.operation.statement.ExecuteStatementInClientMode
+import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.session.{KyuubiSession, SessionHandle, SessionManager}
 import yaooqinn.kyuubi.utils.ReflectUtils
 
 class ExecuteStatementInClientModeSuite extends SparkFunSuite with MockitoSugar {
 
+  private var server: KyuubiServer = _
   private val conf = new SparkConf()
   KyuubiSparkUtil.setupCommonConfig(conf)
   conf.remove(KyuubiSparkUtil.CATALOG_IMPL)
-  conf.setMaster("local")
+  conf.setMaster("local").set(FRONTEND_BIND_PORT.key, "0")
 
   private val proto = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8
   private val user = UserGroupInformation.getCurrentUser
@@ -50,13 +52,15 @@ class ExecuteStatementInClientModeSuite extends SparkFunSuite with MockitoSugar 
   private val passwd = ""
 
   protected val statement = "show tables"
-  protected val sessionMgr = new SessionManager()
+  protected var sessionMgr: SessionManager = _
   protected var session: KyuubiSession = _
   protected var sessHandle: SessionHandle = _
 
   override protected def beforeAll(): Unit = {
-    sessionMgr.init(conf)
-    sessionMgr.start()
+    server = new KyuubiServer()
+    server.init(conf)
+    server.start()
+    sessionMgr = server.beService.getSessionManager
     sessHandle = sessionMgr.openSession(proto, userName, passwd, "", Map.empty, false)
     session = sessionMgr.getSession(sessHandle)
     super.beforeAll()
@@ -64,7 +68,7 @@ class ExecuteStatementInClientModeSuite extends SparkFunSuite with MockitoSugar 
 
   override protected def afterAll(): Unit = {
     sessionMgr.closeSession(sessHandle)
-    sessionMgr.stop()
+    Option(server).foreach(_.stop())
     super.afterAll()
   }
 

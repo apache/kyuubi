@@ -18,6 +18,8 @@
 package yaooqinn.kyuubi.ha
 
 import com.google.common.io.Files
+import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
+import org.apache.curator.retry.ExponentialBackoffRetry
 import org.apache.curator.test.TestingServer
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import org.apache.spark.KyuubiConf._
@@ -30,6 +32,8 @@ trait ZookeeperFunSuite extends SparkFunSuite{
   KyuubiSparkUtil.setupCommonConfig(conf)
   conf.set(KyuubiConf.FRONTEND_BIND_PORT.key, "0")
 
+  var zooKeeperClient: CuratorFramework = _
+
   override def beforeAll(): Unit = {
     zkServer = new TestingServer(2181, Files.createTempDir(), true)
     connectString = zkServer.getConnectString
@@ -37,11 +41,16 @@ trait ZookeeperFunSuite extends SparkFunSuite{
     conf.set(HA_ZOOKEEPER_CONNECTION_BASESLEEPTIME.key, "100ms")
     conf.set(HA_ZOOKEEPER_SESSION_TIMEOUT.key, "15s")
     conf.set(HA_ZOOKEEPER_CONNECTION_MAX_RETRIES.key, "0")
+    zooKeeperClient = CuratorFrameworkFactory.builder().connectString(connectString)
+        .retryPolicy(new ExponentialBackoffRetry(1000, 3))
+        .build()
+    zooKeeperClient.start()
     super.beforeAll()
   }
 
   override def afterAll(): Unit = {
-    zkServer.stop()
+    Option(zooKeeperClient).foreach(_.close())
+    Option(zkServer).foreach(_.stop())
     System.clearProperty(HA_ZOOKEEPER_QUORUM.key)
     System.clearProperty(HA_ENABLED.key)
     super.afterAll()

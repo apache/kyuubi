@@ -200,7 +200,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
 
   @throws[KyuubiSQLException]
   private def getProxyUser(sessionConf: Map[String, String],
-                           ipAddress: String, realUser: String): String = {
+      ipAddress: String, realUser: String): String = {
     Option(sessionConf).flatMap(_.get(KyuubiAuthFactory.HS2_PROXY_USER)) match {
       case None => realUser
       case Some(_) if !conf.get(FRONTEND_ALLOW_USER_SUBSTITUTION).toBoolean =>
@@ -221,19 +221,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
   }
 
   private def getMinVersion(versions: TProtocolVersion*): TProtocolVersion = {
-    val values = TProtocolVersion.values
-    var current = values(values.length - 1).getValue
-    for (version <- versions) {
-      if (current > version.getValue) {
-        current = version.getValue
-      }
-    }
-    for (version <- values) {
-      if (version.getValue == current) {
-        return version
-      }
-    }
-    throw new IllegalArgumentException("never")
+    versions.minBy(_.getValue)
   }
 
   @throws[KyuubiSQLException]

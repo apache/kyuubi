@@ -21,7 +21,7 @@ import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.types.StructType
 
-import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
+import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.author.AuthzHelper
 import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType, GetInfoValue}
@@ -34,18 +34,18 @@ import yaooqinn.kyuubi.session.{SessionHandle, SessionManager}
  * [[BackendService]] holds an instance of [[SessionManager]] which manages
  * `KyuubiSession` for execution
  */
-private[server] class BackendService private(name: String)
+private[server] class BackendService private(name: String, server: KyuubiServer)
   extends CompositeService(name) with Logging {
 
   private[this] var sessionManager: SessionManager = _
   def getSessionManager: SessionManager = sessionManager
 
-  def this() = this(classOf[BackendService].getSimpleName)
+  def this(server: KyuubiServer) = this(classOf[BackendService].getSimpleName, server)
 
   override def init(conf: SparkConf): Unit = synchronized {
     this.conf = conf
     AuthzHelper.init(conf)
-    sessionManager = new SessionManager()
+    sessionManager = new SessionManager(server)
     addService(sessionManager)
     super.init(conf)
   }
