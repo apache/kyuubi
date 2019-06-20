@@ -24,7 +24,7 @@ import org.scalatest.mock.MockitoSugar
 
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.FetchOrientation
-import yaooqinn.kyuubi.session.{KyuubiSession, SessionManager}
+import yaooqinn.kyuubi.session.{KyuubiClientSession, SessionManager}
 import yaooqinn.kyuubi.utils.ReflectUtils
 
 abstract class AbstractKyuubiOperationSuite extends SparkFunSuite with MockitoSugar {
@@ -39,7 +39,7 @@ abstract class AbstractKyuubiOperationSuite extends SparkFunSuite with MockitoSu
   val userName = user.getShortUserName
   val passwd = ""
   val statement = "show tables"
-  var session: KyuubiSession = _
+  var session: KyuubiClientSession = _
 
   override protected def beforeAll(): Unit = {
     sessionMgr = new SessionManager()

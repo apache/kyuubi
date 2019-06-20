@@ -39,11 +39,11 @@ import org.apache.spark.sql.types._
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.schema.{RowSet, RowSetBuilder}
-import yaooqinn.kyuubi.session.KyuubiSession
+import yaooqinn.kyuubi.session.KyuubiClientSession
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 import yaooqinn.kyuubi.utils.ReflectUtils
 
-class KyuubiClientOperation(session: KyuubiSession, statement: String)
+class KyuubiClientOperation(session: KyuubiClientSession, statement: String)
   extends AbstractKyuubiOperation(session, statement) {
 
   import KyuubiClientOperation._

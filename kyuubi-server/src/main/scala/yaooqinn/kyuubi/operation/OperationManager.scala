@@ -21,17 +21,19 @@ import java.sql.SQLException
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
+
 import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.log4j.Logger
 import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
+
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.schema.{RowSet, RowSetBuilder}
 import yaooqinn.kyuubi.service.AbstractService
-import yaooqinn.kyuubi.session.{IKyuubiSession, KyuubiSession}
+import yaooqinn.kyuubi.session.{IKyuubiSession, KyuubiClientSession}
 
 private[kyuubi] class OperationManager private(name: String)
   extends AbstractService(name) with Logging {
@@ -84,7 +86,8 @@ private[kyuubi] class OperationManager private(name: String)
   def newExecuteStatementOperation(
       parentSession: IKyuubiSession,
       statement: String): IKyuubiOperation = synchronized {
-    val operation = new KyuubiClientOperation(parentSession, statement)
+    val operation = new KyuubiClientOperation(parentSession.asInstanceOf[KyuubiClientSession],
+      statement)
     addOperation(operation)
     operation
   }

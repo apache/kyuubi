@@ -57,7 +57,8 @@ class KyuubiSessionSecuredSuite extends SparkFunSuite with SecuredFunSuite {
     val proto = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8
     tryWithSecurityEnabled {
       val session =
-        new KyuubiSession(proto, user, passwd, server.getConf, ip, imper, sessionMgr, operationMgr)
+        new KyuubiClientSession(proto, user, passwd, server.getConf, ip, imper, sessionMgr,
+          operationMgr)
       assert(session.ugi.getShortUserName === user)
     }
   }

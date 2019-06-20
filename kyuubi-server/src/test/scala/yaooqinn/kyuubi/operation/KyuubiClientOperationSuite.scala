@@ -32,7 +32,7 @@ import scala.collection.JavaConverters._
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.FetchOrientation.FETCH_NEXT
 import yaooqinn.kyuubi.schema.ColumnBasedSet
-import yaooqinn.kyuubi.session.KyuubiSession
+import yaooqinn.kyuubi.session.KyuubiClientSession
 import yaooqinn.kyuubi.spark.SparkSessionWithUGI
 import yaooqinn.kyuubi.utils.ReflectUtils
 
@@ -53,7 +53,7 @@ class KyuubiClientOperationSuite extends AbstractKyuubiOperationSuite {
     sparkWithUgi = new SparkSessionWithUGI(user, conf, sessionMgr.getCacheMgr)
     ReflectUtils.setFieldValue(sparkWithUgi,
       "yaooqinn$kyuubi$spark$SparkSessionWithUGI$$_sparkSession", spark)
-    session = new KyuubiSession(
+    session = new KyuubiClientSession(
       proto, userName, passwd, conf, "", false, sessionMgr, sessionMgr.getOperationMgr)
     ReflectUtils.setFieldValue(session, "sparkSessionWithUGI", sparkWithUgi)
   }

@@ -21,15 +21,13 @@ import java.security.PrivilegedExceptionAction
 import java.util.UUID
 import java.util.concurrent.{Future, RejectedExecutionException}
 
-import scala.util.control.NonFatal
-
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.cli.FetchOrientation
-import yaooqinn.kyuubi.session.KyuubiSession
+import yaooqinn.kyuubi.session.IKyuubiSession
 
-abstract class AbstractKyuubiOperation(session: KyuubiSession, statement: String)
+abstract class AbstractKyuubiOperation(session: IKyuubiSession, statement: String)
   extends IKyuubiOperation with Logging{
 
   protected var state: OperationState = INITIALIZED
@@ -52,7 +50,7 @@ abstract class AbstractKyuubiOperation(session: KyuubiSession, statement: String
     this.backgroundHandle = backgroundHandle
   }
 
-  override def getSession: KyuubiSession = session
+  override def getSession: IKyuubiSession = session
 
   override def getHandle: OperationHandle = opHandle
 

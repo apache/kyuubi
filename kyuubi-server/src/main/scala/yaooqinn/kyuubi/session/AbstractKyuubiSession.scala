@@ -25,17 +25,13 @@ import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.cli.thrift.TProtocolVersion
-import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext}
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.cli._
 import yaooqinn.kyuubi.operation.{IKyuubiOperation, OperationHandle, OperationManager}
-import yaooqinn.kyuubi.schema.RowSet
 import yaooqinn.kyuubi.session.security.TokenCollector
-import yaooqinn.kyuubi.spark.SparkSessionWithUGI
 import yaooqinn.kyuubi.utils.KyuubiHadoopUtil
 
 abstract class AbstractKyuubiSession(
@@ -126,7 +122,7 @@ abstract class AbstractKyuubiSession(
 
   override def ugi: UserGroupInformation = this.sessionUGI
 
-  def getInfo(getInfoType: GetInfoType): GetInfoValue = {
+  override def getInfo(getInfoType: GetInfoType): GetInfoValue = {
     acquire(true)
     try {
       getInfoType match {
@@ -154,7 +150,7 @@ abstract class AbstractKyuubiSession(
    * @return
    */
   @throws[KyuubiSQLException]
-  def executeStatement(statement: String): OperationHandle = {
+  override def executeStatement(statement: String): OperationHandle = {
     executeStatementInternal(statement)
   }
 
@@ -165,7 +161,7 @@ abstract class AbstractKyuubiSession(
    * @return
    */
   @throws[KyuubiSQLException]
-  def executeStatementAsync(statement: String): OperationHandle = {
+  override def executeStatementAsync(statement: String): OperationHandle = {
     executeStatementInternal(statement)
   }
 
@@ -173,7 +169,7 @@ abstract class AbstractKyuubiSession(
    * close the session
    */
   @throws[KyuubiSQLException]
-  def close(): Unit = {
+  override def close(): Unit = {
     acquire(true)
     try {
       // Iterate through the opHandles and close their operations
@@ -193,7 +189,7 @@ abstract class AbstractKyuubiSession(
     }
   }
 
-  def cancelOperation(opHandle: OperationHandle): Unit = {
+  override def cancelOperation(opHandle: OperationHandle): Unit = {
     acquire(true)
     try {
       operationManager.cancelOperation(opHandle)
@@ -202,7 +198,7 @@ abstract class AbstractKyuubiSession(
     }
   }
 
-  def closeOperation(opHandle: OperationHandle): Unit = {
+  override def closeOperation(opHandle: OperationHandle): Unit = {
     acquire(true)
     try {
       operationManager.closeOperation(opHandle)
@@ -212,36 +208,8 @@ abstract class AbstractKyuubiSession(
     }
   }
 
-  def getResultSetMetadata(opHandle: OperationHandle): StructType = {
-    acquire(true)
-    try {
-      operationManager.getResultSetSchema(opHandle)
-    } finally {
-      release(true)
-    }
-  }
-
   @throws[KyuubiSQLException]
-  def fetchResults(
-      opHandle: OperationHandle,
-      orientation: FetchOrientation,
-      maxRows: Long,
-      fetchType: FetchType): RowSet = {
-    acquire(true)
-    try {
-      fetchType match {
-        case FetchType.QUERY_OUTPUT =>
-          operationManager.getOperationNextRowSet(opHandle, orientation, maxRows)
-        case _ =>
-          operationManager.getOperationLogRowSet(opHandle, orientation, maxRows)
-      }
-    } finally {
-      release(true)
-    }
-  }
-
-  @throws[KyuubiSQLException]
-  def getDelegationToken(
+  override def getDelegationToken(
       authFactory: KyuubiAuthFactory,
       owner: String,
       renewer: String): String = {
@@ -249,16 +217,16 @@ abstract class AbstractKyuubiSession(
   }
 
   @throws[KyuubiSQLException]
-  def cancelDelegationToken(authFactory: KyuubiAuthFactory, tokenStr: String): Unit = {
+  override def cancelDelegationToken(authFactory: KyuubiAuthFactory, tokenStr: String): Unit = {
     authFactory.cancelDelegationToken(tokenStr)
   }
 
   @throws[KyuubiSQLException]
-  def renewDelegationToken(authFactory: KyuubiAuthFactory, tokenStr: String): Unit = {
+  override def renewDelegationToken(authFactory: KyuubiAuthFactory, tokenStr: String): Unit = {
     authFactory.renewDelegationToken(tokenStr)
   }
 
-  def closeExpiredOperations: Unit = {
+  override def closeExpiredOperations: Unit = {
     if (opHandleSet.nonEmpty) {
       closeTimedOutOperations(operationManager.removeExpiredOperations(opHandleSet.toSeq))
     }
@@ -281,7 +249,7 @@ abstract class AbstractKyuubiSession(
     }
   }
 
-  def getNoOperationTime: Long = {
+  override def getNoOperationTime: Long = {
     if (lastIdleTime > 0) {
       System.currentTimeMillis - lastIdleTime
     } else {
@@ -289,7 +257,7 @@ abstract class AbstractKyuubiSession(
     }
   }
 
-  def getProtocolVersion: TProtocolVersion = sessionHandle.getProtocolVersion
+  override def getProtocolVersion: TProtocolVersion = sessionHandle.getProtocolVersion
 
   /**
    * Check whether operation logging is enabled and session dir is created successfully
@@ -350,15 +318,15 @@ abstract class AbstractKyuubiSession(
     }
   }
 
-  def getSessionHandle: SessionHandle = sessionHandle
+  override def getSessionHandle: SessionHandle = sessionHandle
 
-  def getPassword: String = password
+  override def getPassword: String = password
 
-  def getIpAddress: String = ipAddress
+  override def getIpAddress: String = ipAddress
 
-  def getLastAccessTime: Long = lastAccessTime
+  override def getLastAccessTime: Long = lastAccessTime
 
-  def getUserName: String = sessionUGI.getShortUserName
+  override def getUserName: String = sessionUGI.getShortUserName
 
-  def getSessionMgr: SessionManager = sessionManager
+  override def getSessionMgr: SessionManager = sessionManager
 }

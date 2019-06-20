@@ -24,7 +24,7 @@ import org.apache.spark.sql.types.StructType
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.schema.RowSet
-import yaooqinn.kyuubi.session.KyuubiSession
+import yaooqinn.kyuubi.session.IKyuubiSession
 
 /**
  * Interface class of KyuubiOperation.
@@ -34,7 +34,7 @@ trait IKyuubiOperation {
   /**
    * Get relative IKyuubiSession.
    */
-  def getSession: KyuubiSession
+  def getSession: IKyuubiSession
 
   /**
    * Get relative OperationHandle.

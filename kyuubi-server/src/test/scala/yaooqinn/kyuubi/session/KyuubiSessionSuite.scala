@@ -24,6 +24,7 @@ import org.apache.hive.service.cli.thrift.{TGetInfoType, TProtocolVersion}
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkFunSuite}
 import org.apache.spark.sql.SparkSession
 import org.scalatest.mock.MockitoSugar
+
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType}
@@ -38,7 +39,7 @@ class KyuubiSessionSuite extends SparkFunSuite with MockitoSugar {
   import KyuubiConf._
 
   var server: KyuubiServer = _
-  var session: KyuubiSession = _
+  var session: KyuubiClientSession = _
   var spark: SparkSession = _
   val statement = "show tables"
 
@@ -56,8 +57,8 @@ class KyuubiSessionSuite extends SparkFunSuite with MockitoSugar {
     val ip = ""
     val imper = true
     val proto = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8
-    session =
-      new KyuubiSession(proto, user, passwd, server.getConf, ip, imper, sessionMgr, operationMgr)
+    session = new KyuubiClientSession(proto, user, passwd, server.getConf, ip, imper, sessionMgr,
+      operationMgr)
     session.open(Map.empty)
     KyuubiServerMonitor.getListener(user)
       .foreach(_.onSessionCreated(
@@ -224,7 +225,7 @@ class KyuubiSessionSuite extends SparkFunSuite with MockitoSugar {
   }
 
   test("test getNoOperationTime") {
-    val mockSession = mock[KyuubiSession]
+    val mockSession = mock[KyuubiClientSession]
     assert(mockSession.getNoOperationTime === 0L)
   }
 

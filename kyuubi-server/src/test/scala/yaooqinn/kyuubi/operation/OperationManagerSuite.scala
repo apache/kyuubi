@@ -29,7 +29,7 @@ import org.scalatest.mock.MockitoSugar
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.service.State
-import yaooqinn.kyuubi.session.{KyuubiSession, SessionManager}
+import yaooqinn.kyuubi.session.{KyuubiClientSession, SessionManager}
 
 class OperationManagerSuite extends SparkFunSuite with Matchers with MockitoSugar {
 
@@ -88,7 +88,7 @@ class OperationManagerSuite extends SparkFunSuite with Matchers with MockitoSuga
     conf.remove(KyuubiSparkUtil.CATALOG_IMPL)
     operationMgr.init(conf)
 
-    val session = mock[KyuubiSession]
+    val session = mock[KyuubiClientSession]
     val ss =
       SparkSession.builder()
         .config(KyuubiSparkUtil.SPARK_UI_PORT, KyuubiSparkUtil.SPARK_UI_PORT_DEFAULT)
@@ -127,7 +127,7 @@ class OperationManagerSuite extends SparkFunSuite with Matchers with MockitoSuga
     conf.set(KyuubiConf.OPERATION_IDLE_TIMEOUT.key, "1s")
     operationMgr.init(conf)
 
-    val session = mock[KyuubiSession]
+    val session = mock[KyuubiClientSession]
 
     val ss =
       SparkSession.builder()
@@ -155,7 +155,7 @@ class OperationManagerSuite extends SparkFunSuite with Matchers with MockitoSuga
     conf.remove(KyuubiSparkUtil.CATALOG_IMPL)
     operationMgr.init(conf)
 
-    val session = mock[KyuubiSession]
+    val session = mock[KyuubiClientSession]
     val ss =
       SparkSession.builder()
         .config(KyuubiSparkUtil.SPARK_UI_PORT, KyuubiSparkUtil.SPARK_UI_PORT_DEFAULT)
@@ -180,7 +180,7 @@ class OperationManagerSuite extends SparkFunSuite with Matchers with MockitoSuga
     conf.remove(KyuubiSparkUtil.CATALOG_IMPL)
     operationMgr.init(conf)
 
-    val session = mock[KyuubiSession]
+    val session = mock[KyuubiClientSession]
     val ss =
       SparkSession.builder()
         .config(KyuubiSparkUtil.SPARK_UI_PORT, KyuubiSparkUtil.SPARK_UI_PORT_DEFAULT)

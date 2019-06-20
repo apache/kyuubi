@@ -37,13 +37,13 @@ import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 import yaooqinn.kyuubi.utils.NamedThreadFactory
 
 /**
- * A SessionManager for managing [[KyuubiSession]]s
+ * A SessionManager for managing [[IKyuubiSession]]s
  */
 private[kyuubi] class SessionManager private(
     name: String) extends CompositeService(name) with Logging {
   private val operationManager = new OperationManager()
   private val cacheManager = new SparkSessionCacheManager()
-  private val handleToSession = new ConcurrentHashMap[SessionHandle, KyuubiSession]
+  private val handleToSession = new ConcurrentHashMap[SessionHandle, IKyuubiSession]
   private var execPool: ThreadPoolExecutor = _
   private var isOperationLogEnabled = false
   private var operationLogRootDir: File = _
@@ -246,7 +246,7 @@ private[kyuubi] class SessionManager private(
       ipAddress: String,
       sessionConf: Map[String, String],
       withImpersonation: Boolean): SessionHandle = {
-    val kyuubiSession = new KyuubiSession(
+    val kyuubiSession = new KyuubiClientSession(
       protocol,
       username,
       password,
@@ -276,7 +276,7 @@ private[kyuubi] class SessionManager private(
   }
 
   @throws[KyuubiSQLException]
-  def getSession(sessionHandle: SessionHandle): KyuubiSession = {
+  def getSession(sessionHandle: SessionHandle): IKyuubiSession = {
     val session = handleToSession.get(sessionHandle)
     if (session == null) {
       throw new KyuubiSQLException("Invalid SessionHandle " + sessionHandle)
