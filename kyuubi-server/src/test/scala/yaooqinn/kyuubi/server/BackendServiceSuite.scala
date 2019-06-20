@@ -21,6 +21,7 @@ import java.util.concurrent.RejectedExecutionException
 
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
+import org.apache.spark.KyuubiConf.FRONTEND_BIND_PORT
 
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.GetInfoType
@@ -29,26 +30,28 @@ import yaooqinn.kyuubi.session.SessionHandle
 
 class BackendServiceSuite extends SparkFunSuite {
 
+  private var server: KyuubiServer = _
   private var backendService: BackendService = _
   private val user = KyuubiSparkUtil.getCurrentUserName
   private val conf = new SparkConf(loadDefaults = true).setAppName("be test")
   KyuubiSparkUtil.setupCommonConfig(conf)
   conf.remove(KyuubiSparkUtil.CATALOG_IMPL)
-  conf.setMaster("local")
+  conf.setMaster("local").set(FRONTEND_BIND_PORT.key, "0")
   private var sessionHandle: SessionHandle = _
   private val showTables = "show tables"
   private val ip = "localhost"
   private val proto = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8
 
   override protected def beforeAll(): Unit = {
-    backendService = new BackendService()
-    backendService.init(conf)
-    backendService.start()
+    server = new KyuubiServer()
+    server.init(conf)
+    server.start()
+    backendService = server.beService
     sessionHandle = backendService.openSession(proto, user, "", ip, Map.empty)
   }
 
   protected override def afterAll(): Unit = {
-    backendService.stop()
+    Option(server).foreach(_.stop())
   }
 
   test("open session") {

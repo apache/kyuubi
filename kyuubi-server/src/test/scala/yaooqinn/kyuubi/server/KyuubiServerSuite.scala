@@ -141,4 +141,11 @@ class KyuubiServerSuite extends SparkFunSuite with BeforeAndAfterEach {
     UserGroupInformation.setConfiguration(SparkHadoopUtil.get.newConfiguration(conf))
     assert(!UserGroupInformation.isSecurityEnabled)
   }
+
+  test("deregister from zookeeper") {
+    val server = new KyuubiServer()
+    assert(!server.isDeregisterWithZk)
+    server.deregisterWithZK()
+    assert(server.isDeregisterWithZk)
+  }
 }

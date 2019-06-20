@@ -45,7 +45,7 @@ class HighAvailableServiceSuite extends SparkFunSuite
   override def beforeEach(): Unit = {
     server = new KyuubiServer()
     haService = new HighAvailableService("test", server) {
-      override protected def reset(): Unit = {}
+      override def reset(): Unit = {}
     }
     super.beforeEach()
   }
@@ -138,7 +138,7 @@ class HighAvailableServiceSuite extends SparkFunSuite
   test("deregister watcher") {
 
     val ha = new HighAvailableService("ha", server) { self =>
-      override protected def reset(): Unit = {}
+      override def reset(): Unit = {}
     }
 
     import Watcher.Event.EventType._

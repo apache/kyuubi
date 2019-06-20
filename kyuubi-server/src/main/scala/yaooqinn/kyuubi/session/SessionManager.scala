@@ -41,7 +41,7 @@ import yaooqinn.kyuubi.utils.NamedThreadFactory
  * A SessionManager for managing [[KyuubiSession]]s
  */
 private[kyuubi] class SessionManager private(
-    name: String) extends CompositeService(name) with Logging {
+    name: String, server: KyuubiServer) extends CompositeService(name) with Logging {
   private val operationManager = new OperationManager()
   private val cacheManager = new SparkSessionCacheManager()
   private val handleToSession = new ConcurrentHashMap[SessionHandle, KyuubiSession]
@@ -54,7 +54,7 @@ private[kyuubi] class SessionManager private(
   private var checkOperation: Boolean = false
   private var shutdown: Boolean = false
 
-  def this() = this(classOf[SessionManager].getSimpleName)
+  def this(server: KyuubiServer) = this(classOf[SessionManager].getSimpleName, server)
 
   private def createExecPool(): Unit = {
     val poolSize = conf.get(ASYNC_EXEC_THREADS).toInt
@@ -280,6 +280,7 @@ private[kyuubi] class SessionManager private(
         sessionHandle.getSessionId.toString,
         kyuubiSession.getUserName)
     }
+    info(s"Session [$sessionHandle] opened, current opening sessions: $getOpenSessionCount")
 
     sessionHandle
   }
@@ -304,7 +305,23 @@ private[kyuubi] class SessionManager private(
       _.onSessionClosed(sessionHandle.getSessionId.toString)
     }
     cacheManager.decrease(sessionUser)
-    session.close()
+    info(s"Session [$sessionHandle] closed, current opening sessions: $getOpenSessionCount")
+    try {
+      session.close()
+    } finally {
+      if (server.isDeregisterWithZk) {
+        info("This instance of KyuubiServer is offline from HA service discovery layer previously" +
+          ", the last client is disconnected, shut down now")
+        if (getOpenSessionCount == 0) {
+          new Thread("StopServerAfterSessionCleared") {
+            override def run(): Unit = {
+              info("All Sessions closed, will invoke Kyuubi server stop")
+              server.stop()
+            }
+          }.start()
+        }
+      }
+    }
   }
 
   def getOperationMgr: OperationManager = operationManager

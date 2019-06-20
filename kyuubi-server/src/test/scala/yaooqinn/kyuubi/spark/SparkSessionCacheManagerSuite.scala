@@ -20,17 +20,26 @@ package yaooqinn.kyuubi.spark
 import org.apache.spark._
 import org.apache.spark.sql.SparkSession
 import org.mockito.Mockito.when
-import org.scalatest.Matchers
+import org.scalatest.{BeforeAndAfterEach, Matchers}
 import org.scalatest.mock.MockitoSugar
 
+import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.service.State
 
-class SparkSessionCacheManagerSuite extends SparkFunSuite with Matchers with MockitoSugar {
+class SparkSessionCacheManagerSuite
+  extends SparkFunSuite with Matchers with MockitoSugar with BeforeAndAfterEach {
 
   override def afterAll(): Unit = {
     System.clearProperty("SPARK_YARN_MODE")
     super.afterAll()
   }
+
+  override def beforeEach(): Unit = {
+    MetricsSystem.close()
+    super.beforeEach()
+  }
+
+  override def beforeAll(): Unit = super.beforeAll()
   test("new cache") {
     val cache = new SparkSessionCacheManager()
     cache.getStartTime should be(0)
