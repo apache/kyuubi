@@ -108,19 +108,26 @@ class FailoverServiceSuite extends SparkFunSuite
     server.init(conf)
     haService.init(conf)
     haService.start()
-    Thread.sleep(10000)
+    Thread.sleep(5000)
     val list = zooKeeperClient.getChildren.forPath("/").asScala.toList
     assert(list.size === 3)
-    assert(list.contains("kyuubiserver"))
-    assert(list.contains("kyuubiserver-latch"))
-    val l2 = zooKeeperClient.getChildren.forPath("/kyuubiserver").asScala.toList
+    val ns = "kyuubiserver"
+    assert(list.contains(ns))
+    assert(list.contains(ns + "-latch"))
+    val l2 = zooKeeperClient.getChildren.forPath("/" + ns).asScala.toList
     assert(l2.size === 1)
-    val l3 = zooKeeperClient.getChildren.forPath("/kyuubiserver-latch").asScala.toList
+    val l3 = zooKeeperClient.getChildren.forPath("/" + ns + "-latch").asScala.toList
     assert(l3.size === 1)
     haService.reset()
     Thread.sleep(5000)
-    val l4 = zooKeeperClient.getChildren.forPath("/kyuubiserver-latch").asScala.toList
+    val l4 = zooKeeperClient.getChildren.forPath("/" + ns + "-latch").asScala.toList
     assert(l4.size === 1)
     assert(l3.head !== l4.head)
+
+    zooKeeperClient.delete().forPath("/" + ns + "/" + l2.head)
+    Thread.sleep(5000)
+    val l5 = zooKeeperClient.getChildren.forPath("/" + ns + "-latch").asScala.toList
+    assert(l5.size === 1)
+    assert(l5.head !== l4.head)
   }
 }
