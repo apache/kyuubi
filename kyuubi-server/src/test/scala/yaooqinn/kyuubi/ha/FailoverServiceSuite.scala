@@ -19,6 +19,8 @@ package yaooqinn.kyuubi.ha
 
 import java.io.IOException
 
+import scala.collection.JavaConverters._
+
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkFunSuite}
 import org.scalatest.{BeforeAndAfterEach, Matchers}
@@ -100,5 +102,25 @@ class FailoverServiceSuite extends SparkFunSuite
     haService.init(conf)
     haService.start()
     haService.stop()
+  }
+
+  test("gain leader ship") {
+    server.init(conf)
+    haService.init(conf)
+    haService.start()
+    Thread.sleep(10000)
+    val list = zooKeeperClient.getChildren.forPath("/").asScala.toList
+    assert(list.size === 3)
+    assert(list.contains("kyuubiserver"))
+    assert(list.contains("kyuubiserver-latch"))
+    val l2 = zooKeeperClient.getChildren.forPath("/kyuubiserver").asScala.toList
+    assert(l2.size === 1)
+    val l3 = zooKeeperClient.getChildren.forPath("/kyuubiserver-latch").asScala.toList
+    assert(l3.size === 1)
+    haService.reset()
+    Thread.sleep(5000)
+    val l4 = zooKeeperClient.getChildren.forPath("/kyuubiserver-latch").asScala.toList
+    assert(l4.size === 1)
+    assert(l3.head !== l4.head)
   }
 }

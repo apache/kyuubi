@@ -55,8 +55,9 @@ private[kyuubi] abstract class HighAvailableService(name: String, server: Kyuubi
 
   /**
    * reset current service
+   * Visible for testing
    */
-  protected def reset(): Unit
+  private[ha] def reset(): Unit
 
   /**
    * Expose Kyuubi service instance uri in [[HA_ZOOKEEPER_NAMESPACE]]
