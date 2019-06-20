@@ -93,6 +93,7 @@ private[kyuubi] class FailoverService(name: String, server: KyuubiServer)
   override private[ha] def reset(): Unit = {
     info("Reset Zookeeper leader latch")
     closeLeaderLatch()
+    zkServiceStarted = false
     startLeaderLatch()
   }
 }
