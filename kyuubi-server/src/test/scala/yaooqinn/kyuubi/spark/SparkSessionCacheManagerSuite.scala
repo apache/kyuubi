@@ -106,7 +106,7 @@ class SparkSessionCacheManagerSuite
         c.decReuseTimeAndGet
         c.decReuseTimeAndGet
       }
-      Thread.sleep(1000)
+      Thread.sleep(5000)
       assert(cacheManager.getAndIncrease("alice").isEmpty)
       assert(cacheManager.getAndIncrease("bob").isEmpty)
       assert(cacheManager.getAndIncrease("tom").isEmpty)
