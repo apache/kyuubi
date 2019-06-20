@@ -167,7 +167,6 @@ class SessionManagerSuite extends SparkFunSuite {
       "",
       Map.empty[String, String],
       withImpersonation = true)
-    assert(!sessionManager.getSession(sessionHandle).isOperationLogEnabled)
     assert(sessionManager.getSession(sessionHandle).getSessionMgr === sessionManager)
     assert(sessionManager.getOpenSessionCount === 1)
     sessionManager.closeSession(sessionHandle)

@@ -34,7 +34,7 @@ class SparkSessionCacheSuite extends SparkFunSuite {
   }
   override def afterAll(): Unit = {
     if (spark != null) spark.stop()
-    super.afterAll()
+    super.afterAll()git
   }
 
   test("spark session cache") {

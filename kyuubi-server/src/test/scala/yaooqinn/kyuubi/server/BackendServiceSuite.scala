@@ -25,7 +25,7 @@ import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.GetInfoType
 import yaooqinn.kyuubi.operation.{CANCELED, CLOSED, FINISHED}
-import yaooqinn.kyuubi.session.SessionHandle
+import yaooqinn.kyuubi.session.{KyuubiClientSession, SessionHandle}
 
 class BackendServiceSuite extends SparkFunSuite {
 
@@ -55,6 +55,7 @@ class BackendServiceSuite extends SparkFunSuite {
     val sessionManager = backendService.getSessionManager
     assert(sessionManager.getOpenSessionCount === 1)
     val kyuubiSession = sessionManager.getSession(sessionHandle)
+        .asInstanceOf[KyuubiClientSession]
     assert(kyuubiSession.getSessionHandle === sessionHandle)
     assert(kyuubiSession.getUserName === user)
     assert(!kyuubiSession.sparkSession.sparkContext.isStopped)
