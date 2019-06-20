@@ -17,6 +17,8 @@
 
 package yaooqinn.kyuubi.server
 
+import java.net.InetAddress
+
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.cli.thrift._
@@ -25,7 +27,9 @@ import org.apache.spark.KyuubiConf._
 import org.scalatest.Matchers
 
 import yaooqinn.kyuubi.{KyuubiSQLException, SecuredFunSuite}
+import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.operation.OperationHandle
+import yaooqinn.kyuubi.service.{ServiceException, State}
 import yaooqinn.kyuubi.session.SessionHandle
 
 class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSuite {
@@ -43,6 +47,54 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
   override def afterAll(): Unit = {
     Option(server).foreach(_.stop())
     super.afterAll()
+  }
+
+  test("new frontend service") {
+    val feService = new FrontendService(server.beService)
+    feService.getConf should be(null)
+    feService.getStartTime should be(0)
+    feService.getServiceState should be(State.NOT_INITED)
+    feService.getName should be(classOf[FrontendService].getSimpleName)
+    feService.getServerIPAddress should be(null)
+    feService.getPortNumber should be(0)
+  }
+
+  test("init fe service") {
+    val feService = new FrontendService(server.beService)
+    feService.init(conf)
+    feService.getConf should be(conf)
+    feService.getServiceState should be(State.INITED)
+    feService.getPortNumber should not be 0
+    val conf1 = new SparkConf(loadDefaults = true)
+      .set(FRONTEND_BIND_HOST.key, "")
+      .set(FRONTEND_BIND_PORT.key, "10009")
+    val feService2 = new FrontendService(server.beService)
+    feService2.init(conf1)
+    feService2.getServerIPAddress should be(InetAddress.getLocalHost)
+    intercept[ServiceException](
+      feService2.init(conf1)).getMessage should include("10009")
+  }
+
+  test("start fe service") {
+    val feService = new FrontendService(server.beService)
+    intercept[IllegalStateException](feService.start())
+    feService.init(conf)
+    feService.start()
+    feService.getConf should be(conf)
+    feService.getStartTime should not be 0
+    feService.getServiceState should be(State.STARTED)
+  }
+
+  test("stop fe service") {
+    val feService = new FrontendService(server.beService)
+    feService.stop()
+    feService.getServiceState should be(State.NOT_INITED)
+    feService.init(conf)
+    feService.stop()
+    feService.getServiceState should be(State.INITED)
+    feService.start()
+    feService.stop()
+    feService.getServiceState should be(State.STOPPED)
   }
 
   test("get delegation token") {
@@ -233,15 +285,17 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
   }
 
   test("get port num") {
-    withFEServiceAndHandle { case (fe, _) =>
-      fe.getPortNumber should not be 0
-    }
+    val feService = new FrontendService(server.beService)
+    feService.getPortNumber should be(0)
+    feService.init(conf)
+    feService.getPortNumber should not be 0
   }
 
   test("get server ip addr") {
-    withFEServiceAndHandle { case (fe, _) =>
-      fe.getServerIPAddress should not be null
-    }
+    val feService = new FrontendService(server.beService)
+    feService.getServerIPAddress should be(null)
+    feService.init(conf)
+    feService.getServerIPAddress should not be null
   }
 
   test("fe service server context") {
@@ -260,6 +314,19 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
       handler.createContext(null, null)
       handler.processContext(context, null, null)
       handler.deleteContext(context, null, null)
+    }
+  }
+
+  test("fe tserver event handler with metrics") {
+    withFEServiceAndHandle { case (fe, handle) =>
+      MetricsSystem.init(conf)
+      val handler = new fe.FeTServerEventHandler
+      val context = new fe.FeServiceServerContext()
+      context.setSessionHandle(new SessionHandle(handle))
+      handler.createContext(null, null)
+      handler.processContext(context, null, null)
+      handler.deleteContext(context, null, null)
+      MetricsSystem.close()
     }
   }
 

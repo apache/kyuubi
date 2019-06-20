@@ -211,9 +211,20 @@ class SessionManagerSuite extends SparkFunSuite {
       Map.empty[String, String],
       withImpersonation = true)
 
+    val sessionHandle2 = server.beService.getSessionManager.openSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V8,
+      KyuubiSparkUtil.getCurrentUserName,
+      "",
+      "",
+      Map.empty[String, String],
+      withImpersonation = true)
+
     server.deregisterWithZK()
     server.beService.getSessionManager.closeSession(sessionHandle)
+    assert(server.beService.getSessionManager.getOpenSessionCount === 1)
+    server.beService.getSessionManager.closeSession(sessionHandle2)
     assert(server.beService.getSessionManager.getOpenSessionCount === 0)
+
     assert(server.feService.getServiceState === State.STOPPED)
   }
 }
