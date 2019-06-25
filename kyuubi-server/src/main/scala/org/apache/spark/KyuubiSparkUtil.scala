@@ -87,6 +87,7 @@ object KyuubiSparkUtil extends Logging {
   // Shuffle
   val PREFER_DIRECTBUF: String = SPARK_PREFIX + "shuffle." + "io.preferDirectBufs"
   val PREFER_DIRECTBUF_DEFAULT = "false"
+  val MAX_REMOTE_BLOCK_SIZE_FETCH_TO_MEM: String = SPARK_PREFIX + "maxRemoteBlockSizeFetchToMem"
 
   // Spark SQL
   val CATALOG_IMPL: String = SPARK_PREFIX + SQL_PREFIX + "catalogImplementation"
@@ -97,6 +98,13 @@ object KyuubiSparkUtil extends Logging {
   val ORC_IMPL_DEFAULT = "native"
   val ORC_VECTORIZED_READER_ENABLED: String =
     SPARK_PREFIX + SQL_PREFIX + "orc.enableVectorizedReader"
+  val IGNORE_CORRUPT_FILES: String = SPARK_PREFIX + SQL_PREFIX + "files.ignoreCorruptFiles"
+  val IGNORE_MISSING_FILES: String = SPARK_PREFIX + SQL_PREFIX + "files.ignoreMissingFiles"
+  val HIVE_VERIFY_PARTITION_PATH: String =
+    SPARK_PREFIX + SQL_PREFIX + HIVE_PREFIX + "verifyPartitionPath"
+  val ENABLE_FALL_BACK_TO_HDFS_FOR_STATS: String =
+    SPARK_PREFIX + SQL_PREFIX + "statistics.fallBackToHdfs"
+  val CROSS_JOINS_ENABLED: String = SPARK_PREFIX + SQL_PREFIX + "crossJoin.enabled"
 
   val DEPLOY_MODE: String = SPARK_PREFIX + "submit.deployMode"
   val DEPLOY_MODE_DEFAULT = "client"
@@ -295,6 +303,7 @@ object KyuubiSparkUtil extends Logging {
     KyuubiConf.getAllDefaults.foreach(kv => conf.setIfMissing(kv._1, kv._2))
 
     conf.setIfMissing(PREFER_DIRECTBUF, PREFER_DIRECTBUF_DEFAULT)
+    conf.setIfMissing(MAX_REMOTE_BLOCK_SIZE_FETCH_TO_MEM, "2047m")
     conf.setIfMissing(SPARK_LOCAL_DIR, conf.get(KyuubiConf.BACKEND_SESSION_LOCAL_DIR.key))
     conf.setIfMissing(GC_INTERVAL, GC_INTERVAL_DEFAULT)
     if (UserGroupInformation.isSecurityEnabled) {
@@ -333,6 +342,13 @@ object KyuubiSparkUtil extends Logging {
     }
 
     conf.set(SPARK_YARN_DIST_JARS, distJars)
+
+    // Spark SQL Configurations
+    conf.setIfMissing(IGNORE_CORRUPT_FILES, "true")
+    conf.setIfMissing(IGNORE_MISSING_FILES, "true")
+    conf.setIfMissing(HIVE_VERIFY_PARTITION_PATH, "true")
+    conf.setIfMissing(ENABLE_FALL_BACK_TO_HDFS_FOR_STATS, "true")
+    conf.setIfMissing(CROSS_JOINS_ENABLED, "true")
   }
 
   @tailrec
