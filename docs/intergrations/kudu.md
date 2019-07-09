@@ -9,14 +9,14 @@ When you are reading this documentation, we suppose that you are not necessary t
 Anything missing on this page about Apache Kudu background knowledge, you can refer to its official website.
 
 ## Why Kyuubi on Kudu
-Basically, Kyuubi can take place of HiveServer2 as a multi tenant ad-hoc SQL on Hadoop solution, with the advantages of speed and power comming from Spark SQL. You can run SQL queries towards both data source and Hive tables whose data is secured only with computing resources you are authorized.
+Basically, Kyuubi can take place of HiveServer2 as a multi tenant ad-hoc SQL on Hadoop solution, with the advantages of speed and power coming from Spark SQL. You can run SQL queries towards both data source and Hive tables whose data is secured only with computing resources you are authorized.
 
 > Spark SQL supports operating on a variety of data sources through the DataFrame interface. A DataFrame can be operated on using relational transformations and can also be used to create a temporary view. Registering a DataFrame as a temporary view allows you to run SQL queries over its data. This section describes the general methods for loading and saving data using the Spark Data Sources and then goes into specific options that are available for the built-in data sources.
 
 In Kyuubi, we can register Kudu tables and other data source tables as Spark temporary views to enable federated union queries across Hive, Kudu, and other data sources.
 
 ## Kudu Integration with Apache Spark
-Before integrating Kyuubi with Kudu, we stronly suggest that you integrate and test Spark with Kudu first. You may find the guide from Kudu's online documentation -- [Kudu Integration with Spark](https://kudu.apache.org/docs/developing.html#_kudu_integration_with_spark)
+Before integrating Kyuubi with Kudu, we strongly suggest that you integrate and test Spark with Kudu first. You may find the guide from Kudu's online documentation -- [Kudu Integration with Spark](https://kudu.apache.org/docs/developing.html#_kudu_integration_with_spark)
 
 ## Kudu Integration with Kyuubi
 
@@ -160,3 +160,9 @@ java.lang.UnsupportedOperationException: overwrite is not yet supported
 +---------+--+
 No rows selected (0.611 seconds)
 ```
+
+## References
+[https://kudu.apache.org/](https://kudu.apache.org/)
+[https://kudu.apache.org/docs/developing.html#_kudu_integration_with_spark](https://kudu.apache.org/docs/developing.html#_kudu_integration_with_spark)
+[https://github.com/yaooqinn/kyuubi](https://github.com/yaooqinn/kyuubi)
+[https://spark.apache.org/docs/latest/sql-data-sources.html](https://spark.apache.org/docs/latest/sql-data-sources.html)
