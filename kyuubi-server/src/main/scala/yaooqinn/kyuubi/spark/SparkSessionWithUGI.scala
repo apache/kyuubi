@@ -28,7 +28,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil._
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{SparkSession, SparkSQLUtils}
 import org.apache.spark.ui.KyuubiSessionTab
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
@@ -183,6 +183,7 @@ class SparkSessionWithUGI(
     getOrCreate(sessionConf)
 
     try {
+      doAs(user)(SparkSQLUtils.initializeMetaStoreClient(_sparkSession))
       initialDatabase.foreach { db =>
         doAs(user)(_sparkSession.sql(db))
       }
