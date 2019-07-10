@@ -277,7 +277,8 @@ private[kyuubi] class SessionManager private(
     KyuubiServerMonitor.getListener(session.getUserName).foreach {
       _.onSessionCreated(session.getIpAddress, handle.getSessionId.toString, session.getUserName)
     }
-    info(s"$username's Session [$handle] opened, current opening sessions: $getOpenSessionCount")
+    info(username + "'s Session [" + handle + "] opened, current opening sessions: " +
+      getOpenSessionCount)
 
     handle
   }
@@ -302,7 +303,8 @@ private[kyuubi] class SessionManager private(
       _.onSessionClosed(sessionHandle.getSessionId.toString)
     }
     cacheManager.decrease(user)
-    info(s"$user's Session [$sessionHandle] closed, current opening sessions: $getOpenSessionCount")
+    info(user + "'s Session [" + sessionHandle + "] closed, current opening sessions: " +
+      getOpenSessionCount)
     try {
       session.close()
     } finally {

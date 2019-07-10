@@ -183,7 +183,9 @@ class SparkSessionWithUGI(
     getOrCreate(sessionConf)
 
     try {
-      doAs(user)(SparkSQLUtils.initializeMetaStoreClient(_sparkSession))
+      doAs(user) {
+        SparkSQLUtils.initializeMetaStoreClient(_sparkSession)
+      }
       initialDatabase.foreach { db =>
         doAs(user)(_sparkSession.sql(db))
       }
