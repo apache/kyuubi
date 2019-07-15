@@ -38,4 +38,8 @@ object SparkSQLUtils {
   def toDataFrame(sparkSession: SparkSession, plan: LogicalPlan): DataFrame = {
     Dataset.ofRows(sparkSession, plan)
   }
+
+  def initializeMetaStoreClient(sparkSession: SparkSession): Seq[String] = {
+    sparkSession.sessionState.catalog.listDatabases("default")
+  }
 }
