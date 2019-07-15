@@ -255,7 +255,7 @@ private[kyuubi] class SessionManager private(
       ipAddress: String,
       sessionConf: Map[String, String],
       withImpersonation: Boolean): SessionHandle = {
-    val kyuubiSession = new KyuubiSession(
+    val session = new KyuubiSession(
       protocol,
       username,
       password,
@@ -265,24 +265,21 @@ private[kyuubi] class SessionManager private(
       this,
       operationManager)
     info(s"Opening session for $username")
-    kyuubiSession.open(sessionConf)
+    session.open(sessionConf)
 
-    kyuubiSession.setResourcesSessionDir(resourcesRootDir)
+    session.setResourcesSessionDir(resourcesRootDir)
     if (isOperationLogEnabled) {
-      kyuubiSession.setOperationLogSessionDir(operationLogRootDir)
+      session.setOperationLogSessionDir(operationLogRootDir)
     }
 
-    val sessionHandle = kyuubiSession.getSessionHandle
-    handleToSession.put(sessionHandle, kyuubiSession)
-    KyuubiServerMonitor.getListener(kyuubiSession.getUserName).foreach {
-      _.onSessionCreated(
-        kyuubiSession.getIpAddress,
-        sessionHandle.getSessionId.toString,
-        kyuubiSession.getUserName)
+    val handle = session.getSessionHandle
+    handleToSession.put(handle, session)
+    KyuubiServerMonitor.getListener(session.getUserName).foreach {
+      _.onSessionCreated(session.getIpAddress, handle.getSessionId.toString, session.getUserName)
     }
-    info(s"Session [$sessionHandle] opened, current opening sessions: $getOpenSessionCount")
+    info(s"$username's Session [$handle] opened, current opening sessions: $getOpenSessionCount")
 
-    sessionHandle
+    handle
   }
 
   @throws[KyuubiSQLException]
@@ -300,12 +297,12 @@ private[kyuubi] class SessionManager private(
     if (session == null) {
       throw new KyuubiSQLException(s"Session $sessionHandle does not exist!")
     }
-    val sessionUser = session.getUserName
-    KyuubiServerMonitor.getListener(sessionUser).foreach {
+    val user = session.getUserName
+    KyuubiServerMonitor.getListener(user).foreach {
       _.onSessionClosed(sessionHandle.getSessionId.toString)
     }
-    cacheManager.decrease(sessionUser)
-    info(s"Session [$sessionHandle] closed, current opening sessions: $getOpenSessionCount")
+    cacheManager.decrease(user)
+    info(s"$user's Session [$sessionHandle] closed, current opening sessions: $getOpenSessionCount")
     try {
       session.close()
     } finally {

@@ -20,17 +20,31 @@ package org.apache.spark.sql
 import org.apache.spark.SparkFunSuite
 
 class SparkSQLUtilsSuite extends SparkFunSuite {
+  var sparkSession: SparkSession = _
 
-  test("get user jar class loader") {
-    val sparkSession = SparkSession
+  override def beforeAll(): Unit = {
+    sparkSession = SparkSession
       .builder()
       .appName(classOf[SparkSQLUtilsSuite].getSimpleName)
       .master("local")
       .getOrCreate()
+    super.beforeAll()
+  }
+
+  override def afterAll(): Unit = {
+    if (sparkSession != null) {
+      sparkSession.stop()
+    }
+  }
+
+  test("initialize metastore client ahead") {
+    val dbs = SparkSQLUtils.initializeMetaStoreClient(sparkSession)
+    assert(dbs.contains("default"))
+  }
+
+  test("get user jar class loader") {
     sparkSession.sql("add jar udf-test.jar")
     val loader = SparkSQLUtils.getUserJarClassLoader(sparkSession)
     assert(loader.getResource("udf-test.jar") !== null)
-    sparkSession.stop()
   }
-
 }
