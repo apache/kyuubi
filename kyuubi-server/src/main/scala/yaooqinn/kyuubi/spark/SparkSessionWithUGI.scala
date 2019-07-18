@@ -186,8 +186,8 @@ class SparkSessionWithUGI(
       doAs(user) {
         SparkSQLUtils.initializeMetaStoreClient(_sparkSession)
         _sparkSession.sql(initialDatabase)
+        KyuubiHiveUtil.addDelegationTokensToHiveState(user)
       }
-      KyuubiHiveUtil.addDelegationTokensToHiveState(user)
     } catch {
       case e: Exception =>
         cacheMgr.decrease(userName)
