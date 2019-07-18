@@ -19,14 +19,19 @@ package yaooqinn.kyuubi.operation
 
 import java.io.File
 
+import scala.util.Try
+
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.hdfs.{HdfsConfiguration, MiniDFSCluster}
+import org.apache.hadoop.hive.conf.HiveConf
+import org.apache.hadoop.hive.ql.session.SessionState
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.sql.catalyst.catalog.FunctionResource
 import org.apache.spark.sql.execution.SparkSqlParser
 import org.apache.spark.sql.internal.SQLConf
 
 import yaooqinn.kyuubi.operation.statement.ExecuteStatementInClientMode
-import yaooqinn.kyuubi.utils.ReflectUtils
+import yaooqinn.kyuubi.utils.{KyuubiHiveUtil, ReflectUtils}
 
 class ExecuteStatementInClientModeWithHDFSSuite extends ExecuteStatementInClientModeSuite {
   val hdfsConf = new HdfsConfiguration
@@ -71,4 +76,11 @@ class ExecuteStatementInClientModeWithHDFSSuite extends ExecuteStatementInClient
       ReflectUtils.getFieldValue(plan3, "resources").asInstanceOf[Seq[FunctionResource]].isEmpty)
   }
 
+  test("add delegation token with hive session state, hdfs") {
+    val hiveConf = new HiveConf(hdfsConf, classOf[HiveConf])
+    val state = new SessionState(hiveConf)
+    assert(Try {
+      KyuubiHiveUtil.addDelegationTokensToHiveState(state, UserGroupInformation.getCurrentUser)
+    }.isSuccess)
+  }
 }

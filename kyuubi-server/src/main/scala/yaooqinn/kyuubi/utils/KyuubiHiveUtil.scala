@@ -37,17 +37,22 @@ object KyuubiHiveUtil {
   }
 
   def addDelegationTokensToHiveState(ugi: UserGroupInformation): Unit = {
-    Option(SessionState.get()).foreach { state =>
-      state.getHdfsEncryptionShim match {
-        case shim: org.apache.hadoop.hive.shims.Hadoop23Shims#HdfsEncryptionShim =>
-          val hdfsAdmin = ReflectUtils.getFieldValue(shim, "hdfsAdmin")
-          val dfs = ReflectUtils.getFieldValue(hdfsAdmin, "dfs")
-          dfs match {
-            case fs: FileSystem => fs.addDelegationTokens(ugi.getUserName, ugi.getCredentials)
-            case _ =>
-          }
-        case _ =>
-      }
+    val state = SessionState.get
+    if (state != null) {
+      addDelegationTokensToHiveState(state, ugi)
+    }
+  }
+
+  def addDelegationTokensToHiveState(state: SessionState, ugi: UserGroupInformation): Unit = {
+    state.getHdfsEncryptionShim match {
+      case shim: org.apache.hadoop.hive.shims.Hadoop23Shims#HdfsEncryptionShim =>
+        val hdfsAdmin = ReflectUtils.getFieldValue(shim, "hdfsAdmin")
+        val dfs = ReflectUtils.getFieldValue(hdfsAdmin, "dfs")
+        dfs match {
+          case fs: FileSystem => fs.addDelegationTokens(ugi.getUserName, ugi.getCredentials)
+          case _ =>
+        }
+      case _ =>
     }
   }
 }

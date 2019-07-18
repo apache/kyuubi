@@ -44,6 +44,13 @@ class KyuubiHiveUtilSuite extends SparkFunSuite {
   }
 
   test("add delegation tokens without hive session state ") {
-    assert(Try {KyuubiHiveUtil.addDelegationTokensToHiveState(user) }.isSuccess)
+    assert(Try {KyuubiHiveUtil.addDelegationTokensToHiveState(user)}.isSuccess)
+
   }
+
+  test("add delegation token with hive session state, local fs") {
+    val state = new SessionState(KyuubiHiveUtil.hiveConf(new SparkConf()))
+    assert(Try {KyuubiHiveUtil.addDelegationTokensToHiveState(state, user) }.isSuccess)
+  }
+
 }
