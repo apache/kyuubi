@@ -17,7 +17,10 @@
 
 package yaooqinn.kyuubi.utils
 
+import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.hive.conf.HiveConf
+import org.apache.hadoop.hive.ql.session.SessionState
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 
 object KyuubiHiveUtil {
@@ -33,4 +36,18 @@ object KyuubiHiveUtil {
     new HiveConf(hadoopConf, classOf[HiveConf])
   }
 
+  def addDelegationTokensToHiveState(ugi: UserGroupInformation): Unit = {
+    Option(SessionState.get()).foreach { state =>
+      state.getHdfsEncryptionShim match {
+        case shim: org.apache.hadoop.hive.shims.Hadoop23Shims#HdfsEncryptionShim =>
+          val hdfsAdmin = ReflectUtils.getFieldValue(shim, "hdfsAdmin")
+          val dfs = ReflectUtils.getFieldValue(hdfsAdmin, "dfs")
+          dfs match {
+            case fs: FileSystem => fs.addDelegationTokens(ugi.getUserName, ugi.getCredentials)
+            case _ =>
+          }
+        case _ =>
+      }
+    }
+  }
 }

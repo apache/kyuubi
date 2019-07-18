@@ -34,19 +34,19 @@ import org.apache.spark.ui.KyuubiSessionTab
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.author.AuthzHelper
 import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
-import yaooqinn.kyuubi.utils.{KyuubiHadoopUtil, ReflectUtils}
+import yaooqinn.kyuubi.utils.{KyuubiHadoopUtil, KyuubiHiveUtil, ReflectUtils}
 
 class SparkSessionWithUGI(
     user: UserGroupInformation,
     conf: SparkConf,
     cacheMgr: SparkSessionCacheManager) extends Logging {
-  import SparkSessionWithUGI._
   import KyuubiHadoopUtil._
+  import SparkSessionWithUGI._
 
   private var _sparkSession: SparkSession = _
   private val userName: String = user.getShortUserName
   private val promisedSparkContext = Promise[SparkContext]()
-  private var initialDatabase: Option[String] = None
+  private var initialDatabase: String = "use default"
   private val startTime = System.currentTimeMillis()
   private val timeout = KyuubiSparkUtil.timeStringAsMs(conf.get(BACKEND_SESSION_INIT_TIMEOUT))
 
@@ -71,7 +71,7 @@ class SparkSessionWithUGI(
           } else {
             conf.set(SPARK_HADOOP_PREFIX + k, value)
           }
-        case USE_DB => initialDatabase = Some("use " + value)
+        case USE_DB => initialDatabase = "use " + value
         case _ =>
       }
     }
@@ -94,7 +94,7 @@ class SparkSessionWithUGI(
           } else {
             _sparkSession.conf.set(SPARK_HADOOP_PREFIX + k, value)
           }
-        case USE_DB => initialDatabase = Some("use " + value)
+        case USE_DB => initialDatabase = "use " + value
         case _ =>
       }
     }
@@ -185,10 +185,9 @@ class SparkSessionWithUGI(
     try {
       doAs(user) {
         SparkSQLUtils.initializeMetaStoreClient(_sparkSession)
+        _sparkSession.sql(initialDatabase)
       }
-      initialDatabase.foreach { db =>
-        doAs(user)(_sparkSession.sql(db))
-      }
+      KyuubiHiveUtil.addDelegationTokensToHiveState(user)
     } catch {
       case e: Exception =>
         cacheMgr.decrease(userName)

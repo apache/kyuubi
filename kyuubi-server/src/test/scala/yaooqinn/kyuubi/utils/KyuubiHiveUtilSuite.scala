@@ -17,9 +17,14 @@
 
 package yaooqinn.kyuubi.utils
 
+import scala.util.Try
+
+import org.apache.hadoop.hive.ql.session.SessionState
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.{SparkConf, SparkFunSuite}
 
 class KyuubiHiveUtilSuite extends SparkFunSuite {
+  private val user = UserGroupInformation.getCurrentUser
 
   test("hive conf") {
     val uris = "thrift://yaooqinn.kyuubi"
@@ -38,4 +43,7 @@ class KyuubiHiveUtilSuite extends SparkFunSuite {
 
   }
 
+  test("add delegation tokens without hive session state ") {
+    assert(Try {KyuubiHiveUtil.addDelegationTokensToHiveState(user) }.isSuccess)
+  }
 }
