@@ -17,10 +17,15 @@
 
 package yaooqinn.kyuubi.utils
 
+import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.hive.conf.HiveConf
+import org.apache.hadoop.hive.ql.session.SessionState
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 
-object KyuubiHiveUtil {
+import yaooqinn.kyuubi.Logging
+
+object KyuubiHiveUtil extends Logging {
 
   private val HIVE_PREFIX = "hive."
   private val METASTORE_PREFIX = "metastore."
@@ -33,4 +38,25 @@ object KyuubiHiveUtil {
     new HiveConf(hadoopConf, classOf[HiveConf])
   }
 
+  def addDelegationTokensToHiveState(ugi: UserGroupInformation): Unit = {
+    val state = SessionState.get
+    if (state != null) {
+      addDelegationTokensToHiveState(state, ugi)
+    }
+  }
+
+  def addDelegationTokensToHiveState(state: SessionState, ugi: UserGroupInformation): Unit = {
+    state.getHdfsEncryptionShim match {
+      case shim: org.apache.hadoop.hive.shims.Hadoop23Shims#HdfsEncryptionShim =>
+        try {
+          val hdfsAdmin = ReflectUtils.getFieldValue(shim, "hdfsAdmin")
+          val dfs = ReflectUtils.getFieldValue(hdfsAdmin, "dfs")
+          dfs.asInstanceOf[FileSystem].addDelegationTokens(ugi.getUserName, ugi.getCredentials)
+        } catch {
+          case e: Exception =>
+            error("Failed add delegation token to hive session state", e)
+        }
+      case _ =>
+    }
+  }
 }
