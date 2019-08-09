@@ -131,50 +131,54 @@ class ExecuteStatementInClientMode(
 
   override protected def execute(): Unit = {
     try {
-      info(s"Running query '$statement' with $statementId")
+      val userName = session.getUserName
+      info(s"Running $userName's query '$statement' with $statementId")
       setState(RUNNING)
       MetricsSystem.get.foreach(_.RUNNING_QUERIES.inc)
       val classLoader = SparkSQLUtils.getUserJarClassLoader(sparkSession)
       Thread.currentThread().setContextClassLoader(classLoader)
 
-      KyuubiServerMonitor.getListener(session.getUserName).foreach {
+      KyuubiServerMonitor.getListener(userName).foreach {
         _.onStatementStart(
           statementId,
           session.getSessionHandle.getSessionId.toString,
           statement,
           statementId,
-          session.getUserName)
+          userName)
       }
       sparkSession.sparkContext.setJobGroup(statementId, statement)
       KyuubiSparkUtil.setActiveSparkContext(sparkSession.sparkContext)
 
       val parsedPlan = SparkSQLUtils.parsePlan(sparkSession, statement)
       result = SparkSQLUtils.toDataFrame(sparkSession, transform(parsedPlan))
-      KyuubiServerMonitor.getListener(session.getUserName).foreach {
+      KyuubiServerMonitor.getListener(userName).foreach {
         _.onStatementParsed(statementId, result.queryExecution.toString())
       }
 
       debug(result.queryExecution.toString())
       iter = if (incrementalCollect) {
         val numParts = result.rdd.getNumPartitions
-        info(s"Executing query in incremental mode, running $numParts jobs before optimization")
+        info(s"Executing $userName's query $statementId incrementally, $numParts jobs before" +
+          s" optimization")
         val limit = conf.get(OPERATION_INCREMENTAL_RDD_PARTITIONS_LIMIT).toInt
         if (numParts > limit) {
           val partRows = conf.get(OPERATION_INCREMENTAL_PARTITION_ROWS).toInt
           val count = Try { result.persist.count() } match {
             case Success(outputSize) =>
               val num = math.min(math.max(outputSize / partRows, 1), numParts)
-              info(s"The total query output is $outputSize and will be coalesced to $num of" +
-                s" partitions with $partRows rows on average")
+              info(s"The total query output of $statementId is $outputSize in $numParts" +
+                s" partition(s) and will be coalesced to $num partition(s)")
               num
             case _ =>
               warn("Failed to calculate the query output size, do not coalesce")
               numParts
           }
-          info(s"Executing query in incremental mode, running $count jobs after optimization")
+          info(s"Executing $userName's query $statementId incrementally, $count jobs after" +
+            s" optimization")
           result.coalesce(count.toInt).toLocalIterator().asScala
         } else {
-          info(s"Executing query in incremental mode, running $numParts jobs without optimization")
+          info(s"Executing $userName's query $statementId incrementally, $numParts jobs without" +
+            s" optimization")
           result.toLocalIterator().asScala
         }
       } else {
@@ -186,7 +190,7 @@ class ExecuteStatementInClientMode(
         }
       }
       setState(FINISHED)
-      KyuubiServerMonitor.getListener(session.getUserName).foreach(_.onStatementFinish(statementId))
+      KyuubiServerMonitor.getListener(userName).foreach(_.onStatementFinish(statementId))
     } catch {
       case e: KyuubiSQLException =>
         if (!isClosedOrCanceled) {
