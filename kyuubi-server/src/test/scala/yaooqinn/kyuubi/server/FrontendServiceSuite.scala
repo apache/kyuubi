@@ -606,6 +606,33 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
     }
   }
 
+  test("select") {
+    val block: (FrontendService, TSessionHandle) => Unit = (fe, handle) => {
+      val kyuubiSession = server.beService.getSessionManager.getSession(new SessionHandle(handle))
+      kyuubiSession.sparkSession.sql(
+        "create table if not exists default.select_tbl(key int) using parquet")
+      val ct = new TExecuteStatementReq(handle, "select * from default.select_tbl")
+      val tExecuteStatementResp = fe.ExecuteStatement(ct)
+      val statusReq = new TGetOperationStatusReq(tExecuteStatementResp.getOperationHandle)
+
+      while(fe.GetOperationStatus(statusReq)
+        .getOperationState.getValue < TOperationState.FINISHED_STATE.getValue) {
+        Thread.sleep(10)
+      }
+      Thread.sleep(2000)
+
+      val tFetchResultsReq = new TFetchResultsReq(
+        tExecuteStatementResp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+
+      val tFetchResultsResp = fe.FetchResults(tFetchResultsReq)
+      tFetchResultsResp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+      tFetchResultsResp.getResults.getRows.size() should be(0)
+    }
+    withFEServiceAndHandleIncAndCal(block)
+    withFEServiceAndHandleInc(block)
+    withFEServiceAndHandle(block)
+  }
+
   def withFEServiceAndHandle(block: (FrontendService, TSessionHandle) => Unit): Unit = {
     val feService = server.feService
     val req = new TOpenSessionReq(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)

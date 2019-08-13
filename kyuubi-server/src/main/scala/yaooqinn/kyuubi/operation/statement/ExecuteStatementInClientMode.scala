@@ -173,9 +173,10 @@ class ExecuteStatementInClientMode(
               warn("Failed to calculate the query output size, do not coalesce")
               numParts
           }
-          info(s"Executing $userName's query $statementId incrementally, $count jobs after" +
+          val finalCount = math.max(count, 1)
+          info(s"Executing $userName's query $statementId incrementally, $finalCount jobs after" +
             s" optimization")
-          result.coalesce(count.toInt).toLocalIterator().asScala
+          result.coalesce(finalCount.toInt).toLocalIterator().asScala
         } else {
           info(s"Executing $userName's query $statementId incrementally, $numParts jobs without" +
             s" optimization")
@@ -205,23 +206,11 @@ class ExecuteStatementInClientMode(
           throw new KyuubiSQLException(
             e.withCommand(statement).getMessage + err, "ParseException", 2000, e)
         }
-      case e: AnalysisException =>
-        if (!isClosedOrCanceled) {
-          val err = KyuubiSparkUtil.exceptionString(e)
-          onStatementError(statementId, e.getMessage, err)
-          throw new KyuubiSQLException(err, "AnalysisException", 2001, e)
-        }
-      case e: HiveAccessControlException =>
-        if (!isClosedOrCanceled) {
-          val err = KyuubiSparkUtil.exceptionString(e)
-          onStatementError(statementId, e.getMessage, err)
-          throw new KyuubiSQLException(err, "HiveAccessControlException", 3000, e)
-        }
       case e: Throwable =>
         if (!isClosedOrCanceled) {
           val err = KyuubiSparkUtil.exceptionString(e)
           onStatementError(statementId, e.getMessage, err)
-          throw new KyuubiSQLException(err, "<unknown>", 10000, e)
+          throw new KyuubiSQLException(err, e.getClass.getSimpleName, 10000, e)
         }
     } finally {
       MetricsSystem.get.foreach {m =>
@@ -241,9 +230,7 @@ class ExecuteStatementInClientMode(
 
   override protected def cleanup(state: OperationState) {
     super.cleanup(state)
-    if (statementId != null) {
-      sparkSession.sparkContext.cancelJobGroup(statementId)
-    }
+    sparkSession.sparkContext.cancelJobGroup(statementId)
   }
 }
 
