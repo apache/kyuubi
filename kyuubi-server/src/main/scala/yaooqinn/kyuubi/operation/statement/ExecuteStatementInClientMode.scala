@@ -162,20 +162,11 @@ class ExecuteStatementInClientMode(
         val limit = conf.get(OPERATION_INCREMENTAL_RDD_PARTITIONS_LIMIT).toInt
         if (numParts > limit) {
           val partRows = conf.get(OPERATION_INCREMENTAL_PARTITION_ROWS).toInt
-          val count = Try { result.persist.count() } match {
-            case Success(outputSize) =>
-              val num = math.min(math.max(outputSize / partRows, 1), numParts)
-              info(s"The total query output of $statementId is $outputSize in $numParts" +
-                s" partition(s) and will be coalesced to $num partition(s)")
-              num
-            case _ =>
-              warn("Failed to calculate the query output size, do not coalesce")
-              numParts
-          }
-          val finalCount = math.max(count, 1)
-          info(s"Executing $userName's query $statementId incrementally, $finalCount jobs after" +
-            s" optimization")
-          result.coalesce(finalCount.toInt).toLocalIterator().asScala
+          val outputSize = Try(result.persist.count()).getOrElse(Long.MaxValue)
+          val finalJobNums = math.max(math.min(math.max(outputSize / partRows, 1), numParts), 1)
+          info(s"Executing $userName's query $statementId incrementally, records: $outputSize," +
+            s" $numParts -> $finalJobNums jobs after optimization")
+          result.coalesce(finalJobNums.toInt).toLocalIterator().asScala
         } else {
           info(s"Executing $userName's query $statementId incrementally, $numParts jobs without" +
             s" optimization")
