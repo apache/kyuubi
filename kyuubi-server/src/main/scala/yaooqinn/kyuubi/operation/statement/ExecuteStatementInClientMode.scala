@@ -24,10 +24,9 @@ import scala.util.{Success, Try}
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.fs.{FileUtil, Path}
-import org.apache.hadoop.hive.ql.security.authorization.plugin.HiveAccessControlException
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil
-import org.apache.spark.sql.{AnalysisException, DataFrame, SparkSQLUtils}
+import org.apache.spark.sql.{DataFrame, SparkSQLUtils}
 import org.apache.spark.sql.catalyst.catalog.{FileResource, FunctionResource, JarResource}
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
