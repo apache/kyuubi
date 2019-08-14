@@ -26,7 +26,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.fs.{FileUtil, Path}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil
-import org.apache.spark.sql.{DataFrame, SparkSQLUtils}
+import org.apache.spark.sql.{AnalysisException, DataFrame, SparkSQLUtils}
 import org.apache.spark.sql.catalyst.catalog.{FileResource, FunctionResource, JarResource}
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
@@ -156,20 +156,18 @@ class ExecuteStatementInClientMode(
 
       debug(result.queryExecution.toString())
       iter = if (incrementalCollect) {
-        val numParts = result.rdd.getNumPartitions
-        info("Executing " + userName + "'s query " + statementId + " incrementally, " + numParts +
-          " jobs before optimization")
+        val parts = result.rdd.getNumPartitions
+        info("Run " + userName + "'s query " + statementId + " incrementally, " + parts + " jobs")
         val limit = conf.get(OPERATION_INCREMENTAL_RDD_PARTITIONS_LIMIT).toInt
-        if (numParts > limit) {
+        if (parts > limit) {
           val partRows = conf.get(OPERATION_INCREMENTAL_PARTITION_ROWS).toInt
           val outputSize = Try(result.persist.count()).getOrElse(Long.MaxValue)
-          val finalJobNums = math.max(math.min(math.max(outputSize / partRows, 1), numParts), 1)
-          info("Executing " + userName + "'s query " + statementId + " incrementally, records: " +
-            outputSize + ", " + numParts + " -> " + finalJobNums + " jobs after optimization")
+          val finalJobNums = math.max(math.min(math.max(outputSize / partRows, 1), parts), 1)
+          info("Run " + userName + "'s query " + statementId + " incrementally, records: " +
+            outputSize + ", " + parts + " -> " + finalJobNums + " jobs after")
           result.coalesce(finalJobNums.toInt).toLocalIterator().asScala
         } else {
-          info("Executing " + userName + "'s query " + statementId + " incrementally, " + numParts +
-            " jobs without optimization")
+          info("Run " + userName + "'s query " + statementId + " incrementally without opt")
           result.toLocalIterator().asScala
         }
       } else {
@@ -195,6 +193,12 @@ class ExecuteStatementInClientMode(
           onStatementError(statementId, e.withCommand(statement).getMessage, err)
           throw new KyuubiSQLException(
             e.withCommand(statement).getMessage + err, "ParseException", 2000, e)
+        }
+      case e: AnalysisException =>
+        if (!isClosedOrCanceled) {
+          val err = KyuubiSparkUtil.exceptionString(e)
+          onStatementError(statementId, e.getMessage, err)
+          throw new KyuubiSQLException(err, "AnalysisException", 2001, e)
         }
       case e: Throwable =>
         if (!isClosedOrCanceled) {
