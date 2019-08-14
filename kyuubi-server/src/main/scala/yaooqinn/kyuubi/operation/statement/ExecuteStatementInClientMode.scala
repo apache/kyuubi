@@ -165,7 +165,11 @@ class ExecuteStatementInClientMode(
           val finalJobNums = math.max(math.min(math.max(outputSize / partRows, 1), parts), 1)
           info("Run " + userName + "'s query " + statementId + " incrementally, records: " +
             outputSize + ", " + parts + " -> " + finalJobNums + " jobs after")
-          result.coalesce(finalJobNums.toInt).toLocalIterator().asScala
+          try {
+            result.coalesce(finalJobNums.toInt).toLocalIterator().asScala
+          } finally {
+            result.unpersist()
+          }
         } else {
           info("Run " + userName + "'s query " + statementId + " incrementally without opt")
           result.toLocalIterator().asScala
