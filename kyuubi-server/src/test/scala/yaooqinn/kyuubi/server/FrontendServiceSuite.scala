@@ -631,12 +631,65 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
     withFEServiceAndHandleIncAndCal(block)
     withFEServiceAndHandleInc(block)
     withFEServiceAndHandle(block)
+    withFEServiceAndHandleAndResultLimit(block)
+    withFEServiceAndHandleAndException(block)
+  }
+
+  test("select with exception") {
+    val block: (FrontendService, TSessionHandle) => Unit = (fe, handle) => {
+      val kyuubiSession = server.beService.getSessionManager.getSession(new SessionHandle(handle))
+      kyuubiSession.sparkSession.sql(
+        "create table if not exists default.select_tbl(key int) using parquet")
+      val ct = new TExecuteStatementReq(handle, "select * from default.select_tbl")
+      val tExecuteStatementResp = fe.ExecuteStatement(ct)
+      val statusReq = new TGetOperationStatusReq(tExecuteStatementResp.getOperationHandle)
+
+      while(fe.GetOperationStatus(statusReq)
+        .getOperationState.getValue < TOperationState.FINISHED_STATE.getValue) {
+        Thread.sleep(10)
+      }
+      Thread.sleep(2000)
+
+      val tFetchResultsReq = new TFetchResultsReq(
+        tExecuteStatementResp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
+
+      val tFetchResultsResp = fe.FetchResults(tFetchResultsReq)
+      tFetchResultsResp.getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
+    }
+
+    withFEServiceAndHandleAndException(block)
   }
 
   def withFEServiceAndHandle(block: (FrontendService, TSessionHandle) => Unit): Unit = {
     val feService = server.feService
     val req = new TOpenSessionReq(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
     req.setUsername(user)
+    val resp = feService.OpenSession(req)
+    resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+    val handle = resp.getSessionHandle
+    block(feService, handle)
+  }
+
+  def withFEServiceAndHandleAndResultLimit(
+      block: (FrontendService, TSessionHandle) => Unit): Unit = {
+    val feService = server.feService
+    val req = new TOpenSessionReq(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
+    req.setUsername(user)
+    req.setConfiguration(
+      Map("set:hivevar:" + KyuubiConf.OPERATION_RESULT_LIMIT.key -> "1").asJava)
+    val resp = feService.OpenSession(req)
+    resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
+    val handle = resp.getSessionHandle
+    block(feService, handle)
+  }
+
+  def withFEServiceAndHandleAndException(
+      block: (FrontendService, TSessionHandle) => Unit): Unit = {
+    val feService = server.feService
+    val req = new TOpenSessionReq(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
+    req.setUsername(user)
+    req.setConfiguration(
+      Map("set:hivevar:" + KyuubiConf.OPERATION_RESULT_LIMIT.key -> "invaild put").asJava)
     val resp = feService.OpenSession(req)
     resp.getStatus.getStatusCode should be(TStatusCode.SUCCESS_STATUS)
     val handle = resp.getSessionHandle

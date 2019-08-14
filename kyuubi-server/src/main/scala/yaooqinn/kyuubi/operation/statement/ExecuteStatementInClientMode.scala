@@ -20,7 +20,7 @@ package yaooqinn.kyuubi.operation.statement
 import java.io.File
 
 import scala.collection.JavaConverters._
-import scala.util.{Success, Try}
+import scala.util.Try
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.fs.{FileUtil, Path}
@@ -208,7 +208,7 @@ class ExecuteStatementInClientMode(
         if (!isClosedOrCanceled) {
           val err = KyuubiSparkUtil.exceptionString(e)
           onStatementError(statementId, e.getMessage, err)
-          throw new KyuubiSQLException(err, "<unknown>", 10000, e)
+          throw new KyuubiSQLException(err, e.getClass.getSimpleName, 10000, e)
         }
     } finally {
       MetricsSystem.get.foreach {m =>
