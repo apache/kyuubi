@@ -208,7 +208,7 @@ class ExecuteStatementInClientMode(
         if (!isClosedOrCanceled) {
           val err = KyuubiSparkUtil.exceptionString(e)
           onStatementError(statementId, e.getMessage, err)
-          throw new KyuubiSQLException(err, e.getClass.getSimpleName, 10000, e)
+          throw new KyuubiSQLException(err, "<unknown>", 10000, e)
         }
     } finally {
       MetricsSystem.get.foreach {m =>
