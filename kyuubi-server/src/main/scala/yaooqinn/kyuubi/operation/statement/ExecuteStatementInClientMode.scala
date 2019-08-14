@@ -157,19 +157,19 @@ class ExecuteStatementInClientMode(
       debug(result.queryExecution.toString())
       iter = if (incrementalCollect) {
         val numParts = result.rdd.getNumPartitions
-        info(s"Executing $userName's query $statementId incrementally, $numParts jobs before" +
-          s" optimization")
+        info("Executing " + userName + "'s query " + statementId + " incrementally, " + numParts +
+          " jobs before optimization")
         val limit = conf.get(OPERATION_INCREMENTAL_RDD_PARTITIONS_LIMIT).toInt
         if (numParts > limit) {
           val partRows = conf.get(OPERATION_INCREMENTAL_PARTITION_ROWS).toInt
           val outputSize = Try(result.persist.count()).getOrElse(Long.MaxValue)
           val finalJobNums = math.max(math.min(math.max(outputSize / partRows, 1), numParts), 1)
-          info(s"Executing $userName's query $statementId incrementally, records: $outputSize," +
-            s" $numParts -> $finalJobNums jobs after optimization")
+          info("Executing " + userName + "'s query " + statementId + " incrementally, records: " +
+            outputSize + ", " + numParts + " -> " + finalJobNums + " jobs after optimization")
           result.coalesce(finalJobNums.toInt).toLocalIterator().asScala
         } else {
-          info(s"Executing $userName's query $statementId incrementally, $numParts jobs without" +
-            s" optimization")
+          info("Executing " + userName + "'s query " + statementId + " incrementally, " + numParts +
+            " jobs without optimization")
           result.toLocalIterator().asScala
         }
       } else {
