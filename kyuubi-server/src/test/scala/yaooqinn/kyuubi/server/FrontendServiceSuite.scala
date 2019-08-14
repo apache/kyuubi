@@ -632,7 +632,6 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
     withFEServiceAndHandleInc(block)
     withFEServiceAndHandle(block)
     withFEServiceAndHandleAndResultLimit(block)
-    withFEServiceAndHandleAndException(block)
   }
 
   test("select with exception") {
