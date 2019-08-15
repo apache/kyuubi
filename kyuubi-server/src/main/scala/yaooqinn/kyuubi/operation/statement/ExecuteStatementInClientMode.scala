@@ -171,7 +171,6 @@ class ExecuteStatementInClientMode(
             result.unpersist()
           }
         } else {
-          info("Run " + userName + "'s query " + statementId + " incrementally without opt")
           result.toLocalIterator().asScala
         }
       } else {
@@ -183,7 +182,7 @@ class ExecuteStatementInClientMode(
         }
       }
       setState(FINISHED)
-      KyuubiServerMonitor.getListener(userName).foreach(_.onStatementFinish(statementId))
+      KyuubiServerMonitor.getListener(session.getUserName).foreach(_.onStatementFinish(statementId))
     } catch {
       case e: KyuubiSQLException =>
         if (!isClosedOrCanceled) {
