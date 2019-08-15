@@ -42,10 +42,7 @@ import yaooqinn.kyuubi.session.KyuubiSession
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 import yaooqinn.kyuubi.utils.ReflectUtils
 
-class ExecuteStatementInClientMode(
-    session: KyuubiSession,
-    statement: String,
-    runAsync: Boolean = true)
+class ExecuteStatementInClientMode(session: KyuubiSession, statement: String, runAsync: Boolean)
   extends ExecuteStatementOperation(session, statement, runAsync) {
 
   import ExecuteStatementInClientMode._
