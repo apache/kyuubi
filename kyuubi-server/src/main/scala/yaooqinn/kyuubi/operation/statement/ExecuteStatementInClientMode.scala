@@ -181,31 +181,14 @@ class ExecuteStatementInClientMode(session: KyuubiSession, statement: String, ru
       setState(FINISHED)
       KyuubiServerMonitor.getListener(session.getUserName).foreach(_.onStatementFinish(statementId))
     } catch {
-      case e: ParseException =>
-        if (!isClosedOrCanceled) {
-          val err = KyuubiSparkUtil.exceptionString(e)
-          onStatementError(statementId, e.withCommand(statement).getMessage, err)
-          throw new KyuubiSQLException(
-            e.withCommand(statement).getMessage + err, "ParseException", 2000, e)
-        }
-      case e: AnalysisException =>
-        if (!isClosedOrCanceled) {
-          val err = KyuubiSparkUtil.exceptionString(e)
-          onStatementError(statementId, e.getMessage, err)
-          throw new KyuubiSQLException(err, "AnalysisException", 2001, e)
-        }
-      case e: KyuubiSQLException =>
-        if (!isClosedOrCanceled) {
-          val err = KyuubiSparkUtil.exceptionString(e)
-          onStatementError(statementId, e.getMessage, err)
-          throw e
-        }
-      case e: Throwable =>
-        if (!isClosedOrCanceled) {
-          val err = KyuubiSparkUtil.exceptionString(e)
-          onStatementError(statementId, e.getMessage, err)
-          throw new KyuubiSQLException(err, e.getClass.getSimpleName, 10000, e)
-        }
+      case e: KyuubiSQLException if !isClosedOrCanceled =>
+        val err = KyuubiSparkUtil.exceptionString(e)
+        onStatementError(statementId, e.getMessage, err)
+        throw e
+      case e: Throwable if !isClosedOrCanceled =>
+        val err = KyuubiSparkUtil.exceptionString(e)
+        onStatementError(statementId, e.getMessage, err)
+        throw new KyuubiSQLException(err, e.getClass.getSimpleName, e)
     } finally {
       MetricsSystem.get.foreach {m =>
         m.RUNNING_QUERIES.dec()
