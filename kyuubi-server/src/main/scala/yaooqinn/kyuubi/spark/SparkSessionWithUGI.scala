@@ -138,7 +138,6 @@ class SparkSessionWithUGI(
       conf.get(FRONTEND_BIND_PORT),
       UUID.randomUUID().toString).mkString("|")
     conf.setAppName(appName)
-    configureSparkConf(sessionConf)
     info(s"Create new SparkSession for " + userName + " as " + appName)
 
     try {
@@ -180,6 +179,7 @@ class SparkSessionWithUGI(
 
   @throws[KyuubiSQLException]
   def init(sessionConf: Map[String, String]): Unit = {
+    configureSparkConf(sessionConf)
     getOrCreate(sessionConf)
 
     try {
