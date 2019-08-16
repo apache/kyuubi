@@ -151,6 +151,7 @@ class ExecuteStatementInClientMode(session: KyuubiSession, statement: String, ru
         _.onStatementParsed(statementId, result.queryExecution.toString())
       }
 
+      debug(result.queryExecution.toString())
       iter = if (incrementalCollect) {
         val parts = result.rdd.getNumPartitions
         info("Run " + userName + "'s query " + statementId + " incrementally, " + parts + " jobs")
