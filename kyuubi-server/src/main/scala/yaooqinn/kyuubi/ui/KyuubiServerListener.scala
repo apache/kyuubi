@@ -24,9 +24,7 @@ import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerJobStart}
 import org.apache.spark.sql.internal.SQLConf
 
-import yaooqinn.kyuubi.Logging
-
-class KyuubiServerListener(conf: SparkConf) extends SparkListener with Logging {
+class KyuubiServerListener(conf: SparkConf) extends SparkListener {
 
   private[this] var onlineSessionNum: Int = 0
   private[this] val sessionList = new mutable.LinkedHashMap[String, SessionInfo]
@@ -103,7 +101,6 @@ class KyuubiServerListener(conf: SparkConf) extends SparkListener with Logging {
       executionList(id).state = ExecutionState.FAILED
       totalRunning -= 1
       trimExecutionIfNecessary()
-      info("Statement[" + id + "] failed after " + executionList(id).totalTime / 1000 + "s")
     }
   }
 
@@ -112,7 +109,6 @@ class KyuubiServerListener(conf: SparkConf) extends SparkListener with Logging {
     executionList(id).state = ExecutionState.FINISHED
     totalRunning -= 1
     trimExecutionIfNecessary()
-    info("Statement[" + id + "] finished after " + executionList(id).totalTime / 1000 + "s")
   }
 
   private def trimExecutionIfNecessary(): Unit = {

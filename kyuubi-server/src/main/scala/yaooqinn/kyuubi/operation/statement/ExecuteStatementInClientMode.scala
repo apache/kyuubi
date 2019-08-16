@@ -181,12 +181,6 @@ class ExecuteStatementInClientMode(session: KyuubiSession, statement: String, ru
       setState(FINISHED)
       KyuubiServerMonitor.getListener(session.getUserName).foreach(_.onStatementFinish(statementId))
     } catch {
-      case e: KyuubiSQLException =>
-        if (!isClosedOrCanceled) {
-          val err = KyuubiSparkUtil.exceptionString(e)
-          onStatementError(statementId, e.getMessage, err)
-          throw e
-        }
       case e: ParseException =>
         if (!isClosedOrCanceled) {
           val err = KyuubiSparkUtil.exceptionString(e)
@@ -199,6 +193,12 @@ class ExecuteStatementInClientMode(session: KyuubiSession, statement: String, ru
           val err = KyuubiSparkUtil.exceptionString(e)
           onStatementError(statementId, e.getMessage, err)
           throw new KyuubiSQLException(err, "AnalysisException", 2001, e)
+        }
+      case e: KyuubiSQLException =>
+        if (!isClosedOrCanceled) {
+          val err = KyuubiSparkUtil.exceptionString(e)
+          onStatementError(statementId, e.getMessage, err)
+          throw e
         }
       case e: Throwable =>
         if (!isClosedOrCanceled) {
