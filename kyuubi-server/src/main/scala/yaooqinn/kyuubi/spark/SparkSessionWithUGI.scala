@@ -25,7 +25,7 @@ import scala.concurrent.duration.Duration
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext}
+import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext, SparkEnv}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil._
 import org.apache.spark.sql.{SparkSession, SparkSQLUtils}
@@ -53,7 +53,12 @@ class SparkSessionWithUGI(
   private lazy val newContext: Thread = {
     val threadName = "SparkContext-Starter-" + userName
     new Thread(threadName) {
-      override def run(): Unit = promisedSparkContext.complete(Try(new SparkContext(conf)))
+      override def run(): Unit = promisedSparkContext.complete(Try {
+        if (SparkEnv.get != null) {
+          Thread.sleep(2000)
+        }
+        new SparkContext(conf)
+      })
     }
   }
 
