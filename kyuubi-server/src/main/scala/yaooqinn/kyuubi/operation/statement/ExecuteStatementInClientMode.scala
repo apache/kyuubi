@@ -197,7 +197,7 @@ class ExecuteStatementInClientMode(session: KyuubiSession, statement: String, ru
 
   override protected def onStatementError(id: String, message: String, trace: String): Unit = {
     super.onStatementError(id, message, trace)
-    if (sparkSession.sparkContext.isStopped) {
+    if (!sparkSession.sparkContext.isStopped) {
       sparkSession.sparkContext.cancelJobGroup(statementId)
     }
     KyuubiServerMonitor.getListener(session.getUserName)
@@ -207,7 +207,7 @@ class ExecuteStatementInClientMode(session: KyuubiSession, statement: String, ru
 
   override protected def cleanup(state: OperationState) {
     super.cleanup(state)
-    if (sparkSession.sparkContext.isStopped) {
+    if (!sparkSession.sparkContext.isStopped) {
       sparkSession.sparkContext.cancelJobGroup(statementId)
     }
   }
