@@ -26,9 +26,8 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.fs.{FileUtil, Path}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil
-import org.apache.spark.sql.{AnalysisException, DataFrame, SparkSQLUtils}
+import org.apache.spark.sql.{DataFrame, SparkSQLUtils}
 import org.apache.spark.sql.catalyst.catalog.{FileResource, FunctionResource, JarResource}
-import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.{AddFileCommand, AddJarCommand, CreateFunctionCommand}
 import org.apache.spark.sql.types._
@@ -193,12 +192,14 @@ class ExecuteStatementInClientMode(session: KyuubiSession, statement: String, ru
         m.RUNNING_QUERIES.dec()
         m.TOTAL_QUERIES.inc()
       }
-      sparkSession.sparkContext.cancelJobGroup(statementId)
     }
   }
 
   override protected def onStatementError(id: String, message: String, trace: String): Unit = {
     super.onStatementError(id, message, trace)
+    if (!sparkSession.sparkContext.isStopped) {
+      sparkSession.sparkContext.cancelJobGroup(statementId)
+    }
     KyuubiServerMonitor.getListener(session.getUserName)
       .foreach(_.onStatementError(id, message, trace))
     MetricsSystem.get.foreach(_.ERROR_QUERIES.inc)
@@ -206,7 +207,9 @@ class ExecuteStatementInClientMode(session: KyuubiSession, statement: String, ru
 
   override protected def cleanup(state: OperationState) {
     super.cleanup(state)
-    sparkSession.sparkContext.cancelJobGroup(statementId)
+    if (!sparkSession.sparkContext.isStopped) {
+      sparkSession.sparkContext.cancelJobGroup(statementId)
+    }
   }
 }
 

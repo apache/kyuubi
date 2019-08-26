@@ -22,8 +22,8 @@ import java.util.concurrent.{ConcurrentHashMap, Executors, TimeUnit}
 import scala.collection.JavaConverters._
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder
+import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
-import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
 import yaooqinn.kyuubi.Logging
@@ -54,6 +54,18 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
   }
 
   /**
+   * This is a little bit hacky, Spark sometimes call the active context to get configuration and
+   * when the context stop, Spark will remove this active context, which results in Kyuubi we may
+   * encounter with `None.get()` exception. This is not a thread safe and complete solution for
+   * that issue, but it can significantly reduce the probability.
+   */
+  private def resetActiveSparkContext(): Unit = {
+    userToSession.values().asScala.find(!_.isCrashed).foreach { ssc =>
+      KyuubiSparkUtil.setActiveSparkContext(ssc.spark.sparkContext)
+    }
+  }
+
+  /**
    * Stop the idle [[SparkSession]] instance, then it can be cleared by the `sessionCleaner` or
    * when the user reconnecting action.
    *
@@ -62,6 +74,7 @@ class SparkSessionCacheManager private(name: String) extends AbstractService(nam
     if (ssc.isIdle) {
       info(s"Stopping idle SparkSession for user [$user]")
       ssc.spark.stop()
+      resetActiveSparkContext()
       KyuubiServerMonitor.detachUITab(user)
       System.setProperty("SPARK_YARN_MODE", "true")
     }
