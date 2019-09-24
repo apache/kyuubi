@@ -40,6 +40,12 @@
         </dependency>
 
         <dependency>
+            <groupId>yaooqinn</groupId>
+            <artifactId>kyuubi-thrift</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>${spark.group}</groupId>
             <artifactId>spark-yarn_${scala.binary.version}</artifactId>
         </dependency>
@@ -235,25 +241,6 @@
             </plugin>
 
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>add-source</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>add-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <source>src/gen/java</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <configuration>
@@ -261,6 +248,7 @@
                     <artifactSet>
                         <includes>
                             <include>yaooqinn:kyuubi-common</include>
+                            <include>yaooqinn:kyuubi-thrift</include>
                         </includes>
                     </artifactSet>
                 </configuration>

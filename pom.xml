@@ -27,6 +27,7 @@
     <modules>
         <module>kyuubi-common</module>
         <module>kyuubi-server</module>
+        <module>kyuubi-thrift</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -67,6 +68,7 @@
         <apacheds.version>2.0.0-M15</apacheds.version>
         <curator.version>2.6.0</curator.version>
         <codahale.metrics.version>3.1.2</codahale.metrics.version>
+        <commons-lang.version>2.6</commons-lang.version>
     </properties>
 
     <repositories>
@@ -274,6 +276,12 @@
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-jvm</artifactId>
                 <version>${codahale.metrics.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-lang</groupId>
+                <artifactId>commons-lang</artifactId>
+                <version>${commons-lang.version}</version>
             </dependency>
 
             <dependency>
