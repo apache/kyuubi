@@ -26,8 +26,8 @@
     <version>0.8.0-SNAPSHOT</version>
     <modules>
         <module>kyuubi-common</module>
-        <module>kyuubi-server</module>
         <module>kyuubi-thrift</module>
+        <module>kyuubi-server</module>
     </modules>
     <packaging>pom</packaging>
 

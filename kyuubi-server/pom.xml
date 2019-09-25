@@ -300,7 +300,6 @@
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <configuration>
                     <excludes>
-                        <exclude>**/org/apache/hive/service/cli/thrift/*.class</exclude>
                         <exclude>**/org/apache/spark/launcher/*.class</exclude>
                         <exclude>**/org/apache/spark/deploy/*.class</exclude>
                         <exclude>**/org/apache/spark/SparkEnv.class</exclude>
