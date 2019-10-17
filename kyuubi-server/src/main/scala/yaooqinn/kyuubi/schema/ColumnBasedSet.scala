@@ -32,64 +32,69 @@ case class ColumnBasedSet(types: StructType, rows: Seq[Row]) extends RowSet {
   override def toTRowSet: TRowSet = {
     val tRowSet = new TRowSet(0, Seq[TRow]().asJava)
     if (rows != null) {
-      (0 until types.length).map(i => toTColumn(i, types(i).dataType)).foreach(tRowSet.addToColumns)
+      // rows is Stream[Row], to make it not lazy
+      val rowListWithIndex = rows.zipWithIndex.toList
+      (0 until types.length)
+        .map(i => toTColumn(rowListWithIndex, i, types(i).dataType))
+        .foreach(tRowSet.addToColumns)
     }
     tRowSet
   }
 
-  private[this] def toTColumn(ordinal: Int, typ: DataType): TColumn = {
+  private[this] def toTColumn(
+    rowListWithIndex: List[(Row, Int)], ordinal: Int, typ: DataType): TColumn = {
     val nulls = new BitSet()
     typ match {
       case BooleanType =>
-        val values = rows.zipWithIndex.map { case (row, i) =>
+        val values = rowListWithIndex.map { case (row, i) =>
           nulls.set(i, row.isNullAt(ordinal))
           if (row.isNullAt(ordinal)) true else row.getBoolean(ordinal)
         }.map(_.asInstanceOf[java.lang.Boolean]).asJava
         TColumn.boolVal(new TBoolColumn(values, bitSetToBuffer(nulls)))
       case ByteType =>
-        val values = rows.zipWithIndex.map { case (row, i) =>
+        val values = rowListWithIndex.map { case (row, i) =>
           nulls.set(i, row.isNullAt(ordinal))
           if (row.isNullAt(ordinal)) 0.toByte else row.getByte(ordinal)
         }.map(_.asInstanceOf[java.lang.Byte]).asJava
         TColumn.byteVal(new TByteColumn(values, bitSetToBuffer(nulls)))
       case ShortType =>
-        val values = rows.zipWithIndex.map { case (row, i) =>
+        val values = rowListWithIndex.map { case (row, i) =>
           nulls.set(i, row.isNullAt(ordinal))
           if (row.isNullAt(ordinal)) 0.toShort else row.getShort(ordinal)
         }.map(_.asInstanceOf[java.lang.Short]).asJava
         TColumn.i16Val(new TI16Column(values, bitSetToBuffer(nulls)))
       case IntegerType =>
-        val values = rows.zipWithIndex.map { case (row, i) =>
+        val values = rowListWithIndex.map { case (row, i) =>
           nulls.set(i, row.isNullAt(ordinal))
           if (row.isNullAt(ordinal)) 0 else row.getInt(ordinal)
         }.map(_.asInstanceOf[java.lang.Integer]).asJava
         TColumn.i32Val(new TI32Column(values, bitSetToBuffer(nulls)))
       case LongType =>
-        val values = rows.zipWithIndex.map { case (row, i) =>
+        val values = rowListWithIndex.map { case (row, i) =>
           nulls.set(i, row.isNullAt(ordinal))
           if (row.isNullAt(ordinal)) 0 else row.getLong(ordinal)
         }.map(_.asInstanceOf[java.lang.Long]).asJava
         TColumn.i64Val(new TI64Column(values, bitSetToBuffer(nulls)))
       case FloatType =>
-        val values = rows.zipWithIndex.map { case (row, i) =>
+        val values = rowListWithIndex.map { case (row, i) =>
           nulls.set(i, row.isNullAt(ordinal))
           if (row.isNullAt(ordinal)) 0 else row.getFloat(ordinal)
         }.map(_.toDouble.asInstanceOf[java.lang.Double]).asJava
         TColumn.doubleVal(new TDoubleColumn(values, bitSetToBuffer(nulls)))
       case DoubleType =>
-        val values = rows.zipWithIndex.map { case (row, i) =>
+        val values = rowListWithIndex.map { case (row, i) =>
           nulls.set(i, row.isNullAt(ordinal))
           if (row.isNullAt(ordinal)) 0 else row.getDouble(ordinal)
         }.map(_.asInstanceOf[java.lang.Double]).asJava
         TColumn.doubleVal(new TDoubleColumn(values, bitSetToBuffer(nulls)))
       case StringType =>
-        val values = rows.zipWithIndex.map { case (row, i) =>
+        val values = rowListWithIndex.map { case (row, i) =>
           nulls.set(i, row.isNullAt(ordinal))
           if (row.isNullAt(ordinal)) EMPTY_STRING else row.getString(ordinal)
         }.asJava
         TColumn.stringVal(new TStringColumn(values, bitSetToBuffer(nulls)))
       case BinaryType =>
-        val values = rows.zipWithIndex.map { case (row, i) =>
+        val values = rowListWithIndex.map { case (row, i) =>
           nulls.set(i, row.isNullAt(ordinal))
           if (row.isNullAt(ordinal)) {
             EMPTY_BINARY
@@ -99,7 +104,7 @@ case class ColumnBasedSet(types: StructType, rows: Seq[Row]) extends RowSet {
         }.asJava
         TColumn.binaryVal(new TBinaryColumn(values, bitSetToBuffer(nulls)))
       case _ =>
-        val values = rows.zipWithIndex.map { case (row, i) =>
+        val values = rowListWithIndex.map { case (row, i) =>
           nulls.set(i, row.isNullAt(ordinal))
           if (row.isNullAt(ordinal)) {
             EMPTY_STRING

@@ -92,6 +92,27 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(listIter.isEmpty)
   }
 
+  test("row set null value test with iterator") {
+    val schema = new StructType().add("a", "int").add("b", "string")
+    val rows = Seq(
+      Row(1, "11"),
+      Row(2, "22"),
+      Row(3, null),
+      Row(4, "44"),
+      Row(5, null))
+
+    var iter = rows.toIterator.toSeq
+    var tRowSet = ColumnBasedSet(schema, iter).toTRowSet
+    assert(tRowSet.getColumns.get(1).getStringVal.getValues.get(0) === "11")
+    assert(tRowSet.getColumns.get(1).getStringVal.getValues.get(1) === "22")
+    assert(tRowSet.getColumns.get(1).getStringVal.getValues.get(2) === "")
+    assert(tRowSet.getColumns.get(1).getStringVal.getValues.get(3) === "44")
+    assert(tRowSet.getColumns.get(1).getStringVal.getValues.get(4) === "")
+
+    // byteBuffer 10100
+    assert(tRowSet.getColumns.get(1).getStringVal.getNulls === Array[Byte](20))
+  }
+
   test("kyuubi set to TRowSet then to Hive Row Set") {
     val rowIterator = rows.iterator
     val taken = rowIterator.take(maxRows).toSeq
