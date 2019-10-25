@@ -92,6 +92,80 @@ class ColumnBasedSetSuite extends SparkFunSuite {
     assert(listIter.isEmpty)
   }
 
+  test("row set null value test with iterator") {
+    val schema = new StructType()
+      .add("a", "int")
+      .add("b", "string")
+      .add("c", "boolean")
+      .add("d", "long")
+      .add("e", "short")
+      .add("f", "double")
+    val rows = Seq(
+      Row(1, "11", true, 1L, 1.toShort, 1.0),
+      Row(2, "22", null, 2L, 2.toShort, 2.0),
+      Row(3, null, false, null, 3.toShort, 3.0),
+      Row(4, "44", false, 4L, null, 4.0),
+      Row(5, null, true, null, null, null))
+
+    var iter = rows.toIterator.toSeq
+    var tRowSet = ColumnBasedSet(schema, iter).toTRowSet
+
+    val columnA = tRowSet.getColumns.get(0).getI32Val.getValues
+    assert(columnA.get(0) === 1)
+    assert(columnA.get(1) === 2)
+    assert(columnA.get(2) === 3)
+    assert(columnA.get(3) === 4)
+    assert(columnA.get(4) === 5)
+
+    val columnB = tRowSet.getColumns.get(1).getStringVal.getValues
+    assert(columnB.get(0) === "11")
+    assert(columnB.get(1) === "22")
+    assert(columnB.get(2) === "")
+    assert(columnB.get(3) === "44")
+    assert(columnB.get(4) === "")
+
+    val columnC = tRowSet.getColumns.get(2).getBoolVal.getValues
+    assert(columnC.get(0) === true)
+    assert(columnC.get(1) === true)
+    assert(columnC.get(2) === false)
+    assert(columnC.get(3) === false)
+    assert(columnC.get(4) === true)
+
+    val columnD = tRowSet.getColumns.get(3).getI64Val.getValues
+    assert(columnD.get(0) === 1L)
+    assert(columnD.get(1) === 2L)
+    assert(columnD.get(2) === 0L)
+    assert(columnD.get(3) === 4L)
+    assert(columnD.get(4) === 0L)
+
+    val columnE = tRowSet.getColumns.get(4).getI16Val.getValues
+    assert(columnE.get(0) === 1.toShort)
+    assert(columnE.get(1) === 2.toShort)
+    assert(columnE.get(2) === 3.toShort)
+    assert(columnE.get(3) === 0.toShort)
+    assert(columnE.get(4) === 0.toShort)
+
+    val columnF = tRowSet.getColumns.get(5).getDoubleVal.getValues
+    assert(columnE.get(0) === 1.0)
+    assert(columnE.get(1) === 2.0)
+    assert(columnE.get(2) === 3.0)
+    assert(columnE.get(3) === 0.toDouble)
+    assert(columnE.get(4) === 0.toDouble)
+
+    // byteBuffer 00000
+    assert(tRowSet.getColumns.get(0).getI32Val.getNulls === Array[Byte]())
+    // byteBuffer 10100
+    assert(tRowSet.getColumns.get(1).getStringVal.getNulls === Array[Byte](20))
+    // byteBuffer 00010
+    assert(tRowSet.getColumns.get(2).getBoolVal.getNulls === Array[Byte](2))
+    // byteBuffer 10100
+    assert(tRowSet.getColumns.get(3).getI64Val.getNulls === Array[Byte](20))
+    // byteBuffer 11000
+    assert(tRowSet.getColumns.get(4).getI16Val.getNulls === Array[Byte](24))
+    // byteBuffer 10000
+    assert(tRowSet.getColumns.get(5).getDoubleVal.getNulls === Array[Byte](16))
+  }
+
   test("kyuubi set to TRowSet then to Hive Row Set") {
     val rowIterator = rows.iterator
     val taken = rowIterator.take(maxRows).toSeq
