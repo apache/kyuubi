@@ -106,8 +106,7 @@ abstract class ExecuteStatementOperation(
           getHandle.getHandleIdentifier)
         isOperationLogEnabled = false
       } else {
-        session.getSessionMgr.getOperationMgr
-          .setOperationLog(session.getUserName, operationLog)
+        session.getSessionMgr.getOperationMgr.setOperationLog(operationLog)
       }
     }
   }

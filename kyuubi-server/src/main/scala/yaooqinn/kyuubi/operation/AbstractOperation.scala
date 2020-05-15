@@ -20,8 +20,6 @@ package yaooqinn.kyuubi.operation
 import java.io.{File, FileNotFoundException}
 import java.util.concurrent.Future
 
-import org.apache.hadoop.hive.conf.HiveConf
-import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil._
@@ -164,7 +162,7 @@ abstract class AbstractOperation(
       }
       // create OperationLog object with above log file
       try {
-        this.operationLog = new OperationLog(this.opHandle.toString, logFile, new HiveConf())
+        this.operationLog = new OperationLog(logFile)
       } catch {
         case e: FileNotFoundException =>
           warn("Unable to instantiate OperationLog object for operation: " + this.opHandle, e)
@@ -172,13 +170,13 @@ abstract class AbstractOperation(
           return
       }
       // register this operationLog
-      session.getSessionMgr.getOperationMgr.setOperationLog(session.getUserName, this.operationLog)
+      session.getSessionMgr.getOperationMgr.setOperationLog(this.operationLog)
     }
   }
 
   private def unregisterOperationLog(): Unit = {
     if (isOperationLogEnabled) {
-      session.getSessionMgr.getOperationMgr.unregisterOperationLog(session.getUserName)
+      session.getSessionMgr.getOperationMgr.unregisterOperationLog()
     }
   }
 
