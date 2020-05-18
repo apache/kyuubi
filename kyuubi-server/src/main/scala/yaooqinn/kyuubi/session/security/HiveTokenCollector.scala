@@ -21,7 +21,6 @@ import scala.util.control.NonFatal
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier
-import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.ql.metadata.Hive
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
