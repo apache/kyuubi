@@ -20,13 +20,9 @@ package yaooqinn.kyuubi.operation
 import java.sql.SQLException
 import java.util.concurrent.ConcurrentHashMap
 
-import scala.collection.JavaConverters._
-
-import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.log4j.Logger
 import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
-import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
 import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
@@ -45,7 +41,6 @@ private[kyuubi] class OperationManager private(name: String)
 
   private lazy val logSchema: StructType = new StructType().add("operation_log", "string")
   private val handleToOperation = new ConcurrentHashMap[OperationHandle, KyuubiOperation]
-  private val userToOperationLog = new ConcurrentHashMap[String, OperationLog]()
 
   override def init(conf: SparkConf): Unit = synchronized {
     if (conf.get(LOGGING_OPERATION_ENABLED.key).toBoolean) {
@@ -58,33 +53,13 @@ private[kyuubi] class OperationManager private(name: String)
 
   private def initOperationLogCapture(): Unit = {
     // Register another Appender (with the same layout) that talks to us.
-    val ap = new LogDivertAppender(this)
+    val ap = new LogDivertAppender
     Logger.getRootLogger.addAppender(ap)
   }
 
-  private def getOperationLogByThread: OperationLog = OperationLog.getCurrentOperationLog
+  def setOperationLog(log: OperationLog): Unit = OperationLog.setCurrentOperationLog(log)
 
-  private def getOperationLogByName: OperationLog = {
-    if (!userToOperationLog.isEmpty) {
-      userToOperationLog.get(KyuubiSparkUtil.getCurrentUserName)
-    } else {
-      null
-    }
-  }
-
-  def getOperationLog: OperationLog = {
-    Option(getOperationLogByThread).getOrElse(getOperationLogByName)
-  }
-
-  def setOperationLog(user: String, log: OperationLog): Unit = {
-    OperationLog.setCurrentOperationLog(log)
-    userToOperationLog.put(Option(user).getOrElse(KyuubiSparkUtil.getCurrentUserName), log)
-  }
-
-  def unregisterOperationLog(user: String): Unit = {
-    OperationLog.removeCurrentOperationLog()
-    userToOperationLog.remove(user)
-  }
+  def unregisterOperationLog(): Unit = OperationLog.removeCurrentOperationLog()
 
   def newExecuteStatementOperation(
       parentSession: KyuubiSession,
@@ -231,7 +206,7 @@ private[kyuubi] class OperationManager private(name: String)
     }
     try {
       // convert logs to RowBasedSet
-      val logs = opLog.readOperationLog(isFetchFirst(orientation), maxRows).asScala.map(Row(_))
+      val logs = opLog.read(isFetchFirst(orientation), maxRows)
       RowSetBuilder.create(logSchema, logs, getOperation(opHandle).getProtocolVersion)
     } catch {
       case e: SQLException =>
