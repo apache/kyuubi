@@ -19,7 +19,6 @@ package yaooqinn.kyuubi.operation
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import org.apache.spark.sql.SparkSession
 import org.mockito.Mockito._
@@ -69,18 +68,13 @@ class OperationManagerSuite extends SparkFunSuite with Matchers with MockitoSuga
     val operationMgr = new OperationManager()
     operationMgr.init(conf)
 
-    operationMgr.getOperationLog should be(null)
+    OperationLog.getCurrentOperationLog should be(null)
     val log = mock[OperationLog]
-    operationMgr.setOperationLog(KyuubiSparkUtil.getCurrentUserName, log)
+    operationMgr.setOperationLog(log)
+    OperationLog.getCurrentOperationLog should be(log)
 
-    operationMgr.getOperationLog should be(log)
-
-    OperationLog.removeCurrentOperationLog()
-    operationMgr.getOperationLog should be(log)
-
-    operationMgr.unregisterOperationLog(KyuubiSparkUtil.getCurrentUserName)
-    operationMgr.getOperationLog should be(null)
-
+    operationMgr.unregisterOperationLog()
+    OperationLog.getCurrentOperationLog should be(null)
   }
 
   test("handle operation") {

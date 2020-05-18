@@ -21,49 +21,29 @@ import java.io.CharArrayWriter
 
 import scala.collection.JavaConverters._
 
-import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.log4j._
 import org.apache.log4j.spi.{Filter, LoggingEvent}
 
 import yaooqinn.kyuubi.Logging
 
 class LogDivertAppender extends WriterAppender with Logging {
-
-  private var operationManager: OperationManager = _
-
-  private class NameFilter(
-       var operationManager: OperationManager) extends Filter {
-    override def decide(ev: LoggingEvent): Int = {
-      val log = operationManager.getOperationLog
-      if (log == null) return Filter.DENY
-      val currentLoggingMode = log.getOpLoggingLevel
-      // If logging is disabled, deny everything.
-      if (currentLoggingMode == OperationLog.LoggingLevel.NONE) return Filter.DENY
-      Filter.NEUTRAL
-    }
-  }
-
   /** This is where the log message will go to */
   private val writer = new CharArrayWriter
 
-  private def initLayout(): Unit = {
-    // There should be a ConsoleAppender. Copy its Layout.
-    var layout: Layout = null
-    Logger.getRootLogger.getAllAppenders.asScala.foreach { ap =>
-      if (ap.isInstanceOf[ConsoleAppender]) layout = ap.asInstanceOf[Appender].getLayout
-    }
-    this.layout =
-      Option(layout).getOrElse(new PatternLayout("%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n"))
-  }
+  this.layout = Logger.getRootLogger
+    .getAllAppenders.asScala
+    .find(_.isInstanceOf[ConsoleAppender])
+    .map(_.asInstanceOf[Appender].getLayout)
+    .getOrElse(new PatternLayout("%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n"))
 
-  def this(operationManager: OperationManager) {
-    this()
-    initLayout()
-    setWriter(writer)
-    setName("SparkLogDivertAppender")
-    this.operationManager = operationManager
-    addFilter(new NameFilter(operationManager))
-  }
+  setWriter(writer)
+  setName("SparkLogDivertAppender")
+  addFilter(new Filter {
+    override def decide(loggingEvent: LoggingEvent): Int = {
+      if (OperationLog.getCurrentOperationLog == null) Filter.DENY else Filter.NEUTRAL
+    }
+
+  })
 
   /**
    * Overrides WriterAppender.subAppend(), which does the real logging. No need
@@ -74,11 +54,6 @@ class LogDivertAppender extends WriterAppender with Logging {
     // That should've gone into our writer. Notify the LogContext.
     val logOutput = writer.toString
     writer.reset()
-    val log = operationManager.getOperationLog
-    if (log == null) {
-      debug(" ---+++=== Dropped log event from thread " + event.getThreadName)
-      return
-    }
-    log.writeOperationLog(logOutput)
+    Option(OperationLog.getCurrentOperationLog).foreach(_.write(logOutput))
   }
 }
