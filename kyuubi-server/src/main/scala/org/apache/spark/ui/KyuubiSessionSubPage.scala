@@ -54,7 +54,7 @@ class KyuubiSessionSubPage(parent: KyuubiSessionTab) extends WebUIPage("session"
         </h4> ++
         generateSQLStatsTable(request, sessionStat.sessionId)
       }
-    KyuubiUIUtils.headerSparkPage(request, "Kyuubi Session", content, parent)
+    UIUtils.headerSparkPage(request, "Kyuubi Session", content, parent)
   }
 
   /** Generate basic stats of the kyuubi server program */
@@ -83,7 +83,7 @@ class KyuubiSessionSubPage(parent: KyuubiSessionTab) extends WebUIPage("session"
       def generateDataRow(info: ExecutionInfo): Seq[Node] = {
         val jobLink = info.jobId.map { id: String =>
           <a href={"%s/jobs/job?id=%s"
-            .format(KyuubiUIUtils.prependBaseUri(request, parent.basePath), id)}>
+            .format(UIUtils.prependBaseUri(request, parent.basePath), id)}>
             [{id}]
           </a>
         }

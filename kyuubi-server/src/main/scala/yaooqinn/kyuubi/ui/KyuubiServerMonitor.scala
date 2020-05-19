@@ -19,7 +19,6 @@ package yaooqinn.kyuubi.ui
 
 import scala.collection.mutable.HashMap
 
-import org.apache.spark.SparkException
 import org.apache.spark.ui.KyuubiSessionTab
 
 
