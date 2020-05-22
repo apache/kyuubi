@@ -1,0 +1,197 @@
+#!/usr/bin/env bash
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+## Kyuubi Server Main Entrance
+CLASS="org.apache.kyuubi.server.KyuubiServer"
+
+function usage {
+  echo "Usage: ./bin/kyuubi.sh (start|stop|status)"
+}
+
+if [[ "$@" = *--help ]] || [[ "$@" = *-h ]]; then
+  usage
+  exit 0
+fi
+
+function kyuubi_rotate_log() {
+    log=$1;
+    
+    if [[ -z ${KYUUBI_MAX_LOG_FILES} ]]; then
+      num=5
+    elif [[ ${KYUUBI_MAX_LOG_FILES} -gt 0 ]]; then
+      num=${KYUUBI_MAX_LOG_FILES}
+    else
+      echo "Error: KYUUBI_MAX_LOG_FILES must be a positive number, but got ${KYUUBI_MAX_LOG_FILES}"
+      exit -1
+    fi
+    
+    if [ -f "$log" ]; then # rotate logs
+    while [ ${num} -gt 1 ]; do
+        prev=`expr ${num} - 1`
+        [ -f "$log.$prev" ] && mv "$log.$prev" "$log.$num"
+        num=${prev}
+    done
+    mv "$log" "$log.$num";
+    fi
+}
+
+export KYUUBI_HOME="$(cd "`dirname "$0"`"/..; pwd)"
+
+echo "Starting Kyuubi Server from ${KYUUBI_HOME}"
+
+. "${KYUUBI_HOME}/bin/load-kyuubi-env.sh"
+
+if [[ -z ${JAVA_HOME} ]]; then
+  echo "Error: JAVA_HOME IS NOT SET! CANNOT PROCEED."
+  exit 1
+fi
+
+if [[ -z ${SPARK_HOME} ]]; then
+  echo "Error: SPARK_HOME IS NOT SET! CANNOT PROCEED." >&2
+  exit 1
+else
+  if [[ ! -x "${SPARK_HOME}/bin/spark-submit" ]]; then
+    echo echo "Error: INVALID SPARK DISTRIBUTION! CANNOT PROCEED." >&2
+    exit 1
+  fi
+fi
+
+RUNNER="${JAVA_HOME}/bin/java"
+
+COMMAND="${RUNNER} ${KYUUBI_JAVA_OPTS} -cp"
+
+## Find the Kyuubi Jar
+if [[ -z "$KYUUBI_JAR_DIR" ]]; then
+  KYUUBI_JAR_DIR="$KYUUBI_HOME/jars"
+  if [[ ! -d ${KYUUBI_JAR_DIR} ]]; then
+  echo -e "\nCandidate Kyuubi lib $KYUUBI_JAR_DIR doesn't exist, searching development environment..."
+    KYUUBI_JAR_DIR="$KYUUBI_HOME/kyuubi-assembly/target/scala-${KYUUBI_SCALA_VERSION}/jars"
+  fi
+fi
+
+pid="${KYUUBI_PID_DIR}/kyuubi-$USER-$CLASS.pid"
+
+function start_kyuubi() {
+    if [[ ! -w ${KYUUBI_PID_DIR} ]]; then
+      echo "${USER} does not have 'w' permission to ${KYUUBI_PID_DIR}"
+      exit 1
+    fi
+
+    if [[ ! -w ${KYUUBI_LOG_DIR} ]]; then
+      echo "${USER} does not have 'w' permission to ${KYUUBI_LOG_DIR}"
+      exit 1
+    fi
+
+    if [ -f "$pid" ]; then
+        TARGET_ID="$(cat "$pid")"
+        if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
+          echo "$CLASS running as process $TARGET_ID  Stop it first."
+          exit 1
+        fi
+    fi
+
+    log="${KYUUBI_LOG_DIR}/kyuubi-$USER-$CLASS-$HOSTNAME.out"
+    kyuubi_rotate_log ${log}
+
+    KYUUBI_CLASSPATH="${KYUUBI_JAR_DIR}/*:${KYUUBI_CONF_DIR}"
+    cmd="${RUNNER} ${KYUUBI_JAVA_OPTS} -cp ${KYUUBI_CLASSPATH} $CLASS"
+    echo "Starting $CLASS, logging to $log"
+    nohup nice -n "${KYUUBI_NICENESS:-0}" ${cmd} >> ${log} 2>&1 < /dev/null &
+    newpid="$!"
+
+    echo "$newpid" > "$pid"
+
+    # Poll for up to 5 seconds for the java process to start
+    for i in {1..10}
+    do
+        if [[ $(ps -p "$newpid" -o comm=) =~ "java" ]]; then
+           break
+        fi
+        sleep 0.5
+    done
+
+    sleep 2
+    # Check if the process has died; in that case we'll tail the log so the user can see
+    if [[ ! $(ps -p "$newpid" -o comm=) =~ "java" ]]; then
+      echo "Failed to launch: ${cmd}"
+      tail -2 "$log" | sed 's/^/  /'
+      echo "Full log in $log"
+    else
+      echo "Welcome to"
+      cat ${KYUUBI_HOME}/bin/kyuubi-logo
+    fi
+}
+
+function stop_kyuubi() {
+    if [ -f ${pid} ]; then
+      TARGET_ID="$(cat "$pid")"
+      if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
+        echo "Stopping $CLASS"
+        kill "$TARGET_ID" && rm -f "$pid"
+        for i in {1..20}
+        do
+            sleep 0.5
+            if [[ ! $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
+              break
+            fi
+        done
+
+        if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
+          echo "Failed to stop kyuubi after 10 seconds, try 'kill -9 ${TARGET_ID}' forcefully "
+        else
+           cat ${KYUUBI_HOME}/bin/kyuubi-logo
+           echo "Bye!"
+        fi
+      else
+        echo "no $CLASS to stop"
+      fi
+    else
+      echo "no $CLASS to stop"
+    fi
+}
+
+function check_kyuubi() {
+    if [[ -f ${pid} ]]; then
+      TARGET_ID="$(cat "$pid")"
+      if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
+        echo "Kyuubi is running (pid: $TARGET_ID)"
+      else
+        echo "Kyuubi is not running"
+      fi
+    else
+      echo "Kyuubi is not running"
+    fi
+
+}
+case $1 in
+  (start | "")
+    start_kyuubi
+    ;;
+
+  (stop)
+    stop_kyuubi
+    ;;
+
+  (status)
+    check_kyuubi
+    ;;
+
+  (*)
+    usage
+    ;;
+esac
