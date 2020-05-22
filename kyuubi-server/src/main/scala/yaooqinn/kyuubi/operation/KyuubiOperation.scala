@@ -17,11 +17,9 @@
 
 package yaooqinn.kyuubi.operation
 
-import org.apache.hadoop.hive.ql.session.OperationLog
 import org.apache.hive.service.cli.thrift.TProtocolVersion
 import org.apache.spark.sql.types.StructType
 
-import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.schema.RowSet
 import yaooqinn.kyuubi.session.KyuubiSession

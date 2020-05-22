@@ -28,6 +28,7 @@
         <module>kyuubi-common</module>
         <module>kyuubi-thrift</module>
         <module>kyuubi-server</module>
+        <module>kyuubi-assembly</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -52,10 +53,10 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.7</java.version>
-        <scala.version>2.11.8</scala.version>
+        <scala.version>2.11.12</scala.version>
         <scalatest.version>3.0.3</scalatest.version>
         <scala.binary.version>2.11</scala.binary.version>
-        <maven.version>3.5.4</maven.version>
+        <maven.version>3.6.3</maven.version>
         <spark.group>org.apache.spark</spark.group>
         <spark.version>2.4.5</spark.version>
         <spark.scope>provided</spark.scope>
@@ -65,6 +66,7 @@
         <hive.version>1.2.1.spark2</hive.version>
         <hive.deps.scope>provided</hive.deps.scope>
         <jpam.version>1.1</jpam.version>
+        <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
         <apacheds.version>2.0.0-M15</apacheds.version>
         <curator.version>2.6.0</curator.version>
         <codahale.metrics.version>3.1.2</codahale.metrics.version>
@@ -150,7 +152,7 @@
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
                 <version>${scala.version}</version>
-                <scope>provided</scope>
+                <scope>compile</scope>
             </dependency>
 
             <dependency>
@@ -371,7 +373,7 @@
     <build>
         <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
         <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
-       <pluginManagement>
+        <pluginManagement>
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -498,8 +500,64 @@
                     <version>3.0.2</version>
                 </plugin>
 
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>3.1.0</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>3.1.1</version>
+                    <executions>
+                        <execution>
+                            <id>default-cli</id>
+                            <goals>
+                                <goal>build-classpath</goal>
+                            </goals>
+                            <configuration>
+                                <!-- This includes dependencies with 'runtime' and 'compile' scopes;
+                                     see the docs for includeScope for more details -->
+                                <includeScope>runtime</includeScope>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
-       </pluginManagement>
+        </pluginManagement>
+
+        <plugins>
+            <!-- This plugin dumps the test classpath into a file -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-test-classpath</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>build-classpath</goal>
+                        </goals>
+                        <configuration>
+                            <includeScope>test</includeScope>
+                            <outputProperty>test_classpath</outputProperty>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-module-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <includeScope>runtime</includeScope>
+                            <outputDirectory>${jars.target.dir}</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 
     <profiles>
