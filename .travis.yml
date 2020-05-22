@@ -1,0 +1,39 @@
+language: scala
+scala:
+  - 2.11.8
+jdk:
+  - openjdk8
+
+cache:
+  directories:
+    - $HOME/.m2
+    - ./build
+
+before_deploy:
+  - ./build/dist --tgz
+
+deploy:
+  - provider: pages
+    skip_cleanup: true
+    github_token: $GITHUB_TOKEN
+    email: yaooqinn@hotmail.com
+    name: Kent Yao
+    on:
+      branch: master
+  - provider: releases
+    api_key: $GITHUB_TOKEN
+    file_glob: true
+    file: kyuubi-*.tar.gz
+    skip_cleanup: true
+    on:
+      tags: true
+
+jobs:
+  include:
+    - stage: spark2.4
+      language: scala
+      script:
+        - ./build/mvn clean install -Dmaven.javadoc.skip=true -B -V
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration debug="true" >
+
+    <appender name="console" class="org.apache.log4j.ConsoleAppender">
+        <layout class="org.apache.log4j.PatternLayout">
+        <param name="ConversionPattern"
+          value="%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L %m%n" />
+        </layout>
+    </appender>
+
+    <logger name="org.apache.directory.api.ldap.model.entry" additivity="false">
+        <level value="WARN" />
+        <appender-ref ref="console" />
+    </logger>
+    <logger name="org.apache.directory.api.ldap.model.ldif.LdifReader" additivity="false">
+        <level value="WARN" />
+        <appender-ref ref="console" />
+    </logger>
+    <logger name="yaooqinn.kyuubi.service" additivity="false">
+        <level value="ERROR" />
+        <appender-ref ref="console" />
+    </logger>
+    <logger name="org.apache.spark" additivity="false">
+        <level value="ERROR" />
+        <appender-ref ref="console" />
+    </logger>
+    <logger name="org.apache.zookeeper" additivity="false">
+        <level value="ERROR" />
+        <appender-ref ref="console" />
+    </logger>
+    <logger name="org.apache.curator.framework.imps" additivity="false">
+        <level value="OFF" />
+        <appender-ref ref="console" />
+    </logger>
+    <root>
+        <level value="OFF" />
+        <appender-ref ref="console" />
+    </root>
+</log4j:configuration>
