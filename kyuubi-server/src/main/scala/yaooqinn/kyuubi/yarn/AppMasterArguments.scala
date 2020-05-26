@@ -17,7 +17,7 @@
 
 package yaooqinn.kyuubi.yarn
 
-import yaooqinn.kyuubi.Logging
+import org.apache.kyuubi.Logging
 
 case class AppMasterArguments(args: Array[String]) extends Logging {
   var propertiesFile: Option[String] = _

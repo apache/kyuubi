@@ -25,17 +25,17 @@ import scala.collection.JavaConverters._
 
 import org.apache.commons.io.FileUtils
 import org.apache.hive.service.cli.thrift.TProtocolVersion
+import org.apache.kyuubi.Logging
 import org.apache.spark.KyuubiConf._
+import org.apache.kyuubi.util.NamedThreadFactory
 import org.apache.spark.SparkConf
-
-import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
+import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.operation.OperationManager
 import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.service.{CompositeService, ServiceException}
 import yaooqinn.kyuubi.spark.SparkSessionCacheManager
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
-import yaooqinn.kyuubi.utils.NamedThreadFactory
 
 /**
  * A SessionManager for managing [[KyuubiSession]]s

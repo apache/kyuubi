@@ -27,13 +27,14 @@ import org.apache.curator.framework.api.ACLProvider
 import org.apache.curator.framework.recipes.nodes.PersistentEphemeralNode
 import org.apache.curator.retry.ExponentialBackoffRetry
 import org.apache.hadoop.security.{SecurityUtil, UserGroupInformation}
+import org.apache.kyuubi.Logging
 import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
 import org.apache.zookeeper.{KeeperException, WatchedEvent, Watcher}
 import org.apache.zookeeper.CreateMode.PERSISTENT
 import org.apache.zookeeper.KeeperException.NodeExistsException
 
-import yaooqinn.kyuubi.{KYUUBI_VERSION, Logging}
+import yaooqinn.kyuubi.KYUUBI_VERSION
 import yaooqinn.kyuubi.server.{FrontendService, KyuubiServer}
 import yaooqinn.kyuubi.service.{AbstractService, ServiceException}
 

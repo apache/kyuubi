@@ -30,6 +30,4 @@ object State extends Enumeration {
   /** stopped. No further state transitions are permitted */ STOPPED = Value
 
   type State = Value
-
-
 }

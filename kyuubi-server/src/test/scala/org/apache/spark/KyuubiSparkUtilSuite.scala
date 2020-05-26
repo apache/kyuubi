@@ -24,9 +24,10 @@ import java.security.PrivilegedExceptionAction
 import scala.reflect.internal.util.ScalaClassLoader.URLClassLoader
 
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.kyuubi.Logging
 import org.apache.spark.util.{ChildFirstURLClassLoader, SignalUtils}
 
-import yaooqinn.kyuubi.{Logging, SPARK_COMPILE_VERSION}
+import yaooqinn.kyuubi.SPARK_COMPILE_VERSION
 import yaooqinn.kyuubi.service.ServiceException
 import yaooqinn.kyuubi.utils.ReflectUtils
 

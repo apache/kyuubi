@@ -27,9 +27,8 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.api.records.YarnApplicationState._
 import org.apache.hadoop.yarn.client.api.YarnClient
 import org.apache.hadoop.yarn.conf.YarnConfiguration
+import org.apache.kyuubi.Logging
 import org.apache.spark.KyuubiSparkUtil
-
-import yaooqinn.kyuubi.Logging
 
 private[kyuubi] object KyuubiHadoopUtil extends Logging {
 

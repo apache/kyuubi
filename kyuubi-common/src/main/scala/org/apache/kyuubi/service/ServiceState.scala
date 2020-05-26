@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,14 +15,18 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.utils
+package org.apache.kyuubi.service
 
-import java.util.concurrent.ThreadFactory
+/**
+ * Service states
+ */
+private[kyuubi] object ServiceState extends Enumeration {
+  type ServiceState = Value
 
-class NamedThreadFactory(name: String) extends ThreadFactory {
-  override def newThread(r: Runnable): Thread = {
-    val t = new Thread(r)
-    t.setName(name + ": Thread-" + t.getId)
-    t
-  }
+  val
+  /** Constructed but not initialized */ NEW,
+  /** Initialized but not started or stopped */ INITIALIZED,
+  /** Started and not stopped */ STARTED,
+  /** Stopped. No further state transitions are permitted */ STOPPED = Value
+
 }

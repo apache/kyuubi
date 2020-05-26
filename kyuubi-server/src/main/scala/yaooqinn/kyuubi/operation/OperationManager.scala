@@ -20,12 +20,13 @@ package yaooqinn.kyuubi.operation
 import java.sql.SQLException
 import java.util.concurrent.ConcurrentHashMap
 
+import org.apache.kyuubi.Logging
 import org.apache.log4j.Logger
 import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.types.StructType
 
-import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
+import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.operation.metadata._

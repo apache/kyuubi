@@ -23,10 +23,9 @@ import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics._
 import com.codahale.metrics.jvm._
+import org.apache.kyuubi.Logging
 import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
-
-import yaooqinn.kyuubi.Logging
 
 private[kyuubi] class MetricsSystem(conf: SparkConf) extends Logging {
 

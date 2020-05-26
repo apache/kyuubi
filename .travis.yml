@@ -33,7 +33,7 @@ jobs:
     - stage: spark2.4
       language: scala
       script:
-        - ./build/mvn clean install -Dmaven.javadoc.skip=true -B -V
+        - mvn clean install -Dmaven.javadoc.skip=true -B -V
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

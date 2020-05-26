@@ -17,22 +17,23 @@
 
 package yaooqinn.kyuubi.server
 
+import org.apache.spark.KyuubiConf._
+import org.apache.spark.deploy.SparkHadoopUtil
 import java.net.{InetAddress, ServerSocket}
-import java.util.concurrent.{SynchronousQueue, TimeUnit}
+import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Try}
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hive.service.cli.thrift._
+import org.apache.kyuubi.Logging
+import org.apache.kyuubi.util.ExecutorPoolCaptureOom
 import org.apache.spark.{KyuubiConf, SparkConf}
-import org.apache.spark.KyuubiConf._
-import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TThreadPoolServer}
 import org.apache.thrift.transport.{TServerSocket, TTransport}
-
-import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
+import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.auth.{AuthType, KyuubiAuthFactory, TSetIpAddressProcessor}
 import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType}
 import yaooqinn.kyuubi.metrics.MetricsSystem
@@ -40,7 +41,6 @@ import yaooqinn.kyuubi.operation.OperationHandle
 import yaooqinn.kyuubi.schema.{SchemaMapper, SparkTableTypes}
 import yaooqinn.kyuubi.service.{AbstractService, ServiceException, ServiceUtils}
 import yaooqinn.kyuubi.session.SessionHandle
-import yaooqinn.kyuubi.utils.{NamedThreadFactory, ThreadPoolWithOOMHook}
 
 /**
  * [[FrontendService]] keeps compatible with all kinds of Hive JDBC/Thrift Client Connections
@@ -581,13 +581,10 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
       // Server thread pool
       val minThreads = conf.get(FRONTEND_MIN_WORKER_THREADS).toInt
       val maxThreads = conf.get(FRONTEND_MAX_WORKER_THREADS).toInt
-      val executorService = new ThreadPoolWithOOMHook(
+      val executorService = ExecutorPoolCaptureOom(threadPoolName,
         minThreads,
         maxThreads,
         conf.getTimeAsSeconds(FRONTEND_WORKER_KEEPALIVE_TIME),
-        TimeUnit.SECONDS,
-        new SynchronousQueue[Runnable],
-        new NamedThreadFactory(threadPoolName),
         OOMHook)
 
       // Thrift configs

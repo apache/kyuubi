@@ -19,6 +19,7 @@ package yaooqinn.kyuubi.server
 
 import java.util.concurrent.atomic.AtomicBoolean
 
+import org.apache.kyuubi.Logging
 import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
 
