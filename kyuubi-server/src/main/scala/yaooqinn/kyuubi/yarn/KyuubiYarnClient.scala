@@ -60,20 +60,20 @@ import yaooqinn.kyuubi._
 private[yarn] class KyuubiYarnClient(conf: SparkConf) extends Logging {
   import KyuubiYarnClient._
 
-  private[this] val hadoopConf = new YarnConfiguration(KyuubiSparkUtil.newConfiguration(conf))
+  val hadoopConf = new YarnConfiguration(KyuubiSparkUtil.newConfiguration(conf))
 
   private[this] val yarnClient = YarnClient.createYarnClient()
   yarnClient.init(hadoopConf)
   yarnClient.start()
 
-  private[this] var memory = conf.getSizeAsMb(KyuubiSparkUtil.DRIVER_MEM, "1024m").toInt
-  private[this] var memoryOverhead =
+  var memory = conf.getSizeAsMb(KyuubiSparkUtil.DRIVER_MEM, "1024m").toInt
+  var memoryOverhead =
     conf.getSizeAsMb(KyuubiSparkUtil.DRIVER_MEM_OVERHEAD, (memory * 0.1).toInt + "m").toInt
   private[this] val cores = conf.getInt(KyuubiSparkUtil.DRIVER_CORES,
     YarnConfiguration.DEFAULT_RM_SCHEDULER_MAXIMUM_ALLOCATION_VCORES)
   private[this] val principal = conf.get(KyuubiSparkUtil.PRINCIPAL, "")
   private[this] val keytabOrigin = conf.get(KyuubiSparkUtil.KEYTAB, "")
-  private[this] val loginFromKeytab = principal.nonEmpty && keytabOrigin.nonEmpty
+  val loginFromKeytab = principal.nonEmpty && keytabOrigin.nonEmpty
   private[this] val keytabForAM: String = if (loginFromKeytab) {
     new File(keytabOrigin).getName + "-" + UUID.randomUUID()
   } else {

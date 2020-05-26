@@ -20,7 +20,7 @@ package org.apache.kyuubi
 import org.slf4j.LoggerFactory
 
 trait Logging {
-  lazy val logger = LoggerFactory.getLogger(this.getClass.getCanonicalName.stripSuffix("$"))
+  lazy val logger = LoggerFactory.getLogger(this.getClass)
 
   def debug(message: => Any): Unit = {
     if (logger.isDebugEnabled) {
