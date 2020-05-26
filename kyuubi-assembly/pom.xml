@@ -40,8 +40,8 @@
         </dependency>
 
         <dependency>
-            <groupId>yaooqinn</groupId>
-            <artifactId>kyuubi-thrift</artifactId>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-hive-thrift</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

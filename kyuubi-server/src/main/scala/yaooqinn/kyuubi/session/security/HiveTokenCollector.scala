@@ -25,9 +25,9 @@ import org.apache.hadoop.hive.ql.metadata.Hive
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.token.Token
+import org.apache.kyuubi.Logging
 import org.apache.spark.SparkConf
 
-import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.utils.KyuubiHadoopUtil
 import yaooqinn.kyuubi.utils.KyuubiHiveUtil._
 

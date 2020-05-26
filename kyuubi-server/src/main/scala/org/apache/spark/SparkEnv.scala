@@ -27,6 +27,7 @@ import scala.util.Properties
 
 import com.google.common.collect.MapMaker
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.kyuubi.Logging
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.api.python.PythonWorkerFactory
 import org.apache.spark.broadcast.BroadcastManager
@@ -43,7 +44,6 @@ import org.apache.spark.shuffle.ShuffleManager
 import org.apache.spark.storage._
 import org.apache.spark.util.{RpcUtils, Utils}
 
-import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.utils.ReflectUtils
 
 /**

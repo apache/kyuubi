@@ -18,10 +18,10 @@
 package yaooqinn.kyuubi.server
 
 import org.apache.hive.service.cli.thrift.TProtocolVersion
+import org.apache.kyuubi.Logging
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.types.StructType
 
-import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.author.AuthzHelper
 import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType, GetInfoValue}

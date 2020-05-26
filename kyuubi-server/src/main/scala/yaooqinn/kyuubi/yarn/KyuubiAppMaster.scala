@@ -32,9 +32,9 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.conf.YarnConfiguration._
 import org.apache.hadoop.yarn.exceptions.ApplicationAttemptNotFoundException
 import org.apache.hadoop.yarn.util.ConverterUtils
+import org.apache.kyuubi.Logging
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf}
 
-import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.service.CompositeService
 

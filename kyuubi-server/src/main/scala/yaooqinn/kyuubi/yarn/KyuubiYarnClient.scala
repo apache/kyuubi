@@ -47,10 +47,11 @@ import org.apache.hadoop.yarn.client.api.{YarnClient, YarnClientApplication}
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.exceptions.{ApplicationNotFoundException, YarnException}
 import org.apache.hadoop.yarn.util.Records
+import org.apache.kyuubi.Logging
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf}
 import org.apache.spark.deploy.yarn.KyuubiDistributedCacheManager
 
-import yaooqinn.kyuubi.{Logging, _}
+import yaooqinn.kyuubi._
 
 /**
  * A Yarn Client for submitting Kyuubi towards Yarn

@@ -19,9 +19,8 @@ package yaooqinn.kyuubi.operation
 
 import java.io.File
 
+import org.apache.kyuubi.Logging
 import org.apache.spark.sql.Row
-
-import yaooqinn.kyuubi.Logging
 
 class OperationLog(logFile: LogFile) extends Logging {
 
