@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,38 +15,38 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.utils
+package org.apache.kyuubi.util
 
-import java.util.concurrent.{BlockingQueue, Future, ThreadFactory, ThreadPoolExecutor}
+import java.util.concurrent.{Future, SynchronousQueue, ThreadPoolExecutor, TimeUnit}
 
-import scala.concurrent.duration.TimeUnit
-
-class ThreadPoolWithOOMHook(
+case class ExecutorPoolCaptureOom(
+    poolName: String,
     corePoolSize: Int,
     maximumPoolSize: Int,
-    keepAliveTime: Long,
-    unit: TimeUnit,
-    workQueue: BlockingQueue[Runnable],
-    threadFactory: ThreadFactory,
-    oomHook: Runnable)
+    keepAliveSeconds: Long,
+    hook: Runnable)
   extends ThreadPoolExecutor(
-    corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory) {
+    corePoolSize,
+    maximumPoolSize,
+    keepAliveSeconds,
+    TimeUnit.SECONDS,
+    new SynchronousQueue[Runnable](),
+    NamedThreadFactory(poolName)) {
 
   override def afterExecute(r: Runnable, t: Throwable): Unit = {
     super.afterExecute(r, t)
-    var throwable = t
-    if (throwable == null && r.isInstanceOf[Future[_]]) {
-      try {
-        val future = r.asInstanceOf[Future[_]]
-        if (future.isDone) {
-          future.get()
+    t match {
+      case _: OutOfMemoryError => hook.run()
+      case null => r match {
+        case f: Future[_] => try {
+          if (f.isDone) f.get()
+        } catch {
+          case _: InterruptedException => Thread.currentThread().interrupt()
+          case _: OutOfMemoryError => hook.run()
         }
-      } catch {
-        case _: InterruptedException => Thread.currentThread().interrupt()
-        case t2: Throwable =>
-          throwable = t2
+        case _ =>
       }
+      case _ =>
     }
-    if (throwable.isInstanceOf[OutOfMemoryError]) oomHook.run()
   }
 }

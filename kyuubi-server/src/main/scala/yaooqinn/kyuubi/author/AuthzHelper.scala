@@ -17,12 +17,12 @@
 
 package yaooqinn.kyuubi.author
 
+import org.apache.kyuubi.Logging
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 
-import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.utils.ReflectUtils
 
 private[kyuubi] class AuthzHelper(conf: SparkConf) extends Logging {

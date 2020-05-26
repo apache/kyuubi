@@ -21,12 +21,13 @@ import java.io.{File, FileNotFoundException}
 import java.util.concurrent.Future
 
 import org.apache.hive.service.cli.thrift.TProtocolVersion
+import org.apache.kyuubi.Logging
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil._
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.Row
 
-import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
+import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.session.KyuubiSession

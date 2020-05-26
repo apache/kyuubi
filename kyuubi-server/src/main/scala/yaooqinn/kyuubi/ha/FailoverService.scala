@@ -18,8 +18,8 @@
 package yaooqinn.kyuubi.ha
 
 import org.apache.curator.framework.recipes.leader.{LeaderLatch, LeaderLatchListener}
+import org.apache.kyuubi.Logging
 
-import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.server.KyuubiServer
 
 /**

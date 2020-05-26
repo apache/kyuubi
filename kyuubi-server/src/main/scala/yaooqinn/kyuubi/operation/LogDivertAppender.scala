@@ -21,10 +21,9 @@ import java.io.CharArrayWriter
 
 import scala.collection.JavaConverters._
 
+import org.apache.kyuubi.Logging
 import org.apache.log4j._
 import org.apache.log4j.spi.{Filter, LoggingEvent}
-
-import yaooqinn.kyuubi.Logging
 
 class LogDivertAppender extends WriterAppender with Logging {
   /** This is where the log message will go to */

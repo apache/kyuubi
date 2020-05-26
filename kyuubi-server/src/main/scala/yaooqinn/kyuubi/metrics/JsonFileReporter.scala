@@ -29,10 +29,9 @@ import com.codahale.metrics.json.MetricsModule
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.fs.permission.FsPermission
+import org.apache.kyuubi.Logging
 import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
-
-import yaooqinn.kyuubi.Logging
 
 private[metrics] class JsonFileReporter(conf: SparkConf, registry: MetricRegistry)
   extends Closeable with Logging {

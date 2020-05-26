@@ -20,9 +20,8 @@ package yaooqinn.kyuubi.utils
 import scala.reflect.runtime.{universe => ru}
 import scala.util.{Failure, Success, Try}
 
+import org.apache.kyuubi.Logging
 import org.apache.spark.KyuubiSparkUtil
-
-import yaooqinn.kyuubi.Logging
 
 object ReflectUtils extends Logging {
   /**

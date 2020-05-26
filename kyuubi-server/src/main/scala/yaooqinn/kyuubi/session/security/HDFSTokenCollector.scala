@@ -21,10 +21,10 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.mapred.Master
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
+import org.apache.kyuubi.Logging
 import org.apache.spark.KyuubiSparkUtil._
 import org.apache.spark.SparkConf
 
-import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.service.ServiceException
 
 /**

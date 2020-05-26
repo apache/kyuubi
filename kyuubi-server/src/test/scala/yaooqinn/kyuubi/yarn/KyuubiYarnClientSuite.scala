@@ -132,14 +132,13 @@ class KyuubiYarnClientSuite extends SparkFunSuite with Matchers with MockitoSuga
   test("kyuubi yarn client init") {
     val conf = new SparkConf()
     val client = new KyuubiYarnClient(conf)
-    assert(ReflectUtils.getFieldValue(client,
-      "yaooqinn$kyuubi$yarn$KyuubiYarnClient$$hadoopConf").isInstanceOf[YarnConfiguration])
+    assert(client.hadoopConf !== null)
 
-    assert(!ReflectUtils.getFieldValue(client, "loginFromKeytab").asInstanceOf[Boolean])
+    assert(!client.loginFromKeytab)
 
     conf.set(KyuubiSparkUtil.KEYTAB, "kyuubi.keytab").set(KyuubiSparkUtil.PRINCIPAL, "kyuubi")
     val client2 = new KyuubiYarnClient(conf)
-    assert(ReflectUtils.getFieldValue(client2, "loginFromKeytab").asInstanceOf[Boolean])
+    assert(client2.loginFromKeytab)
   }
 
   test("submit with exceeded memory") {
@@ -152,9 +151,8 @@ class KyuubiYarnClientSuite extends SparkFunSuite with Matchers with MockitoSuga
       when(appId.toString).thenReturn("appId1")
       when(c.getApplicationReport(appId)).thenThrow(classOf[IOException])
       kc.submit()
-      ReflectUtils.getFieldValue(kc, "yaooqinn$kyuubi$yarn$KyuubiYarnClient$$memory") should be(9)
-      ReflectUtils.getFieldValue(kc,
-        "yaooqinn$kyuubi$yarn$KyuubiYarnClient$$memoryOverhead") should be(1)
+      kc.memory should be(9)
+      kc.memoryOverhead should be (1)
     }
   }
 
@@ -168,10 +166,8 @@ class KyuubiYarnClientSuite extends SparkFunSuite with Matchers with MockitoSuga
       when(appId.toString).thenReturn("appId1")
       when(c.getApplicationReport(appId)).thenThrow(classOf[ApplicationNotFoundException])
       kc.submit()
-      ReflectUtils.getFieldValue(kc,
-        "yaooqinn$kyuubi$yarn$KyuubiYarnClient$$memory") should be(1024)
-      ReflectUtils.getFieldValue(kc,
-        "yaooqinn$kyuubi$yarn$KyuubiYarnClient$$memoryOverhead") should be(102)
+      kc.memory should be(1024)
+      kc.memoryOverhead should be (102)
     }
   }
 

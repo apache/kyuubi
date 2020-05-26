@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi
+package org.apache.kyuubi.config
 
-class KyuubiConf {
+private[kyuubi] class ConfigProvider(conf: java.util.Map[String, String]) {
 
-}
+  def get(key: String): Option[String] = {
+    if (key.startsWith(KYUUBI_PREFIX)) {
+      Option(conf.get(key))
+    } else {
+      None
+    }
+  }
 
-object KyuubiConf {
-  /** a custom directory that contains the [[KYUUBI_CONF_FILE_NAME]] */
-  final val KYUUBI_CONF_DIR = "KYUUBI_CONF_DIR"
-  /** the default file that contains kyuubi properties */
-  final val KYUUBI_CONF_FILE_NAME = "kyuubi-defaults.conf"
-  final val KYUUBI_HOME = "KYUUBI_HOME"
 }

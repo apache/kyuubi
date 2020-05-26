@@ -28,11 +28,10 @@ import scala.util.matching.Regex
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.kyuubi.Logging
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.util._
 import org.slf4j.Logger
-
-import yaooqinn.kyuubi.Logging
 
 /**
  * Wrapper for [[Utils]] and [[SparkHadoopUtil]]

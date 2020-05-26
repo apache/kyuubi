@@ -23,14 +23,17 @@ import java.util.Properties
 
 import scala.collection.JavaConverters._
 
-import yaooqinn.kyuubi.Logging
-
 private[kyuubi] object Utils extends Logging {
 
-  import KyuubiConf._
+  import org.apache.kyuubi.config.KyuubiConf._
+
+  def strToSeq(s: String): Seq[String] = {
+    require(s != null)
+    s.split(",").map(_.trim).filter(_.nonEmpty)
+  }
 
   def getSystemProperties: Map[String, String] = {
-    System.getProperties.asScala.toMap
+    sys.props.toMap
   }
 
   def getDefaultPropertiesFile(env: Map[String, String] = sys.env): Option[File] = {
@@ -58,5 +61,4 @@ private[kyuubi] object Utils extends Logging {
       }
     }.getOrElse(Map.empty)
   }
-
 }

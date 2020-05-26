@@ -20,9 +20,8 @@ package yaooqinn.kyuubi.service
 
 import scala.collection.mutable.ListBuffer
 
+import org.apache.kyuubi.Logging
 import org.apache.spark.SparkConf
-
-import yaooqinn.kyuubi.Logging
 
 /**
  * CompositeService.

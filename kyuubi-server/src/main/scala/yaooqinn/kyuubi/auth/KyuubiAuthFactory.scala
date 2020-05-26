@@ -30,12 +30,13 @@ import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge.Server.ServerMode
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.authorize.ProxyUsers
 import org.apache.hive.service.cli.thrift.TCLIService
+import org.apache.kyuubi.Logging
 import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
 import org.apache.thrift.TProcessorFactory
 import org.apache.thrift.transport.{TTransportException, TTransportFactory}
 
-import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
+import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.service.ServiceException
 
 /**
