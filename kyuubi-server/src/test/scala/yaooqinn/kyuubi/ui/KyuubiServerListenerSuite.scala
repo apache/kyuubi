@@ -84,6 +84,7 @@ class KyuubiServerListenerSuite extends SparkFunSuite with MockitoSugar{
     assert(li.getExecutionList.head.jobId.head === "1")
     assert(li.getExecutionList.head.groupId === groupId)
 
+    Thread.sleep(1000)
     li.onStatementFinish(id)
     assert(li.getExecutionList.head.finishTimestamp !== finishTimestamp1)
     assert(li.getExecutionList.head.state === ExecutionState.FINISHED)
