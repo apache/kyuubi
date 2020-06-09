@@ -23,7 +23,7 @@
 
     <parent>
         <artifactId>kyuubi</artifactId>
-        <groupId>yaooqinn</groupId>
+        <groupId>org.apache.kyuubi</groupId>
         <version>0.8.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
@@ -34,9 +34,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>yaooqinn</groupId>
+            <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common</artifactId>
-            <version>${project.version}</version>
+            <version>0.8.0-SNAPSHOT</version>
         </dependency>
 
         <dependency>

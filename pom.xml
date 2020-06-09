@@ -20,7 +20,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>yaooqinn</groupId>
+    <groupId>org.apache.kyuubi</groupId>
     <artifactId>kyuubi</artifactId>
     <name>Kyuubi Project Parent</name>
     <version>0.8.0-SNAPSHOT</version>
@@ -30,6 +30,7 @@
         <module>kyuubi-server</module>
         <module>kyuubi-assembly</module>
         <module>kyuubi-hive-thrift</module>
+        <module>kyuubi-spark-sql-engine</module>
     </modules>
     <packaging>pom</packaging>
 

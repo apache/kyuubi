@@ -19,5 +19,5 @@ package org.apache.kyuubi
 
 package object config {
   final val KYUUBI_PREFIX = "kyuubi."
-
+  final val SPARK_PREFIX = "spark."
 }
