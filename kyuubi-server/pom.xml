@@ -21,7 +21,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>kyuubi</artifactId>
-        <groupId>yaooqinn</groupId>
+        <groupId>org.apache.kyuubi</groupId>
         <version>0.8.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
@@ -34,13 +34,13 @@
     <dependencies>
 
         <dependency>
-            <groupId>yaooqinn</groupId>
+            <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>yaooqinn</groupId>
+            <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-thrift</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -48,16 +48,19 @@
         <dependency>
             <groupId>${spark.group}</groupId>
             <artifactId>spark-yarn_${scala.binary.version}</artifactId>
+            <version>2.4.5</version>
         </dependency>
 
         <dependency>
             <groupId>${spark.group}</groupId>
             <artifactId>spark-hive_${scala.binary.version}</artifactId>
+            <version>2.4.5</version>
         </dependency>
 
         <dependency>
             <groupId>${spark.group}</groupId>
             <artifactId>spark-tags_${scala.binary.version}</artifactId>
+            <version>2.4.5</version>
         </dependency>
 
         <dependency>
@@ -101,7 +104,7 @@
         </dependency>
 
         <dependency>
-            <groupId>yaooqinn</groupId>
+            <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
@@ -110,16 +113,19 @@
         <dependency>
             <groupId>${spark.group}</groupId>
             <artifactId>spark-core_${scala.binary.version}</artifactId>
+            <version>2.4.5</version>
             <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>${spark.group}</groupId>
             <artifactId>spark-catalyst_${scala.binary.version}</artifactId>
+            <version>2.4.5</version>
             <type>test-jar</type>
         </dependency>
         <dependency>
             <groupId>${spark.group}</groupId>
             <artifactId>spark-sql_${scala.binary.version}</artifactId>
+            <version>2.4.5</version>
             <type>test-jar</type>
         </dependency>
         <dependency>
@@ -247,8 +253,8 @@
                     <shadedArtifactAttached>false</shadedArtifactAttached>
                     <artifactSet>
                         <includes>
-                            <include>yaooqinn:kyuubi-common</include>
-                            <include>yaooqinn:kyuubi-thrift</include>
+                            <include>org.apache.kyuubi:kyuubi-common</include>
+                            <include>org.apache.kyuubi:kyuubi-thrift</include>
                         </includes>
                     </artifactSet>
                 </configuration>

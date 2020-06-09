@@ -17,8 +17,6 @@
 
 package yaooqinn.kyuubi.server
 
-import org.apache.spark.KyuubiConf._
-import org.apache.spark.deploy.SparkHadoopUtil
 import java.net.{InetAddress, ServerSocket}
 import java.util.concurrent.TimeUnit
 
@@ -27,9 +25,9 @@ import scala.util.{Failure, Try}
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hive.service.cli.thrift._
-import org.apache.kyuubi.Logging
-import org.apache.kyuubi.util.ExecutorPoolCaptureOom
 import org.apache.spark.{KyuubiConf, SparkConf}
+import org.apache.spark.KyuubiConf._
+import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TThreadPoolServer}
 import org.apache.thrift.transport.{TServerSocket, TTransport}
@@ -41,6 +39,9 @@ import yaooqinn.kyuubi.operation.OperationHandle
 import yaooqinn.kyuubi.schema.{SchemaMapper, SparkTableTypes}
 import yaooqinn.kyuubi.service.{AbstractService, ServiceException, ServiceUtils}
 import yaooqinn.kyuubi.session.SessionHandle
+
+import org.apache.kyuubi.Logging
+import org.apache.kyuubi.util.ExecutorPoolCaptureOom
 
 /**
  * [[FrontendService]] keeps compatible with all kinds of Hive JDBC/Thrift Client Connections
