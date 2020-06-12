@@ -15,18 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.service
+package org.apache.kyuubi.config
 
-/**
- * Service states
- */
-private[kyuubi] object ServiceState extends Enumeration {
-  type ServiceState = Value
+import org.apache.kyuubi.KyuubiFunSuite
 
-  val
-  /** Constructed but not initialized */ LATENT,
-  /** Initialized but not started or stopped */ INITIALIZED,
-  /** Started and not stopped */ STARTED,
-  /** Stopped. No further state transitions are permitted */ STOPPED = Value
+class KyuubiConfSuite extends KyuubiFunSuite {
 
+  import KyuubiConf._
+
+  test("kyuubi conf defaults") {
+    val conf = new KyuubiConf()
+    assert(conf.get(EMBEDDED_ZK_PORT) === 2181)
+    assert(conf.get(EMBEDDED_ZK_TEMP_DIR).endsWith("embedded_zookeeper"))
+    assert(conf.get(HA_ZK_QUORUM) === None)
+  }
 }

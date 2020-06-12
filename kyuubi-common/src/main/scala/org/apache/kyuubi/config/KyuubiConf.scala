@@ -23,6 +23,7 @@ import org.apache.kyuubi.Utils
 
 case class KyuubiConf(loadSysDefault: Boolean = true) {
   private val settings = new ConcurrentHashMap[String, String]()
+  private lazy val reader: ConfigProvider = new ConfigProvider(settings)
 
   if (loadSysDefault) {
     loadSysProps()
@@ -35,11 +36,20 @@ case class KyuubiConf(loadSysDefault: Boolean = true) {
     this
   }
 
+  def set[T](entry: ConfigEntry[T], value: T): KyuubiConf = {
+    settings.put(entry.key, entry.strConverter(value))
+    this
+  }
+
   def set(key: String, value: String): KyuubiConf = {
     require(key != null)
     require(value != null)
     settings.put(key, value)
     this
+  }
+
+  def get[T](config: ConfigEntry[T]): T = {
+    config.readFrom(reader)
   }
 
 }
@@ -51,4 +61,27 @@ object KyuubiConf {
   /** the default file that contains kyuubi properties */
   final val KYUUBI_CONF_FILE_NAME = "kyuubi-defaults.conf"
   final val KYUUBI_HOME = "KYUUBI_HOME"
+
+  def buildConf(key: String): ConfigBuilder = ConfigBuilder(KYUUBI_PREFIX + key)
+
+  val EMBEDDED_ZK_PORT: ConfigEntry[Int] =
+    buildConf("embedded.zk.port")
+      .doc("The port of the embedded zookeeper server")
+      .version("1.0.0")
+      .intConf.checkValue(_ >= 0, s"The value of $EMBEDDED_ZK_PORT must be >= 0")
+      .createWithDefault(2181)
+
+  val EMBEDDED_ZK_TEMP_DIR: ConfigEntry[String] =
+    buildConf("embedded.zk.directory")
+    .doc("The temporary directory for the embedded zookeeper server")
+    .version("1.0.0")
+    .stringConf
+    .createWithDefault(Utils.resolveURI("embedded_zookeeper").getRawPath)
+
+  val HA_ZK_QUORUM: OptionalConfigEntry[Seq[String]] =
+    buildConf("ha.zk.quorum")
+      .version("1.0.0")
+      .stringConf
+      .toSequence
+      .createOptional
 }

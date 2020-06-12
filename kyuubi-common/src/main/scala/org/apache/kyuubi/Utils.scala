@@ -18,10 +18,12 @@
 package org.apache.kyuubi
 
 import java.io.{File, InputStreamReader, IOException}
+import java.net.{URI, URISyntaxException}
 import java.nio.charset.StandardCharsets
-import java.util.Properties
+import java.util.{Properties, UUID}
 
 import scala.collection.JavaConverters._
+import scala.util.{Success, Try}
 
 private[kyuubi] object Utils extends Logging {
 
@@ -61,4 +63,61 @@ private[kyuubi] object Utils extends Logging {
       }
     }.getOrElse(Map.empty)
   }
+
+
+  /**
+   * Return a well-formed URI for the file described by a user input string.
+   *
+   * If the supplied path does not contain a scheme, or is a relative path, it will be
+   * converted into an absolute path with a file:// scheme.
+   */
+  def resolveURI(path: String): URI = {
+    try {
+      val uri = new URI(path)
+      if (uri.getScheme != null) {
+        return uri
+      }
+      // make sure to handle if the path has a fragment (applies to yarn
+      // distributed cache)
+      if (uri.getFragment != null) {
+        val absoluteURI = new File(uri.getPath).getAbsoluteFile.toURI
+        return new URI(absoluteURI.getScheme, absoluteURI.getHost, absoluteURI.getPath,
+          uri.getFragment)
+      }
+    } catch {
+      case _: URISyntaxException =>
+    }
+    new File(path).getAbsoluteFile.toURI
+  }
+
+  private val MAX_DIR_CREATION_ATTEMPTS: Int = 10
+
+  /**
+   * Create a directory inside the given parent directory. The directory is guaranteed to be
+   * newly created, and is not marked for automatic deletion.
+   */
+  def createDirectory(root: String, namePrefix: String = "kyuubi"): File = {
+    (0 until MAX_DIR_CREATION_ATTEMPTS).foreach { _ =>
+      val dir = new File(root, namePrefix + "-" + UUID.randomUUID.toString)
+      Try { dir.mkdirs() } match {
+        case Success(_) => return dir
+        case _ =>
+      }
+    }
+    throw new IOException("Failed to create a temp directory (under " + root + ") after " +
+      MAX_DIR_CREATION_ATTEMPTS + " attempts!")
+  }
+
+  /**
+   * Create a temporary directory inside the given parent directory. The directory will be
+   * automatically deleted when the VM shuts down.
+   */
+  def createTempDir(
+      root: String = System.getProperty("java.io.tmpdir"),
+      namePrefix: String = "kyuubi"): File = {
+    val dir = createDirectory(root, namePrefix)
+    dir.deleteOnExit()
+    dir
+  }
+
 }
