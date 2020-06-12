@@ -49,4 +49,25 @@ class UtilsSuite extends KyuubiFunSuite {
     assert(props("kyuubi.yes") === "yes")
     assert(!props.contains("kyuubi.no"))
   }
+
+  test("resolveURI") {
+    def assertResolves(before: String, after: String): Unit = {
+      // This should test only single paths
+      assert(before.split(",").length === 1)
+      def resolve(uri: String): String = Utils.resolveURI(uri).toString
+      assert(resolve(before) === after)
+      assert(resolve(after) === after)
+      // Repeated invocations of resolveURI should yield the same result
+      assert(resolve(resolve(after)) === after)
+      assert(resolve(resolve(resolve(after))) === after)
+    }
+    assertResolves("hdfs:/root/spark.jar", "hdfs:/root/spark.jar")
+    assertResolves("hdfs:///root/spark.jar#app.jar", "hdfs:///root/spark.jar#app.jar")
+    assertResolves("file:/C:/path/to/file.txt", "file:/C:/path/to/file.txt")
+    assertResolves("file:///C:/path/to/file.txt", "file:///C:/path/to/file.txt")
+    assertResolves("file:/C:/file.txt#alias.txt", "file:/C:/file.txt#alias.txt")
+    assertResolves("file:foo", "file:foo")
+    assertResolves("file:foo:baby", "file:foo:baby")
+  }
+
 }

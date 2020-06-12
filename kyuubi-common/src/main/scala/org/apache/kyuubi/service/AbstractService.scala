@@ -22,20 +22,20 @@ import org.apache.kyuubi.config.KyuubiConf
 
 abstract class AbstractService(serviceName: String) extends Service with Logging {
   import ServiceState._
-  private var conf: KyuubiConf = _
-  private var state: ServiceState = NEW
-  private var startTime: Long = _
+  protected var conf: KyuubiConf = _
+  protected var state: ServiceState = LATENT
+  protected var startTime: Long = _
 
   /**
    * Initialize the service.
    *
-   * The transition must be from [[NEW]]to [[INITIALIZED]] unless the
+   * The transition must be from [[LATENT]]to [[INITIALIZED]] unless the
    * operation failed and an exception was raised.
    *
    * @param conf the configuration of the service
    */
   override def initialize(conf: KyuubiConf): Unit = {
-    ensureCurrentState(NEW)
+    ensureCurrentState(LATENT)
     this.conf = conf
     changeState(INITIALIZED)
     info(s"Service[$serviceName] is initialized.")
@@ -62,7 +62,7 @@ abstract class AbstractService(serviceName: String) extends Service with Logging
    */
   override def stop(): Unit = {
     state match {
-      case NEW | INITIALIZED | STOPPED =>
+      case LATENT | INITIALIZED | STOPPED =>
       case _ =>
         ensureCurrentState(STARTED)
         changeState(STOPPED)

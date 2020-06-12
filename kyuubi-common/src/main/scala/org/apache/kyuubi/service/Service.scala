@@ -24,7 +24,7 @@ trait Service {
   /**
    * Initialize the service.
    *
-   * The transition must be from [[NEW]]to [[INITIALIZED]] unless the
+   * The transition must be from [[LATENT]]to [[INITIALIZED]] unless the
    * operation failed and an exception was raised.
    *
    * @param conf the configuration of the service
