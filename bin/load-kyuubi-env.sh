@@ -47,7 +47,7 @@ if [[ -z ${JAVA_HOME} ]]; then
    fi
 fi
 
-export KYUUBI_SCALA_VERSION="${KYUUBI_SCALA_VERSION:-"2.11"}"
+export KYUUBI_SCALA_VERSION="${KYUUBI_SCALA_VERSION:-"2.12"}"
 
 # Print essential environment variables to console
 echo "JAVA_HOME: ${JAVA_HOME}"

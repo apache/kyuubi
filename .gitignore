@@ -43,3 +43,4 @@ kyuubi-server/kyuubi-kdc/
 metrics/report.json
 metrics/.report.json.crc
 /kyuubi-ha/embedded_zookeeper/
+embedded_zookeeper/

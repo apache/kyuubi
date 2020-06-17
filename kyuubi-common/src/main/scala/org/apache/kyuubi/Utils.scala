@@ -47,6 +47,7 @@ private[kyuubi] object Utils extends Logging {
 
   def getPropertiesFromFile(file: Option[File]): Map[String, String] = {
     file.map { f =>
+      info(s"Loading Kyuubi properties from ${f.getAbsolutePath}")
       val reader = new InputStreamReader(f.toURI.toURL.openStream(), StandardCharsets.UTF_8)
       try {
         val properties = new Properties()

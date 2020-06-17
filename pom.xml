@@ -32,6 +32,7 @@
         <module>kyuubi-hive-thrift</module>
         <module>kyuubi-spark-sql-engine</module>
         <module>kyuubi-ha</module>
+        <module>kyuubi-main</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -282,8 +283,8 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.16</version>
-                <scope>provided</scope>
+                <version>1.7.30</version>
+                <scope>compile</scope>
             </dependency>
 
             <dependency>

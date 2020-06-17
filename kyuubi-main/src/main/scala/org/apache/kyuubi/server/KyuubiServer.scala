@@ -17,10 +17,40 @@
 
 package org.apache.kyuubi.server
 
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.ha.server.EmbeddedZkServer
+import org.apache.kyuubi.service.CompositeService
+
 object KyuubiServer {
 
   def main(args: Array[String]): Unit = {
+    val conf = new KyuubiConf().loadFileDefaults()
+    val server = new KyuubiServer()
+    server.initialize(conf)
+    server.start()
+
     Thread.sleep(10000)
     print("Hello Kyuubi")
   }
+}
+
+class KyuubiServer(name: String) extends CompositeService(name) {
+
+  def this() = this(classOf[KyuubiServer].getName)
+
+  override def initialize(conf: KyuubiConf): Unit = {
+    this.conf = conf
+    val zkServer = new EmbeddedZkServer()
+    addService(zkServer)
+    super.initialize(conf)
+  }
+
+  override def start(): Unit = {
+    super.start()
+  }
+
+  override def stop(): Unit = {
+    super.stop()
+  }
+
 }
