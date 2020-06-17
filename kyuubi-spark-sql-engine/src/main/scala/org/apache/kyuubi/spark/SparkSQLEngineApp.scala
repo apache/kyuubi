@@ -19,11 +19,15 @@ package org.apache.kyuubi.spark
 
 import scala.collection.JavaConverters._
 
+import org.apache.hive.service.Service
 import org.apache.hive.service.cli.CLIService
 import org.apache.hive.service.cli.thrift.ThriftCLIService
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
+
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.ha.client.ServiceDiscovery
 
 object SparkSQLEngineApp {
 
@@ -40,7 +44,11 @@ object SparkSQLEngineApp {
     var thriftCLIService: ThriftCLIService = null
     var cliService: CLIService = null
     server.getServices.asScala.foreach {
-      case t: ThriftCLIService if t.getPortNumber > 0 =>
+      case t: ThriftCLIService =>
+        if (t.getPortNumber == 0) {
+          // Some Spark Version
+          Thread.sleep(3000)
+        }
         thriftCLIService = t
       case c: CLIService => cliService = c
       case _ =>
@@ -48,15 +56,39 @@ object SparkSQLEngineApp {
 
     if (thriftCLIService.getPortNumber <= 0) {
       thriftCLIService.stop()
-      try {
-        thriftCLIService = new KyuubiThriftBinaryCliService(cliService)
-        thriftCLIService.init(server.getHiveConf)
-        thriftCLIService.start()
-      }
+      thriftCLIService = new KyuubiThriftBinaryCliService(cliService)
+      thriftCLIService.init(server.getHiveConf)
+      thriftCLIService.start()
     }
-    val port = thriftCLIService.getPortNumber
-    val hostName = thriftCLIService.getServerIPAddress.getHostName
 
+    if (thriftCLIService == null || thriftCLIService.getServiceState != Service.STATE.STARTED) {
+      server.stop()
+      session.stop()
+    } else {
+      val port = thriftCLIService.getPortNumber
+      val hostName = thriftCLIService.getServerIPAddress.getHostName
+      val instance = s"$hostName:$port"
+      val kyuubiConf = KyuubiConf()
+      conf.getAllWithPrefix("spark.kyuubi.").foreach { case (k, v) =>
+        kyuubiConf.set(k.substring(6), v)
+      }
+
+      val postHook = new Thread {
+        override def run(): Unit = {
+          while (cliService.getSessionManager.getOpenSessionCount > 0) {
+            Thread.sleep(60 * 1000)
+          }
+          server.stop()
+
+        }
+      }
+
+      val namespace =
+        kyuubiConf.get(KyuubiConf.HA_ZK_NAMESPACE) + "-" + session.sparkContext.sparkUser
+      val serviceDiscovery = new ServiceDiscovery(instance, namespace, postHook)
+      serviceDiscovery.initialize(kyuubiConf)
+      serviceDiscovery.start()
+    }
   }
 
 }

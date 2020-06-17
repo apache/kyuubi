@@ -27,6 +27,6 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     val conf = new KyuubiConf()
     assert(conf.get(EMBEDDED_ZK_PORT) === 2181)
     assert(conf.get(EMBEDDED_ZK_TEMP_DIR).endsWith("embedded_zookeeper"))
-    assert(conf.get(HA_ZK_QUORUM) === None)
+    assert(conf.get(HA_ZK_QUORUM).isEmpty)
   }
 }
