@@ -21,6 +21,7 @@ import java.io.File
 
 import org.apache.curator.test.TestingServer
 
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.AbstractService
 
@@ -32,7 +33,7 @@ import org.apache.kyuubi.service.AbstractService
  *
  * @param name the service name
  */
-class EmbeddedZkServer private(name: String) extends AbstractService(name) {
+class EmbeddedZkServer private(name: String) extends AbstractService(name) with Logging {
 
   def this() = this(classOf[EmbeddedZkServer].getSimpleName)
 
@@ -51,6 +52,7 @@ class EmbeddedZkServer private(name: String) extends AbstractService(name) {
 
   override def start(): Unit = {
     server.start()
+    info(s"$getName is started at $getConnectString")
     super.start()
   }
 

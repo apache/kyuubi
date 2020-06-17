@@ -19,20 +19,26 @@ package org.apache.kyuubi.config
 
 import java.util.concurrent.ConcurrentHashMap
 
-import org.apache.kyuubi.Utils
+import org.apache.kyuubi.{Logging, Utils}
 
-case class KyuubiConf(loadSysDefault: Boolean = true) {
+case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   private val settings = new ConcurrentHashMap[String, String]()
   private lazy val reader: ConfigProvider = new ConfigProvider(settings)
 
   if (loadSysDefault) {
-    loadSysProps()
+    loadFromMap()
   }
 
-  private def loadSysProps(): KyuubiConf = {
-    for ((key, value) <- Utils.getSystemProperties if key.startsWith(KYUUBI_PREFIX)) {
+  private def loadFromMap(props: Map[String, String] = Utils.getSystemProperties): KyuubiConf = {
+    for ((key, value) <- props if key.startsWith(KYUUBI_PREFIX)) {
       set(key, value)
     }
+    this
+  }
+
+  def loadFileDefaults(): KyuubiConf = {
+    val maybeConfigFile = Utils.getDefaultPropertiesFile()
+    loadFromMap(Utils.getPropertiesFromFile(maybeConfigFile))
     this
   }
 
