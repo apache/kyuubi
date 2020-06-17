@@ -27,16 +27,16 @@ import org.apache.curator.framework.api.ACLProvider
 import org.apache.curator.framework.recipes.nodes.PersistentEphemeralNode
 import org.apache.curator.retry.ExponentialBackoffRetry
 import org.apache.hadoop.security.{SecurityUtil, UserGroupInformation}
-import org.apache.kyuubi.Logging
 import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
 import org.apache.zookeeper.{KeeperException, WatchedEvent, Watcher}
 import org.apache.zookeeper.CreateMode.PERSISTENT
 import org.apache.zookeeper.KeeperException.NodeExistsException
-
 import yaooqinn.kyuubi.KYUUBI_VERSION
 import yaooqinn.kyuubi.server.{FrontendService, KyuubiServer}
 import yaooqinn.kyuubi.service.{AbstractService, ServiceException}
+
+import org.apache.kyuubi.Logging
 
 /**
  * An abstract class provides [[KyuubiServer]] with high availability functions using Zookeeper
@@ -46,7 +46,7 @@ import yaooqinn.kyuubi.service.{AbstractService, ServiceException}
 private[kyuubi] abstract class HighAvailableService(name: String, server: KyuubiServer)
   extends AbstractService(name) with Logging {
 
-  import HighAvailableService._
+  import yaooqinn.kyuubi.ha.HighAvailableService._
 
   protected final var zkClient: CuratorFramework = _
   protected final var serviceRootNamespace: String = _

@@ -41,6 +41,11 @@ case class KyuubiConf(loadSysDefault: Boolean = true) {
     this
   }
 
+  def set[T](entry: OptionalConfigEntry[T], value: T): KyuubiConf = {
+    set(entry.key, entry.rawStrConverter(value))
+    this
+  }
+
   def set(key: String, value: String): KyuubiConf = {
     require(key != null)
     require(value != null)
@@ -52,6 +57,15 @@ case class KyuubiConf(loadSysDefault: Boolean = true) {
     config.readFrom(reader)
   }
 
+  /** unset a parameter from the configuration */
+  def unset(key: String): KyuubiConf = {
+    settings.remove(key)
+    this
+  }
+
+  def unset(entry: ConfigEntry[_]): KyuubiConf = {
+    unset(entry.key)
+  }
 }
 
 object KyuubiConf {
@@ -64,24 +78,66 @@ object KyuubiConf {
 
   def buildConf(key: String): ConfigBuilder = ConfigBuilder(KYUUBI_PREFIX + key)
 
-  val EMBEDDED_ZK_PORT: ConfigEntry[Int] =
-    buildConf("embedded.zk.port")
-      .doc("The port of the embedded zookeeper server")
-      .version("1.0.0")
-      .intConf.checkValue(_ >= 0, s"The value of $EMBEDDED_ZK_PORT must be >= 0")
-      .createWithDefault(2181)
+  val EMBEDDED_ZK_PORT: ConfigEntry[Int] = buildConf("embedded.zookeeper.port")
+    .doc("The port of the embedded zookeeper server")
+    .version("1.0.0")
+    .intConf
+    .createWithDefault(2181)
 
-  val EMBEDDED_ZK_TEMP_DIR: ConfigEntry[String] =
-    buildConf("embedded.zk.directory")
+  val EMBEDDED_ZK_TEMP_DIR: ConfigEntry[String] = buildConf("embedded.zookeeper.directory")
     .doc("The temporary directory for the embedded zookeeper server")
     .version("1.0.0")
     .stringConf
     .createWithDefault(Utils.resolveURI("embedded_zookeeper").getRawPath)
 
-  val HA_ZK_QUORUM: OptionalConfigEntry[Seq[String]] =
-    buildConf("ha.zk.quorum")
-      .version("1.0.0")
-      .stringConf
-      .toSequence
-      .createOptional
+  val HA_ZK_QUORUM: ConfigEntry[String] = buildConf("ha.zookeeper.quorum")
+    .doc("The connection string for the zookeeper ensemble")
+    .version("1.0.0")
+    .stringConf
+    .createWithDefault("")
+
+  val HA_ZK_NAMESPACE: ConfigEntry[String] = buildConf("ha.zookeeper.namespace")
+    .doc("The connection string for the zookeeper ensemble")
+    .version("1.0.0")
+    .stringConf
+    .createWithDefault("")
+
+  val HA_ZK_CONNECTION_MAX_RETRIES: ConfigEntry[Int] =
+    buildConf("ha.zookeeper.connection.max.retries")
+    .doc("Max retry times for connecting to the zookeeper ensemble")
+    .version("1.0.0")
+    .intConf
+    .createWithDefault(3)
+
+  val HA_ZK_CONNECTION_RETRY_WAIT: ConfigEntry[Int] =
+    buildConf("ha.zookeeper.connection.retry.wait")
+    .doc("Initial amount of time to wait between retries to the zookeeper ensemble")
+    .version("1.0.0")
+    .intConf
+    .createWithDefault(1000)
+
+  val HA_ZK_CONNECTION_TIMEOUT: ConfigEntry[Int] = buildConf("ha.zookeeper.connection.timeout")
+    .doc("The timeout(ms) of creating the connection to the zookeeper ensemble")
+    .version("1.0.0")
+    .intConf
+    .createWithDefault(60 * 1000)
+
+  val HA_ZK_SESSION_TIMEOUT: ConfigEntry[Int] = buildConf("ha.zookeeper.session.timeout")
+    .doc("The timeout(ms) of a connected session to be idled")
+    .version("1.0.0")
+    .intConf
+    .createWithDefault(60 * 1000)
+
+  val SERVER_PRINCIPAL: OptionalConfigEntry[String] = buildConf("server.principal")
+    .doc("")
+    .version("1.0.0")
+    .stringConf
+    .createOptional
+
+  val SERVER_KEYTAB: OptionalConfigEntry[String] = buildConf("server.keytab")
+    .doc("")
+    .version("1.0.0")
+    .stringConf
+    .createOptional
+
 }

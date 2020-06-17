@@ -40,7 +40,10 @@ class EmbeddedZkServer private(name: String) extends AbstractService(name) {
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
-    val port = conf.get(KyuubiConf.EMBEDDED_ZK_PORT)
+    var port = conf.get(KyuubiConf.EMBEDDED_ZK_PORT)
+    // When the client port is 0, the TestingServer will not randomly pick free local port to use
+    // So adjust it to -1 to achieve what is common cognition.
+    if (port == 0) port = -1
     val dataDir = conf.get(KyuubiConf.EMBEDDED_ZK_TEMP_DIR)
     server = new TestingServer(port, new File(dataDir), false)
     super.initialize(conf)

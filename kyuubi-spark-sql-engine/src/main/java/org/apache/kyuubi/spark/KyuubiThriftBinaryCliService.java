@@ -46,7 +46,8 @@ public class KyuubiThriftBinaryCliService extends ThriftCLIService {
   }
 
   @Override
-  public void run() {
+  public synchronized void init(HiveConf hiveConf) {
+    super.init(hiveConf);
     // a hook stop the app when oom occurs
     Runnable hook = new Runnable() {
       @Override
@@ -54,7 +55,6 @@ public class KyuubiThriftBinaryCliService extends ThriftCLIService {
         stop();
       }
     };
-
     try {
       ExecutorPoolCaptureOom executorService = new ExecutorPoolCaptureOom(
         "threadPoolName",
@@ -102,6 +102,17 @@ public class KyuubiThriftBinaryCliService extends ThriftCLIService {
       String msg = "Starting " + getName() + " on port "
         + portNum + " with " + minWorkerThreads + "..." + maxWorkerThreads + " worker threads";
       LOG.info(msg);
+    } catch (Throwable t) {
+      LOG.error("Error starting" + getName(), t);
+      stop();
+    }
+  }
+
+  protected void initializeServer() {}
+
+  @Override
+  public void run() {
+    try {
       server.serve();
     } catch (Throwable t) {
       LOG.error("Error starting" + getName(), t);

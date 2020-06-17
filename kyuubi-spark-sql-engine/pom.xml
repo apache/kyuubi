@@ -43,6 +43,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-ha</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-hive-thriftserver_${scala.binary.version}</artifactId>
             <version>3.0.0-preview2</version>

@@ -218,6 +218,13 @@
             </dependency>
 
             <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-common</artifactId>
+                <version>${hadoop.version}</version>
+                <scope>${hadoop.deps.scope}</scope>
+            </dependency>
+
+            <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-servlet</artifactId>
                 <version>9.3.11.v20160721</version>
@@ -402,8 +409,6 @@
     </dependencies>
 
     <build>
-        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
-        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -431,7 +436,7 @@
                 <plugin>
                     <groupId>net.alchim31.maven</groupId>
                     <artifactId>scala-maven-plugin</artifactId>
-                    <version>3.3.1</version>
+                    <version>4.3.0</version>
                     <executions>
                         <execution>
                             <id>eclipse-add-source</id>
@@ -455,7 +460,6 @@
                     <configuration>
                         <scalaVersion>${scala.version}</scalaVersion>
                         <recompileMode>incremental</recompileMode>
-                        <useZincServer>true</useZincServer>
                         <args>
                             <arg>-unchecked</arg>
                             <arg>-deprecation</arg>
@@ -674,6 +678,25 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>create-tmp-dir</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.build.directory}/tmp" />
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

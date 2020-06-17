@@ -47,6 +47,13 @@
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-framework</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-common</artifactId>
+        </dependency>
+
+        <!-- ut -->
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common</artifactId>
@@ -54,6 +61,21 @@
             <scope>test</scope>
             <type>test-jar</type>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-minikdc</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-service</artifactId>
+        </dependency>
     </dependencies>
+
+    <build>
+        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
+        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
+    </build>
 
 </project>
