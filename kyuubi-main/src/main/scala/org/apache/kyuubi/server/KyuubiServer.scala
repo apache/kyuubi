@@ -36,7 +36,7 @@ object KyuubiServer {
 
 class KyuubiServer(name: String) extends CompositeService(name) {
 
-  def this() = this(classOf[KyuubiServer].getName)
+  def this() = this(classOf[KyuubiServer].getSimpleName)
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf

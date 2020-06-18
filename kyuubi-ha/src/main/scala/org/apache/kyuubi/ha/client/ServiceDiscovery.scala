@@ -126,7 +126,7 @@ class ServiceDiscovery private (
         if (serviceNode != null) {
           try {
             serviceNode.close()
-            warn(s"This Kyuubi instance ${instance} is now de-registered from ZooKeeper. " +
+            warn(s"This Kyuubi instance $instance is now de-registered from ZooKeeper. " +
               "The server will be shut down after the last client session completes.")
           } catch {
             case e: IOException =>
