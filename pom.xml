@@ -64,7 +64,7 @@
         <spark.group>org.apache.spark</spark.group>
         <spark.version>2.4.3</spark.version>
         <spark.scope>provided</spark.scope>
-        <hadoop.version>2.6.5</hadoop.version>
+        <hadoop.version>2.7.4</hadoop.version>
         <hadoop.deps.scope>provided</hadoop.deps.scope>
         <hive.group>org.spark-project.hive</hive.group>
         <hive.version>1.2.1.spark2</hive.version>
@@ -121,39 +121,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>${spark.group}</groupId>
-                <artifactId>spark-core_${scala.binary.version}</artifactId>
-                <version>${spark.version}</version>
-                <scope>${spark.scope}</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>${spark.group}</groupId>
-                <artifactId>spark-yarn_${scala.binary.version}</artifactId>
-                <version>${spark.version}</version>
-                <scope>${spark.scope}</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>${spark.group}</groupId>
-                <artifactId>spark-hive_${scala.binary.version}</artifactId>
-                <version>${spark.version}</version>
-                <scope>${spark.scope}</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>${spark.group}</groupId>
-                <artifactId>spark-tags_${scala.binary.version}</artifactId>
-                <version>${spark.version}</version>
-                <scope>${spark.scope}</scope>
-            </dependency>
-
             <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
