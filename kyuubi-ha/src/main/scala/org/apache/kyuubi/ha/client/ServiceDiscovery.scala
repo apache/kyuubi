@@ -24,7 +24,7 @@ import javax.security.auth.login.Configuration
 
 import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
 import org.apache.curator.framework.recipes.nodes.PersistentEphemeralNode
-import org.apache.curator.retry.ExponentialBackoffRetry
+import org.apache.curator.retry.{BoundedExponentialBackoffRetry, ExponentialBackoffRetry, RetryNTimes, RetryOneTime, RetryUntilElapsed}
 import org.apache.hadoop.security.{SecurityUtil, UserGroupInformation}
 import org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager.JaasConfiguration
 import org.apache.zookeeper.{KeeperException, WatchedEvent, Watcher}
@@ -69,7 +69,7 @@ class ServiceDiscovery private (
         .forPath(s"/$namespace")
     } catch {
       case _: NodeExistsException =>  // do nothing
-      case e: KeeperException => throw e
+      case e: KeeperException => throw new KyuubiException(e)
     }
     super.initialize(conf)
   }
@@ -92,7 +92,8 @@ class ServiceDiscovery private (
       val watcher = new DeRegisterWatcher
       if (zkClient.checkExists.usingWatcher(watcher).forPath(serviceNode.getActualPath) == null) {
         // No node exists, throw exception
-        throw new KyuubiException("Unable to create znode for this Kyuubi instance on ZooKeeper.")
+        throw new KyuubiException(s"Unable to create znode for this Kyuubi instance[$instance]" +
+          s" on ZooKeeper.")
       }
       info("Created a serviceNode on ZooKeeper for KyuubiServer uri: " + instance)
     } catch {
@@ -144,9 +145,11 @@ class ServiceDiscovery private (
 }
 
 object ServiceDiscovery {
-  import org.apache.kyuubi.config.KyuubiConf._
+  import org.apache.kyuubi.ha.HighAvailabilityConf._
+  import RetryPolicies._
 
   private final val DEFAULT_ACL_PROVIDER = ZooKeeperACLProvider()
+
   /**
    * Create a [[CuratorFramework]] instance to be used as the ZooKeeper client
    * Use the [[ZooKeeperACLProvider]] to create appropriate ACLs
@@ -154,10 +157,21 @@ object ServiceDiscovery {
   def newZookeeperClient(conf: KyuubiConf): CuratorFramework = {
     val connectionStr = conf.get(HA_ZK_QUORUM)
     val sessionTimeout = conf.get(HA_ZK_SESSION_TIMEOUT)
-    val connectionTimeout = conf.get(HA_ZK_CONNECTION_TIMEOUT)
-    val baseSleepTime = conf.get(HA_ZK_CONNECTION_RETRY_WAIT)
-    val maxRetries = conf.get(HA_ZK_CONNECTION_MAX_RETRIES)
-    val retryPolicy = new ExponentialBackoffRetry(baseSleepTime, maxRetries)
+    val connectionTimeout = conf.get(HA_ZK_CONN_TIMEOUT)
+    val baseSleepTime = conf.get(HA_ZK_CONN_BASE_RETRY_WAIT)
+    val maxSleepTime = conf.get(HA_ZK_CONN_MAX_RETRY_WAIT)
+    val maxRetries = conf.get(HA_ZK_CONN_MAX_RETRIES)
+    val retryPolicyName = conf.get(HA_ZK_CONN_RETRY_POLICY)
+
+    val retryPolicy = RetryPolicies.withName(retryPolicyName) match {
+      case ONE_TIME => new RetryOneTime(baseSleepTime)
+      case N_TIME => new RetryNTimes(maxRetries, baseSleepTime)
+      case BONDED_EXPONENTIAL_BACKOFF =>
+        new BoundedExponentialBackoffRetry(baseSleepTime, maxSleepTime, maxRetries)
+      case UNTIL_ELAPSED => new RetryUntilElapsed(maxSleepTime, baseSleepTime)
+      case _ => new ExponentialBackoffRetry(baseSleepTime, maxRetries)
+    }
+
     val client = CuratorFrameworkFactory.builder()
       .connectString(connectionStr)
       .sessionTimeoutMs(sessionTimeout)
@@ -179,12 +193,12 @@ object ServiceDiscovery {
    */
   @throws[Exception]
   def setUpZooKeeperAuth(conf: KyuubiConf): Unit = {
-    val keyTabFile = conf.get(SERVER_KEYTAB)
-    val maybePrincipal = conf.get(SERVER_PRINCIPAL)
+    val keyTabFile = conf.get(KyuubiConf.SERVER_KEYTAB)
+    val maybePrincipal = conf.get(KyuubiConf.SERVER_PRINCIPAL)
     val kerberized = maybePrincipal.isDefined && keyTabFile.isDefined
     if (UserGroupInformation.isSecurityEnabled && kerberized) {
       if (!new File(keyTabFile.get).exists()) {
-        throw new IOException(s"${SERVER_KEYTAB.key} does not exists")
+        throw new IOException(s"${KyuubiConf.SERVER_KEYTAB.key} does not exists")
       }
       System.setProperty("zookeeper.sasl.clientconfig", "KyuubiZooKeeperClient")
       var principal = maybePrincipal.get

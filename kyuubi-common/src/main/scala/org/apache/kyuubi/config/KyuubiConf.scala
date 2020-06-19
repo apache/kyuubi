@@ -96,44 +96,6 @@ object KyuubiConf {
     .stringConf
     .createWithDefault(Utils.resolveURI("embedded_zookeeper").getRawPath)
 
-  val HA_ZK_QUORUM: ConfigEntry[String] = buildConf("ha.zookeeper.quorum")
-    .doc("The connection string for the zookeeper ensemble")
-    .version("1.0.0")
-    .stringConf
-    .createWithDefault("")
-
-  val HA_ZK_NAMESPACE: ConfigEntry[String] = buildConf("ha.zookeeper.namespace")
-    .doc("The connection string for the zookeeper ensemble")
-    .version("1.0.0")
-    .stringConf
-    .createWithDefault("")
-
-  val HA_ZK_CONNECTION_MAX_RETRIES: ConfigEntry[Int] =
-    buildConf("ha.zookeeper.connection.max.retries")
-    .doc("Max retry times for connecting to the zookeeper ensemble")
-    .version("1.0.0")
-    .intConf
-    .createWithDefault(3)
-
-  val HA_ZK_CONNECTION_RETRY_WAIT: ConfigEntry[Int] =
-    buildConf("ha.zookeeper.connection.retry.wait")
-    .doc("Initial amount of time to wait between retries to the zookeeper ensemble")
-    .version("1.0.0")
-    .intConf
-    .createWithDefault(1000)
-
-  val HA_ZK_CONNECTION_TIMEOUT: ConfigEntry[Int] = buildConf("ha.zookeeper.connection.timeout")
-    .doc("The timeout(ms) of creating the connection to the zookeeper ensemble")
-    .version("1.0.0")
-    .intConf
-    .createWithDefault(60 * 1000)
-
-  val HA_ZK_SESSION_TIMEOUT: ConfigEntry[Int] = buildConf("ha.zookeeper.session.timeout")
-    .doc("The timeout(ms) of a connected session to be idled")
-    .version("1.0.0")
-    .intConf
-    .createWithDefault(60 * 1000)
-
   val SERVER_PRINCIPAL: OptionalConfigEntry[String] = buildConf("server.principal")
     .doc("")
     .version("1.0.0")
