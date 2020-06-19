@@ -15,17 +15,27 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.config
+package org.apache.kyuubi.ha.client
 
-import org.apache.kyuubi.KyuubiFunSuite
+object RetryPolicies extends Enumeration {
 
-class KyuubiConfSuite extends KyuubiFunSuite {
+  type RetryPolicy = Value
 
-  import KyuubiConf._
+  val
+     /** A retry policy that retries only once */ ONE_TIME,
 
-  test("kyuubi conf defaults") {
-    val conf = new KyuubiConf()
-    assert(conf.get(EMBEDDED_ZK_PORT) === 2181)
-    assert(conf.get(EMBEDDED_ZK_TEMP_DIR).endsWith("embedded_zookeeper"))
-  }
+     /** A retry policy that retries a max number of times */ N_TIME,
+
+     /** A retry policy that retries a set number of times with increasing sleep time between
+      *  retries
+      */
+     EXPONENTIAL_BACKOFF,
+
+     /** A retry policy that retries a set number of times with an increasing (up to a maximum
+      *  bound) sleep time between retries
+      */
+     BONDED_EXPONENTIAL_BACKOFF,
+
+     /** A retry policy that retries until a given amount of time elapses */ UNTIL_ELAPSED = Value
+
 }

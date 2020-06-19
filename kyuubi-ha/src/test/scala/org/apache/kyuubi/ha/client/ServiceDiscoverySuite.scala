@@ -25,7 +25,7 @@ import scala.collection.JavaConverters._
 import org.apache.kyuubi.{KerberizedTestHelper, KyuubiFunSuite}
 import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.server.EmbeddedZkServer
 import org.apache.kyuubi.service.ServiceState
 
@@ -34,15 +34,15 @@ class ServiceDiscoverySuite extends KyuubiFunSuite with KerberizedTestHelper {
   val conf: KyuubiConf = KyuubiConf()
 
   override def beforeAll(): Unit = {
-    conf.set(EMBEDDED_ZK_PORT, 0)
+    conf.set(KyuubiConf.EMBEDDED_ZK_PORT, 0)
     zkServer.initialize(conf)
     zkServer.start()
     super.beforeAll()
   }
 
   override def afterAll(): Unit = {
-    conf.unset(SERVER_KEYTAB)
-    conf.unset(SERVER_PRINCIPAL)
+    conf.unset(KyuubiConf.SERVER_KEYTAB)
+    conf.unset(KyuubiConf.SERVER_PRINCIPAL)
     conf.unset(HA_ZK_QUORUM)
     zkServer.stop()
     super.afterAll()
@@ -53,8 +53,8 @@ class ServiceDiscoverySuite extends KyuubiFunSuite with KerberizedTestHelper {
       val keytab = File.createTempFile("kentyao", ".keytab")
       val principal = "kentyao/_HOST@apache.org"
 
-      conf.set(SERVER_KEYTAB, keytab.getCanonicalPath)
-      conf.set(SERVER_PRINCIPAL, principal)
+      conf.set(KyuubiConf.SERVER_KEYTAB, keytab.getCanonicalPath)
+      conf.set(KyuubiConf.SERVER_PRINCIPAL, principal)
 
       ServiceDiscovery.setUpZooKeeperAuth(conf)
       val configuration = Configuration.getConfiguration
@@ -66,17 +66,17 @@ class ServiceDiscoverySuite extends KyuubiFunSuite with KerberizedTestHelper {
       assert(options("principal") === "kentyao/localhost@apache.org")
       assert(options("useKeyTab").toString.toBoolean)
 
-      conf.set(SERVER_KEYTAB, keytab.getName)
+      conf.set(KyuubiConf.SERVER_KEYTAB, keytab.getName)
       val e = intercept[IOException](ServiceDiscovery.setUpZooKeeperAuth(conf))
-      assert(e.getMessage === s"${SERVER_KEYTAB.key} does not exists")
+      assert(e.getMessage === s"${KyuubiConf.SERVER_KEYTAB.key} does not exists")
     }
   }
 
   test("publish instance to embedded zookeeper server") {
 
     conf
-      .unset(SERVER_KEYTAB)
-      .unset(SERVER_PRINCIPAL)
+      .unset(KyuubiConf.SERVER_KEYTAB)
+      .unset(KyuubiConf.SERVER_PRINCIPAL)
       .set(HA_ZK_QUORUM, zkServer.getConnectString)
 
     val namespace = "kyuubiserver"

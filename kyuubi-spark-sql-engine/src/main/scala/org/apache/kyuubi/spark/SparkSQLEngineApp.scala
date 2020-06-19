@@ -19,56 +19,52 @@ package org.apache.kyuubi.spark
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.Service
+import org.apache.hadoop.hive.conf.HiveConf.ConfVars
+import org.apache.hive.service.ServiceException
 import org.apache.hive.service.cli.CLIService
 import org.apache.hive.service.cli.thrift.ThriftCLIService
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
 
+import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.client.ServiceDiscovery
+import org.apache.kyuubi.ha.HighAvailabilityConf
+import org.apache.kyuubi.ha.client.{RetryPolicies, ServiceDiscovery}
 
-object SparkSQLEngineApp {
+object SparkSQLEngineApp extends Logging {
 
   def main(args: Array[String]): Unit = {
 
     val conf = new SparkConf(loadDefaults = true)
+      .setIfMissing("spark.ui.port", "0")
     val session = SparkSession.builder()
       .config(conf)
       .appName("Kyuubi Spark SQL Engine App")
       .getOrCreate()
 
-    val server = HiveThriftServer2.startWithContext(session.sqlContext)
+//    session.conf.set(ConfVars.HIVE_SERVER2_SESSION_CHECK_INTERVAL.varname, "0s")
 
-    var thriftCLIService: ThriftCLIService = null
-    var cliService: CLIService = null
-    server.getServices.asScala.foreach {
-      case t: ThriftCLIService =>
-        if (t.getPortNumber == 0) {
-          // Some Spark Version
-          Thread.sleep(3000)
-        }
-        thriftCLIService = t
-      case c: CLIService => cliService = c
-      case _ =>
-    }
-
-    if (thriftCLIService.getPortNumber <= 0) {
-      thriftCLIService.stop()
-      thriftCLIService = new KyuubiThriftBinaryCliService(cliService)
-      thriftCLIService.init(server.getHiveConf)
-      thriftCLIService.start()
-    }
-
-    if (thriftCLIService == null || thriftCLIService.getServiceState != Service.STATE.STARTED) {
-      server.stop()
-      session.stop()
-    } else {
+    try {
+      val server = HiveThriftServer2.startWithContext(session.sqlContext)
+      var thriftCLIService: ThriftCLIService = null
+      var cliService: CLIService = null
+      server.getServices.asScala.foreach {
+        case t: ThriftCLIService =>
+          if (t.getPortNumber == 0) {
+            // Just a workaround for some Spark versions has concurrency issue for the local port.
+            Thread.sleep(3000)
+          }
+          thriftCLIService = t
+        case c: CLIService => cliService = c
+        case _ =>
+      }
       val port = thriftCLIService.getPortNumber
       val hostName = thriftCLIService.getServerIPAddress.getHostName
       val instance = s"$hostName:$port"
       val kyuubiConf = KyuubiConf()
+      kyuubiConf.set(HighAvailabilityConf.HA_ZK_CONN_RETRY_POLICY,
+        RetryPolicies.N_TIME.toString)
       conf.getAllWithPrefix("spark.kyuubi.").foreach { case (k, v) =>
         kyuubiConf.set(k.substring(6), v)
       }
@@ -79,16 +75,31 @@ object SparkSQLEngineApp {
             Thread.sleep(60 * 1000)
           }
           server.stop()
-
         }
       }
-
       val namespace =
-        kyuubiConf.get(KyuubiConf.HA_ZK_NAMESPACE) + "-" + session.sparkContext.sparkUser
+        kyuubiConf.get(HighAvailabilityConf.HA_ZK_NAMESPACE) + "-" + session.sparkContext.sparkUser
       val serviceDiscovery = new ServiceDiscovery(instance, namespace, postHook)
-      serviceDiscovery.initialize(kyuubiConf)
-      serviceDiscovery.start()
+      try {
+        serviceDiscovery.initialize(kyuubiConf)
+        serviceDiscovery.start()
+      } catch {
+        case e: KyuubiException =>
+          error(e.getMessage, e.getCause)
+          serviceDiscovery.stop()
+          server.stop()
+          session.stop()
+      }
+    } catch {
+      case e: ServiceException =>
+         error("Failed to start HiveThriftServer2 with spark context", e)
+         session.stop()
+         System.exit(-1)
     }
   }
+
+
+
+
 
 }
