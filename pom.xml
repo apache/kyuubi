@@ -29,7 +29,6 @@
         <module>kyuubi-thrift</module>
         <module>kyuubi-server</module>
         <module>kyuubi-assembly</module>
-        <module>kyuubi-hive-thrift</module>
         <module>kyuubi-spark-sql-engine</module>
         <module>kyuubi-ha</module>
         <module>kyuubi-main</module>
