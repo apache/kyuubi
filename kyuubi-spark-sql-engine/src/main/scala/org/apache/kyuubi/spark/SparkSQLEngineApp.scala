@@ -24,7 +24,7 @@ import org.apache.hive.service.ServiceException
 import org.apache.hive.service.cli.CLIService
 import org.apache.hive.service.cli.thrift.ThriftCLIService
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{RuntimeConfig, SparkSession}
 import org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
 
 import org.apache.kyuubi.{KyuubiException, Logging}
@@ -37,15 +37,15 @@ object SparkSQLEngineApp extends Logging {
   def main(args: Array[String]): Unit = {
 
     val conf = new SparkConf(loadDefaults = true)
+      // reduce conflict probability of the ui port
       .setIfMissing("spark.ui.port", "0")
     val session = SparkSession.builder()
       .config(conf)
       .appName("Kyuubi Spark SQL Engine App")
       .getOrCreate()
 
-//    session.conf.set(ConfVars.HIVE_SERVER2_SESSION_CHECK_INTERVAL.varname, "0s")
-
     try {
+      initHiveServer2Configs(session.conf)
       val server = HiveThriftServer2.startWithContext(session.sqlContext)
       var thriftCLIService: ThriftCLIService = null
       var cliService: CLIService = null
@@ -98,8 +98,15 @@ object SparkSQLEngineApp extends Logging {
     }
   }
 
-
-
-
-
+  private def initHiveServer2Configs(conf: RuntimeConfig): Unit = {
+    val settings = Map(
+      ConfVars.HIVE_SERVER2_LOGGING_OPERATION_LOG_LOCATION -> "",
+      ConfVars.HIVE_SERVER2_SUPPORT_DYNAMIC_SERVICE_DISCOVERY -> "false",
+      ConfVars.HIVE_SERVER2_GLOBAL_INIT_FILE_LOCATION -> null,
+      ConfVars.HIVE_SERVER2_TRANSPORT_MODE -> "binary",
+      ConfVars.HIVE_SERVER2_THRIFT_BIND_HOST -> "",
+      ConfVars.HIVE_SERVER2_THRIFT_PORT -> "0",
+      ConfVars.METASTORE_KERBEROS_PRINCIPAL -> "")
+    settings.foreach { kv => conf.set(kv._1.varname, kv._2) }
+  }
 }

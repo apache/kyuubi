@@ -37,6 +37,12 @@
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.hive</groupId>
+                    <artifactId>hive-service-rpc</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
