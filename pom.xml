@@ -61,7 +61,7 @@
         <scala.binary.version>2.12</scala.binary.version>
         <maven.version>3.6.2</maven.version>
         <spark.group>org.apache.spark</spark.group>
-        <spark.version>2.4.3</spark.version>
+        <spark.version>2.4.5</spark.version>
         <spark.scope>provided</spark.scope>
         <hadoop.version>2.7.4</hadoop.version>
         <hadoop.deps.scope>provided</hadoop.deps.scope>
