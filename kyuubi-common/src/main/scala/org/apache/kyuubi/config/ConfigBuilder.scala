@@ -17,6 +17,9 @@
 
 package org.apache.kyuubi.config
 
+import java.time.Duration
+import java.time.format.DateTimeParseException
+
 private[kyuubi] case class ConfigBuilder(key: String) {
 
   private[config] var _doc = ""
@@ -65,6 +68,25 @@ private[kyuubi] case class ConfigBuilder(key: String) {
 
   def stringConf: TypedConfigBuilder[String] = {
     new TypedConfigBuilder(this, identity)
+  }
+
+  def timeConf: TypedConfigBuilder[Long] = {
+    def timeFromStr(str: String): Long = {
+      try {
+        Duration.parse(str).toMillis
+      } catch {
+        case e: DateTimeParseException =>
+          throw new IllegalArgumentException(s"The formats accepted are based on the ISO-8601" +
+            s" duration format `PnDTnHnMn.nS` with days considered to be exactly 24 hours." +
+            s" $str for $key is not valid", e)
+      }
+    }
+
+    def timeToStr(v: Long): String = {
+      Duration.ofMillis(v).toString
+    }
+
+    new TypedConfigBuilder[Long](this, timeFromStr, timeToStr)
   }
 }
 

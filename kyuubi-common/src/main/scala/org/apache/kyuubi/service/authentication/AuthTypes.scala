@@ -15,20 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.config
+package org.apache.kyuubi.service.authentication
 
-import java.time.Duration
+object AuthTypes extends Enumeration {
+  type AuthType = Value
 
-import org.apache.kyuubi.KyuubiFunSuite
-
-class KyuubiConfSuite extends KyuubiFunSuite {
-
-  import KyuubiConf._
-
-  test("kyuubi conf defaults") {
-    val conf = new KyuubiConf()
-    assert(conf.get(EMBEDDED_ZK_PORT) === 2181)
-    assert(conf.get(EMBEDDED_ZK_TEMP_DIR).endsWith("embedded_zookeeper"))
-    assert(conf.get(OPERATION_IDLE_TIMEOUT) === Duration.ofHours(3).toMillis)
-  }
+  val NOSASL, NONE, LDAP, KERBEROS = Value
 }

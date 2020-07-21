@@ -21,13 +21,11 @@ import java.io.{File, FileNotFoundException}
 import java.util.concurrent.Future
 
 import org.apache.hive.service.cli.thrift.TProtocolVersion
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil._
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.Row
-
-import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.session.KyuubiSession
@@ -102,7 +100,7 @@ abstract class AbstractOperation(
   @throws[KyuubiSQLException]
   protected def assertState(state: OperationState): Unit = {
     if (this.state ne state) {
-      throw new KyuubiSQLException("Expected state " + state + ", but found " + this.state)
+      throw KyuubiSQLException("Expected state " + state + ", but found " + this.state)
     }
     this.lastAccessTime = System.currentTimeMillis()
   }
@@ -122,8 +120,8 @@ abstract class AbstractOperation(
       orientation: FetchOrientation,
       supportedOrientations: Set[FetchOrientation]): Unit = {
     if (!supportedOrientations.contains(orientation)) {
-      throw new KyuubiSQLException(
-        "The fetch type " + orientation.toString + " is not supported for this resultset", "HY106")
+      throw KyuubiSQLException(
+        "The fetch type " + orientation.toString + " is not supported for this resultset")
     }
   }
 

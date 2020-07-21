@@ -31,16 +31,16 @@ import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TThreadPoolServer}
 import org.apache.thrift.transport.{TServerSocket, TTransport}
-import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.auth.{AuthType, KyuubiAuthFactory, TSetIpAddressProcessor}
 import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType}
 import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.operation.OperationHandle
 import yaooqinn.kyuubi.schema.{SchemaMapper, SparkTableTypes}
-import yaooqinn.kyuubi.service.{AbstractService, ServiceException, ServiceUtils}
+import yaooqinn.kyuubi.service.{AbstractService, ServiceException}
 import yaooqinn.kyuubi.session.SessionHandle
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.service.ServiceUtils
 import org.apache.kyuubi.util.ExecutorPoolCaptureOom
 
 /**
@@ -181,21 +181,12 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
     if (realUser == null) {
       realUser = req.getUsername
     }
-    realUser = getShortName(realUser)
+    realUser = ServiceUtils.getShortName(realUser)
 
     if (req.getConfiguration == null) {
       realUser
     } else {
       getProxyUser(req.getConfiguration.asScala.toMap, getIpAddress, realUser)
-    }
-  }
-
-  private def getShortName(userName: String): String = {
-    val indexOfDomainMatch = ServiceUtils.indexOfDomainMatch(userName)
-    if (indexOfDomainMatch <= 0) {
-      userName
-    } else {
-      userName.substring(0, indexOfDomainMatch)
     }
   }
 
@@ -205,7 +196,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
     Option(sessionConf).flatMap(_.get(KyuubiAuthFactory.HS2_PROXY_USER)) match {
       case None => realUser
       case Some(_) if !conf.get(FRONTEND_ALLOW_USER_SUBSTITUTION).toBoolean =>
-        throw new KyuubiSQLException("Proxy user substitution is not allowed")
+        throw KyuubiSQLException("Proxy user substitution is not allowed")
       case Some(p) if !isKerberosAuthMode => p
       case Some(p) => // Verify proxy user privilege of the realUser for the proxyUser
         KyuubiAuthFactory.verifyProxyAccess(realUser, p, ipAddress, hadoopConf)
@@ -258,7 +249,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
     } catch {
       case e: Exception =>
         warn("Error opening session: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp.setStatus(yaooqinn.kyuubi.KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -277,7 +268,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
     } catch {
       case e: Exception =>
         warn("Error closing session: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp.setStatus(yaooqinn.kyuubi.KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -292,7 +283,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
     } catch {
       case e: Exception =>
         warn("Error getting info: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp.setStatus(yaooqinn.kyuubi.KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -313,7 +304,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
     } catch {
       case e: Exception =>
         warn("Error executing statement: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp.setStatus(yaooqinn.kyuubi.KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -327,7 +318,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
     } catch {
       case e: Exception =>
         warn("Error getting type info: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp.setStatus(yaooqinn.kyuubi.KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -341,7 +332,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
     } catch {
       case e: Exception =>
         warn("Error getting catalogs: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp.setStatus(yaooqinn.kyuubi.KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -356,7 +347,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
     } catch {
       case e: Exception =>
         warn("Error getting schemas: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp.setStatus(yaooqinn.kyuubi.KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -376,7 +367,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
     } catch {
       case e: Exception =>
         warn("Error getting tables: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp.setStatus(yaooqinn.kyuubi.KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -390,7 +381,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
     } catch {
       case e: Exception =>
         warn("Error getting table types: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp.setStatus(yaooqinn.kyuubi.KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -406,7 +397,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
     } catch {
       case e: Exception =>
         warn("Error getting columns: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp.setStatus(yaooqinn.kyuubi.KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -422,7 +413,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
     } catch {
       case e: Exception =>
         warn("Error getting functions: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp.setStatus(yaooqinn.kyuubi.KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -443,7 +434,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
     } catch {
       case e: Exception =>
         warn("Error getting operation status: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp.setStatus(yaooqinn.kyuubi.KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -456,7 +447,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
     } catch {
       case e: Exception =>
         warn("Error cancelling operation: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp.setStatus(yaooqinn.kyuubi.KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -469,7 +460,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
     } catch {
       case e: Exception =>
         warn("Error closing operation: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp.setStatus(yaooqinn.kyuubi.KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -483,7 +474,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
     } catch {
       case e: Exception =>
         warn("Error getting result set metadata: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp.setStatus(yaooqinn.kyuubi.KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -502,7 +493,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
     } catch {
       case e: Exception =>
         warn("Error fetching results: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp.setStatus(yaooqinn.kyuubi.KyuubiSQLException.toTStatus(e))
     }
     resp
   }
@@ -523,9 +514,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
       } catch {
         case e: KyuubiSQLException =>
           error("Error obtaining delegation token", e)
-          val tokenErrorStatus = KyuubiSQLException.toTStatus(e)
-          tokenErrorStatus.setSqlState("42000")
-          resp.setStatus(tokenErrorStatus)
+          resp.setStatus(yaooqinn.kyuubi.KyuubiSQLException.toTStatus(e))
       }
     }
     resp
@@ -551,7 +540,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
       } catch {
         case e: KyuubiSQLException =>
           error("Error canceling delegation token", e)
-          resp.setStatus(KyuubiSQLException.toTStatus(e))
+          resp.setStatus(yaooqinn.kyuubi.KyuubiSQLException.toTStatus(e))
       }
     }
     resp
@@ -571,7 +560,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
       } catch {
         case e: KyuubiSQLException =>
           error("Error obtaining renewing token", e)
-          resp.setStatus(KyuubiSQLException.toTStatus(e))
+          resp.setStatus(yaooqinn.kyuubi.KyuubiSQLException.toTStatus(e))
       }
     }
     resp
@@ -585,7 +574,7 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
       val executorService = ExecutorPoolCaptureOom(threadPoolName,
         minThreads,
         maxThreads,
-        conf.getTimeAsSeconds(FRONTEND_WORKER_KEEPALIVE_TIME),
+        conf.getTimeAsSeconds(FRONTEND_WORKER_KEEPALIVE_TIME) * 1000L,
         OOMHook)
 
       // Thrift configs

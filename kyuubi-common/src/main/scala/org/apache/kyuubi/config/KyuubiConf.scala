@@ -17,9 +17,14 @@
 
 package org.apache.kyuubi.config
 
+import java.time.Duration
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
+import scala.collection.JavaConverters._
+
 import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.service.authentication.AuthTypes
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   private val settings = new ConcurrentHashMap[String, String]()
@@ -72,6 +77,23 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   def unset(entry: ConfigEntry[_]): KyuubiConf = {
     unset(entry.key)
   }
+
+  /** Get all parameters as map */
+  def getAll: Map[String, String] = {
+    settings.entrySet().asScala.map(x => (x.getKey, x.getValue)).toMap[String, String]
+  }
+
+  /**
+   * Retrieve key-value pairs from [[KyuubiConf]] starting with `dropped.remainder`, and put them to
+   * the result map with the `dropped` of key being dropped.
+   * @param dropped first part of prefix which will dropped for the new key
+   * @param remainder second part of the prefix which will be remained in the key
+   */
+  def getAllWithPrefix(dropped: String, remainder: String): Map[String, String] = {
+    getAll.filter { case (k, _) => k.startsWith(s"$dropped.$remainder")}.map {
+      case (k, v) => (k.substring(dropped.length), v)
+    }
+  }
 }
 
 object KyuubiConf {
@@ -108,4 +130,66 @@ object KyuubiConf {
     .stringConf
     .createOptional
 
+  val OPERATION_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("operation.idle.timeout")
+    .doc("Operation will be closed when it's not accessed for this duration of time")
+    .version("1.0.0")
+    .timeConf
+    .createWithDefault(Duration.ofHours(3).toMillis)
+
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //                              Frontend Service Configuration                                 //
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+
+  val FRONTEND_BIND_HOST: OptionalConfigEntry[String] = buildConf("frontend.bind.host")
+    .doc("Hostname or IP of the machine on which to run the frontend service.")
+    .version("1.0.0")
+    .stringConf
+    .createOptional
+
+  val FRONTEND_BIND_PORT: ConfigEntry[Int] = buildConf("frontend.bind.port")
+    .doc("Port of the machine on which to run the frontend service.")
+    .version("1.0.0")
+    .intConf
+    .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
+    .createWithDefault(10009)
+
+  val FRONTEND_MIN_WORKER_THREADS: ConfigEntry[Int] = buildConf("frontend.min.worker.threads")
+    .doc("Minimum number of threads in the of frontend worker thread pool for the frontend" +
+      " service")
+    .version("1.0.0")
+    .intConf
+    .createWithDefault(9)
+
+  val FRONTEND_MAX_WORKER_THREADS: ConfigEntry[Int] = buildConf("frontend.max.worker.threads")
+    .doc("Maximum number of threads in the of frontend worker thread pool for the frontend" +
+      " service")
+    .version("1.0.0")
+    .intConf
+    .createWithDefault(99)
+
+  val FRONTEND_WORKER_KEEPALIVE_TIME: ConfigEntry[Long] =
+    buildConf("frontend.worker.keepalive.time")
+      .doc("Keep-alive time (in milliseconds) for an idle worker thread")
+      .version("1.0.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(60).toMillis)
+
+  val FRONTEND_MAX_MESSAGE_SIZE: ConfigEntry[Int] =
+    buildConf("frontend.max.message.size")
+      .doc("Maximum message size in bytes a Kyuubi server will accept.")
+      .intConf
+      .createWithDefault(104857600)
+
+  val FRONTEND_LOGIN_TIMEOUT: ConfigEntry[Long] =
+    buildConf("frontend.login.timeout")
+      .doc("Timeout for Thrift clients during login to the frontend service.")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(20).toMillis)
+
+  val FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH: ConfigEntry[Long] =
+    buildConf("frontend.backoff.slot.length")
+      .doc("Time to back off during login to the frontend service.")
+      .timeConf
+      .createWithDefault(Duration.ofMillis(100).toMillis)
 }

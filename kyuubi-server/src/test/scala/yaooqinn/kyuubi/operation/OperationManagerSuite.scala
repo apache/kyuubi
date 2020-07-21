@@ -19,13 +19,12 @@ package yaooqinn.kyuubi.operation
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import org.apache.spark.sql.SparkSession
 import org.mockito.Mockito._
 import org.scalatest.Matchers
 import org.scalatest.mock.MockitoSugar
-
-import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.service.State
 import yaooqinn.kyuubi.session.{KyuubiSession, SessionManager}

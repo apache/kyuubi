@@ -21,7 +21,7 @@ import java.security.PrivilegedExceptionAction
 import java.util.UUID
 import java.util.concurrent.RejectedExecutionException
 
-import yaooqinn.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.operation._
 import yaooqinn.kyuubi.session.KyuubiSession
 
@@ -78,7 +78,7 @@ abstract class ExecuteStatementOperation(
             }
           })
         } catch {
-          case e: Exception => setOperationException(new KyuubiSQLException(e))
+          case e: Exception => setOperationException(KyuubiSQLException(e))
         }
       }
     }

@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.operation
 
+import scala.language.implicitConversions
+
 import org.apache.hive.service.rpc.thrift.TOperationState
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -28,7 +30,7 @@ object OperationState extends Enumeration {
 
   val INITIALIZED, PENDING, RUNNING, FINISHED, TIMEOUT, CANCELED, CLOSED, ERROR, UNKNOWN = Value
 
-  def toTOperationState(from: OperationState): TOperationState = from match {
+  implicit def toTOperationState(from: OperationState): TOperationState = from match {
     case INITIALIZED => INITIALIZED_STATE
     case PENDING => PENDING_STATE
     case RUNNING => RUNNING_STATE

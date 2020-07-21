@@ -20,9 +20,8 @@ package yaooqinn.kyuubi.operation.metadata
 import java.security.PrivilegedExceptionAction
 
 import org.apache.commons.lang3.StringUtils
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.spark.KyuubiSparkUtil
-
-import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.operation._
 import yaooqinn.kyuubi.schema.{RowSet, RowSetBuilder}
@@ -87,7 +86,7 @@ abstract class MetadataOperation(session: KyuubiSession, opType: OperationType)
     } catch {
       case e: Exception =>
         setState(ERROR)
-        throw new KyuubiSQLException(KyuubiSparkUtil.findCause(e))
+        throw KyuubiSQLException(KyuubiSparkUtil.findCause(e))
     }
   }
 

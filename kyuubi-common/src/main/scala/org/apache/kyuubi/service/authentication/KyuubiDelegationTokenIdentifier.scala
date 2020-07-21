@@ -15,20 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.config
+package org.apache.kyuubi.service.authentication
 
-import java.time.Duration
+import org.apache.hadoop.io.Text
+import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier
 
-import org.apache.kyuubi.KyuubiFunSuite
+case class KyuubiDelegationTokenIdentifier(
+    owner: Text, renewer: Text, realUser: Text) extends AbstractDelegationTokenIdentifier {
+  override def getKind: Text = KyuubiDelegationTokenIdentifier.KIND
+}
 
-class KyuubiConfSuite extends KyuubiFunSuite {
+object KyuubiDelegationTokenIdentifier {
 
-  import KyuubiConf._
-
-  test("kyuubi conf defaults") {
-    val conf = new KyuubiConf()
-    assert(conf.get(EMBEDDED_ZK_PORT) === 2181)
-    assert(conf.get(EMBEDDED_ZK_TEMP_DIR).endsWith("embedded_zookeeper"))
-    assert(conf.get(OPERATION_IDLE_TIMEOUT) === Duration.ofHours(3).toMillis)
+  def apply(): KyuubiDelegationTokenIdentifier = {
+    KyuubiDelegationTokenIdentifier(new Text(), new Text(), new Text())
   }
+
+  final val KIND = new Text("KYUUBI_DELEGATION_TOKEN")
 }

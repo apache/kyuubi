@@ -41,6 +41,8 @@ import org.apache.directory.server.protocol.shared.transport.TcpTransport
 import org.apache.mina.util.AvailablePortFinder
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
 
+import org.apache.kyuubi.service.authentication.LdapAuthenticationProviderImpl
+
 class LdapAuthenticationProviderImplSuite extends SparkFunSuite {
 
   import KyuubiConf._

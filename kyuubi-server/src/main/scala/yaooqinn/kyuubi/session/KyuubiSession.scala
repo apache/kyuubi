@@ -25,12 +25,10 @@ import org.apache.commons.io.FileUtils
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.cli.thrift.TProtocolVersion
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.StructType
-
-import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.cli._
 import yaooqinn.kyuubi.operation.{KyuubiOperation, OperationHandle, OperationManager}
@@ -158,7 +156,7 @@ private[kyuubi] class KyuubiSession(
         case GetInfoType.DBMS_VERSION =>
           new GetInfoValue(this.sparkSessionWithUGI.sparkSession.version)
         case _ =>
-          throw new KyuubiSQLException("Unrecognized GetInfoType value " + getInfoType.toString)
+          throw KyuubiSQLException("Unrecognized GetInfoType value " + getInfoType.toString)
       }
     } finally {
       release(true)

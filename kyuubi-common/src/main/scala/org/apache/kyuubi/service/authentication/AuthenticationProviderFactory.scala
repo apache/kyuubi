@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,22 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package yaooqinn.kyuubi.auth
+
+package org.apache.kyuubi.service.authentication
 
 import javax.security.sasl.AuthenticationException
 
-trait PasswdAuthenticationProvider {
-  /**
-   * The authenticate method is called by the Kyuubi Server authentication layer
-   * to authenticate users for their requests.
-   * If a user is to be granted, return nothing/throw nothing.
-   * When a user is to be disallowed, throw an appropriate [[AuthenticationException]].
-   *
-   * @param user     The username received over the connection request
-   * @param password The password received over the connection request
-   *
-   * @throws AuthenticationException When a user is found to be invalid by the implementation
-   */
-    @throws[AuthenticationException]
-    def authenticate(user: String, password: String): Unit
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.service.authentication.AuthMethods.AuthMethod
+
+/**
+ * This class helps select a [[PasswdAuthenticationProvider]] for a given [[AuthMethods]]
+ */
+object AuthenticationProviderFactory {
+  @throws[AuthenticationException]
+  def getAuthenticationProvider(
+      method: AuthMethod,
+      conf: KyuubiConf): PasswdAuthenticationProvider = method match {
+    case AuthMethods.NONE => new AnonymousAuthenticationProviderImpl
+    case AuthMethods.LDAP => new LdapAuthenticationProviderImpl(conf)
+    case _ => throw new AuthenticationException("Not a valid authentication method")
+  }
 }

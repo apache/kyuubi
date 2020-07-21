@@ -15,21 +15,18 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.auth
+package org.apache.kyuubi.service.authentication
 
 import javax.naming.{Context, NamingException}
 import javax.naming.directory.InitialDirContext
 import javax.security.sasl.AuthenticationException
 
 import org.apache.commons.lang.StringUtils
-import org.apache.spark.SparkConf
 
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.ServiceUtils
-import org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider
 
-class LdapAuthenticationProviderImpl(conf: SparkConf) extends PasswdAuthenticationProvider {
-
-  import org.apache.spark.KyuubiConf._
+class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticationProvider {
 
   /**
    * The authenticate method is called by the Kyuubi Server authentication layer
@@ -39,33 +36,34 @@ class LdapAuthenticationProviderImpl(conf: SparkConf) extends PasswdAuthenticati
    *
    * @param user     The username received over the connection request
    * @param password The password received over the connection request
+   *
    * @throws AuthenticationException When a user is found to be invalid by the implementation
    */
   override def authenticate(user: String, password: String): Unit = {
     if (StringUtils.isBlank(user)) {
-      throw new AuthenticationException(
-        s"Error validating LDAP user, user is null" + s" or contains blank space")
+      throw new AuthenticationException(s"Error validating LDAP user, user is null" +
+        s" or contains blank space")
     }
 
     if (StringUtils.isBlank(password)) {
-      throw new AuthenticationException(
-        s"Error validating LDAP user, password is null" + s" or contains blank space")
+      throw new AuthenticationException(s"Error validating LDAP user, password is null" +
+        s" or contains blank space")
     }
 
     val env = new java.util.Hashtable[String, Any]()
     env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
     env.put(Context.SECURITY_AUTHENTICATION, "simple")
 
-    conf.getOption(AUTHENTICATION_LDAP_URL).foreach(env.put(Context.PROVIDER_URL, _))
+    conf.get(AUTHENTICATION_LDAP_URL).foreach(env.put(Context.PROVIDER_URL, _))
 
-    val domain = conf.get(AUTHENTICATION_LDAP_DOMAIN, "")
-    val u = if (!hasDomain(user) && StringUtils.isNotBlank(domain)) {
+    val domain = conf.get(AUTHENTICATION_LDAP_DOMAIN)
+    val u = if (!hasDomain(user) && domain.nonEmpty) {
       user + "@" + domain
     } else {
       user
     }
 
-    val bindDn = conf.getOption(AUTHENTICATION_LDAP_BASEDN) match {
+    val bindDn = conf.get(AUTHENTICATION_LDAP_BASEDN) match {
       case Some(dn) => "uid=" + u + "," + dn
       case _ => u
     }

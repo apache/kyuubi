@@ -24,6 +24,7 @@ import scala.util.Try
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.fs.{FileUtil, Path}
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil
 import org.apache.spark.sql.{DataFrame, SparkSQLUtils}
@@ -31,8 +32,6 @@ import org.apache.spark.sql.catalyst.catalog.{FileResource, FunctionResource, Ja
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.{AddFileCommand, AddJarCommand, CreateFunctionCommand}
 import org.apache.spark.sql.types._
-
-import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.operation._
@@ -111,7 +110,7 @@ class ExecuteStatementInClientMode(session: KyuubiSession, statement: String, ru
         case FunctionResource(FileResource, uri) =>
           localizeAndAndResource(uri).map(path => AddFileCommand(path).run(sparkSession))
         case o =>
-          throw new KyuubiSQLException(s"Resource Type '${o.resourceType}' is not supported.")
+          throw KyuubiSQLException(s"Resource Type '${o.resourceType}' is not supported.")
       }
       if (resources.isEmpty) {
         c
@@ -186,7 +185,7 @@ class ExecuteStatementInClientMode(session: KyuubiSession, statement: String, ru
       case e: Throwable if !isClosedOrCanceled =>
         val err = KyuubiSparkUtil.exceptionString(e)
         onStatementError(statementId, e.getMessage, err)
-        throw new KyuubiSQLException(err, e.getClass.getSimpleName, e)
+        throw new KyuubiSQLException(err, e)
     } finally {
       MetricsSystem.get.foreach {m =>
         m.RUNNING_QUERIES.dec()

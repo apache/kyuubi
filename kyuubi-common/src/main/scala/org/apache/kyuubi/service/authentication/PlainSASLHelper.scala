@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,54 +14,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package yaooqinn.kyuubi.auth
 
-import java.io.IOException
+package org.apache.kyuubi.service.authentication
+
 import java.security.Security
-import javax.security.auth.callback._
+import javax.security.auth.callback.{Callback, CallbackHandler, NameCallback, PasswordCallback, UnsupportedCallbackException}
 import javax.security.auth.login.LoginException
 import javax.security.sasl.{AuthenticationException, AuthorizeCallback}
 
-import scala.collection.JavaConverters._
-
-import org.apache.hive.service.cli.thrift.TCLIService.Iface
-import org.apache.spark.SparkConf
+import org.apache.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.thrift.{TProcessor, TProcessorFactory}
 import org.apache.thrift.transport.{TSaslServerTransport, TTransport, TTransportFactory}
-import yaooqinn.kyuubi.auth.AuthMethods.AuthMethods
-import yaooqinn.kyuubi.auth.PlainSaslServer.SaslPlainProvider
 
-object PlainSaslHelper {
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.service.authentication.AuthMethods.AuthMethod
+import org.apache.kyuubi.service.authentication.PlainSASLServer.SaslPlainProvider
+
+object PlainSASLHelper {
 
   // Register Plain SASL server provider
-
   Security.addProvider(new SaslPlainProvider())
 
-  def getProcessFactory(service: Iface): TProcessorFactory = {
-    SQLPlainProcessorFactory(service)
+  private case class SQLPlainProcessorFactory(service: Iface) extends TProcessorFactory(null) {
+    override def getProcessor(trans: TTransport): TProcessor =
+      new TSetIpAddressProcessor[Iface](service)
   }
 
-  @throws[LoginException]
-  def getTransportFactory(authTypeStr: String, conf: SparkConf): TTransportFactory = {
-    val saslFactory = new TSaslServerTransport.Factory()
-    try {
-      val handler = new PlainServerCallbackHandler(authTypeStr, conf)
-      val props = Map.empty[String, String]
-      saslFactory.addServerDefinition("PLAIN", authTypeStr, null, props.asJava, handler)
-    } catch {
-      case e: AuthenticationException =>
-        throw new LoginException("Error setting callback handler" + e);
-    }
-    saslFactory
-  }
-
-  private class PlainServerCallbackHandler private(authMethod: AuthMethods, conf: SparkConf)
+  private class PlainServerCallbackHandler private(authMethod: AuthMethod, conf: KyuubiConf)
     extends CallbackHandler {
-    @throws[AuthenticationException]
-    def this(authMethodStr: String, conf: SparkConf) =
-      this(AuthMethods.getValidAuthMethod(authMethodStr), conf)
 
-    @throws[IOException]
+    def this(authMethodStr: String, conf: KyuubiConf) =
+      this(AuthMethods.withName(authMethodStr), conf)
+
     @throws[UnsupportedCallbackException]
     override def handle(callbacks: Array[Callback]): Unit = {
       var username: String = null
@@ -83,8 +67,20 @@ object PlainSaslHelper {
     }
   }
 
-  private case class SQLPlainProcessorFactory(service: Iface) extends TProcessorFactory(null) {
-    override def getProcessor(trans: TTransport): TProcessor =
-      new TSetIpAddressProcessor[Iface](service)
+  def getProcessFactory(service: Iface): TProcessorFactory = {
+    SQLPlainProcessorFactory(service)
+  }
+
+  def getTransportFactory(authTypeStr: String, conf: KyuubiConf): TTransportFactory = {
+    val saslFactory = new TSaslServerTransport.Factory()
+    try {
+      val handler = new PlainServerCallbackHandler(authTypeStr, conf)
+      val props = new java.util.HashMap[String, String]
+      saslFactory.addServerDefinition("PLAIN", authTypeStr, null, props, handler)
+    } catch {
+      case e: AuthenticationException =>
+        throw new LoginException("Error setting callback handler" + e);
+    }
+    saslFactory
   }
 }

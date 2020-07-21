@@ -33,7 +33,7 @@ case class OperationHandle(
 
   def setHasResultSet(hasResultSet: Boolean): Unit = _hasResultSet = hasResultSet
 
-  def toTOperationHandle: TOperationHandle = {
+  implicit def toTOperationHandle: TOperationHandle = {
     val tOperationHandle = new TOperationHandle
     tOperationHandle.setOperationId(identifier.toTHandleIdentifier)
     tOperationHandle.setOperationType(OperationType.toTOperationType(typ))
@@ -69,5 +69,13 @@ object OperationHandle {
 
   def apply(tOperationHandle: TOperationHandle): OperationHandle = {
     apply(tOperationHandle, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
+  }
+
+  implicit def toTOperationHandle(handle: OperationHandle): TOperationHandle = {
+    val tOperationHandle = new TOperationHandle
+    tOperationHandle.setOperationId(handle.identifier.toTHandleIdentifier)
+    tOperationHandle.setOperationType(OperationType.toTOperationType(handle.typ))
+    tOperationHandle.setHasResultSet(handle._hasResultSet)
+    tOperationHandle
   }
 }

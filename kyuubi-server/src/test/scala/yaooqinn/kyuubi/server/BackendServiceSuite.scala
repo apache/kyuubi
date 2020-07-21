@@ -20,10 +20,9 @@ package yaooqinn.kyuubi.server
 import java.util.concurrent.RejectedExecutionException
 
 import org.apache.hive.service.cli.thrift.TProtocolVersion
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import org.apache.spark.KyuubiConf.FRONTEND_BIND_PORT
-
-import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.GetInfoType
 import yaooqinn.kyuubi.operation.{CANCELED, CLOSED, FINISHED}
 import yaooqinn.kyuubi.session.SessionHandle

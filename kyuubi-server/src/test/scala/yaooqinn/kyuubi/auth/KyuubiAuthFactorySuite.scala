@@ -22,11 +22,12 @@ import javax.security.auth.login.LoginException
 import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.authorize.AuthorizationException
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
-
-import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.service.ServiceException
 import yaooqinn.kyuubi.utils.ReflectUtils
+
+import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 
 class KyuubiAuthFactorySuite extends SparkFunSuite {
 
@@ -34,19 +35,19 @@ class KyuubiAuthFactorySuite extends SparkFunSuite {
     val conf = new SparkConf(true)
     val hadoopConf = KyuubiSparkUtil.newConfiguration(conf)
     val user = UserGroupInformation.getCurrentUser.getShortUserName
-    KyuubiAuthFactory.verifyProxyAccess(user, user, "localhost", hadoopConf)
+    KyuubiAuthenticationFactory.verifyProxyAccess(user, user, "localhost", hadoopConf)
     val e = intercept[KyuubiSQLException](
-      KyuubiAuthFactory.verifyProxyAccess(user, "proxy-user", "localhost", hadoopConf))
+      KyuubiAuthenticationFactory.verifyProxyAccess(user, "proxy-user", "localhost", hadoopConf))
     val msg = "Failed to validate proxy privilege"
     assert(e.getMessage.contains(msg))
     assert(e.getCause.isInstanceOf[AuthorizationException])
     hadoopConf.set(s"hadoop.proxyuser.$user.groups", "*")
     val e2 = intercept[KyuubiSQLException](
-      KyuubiAuthFactory.verifyProxyAccess(user, "proxy-user", "localhost", hadoopConf))
+      KyuubiAuthenticationFactory.verifyProxyAccess(user, "proxy-user", "localhost", hadoopConf))
     assert(e2.getMessage.contains(msg))
     assert(e2.getCause.getMessage.contains("Unauthorized connection for super-user"))
     hadoopConf.set(s"hadoop.proxyuser.$user.hosts", "*")
-    KyuubiAuthFactory.verifyProxyAccess(user, "proxy-user", "localhost", hadoopConf)
+    KyuubiAuthenticationFactory.verifyProxyAccess(user, "proxy-user", "localhost", hadoopConf)
   }
 
   test("test HS2_PROXY_USER") {
@@ -64,13 +65,10 @@ class KyuubiAuthFactorySuite extends SparkFunSuite {
     val user = UserGroupInformation.getCurrentUser.getShortUserName
     val e = intercept[KyuubiSQLException](auth.getDelegationToken(user, user))
     assert(e.getMessage.contains("Delegation token only supported over kerberos authentication"))
-    assert(e.toTStatus.getSqlState === "08S01")
     val e1 = intercept[KyuubiSQLException](auth.cancelDelegationToken(""))
     assert(e1.getMessage.contains("Delegation token only supported over kerberos authentication"))
-    assert(e1.toTStatus.getSqlState === "08S01")
     val e2 = intercept[KyuubiSQLException](auth.renewDelegationToken(""))
     assert(e2.getMessage.contains("Delegation token only supported over kerberos authentication"))
-    assert(e2.toTStatus.getSqlState === "08S01")
   }
 
   test("AuthType Other") {
@@ -113,13 +111,10 @@ class KyuubiAuthFactorySuite extends SparkFunSuite {
     val user = UserGroupInformation.getCurrentUser.getShortUserName
     val e = intercept[KyuubiSQLException](auth.getDelegationToken(user, user))
     assert(e.getMessage.contains(s"Error retrieving delegation token for user $user"))
-    assert(e.toTStatus.getSqlState === "08S01")
     val e1 = intercept[KyuubiSQLException](auth.cancelDelegationToken(""))
     assert(e1.getMessage.contains("Error canceling delegation token"))
-    assert(e1.toTStatus.getSqlState === "08S01")
     val e2 = intercept[KyuubiSQLException](auth.renewDelegationToken(""))
     assert(e2.getMessage.contains("Error renewing delegation token"))
-    assert(e2.toTStatus.getSqlState === "08S01")
   }
 
 }
