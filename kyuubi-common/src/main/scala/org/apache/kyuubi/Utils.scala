@@ -25,6 +25,8 @@ import java.util.{Properties, UUID}
 import scala.collection.JavaConverters._
 import scala.util.{Success, Try}
 
+import org.apache.hadoop.security.UserGroupInformation
+
 private[kyuubi] object Utils extends Logging {
 
   import org.apache.kyuubi.config.KyuubiConf._
@@ -64,7 +66,6 @@ private[kyuubi] object Utils extends Logging {
       }
     }.getOrElse(Map.empty)
   }
-
 
   /**
    * Return a well-formed URI for the file described by a user input string.
@@ -121,4 +122,5 @@ private[kyuubi] object Utils extends Logging {
     dir
   }
 
+  def currentUser: String = UserGroupInformation.getCurrentUser.getShortUserName
 }

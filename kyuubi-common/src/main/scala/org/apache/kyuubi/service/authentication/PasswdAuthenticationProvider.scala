@@ -15,20 +15,22 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.config
+package org.apache.kyuubi.service.authentication
 
-import java.time.Duration
+import javax.security.sasl.AuthenticationException
 
-import org.apache.kyuubi.KyuubiFunSuite
-
-class KyuubiConfSuite extends KyuubiFunSuite {
-
-  import KyuubiConf._
-
-  test("kyuubi conf defaults") {
-    val conf = new KyuubiConf()
-    assert(conf.get(EMBEDDED_ZK_PORT) === 2181)
-    assert(conf.get(EMBEDDED_ZK_TEMP_DIR).endsWith("embedded_zookeeper"))
-    assert(conf.get(OPERATION_IDLE_TIMEOUT) === Duration.ofHours(3).toMillis)
-  }
+trait PasswdAuthenticationProvider {
+  /**
+   * The authenticate method is called by the Kyuubi Server authentication layer
+   * to authenticate users for their requests.
+   * If a user is to be granted, return nothing/throw nothing.
+   * When a user is to be disallowed, throw an appropriate [[AuthenticationException]].
+   *
+   * @param user     The username received over the connection request
+   * @param password The password received over the connection request
+   *
+   * @throws AuthenticationException When a user is found to be invalid by the implementation
+   */
+    @throws[AuthenticationException]
+    def authenticate(user: String, password: String): Unit
 }

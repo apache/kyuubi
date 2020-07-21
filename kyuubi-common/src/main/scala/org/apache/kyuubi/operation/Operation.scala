@@ -30,10 +30,18 @@ trait Operation {
 
   def getProtocolVersion: TProtocolVersion
   def getResultSetSchema: TTableSchema
-  def getNextRowSet(order: FetchOrientation, rowSetSize: Long): TRowSet
+  def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet
 
   def getSession: Session
   def getHandle: OperationHandle
   def getStatus: OperationStatus
 
+  def shouldRunAsync: Boolean
+  def isTimedOut: Boolean
+
+}
+
+object Operation {
+  val DEFAULT_FETCH_ORIENTATION_SET: Set[FetchOrientation] =
+    Set(FetchOrientation.FETCH_NEXT, FetchOrientation.FETCH_FIRST)
 }

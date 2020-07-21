@@ -23,11 +23,10 @@ import java.util.concurrent.CountDownLatch
 import scala.concurrent.TimeoutException
 
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.spark._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
-
-import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.author.AuthzHelper
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
 

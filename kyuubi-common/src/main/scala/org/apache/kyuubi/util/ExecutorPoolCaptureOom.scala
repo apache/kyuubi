@@ -29,7 +29,7 @@ case class ExecutorPoolCaptureOom(
     corePoolSize,
     maximumPoolSize,
     keepAliveSeconds,
-    TimeUnit.SECONDS,
+    TimeUnit.MILLISECONDS,
     new SynchronousQueue[Runnable](),
     NamedThreadFactory(poolName)) {
 

@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,18 +15,17 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.operation
+package org.apache.kyuubi.service.authentication
 
-import org.apache.spark.SparkFunSuite
+import org.apache.hive.service.rpc.thrift.TCLIService.{Iface, Processor}
+import org.apache.thrift.{TProcessor, TProcessorFactory}
+import org.apache.thrift.transport.TTransport
 
-import yaooqinn.kyuubi.KyuubiSQLException
-
-class OperationStatusSuite extends SparkFunSuite {
-
-  test("operation status basic tests") {
-    val status = new OperationStatus(INITIALIZED, new KyuubiSQLException("test"))
-    assert(status.getState === INITIALIZED)
-    assert(!status.getState.isTerminal())
-    assert(status.getOperationException.getMessage === "test")
+private[authentication]
+case class CLIServiceProcessorFactory(saslServer: HadoopThriftAuthBridgeServer, service: Iface)
+  extends TProcessorFactory(null) {
+  override def getProcessor(trans: TTransport): TProcessor = {
+    val sqlProcessor = new Processor[Iface](service)
+    saslServer.wrapNonAssumingProcessor(sqlProcessor)
   }
 }

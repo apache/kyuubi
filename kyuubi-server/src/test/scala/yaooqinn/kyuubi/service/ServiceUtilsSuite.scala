@@ -19,6 +19,8 @@ package yaooqinn.kyuubi.service
 
 import org.apache.spark.SparkFunSuite
 
+import org.apache.kyuubi.service.ServiceUtils
+
 class ServiceUtilsSuite extends SparkFunSuite {
 
   test("test index or domain match") {

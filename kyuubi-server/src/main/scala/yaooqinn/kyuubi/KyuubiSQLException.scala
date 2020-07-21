@@ -16,52 +16,17 @@
  */
 package yaooqinn.kyuubi
 
-import java.sql.SQLException
-
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.cli.thrift.{TStatus, TStatusCode}
 
-class KyuubiSQLException(reason: String, sqlState: String, vendorCode: Int, cause: Throwable)
-  extends SQLException(reason, sqlState, vendorCode, cause) {
-
-  def this(reason: String, sqlState: String, cause: Throwable) = this(reason, sqlState, 0, cause)
-
-  def this(reason: String, sqlState: String, vendorCode: Int) =
-    this(reason, sqlState, vendorCode, null)
-
-  def this(reason: String, cause: Throwable) = this(reason, null, 0, cause)
-
-  def this(reason: String, sqlState: String) = this(reason, sqlState, vendorCode = 0)
-
-  def this(reason: String) = this(reason, sqlState = null)
-
-  def this(cause: Throwable) = this(cause.toString, cause)
-
-  /**
-   * Converts current object to a [[TStatus]] object
-   *
-   * @return a { @link TStatus} object
-   */
-  def toTStatus: TStatus = {
-    val tStatus = new TStatus(TStatusCode.ERROR_STATUS)
-    tStatus.setSqlState(getSQLState)
-    tStatus.setErrorCode(getErrorCode)
-    tStatus.setErrorMessage(getMessage)
-    tStatus.setInfoMessages(KyuubiSQLException.toString(this).asJava)
-    tStatus
-  }
-}
-
 object KyuubiSQLException {
 
-  def toTStatus(e: Exception): TStatus = e match {
-    case k: KyuubiSQLException => k.toTStatus
-    case _ =>
-      val tStatus = new TStatus(TStatusCode.ERROR_STATUS)
-      tStatus.setErrorMessage(e.getMessage)
-      tStatus.setInfoMessages(toString(e).asJava)
-      tStatus
+  def toTStatus(e: Exception): TStatus = {
+    val tStatus = new TStatus(TStatusCode.ERROR_STATUS)
+    tStatus.setErrorMessage(e.getMessage)
+    tStatus.setInfoMessages(toString(e).asJava)
+    tStatus
   }
 
 

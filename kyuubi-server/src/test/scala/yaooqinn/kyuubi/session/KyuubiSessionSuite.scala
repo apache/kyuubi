@@ -21,11 +21,10 @@ import java.io.File
 
 import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod
 import org.apache.hive.service.cli.thrift.{TGetInfoType, TProtocolVersion}
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkFunSuite}
 import org.apache.spark.sql.SparkSession
 import org.scalatest.mock.MockitoSugar
-
-import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.auth.KyuubiAuthFactory
 import yaooqinn.kyuubi.cli.{FetchOrientation, FetchType, GetInfoType}
 import yaooqinn.kyuubi.operation.CANCELED
@@ -167,7 +166,6 @@ class KyuubiSessionSuite extends SparkFunSuite with MockitoSugar {
     val e = intercept[KyuubiSQLException](
       session.getDelegationToken(authFactory, session.getUserName, session.getUserName))
     assert(e.getMessage === "Delegation token only supported over kerberos authentication")
-    assert(e.toTStatus.getSqlState === "08S01")
   }
 
   test("cancel delegation token for non secured") {
@@ -176,7 +174,6 @@ class KyuubiSessionSuite extends SparkFunSuite with MockitoSugar {
     val e = intercept[KyuubiSQLException](
       session.cancelDelegationToken(authFactory, ""))
     assert(e.getMessage === "Delegation token only supported over kerberos authentication")
-    assert(e.toTStatus.getSqlState === "08S01")
   }
 
   test("renew delegation token for non secured") {
@@ -185,7 +182,6 @@ class KyuubiSessionSuite extends SparkFunSuite with MockitoSugar {
     val e = intercept[KyuubiSQLException](
       session.renewDelegationToken(authFactory, ""))
     assert(e.getMessage === "Delegation token only supported over kerberos authentication")
-    assert(e.toTStatus.getSqlState === "08S01")
   }
 
   test("test getProtocolVersion") {
@@ -244,13 +240,11 @@ class KyuubiSessionSuite extends SparkFunSuite with MockitoSugar {
     Thread.sleep(5000)
     var opException = kyuubiSession.getSessionMgr.getOperationMgr.getOperation(opHandle)
       .getStatus.getOperationException
-    assert(opException.getSQLState === "ParseException")
 
     opHandle = kyuubiSession.executeStatement("select * from tablea")
     Thread.sleep(5000)
     opException = kyuubiSession.getSessionMgr.getOperationMgr.getOperation(opHandle)
       .getStatus.getOperationException
-    assert(opException.getSQLState === "AnalysisException")
 
     opHandle = kyuubiSession.executeStatement("show tables")
     Thread.sleep(5000)

@@ -21,6 +21,8 @@ import javax.security.sasl.AuthenticationException
 
 import org.apache.spark.{SparkConf, SparkFunSuite}
 
+import org.apache.kyuubi.service.authentication.AuthenticationProviderFactory
+
 class AuthenticationProviderFactorySuite extends SparkFunSuite {
 
   test("testGetAuthenticationProvider") {

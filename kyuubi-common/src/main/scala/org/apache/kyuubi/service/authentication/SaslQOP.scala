@@ -15,20 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.config
+package org.apache.kyuubi.service.authentication
 
-import java.time.Duration
+object SaslQOP extends Enumeration {
+  type SaslQOP = Value
 
-import org.apache.kyuubi.KyuubiFunSuite
+  /** Authentication only. */
+  val AUTH = Value( "auth")
 
-class KyuubiConfSuite extends KyuubiFunSuite {
+  /** Authentication and integrity checking by using signatures. */
+  val AUTH_INT = Value("auth-int")
 
-  import KyuubiConf._
-
-  test("kyuubi conf defaults") {
-    val conf = new KyuubiConf()
-    assert(conf.get(EMBEDDED_ZK_PORT) === 2181)
-    assert(conf.get(EMBEDDED_ZK_TEMP_DIR).endsWith("embedded_zookeeper"))
-    assert(conf.get(OPERATION_IDLE_TIMEOUT) === Duration.ofHours(3).toMillis)
-  }
+  /** Authentication, integrity and confidentiality checking by using signatures and encryption. */
+  val AUTH_CONF = Value("auth-conf")
 }

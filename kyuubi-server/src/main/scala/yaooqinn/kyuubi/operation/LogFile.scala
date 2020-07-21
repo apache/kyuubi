@@ -24,10 +24,9 @@ import scala.collection.JavaConverters._
 
 import org.apache.commons.io.FileUtils
 import org.apache.hadoop.io.IOUtils
-import org.apache.kyuubi.Logging
 import org.apache.spark.sql.Row
 
-import yaooqinn.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 
 class LogFile private (
     file: File,

@@ -21,9 +21,8 @@ import java.io.File
 import java.util.UUID
 
 import org.apache.hive.service.cli.thrift.TProtocolVersion
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
-
-import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.service.{ServiceException, State}
