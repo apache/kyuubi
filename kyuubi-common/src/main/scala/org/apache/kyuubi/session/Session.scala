@@ -32,4 +32,6 @@ trait Session {
   def lastAccessTime: Long
   def sessionManager: SessionManager
 
+  def open(): Unit
+
 }

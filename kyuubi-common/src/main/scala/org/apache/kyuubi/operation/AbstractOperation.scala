@@ -19,18 +19,21 @@ package org.apache.kyuubi.operation
 
 import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet, TTableSchema}
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.session.Session
 
-abstract class AbstractOperation(opType: OperationType, session: Session) extends Operation {
+abstract class AbstractOperation(opType: OperationType, session: Session)
+  extends Operation with Logging {
   import OperationState._
   private final val handle = OperationHandle(opType, session.protocol)
   private final val operationTimeout: Long = session.conf.get(KyuubiConf.OPERATION_IDLE_TIMEOUT)
 
-  @volatile private var state: OperationState = INITIALIZED
+  protected final val statementId = handle.identifier.toString
+
+  @volatile protected var state: OperationState = INITIALIZED
   @volatile protected var startTime: Long = _
   @volatile protected var completedTime: Long = _
   @volatile protected var lastAccessTime: Long = System.currentTimeMillis()
@@ -116,7 +119,7 @@ abstract class AbstractOperation(opType: OperationType, session: Session) extend
 
   override def getSession: Session = session
 
-  override def getHandle: OperationHandle
+  override def getHandle: OperationHandle = handle
 
   override def getStatus: OperationStatus = {
     OperationStatus(state, startTime, completedTime, hasResultSet, Option(operationException))

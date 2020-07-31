@@ -19,6 +19,8 @@ package org.apache.kyuubi.operation
 
 import java.util.Objects
 
+import scala.language.implicitConversions
+
 import org.apache.hive.service.rpc.thrift.{TOperationHandle, TProtocolVersion}
 
 import org.apache.kyuubi.cli.{Handle, HandleIdentifier}

@@ -19,8 +19,8 @@ package org.apache.kyuubi.session
 
 import org.apache.kyuubi.service.CompositeService
 
-trait SessionManager extends CompositeService {
+abstract class SessionManager(name: String) extends CompositeService(name) {
 
-
+  def this() = this(classOf[SessionManager].getSimpleName)
 
 }
