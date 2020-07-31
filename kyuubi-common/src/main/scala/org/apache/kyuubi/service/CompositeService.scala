@@ -48,7 +48,6 @@ abstract class CompositeService(serviceName: String)
       } catch {
         case NonFatal(e) =>
           error(s"Error starting service ${service.getName}", e)
-          error(s"Error starting services $getName")
           stop(idx)
           throw new KyuubiException(s"Failed to Start $getName", e)
       }

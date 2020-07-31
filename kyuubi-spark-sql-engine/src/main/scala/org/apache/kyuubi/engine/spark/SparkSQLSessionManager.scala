@@ -15,33 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation
+package org.apache.kyuubi.engine.spark
 
-import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet, TTableSchema}
+import org.apache.kyuubi.session.SessionManager
 
-import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
-import org.apache.kyuubi.session.Session
+class SparkSQLSessionManager extends SessionManager {
 
-trait Operation {
-
-  def run(): Unit
-  def cancel(): Unit
-  def close(): Unit
-
-  def getProtocolVersion: TProtocolVersion
-  def getResultSetSchema: TTableSchema
-  def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet
-
-  def getSession: Session
-  def getHandle: OperationHandle
-  def getStatus: OperationStatus
-
-  def shouldRunAsync: Boolean
-  def isTimedOut: Boolean
-
-}
-
-object Operation {
-  val DEFAULT_FETCH_ORIENTATION_SET: Set[FetchOrientation] =
-    Set(FetchOrientation.FETCH_NEXT, FetchOrientation.FETCH_FIRST, FetchOrientation.FETCH_PRIOR)
 }

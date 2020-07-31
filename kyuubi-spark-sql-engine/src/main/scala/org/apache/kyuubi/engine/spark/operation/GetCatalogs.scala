@@ -15,33 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation
+package org.apache.kyuubi.engine.spark.operation
 
-import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet, TTableSchema}
+import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
-trait Operation {
+class GetCatalogs(spark: SparkSession, session: Session)
+  extends SparkOperation(spark, OperationType.GET_CATALOGS, session) {
+  override protected def resultSchema: StructType = {
+    new StructType()
+      .add("TABLE_CAT", "string", nullable = true, "Catalog name. NULL if not applicable.")
+  }
 
-  def run(): Unit
-  def cancel(): Unit
-  def close(): Unit
-
-  def getProtocolVersion: TProtocolVersion
-  def getResultSetSchema: TTableSchema
-  def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet
-
-  def getSession: Session
-  def getHandle: OperationHandle
-  def getStatus: OperationStatus
-
-  def shouldRunAsync: Boolean
-  def isTimedOut: Boolean
-
-}
-
-object Operation {
-  val DEFAULT_FETCH_ORIENTATION_SET: Set[FetchOrientation] =
-    Set(FetchOrientation.FETCH_NEXT, FetchOrientation.FETCH_FIRST, FetchOrientation.FETCH_PRIOR)
+  override protected def runInternal(): Unit = {
+    iter = Seq(
+      Row(spark.sessionState.catalogManager.currentCatalog.name())
+    ).toList.iterator
+  }
 }

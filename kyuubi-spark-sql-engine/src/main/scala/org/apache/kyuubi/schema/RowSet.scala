@@ -29,6 +29,14 @@ import org.apache.spark.sql.types._
 
 object RowSet {
 
+  def toTRowSet(rows: Seq[Row], schema: StructType, protocolVersion: TProtocolVersion): TRowSet = {
+    if (protocolVersion.getValue < TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6.getValue) {
+      toRowBasedSet(rows, schema)
+    } else {
+      toColumnBasedSet(rows, schema)
+    }
+  }
+
   def toRowBasedSet(rows: Seq[Row], schema: StructType): TRowSet = {
     val tRows = rows.map { row =>
       val tRow = new TRow()

@@ -35,6 +35,7 @@ class SparkSQLRunner(name: String) extends CompositeService(name) {
   }
 }
 
+
 object SparkSQLRunner extends Logging {
 
   def main(args: Array[String]): Unit = {

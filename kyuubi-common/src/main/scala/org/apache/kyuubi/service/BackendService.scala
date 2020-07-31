@@ -79,7 +79,8 @@ trait BackendService {
       schemaName: String,
       functionName: String): OperationHandle
   def getPrimaryKeys(
-      sessionHandle: SessionHandle, catalogName: String,
+      sessionHandle: SessionHandle,
+      catalogName: String,
       schemaName: String,
       tableName: String): OperationHandle
   def getCrossReference(
