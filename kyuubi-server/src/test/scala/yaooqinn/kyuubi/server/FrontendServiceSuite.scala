@@ -59,22 +59,6 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
     feService.getPortNumber should be(0)
   }
 
-  test("init fe service") {
-    val feService = new FrontendService(server.beService)
-    feService.init(conf)
-    feService.getConf should be(conf)
-    feService.getServiceState should be(State.INITED)
-    feService.getPortNumber should not be 0
-    val conf1 = new SparkConf(loadDefaults = true)
-      .set(FRONTEND_BIND_HOST.key, "")
-      .set(FRONTEND_BIND_PORT.key, "10009")
-    val feService2 = new FrontendService(server.beService)
-    feService2.init(conf1)
-    feService2.getServerIPAddress should be(InetAddress.getLocalHost)
-    intercept[ServiceException](
-      feService2.init(conf1)).getMessage should include("10009")
-  }
-
   test("start fe service") {
     val feService = new FrontendService(server.beService)
     intercept[IllegalStateException](feService.start())

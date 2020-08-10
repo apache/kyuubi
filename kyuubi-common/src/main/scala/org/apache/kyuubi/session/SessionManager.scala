@@ -119,5 +119,4 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
     timeoutChecker.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
   }
-
 }
