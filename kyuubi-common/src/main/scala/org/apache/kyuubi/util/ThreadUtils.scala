@@ -15,10 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark
+package org.apache.kyuubi.util
 
-import org.apache.kyuubi.session.SessionManager
+import java.util.concurrent.{ScheduledExecutorService, ScheduledThreadPoolExecutor}
 
-class SparkSQLSessionManager extends SessionManager {
+object ThreadUtils {
+
+  def newDaemonSingleThreadScheduledExecutor(threadName: String): ScheduledExecutorService = {
+    val threadFactory = NamedThreadFactory(threadName, daemon = true)
+    val executor = new ScheduledThreadPoolExecutor(1, threadFactory)
+    executor.setRemoveOnCancelPolicy(true)
+    executor
+
+  }
 
 }

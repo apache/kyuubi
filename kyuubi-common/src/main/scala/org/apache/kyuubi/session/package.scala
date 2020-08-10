@@ -15,15 +15,27 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.util
+package org.apache.kyuubi
 
-import java.util.concurrent.ThreadFactory
+import java.time.Duration
 
-case class NamedThreadFactory(name: String, daemon: Boolean = false) extends ThreadFactory {
-  override def newThread(r: Runnable): Thread = {
-    val t = new Thread(r)
-    t.setName(name + ": Thread-" + t.getId)
-    t.setDaemon(daemon)
-    t
-  }
+import org.apache.kyuubi.config.ConfigEntry
+import org.apache.kyuubi.config.KyuubiConf.buildConf
+
+package object session {
+
+  val SESSION_CHECK_INTERVAL: ConfigEntry[Long] =
+    buildConf("session.check.interval")
+      .doc("The check interval for frontend session/operation timeout.")
+      .timeConf
+      .checkValue(_ > Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
+      .createWithDefault(Duration.ofHours(6).toMillis)
+
+  val SESSION_TIMEOUT: ConfigEntry[Long] =
+    buildConf("session.timeout")
+      .doc("The check interval for frontend session/operation timeout.")
+      .timeConf
+      .checkValue(_ > Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
+      .createWithDefault(Duration.ofHours(6).toMillis)
+
 }

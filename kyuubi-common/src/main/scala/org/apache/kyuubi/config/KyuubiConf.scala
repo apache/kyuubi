@@ -18,13 +18,11 @@
 package org.apache.kyuubi.config
 
 import java.time.Duration
-import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{Logging, Utils}
-import org.apache.kyuubi.service.authentication.AuthTypes
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   private val settings = new ConcurrentHashMap[String, String]()
@@ -61,6 +59,11 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     require(key != null)
     require(value != null)
     settings.put(key, value)
+    this
+  }
+
+  def setIfMissing[T](entry: ConfigEntry[T], value: T): KyuubiConf = {
+    settings.putIfAbsent(entry.key, entry.strConverter(value))
     this
   }
 

@@ -52,6 +52,7 @@ abstract class CompositeService(serviceName: String)
           throw new KyuubiException(s"Failed to Start $getName", e)
       }
     }
+    super.start()
   }
 
   override def stop(): Unit = {

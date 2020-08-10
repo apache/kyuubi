@@ -60,36 +60,32 @@ object RowSet {
     val nulls = new java.util.BitSet()
     typ match {
       case BooleanType =>
-        val values = getOrSetAsNull[java.lang.Boolean](rows, ordinal, nulls)
+        val values = getOrSetAsNull[java.lang.Boolean](rows, ordinal, nulls, true)
         TColumn.boolVal(new TBoolColumn(values, nulls))
 
       case ByteType =>
-        val values = getOrSetAsNull[java.lang.Byte](rows, ordinal, nulls)
+        val values = getOrSetAsNull[java.lang.Byte](rows, ordinal, nulls, 0.toByte)
         TColumn.byteVal(new TByteColumn(values, nulls))
 
       case ShortType =>
-        val values = getOrSetAsNull[java.lang.Short](rows, ordinal, nulls)
+        val values = getOrSetAsNull[java.lang.Short](rows, ordinal, nulls, 0.toShort)
         TColumn.i16Val(new TI16Column(values, nulls))
 
       case IntegerType =>
-        val values = getOrSetAsNull[java.lang.Integer](rows, ordinal, nulls)
+        val values = getOrSetAsNull[java.lang.Integer](rows, ordinal, nulls, 0)
         TColumn.i32Val(new TI32Column(values, nulls))
 
       case LongType =>
-        val values = getOrSetAsNull[java.lang.Long](rows, ordinal, nulls)
+        val values = getOrSetAsNull[java.lang.Long](rows, ordinal, nulls, 0L)
         TColumn.i64Val(new TI64Column(values, nulls))
 
       case FloatType =>
-        val values = getOrSetAsNull[java.lang.Float](rows, ordinal, nulls)
-          .asScala
-          .map {
-            case null => null
-            case o => java.lang.Double.valueOf(o.toDouble)
-          }.asJava
+        val values = getOrSetAsNull[java.lang.Float](rows, ordinal, nulls, 0.toFloat)
+          .asScala.map(n => java.lang.Double.valueOf(n.toDouble)).asJava
         TColumn.doubleVal(new TDoubleColumn(values, nulls))
 
       case DoubleType =>
-        val values = getOrSetAsNull[java.lang.Double](rows, ordinal, nulls)
+        val values = getOrSetAsNull[java.lang.Double](rows, ordinal, nulls, 0.toDouble)
         TColumn.doubleVal(new TDoubleColumn(values, nulls))
 
       case StringType =>
@@ -120,7 +116,7 @@ object RowSet {
       rows: Seq[Row],
       ordinal: Int,
       nulls: java.util.BitSet,
-      defaultVal: T = null): java.util.List[T] = {
+      defaultVal: T): java.util.List[T] = {
     val size = rows.length
     val ret = new java.util.ArrayList[T](size)
     var idx = 0

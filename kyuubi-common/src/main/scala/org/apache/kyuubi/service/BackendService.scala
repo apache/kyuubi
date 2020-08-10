@@ -19,10 +19,21 @@ package org.apache.kyuubi.service
 
 import org.apache.hive.service.rpc.thrift._
 
-import org.apache.kyuubi.operation.{OperationHandle, OperationStatus}
+import org.apache.kyuubi.operation.{Operation, OperationHandle, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
-import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.session.{Session, SessionHandle, SessionManager}
 
+/**
+ * A [[BackendService]] in Kyuubi architecture is responsible for talking to the SQL engine
+ *
+ * 1. Open/Close [[Session]]
+ * 2. Operate [[Operation]]
+ * 3. Manager [[Session]]s via [[SessionManager]]
+ * 4. Check [[OperationStatus]]
+ * 5. Retrieve [[Operation]] results and metadata
+ * 6. Cancel/Close [[Operation]]
+ *
+ */
 trait BackendService {
 
   def openSession(
@@ -37,21 +48,17 @@ trait BackendService {
 
   def executeStatement(
       sessionHandle: SessionHandle,
-      statement: String,
-      confOverlay: java.util.Map[String, String]): OperationHandle
+      statement: String): OperationHandle
   def executeStatement(
       sessionHandle: SessionHandle,
       statement: String,
-      confOverlay: java.util.Map[String, String],
       queryTimeout: Long): OperationHandle
   def executeStatementAsync(
       sessionHandle: SessionHandle,
-      statement: String,
-      confOverlay: java.util.Map[String, String]): OperationHandle
+      statement: String): OperationHandle
   def executeStatementAsync(
       sessionHandle: SessionHandle,
       statement: String,
-      confOverlay: java.util.Map[String, String],
       queryTimeout: Long): OperationHandle
 
   def getTypeInfo(sessionHandle: SessionHandle): OperationHandle
@@ -78,19 +85,6 @@ trait BackendService {
       catalogName: String,
       schemaName: String,
       functionName: String): OperationHandle
-  def getPrimaryKeys(
-      sessionHandle: SessionHandle,
-      catalogName: String,
-      schemaName: String,
-      tableName: String): OperationHandle
-  def getCrossReference(
-      sessionHandle: SessionHandle,
-      primaryCatalog: String,
-      primarySchema: String,
-      primaryTable: String,
-      foreignCatalog: String,
-      foreignSchema: String,
-      foreignTable: String): OperationHandle
 
   def getOperationStatus(operationHandle: OperationHandle): OperationStatus
   def cancelOperation(operationHandle: OperationHandle): Unit
@@ -99,10 +93,15 @@ trait BackendService {
   def fetchResults(
       operationHandle: OperationHandle,
       orientation: FetchOrientation,
-      maxRows: Long,
+      maxRows: Int,
       fetchLog: Boolean): TRowSet
+
+  def sessionManager: SessionManager
 }
 
 object BackendService {
   final val SERVER_VERSION = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10
 }
+
+
+

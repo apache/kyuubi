@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.schema
 
+import java.util.Collections
+
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift._
@@ -49,14 +51,13 @@ object SchemaHelper {
 
   def toTTypeQualifiers(typ: DataType): TTypeQualifiers = {
     val ret = new TTypeQualifiers()
-    typ match {
+    val qualifiers = typ match {
       case d: DecimalType =>
-        val qualifiers =
-          Map(TCLIServiceConstants.PRECISION -> TTypeQualifierValue.i32Value(d.precision),
-            TCLIServiceConstants.SCALE -> TTypeQualifierValue.i32Value(d.scale))
-        ret.setQualifiers(qualifiers.asJava)
-      case _ =>
+        Map(TCLIServiceConstants.PRECISION -> TTypeQualifierValue.i32Value(d.precision),
+          TCLIServiceConstants.SCALE -> TTypeQualifierValue.i32Value(d.scale)).asJava
+      case _ => Collections.emptyMap[String, TTypeQualifierValue]()
     }
+    ret.setQualifiers(qualifiers)
     ret
   }
 
