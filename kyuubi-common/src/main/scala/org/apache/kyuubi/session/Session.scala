@@ -17,21 +17,67 @@
 
 package org.apache.kyuubi.session
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion, TRowSet, TTableSchema}
 
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.operation.OperationHandle
 
 trait Session {
 
   def protocol: TProtocolVersion
   def handle: SessionHandle
-  def conf: KyuubiConf
+
+  def conf: Map[String, String]
+
   def user: String
   def password: String
+  def ipAddress: String
+
   def createTime: Long
   def lastAccessTime: Long
+  def lastIdleTime: Long
+  def getNoOperationTime: Long
+
   def sessionManager: SessionManager
 
   def open(): Unit
+  def close(): Unit
 
+
+  def getInfo(infoType: TGetInfoType): TGetInfoValue
+
+  def executeStatement(statement: String): OperationHandle
+  def executeStatement(statement: String, queryTimeout: Long): OperationHandle
+  def executeStatementAsync(statement: String): OperationHandle
+  def executeStatementAsync(statement: String, queryTimeout: Long): OperationHandle
+
+  def getTableTypes: OperationHandle
+  def getTypeInfo: OperationHandle
+  def getCatalogs: OperationHandle
+  def getSchemas(catalogName: String, schemaName: String): OperationHandle
+  def getTables(
+      catalogName: String,
+      schemaName: String,
+      tableName: String,
+      tableTypes: java.util.List[String]): OperationHandle
+  def getColumns(
+      catalogName: String,
+      schemaName: String,
+      tableName: String,
+      columnName: String): OperationHandle
+  def getFunctions(
+      catalogName: String,
+      schemaName: String,
+      functionName: String): OperationHandle
+
+  def cancelOperation(operationHandle: OperationHandle): Unit
+  def closeOperation(operationHandle: OperationHandle): Unit
+  def getResultSetMetadata(operationHandle: OperationHandle): TTableSchema
+  def fetchResults(
+      operationHandle: OperationHandle,
+      orientation: FetchOrientation,
+      maxRows: Int,
+      fetchLog: Boolean): TRowSet
+
+  def closeExpiredOperations: Unit
 }

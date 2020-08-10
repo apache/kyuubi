@@ -101,8 +101,8 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
   }
 
   override def setState(newState: OperationState): Unit = {
-    info(s"Processing ${session.user}'s query with queryId: $statementId, currentState:" +
-      s" ${state.name}, newState: ${newState.name}, statement: $statement")
+    info(s"Processing ${session.user}'s query[$statementId]: ${state.name} -> ${newState.name}," +
+      s" statement: $statement")
     super.setState(newState)
   }
 

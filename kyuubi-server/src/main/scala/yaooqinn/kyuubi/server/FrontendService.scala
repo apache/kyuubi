@@ -140,6 +140,41 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
       case e: Exception => throw new ServiceException(e.getMessage + ": " + portNum, e)
     }
     portNum = serverSocket.getLocalPort
+
+    // Server thread pool
+    val minThreads = conf.get(FRONTEND_MIN_WORKER_THREADS).toInt
+    val maxThreads = conf.get(FRONTEND_MAX_WORKER_THREADS).toInt
+    val executorService = ExecutorPoolCaptureOom(threadPoolName,
+      minThreads,
+      maxThreads,
+      conf.getTimeAsSeconds(FRONTEND_WORKER_KEEPALIVE_TIME) * 1000L,
+      OOMHook)
+
+    // Thrift configs
+    authFactory = new KyuubiAuthFactory(conf)
+    val transportFactory = authFactory.getAuthTransFactory
+    val processorFactory = authFactory.getAuthProcFactory(this)
+    val tSocket = new TServerSocket(serverSocket)
+
+    // Server args
+    val maxMessageSize = conf.get(FRONTEND_MAX_MESSAGE_SIZE).toInt
+    val requestTimeout = conf.getTimeAsSeconds(FRONTEND_LOGIN_TIMEOUT).toInt
+    val beBackoffSlotLength = conf.getTimeAsMs(FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH).toInt
+    val args = new TThreadPoolServer.Args(tSocket)
+      .processorFactory(processorFactory)
+      .transportFactory(transportFactory)
+      .protocolFactory(new TBinaryProtocol.Factory)
+      .inputProtocolFactory(
+        new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize))
+      .requestTimeout(requestTimeout).requestTimeoutUnit(TimeUnit.SECONDS)
+      .beBackoffSlotLength(beBackoffSlotLength)
+      .beBackoffSlotLengthUnit(TimeUnit.MILLISECONDS)
+      .executorService(executorService)
+    // TCP Server
+    server = Some(new TThreadPoolServer(args))
+    server.foreach(_.setServerEventHandler(serverEventHandler))
+    info(s"Starting $name on host ${serverIPAddress.getCanonicalHostName} at port $portNum with" +
+      s" [$minThreads, $maxThreads] worker threads")
     super.init(conf)
   }
 
@@ -568,40 +603,6 @@ class FrontendService private(name: String, beService: BackendService, OOMHook: 
 
   override def run(): Unit = {
     try {
-      // Server thread pool
-      val minThreads = conf.get(FRONTEND_MIN_WORKER_THREADS).toInt
-      val maxThreads = conf.get(FRONTEND_MAX_WORKER_THREADS).toInt
-      val executorService = ExecutorPoolCaptureOom(threadPoolName,
-        minThreads,
-        maxThreads,
-        conf.getTimeAsSeconds(FRONTEND_WORKER_KEEPALIVE_TIME) * 1000L,
-        OOMHook)
-
-      // Thrift configs
-      authFactory = new KyuubiAuthFactory(conf)
-      val transportFactory = authFactory.getAuthTransFactory
-      val processorFactory = authFactory.getAuthProcFactory(this)
-      val tSocket = new TServerSocket(serverSocket)
-
-      // Server args
-      val maxMessageSize = conf.get(FRONTEND_MAX_MESSAGE_SIZE).toInt
-      val requestTimeout = conf.getTimeAsSeconds(FRONTEND_LOGIN_TIMEOUT).toInt
-      val beBackoffSlotLength = conf.getTimeAsMs(FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH).toInt
-      val args = new TThreadPoolServer.Args(tSocket)
-        .processorFactory(processorFactory)
-        .transportFactory(transportFactory)
-        .protocolFactory(new TBinaryProtocol.Factory)
-        .inputProtocolFactory(
-          new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize))
-        .requestTimeout(requestTimeout).requestTimeoutUnit(TimeUnit.SECONDS)
-        .beBackoffSlotLength(beBackoffSlotLength)
-        .beBackoffSlotLengthUnit(TimeUnit.MILLISECONDS)
-        .executorService(executorService)
-      // TCP Server
-      server = Some(new TThreadPoolServer(args))
-      server.foreach(_.setServerEventHandler(serverEventHandler))
-      info(s"Starting $name on host ${serverIPAddress.getCanonicalHostName} at port $portNum with" +
-        s" [$minThreads, $maxThreads] worker threads")
       server.foreach(_.serve())
     } catch {
       case t: Throwable =>

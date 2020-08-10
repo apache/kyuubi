@@ -85,18 +85,6 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
     feService.getServiceState should be(State.STARTED)
   }
 
-  test("stop fe service") {
-    val feService = new FrontendService(server.beService)
-    feService.stop()
-    feService.getServiceState should be(State.NOT_INITED)
-    feService.init(conf)
-    feService.stop()
-    feService.getServiceState should be(State.INITED)
-    feService.start()
-    feService.stop()
-    feService.getServiceState should be(State.STOPPED)
-  }
-
   test("get catalogs") {
     withFEServiceAndHandle { case (fe, handle) =>
       val req = new TGetCatalogsReq(handle)

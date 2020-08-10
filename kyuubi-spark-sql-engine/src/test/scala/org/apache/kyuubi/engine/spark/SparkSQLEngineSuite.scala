@@ -15,15 +15,27 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.util
+package org.apache.kyuubi.engine.spark
 
-import java.util.concurrent.ThreadFactory
+import org.apache.kyuubi.KyuubiFunSuite
 
-case class NamedThreadFactory(name: String, daemon: Boolean = false) extends ThreadFactory {
-  override def newThread(r: Runnable): Thread = {
-    val t = new Thread(r)
-    t.setName(name + ": Thread-" + t.getId)
-    t.setDaemon(daemon)
-    t
+class SparkSQLEngineSuite extends KyuubiFunSuite {
+
+  import org.apache.kyuubi.service.ServiceState._
+
+  private val spark = SparkSQLEngine.createSpark()
+
+  test("spark sql engine as a composite service") {
+    val engine = new SparkSQLEngine(spark)
+    assert(engine.getServiceState === LATENT)
+    assert(engine.getServices.forall(_.getServiceState === LATENT))
+
+    engine.initialize(SparkSQLEngine.kyuubiConf)
+    assert(engine.getServiceState === INITIALIZED)
+    assert(engine.getServices.forall(_.getServiceState === INITIALIZED))
+
+    engine.start()
+    assert(engine.getServiceState === STARTED)
+    assert(engine.getServices.forall(_.getServiceState === STARTED))
   }
 }

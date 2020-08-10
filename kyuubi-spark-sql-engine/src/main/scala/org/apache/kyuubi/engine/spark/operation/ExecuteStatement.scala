@@ -27,7 +27,7 @@ import org.apache.kyuubi.session.Session
 class ExecuteStatement(
     spark: SparkSession,
     session: Session,
-    statement: String)
+    protected override val statement: String)
   extends SparkOperation(spark, OperationType.EXECUTE_STATEMENT, session) with Logging {
 
   private var result: DataFrame = _

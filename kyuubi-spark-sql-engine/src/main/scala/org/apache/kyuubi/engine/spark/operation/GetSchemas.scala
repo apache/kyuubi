@@ -43,8 +43,10 @@ class GetSchemas(spark: SparkSession, session: Session, catalogName: String, sch
       val schemaPattern = convertSchemaPattern(schema)
       val databases = spark.sessionState.catalog.listDatabases(schemaPattern)
       val globalTmpViewDb = spark.sessionState.catalog.globalTempViewManager.database
-      if (Pattern.compile(schemaPattern).matcher(globalTmpViewDb).matches()) {
-        iter = (globalTmpViewDb ++ databases).map(Row(_, "")).toList.iterator
+      if (schema == null ||
+        Pattern.compile(convertIdentifierPattern(schema, false))
+          .matcher(globalTmpViewDb).matches()) {
+        iter = (databases :+ globalTmpViewDb).map(Row(_, "")).toList.iterator
       } else {
         iter = databases.map(Row(_, "")).toList.iterator
       }

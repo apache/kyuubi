@@ -15,15 +15,20 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.util
+package org.apache.kyuubi.engine.spark.session
 
-import java.util.concurrent.ThreadFactory
+import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-case class NamedThreadFactory(name: String, daemon: Boolean = false) extends ThreadFactory {
-  override def newThread(r: Runnable): Thread = {
-    val t = new Thread(r)
-    t.setName(name + ": Thread-" + t.getId)
-    t.setDaemon(daemon)
-    t
-  }
+import org.apache.kyuubi.session.{AbstractSession, SessionManager}
+
+class SparkSessionImpl(
+    protocol: TProtocolVersion,
+    user: String,
+    password: String,
+    ipAddress: String,
+    conf: Map[String, String],
+    sessionManager: SessionManager)
+  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+
+  override def open(): Unit = {}
 }

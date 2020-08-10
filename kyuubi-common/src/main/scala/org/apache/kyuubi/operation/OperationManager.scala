@@ -17,7 +17,9 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
+import java.nio.ByteBuffer
+
+import org.apache.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn, TTableSchema}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
@@ -25,6 +27,12 @@ import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.session.Session
 
+/**
+ * The [[OperationManager]] manages all the operations during their lifecycle.
+ *
+ *
+ * @param name Service Name
+ */
 abstract class OperationManager(name: String) extends AbstractService(name) {
 
   private final val handleToOperation = new java.util.HashMap[OperationHandle, Operation]()
@@ -66,6 +74,7 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
 
   final def addOperation(operation: Operation): Operation = synchronized {
     handleToOperation.put(operation.getHandle, operation)
+    operation
   }
 
   @throws[KyuubiSQLException]
@@ -104,8 +113,21 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
 
   final def getOperationNextRowSet(
       opHandle: OperationHandle,
-      order: FetchOrientation, maxRows: Int): TRowSet = {
+      order: FetchOrientation,
+      maxRows: Int): TRowSet = {
     getOperation(opHandle).getNextRowSet(order, maxRows)
+  }
+
+  def getOperationLogRowSet(
+      opHandle: OperationHandle,
+      order: FetchOrientation,
+      maxRows: Int): TRowSet = {
+    // TODO: Support fetch log result
+    val values = new java.util.ArrayList[String]
+    val tColumn = TColumn.stringVal(new TStringColumn(values, ByteBuffer.allocate(0)))
+    val tRow = new TRowSet(0, new java.util.ArrayList[TRow](1))
+    tRow.addToColumns(tColumn)
+    tRow
   }
 
   final def removeExpiredOperations(handles: Seq[OperationHandle]): Seq[Operation] = synchronized {

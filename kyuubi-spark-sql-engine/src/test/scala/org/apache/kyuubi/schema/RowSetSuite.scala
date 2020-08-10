@@ -26,6 +26,7 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.execution.HiveResult
 import org.apache.spark.sql.types.{ArrayType, BinaryType, DateType, DoubleType, IntegerType, MapType, StructType, TimestampType}
 import org.apache.spark.unsafe.types.CalendarInterval
+
 import org.apache.kyuubi.KyuubiFunSuite
 
 class RowSetSuite extends KyuubiFunSuite {
@@ -103,43 +104,43 @@ class RowSetSuite extends KyuubiFunSuite {
       if (i % 3 == 0) assert(b)
       else if (i % 3 == 1) assert(!b)
       else {
-        assert(b === null)
+        assert(b)
       }
     }
 
     val byteCol = cols.next().getByteVal
     byteCol.getValues.asScala.zipWithIndex.foreach {
-      case (b, 11) => assert(b === null)
+      case (b, 11) => assert(b === 0)
       case (b, i) => assert(b === i)
     }
 
     val shortCol = cols.next().getI16Val
     shortCol.getValues.asScala.zipWithIndex.foreach {
-      case (b, 11) => assert(b === null)
+      case (b, 11) => assert(b === 0)
       case (b, i) => assert(b === i)
     }
 
     val intCol = cols.next().getI32Val
     intCol.getValues.asScala.zipWithIndex.foreach {
-      case (b, 11) => assert(b === null)
+      case (b, 11) => assert(b === 0)
       case (b, i) => assert(b === i)
     }
 
     val longCol = cols.next().getI64Val
     longCol.getValues.asScala.zipWithIndex.foreach {
-      case (b, 11) => assert(b === null)
+      case (b, 11) => assert(b === 0)
       case (b, i) => assert(b === i)
     }
 
     val floatCol = cols.next().getDoubleVal
     floatCol.getValues.asScala.zipWithIndex.foreach {
-      case (b, 11) => assert(b === null)
+      case (b, 11) => assert(b === 0)
       case (b, i) => assert(b === java.lang.Float.valueOf(s"$i.$i"))
     }
 
     val doubleCol = cols.next().getDoubleVal
     doubleCol.getValues.asScala.zipWithIndex.foreach {
-      case (b, 11) => assert(b === null)
+      case (b, 11) => assert(b === 0)
       case (b, i) => assert(b === java.lang.Double.valueOf(s"$i.$i"))
     }
 

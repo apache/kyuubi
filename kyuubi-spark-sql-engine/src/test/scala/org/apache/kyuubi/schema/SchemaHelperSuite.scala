@@ -79,7 +79,7 @@ class SchemaHelperSuite extends KyuubiFunSuite {
 
     outerSchema.foreach {
       case f if f.dataType == DecimalType(10, 8) =>
-      case f => assert(toTTypeQualifiers(f.dataType).getQualifiers === null)
+      case f => assert(toTTypeQualifiers(f.dataType).getQualifiers.isEmpty)
     }
   }
 
@@ -98,9 +98,8 @@ class SchemaHelperSuite extends KyuubiFunSuite {
       if (pos == 9) {
         assert(qualifiers.get(TCLIServiceConstants.PRECISION).getI32Value === 10)
         assert(qualifiers.get(TCLIServiceConstants.SCALE).getI32Value === 8)
-
       } else {
-        assert(qualifiers == null)
+        assert(qualifiers.isEmpty)
       }
     }
   }

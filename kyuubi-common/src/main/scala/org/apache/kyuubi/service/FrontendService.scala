@@ -99,6 +99,8 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     super.initialize(conf)
   }
 
+  def connectionUrl: String = s"${serverAddr.getCanonicalHostName}:$portNum"
+
   override def start(): Unit = {
     super.start()
     if (!isStarted) {
@@ -110,6 +112,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def run(): Unit = try {
+    info(s"Starting and exposing JDBC connection at: jdbc:hive2://$connectionUrl/")
     server.foreach(_.serve())
   } catch {
     case t: Throwable =>
@@ -215,12 +218,12 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
       val sessionHandle = SessionHandle(req.getSessionHandle)
       val statement = req.getStatement
       val runAsync = req.isRunAsync
-      val confOverlay = req.getConfOverlay
+      // val confOverlay = req.getConfOverlay
       val queryTimeout = req.getQueryTimeout
       val operationHandle = if (runAsync) {
-        be.executeStatementAsync(sessionHandle, statement, confOverlay, queryTimeout)
+        be.executeStatementAsync(sessionHandle, statement, queryTimeout)
       } else {
-        be.executeStatement(sessionHandle, statement, confOverlay, queryTimeout)
+        be.executeStatement(sessionHandle, statement, queryTimeout)
       }
       resp.setOperationHandle(operationHandle.toTOperationHandle)
       resp.setStatus(OK_STATUS)
@@ -347,41 +350,15 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
 
   override def GetPrimaryKeys(req: TGetPrimaryKeysReq): TGetPrimaryKeysResp = {
     val resp = new TGetPrimaryKeysResp
-    try {
-      val sessionHandle = SessionHandle(req.getSessionHandle)
-      val catalog = req.getCatalogName
-      val schema = req.getSchemaName
-      val table = req.getTableName
-      val opHandle = be.getPrimaryKeys(sessionHandle, catalog, schema, table)
-      resp.setOperationHandle(opHandle.toTOperationHandle)
-      resp.setStatus(OK_STATUS)
-    } catch {
-      case e: Exception =>
-        warn("Error getting primary keys: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
-    }
+    val errStatus = KyuubiSQLException("Feature is not available").toTStatus
+    resp.setStatus(errStatus)
     resp
   }
 
   override def GetCrossReference(req: TGetCrossReferenceReq): TGetCrossReferenceResp = {
     val resp = new TGetCrossReferenceResp
-    try {
-      val sessionHandle = SessionHandle(req.getSessionHandle)
-      val pCatalog = req.getParentCatalogName
-      val fCatalog = req.getForeignCatalogName
-      val pSchema = req.getParentSchemaName
-      val fSchema = req.getForeignSchemaName
-      val pTable = req.getParentTableName
-      val fTable = req.getForeignTableName
-      val operationHandle =
-        be.getCrossReference(sessionHandle, pCatalog, pSchema, pTable, fCatalog, fSchema, fTable)
-      resp.setOperationHandle(operationHandle)
-      resp.setStatus(OK_STATUS)
-    } catch {
-      case e: Exception =>
-        warn("Error getting cross reference: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
-    }
+    val errStatus = KyuubiSQLException("Feature is not available").toTStatus
+    resp.setStatus(errStatus)
     resp
   }
 
@@ -449,14 +426,13 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def FetchResults(req: TFetchResultsReq): TFetchResultsResp = {
-
     val resp = new TFetchResultsResp
     try {
       val operationHandle = OperationHandle(req.getOperationHandle)
       val orientation = FetchOrientation.getFetchOrientation(req.getOrientation)
       val fetchLog = req.getFetchType == 1
-
-      val rowSet = be.fetchResults(operationHandle, orientation, req.getMaxRows, fetchLog)
+      val maxRows = req.getMaxRows.toInt
+      val rowSet = be.fetchResults(operationHandle, orientation, maxRows, fetchLog)
       resp.setResults(rowSet)
       resp.setHasMoreRows(false)
       resp.setStatus(OK_STATUS)
