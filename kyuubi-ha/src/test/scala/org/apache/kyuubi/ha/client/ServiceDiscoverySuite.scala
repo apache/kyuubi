@@ -18,12 +18,12 @@
 package org.apache.kyuubi.ha.client
 
 import java.io.{File, IOException}
+import java.net.InetAddress
 import javax.security.auth.login.Configuration
 
 import scala.collection.JavaConverters._
 
-import org.apache.kyuubi.{KerberizedTestHelper, KyuubiFunSuite}
-import org.apache.kyuubi.KYUUBI_VERSION
+import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION, KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.server.EmbeddedZkServer
@@ -63,7 +63,8 @@ class ServiceDiscoverySuite extends KyuubiFunSuite with KerberizedTestHelper {
       assert(entries.head.getLoginModuleName === "com.sun.security.auth.module.Krb5LoginModule")
       val options = entries.head.getOptions.asScala.toMap
 
-      assert(options("principal") === "kentyao/localhost@apache.org")
+      assert(options("principal") ===
+        s"kentyao/${InetAddress.getLocalHost.getCanonicalHostName}@apache.org")
       assert(options("useKeyTab").toString.toBoolean)
 
       conf.set(KyuubiConf.SERVER_KEYTAB, keytab.getName)

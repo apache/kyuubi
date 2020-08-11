@@ -37,28 +37,6 @@ class SparkSessionCacheSuite extends SparkFunSuite {
     super.afterAll()
   }
 
-  test("spark session cache") {
-    val start = System.currentTimeMillis()
-    val cache = SparkSessionCache.init(spark)
-    val end = System.currentTimeMillis()
-    print("init cache using " + (end - start))
-    print("\n")
-    assert(!cache.isCrashed)
-    assert(!cache.isIdle)
-    assert(!cache.needClear, s"cache status [crash:${cache.isCrashed}, expired:${cache.isExpired}]")
-    assert(!cache.isExpired)
-    assert(cache.spark === spark)
-    assert(cache.getReuseTimes === 1)
-    assert(cache.incReuseTimeAndGet === 2)
-    assert(cache.decReuseTimeAndGet === 1)
-    val expired = cache.isExpired
-    assert(!expired)
-    Thread.sleep(10000)
-    assert(cache.decReuseTimeAndGet === 0)
-    assert(cache.isExpired)
-    assert(cache.needClear)
-  }
-
   test("cache status idled") {
     val start = System.currentTimeMillis()
     val cache = SparkSessionCache.init(spark)
