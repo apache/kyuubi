@@ -588,12 +588,6 @@
                 </plugin>
 
                 <plugin>
-                    <groupId>com.twitter</groupId>
-                    <artifactId>scrooge-maven-plugin</artifactId>
-                    <version>${scrooge.version}</version>
-                </plugin>
-
-                <plugin>
                     <groupId>org.scalastyle</groupId>
                     <artifactId>scalastyle-maven-plugin</artifactId>
                     <version>1.0.0</version>

@@ -35,7 +35,6 @@ case class KyuubiDelegationTokenManager(
 
 
 object KyuubiDelegationTokenManager {
-  import KyuubiConf._
 
   def apply(conf: KyuubiConf): KyuubiDelegationTokenManager = {
     val keyUpdateInterval = conf.get(DELEGATION_KEY_UPDATE_INTERVAL)
