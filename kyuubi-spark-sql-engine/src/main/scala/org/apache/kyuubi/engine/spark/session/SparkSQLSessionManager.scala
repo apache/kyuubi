@@ -26,7 +26,6 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.session.{SessionHandle, SessionManager}
 
-
 /**
  * A [[SessionManager]] constructed with [[SparkSession]] which give it the ability to talk with
  * Spark and let Spark do all the rest heavy work :)
@@ -54,9 +53,9 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       val sparkSession = spark.newSession()
       conf.foreach { case (key, value) => spark.conf.set(key, value)}
       operationManager.setSparkSession(handle, sparkSession)
+      sessionImpl.open()
       info(s"$user's session with $handle is opened, current opening sessions" +
         s" $getOpenSessionCount")
-
       setSession(handle, sessionImpl)
       handle
     } catch {
@@ -65,7 +64,6 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
           sessionImpl.close()
         } catch {
           case t: Throwable => warn(s"Error closing session $handle for $user", t)
-
         }
         throw KyuubiSQLException(s"Error opening session $handle for $user", e)
     }

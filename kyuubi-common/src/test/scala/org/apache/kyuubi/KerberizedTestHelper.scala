@@ -26,7 +26,7 @@ import org.apache.hadoop.security.UserGroupInformation
 trait KerberizedTestHelper {
   var kdc: MiniKdc = _
   val baseDir: File = Utils.createTempDir(
-    this.getClass.getProtectionDomain.getCodeSource.getLocation.getPath, "kyuubi-kdc")
+    this.getClass.getProtectionDomain.getCodeSource.getLocation.getPath, "kyuubi-kdc").toFile
 
   try {
     val kdcConf = MiniKdc.createConf()
