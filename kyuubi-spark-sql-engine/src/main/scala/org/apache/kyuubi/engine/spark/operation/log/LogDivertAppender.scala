@@ -15,28 +15,29 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.operation
+package org.apache.kyuubi.engine.spark.operation.log
 
 import java.io.CharArrayWriter
 
 import scala.collection.JavaConverters._
 
-import org.apache.kyuubi.Logging
 import org.apache.log4j._
 import org.apache.log4j.spi.{Filter, LoggingEvent}
 
-class LogDivertAppender extends WriterAppender with Logging {
-  /** This is where the log message will go to */
-  private val writer = new CharArrayWriter
+class LogDivertAppender extends WriterAppender {
 
-  this.layout = Logger.getRootLogger
+  private final val writer = new CharArrayWriter
+
+  private final val lo = Logger.getRootLogger
     .getAllAppenders.asScala
     .find(_.isInstanceOf[ConsoleAppender])
     .map(_.asInstanceOf[Appender].getLayout)
     .getOrElse(new PatternLayout("%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n"))
 
+  setName("KyuubiSparkSQLEngineLogDivertAppender")
   setWriter(writer)
-  setName("SparkLogDivertAppender")
+  setLayout(lo)
+
   addFilter(new Filter {
     override def decide(loggingEvent: LoggingEvent): Int = {
       if (OperationLog.getCurrentOperationLog == null) Filter.DENY else Filter.NEUTRAL
@@ -52,6 +53,13 @@ class LogDivertAppender extends WriterAppender with Logging {
     // That should've gone into our writer. Notify the LogContext.
     val logOutput = writer.toString
     writer.reset()
-    Option(OperationLog.getCurrentOperationLog).foreach(_.write(logOutput))
+    val log = OperationLog.getCurrentOperationLog
+    if (log != null) log.write(logOutput)
+  }
+}
+
+object LogDivertAppender {
+  def initialize(): Unit = {
+    org.apache.log4j.Logger.getRootLogger.addAppender(new LogDivertAppender())
   }
 }

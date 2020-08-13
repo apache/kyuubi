@@ -20,10 +20,10 @@ package org.apache.kyuubi
 import java.io.{File, InputStreamReader, IOException}
 import java.net.{URI, URISyntaxException}
 import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Path, Paths}
 import java.util.{Properties, UUID}
 
 import scala.collection.JavaConverters._
-import scala.util.{Success, Try}
 
 import org.apache.hadoop.security.UserGroupInformation
 
@@ -98,16 +98,19 @@ private[kyuubi] object Utils extends Logging {
    * Create a directory inside the given parent directory. The directory is guaranteed to be
    * newly created, and is not marked for automatic deletion.
    */
-  def createDirectory(root: String, namePrefix: String = "kyuubi"): File = {
+  def createDirectory(root: String, namePrefix: String = "kyuubi"): Path = {
+    var error: Exception = null
     (0 until MAX_DIR_CREATION_ATTEMPTS).foreach { _ =>
-      val dir = new File(root, namePrefix + "-" + UUID.randomUUID.toString)
-      Try { dir.mkdirs() } match {
-        case Success(_) => return dir
-        case _ =>
+      val candidate = Paths.get(root, s"$namePrefix-${UUID.randomUUID()}")
+      try {
+        val path = Files.createDirectories(candidate)
+        return path
+      } catch {
+        case e: IOException => error = e
       }
     }
     throw new IOException("Failed to create a temp directory (under " + root + ") after " +
-      MAX_DIR_CREATION_ATTEMPTS + " attempts!")
+      MAX_DIR_CREATION_ATTEMPTS + " attempts!", error)
   }
 
   /**
@@ -116,9 +119,9 @@ private[kyuubi] object Utils extends Logging {
    */
   def createTempDir(
       root: String = System.getProperty("java.io.tmpdir"),
-      namePrefix: String = "kyuubi"): File = {
+      namePrefix: String = "kyuubi"): Path = {
     val dir = createDirectory(root, namePrefix)
-    dir.deleteOnExit()
+    dir.toFile.deleteOnExit()
     dir
   }
 

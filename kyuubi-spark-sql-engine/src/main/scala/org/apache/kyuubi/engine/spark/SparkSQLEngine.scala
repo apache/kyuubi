@@ -121,7 +121,7 @@ private object SparkSQLEngine extends Logging {
       engine = startEngine(spark)
     } catch {
       case t: Throwable =>
-        error("Error start SparkSQLRunner", t)
+        error("Error start SparkSQLEngine", t)
         if (engine != null) {
           engine.stop()
         } else if (spark != null) {
