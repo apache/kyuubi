@@ -88,7 +88,7 @@ class OperationLogSuite extends KyuubiFunSuite {
       operationLog.read(-1).getColumns.get(0).getStringVal.getValues.asScala.distinct
     val logMsg1 = list(0)
     assert(logMsg1.contains("INFO") &&
-      logMsg1.contains(classOf[OperationLogSuite].getCanonicalName) && logMsg1.endsWith(msg1))
+      logMsg1.contains(classOf[OperationLogSuite].getSimpleName) && logMsg1.endsWith(msg1))
     val logMsg2 = list(2)
     assert(logMsg2.contains("WARN") && logMsg2.endsWith(msg2))
     val logMsg3 = list(3)

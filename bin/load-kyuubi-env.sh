@@ -49,6 +49,8 @@ fi
 
 export KYUUBI_SCALA_VERSION="${KYUUBI_SCALA_VERSION:-"2.12"}"
 
+export SPARK_HOME="${SPARK_HOME:-"${KYUUBI_HOME}/externals/spark-3.0.0-bin-hadoop2.7"}"
+
 # Print essential environment variables to console
 echo "JAVA_HOME: ${JAVA_HOME}"
 

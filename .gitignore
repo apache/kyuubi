@@ -39,6 +39,7 @@ metastore_db
 derby.log
 ldap
 */dependency-reduced-pom.xml
+*/*/dependency-reduced-pom.xml
 kyuubi-server/kyuubi-kdc/
 metrics/report.json
 metrics/.report.json.crc
