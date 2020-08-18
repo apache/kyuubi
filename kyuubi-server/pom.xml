@@ -31,6 +31,10 @@
     <packaging>jar</packaging>
     <name>Kyuubi Project Server</name>
 
+    <properties>
+        <spark.version2>2.4.6</spark.version2>
+    </properties>
+
     <dependencies>
 
         <dependency>
@@ -52,37 +56,37 @@
         </dependency>
 
         <dependency>
-            <groupId>${spark.group}</groupId>
-            <artifactId>spark-core_${scala.binary.version}</artifactId>
-            <version>2.4.5</version>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-core_2.12</artifactId>
+            <version></version>
             <scope>${spark.scope}</scope>
         </dependency>
 
         <dependency>
             <groupId>${spark.group}</groupId>
             <artifactId>spark-sql_${scala.binary.version}</artifactId>
-            <version>2.4.5</version>
+            <version>${spark.version2}</version>
             <scope>${spark.scope}</scope>
         </dependency>
 
         <dependency>
             <groupId>${spark.group}</groupId>
             <artifactId>spark-hive_${scala.binary.version}</artifactId>
-            <version>2.4.5</version>
+            <version>${spark.version2}</version>
             <scope>${spark.scope}</scope>
         </dependency>
 
         <dependency>
             <groupId>${spark.group}</groupId>
             <artifactId>spark-tags_${scala.binary.version}</artifactId>
-            <version>2.4.5</version>
+            <version>${spark.version2}</version>
             <scope>${spark.scope}</scope>
         </dependency>
 
         <dependency>
             <groupId>${spark.group}</groupId>
             <artifactId>spark-yarn_${scala.binary.version}</artifactId>
-            <version>2.4.5</version>
+            <version>${spark.version2}</version>
             <scope>${spark.scope}</scope>
             <exclusions>
                 <exclusion>
@@ -128,11 +132,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.scalatest</groupId>
-            <artifactId>scalatest_${scala.binary.version}</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common</artifactId>
             <version>${project.version}</version>
@@ -148,24 +147,29 @@
         <dependency>
             <groupId>${spark.group}</groupId>
             <artifactId>spark-core_${scala.binary.version}</artifactId>
-            <version>2.4.5</version>
+            <version>${spark.version2}</version>
             <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${spark.group}</groupId>
             <artifactId>spark-catalyst_${scala.binary.version}</artifactId>
-            <version>2.4.5</version>
+            <version>${spark.version2}</version>
             <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>${spark.group}</groupId>
             <artifactId>spark-sql_${scala.binary.version}</artifactId>
-            <version>2.4.5</version>
+            <version>${spark.version2}</version>
             <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>${hive.group}</groupId>
+            <groupId>org.spark-project.hive</groupId>
             <artifactId>hive-service</artifactId>
+            <version>1.2.1.spark2</version>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.curator</groupId>
@@ -190,6 +194,7 @@
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-test</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -229,7 +234,7 @@
                                     <arg value="${project.basedir}/../build/kyuubi-build-info"/>
                                     <arg value="${project.build.directory}/extra-resources"/>
                                     <arg value="${project.version}"/>
-                                    <arg value="${spark.version}"/>
+                                    <arg value="${spark.version2}"/>
                                 </exec>
                             </target>
                         </configuration>
@@ -246,7 +251,7 @@
                                     <arg value="${project.basedir}/../build/kyuubi-build-info"/>
                                     <arg value="${project.build.testOutputDirectory}"/>
                                     <arg value="${project.version}"/>
-                                    <arg value="${spark.version}"/>
+                                    <arg value="${spark.version2}"/>
                                 </exec>
                             </target>
                         </configuration>
