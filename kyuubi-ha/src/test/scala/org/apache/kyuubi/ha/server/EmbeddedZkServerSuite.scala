@@ -33,6 +33,7 @@ class EmbeddedZkServerSuite extends KyuubiFunSuite {
     assert(zkServer.getName === zkServer.getClass.getSimpleName)
     assert(zkServer.getServiceState === LATENT)
     val conf = KyuubiConf()
+    zkServer.stop() // only for test coverage
     zkServer.initialize(conf)
     assert(zkServer.getConf === conf)
     assert(zkServer.getServiceState === INITIALIZED)
@@ -48,6 +49,7 @@ class EmbeddedZkServerSuite extends KyuubiFunSuite {
 
   test("connect test with embedded zookeeper") {
     val zkServer = new EmbeddedZkServer()
+    assert(zkServer.getConnectString === null)
     zkServer.initialize(KyuubiConf())
     zkServer.start()
 

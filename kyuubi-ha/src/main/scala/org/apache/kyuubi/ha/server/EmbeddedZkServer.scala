@@ -59,8 +59,8 @@ class EmbeddedZkServer private(name: String) extends AbstractService(name) with 
   override def stop(): Unit = {
     if (server != null) {
       server.close()
+      server = null
     }
-    server = null
     super.stop()
   }
 
