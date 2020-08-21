@@ -18,9 +18,8 @@
 
 package yaooqinn.kyuubi.service
 
+import org.apache.kyuubi.Logging
 import org.apache.spark.SparkConf
-
-import yaooqinn.kyuubi.Logging
 
 /**
  * AbstractService.

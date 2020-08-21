@@ -25,17 +25,17 @@ import scala.collection.JavaConverters._
 
 import org.apache.commons.io.FileUtils
 import org.apache.hive.service.cli.thrift.TProtocolVersion
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.spark.KyuubiConf._
-import org.apache.spark.SparkConf
 
-import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.util.NamedThreadFactory
+import org.apache.spark.SparkConf
 import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.operation.OperationManager
 import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.service.{CompositeService, ServiceException}
 import yaooqinn.kyuubi.spark.SparkSessionCacheManager
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor
-import yaooqinn.kyuubi.utils.NamedThreadFactory
 
 /**
  * A SessionManager for managing [[KyuubiSession]]s
@@ -286,7 +286,7 @@ private[kyuubi] class SessionManager private(
   def getSession(sessionHandle: SessionHandle): KyuubiSession = {
     val session = handleToSession.get(sessionHandle)
     if (session == null) {
-      throw new KyuubiSQLException("Invalid SessionHandle " + sessionHandle)
+      throw KyuubiSQLException("Invalid SessionHandle " + sessionHandle)
     }
     session
   }
@@ -295,7 +295,7 @@ private[kyuubi] class SessionManager private(
   def closeSession(sessionHandle: SessionHandle) {
     val session = handleToSession.remove(sessionHandle)
     if (session == null) {
-      throw new KyuubiSQLException(s"Session $sessionHandle does not exist!")
+      throw KyuubiSQLException(s"Session $sessionHandle does not exist!")
     }
     val user = session.getUserName
     KyuubiServerMonitor.getListener(user).foreach {

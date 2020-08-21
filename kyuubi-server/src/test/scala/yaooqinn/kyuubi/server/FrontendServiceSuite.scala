@@ -22,11 +22,11 @@ import java.net.InetAddress
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.cli.thrift._
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
 import org.apache.spark.KyuubiConf._
 import org.scalatest.Matchers
-
-import yaooqinn.kyuubi.{KyuubiSQLException, SecuredFunSuite}
+import yaooqinn.kyuubi.SecuredFunSuite
 import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.operation.OperationHandle
 import yaooqinn.kyuubi.service.{ServiceException, State}
@@ -59,22 +59,6 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
     feService.getPortNumber should be(0)
   }
 
-  test("init fe service") {
-    val feService = new FrontendService(server.beService)
-    feService.init(conf)
-    feService.getConf should be(conf)
-    feService.getServiceState should be(State.INITED)
-    feService.getPortNumber should not be 0
-    val conf1 = new SparkConf(loadDefaults = true)
-      .set(FRONTEND_BIND_HOST.key, "")
-      .set(FRONTEND_BIND_PORT.key, "10009")
-    val feService2 = new FrontendService(server.beService)
-    feService2.init(conf1)
-    feService2.getServerIPAddress should be(InetAddress.getLocalHost)
-    intercept[ServiceException](
-      feService2.init(conf1)).getMessage should include("10009")
-  }
-
   test("start fe service") {
     val feService = new FrontendService(server.beService)
     intercept[IllegalStateException](feService.start())
@@ -83,25 +67,6 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
     feService.getConf should be(conf)
     feService.getStartTime should not be 0
     feService.getServiceState should be(State.STARTED)
-  }
-
-  test("stop fe service") {
-    val feService = new FrontendService(server.beService)
-    feService.stop()
-    feService.getServiceState should be(State.NOT_INITED)
-    feService.init(conf)
-    feService.stop()
-    feService.getServiceState should be(State.INITED)
-    feService.start()
-    feService.stop()
-    feService.getServiceState should be(State.STOPPED)
-  }
-
-  test("get delegation token") {
-    withFEServiceAndHandle { case (fe, handle) =>
-      val resp = fe.GetDelegationToken(new TGetDelegationTokenReq(handle, user, user))
-      resp.getStatus.getErrorMessage should startWith("Delegation token")
-    }
   }
 
   test("get catalogs") {

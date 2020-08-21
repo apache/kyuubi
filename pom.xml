@@ -20,15 +20,20 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>yaooqinn</groupId>
+    <groupId>org.apache.kyuubi</groupId>
     <artifactId>kyuubi</artifactId>
     <name>Kyuubi Project Parent</name>
-    <version>0.8.0-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
     <modules>
         <module>kyuubi-common</module>
+        <module>kyuubi-ha</module>
+        <module>externals/kyuubi-download</module>
+        <module>externals/kyuubi-spark-sql-engine</module>
+        <module>kyuubi-main</module>
+        <module>kyuubi-assembly</module>
         <module>kyuubi-thrift</module>
         <module>kyuubi-server</module>
-        <module>kyuubi-assembly</module>
+        <module>dev/kyuubi-codecov</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -52,28 +57,40 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>1.7</java.version>
-        <scala.version>2.11.12</scala.version>
+        <java.version>1.8</java.version>
+        <scala.version>2.12.10</scala.version>
         <scalatest.version>3.0.3</scalatest.version>
-        <scala.binary.version>2.11</scala.binary.version>
-        <maven.version>3.6.3</maven.version>
+        <scala.binary.version>2.12</scala.binary.version>
+        <maven.version>3.6.2</maven.version>
         <spark.group>org.apache.spark</spark.group>
-        <spark.version>2.4.5</spark.version>
+        <spark.version>3.0.0</spark.version>
         <spark.scope>provided</spark.scope>
-        <hadoop.version>2.6.5</hadoop.version>
+        <hadoop.version>2.7.4</hadoop.version>
         <hadoop.deps.scope>provided</hadoop.deps.scope>
-        <hive.group>org.spark-project.hive</hive.group>
-        <hive.version>1.2.1.spark2</hive.version>
-        <hive.deps.scope>provided</hive.deps.scope>
+        <hive.version>2.3.7</hive.version>
         <jpam.version>1.1</jpam.version>
         <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
         <apacheds.version>2.0.0-M15</apacheds.version>
-        <curator.version>2.6.0</curator.version>
+        <curator.version>2.7.1</curator.version>
         <codahale.metrics.version>3.1.2</codahale.metrics.version>
         <commons-lang.version>2.6</commons-lang.version>
+        <libthrift.version>0.12.0</libthrift.version>
     </properties>
 
     <repositories>
+
+        <repository>
+            <id>gcs-maven-central-mirror</id>
+            <name>GCS Maven Central mirror Asia Pacific</name>
+            <url>https://maven-central-asia.storage-download.googleapis.com/maven2/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+
         <repository>
             <id>central</id>
             <name>Maven Repository</name>
@@ -88,6 +105,18 @@
     </repositories>
 
     <pluginRepositories>
+        <pluginRepository>
+            <id>gcs-maven-central-mirror</id>
+            <name>GCS Maven Central mirror Asia Pacific</name>
+            <url>https://maven-central-asia.storage-download.googleapis.com/maven2/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </pluginRepository>
+
         <pluginRepository>
             <id>central</id>
             <url>https://repo.maven.apache.org/maven2</url>
@@ -115,39 +144,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <dependency>
-                <groupId>${spark.group}</groupId>
-                <artifactId>spark-core_${scala.binary.version}</artifactId>
-                <version>${spark.version}</version>
-                <scope>${spark.scope}</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>${spark.group}</groupId>
-                <artifactId>spark-yarn_${scala.binary.version}</artifactId>
-                <version>${spark.version}</version>
-                <scope>${spark.scope}</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.hadoop</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>${spark.group}</groupId>
-                <artifactId>spark-hive_${scala.binary.version}</artifactId>
-                <version>${spark.version}</version>
-                <scope>${spark.scope}</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>${spark.group}</groupId>
-                <artifactId>spark-tags_${scala.binary.version}</artifactId>
-                <version>${spark.version}</version>
-                <scope>${spark.scope}</scope>
-            </dependency>
-
             <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
@@ -213,6 +209,54 @@
             </dependency>
 
             <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-common</artifactId>
+                <version>${hadoop.version}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.hive</groupId>
+                <artifactId>hive-service-rpc</artifactId>
+                <version>${hive.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-codec</groupId>
+                        <artifactId>commons-codec</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-cli</groupId>
+                        <artifactId>commons-cli</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>tomcat</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+
+            <dependency>
+                <groupId>org.apache.hive</groupId>
+                <artifactId>hive-jdbc</artifactId>
+                <version>${hive.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-codec</groupId>
+                        <artifactId>commons-codec</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-cli</groupId>
+                        <artifactId>commons-cli</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>tomcat</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-servlet</artifactId>
                 <version>9.3.11.v20160721</version>
@@ -248,6 +292,13 @@
 
             <dependency>
                 <groupId>org.apache.curator</groupId>
+                <artifactId>curator-test</artifactId>
+                <version>${curator.version}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.curator</groupId>
                 <artifactId>curator-recipes</artifactId>
                 <version>${curator.version}</version>
                 <scope>provided</scope>
@@ -263,8 +314,8 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.16</version>
-                <scope>provided</scope>
+                <version>1.7.30</version>
+                <scope>compile</scope>
             </dependency>
 
             <dependency>
@@ -286,38 +337,21 @@
             </dependency>
 
             <dependency>
+                <groupId>org.apache.thrift</groupId>
+                <artifactId>libthrift</artifactId>
+                <version>${libthrift.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.twitter</groupId>
+                <artifactId>scrooge-core_${scala.binary.version}</artifactId>
+                <version>${scrooge.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest_${scala.binary.version}</artifactId>
                 <version>${scalatest.version}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>${spark.group}</groupId>
-                <artifactId>spark-core_${scala.binary.version}</artifactId>
-                <version>${spark.version}</version>
-                <type>test-jar</type>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>${spark.group}</groupId>
-                <artifactId>spark-catalyst_${scala.binary.version}</artifactId>
-                <version>${spark.version}</version>
-                <type>test-jar</type>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>${spark.group}</groupId>
-                <artifactId>spark-sql_${scala.binary.version}</artifactId>
-                <version>${spark.version}</version>
-                <type>test-jar</type>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>${hive.group}</groupId>
-                <artifactId>hive-service</artifactId>
-                <version>${hive.version}</version>
                 <scope>test</scope>
             </dependency>
 
@@ -349,12 +383,7 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <dependency>
-                <groupId>org.apache.curator</groupId>
-                <artifactId>curator-test</artifactId>
-                <version>2.6.0</version>
-                <scope>test</scope>
-            </dependency>
+
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
@@ -370,9 +399,22 @@
         </dependencies>
     </dependencyManagement>
 
+    <dependencies>
+
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
+            <version>${scala.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.scalatest</groupId>
+            <artifactId>scalatest_${scala.binary.version}</artifactId>
+        </dependency>
+    </dependencies>
+
     <build>
-        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
-        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -384,7 +426,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.5.1</version>
+		            <version>${maven.version}</version>
                     <configuration>
                         <source>${java.version}</source>
                         <target>${java.version}</target>
@@ -400,7 +442,7 @@
                 <plugin>
                     <groupId>net.alchim31.maven</groupId>
                     <artifactId>scala-maven-plugin</artifactId>
-                    <version>3.3.1</version>
+                    <version>4.3.0</version>
                     <executions>
                         <execution>
                             <id>eclipse-add-source</id>
@@ -424,7 +466,6 @@
                     <configuration>
                         <scalaVersion>${scala.version}</scalaVersion>
                         <recompileMode>incremental</recompileMode>
-                        <useZincServer>true</useZincServer>
                         <args>
                             <arg>-unchecked</arg>
                             <arg>-deprecation</arg>
@@ -466,11 +507,15 @@
                 <plugin>
                     <groupId>org.scalatest</groupId>
                     <artifactId>scalatest-maven-plugin</artifactId>
-                    <version>1.0</version>
+                    <version>2.0.0</version>
                     <configuration>
                         <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                         <junitxml>.</junitxml>
                         <filereports>TestSuite.txt</filereports>
+                        <systemProperties>
+                            <log4j.configuration>file:src/test/resources/log4j.properties</log4j.configuration>
+                            <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
+                        </systemProperties>
                     </configuration>
                     <executions>
                         <execution>
@@ -485,7 +530,36 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.0</version>
+                    <version>0.8.2</version>
+                    <configuration>
+                        <excludes>
+                            <exclude>**/org/apache/spark/launcher/*.class</exclude>
+                            <exclude>**/org/apache/spark/deploy/*.class</exclude>
+                            <exclude>**/org/apache/spark/SparkEnv.class</exclude>
+                            <exclude>**/org/apache/spark/SparkEnv$.class</exclude>
+                            <exclude>**/org/apache/spark/sql/hive/client/*.class</exclude>
+                            <exclude>**/org/apache/hive/service/rpc/thrift/*.class</exclude>
+                            <exclude>**/org/apache/hive/service/cli/thrift/*.class</exclude>
+                        </excludes>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>pre-test</id>
+                            <goals>
+                                <goal>prepare-agent</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>report</id>
+                            <phase>test</phase>
+                            <goals>
+                                <goal>report</goal>
+                            </goals>
+                            <configuration>
+                                <outputDirectory>${project.build.directory}/codecov</outputDirectory>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
 
                 <plugin>
@@ -524,6 +598,30 @@
                         </execution>
                     </executions>
                 </plugin>
+
+                <plugin>
+                    <groupId>org.scalastyle</groupId>
+                    <artifactId>scalastyle-maven-plugin</artifactId>
+                    <version>1.0.0</version>
+                    <configuration>
+                        <verbose>false</verbose>
+                        <failOnViolation>true</failOnViolation>
+                        <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                        <failOnWarning>false</failOnWarning>
+                        <sourceDirectory>${project.basedir}/src/main/scala</sourceDirectory>
+                        <testSourceDirectory>${project.basedir}/src/test/scala</testSourceDirectory>
+                        <configLocation>scalastyle-config.xml</configLocation>
+                        <outputFile>${project.build.directory}/scalastyle-output.xml</outputFile>
+                        <outputEncoding>UTF-8</outputEncoding>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -557,16 +655,52 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.scalastyle</groupId>
+                <artifactId>scalastyle-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- disable surefire -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+
+            <!-- enable scalatest -->
+            <plugin>
+                <groupId>org.scalatest</groupId>
+                <artifactId>scalatest-maven-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>create-tmp-dir</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <mkdir dir="${project.build.directory}/tmp" />
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>hadoop-2.7</id>
-            <properties>
-                <hadoop.version>2.7.4</hadoop.version>
-                <curator.version>2.7.1</curator.version>
-            </properties>
-        </profile>
-    </profiles>
 </project>

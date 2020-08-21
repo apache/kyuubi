@@ -28,7 +28,6 @@ import org.apache.hive.service.cli.thrift.TCLIService.Iface
 import org.apache.spark.SparkConf
 import org.apache.thrift.{TProcessor, TProcessorFactory}
 import org.apache.thrift.transport.{TSaslServerTransport, TTransport, TTransportFactory}
-
 import yaooqinn.kyuubi.auth.AuthMethods.AuthMethods
 import yaooqinn.kyuubi.auth.PlainSaslServer.SaslPlainProvider
 

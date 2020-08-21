@@ -23,11 +23,10 @@ import scala.util.Try
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.hive.conf.HiveConf.ConfVars
+import org.apache.kyuubi.Logging
 import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.sql.internal.NonClosableMutableURLClassLoader
 import org.apache.spark.util.MutableURLClassLoader
-
-import yaooqinn.kyuubi.Logging
 
 /**
  * A Hacking Class for [[IsolatedClientLoader]] to be not isolated

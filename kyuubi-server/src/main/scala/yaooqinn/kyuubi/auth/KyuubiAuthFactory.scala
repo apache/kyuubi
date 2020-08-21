@@ -30,12 +30,11 @@ import org.apache.hadoop.hive.thrift.HadoopThriftAuthBridge.Server.ServerMode
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.authorize.ProxyUsers
 import org.apache.hive.service.cli.thrift.TCLIService
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
 import org.apache.thrift.TProcessorFactory
 import org.apache.thrift.transport.{TTransportException, TTransportFactory}
-
-import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.service.ServiceException
 
 /**
@@ -86,7 +85,8 @@ class KyuubiAuthFactory(conf: SparkConf) extends Logging {
       }
     case _ => authMethod match {
       case AuthType.NOSASL => new TTransportFactory
-      case _ => PlainSaslHelper.getTransportFactory(authMethod.toString, conf)
+      case _ =>
+        PlainSaslHelper.getTransportFactory(authMethod.toString, conf)
     }
   }
 
@@ -101,8 +101,9 @@ class KyuubiAuthFactory(conf: SparkConf) extends Logging {
 
   def getRemoteUser: Option[String] = saslServer.map(_.getRemoteUser)
 
-  def getIpAddress: Option[String] = {
-    saslServer.map(_.getRemoteAddress).filter(_ != null).map(_.getHostAddress)
+  def getIpAddress: Option[String] = saslServer match {
+    case Some(server) => Option(server.getRemoteAddress).map(_.getHostAddress)
+    case _ => Option(TSetIpAddressProcessor.getUserIpAddress)
   }
 
   // retrieve delegation token for the given user
@@ -112,20 +113,20 @@ class KyuubiAuthFactory(conf: SparkConf) extends Logging {
       try {
         val tokenStr = server.getDelegationTokenWithService(owner, renewer, KYUUBI_CLIENT_TOKEN)
         if (tokenStr == null || tokenStr.isEmpty) {
-          throw new KyuubiSQLException(
-            "Received empty retrieving delegation token for user " + owner, "08S01")
+          throw KyuubiSQLException(
+            "Received empty retrieving delegation token for user " + owner)
         }
         tokenStr
       } catch {
         case e: IOException =>
           throw new KyuubiSQLException(
-            "Error retrieving delegation token for user " + owner, "08S01", e)
+            "Error retrieving delegation token for user " + owner, e)
         case e: InterruptedException =>
-          throw new KyuubiSQLException("delegation token retrieval interrupted", "08S01", e)
+          throw new KyuubiSQLException("delegation token retrieval interrupted", e)
       }
     case None =>
-      throw new KyuubiSQLException(
-        "Delegation token only supported over kerberos authentication", "08S01")
+      throw KyuubiSQLException(
+        "Delegation token only supported over kerberos authentication")
   }
 
   // cancel given delegation token
@@ -137,11 +138,11 @@ class KyuubiAuthFactory(conf: SparkConf) extends Logging {
       } catch {
         case e: IOException =>
           throw new KyuubiSQLException(
-            "Error canceling delegation token " + delegationToken, "08S01", e)
+            "Error canceling delegation token " + delegationToken, e)
       }
     case None =>
-      throw new KyuubiSQLException(
-        "Delegation token only supported over kerberos authentication", "08S01")
+      throw KyuubiSQLException(
+        "Delegation token only supported over kerberos authentication")
   }
 
   @throws[KyuubiSQLException]
@@ -152,11 +153,11 @@ class KyuubiAuthFactory(conf: SparkConf) extends Logging {
       } catch {
         case e: IOException =>
           throw new KyuubiSQLException(
-            "Error renewing delegation token " + delegationToken, "08S01", e)
+            "Error renewing delegation token " + delegationToken, e)
       }
     case None =>
-      throw new KyuubiSQLException(
-        "Delegation token only supported over kerberos authentication", "08S01")
+      throw KyuubiSQLException(
+        "Delegation token only supported over kerberos authentication")
   }
 }
 
@@ -188,7 +189,7 @@ object KyuubiAuthFactory {
     } catch {
       case e: IOException =>
         throw new KyuubiSQLException(
-          "Failed to validate proxy privilege of " + realUser + " for " + proxyUser, "08S01", e)
+          "Failed to validate proxy privilege of " + realUser + " for " + proxyUser, e)
     }
   }
 }

@@ -17,7 +17,8 @@
 
 package yaooqinn.kyuubi.ha
 
-import yaooqinn.kyuubi.Logging
+import org.apache.kyuubi.Logging
+
 import yaooqinn.kyuubi.server.KyuubiServer
 
 /**

@@ -26,7 +26,7 @@ import org.apache.commons.io.FileUtils
 import org.apache.hadoop.io.IOUtils
 import org.apache.spark.sql.Row
 
-import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 
 class LogFile private (
     file: File,

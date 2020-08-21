@@ -20,12 +20,11 @@ package yaooqinn.kyuubi.operation
 import java.sql.SQLException
 import java.util.concurrent.ConcurrentHashMap
 
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.log4j.Logger
 import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.types.StructType
-
-import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.operation.metadata._
@@ -136,7 +135,7 @@ private[kyuubi] class OperationManager private(name: String)
   def getOperation(operationHandle: OperationHandle): KyuubiOperation = {
     val operation = getOperationInternal(operationHandle)
     if (operation == null) {
-      throw new KyuubiSQLException("Invalid OperationHandle " + operationHandle)
+      throw KyuubiSQLException("Invalid OperationHandle " + operationHandle)
     }
     operation
   }
@@ -181,7 +180,7 @@ private[kyuubi] class OperationManager private(name: String)
   @throws[KyuubiSQLException]
   def closeOperation(opHandle: OperationHandle): Unit = {
     val operation = removeOperation(opHandle)
-    if (operation == null) throw new KyuubiSQLException("Operation does not exist!")
+    if (operation == null) throw KyuubiSQLException("Operation does not exist!")
     MetricsSystem.get.foreach(_.OPEN_OPERATIONS.dec())
     operation.close()
   }
@@ -201,7 +200,7 @@ private[kyuubi] class OperationManager private(name: String)
     // get the OperationLog object from the operation
     val opLog: OperationLog = getOperation(opHandle).getOperationLog
     if (opLog == null) {
-      throw new KyuubiSQLException(
+      throw KyuubiSQLException(
         "Couldn't find log associated with operation handle: " + opHandle)
     }
     try {

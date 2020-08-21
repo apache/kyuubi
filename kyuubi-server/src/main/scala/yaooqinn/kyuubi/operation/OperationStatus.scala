@@ -17,7 +17,7 @@
 
 package yaooqinn.kyuubi.operation
 
-import yaooqinn.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.KyuubiSQLException
 
 class OperationStatus(state: OperationState, operationException: KyuubiSQLException) {
   def getState: OperationState = state

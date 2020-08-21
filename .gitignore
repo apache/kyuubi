@@ -39,6 +39,11 @@ metastore_db
 derby.log
 ldap
 */dependency-reduced-pom.xml
+*/*/dependency-reduced-pom.xml
 kyuubi-server/kyuubi-kdc/
 metrics/report.json
 metrics/.report.json.crc
+/kyuubi-ha/embedded_zookeeper/
+embedded_zookeeper/
+/externals/kyuubi-spark-sql-engine/kyuubi_operation_logs/
+/externals/kyuubi-spark-sql-engine/spark-warehouse/

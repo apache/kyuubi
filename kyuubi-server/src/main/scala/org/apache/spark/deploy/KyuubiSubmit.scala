@@ -22,10 +22,10 @@ import java.io.{File, PrintStream}
 import scala.collection.mutable.{ArrayBuffer, HashMap, Map}
 
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.kyuubi.Logging
 import org.apache.spark._
 import org.apache.spark.util.{MutableURLClassLoader, Utils}
 
-import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.server.KyuubiServer
 import yaooqinn.kyuubi.yarn.KyuubiYarnClient
 

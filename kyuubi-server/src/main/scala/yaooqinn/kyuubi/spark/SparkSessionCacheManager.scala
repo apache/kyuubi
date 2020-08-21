@@ -22,11 +22,11 @@ import java.util.concurrent.{ConcurrentHashMap, Executors, TimeUnit}
 import scala.collection.JavaConverters._
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder
+import org.apache.kyuubi.Logging
 import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.sql.SparkSession
 
-import yaooqinn.kyuubi.Logging
 import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.service.AbstractService
 import yaooqinn.kyuubi.ui.KyuubiServerMonitor

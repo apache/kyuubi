@@ -17,11 +17,10 @@
 
 package yaooqinn.kyuubi.operation.metadata
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.execution.command.ShowDatabasesCommand
 import org.apache.spark.sql.types.StructType
-
-import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.operation._
 import yaooqinn.kyuubi.session.KyuubiSession
 
@@ -43,7 +42,7 @@ class GetSchemasOperation (
     } catch {
       case e: Exception =>
         setState(ERROR)
-        throw new KyuubiSQLException(e)
+        throw KyuubiSQLException(e)
     }
   }
 

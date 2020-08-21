@@ -21,11 +21,11 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import org.apache.spark.{KyuubiSparkUtil, SparkConf}
 import org.apache.spark.KyuubiConf._
-
-import yaooqinn.kyuubi._
 import yaooqinn.kyuubi.ha.{FailoverService, HighAvailableService, LoadBalanceService}
 import yaooqinn.kyuubi.metrics.MetricsSystem
 import yaooqinn.kyuubi.service.{CompositeService, ServiceException}
+
+import org.apache.kyuubi.Logging
 
 /**
  * Main entrance of Kyuubi Server

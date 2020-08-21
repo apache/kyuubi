@@ -1,6 +1,6 @@
 language: scala
 scala:
-  - 2.11.8
+  - 2.12.10
 jdk:
   - openjdk8
 
@@ -9,12 +9,10 @@ cache:
     - $HOME/.m2
     - ./build
 
-before_deploy:
-  - ./build/dist --tgz
-
 deploy:
   - provider: pages
     skip_cleanup: true
+    keep_history: true
     github_token: $GITHUB_TOKEN
     email: yaooqinn@hotmail.com
     name: Kent Yao
@@ -30,10 +28,10 @@ deploy:
 
 jobs:
   include:
-    - stage: spark2.4
+    - stage: spark3.0.0
       language: scala
       script:
-        - ./build/mvn clean install -Dmaven.javadoc.skip=true -B -V
+        - mvn clean verify -pl :kyuubi-common,:kyuubi-ha,:kyuubi-main,:kyuubi-spark-sql-engine,:kyuubi-codecov -Dmaven.javadoc.skip=true -B -V
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

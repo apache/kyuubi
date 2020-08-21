@@ -25,13 +25,12 @@ import scala.concurrent.duration.Duration
 import scala.util.Try
 
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.spark.{KyuubiSparkUtil, SparkConf, SparkContext, SparkEnv}
 import org.apache.spark.KyuubiConf._
 import org.apache.spark.KyuubiSparkUtil._
 import org.apache.spark.sql.{SparkSession, SparkSQLUtils}
 import org.apache.spark.ui.KyuubiSessionTab
-
-import yaooqinn.kyuubi.{KyuubiSQLException, Logging}
 import yaooqinn.kyuubi.author.AuthzHelper
 import yaooqinn.kyuubi.ui.{KyuubiServerListener, KyuubiServerMonitor}
 import yaooqinn.kyuubi.utils.{KyuubiHadoopUtil, KyuubiHiveUtil, ReflectUtils}
@@ -113,7 +112,7 @@ class SparkSessionWithUGI(
         configureSparkSession(sessionConf)
       case _ if isPartiallyConstructed(userName) =>
         if (System.currentTimeMillis() - startTime > timeout) {
-          throw new KyuubiSQLException(userName + " has a constructing sc, timeout, aborting")
+          throw KyuubiSQLException(userName + " has a constructing sc, timeout, aborting")
         } else {
           SPARK_INSTANTIATION_LOCK.synchronized {
             SPARK_INSTANTIATION_LOCK.wait(1000)
@@ -168,8 +167,8 @@ class SparkSessionWithUGI(
              |Please check whether the specified yarn queue [${conf.getOption(QUEUE)
             .getOrElse("")}] has sufficient resources left
            """.stripMargin
-        throw new KyuubiSQLException(msg, "08S01", 1001, e)
-      case e: Exception => throw new KyuubiSQLException(e)
+        throw new KyuubiSQLException(msg, e)
+      case e: Exception => throw KyuubiSQLException(e)
     } finally {
       setFullyConstructed(userName)
       newContext.join()

@@ -21,9 +21,8 @@ import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.hadoop.hive.ql.session.SessionState
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.kyuubi.Logging
 import org.apache.spark.{KyuubiSparkUtil, SparkConf}
-
-import yaooqinn.kyuubi.Logging
 
 object KyuubiHiveUtil extends Logging {
 

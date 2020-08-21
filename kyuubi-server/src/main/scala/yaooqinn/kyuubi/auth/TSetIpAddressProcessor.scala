@@ -17,11 +17,10 @@
 package yaooqinn.kyuubi.auth
 
 import org.apache.hive.service.cli.thrift.TCLIService.{Iface, Processor}
+import org.apache.kyuubi.Logging
 import org.apache.thrift.TException
 import org.apache.thrift.protocol.TProtocol
 import org.apache.thrift.transport.{TSaslClientTransport, TSaslServerTransport, TSocket, TTransport}
-
-import yaooqinn.kyuubi.Logging
 
 /**
  * This class is responsible for setting the ipAddress for operations executed via Kyuubi.

@@ -21,6 +21,7 @@ import java.io.File
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.cli.thrift.{TFetchOrientation, TProtocolVersion}
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.spark._
 import org.apache.spark.KyuubiConf.{FRONTEND_BIND_PORT, LOGGING_OPERATION_LOG_DIR}
 import org.apache.spark.sql.catalyst.catalog.FunctionResource
@@ -29,8 +30,6 @@ import org.apache.spark.sql.execution.command.CreateFunctionCommand
 import org.apache.spark.sql.internal.SQLConf
 import org.mockito.Mockito.when
 import org.scalatest.mock.MockitoSugar
-
-import yaooqinn.kyuubi.KyuubiSQLException
 import yaooqinn.kyuubi.cli.FetchOrientation
 import yaooqinn.kyuubi.cli.FetchOrientation.{FETCH_FIRST, FETCH_NEXT}
 import yaooqinn.kyuubi.operation.statement.ExecuteStatementInClientMode
