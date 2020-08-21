@@ -24,7 +24,7 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.spark.operation.log.{LogDivertAppender, OperationLog}
+import org.apache.kyuubi.engine.spark.operation.log.LogDivertAppender
 import org.apache.kyuubi.operation.{Operation, OperationHandle, OperationManager}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.{Session, SessionHandle}

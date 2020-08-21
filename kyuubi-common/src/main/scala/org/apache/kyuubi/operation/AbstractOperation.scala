@@ -46,6 +46,8 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
   @volatile protected var operationException: KyuubiSQLException = _
   @volatile protected var hasResultSet: Boolean = false
 
+  protected def statement: String = opType.toString
+
   protected def setHasResultSet(hasResultSet: Boolean): Unit = {
     this.hasResultSet = hasResultSet
     handle.setHasResultSet(hasResultSet)
@@ -56,6 +58,8 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
   }
 
   protected def setState(newState: OperationState): Unit = {
+    info(s"Processing ${session.user}'s query[$statementId]: ${state.name} -> ${newState.name}," +
+      s" statement: $statement")
     OperationState.validateTransition(state, newState)
     state = newState
 
@@ -70,6 +74,10 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
 
   protected def isClosedOrCanceled: Boolean = {
     state == OperationState.CLOSED || state == OperationState.CANCELED
+  }
+
+  protected def isTerminalState(operationState: OperationState): Boolean = {
+    OperationState.isTerminal(operationState)
   }
 
   protected def assertState(state: OperationState): Unit = {
