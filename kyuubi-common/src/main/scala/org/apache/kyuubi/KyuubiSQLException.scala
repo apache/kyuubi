@@ -41,11 +41,23 @@ case class KyuubiSQLException(msg: String, cause: Throwable) extends SQLExceptio
 
 object KyuubiSQLException {
 
+  private final val HEAD_MARK: String = "*"
+  private final val SEPARATOR: Char = ':'
+
   def apply(cause: Throwable): KyuubiSQLException = {
     new KyuubiSQLException(cause.getMessage, cause)
   }
 
   def apply(msg: String): KyuubiSQLException = new KyuubiSQLException(msg, null)
+
+  def apply(tStatus: TStatus): KyuubiSQLException = {
+    val msg = tStatus.getErrorMessage
+    val cause = toCause(tStatus.getInfoMessages.asScala)
+    cause match {
+      case k: KyuubiSQLException if k.getMessage == msg => k
+      case _ => apply(msg, cause)
+    }
+  }
 
   def toTStatus(e: Exception): TStatus = e match {
     case k: KyuubiSQLException => k.toTStatus
@@ -81,16 +93,56 @@ object KyuubiSQLException {
       trace: Array[StackTraceElement],
       max: Int): List[String] = {
     val builder = new StringBuilder
-    builder.append('*').append(ex.getClass.getName).append(':')
-    builder.append(ex.getMessage).append(':')
-    builder.append(trace.length).append(':').append(max)
+    builder.append(HEAD_MARK).append(ex.getClass.getName).append(SEPARATOR)
+    builder.append(ex.getMessage).append(SEPARATOR)
+    builder.append(trace.length).append(SEPARATOR).append(max)
     List(builder.toString) ++ (0 to max).map { i =>
       builder.setLength(0)
-      builder.append(trace(i).getClassName).append(":")
-      builder.append(trace(i).getMethodName).append(":")
-      builder.append(Option(trace(i).getFileName).getOrElse("")).append(':')
+      builder.append(trace(i).getClassName).append(SEPARATOR)
+      builder.append(trace(i).getMethodName).append(SEPARATOR)
+      builder.append(Option(trace(i).getFileName).getOrElse("")).append(SEPARATOR)
       builder.append(trace(i).getLineNumber)
       builder.toString
     }.toList
   }
+
+  private def newInstance(className: String, message: String, cause: Throwable): Throwable = {
+    try {
+      Class.forName(className)
+        .getConstructor(classOf[String], classOf[Throwable])
+        .newInstance(message, cause).asInstanceOf[Throwable]
+    } catch {
+      case e: Exception => throw new RuntimeException(className + ":" + message, e)
+    }
+  }
+
+  private def getCoordinates(line: String): (Int, Int, Int) = {
+    val i1 = line.indexOf(SEPARATOR)
+    val i3 = line.lastIndexOf(SEPARATOR)
+    val i2 = line.substring(0, i3).lastIndexOf(SEPARATOR)
+    (i1, i2, i3)
+  }
+
+  private def toCause(details: Seq[String]): Throwable = {
+    var ex: Throwable = null
+    if (details != null && details.nonEmpty) {
+      val head = details.head
+      val (i1, i2, i3) = getCoordinates(head)
+      val exClz = head.substring(1, i1)
+      val msg = head.substring(i1 + 1, i2)
+      val length = head.substring(i3 + 1).toInt
+      val stackTraceElements = details.tail.take(length + 1).map { line =>
+        val (i1, i2, i3) = getCoordinates(line)
+        val clzName = line.substring(0, i1)
+        val methodName = line.substring(i1 + 1, i2)
+        val fileName = line.substring(i2 + 1, i3)
+        val lineNum = line.substring(i3 + 1).toInt
+        new StackTraceElement(clzName, methodName, fileName, lineNum)
+      }
+      ex = newInstance(exClz, msg, toCause(details.slice(length + 2, details.length)))
+      ex.setStackTrace(stackTraceElements.toArray)
+    }
+    ex
+  }
+
 }

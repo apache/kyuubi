@@ -41,13 +41,7 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
 
   def getOperationLog: OperationLog = operationLog
 
-  protected def statement: String = opType.toString
-
   protected def resultSchema: StructType
-
-  protected def isTerminalState(operationState: OperationState): Boolean = {
-    OperationState.isTerminal(operationState)
-  }
 
   protected def cleanup(targetState: OperationState): Unit = synchronized {
     if (!isTerminalState(state)) {
@@ -104,12 +98,6 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
           }
         }
       }
-  }
-
-  override def setState(newState: OperationState): Unit = {
-    info(s"Processing ${session.user}'s query[$statementId]: ${state.name} -> ${newState.name}," +
-      s" statement: $statement")
-    super.setState(newState)
   }
 
   override protected def beforeRun(): Unit = {
