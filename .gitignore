@@ -45,5 +45,5 @@ metrics/report.json
 metrics/.report.json.crc
 /kyuubi-ha/embedded_zookeeper/
 embedded_zookeeper/
-/kyuubi-spark-sql-engine/spark-warehouse/
-/kyuubi-spark-sql-engine/kyuubi_operation_logs/
+/externals/kyuubi-spark-sql-engine/kyuubi_operation_logs/
+/externals/kyuubi-spark-sql-engine/spark-warehouse/

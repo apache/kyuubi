@@ -53,8 +53,8 @@
                         </goals>
                         <configuration>
                             <url>${spark.archive.mirror}/apache/spark/spark-${spark.version}/${spark.archive.name}</url>
-                            <sha512>${spark.archive.sha512}</sha512>
-                            <!-- outputDirectory>${project.build.directory}</outputDirectory -->
+                            <!-- sha512>${spark.archive.sha512}</sha512 -->
+                            <outputDirectory>${project.build.directory}</outputDirectory>
                             <readTimeOut>60000</readTimeOut>
                             <retries>3</retries>
                             <unpack>true</unpack>

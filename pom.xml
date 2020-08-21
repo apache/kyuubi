@@ -28,11 +28,12 @@
         <module>kyuubi-common</module>
         <module>kyuubi-ha</module>
         <module>externals/kyuubi-download</module>
-        <module>kyuubi-spark-sql-engine</module>
+        <module>externals/kyuubi-spark-sql-engine</module>
         <module>kyuubi-main</module>
         <module>kyuubi-assembly</module>
         <module>kyuubi-thrift</module>
         <module>kyuubi-server</module>
+        <module>dev/kyuubi-codecov</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -529,7 +530,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.0</version>
+                    <version>0.8.2</version>
                     <configuration>
                         <excludes>
                             <exclude>**/org/apache/spark/launcher/*.class</exclude>
@@ -554,6 +555,9 @@
                             <goals>
                                 <goal>report</goal>
                             </goals>
+                            <configuration>
+                                <outputDirectory>${project.build.directory}/codecov</outputDirectory>
+                            </configuration>
                         </execution>
                     </executions>
                 </plugin>
