@@ -9,12 +9,10 @@ cache:
     - $HOME/.m2
     - ./build
 
-before_deploy:
-  - ./build/dist --tgz
-
 deploy:
   - provider: pages
     skip_cleanup: true
+    keep_history: true
     github_token: $GITHUB_TOKEN
     email: yaooqinn@hotmail.com
     name: Kent Yao
