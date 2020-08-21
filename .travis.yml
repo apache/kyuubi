@@ -33,7 +33,7 @@ jobs:
     - stage: spark3.0.0
       language: scala
       script:
-        - mvn clean verfiy -pl :kyuubi-common,:kyuubi-ha,:kyuubi-main,:kyuubi-spark-sql-engine,:kyuubi-codecov -Dmaven.javadoc.skip=true -B -V
+        - mvn clean verify -pl :kyuubi-common,:kyuubi-ha,:kyuubi-main,:kyuubi-spark-sql-engine,:kyuubi-codecov -Dmaven.javadoc.skip=true -B -V
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

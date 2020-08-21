@@ -36,8 +36,6 @@
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
-            <type>test-jar</type>
         </dependency>
 
         <dependency>
