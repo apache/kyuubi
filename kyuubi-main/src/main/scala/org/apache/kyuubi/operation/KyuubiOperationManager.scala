@@ -16,6 +16,7 @@
  */
 
 package org.apache.kyuubi.operation
+
 import java.util.concurrent.ConcurrentHashMap
 
 import org.apache.hive.service.rpc.thrift.{TCLIService, TFetchResultsReq, TRowSet, TSessionHandle}
