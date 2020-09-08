@@ -18,41 +18,16 @@
 package org.apache.kyuubi.server
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.server.EmbeddedZkServer
-import org.apache.kyuubi.service.{AbstractBackendService, SeverLike}
+import org.apache.kyuubi.service.AbstractBackendService
+import org.apache.kyuubi.session.{KyuubiSessionManager, SessionManager}
 
-object KyuubiServer {
+class KyuubiBackendService(name: String) extends AbstractBackendService(name) {
 
-  def main(args: Array[String]): Unit = {
-    val conf = new KyuubiConf().loadFileDefaults()
+  def this() = this(classOf[KyuubiBackendService].getSimpleName)
 
-    val zkEnsemble = conf.get(HA_ZK_QUORUM)
-    if (zkEnsemble == null || zkEnsemble.isEmpty) {
-      val zkServer = new EmbeddedZkServer()
-      zkServer.initialize(conf)
-      zkServer.start()
-      conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
-    }
-
-    val server = new KyuubiServer()
-    server.initialize(conf)
-    server.start()
-
-    Thread.sleep(10000)
-    print("Hello Kyuubi")
-  }
-}
-
-class KyuubiServer(name: String) extends SeverLike(name) {
-
-  def this() = this(classOf[KyuubiServer].getSimpleName)
-
-  override protected val backendService: AbstractBackendService = new KyuubiBackendService()
+  override val sessionManager: SessionManager = new KyuubiSessionManager()
 
   override def initialize(conf: KyuubiConf): Unit = {
     super.initialize(conf)
   }
-
-  override protected def stopServer(): Unit = {}
 }

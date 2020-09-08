@@ -20,6 +20,8 @@ package org.apache.kyuubi.service
 import java.net.{InetAddress, ServerSocket}
 import java.util.concurrent.TimeUnit
 
+import scala.collection.JavaConverters._
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
@@ -161,8 +163,10 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     val userName = getUserName(req)
     val ipAddress = authFactory.getIpAddress.orNull
     val protocol = getMinVersion(BackendService.SERVER_VERSION, req.getClient_protocol)
+    val configuration =
+      Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String])
     val sessionHandle = be.openSession(
-      protocol, userName, req.getPassword, ipAddress, req.getConfiguration)
+      protocol, userName, req.getPassword, ipAddress, configuration)
     res.setServerProtocolVersion(protocol)
     sessionHandle
   }

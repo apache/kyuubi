@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.service
 
-import scala.collection.JavaConverters._
-
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion, TRowSet, TTableSchema}
 
 import org.apache.kyuubi.config.KyuubiConf
@@ -37,8 +35,8 @@ abstract class AbstractBackendService(name: String)
       user: String,
       password: String,
       ipAddr: String,
-      configs: java.util.Map[String, String]): SessionHandle = {
-    sessionManager.openSession(protocol, user, password, ipAddr, configs.asScala.toMap)
+      configs: Map[String, String]): SessionHandle = {
+    sessionManager.openSession(protocol, user, password, ipAddr, configs)
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {

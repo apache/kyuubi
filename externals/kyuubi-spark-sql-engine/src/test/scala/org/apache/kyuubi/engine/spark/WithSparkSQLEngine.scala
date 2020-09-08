@@ -22,11 +22,24 @@ import java.util.Locale
 
 import org.apache.hadoop.hive.ql.metadata.Hive
 import org.apache.hadoop.hive.ql.session.SessionState
+import org.apache.hive.service.rpc.thrift.TCLIService
 import org.apache.spark.sql.SparkSession
+import org.apache.thrift.protocol.TBinaryProtocol
+import org.apache.thrift.transport.TSocket
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
 trait WithSparkSQLEngine extends KyuubiFunSuite {
+
+  val warehousePath = Utils.createTempDir()
+  val metastorePath = Utils.createTempDir()
+  warehousePath.toFile.delete()
+  metastorePath.toFile.delete()
+  System.setProperty("javax.jdo.option.ConnectionURL",
+    s"jdbc:derby:;databaseName=$metastorePath;create=true")
+  System.setProperty("spark.sql.warehouse.dir", warehousePath.toString)
+  System.setProperty("spark.sql.hive.metastore.sharedPrefixes", "org.apache.hive.jdbc")
 
   protected val spark: SparkSession = SparkSQLEngine.createSpark()
 
@@ -91,5 +104,22 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
 
   protected def withJdbcStatement(tableNames: String*)(f: Statement => Unit): Unit = {
     withMultipleConnectionJdbcStatement(tableNames: _*)(f)
+  }
+
+  protected def withThriftClient(f: TCLIService.Iface => Unit): Unit = {
+    val hostAndPort = connectionUrl.split(":")
+    val host = hostAndPort.head
+    val port = hostAndPort(1).toInt
+    val socket = new TSocket(host, port)
+    val transport = PlainSASLHelper.getPlainTransport(Utils.currentUser, "anonymous", socket)
+
+    val protocol = new TBinaryProtocol(transport)
+    val client = new TCLIService.Client(protocol)
+    transport.open()
+    try {
+      f(client)
+    } finally {
+      socket.close()
+    }
   }
 }
