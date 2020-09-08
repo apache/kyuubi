@@ -148,7 +148,7 @@ object ServiceDiscovery {
   import org.apache.kyuubi.ha.HighAvailabilityConf._
   import RetryPolicies._
 
-  private final val DEFAULT_ACL_PROVIDER = ZooKeeperACLProvider()
+  private final val DEFAULT_ACL_PROVIDER = new ZooKeeperACLProvider()
 
   /**
    * Create a [[CuratorFramework]] instance to be used as the ZooKeeper client

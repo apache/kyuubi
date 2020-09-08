@@ -22,14 +22,14 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.zookeeper.ZooDefs
 import org.apache.zookeeper.data.ACL
 
-case class ZooKeeperACLProvider() extends ACLProvider {
+class ZooKeeperACLProvider extends ACLProvider {
 
   /**
    * Return the ACL list to use by default.
    *
    * @return default ACL list
    */
-  override def getDefaultAcl: java.util.List[ACL] = {
+  override lazy val getDefaultAcl: java.util.List[ACL] = {
     val nodeAcls = new java.util.ArrayList[ACL]
     if (UserGroupInformation.isSecurityEnabled) {
       // Read all to the world
