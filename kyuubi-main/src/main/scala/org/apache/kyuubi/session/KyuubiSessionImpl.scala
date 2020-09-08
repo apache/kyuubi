@@ -28,6 +28,7 @@ import org.apache.thrift.transport.{TSocket, TTransport}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.service.BackendService
 
@@ -80,6 +81,7 @@ class KyuubiSessionImpl(
         client = new TCLIService.Client(new TBinaryProtocol(transport))
         openSession()
       case None =>
+//        new SparkProcessBuilder(sessionConf.toSparkPrefixedConf, Some(user), )
 
     }
   }

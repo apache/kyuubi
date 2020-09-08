@@ -22,6 +22,7 @@ import java.sql.{Date, Timestamp}
 
 import scala.collection.JavaConverters._
 
+import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.execution.HiveResult
 import org.apache.spark.sql.types.{ArrayType, BinaryType, DateType, DoubleType, IntegerType, MapType, StructType, TimestampType}
@@ -240,5 +241,19 @@ class RowSetSuite extends KyuubiFunSuite {
 
     val r9 = iter.next().getColVals
     assert(r9.get(14).getStringVal.getValue === new CalendarInterval(8, 8, 8).toString)
+  }
+
+  test("to row set") {
+    TProtocolVersion.values().foreach { proto =>
+      val set = RowSet.toTRowSet(rows, schema, proto)
+      if (proto.getValue < TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6.getValue) {
+        assert(!set.isSetColumns, proto.toString)
+        assert(set.isSetRows, proto.toString)
+      } else {
+        assert(set.isSetColumns, proto.toString)
+        assert(set.isSetRows, proto.toString)
+      }
+    }
+
   }
 }

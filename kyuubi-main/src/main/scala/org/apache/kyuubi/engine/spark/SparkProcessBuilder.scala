@@ -85,7 +85,7 @@ object SparkProcessBuilder extends Logging {
     val sparkProcessBuilder = new SparkProcessBuilder(
       conf,
       Some("kent"),
-      Some("kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine-1.0.0-SNAPSHOT.jar"))
+      Some("externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine-1.0.0-SNAPSHOT.jar"))
     print(sparkProcessBuilder.toString)
     val file = new File(s"${UUID.randomUUID()}abc.log")
     file.createNewFile()
