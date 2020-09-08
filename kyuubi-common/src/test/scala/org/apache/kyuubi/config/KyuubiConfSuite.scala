@@ -31,4 +31,59 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     assert(conf.get(EMBEDDED_ZK_TEMP_DIR).endsWith("embedded_zookeeper"))
     assert(conf.get(OPERATION_IDLE_TIMEOUT) === Duration.ofHours(3).toMillis)
   }
+
+  test("kyuubi conf w/ w/o no sys defaults") {
+    val key = "kyuubi.conf.abc"
+    System.setProperty(key, "xyz")
+    assert(KyuubiConf(false).getOption(key).isEmpty)
+    assert(KyuubiConf(true).getAll.contains(key))
+  }
+
+  test("load default config file") {
+    val conf = KyuubiConf().loadFileDefaults()
+    assert(conf.getOption("kyuubi.yes").get === "yes")
+  }
+
+
+  test("set and unset conf") {
+    val conf = new KyuubiConf()
+
+    val key = "kyuubi.conf.abc"
+    conf.set(key, "opq")
+    assert(conf.getOption(key) === Some("opq"))
+
+    conf.set(OPERATION_IDLE_TIMEOUT, 5L)
+    assert(conf.get(OPERATION_IDLE_TIMEOUT) === 5)
+
+    conf.set(FRONTEND_BIND_HOST, "kentyao.org")
+    assert(conf.get(FRONTEND_BIND_HOST).get === "kentyao.org")
+
+    conf.setIfMissing(OPERATION_IDLE_TIMEOUT, 60L)
+    assert(conf.get(OPERATION_IDLE_TIMEOUT) === 5)
+
+    conf.setIfMissing(EMBEDDED_ZK_PORT, 2188)
+    assert(conf.get(EMBEDDED_ZK_PORT) === 2188)
+
+    conf.unset(EMBEDDED_ZK_PORT)
+    assert(conf.get(EMBEDDED_ZK_PORT) === 2181)
+
+    conf.unset(key)
+    assert(conf.getOption(key).isEmpty)
+
+    val map = conf.getAllWithPrefix("kyuubi", "")
+    assert(map(FRONTEND_BIND_HOST.key.substring(7)) === "kentyao.org")
+    val map1 = conf.getAllWithPrefix("kyuubi", "operation")
+    assert(map1(OPERATION_IDLE_TIMEOUT.key.substring(7)) === "PT0.005S")
+    assert(map1.size === 1)
+  }
+
+  test("clone") {
+    val conf = KyuubiConf()
+    val key = "kyuubi.abc.conf"
+    conf.set(key, "xyz")
+    val cloned = conf.clone
+    assert(conf !== cloned)
+    assert(cloned.getOption(key).get === "xyz")
+  }
+
 }

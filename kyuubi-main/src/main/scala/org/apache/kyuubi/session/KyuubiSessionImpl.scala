@@ -46,7 +46,6 @@ class KyuubiSessionImpl(
     conf.foreach { case (k, v) => sessionConf.set(k, v) }
   }
 
-
   configureSession()
 
   private val zkNamespace = s"$zkNamespacePrefix-$user"
@@ -65,7 +64,6 @@ class KyuubiSessionImpl(
       case e: Exception => throw KyuubiSQLException(e)
     }
   }
-
 
   override def open(): Unit = {
     getServerHost().map { h =>
@@ -104,7 +102,6 @@ class KyuubiSessionImpl(
       throw KyuubiSQLException(tStatus)
     }
   }
-
 
   override def close(): Unit = {
     super.close()

@@ -71,6 +71,8 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     config.readFrom(reader)
   }
 
+  def getOption(key: String): Option[String] = Option(settings.get(key))
+
   /** unset a parameter from the configuration */
   def unset(key: String): KyuubiConf = {
     settings.remove(key)
@@ -94,7 +96,7 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
    */
   def getAllWithPrefix(dropped: String, remainder: String): Map[String, String] = {
     getAll.filter { case (k, _) => k.startsWith(s"$dropped.$remainder")}.map {
-      case (k, v) => (k.substring(dropped.length), v)
+      case (k, v) => (k.substring(dropped.length + 1), v)
     }
   }
 
@@ -105,6 +107,10 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
       cloned.set(e.getKey, e.getValue)
     }
     cloned
+  }
+
+  def toSparkPrefixedConf: Map[String, String] = {
+    settings.entrySet().asScala.map { e => SPARK_PREFIX + e.getKey -> e.getValue}.toMap
   }
 }
 
