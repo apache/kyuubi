@@ -45,6 +45,11 @@ private[kyuubi] object Utils extends Logging {
       .orElse(env.get(KYUUBI_HOME).map(_ + File.separator + "/conf"))
       .map( d => new File(d + File.separator + KYUUBI_CONF_FILE_NAME))
       .filter(f => f.exists() && f.isFile)
+      .orElse {
+        Option(getClass.getClassLoader.getResource(KYUUBI_CONF_FILE_NAME)).map { url =>
+          new File(url.getFile)
+        }
+      }
   }
 
   def getPropertiesFromFile(file: Option[File]): Map[String, String] = {

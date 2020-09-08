@@ -19,11 +19,9 @@ package org.apache.kyuubi.session
 
 import java.util.concurrent.ConcurrentHashMap
 
-import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
 import org.apache.curator.framework.CuratorFramework
-import org.apache.curator.utils.ZKPaths
 import org.apache.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
