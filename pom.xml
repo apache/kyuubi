@@ -74,7 +74,7 @@
         <curator.version>2.7.1</curator.version>
         <codahale.metrics.version>3.1.2</codahale.metrics.version>
         <commons-lang.version>2.6</commons-lang.version>
-        <libthrift.version>0.9.3</libthrift.version>
+        <libthrift.version>0.12.0</libthrift.version>
     </properties>
 
     <repositories>
