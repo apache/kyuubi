@@ -18,13 +18,14 @@
 package org.apache.kyuubi.service.authentication
 
 import java.security.Security
+import java.util.Collections
 import javax.security.auth.callback.{Callback, CallbackHandler, NameCallback, PasswordCallback, UnsupportedCallbackException}
 import javax.security.auth.login.LoginException
 import javax.security.sasl.{AuthenticationException, AuthorizeCallback}
 
 import org.apache.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.thrift.{TProcessor, TProcessorFactory}
-import org.apache.thrift.transport.{TSaslServerTransport, TTransport, TTransportFactory}
+import org.apache.thrift.transport.{TSaslClientTransport, TSaslServerTransport, TTransport, TTransportFactory}
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.AuthMethods.AuthMethod
@@ -82,5 +83,30 @@ object PlainSASLHelper {
         throw new LoginException("Error setting callback handler" + e);
     }
     saslFactory
+  }
+
+  private class PlainCallBackHandler(user: String, password: String) extends CallbackHandler {
+    override def handle(callbacks: Array[Callback]): Unit = {
+      callbacks.foreach {
+        case nc: NameCallback => nc.setName(user)
+        case pc: PasswordCallback => pc.setPassword(password.toCharArray)
+        case other => throw new UnsupportedCallbackException(other)
+      }
+    }
+  }
+
+  def getPlainTransport(
+      user: String,
+      password: String,
+      underlyingTransport: TTransport): TTransport = {
+    val callBackHandler = new PlainCallBackHandler(user, password)
+    new TSaslClientTransport(
+      "PLAIN",
+      null,
+      null,
+      null,
+      Collections.emptyMap[String, String]()
+      , callBackHandler,
+      underlyingTransport)
   }
 }

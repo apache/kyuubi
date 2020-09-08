@@ -20,9 +20,10 @@ package org.apache.kyuubi.engine.spark.operation
 import java.util.regex.Pattern
 
 import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.types.{ArrayType, BinaryType, BooleanType, ByteType, DataType, DateType, DecimalType, DoubleType, FloatType, IntegerType, LongType, MapType, NullType, NumericType, ShortType, StringType, StructField, StructType, TimestampType}
+import org.apache.spark.sql.types.{ArrayType, BinaryType, BooleanType, ByteType, CalendarIntervalType, DataType, DateType, DecimalType, DoubleType, FloatType, IntegerType, LongType, MapType, NullType, NumericType, ShortType, StringType, StructField, StructType, TimestampType}
 
 import org.apache.kyuubi.operation.OperationType
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
 class GetColumns(
@@ -61,7 +62,8 @@ class GetColumns(
    * For array, map, string, and binaries, the column size is variable, return null as unknown.
    */
   private def getColumnSize(typ: DataType): Option[Int] = typ match {
-    case dt @ (BooleanType | _: NumericType | DateType | TimestampType) => Some(dt.defaultSize)
+    case dt @ (BooleanType | _: NumericType | DateType | TimestampType | CalendarIntervalType) =>
+      Some(dt.defaultSize)
     case StructType(fields) =>
       val sizeArr = fields.map(f => getColumnSize(f.dataType))
       if (sizeArr.contains(None)) {
@@ -123,42 +125,42 @@ class GetColumns(
   }
   override protected def resultSchema: StructType = {
     new StructType()
-      .add("TABLE_CAT", "string", nullable = true, "Catalog name. NULL if not applicable")
-      .add("TABLE_SCHEM", "string", nullable = true, "Schema name")
-      .add("TABLE_NAME", "string", nullable = true, "Table name")
-      .add("COLUMN_NAME", "string", nullable = true, "Column name")
-      .add("DATA_TYPE", "int", nullable = true, "SQL type from java.sql.Types")
-      .add("TYPE_NAME", "string", nullable = true, "Data source dependent type name, for a UDT" +
+      .add(TABLE_CAT, "string", nullable = true, "Catalog name. NULL if not applicable")
+      .add(TABLE_SCHEM, "string", nullable = true, "Schema name")
+      .add(TABLE_NAME, "string", nullable = true, "Table name")
+      .add(COLUMN_NAME, "string", nullable = true, "Column name")
+      .add(DATA_TYPE, "int", nullable = true, "SQL type from java.sql.Types")
+      .add(TYPE_NAME, "string", nullable = true, "Data source dependent type name, for a UDT" +
         " the type name is fully qualified")
-      .add("COLUMN_SIZE", "int", nullable = true, "Column size. For char or date types this is" +
+      .add(COLUMN_SIZE, "int", nullable = true, "Column size. For char or date types this is" +
         " the maximum number of characters, for numeric or decimal types this is precision.")
-      .add("BUFFER_LENGTH", "tinyint", nullable = true, "Unused")
-      .add("DECIMAL_DIGITS", "int", nullable = true, "he number of fractional digits")
-      .add("NUM_PREC_RADIX", "int", nullable = true, "Radix (typically either 10 or 2)")
-      .add("NULLABLE", "int", nullable = true, "Is NULL allowed")
-      .add("REMARKS", "string", nullable = true, "Comment describing column (may be null)")
-      .add("COLUMN_DEF", "string", nullable = true, "Default value (may be null)")
-      .add("SQL_DATA_TYPE", "int", nullable = true, "Unused")
-      .add("SQL_DATETIME_SUB", "int", nullable = true, "Unused")
-      .add("CHAR_OCTET_LENGTH", "int", nullable = true,
+      .add(BUFFER_LENGTH, "tinyint", nullable = true, "Unused")
+      .add(DECIMAL_DIGITS, "int", nullable = true, "he number of fractional digits")
+      .add(NUM_PREC_RADIX, "int", nullable = true, "Radix (typically either 10 or 2)")
+      .add(NULLABLE, "int", nullable = true, "Is NULL allowed")
+      .add(REMARKS, "string", nullable = true, "Comment describing column (may be null)")
+      .add(COLUMN_DEF, "string", nullable = true, "Default value (may be null)")
+      .add(SQL_DATA_TYPE, "int", nullable = true, "Unused")
+      .add(SQL_DATETIME_SUB, "int", nullable = true, "Unused")
+      .add(CHAR_OCTET_LENGTH, "int", nullable = true,
         "For char types the maximum number of bytes in the column")
-      .add("ORDINAL_POSITION", "int", nullable = true, "Index of column in table (starting at 1)")
-      .add("IS_NULLABLE", "string", nullable = true,
+      .add(ORDINAL_POSITION, "int", nullable = true, "Index of column in table (starting at 1)")
+      .add(IS_NULLABLE, "string", nullable = true,
         "'NO' means column definitely does not allow NULL values; 'YES' means the column might" +
           " allow NULL values. An empty string means nobody knows.")
-      .add("SCOPE_CATALOG", "string", nullable = true,
+      .add(SCOPE_CATALOG, "string", nullable = true,
         "Catalog of table that is the scope of a reference attribute "
           + "(null if DATA_TYPE isn't REF)")
-      .add("SCOPE_SCHEMA", "string", nullable = true,
+      .add(SCOPE_SCHEMA, "string", nullable = true,
         "Schema of table that is the scope of a reference attribute "
           + "(null if the DATA_TYPE isn't REF)")
-      .add("SCOPE_TABLE", "string", nullable = true,
+      .add(SCOPE_TABLE, "string", nullable = true,
         "Table name that this the scope of a reference attribure "
           + "(null if the DATA_TYPE isn't REF)")
-      .add("SOURCE_DATA_TYPE", "smallint", nullable = true,
+      .add(SOURCE_DATA_TYPE, "smallint", nullable = true,
         "Source type of a distinct type or user-generated Ref type, "
           + "SQL type from java.sql.Types (null if DATA_TYPE isn't DISTINCT or user-generated REF)")
-      .add("IS_AUTO_INCREMENT", "string", nullable = true,
+      .add(IS_AUTO_INCREMENT, "string", nullable = true,
         "Indicates whether this column is auto incremented.")
   }
 

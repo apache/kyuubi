@@ -23,6 +23,7 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.operation.OperationType
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
 class GetFunctions(
@@ -34,13 +35,13 @@ class GetFunctions(
   extends SparkOperation(spark, OperationType.GET_FUNCTIONS, session) {
   override protected def resultSchema: StructType = {
     new StructType()
-      .add("FUNCTION_CAT", "string", nullable = true, "Function catalog (may be null)")
-      .add("FUNCTION_SCHEM", "string", nullable = true, "Function schema (may be null)")
-      .add("FUNCTION_NAME", "string", nullable = true, "Function name. This is the name used to" +
+      .add(FUNCTION_CAT, "string", nullable = true, "Function catalog (may be null)")
+      .add(FUNCTION_SCHEM, "string", nullable = true, "Function schema (may be null)")
+      .add(FUNCTION_NAME, "string", nullable = true, "Function name. This is the name used to" +
         " invoke the function")
-      .add("REMARKS", "string", nullable = true, "Explanatory comment on the function")
-      .add("FUNCTION_TYPE", "int", nullable = true, "Kind of function.")
-      .add("SPECIFIC_NAME", "string", nullable = true, "The name which uniquely identifies this" +
+      .add(REMARKS, "string", nullable = true, "Explanatory comment on the function")
+      .add(FUNCTION_TYPE, "int", nullable = true, "Kind of function.")
+      .add(SPECIFIC_NAME, "string", nullable = true, "The name which uniquely identifies this" +
         " function within its schema")
   }
 
@@ -56,11 +57,7 @@ class GetFunctions(
             "",
             info.getDb,
             info.getName,
-            "\nUsage:\n" + info.getUsage +
-              "\nArgs:\n" + info.getArguments +
-              "\nExamples:\n" + info.getExamples +
-              "\nSince:\n" + info.getSince +
-              "\nNote:\n" + info.getNote,
+            s"Usage: ${info.getUsage}\nExtended Usage:${info.getExtended}",
             DatabaseMetaData.functionResultUnknown,
             info.getClassName)
         }

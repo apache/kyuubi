@@ -23,6 +23,7 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.operation.OperationType
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
 class GetSchemas(spark: SparkSession, session: Session, catalogName: String, schema: String)
@@ -34,8 +35,8 @@ class GetSchemas(spark: SparkSession, session: Session, catalogName: String, sch
 
   override protected def resultSchema: StructType = {
     new StructType()
-      .add("TABLE_SCHEM", "string", nullable = true, "Schema name.")
-      .add("TABLE_CATALOG", "string", nullable = true, "Catalog name.")
+      .add(TABLE_SCHEM, "string", nullable = true, "Schema name.")
+      .add(TABLE_CATALOG, "string", nullable = true, "Catalog name.")
   }
 
   override protected def runInternal(): Unit = {
@@ -44,7 +45,7 @@ class GetSchemas(spark: SparkSession, session: Session, catalogName: String, sch
       val databases = spark.sessionState.catalog.listDatabases(schemaPattern)
       val globalTmpViewDb = spark.sessionState.catalog.globalTempViewManager.database
       if (schema == null ||
-        Pattern.compile(convertIdentifierPattern(schema, false))
+        Pattern.compile(convertSchemaPattern(schema, false))
           .matcher(globalTmpViewDb).matches()) {
         iter = (databases :+ globalTmpViewDb).map(Row(_, "")).toList.iterator
       } else {

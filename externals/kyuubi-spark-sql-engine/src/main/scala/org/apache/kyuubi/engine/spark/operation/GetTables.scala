@@ -24,6 +24,7 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.operation.OperationType
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
 class GetTables(
@@ -33,7 +34,7 @@ class GetTables(
     schema: String,
     tableName: String,
     tableTypes: java.util.List[String])
-  extends SparkOperation(spark, OperationType.GET_SCHEMAS, session) {
+  extends SparkOperation(spark, OperationType.GET_TABLES, session) {
 
   private def matched(tableType: CatalogTableType): Boolean = {
     val commonTableType = tableType match {
@@ -45,11 +46,11 @@ class GetTables(
 
   override protected def resultSchema: StructType = {
     new StructType()
-      .add("TABLE_CAT", "string", nullable = true, "Catalog name. NULL if not applicable.")
-      .add("TABLE_SCHEM", "string", nullable = true, "Schema name.")
-      .add("TABLE_NAME", "string", nullable = true, "Table name.")
-      .add("TABLE_TYPE", "string", nullable = true, "The table type, e.g. \"TABLE\", \"VIEW\"")
-      .add("REMARKS", "string", nullable = true, "Comments about the table.")
+      .add(TABLE_CAT, "string", nullable = true, "Catalog name. NULL if not applicable.")
+      .add(TABLE_SCHEM, "string", nullable = true, "Schema name.")
+      .add(TABLE_NAME, "string", nullable = true, "Table name.")
+      .add(TABLE_TYPE, "string", nullable = true, "The table type, e.g. \"TABLE\", \"VIEW\"")
+      .add(REMARKS, "string", nullable = true, "Comments about the table.")
       .add("TYPE_CAT", "string", nullable = true, "The types catalog." )
       .add("TYPE_SCHEM", "string", nullable = true, "The types catalog")
       .add("TYPE_NAME", "string", nullable = true, "Type name.")
@@ -81,7 +82,8 @@ class GetTables(
 
       val views = if (matched(CatalogTableType.VIEW)) {
         val globalTempViewDb = catalog.globalTempViewManager.database
-        (if (Pattern.compile(schemaPattern).matcher(globalTempViewDb).matches()) {
+        (if (Pattern.compile(convertSchemaPattern(schema, datanucleusFormat = false))
+            .matcher(globalTempViewDb).matches()) {
           catalog.listTables(globalTempViewDb, tablePattern, includeLocalTempViews = true)
         } else {
           catalog.listLocalTempViews(tablePattern)
