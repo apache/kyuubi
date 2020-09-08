@@ -49,6 +49,7 @@ class SchemaHelperSuite extends KyuubiFunSuite {
     .add("c13", ArrayType(LongType))
     .add("c14", MapType(IntegerType, FloatType))
     .add("c15", innerSchema)
+    .add("c16", CalendarIntervalType)
 
 
   test("toTTypeId") {
@@ -68,6 +69,11 @@ class SchemaHelperSuite extends KyuubiFunSuite {
     assert(toTTypeId(outerSchema(13).dataType) === TTypeId.ARRAY_TYPE)
     assert(toTTypeId(outerSchema(14).dataType) === TTypeId.MAP_TYPE)
     assert(toTTypeId(outerSchema(15).dataType) === TTypeId.STRUCT_TYPE)
+    assert(toTTypeId(outerSchema(16).dataType) === TTypeId.STRING_TYPE)
+    val e1 = intercept[IllegalArgumentException](toTTypeId(CharType(1)))
+    assert(e1.getMessage === "Unrecognized type name: char(1)")
+    val e2 = intercept[IllegalArgumentException](toTTypeId(VarcharType(1)))
+    assert(e2.getMessage === "Unrecognized type name: varchar(1)")
   }
 
   test("toTTypeQualifiers") {

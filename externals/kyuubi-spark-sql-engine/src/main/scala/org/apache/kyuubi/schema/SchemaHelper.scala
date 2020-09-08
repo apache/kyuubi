@@ -85,6 +85,4 @@ object SchemaHelper {
     }
     tTableSchema
   }
-
-
 }
