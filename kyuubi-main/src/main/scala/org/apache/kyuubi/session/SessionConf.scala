@@ -15,26 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.operation
+package org.apache.kyuubi.session
 
-import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.types.StructType
+import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf}
 
-import org.apache.kyuubi.operation.OperationType
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
-import org.apache.kyuubi.session.Session
+object SessionConf {
 
-class GetCatalogs(spark: SparkSession, session: Session)
-  extends SparkOperation(spark, OperationType.GET_CATALOGS, session) {
+  private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
 
-  override protected def resultSchema: StructType = {
-    new StructType()
-      .add(TABLE_CAT, "string", nullable = true, "Catalog name. NULL if not applicable.")
-  }
-
-  override protected def runInternal(): Unit = {
-    iter = Seq(
-      Row(spark.sessionState.catalogManager.currentCatalog.name())
-    ).toList.iterator
-  }
+  val ENGINE_LOGIN_TIMEOUT: ConfigEntry[Int] = buildConf("session.engine.login.timeout")
+    .doc("The timeout(ms) of creating the connection to remote sql query engine")
+    .version("1.0.0")
+    .intConf
+    .createWithDefault(15 * 1000)
 }

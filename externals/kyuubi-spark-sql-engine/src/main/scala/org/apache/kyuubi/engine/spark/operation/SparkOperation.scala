@@ -65,11 +65,11 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
    * Convert wildcards and escape sequence of schema pattern from JDBC format to datanucleous/regex
    * The schema pattern treats empty string also as wildcard
    */
-  protected def convertSchemaPattern(pattern: String): String = {
+  protected def convertSchemaPattern(pattern: String, datanucleusFormat: Boolean = true): String = {
     if (StringUtils.isEmpty(pattern)) {
-      convertPattern("%", datanucleusFormat = true)
+      convertPattern("%", datanucleusFormat)
     } else {
-      convertPattern(pattern, datanucleusFormat = true)
+      convertPattern(pattern, datanucleusFormat)
     }
   }
 

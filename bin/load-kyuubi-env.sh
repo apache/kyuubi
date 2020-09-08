@@ -17,7 +17,7 @@
 #
 
 
-export KYUUBI_HOME="${KYUUBI_HOME:-"$(cd "`dirname $0`"/..; pwd)"}"
+export KYUUBI_HOME="${KYUUBI_HOME:-"$(cd "$(dirname "$0")"/.. || exit; pwd)"}"
 
 export KYUUBI_CONF_DIR="${KYUUBI_CONF_DIR:-"${KYUUBI_HOME}"/conf}"
 
@@ -25,7 +25,7 @@ KYUUBI_ENV_SH="${KYUUBI_CONF_DIR}"/kyuubi-env.sh
 if [[ -f ${KYUUBI_ENV_SH} ]]; then
    set -a
    echo "Using kyuubi.sh environment file ${KYUUBI_ENV_SH} to initialize..."
-   . ${KYUUBI_ENV_SH}
+   . "${KYUUBI_ENV_SH}"
    set +a
 else
    echo "Warn: Not find kyuubi.sh environment file ${KYUUBI_ENV_SH}, using default ones..."
@@ -49,7 +49,13 @@ fi
 
 export KYUUBI_SCALA_VERSION="${KYUUBI_SCALA_VERSION:-"2.12"}"
 
-export SPARK_HOME="${SPARK_HOME:-"${KYUUBI_HOME}/externals/spark-3.0.0-bin-hadoop2.7"}"
+SPARK_BUILTIN="${KYUUBI_HOME}/externals/spark-3.0.0-bin-hadoop2.7"
+
+if [[ ! -d ${SPARK_BUILTIN} ]]; then
+  SPARK_BUILTIN="${KYUUBI_HOME}/externals/kyuubi-download/target/spark-3.0.0-bin-hadoop2.7"
+fi
+
+export SPARK_HOME="${SPARK_HOME:-"${SPARK_BUILTIN}"}"
 
 # Print essential environment variables to console
 echo "JAVA_HOME: ${JAVA_HOME}"

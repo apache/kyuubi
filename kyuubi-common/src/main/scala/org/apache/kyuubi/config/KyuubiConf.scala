@@ -97,6 +97,15 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
       case (k, v) => (k.substring(dropped.length), v)
     }
   }
+
+  /** Copy this object */
+  override def clone: KyuubiConf = {
+    val cloned = KyuubiConf(false)
+    settings.entrySet().asScala.foreach { e =>
+      cloned.set(e.getKey, e.getValue)
+    }
+    cloned
+  }
 }
 
 object KyuubiConf {

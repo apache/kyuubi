@@ -18,56 +18,33 @@
 package org.apache.kyuubi.engine.spark
 
 import java.time.LocalDateTime
-import java.util.concurrent.atomic.AtomicBoolean
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.service.{CompositeService, FrontendService}
+import org.apache.kyuubi.ha.HighAvailabilityConf._
+import org.apache.kyuubi.ha.client.ServiceDiscovery
+import org.apache.kyuubi.service.SeverLike
 import org.apache.kyuubi.util.SignalRegister
 
-class SparkSQLEngine(name: String, spark: SparkSession) extends CompositeService(name) {
-
-  private val started = new AtomicBoolean(false)
-  private val OOMHook = new Runnable { override def run(): Unit = stop() }
-  private val backendService = new SparkSQLBackendService(spark)
-  private val frontendService = new FrontendService(backendService, OOMHook)
-
-  def connectionUrl: String = frontendService.connectionUrl
+private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
+  extends SeverLike(name) {
 
   def this(spark: SparkSession) = this(classOf[SparkSQLEngine].getSimpleName, spark)
 
-  override def initialize(conf: KyuubiConf): Unit = {
-    addService(backendService)
-    addService(frontendService)
-    super.initialize(conf)
-  }
+  override protected val backendService = new SparkSQLBackendService(spark)
 
-  override def start(): Unit = {
-    super.start()
-    started.set(true)
-  }
-
-  override def stop(): Unit = {
-    try {
-      spark.stop()
-    } catch {
-      case t: Throwable =>
-        warn(s"Error stopping spark ${t.getMessage}", t)
-    } finally {
-      if (started.getAndSet(false)) {
-        super.stop()
-      }
-    }
-  }
+  override protected def stopServer(): Unit = spark.stop()
 }
 
 
-private object SparkSQLEngine extends Logging {
+object SparkSQLEngine extends Logging {
 
   val kyuubiConf: KyuubiConf = KyuubiConf()
+
+  private val user = Utils.currentUser
 
   def createSpark(): SparkSession = {
     val sparkConf = new SparkConf()
@@ -76,7 +53,7 @@ private object SparkSQLEngine extends Logging {
 
     val appName = Seq(
       "kyuubi",
-      Utils.currentUser,
+      user,
       classOf[SparkSQLEngine].getSimpleName,
       LocalDateTime.now).mkString("_")
 
@@ -96,10 +73,9 @@ private object SparkSQLEngine extends Logging {
       }
     }
 
-    SparkSession.builder()
-      .config(sparkConf)
-      .enableHiveSupport()
-      .getOrCreate()
+    val session = SparkSession.builder().config(sparkConf).enableHiveSupport().getOrCreate()
+    session.sql("SHOW DATABASES")
+    session
   }
 
 
@@ -111,6 +87,27 @@ private object SparkSQLEngine extends Logging {
     engine
   }
 
+  def exposeEngine(engine: SparkSQLEngine): Unit = {
+    val needExpose = kyuubiConf.get(HA_ZK_QUORUM).nonEmpty
+    if (needExpose) {
+      val instance = engine.connectionUrl
+      val zkNamespacePrefix = kyuubiConf.get(HA_ZK_NAMESPACE)
+      val postHook = new Thread {
+        override def run(): Unit = {
+          while (engine.backendService.sessionManager.getOpenSessionCount > 0) {
+            Thread.sleep(60 * 1000)
+          }
+          engine.stop()
+        }
+      }
+      val serviceDiscovery = new ServiceDiscovery(instance, s"$zkNamespacePrefix-$user", postHook)
+      serviceDiscovery.initialize(kyuubiConf)
+      serviceDiscovery.start()
+      sys.addShutdownHook(serviceDiscovery.stop())
+    }
+
+  }
+
   def main(args: Array[String]): Unit = {
     SignalRegister.registerLogger(logger)
 
@@ -119,6 +116,7 @@ private object SparkSQLEngine extends Logging {
     try {
       spark = createSpark()
       engine = startEngine(spark)
+      exposeEngine(engine)
     } catch {
       case t: Throwable =>
         error("Error start SparkSQLEngine", t)

@@ -36,7 +36,7 @@ object SchemaHelper {
     case FloatType => TTypeId.FLOAT_TYPE
     case DoubleType => TTypeId.DOUBLE_TYPE
     case StringType => TTypeId.STRING_TYPE
-    case DecimalType() => TTypeId.DECIMAL_TYPE
+    case _: DecimalType => TTypeId.DECIMAL_TYPE
     case DateType => TTypeId.DATE_TYPE
     case TimestampType => TTypeId.TIMESTAMP_TYPE
     case BinaryType => TTypeId.BINARY_TYPE
@@ -85,4 +85,6 @@ object SchemaHelper {
     }
     tTableSchema
   }
+
+
 }

@@ -41,7 +41,7 @@ trait BackendService {
       user: String,
       password: String,
       ipAddr: String,
-      configs: java.util.Map[String, String]): SessionHandle
+      configs: Map[String, String]): SessionHandle
   def closeSession(sessionHandle: SessionHandle): Unit
 
   def getInfo(sessionHandle: SessionHandle, infoType: TGetInfoType): TGetInfoValue
