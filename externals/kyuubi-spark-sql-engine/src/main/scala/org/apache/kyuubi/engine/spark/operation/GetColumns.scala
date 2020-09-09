@@ -64,7 +64,8 @@ class GetColumns(
    * For array, map, string, and binaries, the column size is variable, return null as unknown.
    */
   private def getColumnSize(typ: DataType): Option[Int] = typ match {
-    case dt @ (BooleanType | _: NumericType | DateType | TimestampType | CalendarIntervalType) =>
+    case dt @ (BooleanType | _: NumericType | DateType | TimestampType |
+               CalendarIntervalType | NullType) =>
       Some(dt.defaultSize)
     case StructType(fields) =>
       val sizeArr = fields.map(f => getColumnSize(f.dataType))
@@ -84,7 +85,7 @@ class GetColumns(
    * For timestamp values, we support microseconds
    * For decimals, it returns the scale
    */
-  private def getDecimalDigits(typ: DataType) = typ match {
+  private def getDecimalDigits(typ: DataType): Option[Int] = typ match {
     case BooleanType | _: IntegerType => Some(0)
     case FloatType => Some(7)
     case DoubleType => Some(15)
@@ -100,29 +101,29 @@ class GetColumns(
 
   private def toRow(db: String, table: String, col: StructField, pos: Int): Row = {
     Row(
-      null,
-      db,
-      table,
-      col.name,
-      toJavaSQLType(col.dataType),
-      col.dataType.sql,
-      getColumnSize(col.dataType).orNull,
-      null,
-      getDecimalDigits(col.dataType).orNull,
-      getNumPrecRadix(col.dataType).orNull,
-      if (col.nullable) 1 else 0,
-      col.getComment().getOrElse(""),
-      null,
-      null,
-      null,
-      null,
-      pos,
-      "YES",
-      null,
-      null,
-      null,
-      null,
-      "NO"
+      null,                                    // TABLE_CAT
+      db,                                      // TABLE_SCHEM
+      table,                                   // TABLE_NAME
+      col.name,                                // COLUMN_NAME
+      toJavaSQLType(col.dataType),             // DATA_TYPE
+      col.dataType.sql,                        // TYPE_NAME
+      getColumnSize(col.dataType).orNull,      // COLUMN_SIZE
+      null,                                    // BUFFER_LENGTH
+      getDecimalDigits(col.dataType).orNull,   // DECIMAL_DIGITS
+      getNumPrecRadix(col.dataType).orNull,    // NUM_PREC_RADIX
+      if (col.nullable) 1 else 0,              // NULLABLE
+      col.getComment().getOrElse(""),          // REMARKS
+      null,                                    // COLUMN_DEF
+      null,                                    // SQL_DATA_TYPE
+      null,                                    // SQL_DATETIME_SUB
+      null,                                    // CHAR_OCTET_LENGTH
+      pos,                                     // ORDINAL_POSITION
+      "YES",                                   // IS_NULLABLE
+      null,                                    // SCOPE_CATALOG
+      null,                                    // SCOPE_SCHEMA
+      null,                                    // SCOPE_TABLE
+      null,                                    // SOURCE_DATA_TYPE
+      "NO"                                     // IS_AUTO_INCREMENT
     )
   }
   override protected def resultSchema: StructType = {
@@ -157,7 +158,7 @@ class GetColumns(
         "Schema of table that is the scope of a reference attribute "
           + "(null if the DATA_TYPE isn't REF)")
       .add(SCOPE_TABLE, "string", nullable = true,
-        "Table name that this the scope of a reference attribure "
+        "Table name that this the scope of a reference attribute "
           + "(null if the DATA_TYPE isn't REF)")
       .add(SOURCE_DATA_TYPE, "smallint", nullable = true,
         "Source type of a distinct type or user-generated Ref type, "
@@ -174,7 +175,6 @@ class GetColumns(
       val columnPattern = Option(columnName)
         .map(c => Pattern.compile(convertIdentifierPattern(c, datanucleusFormat = false)))
         .orNull
-      val databases: Seq[String] = catalog.listDatabases(schemaPattern)
       val tables: Seq[Row] = catalog.listDatabases(schemaPattern).flatMap { db =>
         val identifiers =
           catalog.listTables(db, tablePattern, includeLocalTempViews = false)
