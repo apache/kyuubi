@@ -19,6 +19,8 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.util.regex.Pattern
 
+import scala.collection.mutable.ArrayBuffer
+
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.{ArrayType, BinaryType, BooleanType, ByteType, CalendarIntervalType, DataType, DateType, DecimalType, DoubleType, FloatType, IntegerType, LongType, MapType, NullType, NumericType, ShortType, StringType, StructField, StructType, TimestampType}
 
@@ -172,18 +174,27 @@ class GetColumns(
       val columnPattern = Option(columnName)
         .map(c => Pattern.compile(convertIdentifierPattern(c, datanucleusFormat = false)))
         .orNull
-      var databases: Seq[String] = catalog.listDatabases(schemaPattern)
-      val globalTmpDb = catalog.globalTempViewManager.database
-      if (Pattern.compile(schemaPattern).matcher(globalTmpDb).matches()) {
-        databases = databases ++ Seq(globalTmpDb)
-      }
-      val tableAndGlobalViews: Seq[Row] = databases.flatMap { db =>
+      val databases: Seq[String] = catalog.listDatabases(schemaPattern)
+      val tables: Seq[Row] = catalog.listDatabases(schemaPattern).flatMap { db =>
         val identifiers =
           catalog.listTables(db, tablePattern, includeLocalTempViews = false)
         catalog.getTablesByName(identifiers).flatMap { t =>
           t.schema.zipWithIndex
             .filter { f => columnPattern == null || columnPattern.matcher(f._1.name).matches() }
             .map { case (f, i) => toRow(t.database, t.identifier.table, f, i)
+          }
+        }
+      }
+
+
+      val gviews = new ArrayBuffer[Row]()
+      val globalTmpDb = catalog.globalTempViewManager.database
+      if (Pattern.compile(schemaPattern).matcher(globalTmpDb).matches()) {
+        catalog.globalTempViewManager.listViewNames(tablePattern).foreach { v =>
+          catalog.globalTempViewManager.get(v).foreach { plan =>
+            plan.schema.zipWithIndex
+              .filter { f => columnPattern == null || columnPattern.matcher(f._1.name).matches() }
+              .foreach { case (f, i) => gviews += toRow(globalTmpDb, v, f, i) }
           }
         }
       }
@@ -196,7 +207,7 @@ class GetColumns(
             .map { case (f, i) => toRow(null, v.table, f, i) }
       }
 
-      iter = (tableAndGlobalViews ++ views).toList.iterator
+      iter = (tables ++ gviews ++ views).toList.iterator
     } catch onError()
   }
 }

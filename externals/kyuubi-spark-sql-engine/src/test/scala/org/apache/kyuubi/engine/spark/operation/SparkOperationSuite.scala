@@ -368,6 +368,35 @@ class SparkOperationSuite extends WithSparkSQLEngine {
     }
   }
 
+
+
+  test("get columns operation should handle interval column properly") {
+    val viewName = "view_interval"
+    val ddl = s"CREATE GLOBAL TEMP VIEW $viewName as select interval 1 day as i"
+
+    withJdbcStatement(viewName) { statement =>
+      statement.execute(ddl)
+      val data = statement.getConnection.getMetaData
+      val rowSet = data.getColumns("", "global_temp", viewName, null)
+      while (rowSet.next()) {
+        assert(rowSet.getString(TABLE_CAT) === null)
+        assert(rowSet.getString(TABLE_SCHEM) === "global_temp")
+        assert(rowSet.getString(TABLE_NAME) === viewName)
+        assert(rowSet.getString(COLUMN_NAME) === "i")
+        assert(rowSet.getInt(DATA_TYPE) === java.sql.Types.OTHER)
+        assert(rowSet.getString(TYPE_NAME).equalsIgnoreCase(CalendarIntervalType.sql))
+        assert(rowSet.getInt(COLUMN_SIZE) === CalendarIntervalType.defaultSize)
+        assert(rowSet.getInt(DECIMAL_DIGITS) === 0)
+        assert(rowSet.getInt(NUM_PREC_RADIX) === 0)
+        assert(rowSet.getInt(NULLABLE) === 0)
+        assert(rowSet.getString(REMARKS) === "")
+        assert(rowSet.getInt(ORDINAL_POSITION) === 0)
+        assert(rowSet.getString(IS_NULLABLE) === "YES")
+        assert(rowSet.getString(IS_AUTO_INCREMENT) === "NO")
+      }
+    }
+  }
+
   test("get functions") {
     withJdbcStatement() { statement =>
       val metaData = statement.getConnection.getMetaData
