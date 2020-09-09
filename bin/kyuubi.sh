@@ -50,7 +50,7 @@ function kyuubi_rotate_log() {
     fi
 }
 
-export KYUUBI_HOME="$(cd "`dirname "$0"`"/..; pwd)"
+export KYUUBI_HOME="$(cd "$(dirname "$0")"/..; pwd)"
 
 echo "Starting Kyuubi Server from ${KYUUBI_HOME}"
 
@@ -72,8 +72,6 @@ else
 fi
 
 RUNNER="${JAVA_HOME}/bin/java"
-
-COMMAND="${RUNNER} ${KYUUBI_JAVA_OPTS} -cp"
 
 ## Find the Kyuubi Jar
 if [[ -z "$KYUUBI_JAR_DIR" ]]; then
