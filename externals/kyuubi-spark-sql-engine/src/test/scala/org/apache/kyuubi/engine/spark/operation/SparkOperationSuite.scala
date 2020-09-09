@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import org.apache.hive.service.cli.HiveSQLException
 import org.apache.hive.service.rpc.thrift.TOpenSessionReq
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
 import org.apache.spark.sql.catalyst.catalog.CatalogTableType
@@ -45,13 +46,20 @@ class SparkOperationSuite extends WithSparkSQLEngine {
       statement.execute("CREATE DATABASE IF NOT EXISTS db1")
       statement.execute("CREATE DATABASE IF NOT EXISTS db2")
       val metaData = statement.getConnection.getMetaData
-      val resultSet = metaData.getSchemas(null, null)
-      val expected =
-        Seq("db1", "db2", "default", spark.sharedState.globalTempViewManager.database).iterator
-      while(resultSet.next()) {
-        assert(resultSet.getString(TABLE_SCHEM) === expected.next)
-        assert(resultSet.getString(TABLE_CATALOG).isEmpty)
+
+      Seq("", "%", null, ".*", "db#") foreach { pattern =>
+        val resultSet = metaData.getSchemas(null, pattern)
+        val expected =
+          Seq("db1", "db2", "default", spark.sharedState.globalTempViewManager.database).iterator
+        while(resultSet.next()) {
+          assert(resultSet.getString(TABLE_SCHEM) === expected.next)
+          assert(resultSet.getString(TABLE_CATALOG).isEmpty)
+        }
       }
+
+      val e = intercept[HiveSQLException](metaData.getSchemas(null, "*"))
+      assert(e.getCause.getMessage === "org.apache.kyuubi.KyuubiSQLException:" +
+        "Error operating GET_SCHEMAS: Dangling meta character '*' near index 0\n*\n^")
     }
   }
 
@@ -111,6 +119,10 @@ class SparkOperationSuite extends WithSparkSQLEngine {
       while(rs5.next()) {
         assert(rs5.getString(TABLE_NAME) == view_test)
       }
+
+      val e = intercept[HiveSQLException](metaData.getTables(null, "*", null, null))
+      assert(e.getCause.getMessage === "org.apache.kyuubi.KyuubiSQLException:" +
+        "Error operating GET_TABLES: Dangling meta character '*' near index 0\n*\n^")
     }
   }
 
@@ -305,6 +317,7 @@ class SparkOperationSuite extends WithSparkSQLEngine {
       .add("c14", "timestamp", nullable = false, "14")
       .add("c15", "struct<X: bigint,Y: double>", nullable = true, "15")
       .add("c16", "binary", nullable = false, "16")
+      .add("c17", "struct<X: string>", true, "17")
 
     val ddl =
       s"""
@@ -316,12 +329,13 @@ class SparkOperationSuite extends WithSparkSQLEngine {
     withJdbcStatement(tableName) { statement =>
       statement.execute(ddl)
 
-      val databaseMetaData = statement.getConnection.getMetaData
-      val rowSet = databaseMetaData.getColumns("", dftSchema, tableName, null)
+      val metaData = statement.getConnection.getMetaData
+      val rowSet = metaData.getColumns("", dftSchema, tableName, null)
 
       import java.sql.Types._
       val expectedJavaTypes = Seq(BOOLEAN, TINYINT, SMALLINT, INTEGER, BIGINT, FLOAT, DOUBLE,
-        DECIMAL, DECIMAL, VARCHAR, ARRAY, ARRAY, JAVA_OBJECT, DATE, TIMESTAMP, STRUCT, BINARY)
+        DECIMAL, DECIMAL, VARCHAR, ARRAY, ARRAY, JAVA_OBJECT, DATE, TIMESTAMP, STRUCT, BINARY,
+        STRUCT)
 
       var pos = 0
 
@@ -336,6 +350,7 @@ class SparkOperationSuite extends WithSparkSQLEngine {
         val colSize = rowSet.getInt(COLUMN_SIZE)
         schema(pos).dataType match {
           case StringType | BinaryType | _: ArrayType | _: MapType => assert(colSize === 0)
+          case StructType(fields) if fields.size == 1 => assert(colSize === 0)
           case o => assert(colSize === o.defaultSize)
         }
 
@@ -364,7 +379,15 @@ class SparkOperationSuite extends WithSparkSQLEngine {
         pos += 1
       }
 
-      assert(pos === 17, "all columns should have been verified")
+      assert(pos === 18, "all columns should have been verified")
+
+      val e = intercept[HiveSQLException](metaData.getColumns(null, "*", null, null))
+      assert(e.getCause.getMessage === "org.apache.kyuubi.KyuubiSQLException:" +
+        "Error operating GET_COLUMNS: Dangling meta character '*' near index 0\n*\n^")
+
+      val e1 = intercept[HiveSQLException](metaData.getColumns(null, null, null, "*"))
+      assert(e1.getCause.getMessage === "org.apache.kyuubi.KyuubiSQLException:" +
+        "Error operating GET_COLUMNS: Dangling meta character '*' near index 0\n*\n^")
     }
   }
 
