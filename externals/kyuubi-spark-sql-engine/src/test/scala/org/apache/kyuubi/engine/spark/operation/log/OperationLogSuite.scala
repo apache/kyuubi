@@ -23,7 +23,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
 import org.apache.kyuubi.operation.{OperationHandle, OperationType}
 import org.apache.kyuubi.session.SessionHandle
 
@@ -113,6 +113,14 @@ class OperationLogSuite extends KyuubiFunSuite {
       OperationType.EXECUTE_STATEMENT, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
     val log = OperationLog.createOperationLog(sHandle, oHandle)
     assert(log === null)
+    logRoot.delete()
 
+    OperationLog.createOperationLogRootDirectory(sHandle)
+    val log1 = OperationLog.createOperationLog(sHandle, oHandle)
+    log1.write("some msg here \n")
+    log1.close()
+    log1.write("some msg here again")
+    val e = intercept[KyuubiSQLException](log1.read(-1))
+    assert(e.getMessage.contains(s"${sHandle.identifier}/${oHandle.identifier}"))
   }
 }
