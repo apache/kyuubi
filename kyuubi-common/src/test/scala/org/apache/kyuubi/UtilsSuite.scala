@@ -18,8 +18,24 @@
 package org.apache.kyuubi
 
 import java.io.File
+import java.util.Properties
 
 class UtilsSuite extends KyuubiFunSuite {
+
+  test("build information check") {
+    val buildFile = "kyuubi-version-info.properties"
+    val str = Thread.currentThread().getContextClassLoader.getResourceAsStream(buildFile)
+    val props = new Properties()
+    assert(str !== null)
+    props.load(str)
+    str.close()
+    assert(props.getProperty("kyuubi_version") === KYUUBI_VERSION)
+    assert(props.getProperty("spark_version") === SPARK_COMPILE_VERSION)
+    assert(props.getProperty("branch") === BRANCH)
+    assert(props.getProperty("revision") === REVISION)
+    assert(props.getProperty("user") === BUILD_USER)
+    assert(props.getProperty("url") === REPO_URL)
+  }
 
   test("string to seq") {
     intercept[IllegalArgumentException](Utils.strToSeq(null))

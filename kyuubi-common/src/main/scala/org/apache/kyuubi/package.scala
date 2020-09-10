@@ -40,7 +40,6 @@ package object kyuubi {
     val version: String = props.getProperty("kyuubi_version", unknown)
     val sparkVersion: String = props.getProperty("spark_version", unknown)
     val branch: String = props.getProperty("branch", unknown)
-    val jar: String = props.getProperty("jar", unknown)
     val revision: String = props.getProperty("revision", unknown)
     val user: String = props.getProperty("user", unknown)
     val repoUrl: String = props.getProperty("url", unknown)
@@ -50,7 +49,6 @@ package object kyuubi {
   val KYUUBI_VERSION: String = BuildInfo.version
   val SPARK_COMPILE_VERSION: String = BuildInfo.sparkVersion
   val BRANCH: String = BuildInfo.branch
-  val KYUUBI_JAR_NAME: String = BuildInfo.jar
   val REVISION: String = BuildInfo.revision
   val BUILD_USER: String = BuildInfo.user
   val REPO_URL: String = BuildInfo.repoUrl
