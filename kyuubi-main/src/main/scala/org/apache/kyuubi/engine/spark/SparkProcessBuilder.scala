@@ -40,7 +40,10 @@ class SparkProcessBuilder(
       sparkHome = "./externals/kyuubi-download/target/spark-3.0.0-bin-hadoop2.7"
     }
 
-    Seq(sparkHome, "bin", "spark-submit").mkString(File.separator)
+    val exec = Seq(sparkHome, "bin", "spark-submit").mkString(File.separator)
+    require(new File(exec).exists(), "Please specific SPARK_HOME environment variable to a" +
+      " valid spark release package")
+    exec
   }
 
   override val mainClass: String = "org.apache.kyuubi.engine.spark.SparkSQLEngine"
