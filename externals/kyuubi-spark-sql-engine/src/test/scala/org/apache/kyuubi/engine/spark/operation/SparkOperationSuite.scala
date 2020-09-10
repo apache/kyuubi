@@ -215,7 +215,7 @@ class SparkOperationSuite extends WithSparkSQLEngine {
       assert(typeInfo.getInt(NUM_PREC_RADIX) === 10)
 
       typeInfo.next()
-      assert(typeInfo.getString(TYPE_NAME) === "VARCHAR")
+      assert(typeInfo.getString(TYPE_NAME) === "STRING")
       assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.VARCHAR)
       assert(typeInfo.getInt(PRECISION) === 0)
       assert(typeInfo.getShort(NULLABLE) === 1)
