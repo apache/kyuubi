@@ -62,7 +62,7 @@ object OperationLog extends Logging {
       Files.createDirectories(path)
       path.toFile.deleteOnExit()
     } catch {
-      case NonFatal(e) =>
+      case e: IOException =>
         error(s"Failed to create operation log root directory: $path", e)
     }
   }
@@ -76,8 +76,7 @@ object OperationLog extends Logging {
     try {
       val logPath = Paths.get(LOG_ROOT, sessionHandle.identifier.toString)
       val logFile = Paths.get(logPath.toAbsolutePath.toString, opHandle.identifier.toString)
-      Files.createFile(logFile)
-      info(s"Created operation log file $logFile")
+      info(s"Creating operation log file $logFile")
       new OperationLog(logFile)
     } catch {
       case e: IOException =>
@@ -96,8 +95,12 @@ class OperationLog(path: Path) extends Logging {
    * write log to the operation log file
    */
   def write(msg: String): Unit = synchronized {
-    writer.write(msg)
-    writer.flush()
+    try {
+      writer.write(msg)
+      writer.flush()
+    } catch {
+      case _: IOException => // TODO: better do nothing?
+    }
   }
 
   /**
