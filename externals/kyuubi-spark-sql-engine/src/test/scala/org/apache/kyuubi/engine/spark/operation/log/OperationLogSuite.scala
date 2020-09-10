@@ -100,4 +100,19 @@ class OperationLogSuite extends KyuubiFunSuite {
     assert(list2.isEmpty)
     operationLog.close()
   }
+
+  test("exception when creating log files") {
+    val sHandle = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+    val logRoot = Paths.get(OperationLog.LOG_ROOT, sHandle.identifier.toString).toFile
+    logRoot.deleteOnExit()
+    Files.createFile(Paths.get(OperationLog.LOG_ROOT, sHandle.identifier.toString))
+    assert(logRoot.exists())
+    OperationLog.createOperationLogRootDirectory(sHandle)
+    assert(logRoot.isFile)
+    val oHandle = OperationHandle(
+      OperationType.EXECUTE_STATEMENT, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+    val log = OperationLog.createOperationLog(sHandle, oHandle)
+    assert(log === null)
+
+  }
 }

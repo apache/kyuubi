@@ -89,8 +89,8 @@ object OperationLog extends Logging {
 
 class OperationLog(path: Path) extends Logging {
 
-  private lazy val writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)
-  private lazy val reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)
+  private val writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)
+  private val reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)
 
   /**
    * write log to the operation log file
