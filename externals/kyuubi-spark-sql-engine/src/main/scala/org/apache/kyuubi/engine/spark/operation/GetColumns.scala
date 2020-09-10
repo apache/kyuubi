@@ -172,20 +172,18 @@ class GetColumns(
       val catalog = spark.sessionState.catalog
       val schemaPattern = convertSchemaPattern(schemaName)
       val tablePattern = convertIdentifierPattern(tableName, datanucleusFormat = true)
-      val columnPattern = Option(columnName)
-        .map(c => Pattern.compile(convertIdentifierPattern(c, datanucleusFormat = false)))
-        .orNull
+      val columnPattern =
+        Pattern.compile(convertIdentifierPattern(columnName, datanucleusFormat = false))
       val tables: Seq[Row] = catalog.listDatabases(schemaPattern).flatMap { db =>
         val identifiers =
           catalog.listTables(db, tablePattern, includeLocalTempViews = false)
         catalog.getTablesByName(identifiers).flatMap { t =>
           t.schema.zipWithIndex
-            .filter { f => columnPattern == null || columnPattern.matcher(f._1.name).matches() }
+            .filter { f => columnPattern.matcher(f._1.name).matches() }
             .map { case (f, i) => toRow(t.database, t.identifier.table, f, i)
           }
         }
       }
-
 
       val gviews = new ArrayBuffer[Row]()
       val globalTmpDb = catalog.globalTempViewManager.database
@@ -193,7 +191,7 @@ class GetColumns(
         catalog.globalTempViewManager.listViewNames(tablePattern).foreach { v =>
           catalog.globalTempViewManager.get(v).foreach { plan =>
             plan.schema.zipWithIndex
-              .filter { f => columnPattern == null || columnPattern.matcher(f._1.name).matches() }
+              .filter { f => columnPattern.matcher(f._1.name).matches() }
               .foreach { case (f, i) => gviews += toRow(globalTmpDb, v, f, i) }
           }
         }
@@ -203,11 +201,13 @@ class GetColumns(
         .map(v => (v, catalog.getTempView(v.table).get))
         .flatMap { case (v, plan) =>
           plan.schema.zipWithIndex
-            .filter(f => columnPattern == null || columnPattern.matcher(f._1.name).matches())
+            .filter(f => columnPattern.matcher(f._1.name).matches())
             .map { case (f, i) => toRow(null, v.table, f, i) }
       }
 
       iter = (tables ++ gviews ++ views).toList.iterator
-    } catch onError()
+    } catch {
+      onError()
+    }
   }
 }

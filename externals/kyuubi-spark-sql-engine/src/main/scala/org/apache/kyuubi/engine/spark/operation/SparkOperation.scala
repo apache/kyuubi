@@ -78,7 +78,7 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
    */
   protected def convertIdentifierPattern(pattern: String, datanucleusFormat: Boolean): String = {
     if (pattern == null) {
-      convertPattern("%", datanucleusFormat = true)
+      convertPattern("%", datanucleusFormat)
     } else {
       convertPattern(pattern, datanucleusFormat)
     }
