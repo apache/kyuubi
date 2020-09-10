@@ -50,8 +50,8 @@ class GetTypeInfo(spark: SparkSession, session: Session)
         " null)")
       .add("MINIMUM_SCALE", "smallint", nullable = false, "Minimum scale supported")
       .add("MAXIMUM_SCALE", "smallint", nullable = false, "Maximum scale supported")
-      .add("SQL_DATA_TYPE", "int", nullable = true, "Unused")
-      .add("SQL_DATETIME_SUB", "int", nullable = true, "Unused")
+      .add(SQL_DATA_TYPE, "int", nullable = true, "Unused")
+      .add(SQL_DATETIME_SUB, "int", nullable = true, "Unused")
       .add(NUM_PREC_RADIX, "int", nullable = false, "Usually 2 or 10")
   }
 
@@ -61,24 +61,24 @@ class GetTypeInfo(spark: SparkSession, session: Session)
   }
 
   private def toRow(name: String, javaType: Int, precision: Integer = null): Row = {
-    Row(name, // TYPE_NAME
-      javaType, // DATA_TYPE
-      precision, // PRECISION
-      null, // LITERAL_PREFIX
-      null, // LITERAL_SUFFIX
-      null, // CREATE_PARAMS
-      1.toShort, // NULLABLE
-      javaType == VARCHAR, // CASE_SENSITIVE
+    Row(name,                                        // TYPE_NAME
+      javaType,                                      // DATA_TYPE
+      precision,                                     // PRECISION
+      null,                                          // LITERAL_PREFIX
+      null,                                          // LITERAL_SUFFIX
+      null,                                          // CREATE_PARAMS
+      1.toShort,                                     // NULLABLE
+      javaType == VARCHAR,                           // CASE_SENSITIVE
       if (javaType < 1111) 3.toShort else 0.toShort, // SEARCHABLE
-      !isNumericType(javaType), // UNSIGNED_ATTRIBUTE
-      false, // FIXED_PREC_SCALE
-      false, // AUTO_INCREMENT
-      null, // LOCAL_TYPE_NAME
-      0.toShort, // MINIMUM_SCALE
-      0.toShort, // MAXIMUM_SCALE
-      null, // SQL_DATA_TYPE
-      null, // SQL_DATETIME_SUB
-      if (isNumericType(javaType)) 10 else null // NUM_PREC_RADIX
+      !isNumericType(javaType),                      // UNSIGNED_ATTRIBUTE
+      false,                                         // FIXED_PREC_SCALE
+      false,                                         // AUTO_INCREMENT
+      null,                                          // LOCAL_TYPE_NAME
+      0.toShort,                                     // MINIMUM_SCALE
+      0.toShort,                                     // MAXIMUM_SCALE
+      null,                                          // SQL_DATA_TYPE
+      null,                                          // SQL_DATETIME_SUB
+      if (isNumericType(javaType)) 10 else null      // NUM_PREC_RADIX
     )
   }
 
@@ -92,7 +92,7 @@ class GetTypeInfo(spark: SparkSession, session: Session)
       toRow("BIGINT", BIGINT, 19),
       toRow("FLOAT", FLOAT, 7),
       toRow("DOUBLE", DOUBLE, 15),
-      toRow("VARCHAR", VARCHAR),
+      toRow("STRING", VARCHAR),
       toRow("BINARY", BINARY),
       toRow("DECIMAL", DECIMAL, 38),
       toRow("DATE", DATE),

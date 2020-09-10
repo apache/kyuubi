@@ -63,6 +63,8 @@ class GetFunctions(
         }
       }
       iter = a.toList.iterator
-    } catch onError()
+    } catch {
+      onError()
+    }
   }
 }
