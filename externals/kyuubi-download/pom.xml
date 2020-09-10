@@ -34,7 +34,8 @@
     <properties>
         <spark.archive.name>spark-${spark.version}-bin-hadoop2.7.tgz</spark.archive.name>
         <!-- see more at http://www.apache.org/mirrors/, e.g. https://mirror.bit.edu.cn, https://mirrors.tuna.tsinghua.edu.cn e.t.c -->
-        <spark.archive.mirror>https://mirrors.bfsu.edu.cn</spark.archive.mirror>
+        <!-- spark.archive.mirror>https://mirrors.bfsu.edu.cn</spark.archive.mirror -->
+        <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
         <!-- spark.archive.sha512>f5652835094d9f69eb3260e20ca9c2d58e8bdf85a8ed15797549a518b23c862b75a329b38d4248f8427e4310718238c60fae0f9d1afb3c70fb390d3e9cce2e49</spark.archive.sha512 -->
     </properties>
 
@@ -52,7 +53,7 @@
                             <goal>wget</goal>
                         </goals>
                         <configuration>
-                            <url>${spark.archive.mirror}/apache/spark/spark-${spark.version}/${spark.archive.name}</url>
+                            <url>${spark.archive.mirror}/${spark.archive.name}</url>
                             <!-- sha512>${spark.archive.sha512}</sha512 -->
                             <outputDirectory>${project.build.directory}</outputDirectory>
                             <readTimeOut>60000</readTimeOut>

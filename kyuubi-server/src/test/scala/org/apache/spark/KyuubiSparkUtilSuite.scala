@@ -157,14 +157,6 @@ class KyuubiSparkUtilSuite extends SparkFunSuite with Logging {
     assert(KyuubiSparkUtil.SPARK_PREFIX === "spark.")
   }
 
-  test("testIsSparkVersionOrHigher") {
-    assert(KyuubiSparkUtil.equalOrHigherThan("1.6.3"))
-    assert(KyuubiSparkUtil.equalOrHigherThan("2.0.2"))
-    assert(KyuubiSparkUtil.equalOrHigherThan(SPARK_COMPILE_VERSION))
-    assert(!KyuubiSparkUtil.equalOrHigherThan("2.9.1"))
-    assert(!KyuubiSparkUtil.equalOrHigherThan("3.0.0"))
-  }
-
   test("testTimeStringAsMs") {
     assert(KyuubiSparkUtil.timeStringAsMs("-1") === -1)
     assert(KyuubiSparkUtil.timeStringAsMs("50s") === 50000L)
