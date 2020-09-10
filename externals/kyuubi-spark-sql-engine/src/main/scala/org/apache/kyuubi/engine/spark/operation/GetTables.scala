@@ -100,7 +100,9 @@ class GetTables(
         Seq.empty[Row]
       }
       iter = (tables ++ views).toList.iterator
-    } catch onError()
+    } catch {
+      onError()
+    }
   }
 
 }

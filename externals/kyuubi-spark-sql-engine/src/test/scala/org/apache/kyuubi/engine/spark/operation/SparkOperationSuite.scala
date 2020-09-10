@@ -330,56 +330,59 @@ class SparkOperationSuite extends WithSparkSQLEngine {
       statement.execute(ddl)
 
       val metaData = statement.getConnection.getMetaData
-      val rowSet = metaData.getColumns("", dftSchema, tableName, null)
 
-      import java.sql.Types._
-      val expectedJavaTypes = Seq(BOOLEAN, TINYINT, SMALLINT, INTEGER, BIGINT, FLOAT, DOUBLE,
-        DECIMAL, DECIMAL, VARCHAR, ARRAY, ARRAY, JAVA_OBJECT, DATE, TIMESTAMP, STRUCT, BINARY,
-        STRUCT)
+      Seq("%", null, ".*", "c.*") foreach { pattern =>
+        val rowSet = metaData.getColumns("", dftSchema, tableName, pattern)
 
-      var pos = 0
+        import java.sql.Types._
+        val expectedJavaTypes = Seq(BOOLEAN, TINYINT, SMALLINT, INTEGER, BIGINT, FLOAT, DOUBLE,
+          DECIMAL, DECIMAL, VARCHAR, ARRAY, ARRAY, JAVA_OBJECT, DATE, TIMESTAMP, STRUCT, BINARY,
+          STRUCT)
 
-      while (rowSet.next()) {
-        assert(rowSet.getString(TABLE_CAT) === null)
-        assert(rowSet.getString(TABLE_SCHEM) === dftSchema)
-        assert(rowSet.getString(TABLE_NAME) === tableName)
-        assert(rowSet.getString(COLUMN_NAME) === schema(pos).name)
-        assert(rowSet.getInt(DATA_TYPE) === expectedJavaTypes(pos))
-        assert(rowSet.getString(TYPE_NAME) === schema(pos).dataType.sql)
+        var pos = 0
 
-        val colSize = rowSet.getInt(COLUMN_SIZE)
-        schema(pos).dataType match {
-          case StringType | BinaryType | _: ArrayType | _: MapType => assert(colSize === 0)
-          case StructType(fields) if fields.size == 1 => assert(colSize === 0)
-          case o => assert(colSize === o.defaultSize)
+        while (rowSet.next()) {
+          assert(rowSet.getString(TABLE_CAT) === null)
+          assert(rowSet.getString(TABLE_SCHEM) === dftSchema)
+          assert(rowSet.getString(TABLE_NAME) === tableName)
+          assert(rowSet.getString(COLUMN_NAME) === schema(pos).name)
+          assert(rowSet.getInt(DATA_TYPE) === expectedJavaTypes(pos))
+          assert(rowSet.getString(TYPE_NAME) === schema(pos).dataType.sql)
+
+          val colSize = rowSet.getInt(COLUMN_SIZE)
+          schema(pos).dataType match {
+            case StringType | BinaryType | _: ArrayType | _: MapType => assert(colSize === 0)
+            case StructType(fields) if fields.length == 1 => assert(colSize === 0)
+            case o => assert(colSize === o.defaultSize)
+          }
+
+          assert(rowSet.getInt(BUFFER_LENGTH) === 0) // not used
+          val decimalDigits = rowSet.getInt(DECIMAL_DIGITS)
+          schema(pos).dataType match {
+            case BooleanType | _: IntegerType => assert(decimalDigits === 0)
+            case d: DecimalType => assert(decimalDigits === d.scale)
+            case FloatType => assert(decimalDigits === 7)
+            case DoubleType => assert(decimalDigits === 15)
+            case TimestampType => assert(decimalDigits === 6)
+            case _ => assert(decimalDigits === 0) // nulls
+          }
+
+          val radix = rowSet.getInt(NUM_PREC_RADIX)
+          schema(pos).dataType match {
+            case _: NumericType => assert(radix === 10)
+            case _ => assert(radix === 0) // nulls
+          }
+
+          assert(rowSet.getInt(NULLABLE) === 1)
+          assert(rowSet.getString(REMARKS) === pos.toString)
+          assert(rowSet.getInt(ORDINAL_POSITION) === pos)
+          assert(rowSet.getString(IS_NULLABLE) === "YES")
+          assert(rowSet.getString(IS_AUTO_INCREMENT) === "NO")
+          pos += 1
         }
 
-        assert(rowSet.getInt(BUFFER_LENGTH) === 0) // not used
-        val decimalDigits = rowSet.getInt(DECIMAL_DIGITS)
-        schema(pos).dataType match {
-          case BooleanType | _: IntegerType => assert(decimalDigits === 0)
-          case d: DecimalType => assert(decimalDigits === d.scale)
-          case FloatType => assert(decimalDigits === 7)
-          case DoubleType => assert(decimalDigits === 15)
-          case TimestampType => assert(decimalDigits === 6)
-          case _ => assert(decimalDigits === 0) // nulls
-        }
-
-        val radix = rowSet.getInt(NUM_PREC_RADIX)
-        schema(pos).dataType match {
-          case _: NumericType => assert(radix === 10)
-          case _ => assert(radix === 0) // nulls
-        }
-
-        assert(rowSet.getInt(NULLABLE) === 1)
-        assert(rowSet.getString(REMARKS) === pos.toString)
-        assert(rowSet.getInt(ORDINAL_POSITION) === pos)
-        assert(rowSet.getString(IS_NULLABLE) === "YES")
-        assert(rowSet.getString(IS_AUTO_INCREMENT) === "NO")
-        pos += 1
+        assert(pos === 18, "all columns should have been verified")
       }
-
-      assert(pos === 18, "all columns should have been verified")
 
       val e = intercept[HiveSQLException](metaData.getColumns(null, "*", null, null))
       assert(e.getCause.getMessage === "org.apache.kyuubi.KyuubiSQLException:" +
