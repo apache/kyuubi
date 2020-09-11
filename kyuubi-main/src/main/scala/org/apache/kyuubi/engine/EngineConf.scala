@@ -17,34 +17,17 @@
 
 package org.apache.kyuubi.engine
 
-import java.lang.ProcessBuilder.Redirect
+import org.apache.kyuubi.config.{ConfigBuilder, KyuubiConf, OptionalConfigEntry}
 
-import scala.collection.JavaConverters._
+object EngineConf {
 
-trait ProcessBuilderLike {
+  private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
 
-  protected def executable: String
+  val ENGINE_SPARK_MAIN_RESOURCE: OptionalConfigEntry[String] =
+    buildConf("engine.spark.main.resource")
+      .doc("The connection string for the zookeeper ensemble")
+      .version("1.0.0")
+      .stringConf
+      .createOptional
 
-  protected def mainResource: Option[String]
-
-  protected def mainClass: String
-
-  protected def proxyUser: Option[String]
-
-  protected def commands: Array[String]
-
-  protected def env: Map[String, String]
-
-  final lazy val processBuilder: ProcessBuilder = {
-    val pb = new ProcessBuilder(commands: _*)
-    val envs = pb.environment()
-    envs.putAll(env.asJava)
-    pb.redirectOutput(Redirect.PIPE)
-    pb.redirectError(Redirect.PIPE)
-    pb
-  }
-
-  final def start: Process = {
-    processBuilder.start()
-  }
 }
