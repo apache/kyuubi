@@ -28,7 +28,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>kyuubi-spark-sql-engine</artifactId>
-    <name>Kyuubi Project Spark SQL Engine</name>
+    <name>Kyuubi Project Engine Spark SQL</name>
     <packaging>jar</packaging>
 
     <dependencies>

@@ -32,10 +32,12 @@ class ExecuteStatement(
 
   private var result: DataFrame = _
 
-  override protected def resultSchema: StructType = if (result == null || result.schema.isEmpty) {
-    new StructType().add("Result", "string")
-  } else {
-    result.schema
+  override protected def resultSchema: StructType = {
+    if (result == null || result.schema.isEmpty) {
+      new StructType().add("Result", "string")
+    } else {
+      result.schema
+    }
   }
 
   override protected def runInternal(): Unit = {
