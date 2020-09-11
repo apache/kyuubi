@@ -18,36 +18,66 @@
 package org.apache.kyuubi.engine.spark
 
 import java.io.File
+import java.nio.file.{Files, Paths}
 import java.util.UUID
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.kyuubi.Logging
-import org.apache.kyuubi.SPARK_COMPILE_VERSION
+import org.apache.kyuubi._
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.EngineConf.ENGINE_SPARK_MAIN_RESOURCE
 import org.apache.kyuubi.engine.ProcessBuilderLike
 
 class SparkProcessBuilder(
-    conf: Map[String, String],
     override val proxyUser: Option[String],
-    override val mainResource: Option[String])
+    conf: Map[String, String],
+    override val env: Map[String, String] = sys.env)
   extends ProcessBuilderLike {
 
   import SparkProcessBuilder._
 
   override protected val executable: String = {
-    var sparkHome = conf.getOrElse("SPARK_HOME", System.getenv("SPARK_HOME"))
-
-    if (sparkHome == null) {
-      sparkHome = s"./externals/kyuubi-download/target/spark-$SPARK_COMPILE_VERSION-bin-hadoop2.7"
+    val path = env.get("SPARK_HOME").map { sparkHome =>
+      Paths.get(sparkHome, "bin", "spark-submit").toAbsolutePath
+    } getOrElse {
+      Paths.get(
+        "..",
+        "externals",
+        "kyuubi-download",
+        "target",
+        s"spark-$SPARK_COMPILE_VERSION-bin-hadoop2.7",
+        "bin", "spark-submit").toAbsolutePath
     }
-
-    val exec = Seq(sparkHome, "bin", "spark-submit").mkString(File.separator)
-    require(new File(exec).exists(), "Please specific SPARK_HOME environment variable to a" +
-      " valid spark release package")
-    exec
+    path.toString
   }
 
   override val mainClass: String = "org.apache.kyuubi.engine.spark.SparkSQLEngine"
+
+  override val mainResource: Option[String] = {
+    // 1. get the main resource jar for user specified config first
+    conf.get(ENGINE_SPARK_MAIN_RESOURCE.key).filter { userSpecified =>
+      Files.exists(Paths.get(userSpecified))
+    }.orElse {
+      // 2. get the main resource jar from system build default
+      env.get(KyuubiConf.KYUUBI_HOME)
+        .map {
+          Paths.get(
+            _,
+            "externals",
+            "engines",
+            "spark",
+            s"kyuubi-spark-sql-engine-$KYUUBI_VERSION.jar")
+        }.filter(Files.exists(_)).map(_.toAbsolutePath.toString)
+    }.orElse {
+      // 3. get the main resource from dev environment
+      Some(Paths.get(
+        "..",
+        "externals",
+        "kyuubi-spark-sql-engine",
+        "target",
+        s"kyuubi-spark-sql-engine-$KYUUBI_VERSION.jar").toAbsolutePath.toString)
+    }
+  }
 
   override protected def commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
@@ -78,7 +108,7 @@ class SparkProcessBuilder(
  *
  * (build/)mvn clean package -pl :kyuubi-download -DskipTests
  */
-object SparkProcessBuilder extends Logging {
+object SparkProcessBuilder {
 
   private final val CONF = "--conf"
   private final val CLASS = "--class"
@@ -86,10 +116,7 @@ object SparkProcessBuilder extends Logging {
 
   def main(args: Array[String]): Unit = {
     val conf = Map("spark.abc" -> "1", "spark.xyz" -> "2")
-    val sparkProcessBuilder = new SparkProcessBuilder(
-      conf,
-      Some("kent"),
-      Some("externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine-1.0.0-SNAPSHOT.jar"))
+    val sparkProcessBuilder = new SparkProcessBuilder(Some("kent"), conf)
     print(sparkProcessBuilder.toString)
     val file = new File(s"${UUID.randomUUID()}abc.log")
     file.createNewFile()
