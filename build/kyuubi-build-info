@@ -22,14 +22,18 @@ mkdir -p "$EXTRA_RESOURCE_DIR"
 BUILD_INFO="$EXTRA_RESOURCE_DIR"/kyuubi-version-info.properties
 
 echo_build_properties() {
-  echo kyuubi_version=$1
-  echo spark_version=$2
+  echo kyuubi_version="$2"
+  echo java_version="$3"
+  echo scala_version="$4"
+  echo spark_version="$5"
+  echo hive_version="$6"
+  echo hadoop_version="$7"
   echo user="$USER"
-  echo jar=kyuubi-server-$1.jar
+  echo jar=kyuubi-server-$2.jar
   echo revision=$(git rev-parse HEAD)
   echo branch=$(git rev-parse --abbrev-ref HEAD)
   echo date=$(date -u +%Y-%m-%dT%H:%M:%SZ)
   echo url=$(git config --get remote.origin.url)
 }
 
-echo_build_properties $2 $3 > "$BUILD_INFO"
+echo_build_properties "$@" > "$BUILD_INFO"
