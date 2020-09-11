@@ -23,6 +23,7 @@ import java.util.UUID
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.SPARK_COMPILE_VERSION
 import org.apache.kyuubi.engine.ProcessBuilderLike
 
 class SparkProcessBuilder(
@@ -37,7 +38,7 @@ class SparkProcessBuilder(
     var sparkHome = conf.getOrElse("SPARK_HOME", System.getenv("SPARK_HOME"))
 
     if (sparkHome == null) {
-      sparkHome = "./externals/kyuubi-download/target/spark-3.0.0-bin-hadoop2.7"
+      sparkHome = s"./externals/kyuubi-download/target/spark-$SPARK_COMPILE_VERSION-bin-hadoop2.7"
     }
 
     val exec = Seq(sparkHome, "bin", "spark-submit").mkString(File.separator)

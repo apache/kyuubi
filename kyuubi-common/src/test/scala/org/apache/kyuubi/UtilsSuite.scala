@@ -30,11 +30,16 @@ class UtilsSuite extends KyuubiFunSuite {
     props.load(str)
     str.close()
     assert(props.getProperty("kyuubi_version") === KYUUBI_VERSION)
+    assert(props.getProperty("java_version") === JAVA_COMPILE_VERSION)
+    assert(props.getProperty("scala_version") === SCALA_COMPILE_VERSION)
     assert(props.getProperty("spark_version") === SPARK_COMPILE_VERSION)
+    assert(props.getProperty("hive_version") === HIVE_COMPILE_VERSION)
+    assert(props.getProperty("hadoop_version") === HADOOP_COMPILE_VERSION)
     assert(props.getProperty("branch") === BRANCH)
     assert(props.getProperty("revision") === REVISION)
     assert(props.getProperty("user") === BUILD_USER)
     assert(props.getProperty("url") === REPO_URL)
+    assert(props.getProperty("date") === BUILD_DATE)
   }
 
   test("string to seq") {

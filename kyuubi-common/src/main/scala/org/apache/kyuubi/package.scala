@@ -38,7 +38,11 @@ package object kyuubi {
     }
 
     val version: String = props.getProperty("kyuubi_version", unknown)
+    val java_version: String = props.getProperty("java_version", unknown)
+    val scala_version: String = props.getProperty("scala_version", unknown)
     val sparkVersion: String = props.getProperty("spark_version", unknown)
+    val hive_version: String = props.getProperty("hive_version", unknown)
+    val hadoop_version: String = props.getProperty("hadoop_version", unknown)
     val branch: String = props.getProperty("branch", unknown)
     val revision: String = props.getProperty("revision", unknown)
     val user: String = props.getProperty("user", unknown)
@@ -47,7 +51,11 @@ package object kyuubi {
   }
 
   val KYUUBI_VERSION: String = BuildInfo.version
+  val JAVA_COMPILE_VERSION: String = BuildInfo.java_version
+  val SCALA_COMPILE_VERSION: String = BuildInfo.scala_version
   val SPARK_COMPILE_VERSION: String = BuildInfo.sparkVersion
+  val HIVE_COMPILE_VERSION: String = BuildInfo.hive_version
+  val HADOOP_COMPILE_VERSION: String = BuildInfo.hadoop_version
   val BRANCH: String = BuildInfo.branch
   val REVISION: String = BuildInfo.revision
   val BUILD_USER: String = BuildInfo.user

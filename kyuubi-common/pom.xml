@@ -92,7 +92,11 @@
                                     <arg value="${project.basedir}/../build/kyuubi-build-info"/>
                                     <arg value="${project.build.directory}/extra-resources"/>
                                     <arg value="${project.version}"/>
+                                    <arg value="${java.version}"/>
+                                    <arg value="${scala.binary.version}"/>
                                     <arg value="${spark.version}"/>
+                                    <arg value="${hive.version}"/>
+                                    <arg value="${hadoop.version}"/>
                                 </exec>
                             </target>
                         </configuration>
@@ -109,7 +113,11 @@
                                     <arg value="${project.basedir}/../build/kyuubi-build-info"/>
                                     <arg value="${project.build.testOutputDirectory}"/>
                                     <arg value="${project.version}"/>
+                                    <arg value="${java.version}"/>
+                                    <arg value="${scala.binary.version}"/>
                                     <arg value="${spark.version}"/>
+                                    <arg value="${hive.version}"/>
+                                    <arg value="${hadoop.version}"/>
                                 </exec>
                             </target>
                         </configuration>
