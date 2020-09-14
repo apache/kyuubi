@@ -24,8 +24,8 @@ import org.apache.hive.service.rpc.thrift.TOpenSessionReq
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
 import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.types._
-import org.apache.kyuubi.Utils
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
