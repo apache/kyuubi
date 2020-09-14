@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.spark.session
 
 import scala.util.control.NonFatal
+import scala.util.matching.Regex
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.SparkSession
@@ -37,6 +38,8 @@ import org.apache.kyuubi.session.{SessionHandle, SessionManager}
 class SparkSQLSessionManager private (name: String, spark: SparkSession)
   extends SessionManager(name) {
 
+  import SparkSQLSessionManager._
+
   def this(spark: SparkSession) = this(classOf[SparkSQLSessionManager].getSimpleName, spark)
 
   val operationManager = new SparkSQLOperationManager()
@@ -51,12 +54,17 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     val handle = sessionImpl.handle
     try {
       val sparkSession = spark.newSession()
-      conf.foreach { case (key, value) => spark.conf.set(key, value)}
-      operationManager.setSparkSession(handle, sparkSession)
+      conf.foreach {
+        case (HIVE_VAR_PREFIX(key), value) => sparkSession.conf.set(key, value)
+        case (HIVE_CONF_PREFIX(key), value) => sparkSession.conf.set(key, value)
+        case ("use:database", database) => sparkSession.catalog.setCurrentDatabase(database)
+        case (key, value) => sparkSession.conf.set(key, value)
+      }
       sessionImpl.open()
-      info(s"$user's session with $handle is opened, current opening sessions" +
-        s" $getOpenSessionCount")
+      operationManager.setSparkSession(handle, sparkSession)
       setSession(handle, sessionImpl)
+      info(s"$user's session with $handle is opened, current opening sessions" +
+      s" $getOpenSessionCount")
       handle
     } catch {
       case NonFatal(e) =>
@@ -65,7 +73,12 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
         } catch {
           case t: Throwable => warn(s"Error closing session $handle for $user", t)
         }
-        throw KyuubiSQLException(s"Error opening session $handle for $user", e)
+        throw KyuubiSQLException(s"Error opening session $handle for $user: ${e.getMessage}", e)
     }
   }
+}
+
+object SparkSQLSessionManager {
+  val HIVE_VAR_PREFIX: Regex = """set:hivevar:([^=]+)""".r
+  val HIVE_CONF_PREFIX: Regex = """set:hiveconf:([^=]+)""".r
 }
