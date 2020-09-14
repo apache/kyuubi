@@ -11,7 +11,7 @@ cache:
 
 deploy:
   - provider: pages
-    skip_cleanup: true
+    cleanup: false
     keep_history: true
     github_token: $GITHUB_TOKEN
     email: yaooqinn@hotmail.com
@@ -22,7 +22,7 @@ deploy:
     api_key: $GITHUB_TOKEN
     file_glob: true
     file: kyuubi-*.tar.gz
-    skip_cleanup: true
+    cleanup: false
     on:
       tags: true
 
@@ -31,7 +31,7 @@ jobs:
     - stage: spark3.0.0
       language: scala
       script:
-        - mvn clean verify -pl :kyuubi-common,:kyuubi-ha,:kyuubi-main,:kyuubi-spark-sql-engine,:kyuubi-codecov -Dmaven.javadoc.skip=true -B -V
+        - mvn --no-transfer-progress clean install -pl :kyuubi-common,:kyuubi-ha,:kyuubi-main,:kyuubi-spark-sql-engine,:kyuubi-codecov -Dmaven.javadoc.skip=true -B -V
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
