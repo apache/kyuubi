@@ -122,7 +122,16 @@ object KyuubiConf {
   final val KYUUBI_CONF_FILE_NAME = "kyuubi-defaults.conf"
   final val KYUUBI_HOME = "KYUUBI_HOME"
 
-  def buildConf(key: String): ConfigBuilder = ConfigBuilder(KYUUBI_PREFIX + key)
+  val kyuubiConfEntries: java.util.Map[String, ConfigEntry[_]] =
+    java.util.Collections.synchronizedMap(new java.util.HashMap[String, ConfigEntry[_]]())
+
+  private def register(entry: ConfigEntry[_]): Unit = kyuubiConfEntries.synchronized {
+    require(!kyuubiConfEntries.containsKey(entry.key),
+      s"Duplicate SQLConfigEntry. ${entry.key} has been registered")
+    kyuubiConfEntries.put(entry.key, entry)
+  }
+
+  def buildConf(key: String): ConfigBuilder = ConfigBuilder(KYUUBI_PREFIX + key).onCreate(register)
 
   val EMBEDDED_ZK_PORT: ConfigEntry[Int] = buildConf("embedded.zookeeper.port")
     .doc("The port of the embedded zookeeper server")
