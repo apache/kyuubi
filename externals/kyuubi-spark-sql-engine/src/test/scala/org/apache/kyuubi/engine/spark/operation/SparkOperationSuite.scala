@@ -22,7 +22,7 @@ import java.sql.{Date, SQLException, Timestamp}
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.cli.HiveSQLException
-import org.apache.hive.service.rpc.thrift.{TCloseSessionReq, TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq, TStatus, TStatusCode}
+import org.apache.hive.service.rpc.thrift._
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
 import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.types._
@@ -746,7 +746,7 @@ class SparkOperationSuite extends WithSparkSQLEngine {
       val tOpenSessionResp = client.OpenSession(req)
 
       val tExecuteStatementReq = new TExecuteStatementReq()
-      tExecuteStatementReq.setSessionHandle( tOpenSessionResp.getSessionHandle)
+      tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
       tExecuteStatementReq.setStatement("set")
       val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
 
@@ -798,6 +798,60 @@ class SparkOperationSuite extends WithSparkSQLEngine {
       val status = tOpenSessionResp.getStatus
       assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
       assert(status.getErrorMessage.contains("Database 'default2' does not exist"))
+    }
+  }
+
+  test("not allow to operate closed session or operation") {
+    withThriftClient { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername("kentyao")
+      req.setPassword("anonymous")
+      val tOpenSessionResp = client.OpenSession(req)
+
+      val tExecuteStatementReq = new TExecuteStatementReq()
+      tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      tExecuteStatementReq.setStatement("set")
+      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+
+      val tCloseOperationReq = new TCloseOperationReq(tExecuteStatementResp.getOperationHandle)
+      val tCloseOperationResp = client.CloseOperation(tCloseOperationReq)
+      assert(tCloseOperationResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+
+      val tFetchResultsReq = new TFetchResultsReq()
+      tFetchResultsReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
+      tFetchResultsReq.setFetchType(0)
+      tFetchResultsReq.setMaxRows(1000)
+      val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
+      assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(tFetchResultsResp.getStatus.getErrorMessage startsWith "Invalid OperationHandle" +
+        " [type=EXECUTE_STATEMENT, identifier:")
+
+      val tCloseSessionReq = new TCloseSessionReq()
+      tCloseSessionReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      val tCloseSessionResp = client.CloseSession(tCloseSessionReq)
+      assert(tCloseSessionResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      val tExecuteStatementResp1 = client.ExecuteStatement(tExecuteStatementReq)
+
+      val status = tExecuteStatementResp1.getStatus
+      assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(status.getErrorMessage startsWith s"Invalid SessionHandle [")
+    }
+  }
+
+  test("cancel operation") {
+    withThriftClient { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername("kentyao")
+      req.setPassword("anonymous")
+      val tOpenSessionResp = client.OpenSession(req)
+
+      val tExecuteStatementReq = new TExecuteStatementReq()
+      tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      tExecuteStatementReq.setStatement("set")
+      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+      val tCancelOperationReq = new TCancelOperationReq(tExecuteStatementResp.getOperationHandle)
+      val tCancelOperationResp = client.CancelOperation(tCancelOperationReq)
+      tCancelOperationResp
     }
   }
 }
