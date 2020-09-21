@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.cli
 
+import java.util.Objects
+
 import org.apache.kyuubi.KyuubiFunSuite
 
 class HandleIdentifierSuite extends KyuubiFunSuite {
@@ -29,7 +31,11 @@ class HandleIdentifierSuite extends KyuubiFunSuite {
 
     val id3 = HandleIdentifier(id1.publicId, id1.secretId)
     assert(id3 === id1)
+    assert(id3.toString === id1.publicId.toString)
+    assert(id3.hashCode() ===
+      (Objects.hashCode(id1.publicId) + 31) * 31 + Objects.hashCode(id1.secretId))
     val id4 = HandleIdentifier()
     assert(id4 !== id1)
+    assert(id4 !== new Integer(1))
   }
 }
