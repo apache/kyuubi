@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi
 
+import org.apache.hive.service.rpc.thrift.TStatusCode
+
 class KyuubiSQLExceptionSuite extends KyuubiFunSuite {
 
   test("KyuubiSQLException") {
@@ -28,11 +30,24 @@ class KyuubiSQLExceptionSuite extends KyuubiFunSuite {
     val e1 = new KyuubiException(msg1, e0)
     val e2 = new KyuubiSQLException(msg2, e1)
     assert(e2.toTStatus === KyuubiSQLException.toTStatus(e2))
+
     val e3 = KyuubiSQLException(e2.toTStatus)
     assert(e3.getMessage === e2.getMessage)
     assert(e3.getStackTrace === e2.getStackTrace)
     assert(e3.getCause.getMessage === e1.getMessage)
     assert(e3.getCause.getCause.getMessage === e0.getMessage)
-  }
 
+    val ts0 = KyuubiSQLException.toTStatus(e0)
+    assert(ts0.getStatusCode === TStatusCode.ERROR_STATUS)
+    assert(ts0.getErrorMessage === msg0)
+    assert(ts0.getInfoMessages.get(0).startsWith("*"))
+
+    val e4 = KyuubiSQLException(ts0)
+    assert(e4.getMessage === msg0)
+    assert(e4.getCause.getStackTrace === e0.getStackTrace)
+
+    val e5 = KyuubiSQLException(e0)
+    assert(e5.getMessage === msg0)
+    assert(e5.getCause === e0)
+  }
 }

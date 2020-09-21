@@ -23,7 +23,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.{TStatus, TStatusCode}
 
-case class KyuubiSQLException(msg: String, cause: Throwable) extends SQLException(msg, cause) {
+class KyuubiSQLException(msg: String, cause: Throwable) extends SQLException(msg, cause) {
   /**
    * Converts current object to a [[TStatus]] object
    *
@@ -44,6 +44,9 @@ object KyuubiSQLException {
   private final val HEAD_MARK: String = "*"
   private final val SEPARATOR: Char = ':'
 
+  def apply(msg: String, throwable: Throwable): KyuubiSQLException = {
+    new KyuubiSQLException(msg, throwable)
+  }
   def apply(cause: Throwable): KyuubiSQLException = {
     new KyuubiSQLException(cause.getMessage, cause)
   }
