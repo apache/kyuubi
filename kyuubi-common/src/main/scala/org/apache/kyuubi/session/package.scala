@@ -19,10 +19,15 @@ package org.apache.kyuubi
 
 import java.time.Duration
 
+import scala.util.matching.Regex
+
 import org.apache.kyuubi.config.ConfigEntry
 import org.apache.kyuubi.config.KyuubiConf.buildConf
 
 package object session {
+
+  val HIVE_VAR_PREFIX: Regex = """set:hivevar:([^=]+)""".r
+  val HIVE_CONF_PREFIX: Regex = """set:hiveconf:([^=]+)""".r
 
   val SESSION_CHECK_INTERVAL: ConfigEntry[Long] =
     buildConf("session.check.interval")

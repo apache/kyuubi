@@ -17,12 +17,8 @@
 
 package org.apache.kyuubi.session
 
-import java.util.concurrent.ConcurrentHashMap
-
 import scala.util.control.NonFatal
 
-import org.apache.curator.framework.CuratorFramework
-import org.apache.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -37,16 +33,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   val operationManager = new KyuubiOperationManager()
 
-  private var zkClient: CuratorFramework = _
-
   private var zkNamespacePrefix: String = _
-
-  private val userToClient = new ConcurrentHashMap[String, Iface]()
 
   override def initialize(conf: KyuubiConf): Unit = {
     zkNamespacePrefix = conf.get(HA_ZK_NAMESPACE)
     ServiceDiscovery.setUpZooKeeperAuth(conf)
-    zkClient = ServiceDiscovery.newZookeeperClient(conf)
     super.initialize(conf)
   }
 
@@ -58,15 +49,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       conf: Map[String, String]): SessionHandle = {
 
     val sessionImpl = new KyuubiSessionImpl(
-      protocol, user, password, ipAddress, conf, this, KyuubiConf(), zkNamespacePrefix)
+      protocol, user, password, ipAddress, conf, this, this.getConf.clone, zkNamespacePrefix)
     val handle = sessionImpl.handle
     try {
-      var client: Iface = userToClient.get(user)
-      if (client == null) {
-
-      }
-
-//      operationManager.setConnection(handle)
       sessionImpl.open()
       info(s"$user's session with $handle is opened, current opening sessions" +
         s" $getOpenSessionCount")

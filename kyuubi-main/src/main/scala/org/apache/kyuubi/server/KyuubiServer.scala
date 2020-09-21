@@ -17,16 +17,18 @@
 
 package org.apache.kyuubi.server
 
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.server.EmbeddedZkServer
 import org.apache.kyuubi.service.{AbstractBackendService, SeverLike}
+import org.apache.kyuubi.util.SignalRegister
 
-object KyuubiServer {
+object KyuubiServer extends Logging {
 
   def main(args: Array[String]): Unit = {
+    SignalRegister.registerLogger(logger)
     val conf = new KyuubiConf().loadFileDefaults()
-
     val zkEnsemble = conf.get(HA_ZK_QUORUM)
     if (zkEnsemble == null || zkEnsemble.isEmpty) {
       val zkServer = new EmbeddedZkServer()
@@ -38,9 +40,6 @@ object KyuubiServer {
     val server = new KyuubiServer()
     server.initialize(conf)
     server.start()
-
-    Thread.sleep(10000)
-    print("Hello Kyuubi")
   }
 }
 
