@@ -30,7 +30,7 @@ class packageSuite extends SparkFunSuite {
     props.load(str)
     str.close()
     assert(props.getProperty("kyuubi_version") === KYUUBI_VERSION)
-    assert(props.getProperty("spark_version") === SPARK_COMPILE_VERSION)
+    assert(props.getProperty("kyuubi_spark_version") === SPARK_COMPILE_VERSION)
     assert(props.getProperty("branch") === BRANCH)
     assert(props.getProperty("jar") === KYUUBI_JAR_NAME)
     assert(props.getProperty("revision") === REVISION)

@@ -47,7 +47,6 @@ class KyuubiSessionImpl(
 
   private def configureSession(): Unit = {
     conf.foreach {
-      case (k, v) => sessionConf.set(k, v)
       case (HIVE_VAR_PREFIX(key), value) => sessionConf.set(key, value)
       case (HIVE_CONF_PREFIX(key), value) => sessionConf.set(key, value)
       case ("use:database", _) =>

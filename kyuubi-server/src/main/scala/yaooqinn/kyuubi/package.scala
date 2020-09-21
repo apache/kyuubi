@@ -40,7 +40,7 @@ package object kyuubi {
     }
 
     val version: String = props.getProperty("kyuubi_version", unknown)
-    val sparkVersion: String = props.getProperty("spark_version", unknown)
+    val sparkVersion: String = props.getProperty("kyuubi_spark_version", unknown)
     val branch: String = props.getProperty("branch", unknown)
     val jar: String = props.getProperty("jar", unknown)
     val revision: String = props.getProperty("revision", unknown)

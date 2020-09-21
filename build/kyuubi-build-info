@@ -23,11 +23,11 @@ BUILD_INFO="$EXTRA_RESOURCE_DIR"/kyuubi-version-info.properties
 
 echo_build_properties() {
   echo kyuubi_version="$2"
-  echo java_version="$3"
-  echo scala_version="$4"
-  echo spark_version="$5"
-  echo hive_version="$6"
-  echo hadoop_version="$7"
+  echo kyuubi_java_version="$3"
+  echo kyuubi_scala_version="$4"
+  echo kyuubi_spark_version="$5"
+  echo kyuubi_hive_version="$6"
+  echo kyuubi_hadoop_version="$7"
   echo user="$USER"
   echo jar=kyuubi-server-$2.jar
   echo revision=$(git rev-parse HEAD)
