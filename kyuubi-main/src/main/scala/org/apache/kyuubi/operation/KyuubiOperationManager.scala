@@ -144,8 +144,11 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     val operation = getOperation(opHandle).asInstanceOf[KyuubiOperation]
     val client = getThriftClient(operation.getSession.handle)
 
-    val orientation = FetchOrientation.toTFetchOrientation(order)
-    val req = new TFetchResultsReq(operation.remoteOpHandle(), orientation, maxRows)
+    val req = new TFetchResultsReq()
+    req.setOperationHandle(operation.remoteOpHandle())
+    req.setOrientation(FetchOrientation.toTFetchOrientation(order))
+    req.setMaxRows(maxRows)
+    req.setFetchType(1)
     val resp = client.FetchResults(req)
     resp.getResults
   }

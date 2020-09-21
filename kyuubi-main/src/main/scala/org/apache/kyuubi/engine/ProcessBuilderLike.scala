@@ -17,9 +17,14 @@
 
 package org.apache.kyuubi.engine
 
+import java.io.File
 import java.lang.ProcessBuilder.Redirect
+import java.nio.file.{Files, Path, Paths}
+import java.util.UUID
 
 import scala.collection.JavaConverters._
+
+import org.apache.kyuubi.Utils
 
 trait ProcessBuilderLike {
 
@@ -29,18 +34,25 @@ trait ProcessBuilderLike {
 
   protected def mainClass: String
 
-  protected def proxyUser: Option[String]
+  protected def proxyUser: String
 
   protected def commands: Array[String]
 
   protected def env: Map[String, String]
 
+  protected def workingDir: Path
+
   final lazy val processBuilder: ProcessBuilder = {
     val pb = new ProcessBuilder(commands: _*)
+
     val envs = pb.environment()
     envs.putAll(env.asJava)
-    pb.redirectOutput(Redirect.PIPE)
-    pb.redirectError(Redirect.PIPE)
+
+    pb.directory(workingDir.toFile)
+    val procLogFile =
+      Paths.get(workingDir.toAbsolutePath.toString, UUID.randomUUID().toString).toFile
+    pb.redirectError(procLogFile)
+    pb.redirectOutput(procLogFile)
     pb
   }
 

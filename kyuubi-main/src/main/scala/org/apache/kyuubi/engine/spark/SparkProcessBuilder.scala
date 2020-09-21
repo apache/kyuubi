@@ -17,9 +17,9 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.io.File
-import java.nio.file.{Files, Paths}
-import java.util.UUID
+import java.io.{BufferedReader, InputStreamReader}
+import java.nio.file.{Files, Path, Paths}
+import java.util.concurrent.TimeUnit
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -29,7 +29,7 @@ import org.apache.kyuubi.engine.EngineConf.ENGINE_SPARK_MAIN_RESOURCE
 import org.apache.kyuubi.engine.ProcessBuilderLike
 
 class SparkProcessBuilder(
-    override val proxyUser: Option[String],
+    override val proxyUser: String,
     conf: Map[String, String],
     override val env: Map[String, String] = sys.env)
   extends ProcessBuilderLike {
@@ -46,36 +46,37 @@ class SparkProcessBuilder(
         "kyuubi-download",
         "target",
         s"spark-$SPARK_COMPILE_VERSION-bin-hadoop2.7",
-        "bin", "spark-submit").toAbsolutePath
+        "bin", "spark-submit")
     }
-    path.toString
+    path.toAbsolutePath.toFile.getCanonicalPath
   }
 
-  override val mainClass: String = "org.apache.kyuubi.engine.spark.SparkSQLEngine"
+  override def mainClass: String = "org.apache.kyuubi.engine.spark.SparkSQLEngine"
 
-  override val mainResource: Option[String] = {
+  override def mainResource: Option[String] = {
     // 1. get the main resource jar for user specified config first
+    val jarName = s"kyuubi-spark-sql-engine-$KYUUBI_VERSION.jar"
     conf.get(ENGINE_SPARK_MAIN_RESOURCE.key).filter { userSpecified =>
       Files.exists(Paths.get(userSpecified))
     }.orElse {
       // 2. get the main resource jar from system build default
       env.get(KyuubiConf.KYUUBI_HOME)
-        .map {
-          Paths.get(
-            _,
-            "externals",
-            "engines",
-            "spark",
-            s"kyuubi-spark-sql-engine-$KYUUBI_VERSION.jar")
-        }.filter(Files.exists(_)).map(_.toAbsolutePath.toString)
+        .map { Paths.get(_, "externals", "engines", "spark", jarName) }
+        .filter(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
     }.orElse {
       // 3. get the main resource from dev environment
-      Some(Paths.get(
-        "..",
-        "externals",
-        "kyuubi-spark-sql-engine",
-        "target",
-        s"kyuubi-spark-sql-engine-$KYUUBI_VERSION.jar").toAbsolutePath.toString)
+      Option(Paths.get("externals", "kyuubi-spark-sql-engine", "target", jarName))
+        .filter(Files.exists(_)).orElse {
+        Some(Paths.get("..", "externals", "kyuubi-spark-sql-engine", "target", jarName))
+      }.map(_.toAbsolutePath.toFile.getCanonicalPath)
+    }
+  }
+
+  override protected def workingDir: Path = {
+    env.get("KYUUBI_WORK_DIR_ROOT").map { root =>
+      Utils.createTempDir(root, proxyUser)
+    }.getOrElse {
+      Utils.createTempDir(proxyUser)
     }
   }
 
@@ -88,11 +89,8 @@ class SparkProcessBuilder(
       buffer += CONF
       buffer += s"$k=$v"
     }
-
-    proxyUser.foreach { u =>
-      buffer += PROXY_USER
-      buffer += u
-    }
+    buffer += PROXY_USER
+    buffer += proxyUser
 
     mainResource.foreach { r => buffer += r }
 
@@ -115,17 +113,29 @@ object SparkProcessBuilder {
   private final val PROXY_USER = "--proxy-user"
 
   def main(args: Array[String]): Unit = {
-    val conf = Map("spark.abc" -> "1", "spark.xyz" -> "2")
-    val sparkProcessBuilder = new SparkProcessBuilder(Some("kent"), conf)
+    val conf = Map("spark.abc" -> "1", "spark.xyz" -> "2", "spark.master" -> "hello")
+    val sparkProcessBuilder = new SparkProcessBuilder("kent", conf)
     print(sparkProcessBuilder.toString)
-    val file = new File(s"${UUID.randomUUID()}abc.log")
-    file.createNewFile()
-    file.deleteOnExit()
-    sparkProcessBuilder.processBuilder.redirectOutput(file)
-    sparkProcessBuilder.processBuilder.redirectError(file)
     val start = sparkProcessBuilder.start
 
-    start.waitFor()
-
+    // scalastyle:off
+    if (start.waitFor(1, TimeUnit.MINUTES)) {
+      val reader = new BufferedReader(new InputStreamReader(start.getInputStream))
+      var line = reader.readLine()
+       while(line != null) {
+         println(line)
+         line = reader.readLine()
+       }
+      reader.close()
+    } else {
+      val reader = new BufferedReader(new InputStreamReader(start.getErrorStream))
+      var line = reader.readLine()
+      while(line != null) {
+        println(line)
+        line = reader.readLine()
+      }
+      reader.close()
+      println("\nnot started")
+    }
   }
 }

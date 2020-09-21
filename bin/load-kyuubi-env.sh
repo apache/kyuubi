@@ -41,6 +41,11 @@ if [[ -e ${KYUUBI_LOG_DIR} ]]; then
   mkdir -p ${KYUUBI_LOG_DIR}
 fi
 
+export KYUUBI_WORK_DIR_ROOT="${KYUUBI_WORK_DIR_ROOT:-"${KYUUBI_HOME}/work"}"
+if [[ -e ${KYUUBI_WORK_DIR_ROOT} ]]; then
+  mkdir -p ${KYUUBI_WORK_DIR_ROOT}
+fi
+
 if [[ -z ${JAVA_HOME} ]]; then
    if [[ $(command -v java) ]]; then
      export JAVA_HOME="$(dirname $(dirname $(which java)))"
@@ -49,10 +54,10 @@ fi
 
 export KYUUBI_SCALA_VERSION="${KYUUBI_SCALA_VERSION:-"2.12"}"
 
-SPARK_BUILTIN="${KYUUBI_HOME}/externals/spark-3.0.0-bin-hadoop2.7"
+SPARK_BUILTIN="${KYUUBI_HOME}/externals/spark-3.0.1-bin-hadoop2.7"
 
 if [[ ! -d ${SPARK_BUILTIN} ]]; then
-  SPARK_BUILTIN="${KYUUBI_HOME}/externals/kyuubi-download/target/spark-3.0.0-bin-hadoop2.7"
+  SPARK_BUILTIN="${KYUUBI_HOME}/externals/kyuubi-download/target/spark-3.0.1-bin-hadoop2.7"
 fi
 
 export SPARK_HOME="${SPARK_HOME:-"${SPARK_BUILTIN}"}"
@@ -64,6 +69,7 @@ echo "KYUUBI_HOME: ${KYUUBI_HOME}"
 echo "KYUUBI_CONF_DIR: ${KYUUBI_CONF_DIR}"
 echo "KYUUBI_LOG_DIR: ${KYUUBI_LOG_DIR}"
 echo "KYUUBI_PID_DIR: ${KYUUBI_PID_DIR}"
+echo "KYUUBI_WORK_DIR_ROOT: ${KYUUBI_WORK_DIR_ROOT}"
 
 echo "SPARK_HOME: ${SPARK_HOME}"
 echo "SPARK_CONF_DIR: ${SPARK_CONF_DIR}"

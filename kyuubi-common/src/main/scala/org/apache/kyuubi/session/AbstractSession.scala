@@ -208,7 +208,6 @@ abstract class AbstractSession(
       sessionManager.operationManager.getOperationLogRowSet(operationHandle, orientation, maxRows)
     } else {
       sessionManager.operationManager.getOperationNextRowSet(operationHandle, orientation, maxRows)
-
     }
   }
 

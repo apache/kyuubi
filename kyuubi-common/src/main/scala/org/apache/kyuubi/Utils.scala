@@ -48,7 +48,7 @@ private[kyuubi] object Utils extends Logging {
       .orElse {
         Option(getClass.getClassLoader.getResource(KYUUBI_CONF_FILE_NAME)).map { url =>
           new File(url.getFile)
-        }
+        }.filter(_.exists())
       }
   }
 

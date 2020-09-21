@@ -18,14 +18,13 @@
 package org.apache.kyuubi.engine.spark.session
 
 import scala.util.control.NonFatal
-import scala.util.matching.Regex
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
-import org.apache.kyuubi.session.{SessionHandle, SessionManager}
+import org.apache.kyuubi.session._
 
 /**
  * A [[SessionManager]] constructed with [[SparkSession]] which give it the ability to talk with
@@ -37,8 +36,6 @@ import org.apache.kyuubi.session.{SessionHandle, SessionManager}
  */
 class SparkSQLSessionManager private (name: String, spark: SparkSession)
   extends SessionManager(name) {
-
-  import SparkSQLSessionManager._
 
   def this(spark: SparkSession) = this(classOf[SparkSQLSessionManager].getSimpleName, spark)
 
@@ -78,7 +75,3 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   }
 }
 
-object SparkSQLSessionManager {
-  val HIVE_VAR_PREFIX: Regex = """set:hivevar:([^=]+)""".r
-  val HIVE_CONF_PREFIX: Regex = """set:hiveconf:([^=]+)""".r
-}

@@ -31,7 +31,7 @@ class SparkProcessBuilderSuite extends KyuubiFunSuite {
       .set(EMBEDDED_ZK_TEMP_DIR, "spark_process_test")
       .set("kyuubi.on", "off")
       .toSparkPrefixedConf
-    val builder = new SparkProcessBuilder(Some("kentyao"), conf)
+    val builder = new SparkProcessBuilder("kentyao", conf)
     val commands = builder.toString.split(' ')
     assert(commands(2) === "org.apache.kyuubi.engine.spark.SparkSQLEngine")
     assert(commands.contains("spark.kyuubi.on=off"))

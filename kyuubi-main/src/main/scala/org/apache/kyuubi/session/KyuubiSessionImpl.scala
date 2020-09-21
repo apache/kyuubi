@@ -18,11 +18,13 @@
 package org.apache.kyuubi.session
 
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
 
 import org.apache.curator.utils.ZKPaths
-import org.apache.hive.service.rpc.thrift.{TCLIService, TOpenSessionReq, TProtocolVersion, TSessionHandle, TStatus, TStatusCode}
+import org.apache.hive.service.rpc.thrift._
+import org.apache.thrift.TException
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.{TSocket, TTransport}
 
@@ -30,7 +32,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.ha.client.ServiceDiscovery
-import org.apache.kyuubi.service.BackendService
+import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
 class KyuubiSessionImpl(
     protocol: TProtocolVersion,
@@ -44,7 +46,13 @@ class KyuubiSessionImpl(
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
   private def configureSession(): Unit = {
-    conf.foreach { case (k, v) => sessionConf.set(k, v) }
+    conf.foreach {
+      case (k, v) => sessionConf.set(k, v)
+      case (HIVE_VAR_PREFIX(key), value) => sessionConf.set(key, value)
+      case (HIVE_CONF_PREFIX(key), value) => sessionConf.set(key, value)
+      case ("use:database", _) =>
+      case (key, value) => sessionConf.set(key, value)
+    }
   }
 
   configureSession()
@@ -57,47 +65,58 @@ class KyuubiSessionImpl(
   private var client: TCLIService.Client = _
   private var remoteSessionHandle: TSessionHandle = _
 
-  private def getServerHost(): Option[String] = {
+  private def getServerHost: Option[(String, Int)] = {
     try {
       val hosts = zkClient.getChildren.forPath(zkPath)
-      hosts.asScala.headOption
+      hosts.asScala.headOption.map { p =>
+        val path = ZKPaths.makePath(null, zkNamespace, p)
+        val hostPort = new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
+        val strings = hostPort.split(":")
+        val host = strings.head
+        val port = strings(1).toInt
+        (host, port)
+      }
     } catch {
-      case e: Exception => throw KyuubiSQLException(e)
+      case _: Exception => None
     }
   }
 
   override def open(): Unit = {
-    getServerHost().map { h =>
-      val path = ZKPaths.makePath(null, zkNamespace, h)
-      new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
-    } match {
-      case Some(hostPort) =>
-        val loginTimeout = sessionConf.get(SessionConf.ENGINE_LOGIN_TIMEOUT)
-        val strings = hostPort.split(":")
-        val host = strings.head
-        val port = strings(1).toInt
-        transport = new TSocket(host, port, loginTimeout)
-        if (!transport.isOpen) transport.open()
-        client = new TCLIService.Client(new TBinaryProtocol(transport))
-        openSession()
+    // Init zookeeper client here to capture errors
+    zkClient
+    getServerHost match {
+      case Some((host, port)) => openSession(host, port)
       case None =>
-//        new SparkProcessBuilder(sessionConf.toSparkPrefixedConf, Some(user), )
-
+        val builder = new SparkProcessBuilder(user, sessionConf.toSparkPrefixedConf)
+        val process = builder.start
+        var sh = getServerHost
+        while (sh.isEmpty) {
+          if (process.waitFor(1, TimeUnit.SECONDS)) {
+            throw KyuubiSQLException("Some error happened")
+          }
+          sh = getServerHost
+        }
+        val Some((host, port)) = getServerHost
+        openSession(host, port)
     }
   }
 
-
-  private def openSession(): Unit = {
+  private def openSession(host: String, port: Int): Unit = {
+    val passwd = Option(password).getOrElse("anonymous")
+    val loginTimeout = sessionConf.get(SessionConf.ENGINE_LOGIN_TIMEOUT)
+    transport = PlainSASLHelper.getPlainTransport(
+      user, passwd, new TSocket(host, port, loginTimeout))
+    if (!transport.isOpen) transport.open()
+    client = new TCLIService.Client(new TBinaryProtocol(transport))
     val req = new TOpenSessionReq()
-    req.setClient_protocol(BackendService.SERVER_VERSION)
     req.setUsername(user)
-    req.setPassword(password)
-
+    req.setPassword(passwd)
+    req.setConfiguration(conf.asJava)
     val resp = client.OpenSession(req)
     verifyTStatus(resp.getStatus)
     remoteSessionHandle = resp.getSessionHandle
+    sessionManager.operationManager.setConnection(handle, client, remoteSessionHandle)
   }
-
 
   protected def verifyTStatus(tStatus: TStatus): Unit = {
     if (tStatus.getStatusCode != TStatusCode.SUCCESS_STATUS) {
@@ -107,5 +126,17 @@ class KyuubiSessionImpl(
 
   override def close(): Unit = {
     super.close()
+    val req = new TCloseSessionReq(remoteSessionHandle)
+    try {
+      client.CloseSession(req)
+    } catch {
+      case e: TException =>
+        throw KyuubiSQLException("Error while cleaning up the engine resources", e)
+    } finally {
+      client = null
+      transport.close()
+    }
+
+    zkClient.close()
   }
 }

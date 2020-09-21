@@ -89,7 +89,7 @@ object PlainSASLHelper {
     override def handle(callbacks: Array[Callback]): Unit = {
       callbacks.foreach {
         case nc: NameCallback => nc.setName(user)
-        case pc: PasswordCallback => pc.setPassword(password.toCharArray)
+        case pc: PasswordCallback => pc.setPassword(Option(password).map(_.toCharArray).orNull)
         case other => throw new UnsupportedCallbackException(other)
       }
     }
