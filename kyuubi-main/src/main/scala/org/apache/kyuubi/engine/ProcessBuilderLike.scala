@@ -17,14 +17,10 @@
 
 package org.apache.kyuubi.engine
 
-import java.io.File
-import java.lang.ProcessBuilder.Redirect
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Path, Paths}
 import java.util.UUID
 
 import scala.collection.JavaConverters._
-
-import org.apache.kyuubi.Utils
 
 trait ProcessBuilderLike {
 

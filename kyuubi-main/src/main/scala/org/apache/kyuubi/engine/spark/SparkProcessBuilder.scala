@@ -17,9 +17,7 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.io.{BufferedReader, InputStreamReader}
 import java.nio.file.{Files, Path, Paths}
-import java.util.concurrent.TimeUnit
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -40,12 +38,15 @@ class SparkProcessBuilder(
     val path = env.get("SPARK_HOME").map { sparkHome =>
       Paths.get(sparkHome, "bin", "spark-submit").toAbsolutePath
     } getOrElse {
+      val sparkVer = SPARK_COMPILE_VERSION
+      val hadoopVer = HADOOP_COMPILE_VERSION.take(3)
+      val hiveVer = if (HIVE_COMPILE_VERSION.take(3).toDouble < 2.3) "-hive1.2" else ""
       Paths.get(
         "..",
         "externals",
         "kyuubi-download",
         "target",
-        s"spark-$SPARK_COMPILE_VERSION-bin-hadoop2.7",
+        s"spark-$sparkVer-bin-hadoop$hadoopVer$hiveVer",
         "bin", "spark-submit")
     }
     path.toAbsolutePath.toFile.getCanonicalPath
@@ -76,7 +77,7 @@ class SparkProcessBuilder(
     env.get("KYUUBI_WORK_DIR_ROOT").map { root =>
       Utils.createTempDir(root, proxyUser)
     }.getOrElse {
-      Utils.createTempDir(proxyUser)
+      Utils.createTempDir(namePrefix = proxyUser)
     }
   }
 
@@ -101,41 +102,8 @@ class SparkProcessBuilder(
 }
 
 
-/**
- * May need download spark release packages first.
- *
- * (build/)mvn clean package -pl :kyuubi-download -DskipTests
- */
 object SparkProcessBuilder {
-
   private final val CONF = "--conf"
   private final val CLASS = "--class"
   private final val PROXY_USER = "--proxy-user"
-
-  def main(args: Array[String]): Unit = {
-    val conf = Map("spark.abc" -> "1", "spark.xyz" -> "2", "spark.master" -> "hello")
-    val sparkProcessBuilder = new SparkProcessBuilder("kent", conf)
-    print(sparkProcessBuilder.toString)
-    val start = sparkProcessBuilder.start
-
-    // scalastyle:off
-    if (start.waitFor(1, TimeUnit.MINUTES)) {
-      val reader = new BufferedReader(new InputStreamReader(start.getInputStream))
-      var line = reader.readLine()
-       while(line != null) {
-         println(line)
-         line = reader.readLine()
-       }
-      reader.close()
-    } else {
-      val reader = new BufferedReader(new InputStreamReader(start.getErrorStream))
-      var line = reader.readLine()
-      while(line != null) {
-        println(line)
-        line = reader.readLine()
-      }
-      reader.close()
-      println("\nnot started")
-    }
-  }
 }
