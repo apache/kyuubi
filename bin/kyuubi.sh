@@ -106,7 +106,7 @@ function start_kyuubi() {
     log="${KYUUBI_LOG_DIR}/kyuubi-$USER-$CLASS-$HOSTNAME.out"
     kyuubi_rotate_log ${log}
 
-    KYUUBI_CLASSPATH="${KYUUBI_JAR_DIR}/*:${KYUUBI_CONF_DIR}/*"
+    KYUUBI_CLASSPATH="${KYUUBI_JAR_DIR}/*:${KYUUBI_CONF_DIR}"
     cmd="${RUNNER} ${KYUUBI_JAVA_OPTS} -cp ${KYUUBI_CLASSPATH} $CLASS"
     echo "Starting $CLASS, logging to $log"
     nohup nice -n "${KYUUBI_NICENESS:-0}" ${cmd} >> ${log} 2>&1 < /dev/null &
