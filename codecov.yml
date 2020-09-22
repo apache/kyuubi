@@ -4,16 +4,16 @@ codecov:
 flags:
   kyuubi-common:
     paths:
-      - kyuubi-common/
+      - ./kyuubi-common/target/codecov
   kyuubi-ha:
     paths:
-      - kyuubi-ha/
+      - ./kyuubi-ha/target/codecov
   kyuubi-main:
     paths:
-      - kyuubi-main/
+      - ./kyuubi-main/target/codecov
   kyuubi-spark-sql-engine:
     paths:
-      - externals/kyuubi-spark-sql-engine/
+      - ./externals/kyuubi-spark-sql-engine/target/codecov
 
 # To see status checks based on flags
 coverage:
