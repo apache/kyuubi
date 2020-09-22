@@ -39,5 +39,5 @@ jobs:
       - name: Build with Maven
         run: |
           export MAVEN_OPTS="-Xmx2g -XX:ReservedCodeCacheSize=512m  -Dorg.slf4j.simpleLogger.defaultLogLevel=WARN"
-          mvn --no-transfer-progress clean install -pl :kyuubi-common,:kyuubi-ha,:kyuubi-main,:kyuubi-download,:kyuubi-assembly,:kyuubi-spark-sql-engine,:kyuubi-codecov -Dmaven.javadoc.skip=true -B -V
+          mvn clean install -pl '!:kyuubi-server,!:kyuubi-thrift' -Dmaven.javadoc.skip=true -B -V
           bash <(curl -s https://codecov.io/bash)
