@@ -869,7 +869,13 @@ class SparkOperationSuite extends WithSparkSQLEngine {
       val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
       val tCancelOperationReq = new TCancelOperationReq(tExecuteStatementResp.getOperationHandle)
       val tCancelOperationResp = client.CancelOperation(tCancelOperationReq)
-      tCancelOperationResp
+      assert(tCancelOperationResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      val tFetchResultsReq = new TFetchResultsReq()
+      tFetchResultsReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
+      tFetchResultsReq.setFetchType(0)
+      tFetchResultsReq.setMaxRows(1000)
+      val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
+      assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
     }
   }
 }
