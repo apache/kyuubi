@@ -43,5 +43,5 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
-          files: ./kyuubi-common/target/codecov/jacoco.xml,./kyuubi-ha/target/codecov/jacoco.xml,./externals/kyuubi-spark-sql-engine/target/codecov/jacoco.xml,./kyuubi-main/target/codecov/jacoco.xml,./dev/kyuubi-codecov/target/site/jacoco-aggregate/jacoco.xml
+          files: ./dev/kyuubi-codecov/target/site/jacoco-aggregate/jacoco.xml,./kyuubi-common/target/codecov/jacoco.xml,./kyuubi-ha/target/codecov/jacoco.xml,./externals/kyuubi-spark-sql-engine/target/codecov/jacoco.xml,./kyuubi-main/target/codecov/jacoco.xml
           flags: unittests
