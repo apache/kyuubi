@@ -92,7 +92,6 @@ package object authentication {
       " applicable only if Kyuubi is configured to use Kerberos authentication.")
     .version("1.0.0")
     .stringConf
-    .checkValues(SaslQOP.values.map(_.toString))
     .transform(_.toLowerCase(Locale.ROOT))
     .createWithDefault(SaslQOP.AUTH.toString)
 }
