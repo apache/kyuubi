@@ -426,7 +426,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-antrun-plugin</artifactId>
-                    <version>1.8</version>
+                    <version>3.0.0</version>
                 </plugin>
 
                 <plugin>
@@ -448,7 +448,7 @@
                 <plugin>
                     <groupId>net.alchim31.maven</groupId>
                     <artifactId>scala-maven-plugin</artifactId>
-                    <version>4.3.0</version>
+                    <version>4.4.0</version>
                     <executions>
                         <execution>
                             <id>eclipse-add-source</id>
@@ -536,7 +536,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.2</version>
+                    <version>0.8.6</version>
                     <configuration>
                         <excludes>
                             <exclude>**/org/apache/spark/launcher/*.class</exclude>
