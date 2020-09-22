@@ -40,8 +40,23 @@ jobs:
         run: |
           export MAVEN_OPTS="-Xmx2g -XX:ReservedCodeCacheSize=512m  -Dorg.slf4j.simpleLogger.defaultLogLevel=WARN"
           mvn clean install -pl '!:kyuubi-server,!:kyuubi-thrift' -Dmaven.javadoc.skip=true -B -V
-      - name: Upload coverage to Codecov
+      - name: Codecov kyuubi-common
         uses: codecov/codecov-action@v1
         with:
-          files: ./dev/kyuubi-codecov/target/site/jacoco-aggregate/jacoco.xml,./kyuubi-common/target/codecov/jacoco.xml,./kyuubi-ha/target/codecov/jacoco.xml,./externals/kyuubi-spark-sql-engine/target/codecov/jacoco.xml,./kyuubi-main/target/codecov/jacoco.xml
-          flags: unittests
+          file: ./kyuubi-common/target/codecov/jacoco.xml
+          flags: kyuubi-common
+      - name: Codecov kyuubi-ha
+        uses: codecov/codecov-action@v1
+        with:
+          file: ./kyuubi-ha/target/codecov/jacoco.xml
+          flags: kyuubi-ha
+      - name: Codecov kyuubi-spark-sql-engine
+        uses: codecov/codecov-action@v1
+        with:
+          file: ./externals/kyuubi-spark-sql-engine/target/codecov/jacoco.xml
+          flags: kyuubi-spark-sql-engine
+      - name: Codecov kyuubi-main
+        uses: codecov/codecov-action@v1
+        with:
+          file: ./kyuubi-main/target/codecov/jacoco.xml
+          flags: kyuubi-main
