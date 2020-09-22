@@ -20,20 +20,25 @@ coverage:
   status:
     project:
       default:
+        target: auto
         flags:
           - kyuubi-common
           - kyuubi-ha
           - kyuubi-main
           - kyuubi-spark-sql-engine
       kyuubi-common:
+        target: auto
         flags:
           - kyuubi-common
       kyuubi-ha:
+        target: auto
         flags:
           - kyuubi-ha
       kyuubi-main:
+        target: auto
         flags:
           - kyuubi-main
       kyuubi-spark-sql-engine:
+        target: auto
         flags:
           - kyuubi-spark-sql-engine
