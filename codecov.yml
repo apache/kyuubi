@@ -1,2 +1,39 @@
 codecov:
   token: 6c25f14f-ec5c-40d2-b2e2-482013acca13
+
+flags:
+  kyuubi-common:
+    paths:
+      - kyuubi-common/
+  kyuubi-ha:
+    paths:
+      - kyuubi-ha/
+  kyuubi-main:
+    paths:
+      - kyuubi-main/
+  kyuubi-spark-sql-engine:
+    paths:
+      - externals/kyuubi-spark-sql-engine/
+
+# To see status checks based on flags
+coverage:
+  status:
+    project:
+      default:
+        flags:
+          - kyuubi-common
+          - kyuubi-ha
+          - kyuubi-main
+          - kyuubi-spark-sql-engine
+      kyuubi-common:
+        flags:
+          - kyuubi-common
+      kyuubi-ha:
+        flags:
+          - kyuubi-ha
+      kyuubi-main:
+        flags:
+          - kyuubi-main
+      kyuubi-spark-sql-engine:
+        flags:
+          - kyuubi-spark-sql-engine
