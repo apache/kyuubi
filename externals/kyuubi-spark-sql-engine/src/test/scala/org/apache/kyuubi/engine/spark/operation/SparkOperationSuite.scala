@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.sql.{Date, SQLException, Timestamp}
+import java.sql.{Date, ResultSet, SQLException, Timestamp}
 
 import scala.collection.JavaConverters._
 
@@ -46,20 +46,38 @@ class SparkOperationSuite extends WithSparkSQLEngine {
   }
 
   test("get schemas") {
-    withDatabases("db1", "db2") { statement =>
-      statement.execute("CREATE DATABASE IF NOT EXISTS db1")
-      statement.execute("CREATE DATABASE IF NOT EXISTS db2")
+    def checkResult(rs: ResultSet, dbNames: Seq[String]): Unit = {
+      val expected = dbNames.iterator
+      while(rs.next() || expected.hasNext) {
+        assert(rs.getString("TABLE_SCHEM") === expected.next)
+        assert(rs.getString("TABLE_CATALOG").isEmpty)
+      }
+      // Make sure there are no more elements
+      assert(!rs.next())
+      assert(!expected.hasNext, "All expected schemas should be visited")
+    }
+
+    val dbs = Seq("db1", "db2", "db33", "db44")
+    val dbDflts = Seq("default", "global_temp")
+
+    withDatabases(dbs: _*) { statement =>
+      dbs.foreach(db => statement.execute(s"CREATE DATABASE IF NOT EXISTS $db"))
       val metaData = statement.getConnection.getMetaData
 
-      Seq("", "%", null, ".*", "db#") foreach { pattern =>
-        val resultSet = metaData.getSchemas(null, pattern)
-        val expected =
-          Seq("db1", "db2", "default", spark.sharedState.globalTempViewManager.database).iterator
-        while(resultSet.next()) {
-          assert(resultSet.getString(TABLE_SCHEM) === expected.next)
-          assert(resultSet.getString(TABLE_CATALOG).isEmpty)
-        }
+      Seq("", "%", null, ".*", "_*", "_%", ".%") foreach { pattern =>
+        checkResult(metaData.getSchemas(null, pattern), dbs ++ dbDflts)
       }
+
+      Seq("db%", "db*") foreach { pattern =>
+        checkResult(metaData.getSchemas(null, pattern), dbs)
+      }
+
+      Seq("db_", "db.") foreach { pattern =>
+        checkResult(metaData.getSchemas(null, pattern), dbs.take(2))
+      }
+
+      checkResult(metaData.getSchemas(null, "db1"), Seq("db1"))
+      checkResult(metaData.getSchemas(null, "db_not_exist"), Seq.empty)
 
       val e = intercept[HiveSQLException](metaData.getSchemas(null, "*"))
       assert(e.getCause.getMessage === "org.apache.kyuubi.KyuubiSQLException:" +
