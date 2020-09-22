@@ -160,14 +160,14 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
 
   @throws[KyuubiSQLException]
   private def getSessionHandle(req: TOpenSessionReq, res: TOpenSessionResp): SessionHandle = {
+    val protocol = getMinVersion(BackendService.SERVER_VERSION, req.getClient_protocol)
+    res.setServerProtocolVersion(protocol)
     val userName = getUserName(req)
     val ipAddress = authFactory.getIpAddress.orNull
-    val protocol = getMinVersion(BackendService.SERVER_VERSION, req.getClient_protocol)
     val configuration =
       Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String])
     val sessionHandle = be.openSession(
       protocol, userName, req.getPassword, ipAddress, configuration)
-    res.setServerProtocolVersion(protocol)
     sessionHandle
   }
 
