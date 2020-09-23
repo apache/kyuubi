@@ -21,6 +21,7 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
@@ -42,6 +43,7 @@ class ExecuteStatement(
 
   override protected def runInternal(): Unit = {
     try {
+      info(KyuubiSparkUtil.diagnostics(spark))
       spark.sparkContext.setJobGroup(statementId, statement)
       result = spark.sql(statement)
       iter = result.collect().toList.iterator
