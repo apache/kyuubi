@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.time.LocalDateTime
+import java.time.LocalTime
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
@@ -51,11 +51,7 @@ object SparkSQLEngine extends Logging {
     sparkConf.setIfMissing("spark.master", "local")
     sparkConf.setIfMissing("spark.ui.port", "0")
 
-    val appName = Seq(
-      "kyuubi",
-      user,
-      classOf[SparkSQLEngine].getSimpleName,
-      LocalDateTime.now).mkString("_")
+    val appName = s"kyuubi_${user}_spark_${LocalTime.now}"
 
     sparkConf.setAppName(appName)
 
@@ -105,7 +101,6 @@ object SparkSQLEngine extends Logging {
       serviceDiscovery.start()
       sys.addShutdownHook(serviceDiscovery.stop())
     }
-
   }
 
   def main(args: Array[String]): Unit = {
@@ -117,6 +112,7 @@ object SparkSQLEngine extends Logging {
       spark = createSpark()
       engine = startEngine(spark)
       exposeEngine(engine)
+      info(KyuubiSparkUtil.diagnostics(spark))
     } catch {
       case t: Throwable =>
         error("Error start SparkSQLEngine", t)

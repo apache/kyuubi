@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine.spark.session
 
-import scala.util.control.NonFatal
-
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.SparkSession
 
@@ -64,12 +62,8 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       s" $getOpenSessionCount")
       handle
     } catch {
-      case NonFatal(e) =>
-        try {
-          sessionImpl.close()
-        } catch {
-          case t: Throwable => warn(s"Error closing session $handle for $user", t)
-        }
+      case e: Exception =>
+        sessionImpl.close()
         throw KyuubiSQLException(s"Error opening session $handle for $user: ${e.getMessage}", e)
     }
   }
