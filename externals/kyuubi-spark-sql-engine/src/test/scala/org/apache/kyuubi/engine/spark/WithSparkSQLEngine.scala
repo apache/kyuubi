@@ -62,7 +62,7 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
     Hive.closeCurrent()
   }
 
-  protected def jdbcUrl: String = s"jdbc:hive2://$connectionUrl/"
+  protected def jdbcUrl: String = s"jdbc:hive2://$connectionUrl/;"
 
 
   protected def withMultipleConnectionJdbcStatement(
@@ -81,8 +81,12 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
           statements.head.execute(s"DROP TABLE IF EXISTS $name")
         }
       }
+      info("Closing statements")
       statements.foreach(_.close())
+      info("Closed statements")
       connections.foreach(_.close())
+      info("Closing connections")
+
     }
   }
 
@@ -97,8 +101,11 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
       dbNames.foreach { name =>
         statements.head.execute(s"DROP DATABASE IF EXISTS $name")
       }
+      info("Closing statements")
       statements.foreach(_.close())
+      info("Closed statements")
       connections.foreach(_.close())
+      info("Closing connections")
     }
   }
 

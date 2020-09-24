@@ -32,7 +32,6 @@ object KyuubiSparkUtil {
        |                 deploy mode: ${spark.sparkContext.deployMode}
        |                 version: ${spark.sparkContext.version}
        |           Start time: ${Instant.ofEpochMilli(spark.sparkContext.startTime)}
-       |           User: ${spark.sparkContext.sparkUser}
-       |""".stripMargin
+       |           User: ${spark.sparkContext.sparkUser}""".stripMargin
   }
 }
