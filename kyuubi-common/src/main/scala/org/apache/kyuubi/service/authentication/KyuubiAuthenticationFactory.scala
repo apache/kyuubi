@@ -83,6 +83,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf) {
 
   def getIpAddress: Option[String] = {
     saslServer.map(_.getRemoteAddress).map(_.getHostAddress)
+      .orElse(Option(TSetIpAddressProcessor.getUserIpAddress))
   }
 }
 object KyuubiAuthenticationFactory {

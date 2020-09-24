@@ -45,6 +45,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       password: String,
       ipAddress: String,
       conf: Map[String, String]): SessionHandle = {
+    info(s"Opening session for $user@$ipAddress")
     val sessionImpl = new SparkSessionImpl(protocol, user, password, ipAddress, conf, this)
     val handle = sessionImpl.handle
     try {
@@ -68,4 +69,3 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     }
   }
 }
-
