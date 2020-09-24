@@ -22,8 +22,6 @@ import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 
-import scala.util.control.NonFatal
-
 import org.apache.commons.io.FileUtils
 import org.apache.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn}
 
