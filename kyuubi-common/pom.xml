@@ -86,10 +86,6 @@
             <testResource>
                 <directory>${project.basedir}/src/test/resources</directory>
             </testResource>
-            <testResource>
-                <directory>${project.build.directory}/extra-test-resources</directory>
-                <filtering>true</filtering>
-            </testResource>
         </testResources>
         <plugins>
 
@@ -105,27 +101,6 @@
                                 <exec executable="bash">
                                     <arg value="${project.basedir}/../build/kyuubi-build-info"/>
                                     <arg value="${project.build.directory}/extra-resources"/>
-                                    <arg value="${project.version}"/>
-                                    <arg value="${java.version}"/>
-                                    <arg value="${scala.binary.version}"/>
-                                    <arg value="${spark.version}"/>
-                                    <arg value="${hive.version}"/>
-                                    <arg value="${hadoop.version}"/>
-                                </exec>
-                            </target>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>build-info-test</id>
-                        <phase>generate-test-resources</phase>
-                        <configuration>
-                            <target>
-                                <exec executable="bash">
-                                    <arg value="${project.basedir}/../build/kyuubi-build-info"/>
-                                    <arg value="${project.build.directory}/extra-test-resources"/>
                                     <arg value="${project.version}"/>
                                     <arg value="${java.version}"/>
                                     <arg value="${scala.binary.version}"/>
