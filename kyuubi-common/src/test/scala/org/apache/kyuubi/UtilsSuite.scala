@@ -24,7 +24,7 @@ class UtilsSuite extends KyuubiFunSuite {
 
   test("build information check") {
     val buildFile = "kyuubi-version-info.properties"
-    val str = Thread.currentThread().getContextClassLoader.getResourceAsStream(buildFile)
+    val str = this.getClass.getClassLoader.getResourceAsStream(buildFile)
     val props = new Properties()
     assert(str !== null)
     props.load(str)
