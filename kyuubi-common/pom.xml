@@ -82,6 +82,15 @@
                 <filtering>true</filtering>
             </resource>
         </resources>
+        <testResources>
+            <testResource>
+                <directory>${project.basedir}/src/test/resources</directory>
+            </testResource>
+            <testResource>
+                <directory>${project.build.directory}/extra-test-resources</directory>
+                <filtering>true</filtering>
+            </testResource>
+        </testResources>
         <plugins>
 
             <plugin>
@@ -116,7 +125,7 @@
                             <target>
                                 <exec executable="bash">
                                     <arg value="${project.basedir}/../build/kyuubi-build-info"/>
-                                    <arg value="${project.build.testOutputDirectory}"/>
+                                    <arg value="${project.build.directory}/extra-test-resources"/>
                                     <arg value="${project.version}"/>
                                     <arg value="${java.version}"/>
                                     <arg value="${scala.binary.version}"/>
