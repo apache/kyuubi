@@ -53,8 +53,17 @@ if [[ -z ${JAVA_HOME} ]]; then
 fi
 
 export KYUUBI_SCALA_VERSION="${KYUUBI_SCALA_VERSION:-"2.12"}"
+SPARK_VERSION_BUILD="$(grep "Spark " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
+HADOOP_VERSION_BUILD="$(grep "Hadoop " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
+HIVE_VERSION_BUILD="$(grep "Hive " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
 
-SPARK_BUILTIN="${KYUUBI_HOME}/externals/spark-3.0.1-bin-hadoop2.7"
+if [[ ${HIVE_VERSION_BUILD:0:3} == "2.3" ]]; then
+  HIVE_VERSION_SUFFIX=""
+else
+  HIVE_VERSION_SUFFIX="-hive1.2"
+fi
+
+SPARK_BUILTIN="${KYUUBI_HOME}/externals/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD:0:3}$HIVE_VERSION_SUFFIX"
 
 if [[ ! -d ${SPARK_BUILTIN} ]]; then
   SPARK_BUILTIN="${KYUUBI_HOME}/externals/kyuubi-download/target/spark-3.0.1-bin-hadoop2.7"
