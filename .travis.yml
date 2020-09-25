@@ -59,6 +59,9 @@ install:
 script:
   - mvn clean verify -pl '!:kyuubi-server,!:kyuubi-thrift' -Dmaven.javadoc.skip=true -B -V
 
+after_script:
+  - rm -r $HOME/.m2/repository/org/apache/kyuubi
+
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 
