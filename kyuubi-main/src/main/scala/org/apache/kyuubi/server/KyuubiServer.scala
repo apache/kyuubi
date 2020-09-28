@@ -17,7 +17,9 @@
 
 package org.apache.kyuubi.server
 
-import org.apache.kyuubi.Logging
+import scala.util.Properties
+
+import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.server.EmbeddedZkServer
@@ -25,21 +27,42 @@ import org.apache.kyuubi.service.{AbstractBackendService, SeverLike}
 import org.apache.kyuubi.util.SignalRegister
 
 object KyuubiServer extends Logging {
+  private val zkServer = new EmbeddedZkServer()
 
   def main(args: Array[String]): Unit = {
+    info(
+       """
+         |                  Welcome to
+         |  __  __                           __
+         | /\ \/\ \                         /\ \      __
+         | \ \ \/'/'  __  __  __  __  __  __\ \ \____/\_\
+         |  \ \ , <  /\ \/\ \/\ \/\ \/\ \/\ \\ \ '__`\/\ \
+         |   \ \ \\`\\ \ \_\ \ \ \_\ \ \ \_\ \\ \ \L\ \ \ \
+         |    \ \_\ \_\/`____ \ \____/\ \____/ \ \_,__/\ \_\
+         |     \/_/\/_/`/___/> \/___/  \/___/   \/___/  \/_/
+         |                /\___/
+         |                \/__/
+       """.stripMargin)
+    info(s"Version: $KYUUBI_VERSION, Revision: $REVISION, Branch: $BRANCH," +
+      s" Java: $JAVA_COMPILE_VERSION, Scala: $SCALA_COMPILE_VERSION," +
+      s" Spark: $SPARK_COMPILE_VERSION, Hadoop: $HADOOP_COMPILE_VERSION," +
+      s" Hive: $HIVE_COMPILE_VERSION")
+    info(s"Using Scala ${Properties.versionString}, ${Properties.javaVmName}," +
+      s" ${Properties.javaVersion}")
     SignalRegister.registerLogger(logger)
     val conf = new KyuubiConf().loadFileDefaults()
     val zkEnsemble = conf.get(HA_ZK_QUORUM)
     if (zkEnsemble == null || zkEnsemble.isEmpty) {
-      val zkServer = new EmbeddedZkServer()
       zkServer.initialize(conf)
       zkServer.start()
+      sys.addShutdownHook(zkServer.stop())
       conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
     }
 
     val server = new KyuubiServer()
     server.initialize(conf)
     server.start()
+    sys.addShutdownHook(server.stop())
   }
 }
 
@@ -49,9 +72,5 @@ class KyuubiServer(name: String) extends SeverLike(name) {
 
   override protected val backendService: AbstractBackendService = new KyuubiBackendService()
 
-  override def initialize(conf: KyuubiConf): Unit = {
-    super.initialize(conf)
-  }
-
-  override protected def stopServer(): Unit = {}
+  override protected def stopServer(): Unit = KyuubiServer.zkServer.stop()
 }
