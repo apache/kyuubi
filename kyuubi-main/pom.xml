@@ -27,7 +27,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>kyuubi-main</artifactId>
-    <name>Kyuubi Project Main Service</name>
+    <name>Kyuubi Project Server Main</name>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -52,4 +52,8 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
+        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
+    </build>
 </project>

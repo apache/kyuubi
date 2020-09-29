@@ -14,6 +14,9 @@ flags:
   kyuubi-spark-sql-engine:
     paths:
       - ./externals/kyuubi-spark-sql-engine/target/codecov
+  aggregate:
+    paths:
+      - ./dev/kyuubi-codecov/target/site/jacoco-aggregate
 
 # To see status checks based on flags
 coverage:
@@ -42,3 +45,7 @@ coverage:
         target: auto
         flags:
           - kyuubi-spark-sql-engine
+      aggregate:
+        target: auto
+        flags:
+          - aggregate
