@@ -23,14 +23,14 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.EngineConf.ENGINE_SPARK_MAIN_RESOURCE
-import org.apache.kyuubi.engine.ProcessBuilderLike
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE
+import org.apache.kyuubi.engine.ProcBuilder
 
 class SparkProcessBuilder(
     override val proxyUser: String,
     conf: Map[String, String],
     override val env: Map[String, String] = sys.env)
-  extends ProcessBuilderLike {
+  extends ProcBuilder {
 
   import SparkProcessBuilder._
 
@@ -75,9 +75,9 @@ class SparkProcessBuilder(
 
   override protected def workingDir: Path = {
     env.get("KYUUBI_WORK_DIR_ROOT").map { root =>
-      Utils.createTempDir(root, proxyUser)
+      Utils.createDirectory(root, proxyUser)
     }.getOrElse {
-      Utils.createTempDir(namePrefix = proxyUser)
+      Utils.createDirectory(System.getProperty("java.io.tmpdir"), proxyUser)
     }
   }
 

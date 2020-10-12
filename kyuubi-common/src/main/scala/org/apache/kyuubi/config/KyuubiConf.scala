@@ -219,4 +219,20 @@ object KyuubiConf {
       .doc("Time to back off during login to the frontend service.")
       .timeConf
       .createWithDefault(Duration.ofMillis(100).toMillis)
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //                                 SQL Engine Configuration                                    //
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+
+  val ENGINE_SPARK_MAIN_RESOURCE: OptionalConfigEntry[String] =
+    buildConf("engine.spark.main.resource")
+      .doc("The connection string for the zookeeper ensemble")
+      .version("1.0.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_INIT_TIMEOUT: ConfigEntry[Long] = buildConf("engine.initialize.timeout")
+    .doc("Timeout for starting the background engine, e.g. SparkSQLEngine.")
+    .timeConf
+    .createWithDefault(Duration.ofSeconds(60).toMillis)
 }

@@ -30,6 +30,7 @@ import org.apache.thrift.transport.{TSocket, TTransport}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
@@ -56,6 +57,7 @@ class KyuubiSessionImpl(
 
   configureSession()
 
+  private val timeout = sessionConf.get(ENGINE_INIT_TIMEOUT) / 1000
   private val zkNamespace = s"$zkNamespacePrefix-$user"
   private val zkPath = ZKPaths.makePath(null, zkNamespace)
   private lazy val zkClient = ServiceDiscovery.newZookeeperClient(sessionConf)
@@ -89,10 +91,16 @@ class KyuubiSessionImpl(
         val builder = new SparkProcessBuilder(user, sessionConf.toSparkPrefixedConf)
         val process = builder.start
         var sh = getServerHost
+        var count = 0
         while (sh.isEmpty) {
           if (process.waitFor(1, TimeUnit.SECONDS)) {
-            throw KyuubiSQLException("Some error happened")
+            throw builder.getError
           }
+          if (count >= timeout) {
+            process.destroyForcibly()
+            throw KyuubiSQLException("Timed out to launched Spark")
+          }
+          count += 1
           sh = getServerHost
         }
         val Some((host, port)) = getServerHost
