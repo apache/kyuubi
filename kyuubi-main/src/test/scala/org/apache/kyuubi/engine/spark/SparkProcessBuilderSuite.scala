@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.spark
 
 import java.nio.file.{Files, Paths}
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 
@@ -42,6 +42,13 @@ class SparkProcessBuilderSuite extends KyuubiFunSuite {
     val process = builder.start
     assert(process.isAlive)
     process.destroyForcibly()
+
+    val processBuilder = new SparkProcessBuilder("kentyao", conf ++ Map("spark.ui.port" -> "abc"))
+    processBuilder.start
+    val error = processBuilder.getError
+    assert(error.getMessage.contains(
+      "java.lang.IllegalArgumentException: spark.ui.port should be int, but was abc\n\tat"))
+    assert(error.isInstanceOf[KyuubiSQLException])
   }
 
 }
