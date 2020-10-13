@@ -23,11 +23,11 @@ import javax.security.auth.login.Configuration
 
 import scala.collection.JavaConverters._
 
-import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION, KyuubiFunSuite, Utils}
+import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.server.EmbeddedZkServer
-import org.apache.kyuubi.service.ServiceState
+import org.apache.kyuubi.service.{Serverable, ServiceState}
 
 class ServiceDiscoverySuite extends KyuubiFunSuite with KerberizedTestHelper {
   val zkServer = new EmbeddedZkServer()
@@ -74,21 +74,26 @@ class ServiceDiscoverySuite extends KyuubiFunSuite with KerberizedTestHelper {
   }
 
   test("publish instance to embedded zookeeper server") {
+    var deleted = false
+    val instance = "kentyao.apache.org:10009"
 
     conf
       .unset(KyuubiConf.SERVER_KEYTAB)
       .unset(KyuubiConf.SERVER_PRINCIPAL)
       .set(HA_ZK_QUORUM, zkServer.getConnectString)
 
+    val server: Serverable = new Serverable("test") {
+      override private[kyuubi] val backendService = null
+
+      override protected def stopServer(): Unit = { deleted = true }
+
+      override def connectionUrl: String = instance
+    }
+
     val namespace = "kyuubiserver"
     val znodeRoot = s"/$namespace"
-    val instance = "kentyao.apache.org:10009"
-    var deleted = false
-    val postHook = new Thread {
-      override def run(): Unit = deleted = true
-    }
-    val serviceDiscovery = new ServiceDiscovery(instance, namespace, postHook)
-    val framework = ServiceDiscovery.newZookeeperClient(conf)
+    val serviceDiscovery = new ServiceDiscovery(server, namespace)
+    val framework = ServiceDiscovery.startZookeeperClient(conf)
     try {
       serviceDiscovery.initialize(conf)
       serviceDiscovery.start()

@@ -21,12 +21,12 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import org.apache.kyuubi.config.KyuubiConf
 
-abstract class SeverLike(name: String) extends CompositeService(name) {
+abstract class Serverable(name: String) extends CompositeService(name) {
 
   private val OOMHook = new Runnable { override def run(): Unit = stop() }
   private val started = new AtomicBoolean(false)
 
-  protected val backendService: AbstractBackendService
+  private[kyuubi] val backendService: AbstractBackendService
   private lazy val frontendService = new FrontendService(backendService, OOMHook)
 
   def connectionUrl: String = frontendService.connectionUrl
