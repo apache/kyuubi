@@ -23,7 +23,7 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.server.EmbeddedZkServer
-import org.apache.kyuubi.service.{AbstractBackendService, SeverLike}
+import org.apache.kyuubi.service.{AbstractBackendService, Serverable}
 import org.apache.kyuubi.util.SignalRegister
 
 object KyuubiServer extends Logging {
@@ -66,11 +66,11 @@ object KyuubiServer extends Logging {
   }
 }
 
-class KyuubiServer(name: String) extends SeverLike(name) {
+class KyuubiServer(name: String) extends Serverable(name) {
 
   def this() = this(classOf[KyuubiServer].getSimpleName)
 
-  override protected val backendService: AbstractBackendService = new KyuubiBackendService()
+  override private[kyuubi] val backendService: AbstractBackendService = new KyuubiBackendService()
 
   override protected def stopServer(): Unit = KyuubiServer.zkServer.stop()
 }

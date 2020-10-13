@@ -45,9 +45,10 @@ class SparkProcessBuilderSuite extends KyuubiFunSuite {
 
     val processBuilder = new SparkProcessBuilder("kentyao", conf ++ Map("spark.ui.port" -> "abc"))
     processBuilder.start
+    Thread.sleep(5000)
     val error = processBuilder.getError
     assert(error.getMessage.contains(
-      "java.lang.IllegalArgumentException: spark.ui.port should be int, but was abc\n\tat"))
+      "java.lang.IllegalArgumentException: spark.ui.port should be int, but was abc"))
     assert(error.isInstanceOf[KyuubiSQLException])
   }
 

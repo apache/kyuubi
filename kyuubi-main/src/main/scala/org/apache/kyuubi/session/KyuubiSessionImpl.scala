@@ -60,7 +60,7 @@ class KyuubiSessionImpl(
   private val timeout = sessionConf.get(ENGINE_INIT_TIMEOUT) / 1000
   private val zkNamespace = s"$zkNamespacePrefix-$user"
   private val zkPath = ZKPaths.makePath(null, zkNamespace)
-  private lazy val zkClient = ServiceDiscovery.newZookeeperClient(sessionConf)
+  private lazy val zkClient = ServiceDiscovery.startZookeeperClient(sessionConf)
 
   private var transport: TTransport = _
   private var client: TCLIService.Client = _

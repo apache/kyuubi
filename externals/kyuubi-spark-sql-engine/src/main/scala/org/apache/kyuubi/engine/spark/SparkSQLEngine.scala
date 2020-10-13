@@ -25,16 +25,16 @@ import org.apache.spark.sql.SparkSession
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.ServiceDiscovery
-import org.apache.kyuubi.service.SeverLike
+import org.apache.kyuubi.ha.client.{RetryPolicies, ServiceDiscovery}
+import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.SignalRegister
 
 private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
-  extends SeverLike(name) {
+  extends Serverable(name) {
 
   def this(spark: SparkSession) = this(classOf[SparkSQLEngine].getSimpleName, spark)
 
-  override protected val backendService = new SparkSQLBackendService(spark)
+  override private[kyuubi] val backendService = new SparkSQLBackendService(spark)
 
   override protected def stopServer(): Unit = spark.stop()
 }
@@ -56,6 +56,7 @@ object SparkSQLEngine extends Logging {
     sparkConf.setAppName(appName)
 
     kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_BIND_PORT, 0)
+    kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
 
     val prefix = "spark.kyuubi."
 
@@ -74,7 +75,6 @@ object SparkSQLEngine extends Logging {
     session
   }
 
-
   def startEngine(spark: SparkSession): SparkSQLEngine = {
     val engine = new SparkSQLEngine(spark)
     engine.initialize(kyuubiConf)
@@ -86,17 +86,8 @@ object SparkSQLEngine extends Logging {
   def exposeEngine(engine: SparkSQLEngine): Unit = {
     val needExpose = kyuubiConf.get(HA_ZK_QUORUM).nonEmpty
     if (needExpose) {
-      val instance = engine.connectionUrl
       val zkNamespacePrefix = kyuubiConf.get(HA_ZK_NAMESPACE)
-      val postHook = new Thread {
-        override def run(): Unit = {
-          while (engine.backendService.sessionManager.getOpenSessionCount > 0) {
-            Thread.sleep(60 * 1000)
-          }
-          engine.stop()
-        }
-      }
-      val serviceDiscovery = new ServiceDiscovery(instance, s"$zkNamespacePrefix-$user", postHook)
+      val serviceDiscovery = new ServiceDiscovery(engine, s"$zkNamespacePrefix-$user")
       serviceDiscovery.initialize(kyuubiConf)
       serviceDiscovery.start()
       sys.addShutdownHook(serviceDiscovery.stop())
@@ -105,7 +96,6 @@ object SparkSQLEngine extends Logging {
 
   def main(args: Array[String]): Unit = {
     SignalRegister.registerLogger(logger)
-
     var spark: SparkSession = null
     var engine: SparkSQLEngine = null
     try {

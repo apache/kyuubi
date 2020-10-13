@@ -59,10 +59,8 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
 
   protected def setState(newState: OperationState): Unit = {
     OperationState.validateTransition(state, newState)
-    state = newState
-
     var timeCost = ""
-    state match {
+    newState match {
       case RUNNING => startTime = System.currentTimeMillis()
       case ERROR | FINISHED | CANCELED =>
         completedTime = System.currentTimeMillis()
@@ -71,6 +69,7 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
     }
     info(s"Processing ${session.user}'s query[$statementId]: ${state.name} -> ${newState.name}," +
       s" statement: $statement$timeCost")
+    state = newState
     lastAccessTime = System.currentTimeMillis()
   }
 
