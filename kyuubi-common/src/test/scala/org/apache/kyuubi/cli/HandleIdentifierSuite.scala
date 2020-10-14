@@ -37,5 +37,8 @@ class HandleIdentifierSuite extends KyuubiFunSuite {
     val id4 = HandleIdentifier()
     assert(id4 !== id1)
     assert(id4 !== new Integer(1))
+
+    val id5 = HandleIdentifier(id1.publicId, id1.publicId)
+    assert(id1 !== id5, "no matched secret id")
   }
 }
