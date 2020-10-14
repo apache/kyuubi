@@ -77,7 +77,7 @@ class SparkProcessBuilder(
     env.get("KYUUBI_WORK_DIR_ROOT").map { root =>
       Utils.createTempDir(root, proxyUser)
     }.getOrElse {
-      Utils.createTempDir(proxyUser)
+      Utils.createTempDir(namePrefix = proxyUser)
     }
   }
 
