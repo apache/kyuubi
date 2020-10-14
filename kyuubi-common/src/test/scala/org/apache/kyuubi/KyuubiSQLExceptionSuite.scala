@@ -26,7 +26,7 @@ class KyuubiSQLExceptionSuite extends KyuubiFunSuite {
     val msg1 = "this is just a dummy msg 1"
     val msg2 = "this is just a dummy msg 2"
 
-    val e0 = new RuntimeException(msg0)
+    val e0 = new KyuubiException(msg0)
     val e1 = new KyuubiException(msg1, e0)
     val e2 = new KyuubiSQLException(msg2, e1)
     assert(e2.toTStatus === KyuubiSQLException.toTStatus(e2))
