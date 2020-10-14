@@ -98,7 +98,8 @@ class ServiceDiscovery private (
         .forPath(s"/$namespace")
     } catch {
       case _: NodeExistsException =>  // do nothing
-      case e: KeeperException => throw new KyuubiException(s"Failed to create namespace '/$namespace'", e)
+      case e: KeeperException =>
+        throw new KyuubiException(s"Failed to create namespace '/$namespace'", e)
     }
     super.initialize(conf)
   }

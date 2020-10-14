@@ -56,7 +56,7 @@ class SparkProcessBuilder(
 
   override def mainResource: Option[String] = {
     // 1. get the main resource jar for user specified config first
-    val jarName = s"kyuubi-spark-sql-engine-$KYUUBI_VERSION.jar"
+    val jarName = s"$module-$KYUUBI_VERSION.jar"
     conf.get(ENGINE_SPARK_MAIN_RESOURCE.key).filter { userSpecified =>
       Files.exists(Paths.get(userSpecified))
     }.orElse {
@@ -66,18 +66,18 @@ class SparkProcessBuilder(
         .filter(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
     }.orElse {
       // 3. get the main resource from dev environment
-      Option(Paths.get("externals", "kyuubi-spark-sql-engine", "target", jarName))
+      Option(Paths.get("externals", module, "target", jarName))
         .filter(Files.exists(_)).orElse {
-        Some(Paths.get("..", "externals", "kyuubi-spark-sql-engine", "target", jarName))
+        Some(Paths.get("..", "externals", module, "target", jarName))
       }.map(_.toAbsolutePath.toFile.getCanonicalPath)
     }
   }
 
-  override protected def workingDir: Path = {
+  override protected val workingDir: Path = {
     env.get("KYUUBI_WORK_DIR_ROOT").map { root =>
-      Utils.createDirectory(root, proxyUser)
+      Utils.createTempDir(root, proxyUser)
     }.getOrElse {
-      Utils.createDirectory(System.getProperty("java.io.tmpdir"), proxyUser)
+      Utils.createTempDir(proxyUser)
     }
   }
 
@@ -99,8 +99,9 @@ class SparkProcessBuilder(
   }
 
   override def toString: String = commands.mkString(" ")
-}
 
+  override protected def module: String = "kyuubi-spark-sql-engine"
+}
 
 object SparkProcessBuilder {
   private final val CONF = "--conf"
