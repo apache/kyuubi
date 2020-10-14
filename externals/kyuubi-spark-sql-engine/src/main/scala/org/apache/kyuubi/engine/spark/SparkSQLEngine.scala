@@ -39,7 +39,6 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   override protected def stopServer(): Unit = spark.stop()
 }
 
-
 object SparkSQLEngine extends Logging {
 
   val kyuubiConf: KyuubiConf = KyuubiConf()

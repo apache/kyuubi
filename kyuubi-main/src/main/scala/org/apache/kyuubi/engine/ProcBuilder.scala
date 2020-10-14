@@ -20,7 +20,6 @@ package org.apache.kyuubi.engine
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
-import java.util.UUID
 
 import scala.collection.JavaConverters._
 
@@ -34,6 +33,8 @@ trait ProcBuilder {
 
   protected def mainResource: Option[String]
 
+  protected def module: String
+
   protected def mainClass: String
 
   protected def proxyUser: String
@@ -42,7 +43,7 @@ trait ProcBuilder {
 
   protected def env: Map[String, String]
 
-  protected def workingDir: Path
+  protected val workingDir: Path
 
   final lazy val processBuilder: ProcessBuilder = {
     val pb = new ProcessBuilder(commands: _*)
@@ -56,7 +57,7 @@ trait ProcBuilder {
   private var error: Throwable = UNCAUGHT_ERROR
 
   final def start: Process = {
-    val procLog = Paths.get(workingDir.toAbsolutePath.toString, UUID.randomUUID().toString)
+    val procLog = Paths.get(workingDir.toAbsolutePath.toString, s"$module.log")
     processBuilder.redirectError(procLog.toFile)
     processBuilder.redirectOutput(procLog.toFile)
 
@@ -98,7 +99,7 @@ trait ProcBuilder {
 }
 
 object ProcBuilder {
-  private val PROC_BUILD_LOGGER = NamedThreadFactory("process-logger", daemon = true)
+  private val PROC_BUILD_LOGGER = NamedThreadFactory("process-logger-capture", daemon = true)
 
   private val UNCAUGHT_ERROR = KyuubiSQLException("Uncaught error")
 
