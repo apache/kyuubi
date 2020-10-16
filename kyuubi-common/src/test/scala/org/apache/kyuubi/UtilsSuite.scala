@@ -17,7 +17,8 @@
 
 package org.apache.kyuubi
 
-import java.io.File
+import java.io.{File, IOException}
+import java.nio.file.Files
 import java.util.Properties
 
 class UtilsSuite extends KyuubiFunSuite {
@@ -69,26 +70,19 @@ class UtilsSuite extends KyuubiFunSuite {
     val props = Utils.getPropertiesFromFile(Option(propsFile))
     assert(props("kyuubi.yes") === "yes")
     assert(!props.contains("kyuubi.no"))
-  }
 
-  test("resolveURI") {
-    def assertResolves(before: String, after: String): Unit = {
-      // This should test only single paths
-      assert(before.split(",").length === 1)
-      def resolve(uri: String): String = Utils.resolveURI(uri).toString
-      assert(resolve(before) === after)
-      assert(resolve(after) === after)
-      // Repeated invocations of resolveURI should yield the same result
-      assert(resolve(resolve(after)) === after)
-      assert(resolve(resolve(resolve(after))) === after)
+    val e = intercept[KyuubiException] {
+      Utils.getPropertiesFromFile(Some(new File("invalid-file")))
     }
-    assertResolves("hdfs:/root/spark.jar", "hdfs:/root/spark.jar")
-    assertResolves("hdfs:///root/spark.jar#app.jar", "hdfs:///root/spark.jar#app.jar")
-    assertResolves("file:/C:/path/to/file.txt", "file:/C:/path/to/file.txt")
-    assertResolves("file:///C:/path/to/file.txt", "file:///C:/path/to/file.txt")
-    assertResolves("file:/C:/file.txt#alias.txt", "file:/C:/file.txt#alias.txt")
-    assertResolves("file:foo", "file:foo")
-    assertResolves("file:foo:baby", "file:foo:baby")
+    assert(e.getMessage contains "Failed when loading Kyuubi properties from")
   }
 
+  test("create directory") {
+    val path = Utils.createDirectory(System.getProperty("java.io.tmpdir"))
+    assert(Files.exists(path))
+    assert(path.getFileName.toString.startsWith("kyuubi-"))
+    path.toFile.deleteOnExit()
+    val e = intercept[IOException](Utils.createDirectory("/"))
+    assert(e.getMessage === "Failed to create a temp directory (under /) after 10 attempts!")
+  }
 }

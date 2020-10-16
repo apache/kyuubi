@@ -98,6 +98,7 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
   }
 
   override protected def beforeRun(): Unit = {
+    Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
     setHasResultSet(true)
     setState(OperationState.RUNNING)
     OperationLog.setCurrentOperationLog(operationLog)

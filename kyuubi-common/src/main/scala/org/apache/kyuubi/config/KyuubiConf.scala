@@ -143,7 +143,7 @@ object KyuubiConf {
     .doc("The temporary directory for the embedded zookeeper server")
     .version("1.0.0")
     .stringConf
-    .createWithDefault(Utils.resolveURI("embedded_zookeeper").getRawPath)
+    .createWithDefault("embedded_zookeeper")
 
   val SERVER_PRINCIPAL: OptionalConfigEntry[String] = buildConf("server.principal")
     .doc("")

@@ -18,7 +18,6 @@
 package org.apache.kyuubi
 
 import java.io.{File, InputStreamReader, IOException}
-import java.net.{URI, URISyntaxException}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 import java.util.{Properties, UUID}
@@ -44,7 +43,6 @@ private[kyuubi] object Utils extends Logging {
     env.get(KYUUBI_CONF_DIR)
       .orElse(env.get(KYUUBI_HOME).map(_ + File.separator + "/conf"))
       .map( d => new File(d + File.separator + KYUUBI_CONF_FILE_NAME))
-      .filter(f => f.exists() && f.isFile)
       .orElse {
         Option(getClass.getClassLoader.getResource(KYUUBI_CONF_FILE_NAME)).map { url =>
           new File(url.getFile)
@@ -55,46 +53,23 @@ private[kyuubi] object Utils extends Logging {
   def getPropertiesFromFile(file: Option[File]): Map[String, String] = {
     file.map { f =>
       info(s"Loading Kyuubi properties from ${f.getAbsolutePath}")
-      val reader = new InputStreamReader(f.toURI.toURL.openStream(), StandardCharsets.UTF_8)
       try {
-        val properties = new Properties()
-        properties.load(reader)
-        properties.stringPropertyNames().asScala.map { k =>
-          (k, properties.getProperty(k).trim)
-        }.toMap
+        val reader = new InputStreamReader(f.toURI.toURL.openStream(), StandardCharsets.UTF_8)
+        try {
+          val properties = new Properties()
+          properties.load(reader)
+          properties.stringPropertyNames().asScala.map { k =>
+            (k, properties.getProperty(k).trim)
+          }.toMap
+        } finally {
+          reader.close()
+        }
       } catch {
         case e: IOException =>
           throw new KyuubiException(
             s"Failed when loading Kyuubi properties from ${f.getAbsolutePath}", e)
-      } finally {
-        reader.close()
       }
     }.getOrElse(Map.empty)
-  }
-
-  /**
-   * Return a well-formed URI for the file described by a user input string.
-   *
-   * If the supplied path does not contain a scheme, or is a relative path, it will be
-   * converted into an absolute path with a file:// scheme.
-   */
-  def resolveURI(path: String): URI = {
-    try {
-      val uri = new URI(path)
-      if (uri.getScheme != null) {
-        return uri
-      }
-      // make sure to handle if the path has a fragment (applies to yarn
-      // distributed cache)
-      if (uri.getFragment != null) {
-        val absoluteURI = new File(uri.getPath).getAbsoluteFile.toURI
-        return new URI(absoluteURI.getScheme, absoluteURI.getHost, absoluteURI.getPath,
-          uri.getFragment)
-      }
-    } catch {
-      case _: URISyntaxException =>
-    }
-    new File(path).getAbsoluteFile.toURI
   }
 
   private val MAX_DIR_CREATION_ATTEMPTS: Int = 10
