@@ -19,7 +19,10 @@ package org.apache.kyuubi
 
 import java.io.{File, IOException}
 import java.nio.file.Files
+import java.security.PrivilegedExceptionAction
 import java.util.Properties
+
+import org.apache.hadoop.security.UserGroupInformation
 
 class UtilsSuite extends KyuubiFunSuite {
 
@@ -84,5 +87,25 @@ class UtilsSuite extends KyuubiFunSuite {
     path.toFile.deleteOnExit()
     val e = intercept[IOException](Utils.createDirectory("/"))
     assert(e.getMessage === "Failed to create a temp directory (under /) after 10 attempts!")
+    val path1 = Utils.createDirectory(System.getProperty("java.io.tmpdir"), "kentyao")
+    assert(Files.exists(path1))
+    assert(path1.getFileName.toString.startsWith("kentyao-"))
+    path1.toFile.deleteOnExit()
+  }
+
+  test("create tmp dir") {
+    val path = Utils.createTempDir()
+    assert(Files.exists(path))
+    assert(path.getFileName.toString.startsWith("kyuubi-"))
+  }
+
+  test("current user") {
+    UserGroupInformation.createRemoteUser("kentyao").doAs(
+      new PrivilegedExceptionAction[Unit] {
+        override def run(): Unit = {
+          assert(Utils.currentUser === "kentyao")
+        }
+      }
+    )
   }
 }
