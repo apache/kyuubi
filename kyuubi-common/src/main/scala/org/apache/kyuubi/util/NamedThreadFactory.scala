@@ -19,7 +19,7 @@ package org.apache.kyuubi.util
 
 import java.util.concurrent.ThreadFactory
 
-case class NamedThreadFactory(name: String, daemon: Boolean = false) extends ThreadFactory {
+class NamedThreadFactory(name: String, daemon: Boolean) extends ThreadFactory {
   override def newThread(r: Runnable): Thread = {
     val t = new Thread(r)
     t.setName(name + ": Thread-" + t.getId)
