@@ -51,7 +51,7 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   }
 
   def set[T](entry: OptionalConfigEntry[T], value: T): KyuubiConf = {
-    set(entry.key, entry.rawStrConverter(value))
+    set(entry.key, entry.strConverter(Option(value)))
     this
   }
 

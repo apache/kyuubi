@@ -133,7 +133,7 @@ private[kyuubi] case class TypedConfigBuilder[T](
   }
 
   def createOptional: OptionalConfigEntry[T] = {
-    val entry = OptionalConfigEntry(parent.key, fromStr, toStr, parent._doc, parent._version)
+    val entry = new OptionalConfigEntry(parent.key, fromStr, toStr, parent._doc, parent._version)
     parent._onCreate.foreach(_(entry))
     entry
   }
@@ -143,13 +143,13 @@ private[kyuubi] case class TypedConfigBuilder[T](
     case _ =>
       val d = fromStr(toStr(default))
       val entry =
-        ConfigEntryWithDefault(parent.key, d, fromStr, toStr, parent._doc, parent._version)
+        new ConfigEntryWithDefault(parent.key, d, fromStr, toStr, parent._doc, parent._version)
       parent._onCreate.foreach(_(entry))
       entry
   }
 
   def createWithDefaultString(default: String): ConfigEntryWithDefaultString[T] = {
-    val entry = ConfigEntryWithDefaultString(
+    val entry = new ConfigEntryWithDefaultString(
       parent.key, default, fromStr, toStr, parent._doc, parent._version)
     parent._onCreate.foreach(_(entry))
     entry

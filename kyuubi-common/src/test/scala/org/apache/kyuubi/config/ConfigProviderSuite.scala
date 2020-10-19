@@ -17,15 +17,19 @@
 
 package org.apache.kyuubi.config
 
-import org.apache.kyuubi.Utils
+import scala.collection.JavaConverters._
 
-object ConfigHelpers {
+import org.apache.kyuubi.KyuubiFunSuite
 
-  def strToSeq[T](str: String, converter: String => T): Seq[T] = {
-    Utils.strToSeq(str).map(converter)
+class ConfigProviderSuite extends KyuubiFunSuite {
+
+  test("config provider") {
+    val conf = Map("kyuubi.abc" -> "1", "kyuubi.xyz" -> "2", "spark.abc" -> "kyuubi")
+    val provider = new ConfigProvider(conf.asJava)
+    assert(provider.get("kyuubi.abc").get === "1")
+    assert(provider.get("kyuubi.xyz").get === "2")
+    assert(provider.get("spark.abc") === None)
+
   }
 
-  def seqToStr[T](v: Seq[T], stringConverter: T => String): String = {
-    v.map(stringConverter).mkString(",")
-  }
 }
