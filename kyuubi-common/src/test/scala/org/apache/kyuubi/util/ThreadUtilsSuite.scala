@@ -17,14 +17,18 @@
 
 package org.apache.kyuubi.util
 
-import java.util.concurrent.{ScheduledExecutorService, ScheduledThreadPoolExecutor}
+import java.util.concurrent.TimeUnit
 
-object ThreadUtils {
+import org.apache.kyuubi.KyuubiFunSuite
 
-  def newDaemonSingleThreadScheduledExecutor(threadName: String): ScheduledExecutorService = {
-    val threadFactory = new NamedThreadFactory(threadName, daemon = true)
-    val executor = new ScheduledThreadPoolExecutor(1, threadFactory)
-    executor.setRemoveOnCancelPolicy(true)
-    executor
+class ThreadUtilsSuite extends KyuubiFunSuite {
+
+  test("New daemon single thread scheduled executor") {
+    val service = ThreadUtils.newDaemonSingleThreadScheduledExecutor("ThreadUtilsTest")
+    var flag = false
+    service.schedule(new Runnable {
+      override def run(): Unit = flag = true
+    }, 0, TimeUnit.MILLISECONDS)
+    assert(flag)
   }
 }

@@ -99,7 +99,7 @@ trait ProcBuilder {
 }
 
 object ProcBuilder {
-  private val PROC_BUILD_LOGGER = NamedThreadFactory("process-logger-capture", daemon = true)
+  private val PROC_BUILD_LOGGER = new NamedThreadFactory("process-logger-capture", daemon = true)
 
   private val UNCAUGHT_ERROR = KyuubiSQLException("Uncaught error")
 

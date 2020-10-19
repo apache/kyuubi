@@ -71,7 +71,7 @@ private[kyuubi] class SessionManager private(
         keepAliveTime,
         TimeUnit.SECONDS,
         new LinkedBlockingQueue[Runnable](poolQueueSize),
-        new NamedThreadFactory(threadPoolName))
+        new NamedThreadFactory(threadPoolName, false))
     execPool.allowCoreThreadTimeOut(true)
     checkInterval = conf.getTimeAsMs(FRONTEND_SESSION_CHECK_INTERVAL)
     sessionTimeout = conf.getTimeAsMs(FRONTEND_IDLE_SESSION_TIMEOUT)
