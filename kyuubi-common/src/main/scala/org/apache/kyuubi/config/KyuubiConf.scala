@@ -131,7 +131,9 @@ object KyuubiConf {
     kyuubiConfEntries.put(entry.key, entry)
   }
 
-  def buildConf(key: String): ConfigBuilder = ConfigBuilder(KYUUBI_PREFIX + key).onCreate(register)
+  def buildConf(key: String): ConfigBuilder = {
+    new ConfigBuilder(KYUUBI_PREFIX + key).onCreate(register)
+  }
 
   val EMBEDDED_ZK_PORT: ConfigEntry[Int] = buildConf("embedded.zookeeper.port")
     .doc("The port of the embedded zookeeper server")
