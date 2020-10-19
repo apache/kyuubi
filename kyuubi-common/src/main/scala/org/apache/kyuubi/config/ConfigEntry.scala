@@ -25,9 +25,9 @@ trait ConfigEntry[T] {
   def version: String
 
   def defaultValStr: String
-  def defaultVal: Option[T] = None
+  def defaultVal: Option[T]
 
-  final override def toString: String = {
+  override def toString: String = {
     s"ConfigEntry(key=$key, defaultValue=$defaultValStr, doc=$doc, version=$version)"
   }
 
@@ -40,30 +40,44 @@ trait ConfigEntry[T] {
   ConfigEntry.registerEntry(this)
 }
 
-case class OptionalConfigEntry[T](
-    key: String,
+class OptionalConfigEntry[T](
+    _key: String,
     rawValueConverter: String => T,
     rawStrConverter: T => String,
-    doc: String,
-    version: String) extends ConfigEntry[Option[T]] {
-  override def valueConverter: String => Option[T] = s => Option(rawValueConverter(s))
+    _doc: String,
+    _version: String) extends ConfigEntry[Option[T]] {
+  override def valueConverter: String => Option[T] = {
+    s => Option(rawValueConverter(s))
+  }
 
-  override def strConverter: Option[T] => String = v => v.map(rawStrConverter).orNull
+  override def strConverter: Option[T] => String = {
+    v => v.map(rawStrConverter).orNull
+  }
 
-  override def defaultValStr: String = ConfigEntry.UNDEFINED
+  override def defaultValStr: String = {
+    ConfigEntry.UNDEFINED
+  }
 
   override def readFrom(conf: ConfigProvider): Option[T] = {
     readString(conf).map(rawValueConverter)
   }
+
+  override def defaultVal: Option[Option[T]] = None
+
+  override def key: String = _key
+
+  override def doc: String = _doc
+
+  override def version: String = _version
 }
 
-case class ConfigEntryWithDefault[T](
-    key: String,
+class ConfigEntryWithDefault[T](
+    _key: String,
     _defaultVal: T,
-    valueConverter: String => T,
-    strConverter: T => String,
-    doc: String,
-    version: String) extends ConfigEntry[T] {
+    _valueConverter: String => T,
+    _strConverter: T => String,
+    _doc: String,
+    _version: String) extends ConfigEntry[T] {
   override def defaultValStr: String = strConverter(_defaultVal)
 
   override def defaultVal: Option[T] = Option(_defaultVal)
@@ -71,15 +85,25 @@ case class ConfigEntryWithDefault[T](
   override def readFrom(conf: ConfigProvider): T = {
     readString(conf).map(valueConverter).getOrElse(_defaultVal)
   }
+
+  override def key: String = _key
+
+  override def valueConverter: String => T = _valueConverter
+
+  override def strConverter: T => String = _strConverter
+
+  override def doc: String = _doc
+
+  override def version: String = _version
 }
 
-case class ConfigEntryWithDefaultString[T](
-   key: String,
+class ConfigEntryWithDefaultString[T](
+   _key: String,
    _defaultVal: String,
-   valueConverter: String => T,
-   strConverter: T => String,
-   doc: String,
-   version: String) extends ConfigEntry[T] {
+   _valueConverter: String => T,
+   _strConverter: T => String,
+   _doc: String,
+   _version: String) extends ConfigEntry[T] {
   override def defaultValStr: String = _defaultVal
 
   override def defaultVal: Option[T] = Some(valueConverter(_defaultVal))
@@ -88,6 +112,16 @@ case class ConfigEntryWithDefaultString[T](
     val value = readString(conf).getOrElse(_defaultVal)
     valueConverter(value)
   }
+
+  override def key: String = _key
+
+  override def valueConverter: String => T = _valueConverter
+
+  override def strConverter: T => String = _strConverter
+
+  override def doc: String = _doc
+
+  override def version: String = _version
 }
 
 object ConfigEntry {
@@ -99,6 +133,4 @@ object ConfigEntry {
     val existing = knownConfigs.putIfAbsent(entry.key, entry)
     require(existing == null, s"Config entry ${entry.key} already registered!")
   }
-
-  def findEntry(key: String): ConfigEntry[_] = knownConfigs.get(key)
 }
