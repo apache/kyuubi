@@ -108,4 +108,17 @@ class UtilsSuite extends KyuubiFunSuite {
       }
     )
   }
+
+  test("version test") {
+    assert(Utils.majorVersion(KYUUBI_VERSION) ===
+      Utils.majorMinorVersion(KYUUBI_VERSION)._1)
+    assert(Utils.majorVersion(SPARK_COMPILE_VERSION) ===
+      Utils.majorMinorVersion(SPARK_COMPILE_VERSION)._1)
+    assert(Utils.majorVersion(HADOOP_COMPILE_VERSION) ===
+      Utils.majorMinorVersion(HADOOP_COMPILE_VERSION)._1)
+    assert(Utils.minorVersion(KYUUBI_VERSION) ===
+      Utils.majorMinorVersion(KYUUBI_VERSION)._2)
+    assert(Utils.shortVersion(KYUUBI_VERSION) ===
+      KYUUBI_VERSION.stripSuffix("-SNAPSHOT"))
+  }
 }

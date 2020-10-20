@@ -52,7 +52,7 @@ class GetTables(
       .add(TABLE_TYPE, "string", nullable = true, "The table type, e.g. \"TABLE\", \"VIEW\"")
       .add(REMARKS, "string", nullable = true, "Comments about the table.")
       .add("TYPE_CAT", "string", nullable = true, "The types catalog." )
-      .add("TYPE_SCHEM", "string", nullable = true, "The types catalog")
+      .add("TYPE_SCHEM", "string", nullable = true, "the types schema (may be null)")
       .add("TYPE_NAME", "string", nullable = true, "Type name.")
       .add("SELF_REFERENCING_COL_NAME", "string", nullable = true,
         "Name of the designated \"identifier\" column of a typed table.")
