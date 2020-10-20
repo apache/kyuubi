@@ -86,4 +86,12 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     assert(cloned.getOption(key).get === "xyz")
   }
 
+
+  test("to spark prefixed conf") {
+    val conf = KyuubiConf(false)
+    assert(conf.toSparkPrefixedConf.isEmpty)
+    assert(conf.set("kyuubi.kent", "yao").toSparkPrefixedConf.get("spark.kyuubi.kent") ===
+      Some("yao"))
+  }
+
 }
