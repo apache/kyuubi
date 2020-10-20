@@ -120,5 +120,7 @@ class UtilsSuite extends KyuubiFunSuite {
       Utils.majorMinorVersion(KYUUBI_VERSION)._2)
     assert(Utils.shortVersion(KYUUBI_VERSION) ===
       KYUUBI_VERSION.stripSuffix("-SNAPSHOT"))
+    intercept[IllegalArgumentException](Utils.shortVersion("-" + KYUUBI_VERSION))
+    intercept[IllegalArgumentException](Utils.majorMinorVersion("-" + KYUUBI_VERSION))
   }
 }
