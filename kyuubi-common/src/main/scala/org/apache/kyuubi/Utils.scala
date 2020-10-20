@@ -106,4 +106,47 @@ private[kyuubi] object Utils extends Logging {
   }
 
   def currentUser: String = UserGroupInformation.getCurrentUser.getShortUserName
+
+  private val majorMinorRegex = """^(\d+)\.(\d+)(\..*)?$""".r
+  private val shortVersionRegex = """^(\d+\.\d+\.\d+)(.*)?$""".r
+
+  /**
+   * Given a Kyuubi/Spark/Hive version string, return the major version number.
+   * E.g., for 2.0.1-SNAPSHOT, return 2.
+   */
+  def majorVersion(version: String): Int = majorMinorVersion(version)._1
+
+  /**
+   * Given a Kyuubi/Spark/Hive version string, return the minor version number.
+   * E.g., for 2.0.1-SNAPSHOT, return 0.
+   */
+  def minorVersion(version: String): Int = majorMinorVersion(version)._2
+
+  /**
+   * Given a Kyuubi/Spark/Hive version string, return the short version string.
+   * E.g., for 3.0.0-SNAPSHOT, return '3.0.0'.
+   */
+  def shortVersion(version: String): String = {
+    shortVersionRegex.findFirstMatchIn(version) match {
+      case Some(m) => m.group(1)
+      case None =>
+        throw new IllegalArgumentException(s"Tried to parse '$version' as a project" +
+          s" version string, but it could not find the major/minor/maintenance version numbers.")
+    }
+  }
+
+  /**
+   * Given a Kyuubi/Spark/Hive version string,
+   * return the (major version number, minor version number).
+   * E.g., for 2.0.1-SNAPSHOT, return (2, 0).
+   */
+  def majorMinorVersion(version: String): (Int, Int) = {
+    majorMinorRegex.findFirstMatchIn(version) match {
+      case Some(m) =>
+        (m.group(1).toInt, m.group(2).toInt)
+      case None =>
+        throw new IllegalArgumentException(s"Tried to parse '$version' as a project" +
+          s" version string, but it could not find the major and minor version numbers.")
+    }
+  }
 }

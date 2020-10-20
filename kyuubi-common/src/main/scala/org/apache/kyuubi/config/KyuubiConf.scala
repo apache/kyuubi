@@ -33,7 +33,7 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   }
 
   private def loadFromMap(props: Map[String, String] = Utils.getSystemProperties): KyuubiConf = {
-    for ((key, value) <- props if key.startsWith(KYUUBI_PREFIX)) {
+    for ((key, value) <- props if key.startsWith("kyuubi.")) {
       set(key, value)
     }
     this
@@ -110,7 +110,9 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   }
 
   def toSparkPrefixedConf: Map[String, String] = {
-    settings.entrySet().asScala.map { e => SPARK_PREFIX + e.getKey -> e.getValue}.toMap
+    settings.entrySet().asScala.map { e =>
+      "spark." + e.getKey -> e.getValue
+    }.toMap
   }
 }
 
@@ -132,7 +134,7 @@ object KyuubiConf {
   }
 
   def buildConf(key: String): ConfigBuilder = {
-    new ConfigBuilder(KYUUBI_PREFIX + key).onCreate(register)
+    new ConfigBuilder("kyuubi." + key).onCreate(register)
   }
 
   val EMBEDDED_ZK_PORT: ConfigEntry[Int] = buildConf("embedded.zookeeper.port")

@@ -29,7 +29,5 @@ class ConfigProviderSuite extends KyuubiFunSuite {
     assert(provider.get("kyuubi.abc").get === "1")
     assert(provider.get("kyuubi.xyz").get === "2")
     assert(provider.get("spark.abc") === None)
-
   }
-
 }
