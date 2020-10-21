@@ -29,6 +29,22 @@ import org.apache.kyuubi.util.SignalRegister
 object KyuubiServer extends Logging {
   private val zkServer = new EmbeddedZkServer()
 
+  def startServer(conf: KyuubiConf): KyuubiServer = {
+    val zkEnsemble = conf.get(HA_ZK_QUORUM)
+    if (zkEnsemble == null || zkEnsemble.isEmpty) {
+      zkServer.initialize(conf)
+      zkServer.start()
+      sys.addShutdownHook(zkServer.stop())
+      conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
+    }
+
+    val server = new KyuubiServer()
+    server.initialize(conf)
+    server.start()
+    sys.addShutdownHook(server.stop())
+    server
+  }
+
   def main(args: Array[String]): Unit = {
     info(
        """
@@ -51,18 +67,7 @@ object KyuubiServer extends Logging {
       s" ${Properties.javaVersion}")
     SignalRegister.registerLogger(logger)
     val conf = new KyuubiConf().loadFileDefaults()
-    val zkEnsemble = conf.get(HA_ZK_QUORUM)
-    if (zkEnsemble == null || zkEnsemble.isEmpty) {
-      zkServer.initialize(conf)
-      zkServer.start()
-      sys.addShutdownHook(zkServer.stop())
-      conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
-    }
-
-    val server = new KyuubiServer()
-    server.initialize(conf)
-    server.start()
-    sys.addShutdownHook(server.stop())
+    startServer(conf)
   }
 }
 
