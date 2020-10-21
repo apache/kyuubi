@@ -25,10 +25,14 @@ class ThreadUtilsSuite extends KyuubiFunSuite {
 
   test("New daemon single thread scheduled executor") {
     val service = ThreadUtils.newDaemonSingleThreadScheduledExecutor("ThreadUtilsTest")
-    var flag = false
-    service.schedule(new Runnable {
-      override def run(): Unit = flag = true
-    }, 0, TimeUnit.MILLISECONDS)
-    assert(flag)
+    @volatile var threadName = ""
+    service.submit(new Runnable {
+      override def run(): Unit = {
+        threadName = Thread.currentThread().getName
+      }
+    })
+    service.shutdown()
+    service.awaitTermination(10, TimeUnit.SECONDS)
+    assert(threadName startsWith "ThreadUtilsTest")
   }
 }
