@@ -47,11 +47,12 @@ abstract class KyuubiOperation(
           warn(s"Ignore exception in terminal state with $statementId: $e")
         } else {
           setState(OperationState.ERROR)
-          e match {
-            case kse: KyuubiSQLException => throw kse
+          val ke = e match {
+            case kse: KyuubiSQLException => kse
             case _ =>
-              throw KyuubiSQLException(s"Error $action $opType: ${e.getMessage}", e)
+              KyuubiSQLException(s"Error $action $opType: ${e.getMessage}", e)
           }
+          setOperationException(ke)
         }
       }
   }

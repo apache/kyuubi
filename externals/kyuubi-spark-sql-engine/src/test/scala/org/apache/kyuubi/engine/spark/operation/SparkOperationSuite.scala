@@ -34,6 +34,7 @@ import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 class SparkOperationSuite extends WithSparkSQLEngine {
+
   private val currentCatalog = spark.sessionState.catalogManager.currentCatalog
   private val dftSchema = "default"
 
@@ -723,167 +724,6 @@ class SparkOperationSuite extends WithSparkSQLEngine {
     }
   }
 
-  test("basic open | execute | close") {
-    withThriftClient { client =>
-      val req = new TOpenSessionReq()
-      req.setUsername("kentyao")
-      req.setPassword("anonymous")
-      val tOpenSessionResp = client.OpenSession(req)
-
-      val tExecuteStatementReq = new TExecuteStatementReq()
-      tExecuteStatementReq.setSessionHandle( tOpenSessionResp.getSessionHandle)
-      tExecuteStatementReq.setStatement("set -v")
-      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
-
-      val tFetchResultsReq = new TFetchResultsReq()
-      tFetchResultsReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
-      tFetchResultsReq.setFetchType(1)
-      tFetchResultsReq.setMaxRows(1000)
-      val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
-      val logs = tFetchResultsResp.getResults.getColumns.get(0).getStringVal.getValues.asScala
-      assert(logs.exists(_.contains(classOf[ExecuteStatement].getCanonicalName)))
-
-      tFetchResultsReq.setFetchType(0)
-      val tFetchResultsResp1 = client.FetchResults(tFetchResultsReq)
-      val rs = tFetchResultsResp1.getResults.getColumns.get(0).getStringVal.getValues.asScala
-      assert(rs.contains("spark.sql.shuffle.partitions"))
-
-      val tCloseSessionReq = new TCloseSessionReq()
-      tCloseSessionReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
-      val tCloseSessionResp = client.CloseSession(tCloseSessionReq)
-      assert(tCloseSessionResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-    }
-  }
-
-  test("set session conf") {
-    withThriftClient { client =>
-      val req = new TOpenSessionReq()
-      req.setUsername("kentyao")
-      req.setPassword("anonymous")
-      val conf = Map(
-        "use:database" -> "default",
-        "spark.sql.shuffle.partitions" -> "4",
-        "set:hiveconf:spark.sql.autoBroadcastJoinThreshold" -> "-1",
-        "set:hivevar:spark.sql.adaptive.enabled" -> "true")
-      req.setConfiguration(conf.asJava)
-      val tOpenSessionResp = client.OpenSession(req)
-
-      val tExecuteStatementReq = new TExecuteStatementReq()
-      tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
-      tExecuteStatementReq.setStatement("set")
-      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
-
-      val tFetchResultsReq = new TFetchResultsReq()
-      tFetchResultsReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
-      tFetchResultsReq.setFetchType(0)
-      tFetchResultsReq.setMaxRows(1000)
-      val tFetchResultsResp1 = client.FetchResults(tFetchResultsReq)
-      val columns = tFetchResultsResp1.getResults.getColumns
-      val rs = columns.get(0).getStringVal.getValues.asScala.zip(
-        columns.get(1).getStringVal.getValues.asScala)
-      rs foreach {
-        case ("spark.sql.shuffle.partitions", v) => assert(v === "4")
-        case ("spark.sql.autoBroadcastJoinThreshold", v) => assert(v === "-1")
-        case ("spark.sql.adaptive.enabled", v) => assert(v.toBoolean)
-        case _ =>
-      }
-      assert(spark.conf.get("spark.sql.shuffle.partitions") === "200")
-
-      val tCloseSessionReq = new TCloseSessionReq()
-      tCloseSessionReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
-      val tCloseSessionResp = client.CloseSession(tCloseSessionReq)
-      assert(tCloseSessionResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-    }
-  }
-
-  test("set session conf - static") {
-    withThriftClient { client =>
-      val req = new TOpenSessionReq()
-      req.setUsername("kentyao")
-      req.setPassword("anonymous")
-      val conf = Map("use:database" -> "default", "spark.sql.globalTempDatabase" -> "temp")
-      req.setConfiguration(conf.asJava)
-      val tOpenSessionResp = client.OpenSession(req)
-      val status = tOpenSessionResp.getStatus
-      assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
-      assert(status.getErrorMessage.contains("spark.sql.globalTempDatabase"))
-    }
-  }
-
-  test("set session conf - wrong database") {
-    withThriftClient { client =>
-      val req = new TOpenSessionReq()
-      req.setUsername("kentyao")
-      req.setPassword("anonymous")
-      val conf = Map("use:database" -> "default2")
-      req.setConfiguration(conf.asJava)
-      val tOpenSessionResp = client.OpenSession(req)
-      val status = tOpenSessionResp.getStatus
-      assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
-      assert(status.getErrorMessage.contains("Database 'default2' does not exist"))
-    }
-  }
-
-  test("not allow to operate closed session or operation") {
-    withThriftClient { client =>
-      val req = new TOpenSessionReq()
-      req.setUsername("kentyao")
-      req.setPassword("anonymous")
-      val tOpenSessionResp = client.OpenSession(req)
-
-      val tExecuteStatementReq = new TExecuteStatementReq()
-      tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
-      tExecuteStatementReq.setStatement("set")
-      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
-
-      val tCloseOperationReq = new TCloseOperationReq(tExecuteStatementResp.getOperationHandle)
-      val tCloseOperationResp = client.CloseOperation(tCloseOperationReq)
-      assert(tCloseOperationResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-
-      val tFetchResultsReq = new TFetchResultsReq()
-      tFetchResultsReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
-      tFetchResultsReq.setFetchType(0)
-      tFetchResultsReq.setMaxRows(1000)
-      val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
-      assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
-      assert(tFetchResultsResp.getStatus.getErrorMessage startsWith "Invalid OperationHandle" +
-        " [type=EXECUTE_STATEMENT, identifier:")
-
-      val tCloseSessionReq = new TCloseSessionReq()
-      tCloseSessionReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
-      val tCloseSessionResp = client.CloseSession(tCloseSessionReq)
-      assert(tCloseSessionResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      val tExecuteStatementResp1 = client.ExecuteStatement(tExecuteStatementReq)
-
-      val status = tExecuteStatementResp1.getStatus
-      assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
-      assert(status.getErrorMessage startsWith s"Invalid SessionHandle [")
-    }
-  }
-
-  test("cancel operation") {
-    withThriftClient { client =>
-      val req = new TOpenSessionReq()
-      req.setUsername("kentyao")
-      req.setPassword("anonymous")
-      val tOpenSessionResp = client.OpenSession(req)
-
-      val tExecuteStatementReq = new TExecuteStatementReq()
-      tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
-      tExecuteStatementReq.setStatement("set")
-      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
-      val tCancelOperationReq = new TCancelOperationReq(tExecuteStatementResp.getOperationHandle)
-      val tCancelOperationResp = client.CancelOperation(tCancelOperationReq)
-      assert(tCancelOperationResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      val tFetchResultsReq = new TFetchResultsReq()
-      tFetchResultsReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
-      tFetchResultsReq.setFetchType(0)
-      tFetchResultsReq.setMaxRows(1000)
-      val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
-      assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-    }
-  }
-
   test("Hive JDBC Database MetaData API Auditing") {
     withJdbcStatement() { statement =>
       val metaData = statement.getConnection.getMetaData
@@ -1064,6 +904,186 @@ class SparkOperationSuite extends WithSparkSQLEngine {
       assert(metaData.getSQLStateType === DatabaseMetaData.sqlStateSQL)
       assert(metaData.getMaxLogicalLobSize === 0)
       assert(!metaData.supportsRefCursors)
+    }
+  }
+
+  test("get operation status") {
+    val sql = "select date_sub(date'2011-11-11', '1')"
+
+    withSessionHandle { (client, handle) =>
+      val req = new TExecuteStatementReq()
+      req.setSessionHandle(handle)
+      req.setStatement(sql)
+      val tExecuteStatementResp = client.ExecuteStatement(req)
+      val opHandle = tExecuteStatementResp.getOperationHandle
+      val tGetOperationStatusReq = new TGetOperationStatusReq()
+      tGetOperationStatusReq.setOperationHandle(opHandle)
+      val resp = client.GetOperationStatus(tGetOperationStatusReq)
+      val status = resp.getStatus
+      assert(status.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      assert(resp.getOperationState === TOperationState.FINISHED_STATE)
+      assert(resp.isHasResultSet)
+    }
+  }
+
+  test("basic open | execute | close") {
+    withThriftClient { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername("kentyao")
+      req.setPassword("anonymous")
+      val tOpenSessionResp = client.OpenSession(req)
+
+      val tExecuteStatementReq = new TExecuteStatementReq()
+      tExecuteStatementReq.setSessionHandle( tOpenSessionResp.getSessionHandle)
+      tExecuteStatementReq.setStatement("set -v")
+      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+
+      val tFetchResultsReq = new TFetchResultsReq()
+      tFetchResultsReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
+      tFetchResultsReq.setFetchType(1)
+      tFetchResultsReq.setMaxRows(1000)
+      val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
+      val logs = tFetchResultsResp.getResults.getColumns.get(0).getStringVal.getValues.asScala
+      assert(logs.exists(_.contains(classOf[ExecuteStatement].getCanonicalName)))
+
+      tFetchResultsReq.setFetchType(0)
+      val tFetchResultsResp1 = client.FetchResults(tFetchResultsReq)
+      val rs = tFetchResultsResp1.getResults.getColumns.get(0).getStringVal.getValues.asScala
+      assert(rs.contains("spark.sql.shuffle.partitions"))
+
+      val tCloseSessionReq = new TCloseSessionReq()
+      tCloseSessionReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      val tCloseSessionResp = client.CloseSession(tCloseSessionReq)
+      assert(tCloseSessionResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+    }
+  }
+
+  test("set session conf") {
+    withThriftClient { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername("kentyao")
+      req.setPassword("anonymous")
+      val conf = Map(
+        "use:database" -> "default",
+        "spark.sql.shuffle.partitions" -> "4",
+        "set:hiveconf:spark.sql.autoBroadcastJoinThreshold" -> "-1",
+        "set:hivevar:spark.sql.adaptive.enabled" -> "true")
+      req.setConfiguration(conf.asJava)
+      val tOpenSessionResp = client.OpenSession(req)
+
+      val tExecuteStatementReq = new TExecuteStatementReq()
+      tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      tExecuteStatementReq.setStatement("set")
+      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+
+      val tFetchResultsReq = new TFetchResultsReq()
+      tFetchResultsReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
+      tFetchResultsReq.setFetchType(0)
+      tFetchResultsReq.setMaxRows(1000)
+      val tFetchResultsResp1 = client.FetchResults(tFetchResultsReq)
+      val columns = tFetchResultsResp1.getResults.getColumns
+      val rs = columns.get(0).getStringVal.getValues.asScala.zip(
+        columns.get(1).getStringVal.getValues.asScala)
+      rs foreach {
+        case ("spark.sql.shuffle.partitions", v) => assert(v === "4")
+        case ("spark.sql.autoBroadcastJoinThreshold", v) => assert(v === "-1")
+        case ("spark.sql.adaptive.enabled", v) => assert(v.toBoolean)
+        case _ =>
+      }
+      assert(spark.conf.get("spark.sql.shuffle.partitions") === "200")
+
+      val tCloseSessionReq = new TCloseSessionReq()
+      tCloseSessionReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      val tCloseSessionResp = client.CloseSession(tCloseSessionReq)
+      assert(tCloseSessionResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+    }
+  }
+
+  test("set session conf - static") {
+    withThriftClient { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername("kentyao")
+      req.setPassword("anonymous")
+      val conf = Map("use:database" -> "default", "spark.sql.globalTempDatabase" -> "temp")
+      req.setConfiguration(conf.asJava)
+      val tOpenSessionResp = client.OpenSession(req)
+      val status = tOpenSessionResp.getStatus
+      assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(status.getErrorMessage.contains("spark.sql.globalTempDatabase"))
+    }
+  }
+
+  test("set session conf - wrong database") {
+    withThriftClient { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername("kentyao")
+      req.setPassword("anonymous")
+      val conf = Map("use:database" -> "default2")
+      req.setConfiguration(conf.asJava)
+      val tOpenSessionResp = client.OpenSession(req)
+      val status = tOpenSessionResp.getStatus
+      assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(status.getErrorMessage.contains("Database 'default2' does not exist"))
+    }
+  }
+
+  test("not allow to operate closed session or operation") {
+    withThriftClient { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername("kentyao")
+      req.setPassword("anonymous")
+      val tOpenSessionResp = client.OpenSession(req)
+
+      val tExecuteStatementReq = new TExecuteStatementReq()
+      tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      tExecuteStatementReq.setStatement("set")
+      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+
+      val tCloseOperationReq = new TCloseOperationReq(tExecuteStatementResp.getOperationHandle)
+      val tCloseOperationResp = client.CloseOperation(tCloseOperationReq)
+      assert(tCloseOperationResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+
+      val tFetchResultsReq = new TFetchResultsReq()
+      tFetchResultsReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
+      tFetchResultsReq.setFetchType(0)
+      tFetchResultsReq.setMaxRows(1000)
+      val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
+      assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(tFetchResultsResp.getStatus.getErrorMessage startsWith "Invalid OperationHandle" +
+        " [type=EXECUTE_STATEMENT, identifier:")
+
+      val tCloseSessionReq = new TCloseSessionReq()
+      tCloseSessionReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      val tCloseSessionResp = client.CloseSession(tCloseSessionReq)
+      assert(tCloseSessionResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      val tExecuteStatementResp1 = client.ExecuteStatement(tExecuteStatementReq)
+
+      val status = tExecuteStatementResp1.getStatus
+      assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(status.getErrorMessage startsWith s"Invalid SessionHandle [")
+    }
+  }
+
+  test("cancel operation") {
+    withThriftClient { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername("kentyao")
+      req.setPassword("anonymous")
+      val tOpenSessionResp = client.OpenSession(req)
+
+      val tExecuteStatementReq = new TExecuteStatementReq()
+      tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      tExecuteStatementReq.setStatement("set")
+      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+      val tCancelOperationReq = new TCancelOperationReq(tExecuteStatementResp.getOperationHandle)
+      val tCancelOperationResp = client.CancelOperation(tCancelOperationReq)
+      assert(tCancelOperationResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      val tFetchResultsReq = new TFetchResultsReq()
+      tFetchResultsReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
+      tFetchResultsReq.setFetchType(0)
+      tFetchResultsReq.setMaxRows(1000)
+      val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
+      assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
     }
   }
 }
