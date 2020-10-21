@@ -92,7 +92,9 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
           warn(s"Ignore exception in terminal state with $statementId: $e")
         } else {
           setState(OperationState.ERROR)
-          throw KyuubiSQLException(s"Error operating $opType: ${e.getMessage}", e)
+          val ke = KyuubiSQLException(s"Error operating $opType: ${e.getMessage}", e)
+          setOperationException(ke)
+          throw ke
         }
       }
   }

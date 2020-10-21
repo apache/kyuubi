@@ -22,7 +22,7 @@ import java.util.Locale
 
 import org.apache.hadoop.hive.ql.metadata.Hive
 import org.apache.hadoop.hive.ql.session.SessionState
-import org.apache.hive.service.rpc.thrift.TCLIService
+import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TOpenSessionReq, TSessionHandle}
 import org.apache.spark.sql.SparkSession
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
@@ -40,6 +40,8 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
     s"jdbc:derby:;databaseName=$metastorePath;create=true")
   System.setProperty("spark.sql.warehouse.dir", warehousePath.toString)
   System.setProperty("spark.sql.hive.metastore.sharedPrefixes", "org.apache.hive.jdbc")
+
+  protected val user = System.getProperty("user.name")
 
   protected val spark: SparkSession = SparkSQLEngine.createSpark()
 
@@ -67,7 +69,6 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
 
   protected def withMultipleConnectionJdbcStatement(
       tableNames: String*)(fs: (Statement => Unit)*): Unit = {
-    val user = System.getProperty("user.name")
     val connections = fs.map { _ => DriverManager.getConnection(jdbcUrl, user, "") }
     val statements = connections.map(_.createStatement())
 
@@ -91,7 +92,6 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
   }
 
   protected def withDatabases(dbNames: String*)(fs: (Statement => Unit)*): Unit = {
-    val user = System.getProperty("user.name")
     val connections = fs.map { _ => DriverManager.getConnection(jdbcUrl, user, "") }
     val statements = connections.map(_.createStatement())
 
@@ -127,6 +127,27 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
       f(client)
     } finally {
       socket.close()
+    }
+  }
+
+  protected def withSessionHandle(f: (TCLIService.Iface, TSessionHandle) => Unit): Unit = {
+    withThriftClient { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername(user)
+      req.setPassword("anonymous")
+      val resp = client.OpenSession(req)
+      val handle = resp.getSessionHandle
+
+      try {
+        f(client, handle)
+      } finally {
+        val tCloseSessionReq = new TCloseSessionReq(handle)
+        try {
+          client.CloseSession(tCloseSessionReq)
+        } catch {
+          case e: Exception => error(s"Failed to close $handle", e)
+        }
+      }
     }
   }
 }
