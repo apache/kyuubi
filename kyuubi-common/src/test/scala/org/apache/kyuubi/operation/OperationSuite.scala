@@ -15,25 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.session
+package org.apache.kyuubi.operation
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.KyuubiFunSuite
 
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.operation.{NoopOperationManager, OperationManager}
+class OperationSuite extends KyuubiFunSuite {
 
-class NoopSessionManager extends SessionManager("noop") {
-  override val operationManager: OperationManager = new NoopOperationManager()
-
-  override def openSession(
-      protocol: TProtocolVersion,
-      user: String,
-      password: String,
-      ipAddress: String,
-      conf: Map[String, String]): SessionHandle = {
-    if (conf.get("kyuubi.test.should.fail").exists(_.toBoolean)) {
-      throw KyuubiSQLException("Asked to fail")
-    }
-    new NoopSessionImpl(protocol, user, password, ipAddress, conf, this).handle
+  test("DEFAULT_FETCH_ORIENTATION_SET") {
+    val set = Operation.DEFAULT_FETCH_ORIENTATION_SET
+    assert(set.size === 3)
+    assert(set.contains(FetchOrientation.FETCH_NEXT))
+    assert(set.contains(FetchOrientation.FETCH_FIRST))
+    assert(set.contains(FetchOrientation.FETCH_PRIOR))
   }
 }

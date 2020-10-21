@@ -67,6 +67,13 @@
             <groupId>org.apache.directory.server</groupId>
             <artifactId>apacheds-service</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-jdbc</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>

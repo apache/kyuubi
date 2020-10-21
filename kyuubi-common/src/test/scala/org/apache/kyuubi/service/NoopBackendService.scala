@@ -15,25 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.session
+package org.apache.kyuubi.service
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.session.{NoopSessionManager, SessionManager}
 
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.operation.{NoopOperationManager, OperationManager}
-
-class NoopSessionManager extends SessionManager("noop") {
-  override val operationManager: OperationManager = new NoopOperationManager()
-
-  override def openSession(
-      protocol: TProtocolVersion,
-      user: String,
-      password: String,
-      ipAddress: String,
-      conf: Map[String, String]): SessionHandle = {
-    if (conf.get("kyuubi.test.should.fail").exists(_.toBoolean)) {
-      throw KyuubiSQLException("Asked to fail")
-    }
-    new NoopSessionImpl(protocol, user, password, ipAddress, conf, this).handle
-  }
+class NoopBackendService extends AbstractBackendService("noop") {
+  override val sessionManager: SessionManager = new NoopSessionManager()
 }

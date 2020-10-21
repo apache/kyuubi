@@ -41,7 +41,7 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
   System.setProperty("spark.sql.warehouse.dir", warehousePath.toString)
   System.setProperty("spark.sql.hive.metastore.sharedPrefixes", "org.apache.hive.jdbc")
 
-  protected val user = System.getProperty("user.name")
+  protected val user: String = System.getProperty("user.name")
 
   protected val spark: SparkSession = SparkSQLEngine.createSpark()
 
@@ -87,7 +87,6 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
       info("Closed statements")
       connections.foreach(_.close())
       info("Closing connections")
-
     }
   }
 
