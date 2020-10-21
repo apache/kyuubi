@@ -27,17 +27,28 @@ class NoopOperationManager extends OperationManager("noop") {
       session: Session,
       statement: String,
       runAsync: Boolean,
-      queryTimeout: Long): Operation = new NoopOperation(session)
+      queryTimeout: Long): Operation = {
 
-  override def newGetTypeInfoOperation(session: Session): Operation = new NoopOperation(session)
+    val operation = new NoopOperation(session)
+    addOperation(operation)
+  }
 
-  override def newGetCatalogsOperation(session: Session): Operation = new NoopOperation(session)
+  override def newGetTypeInfoOperation(session: Session): Operation = {
+    val operation = new NoopOperation(session)
+    addOperation(operation)
+  }
+
+  override def newGetCatalogsOperation(session: Session): Operation = {
+    val operation = new NoopOperation(session)
+    addOperation(operation)
+  }
 
   override def newGetSchemasOperation(
       session: Session,
       catalog: String,
       schema: String): Operation = {
-    new NoopOperation(session)
+    val operation = new NoopOperation(session)
+    addOperation(operation)
   }
 
   override def newGetTablesOperation(
@@ -46,11 +57,13 @@ class NoopOperationManager extends OperationManager("noop") {
       schemaName: String,
       tableName: String,
       tableTypes: java.util.List[String]): Operation = {
-    new NoopOperation(session)
+    val operation = new NoopOperation(session)
+    addOperation(operation)
   }
 
   override def newGetTableTypesOperation(session: Session): Operation = {
-    new NoopOperation(session)
+    val operation = new NoopOperation(session)
+    addOperation(operation)
   }
 
   override def newGetColumnsOperation(
@@ -58,13 +71,19 @@ class NoopOperationManager extends OperationManager("noop") {
       catalogName: String,
       schemaName: String,
       tableName: String,
-      columnName: String): Operation = new NoopOperation(session)
+      columnName: String): Operation = {
+    val operation = new NoopOperation(session)
+    addOperation(operation)
+  }
 
   override def newGetFunctionsOperation(
       session: Session,
       catalogName: String,
       schemaName: String,
-      functionName: String): Operation = new NoopOperation(session)
+      functionName: String): Operation = {
+    val operation = new NoopOperation(session)
+    addOperation(operation)
+  }
 
   override def getOperationLogRowSet(
       opHandle: OperationHandle,

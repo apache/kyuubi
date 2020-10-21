@@ -126,7 +126,7 @@ object KyuubiSQLException {
     (i1, i2, i3)
   }
 
-  private def toCause(details: Seq[String]): Throwable = {
+  def toCause(details: Seq[String]): Throwable = {
     var ex: Throwable = null
     if (details != null && details.nonEmpty) {
       val head = details.head

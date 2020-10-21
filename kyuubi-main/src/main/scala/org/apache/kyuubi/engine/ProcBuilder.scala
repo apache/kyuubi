@@ -54,7 +54,7 @@ trait ProcBuilder {
     pb
   }
 
-  private var error: Throwable = UNCAUGHT_ERROR
+  @volatile private var error: Throwable = UNCAUGHT_ERROR
 
   final def start: Process = {
     val procLog = Paths.get(workingDir.toAbsolutePath.toString, s"$module.log")
