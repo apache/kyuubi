@@ -17,7 +17,11 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
+import java.nio.ByteBuffer
+
+import scala.collection.JavaConverters._
+
+import org.apache.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn, TTableSchema}
 
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationType.OperationType
@@ -37,7 +41,12 @@ class NoopOperation(typ: OperationType, session: Session)
 
   override def getResultSetSchema: TTableSchema = new TTableSchema()
 
-  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = new TRowSet()
+  override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
+    val col = TColumn.stringVal(new TStringColumn(Seq(typ.toString).asJava, ByteBuffer.allocate(0)))
+    val tRowSet = new TRowSet(0, new java.util.ArrayList[TRow](0))
+    tRowSet.addToColumns(col)
+    tRowSet
+  }
 
   override def shouldRunAsync: Boolean = false
 }
