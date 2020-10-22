@@ -116,6 +116,19 @@ class FrontendServiceSuite extends KyuubiFunSuite {
     }
   }
 
+  test("close session") {
+    withSessionHandle { (client, handle) =>
+      val req = new TCloseSessionReq(handle)
+      val resp = client.CloseSession(req)
+      assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      val resp1 = client.CloseSession(req)
+      assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      val t = KyuubiSQLException.toCause(resp1.getStatus.getInfoMessages.asScala)
+      assert(t.isInstanceOf[KyuubiSQLException])
+      assert(resp1.getStatus.getErrorMessage === t.getMessage)
+    }
+  }
+
   test("fe service server context") {
     withSessionHandle { (_, handle) =>
       val context = new FeServiceServerContext()
