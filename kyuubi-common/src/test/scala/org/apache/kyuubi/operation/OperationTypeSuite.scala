@@ -35,7 +35,8 @@ class OperationTypeSuite extends KyuubiFunSuite {
     assert(get(TOperationType.GET_TABLE_TYPES) === GET_TABLE_TYPES)
     assert(get(TOperationType.GET_COLUMNS) === GET_COLUMNS)
     assert(get(TOperationType.GET_FUNCTIONS) === GET_FUNCTIONS)
-    assert(get(TOperationType.UNKNOWN) === UNKNOWN_OPERATION)
+    val e = intercept[UnsupportedOperationException](get(TOperationType.UNKNOWN))
+    assert(e.getMessage === "Unsupported Operation type: UNKNOWN")
   }
 
   test("toTOperationType") {
@@ -48,6 +49,7 @@ class OperationTypeSuite extends KyuubiFunSuite {
     assert(to(GET_TABLE_TYPES) === TOperationType.GET_TABLE_TYPES)
     assert(to(GET_COLUMNS) === TOperationType.GET_COLUMNS)
     assert(to(GET_FUNCTIONS) === TOperationType.GET_FUNCTIONS)
-    assert(to(UNKNOWN_OPERATION) === TOperationType.UNKNOWN)
+    val e = intercept[UnsupportedOperationException](to(UNKNOWN_OPERATION))
+    assert(e.getMessage === "Unsupported Operation type: UNKNOWN_OPERATION")
   }
 }
