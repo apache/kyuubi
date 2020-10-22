@@ -103,7 +103,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
 
   def connectionUrl: String = s"${serverAddr.getCanonicalHostName}:$portNum"
 
-  override def start(): Unit = {
+  override def start(): Unit = synchronized {
     super.start()
     if (!isStarted) {
       val thread = new Thread(this)
@@ -122,7 +122,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
       System.exit(-1)
   }
 
-  override def stop(): Unit = {
+  override def stop(): Unit = synchronized {
     if (isStarted) {
       server.foreach(_.stop())
       info(this.name + " has stopped")
