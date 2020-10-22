@@ -24,13 +24,13 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 
 class SparkProcessBuilderSuite extends KyuubiFunSuite {
+  private val conf = KyuubiConf()
+    .set(EMBEDDED_ZK_PORT, 5555)
+    .set(EMBEDDED_ZK_TEMP_DIR, "spark_process_test")
+    .set("kyuubi.on", "off")
+    .toSparkPrefixedConf
 
   test("spark process builder") {
-    val conf = KyuubiConf()
-      .set(EMBEDDED_ZK_PORT, 5555)
-      .set(EMBEDDED_ZK_TEMP_DIR, "spark_process_test")
-      .set("kyuubi.on", "off")
-      .toSparkPrefixedConf
     val builder = new SparkProcessBuilder("kentyao", conf)
     val commands = builder.toString.split(' ')
     assert(commands(2) === "org.apache.kyuubi.engine.spark.SparkSQLEngine")
@@ -42,7 +42,9 @@ class SparkProcessBuilderSuite extends KyuubiFunSuite {
     val process = builder.start
     assert(process.isAlive)
     process.destroyForcibly()
+  }
 
+  test("capture error from spark process builder") {
     val processBuilder = new SparkProcessBuilder("kentyao", conf ++ Map("spark.ui.port" -> "abc"))
     processBuilder.start
     Thread.sleep(5000)
