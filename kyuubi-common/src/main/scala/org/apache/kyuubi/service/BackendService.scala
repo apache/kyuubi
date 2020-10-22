@@ -98,10 +98,3 @@ trait BackendService {
 
   def sessionManager: SessionManager
 }
-
-object BackendService {
-  final val SERVER_VERSION = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10
-}
-
-
-
