@@ -19,13 +19,15 @@ package org.apache.kyuubi.service
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TFetchOrientation, TFetchResultsReq, TGetCatalogsReq, TGetSchemasReq, TOpenSessionReq, TOperationHandle, TOperationType, TSessionHandle, TStatus, TStatusCode}
+import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
 
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.operation.{OperationHandle, OperationType}
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
+import org.apache.kyuubi.session.SessionHandle
 
 class FrontendServiceSuite extends KyuubiFunSuite {
 
@@ -121,6 +123,13 @@ class FrontendServiceSuite extends KyuubiFunSuite {
       assert(opHandle.getOperationType === TOperationType.GET_CATALOGS)
       assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       checkOperationResult(client, opHandle)
+      req.setSessionHandle(SessionHandle(BackendService.SERVER_VERSION).toTSessionHandle)
+
+      val resp1 = client.GetCatalogs(req)
+      assert(resp1.getOperationHandle === null)
+      assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(resp1.getStatus.getSqlState === null)
+      assert(resp1.getStatus.getErrorMessage startsWith "Invalid SessionHandle")
     }
   }
 
@@ -132,6 +141,137 @@ class FrontendServiceSuite extends KyuubiFunSuite {
       assert(opHandle.getOperationType === TOperationType.GET_SCHEMAS)
       assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       checkOperationResult(client, opHandle)
+
+      req.setSessionHandle(SessionHandle(BackendService.SERVER_VERSION).toTSessionHandle)
+      val resp1 = client.GetSchemas(req)
+      assert(resp1.getOperationHandle === null)
+      assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(resp1.getStatus.getSqlState === null)
+      assert(resp1.getStatus.getErrorMessage startsWith "Invalid SessionHandle")
+    }
+  }
+
+  test("get tables") {
+    withSessionHandle { (client, handle) =>
+      val req = new TGetTablesReq(handle)
+      val resp = client.GetTables(req)
+      val opHandle = resp.getOperationHandle
+      assert(opHandle.getOperationType === TOperationType.GET_TABLES)
+      assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      checkOperationResult(client, opHandle)
+
+      req.setSessionHandle(SessionHandle(BackendService.SERVER_VERSION).toTSessionHandle)
+      val resp1 = client.GetTables(req)
+      assert(resp1.getOperationHandle === null)
+      assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(resp1.getStatus.getSqlState === null)
+      assert(resp1.getStatus.getErrorMessage startsWith "Invalid SessionHandle")
+    }
+  }
+
+  test("get table types") {
+    withSessionHandle { (client, handle) =>
+      val req = new TGetTableTypesReq(handle)
+      val resp = client.GetTableTypes(req)
+      val opHandle = resp.getOperationHandle
+      assert(opHandle.getOperationType === TOperationType.GET_TABLE_TYPES)
+      assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      checkOperationResult(client, opHandle)
+
+      req.setSessionHandle(SessionHandle(BackendService.SERVER_VERSION).toTSessionHandle)
+      val resp1 = client.GetTableTypes(req)
+      assert(resp1.getOperationHandle === null)
+      assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(resp1.getStatus.getSqlState === null)
+      assert(resp1.getStatus.getErrorMessage startsWith "Invalid SessionHandle")
+    }
+  }
+
+  test("get columns") {
+    withSessionHandle { (client, handle) =>
+      val req = new TGetColumnsReq(handle)
+      val resp = client.GetColumns(req)
+      val opHandle = resp.getOperationHandle
+      assert(opHandle.getOperationType === TOperationType.GET_COLUMNS)
+      assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      checkOperationResult(client, opHandle)
+
+      req.setSessionHandle(SessionHandle(BackendService.SERVER_VERSION).toTSessionHandle)
+      val resp1 = client.GetColumns(req)
+      assert(resp1.getOperationHandle === null)
+      assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(resp1.getStatus.getSqlState === null)
+      assert(resp1.getStatus.getErrorMessage startsWith "Invalid SessionHandle")
+    }
+  }
+
+  test("get functions") {
+    withSessionHandle { (client, handle) =>
+      val req = new TGetFunctionsReq(handle, "sum")
+      val resp = client.GetFunctions(req)
+      val opHandle = resp.getOperationHandle
+      assert(opHandle.getOperationType === TOperationType.GET_FUNCTIONS)
+      assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      checkOperationResult(client, opHandle)
+
+      req.setSessionHandle(SessionHandle(BackendService.SERVER_VERSION).toTSessionHandle)
+      val resp1 = client.GetFunctions(req)
+      assert(resp1.getOperationHandle === null)
+      assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(resp1.getStatus.getSqlState === null)
+      assert(resp1.getStatus.getErrorMessage startsWith "Invalid SessionHandle")
+    }
+  }
+
+  test("get primary keys") {
+    withSessionHandle { (client, handle) =>
+      val req = new TGetPrimaryKeysReq(handle)
+      val resp = client.GetPrimaryKeys(req)
+      assert(resp.getOperationHandle === null)
+      assert(resp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(resp.getStatus.getSqlState === null)
+      assert(resp.getStatus.getErrorMessage startsWith "Feature is not available")
+    }
+  }
+
+
+  test("get cross reference") {
+    withSessionHandle { (client, handle) =>
+      val req = new TGetCrossReferenceReq(handle)
+      val resp = client.GetCrossReference(req)
+      assert(resp.getOperationHandle === null)
+      assert(resp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(resp.getStatus.getSqlState === null)
+      assert(resp.getStatus.getErrorMessage startsWith "Feature is not available")
+    }
+  }
+
+  test("get operation status") {
+    withSessionHandle { (client, handle) =>
+      val opHandle =
+        OperationHandle(OperationType.EXECUTE_STATEMENT, BackendService.SERVER_VERSION)
+      val req = new TGetOperationStatusReq(opHandle)
+      val resp = client.GetOperationStatus(req)
+      assert(resp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(resp.getStatus.getSqlState === null)
+      assert(resp.getStatus.getErrorMessage startsWith "Invalid OperationHandle")
+
+      val req1 = new TGetTablesReq(handle)
+      val resp1 = client.GetTables(req1)
+      val opHandle1 = resp1.getOperationHandle
+      val req2 = new TGetOperationStatusReq(opHandle1)
+      val resp2 = client.GetOperationStatus(req2)
+      assert(resp2.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      assert(resp2.getOperationState === TOperationState.FINISHED_STATE)
+
+      req1.setSchemaName("invalid")
+      val resp3 = client.GetTables(req1)
+      req2.setOperationHandle(resp3.getOperationHandle)
+      val resp4 = client.GetOperationStatus(req2)
+      assert(resp4.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      assert(resp4.getOperationState === TOperationState.ERROR_STATE)
+      assert(resp4.getErrorMessage === "noop operation err")
+
     }
   }
 }

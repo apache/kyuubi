@@ -23,23 +23,46 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn, TTableSchema}
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.session.Session
 
-class NoopOperation(typ: OperationType, session: Session)
+class NoopOperation(typ: OperationType, session: Session, shouldFail: Boolean = false)
   extends AbstractOperation(typ, session) {
-  override protected def runInternal(): Unit = {}
+  override protected def runInternal(): Unit = {
+    setState(OperationState.RUNNING)
+    if (shouldFail) {
+      val exception = KyuubiSQLException("noop operation err")
+      setOperationException(exception)
+      setState(OperationState.ERROR)
+    }
+    setHasResultSet(true)
+  }
 
-  override protected def beforeRun(): Unit = {}
+  override protected def beforeRun(): Unit = {
+    setState(OperationState.PENDING)
+  }
 
-  override protected def afterRun(): Unit = {}
+  override protected def afterRun(): Unit = {
+    if (!OperationState.isTerminal(state)) {
+      setState(OperationState.FINISHED)
+    }
 
-  override def cancel(): Unit = {}
+  }
 
-  override def close(): Unit = {}
+  override def cancel(): Unit = {
+    setState(OperationState.CANCELED)
 
-  override def getResultSetSchema: TTableSchema = new TTableSchema()
+  }
+
+  override def close(): Unit = {
+    setState(OperationState.CLOSED)
+  }
+
+  override def getResultSetSchema: TTableSchema = {
+    new TTableSchema()
+  }
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
     val col = TColumn.stringVal(new TStringColumn(Seq(typ.toString).asJava, ByteBuffer.allocate(0)))
