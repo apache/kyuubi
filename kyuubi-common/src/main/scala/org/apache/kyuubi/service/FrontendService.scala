@@ -217,6 +217,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     } catch {
       case e: Exception =>
         warn("Error getting type info: ", e)
+        resp.setInfoValue(TGetInfoValue.lenValue(0))
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
