@@ -49,41 +49,6 @@ class FrontendServiceSuite extends SparkFunSuite with Matchers with SecuredFunSu
     super.afterAll()
   }
 
-  test("new frontend service") {
-    val feService = new FrontendService(server.beService)
-    feService.getConf should be(null)
-    feService.getStartTime should be(0)
-    feService.getServiceState should be(State.NOT_INITED)
-    feService.getName should be(classOf[FrontendService].getSimpleName)
-    feService.getServerIPAddress should be(null)
-    feService.getPortNumber should be(0)
-  }
-
-  test("start fe service") {
-    val feService = new FrontendService(server.beService)
-    intercept[IllegalStateException](feService.start())
-    feService.init(conf)
-    feService.start()
-    feService.getConf should be(conf)
-    feService.getStartTime should not be 0
-    feService.getServiceState should be(State.STARTED)
-  }
-
-  test("get catalogs") {
-    withFEServiceAndHandle { case (fe, handle) =>
-      val req = new TGetCatalogsReq(handle)
-      val resp = fe.GetCatalogs(req)
-      val req2 = new TFetchResultsReq(resp.getOperationHandle, TFetchOrientation.FETCH_NEXT, 50)
-      val resp2 = fe.FetchResults(req2)
-      val rows = resp2.getResults.getRows
-      rows.size() should be(0)
-      val closeReq = new TCloseSessionReq(handle)
-      fe.CloseSession(closeReq)
-      val afterCloseResp = fe.GetCatalogs(req)
-      afterCloseResp.getStatus.getStatusCode should be(TStatusCode.ERROR_STATUS)
-    }
-  }
-
   test("get table types") {
     withFEServiceAndHandle { case (fe, handle) =>
       val req = new TGetTableTypesReq(handle)

@@ -28,7 +28,5 @@ class NoopSessionImpl(
     sessionManager: SessionManager)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
-  override def handle: SessionHandle = SessionHandle(protocol)
-
   override def open(): Unit = {}
 }
