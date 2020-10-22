@@ -115,6 +115,38 @@ class FrontendServiceSuite extends KyuubiFunSuite {
     }
   }
 
+  test("get info") {
+    withSessionHandle { (client, handle) =>
+      val req = new TGetInfoReq()
+      req.setSessionHandle(handle)
+      req.setInfoType(TGetInfoType.CLI_DBMS_VER)
+      val resp = client.GetInfo(req)
+      assert(resp.getInfoValue.getStringValue === org.apache.kyuubi.KYUUBI_VERSION)
+      req.setInfoType(TGetInfoType.CLI_SERVER_NAME)
+      assert(client.GetInfo(req).getInfoValue.getStringValue === "Kyuubi")
+      req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
+      assert(client.GetInfo(req).getInfoValue.getStringValue === "Spark SQL")
+      req.setInfoType(TGetInfoType.CLI_MAX_COLUMN_NAME_LEN)
+      assert(client.GetInfo(req).getInfoValue.getLenValue === 128)
+      req.setInfoType(TGetInfoType.CLI_MAX_SCHEMA_NAME_LEN)
+      assert(client.GetInfo(req).getInfoValue.getLenValue === 128)
+      req.setInfoType(TGetInfoType.CLI_MAX_TABLE_NAME_LEN)
+      assert(client.GetInfo(req).getInfoValue.getLenValue === 128)
+      req.setInfoType(TGetInfoType.CLI_ACCESSIBLE_PROCEDURES)
+      val resp1 = client.GetInfo(req)
+      assert(resp1.getInfoValue.getLenValue === 0)
+      assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(resp1.getStatus.getErrorMessage ===
+        "Unrecognized GetInfoType value: CLI_ACCESSIBLE_PROCEDURES")
+      req.setInfoType(TGetInfoType.CLI_USER_NAME)
+      val resp2 = client.GetInfo(req)
+      assert(resp2.getInfoValue.getLenValue === 0)
+      assert(resp2.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(resp2.getStatus.getErrorMessage ===
+        "Unrecognized GetInfoType value: CLI_USER_NAME")
+    }
+  }
+
   test("get catalogs") {
     withSessionHandle { (client, handle) =>
       val req = new TGetCatalogsReq(handle)
