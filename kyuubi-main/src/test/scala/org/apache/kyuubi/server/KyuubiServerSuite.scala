@@ -25,7 +25,7 @@ class KyuubiServerSuite extends KyuubiFunSuite {
 
   test("kyuubi server basic") {
     val server = new KyuubiServer()
-    val conf = KyuubiConf()
+    val conf = KyuubiConf().set(KyuubiConf.FRONTEND_BIND_PORT, 0)
     assert(server.getServices.isEmpty)
     assert(server.getServiceState === LATENT)
     server.initialize(conf)
