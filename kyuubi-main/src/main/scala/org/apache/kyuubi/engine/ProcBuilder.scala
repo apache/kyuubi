@@ -56,7 +56,7 @@ trait ProcBuilder {
 
   @volatile private var error: Throwable = UNCAUGHT_ERROR
 
-  final def start: Process = {
+  final def start: Process = synchronized {
     val procLog = Paths.get(workingDir.toAbsolutePath.toString, s"$module.log")
     processBuilder.redirectError(procLog.toFile)
     processBuilder.redirectOutput(procLog.toFile)
@@ -83,6 +83,8 @@ trait ProcBuilder {
         }
       } catch {
         case _: IOException =>
+      } finally {
+        reader.close()
       }
     }
 
@@ -90,7 +92,7 @@ trait ProcBuilder {
     proc
   }
 
-  def getError: Throwable = {
+  def getError: Throwable = synchronized {
     if (error == UNCAUGHT_ERROR) {
       Thread.sleep(3000)
     }
