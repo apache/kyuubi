@@ -26,6 +26,7 @@ import org.apache.thrift.transport.TSocket
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{OperationHandle, OperationType}
+import org.apache.kyuubi.service.FrontendService.{FeServiceServerContext, SERVER_VERSION}
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 import org.apache.kyuubi.session.SessionHandle
 
@@ -115,6 +116,15 @@ class FrontendServiceSuite extends KyuubiFunSuite {
     }
   }
 
+  test("fe service server context") {
+    withSessionHandle { (_, handle) =>
+      val context = new FeServiceServerContext()
+      val handle1 = SessionHandle(handle)
+      context.setSessionHandle(handle1)
+      assert(context.getSessionHandle.toTSessionHandle === handle)
+    }
+  }
+
   test("get info") {
     withSessionHandle { (client, handle) =>
       val req = new TGetInfoReq()
@@ -155,7 +165,7 @@ class FrontendServiceSuite extends KyuubiFunSuite {
       assert(opHandle.getOperationType === TOperationType.GET_CATALOGS)
       assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       checkOperationResult(client, opHandle)
-      req.setSessionHandle(SessionHandle(BackendService.SERVER_VERSION).toTSessionHandle)
+      req.setSessionHandle(SessionHandle(SERVER_VERSION).toTSessionHandle)
 
       val resp1 = client.GetCatalogs(req)
       assert(resp1.getOperationHandle === null)
@@ -174,7 +184,7 @@ class FrontendServiceSuite extends KyuubiFunSuite {
       assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       checkOperationResult(client, opHandle)
 
-      req.setSessionHandle(SessionHandle(BackendService.SERVER_VERSION).toTSessionHandle)
+      req.setSessionHandle(SessionHandle(SERVER_VERSION).toTSessionHandle)
       val resp1 = client.GetSchemas(req)
       assert(resp1.getOperationHandle === null)
       assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
@@ -192,7 +202,7 @@ class FrontendServiceSuite extends KyuubiFunSuite {
       assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       checkOperationResult(client, opHandle)
 
-      req.setSessionHandle(SessionHandle(BackendService.SERVER_VERSION).toTSessionHandle)
+      req.setSessionHandle(SessionHandle(SERVER_VERSION).toTSessionHandle)
       val resp1 = client.GetTables(req)
       assert(resp1.getOperationHandle === null)
       assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
@@ -210,7 +220,7 @@ class FrontendServiceSuite extends KyuubiFunSuite {
       assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       checkOperationResult(client, opHandle)
 
-      req.setSessionHandle(SessionHandle(BackendService.SERVER_VERSION).toTSessionHandle)
+      req.setSessionHandle(SessionHandle(SERVER_VERSION).toTSessionHandle)
       val resp1 = client.GetTableTypes(req)
       assert(resp1.getOperationHandle === null)
       assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
@@ -228,7 +238,7 @@ class FrontendServiceSuite extends KyuubiFunSuite {
       assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       checkOperationResult(client, opHandle)
 
-      req.setSessionHandle(SessionHandle(BackendService.SERVER_VERSION).toTSessionHandle)
+      req.setSessionHandle(SessionHandle(SERVER_VERSION).toTSessionHandle)
       val resp1 = client.GetColumns(req)
       assert(resp1.getOperationHandle === null)
       assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
@@ -246,7 +256,7 @@ class FrontendServiceSuite extends KyuubiFunSuite {
       assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       checkOperationResult(client, opHandle)
 
-      req.setSessionHandle(SessionHandle(BackendService.SERVER_VERSION).toTSessionHandle)
+      req.setSessionHandle(SessionHandle(SERVER_VERSION).toTSessionHandle)
       val resp1 = client.GetFunctions(req)
       assert(resp1.getOperationHandle === null)
       assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
@@ -281,7 +291,7 @@ class FrontendServiceSuite extends KyuubiFunSuite {
   test("get operation status") {
     withSessionHandle { (client, handle) =>
       val opHandle =
-        OperationHandle(OperationType.EXECUTE_STATEMENT, BackendService.SERVER_VERSION)
+        OperationHandle(OperationType.EXECUTE_STATEMENT, SERVER_VERSION)
       val req = new TGetOperationStatusReq(opHandle)
       val resp = client.GetOperationStatus(req)
       assert(resp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)

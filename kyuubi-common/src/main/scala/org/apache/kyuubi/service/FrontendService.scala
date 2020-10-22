@@ -160,7 +160,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
 
   @throws[KyuubiSQLException]
   private def getSessionHandle(req: TOpenSessionReq, res: TOpenSessionResp): SessionHandle = {
-    val protocol = getMinVersion(BackendService.SERVER_VERSION, req.getClient_protocol)
+    val protocol = getMinVersion(SERVER_VERSION, req.getClient_protocol)
     res.setServerProtocolVersion(protocol)
     val userName = getUserName(req)
     val ipAddress = authFactory.getIpAddress.orNull
@@ -534,6 +534,8 @@ object FrontendService {
   final val OK_STATUS = new TStatus(TStatusCode.SUCCESS_STATUS)
 
   final val CURRENT_SERVER_CONTEXT = new ThreadLocal[FeServiceServerContext]()
+
+  final val SERVER_VERSION = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10
 
   class FeServiceServerContext extends ServerContext {
     private var sessionHandle: SessionHandle = _
