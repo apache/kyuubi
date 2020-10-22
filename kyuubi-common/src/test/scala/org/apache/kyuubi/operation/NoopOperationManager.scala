@@ -29,17 +29,17 @@ class NoopOperationManager extends OperationManager("noop") {
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
 
-    val operation = new NoopOperation(session)
+    val operation = new NoopOperation(OperationType.EXECUTE_STATEMENT, session)
     addOperation(operation)
   }
 
   override def newGetTypeInfoOperation(session: Session): Operation = {
-    val operation = new NoopOperation(session)
+    val operation = new NoopOperation(OperationType.GET_TYPE_INFO, session)
     addOperation(operation)
   }
 
   override def newGetCatalogsOperation(session: Session): Operation = {
-    val operation = new NoopOperation(session)
+    val operation = new NoopOperation(OperationType.GET_CATALOGS, session)
     addOperation(operation)
   }
 
@@ -47,7 +47,7 @@ class NoopOperationManager extends OperationManager("noop") {
       session: Session,
       catalog: String,
       schema: String): Operation = {
-    val operation = new NoopOperation(session)
+    val operation = new NoopOperation(OperationType.GET_SCHEMAS, session)
     addOperation(operation)
   }
 
@@ -57,12 +57,12 @@ class NoopOperationManager extends OperationManager("noop") {
       schemaName: String,
       tableName: String,
       tableTypes: java.util.List[String]): Operation = {
-    val operation = new NoopOperation(session)
+    val operation = new NoopOperation(OperationType.GET_TABLES, session)
     addOperation(operation)
   }
 
   override def newGetTableTypesOperation(session: Session): Operation = {
-    val operation = new NoopOperation(session)
+    val operation = new NoopOperation(OperationType.GET_TABLE_TYPES, session)
     addOperation(operation)
   }
 
@@ -72,7 +72,7 @@ class NoopOperationManager extends OperationManager("noop") {
       schemaName: String,
       tableName: String,
       columnName: String): Operation = {
-    val operation = new NoopOperation(session)
+    val operation = new NoopOperation(OperationType.GET_COLUMNS, session)
     addOperation(operation)
   }
 
@@ -81,7 +81,7 @@ class NoopOperationManager extends OperationManager("noop") {
       catalogName: String,
       schemaName: String,
       functionName: String): Operation = {
-    val operation = new NoopOperation(session)
+    val operation = new NoopOperation(OperationType.GET_FUNCTIONS, session)
     addOperation(operation)
   }
 

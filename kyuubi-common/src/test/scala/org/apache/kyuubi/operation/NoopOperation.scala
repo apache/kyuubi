@@ -20,10 +20,11 @@ package org.apache.kyuubi.operation
 import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
 
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.session.Session
 
-class NoopOperation(session: Session)
-  extends AbstractOperation(OperationType.UNKNOWN_OPERATION, session) {
+class NoopOperation(typ: OperationType, session: Session)
+  extends AbstractOperation(typ, session) {
   override protected def runInternal(): Unit = {}
 
   override protected def beforeRun(): Unit = {}

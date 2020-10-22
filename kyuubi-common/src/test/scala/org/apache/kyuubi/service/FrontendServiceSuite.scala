@@ -19,7 +19,7 @@ package org.apache.kyuubi.service
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TOpenSessionReq, TSessionHandle, TStatusCode}
+import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TGetCatalogsReq, TOpenSessionReq, TOperationType, TSessionHandle, TStatus, TStatusCode}
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
 
@@ -80,7 +80,6 @@ class FrontendServiceSuite extends KyuubiFunSuite {
     }
   }
 
-
   test("open session") {
     withThriftClient { client =>
       val req = new TOpenSessionReq()
@@ -98,6 +97,16 @@ class FrontendServiceSuite extends KyuubiFunSuite {
       val cause = KyuubiSQLException.toCause(resp1.getStatus.getInfoMessages.asScala)
       assert(cause.isInstanceOf[KyuubiSQLException])
       assert(cause.getMessage === "Asked to fail")
+    }
+  }
+
+  test("get catalogs") {
+    withSessionHandle { (client, handle) =>
+      val req = new TGetCatalogsReq(handle)
+      val resp = client.GetCatalogs(req)
+      val opHandle = resp.getOperationHandle
+      assert(opHandle.getOperationType === TOperationType.GET_CATALOGS)
+      assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
     }
   }
 }
