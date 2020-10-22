@@ -19,7 +19,7 @@ package org.apache.kyuubi.service
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TGetCatalogsReq, TOpenSessionReq, TOperationType, TSessionHandle, TStatus, TStatusCode}
+import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TFetchOrientation, TFetchResultsReq, TGetCatalogsReq, TGetSchemasReq, TOpenSessionReq, TOperationHandle, TOperationType, TSessionHandle, TStatus, TStatusCode}
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
 
@@ -80,6 +80,19 @@ class FrontendServiceSuite extends KyuubiFunSuite {
     }
   }
 
+  private def checkOperationResult(
+      client: TCLIService.Iface, handle: TOperationHandle): Unit = {
+    val tFetchResultsReq = new TFetchResultsReq()
+    tFetchResultsReq.setOperationHandle(handle)
+    tFetchResultsReq.setFetchType(0)
+    tFetchResultsReq.setOrientation(TFetchOrientation.FETCH_NEXT)
+    tFetchResultsReq.setMaxRows(10)
+    val resp = client.FetchResults(tFetchResultsReq)
+    val expected = handle.getOperationType.toString
+    val actual = resp.getResults.getColumns.get(0).getStringVal.getValues.get(0)
+    assert(actual === expected)
+  }
+
   test("open session") {
     withThriftClient { client =>
       val req = new TOpenSessionReq()
@@ -107,6 +120,18 @@ class FrontendServiceSuite extends KyuubiFunSuite {
       val opHandle = resp.getOperationHandle
       assert(opHandle.getOperationType === TOperationType.GET_CATALOGS)
       assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      checkOperationResult(client, opHandle)
+    }
+  }
+
+  test("get schemas") {
+    withSessionHandle { (client, handle) =>
+      val req = new TGetSchemasReq(handle)
+      val resp = client.GetSchemas(req)
+      val opHandle = resp.getOperationHandle
+      assert(opHandle.getOperationType === TOperationType.GET_SCHEMAS)
+      assert(resp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      checkOperationResult(client, opHandle)
     }
   }
 }
