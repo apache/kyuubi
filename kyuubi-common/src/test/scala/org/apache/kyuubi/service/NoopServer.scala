@@ -22,6 +22,13 @@ import org.apache.kyuubi.KyuubiException
 class NoopServer extends Serverable("noop") {
   override private[kyuubi] val backendService = new NoopBackendService
 
+  override def start(): Unit = {
+    super.start()
+    if (getConf.getOption("kyuubi.test.should.fail").exists(_.toBoolean)) {
+      throw new IllegalArgumentException("should fail")
+    }
+  }
+
   override protected def stopServer(): Unit = {
     throw new KyuubiException("no need to stop me")
   }

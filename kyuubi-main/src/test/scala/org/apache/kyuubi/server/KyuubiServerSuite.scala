@@ -25,11 +25,13 @@ class KyuubiServerSuite extends KyuubiFunSuite {
 
   test("kyuubi server basic") {
     val server = new KyuubiServer()
+    server.stop()
     val conf = KyuubiConf().set(KyuubiConf.FRONTEND_BIND_PORT, 0)
     assert(server.getServices.isEmpty)
     assert(server.getServiceState === LATENT)
     val e = intercept[IllegalStateException](server.connectionUrl)
     assert(e.getMessage === "Illegal Service State: LATENT")
+    assert(server.getConf === null)
 
     server.initialize(conf)
     assert(server.getServiceState === INITIALIZED)
@@ -37,16 +39,22 @@ class KyuubiServerSuite extends KyuubiFunSuite {
     assert(backendService.getServiceState == INITIALIZED)
     assert(backendService.getServices.forall(_.getServiceState === INITIALIZED))
     assert(server.connectionUrl.split(":").length === 2)
+    assert(server.getConf === conf)
+    assert(server.getStartTime === 0)
+    server.stop()
+
 
     server.start()
     assert(server.getServiceState === STARTED)
     assert(backendService.getServiceState == STARTED)
     assert(backendService.getServices.forall(_.getServiceState === STARTED))
+    assert(server.getStartTime !== 0)
 
     server.stop()
     assert(server.getServiceState === STOPPED)
     assert(backendService.getServiceState == STOPPED)
     assert(backendService.getServices.forall(_.getServiceState === STOPPED))
+    server.stop()
   }
 
   test("invalid port") {
