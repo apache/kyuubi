@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.server
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.ServiceState._
 
@@ -28,11 +28,15 @@ class KyuubiServerSuite extends KyuubiFunSuite {
     val conf = KyuubiConf().set(KyuubiConf.FRONTEND_BIND_PORT, 0)
     assert(server.getServices.isEmpty)
     assert(server.getServiceState === LATENT)
+    val e = intercept[IllegalStateException](server.connectionUrl)
+    assert(e.getMessage === "Illegal Service State: LATENT")
+
     server.initialize(conf)
     assert(server.getServiceState === INITIALIZED)
     val backendService = server.getServices.head.asInstanceOf[KyuubiBackendService]
     assert(backendService.getServiceState == INITIALIZED)
     assert(backendService.getServices.forall(_.getServiceState === INITIALIZED))
+    assert(server.connectionUrl.split(":").length === 2)
 
     server.start()
     assert(server.getServiceState === STARTED)
@@ -45,4 +49,10 @@ class KyuubiServerSuite extends KyuubiFunSuite {
     assert(backendService.getServices.forall(_.getServiceState === STOPPED))
   }
 
+  test("invalid port") {
+    val conf = KyuubiConf().set(KyuubiConf.FRONTEND_BIND_PORT, 100)
+    val e = intercept[KyuubiException](new KyuubiServer().initialize(conf))
+    assert(e.getMessage === "Failed to initialize frontend service")
+    assert(e.getCause.getMessage === "Invalid Port number")
+  }
 }
