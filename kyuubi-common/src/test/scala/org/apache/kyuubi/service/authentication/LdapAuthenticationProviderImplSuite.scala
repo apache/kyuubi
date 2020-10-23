@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,10 +15,9 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.auth
+package org.apache.kyuubi.service.authentication
 
 import java.io.File
-import java.util.{Collections, Hashtable}
 import javax.naming.{CommunicationException, Context}
 import javax.naming.directory.{BasicAttribute, BasicAttributes, InitialDirContext}
 import javax.security.sasl.AuthenticationException
@@ -39,22 +38,20 @@ import org.apache.directory.server.core.partition.ldif.LdifPartition
 import org.apache.directory.server.ldap.LdapServer
 import org.apache.directory.server.protocol.shared.transport.TcpTransport
 import org.apache.mina.util.AvailablePortFinder
-import org.apache.spark.{KyuubiConf, KyuubiSparkUtil, SparkConf, SparkFunSuite}
 
-import org.apache.kyuubi.service.authentication.LdapAuthenticationProviderImpl
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.config.KyuubiConf
 
-class LdapAuthenticationProviderImplSuite extends SparkFunSuite {
-
-  import KyuubiConf._
+class LdapAuthenticationProviderImplSuite extends KyuubiFunSuite {
 
   private val servicePort = AvailablePortFinder.getNextAvailable(9000)
-  val service = new DefaultDirectoryService
-  private val workingDIr = KyuubiSparkUtil.createTempDir()
-  val ldapServer: LdapServer = new LdapServer()
+  private val service = new DefaultDirectoryService
+  private val workingDIr = Utils.createTempDir().toFile
+  private val ldapServer: LdapServer = new LdapServer()
 
-  val partitions = ArrayBuffer[Partition]()
+  private val partitions = ArrayBuffer[Partition]()
 
-  val conf = new SparkConf()
+  private val conf = new KyuubiConf()
 
   override def beforeAll(): Unit = {
     service.setInstanceLayout(new InstanceLayout(workingDIr))
@@ -106,10 +103,10 @@ class LdapAuthenticationProviderImplSuite extends SparkFunSuite {
   }
 
   private def addUser(): Unit = {
-    val env = new Hashtable[String, Any]()
+    val env = new java.util.Hashtable[String, Any]()
     env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory")
     env.put(Context.SECURITY_AUTHENTICATION, "simple")
-    env.put(Context.PROVIDER_URL, conf.get(AUTHENTICATION_LDAP_URL))
+    env.put(Context.PROVIDER_URL, conf.get(AUTHENTICATION_LDAP_URL).get)
     env.put(Context.SECURITY_PRINCIPAL, "uid=admin,ou=system")
     env.put(Context.SECURITY_CREDENTIALS, "secret")
 
@@ -177,7 +174,7 @@ class LdapAuthenticationProviderImplSuite extends SparkFunSuite {
       providerImpl.authenticate("kentyao", "kent"))
     assert(e4.getMessage.contains(user))
 
-    conf.remove(AUTHENTICATION_LDAP_URL)
+    conf.unset(AUTHENTICATION_LDAP_URL)
     val providerImpl3 = new LdapAuthenticationProviderImpl(conf)
     val e5 = intercept[AuthenticationException](
       providerImpl3.authenticate("kentyao", "kentyao"))
@@ -185,5 +182,4 @@ class LdapAuthenticationProviderImplSuite extends SparkFunSuite {
     assert(e5.getMessage.contains(user))
     assert(e5.getCause.isInstanceOf[CommunicationException])
   }
-
 }
