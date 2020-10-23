@@ -29,7 +29,7 @@ case class KyuubiDelegationTokenManager(
   extends AbstractDelegationTokenSecretManager[KyuubiDelegationTokenIdentifier](
     keyUpdateInterval, tokenMaxLifetime, tokenRenewInterval, tokenRemoverScanInterval) {
   override def createIdentifier(): KyuubiDelegationTokenIdentifier = {
-    KyuubiDelegationTokenIdentifier()
+    new KyuubiDelegationTokenIdentifier()
   }
 }
 
