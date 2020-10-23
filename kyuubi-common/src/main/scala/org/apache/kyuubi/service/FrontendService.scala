@@ -103,7 +103,12 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     super.initialize(conf)
   }
 
-  def connectionUrl: String = s"${serverAddr.getCanonicalHostName}:$portNum"
+  def connectionUrl: String = {
+    getServiceState match {
+      case s @ ServiceState.LATENT => throw new IllegalStateException(s"Illegal Service State: $s")
+      case _ => s"${serverAddr.getCanonicalHostName}:$portNum"
+    }
+  }
 
   override def start(): Unit = synchronized {
     super.start()
