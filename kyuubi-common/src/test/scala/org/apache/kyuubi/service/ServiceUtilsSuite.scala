@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,13 +15,11 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.service
+package org.apache.kyuubi.service
 
-import org.apache.spark.SparkFunSuite
+import org.apache.kyuubi.KyuubiFunSuite
 
-import org.apache.kyuubi.service.ServiceUtils
-
-class ServiceUtilsSuite extends SparkFunSuite {
+class ServiceUtilsSuite extends KyuubiFunSuite {
 
   test("test index or domain match") {
     assert(ServiceUtils.indexOfDomainMatch(null) === -1)
@@ -41,5 +39,14 @@ class ServiceUtilsSuite extends SparkFunSuite {
     assert(ServiceUtils.indexOfDomainMatch(user7) === 4)
     val user8 = "Kent*xxx/xxx"
     assert(ServiceUtils.indexOfDomainMatch(user8) === 8)
+  }
+
+  test("get short name") {
+    assert(ServiceUtils.getShortName(null) === null)
+    assert(ServiceUtils.getShortName("") === "")
+    assert(ServiceUtils.getShortName("kent") === "kent")
+    assert(ServiceUtils.getShortName("kent/x") == "kent")
+    assert(ServiceUtils.getShortName("kent@abc/c") === "kent")
+    assert(ServiceUtils.getShortName("kent/abc@c") === "kent")
   }
 }
