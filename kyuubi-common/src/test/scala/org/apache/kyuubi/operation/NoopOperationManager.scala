@@ -17,20 +17,21 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.hive.service.rpc.thrift.TRowSet
+import org.apache.hive.service.rpc.thrift.{TRow, TRowSet}
 
-import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.Session
 
 class NoopOperationManager extends OperationManager("noop") {
+  private val invalid = "invalid"
+
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
-
-    val operation = new NoopOperation(OperationType.EXECUTE_STATEMENT, session)
+    val operation =
+      new NoopOperation(OperationType.EXECUTE_STATEMENT, session, statement == invalid)
     addOperation(operation)
   }
 
@@ -58,7 +59,7 @@ class NoopOperationManager extends OperationManager("noop") {
       schemaName: String,
       tableName: String,
       tableTypes: java.util.List[String]): Operation = {
-    val operation = new NoopOperation(OperationType.GET_TABLES, session, schemaName == "invalid")
+    val operation = new NoopOperation(OperationType.GET_TABLES, session, schemaName == invalid)
     addOperation(operation)
   }
 
@@ -89,5 +90,5 @@ class NoopOperationManager extends OperationManager("noop") {
   override def getOperationLogRowSet(
       opHandle: OperationHandle,
       order: FetchOrientation,
-      maxRows: Int): TRowSet = new TRowSet()
+      maxRows: Int): TRowSet = new TRowSet(0, new java.util.ArrayList[TRow](0))
 }

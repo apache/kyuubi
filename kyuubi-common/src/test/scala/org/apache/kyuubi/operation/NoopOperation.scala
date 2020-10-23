@@ -21,7 +21,7 @@ import java.nio.ByteBuffer
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn, TTableSchema}
+import org.apache.hive.service.rpc.thrift.{TColumn, TColumnDesc, TPrimitiveTypeEntry, TRow, TRowSet, TStringColumn, TTableSchema, TTypeDesc, TTypeEntry, TTypeId}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -61,7 +61,17 @@ class NoopOperation(typ: OperationType, session: Session, shouldFail: Boolean = 
   }
 
   override def getResultSetSchema: TTableSchema = {
-    new TTableSchema()
+    val tColumnDesc = new TColumnDesc()
+    tColumnDesc.setColumnName("noop")
+    val desc = new TTypeDesc
+    desc.addToTypes(TTypeEntry.primitiveEntry(new TPrimitiveTypeEntry(TTypeId.STRING_TYPE)))
+    tColumnDesc.setTypeDesc(desc)
+    tColumnDesc.setComment("comment")
+    tColumnDesc.setPosition(0)
+    tColumnDesc
+    val schema = new TTableSchema()
+    schema.addToColumns(tColumnDesc)
+    schema
   }
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {

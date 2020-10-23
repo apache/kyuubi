@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.spark
 
 import java.nio.file.{Files, Paths}
+import java.util.concurrent.TimeUnit
 
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
@@ -46,7 +47,11 @@ class SparkProcessBuilderSuite extends KyuubiFunSuite {
 
   test("capture error from spark process builder") {
     val processBuilder = new SparkProcessBuilder("kentyao", conf ++ Map("spark.ui.port" -> "abc"))
-    processBuilder.start
+    val proc = processBuilder.start
+    proc.waitFor(10, TimeUnit.SECONDS)
+    while (proc.isAlive) {
+      Thread.sleep(100)
+    }
     Thread.sleep(5000)
     val error = processBuilder.getError
     assert(error.getMessage.contains(
