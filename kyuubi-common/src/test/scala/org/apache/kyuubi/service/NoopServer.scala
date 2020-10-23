@@ -17,8 +17,12 @@
 
 package org.apache.kyuubi.service
 
+import org.apache.kyuubi.KyuubiException
+
 class NoopServer extends Serverable("noop") {
   override private[kyuubi] val backendService = new NoopBackendService
 
-  override protected def stopServer(): Unit = {}
+  override protected def stopServer(): Unit = {
+    throw new KyuubiException("no need to stop me")
+  }
 }
