@@ -18,12 +18,18 @@
 package org.apache.kyuubi.service.authentication
 
 import org.apache.hadoop.io.Text
-import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier
 
-class KyuubiDelegationTokenIdentifier extends AbstractDelegationTokenIdentifier() {
-  override def getKind: Text = KyuubiDelegationTokenIdentifier.KIND
-}
+import org.apache.kyuubi.KyuubiFunSuite
 
-object KyuubiDelegationTokenIdentifier {
-  final val KIND = new Text("KYUUBI_DELEGATION_TOKEN")
+class KyuubiDelegationTokenIdentifierSuite extends KyuubiFunSuite {
+
+  test("kyuubi delegation token identifier") {
+    val identifier = new KyuubiDelegationTokenIdentifier()
+    assert(identifier.getKind === KyuubiDelegationTokenIdentifier.KIND)
+    assert(identifier.getOwner === new Text())
+    assert(identifier.getIssueDate === 0)
+    assert(identifier.getMaxDate === 0)
+    assert(identifier.getRealUser === new Text())
+  }
+
 }
