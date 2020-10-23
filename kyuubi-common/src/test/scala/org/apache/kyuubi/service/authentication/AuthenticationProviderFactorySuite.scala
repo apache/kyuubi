@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,25 +15,24 @@
  * limitations under the License.
  */
 
-package yaooqinn.kyuubi.auth
+package org.apache.kyuubi.service.authentication
 
 import javax.security.sasl.AuthenticationException
 
-import org.apache.spark.{SparkConf, SparkFunSuite}
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.config.KyuubiConf
 
-import org.apache.kyuubi.service.authentication.AuthenticationProviderFactory
+class AuthenticationProviderFactorySuite extends KyuubiFunSuite {
 
-class AuthenticationProviderFactorySuite extends SparkFunSuite {
+  import AuthenticationProviderFactory._
 
-  test("testGetAuthenticationProvider") {
-    val conf = new SparkConf()
-    val anonymous = AuthenticationProviderFactory.getAuthenticationProvider(AuthMethods.NONE, conf)
-    anonymous.authenticate("test", "test")
-
-    val ldap = AuthenticationProviderFactory.getAuthenticationProvider(AuthMethods.LDAP, conf)
-    val exception = intercept[AuthenticationException](ldap.authenticate("test", "test"))
-    assert(exception.getMessage.contains("Error validating LDAP user:"))
-
+  test("get auth provider") {
+    val conf = KyuubiConf()
+    val p1 = getAuthenticationProvider(AuthMethods.withName("NONE"), conf)
+    p1.authenticate(Utils.currentUser, "")
+    val p2 = getAuthenticationProvider(AuthMethods.withName("LDAP"), conf)
+    val e1 = intercept[AuthenticationException](p2.authenticate("test", "test"))
+    assert(e1.getMessage.contains("Error validating LDAP user:"))
     val e2 = intercept[AuthenticationException](
       AuthenticationProviderFactory.getAuthenticationProvider(null, conf))
     assert(e2.getMessage === "Not a valid authentication method")
