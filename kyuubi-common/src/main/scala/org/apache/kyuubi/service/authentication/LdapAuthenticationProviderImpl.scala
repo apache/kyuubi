@@ -58,7 +58,7 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
 
     val domain = conf.get(AUTHENTICATION_LDAP_DOMAIN)
     val u = if (!hasDomain(user) && domain.nonEmpty) {
-      user + "@" + domain
+      user + "@" + domain.get
     } else {
       user
     }
