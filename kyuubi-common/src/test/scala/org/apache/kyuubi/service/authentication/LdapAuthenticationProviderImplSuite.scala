@@ -181,5 +181,9 @@ class LdapAuthenticationProviderImplSuite extends KyuubiFunSuite {
 
     assert(e5.getMessage.contains(user))
     assert(e5.getCause.isInstanceOf[CommunicationException])
+
+    conf.set(AUTHENTICATION_LDAP_DOMAIN, "kyuubi.com")
+    val providerImpl4 = new LdapAuthenticationProviderImpl(conf)
+    intercept[AuthenticationException](providerImpl4.authenticate("kentyao", "kentyao"))
   }
 }
