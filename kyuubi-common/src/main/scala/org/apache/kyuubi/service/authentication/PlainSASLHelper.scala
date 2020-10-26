@@ -79,8 +79,9 @@ object PlainSASLHelper {
       val props = new java.util.HashMap[String, String]
       saslFactory.addServerDefinition("PLAIN", authTypeStr, null, props, handler)
     } catch {
-      case e: AuthenticationException =>
-        throw new LoginException("Error setting callback handler" + e);
+      case e: NoSuchElementException =>
+        throw new IllegalArgumentException(
+          s"Illegal authentication type $authTypeStr for plain transport", e)
     }
     saslFactory
   }
