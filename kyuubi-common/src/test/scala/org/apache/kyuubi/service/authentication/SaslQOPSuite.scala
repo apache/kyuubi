@@ -19,6 +19,7 @@ package org.apache.kyuubi.service.authentication
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.SASL_QOP
 
 class SaslQOPSuite extends KyuubiFunSuite {
 
