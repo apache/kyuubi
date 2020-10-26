@@ -15,18 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.service
+package org.apache.kyuubi.service.authentication
 
-import org.apache.kyuubi.KyuubiException
-import org.apache.kyuubi.session.{NoopSessionManager, SessionManager}
+import org.apache.kyuubi.KyuubiFunSuite
 
-class NoopBackendService extends AbstractBackendService("noop") {
-  override val sessionManager: SessionManager = new NoopSessionManager()
+class TSetIpAddressProcessorSuite extends KyuubiFunSuite {
 
-  override def start(): Unit = {
-    if (conf.getOption("kyuubi.test.backend.should.fail").exists(_.toBoolean)) {
-      throw new KyuubiException("should fail backend")
-    }
-    super.start()
+  test("initial value of user information") {
+    assert(TSetIpAddressProcessor.getUserIpAddress === null)
+    assert(TSetIpAddressProcessor.getUserName === null)
   }
+
 }
