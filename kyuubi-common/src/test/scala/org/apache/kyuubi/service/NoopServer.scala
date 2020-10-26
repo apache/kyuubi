@@ -24,7 +24,7 @@ class NoopServer extends Serverable("noop") {
 
   override def start(): Unit = {
     super.start()
-    if (getConf.getOption("kyuubi.test.should.fail").exists(_.toBoolean)) {
+    if (getConf.getOption("kyuubi.test.server.should.fail").exists(_.toBoolean)) {
       throw new IllegalArgumentException("should fail")
     }
   }

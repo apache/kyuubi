@@ -61,10 +61,19 @@ class ServerableSuite extends KyuubiFunSuite {
   test("error start child services") {
     val conf = KyuubiConf()
       .set(KyuubiConf.FRONTEND_BIND_PORT, 0)
-      .set("kyuubi.test.should.fail", "true")
+      .set("kyuubi.test.server.should.fail", "true")
     val server = new NoopServer()
     server.initialize(conf)
     val e = intercept[IllegalArgumentException](server.start())
     assert(e.getMessage === "should fail")
+
+    conf
+      .set("kyuubi.test.server.should.fail", "false")
+      .set("kyuubi.test.backend.should.fail", "true")
+    val server1 = new NoopServer()
+    server1.initialize(conf)
+    val e1 = intercept[KyuubiException](server1.start())
+    assert(e1.getMessage === "Failed to Start noop")
+    assert(e1.getCause.getMessage === "should fail backend")
   }
 }
