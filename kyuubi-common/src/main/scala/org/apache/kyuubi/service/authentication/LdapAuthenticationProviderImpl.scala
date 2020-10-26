@@ -24,6 +24,7 @@ import javax.security.sasl.AuthenticationException
 import org.apache.commons.lang.StringUtils
 
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.ServiceUtils
 
 class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticationProvider {

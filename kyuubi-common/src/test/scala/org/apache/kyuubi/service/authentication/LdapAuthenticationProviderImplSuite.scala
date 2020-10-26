@@ -41,6 +41,7 @@ import org.apache.mina.util.AvailablePortFinder
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 
 class LdapAuthenticationProviderImplSuite extends KyuubiFunSuite {
 
