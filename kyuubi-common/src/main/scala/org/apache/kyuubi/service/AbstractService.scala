@@ -63,6 +63,7 @@ abstract class AbstractService(serviceName: String) extends Service with Logging
   override def stop(): Unit = {
     state match {
       case LATENT | INITIALIZED | STOPPED =>
+        warn(s"Service[$serviceName] is not started($state) yet.")
       case _ =>
         ensureCurrentState(STARTED)
         changeState(STOPPED)
@@ -112,9 +113,7 @@ abstract class AbstractService(serviceName: String) extends Service with Logging
   private def ensureCurrentState(currentState: ServiceState): Unit = {
     if (state ne currentState) {
       throw new IllegalStateException(
-        s"""
-           |For this operation, the current service state must be $currentState instead of $state
-         """.stripMargin)
+        s"For this operation, the current service state must be $currentState instead of $state")
     }
   }
 
