@@ -57,7 +57,7 @@ install:
 #        - build/mvn --no-transfer-progress clean verify -pl :kyuubi-common,:kyuubi-ha,:kyuubi-main,:kyuubi-spark-sql-engine,:kyuubi-codecov,:kyuubi-download,:kyuubi-assembly -Dmaven.javadoc.skip=true -B -V
 
 script:
-  - mvn clean verify -pl '!:kyuubi-server,!:kyuubi-thrift' -Dmaven.javadoc.skip=true -B -V
+  - build/mvn clean verify -pl '!:kyuubi-server,!:kyuubi-thrift' -Dmaven.javadoc.skip=true -B -V
 
 after_script:
   - rm -r $HOME/.m2/repository/org/apache/kyuubi

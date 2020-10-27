@@ -59,7 +59,7 @@ class HadoopThriftAuthBridgeServer(secretMgr: KyuubiDelegationTokenManager) {
       null,
       SaslRpcServer.SASL_DEFAULT_REALM,
       saslProps,
-      SaslDigestCallbackHandler(secretMgr))
+      new SaslDigestCallbackHandler(secretMgr))
     factory
   }
 
@@ -69,7 +69,7 @@ class HadoopThriftAuthBridgeServer(secretMgr: KyuubiDelegationTokenManager) {
    * the SASL transport.
    */
   def wrapTransportFactory(transFactory: TTransportFactory): TTransportFactory = {
-    TUGIAssumingTransportFactory(ugi, transFactory)
+    new TUGIAssumingTransportFactory(ugi, transFactory)
   }
 
   /**
@@ -78,14 +78,14 @@ class HadoopThriftAuthBridgeServer(secretMgr: KyuubiDelegationTokenManager) {
    * the SASL transport.
    */
   def wrapProcessor(processor: TProcessor): TProcessor = {
-    TUGIAssumingProcessor(processor, secretMgr, userProxy = true)
+    new TUGIAssumingProcessor(processor, secretMgr, userProxy = true)
   }
 
   /**
    * Wrap a TProcessor to capture the client information like connecting userid, ip etc
    */
   def wrapNonAssumingProcessor(processor: TProcessor): TProcessor = {
-    TUGIAssumingProcessor(processor, secretMgr, userProxy = false)
+    new TUGIAssumingProcessor(processor, secretMgr, userProxy = false)
   }
 
   def getRemoteAddress: InetAddress = REMOTE_ADDRESS.get
@@ -119,7 +119,7 @@ object HadoopThriftAuthBridgeServer {
    * This is used on the server side to assume the server's Principal when accepting
    * clients.
    */
-  case class TUGIAssumingTransportFactory(
+  class TUGIAssumingTransportFactory(
       ugi: UserGroupInformation,
       wrapped: TTransportFactory) extends TTransportFactory {
 
@@ -139,7 +139,7 @@ object HadoopThriftAuthBridgeServer {
    *
    * This is used on the server side to set the UGI for each specific call.
    */
-  case class TUGIAssumingProcessor(
+  class TUGIAssumingProcessor(
       wrapped: TProcessor,
       secretMgr: KyuubiDelegationTokenManager,
       userProxy: Boolean) extends TProcessor with Logging {
@@ -204,7 +204,7 @@ object HadoopThriftAuthBridgeServer {
   /**
    * From Apache Hive
    */
-  case class SaslDigestCallbackHandler(secretMgr: KyuubiDelegationTokenManager)
+  class SaslDigestCallbackHandler(secretMgr: KyuubiDelegationTokenManager)
     extends CallbackHandler with Logging {
 
     def getPasswd(identifer: KyuubiDelegationTokenIdentifier): Array[Char] = {

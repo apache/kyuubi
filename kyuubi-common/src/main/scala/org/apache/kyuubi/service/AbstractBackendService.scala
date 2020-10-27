@@ -49,21 +49,9 @@ abstract class AbstractBackendService(name: String)
 
   override def executeStatement(
       sessionHandle: SessionHandle,
-      statement: String): OperationHandle = {
-    sessionManager.getSession(sessionHandle).executeStatement(statement)
-  }
-
-  override def executeStatement(
-      sessionHandle: SessionHandle,
       statement: String,
       queryTimeout: Long): OperationHandle = {
     sessionManager.getSession(sessionHandle).executeStatement(statement, queryTimeout)
-  }
-
-  override def executeStatementAsync(
-      sessionHandle: SessionHandle,
-      statement: String): OperationHandle = {
-    sessionManager.getSession(sessionHandle).executeStatementAsync(statement)
   }
 
   override def executeStatementAsync(
