@@ -128,7 +128,7 @@ This file is divided into 3 sections:
 
   <check level="error" class="org.scalastyle.scalariform.EnsureSingleSpaceAfterTokenChecker" enabled="true">
     <parameters>
-     <parameter name="tokens">ARROW, EQUALS, COMMA, COLON, IF, ELSE, DO, WHILE, FOR, MATCH, TRY, CATCH, FINALLY, LARROW, RARROW</parameter>
+     <parameter name="tokens">ARROW, EQUALS, COMMA,s,$%f,$%d,$%s, COLON, IF, ELSE, DO, WHILE, FOR, MATCH, TRY, CATCH, FINALLY, LARROW, RARROW</parameter>
     </parameters>
   </check>
 
