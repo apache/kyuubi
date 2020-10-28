@@ -21,7 +21,7 @@ The number of user concurrency and the size of your cluster may be two major ind
 Load balancing aims to optimize all Kyuubi service units usage, maximize throughput, minimize response time, and avoid overload of a single unit. Using multiple Kyuubi service units with load balancing instead of a single unit may increase reliability and availability through redundancy. 
 
 <div style="text-align: center">
-    <img style="zoom: 1.00" src="./imgs/ha.png" />
+    <img style="zoom: 1.00" src="../_images/ha.png" />
 </div>
 
 With Hive JDBC Driver, a client can specify service discovery mode in JDBC connection string, i.e. `serviceDiscoveryMode=zooKeeper;` and set `zooKeeperNameSpace=kyuubiserver;`, then it can randomly pick one of the Kyuubi service uris from the specified ZooKeeper address in the `/kyuubiserver` path.
