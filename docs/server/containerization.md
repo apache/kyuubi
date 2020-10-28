@@ -12,9 +12,7 @@ service serving in YARN Container.
 
 <h2 id="1">Service Model</h2>
  
-<div style="text-align: center">
-     <img style="zoom: 1.00" src="./imgs/containerization.png" />
-</div>
+![](../imgs/containerization.png)
 
 The above picture shows the whole architecture for Kyuubi containerization. The key concept is simple and obvious, which runs Kyuubi server as YARN container and serve the JDBC/ODBC client remotely. In such an deployment mode, we do not need to configure or even make some customizations for some complicated situations.
 
@@ -61,15 +59,11 @@ $ bin/start-kyuubi.sh \
 
 At last, a KYUUBI type YARN application named KYUUBI SERVER[version] will be created on the YARN cluster. If we go to the ResourceManager UI, we may see somme thing as follow, 
 
-<div style="text-align: center">
-     <img style="zoom: 1.00" src="./imgs/kyuubi_server_on_yarn.png" />
-</div>
+![](../imgs/kyuubi_server_on_yarn.png)
 
 And also, the server log is available to look up through the ApplicationMaster page.
 
-<div style="text-align: center">
-     <img style="zoom: 1.00" src="./imgs/kyuubi_server_on_yarn_log.png" />
-</div>
+![](../imgs/kyuubi_server_on_yarn_log.png)
 
 ## Additional Documentations
 [Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)  

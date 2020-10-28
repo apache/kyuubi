@@ -23,13 +23,11 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 import recommonmark
 from recommonmark.transform import AutoStructify
 from recommonmark.parser import CommonMarkParser
-source_parsers = {
-    '.md': CommonMarkParser,
-}
+# source_parsers = {
+#     '.md': CommonMarkParser,
+# }
 
 source_suffix = ['.rst', '.md']
-
-
 
 # -- Project information -----------------------------------------------------
 
@@ -98,5 +96,6 @@ def setup(app):
     app.add_config_value('recommonmark_config', {
         'url_resolver': lambda url: github_doc_root + url,
         'auto_toc_tree_section': 'Contents',
+        'enable_eval_rst': True,
     }, True)
     app.add_transform(AutoStructify)

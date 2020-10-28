@@ -1,4 +1,3 @@
-
 Quick Start
 ===========
 
@@ -6,4 +5,4 @@ Quick Start
     :maxdepth: 2
     :numbered: 2
 
-     building
+    building
