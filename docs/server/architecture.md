@@ -20,9 +20,7 @@ of HiveServer2, which can be found at [HiveServer2 Thrift API](https://cwiki.apa
 as the client-server communication mechanism, and a user session level `SparkContext` instantiating / registering / caching / recycling
 mechanism to implement multi-tenant functionality.
 
-<div style="text-align: center">
-    <img style="zoom: 0.88" src="./imgs/kyuubi_architecture.png" />
-</div>
+![](../imgs/kyuubi_architecture.png)
 
 <h2 id="1.1">Unified Interface</h2>
 
@@ -113,9 +111,7 @@ spark.kyuubi.<br />ha.zk.namespace|kyuubiserver|The parent node in ZooKeeper use
 
 Kyuubi's internal is very simple to understand, which is shown as the picture below. We may take about it more detailly later.
 
-<div style="text-align: center">
-    <img style="zoom: 1.00" src="./imgs/kyuubi_internal.png" />
-</div>
+![](../imgs/kyuubi_internal.png)
 
 ## Additional Documentations
 

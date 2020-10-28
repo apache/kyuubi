@@ -20,9 +20,7 @@ The number of user concurrency and the size of your cluster may be two major ind
 
 Load balancing aims to optimize all Kyuubi service units usage, maximize throughput, minimize response time, and avoid overload of a single unit. Using multiple Kyuubi service units with load balancing instead of a single unit may increase reliability and availability through redundancy. 
 
-<div style="text-align: center">
-    <img style="zoom: 1.00" src="../_images/ha.png" />
-</div>
+![](../imgs/ha.png)
 
 With Hive JDBC Driver, a client can specify service discovery mode in JDBC connection string, i.e. `serviceDiscoveryMode=zooKeeper;` and set `zooKeeperNameSpace=kyuubiserver;`, then it can randomly pick one of the Kyuubi service uris from the specified ZooKeeper address in the `/kyuubiserver` path.
 
@@ -32,9 +30,7 @@ When we set `spark.kyuubi.ha.enabled` to `true`, load balance mode is activated 
 
 Active/Standby failover enables you to use a standby Kyuubi server to take over the functionality of a failed unit. When the active unit fails, it changes to the standby state after fixed while the standby unit changes to the active state.
 
-<div style="text-align: center">
-    <img style="zoom: 1.00" src="./imgs/ha_failover.png" />
-</div>
+![](../imgs/ha_failover.png)
 
 A client need not to change any of its behaviours to support load balance or failover mode. But because only the active Kyuubi server will expose its service uri to ZooKeeper in `/kyuubiserver`, clients always randomly pick a server from one and the only choice.
 

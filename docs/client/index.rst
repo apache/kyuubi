@@ -1,6 +1,5 @@
-
-Kyuubi Client Documentation
-===========================
+Client Documentation
+====================
 
 .. toctree::
     :maxdepth: 2
