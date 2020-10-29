@@ -17,11 +17,18 @@
 
 package org.apache.kyuubi
 
-import java.io.{File, IOException}
+import java.io.File
+import java.nio.charset.StandardCharsets
 
+import scala.io.Source
+import scala.util.control.NonFatal
+
+import com.google.common.io.Files
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.minikdc.MiniKdc
 import org.apache.hadoop.security.UserGroupInformation
+import org.scalatest.concurrent.Eventually.{eventually, interval, timeout}
+import org.scalatest.time.SpanSugar._
 
 trait KerberizedTestHelper extends KyuubiFunSuite {
   val baseDir: File = Utils.createTempDir(
@@ -35,13 +42,22 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
   if (logger.isDebugEnabled) {
     kdcConf.setProperty(MiniKdc.DEBUG, "true")
   }
-  val kdc = new MiniKdc(kdcConf, baseDir)
-  try {
-    kdc.start()
-  } catch {
-    case e: IOException =>
-      throw new AssertionError("unable to create temporary directory: " + e.getMessage)
+  private var kdc: MiniKdc = _
+
+  eventually(timeout(60.seconds), interval(1.second)) {
+    try {
+      kdc = new MiniKdc(kdcConf, baseDir)
+      kdc.start()
+    } catch {
+      case NonFatal(e) =>
+        if (kdc != null) {
+          kdc.stop()
+          kdc = null
+        }
+        throw e
+    }
   }
+
   private val keytabFile = new File(baseDir, "kyuubi-test.keytab")
 
   protected val testKeytab: String = keytabFile.getAbsolutePath
@@ -49,6 +65,42 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
   protected var testPrincipal = s"client/$hostName"
   kdc.createPrincipal(keytabFile, testPrincipal)
 
+
+  /**
+   * Forked from Apache Spark
+   * In this method we rewrite krb5.conf to make kdc and client use the same enctypes
+   */
+  private def rewriteKrb5Conf(): Unit = {
+    val krb5Conf = Source.fromFile(kdc.getKrb5conf, StandardCharsets.UTF_8.toString).getLines
+    var rewritten = false
+    val addedConfig =
+      addedKrb5Config("default_tkt_enctypes", "aes128-cts-hmac-sha1-96") +
+        addedKrb5Config("default_tgs_enctypes", "aes128-cts-hmac-sha1-96")
+    val rewriteKrb5Conf = krb5Conf.map(s =>
+      if (s.contains("libdefaults")) {
+        rewritten = true
+        s + addedConfig
+      } else {
+        s
+      }).filter(!_.trim.startsWith("#")).mkString(System.lineSeparator())
+
+    val krb5confStr = if (!rewritten) {
+      "[libdefaults]" + addedConfig + System.lineSeparator() +
+        System.lineSeparator() + rewriteKrb5Conf
+    } else {
+      rewriteKrb5Conf
+    }
+
+    kdc.getKrb5conf.delete()
+    Files.write(krb5confStr, kdc.getKrb5conf, StandardCharsets.UTF_8)
+    debug(s"krb5.conf file content: $krb5confStr")
+  }
+
+  private def addedKrb5Config(key: String, value: String): String = {
+    System.lineSeparator() + s"    $key=$value"
+  }
+
+  rewriteKrb5Conf()
   testPrincipal = testPrincipal + "@" + kdc.getRealm
 
   info(s"KerberizedTest Principal: $testPrincipal")
