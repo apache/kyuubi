@@ -23,39 +23,57 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.minikdc.MiniKdc
 import org.apache.hadoop.security.UserGroupInformation
 
-trait KerberizedTestHelper {
-  var kdc: MiniKdc = _
+trait KerberizedTestHelper extends KyuubiFunSuite {
   val baseDir: File = Utils.createTempDir(
     this.getClass.getProtectionDomain.getCodeSource.getLocation.getPath, "kyuubi-kdc").toFile
-
+  val kdcConf = MiniKdc.createConf()
+  val hostName = "localhost"
+  kdcConf.setProperty(MiniKdc.INSTANCE, "KyuubiKrbServer")
+  kdcConf.setProperty(MiniKdc.ORG_NAME, "KYUUBI")
+  kdcConf.setProperty(MiniKdc.ORG_DOMAIN, "COM")
+  kdcConf.setProperty(MiniKdc.KDC_BIND_ADDRESS, hostName)
+  if (logger.isDebugEnabled) {
+    kdcConf.setProperty(MiniKdc.DEBUG, "true")
+  }
+  val kdc = new MiniKdc(kdcConf, baseDir)
   try {
-    val kdcConf = MiniKdc.createConf()
-    kdcConf.setProperty(MiniKdc.INSTANCE, "KyuubiKrbServer")
-    kdcConf.setProperty(MiniKdc.ORG_NAME, "KYUUBI")
-    kdcConf.setProperty(MiniKdc.ORG_DOMAIN, "COM")
-
-    if (kdc == null) {
-      kdc = new MiniKdc(kdcConf, baseDir)
-      kdc.start()
-    }
+    kdc.start()
   } catch {
     case e: IOException =>
       throw new AssertionError("unable to create temporary directory: " + e.getMessage)
+  }
+  private val keytabFile = new File(baseDir, "kyuubi-test.keytab")
+
+  protected val testKeytab: String = keytabFile.getAbsolutePath
+
+  protected var testPrincipal = s"client/$hostName"
+  kdc.createPrincipal(keytabFile, testPrincipal)
+
+  testPrincipal = testPrincipal + "@" + kdc.getRealm
+
+  info(s"KerberizedTest Principal: $testPrincipal")
+  info(s"KerberizedTest Keytab: $testKeytab")
+
+  override def afterAll(): Unit = {
+    kdc.stop()
+    super.afterAll()
   }
 
   def tryWithSecurityEnabled(block: => Unit): Unit = {
     val conf = new Configuration()
     assert(!UserGroupInformation.isSecurityEnabled)
+    val currentUser = UserGroupInformation.getCurrentUser
     val authType = "hadoop.security.authentication"
     try {
       conf.set(authType, "KERBEROS")
-      System.setProperty("java.security.krb5.realm", kdc.getRealm)
+      System.setProperty("java.security.krb5.conf", kdc.getKrb5conf.getAbsolutePath)
       UserGroupInformation.setConfiguration(conf)
       assert(UserGroupInformation.isSecurityEnabled)
       block
     } finally {
       conf.unset(authType)
-      System.clearProperty("java.security.krb5.realm")
+      System.clearProperty("java.security.krb5.conf")
+      UserGroupInformation.setLoginUser(currentUser)
       UserGroupInformation.setConfiguration(conf)
       assert(!UserGroupInformation.isSecurityEnabled)
     }
