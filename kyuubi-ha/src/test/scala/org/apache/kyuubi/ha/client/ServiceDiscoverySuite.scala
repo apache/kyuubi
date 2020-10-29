@@ -27,7 +27,7 @@ import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.server.EmbeddedZkServer
-import org.apache.kyuubi.service.{Serverable, ServiceState}
+import org.apache.kyuubi.service.{NoopServer, Serverable, ServiceState}
 
 class ServiceDiscoverySuite extends KyuubiFunSuite with KerberizedTestHelper {
   val zkServer = new EmbeddedZkServer()
@@ -74,21 +74,15 @@ class ServiceDiscoverySuite extends KyuubiFunSuite with KerberizedTestHelper {
   }
 
   test("publish instance to embedded zookeeper server") {
-    var deleted = false
-    val instance = "kentyao.apache.org:10009"
 
     conf
       .unset(KyuubiConf.SERVER_KEYTAB)
       .unset(KyuubiConf.SERVER_PRINCIPAL)
       .set(HA_ZK_QUORUM, zkServer.getConnectString)
 
-    val server: Serverable = new Serverable("test") {
-      override private[kyuubi] val backendService = null
-
-      override protected def stopServer(): Unit = { deleted = true }
-
-      override def connectionUrl: String = instance
-    }
+    val server: Serverable = new NoopServer()
+    server.initialize(conf)
+    server.start()
 
     val namespace = "kyuubiserver"
     val znodeRoot = s"/$namespace"
@@ -102,15 +96,16 @@ class ServiceDiscoverySuite extends KyuubiFunSuite with KerberizedTestHelper {
       assert(framework.checkExists().forPath(znodeRoot) !== null)
       val children = framework.getChildren.forPath(znodeRoot).asScala
       assert(children.head ===
-        s"serviceUri=$instance;version=$KYUUBI_VERSION;sequence=0000000000")
+        s"serviceUri=${server.connectionUrl};version=$KYUUBI_VERSION;sequence=0000000000")
 
       children.foreach { child =>
         framework.delete().forPath(s"""$znodeRoot/$child""")
       }
       Thread.sleep(5000)
-      assert(deleted, "Post hook called")
       assert(serviceDiscovery.getServiceState === ServiceState.STOPPED)
+      assert(server.getServiceState === ServiceState.STOPPED)
     } finally {
+      server.stop()
       serviceDiscovery.stop()
       framework.close()
     }

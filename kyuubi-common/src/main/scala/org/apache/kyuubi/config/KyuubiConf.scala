@@ -152,16 +152,29 @@ object KyuubiConf {
     .createWithDefault("embedded_zookeeper")
 
   val SERVER_PRINCIPAL: OptionalConfigEntry[String] = buildConf("server.principal")
-    .doc("")
+    .doc("Name of the Kerberos principal.")
     .version("1.0.0")
     .stringConf
     .createOptional
 
   val SERVER_KEYTAB: OptionalConfigEntry[String] = buildConf("server.keytab")
-    .doc("")
+    .doc("Location of Kyuubi server's keytab.")
     .version("1.0.0")
     .stringConf
     .createOptional
+
+  val KINIT_INTERVAL: ConfigEntry[Long] = buildConf("kinit.interval")
+    .doc("How often will Kyuubi server run `kinit -kt [keytab] [princical]` to renew the" +
+      " local Kerberos credentials cache")
+    .version("1.0.0")
+    .timeConf
+    .createWithDefaultString("PT1H")
+
+  val KINIT_MAX_ATTEMPTS: ConfigEntry[Int] = buildConf("kinit.max.attempts")
+    .doc("How many times will `kinit` process retry")
+    .version("1.0.0")
+    .intConf
+    .createWithDefault(10)
 
   val OPERATION_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("operation.idle.timeout")
     .doc("Operation will be closed when it's not accessed for this duration of time")
