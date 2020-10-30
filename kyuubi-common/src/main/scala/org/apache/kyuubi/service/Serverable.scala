@@ -31,20 +31,21 @@ abstract class Serverable(name: String) extends CompositeService(name) {
 
   def connectionUrl: String = frontendService.connectionUrl
 
-  override def initialize(conf: KyuubiConf): Unit = {
+  override def initialize(conf: KyuubiConf): Unit = synchronized {
     addService(backendService)
     addService(frontendService)
     super.initialize(conf)
   }
 
-  override def start(): Unit = {
-    super.start()
-    started.set(true)
+  override def start(): Unit = synchronized {
+    if (!started.getAndSet(true)) {
+      super.start()
+    }
   }
 
   protected def stopServer(): Unit
 
-  override def stop(): Unit = {
+  override def stop(): Unit = synchronized {
     try {
       stopServer()
     } catch {

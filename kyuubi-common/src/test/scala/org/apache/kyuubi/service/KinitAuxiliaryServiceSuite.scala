@@ -51,7 +51,6 @@ class KinitAuxiliaryServiceSuite extends KerberizedTestHelper {
       assert(service.getServiceState === ServiceState.STARTED)
       service.stop()
       assert(service.getServiceState === ServiceState.STOPPED)
-
     }
   }
 

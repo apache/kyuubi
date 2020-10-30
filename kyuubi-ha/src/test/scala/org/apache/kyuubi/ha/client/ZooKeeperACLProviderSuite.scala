@@ -19,9 +19,9 @@ package org.apache.kyuubi.ha.client
 
 import org.apache.zookeeper.ZooDefs
 
-import org.apache.kyuubi.{KerberizedTestHelper, KyuubiFunSuite}
+import org.apache.kyuubi.KerberizedTestHelper
 
-class ZooKeeperACLProviderSuite extends KyuubiFunSuite with KerberizedTestHelper {
+class ZooKeeperACLProviderSuite extends KerberizedTestHelper {
 
   test("acl for zookeeper") {
     val provider = new ZooKeeperACLProvider()
