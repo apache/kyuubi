@@ -35,13 +35,13 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
     this.getClass.getProtectionDomain.getCodeSource.getLocation.getPath, "kyuubi-kdc").toFile
   val kdcConf = MiniKdc.createConf()
   val hostName = "localhost"
-  kdcConf.setProperty(MiniKdc.INSTANCE, "KyuubiKrbServer")
-  kdcConf.setProperty(MiniKdc.ORG_NAME, "KYUUBI")
+  kdcConf.setProperty(MiniKdc.INSTANCE, this.getClass.getSimpleName)
+  kdcConf.setProperty(MiniKdc.ORG_NAME, this.getClass.getSimpleName)
   kdcConf.setProperty(MiniKdc.ORG_DOMAIN, "COM")
   kdcConf.setProperty(MiniKdc.KDC_BIND_ADDRESS, hostName)
-  if (logger.isDebugEnabled) {
-    kdcConf.setProperty(MiniKdc.DEBUG, "true")
-  }
+  kdcConf.setProperty(MiniKdc.KDC_PORT, "0")
+  kdcConf.setProperty(MiniKdc.DEBUG, "true")
+
   private var kdc: MiniKdc = _
 
   eventually(timeout(60.seconds), interval(1.second)) {
@@ -59,9 +59,7 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
   }
 
   private val keytabFile = new File(baseDir, "kyuubi-test.keytab")
-
   protected val testKeytab: String = keytabFile.getAbsolutePath
-
   protected var testPrincipal = s"client/$hostName"
   kdc.createPrincipal(keytabFile, testPrincipal)
 
@@ -93,7 +91,7 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
 
     kdc.getKrb5conf.delete()
     Files.write(krb5confStr, kdc.getKrb5conf, StandardCharsets.UTF_8)
-    debug(s"krb5.conf file content: $krb5confStr")
+    info(s"krb5.conf file content: $krb5confStr")
   }
 
   private def addedKrb5Config(key: String, value: String): String = {
@@ -101,6 +99,7 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
   }
 
   rewriteKrb5Conf()
+
   testPrincipal = testPrincipal + "@" + kdc.getRealm
 
   info(s"KerberizedTest Principal: $testPrincipal")

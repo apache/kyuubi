@@ -23,13 +23,13 @@ import javax.security.auth.login.Configuration
 
 import scala.collection.JavaConverters._
 
-import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION, KyuubiFunSuite}
+import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.server.EmbeddedZkServer
 import org.apache.kyuubi.service.{NoopServer, Serverable, ServiceState}
 
-class ServiceDiscoverySuite extends KyuubiFunSuite with KerberizedTestHelper {
+class ServiceDiscoverySuite extends KerberizedTestHelper {
   val zkServer = new EmbeddedZkServer()
   val conf: KyuubiConf = KyuubiConf()
 
