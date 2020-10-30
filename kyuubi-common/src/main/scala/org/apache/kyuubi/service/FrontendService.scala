@@ -19,6 +19,7 @@ package org.apache.kyuubi.service
 
 import java.net.{InetAddress, ServerSocket}
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
@@ -50,7 +51,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   private var server: Option[TServer] = None
   protected var serverAddr: InetAddress = _
   protected var portNum: Int = _
-  protected var isStarted: Boolean = false
+  protected var isStarted = new AtomicBoolean(false)
 
   private var authFactory: KyuubiAuthenticationFactory = _
   private var hadoopConf: Configuration = _
@@ -112,11 +113,10 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
 
   override def start(): Unit = synchronized {
     super.start()
-    if (!isStarted) {
+    if (!isStarted.getAndSet(true)) {
       val thread = new Thread(this)
       thread.setName(getName)
       thread.start()
-      isStarted = true
     }
   }
 
@@ -130,10 +130,9 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def stop(): Unit = synchronized {
-    if (isStarted) {
+    if (isStarted.getAndSet(false)) {
       server.foreach(_.stop())
       info(this.name + " has stopped")
-      isStarted = false
     }
     super.stop()
   }
