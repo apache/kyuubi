@@ -65,6 +65,7 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinx.ext.mathjax',
     'recommonmark',
+    'sphinx_markdown_tables',
 ]
 
 master_doc = 'index'
