@@ -23,6 +23,8 @@ import javax.security.auth.login.Configuration
 
 import scala.collection.JavaConverters._
 
+import org.apache.zookeeper.ZooDefs
+
 import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
@@ -108,6 +110,21 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
       server.stop()
       serviceDiscovery.stop()
       framework.close()
+    }
+  }
+
+  test("acl for zookeeper") {
+    val provider = new ZooKeeperACLProvider()
+    val acl = provider.getDefaultAcl
+    assert(acl.size() === 1)
+    assert(acl === ZooDefs.Ids.OPEN_ACL_UNSAFE)
+
+    tryWithSecurityEnabled {
+      val acl1 = new ZooKeeperACLProvider().getDefaultAcl
+      assert(acl1.size() === 2)
+      val expected = ZooDefs.Ids.READ_ACL_UNSAFE
+      expected.addAll(ZooDefs.Ids.CREATOR_ALL_ACL)
+      assert(acl1 === expected)
     }
   }
 }
