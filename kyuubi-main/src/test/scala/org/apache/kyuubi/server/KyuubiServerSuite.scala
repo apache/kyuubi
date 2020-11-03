@@ -35,7 +35,7 @@ class KyuubiServerSuite extends KyuubiFunSuite {
 
     server.initialize(conf)
     assert(server.getServiceState === INITIALIZED)
-    val backendService = server.getServices.head.asInstanceOf[KyuubiBackendService]
+    val backendService = server.getServices(1).asInstanceOf[KyuubiBackendService]
     assert(backendService.getServiceState == INITIALIZED)
     assert(backendService.getServices.forall(_.getServiceState === INITIALIZED))
     assert(server.connectionUrl.split(":").length === 2)
