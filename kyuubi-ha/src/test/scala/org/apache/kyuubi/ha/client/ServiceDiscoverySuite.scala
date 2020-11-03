@@ -113,7 +113,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
     }
   }
 
-  test("acl for zookeeper") {
+  ignore("acl for zookeeper") {
     val provider = new ZooKeeperACLProvider()
     val acl = provider.getDefaultAcl
     assert(acl.size() === 1)
