@@ -73,7 +73,8 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
     var rewritten = false
     val addedConfig =
       addedKrb5Config("default_tkt_enctypes", "aes128-cts-hmac-sha1-96") +
-        addedKrb5Config("default_tgs_enctypes", "aes128-cts-hmac-sha1-96")
+        addedKrb5Config("default_tgs_enctypes", "aes128-cts-hmac-sha1-96") +
+    addedKrb5Config("dns_lookup_realm", "true")
     val rewriteKrb5Conf = krb5Conf.map(s =>
       if (s.contains("libdefaults")) {
         rewritten = true
