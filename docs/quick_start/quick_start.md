@@ -1,9 +1,17 @@
+<div align=center>
+
+![](../imgs/kyuubi_logo_simple.png)
+
+</div>
+
 # Getting Started
 
 
 ## Getting Kyuubi
 
-Currently, Kyuubi maintains all releases on GitHub directly. You can get the most recent stable release of Kyuubi here [Kyuubi Release Page](https://github.com/yaooqinn/kyuubi/releases).
+Currently, Kyuubi maintains all releases on GitHub directly. You can get the most recent stable release of Kyuubi here:
+
+[Kyuubi Release Page](https://github.com/yaooqinn/kyuubi/releases)
 
 ## Requirements
 
