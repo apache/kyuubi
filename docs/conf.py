@@ -33,6 +33,7 @@ source_suffix = ['.rst', '.md']
 # -- Project information -----------------------------------------------------
 
 project = 'Kyuubi'
+
 copyright = '''
 Licensed to the Apache Software Foundation (ASF) under one or more
 contributor license agreements.  See the NOTICE file distributed with
@@ -86,6 +87,13 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
+# html_theme_options = {
+#     'logo_only': True
+# }
+
+html_logo = 'imgs/kyuubi_logo_yellow.png'
+
+
 pygments_style = 'sphinx'
 
 # Add any paths that contain custom static files (such as style sheets) here,
