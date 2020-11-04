@@ -75,7 +75,8 @@ object HighAvailabilityConf {
   val HA_ZK_CONN_RETRY_POLICY: ConfigEntry[String] =
     buildConf("ha.zookeeper.connection.retry.policy")
     .doc("The retry policy for connecting to the zookeeper ensemble, all candidates are:" +
-      s" ${RetryPolicies.values.mkString("[", ", ", "]")}")
+      s" ${RetryPolicies.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
+    .version("1.0.0")
     .stringConf
     .checkValues(RetryPolicies.values.map(_.toString))
     .createWithDefault(RetryPolicies.EXPONENTIAL_BACKOFF.toString)

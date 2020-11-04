@@ -42,6 +42,7 @@ class KyuubiConfSuite extends KyuubiFunSuite {
   test("load default config file") {
     val conf = KyuubiConf().loadFileDefaults()
     assert(conf.getOption("kyuubi.yes").get === "yes")
+    assert(conf.getOption("spark.kyuubi.yes").get === "no")
   }
 
 

@@ -38,3 +38,4 @@
 # - SPARK_HOME              Spark distribution which you would like to use in Kyuubi.
 # - SPARK_CONF_DIR          Optional directory where the Spark configuration lives.
 #                           (Default: $SPARK_HOME/conf)
+#

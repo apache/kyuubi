@@ -109,7 +109,7 @@ bin/kyuubi.sh start
 
 During the server starts, it will print all essential environment variables on the screen, you may check whether they are expected.
 
-```
+```logtalk
 Starting Kyuubi Server from /Users/kentyao/kyuubi/kyuubi-1.0.0-SNAPSHOT-bin-spark-3.0.1
 Using kyuubi.sh environment file /Users/kentyao/kyuubi/kyuubi-1.0.0-SNAPSHOT-bin-spark-3.0.1/conf/kyuubi-env.sh to initialize...
 JAVA_HOME: /Library/Java/JavaVirtualMachines/jdk1.8.0_251.jdk/Contents/Home
@@ -154,7 +154,7 @@ and a builtin beeline tool can be found within the pre-built Spark package in th
 
 The command below will tell Kyuubi server to create a session with itself. 
 
-```sql
+```logtalk
 bin/beeline -u 'jdbc:hive2://localhost:10009/'
 Connecting to jdbc:hive2://localhost:10009/
 Connected to: Spark SQL (version 1.0.0-SNAPSHOT)
@@ -190,7 +190,7 @@ Then, you can see 3 processes running in your local environment, including one `
 
 If the beeline session is successfully connected, then you can run any query supported by Spark SQL now. For example,
 
-```sql
+```logtalk
 0: jdbc:hive2://localhost:10009/> select timestamp '2018-11-17';
 2020-11-02 20:51:49.019 INFO operation.ExecuteStatement:
            Spark application name: kyuubi_kentyao_spark_20:44:57.240

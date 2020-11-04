@@ -33,7 +33,8 @@ class SaslQOPSuite extends KyuubiFunSuite {
     conf.set(SASL_QOP, "abc")
     val e = intercept[IllegalArgumentException](conf.get(SASL_QOP))
     assert(e.getMessage ===
-      "The value of kyuubi.sasl.qop should be one of auth, auth-conf, auth-int, but was abc")
+      "The value of kyuubi.authentication.sasl.qop should be one of" +
+        " auth, auth-conf, auth-int, but was abc")
   }
 
 }
