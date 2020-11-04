@@ -57,7 +57,7 @@ class KyuubiSessionImpl(
 
   configureSession()
 
-  private val timeout = sessionConf.get(ENGINE_INIT_TIMEOUT) / 1000
+  private val timeout: Long = sessionConf.get(ENGINE_INIT_TIMEOUT)
   private val zkNamespace = s"$zkNamespacePrefix-$user"
   private val zkPath = ZKPaths.makePath(null, zkNamespace)
   private lazy val zkClient = ServiceDiscovery.startZookeeperClient(sessionConf)
@@ -91,16 +91,15 @@ class KyuubiSessionImpl(
         val builder = new SparkProcessBuilder(user, sessionConf.toSparkPrefixedConf)
         val process = builder.start
         var sh = getServerHost
-        var count = 0
+        val started = System.currentTimeMillis()
         while (sh.isEmpty) {
           if (process.waitFor(1, TimeUnit.SECONDS)) {
             throw builder.getError
           }
-          if (count >= timeout) {
+          if (started + timeout <= System.currentTimeMillis()) {
             process.destroyForcibly()
-            throw KyuubiSQLException("Timed out to launched Spark")
+            throw KyuubiSQLException(s"Timed out($timeout ms) to launched Spark")
           }
-          count += 1
           sh = getServerHost
         }
         val Some((host, port)) = getServerHost
@@ -110,7 +109,7 @@ class KyuubiSessionImpl(
 
   private def openSession(host: String, port: Int): Unit = {
     val passwd = Option(password).getOrElse("anonymous")
-    val loginTimeout = sessionConf.get(SessionConf.ENGINE_LOGIN_TIMEOUT)
+    val loginTimeout = sessionConf.get(ENGINE_LOGIN_TIMEOUT).toInt
     transport = PlainSASLHelper.getPlainTransport(
       user, passwd, new TSocket(host, port, loginTimeout))
     if (!transport.isOpen) transport.open()

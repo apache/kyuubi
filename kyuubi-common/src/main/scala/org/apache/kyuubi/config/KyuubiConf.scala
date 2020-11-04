@@ -35,7 +35,7 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   }
 
   private def loadFromMap(props: Map[String, String] = Utils.getSystemProperties): KyuubiConf = {
-    for ((key, value) <- props if key.startsWith("kyuubi.")) {
+    for ((key, value) <- props if key.startsWith("kyuubi.") || key.startsWith("spark.")) {
       set(key, value)
     }
     this
@@ -139,32 +139,32 @@ object KyuubiConf {
     new ConfigBuilder("kyuubi." + key).onCreate(register)
   }
 
-  val EMBEDDED_ZK_PORT: ConfigEntry[Int] = buildConf("embedded.zookeeper.port")
+  val EMBEDDED_ZK_PORT: ConfigEntry[Int] = buildConf("zookeeper.embedded.port")
     .doc("The port of the embedded zookeeper server")
     .version("1.0.0")
     .intConf
     .createWithDefault(2181)
 
-  val EMBEDDED_ZK_TEMP_DIR: ConfigEntry[String] = buildConf("embedded.zookeeper.directory")
+  val EMBEDDED_ZK_TEMP_DIR: ConfigEntry[String] = buildConf("zookeeper.embedded.directory")
     .doc("The temporary directory for the embedded zookeeper server")
     .version("1.0.0")
     .stringConf
     .createWithDefault("embedded_zookeeper")
 
-  val SERVER_PRINCIPAL: OptionalConfigEntry[String] = buildConf("server.principal")
+  val SERVER_PRINCIPAL: OptionalConfigEntry[String] = buildConf("authentication.principal")
     .doc("Name of the Kerberos principal.")
     .version("1.0.0")
     .stringConf
     .createOptional
 
-  val SERVER_KEYTAB: OptionalConfigEntry[String] = buildConf("server.keytab")
+  val SERVER_KEYTAB: OptionalConfigEntry[String] = buildConf("authentication.keytab")
     .doc("Location of Kyuubi server's keytab.")
     .version("1.0.0")
     .stringConf
     .createOptional
 
   val KINIT_INTERVAL: ConfigEntry[Long] = buildConf("kinit.interval")
-    .doc("How often will Kyuubi server run `kinit -kt [keytab] [princical]` to renew the" +
+    .doc("How often will Kyuubi server run `kinit -kt [keytab] [principal]` to renew the" +
       " local Kerberos credentials cache")
     .version("1.0.0")
     .timeConf
@@ -224,26 +224,29 @@ object KyuubiConf {
   val FRONTEND_MAX_MESSAGE_SIZE: ConfigEntry[Int] =
     buildConf("frontend.max.message.size")
       .doc("Maximum message size in bytes a Kyuubi server will accept.")
+      .version("1.0.0")
       .intConf
       .createWithDefault(104857600)
 
   val FRONTEND_LOGIN_TIMEOUT: ConfigEntry[Long] =
     buildConf("frontend.login.timeout")
       .doc("Timeout for Thrift clients during login to the frontend service.")
+      .version("1.0.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(20).toMillis)
 
   val FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH: ConfigEntry[Long] =
     buildConf("frontend.backoff.slot.length")
       .doc("Time to back off during login to the frontend service.")
+      .version("1.0.0")
       .timeConf
       .createWithDefault(Duration.ofMillis(100).toMillis)
 
   val AUTHENTICATION_METHOD: ConfigEntry[String] = buildConf("authentication")
-    .doc("Client authentication types." +
-      " NONE: no authentication check." +
-      " KERBEROS: Kerberos/GSSAPI authentication." +
-      " LDAP: Lightweight Directory Access Protocol authentication.")
+    .doc("Client authentication types.<ul>" +
+      " <li>NONE: no authentication check.</li>" +
+      " <li>KERBEROS: Kerberos/GSSAPI authentication.</li>" +
+      " <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul>")
     .version("1.0.0")
     .stringConf
     .transform(_.toUpperCase(Locale.ROOT))
@@ -272,38 +275,38 @@ object KyuubiConf {
 
   val DELEGATION_KEY_UPDATE_INTERVAL: ConfigEntry[Long] =
     buildConf("delegation.key.update.interval")
-      .doc("")
+      .doc("unused yet")
       .version("1.0.0")
       .timeConf
       .createWithDefault(Duration.ofDays(1).toMillis)
 
   val DELEGATION_TOKEN_MAX_LIFETIME: ConfigEntry[Long] =
     buildConf("delegation.token.max.lifetime")
-      .doc("")
+      .doc("unused yet")
       .version("1.0.0")
       .timeConf
       .createWithDefault(Duration.ofDays(7).toMillis)
 
   val DELEGATION_TOKEN_GC_INTERVAL: ConfigEntry[Long] =
     buildConf("delegation.token.gc.interval")
-      .doc("")
+      .doc("unused yet")
       .version("1.0.0")
       .timeConf
       .createWithDefault(Duration.ofHours(1).toMillis)
 
   val DELEGATION_TOKEN_RENEW_INTERVAL: ConfigEntry[Long] =
     buildConf("delegation.token.renew.interval")
-      .doc("")
+      .doc("unused yet")
       .version("1.0.0")
       .timeConf
       .createWithDefault(Duration.ofDays(7).toMillis)
 
-  val SASL_QOP: ConfigEntry[String] = buildConf("sasl.qop")
-    .doc("Sasl QOP enable higher levels of protection for Kyuubi communication with clients." +
-      " auth - authentication only (default)" +
-      " auth-int - authentication plus integrity protection" +
-      " auth-conf - authentication plus integrity and confidentiality protectionThis is" +
-      " applicable only if Kyuubi is configured to use Kerberos authentication.")
+  val SASL_QOP: ConfigEntry[String] = buildConf("authentication.sasl.qop")
+    .doc("Sasl QOP enable higher levels of protection for Kyuubi communication with clients.<ul>" +
+      " <li>auth - authentication only (default)</li>" +
+      " <li>auth-int - authentication plus integrity protection</li>" +
+      " <li>auth-conf - authentication plus integrity and confidentiality protection. This is" +
+      " applicable only if Kyuubi is configured to use Kerberos authentication.</li> </ul>")
     .version("1.0.0")
     .stringConf
     .checkValues(SaslQOP.values.map(_.toString))
@@ -315,14 +318,22 @@ object KyuubiConf {
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
   val ENGINE_SPARK_MAIN_RESOURCE: OptionalConfigEntry[String] =
-    buildConf("engine.spark.main.resource")
-      .doc("The connection string for the zookeeper ensemble")
+    buildConf("session.engine.spark.main.resource")
+      .doc("The package used to create Spark SQL engine remote application. If it is undefined," +
+        " Kyuubi will use the default")
       .version("1.0.0")
       .stringConf
       .createOptional
 
-  val ENGINE_INIT_TIMEOUT: ConfigEntry[Long] = buildConf("engine.initialize.timeout")
+  val ENGINE_LOGIN_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.login.timeout")
+    .doc("The timeout(ms) of creating the connection to remote sql query engine")
+    .version("1.0.0")
+    .timeConf
+    .createWithDefault(Duration.ofSeconds(15).toMillis)
+
+  val ENGINE_INIT_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.initialize.timeout")
     .doc("Timeout for starting the background engine, e.g. SparkSQLEngine.")
+    .version("1.0.0")
     .timeConf
     .createWithDefault(Duration.ofSeconds(60).toMillis)
 }
