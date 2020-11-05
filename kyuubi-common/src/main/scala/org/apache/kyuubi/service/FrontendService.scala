@@ -462,6 +462,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     try {
       val operationHandle = OperationHandle(req.getOperationHandle)
       val orientation = FetchOrientation.getFetchOrientation(req.getOrientation)
+      // 1 means fetching log
       val fetchLog = req.getFetchType == 1
       val maxRows = req.getMaxRows.toInt
       val rowSet = be.fetchResults(operationHandle, orientation, maxRows, fetchLog)

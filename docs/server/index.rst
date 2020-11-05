@@ -10,7 +10,6 @@ Server Documentation
     architecture
     authentication
     authorization
-    containerization
     deploy
     high_availability_guide
     metrics
