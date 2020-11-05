@@ -1,3 +1,4 @@
+<script async defer src="https://buttons.github.io/buttons.js"></script>
 <div align=center>
 
 ![](../imgs/kyuubi_logo_simple.png)
@@ -11,7 +12,7 @@
 
 Currently, Kyuubi maintains all releases on GitHub directly. You can get the most recent stable release of Kyuubi here:
 
-[Kyuubi Release Page](https://github.com/yaooqinn/kyuubi/releases)
+<a class="github-button" href="https://github.com/yaooqinn/kyuubi/releases" data-color-scheme="no-preference: light; light: dark; dark: light;" data-icon="octicon-download" data-size="large" aria-label="Download yaooqinn/kyuubi on GitHub">Download</a>
 
 ## Requirements
 

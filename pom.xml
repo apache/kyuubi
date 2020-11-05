@@ -141,6 +141,17 @@
                 <checksumPolicy>warn</checksumPolicy>
             </snapshots>
         </pluginRepository>
+
+        <pluginRepository>
+            <id>sonatype-public-repository</id>
+            <url>https://oss.sonatype.org/content/groups/public</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </pluginRepository>
     </pluginRepositories>
 
     <dependencyManagement>

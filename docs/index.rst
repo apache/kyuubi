@@ -17,10 +17,11 @@ Welcome to Kyuubi's documentation!
 
    overview/index
    quick_start/index
-   server/index
+   deployment/index
    client/index
    integrations/index
-
+   tools/index
+   community/index
 
 Indices and tables
 ==================

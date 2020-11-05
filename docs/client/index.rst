@@ -1,3 +1,6 @@
+.. image:: ../imgs/kyuubi_logo.png
+   :align: center
+
 Client Documentation
 ====================
 
