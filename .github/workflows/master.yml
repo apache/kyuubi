@@ -38,7 +38,6 @@ jobs:
             ${{ runner.os }}-maven-io-
       - name: Build with Maven
         run: |
-#          export MAVEN_OPTS="-Xmx2g -XX:ReservedCodeCacheSize=512m  -Dorg.slf4j.simpleLogger.defaultLogLevel=WARN"
           mvn clean install -Dmaven.javadoc.skip=true -B -V
           bash <(curl -s https://codecov.io/bash)
 #      - name: Codecov kyuubi-common

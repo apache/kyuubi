@@ -48,7 +48,7 @@
                 <executions>
                     <execution>
                         <id>download-spark-release</id>
-                        <phase>package</phase>
+                        <phase>compile</phase>
                         <goals>
                             <goal>wget</goal>
                         </goals>

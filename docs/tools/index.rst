@@ -1,11 +1,14 @@
 .. image:: ../imgs/kyuubi_logo.png
    :align: center
 
-Overview
+Develop Tools
 ===========
 
 .. toctree::
     :maxdepth: 2
-    :numbered: 2
 
-    summary
+    building
+    distribution
+    testing
+    debugging
+    community

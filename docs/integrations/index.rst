@@ -1,3 +1,5 @@
+.. image:: ../imgs/kyuubi_logo.png
+   :align: center
 
 Integrations
 ===========================

@@ -27,7 +27,7 @@ import org.apache.kyuubi.ha.HighAvailabilityConf
 
 class AllKyuubiConfiguration extends KyuubiFunSuite {
 
-  private val markdown = Paths.get("..", "docs", "server", "settings.md").toAbsolutePath
+  private val markdown = Paths.get("..", "docs", "deployment", "settings.md").toAbsolutePath
 
   private val writer = Files.newBufferedWriter(
     markdown, StandardCharsets.UTF_8,

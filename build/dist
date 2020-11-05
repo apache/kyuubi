@@ -35,13 +35,14 @@ NAME=none
 MVN="$KYUUBI_HOME/build/mvn"
 
 function usage {
-  echo "./build/dist - Tool for making binary distributions of Kyuubi Server"
+  set +x
+  echo "./build/dist - Tool for making binary distributions of Kyuubi"
   echo ""
   echo "Usage:"
   echo "+------------------------------------------------------+"
   echo "| ./build/dist [--name] [--tgz] <maven build options>  |"
   echo "+------------------------------------------------------+"
-  echo "name: -  custom binary name"
+  echo "name: -  custom binary name, using project version if undefined"
   echo "tgz:  -  whether to make a whole bundled package"
   echo ""
 }
