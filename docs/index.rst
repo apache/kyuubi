@@ -23,9 +23,3 @@ Welcome to Kyuubi's documentation!
    tools/index
    community/index
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
