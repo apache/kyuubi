@@ -6,7 +6,8 @@
 
 # Trouble Shooting
 
-## java.lang.UnsupportedClassVersionError .. Unsupported major.minor version 52.0
+## Common Issues
+### java.lang.UnsupportedClassVersionError .. Unsupported major.minor version 52.0
 ```java
 Exception in thread "main" java.lang.UnsupportedClassVersionError: org/apache/kyuubi/server/KyuubiServer : Unsupported major.minor version 52.0
 	at java.lang.ClassLoader.defineClass1(Native Method)
@@ -49,3 +50,21 @@ To fix this problem you should export `JAVA_HOME` w/ a compatible one in `conf/k
 ```shell script
 echo "export JAVA_HOME=/path/to/jdk1.8.0_251" >> conf/kyuubi-env.sh
 ```
+
+### org.apache.spark.SparkException: When running with master 'yarn' either HADOOP_CONF_DIR or YARN_CONF_DIR must be set in the environment
+
+```java
+Exception in thread "main" org.apache.spark.SparkException: When running with master 'yarn' either HADOOP_CONF_DIR or YARN_CONF_DIR must be set in the environment.
+	at org.apache.spark.deploy.SparkSubmitArguments.error(SparkSubmitArguments.scala:630)
+	at org.apache.spark.deploy.SparkSubmitArguments.validateSubmitArguments(SparkSubmitArguments.scala:270)
+	at org.apache.spark.deploy.SparkSubmitArguments.validateArguments(SparkSubmitArguments.scala:233)
+	at org.apache.spark.deploy.SparkSubmitArguments.<init>(SparkSubmitArguments.scala:119)
+	at org.apache.spark.deploy.SparkSubmit$$anon$2$$anon$3.<init>(SparkSubmit.scala:990)
+	at org.apache.spark.deploy.SparkSubmit$$anon$2.parseArguments(SparkSubmit.scala:990)
+	at org.apache.spark.deploy.SparkSubmit.doSubmit(SparkSubmit.scala:85)
+	at org.apache.spark.deploy.SparkSubmit$$anon$2.doSubmit(SparkSubmit.scala:1007)
+	at org.apache.spark.deploy.SparkSubmit$.main(SparkSubmit.scala:1016)
+	at org.apache.spark.deploy.SparkSubmit.main(SparkSubmit.scala)
+```
+
+When Kyuubi gets the `spark.master=yarn`, `HADOOP_CONF_DIR` should also be exported in `$KYUUBI_HOME/conf/kyuubi-env.sh`
