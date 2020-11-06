@@ -119,6 +119,8 @@ class FrontendServiceSuite extends KyuubiFunSuite {
       val cause = KyuubiSQLException.toCause(resp1.getStatus.getInfoMessages.asScala)
       assert(cause.isInstanceOf[KyuubiSQLException])
       assert(cause.getMessage === "Asked to fail")
+
+      assert(resp1.getStatus.getErrorMessage === "Asked to fail")
     }
   }
 

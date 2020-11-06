@@ -58,13 +58,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       setSession(handle, sessionImpl)
       handle
     } catch {
-      case NonFatal(e) =>
+      case e: Throwable =>
         try {
           sessionImpl.close()
         } catch {
           case t: Throwable => warn(s"Error closing session $handle for $user", t)
         }
-        throw KyuubiSQLException(s"Error opening session $handle for $user", e)
+        throw KyuubiSQLException(s"Error opening session $handle for $user due to ${e.getMessage}",
+          e)
     }
   }
 }

@@ -9,3 +9,4 @@ Overview
     :numbered: 2
 
     summary
+    kyuubi_vs_hive
