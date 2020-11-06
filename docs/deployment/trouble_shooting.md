@@ -24,7 +24,7 @@ Exception in thread "main" java.lang.UnsupportedClassVersionError: org/apache/ky
 	at sun.launcher.LauncherHelper.checkAndLoadMain(LauncherHelper.java:482)
 ```
 
-Firstly, you should check the version of Java JRE used to run Kyuubi is actually matched with the version of Java compiler used to build Kyuubi are compatible.
+Firstly, you should check the version of Java JRE used to run Kyuubi is actually matched with the version of Java compiler used to build Kyuubi.
 
 ```bash
 $ java -version
