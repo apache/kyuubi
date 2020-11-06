@@ -15,3 +15,4 @@ Deploying Kyuubi
     deploy
     high_availability_guide
     metrics
+    trouble_shooting
