@@ -132,17 +132,21 @@ class KyuubiSessionImpl(
 
   override def close(): Unit = {
     super.close()
-    val req = new TCloseSessionReq(remoteSessionHandle)
+    sessionManager.operationManager.removeConnection(handle)
     try {
-      client.CloseSession(req)
+      if (remoteSessionHandle != null) {
+        val req = new TCloseSessionReq(remoteSessionHandle)
+        client.CloseSession(req)
+      }
     } catch {
       case e: TException =>
         throw KyuubiSQLException("Error while cleaning up the engine resources", e)
     } finally {
       client = null
-      transport.close()
+      if (transport != null) {
+        transport.close()
+      }
     }
-
     zkClient.close()
   }
 }
