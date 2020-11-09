@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.ha
 
+import org.apache.hadoop.security.UserGroupInformation
+
 import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf}
 import org.apache.kyuubi.ha.client.RetryPolicies
 
@@ -36,6 +38,13 @@ object HighAvailabilityConf {
     .version("1.0.0")
     .stringConf
     .createWithDefault("kyuubi")
+
+  val HA_ZK_ACL_ENABLED: ConfigEntry[Boolean] =
+    buildConf("ha.zookeeper.acl.enabled")
+      .doc("Set to true if the zookeeper ensemble is kerberized")
+      .version("1.0.0")
+      .booleanConf
+      .createWithDefault(UserGroupInformation.isSecurityEnabled)
 
   val HA_ZK_CONN_MAX_RETRIES: ConfigEntry[Int] =
     buildConf("ha.zookeeper.connection.max.retries")

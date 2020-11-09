@@ -47,7 +47,7 @@ Build flags:
 
 To fix this problem you should export `JAVA_HOME` w/ a compatible one in `conf/kyuubi-env.sh`
 
-```shell script
+```bash
 echo "export JAVA_HOME=/path/to/jdk1.8.0_251" >> conf/kyuubi-env.sh
 ```
 
@@ -67,4 +67,90 @@ Exception in thread "main" org.apache.spark.SparkException: When running with ma
 	at org.apache.spark.deploy.SparkSubmit.main(SparkSubmit.scala)
 ```
 
-When Kyuubi gets the `spark.master=yarn`, `HADOOP_CONF_DIR` should also be exported in `$KYUUBI_HOME/conf/kyuubi-env.sh`
+When Kyuubi gets the `spark.master=yarn`, `HADOOP_CONF_DIR` should also be exported in `$KYUUBI_HOME/conf/kyuubi-env.sh`.
+
+To fix this problem you should export `HADOOP_CONF_DIR` to the folder that contains the hadoop client settings in `conf/kyuubi-env.sh`.
+
+```bash
+echo "export HADOOP_CONF_DIR=/path/to/hadoop/conf" >> conf/kyuubi-env.sh
+```
+
+
+### javax.security.sasl.SaslException: GSS initiate failed [Caused by GSSException: No valid credentials provided (Mechanism level: Failed to find any Kerberos tgt)];
+
+
+### org.apache.hadoop.security.AccessControlException: Permission denied: user=hzyanqin, access=WRITE, inode="/user":hdfs:hdfs:drwxr-xr-x
+
+```java
+org.apache.hadoop.security.AccessControlException: Permission denied: user=hzyanqin, access=WRITE, inode="/user":hdfs:hdfs:drwxr-xr-x
+	at org.apache.hadoop.hdfs.server.namenode.FSPermissionChecker.check(FSPermissionChecker.java:350)
+	at org.apache.hadoop.hdfs.server.namenode.FSPermissionChecker.checkPermission(FSPermissionChecker.java:251)
+	at org.apache.ranger.authorization.hadoop.RangerHdfsAuthorizer$RangerAccessControlEnforcer.checkPermission(RangerHdfsAuthorizer.java:306)
+	at org.apache.hadoop.hdfs.server.namenode.FSPermissionChecker.checkPermission(FSPermissionChecker.java:189)
+	at org.apache.hadoop.hdfs.server.namenode.FSDirectory.checkPermission(FSDirectory.java:1767)
+	at org.apache.hadoop.hdfs.server.namenode.FSDirectory.checkPermission(FSDirectory.java:1751)
+	at org.apache.hadoop.hdfs.server.namenode.FSDirectory.checkAncestorAccess(FSDirectory.java:1710)
+	at org.apache.hadoop.hdfs.server.namenode.FSDirMkdirOp.mkdirs(FSDirMkdirOp.java:60)
+	at org.apache.hadoop.hdfs.server.namenode.FSNamesystem.mkdirs(FSNamesystem.java:3062)
+	at org.apache.hadoop.hdfs.server.namenode.NameNodeRpcServer.mkdirs(NameNodeRpcServer.java:1156)
+	at org.apache.hadoop.hdfs.protocolPB.ClientNamenodeProtocolServerSideTranslatorPB.mkdirs(ClientNamenodeProtocolServerSideTranslatorPB.java:652)
+	at org.apache.hadoop.hdfs.protocol.proto.ClientNamenodeProtocolProtos$ClientNamenodeProtocol$2.callBlockingMethod(ClientNamenodeProtocolProtos.java)
+	at org.apache.hadoop.ipc.ProtobufRpcEngine$Server$ProtoBufRpcInvoker.call(ProtobufRpcEngine.java:503)
+	at org.apache.hadoop.ipc.RPC$Server.call(RPC.java:989)
+	at org.apache.hadoop.ipc.Server$RpcCall.run(Server.java:871)
+	at org.apache.hadoop.ipc.Server$RpcCall.run(Server.java:817)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1893)
+	at org.apache.hadoop.ipc.Server$Handler.run(Server.java:2606)
+
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at sun.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:62)
+	at sun.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.lang.reflect.Constructor.newInstance(Constructor.java:423)
+	at org.apache.hadoop.ipc.RemoteException.instantiateException(RemoteException.java:106)
+	at org.apache.hadoop.ipc.RemoteException.unwrapRemoteException(RemoteException.java:73)
+	at org.apache.hadoop.hdfs.DFSClient.primitiveMkdir(DFSClient.java:3007)
+	at org.apache.hadoop.hdfs.DFSClient.mkdirs(DFSClient.java:2975)
+	at org.apache.hadoop.hdfs.DistributedFileSystem$21.doCall(DistributedFileSystem.java:1047)
+	at org.apache.hadoop.hdfs.DistributedFileSystem$21.doCall(DistributedFileSystem.java:1043)
+	at org.apache.hadoop.fs.FileSystemLinkResolver.resolve(FileSystemLinkResolver.java:81)
+	at org.apache.hadoop.hdfs.DistributedFileSystem.mkdirsInternal(DistributedFileSystem.java:1061)
+	at org.apache.hadoop.hdfs.DistributedFileSystem.mkdirs(DistributedFileSystem.java:1036)
+	at org.apache.hadoop.fs.FileSystem.mkdirs(FileSystem.java:1881)
+	at org.apache.hadoop.fs.FileSystem.mkdirs(FileSystem.java:600)
+	at org.apache.spark.deploy.yarn.Client.prepareLocalResources(Client.scala:441)
+	at org.apache.spark.deploy.yarn.Client.createContainerLaunchContext(Client.scala:876)
+	at org.apache.spark.deploy.yarn.Client.submitApplication(Client.scala:196)
+	at org.apache.spark.scheduler.cluster.YarnClientSchedulerBackend.start(YarnClientSchedulerBackend.scala:60)
+	at org.apache.spark.scheduler.TaskSchedulerImpl.start(TaskSchedulerImpl.scala:201)
+	at org.apache.spark.SparkContext.<init>(SparkContext.scala:555)
+	at org.apache.spark.SparkContext$.getOrCreate(SparkContext.scala:2574)
+	at org.apache.spark.sql.SparkSession$Builder.$anonfun$getOrCreate$2(SparkSession.scala:934)
+	at scala.Option.getOrElse(Option.scala:189)
+	at org.apache.spark.sql.SparkSession$Builder.getOrCreate(SparkSession.scala:928)
+	at org.apache.kyuubi.engine.spark.SparkSQLEngine$.createSpark(SparkSQLEngine.scala:72)
+	at org.apache.kyuubi.engine.spark.SparkSQLEngine$.main(SparkSQLEngine.scala:101)
+	at org.apache.kyuubi.engine.spark.SparkSQLEngine.main(SparkSQLEngine.scala)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.spark.deploy.JavaMainApplication.start(SparkApplication.scala:52)
+	at org.apache.spark.deploy.SparkSubmit.org$apache$spark$deploy$SparkSubmit$$runMain(SparkSubmit.scala:928)
+	at org.apache.spark.deploy.SparkSubmit$$anon$1.run(SparkSubmit.scala:165)
+	at org.apache.spark.deploy.SparkSubmit$$anon$1.run(SparkSubmit.scala:163)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at javax.security.auth.Subject.doAs(Subject.java:422)
+	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1746)
+	at org.apache.spark.deploy.SparkSubmit.doRunMain$1(SparkSubmit.scala:163)
+	at org.apache.spark.deploy.SparkSubmit.submit(SparkSubmit.scala:203)
+	at org.apache.spark.deploy.SparkSubmit.doSubmit(SparkSubmit.scala:90)
+	at org.apache.spark.deploy.SparkSubmit$$anon$2.doSubmit(SparkSubmit.scala:1007)
+	at org.apache.spark.deploy.SparkSubmit$.main(SparkSubmit.scala:1016)
+	at org.apache.spark.deploy.SparkSubmit.main(SparkSubmit.scala)
+```
+
+The user do not have permission to create to Hadoop home dir, which is `/user/hzyanqin` in the case above.
+
+To fix this problem you need to create this directory first and grant ACL permission for `hzyanqin`.

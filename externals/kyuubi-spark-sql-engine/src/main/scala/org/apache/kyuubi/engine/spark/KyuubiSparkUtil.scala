@@ -24,14 +24,18 @@ import org.apache.spark.sql.SparkSession
 object KyuubiSparkUtil {
 
   def diagnostics(spark: SparkSession): String = {
+    val sc = spark.sparkContext
+    val webUrl = sc.getConf.getOption(
+      "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")
+      .orElse(sc.uiWebUrl).getOrElse("")
     s"""
-       |           Spark application name: ${spark.sparkContext.appName}
-       |                 application ID:  ${spark.sparkContext.applicationId}
-       |                 application web UI: ${spark.sparkContext.uiWebUrl.getOrElse("")}
-       |                 master: ${spark.sparkContext.master}
-       |                 deploy mode: ${spark.sparkContext.deployMode}
-       |                 version: ${spark.sparkContext.version}
-       |           Start time: ${Instant.ofEpochMilli(spark.sparkContext.startTime)}
-       |           User: ${spark.sparkContext.sparkUser}""".stripMargin
+       |           Spark application name: ${sc.appName}
+       |                 application ID:  ${sc.applicationId}
+       |                 application web UI: $webUrl
+       |                 master: ${sc.master}
+       |                 deploy mode: ${sc.deployMode}
+       |                 version: ${sc.version}
+       |           Start time: ${Instant.ofEpochMilli(sc.startTime)}
+       |           User: ${sc.sparkUser}""".stripMargin
   }
 }
