@@ -113,18 +113,17 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
     }
   }
 
-  ignore("acl for zookeeper") {
-    val provider = new ZooKeeperACLProvider()
+  test("acl for zookeeper") {
+    val provider = new ZooKeeperACLProvider(conf)
     val acl = provider.getDefaultAcl
     assert(acl.size() === 1)
     assert(acl === ZooDefs.Ids.OPEN_ACL_UNSAFE)
 
-    tryWithSecurityEnabled {
-      val acl1 = new ZooKeeperACLProvider().getDefaultAcl
-      assert(acl1.size() === 2)
-      val expected = ZooDefs.Ids.READ_ACL_UNSAFE
-      expected.addAll(ZooDefs.Ids.CREATOR_ALL_ACL)
-      assert(acl1 === expected)
-    }
+    val conf1 = conf.clone.set(HA_ZK_ACL_ENABLED, true)
+    val acl1 = new ZooKeeperACLProvider(conf1).getDefaultAcl
+    assert(acl1.size() === 2)
+    val expected = ZooDefs.Ids.READ_ACL_UNSAFE
+    expected.addAll(ZooDefs.Ids.CREATOR_ALL_ACL)
+    assert(acl1 === expected)
   }
 }

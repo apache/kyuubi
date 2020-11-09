@@ -36,6 +36,7 @@ object KyuubiServer extends Logging {
       zkServer.start()
       sys.addShutdownHook(zkServer.stop())
       conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
+      conf.set(HA_ZK_ACL_ENABLED, false)
     }
 
     val server = new KyuubiServer()

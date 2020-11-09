@@ -9,10 +9,12 @@ Deploying Kyuubi
     :numbered: 3
 
     settings
+    on_yarn
     architecture
     authentication
     authorization
     deploy
     high_availability_guide
     metrics
+    logging
     trouble_shooting

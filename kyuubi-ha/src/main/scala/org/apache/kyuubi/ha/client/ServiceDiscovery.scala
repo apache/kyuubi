@@ -176,8 +176,6 @@ class ServiceDiscovery private (
 object ServiceDiscovery {
   import RetryPolicies._
 
-  private final val DEFAULT_ACL_PROVIDER = new ZooKeeperACLProvider()
-
   private final lazy val connectionChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor("zk-connection-checker")
 
@@ -203,7 +201,7 @@ object ServiceDiscovery {
       .connectString(connectionStr)
       .sessionTimeoutMs(sessionTimeout)
       .connectionTimeoutMs(connectionTimeout)
-      .aclProvider(DEFAULT_ACL_PROVIDER)
+      .aclProvider(new ZooKeeperACLProvider(conf))
       .retryPolicy(retryPolicy)
       .build()
   }

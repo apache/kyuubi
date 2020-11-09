@@ -134,6 +134,7 @@ kyuubi\.frontend<br>\.worker\.keepalive\.time|<div style='width: 80pt;word-wrap:
 
 Key | Default | Meaning | Since
 --- | --- | --- | ---
+kyuubi\.ha\.zookeeper<br>\.acl\.enabled|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>false</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Set to true if the zookeeper ensemble is kerberized</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.ha\.zookeeper<br>\.connection\.base\.retry<br>\.wait|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>1000</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Initial amount of time to wait between retries to the zookeeper ensemble</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.ha\.zookeeper<br>\.connection\.max<br>\.retries|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>3</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Max retry times for connecting to the zookeeper ensemble</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.ha\.zookeeper<br>\.connection\.max\.retry<br>\.wait|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>30000</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Max amount of time to wait between retries for BONDED_EXPONENTIAL_BACKOFF policy can reach, or max time until elapsed for UNTIL_ELAPSED policy to connect the zookeeper ensemble</div>|<div style='width: 20pt'>1.0.0</div>

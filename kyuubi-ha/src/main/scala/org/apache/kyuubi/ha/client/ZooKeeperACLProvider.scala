@@ -18,11 +18,13 @@
 package org.apache.kyuubi.ha.client
 
 import org.apache.curator.framework.api.ACLProvider
-import org.apache.hadoop.security.UserGroupInformation
 import org.apache.zookeeper.ZooDefs
 import org.apache.zookeeper.data.ACL
 
-class ZooKeeperACLProvider extends ACLProvider {
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.ha.HighAvailabilityConf
+
+class ZooKeeperACLProvider(conf: KyuubiConf) extends ACLProvider {
 
   /**
    * Return the ACL list to use by default.
@@ -31,7 +33,7 @@ class ZooKeeperACLProvider extends ACLProvider {
    */
   override lazy val getDefaultAcl: java.util.List[ACL] = {
     val nodeAcls = new java.util.ArrayList[ACL]
-    if (UserGroupInformation.isSecurityEnabled) {
+    if (conf.get(HighAvailabilityConf.HA_ZK_ACL_ENABLED)) {
       // Read all to the world
       nodeAcls.addAll(ZooDefs.Ids.READ_ACL_UNSAFE)
       // Create/Delete/Write/Admin to the authenticated user
