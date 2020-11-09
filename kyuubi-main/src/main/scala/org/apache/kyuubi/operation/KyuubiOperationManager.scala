@@ -56,6 +56,11 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     handleToTSessionHandle.put(sessionHandle, remoteSessionHandle)
   }
 
+  def removeConnection(sessionHandle: SessionHandle): Unit = {
+    handleToClient.remove(sessionHandle)
+    handleToTSessionHandle.remove(sessionHandle)
+  }
+
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
