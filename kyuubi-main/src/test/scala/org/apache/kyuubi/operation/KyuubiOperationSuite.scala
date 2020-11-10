@@ -17,24 +17,13 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TExecuteStatementReq, TSessionHandle}
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.server.KyuubiServer
 
-import org.apache.kyuubi.session.Session
+class KyuubiOperationSuite extends JDBCTests {
 
-class ExecuteStatement(
-    session: Session,
-    client: TCLIService.Iface,
-    remoteSessionHandle: TSessionHandle,
-    override val statement: String)
-  extends KyuubiOperation(
-    OperationType.EXECUTE_STATEMENT, session, client, remoteSessionHandle) {
+  private val conf = KyuubiConf().set(KyuubiConf.FRONTEND_BIND_PORT, 0)
+  private val server: KyuubiServer = KyuubiServer.startServer(conf)
 
-  override protected def runInternal(): Unit = {
-    try {
-      val req = new TExecuteStatementReq(remoteSessionHandle, statement)
-      val resp = client.ExecuteStatement(req)
-      verifyTStatus(resp.getStatus)
-      _remoteOpHandle = resp.getOperationHandle
-    } catch onError()
-  }
+  override protected def jdbcUrl: String = s"jdbc:hive2://${server.connectionUrl}/;"
 }

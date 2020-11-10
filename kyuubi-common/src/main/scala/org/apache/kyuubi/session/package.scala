@@ -29,18 +29,4 @@ package object session {
   val HIVE_VAR_PREFIX: Regex = """set:hivevar:([^=]+)""".r
   val HIVE_CONF_PREFIX: Regex = """set:hiveconf:([^=]+)""".r
 
-  val SESSION_CHECK_INTERVAL: ConfigEntry[Long] =
-    buildConf("session.check.interval")
-      .doc("The check interval for frontend session/operation timeout.")
-      .timeConf
-      .checkValue(_ > Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
-      .createWithDefault(Duration.ofHours(6).toMillis)
-
-  val SESSION_TIMEOUT: ConfigEntry[Long] =
-    buildConf("session.timeout")
-      .doc("The check interval for frontend session/operation timeout.")
-      .timeConf
-      .checkValue(_ > Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
-      .createWithDefault(Duration.ofHours(6).toMillis)
-
 }

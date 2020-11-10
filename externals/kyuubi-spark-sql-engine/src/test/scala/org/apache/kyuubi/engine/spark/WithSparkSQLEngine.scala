@@ -28,9 +28,10 @@ import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.operation.JDBCTests
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
-trait WithSparkSQLEngine extends KyuubiFunSuite {
+trait WithSparkSQLEngine extends JDBCTests {
 
   val warehousePath = Utils.createTempDir()
   val metastorePath = Utils.createTempDir()
@@ -40,8 +41,6 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
     s"jdbc:derby:;databaseName=$metastorePath;create=true")
   System.setProperty("spark.sql.warehouse.dir", warehousePath.toString)
   System.setProperty("spark.sql.hive.metastore.sharedPrefixes", "org.apache.hive.jdbc")
-
-  protected val user: String = System.getProperty("user.name")
 
   protected val spark: SparkSession = SparkSQLEngine.createSpark()
 
@@ -65,52 +64,6 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
   }
 
   protected def jdbcUrl: String = s"jdbc:hive2://$connectionUrl/;"
-
-
-  protected def withMultipleConnectionJdbcStatement(
-      tableNames: String*)(fs: (Statement => Unit)*): Unit = {
-    val connections = fs.map { _ => DriverManager.getConnection(jdbcUrl, user, "") }
-    val statements = connections.map(_.createStatement())
-
-    try {
-      statements.zip(fs).foreach { case (s, f) => f(s) }
-    } finally {
-      tableNames.foreach { name =>
-        if (name.toUpperCase(Locale.ROOT).startsWith("VIEW")) {
-          statements.head.execute(s"DROP VIEW IF EXISTS $name")
-        } else {
-          statements.head.execute(s"DROP TABLE IF EXISTS $name")
-        }
-      }
-      info("Closing statements")
-      statements.foreach(_.close())
-      info("Closed statements")
-      connections.foreach(_.close())
-      info("Closing connections")
-    }
-  }
-
-  protected def withDatabases(dbNames: String*)(fs: (Statement => Unit)*): Unit = {
-    val connections = fs.map { _ => DriverManager.getConnection(jdbcUrl, user, "") }
-    val statements = connections.map(_.createStatement())
-
-    try {
-      statements.zip(fs).foreach { case (s, f) => f(s) }
-    } finally {
-      dbNames.foreach { name =>
-        statements.head.execute(s"DROP DATABASE IF EXISTS $name")
-      }
-      info("Closing statements")
-      statements.foreach(_.close())
-      info("Closed statements")
-      connections.foreach(_.close())
-      info("Closing connections")
-    }
-  }
-
-  protected def withJdbcStatement(tableNames: String*)(f: Statement => Unit): Unit = {
-    withMultipleConnectionJdbcStatement(tableNames: _*)(f)
-  }
 
   protected def withThriftClient(f: TCLIService.Iface => Unit): Unit = {
     val hostAndPort = connectionUrl.split(":")
