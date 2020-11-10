@@ -93,6 +93,7 @@ abstract class KyuubiOperation(
   }
 
   override def getResultSetSchema: TTableSchema = {
+    assertState(OperationState.FINISHED)
     val req = new TGetResultSetMetadataReq(_remoteOpHandle)
     val resp = client.GetResultSetMetadata(req)
     verifyTStatus(resp.getStatus)

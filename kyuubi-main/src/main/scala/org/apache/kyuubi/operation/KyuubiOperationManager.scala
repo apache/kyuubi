@@ -19,7 +19,7 @@ package org.apache.kyuubi.operation
 
 import java.util.concurrent.ConcurrentHashMap
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TFetchResultsReq, TRowSet, TSessionHandle}
+import org.apache.hive.service.rpc.thrift.{TCLIService, TFetchResultsReq, TRow, TRowSet, TSessionHandle}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -149,12 +149,18 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     val operation = getOperation(opHandle).asInstanceOf[KyuubiOperation]
     val client = getThriftClient(operation.getSession.handle)
 
-    val req = new TFetchResultsReq()
-    req.setOperationHandle(operation.remoteOpHandle())
-    req.setOrientation(FetchOrientation.toTFetchOrientation(order))
-    req.setMaxRows(maxRows)
-    req.setFetchType(1)
-    val resp = client.FetchResults(req)
-    resp.getResults
+    val tOperationHandle = operation.remoteOpHandle()
+    if (tOperationHandle == null) {
+      new TRowSet(0, new java.util.ArrayList[TRow](0))
+    } else {
+      val req = new TFetchResultsReq()
+      req.setOperationHandle(tOperationHandle)
+      req.setOrientation(FetchOrientation.toTFetchOrientation(order))
+      req.setMaxRows(maxRows)
+      req.setFetchType(1)
+      val resp = client.FetchResults(req)
+      resp.getResults
+    }
+
   }
 }
