@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.time.LocalTime
+import java.time.Instant
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
@@ -50,7 +50,7 @@ object SparkSQLEngine extends Logging {
     sparkConf.setIfMissing("spark.master", "local")
     sparkConf.setIfMissing("spark.ui.port", "0")
 
-    val appName = s"kyuubi_${user}_spark_${LocalTime.now}"
+    val appName = s"kyuubi_${user}_spark_${Instant.now}"
 
     sparkConf.setAppName(appName)
 
