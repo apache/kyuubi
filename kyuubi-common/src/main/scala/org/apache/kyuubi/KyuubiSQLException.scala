@@ -108,14 +108,13 @@ object KyuubiSQLException {
       builder.toString
     }.toList
   }
-
   private def newInstance(className: String, message: String, cause: Throwable): Throwable = {
     try {
       Class.forName(className)
         .getConstructor(classOf[String], classOf[Throwable])
         .newInstance(message, cause).asInstanceOf[Throwable]
     } catch {
-      case e: Exception => throw new RuntimeException(className + ":" + message, e)
+      case _: Exception => new RuntimeException(className + ":" + message, cause)
     }
   }
 

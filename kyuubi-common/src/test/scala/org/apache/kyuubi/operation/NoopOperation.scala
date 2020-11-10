@@ -68,7 +68,6 @@ class NoopOperation(typ: OperationType, session: Session, shouldFail: Boolean = 
     tColumnDesc.setTypeDesc(desc)
     tColumnDesc.setComment("comment")
     tColumnDesc.setPosition(0)
-    tColumnDesc
     val schema = new TTableSchema()
     schema.addToColumns(tColumnDesc)
     schema

@@ -93,8 +93,8 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   }
 
   private def startTimeoutChecker(): Unit = {
-    val interval = conf.get(SESSION_CHECK_INTERVAL)
-    val timeout = conf.get(SESSION_TIMEOUT)
+    val interval = conf.get(KyuubiConf.SESSION_CHECK_INTERVAL)
+    val timeout = conf.get(KyuubiConf.SESSION_TIMEOUT)
 
     val checkTask = new Runnable {
       override def run(): Unit = {

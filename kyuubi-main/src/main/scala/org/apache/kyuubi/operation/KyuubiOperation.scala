@@ -40,7 +40,7 @@ abstract class KyuubiOperation(
     }
   }
 
-  protected def onError(action: String = "running"): PartialFunction[Throwable, Unit] = {
+  protected def onError(action: String = "operating"): PartialFunction[Throwable, Unit] = {
     case e: Exception =>
       state.synchronized {
         if (isTerminalState(state)) {
@@ -53,6 +53,7 @@ abstract class KyuubiOperation(
               KyuubiSQLException(s"Error $action $opType: ${e.getMessage}", e)
           }
           setOperationException(ke)
+          throw ke
         }
       }
   }
@@ -93,11 +94,23 @@ abstract class KyuubiOperation(
   }
 
   override def getResultSetSchema: TTableSchema = {
-    assertState(OperationState.FINISHED)
-    val req = new TGetResultSetMetadataReq(_remoteOpHandle)
-    val resp = client.GetResultSetMetadata(req)
-    verifyTStatus(resp.getStatus)
-    resp.getSchema
+    if (_remoteOpHandle == null) {
+      val tColumnDesc = new TColumnDesc()
+      tColumnDesc.setColumnName("Result")
+      val desc = new TTypeDesc
+      desc.addToTypes(TTypeEntry.primitiveEntry(new TPrimitiveTypeEntry(TTypeId.STRING_TYPE)))
+      tColumnDesc.setTypeDesc(desc)
+      tColumnDesc.setPosition(0)
+      val schema = new TTableSchema()
+      schema.addToColumns(tColumnDesc)
+      schema
+    } else {
+      val req = new TGetResultSetMetadataReq(_remoteOpHandle)
+      val resp = client.GetResultSetMetadata(req)
+      verifyTStatus(resp.getStatus)
+      resp.getSchema
+    }
+
   }
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
