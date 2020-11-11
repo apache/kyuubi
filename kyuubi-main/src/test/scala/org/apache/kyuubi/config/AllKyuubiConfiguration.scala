@@ -166,8 +166,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
     writeWithNewLine("  - For [Static SQL Configurations](" +
       "http://spark.apache.org/docs/latest/configuration.html#static-sql-configuration) and" +
       " other spark core configs, e.g. `spark.executor.memory`, they will take affect if there" +
-      " is no existing SQL engine application. Otherwise, they will just be ignored or sometimes" +
-      " fail the connection.")
+      " is no existing SQL engine application. Otherwise, they will just be ignored")
     writeWith2Line("### Via SET Syntax")
     writeWithNewLine("Please refer to the Spark official online documentation for" +
       " [SET Command](http://spark.apache.org/docs/latest/sql-ref-syntax-aux-conf-mgmt-set.html)")

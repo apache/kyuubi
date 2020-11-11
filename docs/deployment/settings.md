@@ -191,7 +191,7 @@ Setting them in the JDBC Connection URL supplies session-specific for each SQL e
 - **Runtime SQL Configuration**
   - For [Runtime SQL Configurations](http://spark.apache.org/docs/latest/configuration.html#runtime-sql-configuration), they will take affect every time
 - **Static SQL and Spark Core Configuration**
-  - For [Static SQL Configurations](http://spark.apache.org/docs/latest/configuration.html#static-sql-configuration) and other spark core configs, e.g. `spark.executor.memory`, they will take affect if there is no existing SQL engine application. Otherwise, they will just be ignored or sometimes fail the connection.
+  - For [Static SQL Configurations](http://spark.apache.org/docs/latest/configuration.html#static-sql-configuration) and other spark core configs, e.g. `spark.executor.memory`, they will take affect if there is no existing SQL engine application. Otherwise, they will just be ignored
 ### Via SET Syntax
 
 Please refer to the Spark official online documentation for [SET Command](http://spark.apache.org/docs/latest/sql-ref-syntax-aux-conf-mgmt-set.html)

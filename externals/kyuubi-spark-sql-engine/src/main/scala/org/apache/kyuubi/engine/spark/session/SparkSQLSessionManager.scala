@@ -54,7 +54,9 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
         case (HIVE_VAR_PREFIX(key), value) => sparkSession.conf.set(key, value)
         case (HIVE_CONF_PREFIX(key), value) => sparkSession.conf.set(key, value)
         case ("use:database", database) => sparkSession.catalog.setCurrentDatabase(database)
-        case (key, value) => sparkSession.conf.set(key, value)
+        case (key, value) if sparkSession.conf.isModifiable(key) =>
+          sparkSession.conf.set(key, value)
+        case (key, _) => warn(s"Spark config $key is static and will be ignored")
       }
       sessionImpl.open()
       operationManager.setSparkSession(handle, sparkSession)
