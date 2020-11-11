@@ -511,17 +511,21 @@ class SparkOperationSuite extends WithSparkSQLEngine {
     }
   }
 
-  test("set session conf - static") {
+  test("set session conf - static and core") {
     withThriftClient { client =>
       val req = new TOpenSessionReq()
       req.setUsername("kentyao")
       req.setPassword("anonymous")
-      val conf = Map("use:database" -> "default", "spark.sql.globalTempDatabase" -> "temp")
+      val queue = "spark.yarn.queue"
+      val conf = Map("use:database" -> "default",
+        "spark.sql.globalTempDatabase" -> "temp",
+        queue -> "new")
       req.setConfiguration(conf.asJava)
       val tOpenSessionResp = client.OpenSession(req)
       val status = tOpenSessionResp.getStatus
-      assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
-      assert(status.getErrorMessage.contains("spark.sql.globalTempDatabase"))
+      assert(status.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      assert(spark.conf.get("spark.sql.globalTempDatabase") === "global_temp")
+      assert(spark.conf.getOption(queue).isEmpty)
     }
   }
 
