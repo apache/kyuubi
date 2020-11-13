@@ -3,7 +3,7 @@ name: Release Kyuubi
 on:
   push:
     tags:
-      - *
+      - '*'
 
 jobs:
   build:
