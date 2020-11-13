@@ -1,14 +1,13 @@
 # Kyuubi™
 
-Kyuubi™ is a unified multi-tenant JDBC interface for large-scale data processing, built on top of [Apache Spark™](http://spark.apache.org/).
+Kyuubi™ is a unified multi-tenant JDBC interface for large-scale data processing and analytics, built on top of [Apache Spark™](http://spark.apache.org/).
 
 ![](../imgs/kyuubi_layers.png)
 
 In general, the complete ecosystem of Kyuubi falls into the hierarchies shown in the above figure, with each layer loosely coupled to the other.
 
-For example,
-
-You can use Kyuubi, Spark and [Apache Iceberg](https://iceberg.apache.org/) to build and manage Data Lake with pure SQL.
+For example, you can use Kyuubi, Spark and [Apache Iceberg](https://iceberg.apache.org/) to build and manage Data Lake with pure SQL for both data processing e.g. ETL, and analytics e.g. BI.
+All workloads can be done on one platform, using one copy of data, with one SQL interface.
 
 Kyuubi provides the following features:
 

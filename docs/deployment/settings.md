@@ -85,7 +85,7 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 #
 # kyuubi.authentication           NONE
 # kyuubi.frontend.bind.port       10009
-
+#
 ## Spark Configurations
 #
 # spark.master                    local
