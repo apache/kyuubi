@@ -17,12 +17,7 @@
 
 package org.apache.kyuubi
 
-import java.time.Duration
-
 import scala.util.matching.Regex
-
-import org.apache.kyuubi.config.ConfigEntry
-import org.apache.kyuubi.config.KyuubiConf.buildConf
 
 package object session {
 
