@@ -57,7 +57,7 @@ The SPA policy also make it possible for you to launch different applications ag
 Kyuubi is built on the Apache Spark, a lightning-fast unified analytics engine.
 
  - **Concurrent execution**: multiple Spark applications work together
- - **Quick response**: long-running Spark applications without startup 
+ - **Quick response**: long-running Spark applications without startup cost
  - **Optimal execution plan**: fully supports Spark SQL Catalyst Optimizer,
 
 ## Authentication & Authorization
