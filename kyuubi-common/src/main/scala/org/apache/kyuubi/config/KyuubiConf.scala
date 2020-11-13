@@ -165,13 +165,13 @@ object KyuubiConf {
     .stringConf
     .createWithDefault("embedded_zookeeper")
 
-  val SERVER_PRINCIPAL: OptionalConfigEntry[String] = buildConf("authentication.principal")
+  val SERVER_PRINCIPAL: OptionalConfigEntry[String] = buildConf("kinit.principal")
     .doc("Name of the Kerberos principal.")
     .version("1.0.0")
     .stringConf
     .createOptional
 
-  val SERVER_KEYTAB: OptionalConfigEntry[String] = buildConf("authentication.keytab")
+  val SERVER_KEYTAB: OptionalConfigEntry[String] = buildConf("kinit.keytab")
     .doc("Location of Kyuubi server's keytab.")
     .version("1.0.0")
     .stringConf
