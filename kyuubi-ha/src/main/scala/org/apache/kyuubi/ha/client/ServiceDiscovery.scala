@@ -224,18 +224,20 @@ object ServiceDiscovery {
    */
   @throws[Exception]
   def setUpZooKeeperAuth(conf: KyuubiConf): Unit = {
-    val keyTabFile = conf.get(KyuubiConf.SERVER_KEYTAB)
-    val maybePrincipal = conf.get(KyuubiConf.SERVER_PRINCIPAL)
-    val kerberized = maybePrincipal.isDefined && keyTabFile.isDefined
-    if (UserGroupInformation.isSecurityEnabled && kerberized) {
-      if (!new File(keyTabFile.get).exists()) {
-        throw new IOException(s"${KyuubiConf.SERVER_KEYTAB.key} does not exists")
+    if (conf.get(HA_ZK_ACL_ENABLED)) {
+      val keyTabFile = conf.get(KyuubiConf.SERVER_KEYTAB)
+      val maybePrincipal = conf.get(KyuubiConf.SERVER_PRINCIPAL)
+      val kerberized = maybePrincipal.isDefined && keyTabFile.isDefined
+      if (UserGroupInformation.isSecurityEnabled && kerberized) {
+        if (!new File(keyTabFile.get).exists()) {
+          throw new IOException(s"${KyuubiConf.SERVER_KEYTAB.key} does not exists")
+        }
+        System.setProperty("zookeeper.sasl.clientconfig", "KyuubiZooKeeperClient")
+        var principal = maybePrincipal.get
+        principal = SecurityUtil.getServerPrincipal(principal, "0.0.0.0")
+        val jaasConf = new JaasConfiguration("KyuubiZooKeeperClient", principal, keyTabFile.get)
+        Configuration.setConfiguration(jaasConf)
       }
-      System.setProperty("zookeeper.sasl.clientconfig", "KyuubiZooKeeperClient")
-      var principal = maybePrincipal.get
-      principal = SecurityUtil.getServerPrincipal(principal, "0.0.0.0")
-      val jaasConf = new JaasConfiguration("KyuubiZooKeeperClient", principal, keyTabFile.get)
-      Configuration.setConfiguration(jaasConf)
     }
   }
 }

@@ -27,6 +27,7 @@ import org.apache.zookeeper.ZooDefs
 
 import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.server.EmbeddedZkServer
 import org.apache.kyuubi.service.{NoopServer, Serverable, ServiceState}
@@ -48,31 +49,6 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
     conf.unset(HA_ZK_QUORUM)
     zkServer.stop()
     super.afterAll()
-  }
-
-  test("set up zookeeper auth") {
-    tryWithSecurityEnabled {
-      val keytab = File.createTempFile("kentyao", ".keytab")
-      val principal = "kentyao/_HOST@apache.org"
-
-      conf.set(KyuubiConf.SERVER_KEYTAB, keytab.getCanonicalPath)
-      conf.set(KyuubiConf.SERVER_PRINCIPAL, principal)
-
-      ServiceDiscovery.setUpZooKeeperAuth(conf)
-      val configuration = Configuration.getConfiguration
-      val entries = configuration.getAppConfigurationEntry("KyuubiZooKeeperClient")
-
-      assert(entries.head.getLoginModuleName === "com.sun.security.auth.module.Krb5LoginModule")
-      val options = entries.head.getOptions.asScala.toMap
-
-      assert(options("principal") ===
-        s"kentyao/${InetAddress.getLocalHost.getCanonicalHostName}@apache.org")
-      assert(options("useKeyTab").toString.toBoolean)
-
-      conf.set(KyuubiConf.SERVER_KEYTAB, keytab.getName)
-      val e = intercept[IOException](ServiceDiscovery.setUpZooKeeperAuth(conf))
-      assert(e.getMessage === s"${KyuubiConf.SERVER_KEYTAB.key} does not exists")
-    }
   }
 
   test("publish instance to embedded zookeeper server") {
@@ -125,5 +101,31 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
     val expected = ZooDefs.Ids.READ_ACL_UNSAFE
     expected.addAll(ZooDefs.Ids.CREATOR_ALL_ACL)
     assert(acl1 === expected)
+  }
+
+  test("set up zookeeper auth") {
+    tryWithSecurityEnabled {
+      val keytab = File.createTempFile("kentyao", ".keytab")
+      val principal = "kentyao/_HOST@apache.org"
+
+      conf.set(KyuubiConf.SERVER_KEYTAB, keytab.getCanonicalPath)
+      conf.set(KyuubiConf.SERVER_PRINCIPAL, principal)
+      conf.set(HighAvailabilityConf.HA_ZK_ACL_ENABLED, true)
+
+      ServiceDiscovery.setUpZooKeeperAuth(conf)
+      val configuration = Configuration.getConfiguration
+      val entries = configuration.getAppConfigurationEntry("KyuubiZooKeeperClient")
+
+      assert(entries.head.getLoginModuleName === "com.sun.security.auth.module.Krb5LoginModule")
+      val options = entries.head.getOptions.asScala.toMap
+
+      assert(options("principal") ===
+        s"kentyao/${InetAddress.getLocalHost.getCanonicalHostName}@apache.org")
+      assert(options("useKeyTab").toString.toBoolean)
+
+      conf.set(KyuubiConf.SERVER_KEYTAB, keytab.getName)
+      val e = intercept[IOException](ServiceDiscovery.setUpZooKeeperAuth(conf))
+      assert(e.getMessage === s"${KyuubiConf.SERVER_KEYTAB.key} does not exists")
+    }
   }
 }
