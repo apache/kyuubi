@@ -21,15 +21,16 @@ import java.sql.{DatabaseMetaData, Date, ResultSet, SQLException, SQLFeatureNotS
 
 import scala.collection.JavaConverters._
 import scala.util.Random
+
 import org.apache.hive.common.util.HiveVersionInfo
 import org.apache.hive.service.cli.HiveSQLException
 import org.apache.hive.service.rpc.thrift._
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
 import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.types._
+
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 class SparkOperationSuite extends WithSparkSQLEngine {
