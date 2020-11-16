@@ -21,16 +21,15 @@ import java.sql.{DatabaseMetaData, Date, ResultSet, SQLException, SQLFeatureNotS
 
 import scala.collection.JavaConverters._
 import scala.util.Random
-
 import org.apache.hive.common.util.HiveVersionInfo
 import org.apache.hive.service.cli.HiveSQLException
 import org.apache.hive.service.rpc.thrift._
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
 import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.types._
-
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
+import org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 class SparkOperationSuite extends WithSparkSQLEngine {
@@ -440,10 +439,16 @@ class SparkOperationSuite extends WithSparkSQLEngine {
 
   test("basic open | execute | close") {
     withThriftClient { client =>
+      val operationManager = engine.backendService.sessionManager.
+        operationManager.asInstanceOf[SparkSQLOperationManager]
+      assert(operationManager.getOpenSparkSessionCount === 0)
+
       val req = new TOpenSessionReq()
       req.setUsername("kentyao")
       req.setPassword("anonymous")
       val tOpenSessionResp = client.OpenSession(req)
+
+      assert(operationManager.getOpenSparkSessionCount === 1)
 
       val tExecuteStatementReq = new TExecuteStatementReq()
       tExecuteStatementReq.setSessionHandle( tOpenSessionResp.getSessionHandle)
@@ -467,6 +472,8 @@ class SparkOperationSuite extends WithSparkSQLEngine {
       tCloseSessionReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
       val tCloseSessionResp = client.CloseSession(tCloseSessionReq)
       assert(tCloseSessionResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+
+      assert(operationManager.getOpenSparkSessionCount === 0)
     }
   }
 
