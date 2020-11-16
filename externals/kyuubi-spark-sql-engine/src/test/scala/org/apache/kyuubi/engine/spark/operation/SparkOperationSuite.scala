@@ -440,10 +440,16 @@ class SparkOperationSuite extends WithSparkSQLEngine {
 
   test("basic open | execute | close") {
     withThriftClient { client =>
+      val operationManager = engine.backendService.sessionManager.
+        operationManager.asInstanceOf[SparkSQLOperationManager]
+      assert(operationManager.getOpenSparkSessionCount === 0)
+
       val req = new TOpenSessionReq()
       req.setUsername("kentyao")
       req.setPassword("anonymous")
       val tOpenSessionResp = client.OpenSession(req)
+
+      assert(operationManager.getOpenSparkSessionCount === 1)
 
       val tExecuteStatementReq = new TExecuteStatementReq()
       tExecuteStatementReq.setSessionHandle( tOpenSessionResp.getSessionHandle)
@@ -467,6 +473,8 @@ class SparkOperationSuite extends WithSparkSQLEngine {
       tCloseSessionReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
       val tCloseSessionResp = client.CloseSession(tCloseSessionReq)
       assert(tCloseSessionResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+
+      assert(operationManager.getOpenSparkSessionCount === 0)
     }
   }
 

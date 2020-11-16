@@ -39,6 +39,13 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
   val operationManager = new SparkSQLOperationManager()
 
+  @volatile
+  private var latestLogout: Long = Long.MaxValue
+
+  def setLogoutTime(time: Long): Unit = latestLogout = time
+
+  def getLogoutTime: Long = latestLogout
+
   override def openSession(
       protocol: TProtocolVersion,
       user: String,
@@ -67,6 +74,12 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
         sessionImpl.close()
         throw KyuubiSQLException(s"Error opening session $handle for $user: ${e.getMessage}", e)
     }
+  }
+
+  override def closeSession(sessionHandle: SessionHandle): Unit = {
+    super.closeSession(sessionHandle)
+    setLogoutTime(System.currentTimeMillis())
+    operationManager.removeSparkSession(sessionHandle)
   }
 
   private def setModifiableConfig(spark: SparkSession, key: String, value: String): Unit = {
