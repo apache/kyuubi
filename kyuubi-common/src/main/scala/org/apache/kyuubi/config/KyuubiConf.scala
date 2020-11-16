@@ -365,15 +365,15 @@ object KyuubiConf {
     .checkValue(_ > Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
     .createWithDefault(Duration.ofHours(6).toMillis)
 
-  val ENGINE_CHECK_INTERVAL: ConfigEntry[Long] = buildConf("engine.check.interval")
+  val ENGINE_CHECK_INTERVAL: ConfigEntry[Long] = buildConf("session.engine.check.interval")
     .doc("The check interval for engine timeout")
     .version("1.0.0")
     .timeConf
     .checkValue(_ > Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
     .createWithDefault(Duration.ofMinutes(10).toMillis)
 
-  val ENGINE_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("engine.idle.timeout")
-    .doc("engine timeout, it will be closed when it's not accessed for this duration")
+  val ENGINE_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.idle.timeout")
+    .doc("engine timeout, the engine will self-terminate when it's not accessed for this duration")
     .version("1.0.0")
     .timeConf
     .createWithDefault(Duration.ofMinutes(30L).toMillis)
