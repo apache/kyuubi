@@ -90,6 +90,7 @@ class KyuubiSessionImpl(
       case None =>
         val builder = new SparkProcessBuilder(user, sessionConf.toSparkPrefixedConf)
         val process = builder.start
+        info(s"Launching SQL engine: $builder")
         var sh = getServerHost
         val started = System.currentTimeMillis()
         while (sh.isEmpty) {
@@ -98,7 +99,7 @@ class KyuubiSessionImpl(
           }
           if (started + timeout <= System.currentTimeMillis()) {
             process.destroyForcibly()
-            throw KyuubiSQLException(s"Timed out($timeout ms) to launched Spark")
+            throw KyuubiSQLException(s"Timed out($timeout ms) to launched Spark with $builder")
           }
           sh = getServerHost
         }
