@@ -51,12 +51,10 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     try {
       val sparkSession = spark.newSession()
       conf.foreach {
-        case (HIVE_VAR_PREFIX(key), value) => sparkSession.conf.set(key, value)
-        case (HIVE_CONF_PREFIX(key), value) => sparkSession.conf.set(key, value)
+        case (HIVE_VAR_PREFIX(key), value) => setModifiableConfig(sparkSession, key, value)
+        case (HIVE_CONF_PREFIX(key), value) => setModifiableConfig(sparkSession, key, value)
         case ("use:database", database) => sparkSession.catalog.setCurrentDatabase(database)
-        case (key, value) if sparkSession.conf.isModifiable(key) =>
-          sparkSession.conf.set(key, value)
-        case (key, _) => warn(s"Spark config $key is static and will be ignored")
+        case (key, value) => setModifiableConfig(sparkSession, key, value)
       }
       sessionImpl.open()
       operationManager.setSparkSession(handle, sparkSession)
@@ -68,6 +66,14 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       case e: Exception =>
         sessionImpl.close()
         throw KyuubiSQLException(s"Error opening session $handle for $user: ${e.getMessage}", e)
+    }
+  }
+
+  private def setModifiableConfig(spark: SparkSession, key: String, value: String): Unit = {
+    if (spark.conf.isModifiable(key)) {
+      spark.conf.set(key, value)
+    } else {
+      warn(s"Spark config $key is static and will be ignored")
     }
   }
 }

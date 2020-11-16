@@ -10,7 +10,6 @@
 Welcome to Kyuubi's documentation!
 ==================================
 
-
 .. toctree::
    :maxdepth: 2
    :glob:

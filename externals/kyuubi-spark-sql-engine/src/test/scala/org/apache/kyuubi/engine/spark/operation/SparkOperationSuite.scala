@@ -519,7 +519,9 @@ class SparkOperationSuite extends WithSparkSQLEngine {
       val queue = "spark.yarn.queue"
       val conf = Map("use:database" -> "default",
         "spark.sql.globalTempDatabase" -> "temp",
-        queue -> "new")
+        queue -> "new",
+        s"set:hiveconf:$queue" -> "newnew",
+        s"set:hivevar:$queue" -> "newnewnew")
       req.setConfiguration(conf.asJava)
       val tOpenSessionResp = client.OpenSession(req)
       val status = tOpenSessionResp.getStatus

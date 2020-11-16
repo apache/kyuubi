@@ -1,0 +1,56 @@
+name: Release Kyuubi
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    name: Create and Publish Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      # We split caches because GitHub Action Cache has a 400MB-size limit.
+      - uses: actions/cache@v1
+        with:
+          path: build
+          key: build-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            build-
+      - uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository/com
+          key: ${{ matrix.scala }}-${{ matrix.hadoop }}-maven-com-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ matrix.scala }}-${{ matrix.hadoop }}-maven-com-
+      - uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository/org
+          key: ${{ matrix.scala }}-${{ matrix.hadoop }}-maven-org-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ matrix.scala }}-${{ matrix.hadoop }}-maven-org-
+      - name: Set up JDK 8
+        uses: actions/setup-java@v1
+        with:
+          java-version: '1.8'
+      - uses: olegtarasov/get-tag@v2
+        id: tagName
+      - name: Make Distribution
+        run: ./build/dist --tgz
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release Kyuubi-${{ steps.tagName.outputs.tag }}
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset
+        uses: alexellis/upload-assets@0.2.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          asset_paths: '["./kyuubi-*tgz"]'

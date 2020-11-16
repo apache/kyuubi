@@ -65,9 +65,13 @@ the QUEUE configured at Kyuubi server side will be used as default.
 
 #### Sizing
 
+Pass the configurations below through the JDBC connection string to set how many instances of Spark executor will be used
+and how many cpus and memory will Spark driver, ApplicationMaster and each executor take.
 
 - | Default | Meaning
 --- | --- | ---
+spark.executor.instances | 1 | The number of executors for static allocation
+spark.executor.cores | 1 | The number of cores to use on each executor
 spark.yarn.am.memory | 512m | Amount of memory to use for the YARN Application Master in client mode
 spark.yarn.am.memoryOverhead | amMemory * 0.10, with minimum of 384 | Amount of non-heap memory to be allocated per am process in client mode
 spark.driver.memory | 1g | Amount of memory to use for the driver process
@@ -75,15 +79,26 @@ spark.driver.memoryOverhead | driverMemory * 0.10, with minimum of 384 | Amount 
 spark.executor.memory | 1g | Amount of memory to use for the executor process
 spark.executor.memoryOverhead | executorMemory * 0.10, with minimum of 384 | Amount of additional memory to be allocated per executor process. This is memory that accounts for things like VM overheads, interned strings other native overheads, etc
 
+It is recommended to use [Dynamic Allocation](http://spark.apache.org/docs/3.0.1/configuration.html#dynamic-allocation) with Kyuubi,
+since the SQL engine will be long-running for a period, execute user's queries from clients aperiodically,
+and the demand for computing resources is not the same for those queries.
+It is better for Spark to release some executors when either the query is lightweight, or the SQL engine is being idled. 
 
-#### 
- 
- 
+
+#### Tuning
+
+You can specify `spark.yarn.archive` or `spark.yarn.jars` to point to a world-readable location that contains Spark jars on HDFS,
+which allows YARN to cache it on nodes so that it doesn't need to be distributed each time an application runs. 
+
 #### Others
 
-Acceptable [Spark properties](http://spark.apache.org/docs/latest/running-on-yarn.html#spark-properties)
+Please refer to [Spark properties](http://spark.apache.org/docs/latest/running-on-yarn.html#spark-properties) to check other acceptable configs.
 
 
+## Kerberos
 
+Kyuubi currently does not support Spark's [YARN-specific Kerberos Configuration](http://spark.apache.org/docs/3.0.1/running-on-yarn.html#kerberos),
+so `spark.kerberos.keytab` and `spark.kerberos.principal` should not use now.
 
-
+Instead, you can schedule a periodically `kinit` process via `crontab` task on the local machine that hosts Kyuubi server or simply use [Kyuubi Kinit](settings.html#kinit)
+ 
