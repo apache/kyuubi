@@ -47,6 +47,12 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
     sessionToSpark.put(sessionHandle, spark)
   }
 
+  def removeSparkSession(sessionHandle: SessionHandle): Unit = {
+    sessionToSpark.remove(sessionHandle)
+  }
+
+  def getOpenSparkSessionCount: Int = sessionToSpark.size()
+
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
