@@ -99,7 +99,8 @@ class KyuubiSessionImpl(
           }
           if (started + timeout <= System.currentTimeMillis()) {
             process.destroyForcibly()
-            throw KyuubiSQLException(s"Timed out($timeout ms) to launched Spark with $builder")
+            throw KyuubiSQLException(s"Timed out($timeout ms) to launched Spark with $builder",
+              builder.getError)
           }
           sh = getServerHost
         }

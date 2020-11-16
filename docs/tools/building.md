@@ -19,7 +19,7 @@ This results in the creation of all sub-modules of Kyuubi project w/o running an
 If you want to test it manually, you can start Kyuubi directly from the Kyuubi project root by running
 
 ```bash
-bin/kyuubi.sh start
+bin/kyuubi start
 ```
 
 ## Building Submodules Individually

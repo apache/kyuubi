@@ -43,7 +43,7 @@ kyuubi-1.0.0-SNAPSHOT-bin-spark-3.0.1
 ├── LICENSE
 ├── RELEASE
 ├── bin
-│   └── kyuubi.sh
+│   └── kyuubi
 ├── conf
 │   ├── kyuubi-defaults.conf
 │   ├── kyuubi-env.sh
@@ -61,7 +61,7 @@ From top to bottom are:
 
 - LICENSE: the [APACHE LICENSE, VERSION 2.0](https://www.apache.org/licenses/LICENSE-2.0) we claim to obey.
 - RELEASE: the build information of this package
-- bin: the entry of the Kyuubi server w/ `kyuubi.sh` as the startup script.
+- bin: the entry of the Kyuubi server w/ `kyuubi` as the startup script.
 - conf: all the defaults used by Kyuubi Server itself or creating session with Spark applications.
 - externals
   - engines: contains all kinds of SQL engines that we support, e.g. Apache Spark, Apache Flink(coming soon).
@@ -105,7 +105,7 @@ The `JAVA_HOME` in `$KYUUBI_HOME/conf/kyuubi-env.sh` will take precedence of oth
 
 
 ```bash
-bin/kyuubi.sh start
+bin/kyuubi start
 ```
 
 During the server starts, it will print all essential environment variables on the screen, you may check whether they are expected.
