@@ -56,10 +56,8 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
         val openSessionCount = sessionManager.getOpenSessionCount
         val logoutTime = sessionManager.getLogoutTime
         val current = System.currentTimeMillis
-        if (logger.isDebugEnabled) {
-          debug(s"timeoutChecker, openSessionCount:$openSessionCount," +
-            s" current time:$current, logoutTime:$logoutTime, idleTimeout:$idleTimeout")
-        }
+        debug(s"timeoutChecker, openSessionCount:$openSessionCount," +
+          s" current time:$current, logoutTime:$logoutTime, idleTimeout:$idleTimeout")
         if (openSessionCount <= 0 && (current - logoutTime) > idleTimeout) {
           info(s"Stopping idle $name[${spark.conf.get("spark.app.name")}]")
           sys.exit(0)
