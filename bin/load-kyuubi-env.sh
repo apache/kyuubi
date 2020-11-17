@@ -24,11 +24,11 @@ export KYUUBI_CONF_DIR="${KYUUBI_CONF_DIR:-"${KYUUBI_HOME}"/conf}"
 KYUUBI_ENV_SH="${KYUUBI_CONF_DIR}"/kyuubi-env.sh
 if [[ -f ${KYUUBI_ENV_SH} ]]; then
    set -a
-   echo "Using kyuubi.sh environment file ${KYUUBI_ENV_SH} to initialize..."
+   echo "Using kyuubi environment file ${KYUUBI_ENV_SH} to initialize..."
    . "${KYUUBI_ENV_SH}"
    set +a
 else
-   echo "Warn: Not find kyuubi.sh environment file ${KYUUBI_ENV_SH}, using default ones..."
+   echo "Warn: Not find kyuubi environment file ${KYUUBI_ENV_SH}, using default ones..."
 fi
 
 export KYUUBI_LOG_DIR="${KYUUBI_LOG_DIR:-"${KYUUBI_HOME}/logs"}"

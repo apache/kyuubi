@@ -15,7 +15,7 @@ We can configure the JDWP agent in `KYUUBI_JAVA_OPTS` for debugging.
 For example,
 ```bash
 KYUUBI_JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005 \
-bin/kyuubi.sh start
+bin/kyuubi start
 ```
 
 In the IDE, you set the corresponding parameters(host&port) in debug configurations, for example,

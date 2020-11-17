@@ -34,8 +34,6 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: '1.8'
-      - uses: olegtarasov/get-tag@v2
-        id: tagName
       - name: Make Distribution
         run: ./build/dist --tgz
       - name: Create Release
@@ -45,7 +43,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
-          release_name: Release Kyuubi-${{ steps.tagName.outputs.tag }}
+          release_name: Release Kyuubi-${{ github.ref }}
           draft: false
           prerelease: false
       - name: Upload Release Asset
@@ -53,4 +51,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          asset_paths: '["./kyuubi-*tgz"]'
+          asset_paths: '["./kyuubi-*tar.gz"]'

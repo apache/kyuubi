@@ -351,31 +351,30 @@ object KyuubiConf {
     .timeConf
     .createWithDefault(Duration.ofSeconds(60).toMillis)
 
-  val SESSION_CHECK_INTERVAL: ConfigEntry[Long] =
-    buildConf("session.check.interval")
-      .doc("The check interval for session timeout.")
-      .timeConf
-      .checkValue(_ > Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
-      .createWithDefault(Duration.ofMinutes(5).toMillis)
+  val SESSION_CHECK_INTERVAL: ConfigEntry[Long] = buildConf("session.check.interval")
+    .doc("The check interval for session timeout.")
+    .version("1.0.0")
+    .timeConf
+    .checkValue(_ > Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
+    .createWithDefault(Duration.ofMinutes(5).toMillis)
 
-  val SESSION_TIMEOUT: ConfigEntry[Long] =
-    buildConf("session.timeout")
-      .doc("session timeout, it will be closed when it's not accessed for this duration")
-      .timeConf
-      .checkValue(_ > Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
-      .createWithDefault(Duration.ofHours(6).toMillis)
+  val SESSION_TIMEOUT: ConfigEntry[Long] = buildConf("session.timeout")
+    .doc("session timeout, it will be closed when it's not accessed for this duration")
+    .version("1.0.0")
+    .timeConf
+    .checkValue(_ > Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
+    .createWithDefault(Duration.ofHours(6).toMillis)
 
-  val ENGINE_CHECK_INTERVAL: ConfigEntry[Long] =
-    buildConf("engine.check.interval")
-      .doc("The check interval for engine timeout")
-      .timeConf
-      .checkValue(_ > Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
-      .createWithDefault(Duration.ofMinutes(10).toMillis)
+  val ENGINE_CHECK_INTERVAL: ConfigEntry[Long] = buildConf("session.engine.check.interval")
+    .doc("The check interval for engine timeout")
+    .version("1.0.0")
+    .timeConf
+    .checkValue(_ > Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
+    .createWithDefault(Duration.ofMinutes(10).toMillis)
 
-  val ENGINE_IDLE_TIMEOUT: ConfigEntry[Long] =
-    buildConf("engine.idle.timeout")
-      .doc("engine timeout, it will be closed when it's not accessed for this duration")
-      .timeConf
-      .createWithDefault(Duration.ofMinutes(30L).toMillis)
-
+  val ENGINE_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.idle.timeout")
+    .doc("engine timeout, the engine will self-terminate when it's not accessed for this duration")
+    .version("1.0.0")
+    .timeConf
+    .createWithDefault(Duration.ofMinutes(30L).toMillis)
 }

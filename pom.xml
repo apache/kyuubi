@@ -31,8 +31,6 @@
         <module>externals/kyuubi-spark-sql-engine</module>
         <module>kyuubi-main</module>
         <module>kyuubi-assembly</module>
-        <module>kyuubi-thrift</module>
-        <module>kyuubi-server</module>
         <module>dev/kyuubi-codecov</module>
     </modules>
     <packaging>pom</packaging>
@@ -56,25 +54,19 @@
     </developers>
 
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <apacheds.version>2.0.0-M15</apacheds.version>
+        <curator.version>2.7.1</curator.version>
+        <hadoop.version>2.7.4</hadoop.version>
+        <hive.version>2.3.7</hive.version>
+        <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
         <java.version>1.8</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <scala.version>2.12.10</scala.version>
         <scalatest.version>3.0.3</scalatest.version>
         <scala.binary.version>2.12</scala.binary.version>
         <maven.version>3.6.3</maven.version>
         <spark.group>org.apache.spark</spark.group>
         <spark.version>3.0.1</spark.version>
-        <spark.scope>provided</spark.scope>
-        <hadoop.version>2.7.4</hadoop.version>
-        <hadoop.deps.scope>provided</hadoop.deps.scope>
-        <hive.version>2.3.7</hive.version>
-        <jpam.version>1.1</jpam.version>
-        <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
-        <apacheds.version>2.0.0-M15</apacheds.version>
-        <curator.version>2.7.1</curator.version>
-        <codahale.metrics.version>3.1.2</codahale.metrics.version>
-        <commons-lang.version>2.6</commons-lang.version>
-        <libthrift.version>0.12.0</libthrift.version>
         <log4j.version>1.7.30</log4j.version>
     </properties>
 
@@ -165,63 +157,6 @@
 
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-client</artifactId>
-                <version>${hadoop.version}</version>
-                <scope>${hadoop.deps.scope}</scope>
-                <exclusions>
-                    <exclusion>
-                        <groupId>asm</groupId>
-                        <artifactId>asm</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.codehaus.jackson</groupId>
-                        <artifactId>jackson-mapper-asl</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.ow2.asm</groupId>
-                        <artifactId>asm</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.jboss.netty</groupId>
-                        <artifactId>netty</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.mockito</groupId>
-                        <artifactId>mockito-all</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.mortbay.jetty</groupId>
-                        <artifactId>servlet-api-2.5</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>javax.servlet</groupId>
-                        <artifactId>servlet-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>junit</groupId>
-                        <artifactId>junit</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.sun.jersey</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.sun.jersey.jersey-test-framework</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.sun.jersey.contribs</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-common</artifactId>
                 <version>${hadoop.version}</version>
                 <scope>provided</scope>
@@ -269,33 +204,6 @@
             </dependency>
 
             <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-servlet</artifactId>
-                <version>9.3.11.v20160721</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
-                <version>14.0.1</version>
-                <scope>provided</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>net.sf.jpam</groupId>
-                <artifactId>jpam</artifactId>
-                <version>${jpam.version}</version>
-                <scope>provided</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-yarn-client</artifactId>
-                <version>${hadoop.version}</version>
-                <scope>${hadoop.deps.scope}</scope>
-            </dependency>
-
-            <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-framework</artifactId>
                 <version>${curator.version}</version>
@@ -333,36 +241,6 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-log4j12</artifactId>
                 <version>${log4j.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.dropwizard.metrics</groupId>
-                <artifactId>metrics-core</artifactId>
-                <version>${codahale.metrics.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.dropwizard.metrics</groupId>
-                <artifactId>metrics-jvm</artifactId>
-                <version>${codahale.metrics.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>commons-lang</groupId>
-                <artifactId>commons-lang</artifactId>
-                <version>${commons-lang.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.thrift</groupId>
-                <artifactId>libthrift</artifactId>
-                <version>${libthrift.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.twitter</groupId>
-                <artifactId>scrooge-core_${scala.binary.version}</artifactId>
-                <version>${scrooge.version}</version>
             </dependency>
 
             <dependency>
@@ -503,12 +381,6 @@
                             <javacArg>-Xlint:all,-serial,-path,-try</javacArg>
                         </javacArgs>
                     </configuration>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>build-helper-maven-plugin</artifactId>
-                    <version>3.0.0</version>
                 </plugin>
 
                 <!-- disable surefire -->
