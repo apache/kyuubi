@@ -41,21 +41,32 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
 
   override private[kyuubi] val backendService = new SparkSQLBackendService(spark)
 
-  override protected def stopServer(): Unit = spark.stop()
+  override protected def stopServer(): Unit = {
+    spark.stop()
+    timeoutChecker.shutdown()
+    timeoutChecker.awaitTermination(10, TimeUnit.SECONDS)
+  }
 
   override def start(): Unit = {
     val interval = conf.get(KyuubiConf.ENGINE_CHECK_INTERVAL)
     val idleTimeout = conf.get(KyuubiConf.ENGINE_IDLE_TIMEOUT)
     val checkTask = new Runnable {
       override def run(): Unit = {
-        val current = System.currentTimeMillis
         val sessionManager = backendService.sessionManager.asInstanceOf[SparkSQLSessionManager]
-        if (sessionManager.getOpenSessionCount <= 0 &&
-          current - sessionManager.getLogoutTime > idleTimeout) {
+        val openSessionCount = sessionManager.getOpenSessionCount
+        val logoutTime = sessionManager.getLogoutTime
+        val current = System.currentTimeMillis
+        if (logger.isDebugEnabled) {
+          debug(s"timeoutChecker, openSessionCount:$openSessionCount," +
+            s" current time:$current, logoutTime:$logoutTime, idleTimeout:$idleTimeout")
+        }
+        if (openSessionCount <= 0 && (current - logoutTime) > idleTimeout) {
+          info(s"Stopping idle $name[${spark.conf.get("spark.app.name")}]")
           sys.exit(0)
         }
       }
     }
+    info(s"Scheduling $name cleaning every ${interval / 1000} seconds")
     timeoutChecker.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
     super.start()
   }
