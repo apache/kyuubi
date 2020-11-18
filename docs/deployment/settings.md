@@ -86,14 +86,14 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 # kyuubi.authentication           NONE
 # kyuubi.frontend.bind.port       10009
 #
-## Spark Configurations
+## Spark Configurations, they will override those in $SPARK_HOME/conf/spark-defaults.conf
 #
 # spark.master                    local
 # spark.ui.enabled                false
 
-## Hadoop Configurations
+## Hadoop Configurations, they will override those in $HADOOP_CONF_DIR
 #
-# kyuubi.hadoop.authentication    KERBEROS
+# hadoop.authentication           KERBEROS
 #
 ```
 ### Authentication

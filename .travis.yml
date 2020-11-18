@@ -17,7 +17,7 @@
 
 sudo: required
 
-dist: xenial
+dist: focal
 language: scala
 scala:
   - 2.12.10

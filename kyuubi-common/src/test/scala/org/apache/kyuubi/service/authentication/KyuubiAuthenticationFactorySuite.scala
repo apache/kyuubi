@@ -38,8 +38,8 @@ class KyuubiAuthenticationFactorySuite extends KyuubiFunSuite {
     }
     assert(e1.getMessage === "Failed to validate proxy privilege of kent for yao")
 
-    kyuubiConf.set("kyuubi.hadoop.proxyuser.kent.groups", "*")
-    kyuubiConf.set("kyuubi.hadoop.proxyuser.kent.hosts", "*")
+    kyuubiConf.set("hadoop.proxyuser.kent.groups", "*")
+    kyuubiConf.set("hadoop.proxyuser.kent.hosts", "*")
     val hadoopConf2 = KyuubiHadoopUtils.newHadoopConf(kyuubiConf)
     verifyProxyAccess("kent", "yao", "localhost", hadoopConf2)
   }
