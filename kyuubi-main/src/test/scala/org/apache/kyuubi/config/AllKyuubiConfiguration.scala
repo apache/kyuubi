@@ -95,13 +95,13 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
       " the variable in the subprocess's env configuration file, e.g." +
       "`$SPARK_HOME/conf/spark-env.sh` to use more specific ENV for SQL engine applications.")
 
-    rewriteToConf(Paths.get("..", "conf", "kyuubi-env.sh"))
+    rewriteToConf(Paths.get("..", "conf", "kyuubi-env.sh.template"))
 
     writeWith2Line("## Kyuubi Configurations")
     writeWith2Line("You can configure the Kyuubi properties in" +
       " `$KYUUBI_HOME/conf/kyuubi-defaults.conf`. For example:")
 
-    rewriteToConf(Paths.get("..", "conf", "kyuubi-defaults.conf"))
+    rewriteToConf(Paths.get("..", "conf", "kyuubi-defaults.conf.template"))
 
     KyuubiConf.kyuubiConfEntries.values().asScala
       .toSeq
@@ -176,7 +176,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
     writeWith2Line("Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging." +
       " You can configure it using `$KYUUBI_HOME/conf/log4j.properties`.")
 
-    rewriteToConf(Paths.get("..", "conf", "log4j.properties"))
+    rewriteToConf(Paths.get("..", "conf", "log4j.properties.template"))
 
     writeWith2Line("## Other Configurations")
 

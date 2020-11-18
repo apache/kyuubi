@@ -49,7 +49,7 @@ class KinitAuxiliaryService() extends AbstractService("KinitAuxiliaryService") {
         override def run(): Unit = {
           val process = kinitProc.start()
           if (process.waitFor() == 0) {
-            debug("Successfully kinited")
+            info(s"Successfully ${commands.mkString(" ")}")
             executor.schedule(this, kinitInterval, TimeUnit.MILLISECONDS)
           } else {
             if (kinitAttempts >= kinitMaxAttempts) {

@@ -23,16 +23,16 @@ import org.apache.kyuubi.config.KyuubiConf
 class KyuubiHadoopUtilsSuite extends KyuubiFunSuite {
 
   test("new hadoop conf with kyuubi conf") {
-    val abc = "kyuubi.hadoop.abc"
-    val xyz = "kyuubi.hadoop.xyz"
+    val abc = "hadoop.abc"
+    val xyz = "hadoop.xyz"
     val test = "hadoop.test"
     val kyuubiConf = new KyuubiConf()
       .set(abc, "xyz")
       .set(xyz, "abc")
       .set(test, "t")
     val hadoopConf = KyuubiHadoopUtils.newHadoopConf(kyuubiConf)
-    assert(hadoopConf.get(abc.stripPrefix("kyuubi.")) === "xyz")
-    assert(hadoopConf.get(xyz.stripPrefix("kyuubi.")) === "abc")
-    assert(hadoopConf.get("hadoop.test") === null)
+    assert(hadoopConf.get(abc) === "xyz")
+    assert(hadoopConf.get(xyz) === "abc")
+    assert(hadoopConf.get(test) === "t")
   }
 }
