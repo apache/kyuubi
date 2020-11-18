@@ -39,12 +39,8 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
   val operationManager = new SparkSQLOperationManager()
 
-  @volatile
-  private var latestLogout: Long = Long.MaxValue
-
-  def setLogoutTime(time: Long): Unit = latestLogout = time
-
-  def getLogoutTime: Long = latestLogout
+  @volatile private var _latestLogoutTime: Long = Long.MaxValue
+  def latestLogoutTime: Long = _latestLogoutTime
 
   override def openSession(
       protocol: TProtocolVersion,
@@ -77,8 +73,8 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
+    _latestLogoutTime = System.currentTimeMillis()
     super.closeSession(sessionHandle)
-    setLogoutTime(System.currentTimeMillis())
     operationManager.removeSparkSession(sessionHandle)
   }
 
