@@ -68,7 +68,7 @@ the QUEUE configured at Kyuubi server side will be used as default.
 Pass the configurations below through the JDBC connection string to set how many instances of Spark executor will be used
 and how many cpus and memory will Spark driver, ApplicationMaster and each executor take.
 
-- | Default | Meaning
+Name | Default | Meaning
 --- | --- | ---
 spark.executor.instances | 1 | The number of executors for static allocation
 spark.executor.cores | 1 | The number of cores to use on each executor

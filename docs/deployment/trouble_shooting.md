@@ -154,3 +154,34 @@ org.apache.hadoop.security.AccessControlException: Permission denied: user=hzyan
 The user do not have permission to create to Hadoop home dir, which is `/user/hzyanqin` in the case above.
 
 To fix this problem you need to create this directory first and grant ACL permission for `hzyanqin`.
+
+
+### org.apache.thrift.TApplicationException: Invalid method name: 'get_table_req'
+
+```java
+Caused by: org.apache.thrift.TApplicationException: Invalid method name: 'get_table_req'
+	at org.apache.thrift.TServiceClient.receiveBase(TServiceClient.java:79)
+	at org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore$Client.recv_get_table_req(ThriftHiveMetastore.java:1567)
+	at org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore$Client.get_table_req(ThriftHiveMetastore.java:1554)
+	at org.apache.hadoop.hive.metastore.HiveMetaStoreClient.getTable(HiveMetaStoreClient.java:1350)
+	at org.apache.hadoop.hive.ql.metadata.SessionHiveMetaStoreClient.getTable(SessionHiveMetaStoreClient.java:127)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.hadoop.hive.metastore.RetryingMetaStoreClient.invoke(RetryingMetaStoreClient.java:173)
+	at com.sun.proxy.$Proxy37.getTable(Unknown Source)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.apache.hadoop.hive.metastore.HiveMetaStoreClient$SynchronizedHandler.invoke(HiveMetaStoreClient.java:2336)
+	at com.sun.proxy.$Proxy37.getTable(Unknown Source)
+	at org.apache.hadoop.hive.ql.metadata.Hive.getTable(Hive.java:1274)
+	... 93 more
+```
+
+This error means that you are using incompatible version of Hive metastore client to connect the Hive metastore server.
+
+To fix this problem you could use a compatible version for Hive client by configuring
+`spark.sql.hive.metastore.jars` and `spark.sql.hive.metastore.version` at Spark side.

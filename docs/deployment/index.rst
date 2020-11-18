@@ -10,6 +10,7 @@ Deploying Kyuubi
 
     settings
     on_yarn
+    hive_metastore
     architecture
     authentication
     authorization
