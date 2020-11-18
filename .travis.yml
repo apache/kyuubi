@@ -27,7 +27,6 @@ jdk:
 cache:
   directories:
     - $HOME/.m2
-    - ./build
 
 deploy:
   - provider: pages
@@ -38,13 +37,13 @@ deploy:
     name: Kent Yao
     on:
       branch: master
-  - provider: releases
-    api_key: $GITHUB_TOKEN
-    file_glob: true
-    file: kyuubi-*.tar.gz
-    cleanup: false
-    on:
-      tags: true
+#  - provider: releases
+#    api_key: $GITHUB_TOKEN
+#    file_glob: true
+#    file: kyuubi-*.tar.gz
+#    cleanup: false
+#    on:
+#      tags: true
 
 install:
   - build/mvn --version
