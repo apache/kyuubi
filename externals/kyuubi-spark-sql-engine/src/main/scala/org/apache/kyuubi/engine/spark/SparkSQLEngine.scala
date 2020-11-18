@@ -41,17 +41,23 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
 
   override private[kyuubi] val backendService = new SparkSQLBackendService(spark)
 
-  override protected def stopServer(): Unit = spark.stop()
+  override protected def stopServer(): Unit = {
+    spark.stop()
+    timeoutChecker.shutdown()
+    timeoutChecker.awaitTermination(10, TimeUnit.SECONDS)
+  }
 
   override def start(): Unit = {
     val interval = conf.get(KyuubiConf.ENGINE_CHECK_INTERVAL)
     val idleTimeout = conf.get(KyuubiConf.ENGINE_IDLE_TIMEOUT)
+
     val checkTask = new Runnable {
       override def run(): Unit = {
         val current = System.currentTimeMillis
         val sessionManager = backendService.sessionManager.asInstanceOf[SparkSQLSessionManager]
         if (sessionManager.getOpenSessionCount <= 0 &&
-          current - sessionManager.getLogoutTime > idleTimeout) {
+          (current - sessionManager.latestLogoutTime) > idleTimeout) {
+          info(s"Idled for more than $idleTimeout, terminating")
           sys.exit(0)
         }
       }
