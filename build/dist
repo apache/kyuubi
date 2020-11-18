@@ -154,7 +154,6 @@ echo -e "\$ ${BUILD_COMMAND[@]}\n"
 
 # Make directories
 rm -rf "$DISTDIR"
-mkdir -p "$DISTDIR/jars"
 mkdir -p "$DISTDIR/pid"
 mkdir -p "$DISTDIR/logs"
 mkdir -p "$DISTDIR/work"
