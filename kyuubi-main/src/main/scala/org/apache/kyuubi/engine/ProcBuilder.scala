@@ -68,11 +68,12 @@ trait ProcBuilder {
       override def run(): Unit = try {
         var line: String = reader.readLine
         while (true) {
-          if (containsIgnoreCase(line, "Exception") && !line.contains("at ")) {
+          if (containsIgnoreCase(line, "Exception") && !line.contains("at ") &&
+            !line.startsWith("Caused by:")) {
             val sb = new StringBuilder(line)
 
             line = reader.readLine()
-            while (line != null && line.startsWith("\tat ")) {
+            while (line != null && (line.startsWith("\tat ") || line.startsWith("Caused by: "))) {
               sb.append("\n" + line)
               line = reader.readLine()
             }
