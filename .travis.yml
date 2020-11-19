@@ -17,7 +17,7 @@
 
 sudo: required
 
-dist: focal
+dist: bionic
 language: scala
 scala:
   - 2.12.10
@@ -48,6 +48,13 @@ deploy:
 install:
   - build/mvn --version
   - build/mvn clean
+
+before_script:
+  - build/mvn help:evaluate -Dexpression=project.version
+  - build/mvn help:evaluate -Dexpression=java.version
+  - build/mvn help:evaluate -Dexpression=scala.binary.version
+  - build/mvn help:evaluate -Dexpression=hadoop.version
+  - build/mvn help:evaluate -Dexpression=hive.version
 
 #jobs:
 #  include:

@@ -1,4 +1,4 @@
-# Kyuubi Authentication/Security Guide
+# Authentication
 Kyuubi supports Anonymous (no authentication) with and without SASL, Kerberos (GSSAPI), pass through LDAP between the Thrift client and itself.
 
 ## Configuration
