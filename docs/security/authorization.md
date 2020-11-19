@@ -1,4 +1,4 @@
-# Kyuubi ACL Management Guide
+# ACL Management Guide
 
 - [Authorization Modes](#1)
     - [Storage-Based Authorization](#1.1)

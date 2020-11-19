@@ -12,8 +12,6 @@ Deploying Kyuubi
     on_yarn
     hive_metastore
     architecture
-    authentication
-    authorization
     deploy
     high_availability_guide
     metrics

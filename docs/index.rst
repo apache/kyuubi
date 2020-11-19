@@ -14,9 +14,10 @@ Welcome to Kyuubi's documentation!
    :maxdepth: 2
    :glob:
 
-   overview/index
    quick_start/index
+   overview/index
    deployment/index
+   security/index
    client/index
    integrations/index
    tools/index
