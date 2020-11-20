@@ -377,4 +377,41 @@ object KyuubiConf {
     .version("1.0.0")
     .timeConf
     .createWithDefault(Duration.ofMinutes(30L).toMillis)
+
+  val ENGINE_EXEC_POOL_SIZE: ConfigEntry[Int] =
+    buildConf("session.engine.backend.pool.size")
+      .doc("Number of threads in the operation execution thread pool for SQL engine applications")
+      .version("1.0.0")
+      .intConf
+      .createWithDefault(100)
+
+  val ENGINE_EXEC_WAIT_QUEUE_SIZE: ConfigEntry[Int] =
+    buildConf("session.engine.backend.pool.wait.queue.size")
+      .doc("Size of the wait queue for the operation execution thread pool in SQL engine" +
+        " applications")
+      .version("1.0.0")
+      .intConf
+      .createWithDefault(100)
+
+  val ENGINE_EXEC_KEEPALIVE_TIME: ConfigEntry[Long] =
+    buildConf("session.engine.backend.pool.keepalive.time")
+      .doc("Time(ms) that an idle async thread of the operation execution thread pool will wait" +
+        " for a new task to arrive before terminating")
+      .version("1.0.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(60).toMillis)
+
+  val ENGINE_EXEC_POOL_SHUTDOWN_TIMEOUT: ConfigEntry[Long] =
+    buildConf("session.engine.backend.pool.shutdown.timeout")
+      .doc("Timeout(ms) for the operation execution thread pool to terminate")
+      .version("1.0.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(10).toMillis)
+
+  val ENGINE_LONG_POLLING_TIMEOUT: ConfigEntry[Long] =
+    buildConf("session.engine.long.polling.timeout")
+      .doc("Timeout(ms) for long polling asynchronous running sql query's status")
+      .version("1.0.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(5).toMillis)
 }

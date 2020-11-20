@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.sql.{DatabaseMetaData, Date, ResultSet, SQLException, SQLFeatureNotSupportedException, Timestamp}
+import java.sql.{DatabaseMetaData, ResultSet, SQLFeatureNotSupportedException}
 
 import scala.collection.JavaConverters._
 import scala.util.Random
@@ -25,6 +25,8 @@ import scala.util.Random
 import org.apache.hive.common.util.HiveVersionInfo
 import org.apache.hive.service.cli.HiveSQLException
 import org.apache.hive.service.rpc.thrift._
+import org.apache.hive.service.rpc.thrift.TCLIService.Iface
+import org.apache.hive.service.rpc.thrift.TOperationState._
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
 import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.types._
@@ -438,6 +440,14 @@ class SparkOperationSuite extends WithSparkSQLEngine {
     }
   }
 
+  private def waitForOperationToComplete(client: Iface, op: TOperationHandle): Unit = {
+    val req = new TGetOperationStatusReq(op)
+    var state = client.GetOperationStatus(req).getOperationState
+    while (state == INITIALIZED_STATE || state == PENDING_STATE || state == RUNNING_STATE) {
+      state = client.GetOperationStatus(req).getOperationState
+    }
+
+  }
   test("basic open | execute | close") {
     withThriftClient { client =>
       val operationManager = engine.backendService.sessionManager.
@@ -453,11 +463,14 @@ class SparkOperationSuite extends WithSparkSQLEngine {
 
       val tExecuteStatementReq = new TExecuteStatementReq()
       tExecuteStatementReq.setSessionHandle( tOpenSessionResp.getSessionHandle)
+      tExecuteStatementReq.setRunAsync(true)
       tExecuteStatementReq.setStatement("set -v")
       val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
 
+      val operationHandle = tExecuteStatementResp.getOperationHandle
+      waitForOperationToComplete(client, operationHandle)
       val tFetchResultsReq = new TFetchResultsReq()
-      tFetchResultsReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
+      tFetchResultsReq.setOperationHandle(operationHandle)
       tFetchResultsReq.setFetchType(1)
       tFetchResultsReq.setMaxRows(1000)
       val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
@@ -494,10 +507,13 @@ class SparkOperationSuite extends WithSparkSQLEngine {
       val tExecuteStatementReq = new TExecuteStatementReq()
       tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
       tExecuteStatementReq.setStatement("set")
+      tExecuteStatementReq.setRunAsync(true)
       val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
 
+      val operationHandle = tExecuteStatementResp.getOperationHandle
+      waitForOperationToComplete(client, operationHandle)
       val tFetchResultsReq = new TFetchResultsReq()
-      tFetchResultsReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
+      tFetchResultsReq.setOperationHandle(operationHandle)
       tFetchResultsReq.setFetchType(0)
       tFetchResultsReq.setMaxRows(1000)
       val tFetchResultsResp1 = client.FetchResults(tFetchResultsReq)

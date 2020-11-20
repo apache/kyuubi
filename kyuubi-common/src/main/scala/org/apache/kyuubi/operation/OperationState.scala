@@ -39,7 +39,19 @@ object OperationState extends Enumeration {
     case CANCELED => CANCELED_STATE
     case CLOSED => CLOSED_STATE
     case ERROR => ERROR_STATE
-    case _ => UKNOWN_STATE
+    case UNKNOWN => UKNOWN_STATE
+  }
+
+  implicit def fromTOperationState(from: TOperationState): OperationState = from match {
+    case INITIALIZED_STATE => INITIALIZED
+    case PENDING_STATE => PENDING
+    case RUNNING_STATE => RUNNING
+    case FINISHED_STATE => FINISHED
+    case TIMEDOUT_STATE => TIMEOUT
+    case CANCELED_STATE => CANCELED
+    case CLOSED_STATE => CLOSED
+    case ERROR_STATE => ERROR
+    case UKNOWN_STATE => UNKNOWN
   }
 
   def validateTransition(oldState: OperationState, newState: OperationState): Unit = {

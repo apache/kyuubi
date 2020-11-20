@@ -17,9 +17,6 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.sql.{DriverManager, Statement}
-import java.util.Locale
-
 import org.apache.hadoop.hive.ql.metadata.Hive
 import org.apache.hadoop.hive.ql.session.SessionState
 import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TOpenSessionReq, TSessionHandle}
@@ -27,7 +24,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
 
-import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.operation.JDBCTests
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 

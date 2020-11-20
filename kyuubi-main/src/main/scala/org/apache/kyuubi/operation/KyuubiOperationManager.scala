@@ -68,7 +68,7 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       queryTimeout: Long): Operation = {
     val client = getThriftClient(session.handle)
     val remoteSessionHandle = getRemoteTSessionHandle(session.handle)
-    val operation = new ExecuteStatement(session, client, remoteSessionHandle, statement)
+    val operation = new ExecuteStatement(session, client, remoteSessionHandle, statement, runAsync)
     addOperation(operation)
 
   }

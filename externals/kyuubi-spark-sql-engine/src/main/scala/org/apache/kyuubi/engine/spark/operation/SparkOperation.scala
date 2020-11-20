@@ -36,7 +36,7 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
 
   protected var iter: Iterator[Row] = _
 
-  private final val operationLog: OperationLog =
+  protected final val operationLog: OperationLog =
     OperationLog.createOperationLog(session.handle, getHandle)
 
   def getOperationLog: OperationLog = operationLog
