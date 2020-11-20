@@ -29,6 +29,7 @@ import org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{RetryPolicies, ServiceDiscovery}
 import org.apache.kyuubi.service.Serverable
+import org.apache.kyuubi.session.SparkSQLEngineAppName
 import org.apache.kyuubi.util.{SignalRegister, ThreadUtils}
 
 private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
@@ -46,6 +47,9 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
     timeoutChecker.shutdown()
     timeoutChecker.awaitTermination(10, TimeUnit.SECONDS)
   }
+
+  def getEngineAppName: SparkSQLEngineAppName =
+    SparkSQLEngineAppName.parseAppName(spark.conf.get("spark.app.name"))
 
   override def start(): Unit = {
     val interval = conf.get(KyuubiConf.ENGINE_CHECK_INTERVAL)
@@ -78,9 +82,9 @@ object SparkSQLEngine extends Logging {
     sparkConf.setIfMissing("spark.master", "local")
     sparkConf.setIfMissing("spark.ui.port", "0")
 
-    val appName = s"kyuubi_${user}_spark_${Instant.now}"
-
-    sparkConf.setAppName(appName)
+    val appName = s"kyuubi|user|${user}|${Instant.now}"
+    sparkConf.setIfMissing("spark.app.name", appName)
+//    sparkConf.setAppName(appName)
 
     kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_BIND_PORT, 0)
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
@@ -114,7 +118,9 @@ object SparkSQLEngine extends Logging {
     val needExpose = kyuubiConf.get(HA_ZK_QUORUM).nonEmpty
     if (needExpose) {
       val zkNamespacePrefix = kyuubiConf.get(HA_ZK_NAMESPACE)
-      val serviceDiscovery = new ServiceDiscovery(engine, s"$zkNamespacePrefix-$user")
+      val namespace = engine.getEngineAppName
+        .makeZkPath(zkNamespacePrefix).substring(1)
+      val serviceDiscovery = new ServiceDiscovery(engine, namespace)
       serviceDiscovery.initialize(kyuubiConf)
       serviceDiscovery.start()
       sys.addShutdownHook(serviceDiscovery.stop())

@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.session
 
+import java.net.InetAddress
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 
@@ -46,6 +47,19 @@ class KyuubiSessionImpl(
     zkNamespacePrefix: String)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
+  private val engineAppName = createSparkSQLEngineAppName()
+
+  private def createSparkSQLEngineAppName(): SparkSQLEngineAppName = {
+    val engineScope = EngineScope.withName(sessionConf.get(ENGINE_SCOPE))
+    val serverHost = sessionConf.get(FRONTEND_BIND_HOST)
+      .getOrElse(InetAddress.getLocalHost.getHostName)
+    val serverPort = sessionConf.get(FRONTEND_BIND_PORT)
+    // TODO: config user group
+    val userGroup = "default"
+    SparkSQLEngineAppName(engineScope, serverHost,
+      serverPort, userGroup, user, handle.identifier.toString)
+  }
+
   private def configureSession(): Unit = {
     conf.foreach {
       case (HIVE_VAR_PREFIX(key), value) => sessionConf.set(key, value)
@@ -53,13 +67,13 @@ class KyuubiSessionImpl(
       case ("use:database", _) =>
       case (key, value) => sessionConf.set(key, value)
     }
+    sessionConf.set("spark.app.name", engineAppName.generateAppName())
   }
 
   configureSession()
 
   private val timeout: Long = sessionConf.get(ENGINE_INIT_TIMEOUT)
-  private val zkNamespace = s"$zkNamespacePrefix-$user"
-  private val zkPath = ZKPaths.makePath(null, zkNamespace)
+  private val zkPath = engineAppName.makeZkPath(zkNamespacePrefix)
   private lazy val zkClient = ServiceDiscovery.startZookeeperClient(sessionConf)
 
   private var transport: TTransport = _
@@ -70,7 +84,7 @@ class KyuubiSessionImpl(
     try {
       val hosts = zkClient.getChildren.forPath(zkPath)
       hosts.asScala.headOption.map { p =>
-        val path = ZKPaths.makePath(null, zkNamespace, p)
+        val path = ZKPaths.makePath(zkPath, p)
         val hostPort = new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
         val strings = hostPort.split(":")
         val host = strings.head
