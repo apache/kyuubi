@@ -82,8 +82,8 @@ object SparkSQLEngineAppName {
     new SparkSQLEngineAppName(engineScope, serverHost, serverPort, userGroup, user, handle)
 
   def parseAppName(appName: String): SparkSQLEngineAppName = {
-    val params = appName.split(DELIMITER)
-    val engineScope = EngineScope.withName(params(1))
+    val params = appName.split("\\|")
+    val engineScope = EngineScope.withName(params(1).toUpperCase(Locale.ROOT))
     engineScope match {
       case SESSION =>
         SparkSQLEngineAppName(engineScope, serverHost = params(2), serverPort = params(3).toInt,

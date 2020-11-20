@@ -59,6 +59,8 @@ class SparkSQLEngineAppNameSuite extends KyuubiFunSuite {
     val appName = engine.generateAppName()
     assert(appName.substring(0, appName.lastIndexOf("|")) === expectAppName)
     assert(engine.makeZkPath(zkNamespace) === expectZkPath)
+    val zkPath = SparkSQLEngineAppName.parseAppName(expectAppName).makeZkPath(zkNamespace)
+    assert(zkPath === expectZkPath)
   }
 
 
