@@ -17,12 +17,17 @@
 
 package org.apache.kyuubi.engine.spark.session
 
+import java.util.concurrent.{Future, ThreadPoolExecutor, TimeUnit}
+
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.session._
+import org.apache.kyuubi.util.ThreadUtils
 
 /**
  * A [[SessionManager]] constructed with [[SparkSession]] which give it the ability to talk with
@@ -39,8 +44,33 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
   val operationManager = new SparkSQLOperationManager()
 
+  private var execPool: ThreadPoolExecutor = _
+
   @volatile private var _latestLogoutTime: Long = Long.MaxValue
   def latestLogoutTime: Long = _latestLogoutTime
+
+  override def initialize(conf: KyuubiConf): Unit = {
+    val poolSize = conf.get(ENGINE_EXEC_POOL_SIZE)
+    val waitQueueSize = conf.get(ENGINE_EXEC_WAIT_QUEUE_SIZE)
+    val keepAliveMs = conf.get(ENGINE_EXEC_KEEPALIVE_TIME)
+    execPool = ThreadUtils.newDaemonQueuedThreadPool(
+      poolSize, waitQueueSize, keepAliveMs, s"$name-exec-pool")
+    super.initialize(conf)
+  }
+
+  override def stop(): Unit = {
+    if (execPool != null) {
+      execPool.shutdown()
+      val timeout = conf.get(ENGINE_EXEC_POOL_SHUTDOWN_TIMEOUT)
+      try {
+        execPool.awaitTermination(timeout, TimeUnit.SECONDS)
+      } catch {
+        case e: InterruptedException =>
+          warn(s"Exceeded timeout($timeout ms) to wait the exec-pool shutdown gracefully", e)
+      }
+    }
+    super.stop()
+  }
 
   override def openSession(
       protocol: TProtocolVersion,
@@ -77,6 +107,8 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     super.closeSession(sessionHandle)
     operationManager.removeSparkSession(sessionHandle)
   }
+
+  def submitBackgroundOperation(r: Runnable): Future[_] = execPool.submit(r)
 
   private def setModifiableConfig(spark: SparkSession, key: String, value: String): Unit = {
     if (spark.conf.isModifiable(key)) {

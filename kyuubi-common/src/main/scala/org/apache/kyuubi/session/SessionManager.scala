@@ -89,7 +89,12 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     super.stop()
     shutdown = true
     timeoutChecker.shutdown()
-    timeoutChecker.awaitTermination(10, TimeUnit.SECONDS)
+    try {
+      timeoutChecker.awaitTermination(10, TimeUnit.SECONDS)
+    } catch {
+      case i: InterruptedException =>
+        warn(s"Exceeded to shutdown session timeout checker ", i)
+    }
   }
 
   private def startTimeoutChecker(): Unit = {
