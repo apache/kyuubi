@@ -19,12 +19,14 @@ package org.apache.kyuubi.server
 
 import scala.util.Properties
 
+import org.apache.hadoop.security.UserGroupInformation
+
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.server.EmbeddedZkServer
 import org.apache.kyuubi.service.{AbstractBackendService, KinitAuxiliaryService, Serverable}
-import org.apache.kyuubi.util.SignalRegister
+import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
 
 object KyuubiServer extends Logging {
   private val zkServer = new EmbeddedZkServer()
@@ -68,6 +70,7 @@ object KyuubiServer extends Logging {
       s" ${Properties.javaVersion}")
     SignalRegister.registerLogger(logger)
     val conf = new KyuubiConf().loadFileDefaults()
+    UserGroupInformation.setConfiguration(KyuubiHadoopUtils.newHadoopConf(conf))
     startServer(conf)
   }
 }

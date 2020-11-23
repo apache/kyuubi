@@ -17,7 +17,7 @@
 
 sudo: required
 
-dist: xenial
+dist: bionic
 language: scala
 scala:
   - 2.12.10
@@ -27,7 +27,6 @@ jdk:
 cache:
   directories:
     - $HOME/.m2
-    - ./build
 
 deploy:
   - provider: pages
@@ -38,17 +37,24 @@ deploy:
     name: Kent Yao
     on:
       branch: master
-  - provider: releases
-    api_key: $GITHUB_TOKEN
-    file_glob: true
-    file: kyuubi-*.tar.gz
-    cleanup: false
-    on:
-      tags: true
+#  - provider: releases
+#    api_key: $GITHUB_TOKEN
+#    file_glob: true
+#    file: kyuubi-*.tar.gz
+#    cleanup: false
+#    on:
+#      tags: true
 
 install:
   - build/mvn --version
   - build/mvn clean
+
+before_script:
+  - build/mvn help:evaluate -Dexpression=project.version
+  - build/mvn help:evaluate -Dexpression=java.version
+  - build/mvn help:evaluate -Dexpression=scala.binary.version
+  - build/mvn help:evaluate -Dexpression=hadoop.version
+  - build/mvn help:evaluate -Dexpression=hive.version
 
 #jobs:
 #  include:

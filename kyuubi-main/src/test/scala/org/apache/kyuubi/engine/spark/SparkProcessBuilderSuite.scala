@@ -57,6 +57,18 @@ class SparkProcessBuilderSuite extends KyuubiFunSuite {
     assert(error.getMessage.contains(
       "java.lang.IllegalArgumentException: spark.ui.port should be int, but was abc"))
     assert(error.isInstanceOf[KyuubiSQLException])
+
+    val processBuilder1 = new SparkProcessBuilder("kentyao",
+      conf ++ Map("spark.hive.metastore.uris" -> "thrift://dummy"))
+    val proc1 = processBuilder1.start
+    proc1.waitFor(10, TimeUnit.SECONDS)
+    while (proc1.isAlive) {
+      Thread.sleep(100)
+    }
+    Thread.sleep(5000)
+    val error1 = processBuilder1.getError
+    assert(
+      error1.getMessage.contains("Caused by: org.apache.hadoop.hive.ql.metadata.HiveException:"))
   }
 
 }

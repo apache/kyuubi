@@ -17,14 +17,31 @@
 
 package org.apache.kyuubi.util
 
-import java.util.concurrent.{ScheduledExecutorService, ScheduledThreadPoolExecutor}
+import java.util.concurrent.{LinkedBlockingQueue, ScheduledExecutorService, ScheduledThreadPoolExecutor, ThreadPoolExecutor, TimeUnit}
 
-object ThreadUtils {
+import org.apache.kyuubi.Logging
+
+object ThreadUtils extends Logging {
 
   def newDaemonSingleThreadScheduledExecutor(threadName: String): ScheduledExecutorService = {
     val threadFactory = new NamedThreadFactory(threadName, daemon = true)
     val executor = new ScheduledThreadPoolExecutor(1, threadFactory)
     executor.setRemoveOnCancelPolicy(true)
+    executor
+  }
+
+  def newDaemonQueuedThreadPool(
+      poolSize: Int,
+      poolQueueSize: Int,
+      keepAliveMs: Long,
+      threadPoolName: String): ThreadPoolExecutor = {
+    val nameFactory = new NamedThreadFactory(threadPoolName, daemon = true)
+    val queue = new LinkedBlockingQueue[Runnable](poolQueueSize)
+    info(s"$threadPoolName: pool size: $poolSize, wait queue size: $poolQueueSize," +
+      s" thread keepalive time: $keepAliveMs ms")
+    val executor = new ThreadPoolExecutor(
+      poolSize, poolSize, keepAliveMs, TimeUnit.MILLISECONDS, queue, nameFactory)
+    executor.allowCoreThreadTimeOut(true)
     executor
   }
 }

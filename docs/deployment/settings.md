@@ -86,14 +86,14 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 # kyuubi.authentication           NONE
 # kyuubi.frontend.bind.port       10009
 #
-## Spark Configurations
+## Spark Configurations, they will override those in $SPARK_HOME/conf/spark-defaults.conf
 #
 # spark.master                    local
 # spark.ui.enabled                false
 
-## Hadoop Configurations
+## Hadoop Configurations, they will override those in $HADOOP_CONF_DIR
 #
-# kyuubi.hadoop.authentication    KERBEROS
+# hadoop.authentication           KERBEROS
 #
 ```
 ### Authentication
@@ -162,10 +162,15 @@ kyuubi\.operation\.idle<br>\.timeout|<div style='width: 80pt;word-wrap: break-wo
 Key | Default | Meaning | Since
 --- | --- | --- | ---
 kyuubi\.session\.check<br>\.interval|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT5M</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The check interval for session timeout.</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.session\.engine<br>\.backend\.pool<br>\.keepalive\.time|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT1M</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Time(ms) that an idle async thread of the operation execution thread pool will wait for a new task to arrive before terminating</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.session\.engine<br>\.backend\.pool\.shutdown<br>\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT10S</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Timeout(ms) for the operation execution thread pool to terminate</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.session\.engine<br>\.backend\.pool\.size|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>100</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Number of threads in the operation execution thread pool for SQL engine applications</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.session\.engine<br>\.backend\.pool\.wait<br>\.queue\.size|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>100</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Size of the wait queue for the operation execution thread pool in SQL engine applications</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session\.engine<br>\.check\.interval|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT10M</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The check interval for engine timeout</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session\.engine<br>\.idle\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT30M</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>engine timeout, the engine will self-terminate when it's not accessed for this duration</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session\.engine<br>\.initialize\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT1M</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Timeout for starting the background engine, e.g. SparkSQLEngine.</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session\.engine<br>\.login\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT15S</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The timeout(ms) of creating the connection to remote sql query engine</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.session\.engine<br>\.long\.polling\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT5S</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Timeout(ms) for long polling asynchronous running sql query's status</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session\.engine<br>\.spark\.main\.resource|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The package used to create Spark SQL engine remote application. If it is undefined, Kyuubi will use the default</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session<br>\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT6H</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>session timeout, it will be closed when it's not accessed for this duration</div>|<div style='width: 20pt'>1.0.0</div>
 
