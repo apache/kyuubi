@@ -45,8 +45,8 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   override private[kyuubi] val backendService = new SparkSQLBackendService(spark)
 
   override protected def stopServer(): Unit = {
-    spark.stop()
     deleteEngineZkPath(this)
+    spark.stop()
     timeoutChecker.shutdown()
     timeoutChecker.awaitTermination(10, TimeUnit.SECONDS)
   }
