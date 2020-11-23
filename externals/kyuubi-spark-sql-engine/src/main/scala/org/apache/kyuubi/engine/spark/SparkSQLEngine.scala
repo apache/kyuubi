@@ -35,6 +35,8 @@ import org.apache.kyuubi.util.{SignalRegister, ThreadUtils}
 private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   extends Serverable(name) {
 
+  import SparkSQLEngine._
+
   def this(spark: SparkSession) = this(classOf[SparkSQLEngine].getSimpleName, spark)
 
   private val timeoutChecker =
@@ -44,6 +46,7 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
 
   override protected def stopServer(): Unit = {
     spark.stop()
+    deleteEngineZkPath(this)
     timeoutChecker.shutdown()
     timeoutChecker.awaitTermination(10, TimeUnit.SECONDS)
   }
@@ -124,6 +127,20 @@ object SparkSQLEngine extends Logging {
       serviceDiscovery.initialize(kyuubiConf)
       serviceDiscovery.start()
       sys.addShutdownHook(serviceDiscovery.stop())
+    }
+  }
+
+  def deleteEngineZkPath(engine: SparkSQLEngine): Unit = {
+    val zkNamespacePrefix = kyuubiConf.get(HA_ZK_NAMESPACE)
+    val namespace = engine.getEngineAppName.makeZkPath(zkNamespacePrefix)
+    val framework = ServiceDiscovery.startZookeeperClient(kyuubiConf)
+    try {
+      framework.delete().forPath(namespace)
+    } catch {
+      case e: Exception =>
+        error(s"Failed to delete the engine's zkPath:$namespace", e)
+    } finally {
+      framework.close()
     }
   }
 
