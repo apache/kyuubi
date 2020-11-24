@@ -22,8 +22,17 @@ import org.apache.kyuubi.server.KyuubiServer
 
 class KyuubiOperationSuite extends JDBCTests {
 
-  private val conf = KyuubiConf().set(KyuubiConf.FRONTEND_BIND_PORT, 0)
+  private val conf = KyuubiConf()
+    .set(KyuubiConf.FRONTEND_BIND_PORT, 0)
+    .set(KyuubiConf.ENGINE_CHECK_INTERVAL, 4000L)
+    .set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 10000L)
+
   private val server: KyuubiServer = KyuubiServer.startServer(conf)
+
+  override def afterAll(): Unit = {
+    server.stop()
+    super.afterAll()
+  }
 
   override protected def jdbcUrl: String = s"jdbc:hive2://${server.connectionUrl}/;"
 }

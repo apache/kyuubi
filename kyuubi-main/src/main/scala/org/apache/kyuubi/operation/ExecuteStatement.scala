@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.operation
 
+import java.util.concurrent.RejectedExecutionException
+
 import org.apache.hive.service.rpc.thrift.{TCLIService, TExecuteStatementReq, TGetOperationStatusReq, TSessionHandle}
 import org.apache.hive.service.rpc.thrift.TOperationState._
 
@@ -32,6 +34,8 @@ class ExecuteStatement(
   extends KyuubiOperation(
     OperationType.EXECUTE_STATEMENT, session, client, remoteSessionHandle) {
 
+  private lazy val statusReq = new TGetOperationStatusReq(_remoteOpHandle)
+
   override def beforeRun(): Unit = {
     setHasResultSet(true)
     setState(OperationState.PENDING)
@@ -39,35 +43,82 @@ class ExecuteStatement(
 
   override protected def afterRun(): Unit = {}
 
-  override protected def runInternal(): Unit = {
+  private def executeStatement(): Unit = {
     try {
       val req = new TExecuteStatementReq(remoteSessionHandle, statement)
       req.setRunAsync(shouldRunAsync)
       val resp = client.ExecuteStatement(req)
       verifyTStatus(resp.getStatus)
       _remoteOpHandle = resp.getOperationHandle
-      if (shouldRunAsync) {
-        // TODO we should do this asynchronous too, not just block this
-        var isComplete = false
-        val statusReq = new TGetOperationStatusReq(_remoteOpHandle)
-        var statusResp = client.GetOperationStatus(statusReq)
-        while(!isComplete) {
-          verifyTStatus(statusResp.getStatus)
-          statusResp.getOperationState match {
-            case INITIALIZED_STATE | PENDING_STATE | RUNNING_STATE =>
-              statusResp = client.GetOperationStatus(statusReq)
-            case state @ (FINISHED_STATE | CLOSED_STATE | CANCELED_STATE | TIMEDOUT_STATE) =>
-              isComplete = true
-              setState(state)
-            case ERROR_STATE =>
-              throw KyuubiSQLException(statusResp.getErrorMessage)
-            case _ =>
-              throw KyuubiSQLException(s"UNKNOWN STATE for $statement")
-          }
-        }
-      } else {
-        setState(OperationState.FINISHED)
-      }
     } catch onError()
+  }
+
+  private def waitStatementComplete(): Unit = {
+    setState(OperationState.RUNNING)
+    var statusResp = client.GetOperationStatus(statusReq)
+    var isComplete = false
+    while (!isComplete) {
+      verifyTStatus(statusResp.getStatus)
+      val remoteState = statusResp.getOperationState
+      info(s"Query[$statementId] in ${remoteState.name()}")
+      remoteState match {
+        case INITIALIZED_STATE | PENDING_STATE | RUNNING_STATE =>
+          statusResp = client.GetOperationStatus(statusReq)
+
+        case FINISHED_STATE =>
+          setState(OperationState.FINISHED)
+          isComplete = true
+
+        case CLOSED_STATE =>
+          setState(OperationState.CLOSED)
+          isComplete = true
+
+        case CANCELED_STATE =>
+          setState(OperationState.CANCELED)
+          isComplete = true
+
+        case TIMEDOUT_STATE =>
+          setState(OperationState.TIMEOUT)
+          isComplete = true
+
+        case ERROR_STATE =>
+          setState(OperationState.ERROR)
+          val ke = KyuubiSQLException(statusResp.getErrorMessage)
+          setOperationException(ke)
+          throw ke
+
+        case UKNOWN_STATE =>
+          setState(OperationState.ERROR)
+          val ke = KyuubiSQLException(s"UNKNOWN STATE for $statement")
+          setOperationException(ke)
+          throw ke
+      }
+    }
+  }
+
+  override protected def runInternal(): Unit = {
+    if (shouldRunAsync) {
+      executeStatement()
+      val sessionManager = session.sessionManager
+      val asyncOperation = new Runnable {
+        override def run(): Unit = waitStatementComplete()
+      }
+      try {
+        val backgroundOperation =
+          sessionManager.submitBackgroundOperation(asyncOperation)
+        setBackgroundHandle(backgroundOperation)
+      } catch {
+        case rejected: RejectedExecutionException =>
+          setState(OperationState.ERROR)
+          val ke = KyuubiSQLException("Error submitting query in background, query rejected",
+            rejected)
+          setOperationException(ke)
+          throw ke
+      }
+    } else {
+      setState(OperationState.RUNNING)
+      executeStatement()
+      setState(OperationState.FINISHED)
+    }
   }
 }

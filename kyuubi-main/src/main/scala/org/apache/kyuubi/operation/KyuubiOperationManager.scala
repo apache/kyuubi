@@ -149,18 +149,19 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     val operation = getOperation(opHandle).asInstanceOf[KyuubiOperation]
     val client = getThriftClient(operation.getSession.handle)
 
+    // TODO:(kentyao): In async mode, if we query log like below, will put very heavy load on engine
+    // side and get thrift err like:
+    // org.apache.thrift.transport.TTransportException: Read a negative frame size (-2147418110)!
     val tOperationHandle = operation.remoteOpHandle()
     if (tOperationHandle == null) {
       new TRowSet(0, new java.util.ArrayList[TRow](0))
     } else {
-      val req = new TFetchResultsReq()
-      req.setOperationHandle(tOperationHandle)
-      req.setOrientation(FetchOrientation.toTFetchOrientation(order))
-      req.setMaxRows(maxRows)
-      req.setFetchType(1)
-      val resp = client.FetchResults(req)
-      resp.getResults
+//      val orientation = FetchOrientation.toTFetchOrientation(order)
+//      val req = new TFetchResultsReq(tOperationHandle, orientation, maxRows)
+//      req.setFetchType(1.toShort)
+//      val resp = client.FetchResults(req)
+//      resp.getResults
+      new TRowSet(0, new java.util.ArrayList[TRow](0))
     }
-
   }
 }
