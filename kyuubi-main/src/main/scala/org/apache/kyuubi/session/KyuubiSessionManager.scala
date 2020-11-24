@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.session
 
-import scala.util.control.NonFatal
-
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -68,4 +66,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
           e)
     }
   }
+
+  override protected def isServer: Boolean = true
 }

@@ -18,6 +18,7 @@
 package org.apache.kyuubi.operation
 
 import java.time.Duration
+import java.util.concurrent.Future
 
 import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet, TTableSchema}
 
@@ -45,6 +46,14 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
 
   @volatile protected var operationException: KyuubiSQLException = _
   @volatile protected var hasResultSet: Boolean = false
+
+  @volatile private var _backgroundHandle: Future[_] = _
+
+  protected def setBackgroundHandle(backgroundHandle: Future[_]): Unit = {
+    _backgroundHandle = backgroundHandle
+  }
+
+  def getBackgroundHandle: Future[_] = _backgroundHandle
 
   protected def statement: String = opType.toString
 

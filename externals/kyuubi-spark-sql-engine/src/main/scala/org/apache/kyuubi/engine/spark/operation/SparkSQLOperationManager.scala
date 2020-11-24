@@ -132,11 +132,7 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
       opHandle: OperationHandle,
       order: FetchOrientation,
       maxRows: Int): TRowSet = {
-
     val log = getOperation(opHandle).asInstanceOf[SparkOperation].getOperationLog
-    if (log == null) {
-      throw KyuubiSQLException(s"Couldn't find log associated with $opHandle")
-    }
     log.read(maxRows)
   }
 }

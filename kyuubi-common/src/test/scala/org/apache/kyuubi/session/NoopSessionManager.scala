@@ -38,4 +38,6 @@ class NoopSessionManager extends SessionManager("noop") {
     setSession(session.handle, session)
     session.handle
   }
+
+  override protected def isServer: Boolean = true
 }

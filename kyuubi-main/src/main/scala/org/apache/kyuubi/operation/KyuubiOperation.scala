@@ -120,6 +120,7 @@ abstract class KyuubiOperation(
     val req = new TFetchResultsReq(
       _remoteOpHandle, FetchOrientation.toTFetchOrientation(order), rowSetSize)
     val resp = client.FetchResults(req)
+    verifyTStatus(resp.getStatus)
     resp.getResults
   }
 

@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.session
 
-import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
+import java.util.concurrent.{ConcurrentHashMap, Future, ThreadPoolExecutor, TimeUnit}
 
 import scala.collection.JavaConverters._
 
@@ -25,6 +25,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.operation.OperationManager
 import org.apache.kyuubi.service.CompositeService
 import org.apache.kyuubi.util.ThreadUtils
@@ -43,6 +44,12 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   private val handleToSession = new ConcurrentHashMap[SessionHandle, Session]
   private val timeoutChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-timeout-checker")
+
+  protected def isServer: Boolean
+
+  private var execPool: ThreadPoolExecutor = _
+
+  def submitBackgroundOperation(r: Runnable): Future[_] = execPool.submit(r)
 
   def operationManager: OperationManager
 
@@ -77,6 +84,26 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   override def initialize(conf: KyuubiConf): Unit = {
     addService(operationManager)
+
+    val poolSize: Int = if (isServer) {
+      conf.get(SERVER_EXEC_POOL_SIZE)
+    } else {
+      conf.get(ENGINE_EXEC_POOL_SIZE)
+    }
+
+    val waitQueueSize: Int = if (isServer) {
+      conf.get(SERVER_EXEC_WAIT_QUEUE_SIZE)
+    } else {
+      conf.get(ENGINE_EXEC_WAIT_QUEUE_SIZE)
+    }
+    val keepAliveMs: Long = if (isServer) {
+      conf.get(SERVER_EXEC_KEEPALIVE_TIME)
+    } else {
+      conf.get(ENGINE_EXEC_KEEPALIVE_TIME)
+    }
+
+    execPool = ThreadUtils.newDaemonQueuedThreadPool(
+      poolSize, waitQueueSize, keepAliveMs, s"$name-exec-pool")
     super.initialize(conf)
   }
 
@@ -88,12 +115,28 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   override def stop(): Unit = {
     super.stop()
     shutdown = true
+    val shutdownTimeout: Long = if (isServer) {
+      conf.get(ENGINE_EXEC_POOL_SHUTDOWN_TIMEOUT)
+    } else {
+      conf.get(SERVER_EXEC_POOL_SHUTDOWN_TIMEOUT)
+    }
     timeoutChecker.shutdown()
     try {
-      timeoutChecker.awaitTermination(10, TimeUnit.SECONDS)
+      timeoutChecker.awaitTermination(shutdownTimeout, TimeUnit.MILLISECONDS)
     } catch {
       case i: InterruptedException =>
         warn(s"Exceeded to shutdown session timeout checker ", i)
+    }
+
+    if (execPool != null) {
+      execPool.shutdown()
+      try {
+        execPool.awaitTermination(shutdownTimeout, TimeUnit.MILLISECONDS)
+      } catch {
+        case e: InterruptedException =>
+          warn(s"Exceeded timeout($shutdownTimeout ms) to wait the exec-pool shutdown gracefully",
+            e)
+      }
     }
   }
 
