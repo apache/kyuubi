@@ -47,13 +47,19 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
     sessionToSpark.put(sessionHandle, spark)
   }
 
+  def removeSparkSession(sessionHandle: SessionHandle): Unit = {
+    sessionToSpark.remove(sessionHandle)
+  }
+
+  def getOpenSparkSessionCount: Int = sessionToSpark.size()
+
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val spark = getSparkSession(session.handle)
-    val operation = new ExecuteStatement(spark, session, statement)
+    val operation = new ExecuteStatement(spark, session, statement, runAsync)
     addOperation(operation)
 
   }
@@ -126,11 +132,7 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
       opHandle: OperationHandle,
       order: FetchOrientation,
       maxRows: Int): TRowSet = {
-
     val log = getOperation(opHandle).asInstanceOf[SparkOperation].getOperationLog
-    if (log == null) {
-      throw KyuubiSQLException(s"Couldn't find log associated with $opHandle")
-    }
     log.read(maxRows)
   }
 }

@@ -20,7 +20,7 @@ package org.apache.kyuubi.config
 private[kyuubi] class ConfigProvider(conf: java.util.Map[String, String]) {
 
   def get(key: String): Option[String] = {
-    if (key.startsWith(KYUUBI_PREFIX)) {
+    if (key.startsWith("kyuubi.")) {
       Option(conf.get(key))
     } else {
       None

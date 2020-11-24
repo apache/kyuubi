@@ -18,7 +18,6 @@
 package org.apache.kyuubi.session
 
 import scala.collection.JavaConverters._
-import scala.util.control.NonFatal
 
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion, TRowSet, TTableSchema}
 
@@ -75,12 +74,12 @@ abstract class AbstractSession(
   }
 
   override def close(): Unit = withAcquireRelease() {
-    opHandleSet.forEach { operationHandle =>
+    opHandleSet.forEach { opHandle =>
       try {
-        sessionManager.operationManager.closeOperation(operationHandle)
+        sessionManager.operationManager.closeOperation(opHandle)
       } catch {
-        case NonFatal(e) =>
-          warn(s"Error closing operation $operationHandle during closing $handle", e)
+        case e: Exception =>
+          warn(s"Error closing operation $opHandle during closing $handle for", e)
       }
     }
   }
@@ -106,7 +105,7 @@ abstract class AbstractSession(
       case TGetInfoType.CLI_MAX_COLUMN_NAME_LEN |
            TGetInfoType.CLI_MAX_SCHEMA_NAME_LEN |
            TGetInfoType.CLI_MAX_TABLE_NAME_LEN => TGetInfoValue.lenValue(128)
-      case _ => throw KyuubiSQLException(s"Unrecognized GetInfoType value: ${infoType}")
+      case _ => throw KyuubiSQLException(s"Unrecognized GetInfoType value: $infoType")
     }
   }
 
@@ -208,7 +207,6 @@ abstract class AbstractSession(
       sessionManager.operationManager.getOperationLogRowSet(operationHandle, orientation, maxRows)
     } else {
       sessionManager.operationManager.getOperationNextRowSet(operationHandle, orientation, maxRows)
-
     }
   }
 
@@ -220,8 +218,7 @@ abstract class AbstractSession(
       try {
         op.close()
       } catch {
-        case e: Exception =>
-          warn(s"Error closing timed-out operation ${op.getHandle}", e)
+        case e: Exception => warn(s"Error closing timed-out operation ${op.getHandle}", e)
       }
     }
   }

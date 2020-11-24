@@ -18,7 +18,6 @@
 package org.apache.kyuubi
 
 import java.io.{File, InputStreamReader, IOException}
-import java.net.{URI, URISyntaxException}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 import java.util.{Properties, UUID}
@@ -44,57 +43,34 @@ private[kyuubi] object Utils extends Logging {
     env.get(KYUUBI_CONF_DIR)
       .orElse(env.get(KYUUBI_HOME).map(_ + File.separator + "/conf"))
       .map( d => new File(d + File.separator + KYUUBI_CONF_FILE_NAME))
-      .filter(f => f.exists() && f.isFile)
+      .filter(_.exists())
       .orElse {
         Option(getClass.getClassLoader.getResource(KYUUBI_CONF_FILE_NAME)).map { url =>
           new File(url.getFile)
-        }
+        }.filter(_.exists())
       }
   }
 
   def getPropertiesFromFile(file: Option[File]): Map[String, String] = {
     file.map { f =>
       info(s"Loading Kyuubi properties from ${f.getAbsolutePath}")
-      val reader = new InputStreamReader(f.toURI.toURL.openStream(), StandardCharsets.UTF_8)
       try {
-        val properties = new Properties()
-        properties.load(reader)
-        properties.stringPropertyNames().asScala.map { k =>
-          (k, properties.getProperty(k).trim)
-        }.toMap
+        val reader = new InputStreamReader(f.toURI.toURL.openStream(), StandardCharsets.UTF_8)
+        try {
+          val properties = new Properties()
+          properties.load(reader)
+          properties.stringPropertyNames().asScala.map { k =>
+            (k, properties.getProperty(k).trim)
+          }.toMap
+        } finally {
+          reader.close()
+        }
       } catch {
         case e: IOException =>
           throw new KyuubiException(
             s"Failed when loading Kyuubi properties from ${f.getAbsolutePath}", e)
-      } finally {
-        reader.close()
       }
     }.getOrElse(Map.empty)
-  }
-
-  /**
-   * Return a well-formed URI for the file described by a user input string.
-   *
-   * If the supplied path does not contain a scheme, or is a relative path, it will be
-   * converted into an absolute path with a file:// scheme.
-   */
-  def resolveURI(path: String): URI = {
-    try {
-      val uri = new URI(path)
-      if (uri.getScheme != null) {
-        return uri
-      }
-      // make sure to handle if the path has a fragment (applies to yarn
-      // distributed cache)
-      if (uri.getFragment != null) {
-        val absoluteURI = new File(uri.getPath).getAbsoluteFile.toURI
-        return new URI(absoluteURI.getScheme, absoluteURI.getHost, absoluteURI.getPath,
-          uri.getFragment)
-      }
-    } catch {
-      case _: URISyntaxException =>
-    }
-    new File(path).getAbsoluteFile.toURI
   }
 
   private val MAX_DIR_CREATION_ATTEMPTS: Int = 10
@@ -131,4 +107,47 @@ private[kyuubi] object Utils extends Logging {
   }
 
   def currentUser: String = UserGroupInformation.getCurrentUser.getShortUserName
+
+  private val majorMinorRegex = """^(\d+)\.(\d+)(\..*)?$""".r
+  private val shortVersionRegex = """^(\d+\.\d+\.\d+)(.*)?$""".r
+
+  /**
+   * Given a Kyuubi/Spark/Hive version string, return the major version number.
+   * E.g., for 2.0.1-SNAPSHOT, return 2.
+   */
+  def majorVersion(version: String): Int = majorMinorVersion(version)._1
+
+  /**
+   * Given a Kyuubi/Spark/Hive version string, return the minor version number.
+   * E.g., for 2.0.1-SNAPSHOT, return 0.
+   */
+  def minorVersion(version: String): Int = majorMinorVersion(version)._2
+
+  /**
+   * Given a Kyuubi/Spark/Hive version string, return the short version string.
+   * E.g., for 3.0.0-SNAPSHOT, return '3.0.0'.
+   */
+  def shortVersion(version: String): String = {
+    shortVersionRegex.findFirstMatchIn(version) match {
+      case Some(m) => m.group(1)
+      case None =>
+        throw new IllegalArgumentException(s"Tried to parse '$version' as a project" +
+          s" version string, but it could not find the major/minor/maintenance version numbers.")
+    }
+  }
+
+  /**
+   * Given a Kyuubi/Spark/Hive version string,
+   * return the (major version number, minor version number).
+   * E.g., for 2.0.1-SNAPSHOT, return (2, 0).
+   */
+  def majorMinorVersion(version: String): (Int, Int) = {
+    majorMinorRegex.findFirstMatchIn(version) match {
+      case Some(m) =>
+        (m.group(1).toInt, m.group(2).toInt)
+      case None =>
+        throw new IllegalArgumentException(s"Tried to parse '$version' as a project" +
+          s" version string, but it could not find the major and minor version numbers.")
+    }
+  }
 }

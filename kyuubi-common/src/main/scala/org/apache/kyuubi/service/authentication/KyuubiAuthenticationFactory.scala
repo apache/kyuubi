@@ -32,6 +32,7 @@ import org.apache.thrift.transport.{TTransportException, TTransportFactory}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.authentication.AuthTypes._
 
 class KyuubiAuthenticationFactory(conf: KyuubiConf) {
@@ -83,6 +84,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf) {
 
   def getIpAddress: Option[String] = {
     saslServer.map(_.getRemoteAddress).map(_.getHostAddress)
+      .orElse(Option(TSetIpAddressProcessor.getUserIpAddress))
   }
 }
 object KyuubiAuthenticationFactory {

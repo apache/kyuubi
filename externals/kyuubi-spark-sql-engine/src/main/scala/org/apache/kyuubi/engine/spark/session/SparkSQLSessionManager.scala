@@ -17,14 +17,12 @@
 
 package org.apache.kyuubi.engine.spark.session
 
-import scala.util.control.NonFatal
-
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
-import org.apache.kyuubi.session.{SessionHandle, SessionManager}
+import org.apache.kyuubi.session._
 
 /**
  * A [[SessionManager]] constructed with [[SparkSession]] which give it the ability to talk with
@@ -41,31 +39,52 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
   val operationManager = new SparkSQLOperationManager()
 
+  @volatile private var _latestLogoutTime: Long = Long.MaxValue
+  def latestLogoutTime: Long = _latestLogoutTime
+
   override def openSession(
       protocol: TProtocolVersion,
       user: String,
       password: String,
       ipAddress: String,
       conf: Map[String, String]): SessionHandle = {
+    info(s"Opening session for $user@$ipAddress")
     val sessionImpl = new SparkSessionImpl(protocol, user, password, ipAddress, conf, this)
     val handle = sessionImpl.handle
     try {
       val sparkSession = spark.newSession()
-      conf.foreach { case (key, value) => spark.conf.set(key, value)}
-      operationManager.setSparkSession(handle, sparkSession)
+      conf.foreach {
+        case (HIVE_VAR_PREFIX(key), value) => setModifiableConfig(sparkSession, key, value)
+        case (HIVE_CONF_PREFIX(key), value) => setModifiableConfig(sparkSession, key, value)
+        case ("use:database", database) => sparkSession.catalog.setCurrentDatabase(database)
+        case (key, value) => setModifiableConfig(sparkSession, key, value)
+      }
       sessionImpl.open()
-      info(s"$user's session with $handle is opened, current opening sessions" +
-        s" $getOpenSessionCount")
+      operationManager.setSparkSession(handle, sparkSession)
       setSession(handle, sessionImpl)
+      info(s"$user's session with $handle is opened, current opening sessions" +
+      s" $getOpenSessionCount")
       handle
     } catch {
-      case NonFatal(e) =>
-        try {
-          sessionImpl.close()
-        } catch {
-          case t: Throwable => warn(s"Error closing session $handle for $user", t)
-        }
-        throw KyuubiSQLException(s"Error opening session $handle for $user", e)
+      case e: Exception =>
+        sessionImpl.close()
+        throw KyuubiSQLException(s"Error opening session $handle for $user: ${e.getMessage}", e)
     }
   }
+
+  override def closeSession(sessionHandle: SessionHandle): Unit = {
+    _latestLogoutTime = System.currentTimeMillis()
+    super.closeSession(sessionHandle)
+    operationManager.removeSparkSession(sessionHandle)
+  }
+
+  private def setModifiableConfig(spark: SparkSession, key: String, value: String): Unit = {
+    if (spark.conf.isModifiable(key)) {
+      spark.conf.set(key, value)
+    } else {
+      warn(s"Spark config $key is static and will be ignored")
+    }
+  }
+
+  override protected def isServer: Boolean = false
 }

@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.ha
 
+import org.apache.hadoop.security.UserGroupInformation
+
 import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf}
 import org.apache.kyuubi.ha.client.RetryPolicies
 
@@ -36,6 +38,13 @@ object HighAvailabilityConf {
     .version("1.0.0")
     .stringConf
     .createWithDefault("kyuubi")
+
+  val HA_ZK_ACL_ENABLED: ConfigEntry[Boolean] =
+    buildConf("ha.zookeeper.acl.enabled")
+      .doc("Set to true if the zookeeper ensemble is kerberized")
+      .version("1.0.0")
+      .booleanConf
+      .createWithDefault(UserGroupInformation.isSecurityEnabled)
 
   val HA_ZK_CONN_MAX_RETRIES: ConfigEntry[Int] =
     buildConf("ha.zookeeper.connection.max.retries")
@@ -75,7 +84,8 @@ object HighAvailabilityConf {
   val HA_ZK_CONN_RETRY_POLICY: ConfigEntry[String] =
     buildConf("ha.zookeeper.connection.retry.policy")
     .doc("The retry policy for connecting to the zookeeper ensemble, all candidates are:" +
-      s" ${RetryPolicies.values.mkString("[", ", ", "]")}")
+      s" ${RetryPolicies.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
+    .version("1.0.0")
     .stringConf
     .checkValues(RetryPolicies.values.map(_.toString))
     .createWithDefault(RetryPolicies.EXPONENTIAL_BACKOFF.toString)

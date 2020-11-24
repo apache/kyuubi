@@ -17,25 +17,11 @@
 
 package org.apache.kyuubi
 
-import java.time.Duration
-
-import org.apache.kyuubi.config.ConfigEntry
-import org.apache.kyuubi.config.KyuubiConf.buildConf
+import scala.util.matching.Regex
 
 package object session {
 
-  val SESSION_CHECK_INTERVAL: ConfigEntry[Long] =
-    buildConf("session.check.interval")
-      .doc("The check interval for frontend session/operation timeout.")
-      .timeConf
-      .checkValue(_ > Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
-      .createWithDefault(Duration.ofHours(6).toMillis)
-
-  val SESSION_TIMEOUT: ConfigEntry[Long] =
-    buildConf("session.timeout")
-      .doc("The check interval for frontend session/operation timeout.")
-      .timeConf
-      .checkValue(_ > Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
-      .createWithDefault(Duration.ofHours(6).toMillis)
+  val HIVE_VAR_PREFIX: Regex = """set:hivevar:([^=]+)""".r
+  val HIVE_CONF_PREFIX: Regex = """set:hiveconf:([^=]+)""".r
 
 }

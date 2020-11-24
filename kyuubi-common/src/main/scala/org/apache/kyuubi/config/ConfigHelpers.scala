@@ -28,13 +28,4 @@ object ConfigHelpers {
   def seqToStr[T](v: Seq[T], stringConverter: T => String): String = {
     v.map(stringConverter).mkString(",")
   }
-
-  def toNumber[T](s: String, converter: String => T, key: String, configType: String): T = {
-    try {
-      converter(s.trim)
-    } catch {
-      case _: NumberFormatException =>
-        throw new IllegalArgumentException(s"$key should be $configType, but was $s")
-    }
-  }
 }

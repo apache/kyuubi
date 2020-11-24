@@ -17,8 +17,16 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import java.sql.{DatabaseMetaData, ResultSet, SQLFeatureNotSupportedException}
+
+import scala.collection.JavaConverters._
+import scala.util.Random
+
+import org.apache.hive.common.util.HiveVersionInfo
 import org.apache.hive.service.cli.HiveSQLException
-import org.apache.hive.service.rpc.thrift.TOpenSessionReq
+import org.apache.hive.service.rpc.thrift._
+import org.apache.hive.service.rpc.thrift.TCLIService.Iface
+import org.apache.hive.service.rpc.thrift.TOperationState._
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
 import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.types._
@@ -28,103 +36,6 @@ import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 class SparkOperationSuite extends WithSparkSQLEngine {
-  private val currentCatalog = spark.sessionState.catalogManager.currentCatalog
-  private val dftSchema = "default"
-
-  test("get catalogs") {
-    withJdbcStatement() { statement =>
-      val metaData = statement.getConnection.getMetaData
-      val catalogs = metaData.getCatalogs
-      catalogs.next()
-      assert(catalogs.getString(TABLE_CAT) === currentCatalog.name())
-      assert(!catalogs.next())
-    }
-  }
-
-  test("get schemas") {
-    withDatabases("db1", "db2") { statement =>
-      statement.execute("CREATE DATABASE IF NOT EXISTS db1")
-      statement.execute("CREATE DATABASE IF NOT EXISTS db2")
-      val metaData = statement.getConnection.getMetaData
-
-      Seq("", "%", null, ".*", "db#") foreach { pattern =>
-        val resultSet = metaData.getSchemas(null, pattern)
-        val expected =
-          Seq("db1", "db2", "default", spark.sharedState.globalTempViewManager.database).iterator
-        while(resultSet.next()) {
-          assert(resultSet.getString(TABLE_SCHEM) === expected.next)
-          assert(resultSet.getString(TABLE_CATALOG).isEmpty)
-        }
-      }
-
-      val e = intercept[HiveSQLException](metaData.getSchemas(null, "*"))
-      assert(e.getCause.getMessage === "org.apache.kyuubi.KyuubiSQLException:" +
-        "Error operating GET_SCHEMAS: Dangling meta character '*' near index 0\n*\n^")
-    }
-  }
-
-  test("get tables") {
-    val table_test = "table_1_test"
-    val table_external_test = "table_2_test"
-    val view_test = "view_1_test"
-    val view_global_test = "view_2_test"
-    val tables = Seq(table_test, table_external_test, view_test, view_global_test)
-    val schemas = Seq("default", "default", "default", "global_temp")
-    val tableTypes = Seq("MANAGED", "EXTERNAL", "VIEW", "VIEW")
-    withJdbcStatement(view_test, view_global_test, table_test, view_test) { statement =>
-      statement.execute(
-        s"CREATE TABLE IF NOT EXISTS $table_test(key int) USING parquet COMMENT '$table_test'")
-      val loc = Utils.createTempDir()
-      statement.execute(s"CREATE EXTERNAL TABLE IF NOT EXISTS $table_external_test(key int)" +
-        s" COMMENT '$table_external_test' LOCATION '$loc'")
-      statement.execute(s"CREATE VIEW IF NOT EXISTS $view_test COMMENT '$view_test'" +
-        s" AS SELECT * FROM $table_test")
-      statement.execute(s"CREATE GLOBAL TEMP VIEW $view_global_test" +
-        s" COMMENT '$view_global_test' AS SELECT * FROM $table_test")
-
-      val metaData = statement.getConnection.getMetaData
-      val rs1 = metaData.getTables(null, null, null, null)
-      var i = 0
-      while(rs1.next()) {
-        assert(rs1.getString(TABLE_CAT).isEmpty)
-        assert(rs1.getString(TABLE_SCHEM) === schemas(i))
-        assert(rs1.getString(TABLE_NAME) == tables(i))
-        assert(rs1.getString(TABLE_TYPE) == tableTypes(i))
-        assert(rs1.getString(REMARKS) === tables(i).replace(view_global_test, ""))
-        i += 1
-      }
-      assert(i === 4)
-
-      val rs2 = metaData.getTables(null, null, null, Array("VIEW"))
-      i = 2
-      while(rs2.next()) {
-        assert(rs2.getString(TABLE_NAME) == tables(i))
-        i += 1
-      }
-      assert(i === 4)
-
-      val rs3 = metaData.getTables(null, null, "table%", Array("VIEW"))
-      assert(!rs3.next())
-
-      val rs4 = metaData.getTables(null, null, "table%", Array("TABLE"))
-      i = 0
-      while(rs4.next()) {
-        assert(rs4.getString(TABLE_NAME) == tables(i))
-        i += 1
-      }
-      assert(i === 2)
-
-      val rs5 = metaData.getTables(null, "default", "%", Array("VIEW"))
-      i = 2
-      while(rs5.next()) {
-        assert(rs5.getString(TABLE_NAME) == view_test)
-      }
-
-      val e = intercept[HiveSQLException](metaData.getTables(null, "*", null, null))
-      assert(e.getCause.getMessage === "org.apache.kyuubi.KyuubiSQLException:" +
-        "Error operating GET_TABLES: Dangling meta character '*' near index 0\n*\n^")
-    }
-  }
 
   test("get table types") {
     withJdbcStatement() { statement =>
@@ -136,164 +47,6 @@ class SparkOperationSuite extends WithSparkSQLEngine {
       }
       assert(!expected.hasNext)
       assert(!types.next())
-    }
-  }
-
-  test("get type info") {
-    withJdbcStatement() { statement =>
-      val typeInfo = statement.getConnection.getMetaData.getTypeInfo
-      typeInfo.next()
-      assert(typeInfo.getString(TYPE_NAME) === "VOID")
-      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.NULL)
-      assert(typeInfo.getInt(PRECISION) === 0)
-      assert(typeInfo.getShort(NULLABLE) === 1)
-      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
-      assert(typeInfo.getShort(SEARCHABLE) === 3)
-      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
-
-      typeInfo.next()
-      assert(typeInfo.getString(TYPE_NAME) === "BOOLEAN")
-      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.BOOLEAN)
-      assert(typeInfo.getInt(PRECISION) === 0)
-      assert(typeInfo.getShort(NULLABLE) === 1)
-      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
-      assert(typeInfo.getShort(SEARCHABLE) === 3)
-      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
-
-      typeInfo.next()
-      assert(typeInfo.getString(TYPE_NAME) === "TINYINT")
-      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.TINYINT)
-      assert(typeInfo.getInt(PRECISION) === 3)
-      assert(typeInfo.getShort(NULLABLE) === 1)
-      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
-      assert(typeInfo.getShort(SEARCHABLE) === 3)
-      assert(typeInfo.getInt(NUM_PREC_RADIX) === 10)
-
-      typeInfo.next()
-      assert(typeInfo.getString(TYPE_NAME) === "SMALLINT")
-      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.SMALLINT)
-      assert(typeInfo.getInt(PRECISION) === 5)
-      assert(typeInfo.getShort(NULLABLE) === 1)
-      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
-      assert(typeInfo.getShort(SEARCHABLE) === 3)
-      assert(typeInfo.getInt(NUM_PREC_RADIX) === 10)
-
-      typeInfo.next()
-      assert(typeInfo.getString(TYPE_NAME) === "INTEGER")
-      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.INTEGER)
-      assert(typeInfo.getInt(PRECISION) === 10)
-      assert(typeInfo.getShort(NULLABLE) === 1)
-      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
-      assert(typeInfo.getShort(SEARCHABLE) === 3)
-      assert(typeInfo.getInt(NUM_PREC_RADIX) === 10)
-
-      typeInfo.next()
-      assert(typeInfo.getString(TYPE_NAME) === "BIGINT")
-      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.BIGINT)
-      assert(typeInfo.getInt(PRECISION) === 19)
-      assert(typeInfo.getShort(NULLABLE) === 1)
-      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
-      assert(typeInfo.getShort(SEARCHABLE) === 3)
-      assert(typeInfo.getInt(NUM_PREC_RADIX) === 10)
-
-      typeInfo.next()
-      assert(typeInfo.getString(TYPE_NAME) === "FLOAT")
-      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.FLOAT)
-      assert(typeInfo.getInt(PRECISION) === 7)
-      assert(typeInfo.getShort(NULLABLE) === 1)
-      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
-      assert(typeInfo.getShort(SEARCHABLE) === 3)
-      assert(typeInfo.getInt(NUM_PREC_RADIX) === 10)
-
-      typeInfo.next()
-      assert(typeInfo.getString(TYPE_NAME) === "DOUBLE")
-      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.DOUBLE)
-      assert(typeInfo.getInt(PRECISION) === 15)
-      assert(typeInfo.getShort(NULLABLE) === 1)
-      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
-      assert(typeInfo.getShort(SEARCHABLE) === 3)
-      assert(typeInfo.getInt(NUM_PREC_RADIX) === 10)
-
-      typeInfo.next()
-      assert(typeInfo.getString(TYPE_NAME) === "STRING")
-      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.VARCHAR)
-      assert(typeInfo.getInt(PRECISION) === 0)
-      assert(typeInfo.getShort(NULLABLE) === 1)
-      assert(typeInfo.getBoolean(CASE_SENSITIVE))
-      assert(typeInfo.getShort(SEARCHABLE) === 3)
-      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
-
-      typeInfo.next()
-      assert(typeInfo.getString(TYPE_NAME) === "BINARY")
-      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.BINARY)
-      assert(typeInfo.getInt(PRECISION) === 0)
-      assert(typeInfo.getShort(NULLABLE) === 1)
-      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
-      assert(typeInfo.getShort(SEARCHABLE) === 3)
-      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
-
-      typeInfo.next()
-      assert(typeInfo.getString(TYPE_NAME) === "DECIMAL")
-      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.DECIMAL)
-      assert(typeInfo.getInt(PRECISION) === 38)
-      assert(typeInfo.getShort(NULLABLE) === 1)
-      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
-      assert(typeInfo.getShort(SEARCHABLE) === 3)
-      assert(typeInfo.getInt(NUM_PREC_RADIX) === 10)
-
-      typeInfo.next()
-      assert(typeInfo.getString(TYPE_NAME) === "DATE")
-      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.DATE)
-      assert(typeInfo.getInt(PRECISION) === 0)
-      assert(typeInfo.getShort(NULLABLE) === 1)
-      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
-      assert(typeInfo.getShort(SEARCHABLE) === 3)
-      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
-
-      typeInfo.next()
-      assert(typeInfo.getString(TYPE_NAME) === "TIMESTAMP")
-      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.TIMESTAMP)
-      assert(typeInfo.getInt(PRECISION) === 0)
-      assert(typeInfo.getShort(NULLABLE) === 1)
-      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
-      assert(typeInfo.getShort(SEARCHABLE) === 3)
-      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
-
-      typeInfo.next()
-      assert(typeInfo.getString(TYPE_NAME) === "ARRAY")
-      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.ARRAY)
-      assert(typeInfo.getInt(PRECISION) === 0)
-      assert(typeInfo.getShort(NULLABLE) === 1)
-      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
-      assert(typeInfo.getShort(SEARCHABLE) === 0)
-      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
-
-      typeInfo.next()
-      assert(typeInfo.getString(TYPE_NAME) === "MAP")
-      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.JAVA_OBJECT)
-      assert(typeInfo.getInt(PRECISION) === 0)
-      assert(typeInfo.getShort(NULLABLE) === 1)
-      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
-      assert(typeInfo.getShort(SEARCHABLE) === 0)
-      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
-
-      typeInfo.next()
-      assert(typeInfo.getString(TYPE_NAME) === "STRUCT")
-      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.STRUCT)
-      assert(typeInfo.getInt(PRECISION) === 0)
-      assert(typeInfo.getShort(NULLABLE) === 1)
-      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
-      assert(typeInfo.getShort(SEARCHABLE) === 0)
-      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
-
-      typeInfo.next()
-      assert(typeInfo.getString(TYPE_NAME) === "INTERVAL")
-      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.OTHER)
-      assert(typeInfo.getInt(PRECISION) === 0)
-      assert(typeInfo.getShort(NULLABLE) === 1)
-      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
-      assert(typeInfo.getShort(SEARCHABLE) === 0)
-      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
     }
   }
 
@@ -394,8 +147,6 @@ class SparkOperationSuite extends WithSparkSQLEngine {
     }
   }
 
-
-
   test("get columns operation should handle interval column properly") {
     val viewName = "view_interval"
     val ddl = s"CREATE GLOBAL TEMP VIEW $viewName as select interval 1 day as i"
@@ -453,32 +204,428 @@ class SparkOperationSuite extends WithSparkSQLEngine {
   test("get functions") {
     withJdbcStatement() { statement =>
       val metaData = statement.getConnection.getMetaData
+      val apis = Seq(metaData.getFunctions _, metaData.getProcedures _)
       Seq("to_timestamp", "date_part", "lpad", "date_format", "cos", "sin").foreach { func =>
-        val resultSet = metaData.getFunctions("", dftSchema, func)
-        while (resultSet.next()) {
-          val exprInfo = FunctionRegistry.expressions(func)._1
-          assert(resultSet.getString(FUNCTION_CAT).isEmpty)
-          assert(resultSet.getString(FUNCTION_SCHEM) === null)
-          assert(resultSet.getString(FUNCTION_NAME) === exprInfo.getName)
-          assert(resultSet.getString(REMARKS) ===
-            s"Usage: ${exprInfo.getUsage}\nExtended Usage:${exprInfo.getExtended}")
-          assert(resultSet.getString(SPECIFIC_NAME) === exprInfo.getClassName)
+        apis.foreach { apiFunc =>
+          val resultSet = apiFunc("", dftSchema, func)
+          while (resultSet.next()) {
+            val exprInfo = FunctionRegistry.expressions(func)._1
+            assert(resultSet.getString(FUNCTION_CAT).isEmpty)
+            assert(resultSet.getString(FUNCTION_SCHEM) === null)
+            assert(resultSet.getString(FUNCTION_NAME) === exprInfo.getName)
+            assert(resultSet.getString(REMARKS) ===
+              s"Usage: ${exprInfo.getUsage}\nExtended Usage:${exprInfo.getExtended}")
+            assert(resultSet.getString(SPECIFIC_NAME) === exprInfo.getClassName)
+          }
         }
       }
     }
   }
 
-  test("get functions operation") {
+  test("execute statement -  select decimal") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("SELECT 1.2BD as col1, 1.23BD AS col2")
+      assert(resultSet.next())
+      assert(resultSet.getBigDecimal("col1") === Decimal(1.2).toJavaBigDecimal)
+      assert(resultSet.getBigDecimal("col2") === Decimal(1.23).toJavaBigDecimal)
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.DECIMAL)
+      assert(metaData.getColumnType(2) === java.sql.Types.DECIMAL)
+      assert(metaData.getPrecision(1) == 2)
+      assert(metaData.getPrecision(2) == 3)
+      assert(metaData.getScale(1) == 1)
+      assert(metaData.getScale(2) == 2)
+    }
+  }
+
+  test("Hive JDBC Database MetaData API Auditing") {
+    withJdbcStatement() { statement =>
+      val metaData = statement.getConnection.getMetaData
+      Seq(
+        () => metaData.allProceduresAreCallable(),
+        () => metaData.getURL,
+        () => metaData.getUserName,
+        () => metaData.isReadOnly,
+        () => metaData.nullsAreSortedHigh,
+        () => metaData.nullsAreSortedLow,
+        () => metaData.nullsAreSortedAtStart(),
+        () => metaData.nullsAreSortedAtEnd(),
+        () => metaData.usesLocalFiles(),
+        () => metaData.usesLocalFilePerTable(),
+        () => metaData.supportsMixedCaseIdentifiers(),
+        () => metaData.supportsMixedCaseQuotedIdentifiers(),
+        () => metaData.storesUpperCaseIdentifiers(),
+        () => metaData.storesUpperCaseQuotedIdentifiers(),
+        () => metaData.storesLowerCaseIdentifiers(),
+        () => metaData.storesLowerCaseQuotedIdentifiers(),
+        () => metaData.storesMixedCaseIdentifiers(),
+        () => metaData.storesMixedCaseQuotedIdentifiers(),
+        () => metaData.getSQLKeywords,
+        () => metaData.nullPlusNonNullIsNull,
+        () => metaData.supportsConvert,
+        () => metaData.supportsTableCorrelationNames,
+        () => metaData.supportsDifferentTableCorrelationNames,
+        () => metaData.supportsExpressionsInOrderBy(),
+        () => metaData.supportsOrderByUnrelated,
+        () => metaData.supportsGroupByUnrelated,
+        () => metaData.supportsGroupByBeyondSelect,
+        () => metaData.supportsLikeEscapeClause,
+        () => metaData.supportsMultipleTransactions,
+        () => metaData.supportsMinimumSQLGrammar,
+        () => metaData.supportsCoreSQLGrammar,
+        () => metaData.supportsExtendedSQLGrammar,
+        () => metaData.supportsANSI92EntryLevelSQL,
+        () => metaData.supportsANSI92IntermediateSQL,
+        () => metaData.supportsANSI92FullSQL,
+        () => metaData.supportsIntegrityEnhancementFacility,
+        () => metaData.isCatalogAtStart,
+        () => metaData.supportsSubqueriesInComparisons,
+        () => metaData.supportsSubqueriesInExists,
+        () => metaData.supportsSubqueriesInIns,
+        () => metaData.supportsSubqueriesInQuantifieds,
+        // Spark support this, see https://issues.apache.org/jira/browse/SPARK-18455
+        () => metaData.supportsCorrelatedSubqueries,
+        () => metaData.supportsOpenCursorsAcrossCommit,
+        () => metaData.supportsOpenCursorsAcrossRollback,
+        () => metaData.supportsOpenStatementsAcrossCommit,
+        () => metaData.supportsOpenStatementsAcrossRollback,
+        () => metaData.getMaxBinaryLiteralLength,
+        () => metaData.getMaxCharLiteralLength,
+        () => metaData.getMaxColumnsInGroupBy,
+        () => metaData.getMaxColumnsInIndex,
+        () => metaData.getMaxColumnsInOrderBy,
+        () => metaData.getMaxColumnsInSelect,
+        () => metaData.getMaxColumnsInTable,
+        () => metaData.getMaxConnections,
+        () => metaData.getMaxCursorNameLength,
+        () => metaData.getMaxIndexLength,
+        () => metaData.getMaxSchemaNameLength,
+        () => metaData.getMaxProcedureNameLength,
+        () => metaData.getMaxCatalogNameLength,
+        () => metaData.getMaxRowSize,
+        () => metaData.doesMaxRowSizeIncludeBlobs,
+        () => metaData.getMaxStatementLength,
+        () => metaData.getMaxStatements,
+        () => metaData.getMaxTableNameLength,
+        () => metaData.getMaxTablesInSelect,
+        () => metaData.getMaxUserNameLength,
+        () => metaData.supportsTransactionIsolationLevel(1),
+        () => metaData.supportsDataDefinitionAndDataManipulationTransactions,
+        () => metaData.supportsDataManipulationTransactionsOnly,
+        () => metaData.dataDefinitionCausesTransactionCommit,
+        () => metaData.dataDefinitionIgnoredInTransactions,
+        () => metaData.getColumnPrivileges("", "%", "%", "%"),
+        () => metaData.getTablePrivileges("", "%", "%"),
+        () => metaData.getBestRowIdentifier("", "%", "%", 0, true),
+        () => metaData.getVersionColumns("", "%", "%"),
+        () => metaData.getExportedKeys("", "default", ""),
+        () => metaData.supportsResultSetConcurrency(ResultSet.TYPE_FORWARD_ONLY, 2),
+        () => metaData.ownUpdatesAreVisible(ResultSet.TYPE_FORWARD_ONLY),
+        () => metaData.ownDeletesAreVisible(ResultSet.TYPE_FORWARD_ONLY),
+        () => metaData.ownInsertsAreVisible(ResultSet.TYPE_FORWARD_ONLY),
+        () => metaData.othersUpdatesAreVisible(ResultSet.TYPE_FORWARD_ONLY),
+        () => metaData.othersDeletesAreVisible(ResultSet.TYPE_FORWARD_ONLY),
+        () => metaData.othersInsertsAreVisible(ResultSet.TYPE_FORWARD_ONLY),
+        () => metaData.updatesAreDetected(ResultSet.TYPE_FORWARD_ONLY),
+        () => metaData.deletesAreDetected(ResultSet.TYPE_FORWARD_ONLY),
+        () => metaData.insertsAreDetected(ResultSet.TYPE_FORWARD_ONLY),
+        () => metaData.supportsNamedParameters(),
+        () => metaData.supportsMultipleOpenResults,
+        () => metaData.supportsGetGeneratedKeys,
+        () => metaData.getSuperTypes("", "%", "%"),
+        () => metaData.getSuperTables("", "%", "%"),
+        () => metaData.getAttributes("", "%", "%", "%"),
+        () => metaData.getResultSetHoldability,
+        () => metaData.locatorsUpdateCopy,
+        () => metaData.supportsStatementPooling,
+        () => metaData.getRowIdLifetime,
+        () => metaData.supportsStoredFunctionsUsingCallSyntax,
+        () => metaData.autoCommitFailureClosesAllResultSets,
+        () => metaData.getClientInfoProperties,
+        () => metaData.getFunctionColumns("", "%", "%", "%"),
+        () => metaData.getPseudoColumns("", "%", "%", "%"),
+        () => metaData.generatedKeyAlwaysReturned).foreach { func =>
+        val e = intercept[SQLFeatureNotSupportedException](func())
+        assert(e.getMessage === "Method not supported")
+      }
+
+      import org.apache.kyuubi.KYUUBI_VERSION
+      assert(metaData.allTablesAreSelectable)
+      assert(metaData.getDatabaseProductName === "Spark SQL")
+      assert(metaData.getDatabaseProductVersion === KYUUBI_VERSION)
+      assert(metaData.getDriverName === "Hive JDBC")
+      assert(metaData.getDriverVersion === HiveVersionInfo.getVersion)
+      assert(metaData.getDatabaseMajorVersion === Utils.majorVersion(KYUUBI_VERSION))
+      assert(metaData.getDatabaseMinorVersion === Utils.minorVersion(KYUUBI_VERSION))
+      assert(metaData.getIdentifierQuoteString === " ",
+        "This method returns a space \" \" if identifier quoting is not supported")
+      assert(metaData.getNumericFunctions === "")
+      assert(metaData.getStringFunctions === "")
+      assert(metaData.getSystemFunctions === "")
+      assert(metaData.getTimeDateFunctions === "")
+      assert(metaData.getSearchStringEscape === "\\")
+      assert(metaData.getExtraNameCharacters === "")
+      assert(metaData.supportsAlterTableWithAddColumn())
+      assert(!metaData.supportsAlterTableWithDropColumn())
+      assert(metaData.supportsColumnAliasing())
+      assert(metaData.supportsGroupBy)
+      assert(!metaData.supportsMultipleResultSets)
+      assert(!metaData.supportsNonNullableColumns)
+      assert(metaData.supportsOuterJoins)
+      assert(metaData.supportsFullOuterJoins)
+      assert(metaData.supportsLimitedOuterJoins)
+      assert(metaData.getSchemaTerm === "database")
+      assert(metaData.getProcedureTerm === "UDF")
+      assert(metaData.getCatalogTerm === "instance")
+      assert(metaData.getCatalogSeparator === ".")
+      assert(metaData.supportsSchemasInDataManipulation)
+      assert(!metaData.supportsSchemasInProcedureCalls)
+      assert(metaData.supportsSchemasInTableDefinitions)
+      assert(!metaData.supportsSchemasInIndexDefinitions)
+      assert(!metaData.supportsSchemasInPrivilegeDefinitions)
+      // This is actually supported, but hive jdbc package return false
+      assert(!metaData.supportsCatalogsInDataManipulation)
+      assert(!metaData.supportsCatalogsInProcedureCalls)
+      // This is actually supported, but hive jdbc package return false
+      assert(!metaData.supportsCatalogsInTableDefinitions)
+      assert(!metaData.supportsCatalogsInIndexDefinitions)
+      assert(!metaData.supportsCatalogsInPrivilegeDefinitions)
+      assert(!metaData.supportsPositionedDelete)
+      assert(!metaData.supportsPositionedUpdate)
+      assert(!metaData.supportsSelectForUpdate)
+      assert(!metaData.supportsStoredProcedures)
+      // This is actually supported, but hive jdbc package return false
+      assert(!metaData.supportsUnion)
+      assert(metaData.supportsUnionAll)
+      assert(metaData.getMaxColumnNameLength === 128)
+      assert(metaData.getDefaultTransactionIsolation === java.sql.Connection.TRANSACTION_NONE)
+      assert(!metaData.supportsTransactions)
+      assert(!metaData.getProcedureColumns("", "%", "%", "%").next())
+      intercept[HiveSQLException](metaData.getPrimaryKeys("", "default", ""))
+      assert(!metaData.getImportedKeys("", "default", "").next())
+      intercept[HiveSQLException] {
+        metaData.getCrossReference("", "default", "src", "", "default", "src2")
+      }
+      assert(!metaData.getIndexInfo("", "default", "src", true, true).next())
+
+      assert(metaData.supportsResultSetType(new Random().nextInt()))
+      assert(!metaData.supportsBatchUpdates)
+      assert(!metaData.getUDTs(",", "%", "%", null).next())
+      assert(!metaData.supportsSavepoints)
+      assert(!metaData.supportsResultSetHoldability(ResultSet.HOLD_CURSORS_OVER_COMMIT))
+      assert(metaData.getJDBCMajorVersion === 3)
+      assert(metaData.getJDBCMinorVersion === 0)
+      assert(metaData.getSQLStateType === DatabaseMetaData.sqlStateSQL)
+      assert(metaData.getMaxLogicalLobSize === 0)
+      assert(!metaData.supportsRefCursors)
+    }
+  }
+
+  test("get operation status") {
+    val sql = "select date_sub(date'2011-11-11', '1')"
+
+    withSessionHandle { (client, handle) =>
+      val req = new TExecuteStatementReq()
+      req.setSessionHandle(handle)
+      req.setStatement(sql)
+      val tExecuteStatementResp = client.ExecuteStatement(req)
+      val opHandle = tExecuteStatementResp.getOperationHandle
+      val tGetOperationStatusReq = new TGetOperationStatusReq()
+      tGetOperationStatusReq.setOperationHandle(opHandle)
+      val resp = client.GetOperationStatus(tGetOperationStatusReq)
+      val status = resp.getStatus
+      assert(status.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      assert(resp.getOperationState === TOperationState.FINISHED_STATE)
+      assert(resp.isHasResultSet)
+    }
+  }
+
+  private def waitForOperationToComplete(client: Iface, op: TOperationHandle): Unit = {
+    val req = new TGetOperationStatusReq(op)
+    var state = client.GetOperationStatus(req).getOperationState
+    while (state == INITIALIZED_STATE || state == PENDING_STATE || state == RUNNING_STATE) {
+      state = client.GetOperationStatus(req).getOperationState
+    }
+
+  }
+  test("basic open | execute | close") {
+    withThriftClient { client =>
+      val operationManager = engine.backendService.sessionManager.
+        operationManager.asInstanceOf[SparkSQLOperationManager]
+      assert(operationManager.getOpenSparkSessionCount === 0)
+
+      val req = new TOpenSessionReq()
+      req.setUsername("kentyao")
+      req.setPassword("anonymous")
+      val tOpenSessionResp = client.OpenSession(req)
+
+      assert(operationManager.getOpenSparkSessionCount === 1)
+
+      val tExecuteStatementReq = new TExecuteStatementReq()
+      tExecuteStatementReq.setSessionHandle( tOpenSessionResp.getSessionHandle)
+      tExecuteStatementReq.setRunAsync(true)
+      tExecuteStatementReq.setStatement("set -v")
+      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+
+      val operationHandle = tExecuteStatementResp.getOperationHandle
+      waitForOperationToComplete(client, operationHandle)
+      val tFetchResultsReq = new TFetchResultsReq()
+      tFetchResultsReq.setOperationHandle(operationHandle)
+      tFetchResultsReq.setFetchType(1)
+      tFetchResultsReq.setMaxRows(1000)
+      val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
+      val logs = tFetchResultsResp.getResults.getColumns.get(0).getStringVal.getValues.asScala
+      assert(logs.exists(_.contains(classOf[ExecuteStatement].getCanonicalName)))
+
+      tFetchResultsReq.setFetchType(0)
+      val tFetchResultsResp1 = client.FetchResults(tFetchResultsReq)
+      val rs = tFetchResultsResp1.getResults.getColumns.get(0).getStringVal.getValues.asScala
+      assert(rs.contains("spark.sql.shuffle.partitions"))
+
+      val tCloseSessionReq = new TCloseSessionReq()
+      tCloseSessionReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      val tCloseSessionResp = client.CloseSession(tCloseSessionReq)
+      assert(tCloseSessionResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+
+      assert(operationManager.getOpenSparkSessionCount === 0)
+    }
+  }
+
+  test("set session conf") {
     withThriftClient { client =>
       val req = new TOpenSessionReq()
       req.setUsername("kentyao")
       req.setPassword("anonymous")
-//      req.setClient_protocol(BackendService.SERVER_VERSION)
-      req
-      val resp = client.OpenSession(req)
-      val sessionHandle = resp.getSessionHandle
-    }
+      val conf = Map(
+        "use:database" -> "default",
+        "spark.sql.shuffle.partitions" -> "4",
+        "set:hiveconf:spark.sql.autoBroadcastJoinThreshold" -> "-1",
+        "set:hivevar:spark.sql.adaptive.enabled" -> "true")
+      req.setConfiguration(conf.asJava)
+      val tOpenSessionResp = client.OpenSession(req)
 
+      val tExecuteStatementReq = new TExecuteStatementReq()
+      tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      tExecuteStatementReq.setStatement("set")
+      tExecuteStatementReq.setRunAsync(true)
+      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+
+      val operationHandle = tExecuteStatementResp.getOperationHandle
+      waitForOperationToComplete(client, operationHandle)
+      val tFetchResultsReq = new TFetchResultsReq()
+      tFetchResultsReq.setOperationHandle(operationHandle)
+      tFetchResultsReq.setFetchType(0)
+      tFetchResultsReq.setMaxRows(1000)
+      val tFetchResultsResp1 = client.FetchResults(tFetchResultsReq)
+      val columns = tFetchResultsResp1.getResults.getColumns
+      val rs = columns.get(0).getStringVal.getValues.asScala.zip(
+        columns.get(1).getStringVal.getValues.asScala)
+      rs foreach {
+        case ("spark.sql.shuffle.partitions", v) => assert(v === "4")
+        case ("spark.sql.autoBroadcastJoinThreshold", v) => assert(v === "-1")
+        case ("spark.sql.adaptive.enabled", v) => assert(v.toBoolean)
+        case _ =>
+      }
+      assert(spark.conf.get("spark.sql.shuffle.partitions") === "200")
+
+      val tCloseSessionReq = new TCloseSessionReq()
+      tCloseSessionReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      val tCloseSessionResp = client.CloseSession(tCloseSessionReq)
+      assert(tCloseSessionResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+    }
   }
 
+  test("set session conf - static and core") {
+    withThriftClient { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername("kentyao")
+      req.setPassword("anonymous")
+      val queue = "spark.yarn.queue"
+      val conf = Map("use:database" -> "default",
+        "spark.sql.globalTempDatabase" -> "temp",
+        queue -> "new",
+        s"set:hiveconf:$queue" -> "newnew",
+        s"set:hivevar:$queue" -> "newnewnew")
+      req.setConfiguration(conf.asJava)
+      val tOpenSessionResp = client.OpenSession(req)
+      val status = tOpenSessionResp.getStatus
+      assert(status.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      assert(spark.conf.get("spark.sql.globalTempDatabase") === "global_temp")
+      assert(spark.conf.getOption(queue).isEmpty)
+    }
+  }
+
+  test("set session conf - wrong database") {
+    withThriftClient { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername("kentyao")
+      req.setPassword("anonymous")
+      val conf = Map("use:database" -> "default2")
+      req.setConfiguration(conf.asJava)
+      val tOpenSessionResp = client.OpenSession(req)
+      val status = tOpenSessionResp.getStatus
+      assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(status.getErrorMessage.contains("Database 'default2' does not exist"))
+    }
+  }
+
+  test("not allow to operate closed session or operation") {
+    withThriftClient { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername("kentyao")
+      req.setPassword("anonymous")
+      val tOpenSessionResp = client.OpenSession(req)
+
+      val tExecuteStatementReq = new TExecuteStatementReq()
+      tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      tExecuteStatementReq.setStatement("set")
+      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+
+      val tCloseOperationReq = new TCloseOperationReq(tExecuteStatementResp.getOperationHandle)
+      val tCloseOperationResp = client.CloseOperation(tCloseOperationReq)
+      assert(tCloseOperationResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+
+      val tFetchResultsReq = new TFetchResultsReq()
+      tFetchResultsReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
+      tFetchResultsReq.setFetchType(0)
+      tFetchResultsReq.setMaxRows(1000)
+      val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
+      assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(tFetchResultsResp.getStatus.getErrorMessage startsWith "Invalid OperationHandle" +
+        " [type=EXECUTE_STATEMENT, identifier:")
+
+      val tCloseSessionReq = new TCloseSessionReq()
+      tCloseSessionReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      val tCloseSessionResp = client.CloseSession(tCloseSessionReq)
+      assert(tCloseSessionResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      val tExecuteStatementResp1 = client.ExecuteStatement(tExecuteStatementReq)
+
+      val status = tExecuteStatementResp1.getStatus
+      assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(status.getErrorMessage startsWith s"Invalid SessionHandle [")
+    }
+  }
+
+  test("cancel operation") {
+    withThriftClient { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername("kentyao")
+      req.setPassword("anonymous")
+      val tOpenSessionResp = client.OpenSession(req)
+
+      val tExecuteStatementReq = new TExecuteStatementReq()
+      tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      tExecuteStatementReq.setStatement("set")
+      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+      val tCancelOperationReq = new TCancelOperationReq(tExecuteStatementResp.getOperationHandle)
+      val tCancelOperationResp = client.CancelOperation(tCancelOperationReq)
+      assert(tCancelOperationResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      val tFetchResultsReq = new TFetchResultsReq()
+      tFetchResultsReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
+      tFetchResultsReq.setFetchType(0)
+      tFetchResultsReq.setMaxRows(1000)
+      val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
+      assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+    }
+  }
 }

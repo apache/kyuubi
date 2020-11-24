@@ -25,10 +25,7 @@ object KyuubiHadoopUtils {
 
   def newHadoopConf(conf: KyuubiConf): Configuration = {
     val hadoopConf = new Configuration()
-    conf.getAllWithPrefix("kyuubi", "hadoop").foreach {
-      case (k, v) => hadoopConf.set(k, v)
-    }
+    conf.getAll.foreach { case (k, v) => hadoopConf.set(k, v) }
     hadoopConf
   }
-
 }

@@ -17,36 +17,87 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.io.File
-import java.util.UUID
+import java.nio.file.{Files, Path, Paths}
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.kyuubi.Logging
-import org.apache.kyuubi.engine.ProcessBuilderLike
+import org.apache.kyuubi._
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE
+import org.apache.kyuubi.engine.ProcBuilder
 
 class SparkProcessBuilder(
+    override val proxyUser: String,
     conf: Map[String, String],
-    override val proxyUser: Option[String],
-    override val mainResource: Option[String])
-  extends ProcessBuilderLike {
+    override val env: Map[String, String] = sys.env)
+  extends ProcBuilder with Logging {
 
   import SparkProcessBuilder._
 
   override protected val executable: String = {
-    var sparkHome = conf.getOrElse("SPARK_HOME", System.getenv("SPARK_HOME"))
-
-    if (sparkHome == null) {
-      sparkHome = "./externals/kyuubi-download/target/spark-3.0.0-bin-hadoop2.7"
+    val path = env.get("SPARK_HOME").map { sparkHome =>
+      Paths.get(sparkHome, "bin", "spark-submit").toAbsolutePath
+    } getOrElse {
+      val sparkVer = SPARK_COMPILE_VERSION
+      val hadoopVer = HADOOP_COMPILE_VERSION.take(3)
+      val hiveVer = if (HIVE_COMPILE_VERSION.take(3).toDouble < 2.3) "-hive1.2" else ""
+      Paths.get(
+        "..",
+        "externals",
+        "kyuubi-download",
+        "target",
+        s"spark-$sparkVer-bin-hadoop$hadoopVer$hiveVer",
+        "bin", "spark-submit")
     }
-
-    val exec = Seq(sparkHome, "bin", "spark-submit").mkString(File.separator)
-    require(new File(exec).exists(), "Please specific SPARK_HOME environment variable to a" +
-      " valid spark release package")
-    exec
+    path.toAbsolutePath.toFile.getCanonicalPath
   }
 
-  override val mainClass: String = "org.apache.kyuubi.engine.spark.SparkSQLEngine"
+  override def mainClass: String = "org.apache.kyuubi.engine.spark.SparkSQLEngine"
+
+  override def mainResource: Option[String] = {
+    // 1. get the main resource jar for user specified config first
+    val jarName = s"$module-$KYUUBI_VERSION.jar"
+    conf.get(ENGINE_SPARK_MAIN_RESOURCE.key).filter { userSpecified =>
+      Files.exists(Paths.get(userSpecified))
+    }.orElse {
+      // 2. get the main resource jar from system build default
+      env.get(KyuubiConf.KYUUBI_HOME)
+        .map { Paths.get(_, "externals", "engines", "spark", jarName) }
+        .filter(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
+    }.orElse {
+      // 3. get the main resource from dev environment
+      Option(Paths.get("externals", module, "target", jarName))
+        .filter(Files.exists(_)).orElse {
+        Some(Paths.get("..", "externals", module, "target", jarName))
+      }.map(_.toAbsolutePath.toFile.getCanonicalPath)
+    }
+  }
+
+  override protected val workingDir: Path = {
+    env.get("KYUUBI_WORK_DIR_ROOT").map { root =>
+      val workingRoot = Paths.get(root).toAbsolutePath
+      if (!Files.exists(workingRoot)) {
+        debug(s"Creating KYUUBI_WORK_DIR_ROOT at $workingRoot")
+        Files.createDirectories(workingRoot)
+      }
+      if (Files.isDirectory(workingRoot)) {
+        workingRoot.toString
+      } else null
+    }.map { rootAbs =>
+      val working = Paths.get(rootAbs, proxyUser)
+      if (!Files.exists(working)) {
+        debug(s"Creating $proxyUser's working directory at $working")
+        Files.createDirectories(working)
+      }
+      if (Files.isDirectory(working)) {
+        working
+      } else {
+        Utils.createTempDir(rootAbs, proxyUser)
+      }
+    }.getOrElse {
+      Utils.createTempDir(namePrefix = proxyUser)
+    }
+  }
 
   override protected def commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
@@ -57,11 +108,8 @@ class SparkProcessBuilder(
       buffer += CONF
       buffer += s"$k=$v"
     }
-
-    proxyUser.foreach { u =>
-      buffer += PROXY_USER
-      buffer += u
-    }
+    buffer += PROXY_USER
+    buffer += proxyUser
 
     mainResource.foreach { r => buffer += r }
 
@@ -69,35 +117,12 @@ class SparkProcessBuilder(
   }
 
   override def toString: String = commands.mkString(" ")
+
+  override protected def module: String = "kyuubi-spark-sql-engine"
 }
 
-
-/**
- * May need download spark release packages first.
- *
- * (build/)mvn clean package -pl :kyuubi-download -DskipTests
- */
-object SparkProcessBuilder extends Logging {
-
+object SparkProcessBuilder {
   private final val CONF = "--conf"
   private final val CLASS = "--class"
   private final val PROXY_USER = "--proxy-user"
-
-  def main(args: Array[String]): Unit = {
-    val conf = Map("spark.abc" -> "1", "spark.xyz" -> "2")
-    val sparkProcessBuilder = new SparkProcessBuilder(
-      conf,
-      Some("kent"),
-      Some("externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine-1.0.0-SNAPSHOT.jar"))
-    print(sparkProcessBuilder.toString)
-    val file = new File(s"${UUID.randomUUID()}abc.log")
-    file.createNewFile()
-    file.deleteOnExit()
-    sparkProcessBuilder.processBuilder.redirectOutput(file)
-    sparkProcessBuilder.processBuilder.redirectError(file)
-    val start = sparkProcessBuilder.start
-
-    start.waitFor()
-
-  }
 }

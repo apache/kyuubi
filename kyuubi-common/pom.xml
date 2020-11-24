@@ -44,6 +44,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-service-rpc</artifactId>
         </dependency>
@@ -62,6 +67,13 @@
             <groupId>org.apache.directory.server</groupId>
             <artifactId>apacheds-service</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-jdbc</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -77,6 +89,11 @@
                 <filtering>true</filtering>
             </resource>
         </resources>
+        <testResources>
+            <testResource>
+                <directory>${project.basedir}/src/test/resources</directory>
+            </testResource>
+        </testResources>
         <plugins>
 
             <plugin>
@@ -92,24 +109,11 @@
                                     <arg value="${project.basedir}/../build/kyuubi-build-info"/>
                                     <arg value="${project.build.directory}/extra-resources"/>
                                     <arg value="${project.version}"/>
+                                    <arg value="${java.version}"/>
+                                    <arg value="${scala.binary.version}"/>
                                     <arg value="${spark.version}"/>
-                                </exec>
-                            </target>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>build-info-test</id>
-                        <phase>generate-test-resources</phase>
-                        <configuration>
-                            <target>
-                                <exec executable="bash">
-                                    <arg value="${project.basedir}/../build/kyuubi-build-info"/>
-                                    <arg value="${project.build.testOutputDirectory}"/>
-                                    <arg value="${project.version}"/>
-                                    <arg value="${spark.version}"/>
+                                    <arg value="${hive.version}"/>
+                                    <arg value="${hadoop.version}"/>
                                 </exec>
                             </target>
                         </configuration>
@@ -131,11 +135,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.scalastyle</groupId>
-                <artifactId>scalastyle-maven-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

@@ -42,6 +42,7 @@ class KyuubiConfSuite extends KyuubiFunSuite {
   test("load default config file") {
     val conf = KyuubiConf().loadFileDefaults()
     assert(conf.getOption("kyuubi.yes").get === "yes")
+    assert(conf.getOption("spark.kyuubi.yes").get === "no")
   }
 
 
@@ -84,6 +85,15 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     val cloned = conf.clone
     assert(conf !== cloned)
     assert(cloned.getOption(key).get === "xyz")
+  }
+
+  test("to spark prefixed conf") {
+    val conf = KyuubiConf(false)
+    assert(conf.toSparkPrefixedConf.isEmpty)
+    assert(conf.set("kyuubi.kent", "yao").toSparkPrefixedConf("spark.kyuubi.kent") === "yao")
+    assert(conf.set("spark.kent", "yao").toSparkPrefixedConf("spark.kent") === "yao")
+    assert(conf.set("kent", "yao").toSparkPrefixedConf("spark.kent") === "yao")
+    assert(conf.set("hadoop.kent", "yao").toSparkPrefixedConf("spark.hadoop.hadoop.kent") === "yao")
   }
 
 }

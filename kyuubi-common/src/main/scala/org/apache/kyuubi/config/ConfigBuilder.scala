@@ -24,6 +24,7 @@ private[kyuubi] case class ConfigBuilder(key: String) {
 
   private[config] var _doc = ""
   private[config] var _version = ""
+  private[config] var _onCreate: Option[ConfigEntry[_] => Unit] = None
 
   def doc(s: String): ConfigBuilder = {
     _doc = s
@@ -32,6 +33,11 @@ private[kyuubi] case class ConfigBuilder(key: String) {
 
   def version(s: String): ConfigBuilder = {
     _version = s
+    this
+  }
+
+  def onCreate(callback: ConfigEntry[_] => Unit): ConfigBuilder = {
+    _onCreate = Option(callback)
     this
   }
 
@@ -126,17 +132,26 @@ private[kyuubi] case class TypedConfigBuilder[T](
     TypedConfigBuilder(parent, strToSeq(_, fromStr), seqToStr(_, toStr))
   }
 
-  def createOptional: OptionalConfigEntry[T] = OptionalConfigEntry(
-    parent.key, fromStr, toStr, parent._doc, parent._version)
+  def createOptional: OptionalConfigEntry[T] = {
+    val entry = new OptionalConfigEntry(parent.key, fromStr, toStr, parent._doc, parent._version)
+    parent._onCreate.foreach(_(entry))
+    entry
+  }
 
   def createWithDefault(default: T): ConfigEntry[T] = default match {
     case d: String => createWithDefaultString(d)
     case _ =>
       val d = fromStr(toStr(default))
-      ConfigEntryWithDefault(parent.key, d, fromStr, toStr, parent._doc, parent._version)
+      val entry =
+        new ConfigEntryWithDefault(parent.key, d, fromStr, toStr, parent._doc, parent._version)
+      parent._onCreate.foreach(_(entry))
+      entry
   }
 
   def createWithDefaultString(default: String): ConfigEntryWithDefaultString[T] = {
-    ConfigEntryWithDefaultString(parent.key, default, fromStr, toStr, parent._doc, parent._version)
+    val entry = new ConfigEntryWithDefaultString(
+      parent.key, default, fromStr, toStr, parent._doc, parent._version)
+    parent._onCreate.foreach(_(entry))
+    entry
   }
 }

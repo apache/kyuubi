@@ -31,9 +31,11 @@
 #                           (Default: none).
 # - KYUUBI_NICENESS         The scheduling priority for Kyuubi server.
 #                           (Default: 0)
-#
+# - KYUUBI_WORK_DIR_ROOT    Root directory for launching sql engine applications.
+#                           (Default: $KYUUBI_HOME/work)
 # - HADOOP_CONF_DIR         Directory containing the Hadoop / YARN configuration to use.
 #
 # - SPARK_HOME              Spark distribution which you would like to use in Kyuubi.
 # - SPARK_CONF_DIR          Optional directory where the Spark configuration lives.
 #                           (Default: $SPARK_HOME/conf)
+#

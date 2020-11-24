@@ -19,8 +19,10 @@ package org.apache.kyuubi.service
 
 import java.net.{InetAddress, ServerSocket}
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.collection.JavaConverters._
+import scala.language.implicitConversions
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hive.service.rpc.thrift._
@@ -49,7 +51,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   private var server: Option[TServer] = None
   protected var serverAddr: InetAddress = _
   protected var portNum: Int = _
-  protected var isStarted: Boolean = false
+  protected var isStarted = new AtomicBoolean(false)
 
   private var authFactory: KyuubiAuthenticationFactory = _
   private var hadoopConf: Configuration = _
@@ -72,14 +74,15 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
       authFactory = new KyuubiAuthenticationFactory(conf)
       val transFactory = authFactory.getTTransportFactory
       val tProcFactory = authFactory.getTProcessorFactory(this)
-      val serverSocket = new TServerSocket(new ServerSocket(portNum, 1, serverAddr))
-      portNum = serverSocket.getServerSocket.getLocalPort
+      val serverSocket = new ServerSocket(portNum, -1, serverAddr)
+      portNum = serverSocket.getLocalPort
+      val tServerSocket = new TServerSocket(serverSocket)
 
       val maxMessageSize = conf.get(FRONTEND_MAX_MESSAGE_SIZE)
       val requestTimeout = conf.get(FRONTEND_LOGIN_TIMEOUT).toInt
       val beBackoffSlotLength = conf.get(FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH).toInt
 
-      val args = new TThreadPoolServer.Args(serverSocket)
+      val args = new TThreadPoolServer.Args(tServerSocket)
         .processorFactory(tProcFactory)
         .transportFactory(transFactory)
         .protocolFactory(new TBinaryProtocol.Factory)
@@ -101,15 +104,19 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     super.initialize(conf)
   }
 
-  def connectionUrl: String = s"${serverAddr.getCanonicalHostName}:$portNum"
+  def connectionUrl: String = {
+    getServiceState match {
+      case s @ ServiceState.LATENT => throw new IllegalStateException(s"Illegal Service State: $s")
+      case _ => s"${serverAddr.getCanonicalHostName}:$portNum"
+    }
+  }
 
-  override def start(): Unit = {
+  override def start(): Unit = synchronized {
     super.start()
-    if (!isStarted) {
+    if (!isStarted.getAndSet(true)) {
       val thread = new Thread(this)
       thread.setName(getName)
       thread.start()
-      isStarted = true
     }
   }
 
@@ -122,11 +129,10 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
       System.exit(-1)
   }
 
-  override def stop(): Unit = {
-    if (isStarted) {
+  override def stop(): Unit = synchronized {
+    if (isStarted.getAndSet(false)) {
       server.foreach(_.stop())
       info(this.name + " has stopped")
-      isStarted = false
     }
     super.stop()
   }
@@ -160,18 +166,19 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
 
   @throws[KyuubiSQLException]
   private def getSessionHandle(req: TOpenSessionReq, res: TOpenSessionResp): SessionHandle = {
+    val protocol = getMinVersion(SERVER_VERSION, req.getClient_protocol)
+    res.setServerProtocolVersion(protocol)
     val userName = getUserName(req)
     val ipAddress = authFactory.getIpAddress.orNull
-    val protocol = getMinVersion(BackendService.SERVER_VERSION, req.getClient_protocol)
     val configuration =
       Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String])
     val sessionHandle = be.openSession(
       protocol, userName, req.getPassword, ipAddress, configuration)
-    res.setServerProtocolVersion(protocol)
     sessionHandle
   }
 
   override def OpenSession(req: TOpenSessionReq): TOpenSessionResp = {
+    debug(req.toString)
     info("Client protocol version: " + req.getClient_protocol)
     val resp = new TOpenSessionResp
     try {
@@ -189,9 +196,12 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def CloseSession(req: TCloseSessionReq): TCloseSessionResp = {
+    debug(req.toString)
+    val handle = SessionHandle(req.getSessionHandle)
+    info(s"Received request of closing $handle")
     val resp = new TCloseSessionResp
     try {
-      be.closeSession(SessionHandle(req.getSessionHandle))
+      be.closeSession(handle)
       resp.setStatus(OK_STATUS)
       Option(CURRENT_SERVER_CONTEXT.get()).foreach(_.setSessionHandle(null))
     } catch {
@@ -199,10 +209,12 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
         warn("Error closing session: ", e)
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
+    info(s"Finished closing $handle")
     resp
   }
 
   override def GetInfo(req: TGetInfoReq): TGetInfoResp = {
+    debug(req.toString)
     val resp = new TGetInfoResp
     try {
       val infoValue = be.getInfo(SessionHandle(req.getSessionHandle), req.getInfoType)
@@ -211,12 +223,14 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     } catch {
       case e: Exception =>
         warn("Error getting type info: ", e)
+        resp.setInfoValue(TGetInfoValue.lenValue(0))
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
   }
 
   override def ExecuteStatement(req: TExecuteStatementReq): TExecuteStatementResp = {
+    debug(req.toString)
     val resp = new TExecuteStatementResp
     try {
       val sessionHandle = SessionHandle(req.getSessionHandle)
@@ -240,6 +254,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def GetTypeInfo(req: TGetTypeInfoReq): TGetTypeInfoResp = {
+    debug(req.toString)
     val resp = new TGetTypeInfoResp
     try {
       val operationHandle = be.getTypeInfo(SessionHandle(req.getSessionHandle))
@@ -254,6 +269,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def GetCatalogs(req: TGetCatalogsReq): TGetCatalogsResp = {
+    debug(req.toString)
     val resp = new TGetCatalogsResp
     try {
       val opHandle = be.getCatalogs(SessionHandle(req.getSessionHandle))
@@ -268,6 +284,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def GetSchemas(req: TGetSchemasReq): TGetSchemasResp = {
+    debug(req.toString)
     val resp = new TGetSchemasResp
     try {
       val opHandle = be.getSchemas(
@@ -283,6 +300,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def GetTables(req: TGetTablesReq): TGetTablesResp = {
+    debug(req.toString)
     val resp = new TGetTablesResp
     try {
       val sessionHandle = SessionHandle(req.getSessionHandle)
@@ -302,6 +320,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def GetTableTypes(req: TGetTableTypesReq): TGetTableTypesResp = {
+    debug(req.toString)
     val resp = new TGetTableTypesResp
     try {
       val opHandle = be.getTableTypes(SessionHandle(req.getSessionHandle))
@@ -316,6 +335,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def GetColumns(req: TGetColumnsReq): TGetColumnsResp = {
+    debug(req.toString)
     val resp = new TGetColumnsResp
     try {
       val sessionHandle = SessionHandle(req.getSessionHandle)
@@ -335,6 +355,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def GetFunctions(req: TGetFunctionsReq): TGetFunctionsResp = {
+    debug(req.toString)
     val resp = new TGetFunctionsResp
     try {
       val sessionHandle = SessionHandle(req.getSessionHandle)
@@ -353,6 +374,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def GetPrimaryKeys(req: TGetPrimaryKeysReq): TGetPrimaryKeysResp = {
+    debug(req.toString)
     val resp = new TGetPrimaryKeysResp
     val errStatus = KyuubiSQLException("Feature is not available").toTStatus
     resp.setStatus(errStatus)
@@ -360,6 +382,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def GetCrossReference(req: TGetCrossReferenceReq): TGetCrossReferenceResp = {
+    debug(req.toString)
     val resp = new TGetCrossReferenceResp
     val errStatus = KyuubiSQLException("Feature is not available").toTStatus
     resp.setStatus(errStatus)
@@ -367,6 +390,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def GetOperationStatus(req: TGetOperationStatusReq): TGetOperationStatusResp = {
+    debug(req.toString)
     val resp = new TGetOperationStatusResp
     try {
       val operationHandle = OperationHandle(req.getOperationHandle)
@@ -390,6 +414,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def CancelOperation(req: TCancelOperationReq): TCancelOperationResp = {
+    debug(req.toString)
     val resp = new TCancelOperationResp
     try {
       be.cancelOperation(OperationHandle(req.getOperationHandle))
@@ -403,6 +428,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def CloseOperation(req: TCloseOperationReq): TCloseOperationResp = {
+    debug(req.toString)
     val resp = new TCloseOperationResp
     try {
       be.closeOperation(OperationHandle(req.getOperationHandle))
@@ -416,6 +442,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def GetResultSetMetadata(req: TGetResultSetMetadataReq): TGetResultSetMetadataResp = {
+    debug(req.toString)
     val resp = new TGetResultSetMetadataResp
     try {
       val schema = be.getResultSetMetadata(OperationHandle(req.getOperationHandle))
@@ -430,10 +457,12 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def FetchResults(req: TFetchResultsReq): TFetchResultsResp = {
+    debug(req.toString)
     val resp = new TFetchResultsResp
     try {
       val operationHandle = OperationHandle(req.getOperationHandle)
       val orientation = FetchOrientation.getFetchOrientation(req.getOrientation)
+      // 1 means fetching log
       val fetchLog = req.getFetchType == 1
       val maxRows = req.getMaxRows.toInt
       val rowSet = be.fetchResults(operationHandle, orientation, maxRows, fetchLog)
@@ -455,46 +484,46 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def GetDelegationToken(req: TGetDelegationTokenReq): TGetDelegationTokenResp = {
+    debug(req.toString)
     val resp = new TGetDelegationTokenResp()
     resp.setStatus(notSupportTokenErrorStatus)
     resp
   }
 
   override def CancelDelegationToken(req: TCancelDelegationTokenReq): TCancelDelegationTokenResp = {
+    debug(req.toString)
     val resp = new TCancelDelegationTokenResp
     resp.setStatus(notSupportTokenErrorStatus)
     resp
   }
 
   override def RenewDelegationToken(req: TRenewDelegationTokenReq): TRenewDelegationTokenResp = {
+    debug(req.toString)
     val resp = new TRenewDelegationTokenResp
     resp.setStatus(notSupportTokenErrorStatus)
     resp
   }
 
   class FeTServerEventHandler extends TServerEventHandler {
+    implicit def toFeServiceServerContext(context: ServerContext): FeServiceServerContext = {
+      context.asInstanceOf[FeServiceServerContext]
+    }
+
     override def deleteContext(context: ServerContext, in: TProtocol, out: TProtocol): Unit = {
-      context match {
-        case fc: FeServiceServerContext =>
-          val handle = fc.getSessionHandle
-          if (handle != null) {
-            info(s"Session [$handle] disconnected without closing properly, close it now")
-            try {
-              be.closeSession(handle)
-            } catch {
-              case e: KyuubiSQLException =>
-                warn("Failed closing session", e)
-            }
-          }
-        case _ =>
+      val handle = context.getSessionHandle
+      if (handle != null) {
+        info(s"Session [$handle] disconnected without closing properly, close it now")
+        try {
+          be.closeSession(handle)
+        } catch {
+          case e: KyuubiSQLException =>
+            warn("Failed closing session", e)
+        }
       }
     }
 
     override def processContext(context: ServerContext, in: TTransport, out: TTransport): Unit = {
-      context match {
-        case fc: FeServiceServerContext => CURRENT_SERVER_CONTEXT.set(fc)
-        case _ =>
-      }
+      CURRENT_SERVER_CONTEXT.set(context)
     }
 
     override def preServe(): Unit = {}
@@ -509,6 +538,8 @@ object FrontendService {
   final val OK_STATUS = new TStatus(TStatusCode.SUCCESS_STATUS)
 
   final val CURRENT_SERVER_CONTEXT = new ThreadLocal[FeServiceServerContext]()
+
+  final val SERVER_VERSION = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10
 
   class FeServiceServerContext extends ServerContext {
     private var sessionHandle: SessionHandle = _

@@ -20,16 +20,10 @@ package org.apache.kyuubi.service.authentication
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenIdentifier
 
-case class KyuubiDelegationTokenIdentifier(
-    owner: Text, renewer: Text, realUser: Text) extends AbstractDelegationTokenIdentifier {
+class KyuubiDelegationTokenIdentifier extends AbstractDelegationTokenIdentifier() {
   override def getKind: Text = KyuubiDelegationTokenIdentifier.KIND
 }
 
 object KyuubiDelegationTokenIdentifier {
-
-  def apply(): KyuubiDelegationTokenIdentifier = {
-    KyuubiDelegationTokenIdentifier(new Text(), new Text(), new Text())
-  }
-
   final val KIND = new Text("KYUUBI_DELEGATION_TOKEN")
 }

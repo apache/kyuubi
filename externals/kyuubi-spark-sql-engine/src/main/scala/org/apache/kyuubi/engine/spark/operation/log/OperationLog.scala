@@ -22,8 +22,6 @@ import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 
-import scala.util.control.NonFatal
-
 import org.apache.commons.io.FileUtils
 import org.apache.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn}
 
@@ -125,7 +123,7 @@ class OperationLog(path: Path) extends Logging {
         throw new KyuubiSQLException(s"Operation[$opHandle] log file $absPath is not found", e)
     }
     val tColumn = TColumn.stringVal(new TStringColumn(logs, ByteBuffer.allocate(0)))
-    val tRow = new TRowSet(0, new java.util.ArrayList[TRow](0))
+    val tRow = new TRowSet(0, new java.util.ArrayList[TRow](logs.size()))
     tRow.addToColumns(tColumn)
     tRow
   }

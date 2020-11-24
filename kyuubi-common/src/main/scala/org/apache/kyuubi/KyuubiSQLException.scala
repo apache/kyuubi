@@ -23,7 +23,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.{TStatus, TStatusCode}
 
-case class KyuubiSQLException(msg: String, cause: Throwable) extends SQLException(msg, cause) {
+class KyuubiSQLException(msg: String, cause: Throwable) extends SQLException(msg, cause) {
   /**
    * Converts current object to a [[TStatus]] object
    *
@@ -44,6 +44,9 @@ object KyuubiSQLException {
   private final val HEAD_MARK: String = "*"
   private final val SEPARATOR: Char = ':'
 
+  def apply(msg: String, throwable: Throwable): KyuubiSQLException = {
+    new KyuubiSQLException(msg, throwable)
+  }
   def apply(cause: Throwable): KyuubiSQLException = {
     new KyuubiSQLException(cause.getMessage, cause)
   }
@@ -105,14 +108,13 @@ object KyuubiSQLException {
       builder.toString
     }.toList
   }
-
   private def newInstance(className: String, message: String, cause: Throwable): Throwable = {
     try {
       Class.forName(className)
         .getConstructor(classOf[String], classOf[Throwable])
         .newInstance(message, cause).asInstanceOf[Throwable]
     } catch {
-      case e: Exception => throw new RuntimeException(className + ":" + message, e)
+      case _: Exception => new RuntimeException(className + ":" + message, cause)
     }
   }
 
@@ -123,7 +125,7 @@ object KyuubiSQLException {
     (i1, i2, i3)
   }
 
-  private def toCause(details: Seq[String]): Throwable = {
+  def toCause(details: Seq[String]): Throwable = {
     var ex: Throwable = null
     if (details != null && details.nonEmpty) {
       val head = details.head

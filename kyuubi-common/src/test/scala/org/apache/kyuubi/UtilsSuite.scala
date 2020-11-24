@@ -17,24 +17,33 @@
 
 package org.apache.kyuubi
 
-import java.io.File
+import java.io.{File, IOException}
+import java.nio.file.Files
+import java.security.PrivilegedExceptionAction
 import java.util.Properties
+
+import org.apache.hadoop.security.UserGroupInformation
 
 class UtilsSuite extends KyuubiFunSuite {
 
   test("build information check") {
     val buildFile = "kyuubi-version-info.properties"
-    val str = Thread.currentThread().getContextClassLoader.getResourceAsStream(buildFile)
+    val str = this.getClass.getClassLoader.getResourceAsStream(buildFile)
     val props = new Properties()
     assert(str !== null)
     props.load(str)
     str.close()
     assert(props.getProperty("kyuubi_version") === KYUUBI_VERSION)
-    assert(props.getProperty("spark_version") === SPARK_COMPILE_VERSION)
+    assert(props.getProperty("kyuubi_java_version") === JAVA_COMPILE_VERSION)
+    assert(props.getProperty("kyuubi_scala_version") === SCALA_COMPILE_VERSION)
+    assert(props.getProperty("kyuubi_spark_version") === SPARK_COMPILE_VERSION)
+    assert(props.getProperty("kyuubi_hive_version") === HIVE_COMPILE_VERSION)
+    assert(props.getProperty("kyuubi_hadoop_version") === HADOOP_COMPILE_VERSION)
     assert(props.getProperty("branch") === BRANCH)
     assert(props.getProperty("revision") === REVISION)
     assert(props.getProperty("user") === BUILD_USER)
     assert(props.getProperty("url") === REPO_URL)
+    assert(props.getProperty("date") === BUILD_DATE)
   }
 
   test("string to seq") {
@@ -64,26 +73,54 @@ class UtilsSuite extends KyuubiFunSuite {
     val props = Utils.getPropertiesFromFile(Option(propsFile))
     assert(props("kyuubi.yes") === "yes")
     assert(!props.contains("kyuubi.no"))
-  }
 
-  test("resolveURI") {
-    def assertResolves(before: String, after: String): Unit = {
-      // This should test only single paths
-      assert(before.split(",").length === 1)
-      def resolve(uri: String): String = Utils.resolveURI(uri).toString
-      assert(resolve(before) === after)
-      assert(resolve(after) === after)
-      // Repeated invocations of resolveURI should yield the same result
-      assert(resolve(resolve(after)) === after)
-      assert(resolve(resolve(resolve(after))) === after)
+    val e = intercept[KyuubiException] {
+      Utils.getPropertiesFromFile(Some(new File("invalid-file")))
     }
-    assertResolves("hdfs:/root/spark.jar", "hdfs:/root/spark.jar")
-    assertResolves("hdfs:///root/spark.jar#app.jar", "hdfs:///root/spark.jar#app.jar")
-    assertResolves("file:/C:/path/to/file.txt", "file:/C:/path/to/file.txt")
-    assertResolves("file:///C:/path/to/file.txt", "file:///C:/path/to/file.txt")
-    assertResolves("file:/C:/file.txt#alias.txt", "file:/C:/file.txt#alias.txt")
-    assertResolves("file:foo", "file:foo")
-    assertResolves("file:foo:baby", "file:foo:baby")
+    assert(e.getMessage contains "Failed when loading Kyuubi properties from")
   }
 
+  test("create directory") {
+    val path = Utils.createDirectory(System.getProperty("java.io.tmpdir"))
+    assert(Files.exists(path))
+    assert(path.getFileName.toString.startsWith("kyuubi-"))
+    path.toFile.deleteOnExit()
+    val e = intercept[IOException](Utils.createDirectory("/"))
+    assert(e.getMessage === "Failed to create a temp directory (under /) after 10 attempts!")
+    val path1 = Utils.createDirectory(System.getProperty("java.io.tmpdir"), "kentyao")
+    assert(Files.exists(path1))
+    assert(path1.getFileName.toString.startsWith("kentyao-"))
+    path1.toFile.deleteOnExit()
+  }
+
+  test("create tmp dir") {
+    val path = Utils.createTempDir()
+    assert(Files.exists(path))
+    assert(path.getFileName.toString.startsWith("kyuubi-"))
+  }
+
+  test("current user") {
+    UserGroupInformation.createRemoteUser("kentyao").doAs(
+      new PrivilegedExceptionAction[Unit] {
+        override def run(): Unit = {
+          assert(Utils.currentUser === "kentyao")
+        }
+      }
+    )
+  }
+
+  test("version test") {
+    assert(Utils.majorVersion(KYUUBI_VERSION) ===
+      Utils.majorMinorVersion(KYUUBI_VERSION)._1)
+    assert(Utils.majorVersion(SPARK_COMPILE_VERSION) ===
+      Utils.majorMinorVersion(SPARK_COMPILE_VERSION)._1)
+    assert(Utils.majorVersion(HADOOP_COMPILE_VERSION) ===
+      Utils.majorMinorVersion(HADOOP_COMPILE_VERSION)._1)
+    assert(Utils.minorVersion(KYUUBI_VERSION) ===
+      Utils.majorMinorVersion(KYUUBI_VERSION)._2)
+    assert(Utils.shortVersion(KYUUBI_VERSION) ===
+      KYUUBI_VERSION.stripSuffix("-SNAPSHOT"))
+    intercept[IllegalArgumentException](Utils.shortVersion("-" + KYUUBI_VERSION))
+    intercept[IllegalArgumentException](Utils.majorMinorVersion("-" + KYUUBI_VERSION))
+  }
 }

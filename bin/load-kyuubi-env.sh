@@ -24,11 +24,11 @@ export KYUUBI_CONF_DIR="${KYUUBI_CONF_DIR:-"${KYUUBI_HOME}"/conf}"
 KYUUBI_ENV_SH="${KYUUBI_CONF_DIR}"/kyuubi-env.sh
 if [[ -f ${KYUUBI_ENV_SH} ]]; then
    set -a
-   echo "Using kyuubi.sh environment file ${KYUUBI_ENV_SH} to initialize..."
+   echo "Using kyuubi environment file ${KYUUBI_ENV_SH} to initialize..."
    . "${KYUUBI_ENV_SH}"
    set +a
 else
-   echo "Warn: Not find kyuubi.sh environment file ${KYUUBI_ENV_SH}, using default ones..."
+   echo "Warn: Not find kyuubi environment file ${KYUUBI_ENV_SH}, using default ones..."
 fi
 
 export KYUUBI_LOG_DIR="${KYUUBI_LOG_DIR:-"${KYUUBI_HOME}/logs"}"
@@ -41,6 +41,11 @@ if [[ -e ${KYUUBI_LOG_DIR} ]]; then
   mkdir -p ${KYUUBI_LOG_DIR}
 fi
 
+export KYUUBI_WORK_DIR_ROOT="${KYUUBI_WORK_DIR_ROOT:-"${KYUUBI_HOME}/work"}"
+if [[ -e ${KYUUBI_WORK_DIR_ROOT} ]]; then
+  mkdir -p ${KYUUBI_WORK_DIR_ROOT}
+fi
+
 if [[ -z ${JAVA_HOME} ]]; then
    if [[ $(command -v java) ]]; then
      export JAVA_HOME="$(dirname $(dirname $(which java)))"
@@ -48,11 +53,20 @@ if [[ -z ${JAVA_HOME} ]]; then
 fi
 
 export KYUUBI_SCALA_VERSION="${KYUUBI_SCALA_VERSION:-"2.12"}"
+SPARK_VERSION_BUILD="$(grep "Spark " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
+HADOOP_VERSION_BUILD="$(grep "Hadoop " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
+HIVE_VERSION_BUILD="$(grep "Hive " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
 
-SPARK_BUILTIN="${KYUUBI_HOME}/externals/spark-3.0.0-bin-hadoop2.7"
+if [[ ${HIVE_VERSION_BUILD:0:3} == "2.3" ]]; then
+  HIVE_VERSION_SUFFIX=""
+else
+  HIVE_VERSION_SUFFIX="-hive1.2"
+fi
+
+SPARK_BUILTIN="${KYUUBI_HOME}/externals/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD:0:3}$HIVE_VERSION_SUFFIX"
 
 if [[ ! -d ${SPARK_BUILTIN} ]]; then
-  SPARK_BUILTIN="${KYUUBI_HOME}/externals/kyuubi-download/target/spark-3.0.0-bin-hadoop2.7"
+  SPARK_BUILTIN="${KYUUBI_HOME}/externals/kyuubi-download/target/spark-3.0.1-bin-hadoop2.7"
 fi
 
 export SPARK_HOME="${SPARK_HOME:-"${SPARK_BUILTIN}"}"
@@ -64,6 +78,7 @@ echo "KYUUBI_HOME: ${KYUUBI_HOME}"
 echo "KYUUBI_CONF_DIR: ${KYUUBI_CONF_DIR}"
 echo "KYUUBI_LOG_DIR: ${KYUUBI_LOG_DIR}"
 echo "KYUUBI_PID_DIR: ${KYUUBI_PID_DIR}"
+echo "KYUUBI_WORK_DIR_ROOT: ${KYUUBI_WORK_DIR_ROOT}"
 
 echo "SPARK_HOME: ${SPARK_HOME}"
 echo "SPARK_CONF_DIR: ${SPARK_CONF_DIR}"

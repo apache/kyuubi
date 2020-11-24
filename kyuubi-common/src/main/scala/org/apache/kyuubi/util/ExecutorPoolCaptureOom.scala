@@ -31,7 +31,7 @@ case class ExecutorPoolCaptureOom(
     keepAliveSeconds,
     TimeUnit.MILLISECONDS,
     new SynchronousQueue[Runnable](),
-    NamedThreadFactory(poolName)) {
+    new NamedThreadFactory(poolName, false)) {
 
   override def afterExecute(r: Runnable, t: Throwable): Unit = {
     super.afterExecute(r, t)

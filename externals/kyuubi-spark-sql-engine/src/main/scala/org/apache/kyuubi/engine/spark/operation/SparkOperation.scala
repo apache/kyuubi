@@ -36,7 +36,7 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
 
   protected var iter: Iterator[Row] = _
 
-  private final val operationLog: OperationLog =
+  protected final val operationLog: OperationLog =
     OperationLog.createOperationLog(session.handle, getHandle)
 
   def getOperationLog: OperationLog = operationLog
@@ -92,15 +92,15 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
           warn(s"Ignore exception in terminal state with $statementId: $e")
         } else {
           setState(OperationState.ERROR)
-          e match {
-            case k: KyuubiSQLException => throw k
-            case _ => throw KyuubiSQLException(s"Error operating $opType: ${e.getMessage}", e)
-          }
+          val ke = KyuubiSQLException(s"Error operating $opType: ${e.getMessage}", e)
+          setOperationException(ke)
+          throw ke
         }
       }
   }
 
   override protected def beforeRun(): Unit = {
+    Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
     setHasResultSet(true)
     setState(OperationState.RUNNING)
     OperationLog.setCurrentOperationLog(operationLog)

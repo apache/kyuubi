@@ -20,6 +20,7 @@ package org.apache.kyuubi.service.authentication
 import org.apache.hadoop.security.token.delegation.AbstractDelegationTokenSecretManager
 
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 
 case class KyuubiDelegationTokenManager(
     keyUpdateInterval: Long,
@@ -29,7 +30,7 @@ case class KyuubiDelegationTokenManager(
   extends AbstractDelegationTokenSecretManager[KyuubiDelegationTokenIdentifier](
     keyUpdateInterval, tokenMaxLifetime, tokenRenewInterval, tokenRemoverScanInterval) {
   override def createIdentifier(): KyuubiDelegationTokenIdentifier = {
-    KyuubiDelegationTokenIdentifier()
+    new KyuubiDelegationTokenIdentifier()
   }
 }
 

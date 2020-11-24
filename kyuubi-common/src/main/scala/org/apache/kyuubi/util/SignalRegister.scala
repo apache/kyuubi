@@ -33,13 +33,14 @@ object SignalRegister extends Logging {
   def registerLogger(log: Logger): Unit = {
     Seq("TERM", "HUP", "INT").foreach { sig =>
       if (SystemUtils.IS_OS_UNIX) {
+        val signal = new Signal(sig)
         try {
           val handler = handlers.getOrElseUpdate(sig, {
             info(s"Registering signal handler for $sig")
-            ActionHandler(new Signal(sig))
+            ActionHandler(signal)
           })
           handler.register({
-            log.error("RECEIVED SIGNAL " + sig)
+            log.error(s"RECEIVED SIGNAL ${signal.getNumber}: " + sig)
             false
           })
         } catch {

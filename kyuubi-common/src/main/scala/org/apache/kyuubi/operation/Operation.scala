@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.operation
 
+import java.util.concurrent.Future
+
 import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet, TTableSchema}
 
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -36,6 +38,7 @@ trait Operation {
   def getHandle: OperationHandle
   def getStatus: OperationStatus
 
+  def getBackgroundHandle: Future[_]
   def shouldRunAsync: Boolean
   def isTimedOut: Boolean
 

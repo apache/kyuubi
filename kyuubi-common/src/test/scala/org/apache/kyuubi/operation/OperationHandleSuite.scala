@@ -21,6 +21,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.hive.service.rpc.thrift.TProtocolVersion._
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.operation.OperationType._
 
 class OperationHandleSuite extends KyuubiFunSuite {
@@ -40,5 +41,11 @@ class OperationHandleSuite extends KyuubiFunSuite {
     assert(!t1.isHasResultSet)
     h1.setHasResultSet(true)
     assert(h1.toTOperationHandle.isHasResultSet)
+    assert(h1 !== null)
+    assert(h1 !== new Integer(1))
+    val h3 = OperationHandle(h1.identifier, GET_CATALOGS, HIVE_CLI_SERVICE_PROTOCOL_V10)
+    assert(h3 !== h1, "different types")
+    val h4 = OperationHandle(HandleIdentifier(), h1.typ, HIVE_CLI_SERVICE_PROTOCOL_V10)
+    assert(h4 !== h1)
   }
 }

@@ -23,13 +23,16 @@ import javax.security.auth.login.Configuration
 
 import scala.collection.JavaConverters._
 
-import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION, KyuubiFunSuite, Utils}
+import org.apache.zookeeper.ZooDefs
+
+import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.server.EmbeddedZkServer
-import org.apache.kyuubi.service.ServiceState
+import org.apache.kyuubi.service.{NoopServer, Serverable, ServiceState}
 
-class ServiceDiscoverySuite extends KyuubiFunSuite with KerberizedTestHelper {
+class ServiceDiscoverySuite extends KerberizedTestHelper {
   val zkServer = new EmbeddedZkServer()
   val conf: KyuubiConf = KyuubiConf()
 
@@ -48,6 +51,58 @@ class ServiceDiscoverySuite extends KyuubiFunSuite with KerberizedTestHelper {
     super.afterAll()
   }
 
+  test("publish instance to embedded zookeeper server") {
+
+    conf
+      .unset(KyuubiConf.SERVER_KEYTAB)
+      .unset(KyuubiConf.SERVER_PRINCIPAL)
+      .set(HA_ZK_QUORUM, zkServer.getConnectString)
+
+    val server: Serverable = new NoopServer()
+    server.initialize(conf)
+    server.start()
+
+    val namespace = "kyuubiserver"
+    val znodeRoot = s"/$namespace"
+    val serviceDiscovery = new ServiceDiscovery(server, namespace)
+    val framework = ServiceDiscovery.startZookeeperClient(conf)
+    try {
+      serviceDiscovery.initialize(conf)
+      serviceDiscovery.start()
+
+      assert(framework.checkExists().forPath("/abc") === null)
+      assert(framework.checkExists().forPath(znodeRoot) !== null)
+      val children = framework.getChildren.forPath(znodeRoot).asScala
+      assert(children.head ===
+        s"serviceUri=${server.connectionUrl};version=$KYUUBI_VERSION;sequence=0000000000")
+
+      children.foreach { child =>
+        framework.delete().forPath(s"""$znodeRoot/$child""")
+      }
+      Thread.sleep(5000)
+      assert(serviceDiscovery.getServiceState === ServiceState.STOPPED)
+      assert(server.getServiceState === ServiceState.STOPPED)
+    } finally {
+      server.stop()
+      serviceDiscovery.stop()
+      framework.close()
+    }
+  }
+
+  test("acl for zookeeper") {
+    val provider = new ZooKeeperACLProvider(conf)
+    val acl = provider.getDefaultAcl
+    assert(acl.size() === 1)
+    assert(acl === ZooDefs.Ids.OPEN_ACL_UNSAFE)
+
+    val conf1 = conf.clone.set(HA_ZK_ACL_ENABLED, true)
+    val acl1 = new ZooKeeperACLProvider(conf1).getDefaultAcl
+    assert(acl1.size() === 2)
+    val expected = ZooDefs.Ids.READ_ACL_UNSAFE
+    expected.addAll(ZooDefs.Ids.CREATOR_ALL_ACL)
+    assert(acl1 === expected)
+  }
+
   test("set up zookeeper auth") {
     tryWithSecurityEnabled {
       val keytab = File.createTempFile("kentyao", ".keytab")
@@ -55,6 +110,7 @@ class ServiceDiscoverySuite extends KyuubiFunSuite with KerberizedTestHelper {
 
       conf.set(KyuubiConf.SERVER_KEYTAB, keytab.getCanonicalPath)
       conf.set(KyuubiConf.SERVER_PRINCIPAL, principal)
+      conf.set(HighAvailabilityConf.HA_ZK_ACL_ENABLED, true)
 
       ServiceDiscovery.setUpZooKeeperAuth(conf)
       val configuration = Configuration.getConfiguration
@@ -70,44 +126,6 @@ class ServiceDiscoverySuite extends KyuubiFunSuite with KerberizedTestHelper {
       conf.set(KyuubiConf.SERVER_KEYTAB, keytab.getName)
       val e = intercept[IOException](ServiceDiscovery.setUpZooKeeperAuth(conf))
       assert(e.getMessage === s"${KyuubiConf.SERVER_KEYTAB.key} does not exists")
-    }
-  }
-
-  test("publish instance to embedded zookeeper server") {
-
-    conf
-      .unset(KyuubiConf.SERVER_KEYTAB)
-      .unset(KyuubiConf.SERVER_PRINCIPAL)
-      .set(HA_ZK_QUORUM, zkServer.getConnectString)
-
-    val namespace = "kyuubiserver"
-    val znodeRoot = s"/$namespace"
-    val instance = "kentyao.apache.org:10009"
-    var deleted = false
-    val postHook = new Thread {
-      override def run(): Unit = deleted = true
-    }
-    val serviceDiscovery = new ServiceDiscovery(instance, namespace, postHook)
-    val framework = ServiceDiscovery.newZookeeperClient(conf)
-    try {
-      serviceDiscovery.initialize(conf)
-      serviceDiscovery.start()
-
-      assert(framework.checkExists().forPath("/abc") === null)
-      assert(framework.checkExists().forPath(znodeRoot) !== null)
-      val children = framework.getChildren.forPath(znodeRoot).asScala
-      assert(children.head ===
-        s"serviceUri=$instance;version=$KYUUBI_VERSION;sequence=0000000000")
-
-      children.foreach { child =>
-        framework.delete().forPath(s"""$znodeRoot/$child""")
-      }
-      Thread.sleep(5000)
-      assert(deleted, "Post hook called")
-      assert(serviceDiscovery.getServiceState === ServiceState.STOPPED)
-    } finally {
-      serviceDiscovery.stop()
-      framework.close()
     }
   }
 }

@@ -22,6 +22,9 @@ import java.security.Provider
 import javax.security.auth.callback.{Callback, CallbackHandler, NameCallback, PasswordCallback, UnsupportedCallbackException}
 import javax.security.sasl.{AuthorizeCallback, SaslException, SaslServer, SaslServerFactory}
 
+import org.apache.kyuubi.KYUUBI_VERSION
+import org.apache.kyuubi.Utils
+
 class PlainSASLServer(
     handler: CallbackHandler,
     method: AuthMethods.AuthMethod) extends SaslServer {
@@ -123,7 +126,13 @@ object PlainSASLServer {
     }
   }
 
-  class SaslPlainProvider extends Provider("KyuubiSaslPlain", 1.0, "Kyuubi Plain SASL provider") {
+  private final val version: Double = {
+    val (major, minor) = Utils.majorMinorVersion(KYUUBI_VERSION)
+    major + minor.toDouble / 10
+  }
+
+  class SaslPlainProvider
+    extends Provider("KyuubiSaslPlain", version, "Kyuubi Plain SASL provider") {
     put("SaslServerFactory.PLAIN", classOf[SaslPlainServerFactory].getName)
   }
 }

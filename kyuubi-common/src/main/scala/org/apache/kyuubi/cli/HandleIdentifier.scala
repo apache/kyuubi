@@ -22,7 +22,7 @@ import java.util.{Objects, UUID}
 
 import org.apache.hive.service.rpc.thrift.THandleIdentifier
 
-case class HandleIdentifier(publicId: UUID, secretId: UUID) {
+class HandleIdentifier(val publicId: UUID, val secretId: UUID) {
 
   def toTHandleIdentifier: THandleIdentifier = {
     val guid = new Array[Byte](16)
@@ -39,8 +39,8 @@ case class HandleIdentifier(publicId: UUID, secretId: UUID) {
   override def hashCode(): Int = (Objects.hashCode(publicId) + 31) * 31 + Objects.hashCode(secretId)
 
   override def equals(obj: Any): Boolean = obj match {
-    case HandleIdentifier(pid, sid) =>
-      Objects.equals(publicId, pid) && Objects.equals(secretId, sid)
+    case i: HandleIdentifier =>
+      Objects.equals(publicId, i.publicId) && Objects.equals(secretId, i.secretId)
     case _ => false
   }
 
@@ -48,6 +48,11 @@ case class HandleIdentifier(publicId: UUID, secretId: UUID) {
 }
 
 object HandleIdentifier {
+
+  def apply(publicId: UUID, secretId: UUID): HandleIdentifier = {
+    new HandleIdentifier(publicId, secretId)
+  }
+
   def apply(): HandleIdentifier = {
     val publicId = UUID.randomUUID()
     val secretId = UUID.randomUUID()

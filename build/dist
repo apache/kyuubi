@@ -35,13 +35,14 @@ NAME=none
 MVN="$KYUUBI_HOME/build/mvn"
 
 function usage {
-  echo "./build/dist - Tool for making binary distributions of Kyuubi Server"
+  set +x
+  echo "./build/dist - Tool for making binary distributions of Kyuubi"
   echo ""
   echo "Usage:"
   echo "+------------------------------------------------------+"
   echo "| ./build/dist [--name] [--tgz] <maven build options>  |"
   echo "+------------------------------------------------------+"
-  echo "name: -  custom binary name"
+  echo "name: -  custom binary name, using project version if undefined"
   echo "tgz:  -  whether to make a whole bundled package"
   echo ""
 }
@@ -107,7 +108,27 @@ VERSION=$("$MVN" help:evaluate -Dexpression=project.version $@ 2>/dev/null\
     | grep -v "WARNING"\
     | tail -n 1)
 
+JAVA_VERSION=$("$MVN" help:evaluate -Dexpression=java.version $@ 2>/dev/null\
+    | grep -v "INFO"\
+    | grep -v "WARNING"\
+    | tail -n 1)
+
+SCALA_VERSION=$("$MVN" help:evaluate -Dexpression=scala.binary.version $@ 2>/dev/null\
+    | grep -v "INFO"\
+    | grep -v "WARNING"\
+    | tail -n 1)
+
 SPARK_VERSION=$("$MVN" help:evaluate -Dexpression=spark.version $@ 2>/dev/null\
+    | grep -v "INFO"\
+    | grep -v "WARNING"\
+    | tail -n 1)
+
+HADOOP_VERSION=$("$MVN" help:evaluate -Dexpression=hadoop.version $@ 2>/dev/null\
+    | grep -v "INFO"\
+    | grep -v "WARNING"\
+    | tail -n 1)
+
+HIVE_VERSION=$("$MVN" help:evaluate -Dexpression=hive.version $@ 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | tail -n 1)
@@ -133,18 +154,35 @@ echo -e "\$ ${BUILD_COMMAND[@]}\n"
 
 # Make directories
 rm -rf "$DISTDIR"
-mkdir -p "$DISTDIR/lib"
-echo "Kyuubi $VERSION $GITREVSTRING built for Spark $SPARK_VERSION" > "$DISTDIR/RELEASE"
+mkdir -p "$DISTDIR/pid"
+mkdir -p "$DISTDIR/logs"
+mkdir -p "$DISTDIR/work"
+mkdir -p "$DISTDIR/externals/engines/spark"
+echo "Kyuubi $VERSION $GITREVSTRING built for" > "$DISTDIR/RELEASE"
+echo "Java $JAVA_VERSION" >> "$DISTDIR/RELEASE"
+echo "Scala $SCALA_VERSION" >> "$DISTDIR/RELEASE"
+echo "Spark $SPARK_VERSION" >> "$DISTDIR/RELEASE"
+echo "Hadoop $HADOOP_VERSION" >> "$DISTDIR/RELEASE"
+echo "Hive $HIVE_VERSION" >> "$DISTDIR/RELEASE"
 echo "Build flags: $@" >> "$DISTDIR/RELEASE"
 
-# Copy jar
-cp "$KYUUBI_HOME/kyuubi-server/target/kyuubi-server-$VERSION.jar" "$DISTDIR/lib/"
+# Copy jars
+cp -r "$KYUUBI_HOME/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/" "$DISTDIR/jars"
+## cp engines
+
+if [[ ${HIVE_VERSION:0:3} == "2.3" ]]; then
+  HIVE_VERSION_SUFFIX=""
+else
+  HIVE_VERSION_SUFFIX="-hive1.2"
+fi
+
+cp -r "$KYUUBI_HOME/externals/kyuubi-download/target/spark-$SPARK_VERSION-bin-hadoop${HADOOP_VERSION:0:3}$HIVE_VERSION_SUFFIX/" "$DISTDIR/externals/spark-$SPARK_VERSION-bin-hadoop${HADOOP_VERSION:0:3}$HIVE_VERSION_SUFFIX/"
+cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine-$VERSION.jar" "$DISTDIR/externals/engines/spark"
 
 # Copy license and ASF files
 cp "$KYUUBI_HOME/LICENSE" "$DISTDIR"
 cp -r "$KYUUBI_HOME/bin" "$DISTDIR"
-cp -r "$KYUUBI_HOME/docs" "$DISTDIR"
-
+cp -r "$KYUUBI_HOME/conf" "$DISTDIR"
 
 if [[ "$MAKE_TGZ" == "true" ]]; then
   TARDIR_NAME=kyuubi-$VERSION-bin-$NAME

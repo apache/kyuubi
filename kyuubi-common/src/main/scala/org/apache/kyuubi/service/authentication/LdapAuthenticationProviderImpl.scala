@@ -24,6 +24,7 @@ import javax.security.sasl.AuthenticationException
 import org.apache.commons.lang.StringUtils
 
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.ServiceUtils
 
 class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticationProvider {
@@ -58,7 +59,7 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
 
     val domain = conf.get(AUTHENTICATION_LDAP_DOMAIN)
     val u = if (!hasDomain(user) && domain.nonEmpty) {
-      user + "@" + domain
+      user + "@" + domain.get
     } else {
       user
     }

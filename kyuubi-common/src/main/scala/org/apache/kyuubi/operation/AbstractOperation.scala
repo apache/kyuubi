@@ -18,6 +18,7 @@
 package org.apache.kyuubi.operation
 
 import java.time.Duration
+import java.util.concurrent.Future
 
 import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet, TTableSchema}
 
@@ -46,6 +47,14 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
   @volatile protected var operationException: KyuubiSQLException = _
   @volatile protected var hasResultSet: Boolean = false
 
+  @volatile private var _backgroundHandle: Future[_] = _
+
+  protected def setBackgroundHandle(backgroundHandle: Future[_]): Unit = {
+    _backgroundHandle = backgroundHandle
+  }
+
+  def getBackgroundHandle: Future[_] = _backgroundHandle
+
   protected def statement: String = opType.toString
 
   protected def setHasResultSet(hasResultSet: Boolean): Unit = {
@@ -58,17 +67,18 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
   }
 
   protected def setState(newState: OperationState): Unit = {
-    info(s"Processing ${session.user}'s query[$statementId]: ${state.name} -> ${newState.name}," +
-      s" statement: $statement")
     OperationState.validateTransition(state, newState)
-    state = newState
-
-    state match {
+    var timeCost = ""
+    newState match {
       case RUNNING => startTime = System.currentTimeMillis()
-      case ERROR | FINISHED | CANCELED => completedTime = System.currentTimeMillis()
+      case ERROR | FINISHED | CANCELED =>
+        completedTime = System.currentTimeMillis()
+        timeCost = s", time taken: ${(completedTime - startTime) / 1000.0} seconds"
       case _ =>
     }
-
+    info(s"Processing ${session.user}'s query[$statementId]: ${state.name} -> ${newState.name}," +
+      s" statement: $statement$timeCost")
+    state = newState
     lastAccessTime = System.currentTimeMillis()
   }
 

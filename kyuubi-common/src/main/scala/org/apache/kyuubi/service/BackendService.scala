@@ -48,14 +48,8 @@ trait BackendService {
 
   def executeStatement(
       sessionHandle: SessionHandle,
-      statement: String): OperationHandle
-  def executeStatement(
-      sessionHandle: SessionHandle,
       statement: String,
       queryTimeout: Long): OperationHandle
-  def executeStatementAsync(
-      sessionHandle: SessionHandle,
-      statement: String): OperationHandle
   def executeStatementAsync(
       sessionHandle: SessionHandle,
       statement: String,
@@ -98,10 +92,3 @@ trait BackendService {
 
   def sessionManager: SessionManager
 }
-
-object BackendService {
-  final val SERVER_VERSION = TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10
-}
-
-
-

@@ -17,20 +17,18 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.sql.{DriverManager, Statement}
-import java.util.Locale
-
 import org.apache.hadoop.hive.ql.metadata.Hive
 import org.apache.hadoop.hive.ql.session.SessionState
-import org.apache.hive.service.rpc.thrift.TCLIService
+import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TOpenSessionReq, TSessionHandle}
 import org.apache.spark.sql.SparkSession
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
 
-import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.Utils
+import org.apache.kyuubi.operation.JDBCTests
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
-trait WithSparkSQLEngine extends KyuubiFunSuite {
+trait WithSparkSQLEngine extends JDBCTests {
 
   val warehousePath = Utils.createTempDir()
   val metastorePath = Utils.createTempDir()
@@ -62,49 +60,7 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
     Hive.closeCurrent()
   }
 
-  protected def jdbcUrl: String = s"jdbc:hive2://$connectionUrl/"
-
-
-  protected def withMultipleConnectionJdbcStatement(
-      tableNames: String*)(fs: (Statement => Unit)*): Unit = {
-    val user = System.getProperty("user.name")
-    val connections = fs.map { _ => DriverManager.getConnection(jdbcUrl, user, "") }
-    val statements = connections.map(_.createStatement())
-
-    try {
-      statements.zip(fs).foreach { case (s, f) => f(s) }
-    } finally {
-      tableNames.foreach { name =>
-        if (name.toUpperCase(Locale.ROOT).startsWith("VIEW")) {
-          statements.head.execute(s"DROP VIEW IF EXISTS $name")
-        } else {
-          statements.head.execute(s"DROP TABLE IF EXISTS $name")
-        }
-      }
-      statements.foreach(_.close())
-      connections.foreach(_.close())
-    }
-  }
-
-  protected def withDatabases(dbNames: String*)(fs: (Statement => Unit)*): Unit = {
-    val user = System.getProperty("user.name")
-    val connections = fs.map { _ => DriverManager.getConnection(jdbcUrl, user, "") }
-    val statements = connections.map(_.createStatement())
-
-    try {
-      statements.zip(fs).foreach { case (s, f) => f(s) }
-    } finally {
-      dbNames.foreach { name =>
-        statements.head.execute(s"DROP DATABASE IF EXISTS $name")
-      }
-      statements.foreach(_.close())
-      connections.foreach(_.close())
-    }
-  }
-
-  protected def withJdbcStatement(tableNames: String*)(f: Statement => Unit): Unit = {
-    withMultipleConnectionJdbcStatement(tableNames: _*)(f)
-  }
+  protected def jdbcUrl: String = s"jdbc:hive2://$connectionUrl/;"
 
   protected def withThriftClient(f: TCLIService.Iface => Unit): Unit = {
     val hostAndPort = connectionUrl.split(":")
@@ -120,6 +76,27 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
       f(client)
     } finally {
       socket.close()
+    }
+  }
+
+  protected def withSessionHandle(f: (TCLIService.Iface, TSessionHandle) => Unit): Unit = {
+    withThriftClient { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername(user)
+      req.setPassword("anonymous")
+      val resp = client.OpenSession(req)
+      val handle = resp.getSessionHandle
+
+      try {
+        f(client, handle)
+      } finally {
+        val tCloseSessionReq = new TCloseSessionReq(handle)
+        try {
+          client.CloseSession(tCloseSessionReq)
+        } catch {
+          case e: Exception => error(s"Failed to close $handle", e)
+        }
+      }
     }
   }
 }

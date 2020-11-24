@@ -19,7 +19,7 @@ package org.apache.kyuubi.operation
 
 import java.util.concurrent.ConcurrentHashMap
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TFetchResultsReq, TRowSet, TSessionHandle}
+import org.apache.hive.service.rpc.thrift.{TCLIService, TFetchResultsReq, TRow, TRowSet, TSessionHandle}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -56,6 +56,11 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     handleToTSessionHandle.put(sessionHandle, remoteSessionHandle)
   }
 
+  def removeConnection(sessionHandle: SessionHandle): Unit = {
+    handleToClient.remove(sessionHandle)
+    handleToTSessionHandle.remove(sessionHandle)
+  }
+
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
@@ -63,7 +68,7 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       queryTimeout: Long): Operation = {
     val client = getThriftClient(session.handle)
     val remoteSessionHandle = getRemoteTSessionHandle(session.handle)
-    val operation = new ExecuteStatement(session, client, remoteSessionHandle, statement)
+    val operation = new ExecuteStatement(session, client, remoteSessionHandle, statement, runAsync)
     addOperation(operation)
 
   }
@@ -144,9 +149,19 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     val operation = getOperation(opHandle).asInstanceOf[KyuubiOperation]
     val client = getThriftClient(operation.getSession.handle)
 
-    val orientation = FetchOrientation.toTFetchOrientation(order)
-    val req = new TFetchResultsReq(operation.remoteOpHandle(), orientation, maxRows)
-    val resp = client.FetchResults(req)
-    resp.getResults
+    // TODO:(kentyao): In async mode, if we query log like below, will put very heavy load on engine
+    // side and get thrift err like:
+    // org.apache.thrift.transport.TTransportException: Read a negative frame size (-2147418110)!
+    val tOperationHandle = operation.remoteOpHandle()
+    if (tOperationHandle == null) {
+      new TRowSet(0, new java.util.ArrayList[TRow](0))
+    } else {
+//      val orientation = FetchOrientation.toTFetchOrientation(order)
+//      val req = new TFetchResultsReq(tOperationHandle, orientation, maxRows)
+//      req.setFetchType(1.toShort)
+//      val resp = client.FetchResults(req)
+//      resp.getResults
+      new TRowSet(0, new java.util.ArrayList[TRow](0))
+    }
   }
 }
