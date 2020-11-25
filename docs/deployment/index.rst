@@ -7,6 +7,7 @@ Deploying Kyuubi
 .. toctree::
     :maxdepth: 2
     :numbered: 4
+    :glob:
 
     settings
     on_yarn

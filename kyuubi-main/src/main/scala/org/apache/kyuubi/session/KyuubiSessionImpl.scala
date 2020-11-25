@@ -55,8 +55,6 @@ class KyuubiSessionImpl(
     }
   }
 
-  configureSession()
-
   private val timeout: Long = sessionConf.get(ENGINE_INIT_TIMEOUT)
   private val zkNamespace = s"$zkNamespacePrefix-$user"
   private val zkPath = ZKPaths.makePath(null, zkNamespace)
@@ -88,6 +86,7 @@ class KyuubiSessionImpl(
     getServerHost match {
       case Some((host, port)) => openSession(host, port)
       case None =>
+        configureSession()
         val builder = new SparkProcessBuilder(user, sessionConf.toSparkPrefixedConf)
         val process = builder.start
         info(s"Launching SQL engine: $builder")
