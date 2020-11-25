@@ -28,5 +28,5 @@
 
 ## Hadoop Configurations, they will override those in $HADOOP_CONF_DIR
 #
-# hadoop.authentication           KERBEROS
+# hadoop.security.authentication  KERBEROS
 #
