@@ -111,6 +111,19 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     cloned
   }
 
+  def getUserDefaults(user: String): KyuubiConf = {
+    val cloned = KyuubiConf(false)
+
+    for (e <- settings.entrySet().asScala if !e.getKey.startsWith("___")) {
+      cloned.set(e.getKey, e.getValue)
+    }
+
+    for ((k, v) <- getAllWithPrefix(s"___${user}___", "")) {
+      cloned.set(k, v)
+    }
+    cloned
+  }
+
   /**
    * This method is used to convert kyuubi configs to configs that Spark could identify.
    * - If the key is start with `spark.`, keep it AS IS as it is a Spark Conf

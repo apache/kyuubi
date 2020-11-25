@@ -27,7 +27,8 @@ import org.apache.kyuubi.ha.HighAvailabilityConf
 
 class AllKyuubiConfiguration extends KyuubiFunSuite {
 
-  private val markdown = Paths.get("..", "docs", "deployment", "settings.md").toAbsolutePath
+  private val markdown = Paths.get("..", "docs", "deployment", "settings.md")
+    .toAbsolutePath
 
   private val writer = Files.newBufferedWriter(
     markdown, StandardCharsets.UTF_8,
@@ -189,10 +190,35 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
       " Also, please refer to the [Apache Hadoop](http://hadoop.apache.org)'s" +
       " online documentation for an overview on how to configure Hadoop.")
     writeWith2Line("### Hive Configurations")
-    writeWithNewLine("These configurations are used for SQL engine application to talk to" +
+    writeWith2Line("These configurations are used for SQL engine application to talk to" +
       " Hive MetaStore and could be configured in a `hive-site.xml`." +
       " Placed it in `$SPARK_HOME/conf` directory, or treating them as Spark properties with" +
       " a `spark.hadoop.` prefix.")
 
+    writeWith2Line("## User Defaults")
+    writeWith2Line("In Kyuubi, we can configure user default settings to meet separate needs." +
+      " These user defaults override system defaults, but will be overridden by those from" +
+      " [JDBC Connection URL](#via-jdbc-connection-url) or [Set Command](#via-set-syntax)" +
+      " if could be. They will take effect when creating the SQL engine application ONLY.")
+    writeWith2Line("User default settings are in the form of `___{username}___.{config key}`." +
+      " There are three continuous underscores(`_`) at both sides of the `username` and" +
+      " a dot(`.`) that separates the config key and the prefix. For example:")
+    writeWithNewLine("```bash")
+    writeWithNewLine("# For system defaults")
+    writeWithNewLine("spark.master=local")
+    writeWithNewLine("spark.sql.adaptive.enabled=true")
+    writeWithNewLine("# For a user named kent")
+    writeWithNewLine("___kent___.spark.master=yarn")
+    writeWithNewLine("___kent___.spark.sql.adaptive.enabled=false")
+    writeWithNewLine("# For a user named bob")
+    writeWithNewLine("___bob___.spark.master=spark://master:7077")
+    writeWithNewLine("___bob___.spark.executor.memory=8g")
+    writeWith2Line( "```")
+    writeWith2Line("In the above case, if there are related configurations from" +
+      " [JDBC Connection URL](#via-jdbc-connection-url), `kent` will run his SQL engine" +
+      " application on YARN and prefer the Spark AQE to be off, while `bob` will activate" +
+      " his SQL engine application on a Spark standalone cluster w/ 8g heap memory for each" +
+      " executor and obey the Spark AQE behavior of Kyuubi system default. On the other hand," +
+      " for those users who do not have custom configurations will use system defaults.")
   }
 }
