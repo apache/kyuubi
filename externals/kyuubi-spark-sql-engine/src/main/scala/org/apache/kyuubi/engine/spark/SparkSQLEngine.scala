@@ -30,7 +30,7 @@ import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{RetryPolicies, ServiceDiscovery}
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.session.SparkSQLEngineAppName
-import org.apache.kyuubi.util.{SignalRegister, ThreadUtils}
+import org.apache.kyuubi.util.SignalRegister
 
 private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   extends Serverable(name) {
@@ -39,29 +39,29 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
 
   def this(spark: SparkSession) = this(classOf[SparkSQLEngine].getSimpleName, spark)
 
-  private val timeoutChecker =
-    ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-timeout-checker")
-
   override private[kyuubi] val backendService = new SparkSQLBackendService(spark)
 
   override protected def stopServer(): Unit = {
     deleteEngineZkPath(this)
     spark.stop()
-    timeoutChecker.shutdown()
-    timeoutChecker.awaitTermination(10, TimeUnit.SECONDS)
   }
 
   def getEngineAppName: SparkSQLEngineAppName =
     SparkSQLEngineAppName.parseAppName(spark.conf.get("spark.app.name"))
 
   override def start(): Unit = {
+    startTimeoutChecker()
+    super.start()
+  }
+
+  private def startTimeoutChecker(): Unit = {
+    val sessionManager = backendService.sessionManager.asInstanceOf[SparkSQLSessionManager]
     val interval = conf.get(KyuubiConf.ENGINE_CHECK_INTERVAL)
     val idleTimeout = conf.get(KyuubiConf.ENGINE_IDLE_TIMEOUT)
 
     val checkTask = new Runnable {
       override def run(): Unit = {
         val current = System.currentTimeMillis
-        val sessionManager = backendService.sessionManager.asInstanceOf[SparkSQLSessionManager]
         if (sessionManager.getOpenSessionCount <= 0 &&
           (current - sessionManager.latestLogoutTime) > idleTimeout) {
           info(s"Idled for more than $idleTimeout, terminating")
@@ -69,8 +69,7 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
         }
       }
     }
-    timeoutChecker.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
-    super.start()
+    sessionManager.scheduleTimeoutChecker(checkTask, interval, TimeUnit.MILLISECONDS)
   }
 }
 

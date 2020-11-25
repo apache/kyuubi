@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.session
 
-import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
+import java.util.concurrent.{ConcurrentHashMap, ScheduledFuture, TimeUnit}
 
 import scala.collection.JavaConverters._
 
@@ -58,6 +58,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     if (session == null) {
       throw KyuubiSQLException(s"Invalid $sessionHandle")
     }
+    info(s"Session closed, $sessionHandle, current sessions:$getOpenSessionCount")
     session.close()
   }
 
@@ -96,6 +97,9 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
         warn(s"Exceeded to shutdown session timeout checker ", i)
     }
   }
+
+  def scheduleTimeoutChecker(r: Runnable, interval: Long, unit: TimeUnit): ScheduledFuture[_] =
+    timeoutChecker.scheduleWithFixedDelay(r, interval, interval, unit)
 
   private def startTimeoutChecker(): Unit = {
     val interval = conf.get(KyuubiConf.SESSION_CHECK_INTERVAL)

@@ -44,7 +44,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
   val operationManager = new SparkSQLOperationManager()
 
-  @volatile private var _latestLogoutTime: Long = Long.MaxValue
+  @volatile private var _latestLogoutTime: Long = System.currentTimeMillis()
   def latestLogoutTime: Long = _latestLogoutTime
 
   private var execPool: ThreadPoolExecutor = _
