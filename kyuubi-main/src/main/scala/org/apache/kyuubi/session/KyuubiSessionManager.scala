@@ -51,9 +51,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     val handle = sessionImpl.handle
     try {
       sessionImpl.open()
-      info(s"$user's session with $handle is opened, current opening sessions" +
-        s" $getOpenSessionCount")
       setSession(handle, sessionImpl)
+      info(s"$user's session with $handle is opened, current opening sessions" +
+      s" $getOpenSessionCount")
       handle
     } catch {
       case e: Throwable =>
