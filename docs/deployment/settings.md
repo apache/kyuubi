@@ -94,7 +94,7 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 
 ## Hadoop Configurations, they will override those in $HADOOP_CONF_DIR
 #
-# hadoop.authentication           KERBEROS
+# hadoop.security.authentication  KERBEROS
 #
 ```
 ### Authentication
@@ -250,3 +250,24 @@ Specifying `HADOOP_CONF_DIR` to the directory contains hadoop configuration file
 ### Hive Configurations
 
 These configurations are used for SQL engine application to talk to Hive MetaStore and could be configured in a `hive-site.xml`. Placed it in `$SPARK_HOME/conf` directory, or treating them as Spark properties with a `spark.hadoop.` prefix.
+
+## User Defaults
+
+In Kyuubi, we can configure user default settings to meet separate needs. These user defaults override system defaults, but will be overridden by those from [JDBC Connection URL](#via-jdbc-connection-url) or [Set Command](#via-set-syntax) if could be. They will take effect when creating the SQL engine application ONLY.
+
+User default settings are in the form of `___{username}___.{config key}`. There are three continuous underscores(`_`) at both sides of the `username` and a dot(`.`) that separates the config key and the prefix. For example:
+
+```bash
+# For system defaults
+spark.master=local
+spark.sql.adaptive.enabled=true
+# For a user named kent
+___kent___.spark.master=yarn
+___kent___.spark.sql.adaptive.enabled=false
+# For a user named bob
+___bob___.spark.master=spark://master:7077
+___bob___.spark.executor.memory=8g
+```
+
+In the above case, if there are related configurations from [JDBC Connection URL](#via-jdbc-connection-url), `kent` will run his SQL engine application on YARN and prefer the Spark AQE to be off, while `bob` will activate his SQL engine application on a Spark standalone cluster w/ 8g heap memory for each executor and obey the Spark AQE behavior of Kyuubi system default. On the other hand, for those users who do not have custom configurations will use system defaults.
+

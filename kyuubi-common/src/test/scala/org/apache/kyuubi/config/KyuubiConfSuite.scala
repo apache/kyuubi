@@ -96,4 +96,20 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     assert(conf.set("hadoop.kent", "yao").toSparkPrefixedConf("spark.hadoop.hadoop.kent") === "yao")
   }
 
+
+  test("get user specific defaults") {
+    val conf = KyuubiConf(false)
+      .set("spark.user.test", "a")
+      .set("___kent___.spark.user.test", "b")
+      .set("___yao___.spark.user.test", "c")
+
+    val all1 = conf.getUserDefaults("yaooqinn").getAll
+    assert(all1.size === 1)
+    assert(all1("spark.user.test") === "a")
+    val all2 = conf.getUserDefaults("kent").getAll
+    assert(all2.size === 1)
+    assert(all2("spark.user.test") === "b")
+    assert(conf.getUserDefaults("yao").getOption("spark.user.test").get === "c")
+  }
+
 }

@@ -47,7 +47,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       conf: Map[String, String]): SessionHandle = {
 
     val sessionImpl = new KyuubiSessionImpl(
-      protocol, user, password, ipAddress, conf, this, this.getConf.clone, zkNamespacePrefix)
+      protocol,
+      user,
+      password,
+      ipAddress,
+      conf,
+      this,
+      this.getConf.getUserDefaults(user),
+      zkNamespacePrefix)
     val handle = sessionImpl.handle
     try {
       sessionImpl.open()
