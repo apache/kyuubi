@@ -17,13 +17,12 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.time.Instant
 import java.util.concurrent.TimeUnit
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
-import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.EngineAppName
 import org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager
@@ -44,7 +43,9 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   }
 
   def getEngineAppName: EngineAppName =
-    EngineAppName.parseAppName(spark.conf.get(EngineAppName.SPARK_APP_NAME_KEY))
+    EngineAppName.parseAppName(
+      spark.conf.get(EngineAppName.SPARK_APP_NAME_KEY),
+      SparkSQLEngine.kyuubiConf)
 
   override def start(): Unit = {
     startTimeoutChecker()
@@ -74,16 +75,10 @@ object SparkSQLEngine extends Logging {
 
   val kyuubiConf: KyuubiConf = KyuubiConf()
 
-  private val user = Utils.currentUser
-
   def createSpark(): SparkSession = {
     val sparkConf = new SparkConf()
     sparkConf.setIfMissing("spark.master", "local")
     sparkConf.setIfMissing("spark.ui.port", "0")
-
-    val appName = s"kyuubi|user|${user}|${Instant.now}"
-    sparkConf.setIfMissing(EngineAppName.SPARK_APP_NAME_KEY, appName)
-//    sparkConf.setAppName(appName)
 
     kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_BIND_PORT, 0)
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)

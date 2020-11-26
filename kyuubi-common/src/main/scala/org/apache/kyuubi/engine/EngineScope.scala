@@ -19,6 +19,8 @@ package org.apache.kyuubi.engine
 
 object EngineScope extends Enumeration {
   type EngineScope = Value
-
-  val SESSION, USER, GROUP, SERVER = Value
+  val SESSION = Value("S")
+  val USER = Value("U")
+  val GROUP = Value("G")
+  val SERVER = Value("K")
 }

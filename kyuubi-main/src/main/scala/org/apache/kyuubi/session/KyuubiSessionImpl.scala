@@ -32,7 +32,7 @@ import org.apache.thrift.transport.{TSocket, TTransport}
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.{EngineAppName, EngineScope}
+import org.apache.kyuubi.engine.EngineAppName
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
@@ -50,15 +50,8 @@ class KyuubiSessionImpl(
 
   private val engineAppName = createEngineAppName()
 
-  private def createEngineAppName(): EngineAppName = {
-    val engineScope = EngineScope.withName(sessionConf.get(ENGINE_SCOPE))
-    val serverHost = sessionConf.get(FRONTEND_BIND_HOST)
-      .getOrElse(InetAddress.getLocalHost.getHostName)
-    val serverPort = sessionConf.get(FRONTEND_BIND_PORT)
-    // TODO: config user group
-    val userGroup = "default"
-    EngineAppName(engineScope, serverHost, serverPort, userGroup, user, handle.identifier.toString)
-  }
+  private def createEngineAppName(): EngineAppName =
+    EngineAppName(user, handle.identifier.toString, sessionConf)
 
   private def configureSession(): Unit = {
     conf.foreach {

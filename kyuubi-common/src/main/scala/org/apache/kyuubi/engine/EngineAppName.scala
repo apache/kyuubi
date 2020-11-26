@@ -17,49 +17,41 @@
 
 package org.apache.kyuubi.engine
 
-import java.time.Instant
-import java.util.Locale
+import java.net.InetAddress
 
 import org.apache.curator.utils.ZKPaths
 
-import org.apache.kyuubi.engine.EngineScope.{EngineScope, GROUP, SERVER, SESSION, USER}
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SCOPE, FRONTEND_BIND_HOST, FRONTEND_BIND_PORT}
+import org.apache.kyuubi.engine.EngineScope.{GROUP, SERVER, SESSION, USER}
 
-class EngineAppName(
-   engineScope: EngineScope,
-   serverHost: String,
-   serverPort: Int,
-   userGroup: String,
-   user: String,
-   handle: String) {
+class EngineAppName(user: String, sessionId: String, conf: KyuubiConf) {
 
   import EngineAppName._
 
+  private val engineScope = EngineScope.withName(conf.get(ENGINE_SCOPE))
+  private val serverHost = conf.get(FRONTEND_BIND_HOST)
+    .getOrElse(InetAddress.getLocalHost.getHostName)
+  private val serverPort = conf.get(FRONTEND_BIND_PORT)
+  // TODO: config user group
+  private val userGroup = "default"
+
+  /**
+   * kyuubi_host_port_[KGUS]user_sessionid
+   *
+   * @return
+   */
   def generateAppName(): String = {
-    val appNameBuilder = StringBuilder.newBuilder
-      .append(APP_NAME_PREFIX)
-      .append(DELIMITER).append(engineScope.toString.toLowerCase(Locale.ROOT))
-    engineScope match {
-      case SESSION =>
-        appNameBuilder.append(DELIMITER).append(serverHost)
-          .append(DELIMITER).append(serverPort)
-          .append(DELIMITER).append(userGroup)
-          .append(DELIMITER).append(user)
-          .append(DELIMITER).append(handle)
-      case USER =>
-        appNameBuilder.append(DELIMITER).append(user)
-      case GROUP =>
-        appNameBuilder.append(DELIMITER).append(userGroup)
-      case SERVER =>
-        appNameBuilder.append(DELIMITER).append(serverHost)
-          .append(DELIMITER).append(serverPort)
-    }
-    appNameBuilder.append(DELIMITER).append(Instant.now).mkString
+    StringBuilder.newBuilder.append(APP_NAME_PREFIX)
+      .append(DELIMITER).append(serverHost)
+      .append(DELIMITER).append("[").append(engineScope).append("]").append(user)
+      .append(DELIMITER).append(sessionId).mkString
   }
 
   def makeZkPath(zkNamespace: String): String = {
     engineScope match {
       case SESSION =>
-        ZKPaths.makePath(zkNamespace, "sessions", handle)
+        ZKPaths.makePath(zkNamespace, "sessions", sessionId)
       case USER =>
         ZKPaths.makePath(zkNamespace, "users", user)
       case GROUP =>
@@ -75,31 +67,17 @@ object EngineAppName {
 
   private val APP_NAME_PREFIX = "kyuubi"
 
-  private val DELIMITER = "|"
+  private val DELIMITER = "_"
 
   val SPARK_APP_NAME_KEY = "spark.app.name"
 
-  def apply(engineScope: EngineScope, serverHost: String, serverPort: Int,
-        userGroup: String, user: String, handle: String): EngineAppName =
-    new EngineAppName(engineScope, serverHost, serverPort, userGroup, user, handle)
+  def apply(user: String, sessionId: String, conf: KyuubiConf): EngineAppName =
+    new EngineAppName(user, sessionId, conf)
 
-  def parseAppName(appName: String): EngineAppName = {
-    val params = appName.split("\\|")
-    val engineScope = EngineScope.withName(params(1).toUpperCase(Locale.ROOT))
-    engineScope match {
-      case SESSION =>
-        EngineAppName(engineScope, serverHost = params(2), serverPort = params(3).toInt,
-          userGroup = params(4), user = params(5), handle = params(6))
-      case USER =>
-        EngineAppName(engineScope, serverHost = null, serverPort = 0,
-          userGroup = null, user = params(2), handle = null)
-      case GROUP =>
-        EngineAppName(engineScope, serverHost = null, serverPort = 0,
-          userGroup = params(2), user = null, handle = null)
-      case SERVER =>
-        EngineAppName(engineScope, serverHost = params(2), serverPort = params(3).toInt,
-          userGroup = null, user = null, handle = null)
-    }
+  def parseAppName(appName: String, conf: KyuubiConf): EngineAppName = {
+    val params = appName.split(DELIMITER)
+    val user = params(2).substring(3)
+    EngineAppName(user, params(3), conf)
   }
 }
 
