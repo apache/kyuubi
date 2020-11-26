@@ -15,16 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.session
+package org.apache.kyuubi.engine
 
 import java.time.Instant
 import java.util.Locale
 
 import org.apache.curator.utils.ZKPaths
 
-import org.apache.kyuubi.session.EngineScope.{EngineScope, GROUP, SERVER, SESSION, USER}
+import org.apache.kyuubi.engine.EngineScope.{EngineScope, GROUP, SERVER, SESSION, USER}
 
-class SparkSQLEngineAppName(
+class EngineAppName(
    engineScope: EngineScope,
    serverHost: String,
    serverPort: Int,
@@ -32,7 +32,7 @@ class SparkSQLEngineAppName(
    user: String,
    handle: String) {
 
-  import SparkSQLEngineAppName._
+  import EngineAppName._
 
   def generateAppName(): String = {
     val appNameBuilder = StringBuilder.newBuilder
@@ -71,31 +71,33 @@ class SparkSQLEngineAppName(
 
 }
 
-object SparkSQLEngineAppName {
+object EngineAppName {
 
   private val APP_NAME_PREFIX = "kyuubi"
 
   private val DELIMITER = "|"
 
-  def apply(engineScope: EngineScope, serverHost: String, serverPort: Int,
-        userGroup: String, user: String, handle: String): SparkSQLEngineAppName =
-    new SparkSQLEngineAppName(engineScope, serverHost, serverPort, userGroup, user, handle)
+  val SPARK_APP_NAME_KEY = "spark.app.name"
 
-  def parseAppName(appName: String): SparkSQLEngineAppName = {
+  def apply(engineScope: EngineScope, serverHost: String, serverPort: Int,
+        userGroup: String, user: String, handle: String): EngineAppName =
+    new EngineAppName(engineScope, serverHost, serverPort, userGroup, user, handle)
+
+  def parseAppName(appName: String): EngineAppName = {
     val params = appName.split("\\|")
     val engineScope = EngineScope.withName(params(1).toUpperCase(Locale.ROOT))
     engineScope match {
       case SESSION =>
-        SparkSQLEngineAppName(engineScope, serverHost = params(2), serverPort = params(3).toInt,
+        EngineAppName(engineScope, serverHost = params(2), serverPort = params(3).toInt,
           userGroup = params(4), user = params(5), handle = params(6))
       case USER =>
-        SparkSQLEngineAppName(engineScope, serverHost = null, serverPort = 0,
+        EngineAppName(engineScope, serverHost = null, serverPort = 0,
           userGroup = null, user = params(2), handle = null)
       case GROUP =>
-        SparkSQLEngineAppName(engineScope, serverHost = null, serverPort = 0,
+        EngineAppName(engineScope, serverHost = null, serverPort = 0,
           userGroup = params(2), user = null, handle = null)
       case SERVER =>
-        SparkSQLEngineAppName(engineScope, serverHost = params(2), serverPort = params(3).toInt,
+        EngineAppName(engineScope, serverHost = params(2), serverPort = params(3).toInt,
           userGroup = null, user = null, handle = null)
     }
   }

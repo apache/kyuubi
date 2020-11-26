@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.session
+package org.apache.kyuubi.engine
 
 object EngineScope extends Enumeration {
   type EngineScope = Value

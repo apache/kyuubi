@@ -25,29 +25,26 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.EngineAppName
 import org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{RetryPolicies, ServiceDiscovery}
 import org.apache.kyuubi.service.Serverable
-import org.apache.kyuubi.session.SparkSQLEngineAppName
 import org.apache.kyuubi.util.SignalRegister
 
 private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   extends Serverable(name) {
-
-  import SparkSQLEngine._
 
   def this(spark: SparkSession) = this(classOf[SparkSQLEngine].getSimpleName, spark)
 
   override private[kyuubi] val backendService = new SparkSQLBackendService(spark)
 
   override protected def stopServer(): Unit = {
-    deleteEngineZkPath(this)
     spark.stop()
   }
 
-  def getEngineAppName: SparkSQLEngineAppName =
-    SparkSQLEngineAppName.parseAppName(spark.conf.get("spark.app.name"))
+  def getEngineAppName: EngineAppName =
+    EngineAppName.parseAppName(spark.conf.get(EngineAppName.SPARK_APP_NAME_KEY))
 
   override def start(): Unit = {
     startTimeoutChecker()
@@ -63,7 +60,7 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
       override def run(): Unit = {
         val current = System.currentTimeMillis
         if (sessionManager.getOpenSessionCount <= 0 &&
-          (current - sessionManager.latestLogoutTime) > idleTimeout) {
+          (current - sessionManager.latestLogoutTime) >= idleTimeout) {
           info(s"Idled for more than $idleTimeout, terminating")
           sys.exit(0)
         }
@@ -85,7 +82,7 @@ object SparkSQLEngine extends Logging {
     sparkConf.setIfMissing("spark.ui.port", "0")
 
     val appName = s"kyuubi|user|${user}|${Instant.now}"
-    sparkConf.setIfMissing("spark.app.name", appName)
+    sparkConf.setIfMissing(EngineAppName.SPARK_APP_NAME_KEY, appName)
 //    sparkConf.setAppName(appName)
 
     kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_BIND_PORT, 0)
@@ -126,20 +123,6 @@ object SparkSQLEngine extends Logging {
       serviceDiscovery.initialize(kyuubiConf)
       serviceDiscovery.start()
       sys.addShutdownHook(serviceDiscovery.stop())
-    }
-  }
-
-  def deleteEngineZkPath(engine: SparkSQLEngine): Unit = {
-    val zkNamespacePrefix = kyuubiConf.get(HA_ZK_NAMESPACE)
-    val namespace = engine.getEngineAppName.makeZkPath(zkNamespacePrefix)
-    val framework = ServiceDiscovery.startZookeeperClient(kyuubiConf)
-    try {
-      framework.delete().forPath(namespace)
-    } catch {
-      case e: Exception =>
-        error(s"Failed to delete the engine's zkPath:$namespace", e)
-    } finally {
-      framework.close()
     }
   }
 

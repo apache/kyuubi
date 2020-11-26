@@ -24,8 +24,8 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.engine.EngineScope
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
-import org.apache.kyuubi.session.EngineScope
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   private val settings = new ConcurrentHashMap[String, String]()

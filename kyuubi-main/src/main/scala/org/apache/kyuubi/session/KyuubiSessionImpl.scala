@@ -32,6 +32,7 @@ import org.apache.thrift.transport.{TSocket, TTransport}
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.{EngineAppName, EngineScope}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
@@ -47,17 +48,16 @@ class KyuubiSessionImpl(
     zkNamespacePrefix: String)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
-  private val engineAppName = createSparkSQLEngineAppName()
+  private val engineAppName = createEngineAppName()
 
-  private def createSparkSQLEngineAppName(): SparkSQLEngineAppName = {
+  private def createEngineAppName(): EngineAppName = {
     val engineScope = EngineScope.withName(sessionConf.get(ENGINE_SCOPE))
     val serverHost = sessionConf.get(FRONTEND_BIND_HOST)
       .getOrElse(InetAddress.getLocalHost.getHostName)
     val serverPort = sessionConf.get(FRONTEND_BIND_PORT)
     // TODO: config user group
     val userGroup = "default"
-    SparkSQLEngineAppName(engineScope, serverHost,
-      serverPort, userGroup, user, handle.identifier.toString)
+    EngineAppName(engineScope, serverHost, serverPort, userGroup, user, handle.identifier.toString)
   }
 
   private def configureSession(): Unit = {
@@ -67,7 +67,7 @@ class KyuubiSessionImpl(
       case ("use:database", _) =>
       case (key, value) => sessionConf.set(key, value)
     }
-    sessionConf.set("spark.app.name", engineAppName.generateAppName())
+    sessionConf.set(EngineAppName.SPARK_APP_NAME_KEY, engineAppName.generateAppName())
   }
 
   configureSession()

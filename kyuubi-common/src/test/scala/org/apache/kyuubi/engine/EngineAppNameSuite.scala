@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.session
+package org.apache.kyuubi.engine
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.session.EngineScope.EngineScope
+import org.apache.kyuubi.engine.EngineScope.EngineScope
 
-class SparkSQLEngineAppNameSuite extends KyuubiFunSuite {
+class EngineAppNameSuite extends KyuubiFunSuite {
 
   private val zkNamespace: String = "kyuubi"
   private val serverHost: String = "kentyao.org"
@@ -55,11 +55,11 @@ class SparkSQLEngineAppNameSuite extends KyuubiFunSuite {
 
   private def checkAppNameAndZkPath(scope: EngineScope,
       expectAppName: String, expectZkPath: String): Unit = {
-    val engine = SparkSQLEngineAppName(scope, serverHost, serverPort, userGroup, user, handle)
+    val engine = EngineAppName(scope, serverHost, serverPort, userGroup, user, handle)
     val appName = engine.generateAppName()
     assert(appName.substring(0, appName.lastIndexOf("|")) === expectAppName)
     assert(engine.makeZkPath(zkNamespace) === expectZkPath)
-    val zkPath = SparkSQLEngineAppName.parseAppName(expectAppName).makeZkPath(zkNamespace)
+    val zkPath = EngineAppName.parseAppName(expectAppName).makeZkPath(zkNamespace)
     assert(zkPath === expectZkPath)
   }
 
