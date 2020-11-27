@@ -27,6 +27,8 @@ import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
+  import KyuubiConf._
+
   private val settings = new ConcurrentHashMap[String, String]()
   private lazy val reader: ConfigProvider = new ConfigProvider(settings)
 
@@ -111,6 +113,16 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     cloned
   }
 
+  private val serverOnlyConfEntries: Set[ConfigEntry[_]] = Set(
+    EMBEDDED_ZK_PORT,
+    EMBEDDED_ZK_TEMP_DIR,
+    FRONTEND_BIND_HOST,
+    FRONTEND_BIND_PORT,
+    AUTHENTICATION_METHOD,
+    SERVER_KEYTAB,
+    SERVER_PRINCIPAL,
+    KINIT_INTERVAL)
+
   def getUserDefaults(user: String): KyuubiConf = {
     val cloned = KyuubiConf(false)
 
@@ -121,6 +133,7 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     for ((k, v) <- getAllWithPrefix(s"___${user}___", "")) {
       cloned.set(k, v)
     }
+    serverOnlyConfEntries.foreach(cloned.unset)
     cloned
   }
 
