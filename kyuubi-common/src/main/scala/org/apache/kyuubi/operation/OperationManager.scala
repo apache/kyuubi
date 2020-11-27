@@ -20,7 +20,9 @@ package org.apache.kyuubi.operation
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.operation.log.LogDivertAppender
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.session.Session
 
@@ -33,6 +35,11 @@ import org.apache.kyuubi.session.Session
 abstract class OperationManager(name: String) extends AbstractService(name) {
 
   private final val handleToOperation = new java.util.HashMap[OperationHandle, Operation]()
+
+  override def initialize(conf: KyuubiConf): Unit = {
+    LogDivertAppender.initialize()
+    super.initialize(conf)
+  }
 
   def newExecuteStatementOperation(
       session: Session,
@@ -110,7 +117,12 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
   def getOperationLogRowSet(
       opHandle: OperationHandle,
       order: FetchOrientation,
-      maxRows: Int): TRowSet
+      maxRows: Int): TRowSet = {
+    val operationLog = getOperation(opHandle).getOperationLog
+    operationLog.map(_.read(maxRows)).getOrElse{
+      throw KyuubiSQLException(s"$opHandle failed to generate operation log")
+    }
+  }
 
   final def removeExpiredOperations(handles: Seq[OperationHandle]): Seq[Operation] = synchronized {
     handles.map(handleToOperation.get).filter { operation =>

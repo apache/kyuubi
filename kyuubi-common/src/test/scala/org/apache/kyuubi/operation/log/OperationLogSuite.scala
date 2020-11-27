@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.operation.log
+package org.apache.kyuubi.operation.log
 
 import java.nio.file.{Files, Paths}
 

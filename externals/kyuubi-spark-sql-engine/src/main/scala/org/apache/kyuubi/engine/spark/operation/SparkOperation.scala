@@ -23,11 +23,11 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.engine.spark.operation.log.OperationLog
 import org.apache.kyuubi.operation.{AbstractOperation, OperationState}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.OperationType.OperationType
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.schema.{RowSet, SchemaHelper}
 import org.apache.kyuubi.session.Session
 
@@ -38,8 +38,8 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
 
   protected final val operationLog: OperationLog =
     OperationLog.createOperationLog(session.handle, getHandle)
+  override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
-  def getOperationLog: OperationLog = operationLog
 
   protected def resultSchema: StructType
 
@@ -121,7 +121,7 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
 
   override def close(): Unit = {
     cleanup(OperationState.CLOSED)
-    if (operationLog != null) operationLog.close()
+    getOperationLog.foreach(_.close())
   }
 
   override def getResultSetSchema: TTableSchema = SchemaHelper.toTTableSchema(resultSchema)

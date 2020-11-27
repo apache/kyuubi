@@ -185,3 +185,13 @@ This error means that you are using incompatible version of Hive metastore clien
 
 To fix this problem you could use a compatible version for Hive client by configuring
 `spark.sql.hive.metastore.jars` and `spark.sql.hive.metastore.version` at Spark side.
+
+
+### hive.server2.thrift.max.worker.threads
+
+```java
+Unexpected end of file when reading from HS2 server. The root cause might be too many concurrent connections. Please ask the administrator to check the number of active connections, and adjust hive.server2.thrift.max.worker.threads if applicable.
+Error: org.apache.thrift.transport.TTransportException (state=08S01,code=0)
+```
+
+In Kyuubi, we should increase `kyuubi.frontend.min.worker.threads` instead of `hive.server2.thrift.max.worker.threads`
