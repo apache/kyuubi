@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi
 
+import java.io.{PrintWriter, StringWriter}
 import java.sql.SQLException
 
 import scala.collection.JavaConverters._
@@ -145,6 +146,14 @@ object KyuubiSQLException {
       ex.setStackTrace(stackTraceElements.toArray)
     }
     ex
+  }
+
+  def stringifyException(e: Throwable): String = {
+    val stm = new StringWriter
+    val wrt = new PrintWriter(stm)
+    e.printStackTrace(wrt)
+    wrt.close()
+    stm.toString
   }
 
 }

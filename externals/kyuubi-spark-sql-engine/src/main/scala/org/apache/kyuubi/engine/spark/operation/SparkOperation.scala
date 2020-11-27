@@ -88,11 +88,12 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
     case e: Exception =>
       if (cancel) spark.sparkContext.cancelJobGroup(statementId)
       state.synchronized {
+        val errMsg = KyuubiSQLException.stringifyException(e)
         if (isTerminalState(state)) {
-          warn(s"Ignore exception in terminal state with $statementId: $e")
+          warn(s"Ignore exception in terminal state with $statementId: $errMsg")
         } else {
           setState(OperationState.ERROR)
-          val ke = KyuubiSQLException(s"Error operating $opType: ${e.getMessage}", e)
+          val ke = KyuubiSQLException(s"Error operating $opType: $errMsg", e)
           setOperationException(ke)
           throw ke
         }
