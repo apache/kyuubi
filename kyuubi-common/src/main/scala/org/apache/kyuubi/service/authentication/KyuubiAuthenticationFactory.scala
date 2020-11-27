@@ -61,11 +61,15 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf) {
 
   def getTTransportFactory: TTransportFactory = {
     saslServer match {
-      case Some(server) => try {
-        server.createSaslServerTransportFactory(getSaslProperties)
-      } catch {
-        case e: TTransportException => throw new LoginException(e.getMessage)
-      }
+      case Some(server) =>
+        val serverTransportFactory = try {
+          server.createSaslServerTransportFactory(getSaslProperties)
+        } catch {
+          case e: TTransportException => throw new LoginException(e.getMessage)
+        }
+
+        server.wrapTransportFactory(serverTransportFactory)
+
       case _ => authType match {
         case NOSASL => new TTransportFactory
         case _ => PlainSASLHelper.getTransportFactory(authType.toString, conf)
@@ -74,7 +78,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf) {
   }
 
   def getTProcessorFactory(fe: Iface): TProcessorFactory = saslServer match {
-    case Some(server) => CLIServiceProcessorFactory(server, fe)
+    case Some(server) => FEServiceProcessorFactory(server, fe)
     case _ => PlainSASLHelper.getProcessFactory(fe)
   }
 
