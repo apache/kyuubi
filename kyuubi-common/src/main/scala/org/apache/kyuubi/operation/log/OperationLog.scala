@@ -15,27 +15,22 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.operation.log
+package org.apache.kyuubi.operation.log
 
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 
-import org.apache.commons.io.FileUtils
 import org.apache.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn}
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.session.SessionHandle
 
-/**
- * TODO: This part is spark-independent, mv to kyuubi-common?
- * we can do this after we decide to support other engines
- */
 object OperationLog extends Logging {
 
-  final val LOG_ROOT: String = "kyuubi_operation_logs"
+  final val LOG_ROOT: String = "operation_logs"
   private final val OPERATION_LOG: InheritableThreadLocal[OperationLog] = {
     new InheritableThreadLocal[OperationLog] {
       override def initialValue(): OperationLog = null
@@ -132,7 +127,7 @@ class OperationLog(path: Path) extends Logging {
     try {
       reader.close()
       writer.close()
-      FileUtils.forceDelete(path.toFile)
+      Files.delete(path)
     } catch {
       case e: IOException =>
         error(s"Failed to remove corresponding log file of operation: ${path.toAbsolutePath}", e)

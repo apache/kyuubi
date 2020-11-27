@@ -239,7 +239,7 @@ object KyuubiConf {
       " service")
     .version("1.0.0")
     .intConf
-    .createWithDefault(99)
+    .createWithDefault(999)
 
   val FRONTEND_WORKER_KEEPALIVE_TIME: ConfigEntry[Long] =
     buildConf("frontend.worker.keepalive.time")

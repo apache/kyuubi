@@ -19,14 +19,10 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.util.concurrent.ConcurrentHashMap
 
-import org.apache.hive.service.rpc.thrift.TRowSet
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.spark.operation.log.LogDivertAppender
-import org.apache.kyuubi.operation.{Operation, OperationHandle, OperationManager}
-import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.{Session, SessionHandle}
 
 class SparkSQLOperationManager private (name: String) extends OperationManager(name) {
@@ -121,18 +117,5 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
     val spark = getSparkSession(session.handle)
     val op = new GetFunctions(spark, session, catalogName, schemaName, functionName)
     addOperation(op)
-  }
-
-  override def initialize(conf: KyuubiConf): Unit = {
-    LogDivertAppender.initialize()
-    super.initialize(conf)
-  }
-
-  override def getOperationLogRowSet(
-      opHandle: OperationHandle,
-      order: FetchOrientation,
-      maxRows: Int): TRowSet = {
-    val log = getOperation(opHandle).asInstanceOf[SparkOperation].getOperationLog
-    log.read(maxRows)
   }
 }
