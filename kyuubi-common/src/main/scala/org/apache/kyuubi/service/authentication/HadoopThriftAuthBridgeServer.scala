@@ -19,9 +19,8 @@ package org.apache.kyuubi.service.authentication
 
 import java.io.IOException
 import java.net.InetAddress
-import java.security.{PrivilegedAction, PrivilegedExceptionAction}
-import java.util.Locale
-import javax.security.auth.callback.{Callback, CallbackHandler, NameCallback, PasswordCallback, UnsupportedCallbackException}
+import java.security.PrivilegedAction
+import javax.security.auth.callback._
 import javax.security.sasl.{AuthorizeCallback, RealmCallback}
 
 import org.apache.commons.codec.binary.Base64
@@ -31,7 +30,7 @@ import org.apache.hadoop.security.SaslRpcServer.AuthMethod
 import org.apache.hadoop.security.token.SecretManager.InvalidToken
 import org.apache.thrift.{TException, TProcessor}
 import org.apache.thrift.protocol.TProtocol
-import org.apache.thrift.transport.{TSaslServerTransport, TSocket, TTransport, TTransportException, TTransportFactory}
+import org.apache.thrift.transport._
 
 import org.apache.kyuubi.Logging
 
@@ -73,19 +72,10 @@ class HadoopThriftAuthBridgeServer(secretMgr: KyuubiDelegationTokenManager) {
   }
 
   /**
-   * Wrap a TProcessor in such a way that, before processing any RPC, it
-   * assumes the UserGroupInformation of the user authenticated by
-   * the SASL transport.
-   */
-  def wrapProcessor(processor: TProcessor): TProcessor = {
-    new TUGIAssumingProcessor(processor, secretMgr, userProxy = true)
-  }
-
-  /**
    * Wrap a TProcessor to capture the client information like connecting userid, ip etc
    */
   def wrapNonAssumingProcessor(processor: TProcessor): TProcessor = {
-    new TUGIAssumingProcessor(processor, secretMgr, userProxy = false)
+    new TUGIAssumingProcessor(processor, secretMgr)
   }
 
   def getRemoteAddress: InetAddress = REMOTE_ADDRESS.get
@@ -141,8 +131,7 @@ object HadoopThriftAuthBridgeServer {
    */
   class TUGIAssumingProcessor(
       wrapped: TProcessor,
-      secretMgr: KyuubiDelegationTokenManager,
-      userProxy: Boolean) extends TProcessor with Logging {
+      secretMgr: KyuubiDelegationTokenManager) extends TProcessor with Logging {
     override def process(in: TProtocol, out: TProtocol): Boolean = {
       val transport = in.getTransport
       transport match {
@@ -155,48 +144,41 @@ object HadoopThriftAuthBridgeServer {
           REMOTE_ADDRESS.set(socket.getInetAddress)
           val mechanismName = saslServer.getMechanismName
           USER_AUTH_MECHANISM.set(mechanismName)
-          AuthMethod.valueOf(mechanismName.toUpperCase(Locale.ROOT)) match {
-            case AuthMethod.PLAIN =>
-              REMOTE_USER.set(endUser)
-              wrapped.process(in, out)
-            case other =>
-              if (other.equals(AuthMethod.TOKEN)) try {
-                  val identifier = SaslRpcServer.getIdentifier(authId, secretMgr)
-                  endUser = identifier.getUser.getUserName
-                } catch {
-                  case e: InvalidToken => throw new TException(e.getMessage)
-                }
-              var clientUgi: UserGroupInformation = null
+          if (AuthMethod.PLAIN.getMechanismName.equalsIgnoreCase(mechanismName)) {
+            REMOTE_USER.set(endUser)
+            wrapped.process(in, out)
+          } else {
+            if (AuthMethod.TOKEN.getMechanismName.equalsIgnoreCase(mechanismName)) {
               try {
-                if (userProxy) {
-                  clientUgi =
-                    UserGroupInformation.createProxyUser(endUser, UserGroupInformation.getLoginUser)
-                  REMOTE_USER.set(clientUgi.getShortUserName)
-                  clientUgi.doAs(new PrivilegedExceptionAction[Boolean] {
-                    override def run(): Boolean = try wrapped.process(in, out) catch {
-                      case e: TException => throw new RuntimeException(e)
-                    }
-                  })
-                } else {
-                  val endUserUgi = UserGroupInformation.createRemoteUser(endUser)
-                  REMOTE_USER.set(endUserUgi.getShortUserName)
-                  debug(s"SET REMOTE USER: ${REMOTE_USER.get()} from endUser: $endUser")
-                  wrapped.process(in, out)
-                }
+                val identifier = SaslRpcServer.getIdentifier(authId, secretMgr)
+                endUser = identifier.getUser.getUserName
               } catch {
-                case e: RuntimeException => e.getCause match {
-                  case t: TException => throw t
-                  case _ => throw e
-                }
-                case e: InterruptedException => throw new RuntimeException(e)
-                case e: IOException => throw new RuntimeException(e)
-              } finally if (clientUgi != null) try FileSystem.closeAllForUGI(clientUgi) catch {
-                    case e: IOException =>
-                      error(s"Could not clean up file-system handles for UGI: $clientUgi", e)
+                case e: InvalidToken => throw new TException(e.getMessage)
               }
+            }
+            val clientUgi: UserGroupInformation = UserGroupInformation.createRemoteUser(endUser)
+            try {
+              REMOTE_USER.set(clientUgi.getShortUserName)
+              debug(s"SET REMOTE USER: ${REMOTE_USER.get()} from endUser: $clientUgi")
+              wrapped.process(in, out)
+            } catch {
+              case e: RuntimeException => e.getCause match {
+                case t: TException => throw t
+                case _ => throw e
+              }
+              case e: InterruptedException => throw new RuntimeException(e)
+              case e: IOException => throw new RuntimeException(e)
+            } finally {
+              try {
+                FileSystem.closeAllForUGI(clientUgi)
+              } catch {
+                case e: IOException =>
+                  error(s"Could not clean up file-system handles for UGI: $clientUgi", e)
+              }
+            }
           }
 
-        case _ => throw new TException(s"Unexpected non-Sasl transport ${transport.getClass}")
+        case _ => throw new TException(s"Unexpected non-SASL transport ${transport.getClass}")
       }
     }
   }

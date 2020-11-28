@@ -65,7 +65,6 @@
         <scalatest.version>3.0.3</scalatest.version>
         <scala.binary.version>2.12</scala.binary.version>
         <maven.version>3.6.3</maven.version>
-        <spark.group>org.apache.spark</spark.group>
         <spark.version>3.0.1</spark.version>
         <log4j.version>1.7.30</log4j.version>
     </properties>

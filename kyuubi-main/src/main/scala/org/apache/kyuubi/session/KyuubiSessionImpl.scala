@@ -28,7 +28,7 @@ import org.apache.thrift.TException
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.{TSocket, TTransport}
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, ThriftUtils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
@@ -81,6 +81,7 @@ class KyuubiSessionImpl(
   }
 
   override def open(): Unit = {
+    super.open()
     // Init zookeeper client here to capture errors
     zkClient
     getServerHost match {
@@ -120,15 +121,9 @@ class KyuubiSessionImpl(
     req.setPassword(passwd)
     req.setConfiguration(conf.asJava)
     val resp = client.OpenSession(req)
-    verifyTStatus(resp.getStatus)
+    ThriftUtils.verifyTStatus(resp.getStatus)
     remoteSessionHandle = resp.getSessionHandle
     sessionManager.operationManager.setConnection(handle, client, remoteSessionHandle)
-  }
-
-  protected def verifyTStatus(tStatus: TStatus): Unit = {
-    if (tStatus.getStatusCode != TStatusCode.SUCCESS_STATUS) {
-      throw KyuubiSQLException(tStatus)
-    }
   }
 
   override def close(): Unit = {
@@ -137,7 +132,8 @@ class KyuubiSessionImpl(
     try {
       if (remoteSessionHandle != null) {
         val req = new TCloseSessionReq(remoteSessionHandle)
-        client.CloseSession(req)
+        val resp = client.CloseSession(req)
+        ThriftUtils.verifyTStatus(resp.getStatus)
       }
     } catch {
       case e: TException =>

@@ -15,19 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.session
+package org.apache.kyuubi
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.hive.service.rpc.thrift.{TRow, TRowSet, TStatus, TStatusCode}
 
-import org.apache.kyuubi.session.{AbstractSession, SessionManager}
+object ThriftUtils {
 
-class SparkSessionImpl(
-    protocol: TProtocolVersion,
-    user: String,
-    password: String,
-    ipAddress: String,
-    conf: Map[String, String],
-    sessionManager: SessionManager)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  def verifyTStatus(tStatus: TStatus): Unit = {
+    if (tStatus.getStatusCode != TStatusCode.SUCCESS_STATUS) {
+      throw KyuubiSQLException(tStatus)
+    }
+  }
+
+  val EMPTY_ROW_SET = new TRowSet(0, new java.util.ArrayList[TRow](0))
 
 }

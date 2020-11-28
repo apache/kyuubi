@@ -19,9 +19,10 @@ package org.apache.kyuubi.operation
 
 import org.apache.hive.service.rpc.thrift._
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, ThriftUtils}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationType.OperationType
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
 abstract class KyuubiOperation(
@@ -35,10 +36,10 @@ abstract class KyuubiOperation(
   def remoteOpHandle(): TOperationHandle = _remoteOpHandle
 
   protected def verifyTStatus(tStatus: TStatus): Unit = {
-    if (tStatus.getStatusCode != TStatusCode.SUCCESS_STATUS) {
-      throw KyuubiSQLException(tStatus)
-    }
+    ThriftUtils.verifyTStatus(tStatus)
   }
+
+  override def getOperationLog: Option[OperationLog] = None
 
   protected def onError(action: String = "operating"): PartialFunction[Throwable, Unit] = {
     case e: Exception =>
@@ -72,7 +73,7 @@ abstract class KyuubiOperation(
   }
 
   override def cancel(): Unit = {
-    if (_remoteOpHandle != null && !isTerminalState(state)) {
+    if (_remoteOpHandle != null && !isClosedOrCanceled) {
       try {
         val req = new TCancelOperationReq(_remoteOpHandle)
         val resp = client.CancelOperation(req)
@@ -83,8 +84,9 @@ abstract class KyuubiOperation(
   }
 
   override def close(): Unit = {
-    if (_remoteOpHandle != null && !isTerminalState(state)) {
+    if (_remoteOpHandle != null && !isClosedOrCanceled) {
       try {
+        getOperationLog.foreach(_.close())
         val req = new TCloseOperationReq(_remoteOpHandle)
         val resp = client.CloseOperation(req)
         verifyTStatus(resp.getStatus)

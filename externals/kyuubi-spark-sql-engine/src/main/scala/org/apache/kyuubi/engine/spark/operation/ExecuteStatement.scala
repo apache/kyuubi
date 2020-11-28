@@ -24,8 +24,8 @@ import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
-import org.apache.kyuubi.engine.spark.operation.log.OperationLog
 import org.apache.kyuubi.operation.{OperationState, OperationType}
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
 class ExecuteStatement(

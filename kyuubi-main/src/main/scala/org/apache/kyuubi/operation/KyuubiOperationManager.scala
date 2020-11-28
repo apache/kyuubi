@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import org.apache.hive.service.rpc.thrift.{TCLIService, TFetchResultsReq, TRow, TRowSet, TSessionHandle}
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, ThriftUtils}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.{Session, SessionHandle}
 
@@ -142,26 +142,28 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     addOperation(operation)
   }
 
+
   override def getOperationLogRowSet(
       opHandle: OperationHandle,
-      order: FetchOrientation,
-      maxRows: Int): TRowSet = {
-    val operation = getOperation(opHandle).asInstanceOf[KyuubiOperation]
-    val client = getThriftClient(operation.getSession.handle)
+      order: FetchOrientation, maxRows: Int): TRowSet = {
 
-    // TODO:(kentyao): In async mode, if we query log like below, will put very heavy load on engine
-    // side and get thrift err like:
-    // org.apache.thrift.transport.TTransportException: Read a negative frame size (-2147418110)!
-    val tOperationHandle = operation.remoteOpHandle()
-    if (tOperationHandle == null) {
-      new TRowSet(0, new java.util.ArrayList[TRow](0))
-    } else {
-//      val orientation = FetchOrientation.toTFetchOrientation(order)
-//      val req = new TFetchResultsReq(tOperationHandle, orientation, maxRows)
-//      req.setFetchType(1.toShort)
-//      val resp = client.FetchResults(req)
-//      resp.getResults
-      new TRowSet(0, new java.util.ArrayList[TRow](0))
+    val operation = getOperation(opHandle).asInstanceOf[KyuubiOperation]
+    val operationLog = operation.getOperationLog
+    operationLog match {
+      case Some(log) => log.read(maxRows)
+      case None =>
+        val remoteHandle = operation.remoteOpHandle()
+        val client = getThriftClient(operation.getSession.handle)
+
+        if (remoteHandle != null) {
+          val or = FetchOrientation.toTFetchOrientation(order)
+          val req = new TFetchResultsReq(remoteHandle, or, maxRows)
+          val resp = client.FetchResults(req)
+          ThriftUtils.verifyTStatus(resp.getStatus)
+          resp.getResults
+        } else {
+          ThriftUtils.EMPTY_ROW_SET
+        }
     }
   }
 }
