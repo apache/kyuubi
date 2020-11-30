@@ -1,14 +1,14 @@
 .. image:: ../imgs/kyuubi_logo.png
    :align: center
 
-Security
-========
+Kyuubi Security Overview
+========================
 
 .. toctree::
     :maxdepth: 2
     :numbered: 3
 
-    authentication
+    Authentication <authentication>
     kinit
     authorization
 

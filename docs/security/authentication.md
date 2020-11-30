@@ -1,58 +1,74 @@
-# Authentication
-Kyuubi supports Anonymous (no authentication) with and without SASL, Kerberos (GSSAPI), pass through LDAP between the Thrift client and itself.
+<div align=center>
 
-## Configuration
+![](../imgs/kyuubi_logo_simple.png)
 
-Name|Default|Description
----|---|---
-spark.kyuubi.<br />authentication | NONE | Authentication mode, default NONE. Options are NONE (uses plain SASL), NOSASL, KERBEROS, LDAP.
+</div>
 
-#### NONE
-###### Server
-```bash
-$KYUUBI_HOME/bin/start-kyuubi.sh --conf spark.kyuubi.authentication=NONE
-```
-###### Client
-```bash
-$SPARK_HOME/bin/beeline -u "jdbc:hive2://${replace with spark.kyuubi.frontend.bind.host}:10009/;hive.server2.proxy.user=yaooqinn"
-```
+# Kyuubi Authentication Mechanism
 
-#### NOSASL
-###### Server
-```bash
-$KYUUBI_HOME/bin/start-kyuubi.sh --conf spark.kyuubi.authentication=NOSASL
-```
-###### Client
-```bash
-$SPARK_HOME/bin/beeline -u "jdbc:hive2://${replace with spark.kyuubi.frontend.bind.host}:10009/;hive.server2.proxy.user=hzyaoqin;auth=noSasl"
-```
+In a secure cluster, services should be able to identify and authenticate callers.
+As the fact that the user claims does not necessarily mean this is true.
+
+The authentication process of Kyuubi is used to verify the user identity that a client used to talk to the Kyuubi server.
+Once done, a trusted connection will be set up between the client and server if successful; otherwise, rejected.
+
+**Note** that, this authentication only authenticate whether a user can connect w/ Kyuubi server or not.
+For other secured services that this user wants to interact with, he/she also needs to pass the authentication process of each service, for instance, Hive Metastore, YARN, HDFS.
+
+In `$KYUUBI_HOME/conf/kyuubi-defaults.conf`, specify `kyuubi.authentication` to one of the authentication types listing below.
+
+Key | Default | Meaning | Since
+--- | --- | --- | ---
+kyuubi\.authentication|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>NONE</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Client authentication types.<ul> <li>NOSASL: raw transport.</li> <li>NONE: no authentication check.</li> <li>KERBEROS: Kerberos/GSSAPI authentication.</li> <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul></div>|<div style='width: 20pt'>1.0.0</div>
 
 
-#### KERBEROS
+Key | Default | Meaning | Since
+--- | --- | --- | ---
+kyuubi\.authentication|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>NONE</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Client authentication types.<ul> <li>NOSASL: raw transport.</li> <li>NONE: no authentication check.</li> <li>KERBEROS: Kerberos/GSSAPI authentication.</li> <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul></div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.authentication<br>\.ldap\.base\.dn|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>LDAP base DN.</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.authentication<br>\.ldap\.domain|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>LDAP base DN.</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.authentication<br>\.ldap\.url|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>SPACE character separated LDAP connection URL(s).</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.authentication<br>\.sasl\.qop|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>auth</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Sasl QOP enable higher levels of protection for Kyuubi communication with clients.<ul> <li>auth - authentication only (default)</li> <li>auth-int - authentication plus integrity protection</li> <li>auth-conf - authentication plus integrity and confidentiality protection. This is applicable only if Kyuubi is configured to use Kerberos authentication.</li> </ul></div>|<div style='width: 20pt'>1.0.0</div>
 
-If you configure Kyuubi to use Kerberos authentication, Kyuubi acquires a Kerberos ticket during startup. Kyuubi requires a principal and keytab file specified in `$SPARK_HOME/conf/spark-defaults.conf`. Client applications (for example, JDBC or Beeline) must have a valid Kerberos ticket before initiating a connection to Kyuubi.
+
+#### Using KERBEROS
+
+If you are deploying Kyuubi w/ a kerberized Hadoop cluster, it is strongly recommended that `kyuubi.authentication` should be set to `KERBEROS` too.
+
+Kerberos is a network authentication protocol that provides the tools of authentication and strong cryptography over the network.
+The Kerberos protocol uses strong cryptography so that a client or a server can prove its identity to its server or client across an insecure network connection.
+After a client and server have used Kerberos to prove their identity, they can also encrypt all of their communications to assure privacy and data integrity as they go about their business.
+
+The Kerberos architecture is centered around a trusted authentication service called the key distribution center, or KDC.
+Users and services in a Kerberos environment are referred to as principals;
+each principal shares a secret, such as a password, with the KDC.
 
 Set following for KERBEROS mode:
-- spark.yarn.principal – Kerberos principal for Kyuubi server.
-- spark.yarn.keytab – Keytab for Kyuubi server principal.
 
-**NOTE:**: NONE and NOSASL mode also support these two configurations for Kyuubi to talk with a kerberized cluster only without verifying client accessing via kerberos.
-###### Server
+Key | Default | Meaning | Since
+--- | --- | --- | ---
+kyuubi\.kinit<br>\.principal|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Name of the Kerberos principal.</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.kinit\.keytab|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Location of Kyuubi server's keytab.</div>|<div style='width: 20pt'>1.0.0</div>
+
+
+For example,
+
+- Configure w/ Kyuubi service principal 
 ```bash
-$KYUUBI_HOME/bin/start-kyuubi.sh --conf spark.kyuubi.authentication=KERBEROS
+kyuubi.authentication=KERBEROS
+kyuubi.kinit.principal=spark/kyuubi.apache.org@KYUUBI.APACHE.ORG
+kyuubi.kinit.keytab=/path/to/kyuuib.keytab
 ```
-###### Client
+
+- Start Kyuubi
 ```bash
-$SPARK_HOME/bin/beeline -u "jdbc:hive2://${replace with spark.kyuubi.frontend.bind.host}:10000/;principal=${replace with spark.yarn.principal};hive.server2.proxy.user=yaooqinn"
+$ ./bin/kyuubi start
 ```
 
-## Additional Documentations
+- Kinit w/ user principal and connect using beeline
 
-[Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)  
-[Kyuubi Deployment Guide](https://yaooqinn.github.io/kyuubi/docs/deploy.html)  
-[Kyuubi Containerization Guide](https://yaooqinn.github.io/kyuubi/docs/containerization.html)   
-[High Availability Guide](https://yaooqinn.github.io/kyuubi/docs/high_availability_guide.html)  
-[Configuration Guide](https://yaooqinn.github.io/kyuubi/docs/configurations.html)  
-[Kyuubi ACL Management Guide](https://yaooqinn.github.io/kyuubi/docs/authorization.html)   
-[Kyuubi Architecture](https://yaooqinn.github.io/kyuubi/docs/architecture.html)  
-[Home Page](https://yaooqinn.github.io/kyuubi/)
+```bash
+$ kinit -kt user.keytab user.principal
+
+$ beeline -u "jdbc:hive2://localhost:10009/;principal=spark/kyuubi.apache.org@KYUUBI.APACHE.ORG"
+```

@@ -15,9 +15,9 @@ Welcome to Kyuubi's documentation!
    :glob:
 
    quick_start/index
-   overview/index
-   deployment/index
-   security/index
+   Overview <overview/index>
+   Deploy <deployment/index>
+   Security <security/index>
    client/index
    integrations/index
    tools/index
