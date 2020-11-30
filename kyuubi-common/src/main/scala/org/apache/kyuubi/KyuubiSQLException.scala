@@ -63,11 +63,12 @@ object KyuubiSQLException {
     }
   }
 
-  def toTStatus(e: Exception): TStatus = e match {
+  def toTStatus(e: Exception, verbose: Boolean = false): TStatus = e match {
     case k: KyuubiSQLException => k.toTStatus
     case _ =>
       val tStatus = new TStatus(TStatusCode.ERROR_STATUS)
-      tStatus.setErrorMessage(e.getMessage)
+      val errMsg = if (verbose) stringifyException(e) else e.getMessage
+      tStatus.setErrorMessage(errMsg)
       tStatus.setInfoMessages(toString(e).asJava)
       tStatus
   }

@@ -190,7 +190,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     } catch {
       case e: Exception =>
         warn("Error opening session: ", e)
-        resp.setStatus(KyuubiSQLException.toTStatus(e))
+        resp.setStatus(KyuubiSQLException.toTStatus(e, verbose = true))
     }
     resp
   }

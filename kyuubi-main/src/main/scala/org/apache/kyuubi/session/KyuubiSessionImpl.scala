@@ -110,7 +110,7 @@ class KyuubiSessionImpl(
   }
 
   private def openSession(host: String, port: Int): Unit = {
-    val passwd = Option(password).getOrElse("anonymous")
+    val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
     val loginTimeout = sessionConf.get(ENGINE_LOGIN_TIMEOUT).toInt
     transport = PlainSASLHelper.getPlainTransport(
       user, passwd, new TSocket(host, port, loginTimeout))
