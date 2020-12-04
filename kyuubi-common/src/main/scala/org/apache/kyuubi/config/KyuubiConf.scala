@@ -114,7 +114,7 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     cloned
   }
 
-  private val serverOnlyConfEntries: Set[ConfigEntry[_]] = Set(
+  private val serverOnlyConfEntries: Set[String] = Set(
     EMBEDDED_ZK_PORT,
     EMBEDDED_ZK_TEMP_DIR,
     FRONTEND_BIND_HOST,
@@ -122,7 +122,7 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     AUTHENTICATION_METHOD,
     SERVER_KEYTAB,
     SERVER_PRINCIPAL,
-    KINIT_INTERVAL)
+    KINIT_INTERVAL).map(_.key)
 
   def getUserDefaults(user: String): KyuubiConf = {
     val cloned = KyuubiConf(false)
@@ -131,10 +131,11 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
       cloned.set(e.getKey, e.getValue)
     }
 
-    for ((k, v) <- getAllWithPrefix(s"___${user}___", "")) {
+    for ((k, v) <- getAllWithPrefix(s"___${user}___", "")
+         if !serverOnlyConfEntries.contains(k)) {
       cloned.set(k, v)
     }
-    serverOnlyConfEntries.foreach(cloned.unset)
+
     cloned
   }
 

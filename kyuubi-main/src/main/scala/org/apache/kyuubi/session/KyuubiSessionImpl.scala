@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.session
 
-import java.net.InetAddress
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 
@@ -48,9 +47,7 @@ class KyuubiSessionImpl(
     zkNamespacePrefix: String)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
-  private val engineAppName = createEngineAppName()
-
-  private def createEngineAppName(): EngineAppName =
+  private val engineAppName =
     EngineAppName(user, handle.identifier.toString, sessionConf)
 
   private def configureSession(): Unit = {

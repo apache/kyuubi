@@ -26,7 +26,7 @@ class EngineAppNameSuite extends KyuubiFunSuite {
   private val kyuubiConf: KyuubiConf = KyuubiConf()
   private val zkNamespace: String = "kyuubi"
   private val serverHost: String = "kentyao.org"
-  private val serverPort: Int = 10009
+  private val serverPort: Int = 10001
   private val user: String = "hive"
   private val handle: String = "a9938028-667d-4006-993e-0bdb5a14ae91"
 
@@ -40,23 +40,23 @@ class EngineAppNameSuite extends KyuubiFunSuite {
   test("SparkSQLEngineAppName") {
 
     // SESSION SCOPE
-    val sessionScopeAppName = "kyuubi_kentyao.org_10009_[S]hive_a9938028-667d-4006-993e-0bdb5a14ae91"
+    val sessionScopeAppName = "kyuubi_kentyao.org_10001_[S]hive_a9938028-667d-4006-993e-0bdb5a14ae91"
     val sessionScopeZkPath = "/kyuubi/sessions/a9938028-667d-4006-993e-0bdb5a14ae91"
     checkAppNameAndZkPath(EngineScope.SESSION, sessionScopeAppName, sessionScopeZkPath)
 
     // USER SCOPE
-    val userScopeAppName = "kyuubi_kentyao.org_10009_[U]hive_a9938028-667d-4006-993e-0bdb5a14ae91"
+    val userScopeAppName = "kyuubi_kentyao.org_10001_[U]hive_a9938028-667d-4006-993e-0bdb5a14ae91"
     val userScopeZkPath = "/kyuubi/users/hive"
     checkAppNameAndZkPath(EngineScope.USER, userScopeAppName, userScopeZkPath)
 
     // GROUP SCOPE
-    val groupScopeAppName = "kyuubi_kentyao.org_10009_[G]hive_a9938028-667d-4006-993e-0bdb5a14ae91"
+    val groupScopeAppName = "kyuubi_kentyao.org_10001_[G]hive_a9938028-667d-4006-993e-0bdb5a14ae91"
     val groupScopeZkPath = "/kyuubi/groups/default"
     checkAppNameAndZkPath(EngineScope.GROUP, groupScopeAppName, groupScopeZkPath)
 
     // SERVER SCOPE
-    val serverScopeAppName = "kyuubi_kentyao.org_10009_[K]hive_a9938028-667d-4006-993e-0bdb5a14ae91"
-    val serverScopeZkPath = "/kyuubi/servers/kentyao.org:10009"
+    val serverScopeAppName = "kyuubi_kentyao.org_10001_[K]hive_a9938028-667d-4006-993e-0bdb5a14ae91"
+    val serverScopeZkPath = "/kyuubi/servers/kentyao.org:10001"
     checkAppNameAndZkPath(EngineScope.SERVER, serverScopeAppName, serverScopeZkPath)
 
   }
@@ -64,7 +64,7 @@ class EngineAppNameSuite extends KyuubiFunSuite {
   private def checkAppNameAndZkPath(scope: EngineScope,
       expectAppName: String, expectZkPath: String): Unit = {
     kyuubiConf.set(KyuubiConf.ENGINE_SCOPE, scope.toString)
-    val engine = EngineAppName(user, handle, kyuubiConf)
+    val engine = EngineAppName(user, handle, kyuubiConf.getUserDefaults(user))
     assert(engine.generateAppName() === expectAppName)
     assert(engine.makeZkPath(zkNamespace) === expectZkPath)
     val zkPath = EngineAppName.parseAppName(expectAppName, kyuubiConf).makeZkPath(zkNamespace)
