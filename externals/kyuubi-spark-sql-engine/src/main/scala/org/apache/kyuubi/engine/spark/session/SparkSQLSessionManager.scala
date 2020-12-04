@@ -42,31 +42,6 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   @volatile private var _latestLogoutTime: Long = System.currentTimeMillis()
   def latestLogoutTime: Long = _latestLogoutTime
 
-  private var execPool: ThreadPoolExecutor = _
-
-  override def initialize(conf: KyuubiConf): Unit = {
-    val poolSize = conf.get(ENGINE_EXEC_POOL_SIZE)
-    val waitQueueSize = conf.get(ENGINE_EXEC_WAIT_QUEUE_SIZE)
-    val keepAliveMs = conf.get(ENGINE_EXEC_KEEPALIVE_TIME)
-    execPool = ThreadUtils.newDaemonQueuedThreadPool(
-      poolSize, waitQueueSize, keepAliveMs, s"$name-exec-pool")
-    super.initialize(conf)
-  }
-
-  override def stop(): Unit = {
-    if (execPool != null) {
-      execPool.shutdown()
-      val timeout = conf.get(ENGINE_EXEC_POOL_SHUTDOWN_TIMEOUT)
-      try {
-        execPool.awaitTermination(timeout, TimeUnit.SECONDS)
-      } catch {
-        case e: InterruptedException =>
-          warn(s"Exceeded timeout($timeout ms) to wait the exec-pool shutdown gracefully", e)
-      }
-    }
-    super.stop()
-  }
-
   override def openSession(
       protocol: TProtocolVersion,
       user: String,
