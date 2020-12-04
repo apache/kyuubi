@@ -77,10 +77,13 @@ object EngineAppName {
 
   def parseAppName(appName: String, conf: KyuubiConf): EngineAppName = {
     val params = appName.split(DELIMITER)
+    val engineScope = params(3).substring(1, 2)
     val user = params(3).substring(3)
-    conf.set(FRONTEND_BIND_HOST, params(1))
-    conf.set(FRONTEND_BIND_PORT, params(2).toInt)
-    EngineAppName(user, params(4), conf)
+    val clone = conf.clone
+    clone.set(ENGINE_SCOPE, engineScope)
+    clone.set(FRONTEND_BIND_HOST, params(1))
+    clone.set(FRONTEND_BIND_PORT, params(2).toInt)
+    EngineAppName(user, params(4), clone)
   }
 }
 
