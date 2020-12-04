@@ -81,10 +81,6 @@ object SparkSQLEngine extends Logging {
     sparkConf.setIfMissing("spark.master", "local")
     sparkConf.setIfMissing("spark.ui.port", "0")
 
-    // The engine should not bind the host and port number of the kyuubiServer
-    kyuubiConf.unset(KyuubiConf.FRONTEND_BIND_HOST)
-    kyuubiConf.set(KyuubiConf.FRONTEND_BIND_PORT, 0)
-
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
 
     val prefix = "spark.kyuubi."
@@ -92,6 +88,10 @@ object SparkSQLEngine extends Logging {
     sparkConf.getAllWithPrefix(prefix).foreach { case (k, v) =>
       kyuubiConf.set(s"kyuubi.$k", v)
     }
+
+    // The engine should not bind the host and port number of the kyuubiServer
+    kyuubiConf.unset(KyuubiConf.FRONTEND_BIND_HOST)
+    kyuubiConf.set(KyuubiConf.FRONTEND_BIND_PORT, 0)
 
     if (logger.isDebugEnabled) {
       kyuubiConf.getAll.foreach { case (k, v) =>
