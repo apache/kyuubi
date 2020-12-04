@@ -44,6 +44,7 @@ class EngineAppName(user: String, sessionId: String, conf: KyuubiConf) {
   def generateAppName(): String = {
     StringBuilder.newBuilder.append(APP_NAME_PREFIX)
       .append(DELIMITER).append(serverHost)
+      .append(DELIMITER).append(serverPort)
       .append(DELIMITER).append("[").append(engineScope).append("]").append(user)
       .append(DELIMITER).append(sessionId).mkString
   }
@@ -76,8 +77,10 @@ object EngineAppName {
 
   def parseAppName(appName: String, conf: KyuubiConf): EngineAppName = {
     val params = appName.split(DELIMITER)
-    val user = params(2).substring(3)
-    EngineAppName(user, params(3), conf)
+    val user = params(3).substring(3)
+    conf.set(FRONTEND_BIND_HOST, params(1))
+    conf.set(FRONTEND_BIND_PORT, params(2).toInt)
+    EngineAppName(user, params(4), conf)
   }
 }
 

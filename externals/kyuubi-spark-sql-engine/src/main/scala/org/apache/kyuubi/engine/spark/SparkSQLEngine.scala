@@ -29,37 +29,37 @@ import org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{RetryPolicies, ServiceDiscovery}
 import org.apache.kyuubi.service.Serverable
-import org.apache.kyuubi.util.SignalRegister
+import org.apache.kyuubi.util.{SignalRegister, ThreadUtils}
 
 private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   extends Serverable(name) {
 
   def this(spark: SparkSession) = this(classOf[SparkSQLEngine].getSimpleName, spark)
 
+  private val timeoutChecker =
+    ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-timeout-checker")
+
   override private[kyuubi] val backendService = new SparkSQLBackendService(spark)
 
   override protected def stopServer(): Unit = {
     spark.stop()
+    timeoutChecker.shutdown()
+    timeoutChecker.awaitTermination(10, TimeUnit.SECONDS)
   }
 
-  def getEngineAppName: EngineAppName =
-    EngineAppName.parseAppName(
-      spark.conf.get(EngineAppName.SPARK_APP_NAME_KEY),
-      SparkSQLEngine.kyuubiConf)
+  val appName: EngineAppName = EngineAppName.parseAppName(
+    spark.conf.get(EngineAppName.SPARK_APP_NAME_KEY),
+    SparkSQLEngine.kyuubiConf)
 
   override def start(): Unit = {
-    startTimeoutChecker()
-    super.start()
-  }
 
-  private def startTimeoutChecker(): Unit = {
-    val sessionManager = backendService.sessionManager.asInstanceOf[SparkSQLSessionManager]
     val interval = conf.get(KyuubiConf.ENGINE_CHECK_INTERVAL)
     val idleTimeout = conf.get(KyuubiConf.ENGINE_IDLE_TIMEOUT)
 
     val checkTask = new Runnable {
       override def run(): Unit = {
         val current = System.currentTimeMillis
+        val sessionManager = backendService.sessionManager.asInstanceOf[SparkSQLSessionManager]
         if (sessionManager.getOpenSessionCount <= 0 &&
           (current - sessionManager.latestLogoutTime) >= idleTimeout) {
           info(s"Idled for more than $idleTimeout, terminating")
@@ -67,7 +67,8 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
         }
       }
     }
-    sessionManager.scheduleTimeoutChecker(checkTask, interval, TimeUnit.MILLISECONDS)
+    timeoutChecker.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
+    super.start()
   }
 }
 
@@ -80,7 +81,10 @@ object SparkSQLEngine extends Logging {
     sparkConf.setIfMissing("spark.master", "local")
     sparkConf.setIfMissing("spark.ui.port", "0")
 
-    kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_BIND_PORT, 0)
+    // The engine should not bind the host and port number of the kyuubiServer
+    kyuubiConf.unset(KyuubiConf.FRONTEND_BIND_HOST)
+    kyuubiConf.set(KyuubiConf.FRONTEND_BIND_PORT, 0)
+
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
 
     val prefix = "spark.kyuubi."
@@ -112,8 +116,7 @@ object SparkSQLEngine extends Logging {
     val needExpose = kyuubiConf.get(HA_ZK_QUORUM).nonEmpty
     if (needExpose) {
       val zkNamespacePrefix = kyuubiConf.get(HA_ZK_NAMESPACE)
-      val namespace = engine.getEngineAppName
-        .makeZkPath(zkNamespacePrefix).substring(1)
+      val namespace = engine.appName.makeZkPath(zkNamespacePrefix).substring(1)
       val serviceDiscovery = new ServiceDiscovery(engine, namespace)
       serviceDiscovery.initialize(kyuubiConf)
       serviceDiscovery.start()

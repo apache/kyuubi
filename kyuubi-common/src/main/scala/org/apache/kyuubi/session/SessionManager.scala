@@ -141,9 +141,6 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     }
   }
 
-  def scheduleTimeoutChecker(r: Runnable, interval: Long, unit: TimeUnit): ScheduledFuture[_] =
-    timeoutChecker.scheduleWithFixedDelay(r, interval, interval, unit)
-
   private def startTimeoutChecker(): Unit = {
     val interval = conf.get(KyuubiConf.SESSION_CHECK_INTERVAL)
     val timeout = conf.get(KyuubiConf.SESSION_TIMEOUT)

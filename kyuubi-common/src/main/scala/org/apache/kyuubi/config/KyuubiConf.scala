@@ -408,7 +408,7 @@ object KyuubiConf {
   val ENGINE_SCOPE: ConfigEntry[String] = buildConf("session.engine.scope")
     .doc("The engine session scope.<ul>" +
       " <li>S: One engine per kyuubi session in kyuubi cluster.</li>" +
-      " <li>U: One engine per user in kyuubi cluster.</li>" +
+      " <li>U: One engine per user in kyuubi cluster(default).</li>" +
       " <li>G: One engine per group in kyuubi cluster.</li>" +
       " <li>K: One engine per kyuubi server in kyuubi cluster.</li></ul>")
     .version("1.0.0")
