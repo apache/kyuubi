@@ -32,7 +32,7 @@ import org.apache.hadoop.security.{SecurityUtil, UserGroupInformation}
 import org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager.JaasConfiguration
 import org.apache.zookeeper.{KeeperException, WatchedEvent, Watcher}
 import org.apache.zookeeper.CreateMode.PERSISTENT
-import org.apache.zookeeper.KeeperException.NodeExistsException
+import org.apache.zookeeper.KeeperException.{NodeExistsException, NoNodeException}
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException}
 import org.apache.kyuubi.config.KyuubiConf
@@ -153,8 +153,14 @@ class ServiceDiscovery private (
       val engineScope = conf.get(ENGINE_SCOPE)
       if (EngineScope.SESSION.toString.equalsIgnoreCase(engineScope) &&
         zkClient.checkExists().forPath(s"/$namespace") != null) {
-        info(s"Clean service's namespace: /$namespace")
-        zkClient.delete().forPath(s"/$namespace")
+        info(s"Deleting service's namespace: /$namespace")
+        try {
+          zkClient.delete().forPath(s"/$namespace")
+        } catch {
+          case _: NoNodeException =>  // do nothing
+          case e: KeeperException =>
+            throw new KyuubiException(s"Failed to delete namespace '/$namespace'", e)
+        }
       }
       zkClient.close()
     }
