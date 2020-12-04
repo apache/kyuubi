@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import org.apache.hive.service.rpc.thrift.{TCLIService, TFetchResultsReq, TRow, TRowSet, TSessionHandle}
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, ThriftUtils}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.{Session, SessionHandle}
 
@@ -142,25 +142,28 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     addOperation(operation)
   }
 
+
   override def getOperationLogRowSet(
       opHandle: OperationHandle,
-      order: FetchOrientation,
-      maxRows: Int): TRowSet = {
+      order: FetchOrientation, maxRows: Int): TRowSet = {
+
     val operation = getOperation(opHandle).asInstanceOf[KyuubiOperation]
-    val client = getThriftClient(operation.getSession.handle)
+    val operationLog = operation.getOperationLog
+    operationLog match {
+      case Some(log) => log.read(maxRows)
+      case None =>
+        val remoteHandle = operation.remoteOpHandle()
+        val client = getThriftClient(operation.getSession.handle)
 
-    val tOperationHandle = operation.remoteOpHandle()
-    if (tOperationHandle == null) {
-      new TRowSet(0, new java.util.ArrayList[TRow](0))
-    } else {
-      val req = new TFetchResultsReq()
-      req.setOperationHandle(tOperationHandle)
-      req.setOrientation(FetchOrientation.toTFetchOrientation(order))
-      req.setMaxRows(maxRows)
-      req.setFetchType(1)
-      val resp = client.FetchResults(req)
-      resp.getResults
+        if (remoteHandle != null) {
+          val or = FetchOrientation.toTFetchOrientation(order)
+          val req = new TFetchResultsReq(remoteHandle, or, maxRows)
+          val resp = client.FetchResults(req)
+          ThriftUtils.verifyTStatus(resp.getStatus)
+          resp.getResults
+        } else {
+          ThriftUtils.EMPTY_ROW_SET
+        }
     }
-
   }
 }

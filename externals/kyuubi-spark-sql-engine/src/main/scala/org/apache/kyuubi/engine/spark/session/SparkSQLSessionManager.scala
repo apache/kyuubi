@@ -17,17 +17,12 @@
 
 package org.apache.kyuubi.engine.spark.session
 
-import java.util.concurrent.{Future, ThreadPoolExecutor, TimeUnit}
-
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.session._
-import org.apache.kyuubi.util.ThreadUtils
 
 /**
  * A [[SessionManager]] constructed with [[SparkSession]] which give it the ability to talk with
@@ -108,8 +103,6 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     operationManager.removeSparkSession(sessionHandle)
   }
 
-  def submitBackgroundOperation(r: Runnable): Future[_] = execPool.submit(r)
-
   private def setModifiableConfig(spark: SparkSession, key: String, value: String): Unit = {
     if (spark.conf.isModifiable(key)) {
       spark.conf.set(key, value)
@@ -117,4 +110,6 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       warn(s"Spark config $key is static and will be ignored")
     }
   }
+
+  override protected def isServer: Boolean = false
 }

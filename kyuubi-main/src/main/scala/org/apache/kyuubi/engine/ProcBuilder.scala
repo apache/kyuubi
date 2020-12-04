@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
+import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.JavaConverters._
 
@@ -57,7 +58,8 @@ trait ProcBuilder {
   @volatile private var error: Throwable = UNCAUGHT_ERROR
 
   final def start: Process = synchronized {
-    val procLog = Paths.get(workingDir.toAbsolutePath.toString, s"$module.log")
+    val procLog = Paths.get(workingDir.toAbsolutePath.toString,
+      s"$module${LOG_TAIL.getAndDecrement()}.log")
     processBuilder.redirectError(procLog.toFile)
     processBuilder.redirectOutput(procLog.toFile)
 
@@ -105,6 +107,8 @@ object ProcBuilder {
   private val PROC_BUILD_LOGGER = new NamedThreadFactory("process-logger-capture", daemon = true)
 
   private val UNCAUGHT_ERROR = KyuubiSQLException("Uncaught error")
+
+  private val LOG_TAIL: AtomicInteger = new AtomicInteger(-1)
 
   def containsIgnoreCase(str: String, searchStr: String): Boolean = {
     if (str == null || searchStr == null) {

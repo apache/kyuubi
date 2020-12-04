@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.session
 
-import scala.util.control.NonFatal
-
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -49,13 +47,20 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       conf: Map[String, String]): SessionHandle = {
 
     val sessionImpl = new KyuubiSessionImpl(
-      protocol, user, password, ipAddress, conf, this, this.getConf.clone, zkNamespacePrefix)
+      protocol,
+      user,
+      password,
+      ipAddress,
+      conf,
+      this,
+      this.getConf.getUserDefaults(user),
+      zkNamespacePrefix)
     val handle = sessionImpl.handle
     try {
       sessionImpl.open()
-      info(s"$user's session with $handle is opened, current opening sessions" +
-        s" $getOpenSessionCount")
       setSession(handle, sessionImpl)
+      info(s"$user's session with $handle is opened, current opening sessions" +
+      s" $getOpenSessionCount")
       handle
     } catch {
       case e: Throwable =>
@@ -68,4 +73,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
           e)
     }
   }
+
+  override protected def isServer: Boolean = true
 }

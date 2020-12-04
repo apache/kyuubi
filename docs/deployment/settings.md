@@ -90,10 +90,11 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 #
 # spark.master                    local
 # spark.ui.enabled                false
+# spark.driver.extraJavaOptions   -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005
 
 ## Hadoop Configurations, they will override those in $HADOOP_CONF_DIR
 #
-# hadoop.authentication           KERBEROS
+# hadoop.security.authentication  KERBEROS
 #
 ```
 ### Authentication
@@ -105,6 +106,19 @@ kyuubi\.authentication<br>\.ldap\.base\.dn|<div style='width: 80pt;word-wrap: br
 kyuubi\.authentication<br>\.ldap\.domain|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>LDAP base DN.</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.authentication<br>\.ldap\.url|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>SPACE character separated LDAP connection URL(s).</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.authentication<br>\.sasl\.qop|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>auth</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Sasl QOP enable higher levels of protection for Kyuubi communication with clients.<ul> <li>auth - authentication only (default)</li> <li>auth-int - authentication plus integrity protection</li> <li>auth-conf - authentication plus integrity and confidentiality protection. This is applicable only if Kyuubi is configured to use Kerberos authentication.</li> </ul></div>|<div style='width: 20pt'>1.0.0</div>
+
+### Backend
+
+Key | Default | Meaning | Since
+--- | --- | --- | ---
+kyuubi\.backend\.engine<br>\.exec\.pool\.keepalive<br>\.time|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT1M</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Time(ms) that an idle async thread of the operation execution thread pool will wait for a new task to arrive before terminating in SQL engine applications</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.backend\.engine<br>\.exec\.pool\.shutdown<br>\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT10S</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Timeout(ms) for the operation execution thread pool to terminate in SQL engine applications</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.backend\.engine<br>\.exec\.pool\.size|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>100</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Number of threads in the operation execution thread pool of SQL engine applications</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.backend\.engine<br>\.exec\.pool\.wait\.queue<br>\.size|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>100</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Size of the wait queue for the operation execution thread pool in SQL engine applications</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.backend\.server<br>\.exec\.pool\.keepalive<br>\.time|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT1M</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Time(ms) that an idle async thread of the operation execution thread pool will wait for a new task to arrive before terminating in Kyuubi server</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.backend\.server<br>\.exec\.pool\.shutdown<br>\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT10S</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Timeout(ms) for the operation execution thread pool to terminate in Kyuubi server</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.backend\.server<br>\.exec\.pool\.size|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>100</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Number of threads in the operation execution thread pool of Kyuubi server</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.backend\.server<br>\.exec\.pool\.wait\.queue<br>\.size|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>100</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Size of the wait queue for the operation execution thread pool of Kyuubi server</div>|<div style='width: 20pt'>1.0.0</div>
 
 ### Delegation
 
@@ -124,7 +138,7 @@ kyuubi\.frontend\.bind<br>\.host|<div style='width: 80pt;word-wrap: break-word;w
 kyuubi\.frontend\.bind<br>\.port|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>10009</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Port of the machine on which to run the frontend service.</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.frontend\.login<br>\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT20S</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Timeout for Thrift clients during login to the frontend service.</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.frontend\.max<br>\.message\.size|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>104857600</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Maximum message size in bytes a Kyuubi server will accept.</div>|<div style='width: 20pt'>1.0.0</div>
-kyuubi\.frontend\.max<br>\.worker\.threads|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>99</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Maximum number of threads in the of frontend worker thread pool for the frontend service</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.frontend\.max<br>\.worker\.threads|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>999</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Maximum number of threads in the of frontend worker thread pool for the frontend service</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.frontend\.min<br>\.worker\.threads|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>9</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Minimum number of threads in the of frontend worker thread pool for the frontend service</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.frontend<br>\.worker\.keepalive\.time|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT1M</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Keep-alive time (in milliseconds) for an idle worker thread</div>|<div style='width: 20pt'>1.0.0</div>
 
@@ -156,21 +170,17 @@ kyuubi\.kinit<br>\.principal|<div style='width: 80pt;word-wrap: break-word;white
 Key | Default | Meaning | Since
 --- | --- | --- | ---
 kyuubi\.operation\.idle<br>\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT3H</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Operation will be closed when it's not accessed for this duration of time</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.operation<br>\.status\.polling<br>\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT5S</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Timeout(ms) for long polling asynchronous running sql query's status</div>|<div style='width: 20pt'>1.0.0</div>
 
 ### Session
 
 Key | Default | Meaning | Since
 --- | --- | --- | ---
 kyuubi\.session\.check<br>\.interval|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT5M</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The check interval for session timeout.</div>|<div style='width: 20pt'>1.0.0</div>
-kyuubi\.session\.engine<br>\.backend\.pool<br>\.keepalive\.time|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT1M</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Time(ms) that an idle async thread of the operation execution thread pool will wait for a new task to arrive before terminating</div>|<div style='width: 20pt'>1.0.0</div>
-kyuubi\.session\.engine<br>\.backend\.pool\.shutdown<br>\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT10S</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Timeout(ms) for the operation execution thread pool to terminate</div>|<div style='width: 20pt'>1.0.0</div>
-kyuubi\.session\.engine<br>\.backend\.pool\.size|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>100</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Number of threads in the operation execution thread pool for SQL engine applications</div>|<div style='width: 20pt'>1.0.0</div>
-kyuubi\.session\.engine<br>\.backend\.pool\.wait<br>\.queue\.size|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>100</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Size of the wait queue for the operation execution thread pool in SQL engine applications</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session\.engine<br>\.check\.interval|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT10M</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The check interval for engine timeout</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session\.engine<br>\.idle\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT30M</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>engine timeout, the engine will self-terminate when it's not accessed for this duration</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session\.engine<br>\.initialize\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT1M</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Timeout for starting the background engine, e.g. SparkSQLEngine.</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session\.engine<br>\.login\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT15S</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The timeout(ms) of creating the connection to remote sql query engine</div>|<div style='width: 20pt'>1.0.0</div>
-kyuubi\.session\.engine<br>\.long\.polling\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT5S</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Timeout(ms) for long polling asynchronous running sql query's status</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session\.engine<br>\.spark\.main\.resource|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The package used to create Spark SQL engine remote application. If it is undefined, Kyuubi will use the default</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session<br>\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT6H</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>session timeout, it will be closed when it's not accessed for this duration</div>|<div style='width: 20pt'>1.0.0</div>
 
@@ -240,3 +250,24 @@ Specifying `HADOOP_CONF_DIR` to the directory contains hadoop configuration file
 ### Hive Configurations
 
 These configurations are used for SQL engine application to talk to Hive MetaStore and could be configured in a `hive-site.xml`. Placed it in `$SPARK_HOME/conf` directory, or treating them as Spark properties with a `spark.hadoop.` prefix.
+
+## User Defaults
+
+In Kyuubi, we can configure user default settings to meet separate needs. These user defaults override system defaults, but will be overridden by those from [JDBC Connection URL](#via-jdbc-connection-url) or [Set Command](#via-set-syntax) if could be. They will take effect when creating the SQL engine application ONLY.
+
+User default settings are in the form of `___{username}___.{config key}`. There are three continuous underscores(`_`) at both sides of the `username` and a dot(`.`) that separates the config key and the prefix. For example:
+
+```bash
+# For system defaults
+spark.master=local
+spark.sql.adaptive.enabled=true
+# For a user named kent
+___kent___.spark.master=yarn
+___kent___.spark.sql.adaptive.enabled=false
+# For a user named bob
+___bob___.spark.master=spark://master:7077
+___bob___.spark.executor.memory=8g
+```
+
+In the above case, if there are related configurations from [JDBC Connection URL](#via-jdbc-connection-url), `kent` will run his SQL engine application on YARN and prefer the Spark AQE to be off, while `bob` will activate his SQL engine application on a Spark standalone cluster w/ 8g heap memory for each executor and obey the Spark AQE behavior of Kyuubi system default. On the other hand, for those users who do not have custom configurations will use system defaults.
+

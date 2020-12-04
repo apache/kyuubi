@@ -19,7 +19,6 @@ package org.apache.kyuubi.engine.spark.session
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.engine.spark.operation.log.OperationLog
 import org.apache.kyuubi.session.{AbstractSession, SessionManager}
 
 class SparkSessionImpl(
@@ -31,7 +30,4 @@ class SparkSessionImpl(
     sessionManager: SessionManager)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
-  override def open(): Unit = {
-    OperationLog.createOperationLogRootDirectory(handle)
-  }
 }

@@ -17,16 +17,10 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.util.concurrent.{ExecutionException, TimeoutException, TimeUnit}
-
-import scala.concurrent.CancellationException
-
 import org.apache.spark.sql.SparkSession
 
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.spark.operation.ExecuteStatement
 import org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager
-import org.apache.kyuubi.operation.{Operation, OperationHandle, OperationStatus}
+import org.apache.kyuubi.operation.Operation
 import org.apache.kyuubi.service.AbstractBackendService
 import org.apache.kyuubi.service.BackendService
 import org.apache.kyuubi.session.Session
@@ -42,29 +36,7 @@ import org.apache.kyuubi.session.SessionManager
 class SparkSQLBackendService(name: String, spark: SparkSession)
   extends AbstractBackendService(name) {
 
-  private lazy val timeout = conf.get(KyuubiConf.ENGINE_LONG_POLLING_TIMEOUT)
-
   def this(spark: SparkSession) = this(classOf[SparkSQLBackendService].getSimpleName, spark)
 
   override val sessionManager: SessionManager = new SparkSQLSessionManager(spark)
-
-  override def getOperationStatus(operationHandle: OperationHandle): OperationStatus = {
-    val operation = sessionManager.operationManager.getOperation(operationHandle)
-    operation match {
-      case es: ExecuteStatement if es.shouldRunAsync =>
-        try {
-          es.backgroundHandle.get(timeout, TimeUnit.MILLISECONDS)
-        } catch {
-          case e: TimeoutException =>
-            debug(s"$operationHandle: Long polling timed out, ${e.getMessage}")
-          case e: CancellationException =>
-            debug(s"$operationHandle: The background operation was cancelled, ${e.getMessage}")
-          case e: ExecutionException =>
-            debug(s"$operationHandle: The background operation was aborted, ${e.getMessage}")
-          case _: InterruptedException =>
-        }
-      case _ =>
-    }
-    super.getOperationStatus(operationHandle)
-  }
 }

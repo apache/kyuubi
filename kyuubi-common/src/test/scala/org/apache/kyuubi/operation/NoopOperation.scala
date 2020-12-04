@@ -26,6 +26,7 @@ import org.apache.hive.service.rpc.thrift.{TColumn, TColumnDesc, TPrimitiveTypeE
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationType.OperationType
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
 class NoopOperation(typ: OperationType, session: Session, shouldFail: Boolean = false)
@@ -48,7 +49,6 @@ class NoopOperation(typ: OperationType, session: Session, shouldFail: Boolean = 
     if (!OperationState.isTerminal(state)) {
       setState(OperationState.FINISHED)
     }
-
   }
 
   override def cancel(): Unit = {
@@ -81,4 +81,6 @@ class NoopOperation(typ: OperationType, session: Session, shouldFail: Boolean = 
   }
 
   override def shouldRunAsync: Boolean = false
+
+  override def getOperationLog: Option[OperationLog] = None
 }

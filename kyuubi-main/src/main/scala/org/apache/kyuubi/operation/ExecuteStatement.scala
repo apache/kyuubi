@@ -17,10 +17,13 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TExecuteStatementReq, TGetOperationStatusReq, TSessionHandle}
+import scala.collection.JavaConverters._
+
+import org.apache.hive.service.rpc.thrift.{TCLIService, TExecuteStatementReq, TFetchOrientation, TFetchResultsReq, TGetOperationStatusReq, TSessionHandle}
 import org.apache.hive.service.rpc.thrift.TOperationState._
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
 class ExecuteStatement(
@@ -32,42 +35,112 @@ class ExecuteStatement(
   extends KyuubiOperation(
     OperationType.EXECUTE_STATEMENT, session, client, remoteSessionHandle) {
 
+  private final val _operationLog: OperationLog = if (shouldRunAsync) {
+    OperationLog.createOperationLog(session.handle, getHandle)
+  } else {
+    null
+  }
+
+  override def getOperationLog: Option[OperationLog] = Option(_operationLog)
+
+  private lazy val statusReq = new TGetOperationStatusReq(_remoteOpHandle)
+  private lazy val fetchLogReq = {
+    val req = new TFetchResultsReq(_remoteOpHandle, TFetchOrientation.FETCH_NEXT, 1000)
+    req.setFetchType(1.toShort)
+    req
+  }
+
   override def beforeRun(): Unit = {
+    OperationLog.setCurrentOperationLog(_operationLog)
     setHasResultSet(true)
     setState(OperationState.PENDING)
   }
 
-  override protected def afterRun(): Unit = {}
+  override protected def afterRun(): Unit = {
+    OperationLog.removeCurrentOperationLog()
+  }
 
-  override protected def runInternal(): Unit = {
+  private def executeStatement(): Unit = {
     try {
       val req = new TExecuteStatementReq(remoteSessionHandle, statement)
       req.setRunAsync(shouldRunAsync)
       val resp = client.ExecuteStatement(req)
       verifyTStatus(resp.getStatus)
       _remoteOpHandle = resp.getOperationHandle
-      if (shouldRunAsync) {
-        // TODO we should do this asynchronous too, not just block this
-        var isComplete = false
-        val statusReq = new TGetOperationStatusReq(_remoteOpHandle)
-        var statusResp = client.GetOperationStatus(statusReq)
-        while(!isComplete) {
-          verifyTStatus(statusResp.getStatus)
-          statusResp.getOperationState match {
-            case INITIALIZED_STATE | PENDING_STATE | RUNNING_STATE =>
-              statusResp = client.GetOperationStatus(statusReq)
-            case state @ (FINISHED_STATE | CLOSED_STATE | CANCELED_STATE | TIMEDOUT_STATE) =>
-              isComplete = true
-              setState(state)
-            case ERROR_STATE =>
-              throw KyuubiSQLException(statusResp.getErrorMessage)
-            case _ =>
-              throw KyuubiSQLException(s"UNKNOWN STATE for $statement")
-          }
-        }
-      } else {
-        setState(OperationState.FINISHED)
-      }
     } catch onError()
+  }
+
+  private def waitStatementComplete(): Unit = {
+    setState(OperationState.RUNNING)
+    var statusResp = client.GetOperationStatus(statusReq)
+    var isComplete = false
+    while (!isComplete) {
+      getQueryLog()
+      verifyTStatus(statusResp.getStatus)
+      val remoteState = statusResp.getOperationState
+      info(s"Query[$statementId] in ${remoteState.name()}")
+      isComplete = true
+      remoteState match {
+        case INITIALIZED_STATE | PENDING_STATE | RUNNING_STATE =>
+          isComplete = false
+          statusResp = client.GetOperationStatus(statusReq)
+
+        case FINISHED_STATE =>
+          setState(OperationState.FINISHED)
+
+        case CLOSED_STATE =>
+          setState(OperationState.CLOSED)
+
+        case CANCELED_STATE =>
+          setState(OperationState.CANCELED)
+
+        case TIMEDOUT_STATE =>
+          setState(OperationState.TIMEOUT)
+
+        case ERROR_STATE =>
+          setState(OperationState.ERROR)
+          val ke = KyuubiSQLException(statusResp.getErrorMessage)
+          setOperationException(ke)
+
+        case UKNOWN_STATE =>
+          setState(OperationState.ERROR)
+          val ke = KyuubiSQLException(s"UNKNOWN STATE for $statement")
+          setOperationException(ke)
+      }
+    }
+    // see if anymore log could be fetched
+    getQueryLog()
+  }
+
+  private def getQueryLog(): Unit = {
+    getOperationLog.foreach { logger =>
+      try {
+        val resp = client.FetchResults(fetchLogReq)
+        verifyTStatus(resp.getStatus)
+        val logs = resp.getResults.getColumns.get(0).getStringVal.getValues.asScala
+        logs.foreach(log => logger.write(log + "\n"))
+      } catch {
+        case _: Exception => // do nothing
+      }
+    }
+  }
+
+  override protected def runInternal(): Unit = {
+    if (shouldRunAsync) {
+      executeStatement()
+      val sessionManager = session.sessionManager
+      val asyncOperation = new Runnable {
+        override def run(): Unit = waitStatementComplete()
+      }
+      try {
+        val backgroundOperation =
+          sessionManager.submitBackgroundOperation(asyncOperation)
+        setBackgroundHandle(backgroundOperation)
+      } catch onError("submitting query in background, query rejected")
+    } else {
+      setState(OperationState.RUNNING)
+      executeStatement()
+      setState(OperationState.FINISHED)
+    }
   }
 }

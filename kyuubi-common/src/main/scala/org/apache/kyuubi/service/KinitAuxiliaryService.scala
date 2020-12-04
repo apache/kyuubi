@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.service
 
-import java.util.concurrent.{Callable, TimeUnit}
+import java.util.concurrent.TimeUnit
 
 import org.apache.hadoop.security.UserGroupInformation
 
@@ -69,7 +69,7 @@ class KinitAuxiliaryService() extends AbstractService("KinitAuxiliaryService") {
   override def start(): Unit = {
     super.start()
     if (UserGroupInformation.isSecurityEnabled) {
-      executor.schedule(kinitTask, kinitInterval, TimeUnit.MILLISECONDS)
+      executor.submit(kinitTask)
     }
   }
 

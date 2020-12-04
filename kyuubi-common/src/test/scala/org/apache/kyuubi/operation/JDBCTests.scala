@@ -122,8 +122,7 @@ trait JDBCTests extends KyuubiFunSuite {
       checkResult(metaData.getSchemas(null, "db_not_exist"), Seq.empty)
 
       val e = intercept[HiveSQLException](metaData.getSchemas(null, "*"))
-      assert(e.getCause.getMessage === "org.apache.kyuubi.KyuubiSQLException:" +
-        "Error operating GET_SCHEMAS: Dangling meta character '*' near index 0\n*\n^")
+      assert(e.getCause.getMessage contains "Dangling meta character '*' near index 0\n*\n^")
     }
   }
 
@@ -185,8 +184,7 @@ trait JDBCTests extends KyuubiFunSuite {
       }
 
       val e = intercept[HiveSQLException](metaData.getTables(null, "*", null, null))
-      assert(e.getCause.getMessage === "org.apache.kyuubi.KyuubiSQLException:" +
-        "Error operating GET_TABLES: Dangling meta character '*' near index 0\n*\n^")
+      assert(e.getCause.getMessage contains "Dangling meta character '*' near index 0\n*\n^")
     }
   }
 

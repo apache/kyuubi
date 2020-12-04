@@ -22,7 +22,7 @@ import org.apache.thrift.{TProcessor, TProcessorFactory}
 import org.apache.thrift.transport.TTransport
 
 private[authentication]
-case class CLIServiceProcessorFactory(saslServer: HadoopThriftAuthBridgeServer, service: Iface)
+case class FEServiceProcessorFactory(saslServer: HadoopThriftAuthBridgeServer, service: Iface)
   extends TProcessorFactory(null) {
   override def getProcessor(trans: TTransport): TProcessor = {
     val sqlProcessor = new Processor[Iface](service)

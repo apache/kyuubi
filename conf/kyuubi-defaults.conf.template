@@ -24,8 +24,9 @@
 #
 # spark.master                    local
 # spark.ui.enabled                false
+# spark.driver.extraJavaOptions   -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005
 
 ## Hadoop Configurations, they will override those in $HADOOP_CONF_DIR
 #
-# hadoop.authentication           KERBEROS
+# hadoop.security.authentication  KERBEROS
 #

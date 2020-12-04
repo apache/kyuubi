@@ -17,6 +17,10 @@
 
 package org.apache.kyuubi.service
 
+import java.util.concurrent.{ExecutionException, TimeoutException, TimeUnit}
+
+import scala.concurrent.CancellationException
+
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion, TRowSet, TTableSchema}
 
 import org.apache.kyuubi.config.KyuubiConf
@@ -29,6 +33,8 @@ import org.apache.kyuubi.session.SessionHandle
  */
 abstract class AbstractBackendService(name: String)
   extends CompositeService(name) with BackendService {
+
+  private lazy val timeout = conf.get(KyuubiConf.OPERATION_STATUS_POLLING_TIMEOUT)
 
   override def openSession(
       protocol: TProtocolVersion,
@@ -117,10 +123,22 @@ abstract class AbstractBackendService(name: String)
   }
 
   override def getOperationStatus(operationHandle: OperationHandle): OperationStatus = {
-    sessionManager
-      .operationManager
-      .getOperation(operationHandle)
-      .getStatus
+    val operation = sessionManager.operationManager.getOperation(operationHandle)
+    if (operation.shouldRunAsync) {
+      try {
+        operation.getBackgroundHandle.get(timeout, TimeUnit.MILLISECONDS)
+      } catch {
+        case e: TimeoutException =>
+          debug(s"$operationHandle: Long polling timed out, ${e.getMessage}")
+        case e: CancellationException =>
+          debug(s"$operationHandle: The background operation was cancelled, ${e.getMessage}")
+        case e: ExecutionException =>
+          debug(s"$operationHandle: The background operation was aborted, ${e.getMessage}")
+        case _: InterruptedException =>
+      }
+    }
+    operation.getStatus
+
   }
 
   override def cancelOperation(operationHandle: OperationHandle): Unit = {

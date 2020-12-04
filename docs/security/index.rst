@@ -9,4 +9,6 @@ Security
     :numbered: 3
 
     authentication
+    kinit
     authorization
+

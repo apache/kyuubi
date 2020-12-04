@@ -138,12 +138,10 @@ class SparkOperationSuite extends WithSparkSQLEngine {
       }
 
       val e = intercept[HiveSQLException](metaData.getColumns(null, "*", null, null))
-      assert(e.getCause.getMessage === "org.apache.kyuubi.KyuubiSQLException:" +
-        "Error operating GET_COLUMNS: Dangling meta character '*' near index 0\n*\n^")
+      assert(e.getCause.getMessage contains "Dangling meta character '*' near index 0\n*\n^")
 
       val e1 = intercept[HiveSQLException](metaData.getColumns(null, null, null, "*"))
-      assert(e1.getCause.getMessage === "org.apache.kyuubi.KyuubiSQLException:" +
-        "Error operating GET_COLUMNS: Dangling meta character '*' near index 0\n*\n^")
+      assert(e1.getCause.getMessage contains "Dangling meta character '*' near index 0\n*\n^")
     }
   }
 

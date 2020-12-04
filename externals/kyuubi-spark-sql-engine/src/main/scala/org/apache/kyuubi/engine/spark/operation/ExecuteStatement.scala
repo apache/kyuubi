@@ -17,16 +17,15 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.util.concurrent.{Future, RejectedExecutionException}
+import java.util.concurrent.RejectedExecutionException
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
-import org.apache.kyuubi.engine.spark.operation.log.OperationLog
-import org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager
 import org.apache.kyuubi.operation.{OperationState, OperationType}
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
 class ExecuteStatement(
@@ -37,8 +36,6 @@ class ExecuteStatement(
   extends SparkOperation(spark, OperationType.EXECUTE_STATEMENT, session) with Logging {
 
   private var result: DataFrame = _
-  @volatile private var _backgroundHandle: Future[_] = _
-  def backgroundHandle: Future[_] = _backgroundHandle
 
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
@@ -49,6 +46,7 @@ class ExecuteStatement(
   }
 
   override protected def beforeRun(): Unit = {
+    OperationLog.setCurrentOperationLog(operationLog)
     setState(OperationState.PENDING)
     setHasResultSet(true)
   }
@@ -59,7 +57,6 @@ class ExecuteStatement(
 
   private def executeStatement(): Unit = {
     try {
-      OperationLog.setCurrentOperationLog(operationLog)
       setState(OperationState.RUNNING)
       info(KyuubiSparkUtil.diagnostics(spark))
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
@@ -78,13 +75,16 @@ class ExecuteStatement(
   override protected def runInternal(): Unit = {
     if (shouldRunAsync) {
       val asyncOperation = new Runnable {
-        override def run(): Unit = executeStatement()
+        override def run(): Unit = {
+          OperationLog.setCurrentOperationLog(operationLog)
+          executeStatement()
+        }
       }
 
       try {
-        val sparkSQLSessionManager = session.sessionManager.asInstanceOf[SparkSQLSessionManager]
-        val future = sparkSQLSessionManager.submitBackgroundOperation(asyncOperation)
-        _backgroundHandle = future
+        val sparkSQLSessionManager = session.sessionManager
+        val backgroundHandle = sparkSQLSessionManager.submitBackgroundOperation(asyncOperation)
+        setBackgroundHandle(backgroundHandle)
       } catch {
         case rejected: RejectedExecutionException =>
           setState(OperationState.ERROR)

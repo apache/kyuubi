@@ -15,24 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation
+package org.apache.kyuubi
 
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.KyuubiServer
+import org.apache.hive.service.rpc.thrift.{TRow, TRowSet, TStatus, TStatusCode}
 
-class KyuubiOperationSuite extends JDBCTests {
+object ThriftUtils {
 
-  private val conf = KyuubiConf()
-    .set(KyuubiConf.FRONTEND_BIND_PORT, 0)
-    .set(KyuubiConf.ENGINE_CHECK_INTERVAL, 4000L)
-    .set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 10000L)
-
-  private val server: KyuubiServer = KyuubiServer.startServer(conf)
-
-  override def afterAll(): Unit = {
-    server.stop()
-    super.afterAll()
+  def verifyTStatus(tStatus: TStatus): Unit = {
+    if (tStatus.getStatusCode != TStatusCode.SUCCESS_STATUS) {
+      throw KyuubiSQLException(tStatus)
+    }
   }
 
-  override protected def jdbcUrl: String = s"jdbc:hive2://${server.connectionUrl}/;"
+  val EMPTY_ROW_SET = new TRowSet(0, new java.util.ArrayList[TRow](0))
+
 }
