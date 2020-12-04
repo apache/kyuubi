@@ -36,6 +36,8 @@ import org.apache.zookeeper.KeeperException.NodeExistsException
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SCOPE
+import org.apache.kyuubi.engine.EngineScope
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.ServiceDiscovery._
 import org.apache.kyuubi.service.{AbstractService, Serverable}
@@ -104,7 +106,6 @@ class ServiceDiscovery private (
     super.initialize(conf)
   }
 
-
   override def start(): Unit = {
     val instance = server.connectionUrl
     val pathPrefix = s"/$namespace/serviceUri=$instance;version=$KYUUBI_VERSION;sequence="
@@ -148,7 +149,15 @@ class ServiceDiscovery private (
       }
     }
 
-    if (zkClient != null) zkClient.close()
+    if (zkClient != null) {
+      val engineScope = conf.get(ENGINE_SCOPE)
+      if (EngineScope.SESSION.toString.equalsIgnoreCase(engineScope) &&
+        zkClient.checkExists().forPath(s"/$namespace") != null) {
+        info(s"Clean service's namespace: /$namespace")
+        zkClient.delete().forPath(s"/$namespace")
+      }
+      zkClient.close()
+    }
     super.stop()
   }
 
