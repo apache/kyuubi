@@ -17,12 +17,13 @@
 
 package org.apache.kyuubi.engine.spark
 
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.EngineAppName
 import org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager
@@ -76,11 +77,17 @@ object SparkSQLEngine extends Logging {
 
   val kyuubiConf: KyuubiConf = KyuubiConf()
 
+  private val user = Utils.currentUser
+
   def createSpark(): SparkSession = {
     val sparkConf = new SparkConf()
     sparkConf.setIfMissing("spark.master", "local")
     sparkConf.setIfMissing("spark.ui.port", "0")
 
+    val appName = s"kyuubi_${user}_spark_${Instant.now}"
+    sparkConf.setIfMissing(EngineAppName.SPARK_APP_NAME_KEY, appName)
+
+    kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_BIND_PORT, 0)
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
 
     val prefix = "spark.kyuubi."
@@ -88,10 +95,6 @@ object SparkSQLEngine extends Logging {
     sparkConf.getAllWithPrefix(prefix).foreach { case (k, v) =>
       kyuubiConf.set(s"kyuubi.$k", v)
     }
-
-    // The engine should not bind the host and port number of the kyuubiServer
-    kyuubiConf.unset(KyuubiConf.FRONTEND_BIND_HOST)
-    kyuubiConf.set(KyuubiConf.FRONTEND_BIND_PORT, 0)
 
     if (logger.isDebugEnabled) {
       kyuubiConf.getAll.foreach { case (k, v) =>

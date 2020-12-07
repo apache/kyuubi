@@ -17,48 +17,46 @@
 
 package org.apache.kyuubi.engine
 
-import java.net.InetAddress
-
 import org.apache.curator.utils.ZKPaths
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SCOPE, FRONTEND_BIND_HOST, FRONTEND_BIND_PORT}
-import org.apache.kyuubi.engine.EngineScope.{GROUP, SERVER, SESSION, USER}
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SCOPE
+import org.apache.kyuubi.engine.EngineScope.SESSION
 
 class EngineAppName(user: String, sessionId: String, conf: KyuubiConf) {
 
   import EngineAppName._
 
   private val engineScope = EngineScope.withName(conf.get(ENGINE_SCOPE))
-  private val serverHost = conf.get(FRONTEND_BIND_HOST)
-    .getOrElse(InetAddress.getLocalHost.getHostName)
-  private val serverPort = conf.get(FRONTEND_BIND_PORT)
-  // TODO: config user group
-  private val userGroup = "default"
 
   /**
-   * kyuubi_host_port_[KGUS]user_sessionid
+   * kyuubi_[KGUS]_user_sessionid
    *
-   * @return
+   * @return engine app name
    */
   def generateAppName(): String = {
     StringBuilder.newBuilder.append(APP_NAME_PREFIX)
-      .append(DELIMITER).append(serverHost)
-      .append(DELIMITER).append(serverPort)
-      .append(DELIMITER).append("[").append(engineScope).append("]").append(user)
+      .append(DELIMITER).append(engineScope)
+      .append(DELIMITER).append(user)
       .append(DELIMITER).append(sessionId).mkString
   }
 
+  /**
+   * if engine scope is [S] return
+   * /[zkNamespace]-engine/S/[user]/[sessionId]
+   * else return
+   * /[zkNamespace]-engine/[engineScope]/[user]
+   *
+   * @param zkNamespace zk root path
+   * @return engine zk path
+   */
   def makeZkPath(zkNamespace: String): String = {
+    val namespace = zkNamespace + "-" + ZK_NAMESPACE_SUFFIX
     engineScope match {
       case SESSION =>
-        ZKPaths.makePath(zkNamespace, "sessions", sessionId)
-      case USER =>
-        ZKPaths.makePath(zkNamespace, "users", user)
-      case GROUP =>
-        ZKPaths.makePath(zkNamespace, "groups", userGroup)
-      case SERVER =>
-        ZKPaths.makePath(zkNamespace, "servers", serverHost + ":" + serverPort)
+        ZKPaths.makePath(namespace, engineScope.toString, user, sessionId)
+      case _ =>
+        ZKPaths.makePath(namespace, engineScope.toString, user)
     }
   }
 
@@ -67,6 +65,8 @@ class EngineAppName(user: String, sessionId: String, conf: KyuubiConf) {
 object EngineAppName {
 
   private val APP_NAME_PREFIX = "kyuubi"
+
+  private val ZK_NAMESPACE_SUFFIX = "engine"
 
   private val DELIMITER = "_"
 
@@ -77,13 +77,10 @@ object EngineAppName {
 
   def parseAppName(appName: String, conf: KyuubiConf): EngineAppName = {
     val params = appName.split(DELIMITER)
-    val engineScope = params(3).substring(1, 2)
-    val user = params(3).substring(3)
     val clone = conf.clone
-    clone.set(ENGINE_SCOPE, engineScope)
-    clone.set(FRONTEND_BIND_HOST, params(1))
-    clone.set(FRONTEND_BIND_PORT, params(2).toInt)
-    EngineAppName(user, params(4), clone)
+    clone.set(ENGINE_SCOPE, params(1))
+    EngineAppName(params(2), params(3), conf)
   }
+
 }
 

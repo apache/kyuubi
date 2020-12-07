@@ -25,38 +25,34 @@ class EngineAppNameSuite extends KyuubiFunSuite {
 
   private val kyuubiConf: KyuubiConf = KyuubiConf()
   private val zkNamespace: String = "kyuubi"
-  private val serverHost: String = "kentyao.org"
-  private val serverPort: Int = 10001
   private val user: String = "hive"
   private val handle: String = "a9938028-667d-4006-993e-0bdb5a14ae91"
 
   override def beforeAll(): Unit = {
     super.beforeAll()
-    kyuubiConf.set(KyuubiConf.FRONTEND_BIND_HOST, serverHost)
-    kyuubiConf.set(KyuubiConf.FRONTEND_BIND_PORT, serverPort)
   }
 
 
   test("SparkSQLEngineAppName") {
 
     // SESSION SCOPE
-    val sessionScopeAppName = "kyuubi_kentyao.org_10001_[S]hive_a9938028-667d-4006-993e-0bdb5a14ae91"
-    val sessionScopeZkPath = "/kyuubi/sessions/a9938028-667d-4006-993e-0bdb5a14ae91"
+    val sessionScopeAppName = "kyuubi_S_hive_a9938028-667d-4006-993e-0bdb5a14ae91"
+    val sessionScopeZkPath = "/kyuubi-engine/S/hive/a9938028-667d-4006-993e-0bdb5a14ae91"
     checkAppNameAndZkPath(EngineScope.SESSION, sessionScopeAppName, sessionScopeZkPath)
 
     // USER SCOPE
-    val userScopeAppName = "kyuubi_kentyao.org_10001_[U]hive_a9938028-667d-4006-993e-0bdb5a14ae91"
-    val userScopeZkPath = "/kyuubi/users/hive"
+    val userScopeAppName = "kyuubi_U_hive_a9938028-667d-4006-993e-0bdb5a14ae91"
+    val userScopeZkPath = "/kyuubi-engine/U/hive"
     checkAppNameAndZkPath(EngineScope.USER, userScopeAppName, userScopeZkPath)
 
     // GROUP SCOPE
-    val groupScopeAppName = "kyuubi_kentyao.org_10001_[G]hive_a9938028-667d-4006-993e-0bdb5a14ae91"
-    val groupScopeZkPath = "/kyuubi/groups/default"
+    val groupScopeAppName = "kyuubi_G_hive_a9938028-667d-4006-993e-0bdb5a14ae91"
+    val groupScopeZkPath = "/kyuubi-engine/G/hive"
     checkAppNameAndZkPath(EngineScope.GROUP, groupScopeAppName, groupScopeZkPath)
 
     // SERVER SCOPE
-    val serverScopeAppName = "kyuubi_kentyao.org_10001_[K]hive_a9938028-667d-4006-993e-0bdb5a14ae91"
-    val serverScopeZkPath = "/kyuubi/servers/kentyao.org:10001"
+    val serverScopeAppName = "kyuubi_K_hive_a9938028-667d-4006-993e-0bdb5a14ae91"
+    val serverScopeZkPath = "/kyuubi-engine/K/hive"
     checkAppNameAndZkPath(EngineScope.SERVER, serverScopeAppName, serverScopeZkPath)
 
   }
