@@ -84,28 +84,35 @@ class KyuubiSessionImpl(
     super.open()
     // Init zookeeper client here to capture errors
     zkClient
-    getServerHost match {
-      case Some((host, port)) => openSession(host, port)
-      case None =>
-        configureSession()
-        val builder = new SparkProcessBuilder(user, sessionConf.toSparkPrefixedConf)
-        val process = builder.start
-        info(s"Launching SQL engine: $builder")
-        var sh = getServerHost
-        val started = System.currentTimeMillis()
-        while (sh.isEmpty) {
-          if (process.waitFor(1, TimeUnit.SECONDS)) {
-            throw builder.getError
+    try {
+      getServerHost match {
+        case Some((host, port)) => openSession(host, port)
+        case None =>
+          configureSession()
+          val builder = new SparkProcessBuilder(user, sessionConf.toSparkPrefixedConf)
+          val process = builder.start
+          info(s"Launching SQL engine: $builder")
+          var sh = getServerHost
+          val started = System.currentTimeMillis()
+          while (sh.isEmpty) {
+            if (process.waitFor(1, TimeUnit.SECONDS)) {
+              throw builder.getError
+            }
+            if (started + timeout <= System.currentTimeMillis()) {
+              process.destroyForcibly()
+              throw KyuubiSQLException(s"Timed out($timeout ms) to launched Spark with $builder",
+                builder.getError)
+            }
+            sh = getServerHost
           }
-          if (started + timeout <= System.currentTimeMillis()) {
-            process.destroyForcibly()
-            throw KyuubiSQLException(s"Timed out($timeout ms) to launched Spark with $builder",
-              builder.getError)
-          }
-          sh = getServerHost
-        }
-        val Some((host, port)) = getServerHost
-        openSession(host, port)
+          val Some((host, port)) = getServerHost
+          openSession(host, port)
+      }
+    } catch {
+      case e: Exception =>
+        throw KyuubiSQLException("Error while open session", e)
+    } finally {
+      zkClient.close()
     }
   }
 
@@ -144,6 +151,5 @@ class KyuubiSessionImpl(
         transport.close()
       }
     }
-    zkClient.close()
   }
 }
