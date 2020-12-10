@@ -31,6 +31,7 @@ import org.apache.thrift.transport.{TSocket, TTransport}
 import org.apache.kyuubi.{KyuubiSQLException, ThriftUtils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.EngineAppName
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
@@ -53,10 +54,12 @@ class KyuubiSessionImpl(
       case ("use:database", _) =>
       case (key, value) => sessionConf.set(key, value)
     }
+    sessionConf.set(EngineAppName.SPARK_APP_NAME_KEY, engineAppName.generateAppName())
   }
 
+  private val engineAppName = EngineAppName(user, handle.identifier.toString, sessionConf)
   private val timeout: Long = sessionConf.get(ENGINE_INIT_TIMEOUT)
-  private val zkNamespace = s"$zkNamespacePrefix-$user"
+  private val zkNamespace = engineAppName.makeZkPath(zkNamespacePrefix)
   private val zkPath = ZKPaths.makePath(null, zkNamespace)
   private lazy val zkClient = ServiceDiscovery.startZookeeperClient(sessionConf)
 

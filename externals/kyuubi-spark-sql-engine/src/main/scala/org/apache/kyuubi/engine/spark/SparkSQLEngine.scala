@@ -25,6 +25,7 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.{EngineAppName, EngineScope}
 import org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{RetryPolicies, ServiceDiscovery}
@@ -40,6 +41,11 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-timeout-checker")
 
   override private[kyuubi] val backendService = new SparkSQLBackendService(spark)
+
+  val appName: EngineAppName = EngineAppName.parseAppName(
+    spark.conf.get(EngineAppName.SPARK_APP_NAME_KEY),
+    SparkSQLEngine.kyuubiConf
+  )
 
   override protected def stopServer(): Unit = {
     spark.stop()
@@ -80,7 +86,7 @@ object SparkSQLEngine extends Logging {
 
     val appName = s"kyuubi_${user}_spark_${Instant.now}"
 
-    sparkConf.setAppName(appName)
+    sparkConf.setIfMissing(EngineAppName.SPARK_APP_NAME_KEY, appName)
 
     kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_BIND_PORT, 0)
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
@@ -114,10 +120,22 @@ object SparkSQLEngine extends Logging {
     val needExpose = kyuubiConf.get(HA_ZK_QUORUM).nonEmpty
     if (needExpose) {
       val zkNamespacePrefix = kyuubiConf.get(HA_ZK_NAMESPACE)
-      val serviceDiscovery = new ServiceDiscovery(engine, s"$zkNamespacePrefix-$user")
+      val namespace = engine.appName.makeZkPath(zkNamespacePrefix).substring(1)
+      val serviceDiscovery = new ServiceDiscovery(engine, namespace)
       serviceDiscovery.initialize(kyuubiConf)
       serviceDiscovery.start()
-      sys.addShutdownHook(serviceDiscovery.stop())
+      sys.addShutdownHook({
+        serviceDiscovery.stop()
+        if (EngineScope.SESSION.equals(engine.appName.getEngineScope)) {
+          val zkClient = ServiceDiscovery.startZookeeperClient(kyuubiConf)
+          try {
+            info(s"Deleting engine service's namespace: /$namespace")
+            zkClient.delete().forPath(namespace)
+          } finally {
+            zkClient.close()
+          }
+        }
+      })
     }
   }
 

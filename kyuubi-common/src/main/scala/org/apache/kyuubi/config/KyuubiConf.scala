@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.engine.EngineScope
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
@@ -470,4 +471,16 @@ object KyuubiConf {
       .version("1.0.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
+
+  val ENGINE_SCOPE: ConfigEntry[String] = buildConf("session.engine.scope")
+    .doc("The engine session scope.<ul>" +
+      " <li>S: One engine per kyuubi session in kyuubi cluster.</li>" +
+      " <li>U: One engine per user in kyuubi cluster.</li>" +
+      " <li>G: One engine per group in kyuubi cluster.</li>" +
+      " <li>K: One engine per kyuubi server in kyuubi cluster.</li></ul>")
+    .version("1.0.0")
+    .stringConf
+    .transform(_.toUpperCase(Locale.ROOT))
+    .checkValues(EngineScope.values.map(_.toString))
+    .createWithDefault(EngineScope.USER.toString)
 }
