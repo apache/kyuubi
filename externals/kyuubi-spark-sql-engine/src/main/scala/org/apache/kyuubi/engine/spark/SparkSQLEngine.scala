@@ -120,8 +120,8 @@ object SparkSQLEngine extends Logging {
     val needExpose = kyuubiConf.get(HA_ZK_QUORUM).nonEmpty
     if (needExpose) {
       val zkNamespacePrefix = kyuubiConf.get(HA_ZK_NAMESPACE)
-      val namespace = engine.appName.makeZkPath(zkNamespacePrefix).substring(1)
-      val serviceDiscovery = new ServiceDiscovery(engine, namespace)
+      val zkNamespace = engine.appName.makeZkPath(zkNamespacePrefix)
+      val serviceDiscovery = new ServiceDiscovery(engine, zkNamespace.substring(1))
       serviceDiscovery.initialize(kyuubiConf)
       serviceDiscovery.start()
       sys.addShutdownHook({
@@ -129,8 +129,8 @@ object SparkSQLEngine extends Logging {
         if (EngineScope.SESSION.equals(engine.appName.getEngineScope)) {
           val zkClient = ServiceDiscovery.startZookeeperClient(kyuubiConf)
           try {
-            info(s"Deleting engine service's namespace: /$namespace")
-            zkClient.delete().forPath(namespace)
+            info(s"Deleting engine service's namespace: $zkNamespace")
+            zkClient.delete().forPath(zkNamespace)
           } finally {
             zkClient.close()
           }
