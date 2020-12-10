@@ -68,6 +68,8 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     if (session == null) {
       throw KyuubiSQLException(s"Invalid $sessionHandle")
     }
+    info(s"Session with $sessionHandle is closed," +
+      s" current opening sessions $getOpenSessionCount")
     session.close()
   }
 
