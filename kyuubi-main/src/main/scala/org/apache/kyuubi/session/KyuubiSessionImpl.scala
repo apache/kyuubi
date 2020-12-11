@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.session
 
+import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 
@@ -107,6 +108,11 @@ class KyuubiSessionImpl(
         val Some((host, port)) = getServerHost
         openSession(host, port)
     }
+    try {
+      zkClient.close()
+    } catch {
+      case e: IOException => error("Failed to release the zkClient after session established", e)
+    }
   }
 
   private def openSession(host: String, port: Int): Unit = {
@@ -144,6 +150,5 @@ class KyuubiSessionImpl(
         transport.close()
       }
     }
-    zkClient.close()
   }
 }
