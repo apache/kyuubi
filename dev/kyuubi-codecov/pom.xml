@@ -29,7 +29,7 @@
 
     <artifactId>kyuubi-codecov</artifactId>
     <packaging>pom</packaging>
-    <name>Kyuubi Project Code Coverage</name>
+    <name>Kyuubi Project Dev Code Coverage</name>
 
     <dependencies>
         <dependency>
@@ -77,14 +77,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <skipTests>true</skipTests>
-                </configuration>
             </plugin>
 
             <plugin>
