@@ -284,6 +284,7 @@ object KyuubiConf {
 
   val AUTHENTICATION_METHOD: ConfigEntry[String] = buildConf("authentication")
     .doc("Client authentication types.<ul>" +
+      " <li>NOSASL: raw transport.</li>" +
       " <li>NONE: no authentication check.</li>" +
       " <li>KERBEROS: Kerberos/GSSAPI authentication.</li>" +
       " <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul>")
