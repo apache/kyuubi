@@ -31,7 +31,6 @@
         <module>externals/kyuubi-spark-sql-engine</module>
         <module>kyuubi-main</module>
         <module>kyuubi-assembly</module>
-        <module>dev/kyuubi-tpcds</module>
         <module>dev/kyuubi-codecov</module>
     </modules>
     <packaging>pom</packaging>
@@ -592,4 +591,13 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>tpcds</id>
+            <modules>
+                <module>dev/kyuubi-tpcds</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
