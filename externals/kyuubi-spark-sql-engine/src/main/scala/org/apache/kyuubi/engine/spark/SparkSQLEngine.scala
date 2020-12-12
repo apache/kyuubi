@@ -18,14 +18,12 @@
 package org.apache.kyuubi.engine.spark
 
 import java.time.Instant
-import java.util.concurrent.TimeUnit
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{RetryPolicies, ServiceDiscovery}
 import org.apache.kyuubi.service.Serverable
@@ -40,30 +38,6 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
 
   override protected def stopServer(): Unit = {
     spark.stop()
-  }
-
-  override def start(): Unit = {
-    super.start()
-    startTimeoutChecker()
-  }
-
-  private def startTimeoutChecker(): Unit = {
-    val interval = conf.get(KyuubiConf.ENGINE_CHECK_INTERVAL)
-    val idleTimeout = conf.get(KyuubiConf.ENGINE_IDLE_TIMEOUT)
-    val sessionManager = backendService.sessionManager.asInstanceOf[SparkSQLSessionManager]
-
-    val checkTask = new Runnable {
-      override def run(): Unit = {
-        val current = System.currentTimeMillis
-        if (sessionManager.getOpenSessionCount <= 0 &&
-          (current - sessionManager.latestLogoutTime) >= idleTimeout) {
-          info(s"Idled for more than $idleTimeout, terminating")
-          sys.exit(0)
-        }
-      }
-    }
-
-    sessionManager.submitTimeoutChecker(checkTask, interval, TimeUnit.MILLISECONDS)
   }
 }
 

@@ -51,9 +51,6 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   def submitBackgroundOperation(r: Runnable): Future[_] = execPool.submit(r)
 
-  def submitTimeoutChecker(r: Runnable, interval: Long, unit: TimeUnit): Future[_] =
-    timeoutChecker.scheduleWithFixedDelay(r, interval, interval, unit)
-
   def operationManager: OperationManager
 
   def openSession(
@@ -68,8 +65,6 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     if (session == null) {
       throw KyuubiSQLException(s"Invalid $sessionHandle")
     }
-    info(s"Session with $sessionHandle is closed," +
-      s" current opening sessions $getOpenSessionCount")
     session.close()
   }
 
