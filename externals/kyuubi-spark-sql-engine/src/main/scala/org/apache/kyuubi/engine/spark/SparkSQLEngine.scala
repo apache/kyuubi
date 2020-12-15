@@ -130,6 +130,8 @@ object SparkSQLEngine extends Logging {
       engine = startEngine(spark)
       exposeEngine(engine)
       info(KyuubiSparkUtil.diagnostics(spark))
+      // blocking main thread
+      TimeUnit.DAYS.sleep(Long.MaxValue)
     } catch {
       case t: Throwable =>
         error("Error start SparkSQLEngine", t)

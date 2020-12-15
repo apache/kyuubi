@@ -66,6 +66,13 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     this
   }
 
+  def setIfMissing(key: String, value: String): KyuubiConf = {
+    require(key != null)
+    require(value != null)
+    settings.putIfAbsent(key, value)
+    this
+  }
+
   def setIfMissing[T](entry: ConfigEntry[T], value: T): KyuubiConf = {
     settings.putIfAbsent(entry.key, entry.strConverter(value))
     this

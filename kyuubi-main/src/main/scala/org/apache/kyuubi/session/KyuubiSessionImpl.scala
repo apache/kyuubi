@@ -29,7 +29,7 @@ import org.apache.thrift.TException
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.{TSocket, TTransport}
 
-import org.apache.kyuubi.{KyuubiSQLException, ThriftUtils}
+import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
@@ -65,6 +65,13 @@ class KyuubiSessionImpl(
   private var client: TCLIService.Client = _
   private var remoteSessionHandle: TSessionHandle = _
 
+  private val isClusterMode = sessionConf.getOption(SPARK_SUBMIT_DEPLOY_MODE).get == "cluster"
+
+  if (isClusterMode) {
+    sessionConf.set(SPARK_YARN_MAX_APP_ATTEMPTS, "1")
+    sessionConf.set(SPARK_YARN_SUBMIT_WAIT_APP_COMPLETION, "false")
+  }
+
   private def getServerHost: Option[(String, Int)] = {
     try {
       val hosts = zkClient.getChildren.forPath(zkPath)
@@ -95,7 +102,7 @@ class KyuubiSessionImpl(
         var sh = getServerHost
         val started = System.currentTimeMillis()
         while (sh.isEmpty) {
-          if (process.waitFor(1, TimeUnit.SECONDS)) {
+          if (!isClusterMode && process.waitFor(1, TimeUnit.SECONDS)) {
             throw builder.getError
           }
           if (started + timeout <= System.currentTimeMillis()) {
