@@ -19,6 +19,7 @@ package org.apache.kyuubi.session
 
 import java.io.IOException
 import java.nio.charset.StandardCharsets
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
@@ -65,7 +66,8 @@ class KyuubiSessionImpl(
   private var client: TCLIService.Client = _
   private var remoteSessionHandle: TSessionHandle = _
 
-  private val isClusterMode = sessionConf.getOption(SPARK_SUBMIT_DEPLOY_MODE).get == "cluster"
+  private val isClusterMode = sessionConf.getOption(SPARK_SUBMIT_DEPLOY_MODE)
+    .map(_.toLowerCase(Locale.ROOT)).contains("cluster")
 
   if (isClusterMode) {
     sessionConf.set(SPARK_YARN_MAX_APP_ATTEMPTS, "1")
