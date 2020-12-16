@@ -78,9 +78,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   override def closeSession(sessionHandle: SessionHandle): Unit = {
     _latestLogoutTime = System.currentTimeMillis()
     super.closeSession(sessionHandle)
-    val session = operationManager.removeSparkSession(sessionHandle)
-    info(s"${session.sparkContext.sparkUser}'s session with $sessionHandle is closed," +
-      s"current opening sessions $getOpenSessionCount")
+    operationManager.removeSparkSession(sessionHandle)
   }
 
   private def setModifiableConfig(spark: SparkSession, key: String, value: String): Unit = {
