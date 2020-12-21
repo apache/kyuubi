@@ -591,4 +591,13 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>tpcds</id>
+            <modules>
+                <module>dev/kyuubi-tpcds</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

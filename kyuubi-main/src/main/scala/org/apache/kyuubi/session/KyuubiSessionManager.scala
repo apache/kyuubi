@@ -46,9 +46,11 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddress: String,
       conf: Map[String, String]): SessionHandle = {
 
+    val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
+
     val sessionImpl = new KyuubiSessionImpl(
       protocol,
-      user,
+      username,
       password,
       ipAddress,
       conf,
@@ -59,7 +61,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     try {
       sessionImpl.open()
       setSession(handle, sessionImpl)
-      info(s"$user's session with $handle is opened, current opening sessions" +
+      info(s"$username's session with $handle is opened, current opening sessions" +
       s" $getOpenSessionCount")
       handle
     } catch {
@@ -67,10 +69,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         try {
           sessionImpl.close()
         } catch {
-          case t: Throwable => warn(s"Error closing session $handle for $user", t)
+          case t: Throwable => warn(s"Error closing session $handle for $username", t)
         }
-        throw KyuubiSQLException(s"Error opening session $handle for $user due to ${e.getMessage}",
-          e)
+        throw KyuubiSQLException(
+          s"Error opening session $handle for $username due to ${e.getMessage}", e)
     }
   }
 

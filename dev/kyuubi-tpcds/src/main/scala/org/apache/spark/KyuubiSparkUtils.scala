@@ -15,22 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.util
+package org.apache.spark
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.security.SecurityUtil
+import java.io.File
 
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.spark.util.Utils
 
-object KyuubiHadoopUtils {
+object KyuubiSparkUtils {
 
-  def newHadoopConf(conf: KyuubiConf): Configuration = {
-    val hadoopConf = new Configuration()
-    conf.getAll.foreach { case (k, v) => hadoopConf.set(k, v) }
-    hadoopConf
+  def getLocalDir(conf: SparkConf): String = {
+    org.apache.spark.util.Utils.getLocalDir(conf)
   }
 
-  def getServerPrincipal(principal: String): String = {
-    SecurityUtil.getServerPrincipal(principal, "0.0.0.0")
+  def createTempDir(conf: SparkConf): File = {
+    val root = Utils.getLocalDir(conf)
+    Utils.createTempDir(root, "tpcds")
   }
+
 }
