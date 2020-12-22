@@ -28,7 +28,7 @@ import org.apache.curator.framework.recipes.nodes.PersistentEphemeralNode
 import org.apache.curator.framework.state.{ConnectionState, ConnectionStateListener}
 import org.apache.curator.framework.state.ConnectionState.{CONNECTED, LOST, RECONNECTED}
 import org.apache.curator.retry._
-import org.apache.hadoop.security.{SecurityUtil, UserGroupInformation}
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager.JaasConfiguration
 import org.apache.zookeeper.{KeeperException, WatchedEvent, Watcher}
 import org.apache.zookeeper.CreateMode.PERSISTENT
@@ -39,7 +39,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.ServiceDiscovery._
 import org.apache.kyuubi.service.{AbstractService, Serverable}
-import org.apache.kyuubi.util.ThreadUtils
+import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
 
 /**
  * A service for service discovery
@@ -234,7 +234,7 @@ object ServiceDiscovery {
         }
         System.setProperty("zookeeper.sasl.clientconfig", "KyuubiZooKeeperClient")
         var principal = maybePrincipal.get
-        principal = SecurityUtil.getServerPrincipal(principal, "0.0.0.0")
+        principal = KyuubiHadoopUtils.getServerPrincipal(principal)
         val jaasConf = new JaasConfiguration("KyuubiZooKeeperClient", principal, keyTabFile.get)
         Configuration.setConfiguration(jaasConf)
       }

@@ -18,6 +18,7 @@
 package org.apache.kyuubi.util
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.security.SecurityUtil
 
 import org.apache.kyuubi.config.KyuubiConf
 
@@ -27,5 +28,9 @@ object KyuubiHadoopUtils {
     val hadoopConf = new Configuration()
     conf.getAll.foreach { case (k, v) => hadoopConf.set(k, v) }
     hadoopConf
+  }
+
+  def getServerPrincipal(principal: String): String = {
+    SecurityUtil.getServerPrincipal(principal, "0.0.0.0")
   }
 }
