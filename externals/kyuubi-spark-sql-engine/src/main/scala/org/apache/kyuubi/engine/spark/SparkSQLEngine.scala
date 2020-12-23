@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.spark
 
 import java.time.Instant
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{CountDownLatch, TimeUnit}
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
@@ -73,6 +73,8 @@ object SparkSQLEngine extends Logging {
 
   private val user = Utils.currentUser
 
+  private val countDownLatch = new CountDownLatch(1)
+
   def createSpark(): SparkSession = {
     val sparkConf = new SparkConf()
     sparkConf.setIfMissing("spark.master", "local")
@@ -106,7 +108,10 @@ object SparkSQLEngine extends Logging {
     val engine = new SparkSQLEngine(spark)
     engine.initialize(kyuubiConf)
     engine.start()
-    sys.addShutdownHook(engine.stop())
+    sys.addShutdownHook({
+      countDownLatch.countDown()
+      engine.stop()
+    })
     engine
   }
 
@@ -131,7 +136,7 @@ object SparkSQLEngine extends Logging {
       exposeEngine(engine)
       info(KyuubiSparkUtil.diagnostics(spark))
       // blocking main thread
-      TimeUnit.DAYS.sleep(Long.MaxValue)
+      countDownLatch.await()
     } catch {
       case t: Throwable =>
         error("Error start SparkSQLEngine", t)

@@ -59,8 +59,4 @@ package object kyuubi {
   val BUILD_USER: String = BuildInfo.user
   val REPO_URL: String = BuildInfo.repoUrl
   val BUILD_DATE: String = BuildInfo.buildDate
-
-  val SPARK_SUBMIT_DEPLOY_MODE: String = "spark.submit.deployMode"
-  val SPARK_YARN_MAX_APP_ATTEMPTS: String = "spark.yarn.maxAppAttempts"
-  val SPARK_YARN_SUBMIT_WAIT_APP_COMPLETION: String = "spark.yarn.submit.waitAppCompletion"
 }
