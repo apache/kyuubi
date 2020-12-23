@@ -29,7 +29,7 @@ import org.apache.thrift.TException
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.{TSocket, TTransport}
 
-import org.apache.kyuubi.{KyuubiSQLException, ThriftUtils}
+import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
@@ -96,9 +96,13 @@ class KyuubiSessionImpl(
         info(s"Launching SQL engine: $builder")
         var sh = getServerHost
         val started = System.currentTimeMillis()
+        var exitValue: Option[Int] = None
         while (sh.isEmpty) {
-          if (process.waitFor(1, TimeUnit.SECONDS)) {
-            throw builder.getError
+          if (exitValue.isEmpty && process.waitFor(1, TimeUnit.SECONDS)) {
+            exitValue = Some(process.exitValue())
+            if (exitValue.get != 0) {
+              throw builder.getError
+            }
           }
           if (started + timeout <= System.currentTimeMillis()) {
             process.destroyForcibly()

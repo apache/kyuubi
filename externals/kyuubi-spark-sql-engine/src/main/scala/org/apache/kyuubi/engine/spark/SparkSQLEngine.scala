@@ -18,12 +18,14 @@
 package org.apache.kyuubi.engine.spark
 
 import java.time.Instant
+import java.util.concurrent.CountDownLatch
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.spark.SparkSQLEngine.countDownLatch
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{RetryPolicies, ServiceDiscovery}
 import org.apache.kyuubi.service.Serverable
@@ -37,6 +39,7 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   override private[kyuubi] val backendService = new SparkSQLBackendService(spark)
 
   override protected def stopServer(): Unit = {
+    countDownLatch.countDown()
     spark.stop()
   }
 }
@@ -46,6 +49,8 @@ object SparkSQLEngine extends Logging {
   val kyuubiConf: KyuubiConf = KyuubiConf()
 
   private val user = Utils.currentUser
+
+  private[spark] val countDownLatch = new CountDownLatch(1)
 
   def createSpark(): SparkSession = {
     val sparkConf = new SparkConf()
@@ -104,6 +109,8 @@ object SparkSQLEngine extends Logging {
       engine = startEngine(spark)
       exposeEngine(engine)
       info(KyuubiSparkUtil.diagnostics(spark))
+      // blocking main thread
+      countDownLatch.await()
     } catch {
       case t: Throwable =>
         error("Error start SparkSQLEngine", t)
