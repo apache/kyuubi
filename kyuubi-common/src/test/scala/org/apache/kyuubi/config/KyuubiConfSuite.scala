@@ -18,9 +18,8 @@
 package org.apache.kyuubi.config
 
 import java.time.Duration
-import java.util.Locale
 
-import org.apache.kyuubi.{KyuubiFunSuite, SPARK_SUBMIT_DEPLOY_MODE}
+import org.apache.kyuubi.KyuubiFunSuite
 
 class KyuubiConfSuite extends KyuubiFunSuite {
 
@@ -111,20 +110,6 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     assert(all2.size === 1)
     assert(all2("spark.user.test") === "b")
     assert(conf.getUserDefaults("yao").getOption("spark.user.test").get === "c")
-  }
-
-  test("set spark conf") {
-    val conf = KyuubiConf()
-
-    def isClusterMode(conf: KyuubiConf): Boolean = {
-      conf.getOption(SPARK_SUBMIT_DEPLOY_MODE)
-        .map(_.toLowerCase(Locale.ROOT)).contains("cluster")
-    }
-    assert(isClusterMode(conf) === false)
-
-    conf.set(SPARK_SUBMIT_DEPLOY_MODE, "cluSter")
-    assert(isClusterMode(conf) === true)
-
   }
 
 }
