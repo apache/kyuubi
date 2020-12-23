@@ -68,7 +68,9 @@ class KyuubiSessionImpl(
   private def getServerHost: Option[(String, Int)] = {
     try {
       val hosts = zkClient.getChildren.forPath(zkPath)
-      hosts.asScala.headOption.map { p =>
+      // TODO: use last one because to avoid touching some maybe-crashed engines
+      // We need a big improvement here.
+      hosts.asScala.lastOption.map { p =>
         val path = ZKPaths.makePath(null, zkNamespace, p)
         val hostPort = new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
         val strings = hostPort.split(":")
