@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.spark
 
 import java.time.Instant
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.CountDownLatch
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
@@ -26,19 +26,16 @@ import org.apache.spark.sql.SparkSession
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.{EngineAppName, EngineScope}
-import org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager
+import org.apache.kyuubi.engine.spark.SparkSQLEngine.countDownLatch
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{RetryPolicies, ServiceDiscovery}
 import org.apache.kyuubi.service.Serverable
-import org.apache.kyuubi.util.{SignalRegister, ThreadUtils}
+import org.apache.kyuubi.util.SignalRegister
 
 private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   extends Serverable(name) {
 
   def this(spark: SparkSession) = this(classOf[SparkSQLEngine].getSimpleName, spark)
-
-  private val timeoutChecker =
-    ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-timeout-checker")
 
   override private[kyuubi] val backendService = new SparkSQLBackendService(spark)
 
@@ -48,28 +45,8 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   )
 
   override protected def stopServer(): Unit = {
+    countDownLatch.countDown()
     spark.stop()
-    timeoutChecker.shutdown()
-    timeoutChecker.awaitTermination(10, TimeUnit.SECONDS)
-  }
-
-  override def start(): Unit = {
-    val interval = conf.get(KyuubiConf.ENGINE_CHECK_INTERVAL)
-    val idleTimeout = conf.get(KyuubiConf.ENGINE_IDLE_TIMEOUT)
-
-    val checkTask = new Runnable {
-      override def run(): Unit = {
-        val current = System.currentTimeMillis
-        val sessionManager = backendService.sessionManager.asInstanceOf[SparkSQLSessionManager]
-        if (sessionManager.getOpenSessionCount <= 0 &&
-          (current - sessionManager.latestLogoutTime) > idleTimeout) {
-          info(s"Idled for more than $idleTimeout, terminating")
-          sys.exit(0)
-        }
-      }
-    }
-    timeoutChecker.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
-    super.start()
   }
 }
 
@@ -78,6 +55,8 @@ object SparkSQLEngine extends Logging {
   val kyuubiConf: KyuubiConf = KyuubiConf()
 
   private val user = Utils.currentUser
+
+  private[spark] val countDownLatch = new CountDownLatch(1)
 
   def createSpark(): SparkSession = {
     val sparkConf = new SparkConf()
@@ -148,6 +127,8 @@ object SparkSQLEngine extends Logging {
       engine = startEngine(spark)
       exposeEngine(engine)
       info(KyuubiSparkUtil.diagnostics(spark))
+      // blocking main thread
+      countDownLatch.await()
     } catch {
       case t: Throwable =>
         error("Error start SparkSQLEngine", t)

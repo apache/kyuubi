@@ -43,7 +43,7 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
     sessionToSpark.put(sessionHandle, spark)
   }
 
-  def removeSparkSession(sessionHandle: SessionHandle): Unit = {
+  def removeSparkSession(sessionHandle: SessionHandle): SparkSession = {
     sessionToSpark.remove(sessionHandle)
   }
 

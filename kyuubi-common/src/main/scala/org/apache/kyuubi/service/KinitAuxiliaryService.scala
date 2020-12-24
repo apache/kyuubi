@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.util.ThreadUtils
+import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
 
 class KinitAuxiliaryService() extends AbstractService("KinitAuxiliaryService") {
 
@@ -38,6 +38,7 @@ class KinitAuxiliaryService() extends AbstractService("KinitAuxiliaryService") {
     if (UserGroupInformation.isSecurityEnabled) {
       val keytab = conf.get(KyuubiConf.SERVER_KEYTAB)
       val principal = conf.get(KyuubiConf.SERVER_PRINCIPAL)
+        .map(KyuubiHadoopUtils.getServerPrincipal)
       kinitInterval = conf.get(KyuubiConf.KINIT_INTERVAL)
       kinitMaxAttempts = conf.get(KyuubiConf.KINIT_MAX_ATTEMPTS)
 

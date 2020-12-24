@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.session
 
+import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 
@@ -28,7 +29,7 @@ import org.apache.thrift.TException
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.{TSocket, TTransport}
 
-import org.apache.kyuubi.{KyuubiSQLException, ThriftUtils}
+import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.EngineAppName
@@ -70,7 +71,9 @@ class KyuubiSessionImpl(
   private def getServerHost: Option[(String, Int)] = {
     try {
       val hosts = zkClient.getChildren.forPath(zkPath)
-      hosts.asScala.headOption.map { p =>
+      // TODO: use last one because to avoid touching some maybe-crashed engines
+      // We need a big improvement here.
+      hosts.asScala.lastOption.map { p =>
         val path = ZKPaths.makePath(null, zkNamespace, p)
         val hostPort = new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
         val strings = hostPort.split(":")
@@ -96,9 +99,13 @@ class KyuubiSessionImpl(
         info(s"Launching SQL engine: $builder")
         var sh = getServerHost
         val started = System.currentTimeMillis()
+        var exitValue: Option[Int] = None
         while (sh.isEmpty) {
-          if (process.waitFor(1, TimeUnit.SECONDS)) {
-            throw builder.getError
+          if (exitValue.isEmpty && process.waitFor(1, TimeUnit.SECONDS)) {
+            exitValue = Some(process.exitValue())
+            if (exitValue.get != 0) {
+              throw builder.getError
+            }
           }
           if (started + timeout <= System.currentTimeMillis()) {
             process.destroyForcibly()
@@ -110,10 +117,15 @@ class KyuubiSessionImpl(
         val Some((host, port)) = getServerHost
         openSession(host, port)
     }
+    try {
+      zkClient.close()
+    } catch {
+      case e: IOException => error("Failed to release the zkClient after session established", e)
+    }
   }
 
   private def openSession(host: String, port: Int): Unit = {
-    val passwd = Option(password).getOrElse("anonymous")
+    val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
     val loginTimeout = sessionConf.get(ENGINE_LOGIN_TIMEOUT).toInt
     transport = PlainSASLHelper.getPlainTransport(
       user, passwd, new TSocket(host, port, loginTimeout))
@@ -147,6 +159,5 @@ class KyuubiSessionImpl(
         transport.close()
       }
     }
-    zkClient.close()
   }
 }
