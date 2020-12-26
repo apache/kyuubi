@@ -25,7 +25,6 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.{EngineAppName, EngineScope}
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.countDownLatch
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{RetryPolicies, ServiceDiscovery}
@@ -38,11 +37,6 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   def this(spark: SparkSession) = this(classOf[SparkSQLEngine].getSimpleName, spark)
 
   override private[kyuubi] val backendService = new SparkSQLBackendService(spark)
-
-  val appName: EngineAppName = EngineAppName.parseAppName(
-    spark.conf.get(EngineAppName.SPARK_APP_NAME_KEY),
-    SparkSQLEngine.kyuubiConf
-  )
 
   override protected def stopServer(): Unit = {
     countDownLatch.countDown()
@@ -64,8 +58,7 @@ object SparkSQLEngine extends Logging {
     sparkConf.setIfMissing("spark.ui.port", "0")
 
     val appName = s"kyuubi_${user}_spark_${Instant.now}"
-
-    sparkConf.setIfMissing(EngineAppName.SPARK_APP_NAME_KEY, appName)
+    sparkConf.setIfMissing("spark.app.name", appName)
 
     kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_BIND_PORT, 0)
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
@@ -98,23 +91,11 @@ object SparkSQLEngine extends Logging {
   def exposeEngine(engine: SparkSQLEngine): Unit = {
     val needExpose = kyuubiConf.get(HA_ZK_QUORUM).nonEmpty
     if (needExpose) {
-      val zkNamespacePrefix = kyuubiConf.get(HA_ZK_NAMESPACE)
-      val zkNamespace = engine.appName.makeZkPath(zkNamespacePrefix)
-      val serviceDiscovery = new ServiceDiscovery(engine, zkNamespace.substring(1))
+      val zkNamespace = kyuubiConf.get(HA_ZK_NAMESPACE)
+      val serviceDiscovery = new ServiceDiscovery(engine, zkNamespace)
       serviceDiscovery.initialize(kyuubiConf)
       serviceDiscovery.start()
-      sys.addShutdownHook({
-        serviceDiscovery.stop()
-        if (EngineScope.SESSION.equals(engine.appName.getEngineScope)) {
-          val zkClient = ServiceDiscovery.startZookeeperClient(kyuubiConf)
-          try {
-            info(s"Deleting engine service's namespace: $zkNamespace")
-            zkClient.delete().forPath(zkNamespace)
-          } finally {
-            zkClient.close()
-          }
-        }
-      })
+      sys.addShutdownHook(serviceDiscovery.stop())
     }
   }
 

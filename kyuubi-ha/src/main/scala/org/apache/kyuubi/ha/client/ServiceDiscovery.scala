@@ -28,6 +28,7 @@ import org.apache.curator.framework.recipes.nodes.PersistentEphemeralNode
 import org.apache.curator.framework.state.{ConnectionState, ConnectionStateListener}
 import org.apache.curator.framework.state.ConnectionState.{CONNECTED, LOST, RECONNECTED}
 import org.apache.curator.retry._
+import org.apache.curator.utils.ZKPaths
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager.JaasConfiguration
 import org.apache.zookeeper.{KeeperException, WatchedEvent, Watcher}
@@ -90,16 +91,18 @@ class ServiceDiscovery private (
     })
     zkClient.start()
 
+
+    val ns = ZKPaths.makePath(null, namespace)
     try {
       zkClient
         .create()
         .creatingParentsIfNeeded()
         .withMode(PERSISTENT)
-        .forPath(s"/$namespace")
+        .forPath(ns)
     } catch {
       case _: NodeExistsException =>  // do nothing
       case e: KeeperException =>
-        throw new KyuubiException(s"Failed to create namespace '/$namespace'", e)
+        throw new KyuubiException(s"Failed to create namespace '$ns'", e)
     }
     super.initialize(conf)
   }
@@ -107,7 +110,9 @@ class ServiceDiscovery private (
 
   override def start(): Unit = {
     val instance = server.connectionUrl
-    val pathPrefix = s"/$namespace/serviceUri=$instance;version=$KYUUBI_VERSION;sequence="
+    val pathPrefix = ZKPaths.makePath(
+      namespace,
+      s"serviceUri=$instance;version=$KYUUBI_VERSION;sequence=")
     try {
       serviceNode = new PersistentEphemeralNode(
         zkClient,
