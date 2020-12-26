@@ -17,12 +17,12 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.kyuubi.config.KyuubiConf
-
-class KyuubiOperationPerConnectionSuite extends KyuubiOperationSuite {
-
-  override protected val conf: KyuubiConf = {
-    KyuubiConf().set(KyuubiConf.ENGINE_SHARED_LEVEL, "connection")
-  }
-
-}
+// import org.apache.kyuubi.config.KyuubiConf
+//
+// class KyuubiOperationPerConnectionSuite extends KyuubiOperationSuite {
+//
+//  override protected val conf: KyuubiConf = {
+//    KyuubiConf().set(KyuubiConf.ENGINE_SHARED_LEVEL, "connection")
+//  }
+//
+// }

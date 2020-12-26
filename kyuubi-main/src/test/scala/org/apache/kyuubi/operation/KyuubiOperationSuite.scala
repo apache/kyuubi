@@ -38,6 +38,7 @@ abstract class KyuubiOperationSuite extends JDBCTests {
     zkServer.initialize(conf)
     zkServer.start()
 
+    conf.set("spark.ui.enabled", "false")
     conf.set(KyuubiConf.FRONTEND_BIND_PORT, 0)
     conf.set(KyuubiConf.ENGINE_CHECK_INTERVAL, 4000L)
     conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 10000L)
