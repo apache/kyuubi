@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine
+package org.apache.kyuubi.operation
 
-object EngineScope extends Enumeration {
-  type EngineScope = Value
-  val SESSION = Value("S")
-  val USER = Value("U")
-  val GROUP = Value("G")
-  val SERVER = Value("K")
+import org.apache.kyuubi.config.KyuubiConf
+
+class KyuubiOperationPerUserSuite extends KyuubiOperationSuite {
+
+  override protected val conf: KyuubiConf = {
+    KyuubiConf().set(KyuubiConf.ENGINE_SHARED_LEVEL, "user")
+  }
 }

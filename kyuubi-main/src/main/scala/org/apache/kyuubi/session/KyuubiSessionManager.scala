@@ -21,7 +21,6 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.operation.KyuubiOperationManager
 
@@ -31,10 +30,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   val operationManager = new KyuubiOperationManager()
 
-  private var zkNamespacePrefix: String = _
-
   override def initialize(conf: KyuubiConf): Unit = {
-    zkNamespacePrefix = conf.get(HA_ZK_NAMESPACE)
     ServiceDiscovery.setUpZooKeeperAuth(conf)
     super.initialize(conf)
   }
@@ -55,8 +51,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddress,
       conf,
       this,
-      this.getConf.getUserDefaults(user),
-      zkNamespacePrefix)
+      this.getConf.getUserDefaults(user))
     val handle = sessionImpl.handle
     try {
       sessionImpl.open()
