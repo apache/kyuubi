@@ -91,8 +91,7 @@ object SparkSQLEngine extends Logging {
   def exposeEngine(engine: SparkSQLEngine): Unit = {
     val needExpose = kyuubiConf.get(HA_ZK_QUORUM).nonEmpty
     if (needExpose) {
-      val zkNamespace = kyuubiConf.get(HA_ZK_NAMESPACE)
-      val serviceDiscovery = new ServiceDiscovery(engine, zkNamespace)
+      val serviceDiscovery = new ServiceDiscovery(engine)
       serviceDiscovery.initialize(kyuubiConf)
       serviceDiscovery.start()
       sys.addShutdownHook(serviceDiscovery.stop())

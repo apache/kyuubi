@@ -47,21 +47,24 @@ import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
  *
  * @param name the name of the service itself
  * @param server the instance uri a service that used to publish itself
- * @param namespace a pre-defined namespace used to publish the instance of the associate service
  */
 class ServiceDiscovery private (
     name: String,
-    server: Serverable,
-    namespace: String) extends AbstractService(name) {
+    server: Serverable) extends AbstractService(name) {
 
-  def this(server: Serverable, namespace: String) =
-    this(classOf[ServiceDiscovery].getSimpleName, server, namespace)
+  def this(server: Serverable) =
+    this(classOf[ServiceDiscovery].getSimpleName, server)
 
   private var zkClient: CuratorFramework = _
   private var serviceNode: PersistentEphemeralNode = _
+  /**
+   * a pre-defined namespace used to publish the instance of the associate service
+   */
+  private var namespace: String = _
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
+    namespace = conf.get(HA_ZK_NAMESPACE)
     val maxSleepTime = conf.get(HA_ZK_CONN_MAX_RETRY_WAIT)
     val maxRetries = conf.get(HA_ZK_CONN_MAX_RETRIES)
     setUpZooKeeperAuth(conf)
@@ -90,8 +93,10 @@ class ServiceDiscovery private (
       }
     })
     zkClient.start()
+    super.initialize(conf)
+  }
 
-
+  override def start(): Unit = {
     val ns = ZKPaths.makePath(null, namespace)
     try {
       zkClient
@@ -104,11 +109,6 @@ class ServiceDiscovery private (
       case e: KeeperException =>
         throw new KyuubiException(s"Failed to create namespace '$ns'", e)
     }
-    super.initialize(conf)
-  }
-
-
-  override def start(): Unit = {
     val instance = server.connectionUrl
     val pathPrefix = ZKPaths.makePath(
       namespace,

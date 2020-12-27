@@ -104,7 +104,7 @@ class KyuubiSessionImpl(
       case Some((host, port)) => openSession(host, port)
       case None =>
         sessionConf.set(SparkProcessBuilder.APP_KEY, boundAppName.toString)
-        sessionConf.set(HA_ZK_NAMESPACE, appZkNamespace.stripPrefix(ZKPaths.PATH_SEPARATOR))
+        sessionConf.set(HA_ZK_NAMESPACE, appZkNamespace)
         val builder = new SparkProcessBuilder(appUser, sessionConf.toSparkPrefixedConf)
         val process = builder.start
         info(s"Launching SQL engine: $builder")
