@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{Logging, Utils}
-import org.apache.kyuubi.engine.EngineScope
+import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
@@ -473,15 +473,16 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
-  val ENGINE_SCOPE: ConfigEntry[String] = buildConf("session.engine.scope")
-    .doc("The engine session scope.<ul>" +
-      " <li>S: One engine per kyuubi session in kyuubi cluster.</li>" +
-      " <li>U: One engine per user in kyuubi cluster.</li>" +
-      " <li>G: One engine per group in kyuubi cluster.</li>" +
-      " <li>K: One engine per kyuubi server in kyuubi cluster.</li></ul>")
+  val ENGINE_SHARED_LEVEL: ConfigEntry[String] = buildConf("session.engine.share.level")
+    .doc("The SQL engine App will be shared in different levels, available configs are: <ul>" +
+      " <li>CONNECTION: the App will not be shared but only used by the current client" +
+      " connection</li>" +
+      " <li>USER: the App will be shared by all sessions created by a unique username</li>" +
+      " <li>GROUP: the App will be shared within a certain group (NOT YET)</li>" +
+      " <li>SERVER: the App will be shared by Kyuubi servers</li></ul>")
     .version("1.0.0")
     .stringConf
     .transform(_.toUpperCase(Locale.ROOT))
-    .checkValues(EngineScope.values.map(_.toString))
-    .createWithDefault(EngineScope.USER.toString)
+    .checkValues(ShareLevel.values.map(_.toString))
+    .createWithDefault(ShareLevel.USER.toString)
 }

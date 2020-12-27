@@ -24,16 +24,18 @@ import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters._
 
 import org.apache.curator.utils.ZKPaths
-import org.apache.hive.service.rpc.thrift._
+import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TOpenSessionReq, TProtocolVersion, TSessionHandle}
 import org.apache.thrift.TException
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.{TSocket, TTransport}
 
-import org.apache.kyuubi._
+import org.apache.kyuubi.{KyuubiSQLException, ThriftUtils, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.EngineAppName
+import org.apache.kyuubi.engine.{ShareLevel, SQLEngineAppName}
+import org.apache.kyuubi.engine.ShareLevel.{SERVER, ShareLevel}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
+import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
@@ -44,25 +46,33 @@ class KyuubiSessionImpl(
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: KyuubiSessionManager,
-    sessionConf: KyuubiConf,
-    zkNamespacePrefix: String)
+    sessionConf: KyuubiConf)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
-  private def configureSession(): Unit = {
+  private def mergeConf(): Unit = {
     conf.foreach {
       case (HIVE_VAR_PREFIX(key), value) => sessionConf.set(key, value)
       case (HIVE_CONF_PREFIX(key), value) => sessionConf.set(key, value)
       case ("use:database", _) =>
       case (key, value) => sessionConf.set(key, value)
     }
-    sessionConf.set(EngineAppName.SPARK_APP_NAME_KEY, engineAppName.generateAppName())
   }
 
-  private val engineAppName = EngineAppName(user, handle.identifier.toString, sessionConf)
-  private val timeout: Long = sessionConf.get(ENGINE_INIT_TIMEOUT)
-  private val zkNamespace = engineAppName.makeZkPath(zkNamespacePrefix)
-  private val zkPath = ZKPaths.makePath(null, zkNamespace)
+  mergeConf()
+
+  private val shareLevel: ShareLevel = ShareLevel.withName(sessionConf.get(ENGINE_SHARED_LEVEL))
+
+  private val appUser: String = shareLevel match {
+    case SERVER => Utils.currentUser
+    case _ => user
+  }
+
+  private val boundAppName: SQLEngineAppName = SQLEngineAppName(shareLevel, appUser, handle)
+
+  private val appZkNamespace: String = boundAppName.getZkNamespace(sessionConf.get(HA_ZK_NAMESPACE))
+
   private lazy val zkClient = ServiceDiscovery.startZookeeperClient(sessionConf)
+  private val timeout: Long = sessionConf.get(ENGINE_INIT_TIMEOUT)
 
   private var transport: TTransport = _
   private var client: TCLIService.Client = _
@@ -70,11 +80,11 @@ class KyuubiSessionImpl(
 
   private def getServerHost: Option[(String, Int)] = {
     try {
-      val hosts = zkClient.getChildren.forPath(zkPath)
+      val hosts = zkClient.getChildren.forPath(appZkNamespace)
       // TODO: use last one because to avoid touching some maybe-crashed engines
       // We need a big improvement here.
       hosts.asScala.lastOption.map { p =>
-        val path = ZKPaths.makePath(null, zkNamespace, p)
+        val path = ZKPaths.makePath(appZkNamespace, p)
         val hostPort = new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
         val strings = hostPort.split(":")
         val host = strings.head
@@ -93,8 +103,9 @@ class KyuubiSessionImpl(
     getServerHost match {
       case Some((host, port)) => openSession(host, port)
       case None =>
-        configureSession()
-        val builder = new SparkProcessBuilder(user, sessionConf.toSparkPrefixedConf)
+        sessionConf.set(SparkProcessBuilder.APP_KEY, boundAppName.toString)
+        sessionConf.set(HA_ZK_NAMESPACE, appZkNamespace.stripPrefix(ZKPaths.PATH_SEPARATOR))
+        val builder = new SparkProcessBuilder(appUser, sessionConf.toSparkPrefixedConf)
         val process = builder.start
         info(s"Launching SQL engine: $builder")
         var sh = getServerHost
@@ -114,7 +125,7 @@ class KyuubiSessionImpl(
           }
           sh = getServerHost
         }
-        val Some((host, port)) = getServerHost
+        val Some((host, port)) = sh
         openSession(host, port)
     }
     try {

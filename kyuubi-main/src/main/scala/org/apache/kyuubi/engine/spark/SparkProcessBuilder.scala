@@ -125,4 +125,5 @@ object SparkProcessBuilder {
   private final val CONF = "--conf"
   private final val CLASS = "--class"
   private final val PROXY_USER = "--proxy-user"
+  final val APP_KEY = "spark.app.name"
 }

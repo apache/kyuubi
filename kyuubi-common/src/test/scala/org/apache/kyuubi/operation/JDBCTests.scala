@@ -28,7 +28,7 @@ import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 trait JDBCTests extends KyuubiFunSuite {
 
   protected val dftSchema = "default"
-  protected val user: String = System.getProperty("user.name")
+  protected val user: String = Utils.currentUser
   protected def jdbcUrl: String
 
   protected def withMultipleConnectionJdbcStatement(
