@@ -35,7 +35,6 @@ class ServerableSuite extends KyuubiFunSuite {
     val serverable1 = new NoopServer()
     val conf = KyuubiConf().set(KyuubiConf.FRONTEND_BIND_PORT, 0)
     serverable1.initialize(conf)
-    serverable1.stop()
     assert(serverable1.getStartTime === 0)
     assert(serverable1.getConf === conf)
     assert(serverable1.connectionUrl.nonEmpty)
