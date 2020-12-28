@@ -40,6 +40,12 @@ class FrontendServiceSuite extends KyuubiFunSuite {
 
   val user: String = System.getProperty("user.name")
 
+
+  override def afterAll(): Unit = {
+    server.stop()
+    super.afterAll()
+  }
+
   protected def withThriftClient(f: TCLIService.Iface => Unit): Unit = {
     val hostAndPort = server.connectionUrl.split(":")
     val host = hostAndPort.head
