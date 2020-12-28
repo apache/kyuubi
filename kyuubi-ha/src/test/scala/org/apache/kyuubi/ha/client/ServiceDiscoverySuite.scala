@@ -52,19 +52,20 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
   }
 
   test("publish instance to embedded zookeeper server") {
+    val namespace = "kyuubiserver"
 
     conf
       .unset(KyuubiConf.SERVER_KEYTAB)
       .unset(KyuubiConf.SERVER_PRINCIPAL)
       .set(HA_ZK_QUORUM, zkServer.getConnectString)
+      .set(HA_ZK_NAMESPACE, namespace)
 
     val server: Serverable = new NoopServer()
     server.initialize(conf)
     server.start()
 
-    val namespace = "kyuubiserver"
     val znodeRoot = s"/$namespace"
-    val serviceDiscovery = new ServiceDiscovery(server, namespace)
+    val serviceDiscovery = new ServiceDiscovery(server)
     val framework = ServiceDiscovery.startZookeeperClient(conf)
     try {
       serviceDiscovery.initialize(conf)
