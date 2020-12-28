@@ -37,6 +37,15 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   def this(spark: SparkSession) = this(classOf[SparkSQLEngine].getSimpleName, spark)
 
   override private[kyuubi] val backendService = new SparkSQLBackendService(spark)
+  private val discoveryService = new ServiceDiscovery(this)
+
+  override def initialize(conf: KyuubiConf): Unit = {
+    super.initialize(conf)
+    if (ServiceDiscovery.supportServiceDiscovery(conf)) {
+      addService(discoveryService)
+      discoveryService.initialize(conf)
+    }
+  }
 
   override protected def stopServer(): Unit = {
     countDownLatch.countDown()
@@ -88,16 +97,6 @@ object SparkSQLEngine extends Logging {
     engine
   }
 
-  def exposeEngine(engine: SparkSQLEngine): Unit = {
-    val needExpose = kyuubiConf.get(HA_ZK_QUORUM).nonEmpty
-    if (needExpose) {
-      val serviceDiscovery = new ServiceDiscovery(engine)
-      serviceDiscovery.initialize(kyuubiConf)
-      serviceDiscovery.start()
-      sys.addShutdownHook(serviceDiscovery.stop())
-    }
-  }
-
   def main(args: Array[String]): Unit = {
     SignalRegister.registerLogger(logger)
     var spark: SparkSession = null
@@ -105,7 +104,6 @@ object SparkSQLEngine extends Logging {
     try {
       spark = createSpark()
       engine = startEngine(spark)
-      exposeEngine(engine)
       info(KyuubiSparkUtil.diagnostics(spark))
       // blocking main thread
       countDownLatch.await()
