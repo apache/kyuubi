@@ -153,7 +153,7 @@ This is because in the service discovery layer,
 the namespaces used to store the address of the engine instances are isolated based on the user(by default),
 and different users cannot access other' s instances across the namespace.
 
-# Authentication & Authorization
+## Authentication & Authorization
 
 In a secure cluster, services should be able to identify and authenticate callers.
 As the fact that the user claims does not necessarily mean this is true.
