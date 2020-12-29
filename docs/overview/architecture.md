@@ -45,7 +45,7 @@ these connection requests are maintained as `Kyuubi Session`s,
 and execution requests are maintained as `Kyuubi Operation`s which are bound to the corresponding sessions.
 
 The creation of a `Kyuubi Session` can be divided into two cases: lightweight and heavyweight.
-Most Session creation is lightweight and user-unaware.
+Most session creations are lightweight and user-unaware.
 The only heavyweight case is when there is no `SparkContext` instantiated or cached in the user's shared domain,
 which usually happens when the user is connecting for the first time or has not connected for a long time.
 This one-time cost session maintenance model can meet most of the ad-hoc fast response requirements.
