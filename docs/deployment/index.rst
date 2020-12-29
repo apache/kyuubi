@@ -12,7 +12,6 @@ Deploying Kyuubi
     settings
     on_yarn
     hive_metastore
-    architecture
     deploy
     high_availability_guide
     metrics
