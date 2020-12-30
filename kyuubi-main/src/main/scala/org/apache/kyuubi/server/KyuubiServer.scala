@@ -24,6 +24,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
+import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.ha.server.EmbeddedZkServer
 import org.apache.kyuubi.service.{AbstractBackendService, KinitAuxiliaryService, Serverable}
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
@@ -32,8 +33,7 @@ object KyuubiServer extends Logging {
   private val zkServer = new EmbeddedZkServer()
 
   def startServer(conf: KyuubiConf): KyuubiServer = {
-    val zkEnsemble = conf.get(HA_ZK_QUORUM)
-    if (zkEnsemble == null || zkEnsemble.isEmpty) {
+    if (!ServiceDiscovery.supportServiceDiscovery(conf)) {
       zkServer.initialize(conf)
       zkServer.start()
       sys.addShutdownHook(zkServer.stop())
@@ -80,11 +80,16 @@ class KyuubiServer(name: String) extends Serverable(name) {
   def this() = this(classOf[KyuubiServer].getSimpleName)
 
   override private[kyuubi] val backendService: AbstractBackendService = new KyuubiBackendService()
+  private val discoveryService = new ServiceDiscovery(this)
 
   override def initialize(conf: KyuubiConf): Unit = {
     val kinit = new KinitAuxiliaryService()
     addService(kinit)
     super.initialize(conf)
+    if (ServiceDiscovery.supportServiceDiscovery(conf)) {
+      addService(discoveryService)
+      discoveryService.initialize(conf)
+    }
   }
 
   override protected def stopServer(): Unit = KyuubiServer.zkServer.stop()

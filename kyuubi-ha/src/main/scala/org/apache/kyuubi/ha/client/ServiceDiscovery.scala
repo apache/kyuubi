@@ -131,7 +131,7 @@ class ServiceDiscovery private (
         throw new KyuubiException(s"Unable to create znode for this Kyuubi instance[$instance]" +
           s" on ZooKeeper.")
       }
-      info("Created a serviceNode on ZooKeeper for KyuubiServer uri: " + instance)
+      info(s"Created a ${serviceNode.getActualPath} on ZooKeeper for KyuubiServer uri: " + instance)
     } catch {
       case e: Exception =>
         if (serviceNode != null) {
@@ -244,5 +244,10 @@ object ServiceDiscovery {
         Configuration.setConfiguration(jaasConf)
       }
     }
+  }
+
+  def supportServiceDiscovery(conf: KyuubiConf): Boolean = {
+    val zkEnsemble = conf.get(HA_ZK_QUORUM)
+    zkEnsemble != null && zkEnsemble.nonEmpty
   }
 }
