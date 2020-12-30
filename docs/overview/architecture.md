@@ -30,7 +30,7 @@ which allows Kyuubi to quickly expand its existing ecosystem and introduce new f
 such as cloud-native support and `Data Lake/Lake House` support.
 
 Kyuubi's vision is to build on top of Apache Spark and Data Lake technologies to unify the portal and become an ideal data lake management platform.
-It can support data processing e.g. ETL, and analytics e.g. BI in a pure SQL way data processing e.g. ETL, and analytics e.g. BI.
+It can support data processing e.g. ETL, and analytics e.g. BI in a pure SQL way.
 All workloads can be done on one platform, using one copy of data, with one SQL interface.
 
 ## Architecture Overview
