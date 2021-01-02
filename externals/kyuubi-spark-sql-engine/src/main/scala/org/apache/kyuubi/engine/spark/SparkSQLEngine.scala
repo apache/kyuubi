@@ -40,6 +40,8 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   private val discoveryService = new ServiceDiscovery(this)
 
   override def initialize(conf: KyuubiConf): Unit = {
+    val listener = new SparkSQLEngineListener(this)
+    spark.sparkContext.addSparkListener(listener)
     super.initialize(conf)
     if (ServiceDiscovery.supportServiceDiscovery(conf)) {
       addService(discoveryService)
@@ -49,7 +51,6 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
 
   override protected def stopServer(): Unit = {
     countDownLatch.countDown()
-    spark.stop()
   }
 }
 
@@ -112,9 +113,11 @@ object SparkSQLEngine extends Logging {
         error("Error start SparkSQLEngine", t)
         if (engine != null) {
           engine.stop()
-        } else if (spark != null) {
-          spark.stop()
         }
+    } finally {
+      if (spark != null) {
+        spark.stop()
+      }
     }
   }
 }
