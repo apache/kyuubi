@@ -22,7 +22,7 @@ import org.apache.kyuubi.config.KyuubiConf
 
 class ServerableSuite extends KyuubiFunSuite {
 
-  test("Serverable") {
+  ignore("Serverable") {
     val serverable1 = new NoopServer()
     val conf = KyuubiConf().set(KyuubiConf.FRONTEND_BIND_PORT, 0)
     serverable1.initialize(conf)
