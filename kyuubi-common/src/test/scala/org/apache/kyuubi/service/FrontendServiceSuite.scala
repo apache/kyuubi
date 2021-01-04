@@ -35,6 +35,7 @@ class FrontendServiceSuite extends KyuubiFunSuite {
   private val server = new NoopServer()
   private val conf = KyuubiConf()
     .set(KyuubiConf.FRONTEND_BIND_PORT, 0)
+    .set("kyuubi.test.server.should.fail", "false")
   server.initialize(conf)
   server.start()
 
@@ -42,7 +43,7 @@ class FrontendServiceSuite extends KyuubiFunSuite {
 
 
   override def afterAll(): Unit = {
-    server.stop()
+    server.getServices.foreach(_.stop())
     super.afterAll()
   }
 

@@ -39,6 +39,8 @@ trait WithSparkSQLEngine extends JDBCTests {
   System.setProperty("spark.sql.warehouse.dir", warehousePath.toString)
   System.setProperty("spark.sql.hive.metastore.sharedPrefixes", "org.apache.hive.jdbc")
 
+  SparkSession.clearActiveSession()
+  SparkSession.clearDefaultSession()
   protected val spark: SparkSession = SparkSQLEngine.createSpark()
 
   protected var engine: SparkSQLEngine = _
@@ -56,6 +58,7 @@ trait WithSparkSQLEngine extends JDBCTests {
     if (engine != null) {
       engine.stop()
     }
+    spark.stop()
     SessionState.detachSession()
     Hive.closeCurrent()
   }
