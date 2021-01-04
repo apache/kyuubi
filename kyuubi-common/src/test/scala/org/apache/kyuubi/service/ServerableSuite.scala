@@ -23,15 +23,6 @@ import org.apache.kyuubi.config.KyuubiConf
 class ServerableSuite extends KyuubiFunSuite {
 
   test("Serverable") {
-    val serverable = new NoopServer()
-    serverable.stop()
-    assert(serverable.getStartTime === 0)
-    assert(serverable.getConf === null)
-    assert(serverable.getName === "noop")
-    intercept[IllegalStateException](serverable.connectionUrl)
-    assert(serverable.getServiceState === ServiceState.LATENT)
-    intercept[IllegalStateException](serverable.start())
-
     val serverable1 = new NoopServer()
     val conf = KyuubiConf().set(KyuubiConf.FRONTEND_BIND_PORT, 0)
     serverable1.initialize(conf)
