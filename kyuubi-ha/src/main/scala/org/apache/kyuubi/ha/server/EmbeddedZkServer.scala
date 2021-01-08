@@ -52,17 +52,18 @@ class EmbeddedZkServer private(name: String) extends AbstractService(name) with 
 
   override def start(): Unit = {
     server.start()
-    // Just a tradeoff, otherwise we may get NPE if we call stop() immediately.
-    // (e.g. the unit test EmbeddedZkServerSuite)
-    // TestingZooKeeperMain has a bug that the CountDownLatch released before cnxnFactory inited.
-    // More details could see TestingZooKeeperMain.runFromConfig.
-    Thread.sleep(5000)
     info(s"$getName is started at $getConnectString")
     super.start()
   }
 
   override def stop(): Unit = {
     if (server != null) {
+      // Just a tradeoff, otherwise we may get NPE if we call stop() immediately.
+      // (e.g. the unit test EmbeddedZkServerSuite)
+      // TestingZooKeeperMain has a bug that the CountDownLatch released before cnxnFactory inited.
+      // More details could see TestingZooKeeperMain.runFromConfig.
+      while (getStartTime > 0 && System.currentTimeMillis() - getStartTime < 5000) {
+      }
       server.close()
       server = null
     }
