@@ -66,7 +66,21 @@
         <scala.binary.version>2.12</scala.binary.version>
         <maven.version>3.6.3</maven.version>
         <spark.version>3.0.1</spark.version>
-        <log4j.version>1.7.30</log4j.version>
+        <slf4j.version>1.7.30</slf4j.version>
+        <mockito.verison>1.10.19</mockito.verison>
+
+        <maven.plugin.antrun.version>3.0.0</maven.plugin.antrun.version>
+        <maven.plugin.compiler.version>3.8.1</maven.plugin.compiler.version>
+        <maven.plugin.scala.version>4.4.0</maven.plugin.scala.version>
+        <maven.plugin.surefire.version>2.22.0</maven.plugin.surefire.version>
+        <maven.plugin.scalatest.version>2.0.0</maven.plugin.scalatest.version>
+        <maven.plugin.jacoco.version>0.8.6</maven.plugin.jacoco.version>
+        <maven.plugin.shade.version>3.2.1</maven.plugin.shade.version>
+        <maven.plugin.jar.version>3.2.0</maven.plugin.jar.version>
+        <maven.plugin.assembly.version>3.2.0</maven.plugin.assembly.version>
+        <maven.plugin.dependency.version>3.1.1</maven.plugin.dependency.version>
+        <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
+        <maven.plugin.download.version>1.6.0</maven.plugin.download.version>
     </properties>
 
     <repositories>
@@ -232,14 +246,14 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>${log4j.version}</version>
+                <version>${slf4j.version}</version>
                 <scope>compile</scope>
             </dependency>
 
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-log4j12</artifactId>
-                <version>${log4j.version}</version>
+                <version>${slf4j.version}</version>
             </dependency>
 
             <dependency>
@@ -281,7 +295,7 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
-                <version>1.10.19</version>
+                <version>${mockito.verison}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -314,13 +328,13 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-antrun-plugin</artifactId>
-                    <version>3.0.0</version>
+                    <version>${maven.plugin.antrun.version}</version>
                 </plugin>
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-		            <version>3.8.1</version>
+		            <version>${maven.plugin.compiler.version}</version>
                     <configuration>
                         <source>${java.version}</source>
                         <target>${java.version}</target>
@@ -336,7 +350,7 @@
                 <plugin>
                     <groupId>net.alchim31.maven</groupId>
                     <artifactId>scala-maven-plugin</artifactId>
-                    <version>4.4.0</version>
+                    <version>${maven.plugin.scala.version}</version>
                     <executions>
                         <execution>
                             <id>eclipse-add-source</id>
@@ -386,7 +400,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.22.0</version>
+                    <version>${maven.plugin.surefire.version}</version>
                     <configuration>
                         <skipTests>true</skipTests>
                     </configuration>
@@ -395,7 +409,7 @@
                 <plugin>
                     <groupId>org.scalatest</groupId>
                     <artifactId>scalatest-maven-plugin</artifactId>
-                    <version>2.0.0</version>
+                    <version>${maven.plugin.scalatest.version}</version>
                     <configuration>
                         <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                         <junitxml>.</junitxml>
@@ -418,7 +432,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.6</version>
+                    <version>${maven.plugin.jacoco.version}</version>
                     <configuration>
                         <excludes>
                             <exclude>**/org/apache/spark/launcher/*.class</exclude>
@@ -453,25 +467,25 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
-                    <version>3.2.1</version>
+                    <version>${maven.plugin.shade.version}</version>
                 </plugin>
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>3.2.0</version>
+                    <version>${maven.plugin.jar.version}</version>
                 </plugin>
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-assembly-plugin</artifactId>
-                    <version>3.2.0</version>
+                    <version>${maven.plugin.assembly.version}</version>
                 </plugin>
 
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>3.1.1</version>
+                    <version>${maven.plugin.dependency.version}</version>
                     <executions>
                         <execution>
                             <id>default-cli</id>
@@ -490,7 +504,7 @@
                 <plugin>
                     <groupId>org.scalastyle</groupId>
                     <artifactId>scalastyle-maven-plugin</artifactId>
-                    <version>1.0.0</version>
+                    <version>${maven.plugin.scalastyle.version}</version>
                     <configuration>
                         <verbose>false</verbose>
                         <failOnViolation>true</failOnViolation>
@@ -509,6 +523,11 @@
                             </goals>
                         </execution>
                     </executions>
+                </plugin>
+                <plugin>
+                    <groupId>com.googlecode.maven-download-plugin</groupId>
+                    <artifactId>download-maven-plugin</artifactId>
+                    <version>${maven.plugin.download.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
