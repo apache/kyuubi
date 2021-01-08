@@ -67,7 +67,6 @@
         <maven.version>3.6.3</maven.version>
         <spark.version>3.0.1</spark.version>
         <slf4j.version>1.7.30</slf4j.version>
-        <mockito.verison>1.10.19</mockito.verison>
 
         <maven.plugin.antrun.version>3.0.0</maven.plugin.antrun.version>
         <maven.plugin.compiler.version>3.8.1</maven.plugin.compiler.version>
@@ -292,12 +291,6 @@
                 </exclusions>
             </dependency>
 
-            <dependency>
-                <groupId>org.mockito</groupId>
-                <artifactId>mockito-core</artifactId>
-                <version>${mockito.verison}</version>
-                <scope>test</scope>
-            </dependency>
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-minicluster</artifactId>
