@@ -65,6 +65,16 @@
             <artifactId>hive-jdbc</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-minikdc</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.directory.server</groupId>
+            <artifactId>apacheds-service</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
