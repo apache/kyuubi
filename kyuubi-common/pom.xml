@@ -46,6 +46,13 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-common</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -53,19 +60,16 @@
             <artifactId>hive-service-rpc</artifactId>
         </dependency>
 
-        <!-- ut -->
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-common</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-minikdc</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.directory.server</groupId>
             <artifactId>apacheds-service</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -73,7 +77,6 @@
             <artifactId>hive-jdbc</artifactId>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
     <build>

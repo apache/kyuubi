@@ -35,27 +35,24 @@
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-ha</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-hive-thriftserver_${scala.binary.version}</artifactId>
-            <version>${spark.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common</artifactId>
-            <version>${project.version}</version>
             <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -71,7 +68,6 @@
                     <shadedArtifactAttached>false</shadedArtifactAttached>
                     <artifactSet>
                         <includes>
-                            <!-- -->
                             <include>org.apache.kyuubi:kyuubi-common</include>
                             <include>org.apache.kyuubi:kyuubi-ha</include>
                         </includes>
@@ -84,7 +80,6 @@
                             <goal>shade</goal>
                         </goals>
                     </execution>
-
                 </executions>
             </plugin>
         </plugins>
