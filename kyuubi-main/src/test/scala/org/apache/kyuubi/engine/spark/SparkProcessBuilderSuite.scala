@@ -20,11 +20,12 @@ package org.apache.kyuubi.engine.spark
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.TimeUnit
 
-import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
+import org.apache.kyuubi.{KerberizedTestHelper, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.service.ServiceUtils
 
-class SparkProcessBuilderSuite extends KyuubiFunSuite {
+class SparkProcessBuilderSuite extends KerberizedTestHelper {
   private val conf = KyuubiConf()
     .set(EMBEDDED_ZK_PORT, 5555)
     .set(EMBEDDED_ZK_TEMP_DIR, "spark_process_test")
@@ -71,4 +72,37 @@ class SparkProcessBuilderSuite extends KyuubiFunSuite {
       error1.getMessage.contains("Caused by: org.apache.hadoop.hive.ql.metadata.HiveException:"))
   }
 
+  test("proxy user or keytab") {
+    val b1 = new SparkProcessBuilder("kentyao", conf)
+    assert(b1.toString.contains("--proxy-user kentyao"))
+
+    val conf1 = conf ++ Map("spark.kerberos.principal" -> testPrincipal)
+    val b2 = new SparkProcessBuilder("kentyao", conf1)
+    assert(b2.toString.contains("--proxy-user kentyao"))
+
+    val conf2 = conf ++ Map("spark.kerberos.keytab" -> testKeytab)
+    val b3 = new SparkProcessBuilder("kentyao", conf2)
+    assert(b3.toString.contains("--proxy-user kentyao"))
+
+    val conf3 = conf ++ Map("spark.kerberos.principal" -> testPrincipal,
+      "spark.kerberos.keytab" -> "testKeytab")
+    val b4 = new SparkProcessBuilder(Utils.currentUser, conf3)
+    assert(!b4.toString.contains("--proxy-user kentyao"))
+
+    tryWithSecurityEnabled {
+      val conf33 = conf ++ Map("spark.kerberos.principal" -> testPrincipal,
+        "spark.kerberos.keytab" -> "testKeytab")
+      val b44 = new SparkProcessBuilder(Utils.currentUser, conf33)
+      assert(b44.toString.contains("--proxy-user kentyao"))
+
+      val conf4 = conf ++ Map("spark.kerberos.principal" -> testPrincipal,
+        "spark.kerberos.keytab" -> testKeytab)
+      val b5 = new SparkProcessBuilder("kentyao", conf4)
+      assert(b5.toString.contains("--proxy-user kentyao"))
+
+      val b6 = new SparkProcessBuilder(ServiceUtils.getShortName(testPrincipal), conf4)
+      assert(!b6.toString.contains("--proxy-user kentyao"))
+    }
+
+  }
 }

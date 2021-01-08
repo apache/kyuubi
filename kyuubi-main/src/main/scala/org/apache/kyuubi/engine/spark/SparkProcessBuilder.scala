@@ -17,9 +17,12 @@
 
 package org.apache.kyuubi.engine.spark
 
+import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
 
 import scala.collection.mutable.ArrayBuffer
+
+import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
@@ -108,8 +111,11 @@ class SparkProcessBuilder(
       buffer += CONF
       buffer += s"$k=$v"
     }
-    buffer += PROXY_USER
-    buffer += proxyUser
+    // iff the keytab is specified, PROXY_USER is not supported
+    if (!useKeytab()) {
+      buffer += PROXY_USER
+      buffer += proxyUser
+    }
 
     mainResource.foreach { r => buffer += r }
 
@@ -119,11 +125,32 @@ class SparkProcessBuilder(
   override def toString: String = commands.mkString(" ")
 
   override protected def module: String = "kyuubi-spark-sql-engine"
+
+  private def useKeytab(): Boolean = {
+    val principal = conf.get(PRINCIPAL)
+    val keytab = conf.get(KEYTAB)
+    if (principal.isEmpty || keytab.isEmpty) {
+      false
+    } else {
+      try {
+        val ugi = UserGroupInformation
+          .loginUserFromKeytabAndReturnUGI(principal.get, keytab.get)
+        ugi.getShortUserName == proxyUser
+      } catch {
+        case e: IOException =>
+          error(s"Failed to login for ${principal.get}", e)
+          false
+      }
+    }
+  }
 }
 
 object SparkProcessBuilder {
+  final val APP_KEY = "spark.app.name"
+
   private final val CONF = "--conf"
   private final val CLASS = "--class"
   private final val PROXY_USER = "--proxy-user"
-  final val APP_KEY = "spark.app.name"
+  private final val PRINCIPAL = "spark.kerberos.principal"
+  private final val KEYTAB = "spark.kerberos.keytab"
 }
