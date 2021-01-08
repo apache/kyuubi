@@ -84,16 +84,11 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     val b3 = new SparkProcessBuilder("kentyao", conf2)
     assert(b3.toString.contains("--proxy-user kentyao"))
 
-    val conf3 = conf ++ Map("spark.kerberos.principal" -> testPrincipal,
-      "spark.kerberos.keytab" -> "testKeytab")
-    val b4 = new SparkProcessBuilder(Utils.currentUser, conf3)
-    assert(!b4.toString.contains("--proxy-user kentyao"))
-
     tryWithSecurityEnabled {
-      val conf33 = conf ++ Map("spark.kerberos.principal" -> testPrincipal,
+      val conf3 = conf ++ Map("spark.kerberos.principal" -> testPrincipal,
         "spark.kerberos.keytab" -> "testKeytab")
-      val b44 = new SparkProcessBuilder(Utils.currentUser, conf33)
-      assert(b44.toString.contains("--proxy-user kentyao"))
+      val b4 = new SparkProcessBuilder(Utils.currentUser, conf3)
+      assert(b4.toString.contains(s"--proxy-user ${Utils.currentUser}"))
 
       val conf4 = conf ++ Map("spark.kerberos.principal" -> testPrincipal,
         "spark.kerberos.keytab" -> testKeytab)
@@ -103,6 +98,5 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
       val b6 = new SparkProcessBuilder(ServiceUtils.getShortName(testPrincipal), conf4)
       assert(!b6.toString.contains("--proxy-user kentyao"))
     }
-
   }
 }
