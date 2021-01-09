@@ -49,8 +49,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-test</artifactId>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-common</artifactId>
         </dependency>
 
         <dependency>
@@ -68,11 +68,19 @@
             <artifactId>curator-recipes</artifactId>
         </dependency>
 
+        <!-- begin: for EmbeddedZkServer -->
         <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-common</artifactId>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-test</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty</artifactId>
+        </dependency>
+        <!-- end: for EmbeddedZkServer -->
+
+        <!-- default package with log4j -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
