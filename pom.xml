@@ -65,11 +65,11 @@
         <hadoop.version>2.7.4</hadoop.version>
         <hive.version>2.3.7</hive.version>
         <libfb303.version>0.9.3</libfb303.version>
-        <libthrift.version>0.9.3</libthrift.version>
+        <libthrift.version>0.12.0</libthrift.version>
         <netty3.version>3.7.0.Final</netty3.version>
         <spark.version>3.0.1</spark.version>
         <slf4j.version>1.7.30</slf4j.version>
-        <zookeeper.version>3.4.6</zookeeper.version>
+        <zookeeper.version>3.4.14</zookeeper.version>
 
         <scalatest.version>3.0.3</scalatest.version>
 
