@@ -62,5 +62,8 @@ class KyuubiSQLExceptionSuite extends KyuubiFunSuite {
     val ke = KyuubiSQLException(ite2)
     assert(ke.getMessage == theCause.getMessage)
     assert(ke.getCause == theCause)
+
+    val cornerCase = new InvocationTargetException(null)
+    assert(KyuubiSQLException(cornerCase).getCause === cornerCase)
   }
 }
