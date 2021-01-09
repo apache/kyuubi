@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi
 
+import java.lang.reflect.{InvocationTargetException, UndeclaredThrowableException}
+
 import org.apache.hive.service.rpc.thrift.TStatusCode
 
 class KyuubiSQLExceptionSuite extends KyuubiFunSuite {
@@ -49,5 +51,16 @@ class KyuubiSQLExceptionSuite extends KyuubiFunSuite {
     val e5 = KyuubiSQLException(e0)
     assert(e5.getMessage === msg0)
     assert(e5.getCause === e0)
+  }
+
+  test("find the root cause") {
+    val theCause = new RuntimeException("this is just a dummy message but shall be seen")
+    val ite1 = new InvocationTargetException(theCause)
+    val ute1 = new UndeclaredThrowableException(ite1)
+    val ute2 = new UndeclaredThrowableException(ute1)
+    val ite2 = new InvocationTargetException(ute2)
+    val ke = KyuubiSQLException(ite2)
+    assert(ke.getMessage == theCause.getMessage)
+    assert(ke.getCause == theCause)
   }
 }
