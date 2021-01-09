@@ -18,8 +18,10 @@
 package org.apache.kyuubi
 
 import java.io.{PrintWriter, StringWriter}
+import java.lang.reflect.{InvocationTargetException, UndeclaredThrowableException}
 import java.sql.SQLException
 
+import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.{TStatus, TStatusCode}
@@ -46,10 +48,11 @@ object KyuubiSQLException {
   private final val SEPARATOR: Char = ':'
 
   def apply(msg: String, throwable: Throwable): KyuubiSQLException = {
-    new KyuubiSQLException(msg, throwable)
+    new KyuubiSQLException(msg, findCause(throwable))
   }
   def apply(cause: Throwable): KyuubiSQLException = {
-    new KyuubiSQLException(cause.getMessage, cause)
+    val theCause = findCause(cause)
+    new KyuubiSQLException(theCause.getMessage, theCause)
   }
 
   def apply(msg: String): KyuubiSQLException = new KyuubiSQLException(msg, null)
@@ -157,4 +160,10 @@ object KyuubiSQLException {
     stm.toString
   }
 
+  @tailrec
+  def findCause(t: Throwable): Throwable = t match {
+    case e @ (_: UndeclaredThrowableException | _: InvocationTargetException)
+      if e.getCause != null => findCause(e.getCause)
+    case e => e
+  }
 }
