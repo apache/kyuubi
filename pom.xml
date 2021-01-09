@@ -161,6 +161,62 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>org.apache.kyuubi</groupId>
+                <artifactId>kyuubi-codecov</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.kyuubi</groupId>
+                <artifactId>kyuubi-tpcds</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.kyuubi</groupId>
+                <artifactId>kyuubi-download</artifactId>
+                <type>pom</type>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.kyuubi</groupId>
+                <artifactId>kyuubi-spark-sql-engine</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.kyuubi</groupId>
+                <artifactId>kyuubi-assembly</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.kyuubi</groupId>
+                <artifactId>kyuubi-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.kyuubi</groupId>
+                <artifactId>kyuubi-common</artifactId>
+                <type>test-jar</type>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.kyuubi</groupId>
+                <artifactId>kyuubi-ha</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.kyuubi</groupId>
+                <artifactId>kyuubi-main</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
                 <version>${scala.version}</version>
