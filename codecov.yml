@@ -4,19 +4,23 @@ codecov:
 flags:
   kyuubi-common:
     paths:
-      - ./kyuubi-common/target/codecov
+      - kyuubi-common
+    carryforward: true
   kyuubi-ha:
     paths:
-      - ./kyuubi-ha/target/codecov
+      - kyuubi-ha
+    carryforward: true
   kyuubi-main:
     paths:
-      - ./kyuubi-main/target/codecov
+      - kyuubi-main
+    carryforward: true
   kyuubi-spark-sql-engine:
     paths:
-      - ./externals/kyuubi-spark-sql-engine/target/codecov
+      - externals/kyuubi-spark-sql-engine
   aggregate:
     paths:
-      - ./dev/kyuubi-codecov/target/site/jacoco-aggregate
+      - dev/kyuubi-codecov
+    carryforward: true
 
 # To see status checks based on flags
 coverage:
@@ -49,3 +53,13 @@ coverage:
         target: auto
         flags:
           - aggregate
+
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: false
+  require_base: no
+  require_head: yes
+  branches:
+    - "master"
+  show_carryforward_flags: false
