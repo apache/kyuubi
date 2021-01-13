@@ -56,6 +56,8 @@ trait ProcBuilder {
   }
 
   @volatile private var error: Throwable = UNCAUGHT_ERROR
+  // Visible for test
+  private[kyuubi] var logCaptureThread: Thread = null
 
   final def start: Process = synchronized {
     val procLog = Paths.get(workingDir.toAbsolutePath.toString,
@@ -86,13 +88,21 @@ trait ProcBuilder {
         }
       } catch {
         case _: IOException =>
+        case _: InterruptedException =>
       } finally {
         reader.close()
       }
     }
 
-    PROC_BUILD_LOGGER.newThread(redirect).start()
+    logCaptureThread = PROC_BUILD_LOGGER.newThread(redirect)
+    logCaptureThread.start()
     proc
+  }
+
+  def close(): Unit = {
+    if (logCaptureThread != null) {
+      logCaptureThread.interrupt()
+    }
   }
 
   def getError: Throwable = synchronized {
