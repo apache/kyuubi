@@ -639,11 +639,6 @@
                     <version>${maven.plugin.jacoco.version}</version>
                     <configuration>
                         <excludes>
-                            <exclude>**/org/apache/spark/launcher/*.class</exclude>
-                            <exclude>**/org/apache/spark/deploy/*.class</exclude>
-                            <exclude>**/org/apache/spark/SparkEnv.class</exclude>
-                            <exclude>**/org/apache/spark/SparkEnv$.class</exclude>
-                            <exclude>**/org/apache/spark/sql/hive/client/*.class</exclude>
                             <exclude>**/org/apache/hive/service/rpc/thrift/*.class</exclude>
                             <exclude>**/org/apache/hive/service/cli/thrift/*.class</exclude>
                         </excludes>
