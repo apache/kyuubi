@@ -38,6 +38,7 @@ You can find the specific version of Kyuubi documentation as listed below.
 
 - [master/latest](https://kyuubi.readthedocs.io/en/latest/)
 - [stable](https://kyuubi.readthedocs.io/en/stable/)
+- [v1.0.2](https://kyuubi.readthedocs.io/en/v1.0.2/)
 - [v1.0.1](https://kyuubi.readthedocs.io/en/v1.0.1/)
 - [v1.0.0](https://kyuubi.readthedocs.io/en/v1.0.0/)
 
