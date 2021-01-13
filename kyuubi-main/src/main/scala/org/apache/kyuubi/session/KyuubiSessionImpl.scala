@@ -106,28 +106,33 @@ class KyuubiSessionImpl(
         sessionConf.set(SparkProcessBuilder.APP_KEY, boundAppName.toString)
         sessionConf.set(HA_ZK_NAMESPACE, appZkNamespace)
         val builder = new SparkProcessBuilder(appUser, sessionConf.toSparkPrefixedConf)
-        val process = builder.start
-        info(s"Launching SQL engine: $builder")
-        var sh = getServerHost
-        val started = System.currentTimeMillis()
-        var exitValue: Option[Int] = None
-        while (sh.isEmpty) {
-          if (exitValue.isEmpty && process.waitFor(1, TimeUnit.SECONDS)) {
-            exitValue = Some(process.exitValue())
-            if (exitValue.get != 0) {
-              throw builder.getError
+        try {
+          val process = builder.start
+          info(s"Launching SQL engine: $builder")
+          var sh = getServerHost
+          val started = System.currentTimeMillis()
+          var exitValue: Option[Int] = None
+          while (sh.isEmpty) {
+            if (exitValue.isEmpty && process.waitFor(1, TimeUnit.SECONDS)) {
+              exitValue = Some(process.exitValue())
+              if (exitValue.get != 0) {
+                throw builder.getError
+              }
             }
+            if (started + timeout <= System.currentTimeMillis()) {
+              process.destroyForcibly()
+              throw KyuubiSQLException(s"Timed out($timeout ms) to launched Spark with $builder",
+                builder.getError)
+            }
+            sh = getServerHost
           }
-          if (started + timeout <= System.currentTimeMillis()) {
-            process.destroyForcibly()
-            throw KyuubiSQLException(s"Timed out($timeout ms) to launched Spark with $builder",
-              builder.getError)
-          }
-          sh = getServerHost
+          val Some((host, port)) = sh
+          openSession(host, port)
+        } finally {
+          builder.close()
         }
-        val Some((host, port)) = sh
-        openSession(host, port)
     }
+
     try {
       zkClient.close()
     } catch {
