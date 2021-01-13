@@ -310,7 +310,7 @@ object KyuubiConf {
 
   val AUTHENTICATION_LDAP_DOMAIN: OptionalConfigEntry[String] =
     buildConf("authentication.ldap.domain")
-      .doc("LDAP base DN.")
+      .doc("LDAP domain.")
       .version("1.0.0")
       .stringConf
       .createOptional
