@@ -637,12 +637,6 @@
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
                     <version>${maven.plugin.jacoco.version}</version>
-                    <configuration>
-                        <excludes>
-                            <exclude>**/org/apache/hive/service/rpc/thrift/*.class</exclude>
-                            <exclude>**/org/apache/hive/service/cli/thrift/*.class</exclude>
-                        </excludes>
-                    </configuration>
                     <executions>
                         <execution>
                             <id>pre-test</id>
