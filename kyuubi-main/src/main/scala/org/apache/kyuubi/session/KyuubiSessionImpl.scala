@@ -129,6 +129,8 @@ class KyuubiSessionImpl(
           val Some((host, port)) = sh
           openSession(host, port)
         } finally {
+          // we must close the process builder whether session open is success or failure since
+          // we have a log capture thread in process builder.
           builder.close()
         }
     }

@@ -56,6 +56,7 @@ trait ProcBuilder {
   }
 
   @volatile private var error: Throwable = UNCAUGHT_ERROR
+  // Visible for test
   private[kyuubi] var logCaptureThread: Thread = null
 
   final def start: Process = synchronized {
