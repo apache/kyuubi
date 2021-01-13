@@ -84,8 +84,6 @@ trait ProcBuilder {
 
             error = KyuubiSQLException(sb.toString())
           }
-          // No need to always read log
-          Thread.sleep(200)
           line = reader.readLine()
         }
       } catch {
