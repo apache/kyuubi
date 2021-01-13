@@ -99,4 +99,20 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
       assert(!b6.toString.contains("--proxy-user kentyao"))
     }
   }
+
+  test("log capture should release after close") {
+    val process = new FakeSparkProcessBuilder
+    try {
+      val subProcess = process.start
+      assert(!process.logCaptureThread.isInterrupted)
+      subProcess.waitFor(3, TimeUnit.SECONDS)
+    } finally {
+      process.close()
+    }
+    assert(process.logCaptureThread.isInterrupted)
+  }
+}
+
+class FakeSparkProcessBuilder extends SparkProcessBuilder("fake", Map.empty) {
+  override protected def commands: Array[String] = Array("ls")
 }
