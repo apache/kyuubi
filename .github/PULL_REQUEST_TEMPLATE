@@ -1,11 +1,11 @@
 <!--
 Thanks for sending a pull request!  Here are some tips for you:
-  1. If this is your first time, please read our contributor guidelines: https://github.com/yaooqinn/kyuubi#contributing
+  1. If this is your first time, please read our contributor guidelines: https://kyuubi.readthedocs.io/en/latest/community/contributions.html
 -->
 
 ### Please add issue ID here?
 <!-- replace ${issue ID} with the actual issue id -->
-Fixes ${issue ID}
+Fixes #${issue ID}
 
 ### Why are the changes needed?
 <!--
