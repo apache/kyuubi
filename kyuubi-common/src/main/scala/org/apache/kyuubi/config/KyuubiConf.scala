@@ -358,7 +358,7 @@ object KyuubiConf {
   val SESSION_SUBMIT_LOG_RETAIN_MILLIS: ConfigEntry[Long] =
     buildConf("session.submit.log.retain.millis")
       .doc("If we use Spark as the engine then the session submit log is the console output of " +
-        "spark-submit")
+        "spark-submit. We will retain the session submit log until over the config value.")
       .version("1.1.0")
       .longConf
       .checkValue(_ > 0, "must be positive number")
