@@ -56,17 +56,15 @@ trait ProcBuilder {
     pb
   }
 
-  // Visible for test
-  private[kyuubi] lazy val processLogPath =
-    Paths.get(workingDir.toAbsolutePath.toString, s"$module.log").toUri.toString
   @volatile private var error: Throwable = UNCAUGHT_ERROR
   // Visible for test
   private[kyuubi] var logCaptureThread: Thread = null
 
   private def getRollAppendProcessLogFile: File = {
+    val processLogPath = workingDir
     var index = 0
     while (true) {
-      val file = new File(s"$processLogPath.$index")
+      val file = new File(processLogPath.toFile, s"$module.log.$index")
       if (file.exists()) {
         val lastModified = file.lastModified()
         if (lastModified < System.currentTimeMillis() - processLogRetainTimeMillis) {
@@ -74,6 +72,7 @@ trait ProcBuilder {
         }
         // retry if exists file has been modified recently
       } else {
+        Files.createDirectories(processLogPath)
         if (file.createNewFile()) {
           return file
         }

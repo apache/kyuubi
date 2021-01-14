@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.spark
 
 import java.io.File
-import java.nio.file.{Files, Paths}
+import java.nio.file.{Files, Path, Paths}
 import java.util.concurrent.{Executors, TimeUnit}
 
 import org.apache.kyuubi.{KerberizedTestHelper, KyuubiSQLException, Utils}
@@ -120,11 +120,11 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     try {
       assert(dir.list().length == 0)
 
-      val longTimeFile = new File(dir, "log.7")
+      val longTimeFile = new File(dir, "kyuubi-spark-sql-engine.log.7")
       longTimeFile.createNewFile()
       Thread.sleep(3000)
 
-      val shortTimeFile = new File(dir, "log.0")
+      val shortTimeFile = new File(dir, "kyuubi-spark-sql-engine.log.0")
       shortTimeFile.createNewFile()
 
       val config = Map(s"spark.${SESSION_SUBMIT_LOG_RETAIN_MILLIS.key}" -> "3000")
@@ -132,8 +132,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
         pool.execute(new Runnable {
           override def run(): Unit = {
             val pb = new FakeSparkProcessBuilder(config) {
-              override private[kyuubi] lazy val processLogPath =
-                Paths.get(fakeWorkDir.toAbsolutePath.toString, "log").toAbsolutePath.toString
+              override val workingDir: Path = fakeWorkDir
             }
             try {
               val p = pb.start
