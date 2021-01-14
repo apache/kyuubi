@@ -17,8 +17,9 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.nio.file.{Files, Paths}
-import java.util.concurrent.TimeUnit
+import java.io.File
+import java.nio.file.{Files, Path, Paths}
+import java.util.concurrent.{Executors, TimeUnit}
 
 import org.apache.kyuubi.{KerberizedTestHelper, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -111,8 +112,50 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     }
     assert(process.logCaptureThread.isInterrupted)
   }
+
+  test(s"sub process log should be overwritten") {
+    val pool = Executors.newFixedThreadPool(3)
+    val fakeWorkDir = Files.createTempDirectory("fake")
+    val dir = fakeWorkDir.toFile
+    try {
+      assert(dir.list().length == 0)
+
+      val longTimeFile = new File(dir, "kyuubi-spark-sql-engine.log.7")
+      longTimeFile.createNewFile()
+      Thread.sleep(3000)
+
+      val shortTimeFile = new File(dir, "kyuubi-spark-sql-engine.log.0")
+      shortTimeFile.createNewFile()
+
+      val config = Map(s"spark.${SESSION_SUBMIT_LOG_RETAIN_MILLIS.key}" -> "3000")
+      (1 to 10).foreach { _ =>
+        pool.execute(new Runnable {
+          override def run(): Unit = {
+            val pb = new FakeSparkProcessBuilder(config) {
+              override val workingDir: Path = fakeWorkDir
+            }
+            try {
+              val p = pb.start
+              p.waitFor()
+            } finally {
+              pb.close()
+            }
+          }
+        })
+      }
+      pool.shutdown()
+      while (!pool.isTerminated) {
+        Thread.sleep(100)
+      }
+      assert(dir.listFiles().length == 10 + 1)
+    } finally {
+      dir.listFiles().foreach(_.delete())
+      dir.delete()
+    }
+  }
 }
 
-class FakeSparkProcessBuilder extends SparkProcessBuilder("fake", Map.empty) {
+class FakeSparkProcessBuilder(config: Map[String, String] = Map.empty)
+  extends SparkProcessBuilder("fake", config) {
   override protected def commands: Array[String] = Array("ls")
 }
