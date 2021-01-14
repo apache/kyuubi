@@ -17,10 +17,9 @@
 
 package org.apache.kyuubi.engine
 
-import java.io.IOException
+import java.io.{File, IOException}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
-import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.JavaConverters._
 
@@ -46,6 +45,8 @@ trait ProcBuilder {
 
   protected val workingDir: Path
 
+  protected val processLogRetainTimeMillis: Long
+
   final lazy val processBuilder: ProcessBuilder = {
     val pb = new ProcessBuilder(commands: _*)
 
@@ -55,18 +56,42 @@ trait ProcBuilder {
     pb
   }
 
+  // Visible for test
+  private[kyuubi] lazy val processLogPath =
+    Paths.get(workingDir.toAbsolutePath.toString, s"$module.log").toUri.toString
   @volatile private var error: Throwable = UNCAUGHT_ERROR
   // Visible for test
   private[kyuubi] var logCaptureThread: Thread = null
 
+  private def getRollAppendProcessLogFile: File = {
+    var index = 0
+    while (true) {
+      val file = new File(s"$processLogPath.$index")
+      if (file.exists()) {
+        val lastModified = file.lastModified()
+        if (lastModified < System.currentTimeMillis() - processLogRetainTimeMillis) {
+          return file
+        }
+        // retry if exists file has been modified recently
+      } else {
+        if (file.createNewFile()) {
+          return file
+        }
+        // retry if create failed due to create file concurrently
+      }
+      index = index + 1
+    }
+    // never reach here.
+    null
+  }
+
   final def start: Process = synchronized {
-    val procLog = Paths.get(workingDir.toAbsolutePath.toString,
-      s"$module${LOG_TAIL.getAndDecrement()}.log")
-    processBuilder.redirectError(procLog.toFile)
-    processBuilder.redirectOutput(procLog.toFile)
+    val procLogFile = getRollAppendProcessLogFile
+    processBuilder.redirectError(procLogFile)
+    processBuilder.redirectOutput(procLogFile)
 
     val proc = processBuilder.start()
-    val reader = Files.newBufferedReader(procLog, StandardCharsets.UTF_8)
+    val reader = Files.newBufferedReader(procLogFile.toPath, StandardCharsets.UTF_8)
 
     val redirect = new Runnable {
       override def run(): Unit = try {
@@ -117,8 +142,6 @@ object ProcBuilder {
   private val PROC_BUILD_LOGGER = new NamedThreadFactory("process-logger-capture", daemon = true)
 
   private val UNCAUGHT_ERROR = KyuubiSQLException("Uncaught error")
-
-  private val LOG_TAIL: AtomicInteger = new AtomicInteger(-1)
 
   def containsIgnoreCase(str: String, searchStr: String): Boolean = {
     if (str == null || searchStr == null) {

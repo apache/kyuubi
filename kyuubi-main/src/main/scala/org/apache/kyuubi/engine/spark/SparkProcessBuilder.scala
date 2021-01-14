@@ -37,6 +37,9 @@ class SparkProcessBuilder(
 
   import SparkProcessBuilder._
 
+  override protected val processLogRetainTimeMillis: Long =
+    conf(KyuubiConf.SESSION_SUBMIT_LOG_RETAIN_MILLIS.key).toLong
+
   override protected val executable: String = {
     val path = env.get("SPARK_HOME").map { sparkHome =>
       Paths.get(sparkHome, "bin", "spark-submit").toAbsolutePath

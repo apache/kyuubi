@@ -355,6 +355,15 @@ object KyuubiConf {
     .transform(_.toLowerCase(Locale.ROOT))
     .createWithDefault(SaslQOP.AUTH.toString)
 
+  val SESSION_SUBMIT_LOG_RETAIN_MILLIS: ConfigEntry[Long] =
+    buildConf("session.submit.log.retain.millis")
+      .doc("If we use Spark as the engine then the session submit log is the console output of " +
+        "spark-submit")
+      .version("1.1.0")
+      .longConf
+      .checkValue(_ > 0, "must be positive number")
+      .createWithDefault(7 * 24 * 3600 * 1000L)
+
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //
   /////////////////////////////////////////////////////////////////////////////////////////////////
