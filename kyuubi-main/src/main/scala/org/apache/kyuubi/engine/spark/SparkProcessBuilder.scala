@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.spark
 
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
+import java.time.Duration
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -37,8 +38,10 @@ class SparkProcessBuilder(
 
   import SparkProcessBuilder._
 
-  override protected val processLogRetainTimeMillis: Long =
-    conf(s"spark.${SESSION_SUBMIT_LOG_RETAIN_MILLIS.key}").toLong
+  override protected val processLogRetainTimeMillis: Long = {
+    conf.get(s"spark.${SESSION_SUBMIT_LOG_RETAIN_MILLIS.key}").map(_.toLong)
+      .getOrElse(Duration.ofDays(1).toMillis)
+  }
 
   override protected val executable: String = {
     val path = env.get("SPARK_HOME").map { sparkHome =>

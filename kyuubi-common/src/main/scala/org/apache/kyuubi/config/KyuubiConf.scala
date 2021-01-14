@@ -355,18 +355,18 @@ object KyuubiConf {
     .transform(_.toLowerCase(Locale.ROOT))
     .createWithDefault(SaslQOP.AUTH.toString)
 
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //                                 SQL Engine Configuration                                    //
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+
   val SESSION_SUBMIT_LOG_RETAIN_MILLIS: ConfigEntry[Long] =
-    buildConf("session.log.retain.millis")
+    buildConf("session.engine.log.timeout")
       .doc("If we use Spark as the engine then the session submit log is the console output of " +
         "spark-submit. We will retain the session submit log until over the config value.")
       .version("1.1.0")
       .timeConf
       .checkValue(_ > 0, "must be positive number")
       .createWithDefault(Duration.ofDays(1).toMillis)
-
-  /////////////////////////////////////////////////////////////////////////////////////////////////
-  //                                 SQL Engine Configuration                                    //
-  /////////////////////////////////////////////////////////////////////////////////////////////////
 
   val ENGINE_SPARK_MAIN_RESOURCE: OptionalConfigEntry[String] =
     buildConf("session.engine.spark.main.resource")
