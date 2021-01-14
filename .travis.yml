@@ -29,14 +29,14 @@ cache:
     - $HOME/.m2
 
 deploy:
-  - provider: pages
-    cleanup: false
-    keep_history: true
-    github_token: $GITHUB_TOKEN
-    email: yaooqinn@hotmail.com
-    name: Kent Yao
-    on:
-      branch: master
+#  - provider: pages
+#    cleanup: false
+#    keep_history: true
+#    github_token: $GITHUB_TOKEN
+#    email: yaooqinn@hotmail.com
+#    name: Kent Yao
+#    on:
+#      branch: master
 #  - provider: releases
 #    api_key: $GITHUB_TOKEN
 #    file_glob: true
