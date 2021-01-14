@@ -364,6 +364,15 @@ object KyuubiConf {
   //                                 SQL Engine Configuration                                    //
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
+  val SESSION_SUBMIT_LOG_RETAIN_MILLIS: ConfigEntry[Long] =
+    buildConf("session.engine.log.timeout")
+      .doc("If we use Spark as the engine then the session submit log is the console output of " +
+        "spark-submit. We will retain the session submit log until over the config value.")
+      .version("1.1.0")
+      .timeConf
+      .checkValue(_ > 0, "must be positive number")
+      .createWithDefault(Duration.ofDays(1).toMillis)
+
   val ENGINE_SPARK_MAIN_RESOURCE: OptionalConfigEntry[String] =
     buildConf("session.engine.spark.main.resource")
       .doc("The package used to create Spark SQL engine remote application. If it is undefined," +
