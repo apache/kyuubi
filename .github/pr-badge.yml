@@ -10,12 +10,12 @@
 - label: "Missing"
   message: "Target Issue"
   color: "#ff0000"
-  when: "$payload.pull_request.body.includes('fixes # ') === false"
+  when: "$payload.pull_request.body.includes('fixes #') === false"
 
 - label: "Missing"
   message: "Test Plan"
   color: "#ff0000"
-  when: "$payload.pull_request.body.includes('## Test Plan ') === false"
+  when: "$payload.pull_request.body.includes('## Test Plan') === false"
 
 - label: "Label"
   message: "Feature"
