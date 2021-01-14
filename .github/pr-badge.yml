@@ -1,0 +1,26 @@
+- label: "Hello"
+  message: "$payload.pull_request.user.login"
+  color: "green"
+
+- label: "Preview"
+  message: "PR $prNumber"
+  color: "blue"
+  url: "https://github.com/yaooqinn/kyuubi/pull/$prNumber"
+
+- label: "Missing"
+  message: "Target Issue"
+  color: "#ff0000"
+  when: "$payload.pull_request.body.includes('fixes # ') === false"
+
+- label: "Missing"
+  message: "Test Plan"
+  color: "#ff0000"
+  when: "$payload.pull_request.body.includes('## Test Plan ') === false"
+
+- label: "Label"
+  message: "Feature"
+  when: "$labels.includes('Feature')"
+
+- label: "Label"
+  message: "Bug"
+  when: "$labels.includes('Bug')"
