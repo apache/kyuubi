@@ -159,6 +159,11 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   }
 }
 
+/**
+ * Note to developers:
+ * You need to rerun the test `org.apache.kyuubi.config.AllKyuubiConfiguration` locally if you
+ * add or change a config. That can help to update the conf docs.
+ */
 object KyuubiConf {
 
   /** a custom directory that contains the [[KYUUBI_CONF_FILE_NAME]] */
