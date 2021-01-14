@@ -26,7 +26,7 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_MAIN_RESOURCE, SESSION_SUBMIT_LOG_RETAIN_MILLIS}
 import org.apache.kyuubi.engine.ProcBuilder
 
 class SparkProcessBuilder(
@@ -38,7 +38,7 @@ class SparkProcessBuilder(
   import SparkProcessBuilder._
 
   override protected val processLogRetainTimeMillis: Long =
-    conf("spark.session.submit.log.retain.millis").toLong
+    conf(s"spark.${SESSION_SUBMIT_LOG_RETAIN_MILLIS.key}").toLong
 
   override protected val executable: String = {
     val path = env.get("SPARK_HOME").map { sparkHome =>

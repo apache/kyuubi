@@ -127,7 +127,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
       val shortTimeFile = new File(dir, "log.0")
       shortTimeFile.createNewFile()
 
-      val config = Map(SESSION_SUBMIT_LOG_RETAIN_MILLIS.key -> "3000")
+      val config = Map(s"spark.${SESSION_SUBMIT_LOG_RETAIN_MILLIS.key}" -> "3000")
       (1 to 10).foreach { _ =>
         pool.execute(new Runnable {
           override def run(): Unit = {
