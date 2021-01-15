@@ -136,28 +136,23 @@ object ProcBuilder {
 
   private def getRollAppendProcessLogFile(
       workingDir: Path, module: String, processLogRetainTimeMillis: Long): File = synchronized {
-    val processLogPath = workingDir
     val currentTime = System.currentTimeMillis()
-    var index = 0
-    while (true) {
-      val file = new File(processLogPath.toFile, s"$module.log.$index")
-      if (file.exists()) {
-        val lastModified = file.lastModified()
-        if (lastModified < currentTime - processLogRetainTimeMillis) {
-          file.setLastModified(currentTime)
-          return file
-        }
-        // retry if exists file has been modified recently
-      } else {
-        Files.createDirectories(processLogPath)
-        if (file.createNewFile()) {
-          return file
-        }
-        // retry if create failed due to create file concurrently
-      }
-      index = index + 1
+    val processLogPath = workingDir
+    val totalExistsFile = processLogPath.toFile.listFiles()
+    val sorted = totalExistsFile.sortBy(_.getName.split("\\.").last.toInt)
+    val nextIndex = if (sorted.isEmpty) {
+      0
+    } else {
+      sorted.last.getName.split("\\.").last.toInt + 1
     }
-    // never reach here.
-    null
+    val file = sorted.find(_.lastModified() < currentTime - processLogRetainTimeMillis)
+      .getOrElse {
+        Files.createDirectories(processLogPath)
+        val newLogFile = new File(processLogPath.toFile, s"$module.log.$nextIndex")
+        newLogFile.createNewFile()
+        newLogFile
+      }
+    file.setLastModified(currentTime)
+    file
   }
 }

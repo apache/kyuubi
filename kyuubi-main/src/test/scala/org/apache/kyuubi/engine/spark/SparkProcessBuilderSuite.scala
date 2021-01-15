@@ -121,7 +121,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
       try {
         assert(dir.list().length == 0)
 
-        val longTimeFile = new File(dir, "kyuubi-spark-sql-engine.log.7")
+        val longTimeFile = new File(dir, "kyuubi-spark-sql-engine.log.1")
         longTimeFile.createNewFile()
         longTimeFile.setLastModified(System.currentTimeMillis() - 3600000)
 
