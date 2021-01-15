@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine
 
-import java.io.{File, IOException}
+import java.io.{File, FilenameFilter, IOException}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 
@@ -138,7 +138,11 @@ object ProcBuilder {
       workingDir: Path, module: String, processLogRetainTimeMillis: Long): File = synchronized {
     val currentTime = System.currentTimeMillis()
     val processLogPath = workingDir
-    val totalExistsFile = processLogPath.toFile.listFiles()
+    val totalExistsFile = processLogPath.toFile.listFiles(new FilenameFilter() {
+      override def accept(dir: File, name: String): Boolean = {
+        name.startsWith(module)
+      }
+    })
     val sorted = totalExistsFile.sortBy(_.getName.split("\\.").last.toInt)
     val nextIndex = if (sorted.isEmpty) {
       0
