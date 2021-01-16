@@ -5,7 +5,7 @@
 
 </div>
 
-# Getting Started
+# Getting Started with Kyuubi
 
 
 ## Getting Kyuubi
@@ -33,13 +33,13 @@ Additionally, if you want to work with other Spark compatible systems or plugins
 To install Kyuubi, you need to unpack the tarball. For example, 
 
 ```bash
-tar zxf kyuubi-1.0.0-SNAPSHOT-bin-spark-3.0.1.tar.gz
+tar zxf kyuubi-1.0.2-bin-spark-3.0.1.tar.gz
 ```
 
 This will result in the creation of a subdirectory named `kyuubi-1.0.0-SNAPSHOT-bin-spark-3.0.1` shown below, where the `1.0.0-SNAPSHOT` is the Kyuubi version and `3.0.1` is the pre-built Spark version.
 
 ```bash
-kyuubi-1.0.0-SNAPSHOT-bin-spark-3.0.1
+kyuubi-1.0.2-bin-spark-3.0.1
 ├── LICENSE
 ├── RELEASE
 ├── bin
