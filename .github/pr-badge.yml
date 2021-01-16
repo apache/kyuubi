@@ -10,7 +10,7 @@
 - label: "Missing"
   message: "Target Issue"
   color: "#ff0000"
-  when: "$payload.pull_request.body.includes('fixes #') === false"
+  when: "$payload.pull_request.body.includes('Fixes #') === false"
 
 - label: "Missing"
   message: "Test Plan"
@@ -24,3 +24,7 @@
 - label: "Label"
   message: "Bug"
   when: "$labels.includes('Bug')"
+
+- label: "Label"
+  message: "Doc"
+  when: "$labels.includes('document')"
