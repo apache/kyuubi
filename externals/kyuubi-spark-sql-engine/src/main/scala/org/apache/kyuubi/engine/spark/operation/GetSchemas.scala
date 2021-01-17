@@ -45,10 +45,7 @@ class GetSchemas(spark: SparkSession, session: Session, catalogName: String, sch
       val schemaPattern = convertSchemaPattern(schema)
       val databases = spark.sessionState.catalog.listDatabases(schemaPattern)
       val globalTmpViewDb = spark.sessionState.catalog.globalTempViewManager.database
-      if (
-        // Hive Metastore treat empty schema or * as get all databases,
-        // see detail at [[org.apache.hadoop.hive.metastore.ObjectStore#getDatabase]]
-        StringUtils.isEmpty(schema) || schema == "*"
+      if (StringUtils.isEmpty(schema) || schema == "*"
         || Pattern.compile(convertSchemaPattern(schema, false))
         .matcher(globalTmpViewDb).matches()) {
         iter = (databases :+ globalTmpViewDb).map(Row(_, "")).toList.iterator

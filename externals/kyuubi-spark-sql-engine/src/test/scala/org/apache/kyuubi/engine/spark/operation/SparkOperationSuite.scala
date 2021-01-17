@@ -137,9 +137,6 @@ class SparkOperationSuite extends WithSparkSQLEngine {
         assert(pos === 18, "all columns should have been verified")
       }
 
-      val e = intercept[HiveSQLException](metaData.getColumns(null, "*", null, null))
-      assert(e.getCause.getMessage contains "Dangling meta character '*' near index 0\n*\n^")
-
       val e1 = intercept[HiveSQLException](metaData.getColumns(null, null, null, "*"))
       assert(e1.getCause.getMessage contains "Dangling meta character '*' near index 0\n*\n^")
     }

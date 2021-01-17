@@ -163,25 +163,33 @@ trait JDBCTests extends KyuubiFunSuite {
       }
       assert(i === 4)
 
-      val rs3 = metaData.getTables(null, null, "table%", Array("VIEW"))
-      assert(!rs3.next())
+      val rs3 = metaData.getTables(null, "*", "*", Array("VIEW"))
+      i = 2
+      while(rs3.next()) {
+        assert(rs3.getString(TABLE_NAME) == tables(i))
+        i += 1
+      }
+      assert(i === 4)
 
-      val rs4 = metaData.getTables(null, null, "table%", Array("TABLE"))
+      val rs4 = metaData.getTables(null, null, "table%", Array("VIEW"))
+      assert(!rs4.next())
+
+      val rs5 = metaData.getTables(null, "*", "table%", Array("VIEW"))
+      assert(!rs5.next())
+
+      val rs6 = metaData.getTables(null, null, "table%", Array("TABLE"))
       i = 0
-      while(rs4.next()) {
-        assert(rs4.getString(TABLE_NAME) == tables(i))
+      while(rs6.next()) {
+        assert(rs6.getString(TABLE_NAME) == tables(i))
         i += 1
       }
       assert(i === 2)
 
-      val rs5 = metaData.getTables(null, "default", "%", Array("VIEW"))
+      val rs7 = metaData.getTables(null, "default", "%", Array("VIEW"))
       i = 2
-      while(rs5.next()) {
-        assert(rs5.getString(TABLE_NAME) == view_test)
+      while(rs7.next()) {
+        assert(rs7.getString(TABLE_NAME) == view_test)
       }
-
-      val e = intercept[HiveSQLException](metaData.getTables(null, "*", null, null))
-      assert(e.getCause.getMessage contains "Dangling meta character '*' near index 0\n*\n^")
     }
   }
 
