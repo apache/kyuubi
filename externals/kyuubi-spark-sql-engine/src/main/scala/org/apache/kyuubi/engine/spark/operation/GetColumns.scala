@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-
 import java.util.regex.Pattern
 
 import scala.collection.mutable.ArrayBuffer
