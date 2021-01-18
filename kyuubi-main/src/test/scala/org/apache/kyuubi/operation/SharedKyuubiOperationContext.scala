@@ -28,7 +28,7 @@ trait SharedKyuubiOperationContext extends KyuubiFunSuite {
   protected val conf: KyuubiConf
 
   private var zkServer: EmbeddedZkServer = _
-  protected var server: KyuubiServer = _
+  private var server: KyuubiServer = _
 
   override def beforeAll(): Unit = {
     zkServer = new EmbeddedZkServer()
