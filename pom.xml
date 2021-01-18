@@ -808,5 +808,14 @@
                 <module>dev/kyuubi-tpcds</module>
             </modules>
         </profile>
+
+        <profile>
+            <id>spark-2.4</id>
+            <properties>
+                <spark.version>2.4.7</spark.version>
+                <scala.version>2.11.12</scala.version>
+                <scala.binary.version>2.11</scala.binary.version>
+            </properties>
+        </profile>
     </profiles>
 </project>
