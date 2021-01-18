@@ -814,14 +814,6 @@
             <properties>
                 <spark.version>2.4.7</spark.version>
             </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-shade-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
     </profiles>
 </project>
