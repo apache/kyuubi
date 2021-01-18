@@ -21,6 +21,7 @@ import java.util.regex.Pattern
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.{ArrayType, BinaryType, BooleanType, ByteType, CalendarIntervalType, DataType, DateType, DecimalType, DoubleType, FloatType, IntegerType, LongType, MapType, NullType, NumericType, ShortType, StringType, StructField, StructType, TimestampType}
 
@@ -187,7 +188,9 @@ class GetColumns(
 
       val gviews = new ArrayBuffer[Row]()
       val globalTmpDb = catalog.globalTempViewManager.database
-      if (Pattern.compile(schemaPattern).matcher(globalTmpDb).matches()) {
+      if (StringUtils.isEmpty(schemaName) || schemaName == "*"
+        || Pattern.compile(convertSchemaPattern(schemaName, false))
+        .matcher(globalTmpDb).matches()) {
         catalog.globalTempViewManager.listViewNames(tablePattern).foreach { v =>
           catalog.globalTempViewManager.get(v).foreach { plan =>
             plan.schema.zipWithIndex

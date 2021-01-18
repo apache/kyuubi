@@ -84,8 +84,8 @@ class SparkOperationSuite extends WithSparkSQLEngine {
 
       val metaData = statement.getConnection.getMetaData
 
-      Seq("%", null, ".*", "c.*") foreach { pattern =>
-        val rowSet = metaData.getColumns("", dftSchema, tableName, pattern)
+      Seq("%", null, ".*", "c.*") foreach { columnPattern =>
+        val rowSet = metaData.getColumns("", dftSchema, tableName, columnPattern)
 
         import java.sql.Types._
         val expectedJavaTypes = Seq(BOOLEAN, TINYINT, SMALLINT, INTEGER, BIGINT, FLOAT, DOUBLE,
@@ -137,8 +137,8 @@ class SparkOperationSuite extends WithSparkSQLEngine {
         assert(pos === 18, "all columns should have been verified")
       }
 
-      val e = intercept[HiveSQLException](metaData.getColumns(null, "*", null, null))
-      assert(e.getCause.getMessage contains "Dangling meta character '*' near index 0\n*\n^")
+      val rowSet = metaData.getColumns(null, "*", "not_exist", "not_exist")
+      assert(!rowSet.next())
 
       val e1 = intercept[HiveSQLException](metaData.getColumns(null, null, null, "*"))
       assert(e1.getCause.getMessage contains "Dangling meta character '*' near index 0\n*\n^")
