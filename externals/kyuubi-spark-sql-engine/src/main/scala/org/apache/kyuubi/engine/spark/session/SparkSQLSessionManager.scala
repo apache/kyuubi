@@ -71,7 +71,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     } catch {
       case e: Exception =>
         sessionImpl.close()
-        throw KyuubiSQLException(s"Error opening session $handle for $user: ${e.getMessage}", e)
+        throw KyuubiSQLException(e)
     }
   }
 
