@@ -65,4 +65,13 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>spark-3.1</id>
+            <properties>
+                <spark.archive.name>spark-${spark.version}-bin-hadoop2.7.tgz</spark.archive.name>
+                <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v${spark.version}-rc1-bin</spark.archive.mirror>
+            </properties>
+        </profile>
+    </profiles>
 </project>
