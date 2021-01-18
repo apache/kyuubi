@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.service.authentication
 
-
 import java.io.IOException
 import javax.security.auth.login.LoginException
 import javax.security.sasl.Sasl

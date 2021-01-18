@@ -34,7 +34,6 @@ case class KyuubiDelegationTokenManager(
   }
 }
 
-
 object KyuubiDelegationTokenManager {
 
   def apply(conf: KyuubiConf): KyuubiDelegationTokenManager = {
