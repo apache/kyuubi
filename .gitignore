@@ -23,8 +23,6 @@
 build/apache-maven*
 build/scala*
 build/test
-kyuubi-server/build
-kyuubi-server/*example*
 target/
 dist/
 kyuubi-*-bin-*
@@ -40,7 +38,6 @@ derby.log
 ldap
 */dependency-reduced-pom.xml
 */*/dependency-reduced-pom.xml
-kyuubi-server/kyuubi-kdc/
 metrics/report.json
 metrics/.report.json.crc
 /kyuubi-ha/embedded_zookeeper/
