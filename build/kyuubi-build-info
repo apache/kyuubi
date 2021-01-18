@@ -29,7 +29,6 @@ echo_build_properties() {
   echo kyuubi_hive_version="$6"
   echo kyuubi_hadoop_version="$7"
   echo user="$USER"
-  echo jar=kyuubi-server-$2.jar
   echo revision=$(git rev-parse HEAD)
   echo branch=$(git rev-parse --abbrev-ref HEAD)
   echo date=$(date -u +%Y-%m-%dT%H:%M:%SZ)
