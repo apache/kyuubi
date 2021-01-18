@@ -17,12 +17,15 @@
 
 package org.apache.kyuubi.operation
 
- import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf
 
- class KyuubiOperationPerConnectionSuite extends KyuubiOperationSuite {
+/**
+ * UT with Connection level engine shared cost more time, only run basic jdbc tests.
+ */
+class KyuubiOperationPerConnectionSuite extends SharedKyuubiOperationContext with BasicJDBCTests {
+  override protected def jdbcUrl: String = getJdbcUrl
 
   override protected val conf: KyuubiConf = {
     KyuubiConf().set(KyuubiConf.ENGINE_SHARED_LEVEL, "connection")
   }
-
- }
+}
