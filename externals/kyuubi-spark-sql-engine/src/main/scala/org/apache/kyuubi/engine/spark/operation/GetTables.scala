@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.util.regex.Pattern
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.types.StructType
@@ -51,7 +52,7 @@ class GetTables(
       .add(TABLE_NAME, "string", nullable = true, "Table name.")
       .add(TABLE_TYPE, "string", nullable = true, "The table type, e.g. \"TABLE\", \"VIEW\"")
       .add(REMARKS, "string", nullable = true, "Comments about the table.")
-      .add("TYPE_CAT", "string", nullable = true, "The types catalog." )
+      .add("TYPE_CAT", "string", nullable = true, "The types catalog.")
       .add("TYPE_SCHEM", "string", nullable = true, "the types schema (may be null)")
       .add("TYPE_NAME", "string", nullable = true, "Type name.")
       .add("SELF_REFERENCING_COL_NAME", "string", nullable = true,
@@ -82,8 +83,9 @@ class GetTables(
 
       val views = if (matched(CatalogTableType.VIEW)) {
         val globalTempViewDb = catalog.globalTempViewManager.database
-        (if (Pattern.compile(convertSchemaPattern(schema, datanucleusFormat = false))
-            .matcher(globalTempViewDb).matches()) {
+        (if (StringUtils.isEmpty(schema) || schema == "*"
+          || Pattern.compile(convertSchemaPattern(schema, datanucleusFormat = false))
+          .matcher(globalTempViewDb).matches()) {
           catalog.listTables(globalTempViewDb, tablePattern, includeLocalTempViews = true)
         } else {
           catalog.listLocalTempViews(tablePattern)
