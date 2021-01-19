@@ -19,7 +19,7 @@ package org.apache.kyuubi.operation
 
 import org.apache.kyuubi.config.KyuubiConf
 
-class KyuubiOperationPerGroupSuite extends SharedKyuubiOperationContext with JDBCTests {
+class KyuubiOperationPerGroupSuite extends WithKyuubiServer with JDBCTests {
 
   override protected def jdbcUrl: String = getJdbcUrl
 

@@ -23,7 +23,7 @@ import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_ACL_ENABLED, HA_ZK_QUORU
 import org.apache.kyuubi.ha.server.EmbeddedZkServer
 import org.apache.kyuubi.server.KyuubiServer
 
-trait SharedKyuubiOperationContext extends KyuubiFunSuite {
+trait WithKyuubiServer extends KyuubiFunSuite {
 
   protected val conf: KyuubiConf
 
