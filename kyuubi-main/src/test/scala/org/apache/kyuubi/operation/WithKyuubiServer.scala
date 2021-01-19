@@ -17,13 +17,13 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.kyuubi.Utils
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf._
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_ACL_ENABLED, HA_ZK_QUORUM}
 import org.apache.kyuubi.ha.server.EmbeddedZkServer
 import org.apache.kyuubi.server.KyuubiServer
 
-abstract class KyuubiOperationSuite extends JDBCTests {
+trait WithKyuubiServer extends KyuubiFunSuite {
 
   protected val conf: KyuubiConf
 
@@ -63,5 +63,5 @@ abstract class KyuubiOperationSuite extends JDBCTests {
     super.afterAll()
   }
 
-  override protected def jdbcUrl: String = s"jdbc:hive2://${server.connectionUrl}/;"
+  protected def getJdbcUrl: String = s"jdbc:hive2://${server.connectionUrl}/;"
 }
