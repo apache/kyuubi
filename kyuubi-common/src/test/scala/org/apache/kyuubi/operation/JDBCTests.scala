@@ -19,7 +19,7 @@ package org.apache.kyuubi.operation
 
 import java.sql.{Date, SQLException, Timestamp}
 
-trait JDBCTests extends BasicJDBCTests {
+abstract class JDBCTests extends BasicJDBCTests {
   test("execute statement -  select null") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT NULL AS col")

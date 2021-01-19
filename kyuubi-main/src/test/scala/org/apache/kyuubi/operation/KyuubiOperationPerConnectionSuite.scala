@@ -22,7 +22,7 @@ import org.apache.kyuubi.config.KyuubiConf
 /**
  * UT with Connection level engine shared cost more time, only run basic jdbc tests.
  */
-class KyuubiOperationPerConnectionSuite extends SharedKyuubiOperationContext with BasicJDBCTests {
+class KyuubiOperationPerConnectionSuite extends BasicJDBCTests with SharedKyuubiOperationContext {
 
   override protected def jdbcUrl: String = getJdbcUrl
 

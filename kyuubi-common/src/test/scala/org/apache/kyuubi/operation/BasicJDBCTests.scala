@@ -17,65 +17,14 @@
 
 package org.apache.kyuubi.operation
 
-import java.sql.{DriverManager, ResultSet, Statement}
-import java.util.Locale
+import java.sql.ResultSet
 
 import org.apache.hive.service.cli.HiveSQLException
 
-import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
-trait BasicJDBCTests extends KyuubiFunSuite {
-
-  protected val dftSchema = "default"
-  protected val user: String = Utils.currentUser
-  protected def jdbcUrl: String
-
-  protected def withMultipleConnectionJdbcStatement(
-      tableNames: String*)(fs: (Statement => Unit)*): Unit = {
-    val connections = fs.map { _ => DriverManager.getConnection(jdbcUrl, user, "") }
-    val statements = connections.map(_.createStatement())
-
-    try {
-      statements.zip(fs).foreach { case (s, f) => f(s) }
-    } finally {
-      tableNames.foreach { name =>
-        if (name.toUpperCase(Locale.ROOT).startsWith("VIEW")) {
-          statements.head.execute(s"DROP VIEW IF EXISTS $name")
-        } else {
-          statements.head.execute(s"DROP TABLE IF EXISTS $name")
-        }
-      }
-      info("Closing statements")
-      statements.foreach(_.close())
-      info("Closed statements")
-      connections.foreach(_.close())
-      info("Closing connections")
-    }
-  }
-
-  protected def withDatabases(dbNames: String*)(fs: (Statement => Unit)*): Unit = {
-    val connections = fs.map { _ => DriverManager.getConnection(jdbcUrl, user, "") }
-    val statements = connections.map(_.createStatement())
-
-    try {
-      statements.zip(fs).foreach { case (s, f) => f(s) }
-    } finally {
-      dbNames.foreach { name =>
-        statements.head.execute(s"DROP DATABASE IF EXISTS $name")
-      }
-      info("Closing statements")
-      statements.foreach(_.close())
-      info("Closed statements")
-      connections.foreach(_.close())
-      info("Closing connections")
-    }
-  }
-
-  protected def withJdbcStatement(tableNames: String*)(f: Statement => Unit): Unit = {
-    withMultipleConnectionJdbcStatement(tableNames: _*)(f)
-  }
-
+abstract class BasicJDBCTests extends JDBCTestUtils {
 
   test("get catalogs") {
     withJdbcStatement() { statement =>
