@@ -22,7 +22,7 @@ import java.sql.ResultSet
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
-abstract class BasicJDBCTests extends JDBCTestUtils {
+trait BasicJDBCTests extends JDBCTestUtils {
   test("get catalogs") {
     withJdbcStatement() { statement =>
       val metaData = statement.getConnection.getMetaData
