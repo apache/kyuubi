@@ -113,13 +113,9 @@ class KyuubiSessionImpl(
           val started = System.currentTimeMillis()
           // Here are 4 option:
           // 1. Spark exit error (exitValue != 0)
-          //    we need to throw exception.
           // 2. Client mode, Spark exit normally (exitValue = 0) but failed to get server host
-          //    we need to throw exception.
           // 3. timeout
-          //    we need to throw exception.
           // 4. We get server host successfully
-          //    we need to release the loop and go to next logic.
           while (sh.isEmpty) {
             if (process.waitFor(1, TimeUnit.SECONDS)) {
               if (process.exitValue() != 0) {
@@ -132,8 +128,8 @@ class KyuubiSessionImpl(
             }
             if (started + timeout <= System.currentTimeMillis()) {
               process.destroyForcibly()
-              throw KyuubiSQLException(
-                s"Timed out($timeout ms) to launched Spark with $builder", builder.getError)
+              throw KyuubiSQLException(s"Timed out($timeout ms) to launched Spark with $builder",
+                builder.getError)
             }
             sh = getServerHost
           }
