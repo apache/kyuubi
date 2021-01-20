@@ -38,6 +38,10 @@ class SparkProcessBuilder(
 
   import SparkProcessBuilder._
 
+  val isClusterMode: Boolean = {
+    conf.get("spark.submit.deployMode").contains("cluster")
+  }
+
   override protected val processLogRetainTimeMillis: Long = {
     conf.get(s"spark.${SESSION_SUBMIT_LOG_RETAIN_MILLIS.key}").map(_.toLong)
       .getOrElse(Duration.ofDays(1).toMillis)

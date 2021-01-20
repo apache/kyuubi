@@ -56,7 +56,7 @@ trait ProcBuilder {
     pb
   }
 
-  @volatile private var error: Throwable = UNCAUGHT_ERROR
+  @volatile private var error: Option[Throwable] = None
   // Visible for test
   private[kyuubi] var logCaptureThread: Thread = null
 
@@ -82,7 +82,7 @@ trait ProcBuilder {
               line = reader.readLine()
             }
 
-            error = KyuubiSQLException(sb.toString())
+            error = Some(KyuubiSQLException(sb.toString()))
           }
           line = reader.readLine()
         }
@@ -106,10 +106,10 @@ trait ProcBuilder {
   }
 
   def getError: Throwable = synchronized {
-    if (error == UNCAUGHT_ERROR) {
+    if (error.isEmpty) {
       Thread.sleep(3000)
     }
-    error
+    error.getOrElse(UNCAUGHT_ERROR)
   }
 }
 
