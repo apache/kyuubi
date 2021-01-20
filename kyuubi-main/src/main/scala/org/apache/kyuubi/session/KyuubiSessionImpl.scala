@@ -100,45 +100,47 @@ class KyuubiSessionImpl(
     super.open()
     // Init zookeeper client here to capture errors
     zkClient
-    getServerHost match {
-      case Some((host, port)) => openSession(host, port)
-      case None =>
-        sessionConf.set(SparkProcessBuilder.APP_KEY, boundAppName.toString)
-        sessionConf.set(HA_ZK_NAMESPACE, appZkNamespace)
-        val builder = new SparkProcessBuilder(appUser, sessionConf.toSparkPrefixedConf)
-        try {
-          val process = builder.start
-          info(s"Launching SQL engine: $builder")
-          var sh = getServerHost
-          val started = System.currentTimeMillis()
-          var exitValue: Option[Int] = None
-          while (sh.isEmpty) {
-            if (exitValue.isEmpty && process.waitFor(1, TimeUnit.SECONDS)) {
-              exitValue = Some(process.exitValue())
-              if (exitValue.get != 0) {
-                throw builder.getError
-              }
-            }
-            if (started + timeout <= System.currentTimeMillis()) {
-              process.destroyForcibly()
-              throw KyuubiSQLException(s"Timed out($timeout ms) to launched Spark with $builder",
-                builder.getError)
-            }
-            sh = getServerHost
-          }
-          val Some((host, port)) = sh
-          openSession(host, port)
-        } finally {
-          // we must close the process builder whether session open is success or failure since
-          // we have a log capture thread in process builder.
-          builder.close()
-        }
-    }
-
     try {
-      zkClient.close()
-    } catch {
-      case e: IOException => error("Failed to release the zkClient after session established", e)
+      getServerHost match {
+        case Some((host, port)) => openSession(host, port)
+        case None =>
+          sessionConf.set(SparkProcessBuilder.APP_KEY, boundAppName.toString)
+          sessionConf.set(HA_ZK_NAMESPACE, appZkNamespace)
+          val builder = new SparkProcessBuilder(appUser, sessionConf.toSparkPrefixedConf)
+          try {
+            val process = builder.start
+            info(s"Launching SQL engine: $builder")
+            var sh = getServerHost
+            val started = System.currentTimeMillis()
+            var exitValue: Option[Int] = None
+            while (sh.isEmpty) {
+              if (exitValue.isEmpty && process.waitFor(1, TimeUnit.SECONDS)) {
+                exitValue = Some(process.exitValue())
+                if (exitValue.get != 0) {
+                  throw builder.getError
+                }
+              }
+              if (started + timeout <= System.currentTimeMillis()) {
+                process.destroyForcibly()
+                throw KyuubiSQLException(s"Timed out($timeout ms) to launched Spark with $builder",
+                  builder.getError)
+              }
+              sh = getServerHost
+            }
+            val Some((host, port)) = sh
+            openSession(host, port)
+          } finally {
+            // we must close the process builder whether session open is success or failure since
+            // we have a log capture thread in process builder.
+            builder.close()
+          }
+      }
+    } finally {
+      try {
+        zkClient.close()
+      } catch {
+        case e: IOException => error("Failed to release the zkClient after session established", e)
+      }
     }
   }
 
