@@ -99,8 +99,8 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
         s" [$minThreads, $maxThreads] worker threads")
     } catch {
       case e: Throwable =>
-        throw new KyuubiException("Failed to initialize frontend service, " +
-          s"please check this host:port $serverAddr:$portNum is available.", e)
+        throw new KyuubiException(
+          s"Failed to initialize frontend service on $serverAddr:$portNum.", e)
     }
     super.initialize(conf)
   }
