@@ -3,9 +3,21 @@
   color: "green"
 
 - label: "Preview"
-  message: "Fixes $prNumber"
+  message: "Closes%20#$prNumber"
   color: "blue"
   url: "https://github.com/yaooqinn/kyuubi/pull/$prNumber"
+
+- label: "+"
+  message: "$additions"
+  color: "red"
+
+- label: "-"
+  message: "$deletions"
+  color: "green"
+
+- label: "commits"
+  message: "$commits"
+  color: "yellow"
 
 - label: "Missing"
   message: "Target Issue"
