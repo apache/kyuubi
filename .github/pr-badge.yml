@@ -3,7 +3,7 @@
   color: "green"
 
 - label: "Preview"
-  message: "PR $prNumber"
+  message: "Fixes $prNumber"
   color: "blue"
   url: "https://github.com/yaooqinn/kyuubi/pull/$prNumber"
 
@@ -15,7 +15,7 @@
 - label: "Missing"
   message: "Test Plan"
   color: "#ff0000"
-  when: "$payload.pull_request.body.includes('## Test Plan') === false"
+  when: "$payload.pull_request.body.includes('- [x]') === false"
 
 - label: "Label"
   message: "Feature"
