@@ -45,7 +45,7 @@ class SparkProcessBuilder(
 
   override protected val executable: String = {
     val path = env.get("SPARK_HOME").map { sparkHome =>
-      Paths.get(sparkHome, "bin", "spark-submit").toAbsolutePath
+      Paths.get(sparkHome, "bin", SPARK_SUBMIT_FILE).toAbsolutePath
     } getOrElse {
       val sparkVer = SPARK_COMPILE_VERSION
       val hadoopVer = HADOOP_COMPILE_VERSION.take(3)
@@ -159,4 +159,11 @@ object SparkProcessBuilder {
   private final val PROXY_USER = "--proxy-user"
   private final val PRINCIPAL = "spark.kerberos.principal"
   private final val KEYTAB = "spark.kerberos.keytab"
+  private final val SPARK_SUBMIT_FILE = {
+    if (String.valueOf(System.getProperty("os.name")).toLowerCase().contains("win")) {
+      "spark-submit.cmd"
+    } else {
+      "spark-submit"
+    }
+  }
 }
