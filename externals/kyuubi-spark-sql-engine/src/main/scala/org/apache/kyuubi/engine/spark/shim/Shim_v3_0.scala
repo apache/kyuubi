@@ -23,13 +23,17 @@ class Shim_v3_0 extends Shim_v2_4 {
 
   override def getCatalogs(ss: SparkSession): Seq[Row] = {
     val sessionState = getSessionState(ss)
+
+    // A [[CatalogManager]] is session unique
     val catalogMgr = invoke(sessionState, "catalogManager")
     // get the custom v2 session catalog or default spark_catalog
-    val currentCatalog = invoke(catalogMgr, "v2SessionCatalog")
-    val currentCatalogName = invoke(currentCatalog, "name")
-      .asInstanceOf[String]
+    val sessionCatalog = invoke(catalogMgr, "v2SessionCatalog")
+    val defaultCatalog = invoke(catalogMgr, "currentCatalog")
+
+    val defaults = Seq(sessionCatalog, defaultCatalog).distinct
+      .map(invoke(_, "name").asInstanceOf[String])
     val catalogs = getField(catalogMgr, "catalogs")
       .asInstanceOf[scala.collection.Map[String, _]]
-    (catalogs.keys ++: Seq(currentCatalogName)).distinct.map(Row(_))
+    (catalogs.keys ++: defaults).distinct.map(Row(_))
   }
 }

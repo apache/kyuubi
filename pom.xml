@@ -70,6 +70,8 @@
         <zookeeper.version>3.4.14</zookeeper.version>
 
         <scalatest.version>3.0.3</scalatest.version>
+        <iceberg.name>iceberg-spark3-runtime</iceberg.name>
+        <iceberg.version>0.11.0</iceberg.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
@@ -507,6 +509,13 @@
                 <artifactId>netty</artifactId>
                 <version>${netty3.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.apache.iceberg</groupId>
+                <artifactId>${iceberg.name}</artifactId>
+                <version>${iceberg.version}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -815,6 +824,7 @@
                 <spark.version>2.4.7</spark.version>
                 <scala.version>2.11.12</scala.version>
                 <scala.binary.version>2.11</scala.binary.version>
+                <iceberg.name>iceberg-spark-runtime</iceberg.name>
             </properties>
         </profile>
     </profiles>

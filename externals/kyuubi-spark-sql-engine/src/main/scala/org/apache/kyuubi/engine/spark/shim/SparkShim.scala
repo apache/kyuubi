@@ -19,12 +19,12 @@ package org.apache.kyuubi.engine.spark.shim
 
 import org.apache.spark.sql.{Row, SparkSession}
 
-import org.apache.kyuubi.Utils
+import org.apache.kyuubi.{Logging, Utils}
 
 /**
  * A shim that defines the interface interact with Spark's catalogs
  */
-trait SparkShim {
+trait SparkShim extends Logging {
 
   /**
    * Get all register catalogs in Spark's `CatalogManager`
