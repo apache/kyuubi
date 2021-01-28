@@ -15,27 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.operation
+package org.apache.kyuubi.engine.spark.shim
 
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.{Row, SparkSession}
 
-import org.apache.kyuubi.engine.spark.shim.SparkShim
-import org.apache.kyuubi.operation.OperationType
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
-import org.apache.kyuubi.session.Session
-
-class GetCatalogs(spark: SparkSession, session: Session)
-  extends SparkOperation(spark, OperationType.GET_CATALOGS, session) {
-
-  override protected def resultSchema: StructType = {
-    new StructType()
-      .add(TABLE_CAT, "string", nullable = true, "Catalog name. NULL if not applicable.")
-  }
-
-  override protected def runInternal(): Unit = {
-   try {
-     iter = SparkShim().getCatalogs(spark).toIterator
-    } catch onError()
+class Shim_v2_4 extends SparkShim {
+  override def getCatalogs(ss: SparkSession): Seq[Row] = {
+    Seq(Row("spark_catalog"))
   }
 }
