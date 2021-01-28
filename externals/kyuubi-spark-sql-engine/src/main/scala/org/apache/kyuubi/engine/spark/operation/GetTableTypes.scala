@@ -18,7 +18,6 @@
 package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.operation.OperationType
@@ -33,6 +32,6 @@ class GetTableTypes(spark: SparkSession, session: Session)
   }
 
   override protected def runInternal(): Unit = {
-    iter = CatalogTableType.tableTypes.map(t => Row(t.name)).toList.iterator
+    iter = Seq("EXTERNAL", "MANAGED", "VIEW").map(Row(_)).toList.iterator
   }
 }

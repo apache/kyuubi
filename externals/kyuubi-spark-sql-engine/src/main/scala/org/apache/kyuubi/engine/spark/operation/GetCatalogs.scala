@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.{AnalysisException, Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.operation.OperationType
@@ -33,8 +33,12 @@ class GetCatalogs(spark: SparkSession, session: Session)
   }
 
   override protected def runInternal(): Unit = {
-    iter = Seq(
-      Row(spark.sessionState.catalogManager.currentCatalog.name())
-    ).toList.iterator
+     try {
+       iter = try {
+        spark.sql("SELECT CURRENT_CATALOG()").collect().toList.toIterator
+      } catch {
+        case _: AnalysisException => Seq(Row("spark_catalog")).toIterator
+      }
+    } catch onError()
   }
 }

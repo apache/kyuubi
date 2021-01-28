@@ -33,15 +33,14 @@ class EmbeddedZkServerSuite extends KyuubiFunSuite {
     assert(zkServer.getName === zkServer.getClass.getSimpleName)
     assert(zkServer.getServiceState === LATENT)
     val conf = KyuubiConf()
+    conf.set(KyuubiConf.EMBEDDED_ZK_PORT, 0)
     zkServer.stop() // only for test coverage
     zkServer.initialize(conf)
     assert(zkServer.getConf === conf)
     assert(zkServer.getServiceState === INITIALIZED)
-    assert(zkServer.getConnectString.endsWith("2181"))
     assert(zkServer.getStartTime === 0)
     zkServer.start()
     assert(zkServer.getServiceState === STARTED)
-    assert(zkServer.getConnectString.endsWith("2181"))
     assert(zkServer.getStartTime !== 0)
     zkServer.stop()
     assert(zkServer.getServiceState === STOPPED)
@@ -50,7 +49,7 @@ class EmbeddedZkServerSuite extends KyuubiFunSuite {
   test("connect test with embedded zookeeper") {
     val zkServer = new EmbeddedZkServer()
     assert(zkServer.getConnectString === null)
-    zkServer.initialize(KyuubiConf())
+    zkServer.initialize(KyuubiConf().set(KyuubiConf.EMBEDDED_ZK_PORT, 0))
     zkServer.start()
 
     val zkClient = CuratorFrameworkFactory.builder()
