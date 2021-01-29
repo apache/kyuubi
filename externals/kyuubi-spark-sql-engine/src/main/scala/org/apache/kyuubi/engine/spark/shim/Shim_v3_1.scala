@@ -17,25 +17,19 @@
 
 package org.apache.kyuubi.engine.spark.shim
 
-import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.DataType
 
-class Shim_v2_4 extends SparkShim {
+class Shim_v3_1 extends Shim_v3_0 {
 
-  override def getCatalogs(spark: SparkSession): Seq[Row] = {
-    Seq(Row(""))
+  override def toHiveString(value: Any, typ: DataType): String = {
+    val formatters = invokeScalaObject(
+      "org.apache.spark.sql.execution.HiveResult$",
+      "getTimeFormatters").asInstanceOf[AnyRef]
+
+    invokeScalaObject("org.apache.spark.sql.execution.HiveResult$", "toHiveString",
+      (classOf[(Any, DataType)], (value, typ)),
+      (classOf[Boolean], Boolean.box(false)),
+      (Class.forName("org.apache.spark.sql.execution.HiveResult$TimeFormatters"), formatters)
+    ).asInstanceOf[String]
   }
-
-  override def catalogExists(spark: SparkSession, catalog: String): Boolean = false
-
-  override def getSchemas(
-      spark: SparkSession,
-      catalogName: String,
-      schemaPattern: String): Seq[Row] = {
-    (spark.sessionState.catalog.listDatabases(schemaPattern) ++
-      getGlobalTempViewManager(spark, schemaPattern)).map(Row(_, ""))
-  }
-
-  // TODO
-  override def toHiveString(value: Any, typ: DataType): String = ""
 }

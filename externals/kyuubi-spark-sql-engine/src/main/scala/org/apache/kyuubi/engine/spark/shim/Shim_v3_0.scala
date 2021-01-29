@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.spark.shim
 
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.connector.catalog.{CatalogExtension, CatalogPlugin, SupportsNamespaces}
+import org.apache.spark.sql.types.DataType
 
 class Shim_v3_0 extends Shim_v2_4 {
 
@@ -92,5 +93,14 @@ class Shim_v3_0 extends Shim_v2_4 {
       val catalogPlugin = manager.catalog(catalogName)
       (getSchemas(catalogPlugin, schemaPattern) ++ viewMgr).map(Row(_, catalogName))
     }
+  }
+
+  override def toHiveString(value: Any, typ: DataType): String = {
+
+    invokeScalaObject("org.apache.spark.sql.execution.HiveResult$",
+      "toHiveString",
+      (classOf[(AnyRef, DataType)], (value, typ)),
+      (classOf[Boolean], Boolean.box(false))
+    ).asInstanceOf[String]
   }
 }

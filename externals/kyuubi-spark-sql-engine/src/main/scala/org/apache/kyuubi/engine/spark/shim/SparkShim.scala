@@ -17,7 +17,10 @@
 
 package org.apache.kyuubi.engine.spark.shim
 
+import scala.reflect.runtime.{universe => ru}
+
 import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.types.DataType
 
 import org.apache.kyuubi.{Logging, Utils}
 
@@ -38,6 +41,18 @@ trait SparkShim extends Logging {
   def getGlobalTempViewManager(spark: SparkSession, schemaPattern: String): Seq[String] = {
     val database = spark.sharedState.globalTempViewManager.database
     Option(database).filter(_.matches(schemaPattern)).toSeq
+  }
+
+  def toHiveString(value: Any, typ: DataType): String
+
+  protected def invokeScalaObject(
+      objectName: String,
+      methodName: String,
+      args: (Class[_], AnyRef)*): Any = {
+    val rm = ru.runtimeMirror(getClass.getClassLoader)
+    val moduleSymbol = rm.moduleSymbol(Class.forName(objectName))
+    val obj = rm.reflectModule(moduleSymbol).instance
+    invoke(obj, methodName, args.toSeq: _*)
   }
 
   protected def invoke(
@@ -73,8 +88,9 @@ object SparkShim {
     val runtimeSparkVer = org.apache.spark.SPARK_VERSION
     val (major, minor) = Utils.majorMinorVersion(runtimeSparkVer)
     (major, minor) match {
-      case (3, _) => new Shim_v3_0
       case (2, _) => new Shim_v2_4
+      case (3, 0) => new Shim_v3_0
+      case (3, _) => new Shim_v3_1
       case _ => throw new IllegalArgumentException(s"Not Support spark version $runtimeSparkVer")
     }
   }

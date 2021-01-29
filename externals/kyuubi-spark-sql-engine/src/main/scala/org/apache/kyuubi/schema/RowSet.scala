@@ -24,8 +24,9 @@ import scala.language.implicitConversions
 
 import org.apache.hive.service.rpc.thrift._
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.execution.HiveResult
 import org.apache.spark.sql.types._
+
+import org.apache.kyuubi.engine.spark.shim.SparkShim
 
 object RowSet {
 
@@ -105,7 +106,7 @@ object RowSet {
           if (row.isNullAt(ordinal)) {
             ""
           } else {
-            HiveResult.toHiveString((row.get(ordinal), typ))
+            SparkShim().toHiveString(row.get(ordinal), typ)
           }
         }.asJava
         TColumn.stringVal(new TStringColumn(values, nulls))
@@ -183,8 +184,7 @@ object RowSet {
       case _ =>
         val tStrValue = new TStringValue
         if (!row.isNullAt(ordinal)) {
-          tStrValue.setValue(
-            HiveResult.toHiveString((row.get(ordinal), types(ordinal).dataType)))
+          tStrValue.setValue(SparkShim().toHiveString(row.get(ordinal), types(ordinal).dataType))
         }
         TColumnValue.stringVal(tStrValue)
     }
