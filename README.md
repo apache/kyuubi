@@ -68,4 +68,4 @@ All bits of help are welcome. You can make various types of contributions to Kyu
 The project took its name from a character of a popular Japanese manga - `Naruto`.
 The character is named `Kyuubi Kitsune/Kurama`, which is a nine-tailed fox in mythology.
 `Kyuubi` spread the power and spirit of fire, which is used here to represent the powerful [Apache Spark](http://spark.apache.org).
-It's nine tails stands for end-to end multi-tenancy support of this project.
+It's nine tails stands for end-to-end multi-tenancy support of this project.
