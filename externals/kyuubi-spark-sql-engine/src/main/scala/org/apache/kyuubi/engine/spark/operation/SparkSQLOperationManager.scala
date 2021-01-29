@@ -57,7 +57,6 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
     val spark = getSparkSession(session.handle)
     val operation = new ExecuteStatement(spark, session, statement, runAsync)
     addOperation(operation)
-
   }
 
   override def newGetTypeInfoOperation(session: Session): Operation = {

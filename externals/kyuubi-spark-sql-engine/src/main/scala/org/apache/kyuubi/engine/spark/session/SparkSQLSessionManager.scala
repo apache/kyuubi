@@ -111,5 +111,4 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     }
     submitBackgroundOperation(checkTask)
   }
-
 }

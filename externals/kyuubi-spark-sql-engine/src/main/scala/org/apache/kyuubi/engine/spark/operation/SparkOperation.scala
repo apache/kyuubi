@@ -40,7 +40,6 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
     OperationLog.createOperationLog(session.handle, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
-
   protected def resultSchema: StructType
 
   protected def cleanup(targetState: OperationState): Unit = synchronized {

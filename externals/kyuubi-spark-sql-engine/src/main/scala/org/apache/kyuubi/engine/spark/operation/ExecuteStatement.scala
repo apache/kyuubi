@@ -71,7 +71,6 @@ class ExecuteStatement(
     }
   }
 
-
   override protected def runInternal(): Unit = {
     if (shouldRunAsync) {
       val asyncOperation = new Runnable {
@@ -96,6 +95,5 @@ class ExecuteStatement(
     } else {
       executeStatement()
     }
-
   }
 }
