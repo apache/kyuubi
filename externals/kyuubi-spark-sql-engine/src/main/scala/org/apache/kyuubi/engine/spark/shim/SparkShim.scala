@@ -29,10 +29,15 @@ trait SparkShim extends Logging {
   /**
    * Get all register catalogs in Spark's `CatalogManager`
    */
-  def getCatalogs(ss: SparkSession): Seq[Row]
+  def getCatalogs(spark: SparkSession): Seq[Row]
 
-  protected def getSessionState(ss: SparkSession): Any = {
-    invoke(classOf[SparkSession], ss, "sessionState")
+  def catalogExists(spark: SparkSession, catalog: String): Boolean
+
+  def getSchemas(spark: SparkSession, catalogName: String, schemaPattern: String): Seq[Row]
+
+  def getGlobalTempViewManager(spark: SparkSession, schemaPattern: String): Seq[String] = {
+    val database = spark.sharedState.globalTempViewManager.database
+    Option(database).filter(_.matches(schemaPattern)).toSeq
   }
 
   protected def invoke(

@@ -50,8 +50,12 @@ class SparkProcessBuilder(
       val sparkVer = SPARK_COMPILE_VERSION
       val hadoopVer = HADOOP_COMPILE_VERSION.take(3)
       val hiveVer = if (HIVE_COMPILE_VERSION.take(3).toDouble < 2.3) "-hive1.2" else ""
+      val kyuubiPattern = "/kyuubi/"
+      val cwd = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
+      val idx = kyuubiPattern.length + cwd.lastIndexOf(kyuubiPattern)
+      val kyuubiDevHome = cwd.substring(0, idx)
       Paths.get(
-        "..",
+        kyuubiDevHome,
         "externals",
         "kyuubi-download",
         "target",

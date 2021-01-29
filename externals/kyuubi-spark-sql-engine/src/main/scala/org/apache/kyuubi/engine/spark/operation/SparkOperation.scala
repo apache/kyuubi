@@ -65,7 +65,7 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
    * The schema pattern treats empty string also as wildcard
    */
   protected def convertSchemaPattern(pattern: String, datanucleusFormat: Boolean = true): String = {
-    if (StringUtils.isEmpty(pattern)) {
+    if (StringUtils.isEmpty(pattern) || pattern == "*") {
       convertPattern("%", datanucleusFormat)
     } else {
       convertPattern(pattern, datanucleusFormat)

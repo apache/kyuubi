@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.operation
 
-import java.sql.{DriverManager, Statement}
+import java.sql.{DriverManager, ResultSet, Statement}
 import java.util.Locale
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
@@ -71,5 +71,19 @@ trait JDBCTestUtils extends KyuubiFunSuite {
 
   protected def withJdbcStatement(tableNames: String*)(f: Statement => Unit): Unit = {
     withMultipleConnectionJdbcStatement(tableNames: _*)(f)
+  }
+
+  protected def checkGetSchemas(
+      rs: ResultSet, dbNames: Seq[String], catalogName: String = ""): Unit = {
+    val expected = dbNames
+    var count = 0
+    while(rs.next()) {
+      count += 1
+      assert(expected.contains(rs.getString("TABLE_SCHEM")))
+      assert(rs.getString("TABLE_CATALOG") === catalogName)
+    }
+    // Make sure there are no more elements
+    assert(!rs.next())
+    assert(expected.size === count, "All expected schemas should be visited")
   }
 }
