@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.operation
 
-import java.sql.ResultSet
-
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
@@ -34,38 +32,28 @@ trait BasicJDBCTests extends JDBCTestUtils {
   }
 
   test("get schemas") {
-    def checkResult(rs: ResultSet, dbNames: Seq[String]): Unit = {
-      val expected = dbNames.iterator
-      while(rs.next() || expected.hasNext) {
-        assert(rs.getString("TABLE_SCHEM") === expected.next)
-        assert(rs.getString("TABLE_CATALOG").isEmpty)
-      }
-      // Make sure there are no more elements
-      assert(!rs.next())
-      assert(!expected.hasNext, "All expected schemas should be visited")
-    }
-
     val dbs = Seq("db1", "db2", "db33", "db44")
     val dbDflts = Seq("default", "global_temp")
 
+    val catalog = "spark_catalog"
     withDatabases(dbs: _*) { statement =>
       dbs.foreach(db => statement.execute(s"CREATE DATABASE IF NOT EXISTS $db"))
       val metaData = statement.getConnection.getMetaData
 
       Seq("", "*", "%", null, ".*", "_*", "_%", ".%") foreach { pattern =>
-        checkResult(metaData.getSchemas(null, pattern), dbs ++ dbDflts)
+        checkGetSchemas(metaData.getSchemas(catalog, pattern), dbs ++ dbDflts, catalog)
       }
 
-      Seq("db%", "db*") foreach { pattern =>
-        checkResult(metaData.getSchemas(null, pattern), dbs)
+      Seq("db%", "db.*") foreach { pattern =>
+        checkGetSchemas(metaData.getSchemas(catalog, pattern), dbs, catalog)
       }
 
       Seq("db_", "db.") foreach { pattern =>
-        checkResult(metaData.getSchemas(null, pattern), dbs.take(2))
+        checkGetSchemas(metaData.getSchemas(catalog, pattern), dbs.take(2), catalog)
       }
 
-      checkResult(metaData.getSchemas(null, "db1"), Seq("db1"))
-      checkResult(metaData.getSchemas(null, "db_not_exist"), Seq.empty)
+      checkGetSchemas(metaData.getSchemas(catalog, "db1"), Seq("db1"), catalog)
+      checkGetSchemas(metaData.getSchemas(catalog, "db_not_exist"), Seq.empty, catalog)
     }
   }
 

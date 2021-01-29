@@ -34,6 +34,15 @@ class IcebergOperationSuite extends WithKyuubiServer with JDBCTestUtils {
 
   private val warehouse = Utils.createTempDir()
 
+  /**
+   * spark.sql.defaultCatalog=hadoop_prod
+   * spark.sql.extensions=org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
+   * spark.sql.catalog.spark_catalog=org.apache.iceberg.spark.SparkSessionCatalog
+   * spark.sql.catalog.spark_catalog.type=hive
+   * spark.sql.catalog.hadoop_prod=org.apache.iceberg.spark.SparkCatalog
+   * spark.sql.catalog.hadoop_prod.type=hadoop
+   * spark.sql.catalog.hadoop_prod.warehouse=$warehouse
+   */
   override def jdbcUrl: String = getJdbcUrl +
     "#" +
     s"spark.sql.defaultCatalog=$catalog;" +
@@ -55,6 +64,41 @@ class IcebergOperationSuite extends WithKyuubiServer with JDBCTestUtils {
       assert(catalogs.getString(TABLE_CAT) === "spark_catalog")
       catalogs.next()
       assert(catalogs.getString(TABLE_CAT) === catalog)
+    }
+  }
+
+  test("get schemas") {
+    val dbs = Seq("db1", "db2", "db33", "db44")
+    val dbDflts = Seq("default", "global_temp")
+
+    withDatabases(dbs: _*) { statement =>
+      dbs.foreach(db => statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $db"))
+      val metaData = statement.getConnection.getMetaData
+
+      val allPattern = Seq("", "*", "%", null, ".*", "_*", "_%", ".%")
+
+      // The session catalog
+      allPattern foreach { pattern =>
+        checkGetSchemas(metaData.getSchemas("spark_catalog", pattern), dbDflts, "spark_catalog")
+      }
+
+      Seq(null, catalog).foreach { cg =>
+        allPattern foreach { pattern =>
+          checkGetSchemas(
+            metaData.getSchemas(cg, pattern), dbs ++ Seq("global_temp"), catalog)
+        }
+      }
+
+      Seq("db%", "db.*") foreach { pattern =>
+        checkGetSchemas(metaData.getSchemas(catalog, pattern), dbs, catalog)
+      }
+
+      Seq("db_", "db.") foreach { pattern =>
+        checkGetSchemas(metaData.getSchemas(catalog, pattern), dbs.take(2), catalog)
+      }
+
+      checkGetSchemas(metaData.getSchemas(catalog, "db1"), Seq("db1"), catalog)
+      checkGetSchemas(metaData.getSchemas(catalog, "db_not_exist"), Seq.empty, catalog)
     }
   }
 }

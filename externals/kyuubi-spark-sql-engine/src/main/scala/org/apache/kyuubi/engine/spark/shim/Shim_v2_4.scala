@@ -20,7 +20,18 @@ package org.apache.kyuubi.engine.spark.shim
 import org.apache.spark.sql.{Row, SparkSession}
 
 class Shim_v2_4 extends SparkShim {
-  override def getCatalogs(ss: SparkSession): Seq[Row] = {
-    Seq(Row("spark_catalog"))
+
+  override def getCatalogs(spark: SparkSession): Seq[Row] = {
+    Seq(Row(""))
+  }
+
+  override def catalogExists(spark: SparkSession, catalog: String): Boolean = false
+
+  override def getSchemas(
+      spark: SparkSession,
+      catalogName: String,
+      schemaPattern: String): Seq[Row] = {
+    (spark.sessionState.catalog.listDatabases(schemaPattern) ++
+      getGlobalTempViewManager(spark, schemaPattern)).map(Row(_, ""))
   }
 }

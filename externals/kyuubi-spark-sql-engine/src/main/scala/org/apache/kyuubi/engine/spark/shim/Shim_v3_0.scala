@@ -18,22 +18,55 @@
 package org.apache.kyuubi.engine.spark.shim
 
 import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.connector.catalog.{CatalogExtension, CatalogPlugin, SupportsNamespaces}
 
 class Shim_v3_0 extends Shim_v2_4 {
 
-  override def getCatalogs(ss: SparkSession): Seq[Row] = {
-    val sessionState = getSessionState(ss)
+  override def getCatalogs(spark: SparkSession): Seq[Row] = {
 
     // A [[CatalogManager]] is session unique
-    val catalogMgr = invoke(sessionState, "catalogManager")
+    val catalogMgr = spark.sessionState.catalogManager
     // get the custom v2 session catalog or default spark_catalog
     val sessionCatalog = invoke(catalogMgr, "v2SessionCatalog")
-    val defaultCatalog = invoke(catalogMgr, "currentCatalog")
+    val defaultCatalog = catalogMgr.currentCatalog
 
     val defaults = Seq(sessionCatalog, defaultCatalog).distinct
       .map(invoke(_, "name").asInstanceOf[String])
     val catalogs = getField(catalogMgr, "catalogs")
       .asInstanceOf[scala.collection.Map[String, _]]
     (catalogs.keys ++: defaults).distinct.map(Row(_))
+  }
+
+  override def catalogExists(spark: SparkSession, catalog: String): Boolean = {
+    spark.sessionState.catalogManager.isCatalogRegistered(catalog)
+  }
+
+  private def getSchemas(
+      catalog: CatalogPlugin,
+      schemaPattern: String): Seq[String] = catalog match {
+    case catalog: CatalogExtension =>
+      // DSv2 does not support pass schemaPattern transparently
+      val schemas =
+        (catalog.defaultNamespace()  ++ catalog.listNamespaces(Array()).map(_.head)).distinct
+      schemas.filter(_.matches(schemaPattern))
+    case catalog: SupportsNamespaces =>
+      // TODO: 1. We need explode here based on the impl of DSv2
+      // TODO: 2. we need ensure how BI tools support multipart namespaces
+      val schemas = (catalog.defaultNamespace() ++ catalog.listNamespaces().map(_.head)).distinct
+      schemas.filter(_.matches(schemaPattern))
+  }
+
+  override def getSchemas(
+      spark: SparkSession,
+      catalogName: String,
+      schemaPattern: String): Seq[Row] = {
+    val viewMgr = getGlobalTempViewManager(spark, schemaPattern)
+    val manager = spark.sessionState.catalogManager
+    if (catalogName == null) {
+      val catalog = manager.currentCatalog
+      (getSchemas(catalog, schemaPattern) ++ viewMgr).map(Row(_, catalog.name()))
+    } else {
+      (getSchemas(manager.catalog(catalogName), schemaPattern) ++ viewMgr).map(Row(_, catalogName))
+    }
   }
 }
