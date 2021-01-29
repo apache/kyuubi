@@ -43,7 +43,7 @@ You can find the specific version of Kyuubi documentation as listed below.
 - [v1.0.1](https://kyuubi.readthedocs.io/en/v1.0.1/)
 - [v1.0.0](https://kyuubi.readthedocs.io/en/v1.0.0/)
 
-For 0.8 and earlier versions, please check the [project docs folder](https://github.com/yaooqinn/kyuubi/tree/branch-0.7/docs) directly.
+For 0.8 and earlier versions, please check the [Github Pages](https://yaooqinn.github.io/kyuubi/) directly.
 
 ## Quick Start
 
