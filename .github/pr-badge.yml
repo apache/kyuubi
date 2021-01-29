@@ -3,9 +3,21 @@
   color: "green"
 
 - label: "Preview"
-  message: "PR $prNumber"
+  message: "Closes%20#$prNumber"
   color: "blue"
   url: "https://github.com/yaooqinn/kyuubi/pull/$prNumber"
+
+- label: "+"
+  message: "$additions"
+  color: "red"
+
+- label: "-"
+  message: "$deletions"
+  color: "green"
+
+- label: "commits"
+  message: "$commits"
+  color: "yellow"
 
 - label: "Missing"
   message: "Target Issue"
@@ -15,7 +27,7 @@
 - label: "Missing"
   message: "Test Plan"
   color: "#ff0000"
-  when: "$payload.pull_request.body.includes('## Test Plan') === false"
+  when: "$payload.pull_request.body.includes('- [x]') === false"
 
 - label: "Label"
   message: "Feature"

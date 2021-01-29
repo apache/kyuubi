@@ -36,7 +36,7 @@ class SparkSQLEngineListenerSuite extends KyuubiFunSuite {
       .builder().master("local").config("spark.ui.port", "0").getOrCreate()
 
     val engine = new SparkSQLEngine(spark)
-    engine.initialize(KyuubiConf())
+    engine.initialize(KyuubiConf().set(KyuubiConf.FRONTEND_BIND_PORT, 0))
     engine.start()
     assert(engine.getServiceState === ServiceState.STARTED)
     spark.stop()

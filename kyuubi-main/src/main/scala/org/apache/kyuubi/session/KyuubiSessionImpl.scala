@@ -51,8 +51,21 @@ class KyuubiSessionImpl(
 
   private def mergeConf(): Unit = {
     conf.foreach {
-      case (HIVE_VAR_PREFIX(key), value) => sessionConf.set(key, value)
-      case (HIVE_CONF_PREFIX(key), value) => sessionConf.set(key, value)
+      case (k, v) if k.startsWith("set:") =>
+        val newKey = k.substring(4)
+        if (newKey.startsWith(SYSTEM_PREFIX)) {
+          sessionConf.set(newKey.substring(SYSTEM_PREFIX.length), v)
+        } else if (newKey.startsWith(HIVECONF_PREFIX)) {
+          sessionConf.set(newKey.substring(HIVECONF_PREFIX.length), v)
+        } else if (newKey.startsWith(HIVEVAR_PREFIX)) {
+          sessionConf.set(newKey.substring(HIVEVAR_PREFIX.length), v)
+        } else if (newKey.startsWith(METACONF_PREFIX)) {
+          sessionConf.set(newKey.substring(METACONF_PREFIX.length), v)
+        } else if (newKey.startsWith(SYSTEM_PREFIX)) {
+          // do nothing
+        } else {
+          sessionConf.set(k, v)
+        }
       case ("use:database", _) =>
       case (key, value) => sessionConf.set(key, value)
     }

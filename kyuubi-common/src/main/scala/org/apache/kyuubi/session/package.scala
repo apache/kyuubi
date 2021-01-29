@@ -24,4 +24,10 @@ package object session {
   val HIVE_VAR_PREFIX: Regex = """set:hivevar:([^=]+)""".r
   val HIVE_CONF_PREFIX: Regex = """set:hiveconf:([^=]+)""".r
 
+  val ENV_PREFIX = "env:"
+  val SYSTEM_PREFIX = "system:"
+  val HIVECONF_PREFIX = "hiveconf:"
+  val HIVEVAR_PREFIX = "hivevar:"
+  val METACONF_PREFIX = "metaconf:"
+
 }

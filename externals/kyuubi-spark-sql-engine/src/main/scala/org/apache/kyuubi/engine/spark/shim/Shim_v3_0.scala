@@ -15,23 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.operation
+package org.apache.kyuubi.engine.spark.shim
 
 import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.operation.OperationType
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
-import org.apache.kyuubi.session.Session
+class Shim_v3_0 extends Shim_v2_4 {
 
-class GetTableTypes(spark: SparkSession, session: Session)
-  extends SparkOperation(spark, OperationType.GET_TABLE_TYPES, session) {
-  override protected def resultSchema: StructType = {
-    new StructType()
-      .add(TABLE_TYPE, "string", nullable = true, "Table type name.")
-  }
+  override def getCatalogs(ss: SparkSession): Seq[Row] = {
+    val sessionState = getSessionState(ss)
 
-  override protected def runInternal(): Unit = {
-    iter = Seq("EXTERNAL", "MANAGED", "VIEW").map(Row(_)).toList.iterator
+    // A [[CatalogManager]] is session unique
+    val catalogMgr = invoke(sessionState, "catalogManager")
+    // get the custom v2 session catalog or default spark_catalog
+    val sessionCatalog = invoke(catalogMgr, "v2SessionCatalog")
+    val defaultCatalog = invoke(catalogMgr, "currentCatalog")
+
+    val defaults = Seq(sessionCatalog, defaultCatalog).distinct
+      .map(invoke(_, "name").asInstanceOf[String])
+    val catalogs = getField(catalogMgr, "catalogs")
+      .asInstanceOf[scala.collection.Map[String, _]]
+    (catalogs.keys ++: defaults).distinct.map(Row(_))
   }
 }
