@@ -38,6 +38,8 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     val commands = builder.toString.split(' ')
     assert(commands(2) === "org.apache.kyuubi.engine.spark.SparkSQLEngine")
     assert(commands.contains("spark.kyuubi.on=off"))
+    builder.toString.contains("\\\n\t--class")
+    builder.toString.contains("\\\n\t--conf spark.kyuubi.on=off")
     val pb = new ProcessBuilder(commands.head, "--help")
     assert(pb.start().waitFor() === 0)
     assert(Files.exists(Paths.get(commands.last)))
