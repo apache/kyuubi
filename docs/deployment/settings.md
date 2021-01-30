@@ -238,11 +238,6 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 # spark.sql.adaptive.skewJoin.skewedPartitionFactor         5
 # spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes 256m
 # spark.sql.adaptive.nonEmptyPartitionRatioForBroadcastJoin 0.2
-
-## Hadoop Configurations, they will override those in $HADOOP_CONF_DIR
-#
-# hadoop.security.authentication  KERBEROS
-#
 ```
 ### Authentication
 
