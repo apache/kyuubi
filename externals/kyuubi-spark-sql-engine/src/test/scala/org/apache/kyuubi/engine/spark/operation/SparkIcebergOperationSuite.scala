@@ -15,14 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation.datalake
+package org.apache.kyuubi.engine.spark.operation
 
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.{BasicIcebergJDBCTests, WithKyuubiServer}
+import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
+import org.apache.kyuubi.operation.BasicIcebergJDBCTests
 
-class IcebergOperationSuite extends WithKyuubiServer with BasicIcebergJDBCTests {
-  override protected val conf: KyuubiConf = KyuubiConf()
+class SparkIcebergOperationSuite extends WithSparkSQLEngine with BasicIcebergJDBCTests {
+  override protected def jdbcUrl: String = getJdbcUrl
 
-  override def jdbcUrl: String = getJdbcUrl +
-    "#" + icebergConfigs.map {case (k, v) => k + "=" + v}.mkString(";")
+  override def beforeAll(): Unit = {
+    for ((k, v) <- icebergConfigs) {
+      System.setProperty(k, v)
+    }
+    super.beforeAll()
+  }
+
+  override def afterAll(): Unit = {
+    super.afterAll()
+    for ((k, _) <- icebergConfigs) {
+      System.clearProperty(k)
+    }
+  }
 }

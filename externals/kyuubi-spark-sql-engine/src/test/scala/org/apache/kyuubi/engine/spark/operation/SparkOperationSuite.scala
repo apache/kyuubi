@@ -33,9 +33,12 @@ import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
+import org.apache.kyuubi.operation.JDBCTests
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
-class SparkOperationSuite extends WithSparkSQLEngine {
+class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
+
+  override protected def jdbcUrl: String = getJdbcUrl
 
   test("get table types") {
     withJdbcStatement() { statement =>
