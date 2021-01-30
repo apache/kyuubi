@@ -19,14 +19,37 @@ When creating a Pull Request, you will automatically get the template below.
 
 Fulfilling it thoroughly can improve the speed of the review process.
 
-    ### Please clarify what changes you are proposing
-    A few sentences describing the overall goals of the pull request's commits.
-    
-    ### Please add issue ID here?
-    
-    Fixes #{issue ID} - replace ${issue ID} with the actual issue id.
-    
-    ### Test Plan:
-    - Add some test cases that check the changes thoroughly including negative and positive cases if possible
-    - Add screenshots for manual tests if appropriate
-    - Run test locally before make a pull request https://kyuubi.readthedocs.io/en/latest/tools/testing.html#running-tests
+```
+<!--
+Thanks for sending a pull request!
+
+Here are some tips for you:
+  1. If this is your first time, please read our contributor guidelines:
+     https://kyuubi.readthedocs.io/en/latest/community/contributions.html
+-->
+
+### _Which issue are you going to fix?_
+<!--
+Replace ${ID} below with the actual issue id from
+https://github.com/yaooqinn/kyuubi/issues,
+so that the issue will be linked and automatically closed after merging
+-->
+
+Fixes #${ID}
+
+### _Why are the changes needed?_
+<!--
+Please clarify why the changes are needed. For instance,
+  1. If you add a feature, you can talk about the user case of it.
+  2. If you fix a bug, you can clarify why it is a bug.
+-->
+
+
+### _How was this patch tested?_
+- [ ] Add some test cases that check the changes thoroughly including negative and positive cases if possible
+
+- [ ] Add screenshots for manual tests if appropriate
+
+- [ ] [Run test](https://kyuubi.readthedocs.io/en/latest/tools/testing.html#running-tests) locally before make a pull request
+
+```

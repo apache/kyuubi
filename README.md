@@ -63,9 +63,15 @@ All bits of help are welcome. You can make various types of contributions to Kyu
 - Promote to others
 - Click the star button if you like this project
 
+Before you start, we recommend that you check the [Contribution Guidelines](https://kyuubi.readthedocs.io/en/latest/community/contributions.html) first.
+
 ## Aside
 
 The project took its name from a character of a popular Japanese manga - `Naruto`.
 The character is named `Kyuubi Kitsune/Kurama`, which is a nine-tailed fox in mythology.
 `Kyuubi` spread the power and spirit of fire, which is used here to represent the powerful [Apache Spark](http://spark.apache.org).
 It's nine tails stands for end-to-end multi-tenancy support of this project.
+
+## License
+
+This project is licensed under the Apache 2.0 License. See the [LICENSE](./LICENSE) file for details.
