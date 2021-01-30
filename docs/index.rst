@@ -102,3 +102,9 @@ Kyuubi provides both high availability and load balancing solutions based on Zoo
 
    tools/index
    community/index
+
+.. toctree::
+   :caption: Appendix
+   :maxdepth: 2
+
+   appendix/index
