@@ -66,7 +66,8 @@ class Shim_v3_0 extends Shim_v2_4 {
       val catalog = manager.currentCatalog
       (getSchemas(catalog, schemaPattern) ++ viewMgr).map(Row(_, catalog.name()))
     } else {
-      (getSchemas(manager.catalog(catalogName), schemaPattern) ++ viewMgr).map(Row(_, catalogName))
+      val catalogPlugin = manager.catalog(catalogName)
+      (getSchemas(catalogPlugin, schemaPattern) ++ viewMgr).map(Row(_, catalogName))
     }
   }
 }

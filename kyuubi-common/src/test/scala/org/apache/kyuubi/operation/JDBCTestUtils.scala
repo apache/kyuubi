@@ -20,7 +20,12 @@ package org.apache.kyuubi.operation
 import java.sql.{DriverManager, ResultSet, Statement}
 import java.util.Locale
 
+import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TOpenSessionReq, TSessionHandle}
+import org.apache.thrift.protocol.TBinaryProtocol
+import org.apache.thrift.transport.TSocket
+
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
 trait JDBCTestUtils extends KyuubiFunSuite {
 
@@ -71,6 +76,44 @@ trait JDBCTestUtils extends KyuubiFunSuite {
 
   protected def withJdbcStatement(tableNames: String*)(f: Statement => Unit): Unit = {
     withMultipleConnectionJdbcStatement(tableNames: _*)(f)
+  }
+
+  protected def withThriftClient(f: TCLIService.Iface => Unit): Unit = {
+    val hostAndPort = jdbcUrl.stripPrefix("jdbc:hive2://").split("/;").head.split(":")
+    val host = hostAndPort.head
+    val port = hostAndPort(1).toInt
+    val socket = new TSocket(host, port)
+    val transport = PlainSASLHelper.getPlainTransport(Utils.currentUser, "anonymous", socket)
+
+    val protocol = new TBinaryProtocol(transport)
+    val client = new TCLIService.Client(protocol)
+    transport.open()
+    try {
+      f(client)
+    } finally {
+      socket.close()
+    }
+  }
+
+  protected def withSessionHandle(f: (TCLIService.Iface, TSessionHandle) => Unit): Unit = {
+    withThriftClient { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername(user)
+      req.setPassword("anonymous")
+      val resp = client.OpenSession(req)
+      val handle = resp.getSessionHandle
+
+      try {
+        f(client, handle)
+      } finally {
+        val tCloseSessionReq = new TCloseSessionReq(handle)
+        try {
+          client.CloseSession(tCloseSessionReq)
+        } catch {
+          case e: Exception => error(s"Failed to close $handle", e)
+        }
+      }
+    }
   }
 
   protected def checkGetSchemas(

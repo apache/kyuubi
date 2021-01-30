@@ -19,35 +19,29 @@ package org.apache.kyuubi.engine.spark
 
 import org.apache.hadoop.hive.ql.metadata.Hive
 import org.apache.hadoop.hive.ql.session.SessionState
-import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TOpenSessionReq, TSessionHandle}
 import org.apache.spark.sql.SparkSession
-import org.apache.thrift.protocol.TBinaryProtocol
-import org.apache.thrift.transport.TSocket
 
-import org.apache.kyuubi.Utils
-import org.apache.kyuubi.operation.JDBCTests
-import org.apache.kyuubi.service.authentication.PlainSASLHelper
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 
-trait WithSparkSQLEngine extends JDBCTests {
-
-  val warehousePath = Utils.createTempDir()
-  val metastorePath = Utils.createTempDir()
-  warehousePath.toFile.delete()
-  metastorePath.toFile.delete()
-  System.setProperty("javax.jdo.option.ConnectionURL",
-    s"jdbc:derby:;databaseName=$metastorePath;create=true")
-  System.setProperty("spark.sql.warehouse.dir", warehousePath.toString)
-  System.setProperty("spark.sql.hive.metastore.sharedPrefixes", "org.apache.hive.jdbc")
-
-  SparkSession.clearActiveSession()
-  SparkSession.clearDefaultSession()
-  protected val spark: SparkSession = SparkSQLEngine.createSpark()
-
+trait WithSparkSQLEngine extends KyuubiFunSuite {
+  protected var spark: SparkSession = _
   protected var engine: SparkSQLEngine = _
 
   protected var connectionUrl: String = _
 
   override def beforeAll(): Unit = {
+    val warehousePath = Utils.createTempDir()
+    val metastorePath = Utils.createTempDir()
+    warehousePath.toFile.delete()
+    metastorePath.toFile.delete()
+    System.setProperty("javax.jdo.option.ConnectionURL",
+      s"jdbc:derby:;databaseName=$metastorePath;create=true")
+    System.setProperty("spark.sql.warehouse.dir", warehousePath.toString)
+    System.setProperty("spark.sql.hive.metastore.sharedPrefixes", "org.apache.hive.jdbc")
+
+    SparkSession.clearActiveSession()
+    SparkSession.clearDefaultSession()
+    spark = SparkSQLEngine.createSpark()
     engine = SparkSQLEngine.startEngine(spark)
     connectionUrl = engine.connectionUrl
     super.beforeAll()
@@ -58,48 +52,12 @@ trait WithSparkSQLEngine extends JDBCTests {
     if (engine != null) {
       engine.stop()
     }
-    spark.stop()
+    if (spark != null) {
+      spark.stop()
+    }
     SessionState.detachSession()
     Hive.closeCurrent()
   }
 
-  protected def jdbcUrl: String = s"jdbc:hive2://$connectionUrl/;"
-
-  protected def withThriftClient(f: TCLIService.Iface => Unit): Unit = {
-    val hostAndPort = connectionUrl.split(":")
-    val host = hostAndPort.head
-    val port = hostAndPort(1).toInt
-    val socket = new TSocket(host, port)
-    val transport = PlainSASLHelper.getPlainTransport(Utils.currentUser, "anonymous", socket)
-
-    val protocol = new TBinaryProtocol(transport)
-    val client = new TCLIService.Client(protocol)
-    transport.open()
-    try {
-      f(client)
-    } finally {
-      socket.close()
-    }
-  }
-
-  protected def withSessionHandle(f: (TCLIService.Iface, TSessionHandle) => Unit): Unit = {
-    withThriftClient { client =>
-      val req = new TOpenSessionReq()
-      req.setUsername(user)
-      req.setPassword("anonymous")
-      val resp = client.OpenSession(req)
-      val handle = resp.getSessionHandle
-
-      try {
-        f(client, handle)
-      } finally {
-        val tCloseSessionReq = new TCloseSessionReq(handle)
-        try {
-          client.CloseSession(tCloseSessionReq)
-        } catch {
-          case e: Exception => error(s"Failed to close $handle", e)
-        }
-      }
-    }
-  }
+  protected def getJdbcUrl: String = s"jdbc:hive2://$connectionUrl/;"
 }
