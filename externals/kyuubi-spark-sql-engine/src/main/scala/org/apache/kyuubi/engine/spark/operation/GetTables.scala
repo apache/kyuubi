@@ -19,6 +19,8 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.util.regex.Pattern
 
+import scala.collection.JavaConverters._
+
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.catalog.CatalogTableType
@@ -36,6 +38,14 @@ class GetTables(
     tableName: String,
     tableTypes: java.util.List[String])
   extends SparkOperation(spark, OperationType.GET_TABLES, session) {
+
+  override def statement: String = {
+    super.statement +
+      s" [catalog: $catalog," +
+      s" schemaPattern: $schema," +
+      s" tablePattern: $tableName," +
+      s" tableTypes: ${tableTypes.asScala.mkString("(", ", ", ")")}]"
+  }
 
   private def matched(tableType: CatalogTableType): Boolean = {
     val commonTableType = tableType match {

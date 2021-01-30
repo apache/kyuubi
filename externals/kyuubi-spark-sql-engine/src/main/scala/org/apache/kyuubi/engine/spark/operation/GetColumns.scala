@@ -38,6 +38,14 @@ class GetColumns(
     columnName: String)
   extends SparkOperation(spark, OperationType.GET_COLUMNS, session) {
 
+  override def statement: String = {
+    super.statement +
+      s" [catalog: $catalogName," +
+      s" schemaPattern: $schemaName," +
+      s" tablePattern: $tableName," +
+      s" columnPattern: $columnName]"
+  }
+
   private def toJavaSQLType(typ: DataType): Int = typ match {
     case NullType => java.sql.Types.NULL
     case BooleanType => java.sql.Types.BOOLEAN
