@@ -44,7 +44,7 @@ class GetTables(
       s" [catalog: $catalog," +
       s" schemaPattern: $schema," +
       s" tablePattern: $tableName," +
-      s" tableTypes: ${tableTypes.asScala.mkString("(", ", ", ")")}]"
+      s" tableTypes: ${Option(tableTypes).map(_.asScala.mkString("(", ", ", ")")).orNull}]"
   }
 
   private def matched(tableType: CatalogTableType): Boolean = {
