@@ -33,6 +33,14 @@ class GetFunctions(
     schemaName: String,
     functionName: String)
   extends SparkOperation(spark, OperationType.GET_FUNCTIONS, session) {
+
+  override def statement: String = {
+    super.statement +
+      s" [catalog: $catalogName," +
+      s" schemaPattern: $schemaName," +
+      s" functionPattern: $functionName]"
+  }
+
   override protected def resultSchema: StructType = {
     new StructType()
       .add(FUNCTION_CAT, "string", nullable = true, "Function catalog (may be null)")
