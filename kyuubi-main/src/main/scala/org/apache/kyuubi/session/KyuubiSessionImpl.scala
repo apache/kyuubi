@@ -121,8 +121,8 @@ class KyuubiSessionImpl(
           sessionConf.set(HA_ZK_NAMESPACE, appZkNamespace)
           val builder = new SparkProcessBuilder(appUser, sessionConf.toSparkPrefixedConf)
           try {
-            val process = builder.start
             info(s"Launching SQL engine: $builder")
+            val process = builder.start
             var sh = getServerHost
             val started = System.currentTimeMillis()
             var exitValue: Option[Int] = None

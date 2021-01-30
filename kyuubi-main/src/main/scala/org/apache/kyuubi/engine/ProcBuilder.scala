@@ -19,11 +19,11 @@ package org.apache.kyuubi.engine
 
 import java.io.{File, FilenameFilter, IOException}
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Path}
 
 import scala.collection.JavaConverters._
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.util.NamedThreadFactory
 
 trait ProcBuilder {
@@ -113,7 +113,7 @@ trait ProcBuilder {
   }
 }
 
-object ProcBuilder {
+object ProcBuilder extends Logging {
   private val PROC_BUILD_LOGGER = new NamedThreadFactory("process-logger-capture", daemon = true)
 
   private val UNCAUGHT_ERROR = KyuubiSQLException("Uncaught error")
@@ -157,6 +157,7 @@ object ProcBuilder {
         newLogFile
       }
     file.setLastModified(currentTime)
+    info(s"Logging to $file")
     file
   }
 }
