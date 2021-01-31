@@ -47,13 +47,18 @@ abstract class Serverable(name: String) extends CompositeService(name) {
 
   override def stop(): Unit = synchronized {
     try {
-      stopServer()
-    } catch {
-      case t: Throwable =>
-        warn(s"Error stopping spark ${t.getMessage}", t)
-    } finally {
       if (started.getAndSet(false)) {
         super.stop()
+      }
+    } catch {
+      case t: Throwable =>
+        warn(s"Error stopping $name ${t.getMessage}", t)
+    } finally {
+      try {
+        stopServer()
+      } catch {
+        case t: Throwable =>
+          warn(s"Error stopping spark ${t.getMessage}", t)
       }
     }
   }
