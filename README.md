@@ -21,7 +21,7 @@ and every improvement in the engine's capabilities can help Kyuubi's performance
 In addition, Kyuubi improves ad-hoc responsiveness through the engine caching,
 and enhances concurrency through horizontal scaling and load balancing.
 It provides complete authentication and authentication services to ensure data and metadata security.
-It provides robust high availability and load balancing to help you guarantee the SLA commitment.
+It provides robust high availability and load balancing to help you guarantee the SLA commitments.
 It provides a two-level elastic resource management architecture to effectively improve resource utilization while covering the performance and response requirements of all scenarios including interactive,
 or batch processing and point queries, or full table scans.
 It embraces Spark and builds an ecosystem on top of it,
@@ -70,7 +70,7 @@ Before you start, we recommend that you check the [Contribution Guidelines](http
 The project took its name from a character of a popular Japanese manga - `Naruto`.
 The character is named `Kyuubi Kitsune/Kurama`, which is a nine-tailed fox in mythology.
 `Kyuubi` spread the power and spirit of fire, which is used here to represent the powerful [Apache Spark](http://spark.apache.org).
-It's nine tails stands for end-to-end multi-tenancy support of this project.
+Its nine tails stands for end-to-end multi-tenancy support of this project.
 
 ## License
 
