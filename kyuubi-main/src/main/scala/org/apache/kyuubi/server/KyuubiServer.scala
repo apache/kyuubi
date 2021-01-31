@@ -36,7 +36,6 @@ object KyuubiServer extends Logging {
     if (!ServiceDiscovery.supportServiceDiscovery(conf)) {
       zkServer.initialize(conf)
       zkServer.start()
-      sys.addShutdownHook(zkServer.stop())
       conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
       conf.set(HA_ZK_ACL_ENABLED, false)
     }
@@ -82,7 +81,7 @@ class KyuubiServer(name: String) extends Serverable(name) {
   override private[kyuubi] val backendService: AbstractBackendService = new KyuubiBackendService()
   private val discoveryService = new ServiceDiscovery(this)
 
-  override def initialize(conf: KyuubiConf): Unit = {
+  override def initialize(conf: KyuubiConf): Unit = synchronized {
     val kinit = new KinitAuxiliaryService()
     addService(kinit)
     super.initialize(conf)
