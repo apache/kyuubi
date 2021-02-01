@@ -27,8 +27,6 @@ import scala.collection.JavaConverters._
 import org.apache.commons.lang.SystemUtils
 import org.apache.hadoop.security.UserGroupInformation
 
-
-
 private[kyuubi] object Utils extends Logging {
 
   import org.apache.kyuubi.config.KyuubiConf._
@@ -155,7 +153,7 @@ private[kyuubi] object Utils extends Logging {
   }
 
   /**
-    * Whether the underlying operating system is Windows.
-  */
+  * Whether the underlying operating system is Windows.
+    */
   val isWindows = SystemUtils.IS_OS_WINDOWS
 }
