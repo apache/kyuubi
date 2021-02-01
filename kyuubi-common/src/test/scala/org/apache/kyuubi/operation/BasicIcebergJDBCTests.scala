@@ -97,14 +97,16 @@ trait BasicIcebergJDBCTests extends JDBCTestUtils {
       dbs.foreach(db => statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $db"))
       val metaData = statement.getConnection.getMetaData
 
-      val allPattern = Seq("%")
-
-      Seq(catalog).foreach { cg =>
+      val allPattern = Seq("", "*", "%", null, ".*", "_*", "_%", ".%")
+      Seq(null, catalog).foreach { cg =>
         allPattern foreach { pattern =>
           checkGetSchemas(
             metaData.getSchemas(cg, pattern), dbs ++ Seq("global_temp"), catalog)
         }
       }
+
+      checkGetSchemas(metaData.getSchemas(catalog, "db1.db2%"),
+        Seq("db1.db2", "db1.db2.db3"), catalog)
     }
   }
 }
