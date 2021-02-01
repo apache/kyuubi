@@ -89,4 +89,22 @@ trait BasicIcebergJDBCTests extends JDBCTestUtils {
       checkGetSchemas(metaData.getSchemas(catalog, "db_not_exist"), Seq.empty, catalog)
     }
   }
+
+  test("get schemas with multipart namespaces") {
+    val dbs = Seq("db1", "db1.db2", "db1.db2.db3", "db4")
+
+    withDatabases(dbs: _*) { statement =>
+      dbs.foreach(db => statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $db"))
+      val metaData = statement.getConnection.getMetaData
+
+      val allPattern = Seq("%")
+
+      Seq(catalog).foreach { cg =>
+        allPattern foreach { pattern =>
+          checkGetSchemas(
+            metaData.getSchemas(cg, pattern), dbs ++ Seq("global_temp"), catalog)
+        }
+      }
+    }
+  }
 }
