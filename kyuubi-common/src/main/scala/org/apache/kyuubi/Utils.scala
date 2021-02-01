@@ -24,6 +24,7 @@ import java.util.{Properties, UUID}
 
 import scala.collection.JavaConverters._
 
+import org.apache.commons.lang.SystemUtils
 import org.apache.hadoop.security.UserGroupInformation
 
 private[kyuubi] object Utils extends Logging {
@@ -150,4 +151,9 @@ private[kyuubi] object Utils extends Logging {
           s" version string, but it could not find the major and minor version numbers.")
     }
   }
+
+  /**
+   * Whether the underlying operating system is Windows.
+   */
+  val isWindows = SystemUtils.IS_OS_WINDOWS
 }
