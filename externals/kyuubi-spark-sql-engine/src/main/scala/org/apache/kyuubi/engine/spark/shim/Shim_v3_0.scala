@@ -62,7 +62,7 @@ class Shim_v3_0 extends Shim_v2_4 {
       catalog.listNamespaces(ns)
     }
     if (children.isEmpty) {
-      namespaces
+      namespaces.map(_.map(quoteIfNeeded))
     } else {
       namespaces.map(_.map(quoteIfNeeded)) ++: listNamespaces(catalog, children)
     }

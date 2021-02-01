@@ -92,13 +92,7 @@ trait BasicIcebergJDBCTests extends JDBCTestUtils {
 
   test("get schemas with multipart namespaces") {
     val dbs = Seq(
-      "`a.b`",
-      "`a.b`.c",
-      "a.`b.c`",
-      "`a.b.c`",
-      "`a.b``.c`",
-      "db1.db2.db3",
-      "db4")
+      "`a.b`")
 
     withDatabases(dbs: _*) { statement =>
       dbs.foreach(db => statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $db"))
