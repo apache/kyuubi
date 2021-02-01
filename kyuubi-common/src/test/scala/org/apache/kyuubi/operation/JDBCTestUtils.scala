@@ -63,7 +63,7 @@ trait JDBCTestUtils extends KyuubiFunSuite {
     try {
       statements.zip(fs).foreach { case (s, f) => f(s) }
     } finally {
-      dbNames.foreach { name =>
+      dbNames.reverse.foreach { name =>
         statements.head.execute(s"DROP DATABASE IF EXISTS $name")
       }
       info("Closing statements")
@@ -118,15 +118,14 @@ trait JDBCTestUtils extends KyuubiFunSuite {
 
   protected def checkGetSchemas(
       rs: ResultSet, dbNames: Seq[String], catalogName: String = ""): Unit = {
-    val expected = dbNames
     var count = 0
     while(rs.next()) {
       count += 1
-      assert(expected.contains(rs.getString("TABLE_SCHEM")))
+      assert(dbNames.contains(rs.getString("TABLE_SCHEM")))
       assert(rs.getString("TABLE_CATALOG") === catalogName)
     }
     // Make sure there are no more elements
     assert(!rs.next())
-    assert(expected.size === count, "All expected schemas should be visited")
+    assert(dbNames.size === count, "All expected schemas should be visited")
   }
 }

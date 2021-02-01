@@ -50,10 +50,22 @@ class Shim_v3_0 extends Shim_v2_4 {
         (catalog.defaultNamespace()  ++ catalog.listNamespaces(Array()).map(_.head)).distinct
       schemas.filter(_.matches(schemaPattern))
     case catalog: SupportsNamespaces =>
-      // TODO: 1. We need explode here based on the impl of DSv2
-      // TODO: 2. we need ensure how BI tools support multipart namespaces
-      val schemas = (catalog.defaultNamespace() ++ catalog.listNamespaces().map(_.head)).distinct
-      schemas.filter(_.matches(schemaPattern))
+      val rootSchema = catalog.listNamespaces()
+      val allSchemas = listNamespaces(catalog, rootSchema).map(_.mkString("."))
+      val schemas = (allSchemas ++: catalog.defaultNamespace().toSet)
+      schemas.filter(_.matches(schemaPattern)).toSeq
+  }
+
+  private def listNamespaces(
+      catalog: SupportsNamespaces, namespaces: Array[Array[String]]): Array[Array[String]] = {
+    val children = namespaces.flatMap { ns =>
+      catalog.listNamespaces(ns)
+    }
+    if (children.isEmpty) {
+      namespaces
+    } else {
+      namespaces ++: listNamespaces(catalog, children)
+    }
   }
 
   override def getSchemas(
