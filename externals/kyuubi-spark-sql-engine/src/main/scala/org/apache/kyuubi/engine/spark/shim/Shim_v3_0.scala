@@ -62,9 +62,20 @@ class Shim_v3_0 extends Shim_v2_4 {
       catalog.listNamespaces(ns)
     }
     if (children.isEmpty) {
-      namespaces
+      namespaces.map(_.map(quoteIfNeeded))
     } else {
-      namespaces ++: listNamespaces(catalog, children)
+      namespaces.map(_.map(quoteIfNeeded)) ++: listNamespaces(catalog, children)
+    }
+  }
+
+  /**
+   * Forked from Apache Spark's org.apache.spark.sql.connector.catalog.CatalogV2Implicits
+   */
+  private def quoteIfNeeded(part: String): String = {
+    if (part.contains(".") || part.contains("`")) {
+      s"`${part.replace("`", "``")}`"
+    } else {
+      part
     }
   }
 

@@ -91,7 +91,14 @@ trait BasicIcebergJDBCTests extends JDBCTestUtils {
   }
 
   test("get schemas with multipart namespaces") {
-    val dbs = Seq("db1", "db1.db2", "db1.db2.db3", "db4")
+    val dbs = Seq(
+      "`a.b`",
+      "`a.b`.c",
+      "a.`b.c`",
+      "`a.b.c`",
+      "`a.b``.c`",
+      "db1.db2.db3",
+      "db4")
 
     withDatabases(dbs: _*) { statement =>
       dbs.foreach(db => statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $db"))
@@ -100,8 +107,8 @@ trait BasicIcebergJDBCTests extends JDBCTestUtils {
       val allPattern = Seq("", "*", "%", null, ".*", "_*", "_%", ".%")
       Seq(null, catalog).foreach { cg =>
         allPattern foreach { pattern =>
-          checkGetSchemas(
-            metaData.getSchemas(cg, pattern), dbs ++ Seq("global_temp"), catalog)
+          checkGetSchemas(metaData.getSchemas(cg, pattern),
+            dbs ++ Seq("global_temp", "a", "db1", "db1.db2"), catalog)
         }
       }
 
