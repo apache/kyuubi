@@ -47,6 +47,4 @@ embedded_zookeeper/
 /work/
 /docs/_build/
 /kyuubi-common/metrics/
-kyuubi-common/operation_logs/
-/kyuubi-common/operation_logs/
-/kyuubi-main/operation_logs/
+**/operation_logs/
