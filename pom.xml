@@ -362,6 +362,22 @@
             </dependency>
 
             <!--
+              DO NOT use it directly,
+              instead use `spark-hive-thriftserver` to retrieve a relative clean hive jdbc driver.
+            -->
+            <dependency>
+                <groupId>org.apache.hive</groupId>
+                <artifactId>hive-jdbc</artifactId>
+                <version>${hive.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <!--
               because of THRIFT-4805, we don't upgrade to libthrift:0.12.0,
               because of THRIFT-5274, we don't upgrade to libthrift:0.13.0,
               so just keep hive-service-rpc:2.3.7 transitive dependency libthrift:0.9.3
@@ -388,12 +404,6 @@
                         <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.httpcomponents</groupId>
-                <artifactId>httpcomponents-client</artifactId>
-                <version>4.5.6</version>
             </dependency>
 
             <dependency>
