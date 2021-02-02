@@ -127,6 +127,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     info(s"Starting and exposing JDBC connection at: jdbc:hive2://$connectionUrl/")
     server.foreach(_.serve())
   } catch {
+    case _: InterruptedException => error(s"$getName is interrupted")
     case t: Throwable =>
       error(s"Error starting $getName", t)
       System.exit(-1)

@@ -23,7 +23,7 @@ import org.apache.kyuubi.service.ServiceState._
 
 class KyuubiServerSuite extends KyuubiFunSuite {
 
-  ignore("kyuubi server basic") {
+  test("kyuubi server basic") {
     val server = new KyuubiServer()
     server.stop()
     val conf = KyuubiConf().set(KyuubiConf.FRONTEND_BIND_PORT, 0)
@@ -57,7 +57,7 @@ class KyuubiServerSuite extends KyuubiFunSuite {
     server.stop()
   }
 
-  ignore("invalid port") {
+  test("invalid port") {
     val conf = KyuubiConf().set(KyuubiConf.FRONTEND_BIND_PORT, 100)
     val e = intercept[KyuubiException](new KyuubiServer().initialize(conf))
     assert(e.getMessage.contains("Failed to initialize frontend service"))
