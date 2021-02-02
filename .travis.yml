@@ -44,15 +44,15 @@ deploy:
 #      tags: true
 
 install:
-  - build/mvn --version
-  - build/mvn clean
+  - mvn --version
+  - mvn clean
 
 before_script:
-  - build/mvn help:evaluate -Dexpression=project.version
-  - build/mvn help:evaluate -Dexpression=java.version
-  - build/mvn help:evaluate -Dexpression=scala.binary.version
-  - build/mvn help:evaluate -Dexpression=hadoop.version
-  - build/mvn help:evaluate -Dexpression=hive.version
+  - mvn help:evaluate -Dexpression=project.version
+  - mvn help:evaluate -Dexpression=java.version
+  - mvn help:evaluate -Dexpression=scala.binary.version
+  - mvn help:evaluate -Dexpression=hadoop.version
+  - mvn help:evaluate -Dexpression=hive.version
 
 #jobs:
 #  include:
@@ -61,7 +61,7 @@ before_script:
 #        - build/mvn --no-transfer-progress clean verify -pl :kyuubi-common,:kyuubi-ha,:kyuubi-main,:kyuubi-spark-sql-engine,:kyuubi-codecov,:kyuubi-download,:kyuubi-assembly -Dmaven.javadoc.skip=true -B -V
 
 script:
-  - build/mvn clean install -Dmaven.javadoc.skip=true -B -V
+  - mvn clean install -Dmaven.javadoc.skip=true -V
 
 after_script:
   - rm -r $HOME/.m2/repository/org/apache/kyuubi

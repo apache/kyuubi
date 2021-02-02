@@ -17,27 +17,11 @@
 
 package org.apache.kyuubi.engine.spark
 
-import org.apache.spark.sql.SparkSession
-
-import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.ServiceState
 
-class SparkSQLEngineListenerSuite extends KyuubiFunSuite {
-
-  override def beforeAll(): Unit = {
-    SparkSession.clearActiveSession()
-    SparkSession.clearDefaultSession()
-    super.beforeAll()
-  }
+class SparkSQLEngineListenerSuite extends WithSparkSQLEngine {
 
   test("application end") {
-    val spark = SparkSession
-      .builder().master("local").config("spark.ui.port", "0").getOrCreate()
-
-    val engine = new SparkSQLEngine(spark)
-    engine.initialize(KyuubiConf().set(KyuubiConf.FRONTEND_BIND_PORT, 0))
-    engine.start()
     assert(engine.getServiceState === ServiceState.STARTED)
     spark.stop()
     assert(engine.getServiceState === ServiceState.STOPPED)

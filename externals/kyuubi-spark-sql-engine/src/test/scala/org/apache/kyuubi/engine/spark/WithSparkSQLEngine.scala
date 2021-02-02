@@ -51,10 +51,14 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
     super.afterAll()
     if (engine != null) {
       engine.stop()
+      engine = null
     }
     if (spark != null) {
       spark.stop()
+      spark = null
     }
+    SparkSession.clearActiveSession()
+    SparkSession.clearDefaultSession()
     SessionState.detachSession()
     Hive.closeCurrent()
   }

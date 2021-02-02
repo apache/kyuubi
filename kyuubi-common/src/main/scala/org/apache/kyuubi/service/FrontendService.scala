@@ -19,7 +19,6 @@ package org.apache.kyuubi.service
 
 import java.net.{InetAddress, ServerSocket}
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
@@ -35,7 +34,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.SessionHandle
-import org.apache.kyuubi.util.{ExecutorPoolCaptureOom, KyuubiHadoopUtils}
+import org.apache.kyuubi.util.{ExecutorPoolCaptureOom, KyuubiHadoopUtils, NamedThreadFactory}
 
 class FrontendService private (name: String, be: BackendService, oomHook: Runnable)
   extends AbstractService(name) with TCLIService.Iface with Runnable with Logging {
@@ -49,9 +48,10 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   private var server: Option[TServer] = None
+  private var serverThread: Thread = _
   protected var serverAddr: InetAddress = _
   protected var portNum: Int = _
-  protected var isStarted = new AtomicBoolean(false)
+  protected var isStarted = false
 
   private var authFactory: KyuubiAuthenticationFactory = _
   private var hadoopConf: Configuration = _
@@ -114,10 +114,10 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
 
   override def start(): Unit = synchronized {
     super.start()
-    if (!isStarted.getAndSet(true)) {
-      val thread = new Thread(this)
-      thread.setName(getName)
-      thread.start()
+    if(!isStarted) {
+      serverThread = new NamedThreadFactory(getName, false).newThread(this)
+      serverThread.start()
+      isStarted = true
     }
   }
 
@@ -125,15 +125,22 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     info(s"Starting and exposing JDBC connection at: jdbc:hive2://$connectionUrl/")
     server.foreach(_.serve())
   } catch {
+    case _: InterruptedException => error(s"$getName is interrupted")
     case t: Throwable =>
       error(s"Error starting $getName", t)
       System.exit(-1)
   }
 
   override def stop(): Unit = synchronized {
-    if (isStarted.getAndSet(false)) {
+    if (isStarted) {
+      if (serverThread != null) {
+        serverThread.interrupt()
+        serverThread = null
+      }
       server.foreach(_.stop())
+      server = None
       info(this.name + " has stopped")
+      isStarted = false
     }
     super.stop()
   }
