@@ -60,6 +60,7 @@
         <scala.binary.version>2.12</scala.binary.version>
 
         <apacheds.version>2.0.0-M15</apacheds.version>
+        <commons-lang3.version>3.10</commons-lang3.version>
         <guava.version>11.0.2</guava.version>
         <curator.version>2.7.1</curator.version>
         <hadoop.version>2.7.4</hadoop.version>
@@ -302,6 +303,12 @@
                         <artifactId>jsr305</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
             </dependency>
 
             <dependency>
