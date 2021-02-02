@@ -49,9 +49,10 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   private var server: Option[TServer] = None
+  private var serverThread: Thread = _
   protected var serverAddr: InetAddress = _
   protected var portNum: Int = _
-  protected var isStarted = new AtomicBoolean(false)
+  protected var isStarted = false
 
   private var authFactory: KyuubiAuthenticationFactory = _
   private var hadoopConf: Configuration = _
@@ -114,10 +115,11 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
 
   override def start(): Unit = synchronized {
     super.start()
-    if (!isStarted.getAndSet(true)) {
-      val thread = new Thread(this)
-      thread.setName(getName)
-      thread.start()
+    if(!isStarted) {
+      serverThread = new Thread(this)
+      serverThread.setName(getName)
+      serverThread.start()
+      isStarted = true
     }
   }
 
@@ -131,9 +133,15 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def stop(): Unit = synchronized {
-    if (isStarted.getAndSet(false)) {
+    if (isStarted) {
+      if (serverThread != null) {
+        serverThread.interrupt()
+        serverThread = null
+      }
       server.foreach(_.stop())
+      server = None
       info(this.name + " has stopped")
+      isStarted = false
     }
     super.stop()
   }
