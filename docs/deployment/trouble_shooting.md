@@ -195,3 +195,42 @@ Error: org.apache.thrift.transport.TTransportException (state=08S01,code=0)
 ```
 
 In Kyuubi, we should increase `kyuubi.frontend.min.worker.threads` instead of `hive.server2.thrift.max.worker.threads`
+
+### Failed to create function using jar
+`CREATE TEMPORARY FUNCTION TEST AS 'com.netease.UDFTest' using jar 'hdfs:///tmp/udf.jar'`
+
+```java
+Error operating EXECUTE_STATEMENT: org.apache.spark.sql.AnalysisException: Can not load class 'com.netease.UDFTest' when registering the function 'test', please make sure it is on the classpath;
+	at org.apache.spark.sql.catalyst.catalog.SessionCatalog.$anonfun$registerFunction$1(SessionCatalog.scala:1336)
+	at scala.Option.getOrElse(Option.scala:189)
+	at org.apache.spark.sql.catalyst.catalog.SessionCatalog.registerFunction(SessionCatalog.scala:1333)
+	at org.apache.spark.sql.execution.command.CreateFunctionCommand.run(functions.scala:82)
+	at org.apache.spark.sql.execution.command.ExecutedCommandExec.sideEffectResult$lzycompute(commands.scala:70)
+	at org.apache.spark.sql.execution.command.ExecutedCommandExec.sideEffectResult(commands.scala:68)
+	at org.apache.spark.sql.execution.command.ExecutedCommandExec.executeCollect(commands.scala:79)
+	at org.apache.spark.sql.Dataset.$anonfun$logicalPlan$1(Dataset.scala:229)
+	at org.apache.spark.sql.Dataset.$anonfun$withAction$1(Dataset.scala:3618)
+	at org.apache.spark.sql.execution.SQLExecution$.$anonfun$withNewExecutionId$5(SQLExecution.scala:100)
+	at org.apache.spark.sql.execution.SQLExecution$.withSQLConfPropagated(SQLExecution.scala:160)
+	at org.apache.spark.sql.execution.SQLExecution$.$anonfun$withNewExecutionId$1(SQLExecution.scala:87)
+	at org.apache.spark.sql.SparkSession.withActive(SparkSession.scala:764)
+	at org.apache.spark.sql.execution.SQLExecution$.withNewExecutionId(SQLExecution.scala:64)
+	at org.apache.spark.sql.Dataset.withAction(Dataset.scala:3616)
+	at org.apache.spark.sql.Dataset.<init>(Dataset.scala:229)
+	at org.apache.spark.sql.Dataset$.$anonfun$ofRows$2(Dataset.scala:100)
+	at org.apache.spark.sql.SparkSession.withActive(SparkSession.scala:764)
+	at org.apache.spark.sql.Dataset$.ofRows(Dataset.scala:97)
+	at org.apache.spark.sql.SparkSession.$anonfun$sql$1(SparkSession.scala:607)
+	at org.apache.spark.sql.SparkSession.withActive(SparkSession.scala:764)
+	at org.apache.spark.sql.SparkSession.sql(SparkSession.scala:602)
+	at org.apache.kyuubi.engine.spark.operation.ExecuteStatement.org$apache$kyuubi$engine$spark$operation$ExecuteStatement$$executeStatement(ExecuteStatement.scala:64)
+	at org.apache.kyuubi.engine.spark.operation.ExecuteStatement$$anon$1.run(ExecuteStatement.scala:80)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+	at java.lang.Thread.run(Thread.java:745)
+```
+
+If you get this exception when creating a function, you can check your JDK version.
+You should update JDK to JDK1.8.0_121 and later, since JDK1.8.0_121 fix a security issue [Additional access restrictions for URLClassLoader.newInstance](https://www.oracle.com/java/technologies/javase/8u121-relnotes.html).
