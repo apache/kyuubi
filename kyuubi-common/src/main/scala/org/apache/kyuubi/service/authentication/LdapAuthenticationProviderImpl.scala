@@ -21,7 +21,7 @@ import javax.naming.{Context, NamingException}
 import javax.naming.directory.InitialDirContext
 import javax.security.sasl.AuthenticationException
 
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._

@@ -24,7 +24,7 @@ import java.util.{Properties, UUID}
 
 import scala.collection.JavaConverters._
 
-import org.apache.commons.lang.SystemUtils
+import org.apache.commons.lang3.SystemUtils
 import org.apache.hadoop.security.UserGroupInformation
 
 private[kyuubi] object Utils extends Logging {
