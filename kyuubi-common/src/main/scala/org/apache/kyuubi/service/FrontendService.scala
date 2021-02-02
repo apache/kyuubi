@@ -19,7 +19,6 @@ package org.apache.kyuubi.service
 
 import java.net.{InetAddress, ServerSocket}
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
@@ -35,7 +34,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.SessionHandle
-import org.apache.kyuubi.util.{ExecutorPoolCaptureOom, KyuubiHadoopUtils}
+import org.apache.kyuubi.util.{ExecutorPoolCaptureOom, KyuubiHadoopUtils, NamedThreadFactory}
 
 class FrontendService private (name: String, be: BackendService, oomHook: Runnable)
   extends AbstractService(name) with TCLIService.Iface with Runnable with Logging {
@@ -116,8 +115,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   override def start(): Unit = synchronized {
     super.start()
     if(!isStarted) {
-      serverThread = new Thread(this)
-      serverThread.setName(getName)
+      serverThread = new NamedThreadFactory(getName, false).newThread(this)
       serverThread.start()
       isStarted = true
     }
