@@ -36,21 +36,21 @@ To install Kyuubi, you need to unpack the tarball. For example,
 tar zxf kyuubi-1.0.2-bin-spark-3.0.1.tar.gz
 ```
 
-This will result in the creation of a subdirectory named `kyuubi-1.0.0-SNAPSHOT-bin-spark-3.0.1` shown below, where the `1.0.0-SNAPSHOT` is the Kyuubi version and `3.0.1` is the pre-built Spark version.
+This will result in the creation of a subdirectory named `kyuubi-1.0.2-bin-spark-3.0.1` shown below, where the `1.0.2` is the Kyuubi version and `3.0.1` is the pre-built Spark version.
 
 ```bash
 kyuubi-1.0.2-bin-spark-3.0.1
 ├── LICENSE
 ├── RELEASE
 ├── bin
-│   └── kyuubi
+│   └── kyuubi
 ├── conf
-│   ├── kyuubi-defaults.conf
-│   ├── kyuubi-env.sh
-│   └── log4j.properties
+│   ├── kyuubi-defaults.conf
+│   ├── kyuubi-env.sh
+│   └── log4j.properties
 ├── externals
-│   ├── engines
-│   └── spark-3.0.1-bin-hadoop2.7
+│   ├── engines
+│   └── spark-3.0.1-bin-hadoop2.7
 ├── jars
 ├── logs
 ├── pid
@@ -111,18 +111,18 @@ bin/kyuubi start
 During the server starts, it will print all essential environment variables on the screen, you may check whether they are expected.
 
 ```logtalk
-Starting Kyuubi Server from /Users/kentyao/kyuubi/kyuubi-1.0.0-SNAPSHOT-bin-spark-3.0.1
-Using kyuubi.sh environment file /Users/kentyao/kyuubi/kyuubi-1.0.0-SNAPSHOT-bin-spark-3.0.1/conf/kyuubi-env.sh to initialize...
+Starting Kyuubi Server from /Users/kentyao/kyuubi/kyuubi-1.0.2-bin-spark-3.0.1
+Using kyuubi.sh environment file /Users/kentyao/kyuubi/kyuubi-1.0.2-bin-spark-3.0.1/conf/kyuubi-env.sh to initialize...
 JAVA_HOME: /Library/Java/JavaVirtualMachines/jdk1.8.0_251.jdk/Contents/Home
-KYUUBI_HOME: /Users/kentyao/kyuubi/kyuubi-1.0.0-SNAPSHOT-bin-spark-3.0.1
-KYUUBI_CONF_DIR: /Users/kentyao/kyuubi/kyuubi-1.0.0-SNAPSHOT-bin-spark-3.0.1/conf
-KYUUBI_LOG_DIR: /Users/kentyao/kyuubi/kyuubi-1.0.0-SNAPSHOT-bin-spark-3.0.1/logs
-KYUUBI_PID_DIR: /Users/kentyao/kyuubi/kyuubi-1.0.0-SNAPSHOT-bin-spark-3.0.1/pid
-KYUUBI_WORK_DIR_ROOT: /Users/kentyao/kyuubi/kyuubi-1.0.0-SNAPSHOT-bin-spark-3.0.1/work
-SPARK_HOME: /Users/kentyao/kyuubi/kyuubi-1.0.0-SNAPSHOT-bin-spark-3.0.1/externals/spark-3.0.1-bin-hadoop2.7
+KYUUBI_HOME: /Users/kentyao/kyuubi/kyuubi-1.0.2-bin-spark-3.0.1
+KYUUBI_CONF_DIR: /Users/kentyao/kyuubi/kyuubi-1.0.2-bin-spark-3.0.1/conf
+KYUUBI_LOG_DIR: /Users/kentyao/kyuubi/kyuubi-1.0.2-bin-spark-3.0.1/logs
+KYUUBI_PID_DIR: /Users/kentyao/kyuubi/kyuubi-1.0.2-bin-spark-3.0.1/pid
+KYUUBI_WORK_DIR_ROOT: /Users/kentyao/kyuubi/kyuubi-1.0.2-bin-spark-3.0.1/work
+SPARK_HOME: /Users/kentyao/kyuubi/kyuubi-1.0.2-bin-spark-3.0.1/externals/spark-3.0.1-bin-hadoop2.7
 SPARK_CONF_DIR:
 HADOOP_CONF_DIR:
-Starting org.apache.kyuubi.server.KyuubiServer, logging to /Users/kentyao/kyuubi/kyuubi-1.0.0-SNAPSHOT-bin-spark-3.0.1/logs/kyuubi-kentyao-org.apache.kyuubi.server.KyuubiServer-hulk.local.out
+Starting org.apache.kyuubi.server.KyuubiServer, logging to /Users/kentyao/kyuubi/kyuubi-1.0.2-bin-spark-3.0.1/logs/kyuubi-kentyao-org.apache.kyuubi.server.KyuubiServer-hulk.local.out
 Welcome to
   __  __                           __
  /\ \/\ \                         /\ \      __
@@ -158,7 +158,7 @@ The command below will tell Kyuubi server to create a session with itself.
 ```logtalk
 bin/beeline -u 'jdbc:hive2://localhost:10009/'
 Connecting to jdbc:hive2://localhost:10009/
-Connected to: Spark SQL (version 1.0.0-SNAPSHOT)
+Connected to: Spark SQL (version 1.0.2)
 Driver: Hive JDBC (version 2.3.7)
 Transaction isolation: TRANSACTION_REPEATABLE_READ
 Beeline version 2.3.7 by Apache Hive
