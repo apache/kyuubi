@@ -64,7 +64,7 @@ trait BasicJDBCTests extends JDBCTestUtils {
     val view_global_test = "view_2_test"
     val tables = Seq(table_test, table_external_test, view_test, view_global_test)
     val schemas = Seq("default", "default", "default", "global_temp")
-    val tableTypes = Seq("MANAGED", "EXTERNAL", "VIEW", "VIEW")
+    val tableTypes = Seq("TABLE", "TABLE", "VIEW", "VIEW")
     withJdbcStatement(view_test, view_global_test, table_test, view_test) { statement =>
       statement.execute(
         s"CREATE TABLE IF NOT EXISTS $table_test(key int) USING parquet COMMENT '$table_test'")
@@ -80,7 +80,8 @@ trait BasicJDBCTests extends JDBCTestUtils {
       val rs1 = metaData.getTables(null, null, null, null)
       var i = 0
       while(rs1.next()) {
-        assert(rs1.getString(TABLE_CAT).isEmpty)
+        val catalogName = rs1.getString(TABLE_CAT)
+        assert(catalogName === "spark_catalog" || catalogName === null)
         assert(rs1.getString(TABLE_SCHEM) === schemas(i))
         assert(rs1.getString(TABLE_NAME) == tables(i))
         assert(rs1.getString(TABLE_TYPE) == tableTypes(i))

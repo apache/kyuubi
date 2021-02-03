@@ -31,6 +31,7 @@ trait WithKyuubiServer extends KyuubiFunSuite {
   private var server: KyuubiServer = _
 
   override def beforeAll(): Unit = {
+    super.beforeAll()
     zkServer = new EmbeddedZkServer()
     conf.set(KyuubiConf.EMBEDDED_ZK_PORT, -1)
     val zkData = Utils.createTempDir()
@@ -44,18 +45,14 @@ trait WithKyuubiServer extends KyuubiFunSuite {
     conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 10000L)
     conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
     conf.set(HA_ZK_ACL_ENABLED, false)
-
     server = KyuubiServer.startServer(conf)
-    super.beforeAll()
   }
 
   override def afterAll(): Unit = {
-
     if (server != null) {
       server.stop()
       server = null
     }
-
     if (zkServer != null) {
       zkServer.stop()
       zkServer = null
