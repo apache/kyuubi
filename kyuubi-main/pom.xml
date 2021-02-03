@@ -73,16 +73,6 @@
 
         <dependency>
             <groupId>org.apache.hive</groupId>
-            <artifactId>hive-cli</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.hive</groupId>
-            <artifactId>hive-beeline</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.hive</groupId>
             <artifactId>hive-common</artifactId>
             <scope>test</scope>
         </dependency>
