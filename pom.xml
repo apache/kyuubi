@@ -23,7 +23,7 @@
     <groupId>org.apache.kyuubi</groupId>
     <artifactId>kyuubi</artifactId>
     <name>Kyuubi Project Parent</name>
-    <version>1.0.3-SNAPSHOT</version>
+    <version>1.0.3</version>
     <modules>
         <module>kyuubi-common</module>
         <module>kyuubi-ha</module>
