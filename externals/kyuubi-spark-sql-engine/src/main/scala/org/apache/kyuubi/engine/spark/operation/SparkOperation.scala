@@ -85,7 +85,9 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
   }
 
   protected def onError(cancel: Boolean = false): PartialFunction[Throwable, Unit] = {
-    case e: Exception =>
+    // We should use Throwable instead of Exception since `java.lang.NoClassDefFoundError`
+    // could be thrown.
+    case e: Throwable =>
       if (cancel) spark.sparkContext.cancelJobGroup(statementId)
       state.synchronized {
         val errMsg = KyuubiSQLException.stringifyException(e)
