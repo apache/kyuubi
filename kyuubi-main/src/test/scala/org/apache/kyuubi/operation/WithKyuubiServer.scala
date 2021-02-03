@@ -47,6 +47,7 @@ trait WithKyuubiServer extends KyuubiFunSuite {
 
     server = KyuubiServer.startServer(conf)
     super.beforeAll()
+    Thread.sleep(1500)
   }
 
   override def afterAll(): Unit = {
