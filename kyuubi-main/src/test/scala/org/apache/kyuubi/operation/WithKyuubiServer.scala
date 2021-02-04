@@ -46,6 +46,7 @@ trait WithKyuubiServer extends KyuubiFunSuite {
     conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
     conf.set(HA_ZK_ACL_ENABLED, false)
     server = KyuubiServer.startServer(conf)
+    Thread.sleep(1500)
   }
 
   override def afterAll(): Unit = {
