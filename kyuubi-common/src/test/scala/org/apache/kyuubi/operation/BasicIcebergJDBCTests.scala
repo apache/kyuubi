@@ -20,7 +20,7 @@ package org.apache.kyuubi.operation
 import java.nio.file.Path
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 trait BasicIcebergJDBCTests extends JDBCTestUtils {
 
@@ -63,15 +63,14 @@ trait BasicIcebergJDBCTests extends JDBCTestUtils {
       dbs.foreach(db => statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $db"))
       val metaData = statement.getConnection.getMetaData
 
-      val allPattern = Seq("", "*", "%", null, ".*", "_*", "_%", ".%")
 
       // The session catalog
-      allPattern foreach { pattern =>
+      patterns foreach { pattern =>
         checkGetSchemas(metaData.getSchemas("spark_catalog", pattern), dbDflts, "spark_catalog")
       }
 
       Seq(null, catalog).foreach { cg =>
-        allPattern foreach { pattern =>
+        patterns foreach { pattern =>
           checkGetSchemas(
             metaData.getSchemas(cg, pattern), dbs ++ Seq("global_temp"), catalog)
         }
@@ -104,9 +103,8 @@ trait BasicIcebergJDBCTests extends JDBCTestUtils {
       dbs.foreach(db => statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $db"))
       val metaData = statement.getConnection.getMetaData
 
-      val allPattern = Seq("", "*", "%", null, ".*", "_*", "_%", ".%")
       Seq(null, catalog).foreach { cg =>
-        allPattern foreach { pattern =>
+        patterns foreach { pattern =>
           checkGetSchemas(metaData.getSchemas(cg, pattern),
             dbs ++ Seq("global_temp", "a", "db1", "db1.db2"), catalog)
         }
@@ -115,5 +113,43 @@ trait BasicIcebergJDBCTests extends JDBCTestUtils {
       checkGetSchemas(metaData.getSchemas(catalog, "db1.db2%"),
         Seq("db1.db2", "db1.db2.db3"), catalog)
     }
+  }
+
+  test("get tables") {
+    val dbs = Seq(
+      "`a.b`",
+      "`a.b`.c",
+      "a.`b.c`",
+      "`a.b.c`",
+      "`a.b``.c`",
+      "db1.db2.db3",
+      "db4")
+    withDatabases(dbs: _*) { statement =>
+      dbs.foreach(db => statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $db"))
+      val metaData = statement.getConnection.getMetaData
+
+      Seq("hadoop_prod").foreach { catalog =>
+        dbs.foreach { db =>
+          try {
+            statement.execute(
+              s"CREATE TABLE IF NOT EXISTS $catalog.$db.tbl(c STRING) USING iceberg")
+
+            val rs1 = metaData.getTables(catalog, db, "%", null)
+            while (rs1.next()) {
+              val catalogName = rs1.getString(TABLE_CAT)
+              assert(catalogName === catalog)
+              assert(rs1.getString(TABLE_SCHEM) === db)
+              assert(rs1.getString(TABLE_NAME) === "tbl")
+              assert(rs1.getString(TABLE_TYPE) == "TABLE")
+              assert(rs1.getString(REMARKS) === "")
+            }
+            assert(!rs1.next())
+          } finally {
+            statement.execute(s"DROP TABLE IF EXISTS $catalog.$db.tbl")
+          }
+        }
+      }
+    }
+
   }
 }
