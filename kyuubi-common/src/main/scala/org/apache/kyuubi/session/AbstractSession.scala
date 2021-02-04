@@ -61,10 +61,11 @@ abstract class AbstractSession(
   private def release(userAccess: Boolean): Unit = {
     if (userAccess) {
       _lastAccessTime = System.currentTimeMillis
+      if (opHandleSet.isEmpty) {
+        _lastIdleTime = System.currentTimeMillis
+      }
     }
-    if (opHandleSet.isEmpty) {
-      _lastIdleTime = System.currentTimeMillis
-    } else {
+    if (!opHandleSet.isEmpty) {
       _lastIdleTime = 0
     }
   }
@@ -211,7 +212,7 @@ abstract class AbstractSession(
     }
   }
 
-  override def closeExpiredOperations: Unit = {
+  override def closeExpiredOperations: Unit = withAcquireRelease(false) {
     val operations = sessionManager.operationManager
       .removeExpiredOperations(opHandleSet.asScala.toSeq)
     operations.foreach { op =>
