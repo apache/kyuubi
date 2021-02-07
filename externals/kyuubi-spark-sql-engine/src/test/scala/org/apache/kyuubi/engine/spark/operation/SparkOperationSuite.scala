@@ -28,11 +28,11 @@ import org.apache.hive.service.rpc.thrift._
 import org.apache.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.hive.service.rpc.thrift.TOperationState._
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
-import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
+import org.apache.kyuubi.engine.spark.shim.SparkShim
 import org.apache.kyuubi.operation.JDBCTests
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
@@ -44,9 +44,9 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
     withJdbcStatement() { statement =>
       val meta = statement.getConnection.getMetaData
       val types = meta.getTableTypes
-      val expected = CatalogTableType.tableTypes.toIterator
+      val expected = SparkShim.sparkTableTypes.toIterator
       while (types.next()) {
-        assert(types.getString(TABLE_TYPE) === expected.next().name)
+        assert(types.getString(TABLE_TYPE) === expected.next())
       }
       assert(!expected.hasNext)
       assert(!types.next())

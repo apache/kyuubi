@@ -51,7 +51,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   private var serverThread: Thread = _
   protected var serverAddr: InetAddress = _
   protected var portNum: Int = _
-  protected var isStarted = false
+  @volatile protected var isStarted = false
 
   private var authFactory: KyuubiAuthenticationFactory = _
   private var hadoopConf: Configuration = _

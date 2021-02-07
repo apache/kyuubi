@@ -31,6 +31,7 @@ trait JDBCTestUtils extends KyuubiFunSuite {
 
   protected val dftSchema = "default"
   protected val user: String = Utils.currentUser
+  protected val patterns = Seq("", "*", "%", null, ".*", "_*", "_%", ".%")
   protected def jdbcUrl: String
 
   protected def withMultipleConnectionJdbcStatement(

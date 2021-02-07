@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.spark.shim
 
 import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.connector.catalog.{CatalogExtension, CatalogPlugin, SupportsNamespaces}
+import org.apache.spark.sql.connector.catalog.{CatalogExtension, CatalogPlugin, SupportsNamespaces, TableCatalog}
 
 class Shim_v3_0 extends Shim_v2_4 {
 
@@ -37,34 +37,41 @@ class Shim_v3_0 extends Shim_v2_4 {
     (catalogs.keys ++: defaults).distinct.map(Row(_))
   }
 
+  override def getCatalog(spark: SparkSession, catalogName: String): CatalogPlugin = {
+    val catalogManager = spark.sessionState.catalogManager
+    if (catalogName == null) {
+      catalogManager.currentCatalog
+    } else {
+      catalogManager.catalog(catalogName)
+    }
+  }
+
   override def catalogExists(spark: SparkSession, catalog: String): Boolean = {
     spark.sessionState.catalogManager.isCatalogRegistered(catalog)
   }
 
-  private def getSchemas(
-      catalog: CatalogPlugin,
-      schemaPattern: String): Seq[String] = catalog match {
-    case catalog: CatalogExtension =>
-      // DSv2 does not support pass schemaPattern transparently
-      val schemas =
-        (catalog.defaultNamespace()  ++ catalog.listNamespaces(Array()).map(_.head)).distinct
-      schemas.filter(_.matches(schemaPattern))
-    case catalog: SupportsNamespaces =>
-      val rootSchema = catalog.listNamespaces()
-      val allSchemas = listNamespaces(catalog, rootSchema).map(_.mkString("."))
-      val schemas = (allSchemas ++: catalog.defaultNamespace().toSet)
-      schemas.filter(_.matches(schemaPattern)).toSeq
-  }
-
-  private def listNamespaces(
-      catalog: SupportsNamespaces, namespaces: Array[Array[String]]): Array[Array[String]] = {
+  private def listAllNamespaces(
+      catalog: SupportsNamespaces,
+      namespaces: Array[Array[String]]): Array[Array[String]] = {
     val children = namespaces.flatMap { ns =>
       catalog.listNamespaces(ns)
     }
     if (children.isEmpty) {
-      namespaces.map(_.map(quoteIfNeeded))
+      namespaces
     } else {
-      namespaces.map(_.map(quoteIfNeeded)) ++: listNamespaces(catalog, children)
+      namespaces ++: listAllNamespaces(catalog, children)
+    }
+  }
+
+  private def listAllNamespaces(catalog: CatalogPlugin): Array[Array[String]] = {
+    catalog match {
+      case catalog: CatalogExtension =>
+        // DSv2 does not support pass schemaPattern transparently
+        catalog.defaultNamespace() +: catalog.listNamespaces(Array())
+      case catalog: SupportsNamespaces =>
+        val rootSchema = catalog.listNamespaces()
+        val allSchemas = listAllNamespaces(catalog, rootSchema)
+        allSchemas
     }
   }
 
@@ -79,18 +86,63 @@ class Shim_v3_0 extends Shim_v2_4 {
     }
   }
 
+  private def listNamespacesWithPattern(
+      catalog: CatalogPlugin, schemaPattern: String): Array[Array[String]] = {
+    val p = schemaPattern.r.pattern
+    listAllNamespaces(catalog).filter { ns =>
+      val quoted = ns.map(quoteIfNeeded).mkString(".")
+      p.matcher(quoted).matches()
+    }.distinct
+  }
+
+  private def getSchemasWithPattern(catalog: CatalogPlugin, schemaPattern: String): Seq[String] = {
+    val p = schemaPattern.r.pattern
+    listAllNamespaces(catalog).flatMap { ns =>
+      val quoted = ns.map(quoteIfNeeded).mkString(".")
+      if (p.matcher(quoted).matches()) {
+        Some(quoted)
+      } else {
+        None
+      }
+    }.distinct
+  }
+
   override def getSchemas(
       spark: SparkSession,
       catalogName: String,
       schemaPattern: String): Seq[Row] = {
     val viewMgr = getGlobalTempViewManager(spark, schemaPattern)
-    val manager = spark.sessionState.catalogManager
-    if (catalogName == null) {
-      val catalog = manager.currentCatalog
-      (getSchemas(catalog, schemaPattern) ++ viewMgr).map(Row(_, catalog.name()))
-    } else {
-      val catalogPlugin = manager.catalog(catalogName)
-      (getSchemas(catalogPlugin, schemaPattern) ++ viewMgr).map(Row(_, catalogName))
+    val catalog = getCatalog(spark, catalogName)
+    val schemas = getSchemasWithPattern(catalog, schemaPattern)
+    (schemas ++ viewMgr).map(Row(_, catalog.name()))
+  }
+
+  override def getCatalogTablesOrViews(
+      spark: SparkSession,
+      catalogName: String,
+      schemaPattern: String,
+      tablePattern: String,
+      tableTypes: Set[String]): Seq[Row] = {
+    val catalog = getCatalog(spark, catalogName)
+    val schemas = listNamespacesWithPattern(catalog, schemaPattern)
+    catalog match {
+      case catalog if catalog.name() == SESSION_CATALOG =>
+        super.getCatalogTablesOrViews(
+          spark, SESSION_CATALOG, schemaPattern, tablePattern, tableTypes)
+      case ce: CatalogExtension =>
+        super.getCatalogTablesOrViews(spark, ce.name(), schemaPattern, tablePattern, tableTypes)
+      case tc: TableCatalog =>
+        schemas.flatMap { ns =>
+          tc.listTables(ns)
+        }.map { ident =>
+          val table = tc.loadTable(ident)
+          // TODO: restore view type for session catalog
+          val comment = table.properties().getOrDefault(TableCatalog.PROP_COMMENT, "")
+          val schema = ident.namespace().map(quoteIfNeeded).mkString(".")
+          val tableName = quoteIfNeeded(ident.name())
+          Row(catalog.name(), schema, tableName, "TABLE", comment, null, null, null, null, null)
+        }
+      case _ => Seq.empty[Row]
     }
   }
 }

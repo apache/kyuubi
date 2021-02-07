@@ -18,6 +18,8 @@
 package org.apache.kyuubi.engine.spark.shim
 
 import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.connector.catalog.CatalogPlugin
 
 import org.apache.kyuubi.{Logging, Utils}
 
@@ -26,19 +28,55 @@ import org.apache.kyuubi.{Logging, Utils}
  */
 trait SparkShim extends Logging {
 
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //                                          Catalog                                            //
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+
   /**
    * Get all register catalogs in Spark's `CatalogManager`
    */
   def getCatalogs(spark: SparkSession): Seq[Row]
 
-  def catalogExists(spark: SparkSession, catalog: String): Boolean
+  protected def getCatalog(spark: SparkSession, catalog: String): CatalogPlugin
 
+  protected def catalogExists(spark: SparkSession, catalog: String): Boolean
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //                                           Schema                                            //
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+
+  /**
+   * a list of [[Row]]s, with 2 fields `schemaName: String, catalogName: String`
+   */
   def getSchemas(spark: SparkSession, catalogName: String, schemaPattern: String): Seq[Row]
 
-  def getGlobalTempViewManager(spark: SparkSession, schemaPattern: String): Seq[String] = {
-    val database = spark.sharedState.globalTempViewManager.database
-    Option(database).filter(_.matches(schemaPattern)).toSeq
-  }
+  protected def getGlobalTempViewManager(spark: SparkSession, schemaPattern: String): Seq[String]
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //                                        Table & View                                         //
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+
+  def getCatalogTablesOrViews(
+      spark: SparkSession,
+      catalogName: String,
+      schemaPattern: String,
+      tablePattern: String,
+      tableTypes: Set[String]): Seq[Row]
+
+  def getTempViews(
+      spark: SparkSession,
+      catalogName: String,
+      schemaPattern: String,
+      tablePattern: String): Seq[Row]
+
+  protected def getViews(
+      spark: SparkSession,
+      schemaPattern: String,
+      tablePattern: String): Seq[TableIdentifier]
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //                                         Miscellaneous                                       //
+  /////////////////////////////////////////////////////////////////////////////////////////////////
 
   protected def invoke(
       obj: Any,
@@ -66,6 +104,13 @@ trait SparkShim extends Logging {
     field.setAccessible(true)
     field.get(o)
   }
+
+  protected def matched(tableTypes: Set[String], tableType: String): Boolean = {
+    val typ = if (tableType.equalsIgnoreCase("VIEW")) "VIEW" else "TABLE"
+    tableTypes.exists(typ.equalsIgnoreCase)
+  }
+
+  protected val SESSION_CATALOG: String = "spark_catalog"
 }
 
 object SparkShim {
@@ -78,4 +123,6 @@ object SparkShim {
       case _ => throw new IllegalArgumentException(s"Not Support spark version $runtimeSparkVer")
     }
   }
+
+  val sparkTableTypes = Set("VIEW", "TABLE")
 }
