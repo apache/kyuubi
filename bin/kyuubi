@@ -21,11 +21,12 @@ CLASS="org.apache.kyuubi.server.KyuubiServer"
 
 function usage {
   echo "Usage: bin/kyuubi command"
-  echo "  COMMANDS:"
-  echo "    start   run kyuubi as daemon"
-  echo "    run     run kyuubi in foreground"
-  echo "    stop    stop kyuubi daemon"
-  echo "    status  show kyuubi daemon status"
+  echo "  commands:"
+  echo "    start        - Run a Kyuubi server as a daemon"
+  echo "    run          - Run a Kyuubi server in the foreground"
+  echo "    stop         - Stop the Kyuubi daemon"
+  echo "    status       - Show status of the Kyuubi daemon"
+  echo "    -h | --help  - Show this help message"
 }
 
 if [[ "$@" = *--help ]] || [[ "$@" = *-h ]]; then
