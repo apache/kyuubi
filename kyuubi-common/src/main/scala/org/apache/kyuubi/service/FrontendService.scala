@@ -133,13 +133,13 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
 
   override def stop(): Unit = synchronized {
     if (isStarted) {
+      server.foreach(_.stop())
+      server = None
+      info(this.name + " has stopped")
       if (serverThread != null) {
         serverThread.interrupt()
         serverThread = null
       }
-      server.foreach(_.stop())
-      server = None
-      info(this.name + " has stopped")
       isStarted = false
     }
     super.stop()
