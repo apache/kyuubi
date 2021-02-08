@@ -71,7 +71,10 @@ class ExecuteStatement(
           case _ => col(field.name).cast(StringType)
         }
       }
-      iter = result.select(castCols: _*).collect().toList.iterator
+      debug(s"original result queryExecution: ${result.queryExecution}")
+      val castedResult = result.select(castCols: _*)
+      debug(s"casted result queryExecution: ${castedResult.queryExecution}")
+      iter = castedResult.collect().toList.iterator
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
