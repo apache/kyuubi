@@ -88,10 +88,6 @@ object RowSet {
         val values = getOrSetAsNull[java.lang.Double](rows, ordinal, nulls, 0.toDouble)
         TColumn.doubleVal(new TDoubleColumn(values, nulls))
 
-      case StringType =>
-        val values = getOrSetAsNull[java.lang.String](rows, ordinal, nulls, "")
-        TColumn.stringVal(new TStringColumn(values, nulls))
-
       case BinaryType =>
         val values = getOrSetAsNull[Array[Byte]](rows, ordinal, nulls, Array())
           .asScala
@@ -100,10 +96,7 @@ object RowSet {
         TColumn.binaryVal(new TBinaryColumn(values, nulls))
 
       case _ =>
-        val values = rows.zipWithIndex.toList.map { case (row, i) =>
-          nulls.set(i, row.isNullAt(ordinal))
-          if (row.isNullAt(ordinal)) "" else row.getString(ordinal)
-        }.asJava
+        val values = getOrSetAsNull[java.lang.String](rows, ordinal, nulls, "")
         TColumn.stringVal(new TStringColumn(values, nulls))
     }
   }

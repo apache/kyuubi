@@ -66,7 +66,7 @@ class ExecuteStatement(
       val castCols = result.schema.map { field =>
         field.dataType match {
           case BooleanType | ByteType | ShortType | IntegerType | LongType |
-               FloatType | DoubleType | BinaryType =>
+               FloatType | DoubleType | BinaryType | StringType =>
             col(field.name)
           case _ => col(field.name).cast(StringType)
         }
