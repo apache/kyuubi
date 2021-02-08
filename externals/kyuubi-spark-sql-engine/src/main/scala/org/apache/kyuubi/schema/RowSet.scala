@@ -18,6 +18,7 @@
 package org.apache.kyuubi.schema
 
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
@@ -101,11 +102,7 @@ object RowSet {
       case _ =>
         val values = rows.zipWithIndex.toList.map { case (row, i) =>
           nulls.set(i, row.isNullAt(ordinal))
-          if (row.isNullAt(ordinal)) {
-            ""
-          } else {
-            Formatter.formatValue((row.get(ordinal), typ))
-          }
+          if (row.isNullAt(ordinal)) "" else row.getString(ordinal)
         }.asJava
         TColumn.stringVal(new TStringColumn(values, nulls))
     }
@@ -174,15 +171,17 @@ object RowSet {
         if (!row.isNullAt(ordinal)) tDoubleValue.setValue(row.getDouble(ordinal))
         TColumnValue.doubleVal(tDoubleValue)
 
-      case StringType =>
-        val tStringValue = new TStringValue
-        if (!row.isNullAt(ordinal)) tStringValue.setValue(row.getString(ordinal))
-        TColumnValue.stringVal(tStringValue)
+      case BinaryType =>
+        val tStrValue = new TStringValue
+        if (!row.isNullAt(ordinal)) {
+          tStrValue.setValue(new String(row.getAs[Array[Byte]](ordinal), StandardCharsets.UTF_8))
+        }
+        TColumnValue.stringVal(tStrValue)
 
       case _ =>
         val tStrValue = new TStringValue
         if (!row.isNullAt(ordinal)) {
-          tStrValue.setValue(Formatter.formatValue((row.get(ordinal), types(ordinal).dataType)))
+          tStrValue.setValue(row.getString(ordinal))
         }
         TColumnValue.stringVal(tStrValue)
     }

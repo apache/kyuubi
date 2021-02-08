@@ -195,8 +195,8 @@ trait JDBCTests extends BasicJDBCTests {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT map() AS col1, map(1, 2, 3, 4) AS col2")
       assert(resultSet.next())
-      assert(resultSet.getObject("col1") === "{}")
-      assert(resultSet.getObject("col2") === "{1:2,3:4}")
+      assert(resultSet.getObject("col1") === "[]")
+      assert(resultSet.getObject("col2") === "[1 -> 2, 3 -> 4]")
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.JAVA_OBJECT)
       assert(metaData.getPrecision(1) === Int.MaxValue)
@@ -211,8 +211,8 @@ trait JDBCTests extends BasicJDBCTests {
       val resultSet = statement.executeQuery(
         "SELECT struct('1', '2') AS col1, named_struct('a', 2, 'b', 4) AS col2")
       assert(resultSet.next())
-      assert(resultSet.getObject("col1") === "{\"col1\":\"1\",\"col2\":\"2\"}")
-      assert(resultSet.getObject("col2") === "{\"a\":2,\"b\":4}")
+      assert(resultSet.getObject("col1") === "[1, 2]")
+      assert(resultSet.getObject("col2") === "[2, 4]")
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.STRUCT)
       assert(metaData.getPrecision(1) === Int.MaxValue)

@@ -18,14 +18,13 @@
 package org.apache.kyuubi.schema
 
 import java.nio.ByteBuffer
-import java.sql.{Date, Timestamp}
+import java.nio.charset.StandardCharsets
 
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.execution.HiveResult
-import org.apache.spark.sql.types.{ArrayType, BinaryType, DateType, DoubleType, IntegerType, MapType, StructType, TimestampType}
+import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.CalendarInterval
 
 import org.apache.kyuubi.KyuubiFunSuite
@@ -33,12 +32,10 @@ import org.apache.kyuubi.KyuubiFunSuite
 class RowSetSuite extends KyuubiFunSuite {
 
   def genRow(value: Int): Row = {
-    val boolVal = if (value % 3 == 0) {
-      true
-    } else if (value % 3 == 1) {
-      false
-    } else {
-      null
+    val boolVal = value % 3 match {
+      case 0 => true
+      case 1 => false
+      case _ => null
     }
     val byteVal = value.toByte
     val shortVal = value.toShort
@@ -46,14 +43,13 @@ class RowSetSuite extends KyuubiFunSuite {
     val floatVal = java.lang.Float.valueOf(s"$value.$value")
     val doubleVal = java.lang.Double.valueOf(s"$value.$value")
     val stringVal = value.toString * value
-    val decimalVal = new java.math.BigDecimal(s"$value.$value")
-    val day = java.lang.String.format("%02d", java.lang.Integer.valueOf(value + 1))
-    val dateVal = Date.valueOf(s"2018-11-$day")
-    val timestampVal = Timestamp.valueOf(s"2018-11-17 13:33:33.$value")
+    val decimalVal = s"$value.$value"
+    val dateVal = "2018-11-%02d" format value + 1
+    val timestampVal = s"2018-11-17 13:33:33.$value"
     val binaryVal = Array.fill[Byte](value)(value.toByte)
-    val arrVal = Array.fill(value)(doubleVal).toSeq
-    val mapVal = Map(value -> doubleVal)
-    val interval = new CalendarInterval(value, value, value)
+    val arrVal = Array.fill(value)(doubleVal).mkString("[", ",", "]")
+    val mapVal = Map(value -> doubleVal).map{ case (k, v) => s"$k -> $v"}.mkString("[", ",", "]")
+    val interval = new CalendarInterval(value, value, value).toString
 
     Row(boolVal,
       byteVal,
@@ -102,10 +98,10 @@ class RowSetSuite extends KyuubiFunSuite {
     val boolCol = cols.next().getBoolVal
     assert(boolCol.getValuesSize === rows.size)
     boolCol.getValues.asScala.zipWithIndex.foreach { case (b, i) =>
-      if (i % 3 == 0) assert(b)
-      else if (i % 3 == 1) assert(!b)
-      else {
-        assert(b)
+      i % 3 match {
+        case 0 => assert(b)
+        case 1 => assert(!b)
+        case _ => assert(b)
       }
     }
 
@@ -160,15 +156,13 @@ class RowSetSuite extends KyuubiFunSuite {
     val dateCol = cols.next().getStringVal
     dateCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b.isEmpty)
-      case (b, i) =>
-        assert(b === HiveResult.toHiveString((Date.valueOf(s"2018-11-${i + 1}"), DateType)))
+      case (b, i) => assert(b === "2018-11-%02d".format(i + 1))
     }
 
     val tsCol = cols.next().getStringVal
     tsCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b.isEmpty)
-      case (b, i) => assert(b ===
-        HiveResult.toHiveString((Timestamp.valueOf(s"2018-11-17 13:33:33.$i"), TimestampType)))
+      case (b, i) => assert(b === s"2018-11-17 13:33:33.$i")
     }
 
     val binCol = cols.next().getBinaryVal
@@ -180,15 +174,14 @@ class RowSetSuite extends KyuubiFunSuite {
     val arrCol = cols.next().getStringVal
     arrCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
-      case (b, i) => assert(b === HiveResult.toHiveString(
-        (Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toSeq, ArrayType(DoubleType))))
+      case (b, i) => assert(b ===
+        Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).mkString("[", ",", "]"))
     }
 
     val mapCol = cols.next().getStringVal
     mapCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
-      case (b, i) => assert(b === HiveResult.toHiveString(
-        (Map(i -> java.lang.Double.valueOf(s"$i.$i")), MapType(IntegerType, DoubleType))))
+      case (b, i) => assert(b === s"[$i -> ${java.lang.Double.valueOf(s"$i.$i")}]")
     }
 
     val intervalCol = cols.next().getStringVal
@@ -230,14 +223,12 @@ class RowSetSuite extends KyuubiFunSuite {
 
     val r7 = iter.next().getColVals
     assert(r7.get(10).getStringVal.getValue === "2018-11-17 13:33:33.6")
-    assert(r7.get(11).getStringVal.getValue ===
-      HiveResult.toHiveString((Array.fill[Byte](6)(6.toByte), BinaryType)))
+    assert(r7.get(11).getStringVal.getValue === new String(
+      Array.fill[Byte](6)(6.toByte), StandardCharsets.UTF_8))
 
     val r8 = iter.next().getColVals
-    assert(r8.get(12).getStringVal.getValue === HiveResult.toHiveString(
-      (Array.fill(7)(7.7d).toSeq, ArrayType(DoubleType))))
-    assert(r8.get(13).getStringVal.getValue ===
-      HiveResult.toHiveString((Map(7 -> 7.7d), MapType(IntegerType, DoubleType))))
+    assert(r8.get(12).getStringVal.getValue === Array.fill(7)(7.7d).mkString("[", ",", "]"))
+    assert(r8.get(13).getStringVal.getValue === "[7 -> 7.7]")
 
     val r9 = iter.next().getColVals
     assert(r9.get(14).getStringVal.getValue === new CalendarInterval(8, 8, 8).toString)
