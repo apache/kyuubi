@@ -20,7 +20,7 @@
 CLASS="org.apache.kyuubi.server.KyuubiServer"
 
 function usage {
-  echo "Usage: ./bin/kyuubi (start|stop|status)"
+  echo "Usage: ./bin/kyuubi (start|run|stop|status)"
 }
 
 if [[ "$@" = *--help ]] || [[ "$@" = *-h ]]; then
@@ -82,6 +82,9 @@ if [[ -z "$KYUUBI_JAR_DIR" ]]; then
   fi
 fi
 
+KYUUBI_CLASSPATH="${KYUUBI_JAR_DIR}/*:${KYUUBI_CONF_DIR}:${HADOOP_CONF_DIR}"
+cmd="${RUNNER} ${KYUUBI_JAVA_OPTS} -cp ${KYUUBI_CLASSPATH} $CLASS"
+
 pid="${KYUUBI_PID_DIR}/kyuubi-$USER-$CLASS.pid"
 
 function start_kyuubi() {
@@ -106,8 +109,6 @@ function start_kyuubi() {
     log="${KYUUBI_LOG_DIR}/kyuubi-$USER-$CLASS-$HOSTNAME.out"
     kyuubi_rotate_log ${log}
 
-    KYUUBI_CLASSPATH="${KYUUBI_JAR_DIR}/*:${KYUUBI_CONF_DIR}:${HADOOP_CONF_DIR}"
-    cmd="${RUNNER} ${KYUUBI_JAVA_OPTS} -cp ${KYUUBI_CLASSPATH} $CLASS"
     echo "Starting $CLASS, logging to $log"
     nohup nice -n "${KYUUBI_NICENESS:-0}" ${cmd} >> ${log} 2>&1 < /dev/null &
     newpid="$!"
@@ -133,6 +134,11 @@ function start_kyuubi() {
       echo "Welcome to"
       cat ${KYUUBI_HOME}/bin/kyuubi-logo
     fi
+}
+
+function run_kyuubi() {
+    echo "Starting $CLASS"
+    nice -n "${KYUUBI_NICENESS:-0}" ${cmd}
 }
 
 function stop_kyuubi() {
@@ -179,6 +185,10 @@ function check_kyuubi() {
 case $1 in
   (start | "")
     start_kyuubi
+    ;;
+
+  (run)
+    run_kyuubi
     ;;
 
   (stop)
