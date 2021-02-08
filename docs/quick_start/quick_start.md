@@ -138,12 +138,6 @@ Welcome to
 
 If all goes well, this will result in the creation of the Kyuubi server instance with a `PID` stored in `$KYUUBI_HOME/pid/kyuubi-<username>-org.apache.kyuubi.server.KyuubiServer.pid`
 
-Alternatively, it can be run in the foreground, with the logs and other output written to stdout/stderr. Both streams should be captured if using a supervision system like daemontools:
-
-```bash
-bin/kyuubi run
-```
-
 Then, you can get the JDBC connection url at the end of log file, e.g.
 
 ```
@@ -151,6 +145,13 @@ FrontendService: Starting and exposing JDBC connection at: jdbc:hive2://localhos
 ```
 
 If something goes wrong, you shall be able to find some clues in the log file too.
+
+Alternatively, it can be run in the foreground, with the logs and other output written to stdout/stderr. 
+Both streams should be captured if using a supervision system like `supervisord`.
+
+```bash
+bin/kyuubi run
+```
 
 ## Using Hive Beeline
 
