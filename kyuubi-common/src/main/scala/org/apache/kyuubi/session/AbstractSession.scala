@@ -61,11 +61,10 @@ abstract class AbstractSession(
   private def release(userAccess: Boolean): Unit = {
     if (userAccess) {
       _lastAccessTime = System.currentTimeMillis
-      if (opHandleSet.isEmpty) {
-        _lastIdleTime = System.currentTimeMillis
-      }
     }
-    if (!opHandleSet.isEmpty) {
+    if (opHandleSet.isEmpty) {
+      _lastIdleTime = System.currentTimeMillis
+    } else {
       _lastIdleTime = 0
     }
   }
@@ -212,15 +211,18 @@ abstract class AbstractSession(
     }
   }
 
-  override def closeExpiredOperations: Unit = withAcquireRelease(false) {
+  override def closeExpiredOperations: Unit = {
     val operations = sessionManager.operationManager
       .removeExpiredOperations(opHandleSet.asScala.toSeq)
     operations.foreach { op =>
-      opHandleSet.remove(op.getHandle)
-      try {
-        op.close()
-      } catch {
-        case e: Exception => warn(s"Error closing timed-out operation ${op.getHandle}", e)
+      // After the last expired Handle has been cleaned, the 'lastIdleTime' needs to be updated.
+      withAcquireRelease(false) {
+        opHandleSet.remove(op.getHandle)
+        try {
+          op.close()
+        } catch {
+          case e: Exception => warn(s"Error closing timed-out operation ${op.getHandle}", e)
+        }
       }
     }
   }
