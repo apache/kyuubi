@@ -20,7 +20,8 @@ package org.apache.kyuubi.engine.spark.operation
 import java.util.concurrent.RejectedExecutionException
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
@@ -62,7 +63,18 @@ class ExecuteStatement(
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
       spark.sparkContext.setJobGroup(statementId, statement)
       result = spark.sql(statement)
-      iter = result.collect().toList.iterator
+      val castCols = result.schema.map { field =>
+        field.dataType match {
+          case BooleanType | ByteType | ShortType | IntegerType | LongType |
+               FloatType | DoubleType | BinaryType | StringType =>
+            col(field.name)
+          case _ => col(field.name).cast(StringType)
+        }
+      }
+      debug(s"original result queryExecution: ${result.queryExecution}")
+      val castedResult = result.select(castCols: _*)
+      debug(s"casted result queryExecution: ${castedResult.queryExecution}")
+      iter = castedResult.collect().toList.iterator
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)

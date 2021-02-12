@@ -18,13 +18,13 @@
 package org.apache.kyuubi.schema
 
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
 import org.apache.hive.service.rpc.thrift._
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.execution.HiveResult
 import org.apache.spark.sql.types._
 
 object RowSet {
@@ -88,10 +88,6 @@ object RowSet {
         val values = getOrSetAsNull[java.lang.Double](rows, ordinal, nulls, 0.toDouble)
         TColumn.doubleVal(new TDoubleColumn(values, nulls))
 
-      case StringType =>
-        val values = getOrSetAsNull[java.lang.String](rows, ordinal, nulls, "")
-        TColumn.stringVal(new TStringColumn(values, nulls))
-
       case BinaryType =>
         val values = getOrSetAsNull[Array[Byte]](rows, ordinal, nulls, Array())
           .asScala
@@ -100,14 +96,7 @@ object RowSet {
         TColumn.binaryVal(new TBinaryColumn(values, nulls))
 
       case _ =>
-        val values = rows.zipWithIndex.toList.map { case (row, i) =>
-          nulls.set(i, row.isNullAt(ordinal))
-          if (row.isNullAt(ordinal)) {
-            ""
-          } else {
-            HiveResult.toHiveString((row.get(ordinal), typ))
-          }
-        }.asJava
+        val values = getOrSetAsNull[java.lang.String](rows, ordinal, nulls, "")
         TColumn.stringVal(new TStringColumn(values, nulls))
     }
   }
@@ -175,16 +164,17 @@ object RowSet {
         if (!row.isNullAt(ordinal)) tDoubleValue.setValue(row.getDouble(ordinal))
         TColumnValue.doubleVal(tDoubleValue)
 
-      case StringType =>
-        val tStringValue = new TStringValue
-        if (!row.isNullAt(ordinal)) tStringValue.setValue(row.getString(ordinal))
-        TColumnValue.stringVal(tStringValue)
+      case BinaryType =>
+        val tStrValue = new TStringValue
+        if (!row.isNullAt(ordinal)) {
+          tStrValue.setValue(new String(row.getAs[Array[Byte]](ordinal), StandardCharsets.UTF_8))
+        }
+        TColumnValue.stringVal(tStrValue)
 
       case _ =>
         val tStrValue = new TStringValue
         if (!row.isNullAt(ordinal)) {
-          tStrValue.setValue(
-            HiveResult.toHiveString((row.get(ordinal), types(ordinal).dataType)))
+          tStrValue.setValue(row.getString(ordinal))
         }
         TColumnValue.stringVal(tStrValue)
     }
