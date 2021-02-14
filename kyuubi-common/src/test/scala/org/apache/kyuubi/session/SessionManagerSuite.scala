@@ -20,29 +20,19 @@ package org.apache.kyuubi.session
 import java.time.Duration
 
 import org.apache.hive.service.rpc.thrift._
+import org.scalatest.concurrent.Eventually
+import org.scalatest.time.{Seconds, Span}
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.FrontendServiceSuite
 
-class SessionManagerSuite extends FrontendServiceSuite {
+class SessionManagerSuite extends FrontendServiceSuite with Eventually {
 
   override val conf = KyuubiConf()
     .set(KyuubiConf.FRONTEND_BIND_PORT, 0)
     .set("kyuubi.test.server.should.fail", "false")
     .set(KyuubiConf.SESSION_CHECK_INTERVAL, Duration.ofSeconds(5).toMillis)
     .set(KyuubiConf.SESSION_TIMEOUT, Duration.ofSeconds(5).toMillis)
-
-  def waitFor(waitForTime: Long)(f: () => Boolean): Unit = {
-    val startTime = System.currentTimeMillis()
-    var spendTime = System.currentTimeMillis() - startTime
-    while (f()) {
-      spendTime = System.currentTimeMillis() - startTime
-      if (spendTime > waitForTime) {
-        throw new RuntimeException()
-      }
-    }
-    info(s"Spend time $spendTime ms")
-  }
 
   test("close expired operations") {
     sessionConf.put(
@@ -72,19 +62,16 @@ class SessionManagerSuite extends FrontendServiceSuite {
       assert(lastAccessTime < session.lastAccessTime)
       lastAccessTime = session.lastAccessTime
 
-      waitFor(Duration.ofSeconds(60).toMillis) { () =>
-        {
-          session.lastIdleTime == 0
-        }
+      eventually (timeout(Span(60, Seconds)), interval(Span(1, Seconds))) {
+        assert(session.lastIdleTime > lastAccessTime)
       }
 
       info("operation is terminated")
       assert(lastAccessTime == session.lastAccessTime)
-      assert(session.lastIdleTime > lastAccessTime)
       assert(sessionManager.getOpenSessionCount == 1)
 
-      waitFor(Duration.ofSeconds(60).toMillis) { () =>
-        lastAccessTime == session.lastAccessTime
+      eventually (timeout(Span(60, Seconds)), interval(Span(1, Seconds))) {
+        assert(session.lastAccessTime > lastAccessTime)
       }
       assert(sessionManager.getOpenSessionCount == 0)
     }
