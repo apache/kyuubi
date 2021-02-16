@@ -24,7 +24,7 @@ Load balancing aims to optimize all Kyuubi service units usage, maximize through
 
 With Hive JDBC Driver, a client can specify service discovery mode in JDBC connection string, i.e. `serviceDiscoveryMode=zooKeeper;` and set `zooKeeperNameSpace=kyuubiserver;`, then it can randomly pick one of the Kyuubi service uris from the specified ZooKeeper address in the `/kyuubiserver` path.
 
-When we set `spark.kyuubi.ha.enabled` to `true`, load balance mode is activated by default. Please make sure that you specify the correct ZooKeeper address via `spark.kyuubi.ha.zk.quorum` and `spark.kyuubi.ha.zk.client.port`.
+When we set `spark.kyuubi.ha.enabled` to `true`, load balance mode is activated by default. Please make sure that you specify the correct ZooKeeper address via `spark.kyuubi.ha.zookeeper.quorum` and `spark.kyuubi.ha.zookeeper.client.port`.
 
 ## Active/Standby Failover
 
@@ -34,7 +34,7 @@ Active/Standby failover enables you to use a standby Kyuubi server to take over 
 
 A client need not to change any of its behaviours to support load balance or failover mode. But because only the active Kyuubi server will expose its service uri to ZooKeeper in `/kyuubiserver`, clients always randomly pick a server from one and the only choice.
 
-When we set `spark.kyuubi.ha.enabled` to `true` and `spark.kyuubi.ha.mode` to `failover`, failover mode is activated then. Please make sure that you specify the correct ZooKeeper address via `spark.kyuubi.ha.zk.quorum` and `spark.kyuubi.ha.zk.client.port`.
+When we set `spark.kyuubi.ha.enabled` to `true` and `spark.kyuubi.ha.mode` to `failover`, failover mode is activated then. Please make sure that you specify the correct ZooKeeper address via `spark.kyuubi.ha.zookeeper.quorum` and `spark.kyuubi.ha.zookeeper.client.port`.
 
 ## Configuring High Availability
 
@@ -42,14 +42,14 @@ This section describes how to configure high availability. These configurations 
 
 Name|Default|Description
 ---|---|---
-spark.kyuubi.<br />ha.enabled|false|Whether KyuubiServer supports dynamic service discovery for its clients. To support this, each instance of KyuubiServer currently uses ZooKeeper to register itself, when it is brought up. JDBC/ODBC clients should use the ZooKeeper ensemble: spark.kyuubi.ha.zk.quorum in their connection string.
+spark.kyuubi.<br />ha.enabled|false|Whether KyuubiServer supports dynamic service discovery for its clients. To support this, each instance of KyuubiServer currently uses ZooKeeper to register itself, when it is brought up. JDBC/ODBC clients should use the ZooKeeper ensemble: spark.kyuubi.ha.zookeeper.quorum in their connection string.
 spark.kyuubi.<br />ha.mode|load-balance|High availability mode, one is load-balance which is used by default, another is failover as master-slave mode.
-spark.kyuubi.<br />ha.zk.quorum|none|Comma separated list of ZooKeeper servers to talk to, when KyuubiServer supports service discovery via Zookeeper.
-spark.kyuubi.<br />ha.zk.namespace|kyuubiserver|The parent node in ZooKeeper used by KyuubiServer when supporting dynamic service discovery.
-spark.kyuubi.<br />ha.zk.client.port|2181|The port of ZooKeeper servers to talk to. If the list of Zookeeper servers specified in spark.kyuubi.zookeeper.quorum does not contain port numbers, this value is used.
-spark.kyuubi.<br />ha.zk.session.timeout|1,200,000|ZooKeeper client's session timeout (in milliseconds). The client is disconnected, and as a result, all locks released, if a heartbeat is not sent in the timeout.
-spark.kyuubi.<br />ha.zk.connection.basesleeptime|1,000|Initial amount of time (in milliseconds) to wait between retries when connecting to the ZooKeeper server when using ExponentialBackoffRetry policy.
-spark.kyuubi.<br />ha.zk.connection.max.retries|3|Max retry times for connecting to the zk server
+spark.kyuubi.<br />ha.zookeeper.quorum|none|Comma separated list of ZooKeeper servers to talk to, when KyuubiServer supports service discovery via Zookeeper.
+spark.kyuubi.<br />ha.zookeeper.namespace|kyuubiserver|The parent node in ZooKeeper used by KyuubiServer when supporting dynamic service discovery.
+spark.kyuubi.<br />ha.zookeeper.client.port|2181|The port of ZooKeeper servers to talk to. If the list of Zookeeper servers specified in spark.kyuubi.zookeeper.quorum does not contain port numbers, this value is used.
+spark.kyuubi.<br />ha.zookeeper.session.timeout|1,200,000|ZooKeeper client's session timeout (in milliseconds). The client is disconnected, and as a result, all locks released, if a heartbeat is not sent in the timeout.
+spark.kyuubi.<br />ha.zookeeper.connection.basesleeptime|1,000|Initial amount of time (in milliseconds) to wait between retries when connecting to the ZooKeeper server when using ExponentialBackoffRetry policy.
+spark.kyuubi.<br />ha.zookeeper.connection.max.retries|3|Max retry times for connecting to the zk server
 
 ## Additional Documentations
 [Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)  
