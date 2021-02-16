@@ -17,6 +17,9 @@
 
 package org.apache.kyuubi.service
 
+
+import java.util
+
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift._
@@ -32,15 +35,19 @@ import org.apache.kyuubi.session.SessionHandle
 
 class FrontendServiceSuite extends KyuubiFunSuite {
 
-  private val server = new NoopServer()
-  private val conf = KyuubiConf()
+  protected val server = new NoopServer()
+  protected val conf = KyuubiConf()
     .set(KyuubiConf.FRONTEND_BIND_PORT, 0)
     .set("kyuubi.test.server.should.fail", "false")
-  server.initialize(conf)
-  server.start()
 
   val user: String = System.getProperty("user.name")
+  val sessionConf: util.Map[String, String] = new util.HashMap()
 
+  override def beforeAll(): Unit = {
+    server.initialize(conf)
+    server.start()
+    super.beforeAll()
+  }
 
   override def afterAll(): Unit = {
     server.getServices.foreach(_.stop())
@@ -69,6 +76,7 @@ class FrontendServiceSuite extends KyuubiFunSuite {
       val req = new TOpenSessionReq()
       req.setUsername(user)
       req.setPassword("anonymous")
+      req.setConfiguration(sessionConf)
       val resp = client.OpenSession(req)
       val handle = resp.getSessionHandle
 
