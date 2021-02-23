@@ -66,11 +66,12 @@ fi
 SPARK_BUILTIN="${KYUUBI_HOME}/externals/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD:0:3}$HIVE_VERSION_SUFFIX"
 
 if [[ ! -d ${SPARK_BUILTIN} ]]; then
-  SPARK_VERSION_BUILD=$("$MVN" help:evaluate -Dexpression=spark.version $@ 2>/dev/null\
+  MVN="${MVN:-"${KYUUBI_HOME}/build/mvn"}"
+  SPARK_VERSION_BUILD=$("$MVN" help:evaluate -Dexpression=spark.version 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | tail -n 1)
-  HADOOP_VERSION_BUILD=$("$MVN" help:evaluate -Dexpression=hadoop.version $@ 2>/dev/null\
+  HADOOP_VERSION_BUILD=$("$MVN" help:evaluate -Dexpression=hadoop.version 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | tail -n 1)
