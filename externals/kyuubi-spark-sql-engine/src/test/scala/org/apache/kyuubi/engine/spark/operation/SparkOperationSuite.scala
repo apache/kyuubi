@@ -32,7 +32,7 @@ import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.engine.spark.shim.SparkShim
+import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.JDBCTests
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
@@ -44,7 +44,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
     withJdbcStatement() { statement =>
       val meta = statement.getConnection.getMetaData
       val types = meta.getTableTypes
-      val expected = SparkShim.sparkTableTypes.toIterator
+      val expected = SparkCatalogShim.sparkTableTypes.toIterator
       while (types.next()) {
         assert(types.getString(TABLE_TYPE) === expected.next())
       }
@@ -98,7 +98,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
         var pos = 0
 
         while (rowSet.next()) {
-          assert(rowSet.getString(TABLE_CAT) === null)
+          assert(rowSet.getString(TABLE_CAT) === SparkCatalogShim.SESSION_CATALOG)
           assert(rowSet.getString(TABLE_SCHEM) === dftSchema)
           assert(rowSet.getString(TABLE_NAME) === tableName)
           assert(rowSet.getString(COLUMN_NAME) === schema(pos).name)
@@ -142,9 +142,6 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
 
       val rowSet = metaData.getColumns(null, "*", "not_exist", "not_exist")
       assert(!rowSet.next())
-
-      val e1 = intercept[HiveSQLException](metaData.getColumns(null, null, null, "*"))
-      assert(e1.getCause.getMessage contains "Dangling meta character '*' near index 0\n*\n^")
     }
   }
 
@@ -157,7 +154,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
       val data = statement.getConnection.getMetaData
       val rowSet = data.getColumns("", "global_temp", viewName, null)
       while (rowSet.next()) {
-        assert(rowSet.getString(TABLE_CAT) === null)
+        assert(rowSet.getString(TABLE_CAT) === SparkCatalogShim.SESSION_CATALOG)
         assert(rowSet.getString(TABLE_SCHEM) === "global_temp")
         assert(rowSet.getString(TABLE_NAME) === viewName)
         assert(rowSet.getString(COLUMN_NAME) === "i")
@@ -184,20 +181,20 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
       val data = statement.getConnection.getMetaData
       val rowSet = data.getColumns("", "global_temp", viewName, "n")
       while (rowSet.next()) {
-        assert(rowSet.getString("TABLE_CAT") === null)
-        assert(rowSet.getString("TABLE_SCHEM") === "global_temp")
-        assert(rowSet.getString("TABLE_NAME") === viewName)
-        assert(rowSet.getString("COLUMN_NAME") === "n")
-        assert(rowSet.getInt("DATA_TYPE") === java.sql.Types.NULL)
-        assert(rowSet.getString("TYPE_NAME").equalsIgnoreCase(NullType.sql))
-        assert(rowSet.getInt("COLUMN_SIZE") === 1)
-        assert(rowSet.getInt("DECIMAL_DIGITS") === 0)
-        assert(rowSet.getInt("NUM_PREC_RADIX") === 0)
-        assert(rowSet.getInt("NULLABLE") === 1)
-        assert(rowSet.getString("REMARKS") === "")
-        assert(rowSet.getInt("ORDINAL_POSITION") === 0)
-        assert(rowSet.getString("IS_NULLABLE") === "YES")
-        assert(rowSet.getString("IS_AUTO_INCREMENT") === "NO")
+        assert(rowSet.getString(TABLE_CAT) === SparkCatalogShim.SESSION_CATALOG)
+        assert(rowSet.getString(TABLE_SCHEM) === "global_temp")
+        assert(rowSet.getString(TABLE_NAME) === viewName)
+        assert(rowSet.getString(COLUMN_NAME) === "n")
+        assert(rowSet.getInt(DATA_TYPE) === java.sql.Types.NULL)
+        assert(rowSet.getString(TYPE_NAME).equalsIgnoreCase(NullType.sql))
+        assert(rowSet.getInt(COLUMN_SIZE) === 1)
+        assert(rowSet.getInt(DECIMAL_DIGITS) === 0)
+        assert(rowSet.getInt(NUM_PREC_RADIX) === 0)
+        assert(rowSet.getInt(NULLABLE) === 1)
+        assert(rowSet.getString(REMARKS) === "")
+        assert(rowSet.getInt(ORDINAL_POSITION) === 0)
+        assert(rowSet.getString(IS_NULLABLE) === "YES")
+        assert(rowSet.getString(IS_AUTO_INCREMENT) === "NO")
       }
     }
   }

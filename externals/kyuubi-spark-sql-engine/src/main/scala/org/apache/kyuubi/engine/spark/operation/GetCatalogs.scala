@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.spark.operation
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.engine.spark.shim.SparkShim
+import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
 import org.apache.kyuubi.session.Session
@@ -35,7 +35,7 @@ class GetCatalogs(spark: SparkSession, session: Session)
 
   override protected def runInternal(): Unit = {
    try {
-     iter = SparkShim().getCatalogs(spark).toIterator
+     iter = SparkCatalogShim().getCatalogs(spark).toIterator
     } catch onError()
   }
 }

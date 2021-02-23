@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.spark.operation
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.engine.spark.shim.SparkShim
+import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
@@ -40,8 +40,8 @@ class GetSchemas(spark: SparkSession, session: Session, catalogName: String, sch
 
   override protected def runInternal(): Unit = {
     try {
-      val schemaPattern = convertSchemaPattern(schema, datanucleusFormat = false)
-      val rows = SparkShim().getSchemas(spark, catalogName, schemaPattern)
+      val schemaPattern = toJavaRegex(schema)
+      val rows = SparkCatalogShim().getSchemas(spark, catalogName, schemaPattern)
       iter = rows.toList.toIterator
     } catch onError()
   }
