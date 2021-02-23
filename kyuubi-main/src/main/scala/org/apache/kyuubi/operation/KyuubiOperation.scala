@@ -18,12 +18,13 @@
 package org.apache.kyuubi.operation
 
 import org.apache.hive.service.rpc.thrift._
+import org.apache.kyuubi.KyuubiSQLException
 
-import org.apache.kyuubi.{KyuubiSQLException, ThriftUtils}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.ThriftUtils
 
 abstract class KyuubiOperation(
     opType: OperationType,

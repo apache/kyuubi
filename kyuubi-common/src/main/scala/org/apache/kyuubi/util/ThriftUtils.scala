@@ -15,9 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi
+package org.apache.kyuubi.util
 
 import org.apache.hive.service.rpc.thrift.{TRow, TRowSet, TStatus, TStatusCode}
+
+import org.apache.kyuubi.KyuubiSQLException
 
 object ThriftUtils {
 
