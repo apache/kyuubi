@@ -35,7 +35,7 @@ class GetCatalogs(spark: SparkSession, session: Session)
 
   override protected def runInternal(): Unit = {
    try {
-     iter = SparkCatalogShim().getCatalogs(spark).toIterator
+     iter = SparkCatalogShim().getCatalogs(spark).toList.toIterator
     } catch onError()
   }
 }

@@ -42,7 +42,7 @@ abstract class KyuubiOperation(
   override def getOperationLog: Option[OperationLog] = None
 
   protected def onError(action: String = "operating"): PartialFunction[Throwable, Unit] = {
-    case e: Exception =>
+    case e: Throwable =>
       state.synchronized {
         if (isTerminalState(state)) {
           warn(s"Ignore exception in terminal state with $statementId: $e")
