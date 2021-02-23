@@ -21,9 +21,11 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.connector.catalog.CatalogPlugin
 
-class Shim_v2_4 extends SparkShim {
+class CatalogShim_v2_4 extends SparkCatalogShim {
 
-  override def getCatalogs(spark: SparkSession): Seq[Row] = Seq(Row(""))
+  override def getCatalogs(spark: SparkSession): Seq[Row] = {
+    Seq(Row(SparkCatalogShim.SESSION_CATALOG))
+  }
 
   override protected def getCatalog(spark: SparkSession, catalog: String): CatalogPlugin = null
 
@@ -85,5 +87,81 @@ class Shim_v2_4 extends SparkShim {
     } else {
       spark.sessionState.catalog.listLocalTempViews(tablePattern)
     }
+  }
+
+  override def getColumns(
+      spark: SparkSession,
+      catalogName: String,
+      schemaPattern: String,
+      tablePattern: String,
+      columnPattern: String): Seq[Row] = {
+
+    val cols1 = getColumnsByCatalog(spark, catalogName, schemaPattern, tablePattern, columnPattern)
+
+    val cols2 = getColumnsByGlobalTempViewManager(
+      spark, catalogName, schemaPattern, tablePattern, columnPattern)
+
+    val cols3 = getColumnsByLocalTempViews(spark, tablePattern, columnPattern)
+
+    cols1 ++ cols2 ++ cols3
+  }
+
+  protected def getColumnsByCatalog(
+      spark: SparkSession,
+      catalogName: String,
+      schemaPattern: String,
+      tablePattern: String,
+      columnPattern: String): Seq[Row] = {
+    val cp = columnPattern.r.pattern
+    val catalog = spark.sessionState.catalog
+
+    val databases = catalog.listDatabases(schemaPattern)
+
+    databases.flatMap { db =>
+      val identifiers = catalog.listTables(db, tablePattern, includeLocalTempViews = true)
+      catalog.getTablesByName(identifiers).flatMap { t =>
+        t.schema.zipWithIndex.filter(f => cp.matcher(f._1.name).matches())
+          .map { case (f, i) => toColumnResult(catalogName, t.database, t.identifier.table, f, i) }
+      }
+    }
+  }
+
+  protected def getColumnsByGlobalTempViewManager(
+      spark: SparkSession,
+      catalogName: String,
+      schemaPattern: String,
+      tablePattern: String,
+      columnPattern: String): Seq[Row] = {
+    val cp = columnPattern.r.pattern
+    val catalog = spark.sessionState.catalog
+
+    getGlobalTempViewManager(spark, schemaPattern).flatMap { globalTmpDb =>
+      catalog.globalTempViewManager.listViewNames(tablePattern).flatMap { v =>
+        catalog.globalTempViewManager.get(v).map { plan =>
+          plan.schema.zipWithIndex.filter(f => cp.matcher(f._1.name).matches())
+            .map { case (f, i) =>
+              toColumnResult(SparkCatalogShim.SESSION_CATALOG, globalTmpDb, v, f, i)
+            }
+        }
+      }.flatten
+    }
+  }
+
+  protected def getColumnsByLocalTempViews(
+    spark: SparkSession,
+    tablePattern: String,
+    columnPattern: String): Seq[Row] = {
+    val cp = columnPattern.r.pattern
+    val catalog = spark.sessionState.catalog
+
+    catalog.listLocalTempViews(tablePattern)
+      .map(v => (v, catalog.getTempView(v.table).get))
+      .flatMap { case (v, plan) =>
+        plan.schema.zipWithIndex
+          .filter(f => cp.matcher(f._1.name).matches())
+          .map { case (f, i) =>
+            toColumnResult(SparkCatalogShim.SESSION_CATALOG, null, v.table, f, i)
+          }
+      }
   }
 }

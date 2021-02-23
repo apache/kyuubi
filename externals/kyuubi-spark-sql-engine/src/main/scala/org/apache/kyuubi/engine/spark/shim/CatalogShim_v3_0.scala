@@ -20,7 +20,9 @@ package org.apache.kyuubi.engine.spark.shim
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.connector.catalog.{CatalogExtension, CatalogPlugin, SupportsNamespaces, TableCatalog}
 
-class Shim_v3_0 extends Shim_v2_4 {
+import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim.SESSION_CATALOG
+
+class CatalogShim_v3_0 extends CatalogShim_v2_4 {
 
   override def getCatalogs(spark: SparkSession): Seq[Row] = {
 
@@ -39,7 +41,7 @@ class Shim_v3_0 extends Shim_v2_4 {
 
   override def getCatalog(spark: SparkSession, catalogName: String): CatalogPlugin = {
     val catalogManager = spark.sessionState.catalogManager
-    if (catalogName == null) {
+    if (catalogName == null || catalogName.isEmpty) {
       catalogManager.currentCatalog
     } else {
       catalogManager.catalog(catalogName)
@@ -126,7 +128,7 @@ class Shim_v3_0 extends Shim_v2_4 {
     val catalog = getCatalog(spark, catalogName)
     val schemas = listNamespacesWithPattern(catalog, schemaPattern)
     catalog match {
-      case catalog if catalog.name() == SESSION_CATALOG =>
+      case builtin if builtin.name() == SESSION_CATALOG =>
         super.getCatalogTablesOrViews(
           spark, SESSION_CATALOG, schemaPattern, tablePattern, tableTypes)
       case ce: CatalogExtension =>
@@ -143,6 +145,31 @@ class Shim_v3_0 extends Shim_v2_4 {
           Row(catalog.name(), schema, tableName, "TABLE", comment, null, null, null, null, null)
         }
       case _ => Seq.empty[Row]
+    }
+  }
+
+  override protected def getColumnsByCatalog(
+      spark: SparkSession,
+      catalogName: String,
+      schemaPattern: String,
+      tablePattern: String,
+      columnPattern: String): Seq[Row] = {
+    val catalog = getCatalog(spark, catalogName)
+    val namespaces = listNamespacesWithPattern(catalog, schemaPattern)
+    val cp = columnPattern.r.pattern
+
+    catalog match {
+      case builtin if builtin.name() == SESSION_CATALOG => super.getColumnsByCatalog(
+        spark, SESSION_CATALOG, schemaPattern, tablePattern, columnPattern)
+      case tc: TableCatalog =>
+        namespaces.flatMap { ns => tc.listTables(ns) }.flatMap { ident =>
+          val table = tc.loadTable(ident)
+          val namespace = ident.namespace().map(quoteIfNeeded).mkString(".")
+          val tableName = quoteIfNeeded(ident.name())
+
+          table.schema.zipWithIndex.filter(f => cp.matcher(f._1.name).matches())
+            .map { case (f, i) => toColumnResult(tc.name(), namespace, tableName, f, i) }
+        }
     }
   }
 }

@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.engine.spark.shim.SparkShim
+import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.{Session, SessionHandle}
 
@@ -91,7 +91,7 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
       tableTypes: java.util.List[String]): Operation = {
     val spark = getSparkSession(session.handle)
     val tTypes = if (tableTypes == null || tableTypes.isEmpty) {
-      SparkShim.sparkTableTypes
+      SparkCatalogShim.sparkTableTypes
     } else {
       tableTypes.asScala.toSet
     }
