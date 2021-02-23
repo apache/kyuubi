@@ -60,8 +60,8 @@ class GetTables(
 
   override protected def runInternal(): Unit = {
     try {
-      val schemaPattern = convertSchemaPattern(schema, datanucleusFormat = false)
-      val tablePattern = convertIdentifierPattern(tableName, datanucleusFormat = true)
+      val schemaPattern = toJavaRegex(schema)
+      val tablePattern = toJavaRegex(tableName)
       val sparkShim = SparkCatalogShim()
       val catalogTablesAndViews =
         sparkShim.getCatalogTablesOrViews(spark, catalog, schemaPattern, tablePattern, tableTypes)

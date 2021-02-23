@@ -142,9 +142,6 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
 
       val rowSet = metaData.getColumns(null, "*", "not_exist", "not_exist")
       assert(!rowSet.next())
-
-      val e1 = intercept[HiveSQLException](metaData.getColumns(null, null, null, "*"))
-      assert(e1.getCause.getMessage contains "Dangling meta character '*' near index 0\n*\n^")
     }
   }
 

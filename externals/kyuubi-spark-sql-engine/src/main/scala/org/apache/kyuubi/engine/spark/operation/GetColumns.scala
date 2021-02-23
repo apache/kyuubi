@@ -85,9 +85,9 @@ class GetColumns(
 
   override protected def runInternal(): Unit = {
     try {
-      val schemaPattern = convertSchemaPattern(schemaName, datanucleusFormat = false)
-      val tablePattern = convertIdentifierPattern(tableName, datanucleusFormat = true)
-      val columnPattern = convertIdentifierPattern(columnName, datanucleusFormat = false)
+      val schemaPattern = toJavaRegex(schemaName)
+      val tablePattern = toJavaRegex(tableName)
+      val columnPattern = toJavaRegex(columnName)
       iter = SparkCatalogShim()
         .getColumns(spark, catalogName, schemaPattern, tablePattern, columnPattern)
         .toList.iterator

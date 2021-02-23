@@ -40,7 +40,7 @@ class GetSchemas(spark: SparkSession, session: Session, catalogName: String, sch
 
   override protected def runInternal(): Unit = {
     try {
-      val schemaPattern = convertSchemaPattern(schema, datanucleusFormat = false)
+      val schemaPattern = toJavaRegex(schema)
       val rows = SparkCatalogShim().getSchemas(spark, catalogName, schemaPattern)
       iter = rows.toList.toIterator
     } catch onError()

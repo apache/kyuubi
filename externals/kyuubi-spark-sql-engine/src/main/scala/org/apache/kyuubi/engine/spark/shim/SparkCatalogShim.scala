@@ -19,7 +19,6 @@ package org.apache.kyuubi.engine.spark.shim
 
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.types.StructField
 
 import org.apache.kyuubi.{Logging, Utils}
@@ -38,8 +37,6 @@ trait SparkCatalogShim extends Logging {
    * Get all register catalogs in Spark's `CatalogManager`
    */
   def getCatalogs(spark: SparkSession): Seq[Row]
-
-  protected def getCatalog(spark: SparkSession, catalog: String): CatalogPlugin
 
   protected def catalogExists(spark: SparkSession, catalog: String): Boolean
 

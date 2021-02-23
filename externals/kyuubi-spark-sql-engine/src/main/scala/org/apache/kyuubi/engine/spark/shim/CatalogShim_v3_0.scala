@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.spark.shim
 
+import java.util.regex.Pattern
+
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.connector.catalog.{CatalogExtension, CatalogPlugin, SupportsNamespaces, TableCatalog}
 
@@ -39,7 +41,7 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
     (catalogs.keys ++: defaults).distinct.map(Row(_))
   }
 
-  override def getCatalog(spark: SparkSession, catalogName: String): CatalogPlugin = {
+  private def getCatalog(spark: SparkSession, catalogName: String): CatalogPlugin = {
     val catalogManager = spark.sessionState.catalogManager
     if (catalogName == null || catalogName.isEmpty) {
       catalogManager.currentCatalog
@@ -126,17 +128,17 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
       tablePattern: String,
       tableTypes: Set[String]): Seq[Row] = {
     val catalog = getCatalog(spark, catalogName)
-    val schemas = listNamespacesWithPattern(catalog, schemaPattern)
+    val namespaces = listNamespacesWithPattern(catalog, schemaPattern)
     catalog match {
       case builtin if builtin.name() == SESSION_CATALOG =>
         super.getCatalogTablesOrViews(
           spark, SESSION_CATALOG, schemaPattern, tablePattern, tableTypes)
-      case ce: CatalogExtension =>
-        super.getCatalogTablesOrViews(spark, ce.name(), schemaPattern, tablePattern, tableTypes)
       case tc: TableCatalog =>
-        schemas.flatMap { ns =>
-          tc.listTables(ns)
-        }.map { ident =>
+        val tp = tablePattern.r.pattern
+        val identifiers = namespaces.flatMap { ns =>
+          tc.listTables(ns).filter(i => tp.matcher(quoteIfNeeded(i.name())).matches())
+        }
+        identifiers.map { ident =>
           val table = tc.loadTable(ident)
           // TODO: restore view type for session catalog
           val comment = table.properties().getOrDefault(TableCatalog.PROP_COMMENT, "")
@@ -153,21 +155,26 @@ class CatalogShim_v3_0 extends CatalogShim_v2_4 {
       catalogName: String,
       schemaPattern: String,
       tablePattern: String,
-      columnPattern: String): Seq[Row] = {
+      columnPattern: Pattern): Seq[Row] = {
     val catalog = getCatalog(spark, catalogName)
-    val namespaces = listNamespacesWithPattern(catalog, schemaPattern)
-    val cp = columnPattern.r.pattern
 
     catalog match {
-      case builtin if builtin.name() == SESSION_CATALOG => super.getColumnsByCatalog(
-        spark, SESSION_CATALOG, schemaPattern, tablePattern, columnPattern)
+      case builtin if builtin.name() == SESSION_CATALOG =>
+        super.getColumnsByCatalog(
+          spark, SESSION_CATALOG, schemaPattern, tablePattern, columnPattern)
+
       case tc: TableCatalog =>
-        namespaces.flatMap { ns => tc.listTables(ns) }.flatMap { ident =>
+        val namespaces = listNamespacesWithPattern(catalog, schemaPattern)
+        val tp = tablePattern.r.pattern
+        val identifiers = namespaces.flatMap { ns =>
+          tc.listTables(ns).filter(i => tp.matcher(quoteIfNeeded(i.name())).matches())
+        }
+        identifiers.flatMap { ident =>
           val table = tc.loadTable(ident)
           val namespace = ident.namespace().map(quoteIfNeeded).mkString(".")
           val tableName = quoteIfNeeded(ident.name())
 
-          table.schema.zipWithIndex.filter(f => cp.matcher(f._1.name).matches())
+          table.schema.zipWithIndex.filter(f => columnPattern.matcher(f._1.name).matches())
             .map { case (f, i) => toColumnResult(tc.name(), namespace, tableName, f, i) }
         }
     }

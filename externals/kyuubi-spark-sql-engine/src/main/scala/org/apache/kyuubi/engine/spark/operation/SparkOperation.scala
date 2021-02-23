@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import java.util.regex.Pattern
+
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
 import org.apache.spark.sql.{Row, SparkSession}
@@ -49,38 +51,33 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
     }
   }
 
-  private def convertPattern(pattern: String, datanucleusFormat: Boolean): String = {
-    val wStr = if (datanucleusFormat) "*" else ".*"
-    pattern
-      .replaceAll("([^\\\\])%", "$1" + wStr)
-      .replaceAll("\\\\%", "%")
-      .replaceAll("^%", wStr)
-      .replaceAll("([^\\\\])_", "$1.")
-      .replaceAll("\\\\_", "_")
-      .replaceAll("^_", ".")
-  }
-
   /**
-   * Convert wildcards and escape sequence of schema pattern from JDBC format to datanucleous/regex
-   * The schema pattern treats empty string also as wildcard
+   * convert SQL 'like' pattern to a Java regular expression.
+   *
+   * Underscores (_) are converted to '.' and percent signs (%) are converted to '.*'.
+   *
+   * @param input the SQL pattern to convert
+   * @return the equivalent Java regular expression of the pattern
    */
-  protected def convertSchemaPattern(pattern: String, datanucleusFormat: Boolean = true): String = {
-    if (StringUtils.isEmpty(pattern) || pattern == "*") {
-      convertPattern("%", datanucleusFormat)
+  def toJavaRegex(input: String): String = {
+    val res = if (StringUtils.isEmpty(input) || input == "*") {
+      "%"
     } else {
-      convertPattern(pattern, datanucleusFormat)
+      input
     }
-  }
+    val in = res.toIterator
+    val out = new StringBuilder()
 
-  /**
-   * Convert wildcards and escape sequence from JDBC format to datanucleous/regex
-   */
-  protected def convertIdentifierPattern(pattern: String, datanucleusFormat: Boolean): String = {
-    if (pattern == null) {
-      convertPattern("%", datanucleusFormat)
-    } else {
-      convertPattern(pattern, datanucleusFormat)
+    while (in.hasNext) {
+      in.next match {
+        case c if c == '\\' && in.hasNext => Pattern.quote(Character.toString(in.next()))
+        case c if c == '\\' && !in.hasNext => Pattern.quote(Character.toString(c))
+        case '_' => out ++= "."
+        case '%' => out ++= ".*"
+        case c => out ++= Character.toString(c)
+      }
     }
+    out.result()
   }
 
   protected def onError(cancel: Boolean = false): PartialFunction[Throwable, Unit] = {
