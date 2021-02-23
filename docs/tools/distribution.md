@@ -28,4 +28,4 @@ For instance,
 ./build/dist --name custom-name --tgz
 ```
 
-This results a Kyuubi distribution named `kyuubi-{version}-bin-custom-name-spark-3.0.1.tar.gz` for you. 
+This results a Kyuubi distribution named `kyuubi-{version}-bin-custom-name.tar.gz` for you.
