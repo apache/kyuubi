@@ -54,14 +54,17 @@ before_script:
   - mvn help:evaluate -Dexpression=hadoop.version
   - mvn help:evaluate -Dexpression=hive.version
 
-#jobs:
-#  include:
-#    - stage: spark3.0.0
-#      script:
-#        - build/mvn --no-transfer-progress clean verify -pl :kyuubi-common,:kyuubi-ha,:kyuubi-main,:kyuubi-spark-sql-engine,:kyuubi-codecov,:kyuubi-download,:kyuubi-assembly -Dmaven.javadoc.skip=true -B -V
+jobs:
+  include:
+    - stage: spark3.0
+      script:
+        - mvn clean install -Dmaven.javadoc.skip=true -V
+    - stage: spark3.1
+      script:
+        - mvn clean install -Dmaven.javadoc.skip=true -V -Dspark.archive.mirror=https://dist.apache.org/repos/dist/dev/spark/v3.1.0-rc1-bin/ -Dspark.archive.name=spark-3.1.0-bin-hadoop2.7.tgz -Dspark.version=3.1.0
 
-script:
-  - mvn clean install -Dmaven.javadoc.skip=true -V
+#script:
+#  - mvn clean install -Dmaven.javadoc.skip=true -V
 
 after_script:
   - rm -r $HOME/.m2/repository/org/apache/kyuubi
