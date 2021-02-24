@@ -72,7 +72,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     Thread.sleep(5000)
     val error1 = processBuilder1.getError
     assert(
-      error1.getMessage.contains("Caused by: org.apache.hadoop.hive.ql.metadata.HiveException:"))
+      error1.getMessage.contains("org.apache.hadoop.hive.ql.metadata.HiveException:"))
   }
 
   test("proxy user or keytab") {
