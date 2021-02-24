@@ -37,6 +37,7 @@ trait WithKyuubiServer extends KyuubiFunSuite {
     conf.set(KyuubiConf.EMBEDDED_ZK_TEMP_DIR, zkData.toString)
     zkServer.initialize(conf)
     zkServer.start()
+    Thread.sleep(1500)
 
     conf.set("spark.ui.enabled", "false")
     conf.set(KyuubiConf.FRONTEND_BIND_PORT, 0)
