@@ -84,37 +84,36 @@ class KyuubiSessionImpl(
 
   private val appZkNamespace: String = boundAppName.getZkNamespace(sessionConf.get(HA_ZK_NAMESPACE))
 
-  private lazy val zkClient = ServiceDiscovery.startZookeeperClient(sessionConf)
   private val timeout: Long = sessionConf.get(ENGINE_INIT_TIMEOUT)
 
   private var transport: TTransport = _
   private var client: TCLIService.Client = _
   private var remoteSessionHandle: TSessionHandle = _
 
-  private def getServerHost: Option[(String, Int)] = {
-    try {
-      val hosts = zkClient.getChildren.forPath(appZkNamespace)
-      // TODO: use last one because to avoid touching some maybe-crashed engines
-      // We need a big improvement here.
-      hosts.asScala.lastOption.map { p =>
-        val path = ZKPaths.makePath(appZkNamespace, p)
-        val hostPort = new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
-        logSessionInfo(s"Get available engine $hostPort from enginespace $path")
-        val strings = hostPort.split(":")
-        val host = strings.head
-        val port = strings(1).toInt
-        (host, port)
-      }
-    } catch {
-      case _: Exception => None
-    }
-  }
-
   override def open(): Unit = {
     super.open()
-    // Init zookeeper client here to capture errors
-    zkClient
+    val zkClient = ServiceDiscovery.startZookeeperClientForRead(sessionConf)
     logSessionInfo(s"Connected to Zookeeper")
+
+    def getServerHost: Option[(String, Int)] = {
+      try {
+        val hosts = zkClient.getChildren.forPath(appZkNamespace)
+        // TODO: use last one because to avoid touching some maybe-crashed engines
+        // We need a big improvement here.
+        hosts.asScala.lastOption.map { p =>
+          val path = ZKPaths.makePath(appZkNamespace, p)
+          val hostPort = new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
+          logSessionInfo(s"Get available engine $hostPort from enginespace $path")
+          val strings = hostPort.split(":")
+          val host = strings.head
+          val port = strings(1).toInt
+          (host, port)
+        }
+      } catch {
+        case _: Exception => None
+      }
+    }
+
     try {
       getServerHost match {
         case Some((host, port)) => openSession(host, port)

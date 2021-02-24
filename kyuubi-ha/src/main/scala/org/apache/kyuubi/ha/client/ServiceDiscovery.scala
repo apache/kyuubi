@@ -199,7 +199,7 @@ object ServiceDiscovery {
       case BONDED_EXPONENTIAL_BACKOFF =>
         new BoundedExponentialBackoffRetry(baseSleepTime, maxSleepTime, maxRetries)
       case UNTIL_ELAPSED => new RetryUntilElapsed(maxSleepTime, baseSleepTime)
-      case _ => new ExponentialBackoffRetry(baseSleepTime, maxRetries)
+      case _ => new ExponentialBackoffRetry(baseSleepTime, maxRetries, maxSleepTime)
     }
 
     CuratorFrameworkFactory.builder()
@@ -217,6 +217,17 @@ object ServiceDiscovery {
    */
   def startZookeeperClient(conf: KyuubiConf): CuratorFramework = {
     val client = buildZookeeperClient(conf)
+    client.start()
+    client
+  }
+
+  def startZookeeperClientForRead(conf: KyuubiConf): CuratorFramework = {
+    val connectionStr = conf.get(HA_ZK_QUORUM)
+    val client = CuratorFrameworkFactory.builder()
+      .connectString(connectionStr)
+      .aclProvider(new ZooKeeperACLProvider(conf))
+      .retryPolicy(new ExponentialBackoffRetry(1000, 3))
+      .build()
     client.start()
     client
   }
