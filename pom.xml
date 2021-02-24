@@ -69,6 +69,8 @@
         <hive.version>2.3.7</hive.version>
         <netty3.version>3.7.0.Final</netty3.version>
         <spark.version>3.0.2</spark.version>
+        <spark.archive.name>spark-${spark.version}-bin-hadoop2.7.tgz</spark.archive.name>
+        <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
         <slf4j.version>1.7.30</slf4j.version>
         <zookeeper.version>3.4.14</zookeeper.version>
 
@@ -1137,7 +1139,6 @@
             <id>spark-3.1</id>
             <properties>
                 <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v3.1.0-rc1-bin</spark.archive.mirror>
-                <spark.archive.name>spark-3.1.0-bin-hadoop2.7.tgz</spark.archive.name>
                 <spark.version>3.1.0</spark.version>
             </properties>
         </profile>
