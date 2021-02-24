@@ -6,6 +6,11 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        spark:
+          - 3.0
+          - 3.1
     steps:
       - uses: actions/checkout@v2
       - name: Setup JDK 1.8
@@ -38,7 +43,7 @@ jobs:
             ${{ runner.os }}-maven-io-
       - name: Build with Maven
         run: |
-          mvn clean install -Dmaven.javadoc.skip=true -B -V
+          mvn clean install -P${{ matrix.spark }} -Dmaven.javadoc.skip=true -B -V
           bash <(curl -s https://codecov.io/bash)
 #      - name: Codecov kyuubi-common
 #        uses: codecov/codecov-action@v1

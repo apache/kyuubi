@@ -1128,5 +1128,19 @@
                 <iceberg.name>iceberg-spark-runtime</iceberg.name>
             </properties>
         </profile>
+
+        <profile>
+            <id>spark-3.0</id>
+        </profile>
+
+        <profile>
+            <id>spark-3.1</id>
+            <properties>
+                <spark.archive.mirror>https://dist.apache.org/repos/dist/dev/spark/v3.1.0-rc1-bin</spark.archive.mirror>
+                <spark.archive.name>spark-3.1.0-bin-hadoop2.7.tgz</spark.archive.name>
+                <spark.version>3.1.0</spark.version>
+            </properties>
+        </profile>
+
     </profiles>
 </project>
