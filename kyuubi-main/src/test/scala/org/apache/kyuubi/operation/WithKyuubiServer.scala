@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.operation
 
+import java.nio.file.Files
+
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_ACL_ENABLED, HA_ZK_QUORUM}
@@ -30,7 +32,11 @@ trait WithKyuubiServer extends KyuubiFunSuite {
   private var zkServer: EmbeddedZkServer = _
   private var server: KyuubiServer = _
 
+  private val metastore = Utils.createTempDir()
+
   override def beforeAll(): Unit = {
+
+    Files.delete(metastore)
     zkServer = new EmbeddedZkServer()
     conf.set(KyuubiConf.EMBEDDED_ZK_PORT, -1)
     val zkData = Utils.createTempDir()
@@ -40,6 +46,8 @@ trait WithKyuubiServer extends KyuubiFunSuite {
     Thread.sleep(1500)
 
     conf.set("spark.ui.enabled", "false")
+    conf.set("spark.hadoop.javax.jdo.option.ConnectionURL",
+      s"jdbc:derby:;databaseName=$metastore;create=true")
     conf.set(KyuubiConf.FRONTEND_BIND_PORT, 0)
     conf.set(KyuubiConf.ENGINE_CHECK_INTERVAL, 4000L)
     conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 10000L)
@@ -51,7 +59,6 @@ trait WithKyuubiServer extends KyuubiFunSuite {
   }
 
   override def afterAll(): Unit = {
-
     if (server != null) {
       server.stop()
       server = null
