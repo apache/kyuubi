@@ -159,6 +159,7 @@ class SparkProcessBuilder(
 
 object SparkProcessBuilder {
   final val APP_KEY = "spark.app.name"
+  final val TAG_KEY = "spark.yarn.tags"
 
   private final val CONF = "--conf"
   private final val CLASS = "--class"
