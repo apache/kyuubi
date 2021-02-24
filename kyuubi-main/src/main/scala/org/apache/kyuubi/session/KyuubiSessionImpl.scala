@@ -99,6 +99,7 @@ class KyuubiSessionImpl(
       hosts.asScala.lastOption.map { p =>
         val path = ZKPaths.makePath(appZkNamespace, p)
         val hostPort = new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
+        logSessionInfo(s"Get available engine $hostPort from enginespace $path")
         val strings = hostPort.split(":")
         val host = strings.head
         val port = strings(1).toInt
@@ -113,6 +114,7 @@ class KyuubiSessionImpl(
     super.open()
     // Init zookeeper client here to capture errors
     zkClient
+    logSessionInfo(s"Connected to Zookeeper")
     try {
       getServerHost match {
         case Some((host, port)) => openSession(host, port)
@@ -121,7 +123,7 @@ class KyuubiSessionImpl(
           sessionConf.set(HA_ZK_NAMESPACE, appZkNamespace)
           val builder = new SparkProcessBuilder(appUser, sessionConf.toSparkPrefixedConf)
           try {
-            info(s"Launching SQL engine: $builder")
+            logSessionInfo(s"Launching SQL engine: $builder")
             val process = builder.start
             var sh = getServerHost
             val started = System.currentTimeMillis()
@@ -162,7 +164,10 @@ class KyuubiSessionImpl(
     val loginTimeout = sessionConf.get(ENGINE_LOGIN_TIMEOUT).toInt
     transport = PlainSASLHelper.getPlainTransport(
       user, passwd, new TSocket(host, port, loginTimeout))
-    if (!transport.isOpen) transport.open()
+    if (!transport.isOpen) {
+      logSessionInfo(s"Connecting to engine [$host:$port]")
+      transport.open()
+    }
     client = new TCLIService.Client(new TBinaryProtocol(transport))
     val req = new TOpenSessionReq()
     req.setUsername(user)
