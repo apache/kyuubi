@@ -101,6 +101,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     val idleTimeout = conf.get(KyuubiConf.ENGINE_IDLE_TIMEOUT)
     val checkTask = new Runnable {
       override def run(): Unit = {
+        TimeUnit.MILLISECONDS.sleep(interval)
         while (getOpenSessionCount > 0 ||
           System.currentTimeMillis - latestLogoutTime < idleTimeout) {
           TimeUnit.MILLISECONDS.sleep(interval)

@@ -49,8 +49,8 @@ trait WithKyuubiServer extends KyuubiFunSuite {
     conf.set("spark.hadoop.javax.jdo.option.ConnectionURL",
       s"jdbc:derby:;databaseName=$metastore;create=true")
     conf.set(KyuubiConf.FRONTEND_BIND_PORT, 0)
-    conf.set(KyuubiConf.ENGINE_CHECK_INTERVAL, 4000L)
-    conf.set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 10000L)
+    conf.setIfMissing(KyuubiConf.ENGINE_CHECK_INTERVAL, 4000L)
+    conf.setIfMissing(KyuubiConf.ENGINE_IDLE_TIMEOUT, 10000L)
     conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
     conf.set(HA_ZK_ACL_ENABLED, false)
 

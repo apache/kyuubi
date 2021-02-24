@@ -92,7 +92,7 @@ class KyuubiSessionImpl(
 
   override def open(): Unit = {
     super.open()
-    val zkClient = ServiceDiscovery.startZookeeperClientForRead(sessionConf)
+    val zkClient = ServiceDiscovery.startZookeeperClient(sessionConf)
     logSessionInfo(s"Connected to Zookeeper")
 
     def getServerHost: Option[(String, Int)] = {
@@ -166,13 +166,16 @@ class KyuubiSessionImpl(
     if (!transport.isOpen) {
       logSessionInfo(s"Connecting to engine [$host:$port]")
       transport.open()
+      logSessionInfo(s"Connected to engine [$host:$port]")
     }
     client = new TCLIService.Client(new TBinaryProtocol(transport))
     val req = new TOpenSessionReq()
     req.setUsername(user)
     req.setPassword(passwd)
     req.setConfiguration(conf.asJava)
+    logSessionInfo(s"Sending TOpenSessionReq to engine [$host:$port]")
     val resp = client.OpenSession(req)
+    logSessionInfo(s"Received TOpenSessionResp from engine [$host:$port]")
     ThriftUtils.verifyTStatus(resp.getStatus)
     remoteSessionHandle = resp.getSessionHandle
     sessionManager.operationManager.setConnection(handle, client, remoteSessionHandle)

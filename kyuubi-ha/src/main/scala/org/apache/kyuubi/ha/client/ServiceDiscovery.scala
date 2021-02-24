@@ -216,17 +216,16 @@ object ServiceDiscovery {
    * Use the [[ZooKeeperACLProvider]] to create appropriate ACLs
    */
   def startZookeeperClient(conf: KyuubiConf): CuratorFramework = {
-    val client = buildZookeeperClient(conf)
-    client.start()
-    client
-  }
-
-  def startZookeeperClientForRead(conf: KyuubiConf): CuratorFramework = {
     val connectionStr = conf.get(HA_ZK_QUORUM)
+    val sessionTimeout = conf.get(HA_ZK_SESSION_TIMEOUT)
+    val connectionTimeout = conf.get(HA_ZK_CONN_TIMEOUT)
+
+    val retryPolicy = new ExponentialBackoffRetry(1000, 3)
     val client = CuratorFrameworkFactory.builder()
       .connectString(connectionStr)
-      .aclProvider(new ZooKeeperACLProvider(conf))
-      .retryPolicy(new ExponentialBackoffRetry(1000, 3))
+      .sessionTimeoutMs(sessionTimeout)
+      .connectionTimeoutMs(connectionTimeout)
+      .retryPolicy(retryPolicy)
       .build()
     client.start()
     client
