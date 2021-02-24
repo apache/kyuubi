@@ -117,7 +117,8 @@ class KyuubiSessionImpl(
       getServerHost match {
         case Some((host, port)) => openSession(host, port)
         case None =>
-          sessionConf.set(SparkProcessBuilder.APP_KEY, boundAppName.toString)
+          sessionConf.setIfMissing(SparkProcessBuilder.APP_KEY, boundAppName.toString)
+          sessionConf.setIfMissing(SparkProcessBuilder.TAG_KEY, "KYUUBI")
           sessionConf.set(HA_ZK_NAMESPACE, appZkNamespace)
           val builder = new SparkProcessBuilder(appUser, sessionConf.toSparkPrefixedConf)
           try {
