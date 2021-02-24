@@ -118,7 +118,10 @@ class KyuubiSessionImpl(
         case Some((host, port)) => openSession(host, port)
         case None =>
           sessionConf.setIfMissing(SparkProcessBuilder.APP_KEY, boundAppName.toString)
-          sessionConf.setIfMissing(SparkProcessBuilder.TAG_KEY, "KYUUBI")
+          // tag is a seq type with comma-separated
+          sessionConf.set(SparkProcessBuilder.TAG_KEY,
+            sessionConf.getOption(SparkProcessBuilder.TAG_KEY)
+              .map(_ + ",").getOrElse("") + "KYUUBI")
           sessionConf.set(HA_ZK_NAMESPACE, appZkNamespace)
           val builder = new SparkProcessBuilder(appUser, sessionConf.toSparkPrefixedConf)
           try {
