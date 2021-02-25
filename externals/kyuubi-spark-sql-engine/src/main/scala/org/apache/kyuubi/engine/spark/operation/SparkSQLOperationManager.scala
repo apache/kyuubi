@@ -50,6 +50,8 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
     sessionToSpark.remove(sessionHandle)
   }
 
+  def getOpenSparkSessionCount: Int = sessionToSpark.size()
+
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
