@@ -51,7 +51,8 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
 
   override def start(): Unit = {
     super.start()
-    // Start engine self
+    // Start engine self-terminating checker after all services are ready and it can be reached by
+    // all servers in engine spaces.
     backendService.sessionManager.startTerminatingChecker()
   }
 
