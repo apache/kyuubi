@@ -49,6 +49,12 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
     }
   }
 
+  override def start(): Unit = {
+    super.start()
+    // Start engine self
+    backendService.sessionManager.startTerminatingChecker()
+  }
+
   override protected def stopServer(): Unit = {
     countDownLatch.countDown()
   }
@@ -60,7 +66,7 @@ object SparkSQLEngine extends Logging {
 
   private val user = Utils.currentUser
 
-  private[spark] val countDownLatch = new CountDownLatch(1)
+  private val countDownLatch = new CountDownLatch(1)
 
   def createSpark(): SparkSession = {
     val sparkConf = new SparkConf()

@@ -41,6 +41,9 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   @volatile private var shutdown = false
 
+  @volatile private var _latestLogoutTime: Long = System.currentTimeMillis()
+  def latestLogoutTime: Long = _latestLogoutTime
+
   private val handleToSession = new ConcurrentHashMap[SessionHandle, Session]
   private val timeoutChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-timeout-checker")
@@ -61,6 +64,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       conf: Map[String, String]): SessionHandle
 
   def closeSession(sessionHandle: SessionHandle): Unit = {
+    _latestLogoutTime = System.currentTimeMillis()
     val session = handleToSession.remove(sessionHandle)
     if (session == null) {
       throw KyuubiSQLException(s"Invalid $sessionHandle")
@@ -142,8 +146,8 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   }
 
   private def startTimeoutChecker(): Unit = {
-    val interval = conf.get(KyuubiConf.SESSION_CHECK_INTERVAL)
-    val timeout = conf.get(KyuubiConf.SESSION_TIMEOUT)
+    val interval = conf.get(SESSION_CHECK_INTERVAL)
+    val timeout = conf.get(SESSION_TIMEOUT)
 
     val checkTask = new Runnable {
       override def run(): Unit = {
@@ -166,6 +170,21 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       }
     }
 
+    timeoutChecker.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
+  }
+
+  private[kyuubi] def startTerminatingChecker(): Unit = if (!isServer) {
+    val interval = conf.get(ENGINE_CHECK_INTERVAL)
+    val idleTimeout = conf.get(ENGINE_IDLE_TIMEOUT)
+    val checkTask = new Runnable {
+      override def run(): Unit = {
+        if (!shutdown &&
+          System.currentTimeMillis() - latestLogoutTime > idleTimeout && getOpenSessionCount <= 0) {
+          info(s"Idled for more than $idleTimeout ms, terminating")
+          sys.exit(0)
+        }
+      }
+    }
     timeoutChecker.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
   }
 }
