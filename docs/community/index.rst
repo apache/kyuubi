@@ -9,5 +9,6 @@ Community
     :numbered: 4
     :glob:
 
+    collaborators
     contributions
     badges
