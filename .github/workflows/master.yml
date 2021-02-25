@@ -40,6 +40,18 @@ jobs:
         run: |
           mvn clean install -Dmaven.javadoc.skip=true -B -V
           bash <(curl -s https://codecov.io/bash)
+      - name: Collect unit tests log
+        run: |
+          mv kyuubi-common/target/unit-tests.log kyuubi-common_unit-tests.log
+          mv kyuubi-main/target/unit-tests.log kyuubi-main_unit-tests.log
+      - name: Upload unit tests log
+        uses: actions/upload-artifact@v2
+        with:
+          name: unit-tests-log
+          path: |
+            kyuubi-common_unit-tests.log
+            kyuubi-main_unit-tests.log
+          retention-days: 30
 #      - name: Codecov kyuubi-common
 #        uses: codecov/codecov-action@v1
 #        with:
