@@ -26,8 +26,8 @@ import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TOpenS
 import org.apache.thrift.TException
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.{TSocket, TTransport}
-import org.apache.kyuubi.{KyuubiSQLException, Utils}
 
+import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.{ShareLevel, SQLEngineAppName}

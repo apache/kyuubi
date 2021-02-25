@@ -24,8 +24,7 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.engine.spark.ArrayFetchIterator
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
+import org.apache.kyuubi.engine.spark.{ArrayFetchIterator, KyuubiSparkUtil}
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session

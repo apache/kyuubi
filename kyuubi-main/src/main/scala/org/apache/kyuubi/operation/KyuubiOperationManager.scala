@@ -20,8 +20,8 @@ package org.apache.kyuubi.operation
 import java.util.concurrent.ConcurrentHashMap
 
 import org.apache.hive.service.rpc.thrift.{TCLIService, TFetchResultsReq, TRow, TRowSet, TSessionHandle}
-import org.apache.kyuubi.KyuubiSQLException
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.{Session, SessionHandle}
 import org.apache.kyuubi.util.ThriftUtils
