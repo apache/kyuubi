@@ -266,7 +266,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
       val tFetchResultsResp3 = client.FetchResults(tFetchResultsReq3)
       assert(tFetchResultsResp3.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
       val idSeq3 = tFetchResultsResp3.getResults.getColumns.get(0).getI64Val.getValues.asScala.toSeq
-      assertResult(Seq(1L))(idSeq3)
+      assertResult(Seq(0L))(idSeq3)
 
       // fetch first
       val tFetchResultsReq4 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_FIRST, 3)
