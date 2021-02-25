@@ -43,7 +43,7 @@ jobs:
             ${{ runner.os }}-maven-io-
       - name: Build with Maven
         run: |
-          mvn clean install -P${{ matrix.spark }} -Dmaven.javadoc.skip=true -B -V
+          mvn clean install -Pspark-${{ matrix.spark }} -Dmaven.javadoc.skip=true -B -V
           bash <(curl -s https://codecov.io/bash)
 #      - name: Codecov kyuubi-common
 #        uses: codecov/codecov-action@v1
