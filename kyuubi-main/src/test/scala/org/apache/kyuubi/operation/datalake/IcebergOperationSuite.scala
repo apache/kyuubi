@@ -21,8 +21,11 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{BasicIcebergJDBCTests, WithKyuubiServer}
 
 class IcebergOperationSuite extends WithKyuubiServer with BasicIcebergJDBCTests {
-  override protected val conf: KyuubiConf = KyuubiConf()
+  override protected val conf: KyuubiConf = {
+    val kyuubiConf = KyuubiConf().set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 20000L)
+    icebergConfigs.foreach {case (k, v) => kyuubiConf.set(k, v) }
+    kyuubiConf
+  }
 
-  override def jdbcUrl: String = getJdbcUrl +
-    "#" + icebergConfigs.map {case (k, v) => k + "=" + v}.mkString(";")
+  override def jdbcUrl: String = getJdbcUrl
 }
