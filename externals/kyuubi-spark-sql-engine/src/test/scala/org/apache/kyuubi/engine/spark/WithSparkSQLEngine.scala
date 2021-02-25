@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine.spark
 
-import org.apache.hadoop.hive.ql.metadata.Hive
-import org.apache.hadoop.hive.ql.session.SessionState
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
@@ -59,8 +57,6 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
     }
     SparkSession.clearActiveSession()
     SparkSession.clearDefaultSession()
-    SessionState.detachSession()
-    Hive.closeCurrent()
   }
 
   protected def getJdbcUrl: String = s"jdbc:hive2://$connectionUrl/;"
