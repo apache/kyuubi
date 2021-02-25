@@ -174,6 +174,8 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   }
 
   private[kyuubi] def startTerminatingChecker(): Unit = if (!isServer) {
+    // initialize `_latestLogoutTime` at start
+    _latestLogoutTime = System.currentTimeMillis()
     val interval = conf.get(ENGINE_CHECK_INTERVAL)
     val idleTimeout = conf.get(ENGINE_IDLE_TIMEOUT)
     val checkTask = new Runnable {
