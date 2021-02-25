@@ -29,6 +29,8 @@ object ThriftUtils {
     }
   }
 
-  val EMPTY_ROW_SET = new TRowSet(0, new java.util.ArrayList[TRow](0))
+  def newEmptyRowSet: TRowSet = new TRowSet(0, new java.util.ArrayList[TRow](0))
+
+  val EMPTY_ROW_SET: TRowSet = newEmptyRowSet
 
 }
