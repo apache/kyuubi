@@ -18,12 +18,10 @@
 package org.apache.kyuubi.session
 
 import java.io.IOException
-import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
 
-import org.apache.curator.utils.ZKPaths
 import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TOpenSessionReq, TProtocolVersion, TSessionHandle}
 import org.apache.thrift.TException
 import org.apache.thrift.protocol.TBinaryProtocol
@@ -36,7 +34,7 @@ import org.apache.kyuubi.engine.{ShareLevel, SQLEngineAppName}
 import org.apache.kyuubi.engine.ShareLevel.{SERVER, ShareLevel}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.ServiceDiscovery
+import org.apache.kyuubi.ha.client.ServiceDiscovery._
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
 class KyuubiSessionImpl(
@@ -84,37 +82,18 @@ class KyuubiSessionImpl(
 
   private val appZkNamespace: String = boundAppName.getZkNamespace(sessionConf.get(HA_ZK_NAMESPACE))
 
-  private lazy val zkClient = ServiceDiscovery.startZookeeperClient(sessionConf)
   private val timeout: Long = sessionConf.get(ENGINE_INIT_TIMEOUT)
 
   private var transport: TTransport = _
   private var client: TCLIService.Client = _
   private var remoteSessionHandle: TSessionHandle = _
 
-  private def getServerHost: Option[(String, Int)] = {
-    try {
-      val hosts = zkClient.getChildren.forPath(appZkNamespace)
-      // TODO: use last one because to avoid touching some maybe-crashed engines
-      // We need a big improvement here.
-      hosts.asScala.lastOption.map { p =>
-        val path = ZKPaths.makePath(appZkNamespace, p)
-        val hostPort = new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
-        val strings = hostPort.split(":")
-        val host = strings.head
-        val port = strings(1).toInt
-        (host, port)
-      }
-    } catch {
-      case _: Exception => None
-    }
-  }
-
   override def open(): Unit = {
     super.open()
-    // Init zookeeper client here to capture errors
-    zkClient
+    val zkClient = startZookeeperClient(sessionConf)
+    logSessionInfo(s"Connected to Zookeeper")
     try {
-      getServerHost match {
+      getServerHost(zkClient, appZkNamespace) match {
         case Some((host, port)) => openSession(host, port)
         case None =>
           sessionConf.setIfMissing(SparkProcessBuilder.APP_KEY, boundAppName.toString)
@@ -125,9 +104,9 @@ class KyuubiSessionImpl(
           sessionConf.set(HA_ZK_NAMESPACE, appZkNamespace)
           val builder = new SparkProcessBuilder(appUser, sessionConf.toSparkPrefixedConf)
           try {
-            info(s"Launching SQL engine: $builder")
+            logSessionInfo(s"Launching SQL engine:\n$builder")
             val process = builder.start
-            var sh = getServerHost
+            var sh = getServerHost(zkClient, appZkNamespace)
             val started = System.currentTimeMillis()
             var exitValue: Option[Int] = None
             while (sh.isEmpty) {
@@ -142,7 +121,7 @@ class KyuubiSessionImpl(
                 throw KyuubiSQLException(s"Timed out($timeout ms) to launched Spark with $builder",
                   builder.getError)
               }
-              sh = getServerHost
+              sh = getServerHost(zkClient, appZkNamespace)
             }
             val Some((host, port)) = sh
             openSession(host, port)
@@ -166,13 +145,19 @@ class KyuubiSessionImpl(
     val loginTimeout = sessionConf.get(ENGINE_LOGIN_TIMEOUT).toInt
     transport = PlainSASLHelper.getPlainTransport(
       user, passwd, new TSocket(host, port, loginTimeout))
-    if (!transport.isOpen) transport.open()
+    if (!transport.isOpen) {
+      logSessionInfo(s"Connecting to engine [$host:$port]")
+      transport.open()
+      logSessionInfo(s"Connected to engine [$host:$port]")
+    }
     client = new TCLIService.Client(new TBinaryProtocol(transport))
     val req = new TOpenSessionReq()
     req.setUsername(user)
     req.setPassword(passwd)
     req.setConfiguration(conf.asJava)
+    logSessionInfo(s"Sending TOpenSessionReq to engine [$host:$port]")
     val resp = client.OpenSession(req)
+    logSessionInfo(s"Received TOpenSessionResp from engine [$host:$port]")
     ThriftUtils.verifyTStatus(resp.getStatus)
     remoteSessionHandle = resp.getSessionHandle
     sessionManager.operationManager.setConnection(handle, client, remoteSessionHandle)
