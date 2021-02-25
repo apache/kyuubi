@@ -24,7 +24,6 @@ import org.apache.thrift.transport.TTransportException
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationType.OperationType
-import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.util.ThriftUtils
 
@@ -41,8 +40,6 @@ abstract class KyuubiOperation(
   protected def verifyTStatus(tStatus: TStatus): Unit = {
     ThriftUtils.verifyTStatus(tStatus)
   }
-
-  override def getOperationLog: Option[OperationLog] = None
 
   protected def onError(action: String = "operating"): PartialFunction[Throwable, Unit] = {
     case e: Throwable =>
