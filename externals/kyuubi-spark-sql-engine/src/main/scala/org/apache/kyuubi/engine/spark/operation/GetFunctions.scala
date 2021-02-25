@@ -22,6 +22,7 @@ import java.sql.DatabaseMetaData
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
+import org.apache.kyuubi.engine.spark.IterableFetchIterator
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
@@ -70,7 +71,7 @@ class GetFunctions(
             info.getClassName)
         }
       }
-      iter = a.toList.iterator
+      iter = new IterableFetchIterator(a.toList)
     } catch {
       onError()
     }

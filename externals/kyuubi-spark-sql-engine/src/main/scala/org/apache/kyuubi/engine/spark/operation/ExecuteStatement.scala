@@ -24,6 +24,7 @@ import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.engine.spark.ArrayFetchIterator
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.log.OperationLog
@@ -74,7 +75,7 @@ class ExecuteStatement(
       debug(s"original result queryExecution: ${result.queryExecution}")
       val castedResult = result.select(castCols: _*)
       debug(s"casted result queryExecution: ${castedResult.queryExecution}")
-      iter = castedResult.collect().toList.iterator
+      iter = new ArrayFetchIterator(castedResult.collect())
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)

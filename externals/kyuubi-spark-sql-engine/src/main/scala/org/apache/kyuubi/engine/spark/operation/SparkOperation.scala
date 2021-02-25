@@ -25,8 +25,9 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.engine.spark.FetchIterator
 import org.apache.kyuubi.operation.{AbstractOperation, OperationState}
-import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.operation.FetchOrientation._
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
@@ -36,7 +37,7 @@ import org.apache.kyuubi.session.Session
 abstract class SparkOperation(spark: SparkSession, opType: OperationType, session: Session)
   extends AbstractOperation(opType, session) {
 
-  protected var iter: Iterator[Row] = _
+  protected var iter: FetchIterator[Row] = _
 
   protected final val operationLog: OperationLog =
     OperationLog.createOperationLog(session.handle, getHandle)
@@ -130,8 +131,15 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
     validateDefaultFetchOrientation(order)
     assertState(OperationState.FINISHED)
     setHasResultSet(true)
+    order match {
+      case FETCH_NEXT => iter.fetchNext()
+      case FETCH_PRIOR => iter.fetchPrior(rowSetSize);
+      case FETCH_FIRST => iter.fetchAbsolute(0);
+    }
     val taken = iter.take(rowSetSize)
-    RowSet.toTRowSet(taken.toList, resultSchema, getProtocolVersion)
+    val resultRowSet = RowSet.toTRowSet(taken.toList, resultSchema, getProtocolVersion)
+    resultRowSet.setStartRowOffset(iter.getPosition)
+    resultRowSet
   }
 
   override def shouldRunAsync: Boolean = false
