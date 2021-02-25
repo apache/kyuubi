@@ -36,6 +36,9 @@ class ExecuteStatement(
     override val shouldRunAsync: Boolean)
   extends SparkOperation(spark, OperationType.EXECUTE_STATEMENT, session) with Logging {
 
+  private val operationLog: OperationLog =
+    OperationLog.createOperationLog(session.handle, getHandle)
+  override def getOperationLog: Option[OperationLog] = Option(operationLog)
   private var result: DataFrame = _
 
   override protected def resultSchema: StructType = {

@@ -39,10 +39,6 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
 
   protected var iter: FetchIterator[Row] = _
 
-  protected final val operationLog: OperationLog =
-    OperationLog.createOperationLog(session.handle, getHandle)
-  override def getOperationLog: Option[OperationLog] = Option(operationLog)
-
   protected def resultSchema: StructType
 
   protected def cleanup(targetState: OperationState): Unit = synchronized {
@@ -104,7 +100,6 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
     Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
     setHasResultSet(true)
     setState(OperationState.RUNNING)
-    OperationLog.setCurrentOperationLog(operationLog)
   }
 
   override protected def afterRun(): Unit = {
