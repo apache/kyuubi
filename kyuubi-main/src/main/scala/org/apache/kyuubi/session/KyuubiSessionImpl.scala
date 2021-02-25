@@ -151,7 +151,6 @@ class KyuubiSessionImpl(
       logSessionInfo(s"Connected to engine [$host:$port]")
     }
     client = new TCLIService.Client(new TBinaryProtocol(transport))
-
     val req = new TOpenSessionReq()
     req.setUsername(user)
     req.setPassword(passwd)
@@ -162,7 +161,6 @@ class KyuubiSessionImpl(
     ThriftUtils.verifyTStatus(resp.getStatus)
     remoteSessionHandle = resp.getSessionHandle
     sessionManager.operationManager.setConnection(handle, client, remoteSessionHandle)
-
   }
 
   override def close(): Unit = {
