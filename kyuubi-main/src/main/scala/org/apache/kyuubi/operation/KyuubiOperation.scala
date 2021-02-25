@@ -19,11 +19,11 @@ package org.apache.kyuubi.operation
 
 import org.apache.hive.service.rpc.thrift._
 
-import org.apache.kyuubi.{KyuubiSQLException, ThriftUtils}
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationType.OperationType
-import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.ThriftUtils
 
 abstract class KyuubiOperation(
     opType: OperationType,
@@ -39,10 +39,8 @@ abstract class KyuubiOperation(
     ThriftUtils.verifyTStatus(tStatus)
   }
 
-  override def getOperationLog: Option[OperationLog] = None
-
   protected def onError(action: String = "operating"): PartialFunction[Throwable, Unit] = {
-    case e: Exception =>
+    case e: Throwable =>
       state.synchronized {
         if (isTerminalState(state)) {
           warn(s"Ignore exception in terminal state with $statementId: $e")

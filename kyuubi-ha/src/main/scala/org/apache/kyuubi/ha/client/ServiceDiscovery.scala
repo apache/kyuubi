@@ -23,6 +23,8 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.security.auth.login.Configuration
 
+import scala.collection.JavaConverters._
+
 import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
 import org.apache.curator.framework.recipes.nodes.PersistentEphemeralNode
 import org.apache.curator.framework.state.{ConnectionState, ConnectionStateListener}
@@ -216,7 +218,16 @@ object ServiceDiscovery {
    * Use the [[ZooKeeperACLProvider]] to create appropriate ACLs
    */
   def startZookeeperClient(conf: KyuubiConf): CuratorFramework = {
-    val client = buildZookeeperClient(conf)
+    val connectionStr = conf.get(HA_ZK_QUORUM)
+    val sessionTimeout = conf.get(HA_ZK_SESSION_TIMEOUT)
+    val connectionTimeout = conf.get(HA_ZK_CONN_TIMEOUT)
+    val retryPolicy = new ExponentialBackoffRetry(1000, 3)
+    val client = CuratorFrameworkFactory.builder()
+      .connectString(connectionStr)
+      .sessionTimeoutMs(sessionTimeout)
+      .connectionTimeoutMs(connectionTimeout)
+      .retryPolicy(retryPolicy)
+      .build()
     client.start()
     client
   }
@@ -249,5 +260,23 @@ object ServiceDiscovery {
   def supportServiceDiscovery(conf: KyuubiConf): Boolean = {
     val zkEnsemble = conf.get(HA_ZK_QUORUM)
     zkEnsemble != null && zkEnsemble.nonEmpty
+  }
+
+  def getServerHost(zkClient: CuratorFramework, namespace: String): Option[(String, Int)] = {
+    try {
+      val hosts = zkClient.getChildren.forPath(namespace)
+      // TODO: use last one because to avoid touching some maybe-crashed engines
+      // We need a big improvement here.
+      hosts.asScala.lastOption.map { p =>
+        val path = ZKPaths.makePath(namespace, p)
+        val hostPort = new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
+        val strings = hostPort.split(":")
+        val host = strings.head
+        val port = strings(1).toInt
+        (host, port)
+      }
+    } catch {
+      case _: Exception => None
+    }
   }
 }

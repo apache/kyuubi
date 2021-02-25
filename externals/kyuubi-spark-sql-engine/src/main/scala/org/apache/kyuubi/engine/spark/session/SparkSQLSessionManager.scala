@@ -17,13 +17,10 @@
 
 package org.apache.kyuubi.engine.spark.session
 
-import java.util.concurrent.TimeUnit
-
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.session._
 
@@ -41,9 +38,6 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   def this(spark: SparkSession) = this(classOf[SparkSQLSessionManager].getSimpleName, spark)
 
   val operationManager = new SparkSQLOperationManager()
-
-  @volatile private var _latestLogoutTime: Long = System.currentTimeMillis()
-  def latestLogoutTime: Long = _latestLogoutTime
 
   override def openSession(
       protocol: TProtocolVersion,
@@ -76,7 +70,6 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
-    _latestLogoutTime = System.currentTimeMillis()
     super.closeSession(sessionHandle)
     operationManager.removeSparkSession(sessionHandle)
   }
@@ -90,25 +83,4 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   }
 
   override protected def isServer: Boolean = false
-
-  override def start(): Unit = {
-    startTimeoutChecker()
-    super.start()
-  }
-
-  private def startTimeoutChecker(): Unit = {
-    val interval = conf.get(KyuubiConf.ENGINE_CHECK_INTERVAL)
-    val idleTimeout = conf.get(KyuubiConf.ENGINE_IDLE_TIMEOUT)
-    val checkTask = new Runnable {
-      override def run(): Unit = {
-        while (getOpenSessionCount > 0 ||
-          System.currentTimeMillis - latestLogoutTime < idleTimeout) {
-          TimeUnit.MILLISECONDS.sleep(interval)
-        }
-        info(s"Idled for more than $idleTimeout ms, terminating")
-        sys.exit(0)
-      }
-    }
-    submitBackgroundOperation(checkTask)
-  }
 }

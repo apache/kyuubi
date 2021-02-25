@@ -73,4 +73,4 @@ after_success:
   - bash <(curl -s https://codecov.io/bash)
 
 after_failure:
-  - for log in `find * -name "unit-tests.log"`; do echo "=========$log========="; cat $log; done
+  - for log in `find * -name "kyuubi-spark-sql-engine.log*"`; do echo "=========$log========="; cat $log; done
