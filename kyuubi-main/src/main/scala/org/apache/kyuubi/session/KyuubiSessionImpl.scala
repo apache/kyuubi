@@ -27,7 +27,7 @@ import org.apache.thrift.TException
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.{TSocket, TTransport}
 
-import org.apache.kyuubi.{KyuubiSQLException, ThriftUtils, Utils}
+import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.{ShareLevel, SQLEngineAppName}
@@ -36,6 +36,7 @@ import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.ServiceDiscovery._
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
+import org.apache.kyuubi.util.ThriftUtils
 
 class KyuubiSessionImpl(
     protocol: TProtocolVersion,

@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine.spark.operation
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.StructType
 
+import org.apache.kyuubi.engine.spark.IterableFetchIterator
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
@@ -73,7 +74,7 @@ class GetTables(
         } else {
           catalogTablesAndViews
         }
-      iter = allTableAndViews.toList.iterator
+      iter = new IterableFetchIterator(allTableAndViews)
     } catch {
       onError()
     }
