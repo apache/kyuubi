@@ -105,7 +105,7 @@ trait ProcBuilder {
           if (containsIgnoreCase(line, "Exception:") &&
               !line.contains("at ") && !line.startsWith("Caused by:")) {
             val sb = new StringBuilder(line)
-            error = KyuubiSQLException(sb.toString())
+            error = KyuubiSQLException(sb.toString() + s"\n See more: $engineLog")
             line = reader.readLine()
             while (sb.length < maxErrorSize && line != null &&
               (line.startsWith("\tat ") || line.startsWith("Caused by: "))) {
@@ -113,8 +113,7 @@ trait ProcBuilder {
               line = reader.readLine()
             }
 
-            sb.append(s"\n See more: $engineLog")
-            error = KyuubiSQLException(sb.toString())
+            error = KyuubiSQLException(sb.toString() + s"\n See more: $engineLog")
           }
           line = reader.readLine()
         }

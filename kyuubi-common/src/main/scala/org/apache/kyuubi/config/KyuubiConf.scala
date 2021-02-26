@@ -377,8 +377,7 @@ object KyuubiConf {
         " error message(characters).")
       .version("1.1.0")
       .intConf
-      .checkValue( v => v >= 200 && v <= FRONTEND_MAX_MESSAGE_SIZE.defaultVal.get,
-        s"must in [200, ${FRONTEND_MAX_MESSAGE_SIZE.key}]")
+      .checkValue( v => v >= 200 && v <= 8192, s"must in [200, 8192]")
       .createWithDefault(8192)
 
   val ENGINE_LOG_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.log.timeout")
