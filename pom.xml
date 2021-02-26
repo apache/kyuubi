@@ -1124,6 +1124,10 @@
         </profile>
 
         <profile>
+            <id>spark-provided</id>
+        </profile>
+
+        <profile>
             <id>spark-2.4</id>
             <properties>
                 <spark.version>2.4.7</spark.version>

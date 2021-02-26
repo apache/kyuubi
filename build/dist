@@ -31,6 +31,7 @@ set -x
 KYUUBI_HOME="$(cd "`dirname "$0"`/.."; pwd)"
 DISTDIR="$KYUUBI_HOME/dist"
 MAKE_TGZ=false
+SPARK_PROVIDED=false
 NAME=none
 MVN="$KYUUBI_HOME/build/mvn"
 
@@ -39,11 +40,12 @@ function usage {
   echo "./build/dist - Tool for making binary distributions of Kyuubi"
   echo ""
   echo "Usage:"
-  echo "+------------------------------------------------------+"
-  echo "| ./build/dist [--name] [--tgz] <maven build options>  |"
-  echo "+------------------------------------------------------+"
-  echo "name: -  custom binary name, using project version if undefined"
-  echo "tgz:  -  whether to make a whole bundled package"
+  echo "+--------------------------------------------------------------------------------------+"
+  echo "| ./build/dist [--name <custom_name>] [--tgz] [--spark-provided] <maven build options> |"
+  echo "+--------------------------------------------------------------------------------------+"
+  echo "name:           -  custom binary name, using project version if undefined"
+  echo "tgz:            -  whether to make a whole bundled package"
+  echo "spark-provided: -  whether to make a package without Spark binary"
   echo ""
 }
 
@@ -58,6 +60,9 @@ while (( "$#" )); do
   case $1 in
     --tgz)
       MAKE_TGZ=true
+      ;;
+    --spark-provided)
+      SPARK_PROVIDED=true
       ;;
     --name)
       NAME="$2"
@@ -136,7 +141,11 @@ HIVE_VERSION=$("$MVN" help:evaluate -Dexpression=hive.version $@ 2>/dev/null\
 echo "Building Kyuubi package of version $VERSION against Spark version - $SPARK_VERSION"
 
 if [[ "$NAME" == "none" ]]; then
-  NAME="spark-"$SPARK_VERSION
+  if [[ "$SPARK_PROVIDED" == "true" ]]; then
+    NAME="without-spark"
+  else
+    NAME="spark-"$SPARK_VERSION
+  fi
 fi
 
 if [[ "$MAKE_TGZ" == "true" ]]; then
@@ -145,7 +154,12 @@ else
   echo "Making distribution for Kyuubi $VERSION named $NAME in '$DISTDIR'..."
 fi
 
-BUILD_COMMAND=("$MVN" -T 1C clean package -DskipTests $@)
+MVN_DIST_OPT="-DskipTests"
+if [[ "$SPARK_PROVIDED" == "true" ]]; then
+  MVN_DIST_OPT="$MVN_DIST_OPT -Pspark-provided"
+fi
+
+BUILD_COMMAND=("$MVN" -T 1C clean package $MVN_DIST_OPT $@)
 
 echo -e "\nBuilding with..."
 echo -e "\$ ${BUILD_COMMAND[@]}\n"
@@ -176,7 +190,10 @@ else
   HIVE_VERSION_SUFFIX="-hive1.2"
 fi
 
-cp -r "$KYUUBI_HOME/externals/kyuubi-download/target/spark-$SPARK_VERSION-bin-hadoop${HADOOP_VERSION:0:3}$HIVE_VERSION_SUFFIX/" "$DISTDIR/externals/spark-$SPARK_VERSION-bin-hadoop${HADOOP_VERSION:0:3}$HIVE_VERSION_SUFFIX/"
+if [[ "$SPARK_PROVIDED" != "true" ]]; then
+  cp -r "$KYUUBI_HOME/externals/kyuubi-download/target/spark-$SPARK_VERSION-bin-hadoop${HADOOP_VERSION:0:3}$HIVE_VERSION_SUFFIX/" \
+        "$DISTDIR/externals/spark-$SPARK_VERSION-bin-hadoop${HADOOP_VERSION:0:3}$HIVE_VERSION_SUFFIX/"
+fi
 cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine-$VERSION.jar" "$DISTDIR/externals/engines/spark"
 
 # Copy license and ASF files
