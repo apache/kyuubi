@@ -48,8 +48,8 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
 
   test("capture error from spark process builder") {
     val processBuilder = new SparkProcessBuilder("kentyao", conf.set("spark.ui.port", "abc"))
-    val proc = processBuilder.start
-    eventually(timeout(30.seconds), interval(100.milliseconds)) {
+    processBuilder.start
+    eventually(timeout(90.seconds), interval(500.milliseconds)) {
       val error = processBuilder.getError
       assert(error.getMessage.contains(
         "java.lang.IllegalArgumentException: spark.ui.port should be int, but was abc"))
@@ -59,8 +59,8 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     val processBuilder1 = new SparkProcessBuilder("kentyao",
       conf.set("spark.hive.metastore.uris", "thrift://dummy"))
 
-    val proc1 = processBuilder1.start
-    eventually(timeout(30.seconds), interval(100.milliseconds)) {
+    processBuilder1.start
+    eventually(timeout(90.seconds), interval(500.milliseconds)) {
       val error1 = processBuilder1.getError
       assert(
         error1.getMessage.contains("org.apache.hadoop.hive.ql.metadata.HiveException:"))
@@ -73,7 +73,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     val pb = new SparkProcessBuilder("kentyao",
       conf.set("spark.hive.metastore.uris", "thrift://dummy"))
     pb.start
-    eventually(timeout(30.seconds), interval(100.milliseconds)) {
+    eventually(timeout(90.seconds), interval(500.milliseconds)) {
       val error1 = pb.getError
       assert(!error1.getMessage.contains("Failed to detect the root cause"))
       assert(error1.getMessage.contains("See more: "))
@@ -84,7 +84,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
       conf.set("spark.hive.metastore.uris", "thrift://dummy")
         .set(KyuubiConf.ENGINE_ERROR_MAX_SIZE, 200))
     pb2.start
-    eventually(timeout(30.seconds), interval(100.milliseconds)) {
+    eventually(timeout(90.seconds), interval(500.milliseconds)) {
       val error1 = pb2.getError
       assert(!error1.getMessage.contains("Failed to detect the root cause"))
       assert(error1.getMessage.contains("See more: "))
