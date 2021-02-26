@@ -19,7 +19,6 @@ package org.apache.kyuubi.engine.spark
 
 import java.io.IOException
 import java.nio.file.{Files, Path, Paths}
-import java.time.Duration
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -27,21 +26,16 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_MAIN_RESOURCE, SESSION_SUBMIT_LOG_RETAIN_MILLIS}
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE
 import org.apache.kyuubi.engine.ProcBuilder
 
 class SparkProcessBuilder(
     override val proxyUser: String,
-    conf: Map[String, String],
+    override val conf: KyuubiConf,
     override val env: Map[String, String] = sys.env)
   extends ProcBuilder with Logging {
 
   import SparkProcessBuilder._
-
-  override protected val processLogRetainTimeMillis: Long = {
-    conf.get(s"spark.${SESSION_SUBMIT_LOG_RETAIN_MILLIS.key}").map(_.toLong)
-      .getOrElse(Duration.ofDays(1).toMillis)
-  }
 
   override protected val executable: String = {
     val path = env.get("SPARK_HOME").map { sparkHome =>
@@ -69,7 +63,7 @@ class SparkProcessBuilder(
   override def mainResource: Option[String] = {
     // 1. get the main resource jar for user specified config first
     val jarName = s"$module-$KYUUBI_VERSION.jar"
-    conf.get(ENGINE_SPARK_MAIN_RESOURCE.key).filter { userSpecified =>
+    conf.get(ENGINE_SPARK_MAIN_RESOURCE).filter { userSpecified =>
       Files.exists(Paths.get(userSpecified))
     }.orElse {
       // 2. get the main resource jar from system build default
@@ -116,7 +110,7 @@ class SparkProcessBuilder(
     buffer += executable
     buffer += CLASS
     buffer += mainClass
-    conf.foreach { case (k, v) =>
+    conf.toSparkPrefixedConf.foreach { case (k, v) =>
       buffer += CONF
       buffer += s"$k=$v"
     }
@@ -139,8 +133,8 @@ class SparkProcessBuilder(
   override protected def module: String = "kyuubi-spark-sql-engine"
 
   private def useKeytab(): Boolean = {
-    val principal = conf.get(PRINCIPAL)
-    val keytab = conf.get(KEYTAB)
+    val principal = conf.getOption(PRINCIPAL)
+    val keytab = conf.getOption(KEYTAB)
     if (principal.isEmpty || keytab.isEmpty) {
       false
     } else {
