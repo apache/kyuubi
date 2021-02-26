@@ -371,14 +371,22 @@ object KyuubiConf {
   //                                 SQL Engine Configuration                                    //
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
-  val SESSION_SUBMIT_LOG_RETAIN_MILLIS: ConfigEntry[Long] =
-    buildConf("session.engine.log.timeout")
-      .doc("If we use Spark as the engine then the session submit log is the console output of " +
-        "spark-submit. We will retain the session submit log until over the config value.")
+  val ENGINE_ERROR_MAX_SIZE: ConfigEntry[Int] =
+    buildConf("session.engine.startup.error.max.size")
+      .doc("During engine bootstrapping, if error occurs, using this config to limit the length" +
+        " error message(characters).")
       .version("1.1.0")
-      .timeConf
-      .checkValue(_ > 0, "must be positive number")
-      .createWithDefault(Duration.ofDays(1).toMillis)
+      .intConf
+      .checkValue( v => v >= 200 && v <= 8192, s"must in [200, 8192]")
+      .createWithDefault(8192)
+
+  val ENGINE_LOG_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.log.timeout")
+    .doc("If we use Spark as the engine then the session submit log is the console output of " +
+      "spark-submit. We will retain the session submit log until over the config value.")
+    .version("1.1.0")
+    .timeConf
+    .checkValue(_ > 0, "must be positive number")
+    .createWithDefault(Duration.ofDays(1).toMillis)
 
   val ENGINE_SPARK_MAIN_RESOURCE: OptionalConfigEntry[String] =
     buildConf("session.engine.spark.main.resource")
