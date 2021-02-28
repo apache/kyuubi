@@ -144,7 +144,7 @@ if [[ "$NAME" == "none" ]]; then
   if [[ "$SPARK_PROVIDED" == "true" ]]; then
     NAME="without-spark"
   else
-    NAME="spark-"$SPARK_VERSION
+    NAME="spark-"${SPARK_VERSION:0:3}
   fi
 fi
 
