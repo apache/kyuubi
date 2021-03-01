@@ -44,6 +44,10 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     this
   }
 
+  def loadFromSystemProperties(): Unit = {
+    loadFromMap()
+  }
+
   def loadFileDefaults(): KyuubiConf = {
     val maybeConfigFile = Utils.getDefaultPropertiesFile()
     loadFromMap(Utils.getPropertiesFromFile(maybeConfigFile))
