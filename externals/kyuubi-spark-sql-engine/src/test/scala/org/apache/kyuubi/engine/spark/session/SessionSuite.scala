@@ -66,7 +66,7 @@ class SessionSuite extends WithSparkSQLEngine with JDBCTestUtils {
     assert(engine.getServiceState == STARTED)
     withJdbcStatement() {_ => }
     eventually(Timeout(200.seconds)) {
-      assert(engine.getServiceState == STARTED)
+      assert(engine.getServiceState == STOPPED)
     }
   }
 }
