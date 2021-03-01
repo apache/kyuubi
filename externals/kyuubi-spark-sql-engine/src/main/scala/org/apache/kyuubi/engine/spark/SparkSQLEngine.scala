@@ -20,7 +20,6 @@ package org.apache.kyuubi.engine.spark
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 
-import com.google.common.annotations.VisibleForTesting
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
