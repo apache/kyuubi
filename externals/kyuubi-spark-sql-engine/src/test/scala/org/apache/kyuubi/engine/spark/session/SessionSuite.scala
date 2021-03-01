@@ -39,7 +39,6 @@ class SessionSuite extends WithSparkSQLEngine with JDBCTestUtils {
       s"jdbc:derby:;databaseName=$metastorePath;create=true")
     System.setProperty("spark.sql.warehouse.dir", warehousePath.toString)
     System.setProperty("spark.sql.hive.metastore.sharedPrefixes", "org.apache.hive.jdbc")
-    System.setProperty(CONNECTION_RELEASE_ON_CLOSE.key, "true")
     System.setProperty(ENGINE_SHARED_LEVEL.key, "CONNECTION")
     spark = SparkSQLEngine.createSpark()
     engine = SparkSQLEngine.startEngine(spark)
@@ -64,12 +63,5 @@ class SessionSuite extends WithSparkSQLEngine with JDBCTestUtils {
     withJdbcStatement() {_ => }
     Thread.sleep(5000)
     assert(!engine.isAlive())
-  }
-
-  test("don't release session if kyuubi.connection.release.onClose is false") {
-    assert(engine.isAlive())
-    engine.getConf.set(CONNECTION_RELEASE_ON_CLOSE.key, "false")
-    withJdbcStatement() {_ => }
-    assert(engine.isAlive())
   }
 }
