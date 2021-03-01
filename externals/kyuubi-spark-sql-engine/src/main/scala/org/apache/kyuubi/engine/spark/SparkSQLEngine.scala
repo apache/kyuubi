@@ -70,21 +70,8 @@ object SparkSQLEngine extends Logging {
 
   private val countDownLatch = new CountDownLatch(1)
 
-  @VisibleForTesting
-  private[spark] def createSpark(configs: (String, String)*): SparkSession = {
-    val sparkConf = new SparkConf()
-    configs.foreach { case (k, v) =>
-      sparkConf.set(k, v)
-    }
-    createSpark(Some(sparkConf))
-  }
-
   def createSpark(): SparkSession = {
-    createSpark(None)
-  }
-
-  def createSpark(sparkConfOpt: Option[SparkConf]): SparkSession = {
-    val sparkConf = sparkConfOpt.getOrElse(new SparkConf())
+    val sparkConf = new SparkConf()
     sparkConf.setIfMissing("spark.master", "local")
     sparkConf.setIfMissing("spark.ui.port", "0")
 
