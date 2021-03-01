@@ -61,14 +61,14 @@ class SessionSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
   test("release session if shared level is CONNECTION") {
     assert(engine.isAlive())
-    withJdbcStatement(engine.connectionUrl) {_ => }
+    withJdbcStatement() {_ => }
     assert(!engine.isAlive())
   }
 
   test("don't release session if kyuubi.connection.release.onClose is false") {
     assert(engine.isAlive())
     engine.getConf.set(CONNECTION_RELEASE_ON_CLOSE.key, "false")
-    withJdbcStatement(engine.connectionUrl) {_ => }
+    withJdbcStatement() {_ => }
     assert(engine.isAlive())
   }
 }
