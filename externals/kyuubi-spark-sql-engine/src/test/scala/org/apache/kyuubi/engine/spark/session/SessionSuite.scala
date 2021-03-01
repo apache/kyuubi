@@ -59,6 +59,7 @@ class SessionSuite extends KyuubiFunSuite {
   test("don't release session if kyuubi.connection.release.onClose is false") {
     assert(engine.isAlive())
     engine.getConf.set(CONNECTION_RELEASE_ON_CLOSE.key, "false")
+    withJdbcStatement(engine.connectionUrl) {_ => }
     assert(engine.isAlive())
   }
 
