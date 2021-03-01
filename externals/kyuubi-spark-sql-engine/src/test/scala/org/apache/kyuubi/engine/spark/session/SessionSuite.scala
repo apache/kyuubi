@@ -24,9 +24,11 @@ import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.{SparkSQLEngine, WithSparkSQLEngine}
 import org.apache.kyuubi.operation.JDBCTestUtils
+import org.apache.kyuubi.service.ServiceState._
 
 class SessionSuite extends WithSparkSQLEngine with JDBCTestUtils {
   override def beforeAll(): Unit = {
+    System.setProperty(ENGINE_SHARED_LEVEL.key, "CONNECTION")
   }
 
   override def afterAll(): Unit = {
@@ -42,7 +44,6 @@ class SessionSuite extends WithSparkSQLEngine with JDBCTestUtils {
       s"jdbc:derby:;databaseName=$metastorePath;create=true")
     System.setProperty("spark.sql.warehouse.dir", warehousePath.toString)
     System.setProperty("spark.sql.hive.metastore.sharedPrefixes", "org.apache.hive.jdbc")
-    System.setProperty(ENGINE_SHARED_LEVEL.key, "CONNECTION")
     spark = SparkSQLEngine.createSpark()
     engine = SparkSQLEngine.startEngine(spark)
   }
@@ -62,10 +63,10 @@ class SessionSuite extends WithSparkSQLEngine with JDBCTestUtils {
   override protected def jdbcUrl: String = s"jdbc:hive2://${engine.connectionUrl}/;"
 
   test("release session if shared level is CONNECTION") {
-    assert(engine.started.get)
+    assert(engine.getServiceState == STARTED)
     withJdbcStatement() {_ => }
-    eventually(Timeout(60.seconds)) {
-      assert(!engine.started.get)
+    eventually(Timeout(200.seconds)) {
+      assert(engine.getServiceState == STARTED)
     }
   }
 }
