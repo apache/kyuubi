@@ -17,6 +17,9 @@
 
 package org.apache.kyuubi.engine.spark.session
 
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
+import org.scalatest.time.SpanSugar._
+
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.{SparkSQLEngine, WithSparkSQLEngine}
@@ -59,9 +62,10 @@ class SessionSuite extends WithSparkSQLEngine with JDBCTestUtils {
   override protected def jdbcUrl: String = s"jdbc:hive2://${engine.connectionUrl}/;"
 
   test("release session if shared level is CONNECTION") {
-    assert(engine.isAlive())
+    assert(engine.started.get)
     withJdbcStatement() {_ => }
-    Thread.sleep(5000)
-    assert(!engine.isAlive())
+    eventually(Timeout(10.seconds)) {
+      assert(!engine.started.get)
+    }
   }
 }
