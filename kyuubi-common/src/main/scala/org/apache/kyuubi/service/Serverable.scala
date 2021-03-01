@@ -25,6 +25,7 @@ abstract class Serverable(name: String) extends CompositeService(name) {
 
   private val OOMHook = new Runnable { override def run(): Unit = stop() }
   private val started = new AtomicBoolean(false)
+  private val stopped = new AtomicBoolean(false)
 
   private[kyuubi] val backendService: AbstractBackendService
   private lazy val frontendService = new FrontendService(backendService, OOMHook)
@@ -60,6 +61,11 @@ abstract class Serverable(name: String) extends CompositeService(name) {
         case t: Throwable =>
           warn(s"Error stopping spark ${t.getMessage}", t)
       }
+      stopped.set(true)
     }
+  }
+
+  def isAlive(): Boolean = {
+    started.get() && !stopped.get()
   }
 }

@@ -24,6 +24,8 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{CONNECTION_RELEASE_ON_CLOSE, ENGINE_SHARED_LEVEL}
+import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.session._
 
@@ -79,6 +81,11 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     _latestLogoutTime = System.currentTimeMillis()
     super.closeSession(sessionHandle)
     operationManager.removeSparkSession(sessionHandle)
+    if (conf.get(ENGINE_SHARED_LEVEL) == ShareLevel.CONNECTION.toString &&
+      conf.get(CONNECTION_RELEASE_ON_CLOSE)) {
+      info("Connection session stopped.")
+      sys.exit(0)
+    }
   }
 
   private def setModifiableConfig(spark: SparkSession, key: String, value: String): Unit = {

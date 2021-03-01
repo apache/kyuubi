@@ -499,4 +499,12 @@ object KyuubiConf {
     .transform(_.toUpperCase(Locale.ROOT))
     .checkValues(ShareLevel.values.map(_.toString))
     .createWithDefault(ShareLevel.USER.toString)
+
+   val CONNECTION_RELEASE_ON_CLOSE: ConfigEntry[Boolean] = buildConf("connection.release.onClose")
+     .doc("If session.engine.share.level is CONNECTION, Kyuubi will release the session if the " +
+       "connection is closed. Note that, if this config set to true, the config of " +
+       "session.engine.idle.timeout will be ignored.")
+     .version("1.1.0")
+     .booleanConf
+     .createWithDefault(true)
 }

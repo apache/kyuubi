@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine.spark
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 
+import com.google.common.annotations.VisibleForTesting
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
@@ -62,8 +63,21 @@ object SparkSQLEngine extends Logging {
 
   private[spark] val countDownLatch = new CountDownLatch(1)
 
-  def createSpark(): SparkSession = {
+  @VisibleForTesting
+  private[spark] def createSpark(configs: (String, String)*): SparkSession = {
     val sparkConf = new SparkConf()
+    configs.foreach { case (k, v) =>
+      sparkConf.set(k, v)
+    }
+    createSpark(Some(sparkConf))
+  }
+
+  def createSpark(): SparkSession = {
+    createSpark(None)
+  }
+
+  def createSpark(sparkConfOpt: Option[SparkConf]): SparkSession = {
+    val sparkConf = sparkConfOpt.getOrElse(new SparkConf())
     sparkConf.setIfMissing("spark.master", "local")
     sparkConf.setIfMissing("spark.ui.port", "0")
 
