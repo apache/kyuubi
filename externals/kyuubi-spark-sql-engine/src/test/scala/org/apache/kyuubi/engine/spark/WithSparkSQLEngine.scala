@@ -28,6 +28,11 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
   protected var connectionUrl: String = _
 
   override def beforeAll(): Unit = {
+    startSparkEngine()
+    super.beforeAll()
+  }
+
+  protected def startSparkEngine(): Unit = {
     val warehousePath = Utils.createTempDir()
     val metastorePath = Utils.createTempDir()
     warehousePath.toFile.delete()
@@ -42,11 +47,14 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
     spark = SparkSQLEngine.createSpark()
     engine = SparkSQLEngine.startEngine(spark)
     connectionUrl = engine.connectionUrl
-    super.beforeAll()
   }
 
   override def afterAll(): Unit = {
     super.afterAll()
+    stopSparkEngine()
+  }
+
+  protected def stopSparkEngine(): Unit = {
     if (engine != null) {
       engine.stop()
       engine = null

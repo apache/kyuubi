@@ -36,28 +36,12 @@ class SessionSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
-    val warehousePath = Utils.createTempDir()
-    val metastorePath = Utils.createTempDir()
-    warehousePath.toFile.delete()
-    metastorePath.toFile.delete()
-    System.setProperty("javax.jdo.option.ConnectionURL",
-      s"jdbc:derby:;databaseName=$metastorePath;create=true")
-    System.setProperty("spark.sql.warehouse.dir", warehousePath.toString)
-    System.setProperty("spark.sql.hive.metastore.sharedPrefixes", "org.apache.hive.jdbc")
-    spark = SparkSQLEngine.createSpark()
-    engine = SparkSQLEngine.startEngine(spark)
+    startSparkEngine()
   }
 
   override protected def afterEach(): Unit = {
     super.afterEach()
-    if (engine != null) {
-      engine.stop()
-      engine = null
-    }
-    if (spark != null) {
-      spark.stop()
-      spark = null
-    }
+    stopSparkEngine()
   }
 
   override protected def jdbcUrl: String = s"jdbc:hive2://${engine.connectionUrl}/;"
