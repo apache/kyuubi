@@ -65,6 +65,8 @@ object SparkSQLEngine extends Logging {
 
   val kyuubiConf: KyuubiConf = KyuubiConf()
 
+  var currentEngine: Option[SparkSQLEngine] = None
+
   private val user = Utils.currentUser
 
   private val countDownLatch = new CountDownLatch(1)
@@ -102,6 +104,7 @@ object SparkSQLEngine extends Logging {
     engine.initialize(kyuubiConf)
     engine.start()
     sys.addShutdownHook(engine.stop())
+    currentEngine = Some(engine)
     engine
   }
 

@@ -61,7 +61,6 @@ class SessionSuite extends WithSparkSQLEngine with JDBCTestUtils {
   test("release session if shared level is CONNECTION") {
     assert(engine.isAlive())
     withJdbcStatement() {_ => }
-    Thread.sleep(5000)
     assert(!engine.isAlive())
   }
 }

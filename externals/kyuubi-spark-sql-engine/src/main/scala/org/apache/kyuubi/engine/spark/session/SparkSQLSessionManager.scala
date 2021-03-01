@@ -23,6 +23,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARED_LEVEL
 import org.apache.kyuubi.engine.ShareLevel
+import org.apache.kyuubi.engine.spark.SparkSQLEngine
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.session._
 
@@ -76,7 +77,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     operationManager.removeSparkSession(sessionHandle)
     if (conf.get(ENGINE_SHARED_LEVEL) == ShareLevel.CONNECTION.toString) {
       info("Session stopped due to shared level is Connection.")
-      sys.exit(0)
+      stopSession()
     }
   }
 
@@ -86,6 +87,10 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     } else {
       warn(s"Spark config $key is static and will be ignored")
     }
+  }
+
+  private def stopSession(): Unit = {
+    SparkSQLEngine.currentEngine.foreach(_.stop())
   }
 
   override protected def isServer: Boolean = false
