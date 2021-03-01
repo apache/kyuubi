@@ -68,7 +68,7 @@
         <hadoop.version>2.7.4</hadoop.version>
         <hive.version>2.3.7</hive.version>
         <netty3.version>3.7.0.Final</netty3.version>
-        <spark.version>3.0.1</spark.version>
+        <spark.version>3.0.2</spark.version>
         <slf4j.version>1.7.30</slf4j.version>
         <zookeeper.version>3.4.14</zookeeper.version>
 
@@ -333,7 +333,7 @@
 
             <dependency>
                 <groupId>org.apache.spark</groupId>
-                <artifactId>spark-hive-thriftserver_${scala.binary.version}</artifactId>
+                <artifactId>spark-hive_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
                 <exclusions>
                     <exclusion>
@@ -615,6 +615,54 @@
                 <groupId>org.apache.hive</groupId>
                 <artifactId>hive-shims</artifactId>
                 <version>${hive.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.guava</groupId>
+                        <artifactId>guava</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-yarn-server-resourcemanager</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.curator</groupId>
+                        <artifactId>curator-framework</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.thrift</groupId>
+                        <artifactId>libthrift</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.codehaus.groovy</groupId>
+                        <artifactId>groovy-all</artifactId>
+                    </exclusion>
+                    <!-- Begin of Hive 2.3 exclusion -->
+                    <exclusion>
+                        <groupId>org.apache.logging.log4j</groupId>
+                        <artifactId>log4j-slf4j-impl</artifactId>
+                    </exclusion>
+                    <!-- End of Hive 2.3 exclusion -->
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -877,9 +925,13 @@
                         <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                         <junitxml>.</junitxml>
                         <filereports>TestSuite.txt</filereports>
+                        <environmentVariables>
+                            <KYUUBI_WORK_DIR_ROOT>${project.build.directory}/work</KYUUBI_WORK_DIR_ROOT>
+                        </environmentVariables>
                         <systemProperties>
                             <log4j.configuration>file:src/test/resources/log4j.properties</log4j.configuration>
                             <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
+                            <spark.driver.memory>2g</spark.driver.memory>
                         </systemProperties>
                     </configuration>
                     <executions>
@@ -1069,6 +1121,10 @@
             <modules>
                 <module>dev/kyuubi-tpcds</module>
             </modules>
+        </profile>
+
+        <profile>
+            <id>spark-provided</id>
         </profile>
 
         <profile>

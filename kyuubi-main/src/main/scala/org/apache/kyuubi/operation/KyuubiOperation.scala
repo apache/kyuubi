@@ -17,13 +17,15 @@
 
 package org.apache.kyuubi.operation
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift._
+import org.apache.thrift.transport.TTransportException
 
-import org.apache.kyuubi.{KyuubiSQLException, ThriftUtils}
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationType.OperationType
-import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.ThriftUtils
 
 abstract class KyuubiOperation(
     opType: OperationType,
@@ -39,10 +41,8 @@ abstract class KyuubiOperation(
     ThriftUtils.verifyTStatus(tStatus)
   }
 
-  override def getOperationLog: Option[OperationLog] = None
-
   protected def onError(action: String = "operating"): PartialFunction[Throwable, Unit] = {
-    case e: Exception =>
+    case e: Throwable =>
       state.synchronized {
         if (isTerminalState(state)) {
           warn(s"Ignore exception in terminal state with $statementId: $e")
@@ -50,6 +50,11 @@ abstract class KyuubiOperation(
           setState(OperationState.ERROR)
           val ke = e match {
             case kse: KyuubiSQLException => kse
+            case te: TTransportException if te.getType == TTransportException.END_OF_FILE &&
+                StringUtils.isEmpty(te.getMessage) =>
+              // https://issues.apache.org/jira/browse/THRIFT-4858
+              KyuubiSQLException(
+                s"Error $action $opType: Socket for $remoteSessionHandle is closed", e)
             case _ =>
               KyuubiSQLException(s"Error $action $opType: ${e.getMessage}", e)
           }

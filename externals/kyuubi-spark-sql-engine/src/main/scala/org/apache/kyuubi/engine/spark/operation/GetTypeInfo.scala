@@ -22,6 +22,7 @@ import java.sql.Types._
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
+import org.apache.kyuubi.engine.spark.IterableFetchIterator
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
@@ -83,7 +84,7 @@ class GetTypeInfo(spark: SparkSession, session: Session)
   }
 
   override protected def runInternal(): Unit = {
-    iter = Seq(
+    iter = new IterableFetchIterator(Seq(
       toRow("VOID", NULL),
       toRow("BOOLEAN", BOOLEAN),
       toRow("TINYINT", TINYINT, 3),
@@ -101,6 +102,6 @@ class GetTypeInfo(spark: SparkSession, session: Session)
       toRow("MAP", JAVA_OBJECT),
       toRow("STRUCT", STRUCT),
       toRow("INTERVAL", OTHER)
-    ).toList.iterator
+    ))
   }
 }

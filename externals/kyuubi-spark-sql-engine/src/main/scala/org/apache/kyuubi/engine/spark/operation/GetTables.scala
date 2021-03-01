@@ -18,10 +18,10 @@
 package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.catalog.CatalogTableType
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.engine.spark.shim.SparkShim
+import org.apache.kyuubi.engine.spark.IterableFetchIterator
+import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
@@ -61,9 +61,9 @@ class GetTables(
 
   override protected def runInternal(): Unit = {
     try {
-      val schemaPattern = convertSchemaPattern(schema, datanucleusFormat = false)
-      val tablePattern = convertIdentifierPattern(tableName, datanucleusFormat = true)
-      val sparkShim = SparkShim()
+      val schemaPattern = toJavaRegex(schema)
+      val tablePattern = toJavaRegex(tableName)
+      val sparkShim = SparkCatalogShim()
       val catalogTablesAndViews =
         sparkShim.getCatalogTablesOrViews(spark, catalog, schemaPattern, tablePattern, tableTypes)
 
@@ -74,7 +74,7 @@ class GetTables(
         } else {
           catalogTablesAndViews
         }
-      iter = allTableAndViews.toList.iterator
+      iter = new IterableFetchIterator(allTableAndViews)
     } catch {
       onError()
     }

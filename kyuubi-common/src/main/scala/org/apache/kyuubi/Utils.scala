@@ -155,5 +155,5 @@ private[kyuubi] object Utils extends Logging {
   /**
    * Whether the underlying operating system is Windows.
    */
-  val isWindows = SystemUtils.IS_OS_WINDOWS
+  val isWindows: Boolean = SystemUtils.IS_OS_WINDOWS
 }

@@ -19,14 +19,15 @@ package org.apache.kyuubi.engine.spark.shim
 
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.connector.catalog.CatalogPlugin
+import org.apache.spark.sql.types.StructField
 
 import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.schema.SchemaHelper
 
 /**
  * A shim that defines the interface interact with Spark's catalogs
  */
-trait SparkShim extends Logging {
+trait SparkCatalogShim extends Logging {
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                          Catalog                                            //
@@ -36,8 +37,6 @@ trait SparkShim extends Logging {
    * Get all register catalogs in Spark's `CatalogManager`
    */
   def getCatalogs(spark: SparkSession): Seq[Row]
-
-  protected def getCatalog(spark: SparkSession, catalog: String): CatalogPlugin
 
   protected def catalogExists(spark: SparkSession, catalog: String): Boolean
 
@@ -73,6 +72,47 @@ trait SparkShim extends Logging {
       spark: SparkSession,
       schemaPattern: String,
       tablePattern: String): Seq[TableIdentifier]
+
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //                                          Columns                                            //
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+
+  def getColumns(
+      spark: SparkSession,
+      catalogName: String,
+      schemaPattern: String,
+      tablePattern: String,
+      columnPattern: String): Seq[Row]
+
+  protected def toColumnResult(
+      catalog: String, db: String, table: String, col: StructField, pos: Int): Row = {
+    Row(
+      catalog,                                              // TABLE_CAT
+      db,                                                   // TABLE_SCHEM
+      table,                                                // TABLE_NAME
+      col.name,                                             // COLUMN_NAME
+      SchemaHelper.toJavaSQLType(col.dataType),             // DATA_TYPE
+      col.dataType.sql,                                     // TYPE_NAME
+      SchemaHelper.getColumnSize(col.dataType).orNull,      // COLUMN_SIZE
+      null,                                                 // BUFFER_LENGTH
+      SchemaHelper.getDecimalDigits(col.dataType).orNull,   // DECIMAL_DIGITS
+      SchemaHelper.getNumPrecRadix(col.dataType).orNull,    // NUM_PREC_RADIX
+      if (col.nullable) 1 else 0,                           // NULLABLE
+      col.getComment().getOrElse(""),                       // REMARKS
+      null,                                                 // COLUMN_DEF
+      null,                                                 // SQL_DATA_TYPE
+      null,                                                 // SQL_DATETIME_SUB
+      null,                                                 // CHAR_OCTET_LENGTH
+      pos,                                                  // ORDINAL_POSITION
+      "YES",                                                // IS_NULLABLE
+      null,                                                 // SCOPE_CATALOG
+      null,                                                 // SCOPE_SCHEMA
+      null,                                                 // SCOPE_TABLE
+      null,                                                 // SOURCE_DATA_TYPE
+      "NO"                                                  // IS_AUTO_INCREMENT
+    )
+  }
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                         Miscellaneous                                       //
@@ -110,19 +150,20 @@ trait SparkShim extends Logging {
     tableTypes.exists(typ.equalsIgnoreCase)
   }
 
-  protected val SESSION_CATALOG: String = "spark_catalog"
 }
 
-object SparkShim {
-  def apply(): SparkShim = {
+object SparkCatalogShim {
+  def apply(): SparkCatalogShim = {
     val runtimeSparkVer = org.apache.spark.SPARK_VERSION
     val (major, minor) = Utils.majorMinorVersion(runtimeSparkVer)
     (major, minor) match {
-      case (3, _) => new Shim_v3_0
-      case (2, _) => new Shim_v2_4
+      case (3, _) => new CatalogShim_v3_0
+      case (2, _) => new CatalogShim_v2_4
       case _ => throw new IllegalArgumentException(s"Not Support spark version $runtimeSparkVer")
     }
   }
+
+  val SESSION_CATALOG: String = "spark_catalog"
 
   val sparkTableTypes = Set("VIEW", "TABLE")
 }

@@ -50,6 +50,13 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
     }
   }
 
+  override def start(): Unit = {
+    super.start()
+    // Start engine self-terminating checker after all services are ready and it can be reached by
+    // all servers in engine spaces.
+    backendService.sessionManager.startTerminatingChecker()
+  }
+
   override protected def stopServer(): Unit = {
     countDownLatch.countDown()
   }
@@ -61,7 +68,7 @@ object SparkSQLEngine extends Logging {
 
   private val user = Utils.currentUser
 
-  private[spark] val countDownLatch = new CountDownLatch(1)
+  private val countDownLatch = new CountDownLatch(1)
 
   @VisibleForTesting
   private[spark] def createSpark(configs: (String, String)*): SparkSession = {
