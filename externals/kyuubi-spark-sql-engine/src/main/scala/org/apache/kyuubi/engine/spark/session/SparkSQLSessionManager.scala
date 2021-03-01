@@ -83,7 +83,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     operationManager.removeSparkSession(sessionHandle)
     if (conf.get(ENGINE_SHARED_LEVEL) == ShareLevel.CONNECTION.toString &&
       conf.get(CONNECTION_RELEASE_ON_CLOSE)) {
-      info("Connection session stopped.")
+      info("Session stopped due to shared level is Connection.")
       sys.exit(0)
     }
   }
