@@ -25,7 +25,7 @@ class SparkIcebergOperationSuite extends WithSparkSQLEngine with BasicIcebergJDB
 
   override def beforeAll(): Unit = {
     for ((k, v) <- icebergConfigs) {
-      System.setProperty(k, v)
+      conf.set(k, v)
     }
     super.beforeAll()
   }
@@ -33,7 +33,7 @@ class SparkIcebergOperationSuite extends WithSparkSQLEngine with BasicIcebergJDB
   override def afterAll(): Unit = {
     super.afterAll()
     for ((k, _) <- icebergConfigs) {
-      System.clearProperty(k)
+      conf.unset(k)
     }
   }
 }

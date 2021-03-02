@@ -20,10 +20,15 @@ package org.apache.kyuubi.engine.spark
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.config.KyuubiConf
 
 trait WithSparkSQLEngine extends KyuubiFunSuite {
   protected var spark: SparkSession = _
   protected var engine: SparkSQLEngine = _
+  protected val conf: KyuubiConf = {
+    SparkSQLEngine.kyuubiConf.loadFromSystemProperties()
+    SparkSQLEngine.kyuubiConf
+  }
 
   protected var connectionUrl: String = _
 
@@ -44,7 +49,6 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
 
     SparkSession.clearActiveSession()
     SparkSession.clearDefaultSession()
-    SparkSQLEngine.kyuubiConf.loadFromSystemProperties()
     spark = SparkSQLEngine.createSpark()
     engine = SparkSQLEngine.startEngine(spark)
     connectionUrl = engine.connectionUrl
