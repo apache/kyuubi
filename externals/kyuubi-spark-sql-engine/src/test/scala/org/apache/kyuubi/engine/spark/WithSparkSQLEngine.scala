@@ -24,7 +24,7 @@ import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 trait WithSparkSQLEngine extends KyuubiFunSuite {
   protected var spark: SparkSession = _
   protected var engine: SparkSQLEngine = _
-  protected def conf: Map[String, String] = Map.empty
+  def conf: Map[String, String]
 
   protected var connectionUrl: String = _
 
