@@ -22,10 +22,7 @@ import org.apache.kyuubi.operation.BasicIcebergJDBCTests
 
 class SparkIcebergOperationSuite extends WithSparkSQLEngine with BasicIcebergJDBCTests {
   override protected def jdbcUrl: String = getJdbcUrl
-
-  override protected def conf: Map[String, String] = {
-    icebergConfigs
-  }
+  override def conf: Map[String, String] = icebergConfigs
 
   override def afterAll(): Unit = {
     super.afterAll()
