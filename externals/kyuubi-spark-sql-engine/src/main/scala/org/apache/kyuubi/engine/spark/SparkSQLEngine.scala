@@ -79,12 +79,17 @@ object SparkSQLEngine extends Logging {
     val appName = s"kyuubi_${user}_spark_${Instant.now}"
     sparkConf.setIfMissing("spark.app.name", appName)
 
+    // Pass spark config from kyuubi with `kyuubi.spark`
+    kyuubiConf.getAllWithPrefix("kyuubi", "spark").foreach { case (k, v) =>
+      sparkConf.set(k, v)
+    }
+
     kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_BIND_PORT, 0)
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
 
-    val prefix = "spark.kyuubi."
-
-    sparkConf.getAllWithPrefix(prefix).foreach { case (k, v) =>
+    // Pass kyuubi config from spark with `spark.kyuubi`
+    val sparkToKyuubiPrefix = "spark.kyuubi."
+    sparkConf.getAllWithPrefix(sparkToKyuubiPrefix).foreach { case (k, v) =>
       kyuubiConf.set(s"kyuubi.$k", v)
     }
 
