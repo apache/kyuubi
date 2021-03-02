@@ -42,8 +42,10 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
       s"jdbc:derby:;databaseName=$metastorePath;create=true")
     System.setProperty("spark.sql.warehouse.dir", warehousePath.toString)
     System.setProperty("spark.sql.hive.metastore.sharedPrefixes", "org.apache.hive.jdbc")
-    conf.foreach{case (k, v) => System.setProperty(k, v)}
-    SparkSQLEngine.kyuubiConf.loadFromSystemProperties()
+    conf.foreach { case (k, v) =>
+      System.setProperty(k, v)
+      SparkSQLEngine.kyuubiConf.set(k, v)
+    }
 
     SparkSession.clearActiveSession()
     SparkSession.clearDefaultSession()
