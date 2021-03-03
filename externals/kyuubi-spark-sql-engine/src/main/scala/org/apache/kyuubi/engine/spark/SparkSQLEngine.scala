@@ -20,8 +20,11 @@ package org.apache.kyuubi.engine.spark
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 
+import scala.util.control.NonFatal
+
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
+
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARED_LEVEL
@@ -31,7 +34,6 @@ import org.apache.kyuubi.ha.client.{RetryPolicies, ServiceDiscovery}
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.SignalRegister
 
-import scala.util.control.NonFatal
 
 private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   extends Serverable(name) {
