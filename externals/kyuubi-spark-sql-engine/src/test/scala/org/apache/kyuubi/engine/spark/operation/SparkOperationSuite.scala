@@ -39,7 +39,7 @@ import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
 
   override protected def jdbcUrl: String = getJdbcUrl
-  override def conf: Map[String, String] = Map.empty
+  override def withKyuubiConf: Map[String, String] = Map.empty
 
   test("get table types") {
     withJdbcStatement() { statement =>

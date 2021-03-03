@@ -28,19 +28,31 @@ import org.apache.kyuubi.ha.server.EmbeddedZkServer
 
 trait WithDiscoverySparkSQLEngine extends WithSparkSQLEngine {
   private var zkServer: EmbeddedZkServer = _
-  def kyuubiConf: KyuubiConf = SparkSQLEngine.kyuubiConf
   def namespace: String
+  override def withKyuubiConf: Map[String, String] = {
+    assert(zkServer != null)
+    Map(HA_ZK_QUORUM.key -> zkServer.getConnectString,
+      HA_ZK_ACL_ENABLED.key -> "false",
+      HA_ZK_NAMESPACE.key -> namespace)
+  }
 
-  override protected def beforeEach(): Unit = {
+  override def beforeAll(): Unit = {
     zkServer = new EmbeddedZkServer()
     val zkData = Utils.createTempDir()
-    kyuubiConf.set(EMBEDDED_ZK_PORT, -1)
-    kyuubiConf.set(EMBEDDED_ZK_TEMP_DIR, zkData.toString)
-    zkServer.initialize(kyuubiConf)
+    val tmpConf = KyuubiConf()
+    tmpConf.set(EMBEDDED_ZK_PORT, -1)
+    tmpConf.set(EMBEDDED_ZK_TEMP_DIR, zkData.toString)
+    zkServer.initialize(tmpConf)
     zkServer.start()
-    kyuubiConf.set(HA_ZK_QUORUM, zkServer.getConnectString)
-    kyuubiConf.set(HA_ZK_ACL_ENABLED, false)
-    kyuubiConf.set(HA_ZK_NAMESPACE, namespace)
+  }
+
+  override def afterAll(): Unit = {
+    if (zkServer != null) {
+      zkServer.stop()
+    }
+  }
+
+  override protected def beforeEach(): Unit = {
     super.beforeEach()
     startSparkEngine()
   }
@@ -48,10 +60,6 @@ trait WithDiscoverySparkSQLEngine extends WithSparkSQLEngine {
   override protected def afterEach(): Unit = {
     super.afterEach()
     stopSparkEngine()
-
-    if (zkServer != null) {
-      zkServer.stop()
-    }
   }
 
   def withZkClient(f: CuratorFramework => Unit): Unit = {
