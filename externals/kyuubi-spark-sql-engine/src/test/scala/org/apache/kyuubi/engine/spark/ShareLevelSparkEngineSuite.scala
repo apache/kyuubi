@@ -19,10 +19,14 @@ package org.apache.kyuubi.engine.spark
 
 import java.util.UUID
 
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
+
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARED_LEVEL
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.ShareLevel.ShareLevel
 import org.apache.kyuubi.operation.JDBCTestUtils
+import org.apache.kyuubi.service.ServiceState
 
 /**
  * This suite is to test some behaivor with spark engine in different share level.
@@ -44,6 +48,9 @@ abstract class ShareLevelSparkEngineSuite
     withZkClient { zkClient =>
       assert(zkClient.checkExists().forPath(namespace) != null)
       withJdbcStatement() {_ => }
+      eventually(Timeout(120.seconds)) {
+        assert(engine.getServiceState == ServiceState.STOPPED)
+      }
       sharedLevel match {
         // Connection level, we will cleanup namespace since it's always a global unique value.
         case ShareLevel.CONNECTION =>
