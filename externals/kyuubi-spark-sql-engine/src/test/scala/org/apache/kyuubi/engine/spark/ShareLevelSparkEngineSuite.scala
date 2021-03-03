@@ -54,8 +54,8 @@ abstract class ShareLevelSparkEngineSuite
         case ShareLevel.CONNECTION =>
           eventually(Timeout(120.seconds)) {
             assert(engine.getServiceState == ServiceState.STOPPED)
+            assert(zkClient.checkExists().forPath(namespace) == null)
           }
-          assert(zkClient.checkExists().forPath(namespace) == null)
         case _ =>
           assert(engine.getServiceState == ServiceState.STARTED)
           assert(zkClient.checkExists().forPath(namespace) != null)
