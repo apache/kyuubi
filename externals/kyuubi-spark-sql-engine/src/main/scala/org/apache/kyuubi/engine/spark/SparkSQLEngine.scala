@@ -63,19 +63,13 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
     if (getServiceState == ServiceState.STOPPED) {
       return
     }
-    try {
-      conf.get(ENGINE_SHARED_LEVEL) match {
-        case "CONNECTION" =>
-          info("Clean up discovery service due to this is connection share level.")
-          discoveryService.cleanup()
-        case _ =>
-      }
-    } catch {
-      case NonFatal(e) =>
-        warn("Failed to clean up Spark engine before stop.", e)
-    } finally {
-      super.stop()
+    conf.get(ENGINE_SHARED_LEVEL) match {
+      case "CONNECTION" =>
+        info("Clean up discovery service due to this is connection share level.")
+        discoveryService.cleanup()
+      case _ =>
     }
+    super.stop()
   }
 
   override protected def stopServer(): Unit = {
