@@ -22,7 +22,6 @@ import java.util.concurrent.CountDownLatch
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
-
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARED_LEVEL
@@ -31,6 +30,8 @@ import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{RetryPolicies, ServiceDiscovery}
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.SignalRegister
+
+import scala.util.control.NonFatal
 
 private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   extends Serverable(name) {
@@ -66,7 +67,7 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
         case _ =>
       }
     } catch {
-      case e: Throwable =>
+      case NonFatal(e) =>
         warn("Failed to clean up Spark engine before stop.", e)
     } finally {
       super.stop()
