@@ -71,11 +71,3 @@ class ConnectionLevelSparkEngineSuite extends ShareLevelSparkEngineSuite {
 class UserLevelSparkEngineSuite extends ShareLevelSparkEngineSuite {
   override def sharedLevel: ShareLevel = ShareLevel.USER
 }
-
-class GroupLevelSparkEngineSuite extends ShareLevelSparkEngineSuite {
-  override def sharedLevel: ShareLevel = ShareLevel.GROUP
-}
-
-class ServerLevelSparkEngineSuite extends ShareLevelSparkEngineSuite {
-  override def sharedLevel: ShareLevel = ShareLevel.SERVER
-}
