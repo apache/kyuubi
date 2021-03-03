@@ -77,10 +77,6 @@
             <artifactId>curator-test</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty</artifactId>
-        </dependency>
         <!-- end: for EmbeddedZkServer -->
 
         <!-- default package with log4j -->

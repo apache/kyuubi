@@ -14,7 +14,7 @@
 ./build/mvn clean package -DskipTests
 ```
 
-This results in the creation of all sub-modules of Kyuubi project w/o running any unit test.
+This results in the creation of all sub-modules of Kyuubi project without running any unit test.
 
 If you want to test it manually, you can start Kyuubi directly from the Kyuubi project root by running
 
@@ -32,7 +32,7 @@ build/mvn clean package -pl :kyuubi-common -DskipTests
 
 ## Skipping Some modules
 
-For instance, you can build the Kyuubi modules w/o Kyuubi Codecov and Assembly modules using:
+For instance, you can build the Kyuubi modules without Kyuubi Codecov and Assembly modules using:
 
 ```bash
  mvn clean install -pl '!:kyuubi-codecov,!:kyuubi-assembly' -DskipTests

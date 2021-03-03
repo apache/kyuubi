@@ -20,13 +20,13 @@ These are essential components required for Kyuubi to startup. For quick start d
 
 Components| Role | Optional | Version | Remarks
 --- | --- | --- | --- | ---
-Java | Java<br>Runtime<br>Environment | Required | 1.8 | Kyuubi is pre-built w/ Java 1.8
+Java | Java<br>Runtime<br>Environment | Required | 1.8 | Kyuubi is pre-built with Java 1.8
 Spark | Distribute<br>SQL<br>Engine | Optional | 3.0.x | By default Kyuubi is pre-built w/<br> a Apache Spark release inside at<br> `$KYUUBI_HOME/externals`
-HDFS | Distributed<br>File<br>System |  Optional | referenced<br>by<br>Spark | Hadoop Distributed File System is a <br>part of Hadoop framework, used to<br> store and process the datasets.<br> You can interact w/ any<br> Spark-compatible versions of HDFS.
+HDFS | Distributed<br>File<br>System |  Optional | referenced<br>by<br>Spark | Hadoop Distributed File System is a <br>part of Hadoop framework, used to<br> store and process the datasets.<br> You can interact with any<br> Spark-compatible versions of HDFS.
 Hive | Metastore | Optional | referenced<br>by<br>Spark | Hive Metastore for Spark SQL to connect
 Zookeeper | Service<br>Discovery | Optional | Any<br>zookeeper<br>ensemble<br>compatible<br>with<br>curator(2.7.1) | By default, Kyuubi provides a<br> embeded Zookeeper server inside for<br> non-production use.
 
-Additionally, if you want to work with other Spark compatible systems or plugins, you only need to take care of them as using them w/ regular Spark applications. For example, you can run Spark SQL engines created by the Kyuubi on any kind of cluster manager, including YARN, Kubernetes, Mesos, e.t.c... Or, you can manipulate data from different data sources w/ the Spark Datasource API, e.g. Delta Lake, Apache Hudi, Apache Iceberg, Apache Kudu and e.t.c...
+Additionally, if you want to work with other Spark compatible systems or plugins, you only need to take care of them as using them with regular Spark applications. For example, you can run Spark SQL engines created by the Kyuubi on any kind of cluster manager, including YARN, Kubernetes, Mesos, e.t.c... Or, you can manipulate data from different data sources with the Spark Datasource API, e.g. Delta Lake, Apache Hudi, Apache Iceberg, Apache Kudu and e.t.c...
 
 ## Installation
 
@@ -61,7 +61,7 @@ From top to bottom are:
 
 - LICENSE: the [APACHE LICENSE, VERSION 2.0](https://www.apache.org/licenses/LICENSE-2.0) we claim to obey.
 - RELEASE: the build information of this package
-- bin: the entry of the Kyuubi server w/ `kyuubi` as the startup script.
+- bin: the entry of the Kyuubi server with `kyuubi` as the startup script.
 - conf: all the defaults used by Kyuubi Server itself or creating session with Spark applications.
 - externals
   - engines: contains all kinds of SQL engines that we support, e.g. Apache Spark, Apache Flink(coming soon).

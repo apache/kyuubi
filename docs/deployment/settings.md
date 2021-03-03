@@ -140,19 +140,6 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 # spark.scheduler.listenerbus.eventqueue.shared.capacity             100000
 # spark.scheduler.listenerbus.eventqueue.eventLog.capacity           20000
 
-## Dynamic Allocation
-# spark.dynamicAllocation.enabled                           true
-# spark.dynamicAllocation.initialExecutors                  10
-# spark.dynamicAllocation.minExecutors                      10
-# spark.dynamicAllocation.maxExecutors                      500
-# spark.dynamicAllocation.executorAllocationRatio           0.8
-# spark.dynamicAllocation.executorIdleTimeout               60s
-# spark.dynamicAllocation.cachedExecutorIdleTimeout         1h
-# spark.dynamicAllocation.shuffleTracking.enabled           false
-# spark.dynamicAllocation.shuffleTracking.timeout           30min
-# spark.dynamicAllocation.schedulerBacklogTimeout           1s
-# spark.dynamicAllocation.sustainedSchedulerBacklogTimeout  1s
-
 ## External Shuffle Service
 # spark.shuffle.service.enabled                             true
 # spark.shuffle.service.fetch.rdd.enabled                   true
@@ -224,20 +211,6 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 # spark.sql.optimizer.dynamicPartitionPruning.fallbackFilterRatio 0.5
 # spark.sql.optimizer.dynamicPartitionPruning.reuseBroadcastOnly  true
 
-# Adaptive Query Execution
-# spark.sql.adaptive.enabled                                true
-# spark.sql.adaptive.forceApply                             false
-# spark.sql.adaptive.logLevel                               info
-# spark.sql.adaptive.advisoryPartitionSizeInBytes           128m
-# spark.sql.adaptive.coalescePartitions.enabled             true
-# spark.sql.adaptive.coalescePartitions.minPartitionNum     64
-# spark.sql.adaptive.coalescePartitions.initialPartitionNum
-# spark.sql.adaptive.fetchShuffleBlocksInBatch              true
-# spark.sql.adaptive.localShuffleReader.enabled             true
-# spark.sql.adaptive.skewJoin.enabled                       true
-# spark.sql.adaptive.skewJoin.skewedPartitionFactor         5
-# spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes 256m
-# spark.sql.adaptive.nonEmptyPartitionRatioForBroadcastJoin 0.2
 ```
 ### Authentication
 
@@ -414,5 +387,5 @@ ___bob___.spark.master=spark://master:7077
 ___bob___.spark.executor.memory=8g
 ```
 
-In the above case, if there are related configurations from [JDBC Connection URL](#via-jdbc-connection-url), `kent` will run his SQL engine application on YARN and prefer the Spark AQE to be off, while `bob` will activate his SQL engine application on a Spark standalone cluster w/ 8g heap memory for each executor and obey the Spark AQE behavior of Kyuubi system default. On the other hand, for those users who do not have custom configurations will use system defaults.
+In the above case, if there are related configurations from [JDBC Connection URL](#via-jdbc-connection-url), `kent` will run his SQL engine application on YARN and prefer the Spark AQE to be off, while `bob` will activate his SQL engine application on a Spark standalone cluster with 8g heap memory for each executor and obey the Spark AQE behavior of Kyuubi system default. On the other hand, for those users who do not have custom configurations will use system defaults.
 
