@@ -146,17 +146,30 @@ class ServiceDiscovery private (
   }
 
   override def stop(): Unit = {
+    closeServiceNode()
+
+    if (zkClient != null) zkClient.close()
+    super.stop()
+  }
+
+  private def closeServiceNode(): Unit = {
     if (serviceNode != null) {
       try {
         serviceNode.close()
       } catch {
         case e: IOException =>
           error("Failed to close the persistent ephemeral znode" + serviceNode.getActualPath, e)
+      } finally {
+        serviceNode = null
       }
     }
+  }
 
-    if (zkClient != null) zkClient.close()
-    super.stop()
+  def cleanup(): Unit = {
+    closeServiceNode()
+    if (namespace != null) {
+      zkClient.delete().deletingChildrenIfNeeded().forPath(namespace)
+    }
   }
 
   private def stopGracefully(): Unit = {
@@ -167,7 +180,6 @@ class ServiceDiscovery private (
     }
     server.stop()
   }
-
 
   class DeRegisterWatcher extends Watcher {
     override def process(event: WatchedEvent): Unit = {

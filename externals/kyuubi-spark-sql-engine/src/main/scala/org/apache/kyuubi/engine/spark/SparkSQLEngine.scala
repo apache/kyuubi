@@ -25,6 +25,7 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARED_LEVEL
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.countDownLatch
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{RetryPolicies, ServiceDiscovery}
@@ -54,6 +55,22 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
     // Start engine self-terminating checker after all services are ready and it can be reached by
     // all servers in engine spaces.
     backendService.sessionManager.startTerminatingChecker()
+  }
+
+  override def stop(): Unit = {
+    try {
+      conf.get(ENGINE_SHARED_LEVEL) match {
+        case "CONNECTION" =>
+          info("Clean up discovery service due to this is connection share level.")
+          discoveryService.cleanup()
+        case _ =>
+      }
+    } catch {
+      case e: Throwable =>
+        warn("Failed to clean up Spark engine before stop.", e)
+    } finally {
+      super.stop()
+    }
   }
 
   override protected def stopServer(): Unit = {
