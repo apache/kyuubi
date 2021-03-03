@@ -17,10 +17,10 @@
 
 package org.apache.kyuubi.ha.client
 
+import scala.util.control.NonFatal
+
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARED_LEVEL
 import org.apache.kyuubi.service.Serverable
-
-import scala.util.control.NonFatal
 
 /**
  * A service for service discovery used by engine side.
