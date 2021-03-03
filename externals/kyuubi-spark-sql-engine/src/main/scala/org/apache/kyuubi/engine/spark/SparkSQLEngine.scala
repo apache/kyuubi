@@ -31,7 +31,7 @@ import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARED_LEVEL
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.countDownLatch
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{RetryPolicies, ServiceDiscovery}
-import org.apache.kyuubi.service.Serverable
+import org.apache.kyuubi.service.{Serverable, ServiceState}
 import org.apache.kyuubi.util.SignalRegister
 
 private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
@@ -60,6 +60,9 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   }
 
   override def stop(): Unit = {
+    if (getServiceState == ServiceState.STOPPED) {
+      return
+    }
     try {
       conf.get(ENGINE_SHARED_LEVEL) match {
         case "CONNECTION" =>
