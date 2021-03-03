@@ -19,11 +19,11 @@ package org.apache.kyuubi
 
 import java.io.File
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 
 import scala.io.Source
 import scala.util.control.NonFatal
 
-import com.google.common.io.Files
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.minikdc.MiniKdc
 import org.apache.hadoop.security.UserGroupInformation
@@ -90,7 +90,9 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
     }
 
     kdc.getKrb5conf.delete()
-    Files.write(krb5confStr, kdc.getKrb5conf, StandardCharsets.UTF_8)
+    val writer = Files.newBufferedWriter(kdc.getKrb5conf.toPath, StandardCharsets.UTF_8)
+    writer.write(krb5confStr)
+    writer.close()
     info(s"krb5.conf file content: $krb5confStr")
   }
 
