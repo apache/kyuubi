@@ -63,7 +63,7 @@
         <commons-lang3.version>3.10</commons-lang3.version>
         <commons.httpclient.version>4.5.6</commons.httpclient.version>
         <commons.httpcore.version>4.4.12</commons.httpcore.version>
-        <guava.version>11.0.2</guava.version>
+        <guava.version>14.0.1</guava.version>
         <curator.version>2.12.0</curator.version>
         <hadoop.version>2.7.4</hadoop.version>
         <hive.version>2.3.7</hive.version>
