@@ -65,12 +65,6 @@
             <artifactId>curator-test</artifactId>
             <scope>provided</scope>
         </dependency>
-
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty</artifactId>
-            <scope>provided</scope>
-        </dependency>
         <!-- End: for EmbeddedZkServer -->
 
         <dependency>
