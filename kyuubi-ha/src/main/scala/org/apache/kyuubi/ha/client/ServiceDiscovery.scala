@@ -162,19 +162,6 @@ abstract class ServiceDiscovery private (
     }
   }
 
-  // clean up the namespace in zk
-  def cleanup(): Unit = {
-    closeServiceNode()
-    if (namespace != null) {
-      try {
-        zkClient.delete().deletingChildrenIfNeeded().forPath(namespace)
-      } catch {
-        case NonFatal(e) =>
-          warn("Failed to clean up Spark engine before stop.", e)
-      }
-    }
-  }
-
   // stop the server genteelly
   def stopGracefully(): Unit = {
     stop()

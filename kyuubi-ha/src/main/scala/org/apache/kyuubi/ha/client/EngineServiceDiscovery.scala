@@ -17,7 +17,10 @@
 
 package org.apache.kyuubi.ha.client
 
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARED_LEVEL
 import org.apache.kyuubi.service.Serverable
+
+import scala.util.control.NonFatal
 
 /**
  * A service for service discovery used by engine side.
@@ -31,6 +34,28 @@ class EngineServiceDiscovery private(
   def this(server: Serverable) =
     this(classOf[EngineServiceDiscovery].getSimpleName, server)
 
+  override def stop(): Unit = {
+    conf.get(ENGINE_SHARED_LEVEL) match {
+      // For connection level, we should clean up the namespace in zk in case the disk stress.
+      case "CONNECTION" =>
+        cleanup()
+        info("Clean up discovery service due to this is connection share level.")
+
+      case _ =>
+    }
+    super.stop()
+  }
+
+  private def cleanup(): Unit = {
+    if (namespace != null) {
+      try {
+        zkClient.delete().deletingChildrenIfNeeded().forPath(namespace)
+      } catch {
+        case NonFatal(e) =>
+          warn("Failed to clean up Spark engine before stop.", e)
+      }
+    }
+  }
 }
 
 
