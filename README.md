@@ -53,7 +53,7 @@ Ready? [Getting Started](https://kyuubi.readthedocs.io/en/latest/quick_start/qui
 
 All bits of help are welcome. You can make various types of contributions to Kyuubi, including the following but not limited to,
 
-- Help new users in chat channel or share your success stories w/ us - [![Gitter](https://badges.gitter.im/kyuubi-on-spark/Lobby.svg)](https://gitter.im/kyuubi-on-spark/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+- Help new users in chat channel or share your success stories with us - [![Gitter](https://badges.gitter.im/kyuubi-on-spark/Lobby.svg)](https://gitter.im/kyuubi-on-spark/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 - Improve Documentation - [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.readthedocs.io/en/latest/?badge=latest)
 - Test releases - [![GitHub release](https://img.shields.io/github/release/yaooqinn/kyuubi.svg)](https://github.com/yaooqinn/kyuubi/releases)
 - Improve test coverage - [![codecov](https://codecov.io/gh/yaooqinn/kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/yaooqinn/kyuubi)
