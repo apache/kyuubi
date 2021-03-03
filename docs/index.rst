@@ -85,7 +85,7 @@ Kyuubi provides both high availability and load balancing solutions based on Zoo
    :glob:
 
    quick_start/index
-   Deploy <deployment/index>
+   deployment/index
    Security <security/index>
    client/index
    integrations/index

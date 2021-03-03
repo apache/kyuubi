@@ -10,6 +10,7 @@ Deploying Kyuubi
     :glob:
 
     settings
+    spark/index
     on_yarn
     hive_metastore
     high_availability_guide
