@@ -297,6 +297,12 @@
                 </exclusions>
             </dependency>
 
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client</artifactId>
+                <version>${hadoop.version}</version>
+            </dependency>
+
             <!-- align with hadoop-common to avoid potential conflict -->
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -1353,10 +1359,19 @@
             <id>spark-3.1</id>
             <properties>
                 <spark.version>3.1.1</spark.version>
-<!--                <hadoop.version>3.2.2</hadoop.version>-->
             </properties>
         </profile>
 
+        <profile>
+            <id>hadoop-2.7</id>
+        </profile>
+
+        <profile>
+            <id>hadoop-3.2</id>
+            <properties>
+                <haddop.version>3.2.2</haddop.version>
+            </properties>
+        </profile>
         <profile>
             <id>spark-provided</id>
             <properties>
