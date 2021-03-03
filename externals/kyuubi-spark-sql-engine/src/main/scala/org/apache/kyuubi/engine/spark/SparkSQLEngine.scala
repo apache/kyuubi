@@ -20,8 +20,6 @@ package org.apache.kyuubi.engine.spark
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 
-import scala.util.control.NonFatal
-
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 
@@ -30,7 +28,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARED_LEVEL
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.countDownLatch
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.{RetryPolicies, ServiceDiscovery}
+import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, RetryPolicies, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, ServiceState}
 import org.apache.kyuubi.util.SignalRegister
 
@@ -40,7 +38,7 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   def this(spark: SparkSession) = this(classOf[SparkSQLEngine].getSimpleName, spark)
 
   override private[kyuubi] val backendService = new SparkSQLBackendService(spark)
-  private val discoveryService = new ServiceDiscovery(this)
+  private val discoveryService = new EngineServiceDiscovery(this)
 
   override def initialize(conf: KyuubiConf): Unit = {
     val listener = new SparkSQLEngineListener(this)
@@ -60,9 +58,6 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   }
 
   override def stop(): Unit = {
-    if (getServiceState == ServiceState.STOPPED) {
-      return
-    }
     conf.get(ENGINE_SHARED_LEVEL) match {
       case "CONNECTION" =>
         info("Clean up discovery service due to this is connection share level.")

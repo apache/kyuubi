@@ -34,8 +34,8 @@ import org.apache.curator.retry._
 import org.apache.curator.utils.ZKPaths
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager.JaasConfiguration
-import org.apache.zookeeper.{KeeperException, WatchedEvent, Watcher}
 import org.apache.zookeeper.CreateMode.PERSISTENT
+import org.apache.zookeeper.KeeperException
 import org.apache.zookeeper.KeeperException.NodeExistsException
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException}
@@ -46,34 +46,37 @@ import org.apache.kyuubi.service.{AbstractService, Serverable}
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
 
 /**
- * A service for service discovery
+ * A abstract service for service discovery
  *
  * @param name the name of the service itself
  * @param server the instance uri a service that used to publish itself
  */
-class ServiceDiscovery private (
+abstract class ServiceDiscovery private (
     name: String,
     server: Serverable) extends AbstractService(name) {
 
   def this(server: Serverable) =
     this(classOf[ServiceDiscovery].getSimpleName, server)
 
-  private var zkClient: CuratorFramework = _
-  private var serviceNode: PersistentEphemeralNode = _
+  private var _zkClient: CuratorFramework = _
+  private var _serviceNode: PersistentEphemeralNode = _
   /**
    * a pre-defined namespace used to publish the instance of the associate service
    */
-  private var namespace: String = _
+  private var _namespace: String = _
+
+  def zkClient: CuratorFramework = _zkClient
+  def serviceNode: PersistentEphemeralNode = _serviceNode
+  def namespace: String = _namespace
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
-    namespace = conf.get(HA_ZK_NAMESPACE)
+    _namespace = conf.get(HA_ZK_NAMESPACE)
     val maxSleepTime = conf.get(HA_ZK_CONN_MAX_RETRY_WAIT)
     val maxRetries = conf.get(HA_ZK_CONN_MAX_RETRIES)
     setUpZooKeeperAuth(conf)
-    zkClient = buildZookeeperClient(conf)
+    _zkClient = buildZookeeperClient(conf)
     zkClient.getConnectionStateListenable.addListener(new ConnectionStateListener {
-
       private val isConnected = new AtomicBoolean(false)
 
       override def stateChanged(client: CuratorFramework, newState: ConnectionState): Unit = {
@@ -87,7 +90,6 @@ class ServiceDiscovery private (
               override def run(): Unit = if (!isConnected.get()) {
                 error(s"Zookeeper client connection state changed to: $newState, but failed to" +
                   s" reconnect in ${delay / 1000} seconds. Give up retry. ")
-                client.close()
                 stopGracefully()
               }
             }, delay, TimeUnit.MILLISECONDS)
@@ -117,7 +119,7 @@ class ServiceDiscovery private (
       namespace,
       s"serviceUri=$instance;version=$KYUUBI_VERSION;sequence=")
     try {
-      serviceNode = new PersistentEphemeralNode(
+      _serviceNode = new PersistentEphemeralNode(
         zkClient,
         PersistentEphemeralNode.Mode.EPHEMERAL_SEQUENTIAL,
         pathPrefix,
@@ -126,13 +128,6 @@ class ServiceDiscovery private (
       val znodeTimeout = 120
       if (!serviceNode.waitForInitialCreate(znodeTimeout, TimeUnit.SECONDS)) {
         throw new KyuubiException(s"Max znode creation wait time $znodeTimeout s exhausted")
-      }
-      // Set a watch on the serviceNode
-      val watcher = new DeRegisterWatcher
-      if (zkClient.checkExists.usingWatcher(watcher).forPath(serviceNode.getActualPath) == null) {
-        // No node exists, throw exception
-        throw new KyuubiException(s"Unable to create znode for this Kyuubi instance[$instance]" +
-          s" on ZooKeeper.")
       }
       info(s"Created a ${serviceNode.getActualPath} on ZooKeeper for KyuubiServer uri: " + instance)
     } catch {
@@ -153,19 +148,21 @@ class ServiceDiscovery private (
     super.stop()
   }
 
-  private def closeServiceNode(): Unit = {
-    if (serviceNode != null) {
+  // close the EPHEMERAL_SEQUENTIAL node in zk
+  protected def closeServiceNode(): Unit = {
+    if (_serviceNode != null) {
       try {
-        serviceNode.close()
+        _serviceNode.close()
       } catch {
         case e: IOException =>
           error("Failed to close the persistent ephemeral znode" + serviceNode.getActualPath, e)
       } finally {
-        serviceNode = null
+        _serviceNode = null
       }
     }
   }
 
+  // clean up the namespace in zk
   def cleanup(): Unit = {
     closeServiceNode()
     if (namespace != null) {
@@ -178,23 +175,9 @@ class ServiceDiscovery private (
     }
   }
 
-  private def stopGracefully(): Unit = {
+  // stop the server genteelly
+  def stopGracefully(): Unit = {
     stop()
-    while (server.backendService != null &&
-      server.backendService.sessionManager.getOpenSessionCount > 0) {
-      Thread.sleep(1000 * 60)
-    }
-    server.stop()
-  }
-
-  class DeRegisterWatcher extends Watcher {
-    override def process(event: WatchedEvent): Unit = {
-      if (event.getType == Watcher.Event.EventType.NodeDeleted) {
-        warn(s"This Kyuubi instance ${server.connectionUrl} is now de-registered from" +
-          s" ZooKeeper. The server will be shut down after the last client session completes.")
-        ServiceDiscovery.this.stopGracefully()
-      }
-    }
   }
 }
 
