@@ -45,7 +45,7 @@ Hive 2.3.7
 Build flags:
 ```
 
-To fix this problem you should export `JAVA_HOME` w/ a compatible one in `conf/kyuubi-env.sh`
+To fix this problem you should export `JAVA_HOME` with a compatible one in `conf/kyuubi-env.sh`
 
 ```bash
 echo "export JAVA_HOME=/path/to/jdk1.8.0_251" >> conf/kyuubi-env.sh

@@ -26,7 +26,7 @@ have multiple reducer stages.
 ** Optimizer ** | Spark SQL Catalyst | Hive Optimizer
 ** Engine ** | up to Spark 3.x | MapReduce/[up to Spark 2.3](https://cwiki.apache.org/confluence/display/Hive/Hive+on+Spark%3A+Getting+Started#HiveonSpark:GettingStarted-VersionCompatibility)/Tez
 ** Performance ** | High | Low
-** Compatibility w/ Spark ** | Good | Bad(need to rebuild on a specific version)
+** Compatibility with Spark ** | Good | Bad(need to rebuild on a specific version)
 ** Data Types ** | [Spark Data Types](http://spark.apache.org/docs/latest/sql-ref-datatypes.html) |  [Hive Data Types](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+Types)
 
 
