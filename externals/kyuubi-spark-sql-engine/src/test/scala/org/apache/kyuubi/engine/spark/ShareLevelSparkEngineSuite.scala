@@ -49,14 +49,15 @@ abstract class ShareLevelSparkEngineSuite
       assert(engine.getServiceState == ServiceState.STARTED)
       assert(zkClient.checkExists().forPath(namespace) != null)
       withJdbcStatement() {_ => }
-      eventually(Timeout(120.seconds)) {
-        assert(engine.getServiceState == ServiceState.STOPPED)
-      }
       sharedLevel match {
         // Connection level, we will cleanup namespace since it's always a global unique value.
         case ShareLevel.CONNECTION =>
+          eventually(Timeout(120.seconds)) {
+            assert(engine.getServiceState == ServiceState.STOPPED)
+          }
           assert(zkClient.checkExists().forPath(namespace) == null)
         case _ =>
+          assert(engine.getServiceState == ServiceState.STARTED)
           assert(zkClient.checkExists().forPath(namespace) != null)
       }
     }
