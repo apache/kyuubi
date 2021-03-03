@@ -24,6 +24,7 @@ import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 trait WithSparkSQLEngine extends KyuubiFunSuite {
   protected var spark: SparkSession = _
   protected var engine: SparkSQLEngine = _
+  def conf: Map[String, String]
 
   protected var connectionUrl: String = _
 
@@ -41,10 +42,13 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
       s"jdbc:derby:;databaseName=$metastorePath;create=true")
     System.setProperty("spark.sql.warehouse.dir", warehousePath.toString)
     System.setProperty("spark.sql.hive.metastore.sharedPrefixes", "org.apache.hive.jdbc")
+    conf.foreach { case (k, v) =>
+      System.setProperty(k, v)
+      SparkSQLEngine.kyuubiConf.set(k, v)
+    }
 
     SparkSession.clearActiveSession()
     SparkSession.clearDefaultSession()
-    SparkSQLEngine.kyuubiConf.loadFromSystemProperties()
     spark = SparkSQLEngine.createSpark()
     engine = SparkSQLEngine.startEngine(spark)
     connectionUrl = engine.connectionUrl
