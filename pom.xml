@@ -67,7 +67,6 @@
         <curator.version>2.12.0</curator.version>
         <hadoop.version>2.7.4</hadoop.version>
         <hive.version>2.3.7</hive.version>
-        <netty3.version>3.7.0.Final</netty3.version>
         <spark.version>3.0.2</spark.version>
         <slf4j.version>1.7.30</slf4j.version>
         <zookeeper.version>3.4.14</zookeeper.version>
@@ -804,12 +803,6 @@
                         <artifactId>log4j</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty</artifactId>
-                <version>${netty3.version}</version>
             </dependency>
 
             <dependency>
