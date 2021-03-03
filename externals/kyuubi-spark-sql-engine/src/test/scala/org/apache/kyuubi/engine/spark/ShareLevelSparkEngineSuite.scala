@@ -52,9 +52,7 @@ abstract class ShareLevelSparkEngineSuite
       sharedLevel match {
         // Connection level, we will cleanup namespace since it's always a global unique value.
         case ShareLevel.CONNECTION =>
-          eventually(Timeout(120.seconds)) {
-            assert(engine.getServiceState == ServiceState.STOPPED)
-          }
+          assert(engine.getServiceState == ServiceState.STOPPED)
           assert(zkClient.checkExists().forPath(namespace) == null)
         case _ =>
           assert(engine.getServiceState == ServiceState.STARTED)
