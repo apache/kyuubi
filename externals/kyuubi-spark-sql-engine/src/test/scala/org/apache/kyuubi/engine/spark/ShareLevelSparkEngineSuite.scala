@@ -46,6 +46,7 @@ abstract class ShareLevelSparkEngineSuite
 
   test("check discovery service is clean up with different share level") {
     withZkClient { zkClient =>
+      assert(engine.getServiceState == ServiceState.STARTED)
       assert(zkClient.checkExists().forPath(namespace) != null)
       withJdbcStatement() {_ => }
       eventually(Timeout(120.seconds)) {
