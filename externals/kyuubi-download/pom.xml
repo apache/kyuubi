@@ -31,11 +31,23 @@
     <packaging>pom</packaging>
     <name>Kyuubi Project Download Externals</name>
 
+    <properties>
+        <spark.download.skip>false</spark.download.skip>
+        <spark.archive.name>spark-${spark.version}-bin-hadoop2.7.tgz</spark.archive.name>
+        <!-- see more at http://www.apache.org/mirrors/, e.g. https://mirror.bit.edu.cn, https://mirrors.tuna.tsinghua.edu.cn e.t.c -->
+        <!-- spark.archive.mirror>https://mirrors.bfsu.edu.cn</spark.archive.mirror -->
+        <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
+        <!-- spark.archive.sha512>f5652835094d9f69eb3260e20ca9c2d58e8bdf85a8ed15797549a518b23c862b75a329b38d4248f8427e4310718238c60fae0f9d1afb3c70fb390d3e9cce2e49</spark.archive.sha512 -->
+    </properties>
+
     <build>
         <plugins>
             <plugin>
                 <groupId>com.googlecode.maven-download-plugin</groupId>
                 <artifactId>download-maven-plugin</artifactId>
+                <configuration>
+                    <skip>${spark.download.skip}</skip>
+                </configuration>
                 <executions>
                     <execution>
                         <id>download-spark-release</id>
@@ -57,4 +69,12 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>spark-provided</id>
+            <properties>
+                <spark.download.skip>true</spark.download.skip>
+            </properties>
+        </profile>
+    </profiles>
 </project>

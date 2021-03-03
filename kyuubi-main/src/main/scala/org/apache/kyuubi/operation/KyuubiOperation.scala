@@ -17,7 +17,9 @@
 
 package org.apache.kyuubi.operation
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift._
+import org.apache.thrift.transport.TTransportException
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -48,6 +50,11 @@ abstract class KyuubiOperation(
           setState(OperationState.ERROR)
           val ke = e match {
             case kse: KyuubiSQLException => kse
+            case te: TTransportException if te.getType == TTransportException.END_OF_FILE &&
+                StringUtils.isEmpty(te.getMessage) =>
+              // https://issues.apache.org/jira/browse/THRIFT-4858
+              KyuubiSQLException(
+                s"Error $action $opType: Socket for $remoteSessionHandle is closed", e)
             case _ =>
               KyuubiSQLException(s"Error $action $opType: ${e.getMessage}", e)
           }

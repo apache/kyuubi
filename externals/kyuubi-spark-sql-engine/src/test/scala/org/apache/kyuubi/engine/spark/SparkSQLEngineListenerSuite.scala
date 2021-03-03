@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine.spark
 import org.apache.kyuubi.service.ServiceState
 
 class SparkSQLEngineListenerSuite extends WithSparkSQLEngine {
+  override def conf: Map[String, String] = Map.empty
 
   test("application end") {
     assert(engine.getServiceState === ServiceState.STARTED)

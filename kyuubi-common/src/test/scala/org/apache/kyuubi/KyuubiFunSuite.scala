@@ -19,10 +19,12 @@ package org.apache.kyuubi
 
 // scalastyle:off
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Outcome}
+import org.scalatest.concurrent.Eventually
 
 trait KyuubiFunSuite extends FunSuite
   with BeforeAndAfterAll
   with BeforeAndAfterEach
+  with Eventually
   with ThreadAudit
   with Logging {
   // scalastyle:on

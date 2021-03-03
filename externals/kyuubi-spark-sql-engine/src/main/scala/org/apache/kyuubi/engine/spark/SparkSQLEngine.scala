@@ -65,6 +65,8 @@ object SparkSQLEngine extends Logging {
 
   val kyuubiConf: KyuubiConf = KyuubiConf()
 
+  var currentEngine: Option[SparkSQLEngine] = None
+
   private val user = Utils.currentUser
 
   private val countDownLatch = new CountDownLatch(1)
@@ -80,9 +82,9 @@ object SparkSQLEngine extends Logging {
     kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_BIND_PORT, 0)
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
 
-    val prefix = "spark.kyuubi."
-
-    sparkConf.getAllWithPrefix(prefix).foreach { case (k, v) =>
+    // Pass kyuubi config from spark with `spark.kyuubi`
+    val sparkToKyuubiPrefix = "spark.kyuubi."
+    sparkConf.getAllWithPrefix(sparkToKyuubiPrefix).foreach { case (k, v) =>
       kyuubiConf.set(s"kyuubi.$k", v)
     }
 
@@ -102,6 +104,7 @@ object SparkSQLEngine extends Logging {
     engine.initialize(kyuubiConf)
     engine.start()
     sys.addShutdownHook(engine.stop())
+    currentEngine = Some(engine)
     engine
   }
 

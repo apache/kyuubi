@@ -15,11 +15,12 @@ For more information on usage, run `./build/dist --help`
 ./build/dist - Tool for making binary distributions of Kyuubi Server
 
 Usage:
-+------------------------------------------------------+
-| ./build/dist [--name] [--tgz] <maven build options>  |
-+------------------------------------------------------+
-name: -  custom binary name, using project version if undefined
-tgz:  -  whether to make a whole bundled package
++--------------------------------------------------------------------------------------+
+| ./build/dist [--name <custom_name>] [--tgz] [--spark-provided] <maven build options> |
++--------------------------------------------------------------------------------------+
+name:           -  custom binary name, using project version if undefined
+tgz:            -  whether to make a whole bundled package
+spark-provided: -  whether to make a package without Spark binary
 ```
 
 For instance,
@@ -29,3 +30,11 @@ For instance,
 ```
 
 This results a Kyuubi distribution named `kyuubi-{version}-bin-custom-name.tar.gz` for you.
+
+If you are planing to deploy Kyuubi where `spark` is provided, in other word, it's not required to bundle spark binary, use 
+
+```bash
+./build/dist --tgz --spark-provided
+```
+
+Then you will get a Kyuubi distribution without spark binary named `kyuubi-{version}-bin-without-spark.tar.gz`.

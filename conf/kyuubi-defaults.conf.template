@@ -67,19 +67,6 @@
 # spark.scheduler.listenerbus.eventqueue.shared.capacity             100000
 # spark.scheduler.listenerbus.eventqueue.eventLog.capacity           20000
 
-## Dynamic Allocation
-# spark.dynamicAllocation.enabled                           true
-# spark.dynamicAllocation.initialExecutors                  10
-# spark.dynamicAllocation.minExecutors                      10
-# spark.dynamicAllocation.maxExecutors                      500
-# spark.dynamicAllocation.executorAllocationRatio           0.8
-# spark.dynamicAllocation.executorIdleTimeout               60s
-# spark.dynamicAllocation.cachedExecutorIdleTimeout         1h
-# spark.dynamicAllocation.shuffleTracking.enabled           false
-# spark.dynamicAllocation.shuffleTracking.timeout           30min
-# spark.dynamicAllocation.schedulerBacklogTimeout           1s
-# spark.dynamicAllocation.sustainedSchedulerBacklogTimeout  1s
-
 ## External Shuffle Service
 # spark.shuffle.service.enabled                             true
 # spark.shuffle.service.fetch.rdd.enabled                   true
@@ -151,17 +138,3 @@
 # spark.sql.optimizer.dynamicPartitionPruning.fallbackFilterRatio 0.5
 # spark.sql.optimizer.dynamicPartitionPruning.reuseBroadcastOnly  true
 
-# Adaptive Query Execution
-# spark.sql.adaptive.enabled                                true
-# spark.sql.adaptive.forceApply                             false
-# spark.sql.adaptive.logLevel                               info
-# spark.sql.adaptive.advisoryPartitionSizeInBytes           128m
-# spark.sql.adaptive.coalescePartitions.enabled             true
-# spark.sql.adaptive.coalescePartitions.minPartitionNum     64
-# spark.sql.adaptive.coalescePartitions.initialPartitionNum
-# spark.sql.adaptive.fetchShuffleBlocksInBatch              true
-# spark.sql.adaptive.localShuffleReader.enabled             true
-# spark.sql.adaptive.skewJoin.enabled                       true
-# spark.sql.adaptive.skewJoin.skewedPartitionFactor         5
-# spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes 256m
-# spark.sql.adaptive.nonEmptyPartitionRatioForBroadcastJoin 0.2

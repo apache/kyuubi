@@ -335,7 +335,7 @@
 
             <dependency>
                 <groupId>org.apache.spark</groupId>
-                <artifactId>spark-hive-thriftserver_${scala.binary.version}</artifactId>
+                <artifactId>spark-hive_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
                 <exclusions>
                     <exclusion>
@@ -1123,6 +1123,10 @@
             <modules>
                 <module>dev/kyuubi-tpcds</module>
             </modules>
+        </profile>
+
+        <profile>
+            <id>spark-provided</id>
         </profile>
 
         <profile>

@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine.spark
 
-import org.apache.hadoop.hive.ql.metadata.Hive
-import org.apache.hadoop.hive.ql.session.SessionState
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
@@ -26,10 +24,16 @@ import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 trait WithSparkSQLEngine extends KyuubiFunSuite {
   protected var spark: SparkSession = _
   protected var engine: SparkSQLEngine = _
+  def conf: Map[String, String]
 
   protected var connectionUrl: String = _
 
   override def beforeAll(): Unit = {
+    startSparkEngine()
+    super.beforeAll()
+  }
+
+  protected def startSparkEngine(): Unit = {
     val warehousePath = Utils.createTempDir()
     val metastorePath = Utils.createTempDir()
     warehousePath.toFile.delete()
@@ -38,17 +42,24 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
       s"jdbc:derby:;databaseName=$metastorePath;create=true")
     System.setProperty("spark.sql.warehouse.dir", warehousePath.toString)
     System.setProperty("spark.sql.hive.metastore.sharedPrefixes", "org.apache.hive.jdbc")
+    conf.foreach { case (k, v) =>
+      System.setProperty(k, v)
+      SparkSQLEngine.kyuubiConf.set(k, v)
+    }
 
     SparkSession.clearActiveSession()
     SparkSession.clearDefaultSession()
     spark = SparkSQLEngine.createSpark()
     engine = SparkSQLEngine.startEngine(spark)
     connectionUrl = engine.connectionUrl
-    super.beforeAll()
   }
 
   override def afterAll(): Unit = {
     super.afterAll()
+    stopSparkEngine()
+  }
+
+  protected def stopSparkEngine(): Unit = {
     if (engine != null) {
       engine.stop()
       engine = null
@@ -59,8 +70,6 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
     }
     SparkSession.clearActiveSession()
     SparkSession.clearDefaultSession()
-    SessionState.detachSession()
-    Hive.closeCurrent()
   }
 
   protected def getJdbcUrl: String = s"jdbc:hive2://$connectionUrl/;"
