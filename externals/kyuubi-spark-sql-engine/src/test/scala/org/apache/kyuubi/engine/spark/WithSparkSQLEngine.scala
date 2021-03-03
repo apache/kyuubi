@@ -59,15 +59,17 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
 
   override def afterAll(): Unit = {
     super.afterAll()
+
+    stopSparkEngine()
+  }
+
+  protected def stopSparkEngine(): Unit = {
     // we need to clean up conf since it's the global config in same jvm.
     withKyuubiConf.foreach { case (k, _) =>
       System.clearProperty(k)
       kyuubiConf.unset(k)
     }
-    stopSparkEngine()
-  }
 
-  protected def stopSparkEngine(): Unit = {
     if (engine != null) {
       engine.stop()
       engine = null
