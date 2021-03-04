@@ -60,16 +60,18 @@
         <scala.binary.version>2.12</scala.binary.version>
 
         <apacheds.version>2.0.0-M15</apacheds.version>
+        <commons-codec.version>1.15</commons-codec.version>
+        <commons-collections.version>3.2.2</commons-collections.version>
         <commons-lang3.version>3.10</commons-lang3.version>
         <commons.httpclient.version>4.5.6</commons.httpclient.version>
         <commons.httpcore.version>4.4.12</commons.httpcore.version>
         <guava.version>24.1.1-jre</guava.version>
         <curator.version>2.12.0</curator.version>
-        <hadoop.version>2.7.4</hadoop.version>
-        <hadoop.binary.version>2.7</hadoop.binary.version>
+        <hadoop.version>3.2.2</hadoop.version>
         <hive.version>2.3.7</hive.version>
         <spark.version>3.0.2</spark.version>
-        <spark.archive.name>spark-${spark.version}-bin-hadoop${hadoop.binary.version}.tgz</spark.archive.name>
+        <spark.hadoop.binary.version>3.2</spark.hadoop.binary.version>
+        <spark.archive.name>spark-${spark.version}-bin-hadoop${spark.hadoop.binary.version}.tgz</spark.archive.name>
         <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
 
@@ -301,7 +303,13 @@
 
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-client</artifactId>
+                <artifactId>hadoop-client-api</artifactId>
+                <version>${hadoop.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client-runtime</artifactId>
                 <version>${hadoop.version}</version>
             </dependency>
 
@@ -316,6 +324,18 @@
                         <artifactId>jsr305</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-codec</groupId>
+                <artifactId>commons-codec</artifactId>
+                <version>${commons-codec.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>commons-collections</groupId>
+                <artifactId>commons-collections</artifactId>
+                <version>${commons-collections.version}</version>
             </dependency>
 
             <dependency>
@@ -1367,14 +1387,16 @@
         </profile>
 
         <profile>
-            <id>hadoop-2.7</id>
+            <id>spark-hadoop-2.7</id>
+            <properties>
+                <spark.hadoop.binary.version>2.7</spark.hadoop.binary.version>
+            </properties>
         </profile>
 
         <profile>
-            <id>hadoop-3.2</id>
+            <id>spark-hadoop-3.2</id>
             <properties>
-                <hadoop.version>3.2.2</hadoop.version>
-                <hadoop.binary.version>3.2</hadoop.binary.version>
+                <spark.hadoop.binary.version>3.2</spark.hadoop.binary.version>
             </properties>
         </profile>
         <profile>

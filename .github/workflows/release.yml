@@ -12,12 +12,12 @@ jobs:
     strategy:
       matrix:
         profiles:
-          - '-Pspark-3.0 -Phadoop-2.7'
-          - '--spark-provided -Pspark-3.0 -Phadoop-2.7'
-          - '-Pspark-3.1 -Phadoop-2.7'
-          - '--spark-provided -Pspark-3.1 -Phadoop-2.7'
-          - '-Pspark-3.1 -Phadoop-3.2'
-          - '--spark-provided -Pspark-3.1 -Phadoop-3.2'
+          - '-Pspark-3.0 -Pspark-hadoop-2.7'
+          - '--spark-provided -Pspark-3.0 -Pspark-hadoop-2.7'
+          - '-Pspark-3.1 -Pspark-hadoop-2.7'
+          - '--spark-provided -Pspark-3.1 -Pspark-hadoop-2.7'
+          - '-Pspark-3.1 -Pspark-hadoop-3.2'
+          - '--spark-provided -Pspark-3.1 -Pspark-hadoop-3.2'
     steps:
       - uses: actions/checkout@master
       # We split caches because GitHub Action Cache has a 400MB-size limit.

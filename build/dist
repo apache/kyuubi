@@ -128,6 +128,11 @@ SPARK_VERSION=$("$MVN" help:evaluate -Dexpression=spark.version $@ 2>/dev/null\
     | grep -v "WARNING"\
     | tail -n 1)
 
+SPARK_HADOOP_VERSION=$("$MVN" help:evaluate -Dexpression=spark.hadoop.binary.version $@ 2>/dev/null\
+    | grep -v "INFO"\
+    | grep -v "WARNING"\
+    | tail -n 1)
+
 HADOOP_VERSION=$("$MVN" help:evaluate -Dexpression=hadoop.version $@ 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
@@ -141,17 +146,12 @@ HIVE_VERSION=$("$MVN" help:evaluate -Dexpression=hive.version $@ 2>/dev/null\
 echo "Building Kyuubi package of version $VERSION against Spark version - $SPARK_VERSION"
 
 if [[ "$NAME" == "none" ]]; then
-
-  if [[ ${HADOOP_VERSION:0:3} == "2.7" ]]; then
-    HADOOP_VERSION_SUFFIX=""
-  else
-    HADOOP_VERSION_SUFFIX="-hadoop${HADOOP_VERSION:0:3}"
-  fi
+  SPARK_HADOOP_VERSION_SUFFIX="-hadoop${SPARK_HADOOP_VERSION}"
 
   if [[ "$SPARK_PROVIDED" == "true" ]]; then
-    NAME="without-spark"$HADOOP_VERSION_SUFFIX
+    NAME="without-spark"$SPARK_HADOOP_VERSION_SUFFIX
   else
-    NAME="spark-"${SPARK_VERSION:0:3}$HADOOP_VERSION_SUFFIX
+    NAME="spark-"${SPARK_VERSION:0:3}$SPARK_HADOOP_VERSION_SUFFIX
   fi
 fi
 
@@ -192,8 +192,8 @@ cp -r "$KYUUBI_HOME/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/" "$DISTDIR
 ## cp engines
 
 if [[ "$SPARK_PROVIDED" != "true" ]]; then
-  cp -r "$KYUUBI_HOME/externals/kyuubi-download/target/spark-$SPARK_VERSION-bin-hadoop${HADOOP_VERSION:0:3}$HIVE_VERSION_SUFFIX/" \
-        "$DISTDIR/externals/spark-$SPARK_VERSION-bin-hadoop${HADOOP_VERSION:0:3}$HIVE_VERSION_SUFFIX/"
+  cp -r "$KYUUBI_HOME/externals/kyuubi-download/target/spark-$SPARK_VERSION-bin-hadoop${SPARK_HADOOP_VERSION}$HIVE_VERSION_SUFFIX/" \
+        "$DISTDIR/externals/spark-$SPARK_VERSION-bin-hadoop${SPARK_HADOOP_VERSION}$HIVE_VERSION_SUFFIX/"
 fi
 cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine-$VERSION.jar" "$DISTDIR/externals/engines/spark"
 
