@@ -1373,7 +1373,6 @@
         <profile>
             <id>hadoop-3.2</id>
             <properties>
-                <!-- TODO: Enable this after sovle guava dep issue and so on -->
                 <hadoop.version>3.2.2</hadoop.version>
                 <hadoop.binary.version>3.2</hadoop.binary.version>
             </properties>
