@@ -19,6 +19,13 @@ package org.apache.kyuubi.schema
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
+import java.sql.Timestamp
+import java.text.SimpleDateFormat
+import java.time.{Instant, LocalDate}
+import java.time.chrono.IsoChronology
+import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder, ResolverStyle}
+import java.time.temporal.ChronoField
+import java.util.{Date, Locale}
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
@@ -88,6 +95,10 @@ object RowSet {
         val values = getOrSetAsNull[java.lang.Double](rows, ordinal, nulls, 0.toDouble)
         TColumn.doubleVal(new TDoubleColumn(values, nulls))
 
+      case StringType =>
+        val values = getOrSetAsNull[java.lang.String](rows, ordinal, nulls, "")
+        TColumn.stringVal(new TStringColumn(values, nulls))
+
       case BinaryType =>
         val values = getOrSetAsNull[Array[Byte]](rows, ordinal, nulls, Array())
           .asScala
@@ -96,7 +107,14 @@ object RowSet {
         TColumn.binaryVal(new TBinaryColumn(values, nulls))
 
       case _ =>
-        val values = getOrSetAsNull[java.lang.String](rows, ordinal, nulls, "")
+        val values = rows.zipWithIndex.toList.map { case (row, i) =>
+          nulls.set(i, row.isNullAt(ordinal))
+          if (row.isNullAt(ordinal)) {
+            ""
+          } else {
+            toHiveString((row.get(ordinal), typ))
+          }
+        }.asJava
         TColumn.stringVal(new TStringColumn(values, nulls))
     }
   }
@@ -164,19 +182,72 @@ object RowSet {
         if (!row.isNullAt(ordinal)) tDoubleValue.setValue(row.getDouble(ordinal))
         TColumnValue.doubleVal(tDoubleValue)
 
-      case BinaryType =>
-        val tStrValue = new TStringValue
-        if (!row.isNullAt(ordinal)) {
-          tStrValue.setValue(new String(row.getAs[Array[Byte]](ordinal), StandardCharsets.UTF_8))
-        }
-        TColumnValue.stringVal(tStrValue)
+      case StringType =>
+        val tStringValue = new TStringValue
+        if (!row.isNullAt(ordinal)) tStringValue.setValue(row.getString(ordinal))
+        TColumnValue.stringVal(tStringValue)
 
       case _ =>
         val tStrValue = new TStringValue
         if (!row.isNullAt(ordinal)) {
-          tStrValue.setValue(row.getString(ordinal))
+          tStrValue.setValue(
+            toHiveString((row.get(ordinal), types(ordinal).dataType)))
         }
         TColumnValue.stringVal(tStrValue)
+    }
+  }
+
+  private def createBuilder(): DateTimeFormatterBuilder = {
+    new DateTimeFormatterBuilder().parseCaseInsensitive()
+  }
+
+  private lazy val dateFormatter = {
+    createBuilder().appendPattern("yyyy-MM-dd")
+      .toFormatter(Locale.US)
+      .withChronology(IsoChronology.INSTANCE)
+      .withResolverStyle(ResolverStyle.STRICT)
+  }
+
+  private lazy val simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US)
+
+  private lazy val timestampFormatter: DateTimeFormatter = {
+    createBuilder()
+      .appendPattern("yyyy-MM-dd HH:mm:ss")
+      .appendFraction(ChronoField.MICRO_OF_SECOND, 0, 9, true)
+      .toFormatter(Locale.US)
+      .withChronology(IsoChronology.INSTANCE)
+      .withResolverStyle(ResolverStyle.STRICT)
+  }
+
+  private lazy val simpleTimestampFormatter = {
+    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
+  }
+
+
+  /**
+   * A simpler impl of Spark's toHiveString
+   */
+  def toHiveString(dataWithType: (Any, DataType)): String = {
+    dataWithType match {
+      case (null, _) => "null"
+      case (d: Date, DateType) => simpleDateFormat.format(d)
+      case (ld: LocalDate, DateType) => dateFormatter.format(ld)
+      case (t: Timestamp, TimestampType) => simpleTimestampFormatter.format(t)
+      case (i: Instant, TimestampType) => timestampFormatter.format(i)
+      case (bin: Array[Byte], BinaryType) => new String(bin, StandardCharsets.UTF_8)
+      case (decimal: java.math.BigDecimal, DecimalType()) => decimal.toPlainString
+      case (s: String, StringType) => "\"" + s + "\""
+      case (seq: scala.collection.Seq[_], ArrayType(typ, _)) =>
+        seq.map(v => (v, typ)).map(e => toHiveString(e)).mkString("[", ",", "]")
+      case (m: Map[_, _], MapType(kType, vType, _)) =>
+        m.map { case (key, value) =>
+          toHiveString((key, kType)) + ":" + toHiveString((value, vType))
+        }.toSeq.sorted.mkString("{", ",", "}")
+      case (struct: Row, StructType(fields)) =>
+        struct.toSeq.zip(fields).map { case (v, t) =>
+          s""""${t.name}":${toHiveString((v, t.dataType))}"""
+        }.mkString("{", ",", "}")
+      case (other, _) => other.toString
     }
   }
 }
