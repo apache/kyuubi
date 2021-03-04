@@ -26,20 +26,23 @@ cache:
   directories:
     - $HOME/.m2
 
-
 matrix:
   include:
-    - name: Test Kyuubi -Pspark-3.0 -Phadoop-2.7
+    - name: Test Kyuubi w/ -Pspark-3.0 -Phadoop-2.7
       env:
         - PROFILE="-Pspark-3.0 -Phadoop-2.7"
         - EXCLUDE_TAGS=""
-    - name: Test Kyuubi -Pspark-3.1 -Phadoop-2.7
+    - name: Test Kyuubi w/ -Pspark-3.1 -Phadoop-2.7
       env:
         - PROFILE="-Pspark-3.1 -Phadoop-2.7"
         - EXCLUDE_TAGS="org.apache.kyuubi.tags.DataLakeTest"
-    - name: Test Kyuubi -Pspark-3.1 -Phadoop-3.2
+    - name: Test Kyuubi w/ -Pspark-3.1 -Phadoop-3.2
       env:
         - PROFILE="-Pspark-3.1 -Phadoop-3.2"
+        - EXCLUDE_TAGS="org.apache.kyuubi.tags.DataLakeTest"
+    - name: Test Kyuubi w/ -Pspark-3.0 -Phadoop-2.7 by Spark 3.1 distribution
+      env:
+        - PROFILE="-Pspark-3.0 -Phadoop-2.7 -Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.1 -Dspark.archive.name=spark-3.1.1-bin-hadoop2.7.tgz"
         - EXCLUDE_TAGS="org.apache.kyuubi.tags.DataLakeTest"
 
 install:
@@ -52,4 +55,6 @@ after_success:
   - if [[ -z $EXCLUDE_TAGS ]]; then bash <(curl -s https://codecov.io/bash); fi
 
 after_failure:
+  - echo "==== Build with $PROFILE FAILED ===="
   - for log in `find * -name "kyuubi-spark-sql-engine.log*"`; do echo "=========$log========="; cat $log; done
+  - for log in `find * -name "unit-tests.log"`; do echo "=========$log========="; cat $log; done
