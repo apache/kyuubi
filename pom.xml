@@ -66,7 +66,7 @@
         <guava.version>16.0.1</guava.version>
         <curator.version>2.12.0</curator.version>
         <hadoop.version>2.7.4</hadoop.version>
-        <hadoop.binary.version>2/7</hadoop.binary.version>
+        <hadoop.binary.version>2.7</hadoop.binary.version>
         <hive.version>2.3.7</hive.version>
         <spark.version>3.0.2</spark.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop${hadoop.binary.version}.tgz</spark.archive.name>
