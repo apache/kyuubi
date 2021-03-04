@@ -63,7 +63,7 @@
         <commons-lang3.version>3.10</commons-lang3.version>
         <commons.httpclient.version>4.5.6</commons.httpclient.version>
         <commons.httpcore.version>4.4.12</commons.httpcore.version>
-        <guava.version>16.0.1</guava.version>
+        <guava.version>24.1.1-jre</guava.version>
         <curator.version>2.12.0</curator.version>
         <hadoop.version>2.7.4</hadoop.version>
         <hadoop.binary.version>2.7</hadoop.binary.version>
@@ -1373,7 +1373,6 @@
         <profile>
             <id>hadoop-3.2</id>
             <properties>
-                <!-- TODO: Enable this after sovle guava dep issue and so on -->
                 <hadoop.version>3.2.2</hadoop.version>
                 <hadoop.binary.version>3.2</hadoop.binary.version>
             </properties>
