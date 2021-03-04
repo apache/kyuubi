@@ -63,11 +63,16 @@
         <commons-lang3.version>3.10</commons-lang3.version>
         <commons.httpclient.version>4.5.6</commons.httpclient.version>
         <commons.httpcore.version>4.4.12</commons.httpcore.version>
-        <guava.version>14.0.1</guava.version>
+        <guava.version>16.0.1</guava.version>
         <curator.version>2.12.0</curator.version>
         <hadoop.version>2.7.4</hadoop.version>
+        <hadoop.binary.version>2.7</hadoop.binary.version>
         <hive.version>2.3.7</hive.version>
         <spark.version>3.0.2</spark.version>
+        <spark.archive.name>spark-${spark.version}-bin-hadoop${hadoop.binary.version}.tgz</spark.archive.name>
+        <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
+        <spark.archive.download.skip>false</spark.archive.download.skip>
+
         <slf4j.version>1.7.30</slf4j.version>
         <zookeeper.version>3.4.14</zookeeper.version>
 
@@ -83,6 +88,7 @@
         <maven.plugin.scala.version>4.4.0</maven.plugin.scala.version>
         <maven.plugin.surefire.version>2.22.0</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.0.0</maven.plugin.scalatest.version>
+        <maven.plugin.scalatest.exclude.tags></maven.plugin.scalatest.exclude.tags>
         <maven.plugin.jacoco.version>0.8.6</maven.plugin.jacoco.version>
         <maven.plugin.shade.version>3.2.1</maven.plugin.shade.version>
         <maven.plugin.jar.version>3.2.0</maven.plugin.jar.version>
@@ -293,6 +299,12 @@
                 </exclusions>
             </dependency>
 
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client</artifactId>
+                <version>${hadoop.version}</version>
+            </dependency>
+
             <!-- align with hadoop-common to avoid potential conflict -->
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -326,8 +338,99 @@
 
             <dependency>
                 <groupId>org.apache.spark</groupId>
+                <artifactId>spark-core_${scala.binary.version}</artifactId>
+                <version>${spark.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.glassfish.jersey.core</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.glassfish.jersey.containers</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.glassfish.jersey.inject</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.avro</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.google.code.findbugs</groupId>
+                        <artifactId>jsr305</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.github.luben</groupId>
+                        <artifactId>zstd-jni</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.scala-lang.modules</groupId>
+                        <artifactId>scala-xml_${scala.binary.version}</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-client</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.spark</groupId>
                 <artifactId>spark-sql_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.univocity</groupId>
+                        <artifactId>univocity-parsers</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-client</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.spark</groupId>
+                        <artifactId>spark-core_${scala.binary.version}</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.spark</groupId>
+                        <artifactId>spark-launcher_${scala.binary.version}</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.spark</groupId>
+                        <artifactId>spark-kvstore_${scala.binary.version}</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.spark</groupId>
+                        <artifactId>spark-network-common_${scala.binary.version}</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.spark</groupId>
+                        <artifactId>spark-network-shuffle_${scala.binary.version}</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.spark</groupId>
+                        <artifactId>spark-sketch_${scala.binary.version}</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.spark</groupId>
+                        <artifactId>spark-tags_${scala.binary.version}</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.spark-project.spark</groupId>
+                        <artifactId>unused</artifactId>
+                    </exclusion>
+
+                    <exclusion>
+                        <groupId>org.apache.avro</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.orc</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -345,11 +448,59 @@
                     </exclusion>
                     <exclusion>
                         <groupId>org.apache.hive</groupId>
+                        <artifactId>hive-common</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hive</groupId>
+                        <artifactId>hive-serde</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hive</groupId>
                         <artifactId>hive-service-rpc</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hive</groupId>
+                        <artifactId>hive-llap-client</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hive</groupId>
+                        <artifactId>hive-llap-common</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.spark-project.spark</groupId>
+                        <artifactId>unused</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.apache.avro</groupId>
                         <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.google.code.findbugs</groupId>
+                        <artifactId>jsr305</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.thrift</groupId>
+                        <artifactId>libthrift</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.thrift</groupId>
+                        <artifactId>libfb303</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>joda-time</groupId>
+                        <artifactId>joda-time</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.jodd</groupId>
+                        <artifactId>jodd-core</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.httpcomponents</groupId>
+                        <artifactId>httpclient</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-httpclient</groupId>
+                        <artifactId>commons-httpclient</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -489,6 +640,14 @@
                         <groupId>org.codehaus.groovy</groupId>
                         <artifactId>groovy-all</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.httpcomponents</groupId>
+                        <artifactId>httpclient</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.httpcomponents</groupId>
+                        <artifactId>httpcore</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -565,6 +724,14 @@
                         <artifactId>jasper-runtime</artifactId>
                     </exclusion>
                     <!-- End of Hive 2.3 exclusion -->
+                    <exclusion>
+                        <groupId>commons-lang</groupId>
+                        <artifactId>commons-lang</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>net.sf.opencsv</groupId>
+                        <artifactId>opencsv</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -661,6 +828,66 @@
                         <artifactId>log4j-slf4j-impl</artifactId>
                     </exclusion>
                     <!-- End of Hive 2.3 exclusion -->
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.hive</groupId>
+                <artifactId>hive-llap-client</artifactId>
+                <version>${hive.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.hive</groupId>
+                        <artifactId>hive-common</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hive</groupId>
+                        <artifactId>hive-llap-common</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.curator</groupId>
+                        <artifactId>curator-framework</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.curator</groupId>
+                        <artifactId>apache-curator</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.hive</groupId>
+                <artifactId>hive-llap-common</artifactId>
+                <version>${hive.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.hive</groupId>
+                        <artifactId>hive-common</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hive</groupId>
+                        <artifactId>hive-serde</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -926,6 +1153,7 @@
                             <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
                             <spark.driver.memory>2g</spark.driver.memory>
                         </systemProperties>
+                        <tagsToExclude>${maven.plugin.scalatest.exclude.tags}</tagsToExclude>
                     </configuration>
                     <executions>
                         <execution>
@@ -1117,16 +1345,43 @@
         </profile>
 
         <profile>
-            <id>spark-provided</id>
-        </profile>
-
-        <profile>
             <id>spark-2.4</id>
             <properties>
                 <spark.version>2.4.7</spark.version>
                 <scala.version>2.11.12</scala.version>
                 <scala.binary.version>2.11</scala.binary.version>
                 <iceberg.name>iceberg-spark-runtime</iceberg.name>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>spark-3.0</id>
+        </profile>
+
+        <profile>
+            <id>spark-3.1</id>
+            <properties>
+                <spark.version>3.1.1</spark.version>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.DataLakeTest</maven.plugin.scalatest.exclude.tags>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>hadoop-2.7</id>
+        </profile>
+
+        <profile>
+            <id>hadoop-3.2</id>
+            <properties>
+                <!-- TODO: Enable this after sovle guava dep issue and so on -->
+                <hadoop.version>3.2.2</hadoop.version>
+                <hadoop.binary.version>3.2</hadoop.binary.version>
+            </properties>
+        </profile>
+        <profile>
+            <id>spark-provided</id>
+            <properties>
+                <spark.archive.download.skip>true</spark.archive.download.skip>
             </properties>
         </profile>
     </profiles>

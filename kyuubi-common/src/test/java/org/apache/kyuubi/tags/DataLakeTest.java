@@ -15,19 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation.datalake
+package org.apache.kyuubi.tags;
 
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.{BasicIcebergJDBCTests, WithKyuubiServer}
-import org.apache.kyuubi.tags.DataLakeTest
+import org.scalatest.TagAnnotation;
 
-@DataLakeTest
-class IcebergOperationSuite extends WithKyuubiServer with BasicIcebergJDBCTests {
-  override protected val conf: KyuubiConf = {
-    val kyuubiConf = KyuubiConf().set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 20000L)
-    icebergConfigs.foreach {case (k, v) => kyuubiConf.set(k, v) }
-    kyuubiConf
-  }
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-  override def jdbcUrl: String = getJdbcUrl
-}
+@TagAnnotation
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD, ElementType.TYPE})
+public @interface DataLakeTest {}

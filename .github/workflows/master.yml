@@ -1,11 +1,24 @@
 name: Kyuubi
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+      - branch-*
+  pull_request:
+    branches:
+      - master
+      - branch-*
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        profiles:
+          - '-Pspark-3.0 -Phadoop-2.7'
+          - '-Pspark-3.1 -Phadoop-2.7'
     steps:
       - uses: actions/checkout@v2
       - name: Setup JDK 1.8
@@ -38,7 +51,7 @@ jobs:
             ${{ runner.os }}-maven-io-
       - name: Build with Maven
         run: |
-          mvn clean install -Dmaven.javadoc.skip=true -B -V
+          mvn clean install ${{ matrix.profiles }} -Dmaven.javadoc.skip=true -B -V
           bash <(curl -s https://codecov.io/bash)
       - name: Collect unit tests log
         run: |

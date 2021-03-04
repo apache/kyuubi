@@ -19,7 +19,9 @@ package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.BasicIcebergJDBCTests
+import org.apache.kyuubi.tags.DataLakeTest
 
+@DataLakeTest
 class SparkIcebergOperationSuite extends WithSparkSQLEngine with BasicIcebergJDBCTests {
   override protected def jdbcUrl: String = getJdbcUrl
   override def withKyuubiConf: Map[String, String] = icebergConfigs
