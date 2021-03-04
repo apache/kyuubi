@@ -141,10 +141,17 @@ HIVE_VERSION=$("$MVN" help:evaluate -Dexpression=hive.version $@ 2>/dev/null\
 echo "Building Kyuubi package of version $VERSION against Spark version - $SPARK_VERSION"
 
 if [[ "$NAME" == "none" ]]; then
-  if [[ "$SPARK_PROVIDED" == "true" ]]; then
-    NAME="without-spark"
+
+  if [[ ${HADOOP_VERSION:0:3} == "2.7" ]]; then
+    HADOOP_VERSION_SUFFIX=""
   else
-    NAME="spark-"${SPARK_VERSION:0:3}
+    HADOOP_VERSION_SUFFIX="-hadoop${HADOOP_VERSION:0:3}"
+  fi
+
+  if [[ "$SPARK_PROVIDED" == "true" ]]; then
+    NAME="without-spark"$HADOOP_VERSION_SUFFIX
+  else
+    NAME="spark-"${SPARK_VERSION:0:3}$HADOOP_VERSION_SUFFIX
   fi
 fi
 
@@ -183,12 +190,6 @@ echo "Build flags: $@" >> "$DISTDIR/RELEASE"
 # Copy jars
 cp -r "$KYUUBI_HOME/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/" "$DISTDIR/jars"
 ## cp engines
-
-if [[ ${HIVE_VERSION:0:3} == "2.3" ]]; then
-  HIVE_VERSION_SUFFIX=""
-else
-  HIVE_VERSION_SUFFIX="-hive1.2"
-fi
 
 if [[ "$SPARK_PROVIDED" != "true" ]]; then
   cp -r "$KYUUBI_HOME/externals/kyuubi-download/target/spark-$SPARK_VERSION-bin-hadoop${HADOOP_VERSION:0:3}$HIVE_VERSION_SUFFIX/" \

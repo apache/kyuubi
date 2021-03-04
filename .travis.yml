@@ -37,20 +37,13 @@ matrix:
       env:
         - PROFILE="-Pspark-3.1 -Phadoop-2.7"
         - EXCLUDE_TAGS="org.apache.kyuubi.tags.DataLakeTest"
-#    - name: Tes Kyuubi -Pspark-3.1 -Phadoop-3.2
-#      env:
-#        - PROFILE="-Pspark-3.1 -Phadoop-3.2"
-#        - EXCLUDE_TAGS="org.apache.kyuubi.tags.DataLakeTest"
+    - name: Tes Kyuubi -Pspark-3.1 -Phadoop-3.2
+      env:
+        - PROFILE="-Pspark-3.1 -Phadoop-3.2"
+        - EXCLUDE_TAGS="org.apache.kyuubi.tags.DataLakeTest"
 
 install:
   - mvn --version
-
-before_script:
-  - mvn help:evaluate -Dexpression=project.version
-  - mvn help:evaluate -Dexpression=java.version
-  - mvn help:evaluate -Dexpression=scala.binary.version
-  - mvn help:evaluate -Dexpression=hadoop.version
-  - mvn help:evaluate -Dexpression=hive.version
 
 script:
   - mvn clean install $PROFILE -Dmaven.plugin.scalatest.exclude.tags=$EXCLUDE_TAGS -Dmaven.javadoc.skip=true -V
