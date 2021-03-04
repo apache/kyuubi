@@ -19,6 +19,10 @@ package org.apache.kyuubi.operation
 
 import java.sql.{Date, SQLException, Timestamp}
 
+import scala.collection.JavaConverters._
+
+import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq, TStatusCode}
+
 trait JDBCTests extends BasicJDBCTests {
   test("execute statement -  select null") {
     withJdbcStatement() { statement =>
@@ -231,6 +235,76 @@ trait JDBCTests extends BasicJDBCTests {
       }
       assert(e.getMessage
         .contains("The second argument of 'date_sub' function needs to be an integer."))
+    }
+  }
+
+  test("execute statement - select with variable substitution") {
+    withThriftClient { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername("chengpan")
+      req.setPassword("123")
+      val conf = Map(
+        "use:database" -> "default",
+        "set:hiveconf:a" -> "x",
+        "set:hivevar:b" -> "y",
+        "set:metaconf:c" -> "z",
+        "set:system:s" -> "s")
+      req.setConfiguration(conf.asJava)
+      val tOpenSessionResp = client.OpenSession(req)
+      val status = tOpenSessionResp.getStatus
+      assert(status.getStatusCode === TStatusCode.SUCCESS_STATUS)
+
+      val tExecuteStatementReq = new TExecuteStatementReq()
+      tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      // hive matched behaviors
+      tExecuteStatementReq.setStatement(
+        """
+          |select
+          | '${hiveconf:a}' as col_0,
+          | '${hivevar:b}'  as col_1,
+          | '${b}'          as col_2
+          |""".stripMargin)
+      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+      val tFetchResultsReq = new TFetchResultsReq()
+      tFetchResultsReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
+      tFetchResultsReq.setFetchType(0)
+      tFetchResultsReq.setMaxRows(1)
+      val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
+      assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      assert(tFetchResultsResp.getResults.getColumns.get(0).getStringVal.getValues.get(0) === "x")
+      assert(tFetchResultsResp.getResults.getColumns.get(1).getStringVal.getValues.get(0) === "y")
+      assert(tFetchResultsResp.getResults.getColumns.get(2).getStringVal.getValues.get(0) === "y")
+
+      val tExecuteStatementReq2 = new TExecuteStatementReq()
+      tExecuteStatementReq2.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      // spark specific behaviors
+      tExecuteStatementReq2.setStatement(
+        """
+          |select
+          | '${a}'             as col_0,
+          | '${hivevar:a}'     as col_1,
+          | '${spark:a}'       as col_2,
+          | '${sparkconf:a}'   as col_3,
+          | '${not_exist_var}' as col_4,
+          | '${c}'             as col_5,
+          | '${s}'             as col_6
+          |""".stripMargin)
+      val tExecuteStatementResp2 = client.ExecuteStatement(tExecuteStatementReq2)
+      val tFetchResultsReq2 = new TFetchResultsReq()
+      tFetchResultsReq2.setOperationHandle(tExecuteStatementResp2.getOperationHandle)
+      tFetchResultsReq2.setFetchType(0)
+      tFetchResultsReq2.setMaxRows(1)
+      val tFetchResultsResp2 = client.FetchResults(tFetchResultsReq2)
+      assert(tFetchResultsResp2.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      assert(tFetchResultsResp2.getResults.getColumns.get(0).getStringVal.getValues.get(0) === "x")
+      assert(tFetchResultsResp2.getResults.getColumns.get(1).getStringVal.getValues.get(0) === "x")
+      assert(tFetchResultsResp2.getResults.getColumns.get(2).getStringVal.getValues.get(0) === "x")
+      assert(tFetchResultsResp2.getResults.getColumns.get(3).getStringVal.getValues.get(0) === "x")
+      // for not exist vars, hive return "${not_exist_var}" itself, but spark return ""
+      assert(tFetchResultsResp2.getResults.getColumns.get(4).getStringVal.getValues.get(0) === "")
+
+      assert(tFetchResultsResp2.getResults.getColumns.get(5).getStringVal.getValues.get(0) === "z")
+      assert(tFetchResultsResp2.getResults.getColumns.get(6).getStringVal.getValues.get(0) === "s")
     }
   }
 }

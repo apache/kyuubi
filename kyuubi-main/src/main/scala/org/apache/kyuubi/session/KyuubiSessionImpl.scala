@@ -50,8 +50,8 @@ class KyuubiSessionImpl(
 
   private def mergeConf(): Unit = {
     conf.foreach {
-      case (k, v) if k.startsWith("set:") =>
-        val newKey = k.substring(4)
+      case (k, v) if k.startsWith(SET_PREFIX) =>
+        val newKey = k.substring(SET_PREFIX.length)
         if (newKey.startsWith(SYSTEM_PREFIX)) {
           sessionConf.set(newKey.substring(SYSTEM_PREFIX.length), v)
         } else if (newKey.startsWith(HIVECONF_PREFIX)) {
@@ -60,8 +60,6 @@ class KyuubiSessionImpl(
           sessionConf.set(newKey.substring(HIVEVAR_PREFIX.length), v)
         } else if (newKey.startsWith(METACONF_PREFIX)) {
           sessionConf.set(newKey.substring(METACONF_PREFIX.length), v)
-        } else if (newKey.startsWith(SYSTEM_PREFIX)) {
-          // do nothing
         } else {
           sessionConf.set(k, v)
         }
