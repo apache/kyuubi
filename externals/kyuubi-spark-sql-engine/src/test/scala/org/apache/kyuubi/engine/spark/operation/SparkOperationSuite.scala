@@ -654,7 +654,9 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
       val conf = Map(
         "use:database" -> "default",
         "set:hiveconf:a" -> "x",
-        "set:hivevar:b" -> "y")
+        "set:hivevar:b" -> "y",
+        "set:metaconf:c" -> "z",
+        "set:system:s" -> "s")
       req.setConfiguration(conf.asJava)
       val tOpenSessionResp = client.OpenSession(req)
       val status = tOpenSessionResp.getStatus
@@ -691,7 +693,9 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
           | '${hivevar:a}'     as col_1,
           | '${spark:a}'       as col_2,
           | '${sparkconf:a}'   as col_3,
-          | '${not_exist_var}' as col_4
+          | '${not_exist_var}' as col_4,
+          | '${c}'             as col_5,
+          | '${s}'             as col_6
           |""".stripMargin)
       val tExecuteStatementResp2 = client.ExecuteStatement(tExecuteStatementReq2)
       val tFetchResultsReq2 = new TFetchResultsReq()
@@ -706,6 +710,9 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
       assert(tFetchResultsResp2.getResults.getColumns.get(3).getStringVal.getValues.get(0) === "x")
       // for not exist vars, hive return "${not_exist_var}" itself, but spark return ""
       assert(tFetchResultsResp2.getResults.getColumns.get(4).getStringVal.getValues.get(0) === "")
+
+      assert(tFetchResultsResp2.getResults.getColumns.get(5).getStringVal.getValues.get(0) === "z")
+      assert(tFetchResultsResp2.getResults.getColumns.get(6).getStringVal.getValues.get(0) === "s")
     }
   }
 

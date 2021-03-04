@@ -54,12 +54,25 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     try {
       val sparkSession = spark.newSession()
       conf.foreach {
-        case (HIVE_VAR_PREFIX(key), value) if key.startsWith(SPARK_PREFIX) =>
-          setModifiableConfig(sparkSession, key, value)
-        case (HIVE_VAR_PREFIX(key), value) => sparkSession.conf.set(key, value)
-        case (HIVE_CONF_PREFIX(key), value) if key.startsWith(SPARK_PREFIX) =>
-          setModifiableConfig(sparkSession, key, value)
-        case (HIVE_CONF_PREFIX(key), value) => sparkSession.conf.set(key, value)
+        case (k, v) if k.startsWith(SET_PREFIX) =>
+          val newKey = k.substring(SET_PREFIX.length)
+          if (newKey.startsWith(SYSTEM_PREFIX)) {
+            sparkSession.conf.set(newKey.substring(SYSTEM_PREFIX.length), v)
+          } else if (newKey.startsWith(HIVECONF_PREFIX) && newKey.startsWith(SPARK_PREFIX)) {
+            setModifiableConfig(sparkSession, newKey.substring(HIVECONF_PREFIX.length), v)
+          } else if (newKey.startsWith(HIVECONF_PREFIX)) {
+            sparkSession.conf.set(newKey.substring(HIVECONF_PREFIX.length), v)
+          } else if (newKey.startsWith(HIVEVAR_PREFIX) && newKey.startsWith(SPARK_PREFIX)) {
+            setModifiableConfig(sparkSession, newKey.substring(HIVEVAR_PREFIX.length), v)
+          } else if (newKey.startsWith(HIVEVAR_PREFIX)) {
+            sparkSession.conf.set(newKey.substring(HIVEVAR_PREFIX.length), v)
+          } else if (newKey.startsWith(METACONF_PREFIX) && newKey.startsWith(SPARK_PREFIX)) {
+            setModifiableConfig(sparkSession, newKey.substring(METACONF_PREFIX.length), v)
+          } else if (newKey.startsWith(METACONF_PREFIX)) {
+            sparkSession.conf.set(newKey.substring(METACONF_PREFIX.length), v)
+          } else {
+            setModifiableConfig(sparkSession, k, v)
+          }
         case ("use:database", database) => sparkSession.catalog.setCurrentDatabase(database)
         case (key, value) => setModifiableConfig(sparkSession, key, value)
       }
