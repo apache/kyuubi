@@ -30,4 +30,5 @@ package object session {
   val HIVEVAR_PREFIX = "hivevar:"
   val METACONF_PREFIX = "metaconf:"
 
+  val SPARK_PREFIX = "spark."
 }

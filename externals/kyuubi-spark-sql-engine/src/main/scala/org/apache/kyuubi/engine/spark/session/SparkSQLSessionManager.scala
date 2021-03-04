@@ -54,8 +54,12 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     try {
       val sparkSession = spark.newSession()
       conf.foreach {
-        case (HIVE_VAR_PREFIX(key), value) => setModifiableConfig(sparkSession, key, value)
-        case (HIVE_CONF_PREFIX(key), value) => setModifiableConfig(sparkSession, key, value)
+        case (HIVE_VAR_PREFIX(key), value) if key.startsWith(SPARK_PREFIX) =>
+          setModifiableConfig(sparkSession, key, value)
+        case (HIVE_VAR_PREFIX(key), value) => sparkSession.conf.set(key, value)
+        case (HIVE_CONF_PREFIX(key), value) if key.startsWith(SPARK_PREFIX) =>
+          setModifiableConfig(sparkSession, key, value)
+        case (HIVE_CONF_PREFIX(key), value) => sparkSession.conf.set(key, value)
         case ("use:database", database) => sparkSession.catalog.setCurrentDatabase(database)
         case (key, value) => setModifiableConfig(sparkSession, key, value)
       }
