@@ -76,13 +76,11 @@
             <artifactId>curator-recipes</artifactId>
         </dependency>
 
-        <!-- begin: for EmbeddedZkServer -->
+        <!-- for EmbeddedZkServer -->
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-test</artifactId>
         </dependency>
-
-        <!-- end: for EmbeddedZkServer -->
 
         <!-- default package with log4j -->
         <dependency>
