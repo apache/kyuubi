@@ -27,7 +27,7 @@ import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.countDownLatch
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.{RetryPolicies, ServiceDiscovery}
+import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, RetryPolicies, ServiceDiscovery}
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.SignalRegister
 
@@ -37,7 +37,7 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   def this(spark: SparkSession) = this(classOf[SparkSQLEngine].getSimpleName, spark)
 
   override private[kyuubi] val backendService = new SparkSQLBackendService(spark)
-  private val discoveryService = new ServiceDiscovery(this)
+  private val discoveryService = new EngineServiceDiscovery(this)
 
   override def initialize(conf: KyuubiConf): Unit = {
     val listener = new SparkSQLEngineListener(this)
