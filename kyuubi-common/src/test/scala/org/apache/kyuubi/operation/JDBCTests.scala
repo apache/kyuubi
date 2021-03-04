@@ -236,9 +236,9 @@ trait JDBCTests extends BasicJDBCTests {
 
   test("execute statement - select with builtin functions") {
     withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery("SELECT substr('kentyao', 1)")
+      val resultSet = statement.executeQuery("SELECT substring('kentyao', 1)")
       assert(resultSet.next())
-      assert(resultSet.getString("col") === "kentyao")
+      assert(resultSet.getString("substring(kentyao, 1, 2147483647)") === "kentyao")
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.VARCHAR)
       assert(metaData.getPrecision(1) === Int.MaxValue)
