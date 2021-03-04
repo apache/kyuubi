@@ -66,7 +66,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
     server.start()
 
     val znodeRoot = s"/$namespace"
-    val serviceDiscovery = new ServiceDiscovery(server)
+    val serviceDiscovery = new KyuubiServiceDiscovery(server)
     val framework = ServiceDiscovery.startZookeeperClient(conf)
     try {
       serviceDiscovery.initialize(conf)
