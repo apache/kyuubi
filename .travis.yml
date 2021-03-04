@@ -33,11 +33,11 @@ matrix:
       env:
         - PROFILE="-Pspark-3.0 -Phadoop-2.7"
         - EXCLUDE_TAGS=""
-    - name: Tes Kyuubi -Pspark-3.1 -Phadoop-2.7
+    - name: Test Kyuubi -Pspark-3.1 -Phadoop-2.7
       env:
         - PROFILE="-Pspark-3.1 -Phadoop-2.7"
         - EXCLUDE_TAGS="org.apache.kyuubi.tags.DataLakeTest"
-    - name: Tes Kyuubi -Pspark-3.1 -Phadoop-3.2
+    - name: Test Kyuubi -Pspark-3.1 -Phadoop-3.2
       env:
         - PROFILE="-Pspark-3.1 -Phadoop-3.2"
         - EXCLUDE_TAGS="org.apache.kyuubi.tags.DataLakeTest"
