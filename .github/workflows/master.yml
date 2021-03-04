@@ -18,6 +18,7 @@ jobs:
       matrix:
         profiles:
           - '-Pspark-3.0 -Phadoop-2.7'
+          - '
           - '-Pspark-3.1 -Phadoop-2.7'
           - '-Pspark-3.1 -Phadoop-3.2'
     steps:
