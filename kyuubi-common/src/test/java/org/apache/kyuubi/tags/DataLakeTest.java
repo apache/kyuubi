@@ -15,21 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.operation
+package org.apache.kyuubi.tags;
 
-import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.operation.BasicIcebergJDBCTests
-import org.apache.kyuubi.tags.DataLakeTest
+import org.scalatest.TagAnnotation;
 
-@DataLakeTest
-class SparkIcebergOperationSuite extends WithSparkSQLEngine with BasicIcebergJDBCTests {
-  override protected def jdbcUrl: String = getJdbcUrl
-  override def conf: Map[String, String] = icebergConfigs
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-  override def afterAll(): Unit = {
-    super.afterAll()
-    for ((k, _) <- icebergConfigs) {
-      System.clearProperty(k)
-    }
-  }
-}
+@TagAnnotation
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD, ElementType.TYPE})
+public @interface DataLakeTest {}

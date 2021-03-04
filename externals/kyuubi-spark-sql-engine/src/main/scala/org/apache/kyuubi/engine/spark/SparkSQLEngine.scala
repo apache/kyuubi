@@ -73,6 +73,7 @@ object SparkSQLEngine extends Logging {
 
   def createSpark(): SparkSession = {
     val sparkConf = new SparkConf()
+    sparkConf.setIfMissing("spark.sql.legacy.castComplexTypesToString.enabled", "true")
     sparkConf.setIfMissing("spark.master", "local")
     sparkConf.setIfMissing("spark.ui.port", "0")
 
