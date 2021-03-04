@@ -37,25 +37,17 @@ class EngineServiceDiscovery private(
   override def stop(): Unit = {
     conf.get(ENGINE_SHARED_LEVEL) match {
       // For connection level, we should clean up the namespace in zk in case the disk stress.
-      case "CONNECTION" =>
-        cleanup()
-        info("Clean up discovery service due to this is connection share level.")
+      case "CONNECTION" if namespace != null =>
+        try {
+          zkClient.delete().deletingChildrenIfNeeded().forPath(namespace)
+          info("Clean up discovery service due to this is connection share level.")
+        } catch {
+          case NonFatal(e) =>
+            warn("Failed to clean up Spark engine before stop.", e)
+        }
 
       case _ =>
     }
     super.stop()
   }
-
-  private def cleanup(): Unit = {
-    if (namespace != null) {
-      try {
-        zkClient.delete().deletingChildrenIfNeeded().forPath(namespace)
-      } catch {
-        case NonFatal(e) =>
-          warn("Failed to clean up Spark engine before stop.", e)
-      }
-    }
-  }
 }
-
-
