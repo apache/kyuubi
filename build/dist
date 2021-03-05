@@ -149,7 +149,7 @@ if [[ "$NAME" == "none" ]]; then
   SPARK_HADOOP_VERSION_SUFFIX="-hadoop${SPARK_HADOOP_VERSION}"
 
   if [[ "$SPARK_PROVIDED" == "true" ]]; then
-    NAME="without-spark"$SPARK_HADOOP_VERSION_SUFFIX
+    NAME="without-spark"
   else
     NAME="spark-"${SPARK_VERSION:0:3}$SPARK_HADOOP_VERSION_SUFFIX
   fi
