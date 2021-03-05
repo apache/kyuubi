@@ -216,7 +216,7 @@ object RowSet {
       .withChronology(IsoChronology.INSTANCE)
   }
 
-  private lazy val simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US)
+  private lazy val simpleDateFormatter = new SimpleDateFormat("yyyy-MM-dd", Locale.US)
 
   private lazy val timestampFormatter: DateTimeFormatter = {
     createBuilder().appendPattern("yyyy-MM-dd HH:mm:ss")
@@ -239,7 +239,7 @@ object RowSet {
         "null"
 
       case (d: Date, DateType) =>
-        simpleDateFormat.format(d)
+        simpleDateFormatter.format(d)
 
       case (ld: LocalDate, DateType) =>
         dateFormatter.format(ld)
