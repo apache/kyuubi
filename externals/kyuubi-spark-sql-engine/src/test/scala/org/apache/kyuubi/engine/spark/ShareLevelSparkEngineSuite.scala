@@ -19,9 +19,6 @@ package org.apache.kyuubi.engine.spark
 
 import java.util.UUID
 
-import org.scalatest.concurrent.PatienceConfiguration.Timeout
-import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
-
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARED_LEVEL
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.ShareLevel.ShareLevel
@@ -44,7 +41,7 @@ abstract class ShareLevelSparkEngineSuite
     s"/kyuubi/${sharedLevel.toString}/${UUID.randomUUID().toString}"
   }
 
-  test("check discovery service is clean up with different share level") {
+  ignore("check discovery service is clean up with different share level") {
     withZkClient { zkClient =>
       assert(engine.getServiceState == ServiceState.STARTED)
       assert(zkClient.checkExists().forPath(namespace) != null)

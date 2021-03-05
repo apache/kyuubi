@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import java.time.ZoneId
 import java.util.regex.Pattern
 
 import org.apache.commons.lang3.StringUtils
@@ -26,6 +27,7 @@ import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.spark.FetchIterator
+import org.apache.kyuubi.engine.spark.operation.SparkOperation.TIMEZONE_KEY
 import org.apache.kyuubi.operation.{AbstractOperation, OperationState}
 import org.apache.kyuubi.operation.FetchOrientation._
 import org.apache.kyuubi.operation.OperationState.OperationState
@@ -36,6 +38,12 @@ import org.apache.kyuubi.session.Session
 
 abstract class SparkOperation(spark: SparkSession, opType: OperationType, session: Session)
   extends AbstractOperation(opType, session) {
+
+  private val timeZone: ZoneId = {
+    spark.conf.getOption(TIMEZONE_KEY).map { timeZoneId =>
+      ZoneId.of(timeZoneId.replaceFirst("(\\+|\\-)(\\d):", "$10$2:"), ZoneId.SHORT_IDS)
+    }.getOrElse(ZoneId.systemDefault())
+  }
 
   protected var iter: FetchIterator[Row] = _
 
@@ -132,10 +140,14 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
       case FETCH_FIRST => iter.fetchAbsolute(0);
     }
     val taken = iter.take(rowSetSize)
-    val resultRowSet = RowSet.toTRowSet(taken.toList, resultSchema, getProtocolVersion)
+    val resultRowSet = RowSet.toTRowSet(taken.toList, resultSchema, getProtocolVersion, timeZone)
     resultRowSet.setStartRowOffset(iter.getPosition)
     resultRowSet
   }
 
   override def shouldRunAsync: Boolean = false
+}
+
+object SparkOperation {
+  val TIMEZONE_KEY = "spark.sql.session.timeZone"
 }
