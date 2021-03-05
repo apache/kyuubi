@@ -20,7 +20,6 @@ package org.apache.kyuubi.engine.spark.operation
 import java.util.concurrent.RejectedExecutionException
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
