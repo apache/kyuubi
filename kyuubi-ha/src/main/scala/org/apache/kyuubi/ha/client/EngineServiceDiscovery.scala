@@ -34,7 +34,8 @@ class EngineServiceDiscovery private(
   def this(server: Serverable) =
     this(classOf[EngineServiceDiscovery].getSimpleName, server)
 
-  override def stop(): Unit = {
+  override def stop(): Unit = synchronized {
+    closeServiceNode()
     conf.get(ENGINE_SHARED_LEVEL) match {
       // For connection level, we should clean up the namespace in zk in case the disk stress.
       case "CONNECTION" if namespace != null =>
