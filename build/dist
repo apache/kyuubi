@@ -128,7 +128,7 @@ SPARK_VERSION=$("$MVN" help:evaluate -Dexpression=spark.version $@ 2>/dev/null\
     | grep -v "WARNING"\
     | tail -n 1)
 
-SPARK_HADOOP_VERSION=$("$MVN" help:evaluate -Dexpression=spark.hadoop.binary.version $@ 2>/dev/null\
+SPARK_HADOOP_VERSION=$("$MVN" help:evaluate -Dexpression=hadoop.binary.version $@ 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | tail -n 1)

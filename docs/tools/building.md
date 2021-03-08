@@ -22,12 +22,20 @@ If you want to test it manually, you can start Kyuubi directly from the Kyuubi p
 bin/kyuubi start
 ```
 
-## Building Submodules Individually
+## Building a Submodule Individually
 
 For instance, you can build the Kyuubi Common module using:
 
 ```bash
 build/mvn clean package -pl :kyuubi-common -DskipTests
+```
+
+## Building Submodules Individually
+
+For instance, you can build the Kyuubi Common module using:
+
+```bash
+build/mvn clean package -pl :kyuubi-common,:kyuubi-ha -DskipTests
 ```
 
 ## Skipping Some modules
@@ -37,6 +45,13 @@ For instance, you can build the Kyuubi modules without Kyuubi Codecov and Assemb
 ```bash
  mvn clean install -pl '!:kyuubi-codecov,!:kyuubi-assembly' -DskipTests
 ```
+
+## Building Kyuubi against Different Apache Spark versions
+
+Profile | Default  | Since
+--- | --- | --- 
+-Pspark3.0 | Yes | 1.0.0
+-PSpark3.1 |No | 1.1.0
 
 ## Defining the Apache Mirror for Spark
 

@@ -66,10 +66,10 @@
         <curator.version>2.12.0</curator.version>
         <guava.version>30.1-jre</guava.version>
         <hadoop.version>3.2.2</hadoop.version>
+        <hadoop.binary.version>2.7</hadoop.binary.version>
         <hive.version>2.3.7</hive.version>
         <spark.version>3.0.2</spark.version>
-        <spark.hadoop.binary.version>3.2</spark.hadoop.binary.version>
-        <spark.archive.name>spark-${spark.version}-bin-hadoop${spark.hadoop.binary.version}.tgz</spark.archive.name>
+        <spark.archive.name>spark-${spark.version}-bin-hadoop${hadoop.binary.version}.tgz</spark.archive.name>
         <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
 
@@ -1272,14 +1272,8 @@
             <id>spark-3.1</id>
             <properties>
                 <spark.version>3.1.1</spark.version>
+                <hadoop.binary.version>2.7</hadoop.binary.version>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.DataLakeTest</maven.plugin.scalatest.exclude.tags>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>spark-hadoop-2.7</id>
-            <properties>
-                <spark.hadoop.binary.version>2.7</spark.hadoop.binary.version>
             </properties>
         </profile>
 
@@ -1289,6 +1283,7 @@
                 <spark.hadoop.binary.version>3.2</spark.hadoop.binary.version>
             </properties>
         </profile>
+
         <profile>
             <id>spark-provided</id>
             <properties>

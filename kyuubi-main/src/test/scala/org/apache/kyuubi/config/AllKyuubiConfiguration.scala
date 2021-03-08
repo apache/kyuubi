@@ -85,9 +85,10 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
         |</div>
         |""".stripMargin)
 
-    writeWith2Line("# Configurations Guide")
+    writeWith2Line("# Introduction to the Kyuubi Configurations System")
 
-    writeWith2Line("Kyuubi provides several ways to configure the system.")
+    writeWith2Line(
+      "Kyuubi provides several ways to configure the system and corresponding engines.")
 
     writeWith2Line("## Environments")
     writeWith2Line("You can configure the environment variables in" +
