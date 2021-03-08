@@ -9,14 +9,6 @@ jobs:
   build:
     name: Create and Publish Release
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        profiles:
-          - '-Pspark-3.0'
-          - '-Pspark-3.0 -Dhadoop.binary.version=3.2'
-          - '-Pspark-3.1'
-          - '-Pspark-3.1 -Dhadoop.binary.version=3.2'
-          - '--spark-provided'
     steps:
       - uses: actions/checkout@master
       # We split caches because GitHub Action Cache has a 400MB-size limit.
@@ -42,8 +34,16 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: '1.8'
-      - name: Make Distribution
-        run: ./build/dist --tgz ${{ matrix.profiles }}
+      - name: Make Distribution -Pspark-3.0
+        run: ./build/dist --tgz -Pspark-3.0
+      - name: Make Distribution -Pspark-3.0 -Dhadoop.binary.version=3.2
+        run: ./build/dist --tgz -Pspark-3.0 -Dhadoop.binary.version=3.2
+      - name: Make Distribution -Pspark-3.1
+        run: ./build/dist --tgz -Pspark-3.1
+      - name: Make Distribution -Pspark-3.1 -Dhadoop.binary.version=3.2
+        run: ./build/dist --tgz -Pspark-3.1 -Dhadoop.binary.version=3.2
+      - name: Make Distribution --spark-provided
+        run: ./build/dist --tgz --spark-provided
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
