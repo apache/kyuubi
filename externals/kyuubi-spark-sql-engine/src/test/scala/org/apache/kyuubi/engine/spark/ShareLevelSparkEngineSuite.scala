@@ -41,7 +41,7 @@ abstract class ShareLevelSparkEngineSuite
     s"/kyuubi/${sharedLevel.toString}/${UUID.randomUUID().toString}"
   }
 
-  ignore("check discovery service is clean up with different share level") {
+  test("check discovery service is clean up with different share level") {
     withZkClient { zkClient =>
       assert(engine.getServiceState == ServiceState.STARTED)
       assert(zkClient.checkExists().forPath(namespace) != null)
