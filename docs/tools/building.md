@@ -48,10 +48,13 @@ For instance, you can build the Kyuubi modules without Kyuubi Codecov and Assemb
 
 ## Building Kyuubi against Different Apache Spark versions
 
+Since v1.1.0, Kyuubi support building with different Spark profiles,
+
 Profile | Default  | Since
 --- | --- | --- 
--Pspark3.0 | Yes | 1.0.0
--PSpark3.1 |No | 1.1.0
+-Pspark-3.0 | Yes | 1.0.0
+-Pspark-3.1 | No | 1.1.0
+
 
 ## Defining the Apache Mirror for Spark
 
