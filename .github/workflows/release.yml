@@ -60,3 +60,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           asset_paths: '["./kyuubi-*tar.gz"]'
+      - name: Update Release Note
+        uses: anton-yurchenko/git-release@v3.4.3
