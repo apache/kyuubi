@@ -54,11 +54,21 @@ jobs:
           release_name: Release Kyuubi-${{ github.ref }}
           draft: false
           prerelease: false
-      - name: Upload Release Asset
-        uses: alexellis/upload-assets@0.2.2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          asset_paths: '["./kyuubi-*tar.gz"]'
+      #- name: Upload Release Asset
+      #  uses: alexellis/upload-assets@0.2.2
+      #  env:
+      #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #  with:
+      #    asset_paths: '["./kyuubi-*tar.gz"]'
       - name: Update Release Note
         uses: anton-yurchenko/git-release@v3.4.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DRAFT_RELEASE: "false"
+          PRE_RELEASE: "false"
+          CHANGELOG_FILE: "CHANGELOG.md"
+          ALLOW_EMPTY_CHANGELOG: "false"
+          ALLOW_TAG_PREFIX: "true"
+        with:
+          args: |
+            ./kyuubi-*tar.gz
