@@ -237,6 +237,14 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
     }
   }
 
+  test("execute statement -  select column name with dots") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("select 'tmp.hello'")
+      assert(resultSet.next())
+      assert(resultSet.getString("tmp.hello") === "tmp.hello")
+    }
+  }
+
   test("test fetch orientation") {
     val sql = "SELECT id FROM range(2)"
 
