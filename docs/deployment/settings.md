@@ -8,9 +8,9 @@
 </div>
 
 
-# Configurations Guide
+# Introduction to the Kyuubi Configurations System
 
-Kyuubi provides several ways to configure the system.
+Kyuubi provides several ways to configure the system and corresponding engines.
 
 ## Environments
 
@@ -89,128 +89,13 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 #
 
 ## Kyuubi Configurations
+
 #
 # kyuubi.authentication           NONE
 # kyuubi.frontend.bind.port       10009
 #
 
-## Spark Configurations, they will override those in $SPARK_HOME/conf/spark-defaults.conf
-## Dummy Ones
-# spark.master                      local
-# spark.submit.deployMode           client
-# spark.ui.enabled                  false
-# spark.ui.port                     0
-# spark.driver.extraJavaOptions     -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005
-# spark.scheduler.mode              FAIR
-# spark.serializer                  org.apache.spark.serializer.KryoSerializer
-# spark.kryoserializer.buffer.max   128m
-# spark.buffer.size                 131072
-# spark.local.dir                   ./local
-# spark.network.timeout             120s
-# spark.cleaner.periodicGC.interval 10min
-
-## Spark Driver / AM Sizing
-# spark.driver.cores            4
-# spark.driver.memory           8g
-# spark.driver.memoryOverhead   2048
-# spark.driver.extraJavaOptions -XX:MaxDirectMemorySize=2048m
-# spark.driver.maxResultSize    3g
-# spark.yarn.am.cores           4
-# spark.yarn.am.memory	        2g
-# spark.yarn.am.memoryOverhead	1024
-
-## Spark Executor Sizing
-# spark.executor.instances        100
-# spark.executor.cores            4
-# spark.executor.memory           16g
-# spark.executor.memoryOverhead   4096
-# spark.executor.extraJavaOptions -XX:MaxDirectMemorySize=2048m
-
-## Executor Heartbeat
-# spark.storage.blockManagerHeartbeatTimeoutMs                       300s
-# spark.executor.heartbeatInterval                                   15s
-# spark.executor.heartbeat.maxFailures                               30
-
-
-## Event Queue Capacity
-# spark.scheduler.revive.interval                                    1s
-# spark.scheduler.listenerbus.eventqueue.capacity                    100000
-# spark.scheduler.listenerbus.eventqueue.executorManagement.capacity 100000
-# spark.scheduler.listenerbus.eventqueue.appStatus.capacity          100000
-# spark.scheduler.listenerbus.eventqueue.shared.capacity             100000
-# spark.scheduler.listenerbus.eventqueue.eventLog.capacity           20000
-
-## External Shuffle Service
-# spark.shuffle.service.enabled                             true
-# spark.shuffle.service.fetch.rdd.enabled                   true
-# spark.shuffle.service.port                                7337
-
-## Speculation
-# spark.speculation                         true
-# spark.speculation.interval                1s
-# spark.speculation.multiplier              1.5
-# spark.speculation.quantile                0.9
-# spark.speculation.task.duration.threshold 10min
-
-## Shuffle Behavior
-# spark.shuffle.compress                                    true
-# spark.shuffle.detectCorrupt                               true
-# spark.shuffle.detectCorrupt.useExtraMemory                true
-# spark.shuffle.file.buffer                                 64k
-# spark.shuffle.unsafe.file.output.buffer                   64k
-# spark.shuffle.spill.diskWriteBufferSize                   8k
-# spark.shuffle.spill.compress                              true
-# spark.shuffle.mapOutput.dispatcher.numThreads             12
-# spark.shuffle.mapOutput.parallelAggregationThreshold      5000
-# spark.shuffle.readHostLocalDisk                           true
-# spark.shuffle.io.maxRetries                               10
-# spark.shuffle.io.retryWait                                6s
-# spark.shuffle.io.preferDirectBufs                         false
-# spark.shuffle.io.serverThreads                            8
-# spark.shuffle.io.clientThreads                            8
-# spark.shuffle.io.connectionTimeout                        240s
-# spark.shuffle.registration.timeout                        6000
-# spark.shuffle.registration.maxAttempts                    10
-# spark.shuffle.sync                                        false
-# spark.shuffle.useOldFetchProtocol                         true
-# spark.shuffle.unsafe.fastMergeEnabled                     true
-# spark.shuffle.minNumPartitionsToHighlyCompress            100
-# spark.network.maxRemoteBlockSizeFetchToMem                128m
-# spark.reducer.maxSizeInFlight                             48m
-# spark.reducer.maxReqsInFlight                             256
-# spark.reducer.maxBlocksInFlightPerAddress                 256
-
-## Data Locality for Task Schedule
-# spark.locality.wait                                       0s
-# spark.locality.wait.process                               0s
-# spark.locality.wait.node                                  0s
-# spark.locality.wait.rack                                  0s
-
-## Event Logging for History Server
-# spark.eventLog.enabled                            true
-# spark.eventLog.dir                                hdfs://hadoop-dfs/history
-# spark.eventLog.compress                           true
-# spark.eventLog.longForm.enabled                   true
-# spark.eventLog.rolling.enabled                    true
-# spark.yarn.historyServer.address                  http://historyserver:18080
-
-## SQL
-## General SQL Settings
-# spark.sql.shuffle.partitions                              8192
-# spark.sql.optimizer.inSetConversionThreshold              2
-# spark.sql.autoBroadcastJoinThreshold                      64m
-# spark.sql.broadcastTimeout                                600s
-# spark.sql.join.preferSortMergeJoin                        true
-# spark.sql.hive.metastorePartitionPruning                  true
-# spark.sql.parquet.filterPushdown                          true
-# spark.sql.parquet.recordLevelFilter.enabled	            true
-# spark.sql.statistics.fallBackToHdfs	                    true
-## Dynamic Partition Pruning
-# spark.sql.optimizer.dynamicPartitionPruning.enabled             true
-# spark.sql.optimizer.dynamicPartitionPruning.useStats            true
-# spark.sql.optimizer.dynamicPartitionPruning.fallbackFilterRatio 0.5
-# spark.sql.optimizer.dynamicPartitionPruning.reuseBroadcastOnly  true
-
+# Details in https://kyuubi.readthedocs.io/en/latest/deployment/settings.html
 ```
 ### Authentication
 

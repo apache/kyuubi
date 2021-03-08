@@ -12,10 +12,10 @@ jobs:
     strategy:
       matrix:
         profiles:
-          - '-Pspark-3.0 -Pspark-hadoop-2.7'
-          - '-Pspark-3.0 -Pspark-hadoop-3.2'
-          - '-Pspark-3.1 -Pspark-hadoop-2.7'
-          - '-Pspark-3.1 -Pspark-hadoop-3.2'
+          - '-Pspark-3.0'
+          - '-Pspark-3.0 -Dhadoop.binary.version=3.2'
+          - '-Pspark-3.1'
+          - '-Pspark-3.1 -Dhadoop.binary.version=3.2'
           - '--spark-provided'
     steps:
       - uses: actions/checkout@master

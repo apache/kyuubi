@@ -17,10 +17,10 @@ jobs:
     strategy:
       matrix:
         profiles:
-          - '-Pspark-3.0 -Pspark-hadoop-2.7'
-          - '-Pspark-3.0 -Pspark-hadoop-2.7 -Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.1 -Dspark.archive.name=spark-3.1.1-bin-hadoop2.7.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.DataLakeTest'
-          - '-Pspark-3.1 -Pspark-hadoop-2.7'
-          - '-Pspark-3.1 -Pspark-hadoop-3.2'
+          - '-Pspark-3.0'
+          - '-Pspark-3.0 -Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.1 -Dspark.archive.name=spark-3.1.1-bin-hadoop2.7.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.DataLakeTest'
+          - '-Pspark-3.1'
+          - '-Pspark-3.1 -Dhadoop.binary.version=3.2'
     steps:
       - uses: actions/checkout@v2
       - name: Setup JDK 1.8
@@ -67,23 +67,3 @@ jobs:
             kyuubi-common_unit-tests.log
             kyuubi-main_unit-tests.log
           retention-days: 30
-#      - name: Codecov kyuubi-common
-#        uses: codecov/codecov-action@v1
-#        with:
-#          file: ./kyuubi-common/target/codecov/jacoco.xml
-#          flags: kyuubi-common
-#      - name: Codecov kyuubi-ha
-#        uses: codecov/codecov-action@v1
-#        with:
-#          file: ./kyuubi-ha/target/codecov/jacoco.xml
-#          flags: kyuubi-ha
-#      - name: Codecov kyuubi-spark-sql-engine
-#        uses: codecov/codecov-action@v1
-#        with:
-#          file: ./externals/kyuubi-spark-sql-engine/target/codecov/jacoco.xml
-#          flags: kyuubi-spark-sql-engine
-#      - name: Codecov kyuubi-main
-#        uses: codecov/codecov-action@v1
-#        with:
-#          file: ./kyuubi-main/target/codecov/jacoco.xml
-#          flags: kyuubi-main
