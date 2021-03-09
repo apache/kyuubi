@@ -18,7 +18,8 @@
 package org.apache.kyuubi.engine.spark
 
 import java.io.File
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Path, Paths, StandardOpenOption}
+import java.time.Duration
 import java.util.concurrent.{Executors, TimeUnit}
 
 import org.scalatest.time.SpanSugar._
@@ -178,6 +179,27 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     (1 to 10).foreach { _ =>
       atomicTest()
     }
+  }
+
+  test("overwrite log file should cleanup before write") {
+    val fakeWorkDir = Files.createTempDirectory("fake")
+    val builder1 = new FakeSparkProcessBuilder(KyuubiConf()) {
+      override val workingDir: Path = fakeWorkDir
+    }
+    val file1 = builder1.engineLog
+    Files.write(file1.toPath, "a".getBytes(), StandardOpenOption.APPEND)
+    assert(file1.length() == 1)
+    Files.write(file1.toPath, "a".getBytes(), StandardOpenOption.APPEND)
+    assert(file1.length() == 2)
+    file1.setLastModified(System.currentTimeMillis() - Duration.ofDays(1).toMillis - 1000)
+
+    val builder2 = new FakeSparkProcessBuilder(KyuubiConf()) {
+      override val workingDir: Path = fakeWorkDir
+    }
+    val file2 = builder2.engineLog
+    assert(file1.getAbsolutePath == file2.getAbsolutePath)
+    Files.write(file2.toPath, "a".getBytes(), StandardOpenOption.APPEND)
+    assert(file2.length() == 1)
   }
 }
 

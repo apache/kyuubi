@@ -65,7 +65,7 @@ trait ProcBuilder {
   // Visible for test
   private[kyuubi] var logCaptureThread: Thread = _
 
-  private lazy val engineLog: File = ProcBuilder.synchronized {
+  private[kyuubi] lazy val engineLog: File = ProcBuilder.synchronized {
     val engineLogTimeout = conf.get(KyuubiConf.ENGINE_LOG_TIMEOUT)
     val currentTime = System.currentTimeMillis()
     val processLogPath = workingDir
@@ -81,6 +81,18 @@ trait ProcBuilder {
       sorted.last.getName.split("\\.").last.toInt + 1
     }
     val file = sorted.find(_.lastModified() < currentTime - engineLogTimeout)
+      .map { existsFile =>
+        try {
+          // Here we want to overwrite the exists log file
+          existsFile.delete()
+          existsFile.createNewFile()
+          existsFile
+        } catch {
+          case e: Exception =>
+            warn(s"failed to delete engine log file: ${existsFile.getAbsolutePath}", e)
+            null
+        }
+      }
       .getOrElse {
         Files.createDirectories(processLogPath)
         val newLogFile = new File(processLogPath.toFile, s"$module.log.$nextIndex")
