@@ -69,11 +69,7 @@ trait ProcBuilder {
     val engineLogTimeout = conf.get(KyuubiConf.ENGINE_LOG_TIMEOUT)
     val currentTime = System.currentTimeMillis()
     val processLogPath = workingDir
-    val totalExistsFile = processLogPath.toFile.listFiles(new FilenameFilter() {
-      override def accept(dir: File, name: String): Boolean = {
-        name.startsWith(module)
-      }
-    })
+    val totalExistsFile = processLogPath.toFile.listFiles { (_, name) => name.startsWith(module) }
     val sorted = totalExistsFile.sortBy(_.getName.split("\\.").last.toInt)
     val nextIndex = if (sorted.isEmpty) {
       0
