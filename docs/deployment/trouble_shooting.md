@@ -249,6 +249,5 @@ Caused by: org.apache.spark.sql.AnalysisException: Cannot modify the value of a 
 ```
 
 This is because Spark-3.1 will check the config which you set and throw exception if the config is static or used in other module (e.g. yarn/core).
-The related PR is https://github.com/apache/spark/pull/27062.
 
 You can add a config `spark.sql.legacy.setCommandRejectsSparkCoreConfs=false` in `spark-defaults.conf` to disable this behavior.
