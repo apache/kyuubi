@@ -105,7 +105,8 @@ trait ProcBuilder {
     val proc = processBuilder.start()
     val reader = Files.newBufferedReader(engineLog.toPath, StandardCharsets.UTF_8)
 
-    val redirect = new Runnable { () => try {
+    val redirect = new Runnable { () => 
+      try {
         val maxErrorSize = conf.get(KyuubiConf.ENGINE_ERROR_MAX_SIZE)
         var line: String = reader.readLine
         while (true) {
