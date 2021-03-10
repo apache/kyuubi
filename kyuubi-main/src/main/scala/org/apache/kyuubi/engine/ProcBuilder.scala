@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine
 
-import java.io.{File, FilenameFilter, IOException}
+import java.io.{File, IOException}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
