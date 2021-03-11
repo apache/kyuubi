@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.hive.service.rpc.thrift.{TRow, TRowSet}
+import org.apache.hive.service.rpc.thrift.TRowSet
 
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.Session
