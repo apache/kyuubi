@@ -1021,6 +1021,8 @@
                             <arg>-feature</arg>
                             <arg>-explaintypes</arg>
                             <arg>-Yno-adapted-args</arg>
+                            <arg>-Xfatal-warnings</arg>
+                            <arg>-Ywarn-unused:imports</arg>
                         </args>
                         <jvmArgs>
                             <jvmArg>-Xms1024m</jvmArg>
@@ -1201,12 +1203,6 @@
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
-                <configuration>
-                    <args>
-                        <arg>-Xfatal-warnings</arg>
-                        <arg>-Ywarn-unused:imports</arg>
-                    </args>
-                </configuration>
             </plugin>
 
             <plugin>
