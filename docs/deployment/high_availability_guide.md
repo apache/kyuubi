@@ -24,7 +24,7 @@ Load balancing aims to optimize all Kyuubi service units usage, maximize through
 
 With Hive JDBC Driver, a client can specify service discovery mode in JDBC connection string, i.e. `serviceDiscoveryMode=zooKeeper;` and set `zooKeeperNameSpace=kyuubiserver;`, then it can randomly pick one of the Kyuubi service uris from the specified ZooKeeper address in the `/kyuubiserver` path.
 
-When we set `spark.kyuubi.ha.enabled` to `true`, load balance mode is activated by default. Please make sure that you specify the correct ZooKeeper address via `spark.kyuubi.ha.zookeeper.quorum` and `spark.kyuubi.ha.zookeeper.client.port`.
+When we set `kyuubi.ha.enabled` to `true`, load balance mode is activated by default. Please make sure that you specify the correct ZooKeeper address via `kyuubi.ha.zookeeper.quorum` and `kyuubi.ha.zookeeper.client.port`.
 
 ## Active/Standby Failover
 
@@ -34,22 +34,23 @@ Active/Standby failover enables you to use a standby Kyuubi server to take over 
 
 A client need not to change any of its behaviours to support load balance or failover mode. But because only the active Kyuubi server will expose its service uri to ZooKeeper in `/kyuubiserver`, clients always randomly pick a server from one and the only choice.
 
-When we set `spark.kyuubi.ha.enabled` to `true` and `spark.kyuubi.ha.mode` to `failover`, failover mode is activated then. Please make sure that you specify the correct ZooKeeper address via `spark.kyuubi.ha.zookeeper.quorum` and `spark.kyuubi.ha.zookeeper.client.port`.
+When we set `kyuubi.ha.enabled` to `true` and `kyuubi.ha.mode` to `failover`, failover mode is activated then. Please make sure that you specify the correct ZooKeeper address via `kyuubi.ha.zookeeper.quorum` and `kyuubi.ha.zookeeper.client.port`.
 
 ## Configuring High Availability
 
 This section describes how to configure high availability. These configurations in the following table can be treat like normal Spark properties by setting them in `spark-defaults.conf` file or via `--conf` parameter in server starting scripts.
 
-Name|Default|Description
----|---|---
-spark.kyuubi.<br />ha.enabled|false|Whether KyuubiServer supports dynamic service discovery for its clients. To support this, each instance of KyuubiServer currently uses ZooKeeper to register itself, when it is brought up. JDBC/ODBC clients should use the ZooKeeper ensemble: spark.kyuubi.ha.zookeeper.quorum in their connection string.
-spark.kyuubi.<br />ha.mode|load-balance|High availability mode, one is load-balance which is used by default, another is failover as master-slave mode.
-spark.kyuubi.<br />ha.zookeeper.quorum|none|Comma separated list of ZooKeeper servers to talk to, when KyuubiServer supports service discovery via Zookeeper.
-spark.kyuubi.<br />ha.zookeeper.namespace|kyuubiserver|The parent node in ZooKeeper used by KyuubiServer when supporting dynamic service discovery.
-spark.kyuubi.<br />ha.zookeeper.client.port|2181|The port of ZooKeeper servers to talk to. If the list of Zookeeper servers specified in spark.kyuubi.zookeeper.quorum does not contain port numbers, this value is used.
-spark.kyuubi.<br />ha.zookeeper.session.timeout|1,200,000|ZooKeeper client's session timeout (in milliseconds). The client is disconnected, and as a result, all locks released, if a heartbeat is not sent in the timeout.
-spark.kyuubi.<br />ha.zookeeper.connection.basesleeptime|1,000|Initial amount of time (in milliseconds) to wait between retries when connecting to the ZooKeeper server when using ExponentialBackoffRetry policy.
-spark.kyuubi.<br />ha.zookeeper.connection.max.retries|3|Max retry times for connecting to the zk server
+Key | Default | Meaning | Since
+--- | --- | --- | ---
+kyuubi\.ha\.zookeeper<br>\.acl\.enabled|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>false</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Set to true if the zookeeper ensemble is kerberized</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.ha\.zookeeper<br>\.connection\.base\.retry<br>\.wait|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>1000</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Initial amount of time to wait between retries to the zookeeper ensemble</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.ha\.zookeeper<br>\.connection\.max<br>\.retries|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>3</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Max retry times for connecting to the zookeeper ensemble</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.ha\.zookeeper<br>\.connection\.max\.retry<br>\.wait|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>30000</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Max amount of time to wait between retries for BONDED_EXPONENTIAL_BACKOFF policy can reach, or max time until elapsed for UNTIL_ELAPSED policy to connect the zookeeper ensemble</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.ha\.zookeeper<br>\.connection\.retry<br>\.policy|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>EXPONENTIAL_BACKOFF</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The retry policy for connecting to the zookeeper ensemble, all candidates are: <ul><li>ONE_TIME</li><li> N_TIME</li><li> EXPONENTIAL_BACKOFF</li><li> BONDED_EXPONENTIAL_BACKOFF</li><li> UNTIL_ELAPSED</li></ul></div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.ha\.zookeeper<br>\.connection\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>15000</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The timeout(ms) of creating the connection to the zookeeper ensemble</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.ha\.zookeeper<br>\.namespace|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>kyuubi</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The root directory for the service to deploy its instance uri. Additionally, it will creates a -[username] suffixed root directory for each application</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.ha\.zookeeper<br>\.quorum|<div style='width: 80pt;word-wrap: break-word;white-space: normal'></div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The connection string for the zookeeper ensemble</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.ha\.zookeeper<br>\.session\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>60000</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The timeout(ms) of a connected session to be idled</div>|<div style='width: 20pt'>1.0.0</div>
 
 ## Additional Documentations
 [Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)  
