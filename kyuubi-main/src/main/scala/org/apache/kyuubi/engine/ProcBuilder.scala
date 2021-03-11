@@ -112,7 +112,7 @@ trait ProcBuilder {
         var line: String = reader.readLine
         while (true) {
           if (containsIgnoreCase(line, "Exception:") &&
-            !line.contains("at ") && !line.startsWith("Caused by:")) {
+              !line.contains("at ") && !line.startsWith("Caused by:")) {
             val sb = new StringBuilder(line)
             error = KyuubiSQLException(sb.toString() + s"\n See more: $engineLog")
             line = reader.readLine()
