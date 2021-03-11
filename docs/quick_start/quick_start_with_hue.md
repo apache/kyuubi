@@ -47,7 +47,7 @@ docker run --rm gethue/hue:latest cat /usr/share/hue/desktop/conf/hue.ini > hue.
 
 ```ini
 [beeswax]
-  # Kyuubi 1.1.x support thrift version from 1 to 9
+  # Kyuubi 1.1.x support thrift version from 1 to 10
   thrift_version=7
   # change to your username to avoid permissions issue for local test
   auth_username=chengpan
