@@ -30,6 +30,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.util.NamedThreadFactory
 
 trait ProcBuilder {
+
   import ProcBuilder._
 
   protected def executable: String
@@ -111,7 +112,7 @@ trait ProcBuilder {
         var line: String = reader.readLine
         while (true) {
           if (containsIgnoreCase(line, "Exception:") &&
-              !line.contains("at ") && !line.startsWith("Caused by:")) {
+            !line.contains("at ") && !line.startsWith("Caused by:")) {
             val sb = new StringBuilder(line)
             error = KyuubiSQLException(sb.toString() + s"\n See more: $engineLog")
             line = reader.readLine()

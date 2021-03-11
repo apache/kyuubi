@@ -19,7 +19,7 @@ package org.apache.kyuubi.operation
 
 import java.util.concurrent.ConcurrentHashMap
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TFetchResultsReq, TRow, TRowSet, TSessionHandle}
+import org.apache.hive.service.rpc.thrift.{TCLIService, TFetchResultsReq, TRowSet, TSessionHandle}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
