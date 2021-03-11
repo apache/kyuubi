@@ -26,8 +26,9 @@ PWD=$(cd "$(dirname "$0")"/.. || exit; pwd)
 
 MVN="${PWD}"/build/mvn
 
-DEP_PR="${PWD}"/dev/dependencyList.txt.tmp
-DEP="${PWD}"/dev/dependencyList.txt
+
+DEP_PR="${PWD}"/dev/dependencyList.tmp
+DEP="${PWD}"/dev/dependencyList
 
 
 function build_classpath() {
@@ -46,12 +47,12 @@ function build_classpath() {
 }
 
 function git_diff() {
-    the_diff="$(git diff ${DEP} ${DEP_PR} | grep -v "dependencyList")"
+    the_diff=$(git diff ${DEP} ${DEP_PR})
+    rm -rf "${DEP_PR}"
     if [[ -n $the_diff ]]; then
         echo "Dependency List Changed Detected: "
-        echo "${the_diff}"
+        echo ${the_diff}
         echo "To update the dependency file, run './build/dependency.sh --replace'."
-        rm -rf "${DEP_PR}"
         exit 1
     fi
 }
