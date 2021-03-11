@@ -1,11 +1,26 @@
 name: Kyuubi
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+      - branch-*
+  pull_request:
+    branches:
+      - master
+      - branch-*
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        profiles:
+          - '-Pspark-3.0'
+          - '-Pspark-3.0 -Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.1 -Dspark.archive.name=spark-3.1.1-bin-hadoop2.7.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.DataLakeTest'
+          - '-Pspark-3.1'
+          - '-Pspark-3.1 -Dhadoop.binary.version=3.2'
     steps:
       - uses: actions/checkout@v2
       - name: Setup JDK 1.8
@@ -38,25 +53,17 @@ jobs:
             ${{ runner.os }}-maven-io-
       - name: Build with Maven
         run: |
-          mvn clean install -Dmaven.javadoc.skip=true -B -V
+          mvn clean install ${{ matrix.profiles }} -Dmaven.javadoc.skip=true -V
           bash <(curl -s https://codecov.io/bash)
-#      - name: Codecov kyuubi-common
-#        uses: codecov/codecov-action@v1
-#        with:
-#          file: ./kyuubi-common/target/codecov/jacoco.xml
-#          flags: kyuubi-common
-#      - name: Codecov kyuubi-ha
-#        uses: codecov/codecov-action@v1
-#        with:
-#          file: ./kyuubi-ha/target/codecov/jacoco.xml
-#          flags: kyuubi-ha
-#      - name: Codecov kyuubi-spark-sql-engine
-#        uses: codecov/codecov-action@v1
-#        with:
-#          file: ./externals/kyuubi-spark-sql-engine/target/codecov/jacoco.xml
-#          flags: kyuubi-spark-sql-engine
-#      - name: Codecov kyuubi-main
-#        uses: codecov/codecov-action@v1
-#        with:
-#          file: ./kyuubi-main/target/codecov/jacoco.xml
-#          flags: kyuubi-main
+      - name: Collect unit tests log
+        run: |
+          mv kyuubi-common/target/unit-tests.log kyuubi-common_unit-tests.log
+          mv kyuubi-main/target/unit-tests.log kyuubi-main_unit-tests.log
+      - name: Upload unit tests log
+        uses: actions/upload-artifact@v2
+        with:
+          name: unit-tests-log
+          path: |
+            kyuubi-common_unit-tests.log
+            kyuubi-main_unit-tests.log
+          retention-days: 30

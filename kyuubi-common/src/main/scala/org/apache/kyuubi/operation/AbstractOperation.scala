@@ -26,6 +26,7 @@ import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_IDLE_TIMEOUT
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationType.OperationType
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
 abstract class AbstractOperation(opType: OperationType, session: Session)
@@ -38,6 +39,8 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
     .map(_.toLong).getOrElse(Duration.ofHours(3).toMillis)
 
   protected final val statementId = handle.identifier.toString
+
+  override def getOperationLog: Option[OperationLog] = None
 
   @volatile protected var state: OperationState = INITIALIZED
   @volatile protected var startTime: Long = _

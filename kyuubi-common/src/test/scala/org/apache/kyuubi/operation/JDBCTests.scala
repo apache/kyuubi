@@ -19,6 +19,10 @@ package org.apache.kyuubi.operation
 
 import java.sql.{Date, SQLException, Timestamp}
 
+import scala.collection.JavaConverters._
+
+import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq, TStatusCode}
+
 trait JDBCTests extends BasicJDBCTests {
   test("execute statement -  select null") {
     withJdbcStatement() { statement =>
@@ -178,10 +182,12 @@ trait JDBCTests extends BasicJDBCTests {
 
   test("execute statement -  select array") {
     withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery("SELECT array() AS col1, array(1) AS col2")
+      val resultSet = statement.executeQuery(
+        "SELECT array() AS col1, array(1) AS col2, array(null) AS col3")
       assert(resultSet.next())
       assert(resultSet.getObject("col1") === "[]")
       assert(resultSet.getObject("col2") === "[1]")
+      assert(resultSet.getObject("col3") === "[null]")
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.ARRAY)
       assert(metaData.getPrecision(1) === Int.MaxValue)
@@ -193,10 +199,12 @@ trait JDBCTests extends BasicJDBCTests {
 
   test("execute statement - select map") {
     withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery("SELECT map() AS col1, map(1, 2, 3, 4) AS col2")
+      val resultSet = statement.executeQuery(
+        "SELECT map() AS col1, map(1, 2, 3, 4) AS col2, map(1, null) AS col3")
       assert(resultSet.next())
-      assert(resultSet.getObject("col1") === "[]")
-      assert(resultSet.getObject("col2") === "[1 -> 2, 3 -> 4]")
+      assert(resultSet.getObject("col1") === "{}")
+      assert(resultSet.getObject("col2") === "{1:2,3:4}")
+      assert(resultSet.getObject("col3") === "{1:null}")
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.JAVA_OBJECT)
       assert(metaData.getPrecision(1) === Int.MaxValue)
@@ -209,10 +217,14 @@ trait JDBCTests extends BasicJDBCTests {
   test("execute statement - select struct") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery(
-        "SELECT struct('1', '2') AS col1, named_struct('a', 2, 'b', 4) AS col2")
+        "SELECT struct('1', '2') AS col1," +
+          " named_struct('a', 2, 'b', 4) AS col2," +
+          " named_struct('a', null, 'b', null) AS col3")
       assert(resultSet.next())
-      assert(resultSet.getObject("col1") === "[1, 2]")
-      assert(resultSet.getObject("col2") === "[2, 4]")
+      assert(resultSet.getObject("col1") === """{"col1":"1","col2":"2"}""")
+      assert(resultSet.getObject("col2") === """{"a":2,"b":4}""")
+      assert(resultSet.getObject("col3") === """{"a":null,"b":null}""")
+
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.STRUCT)
       assert(metaData.getPrecision(1) === Int.MaxValue)
@@ -231,6 +243,88 @@ trait JDBCTests extends BasicJDBCTests {
       }
       assert(e.getMessage
         .contains("The second argument of 'date_sub' function needs to be an integer."))
+    }
+  }
+
+  test("execute statement - select with variable substitution") {
+    withThriftClient { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername("chengpan")
+      req.setPassword("123")
+      val conf = Map(
+        "use:database" -> "default",
+        "set:hiveconf:a" -> "x",
+        "set:hivevar:b" -> "y",
+        "set:metaconf:c" -> "z",
+        "set:system:s" -> "s")
+      req.setConfiguration(conf.asJava)
+      val tOpenSessionResp = client.OpenSession(req)
+      val status = tOpenSessionResp.getStatus
+      assert(status.getStatusCode === TStatusCode.SUCCESS_STATUS)
+
+      val tExecuteStatementReq = new TExecuteStatementReq()
+      tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      // hive matched behaviors
+      tExecuteStatementReq.setStatement(
+        """
+          |select
+          | '${hiveconf:a}' as col_0,
+          | '${hivevar:b}'  as col_1,
+          | '${b}'          as col_2
+          |""".stripMargin)
+      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+      val tFetchResultsReq = new TFetchResultsReq()
+      tFetchResultsReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
+      tFetchResultsReq.setFetchType(0)
+      tFetchResultsReq.setMaxRows(1)
+      val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
+      assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      assert(tFetchResultsResp.getResults.getColumns.get(0).getStringVal.getValues.get(0) === "x")
+      assert(tFetchResultsResp.getResults.getColumns.get(1).getStringVal.getValues.get(0) === "y")
+      assert(tFetchResultsResp.getResults.getColumns.get(2).getStringVal.getValues.get(0) === "y")
+
+      val tExecuteStatementReq2 = new TExecuteStatementReq()
+      tExecuteStatementReq2.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      // spark specific behaviors
+      tExecuteStatementReq2.setStatement(
+        """
+          |select
+          | '${a}'             as col_0,
+          | '${hivevar:a}'     as col_1,
+          | '${spark:a}'       as col_2,
+          | '${sparkconf:a}'   as col_3,
+          | '${not_exist_var}' as col_4,
+          | '${c}'             as col_5,
+          | '${s}'             as col_6
+          |""".stripMargin)
+      val tExecuteStatementResp2 = client.ExecuteStatement(tExecuteStatementReq2)
+      val tFetchResultsReq2 = new TFetchResultsReq()
+      tFetchResultsReq2.setOperationHandle(tExecuteStatementResp2.getOperationHandle)
+      tFetchResultsReq2.setFetchType(0)
+      tFetchResultsReq2.setMaxRows(1)
+      val tFetchResultsResp2 = client.FetchResults(tFetchResultsReq2)
+      assert(tFetchResultsResp2.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      assert(tFetchResultsResp2.getResults.getColumns.get(0).getStringVal.getValues.get(0) === "x")
+      assert(tFetchResultsResp2.getResults.getColumns.get(1).getStringVal.getValues.get(0) === "x")
+      assert(tFetchResultsResp2.getResults.getColumns.get(2).getStringVal.getValues.get(0) === "x")
+      assert(tFetchResultsResp2.getResults.getColumns.get(3).getStringVal.getValues.get(0) === "x")
+      // for not exist vars, hive return "${not_exist_var}" itself, but spark return ""
+      assert(tFetchResultsResp2.getResults.getColumns.get(4).getStringVal.getValues.get(0) === "")
+
+      assert(tFetchResultsResp2.getResults.getColumns.get(5).getStringVal.getValues.get(0) === "z")
+      assert(tFetchResultsResp2.getResults.getColumns.get(6).getStringVal.getValues.get(0) === "s")
+    }
+  }
+
+  test("execute statement - select with builtin functions") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("SELECT substring('kentyao', 1)")
+      assert(resultSet.next())
+      assert(resultSet.getString("substring(kentyao, 1, 2147483647)") === "kentyao")
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.VARCHAR)
+      assert(metaData.getPrecision(1) === Int.MaxValue)
+      assert(metaData.getScale(1) === 0)
     }
   }
 }

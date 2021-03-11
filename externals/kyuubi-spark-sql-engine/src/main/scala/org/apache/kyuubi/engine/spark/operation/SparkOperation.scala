@@ -17,14 +17,19 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import java.time.ZoneId
+import java.util.regex.Pattern
+
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.engine.spark.FetchIterator
+import org.apache.kyuubi.engine.spark.operation.SparkOperation.TIMEZONE_KEY
 import org.apache.kyuubi.operation.{AbstractOperation, OperationState}
-import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.operation.FetchOrientation._
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
@@ -34,11 +39,13 @@ import org.apache.kyuubi.session.Session
 abstract class SparkOperation(spark: SparkSession, opType: OperationType, session: Session)
   extends AbstractOperation(opType, session) {
 
-  protected var iter: Iterator[Row] = _
+  private val timeZone: ZoneId = {
+    spark.conf.getOption(TIMEZONE_KEY).map { timeZoneId =>
+      ZoneId.of(timeZoneId.replaceFirst("(\\+|\\-)(\\d):", "$10$2:"), ZoneId.SHORT_IDS)
+    }.getOrElse(ZoneId.systemDefault())
+  }
 
-  protected final val operationLog: OperationLog =
-    OperationLog.createOperationLog(session.handle, getHandle)
-  override def getOperationLog: Option[OperationLog] = Option(operationLog)
+  protected var iter: FetchIterator[Row] = _
 
   protected def resultSchema: StructType
 
@@ -49,38 +56,33 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
     }
   }
 
-  private def convertPattern(pattern: String, datanucleusFormat: Boolean): String = {
-    val wStr = if (datanucleusFormat) "*" else ".*"
-    pattern
-      .replaceAll("([^\\\\])%", "$1" + wStr)
-      .replaceAll("\\\\%", "%")
-      .replaceAll("^%", wStr)
-      .replaceAll("([^\\\\])_", "$1.")
-      .replaceAll("\\\\_", "_")
-      .replaceAll("^_", ".")
-  }
-
   /**
-   * Convert wildcards and escape sequence of schema pattern from JDBC format to datanucleous/regex
-   * The schema pattern treats empty string also as wildcard
+   * convert SQL 'like' pattern to a Java regular expression.
+   *
+   * Underscores (_) are converted to '.' and percent signs (%) are converted to '.*'.
+   *
+   * @param input the SQL pattern to convert
+   * @return the equivalent Java regular expression of the pattern
    */
-  protected def convertSchemaPattern(pattern: String, datanucleusFormat: Boolean = true): String = {
-    if (StringUtils.isEmpty(pattern) || pattern == "*") {
-      convertPattern("%", datanucleusFormat)
+  def toJavaRegex(input: String): String = {
+    val res = if (StringUtils.isEmpty(input) || input == "*") {
+      "%"
     } else {
-      convertPattern(pattern, datanucleusFormat)
+      input
     }
-  }
+    val in = res.toIterator
+    val out = new StringBuilder()
 
-  /**
-   * Convert wildcards and escape sequence from JDBC format to datanucleous/regex
-   */
-  protected def convertIdentifierPattern(pattern: String, datanucleusFormat: Boolean): String = {
-    if (pattern == null) {
-      convertPattern("%", datanucleusFormat)
-    } else {
-      convertPattern(pattern, datanucleusFormat)
+    while (in.hasNext) {
+      in.next match {
+        case c if c == '\\' && in.hasNext => Pattern.quote(Character.toString(in.next()))
+        case c if c == '\\' && !in.hasNext => Pattern.quote(Character.toString(c))
+        case '_' => out ++= "."
+        case '%' => out ++= ".*"
+        case c => out ++= Character.toString(c)
+      }
     }
+    out.result()
   }
 
   protected def onError(cancel: Boolean = false): PartialFunction[Throwable, Unit] = {
@@ -106,7 +108,6 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
     Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
     setHasResultSet(true)
     setState(OperationState.RUNNING)
-    OperationLog.setCurrentOperationLog(operationLog)
   }
 
   override protected def afterRun(): Unit = {
@@ -133,9 +134,20 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
     validateDefaultFetchOrientation(order)
     assertState(OperationState.FINISHED)
     setHasResultSet(true)
+    order match {
+      case FETCH_NEXT => iter.fetchNext()
+      case FETCH_PRIOR => iter.fetchPrior(rowSetSize);
+      case FETCH_FIRST => iter.fetchAbsolute(0);
+    }
     val taken = iter.take(rowSetSize)
-    RowSet.toTRowSet(taken.toList, resultSchema, getProtocolVersion)
+    val resultRowSet = RowSet.toTRowSet(taken.toList, resultSchema, getProtocolVersion, timeZone)
+    resultRowSet.setStartRowOffset(iter.getPosition)
+    resultRowSet
   }
 
   override def shouldRunAsync: Boolean = false
+}
+
+object SparkOperation {
+  val TIMEZONE_KEY = "spark.sql.session.timeZone"
 }

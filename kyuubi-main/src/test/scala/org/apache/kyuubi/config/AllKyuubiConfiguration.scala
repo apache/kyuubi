@@ -85,9 +85,10 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
         |</div>
         |""".stripMargin)
 
-    writeWith2Line("# Configurations Guide")
+    writeWith2Line("# Introduction to the Kyuubi Configurations System")
 
-    writeWith2Line("Kyuubi provides several ways to configure the system.")
+    writeWith2Line(
+      "Kyuubi provides several ways to configure the system and corresponding engines.")
 
     writeWith2Line("## Environments")
     writeWith2Line("You can configure the environment variables in" +
@@ -217,7 +218,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
     writeWith2Line("In the above case, if there are related configurations from" +
       " [JDBC Connection URL](#via-jdbc-connection-url), `kent` will run his SQL engine" +
       " application on YARN and prefer the Spark AQE to be off, while `bob` will activate" +
-      " his SQL engine application on a Spark standalone cluster w/ 8g heap memory for each" +
+      " his SQL engine application on a Spark standalone cluster with 8g heap memory for each" +
       " executor and obey the Spark AQE behavior of Kyuubi system default. On the other hand," +
       " for those users who do not have custom configurations will use system defaults.")
   }

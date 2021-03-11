@@ -4,7 +4,7 @@
 
 </div>
 
-# Integration w/ Hive Metastore
+# Integration with Hive Metastore
 
 In this section, you will learn how to configure Kyuubi to interact with Hive Metastore.
 
@@ -110,7 +110,7 @@ hive.metastore.uris | thrift://&lt;host&gt;:&lt;port&gt;,thrift://&lt;host1&gt;:
 ### Via kyuubi-defaults.conf
 
 In `$KYUUBI_HOME/conf/kyuubi-defaults.conf`, all _**Hive primitive configurations**_, e.g. `hive.metastore.uris`,
-and the **_Spark derivatives_**, which are prefixed w/ `spark.hive.` or `spark.hadoop.`, e.g `spark.hive.metastore.uris` or `spark.hadoop.hive.metastore.uris`,
+and the **_Spark derivatives_**, which are prefixed with `spark.hive.` or `spark.hadoop.`, e.g `spark.hive.metastore.uris` or `spark.hadoop.hive.metastore.uris`,
 will be loaded as Hive primitives by the Hive client inside the Spark application.
 
 Kyuubi will take these configurations as system wide defaults for all applications it launches.

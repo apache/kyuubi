@@ -32,19 +32,20 @@ import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.engine.spark.shim.SparkShim
+import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.JDBCTests
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
 
   override protected def jdbcUrl: String = getJdbcUrl
+  override def withKyuubiConf: Map[String, String] = Map.empty
 
   test("get table types") {
     withJdbcStatement() { statement =>
       val meta = statement.getConnection.getMetaData
       val types = meta.getTableTypes
-      val expected = SparkShim.sparkTableTypes.toIterator
+      val expected = SparkCatalogShim.sparkTableTypes.toIterator
       while (types.next()) {
         assert(types.getString(TABLE_TYPE) === expected.next())
       }
@@ -73,7 +74,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
       .add("c14", "timestamp", nullable = false, "14")
       .add("c15", "struct<X: bigint,Y: double>", nullable = true, "15")
       .add("c16", "binary", nullable = false, "16")
-      .add("c17", "struct<X: string>", true, "17")
+      .add("c17", "struct<X: string>", nullable = true, "17")
 
     val ddl =
       s"""
@@ -98,7 +99,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
         var pos = 0
 
         while (rowSet.next()) {
-          assert(rowSet.getString(TABLE_CAT) === null)
+          assert(rowSet.getString(TABLE_CAT) === SparkCatalogShim.SESSION_CATALOG)
           assert(rowSet.getString(TABLE_SCHEM) === dftSchema)
           assert(rowSet.getString(TABLE_NAME) === tableName)
           assert(rowSet.getString(COLUMN_NAME) === schema(pos).name)
@@ -142,9 +143,6 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
 
       val rowSet = metaData.getColumns(null, "*", "not_exist", "not_exist")
       assert(!rowSet.next())
-
-      val e1 = intercept[HiveSQLException](metaData.getColumns(null, null, null, "*"))
-      assert(e1.getCause.getMessage contains "Dangling meta character '*' near index 0\n*\n^")
     }
   }
 
@@ -157,7 +155,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
       val data = statement.getConnection.getMetaData
       val rowSet = data.getColumns("", "global_temp", viewName, null)
       while (rowSet.next()) {
-        assert(rowSet.getString(TABLE_CAT) === null)
+        assert(rowSet.getString(TABLE_CAT) === SparkCatalogShim.SESSION_CATALOG)
         assert(rowSet.getString(TABLE_SCHEM) === "global_temp")
         assert(rowSet.getString(TABLE_NAME) === viewName)
         assert(rowSet.getString(COLUMN_NAME) === "i")
@@ -184,20 +182,20 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
       val data = statement.getConnection.getMetaData
       val rowSet = data.getColumns("", "global_temp", viewName, "n")
       while (rowSet.next()) {
-        assert(rowSet.getString("TABLE_CAT") === null)
-        assert(rowSet.getString("TABLE_SCHEM") === "global_temp")
-        assert(rowSet.getString("TABLE_NAME") === viewName)
-        assert(rowSet.getString("COLUMN_NAME") === "n")
-        assert(rowSet.getInt("DATA_TYPE") === java.sql.Types.NULL)
-        assert(rowSet.getString("TYPE_NAME").equalsIgnoreCase(NullType.sql))
-        assert(rowSet.getInt("COLUMN_SIZE") === 1)
-        assert(rowSet.getInt("DECIMAL_DIGITS") === 0)
-        assert(rowSet.getInt("NUM_PREC_RADIX") === 0)
-        assert(rowSet.getInt("NULLABLE") === 1)
-        assert(rowSet.getString("REMARKS") === "")
-        assert(rowSet.getInt("ORDINAL_POSITION") === 0)
-        assert(rowSet.getString("IS_NULLABLE") === "YES")
-        assert(rowSet.getString("IS_AUTO_INCREMENT") === "NO")
+        assert(rowSet.getString(TABLE_CAT) === SparkCatalogShim.SESSION_CATALOG)
+        assert(rowSet.getString(TABLE_SCHEM) === "global_temp")
+        assert(rowSet.getString(TABLE_NAME) === viewName)
+        assert(rowSet.getString(COLUMN_NAME) === "n")
+        assert(rowSet.getInt(DATA_TYPE) === java.sql.Types.NULL)
+        assert(rowSet.getString(TYPE_NAME).equalsIgnoreCase(NullType.sql))
+        assert(rowSet.getInt(COLUMN_SIZE) === 1)
+        assert(rowSet.getInt(DECIMAL_DIGITS) === 0)
+        assert(rowSet.getInt(NUM_PREC_RADIX) === 0)
+        assert(rowSet.getInt(NULLABLE) === 1)
+        assert(rowSet.getString(REMARKS) === "")
+        assert(rowSet.getInt(ORDINAL_POSITION) === 0)
+        assert(rowSet.getString(IS_NULLABLE) === "YES")
+        assert(rowSet.getString(IS_AUTO_INCREMENT) === "NO")
       }
     }
   }
@@ -236,6 +234,55 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
       assert(metaData.getPrecision(2) == 3)
       assert(metaData.getScale(1) == 1)
       assert(metaData.getScale(2) == 2)
+    }
+  }
+
+  test("execute statement -  select column name with dots") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("select 'tmp.hello'")
+      assert(resultSet.next())
+      assert(resultSet.getString("tmp.hello") === "tmp.hello")
+    }
+  }
+
+  test("test fetch orientation") {
+    val sql = "SELECT id FROM range(2)"
+
+    withSessionHandle { (client, handle) =>
+      val req = new TExecuteStatementReq()
+      req.setSessionHandle(handle)
+      req.setStatement(sql)
+      val tExecuteStatementResp = client.ExecuteStatement(req)
+      val opHandle = tExecuteStatementResp.getOperationHandle
+      waitForOperationToComplete(client, opHandle)
+
+      // fetch next from before first row
+      val tFetchResultsReq1 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_NEXT, 1)
+      val tFetchResultsResp1 = client.FetchResults(tFetchResultsReq1)
+      assert(tFetchResultsResp1.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      val idSeq1 = tFetchResultsResp1.getResults.getColumns.get(0).getI64Val.getValues.asScala.toSeq
+      assertResult(Seq(0L))(idSeq1)
+
+      // fetch next from first row
+      val tFetchResultsReq2 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_NEXT, 1)
+      val tFetchResultsResp2 = client.FetchResults(tFetchResultsReq2)
+      assert(tFetchResultsResp2.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      val idSeq2 = tFetchResultsResp2.getResults.getColumns.get(0).getI64Val.getValues.asScala.toSeq
+      assertResult(Seq(1L))(idSeq2)
+
+      // fetch prior from second row, expected got first row
+      val tFetchResultsReq3 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_PRIOR, 1)
+      val tFetchResultsResp3 = client.FetchResults(tFetchResultsReq3)
+      assert(tFetchResultsResp3.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      val idSeq3 = tFetchResultsResp3.getResults.getColumns.get(0).getI64Val.getValues.asScala.toSeq
+      assertResult(Seq(0L))(idSeq3)
+
+      // fetch first
+      val tFetchResultsReq4 = new TFetchResultsReq(opHandle, TFetchOrientation.FETCH_FIRST, 3)
+      val tFetchResultsResp4 = client.FetchResults(tFetchResultsReq4)
+      assert(tFetchResultsResp4.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      val idSeq4 = tFetchResultsResp4.getResults.getColumns.get(0).getI64Val.getValues.asScala.toSeq
+      assertResult(Seq(0L, 1L))(idSeq4)
     }
   }
 
@@ -463,7 +510,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
       assert(operationManager.getOpenSparkSessionCount === 1)
 
       val tExecuteStatementReq = new TExecuteStatementReq()
-      tExecuteStatementReq.setSessionHandle( tOpenSessionResp.getSessionHandle)
+      tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
       tExecuteStatementReq.setRunAsync(true)
       tExecuteStatementReq.setStatement("set -v")
       val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
@@ -604,6 +651,76 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
       val status = tExecuteStatementResp1.getStatus
       assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
       assert(status.getErrorMessage startsWith s"Invalid SessionHandle [")
+    }
+  }
+
+  test("test variable substitution") {
+    withThriftClient { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername("chengpan")
+      req.setPassword("123")
+      val conf = Map(
+        "use:database" -> "default",
+        "set:hiveconf:a" -> "x",
+        "set:hivevar:b" -> "y",
+        "set:metaconf:c" -> "z",
+        "set:system:s" -> "s")
+      req.setConfiguration(conf.asJava)
+      val tOpenSessionResp = client.OpenSession(req)
+      val status = tOpenSessionResp.getStatus
+      assert(status.getStatusCode === TStatusCode.SUCCESS_STATUS)
+
+      val tExecuteStatementReq = new TExecuteStatementReq()
+      tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      // hive matched behaviors
+      tExecuteStatementReq.setStatement(
+        """
+          |select
+          | '${hiveconf:a}' as col_0,
+          | '${hivevar:b}'  as col_1,
+          | '${b}'          as col_2
+          |""".stripMargin)
+      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+      val tFetchResultsReq = new TFetchResultsReq()
+      tFetchResultsReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
+      tFetchResultsReq.setFetchType(0)
+      tFetchResultsReq.setMaxRows(1)
+      val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
+      assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      assert(tFetchResultsResp.getResults.getColumns.get(0).getStringVal.getValues.get(0) === "x")
+      assert(tFetchResultsResp.getResults.getColumns.get(1).getStringVal.getValues.get(0) === "y")
+      assert(tFetchResultsResp.getResults.getColumns.get(2).getStringVal.getValues.get(0) === "y")
+
+      val tExecuteStatementReq2 = new TExecuteStatementReq()
+      tExecuteStatementReq2.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      // spark specific behaviors
+      tExecuteStatementReq2.setStatement(
+        """
+          |select
+          | '${a}'             as col_0,
+          | '${hivevar:a}'     as col_1,
+          | '${spark:a}'       as col_2,
+          | '${sparkconf:a}'   as col_3,
+          | '${not_exist_var}' as col_4,
+          | '${c}'             as col_5,
+          | '${s}'             as col_6
+          |""".stripMargin)
+      val tExecuteStatementResp2 = client.ExecuteStatement(tExecuteStatementReq2)
+      val tFetchResultsReq2 = new TFetchResultsReq()
+      tFetchResultsReq2.setOperationHandle(tExecuteStatementResp2.getOperationHandle)
+      tFetchResultsReq2.setFetchType(0)
+      tFetchResultsReq2.setMaxRows(1)
+      val tFetchResultsResp2 = client.FetchResults(tFetchResultsReq2)
+      assert(tFetchResultsResp2.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      assert(tFetchResultsResp2.getResults.getColumns.get(0).getStringVal.getValues.get(0) === "x")
+      assert(tFetchResultsResp2.getResults.getColumns.get(1).getStringVal.getValues.get(0) === "x")
+      assert(tFetchResultsResp2.getResults.getColumns.get(2).getStringVal.getValues.get(0) === "x")
+      assert(tFetchResultsResp2.getResults.getColumns.get(3).getStringVal.getValues.get(0) === "x")
+      // for not exist vars, hive return "${not_exist_var}" itself, but spark return ""
+      assert(tFetchResultsResp2.getResults.getColumns.get(4).getStringVal.getValues.get(0) === "")
+
+      assert(tFetchResultsResp2.getResults.getColumns.get(5).getStringVal.getValues.get(0) === "z")
+      assert(tFetchResultsResp2.getResults.getColumns.get(6).getStringVal.getValues.get(0) === "s")
     }
   }
 

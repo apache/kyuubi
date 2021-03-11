@@ -8,9 +8,9 @@
 </div>
 
 
-# Configurations Guide
+# Introduction to the Kyuubi Configurations System
 
-Kyuubi provides several ways to configure the system.
+Kyuubi provides several ways to configure the system and corresponding engines.
 
 ## Environments
 
@@ -89,155 +89,13 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 #
 
 ## Kyuubi Configurations
+
 #
 # kyuubi.authentication           NONE
 # kyuubi.frontend.bind.port       10009
 #
 
-## Spark Configurations, they will override those in $SPARK_HOME/conf/spark-defaults.conf
-## Dummy Ones
-# spark.master                      local
-# spark.submit.deployMode           client
-# spark.ui.enabled                  false
-# spark.ui.port                     0
-# spark.driver.extraJavaOptions     -agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005
-# spark.scheduler.mode              FAIR
-# spark.serializer                  org.apache.spark.serializer.KryoSerializer
-# spark.kryoserializer.buffer.max   128m
-# spark.buffer.size                 131072
-# spark.local.dir                   ./local
-# spark.network.timeout             120s
-# spark.cleaner.periodicGC.interval 10min
-
-## Spark Driver / AM Sizing
-# spark.driver.cores            4
-# spark.driver.memory           8g
-# spark.driver.memoryOverhead   2048
-# spark.driver.extraJavaOptions -XX:MaxDirectMemorySize=2048m
-# spark.driver.maxResultSize    3g
-# spark.yarn.am.cores           4
-# spark.yarn.am.memory	        2g
-# spark.yarn.am.memoryOverhead	1024
-
-## Spark Executor Sizing
-# spark.executor.instances        100
-# spark.executor.cores            4
-# spark.executor.memory           16g
-# spark.executor.memoryOverhead   4096
-# spark.executor.extraJavaOptions -XX:MaxDirectMemorySize=2048m
-
-## Executor Heartbeat
-# spark.storage.blockManagerHeartbeatTimeoutMs                       300s
-# spark.executor.heartbeatInterval                                   15s
-# spark.executor.heartbeat.maxFailures                               30
-
-
-## Event Queue Capacity
-# spark.scheduler.revive.interval                                    1s
-# spark.scheduler.listenerbus.eventqueue.capacity                    100000
-# spark.scheduler.listenerbus.eventqueue.executorManagement.capacity 100000
-# spark.scheduler.listenerbus.eventqueue.appStatus.capacity          100000
-# spark.scheduler.listenerbus.eventqueue.shared.capacity             100000
-# spark.scheduler.listenerbus.eventqueue.eventLog.capacity           20000
-
-## Dynamic Allocation
-# spark.dynamicAllocation.enabled                           true
-# spark.dynamicAllocation.initialExecutors                  10
-# spark.dynamicAllocation.minExecutors                      10
-# spark.dynamicAllocation.maxExecutors                      500
-# spark.dynamicAllocation.executorAllocationRatio           0.8
-# spark.dynamicAllocation.executorIdleTimeout               60s
-# spark.dynamicAllocation.cachedExecutorIdleTimeout         1h
-# spark.dynamicAllocation.shuffleTracking.enabled           false
-# spark.dynamicAllocation.shuffleTracking.timeout           30min
-# spark.dynamicAllocation.schedulerBacklogTimeout           1s
-# spark.dynamicAllocation.sustainedSchedulerBacklogTimeout  1s
-
-## External Shuffle Service
-# spark.shuffle.service.enabled                             true
-# spark.shuffle.service.fetch.rdd.enabled                   true
-# spark.shuffle.service.port                                7337
-
-## Speculation
-# spark.speculation                         true
-# spark.speculation.interval                1s
-# spark.speculation.multiplier              1.5
-# spark.speculation.quantile                0.9
-# spark.speculation.task.duration.threshold 10min
-
-## Shuffle Behavior
-# spark.shuffle.compress                                    true
-# spark.shuffle.detectCorrupt                               true
-# spark.shuffle.detectCorrupt.useExtraMemory                true
-# spark.shuffle.file.buffer                                 64k
-# spark.shuffle.unsafe.file.output.buffer                   64k
-# spark.shuffle.spill.diskWriteBufferSize                   8k
-# spark.shuffle.spill.compress                              true
-# spark.shuffle.mapOutput.dispatcher.numThreads             12
-# spark.shuffle.mapOutput.parallelAggregationThreshold      5000
-# spark.shuffle.readHostLocalDisk                           true
-# spark.shuffle.io.maxRetries                               10
-# spark.shuffle.io.retryWait                                6s
-# spark.shuffle.io.preferDirectBufs                         false
-# spark.shuffle.io.serverThreads                            8
-# spark.shuffle.io.clientThreads                            8
-# spark.shuffle.io.connectionTimeout                        240s
-# spark.shuffle.registration.timeout                        6000
-# spark.shuffle.registration.maxAttempts                    10
-# spark.shuffle.sync                                        false
-# spark.shuffle.useOldFetchProtocol                         true
-# spark.shuffle.unsafe.fastMergeEnabled                     true
-# spark.shuffle.minNumPartitionsToHighlyCompress            100
-# spark.network.maxRemoteBlockSizeFetchToMem                128m
-# spark.reducer.maxSizeInFlight                             48m
-# spark.reducer.maxReqsInFlight                             256
-# spark.reducer.maxBlocksInFlightPerAddress                 256
-
-## Data Locality for Task Schedule
-# spark.locality.wait                                       0s
-# spark.locality.wait.process                               0s
-# spark.locality.wait.node                                  0s
-# spark.locality.wait.rack                                  0s
-
-## Event Logging for History Server
-# spark.eventLog.enabled                            true
-# spark.eventLog.dir                                hdfs://hadoop-dfs/history
-# spark.eventLog.compress                           true
-# spark.eventLog.longForm.enabled                   true
-# spark.eventLog.rolling.enabled                    true
-# spark.yarn.historyServer.address                  http://historyserver:18080
-
-## SQL
-## General SQL Settings
-# spark.sql.shuffle.partitions                              8192
-# spark.sql.optimizer.inSetConversionThreshold              2
-# spark.sql.autoBroadcastJoinThreshold                      64m
-# spark.sql.broadcastTimeout                                600s
-# spark.sql.join.preferSortMergeJoin                        true
-# spark.sql.hive.metastorePartitionPruning                  true
-# spark.sql.parquet.filterPushdown                          true
-# spark.sql.parquet.recordLevelFilter.enabled	            true
-# spark.sql.statistics.fallBackToHdfs	                    true
-## Dynamic Partition Pruning
-# spark.sql.optimizer.dynamicPartitionPruning.enabled             true
-# spark.sql.optimizer.dynamicPartitionPruning.useStats            true
-# spark.sql.optimizer.dynamicPartitionPruning.fallbackFilterRatio 0.5
-# spark.sql.optimizer.dynamicPartitionPruning.reuseBroadcastOnly  true
-
-# Adaptive Query Execution
-# spark.sql.adaptive.enabled                                true
-# spark.sql.adaptive.forceApply                             false
-# spark.sql.adaptive.logLevel                               info
-# spark.sql.adaptive.advisoryPartitionSizeInBytes           128m
-# spark.sql.adaptive.coalescePartitions.enabled             true
-# spark.sql.adaptive.coalescePartitions.minPartitionNum     64
-# spark.sql.adaptive.coalescePartitions.initialPartitionNum
-# spark.sql.adaptive.fetchShuffleBlocksInBatch              true
-# spark.sql.adaptive.localShuffleReader.enabled             true
-# spark.sql.adaptive.skewJoin.enabled                       true
-# spark.sql.adaptive.skewJoin.skewedPartitionFactor         5
-# spark.sql.adaptive.skewJoin.skewedPartitionThresholdInBytes 256m
-# spark.sql.adaptive.nonEmptyPartitionRatioForBroadcastJoin 0.2
+# Details in https://kyuubi.readthedocs.io/en/latest/deployment/settings.html
 ```
 ### Authentication
 
@@ -319,13 +177,14 @@ kyuubi\.operation<br>\.status\.polling<br>\.timeout|<div style='width: 80pt;word
 Key | Default | Meaning | Since
 --- | --- | --- | ---
 kyuubi\.session\.check<br>\.interval|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT5M</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The check interval for session timeout.</div>|<div style='width: 20pt'>1.0.0</div>
-kyuubi\.session\.engine<br>\.check\.interval|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT10M</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The check interval for engine timeout</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.session\.engine<br>\.check\.interval|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT5M</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The check interval for engine timeout</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session\.engine<br>\.idle\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT30M</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>engine timeout, the engine will self-terminate when it's not accessed for this duration</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session\.engine<br>\.initialize\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT1M</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Timeout for starting the background engine, e.g. SparkSQLEngine.</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session\.engine<br>\.log\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT24H</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>If we use Spark as the engine then the session submit log is the console output of spark-submit. We will retain the session submit log until over the config value.</div>|<div style='width: 20pt'>1.1.0</div>
 kyuubi\.session\.engine<br>\.login\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT15S</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The timeout(ms) of creating the connection to remote sql query engine</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session\.engine<br>\.share\.level|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>USER</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The SQL engine App will be shared in different levels, available configs are: <ul> <li>CONNECTION: the App will not be shared but only used by the current client connection</li> <li>USER: the App will be shared by all sessions created by a unique username</li> <li>GROUP: the App will be shared within a certain group (NOT YET)</li> <li>SERVER: the App will be shared by Kyuubi servers</li></ul></div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session\.engine<br>\.spark\.main\.resource|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The package used to create Spark SQL engine remote application. If it is undefined, Kyuubi will use the default</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.session\.engine<br>\.startup\.error\.max<br>\.size|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>8192</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>During engine bootstrapping, if error occurs, using this config to limit the length error message(characters).</div>|<div style='width: 20pt'>1.1.0</div>
 kyuubi\.session<br>\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT6H</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>session timeout, it will be closed when it's not accessed for this duration</div>|<div style='width: 20pt'>1.0.0</div>
 
 ### Zookeeper
@@ -413,5 +272,5 @@ ___bob___.spark.master=spark://master:7077
 ___bob___.spark.executor.memory=8g
 ```
 
-In the above case, if there are related configurations from [JDBC Connection URL](#via-jdbc-connection-url), `kent` will run his SQL engine application on YARN and prefer the Spark AQE to be off, while `bob` will activate his SQL engine application on a Spark standalone cluster w/ 8g heap memory for each executor and obey the Spark AQE behavior of Kyuubi system default. On the other hand, for those users who do not have custom configurations will use system defaults.
+In the above case, if there are related configurations from [JDBC Connection URL](#via-jdbc-connection-url), `kent` will run his SQL engine application on YARN and prefer the Spark AQE to be off, while `bob` will activate his SQL engine application on a Spark standalone cluster with 8g heap memory for each executor and obey the Spark AQE behavior of Kyuubi system default. On the other hand, for those users who do not have custom configurations will use system defaults.
 

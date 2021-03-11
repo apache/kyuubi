@@ -19,6 +19,13 @@ package org.apache.kyuubi.schema
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
+import java.sql.Timestamp
+import java.text.SimpleDateFormat
+import java.time.{Instant, LocalDate, ZoneId}
+import java.time.chrono.IsoChronology
+import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder, ResolverStyle}
+import java.time.temporal.ChronoField
+import java.util.{Date, Locale}
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
@@ -29,34 +36,39 @@ import org.apache.spark.sql.types._
 
 object RowSet {
 
-  def toTRowSet(rows: Seq[Row], schema: StructType, protocolVersion: TProtocolVersion): TRowSet = {
+  def toTRowSet(
+      rows: Seq[Row],
+      schema: StructType,
+      protocolVersion: TProtocolVersion,
+      timeZone: ZoneId): TRowSet = {
     if (protocolVersion.getValue < TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6.getValue) {
-      toRowBasedSet(rows, schema)
+      toRowBasedSet(rows, schema, timeZone)
     } else {
-      toColumnBasedSet(rows, schema)
+      toColumnBasedSet(rows, schema, timeZone)
     }
   }
 
-  def toRowBasedSet(rows: Seq[Row], schema: StructType): TRowSet = {
+  def toRowBasedSet(rows: Seq[Row], schema: StructType, timeZone: ZoneId): TRowSet = {
     val tRows = rows.map { row =>
       val tRow = new TRow()
-      (0 until row.length).map(i => toTColumnValue(i, row, schema)).foreach(tRow.addToColVals)
+      (0 until row.length).map(i => toTColumnValue(i, row, schema, timeZone))
+        .foreach(tRow.addToColVals)
       tRow
     }.asJava
     new TRowSet(0, tRows)
   }
 
-  def toColumnBasedSet(rows: Seq[Row], schema: StructType): TRowSet = {
+  def toColumnBasedSet(rows: Seq[Row], schema: StructType, timeZone: ZoneId): TRowSet = {
     val size = rows.length
     val tRowSet = new TRowSet(0, new java.util.ArrayList[TRow](size))
     schema.zipWithIndex.foreach { case (filed, i) =>
-      val tColumn = toTColumn(rows, i, filed.dataType)
+      val tColumn = toTColumn(rows, i, filed.dataType, timeZone)
       tRowSet.addToColumns(tColumn)
     }
     tRowSet
   }
 
-  private def toTColumn(rows: Seq[Row], ordinal: Int, typ: DataType): TColumn = {
+  private def toTColumn(rows: Seq[Row], ordinal: Int, typ: DataType, timeZone: ZoneId): TColumn = {
     val nulls = new java.util.BitSet()
     typ match {
       case BooleanType =>
@@ -88,6 +100,10 @@ object RowSet {
         val values = getOrSetAsNull[java.lang.Double](rows, ordinal, nulls, 0.toDouble)
         TColumn.doubleVal(new TDoubleColumn(values, nulls))
 
+      case StringType =>
+        val values = getOrSetAsNull[java.lang.String](rows, ordinal, nulls, "")
+        TColumn.stringVal(new TStringColumn(values, nulls))
+
       case BinaryType =>
         val values = getOrSetAsNull[Array[Byte]](rows, ordinal, nulls, Array())
           .asScala
@@ -96,7 +112,14 @@ object RowSet {
         TColumn.binaryVal(new TBinaryColumn(values, nulls))
 
       case _ =>
-        val values = getOrSetAsNull[java.lang.String](rows, ordinal, nulls, "")
+        val values = rows.zipWithIndex.toList.map { case (row, i) =>
+          nulls.set(i, row.isNullAt(ordinal))
+          if (row.isNullAt(ordinal)) {
+            ""
+          } else {
+            toHiveString((row.get(ordinal), typ), timeZone)
+          }
+        }.asJava
         TColumn.stringVal(new TStringColumn(values, nulls))
     }
   }
@@ -127,7 +150,11 @@ object RowSet {
     ByteBuffer.wrap(bitSet.toByteArray)
   }
 
-  private[this] def toTColumnValue(ordinal: Int, row: Row, types: StructType): TColumnValue = {
+  private def toTColumnValue(
+      ordinal: Int,
+      row: Row,
+      types: StructType,
+      timeZone: ZoneId): TColumnValue = {
     types(ordinal).dataType match {
       case BooleanType =>
         val boolValue = new TBoolValue
@@ -164,19 +191,90 @@ object RowSet {
         if (!row.isNullAt(ordinal)) tDoubleValue.setValue(row.getDouble(ordinal))
         TColumnValue.doubleVal(tDoubleValue)
 
-      case BinaryType =>
-        val tStrValue = new TStringValue
-        if (!row.isNullAt(ordinal)) {
-          tStrValue.setValue(new String(row.getAs[Array[Byte]](ordinal), StandardCharsets.UTF_8))
-        }
-        TColumnValue.stringVal(tStrValue)
+      case StringType =>
+        val tStringValue = new TStringValue
+        if (!row.isNullAt(ordinal)) tStringValue.setValue(row.getString(ordinal))
+        TColumnValue.stringVal(tStringValue)
 
       case _ =>
         val tStrValue = new TStringValue
         if (!row.isNullAt(ordinal)) {
-          tStrValue.setValue(row.getString(ordinal))
+          tStrValue.setValue(
+            toHiveString((row.get(ordinal), types(ordinal).dataType), timeZone))
         }
         TColumnValue.stringVal(tStrValue)
+    }
+  }
+
+  private def createBuilder(): DateTimeFormatterBuilder = {
+    new DateTimeFormatterBuilder().parseCaseInsensitive()
+  }
+
+  private lazy val dateFormatter = {
+    createBuilder().appendPattern("yyyy-MM-dd")
+      .toFormatter(Locale.US)
+      .withChronology(IsoChronology.INSTANCE)
+  }
+
+  private lazy val simpleDateFormatter = new SimpleDateFormat("yyyy-MM-dd", Locale.US)
+
+  private lazy val timestampFormatter: DateTimeFormatter = {
+    createBuilder().appendPattern("yyyy-MM-dd HH:mm:ss")
+      .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
+      .toFormatter(Locale.US)
+      .withChronology(IsoChronology.INSTANCE)
+  }
+
+  private lazy val simpleTimestampFormatter = {
+    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
+  }
+
+  /**
+   * A simpler impl of Spark's toHiveString
+   */
+  def toHiveString(dataWithType: (Any, DataType), timeZone: ZoneId): String = {
+    dataWithType match {
+      case (null, _) =>
+        // Only match nulls in nested type values
+        "null"
+
+      case (d: Date, DateType) =>
+        simpleDateFormatter.format(d)
+
+      case (ld: LocalDate, DateType) =>
+        dateFormatter.format(ld)
+
+      case (t: Timestamp, TimestampType) =>
+        simpleTimestampFormatter.format(t)
+
+      case (i: Instant, TimestampType) =>
+        timestampFormatter.withZone(timeZone).format(i)
+
+      case (bin: Array[Byte], BinaryType) =>
+        new String(bin, StandardCharsets.UTF_8)
+
+      case (decimal: java.math.BigDecimal, DecimalType()) =>
+        decimal.toPlainString
+
+      case (s: String, StringType) =>
+        // Only match string in nested type values
+        "\"" + s + "\""
+
+      case (seq: scala.collection.Seq[_], ArrayType(typ, _)) =>
+        seq.map(v => (v, typ)).map(e => toHiveString(e, timeZone)).mkString("[", ",", "]")
+
+      case (m: Map[_, _], MapType(kType, vType, _)) =>
+        m.map { case (key, value) =>
+          toHiveString((key, kType), timeZone) + ":" + toHiveString((value, vType), timeZone)
+        }.toSeq.sorted.mkString("{", ",", "}")
+
+      case (struct: Row, StructType(fields)) =>
+        struct.toSeq.zip(fields).map { case (v, t) =>
+          s""""${t.name}":${toHiveString((v, t.dataType), timeZone)}"""
+        }.mkString("{", ",", "}")
+
+      case (other, _) =>
+        other.toString
     }
   }
 }

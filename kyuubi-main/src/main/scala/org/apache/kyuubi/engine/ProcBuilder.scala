@@ -17,13 +17,16 @@
 
 package org.apache.kyuubi.engine
 
-import java.io.{File, FilenameFilter, IOException}
+import java.io.{File, IOException}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
 import scala.collection.JavaConverters._
 
+import org.apache.commons.lang3.StringUtils.containsIgnoreCase
+
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.util.NamedThreadFactory
 
 trait ProcBuilder {
@@ -41,11 +44,11 @@ trait ProcBuilder {
 
   protected def commands: Array[String]
 
+  protected def conf: KyuubiConf
+
   protected def env: Map[String, String]
 
   protected val workingDir: Path
-
-  protected val processLogRetainTimeMillis: Long
 
   final lazy val processBuilder: ProcessBuilder = {
     val pb = new ProcessBuilder(commands: _*)
@@ -53,36 +56,72 @@ trait ProcBuilder {
     val envs = pb.environment()
     envs.putAll(env.asJava)
     pb.directory(workingDir.toFile)
+    pb.redirectError(engineLog)
+    pb.redirectOutput(engineLog)
     pb
   }
 
   @volatile private var error: Throwable = UNCAUGHT_ERROR
   // Visible for test
-  private[kyuubi] var logCaptureThread: Thread = null
+  private[kyuubi] var logCaptureThread: Thread = _
+
+  private[kyuubi] lazy val engineLog: File = ProcBuilder.synchronized {
+    val engineLogTimeout = conf.get(KyuubiConf.ENGINE_LOG_TIMEOUT)
+    val currentTime = System.currentTimeMillis()
+    val processLogPath = workingDir
+    val totalExistsFile = processLogPath.toFile.listFiles { (_, name) => name.startsWith(module) }
+    val sorted = totalExistsFile.sortBy(_.getName.split("\\.").last.toInt)
+    val nextIndex = if (sorted.isEmpty) {
+      0
+    } else {
+      sorted.last.getName.split("\\.").last.toInt + 1
+    }
+    val file = sorted.find(_.lastModified() < currentTime - engineLogTimeout)
+      .map { existsFile =>
+        try {
+          // Here we want to overwrite the exists log file
+          existsFile.delete()
+          existsFile.createNewFile()
+          existsFile
+        } catch {
+          case e: Exception =>
+            warn(s"failed to delete engine log file: ${existsFile.getAbsolutePath}", e)
+            null
+        }
+      }
+      .getOrElse {
+        Files.createDirectories(processLogPath)
+        val newLogFile = new File(processLogPath.toFile, s"$module.log.$nextIndex")
+        newLogFile.createNewFile()
+        newLogFile
+      }
+    file.setLastModified(currentTime)
+    info(s"Logging to $file")
+    file
+  }
 
   final def start: Process = synchronized {
-    val procLogFile = getRollAppendProcessLogFile(workingDir, module, processLogRetainTimeMillis)
-    processBuilder.redirectError(procLogFile)
-    processBuilder.redirectOutput(procLogFile)
 
     val proc = processBuilder.start()
-    val reader = Files.newBufferedReader(procLogFile.toPath, StandardCharsets.UTF_8)
+    val reader = Files.newBufferedReader(engineLog.toPath, StandardCharsets.UTF_8)
 
-    val redirect = new Runnable {
-      override def run(): Unit = try {
+    val redirect: Runnable = { () =>
+      try {
+        val maxErrorSize = conf.get(KyuubiConf.ENGINE_ERROR_MAX_SIZE)
         var line: String = reader.readLine
         while (true) {
-          if (containsIgnoreCase(line, "Exception") && !line.contains("at ") &&
-            !line.startsWith("Caused by:")) {
+          if (containsIgnoreCase(line, "Exception:") &&
+              !line.contains("at ") && !line.startsWith("Caused by:")) {
             val sb = new StringBuilder(line)
-
+            error = KyuubiSQLException(sb.toString() + s"\n See more: $engineLog")
             line = reader.readLine()
-            while (line != null && (line.startsWith("\tat ") || line.startsWith("Caused by: "))) {
+            while (sb.length < maxErrorSize && line != null &&
+              (line.startsWith("\tat ") || line.startsWith("Caused by: "))) {
               sb.append("\n" + line)
               line = reader.readLine()
             }
 
-            error = KyuubiSQLException(sb.toString())
+            error = KyuubiSQLException(sb.toString() + s"\n See more: $engineLog")
           }
           line = reader.readLine()
         }
@@ -107,57 +146,19 @@ trait ProcBuilder {
 
   def getError: Throwable = synchronized {
     if (error == UNCAUGHT_ERROR) {
-      Thread.sleep(3000)
+      Thread.sleep(1000)
     }
-    error
+    error match {
+      case UNCAUGHT_ERROR => KyuubiSQLException(
+        s"Failed to detect the root cause, please check $engineLog at server side if necessary")
+      case other => other
+    }
   }
 }
 
 object ProcBuilder extends Logging {
   private val PROC_BUILD_LOGGER = new NamedThreadFactory("process-logger-capture", daemon = true)
 
-  private val UNCAUGHT_ERROR = KyuubiSQLException("Uncaught error")
+  private val UNCAUGHT_ERROR = new RuntimeException("Uncaught error")
 
-  def containsIgnoreCase(str: String, searchStr: String): Boolean = {
-    if (str == null || searchStr == null) {
-      false
-    } else {
-      val max = str.length - searchStr.length
-      var i = 0
-      while (i <= max) {
-        if (str.regionMatches(true, i, searchStr, 0, searchStr.length)) {
-          return true
-        }
-        i += 1
-      }
-      false
-    }
-  }
-
-  private def getRollAppendProcessLogFile(
-      workingDir: Path, module: String, processLogRetainTimeMillis: Long): File = synchronized {
-    val currentTime = System.currentTimeMillis()
-    val processLogPath = workingDir
-    val totalExistsFile = processLogPath.toFile.listFiles(new FilenameFilter() {
-      override def accept(dir: File, name: String): Boolean = {
-        name.startsWith(module)
-      }
-    })
-    val sorted = totalExistsFile.sortBy(_.getName.split("\\.").last.toInt)
-    val nextIndex = if (sorted.isEmpty) {
-      0
-    } else {
-      sorted.last.getName.split("\\.").last.toInt + 1
-    }
-    val file = sorted.find(_.lastModified() < currentTime - processLogRetainTimeMillis)
-      .getOrElse {
-        Files.createDirectories(processLogPath)
-        val newLogFile = new File(processLogPath.toFile, s"$module.log.$nextIndex")
-        newLogFile.createNewFile()
-        newLogFile
-      }
-    file.setLastModified(currentTime)
-    info(s"Logging to $file")
-    file
-  }
 }

@@ -17,15 +17,16 @@
 
 package org.apache.kyuubi.engine.spark.shim
 
+import java.util.regex.Pattern
+
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.connector.catalog.CatalogPlugin
 
-class Shim_v2_4 extends SparkShim {
+class CatalogShim_v2_4 extends SparkCatalogShim {
 
-  override def getCatalogs(spark: SparkSession): Seq[Row] = Seq(Row(""))
-
-  override protected def getCatalog(spark: SparkSession, catalog: String): CatalogPlugin = null
+  override def getCatalogs(spark: SparkSession): Seq[Row] = {
+    Seq(Row(SparkCatalogShim.SESSION_CATALOG))
+  }
 
   override protected def catalogExists(spark: SparkSession, catalog: String): Boolean = false
 
@@ -85,5 +86,75 @@ class Shim_v2_4 extends SparkShim {
     } else {
       spark.sessionState.catalog.listLocalTempViews(tablePattern)
     }
+  }
+
+  override def getColumns(
+      spark: SparkSession,
+      catalogName: String,
+      schemaPattern: String,
+      tablePattern: String,
+      columnPattern: String): Seq[Row] = {
+
+    val cp = columnPattern.r.pattern
+    val byCatalog = getColumnsByCatalog(spark, catalogName, schemaPattern, tablePattern, cp)
+    val byGlobalTmpDB = getColumnsByGlobalTempViewManager(spark, schemaPattern, tablePattern, cp)
+    val byLocalTmp = getColumnsByLocalTempViews(spark, tablePattern, cp)
+
+    byCatalog ++ byGlobalTmpDB ++ byLocalTmp
+  }
+
+  protected def getColumnsByCatalog(
+      spark: SparkSession,
+      catalogName: String,
+      schemaPattern: String,
+      tablePattern: String,
+      columnPattern: Pattern): Seq[Row] = {
+    val catalog = spark.sessionState.catalog
+
+    val databases = catalog.listDatabases(schemaPattern)
+
+    databases.flatMap { db =>
+      val identifiers = catalog.listTables(db, tablePattern, includeLocalTempViews = true)
+      catalog.getTablesByName(identifiers).flatMap { t =>
+        t.schema.zipWithIndex.filter(f => columnPattern.matcher(f._1.name).matches())
+          .map { case (f, i) => toColumnResult(catalogName, t.database, t.identifier.table, f, i) }
+      }
+    }
+  }
+
+  protected def getColumnsByGlobalTempViewManager(
+      spark: SparkSession,
+      schemaPattern: String,
+      tablePattern: String,
+      columnPattern: Pattern): Seq[Row] = {
+    val catalog = spark.sessionState.catalog
+
+    getGlobalTempViewManager(spark, schemaPattern).flatMap { globalTmpDb =>
+      catalog.globalTempViewManager.listViewNames(tablePattern).flatMap { v =>
+        catalog.globalTempViewManager.get(v).map { plan =>
+          plan.schema.zipWithIndex.filter(f => columnPattern.matcher(f._1.name).matches())
+            .map { case (f, i) =>
+              toColumnResult(SparkCatalogShim.SESSION_CATALOG, globalTmpDb, v, f, i)
+            }
+        }
+      }.flatten
+    }
+  }
+
+  protected def getColumnsByLocalTempViews(
+    spark: SparkSession,
+    tablePattern: String,
+    columnPattern: Pattern): Seq[Row] = {
+    val catalog = spark.sessionState.catalog
+
+    catalog.listLocalTempViews(tablePattern)
+      .map(v => (v, catalog.getTempView(v.table).get))
+      .flatMap { case (v, plan) =>
+        plan.schema.zipWithIndex
+          .filter(f => columnPattern.matcher(f._1.name).matches())
+          .map { case (f, i) =>
+            toColumnResult(SparkCatalogShim.SESSION_CATALOG, null, v.table, f, i)
+          }
+      }
   }
 }

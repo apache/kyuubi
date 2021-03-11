@@ -17,13 +17,13 @@
 
 package org.apache.kyuubi.engine.spark.session
 
-import java.util.concurrent.TimeUnit
-
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARED_LEVEL
+import org.apache.kyuubi.engine.ShareLevel
+import org.apache.kyuubi.engine.spark.SparkSQLEngine
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.session._
 
@@ -42,9 +42,6 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
   val operationManager = new SparkSQLOperationManager()
 
-  @volatile private var _latestLogoutTime: Long = System.currentTimeMillis()
-  def latestLogoutTime: Long = _latestLogoutTime
-
   override def openSession(
       protocol: TProtocolVersion,
       user: String,
@@ -57,8 +54,25 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     try {
       val sparkSession = spark.newSession()
       conf.foreach {
-        case (HIVE_VAR_PREFIX(key), value) => setModifiableConfig(sparkSession, key, value)
-        case (HIVE_CONF_PREFIX(key), value) => setModifiableConfig(sparkSession, key, value)
+        case (k, v) if k.startsWith(SET_PREFIX) =>
+          val newKey = k.substring(SET_PREFIX.length)
+          if (newKey.startsWith(SYSTEM_PREFIX)) {
+            sparkSession.conf.set(newKey.substring(SYSTEM_PREFIX.length), v)
+          } else if (newKey.startsWith(HIVECONF_PREFIX) && newKey.startsWith(SPARK_PREFIX)) {
+            setModifiableConfig(sparkSession, newKey.substring(HIVECONF_PREFIX.length), v)
+          } else if (newKey.startsWith(HIVECONF_PREFIX)) {
+            sparkSession.conf.set(newKey.substring(HIVECONF_PREFIX.length), v)
+          } else if (newKey.startsWith(HIVEVAR_PREFIX) && newKey.startsWith(SPARK_PREFIX)) {
+            setModifiableConfig(sparkSession, newKey.substring(HIVEVAR_PREFIX.length), v)
+          } else if (newKey.startsWith(HIVEVAR_PREFIX)) {
+            sparkSession.conf.set(newKey.substring(HIVEVAR_PREFIX.length), v)
+          } else if (newKey.startsWith(METACONF_PREFIX) && newKey.startsWith(SPARK_PREFIX)) {
+            setModifiableConfig(sparkSession, newKey.substring(METACONF_PREFIX.length), v)
+          } else if (newKey.startsWith(METACONF_PREFIX)) {
+            sparkSession.conf.set(newKey.substring(METACONF_PREFIX.length), v)
+          } else {
+            setModifiableConfig(sparkSession, k, v)
+          }
         case ("use:database", database) => sparkSession.catalog.setCurrentDatabase(database)
         case (key, value) => setModifiableConfig(sparkSession, key, value)
       }
@@ -76,9 +90,12 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
-    _latestLogoutTime = System.currentTimeMillis()
     super.closeSession(sessionHandle)
     operationManager.removeSparkSession(sessionHandle)
+    if (conf.get(ENGINE_SHARED_LEVEL) == ShareLevel.CONNECTION.toString) {
+      info("Session stopped due to shared level is Connection.")
+      stopSession()
+    }
   }
 
   private def setModifiableConfig(spark: SparkSession, key: String, value: String): Unit = {
@@ -89,26 +106,9 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     }
   }
 
+  private def stopSession(): Unit = {
+    SparkSQLEngine.currentEngine.foreach(_.stop())
+  }
+
   override protected def isServer: Boolean = false
-
-  override def start(): Unit = {
-    startTimeoutChecker()
-    super.start()
-  }
-
-  private def startTimeoutChecker(): Unit = {
-    val interval = conf.get(KyuubiConf.ENGINE_CHECK_INTERVAL)
-    val idleTimeout = conf.get(KyuubiConf.ENGINE_IDLE_TIMEOUT)
-    val checkTask = new Runnable {
-      override def run(): Unit = {
-        while (getOpenSessionCount > 0 ||
-          System.currentTimeMillis - latestLogoutTime < idleTimeout) {
-          TimeUnit.MILLISECONDS.sleep(interval)
-        }
-        info(s"Idled for more than $idleTimeout ms, terminating")
-        sys.exit(0)
-      }
-    }
-    submitBackgroundOperation(checkTask)
-  }
 }

@@ -34,8 +34,16 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: '1.8'
-      - name: Make Distribution
-        run: ./build/dist --tgz
+      - name: Make Distribution -Pspark-3.0
+        run: ./build/dist --tgz -Pspark-3.0
+      - name: Make Distribution -Pspark-3.0 -Dhadoop.binary.version=3.2
+        run: ./build/dist --tgz -Pspark-3.0 -Dhadoop.binary.version=3.2
+      - name: Make Distribution -Pspark-3.1
+        run: ./build/dist --tgz -Pspark-3.1
+      - name: Make Distribution -Pspark-3.1 -Dhadoop.binary.version=3.2
+        run: ./build/dist --tgz -Pspark-3.1 -Dhadoop.binary.version=3.2
+      - name: Make Distribution --spark-provided
+        run: ./build/dist --tgz --spark-provided
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -52,3 +60,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           asset_paths: '["./kyuubi-*tar.gz"]'
+      - name: Update Release Note
+        id: github_release_changelog
+        uses: mikepenz/release-changelog-builder-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

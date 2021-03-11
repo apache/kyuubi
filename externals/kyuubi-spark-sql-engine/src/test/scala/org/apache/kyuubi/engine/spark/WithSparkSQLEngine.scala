@@ -17,19 +17,26 @@
 
 package org.apache.kyuubi.engine.spark
 
-import org.apache.hadoop.hive.ql.metadata.Hive
-import org.apache.hadoop.hive.ql.session.SessionState
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.config.KyuubiConf
 
 trait WithSparkSQLEngine extends KyuubiFunSuite {
   protected var spark: SparkSession = _
   protected var engine: SparkSQLEngine = _
+  // conf will be loaded until start spark engine
+  def withKyuubiConf: Map[String, String]
+  val kyuubiConf: KyuubiConf = SparkSQLEngine.kyuubiConf
 
   protected var connectionUrl: String = _
 
   override def beforeAll(): Unit = {
+    startSparkEngine()
+    super.beforeAll()
+  }
+
+  protected def startSparkEngine(): Unit = {
     val warehousePath = Utils.createTempDir()
     val metastorePath = Utils.createTempDir()
     warehousePath.toFile.delete()
@@ -38,17 +45,31 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
       s"jdbc:derby:;databaseName=$metastorePath;create=true")
     System.setProperty("spark.sql.warehouse.dir", warehousePath.toString)
     System.setProperty("spark.sql.hive.metastore.sharedPrefixes", "org.apache.hive.jdbc")
+    System.setProperty("spark.ui.enabled", "false")
+    withKyuubiConf.foreach { case (k, v) =>
+      System.setProperty(k, v)
+      kyuubiConf.set(k, v)
+    }
 
     SparkSession.clearActiveSession()
     SparkSession.clearDefaultSession()
     spark = SparkSQLEngine.createSpark()
     engine = SparkSQLEngine.startEngine(spark)
     connectionUrl = engine.connectionUrl
-    super.beforeAll()
   }
 
   override def afterAll(): Unit = {
     super.afterAll()
+    stopSparkEngine()
+  }
+
+  protected def stopSparkEngine(): Unit = {
+    // we need to clean up conf since it's the global config in same jvm.
+    withKyuubiConf.foreach { case (k, _) =>
+      System.clearProperty(k)
+      kyuubiConf.unset(k)
+    }
+
     if (engine != null) {
       engine.stop()
       engine = null
@@ -59,8 +80,6 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
     }
     SparkSession.clearActiveSession()
     SparkSession.clearDefaultSession()
-    SessionState.detachSession()
-    Hive.closeCurrent()
   }
 
   protected def getJdbcUrl: String = s"jdbc:hive2://$connectionUrl/;"

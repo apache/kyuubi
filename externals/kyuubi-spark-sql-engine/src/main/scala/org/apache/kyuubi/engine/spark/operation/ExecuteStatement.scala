@@ -20,11 +20,10 @@ package org.apache.kyuubi.engine.spark.operation
 import java.util.concurrent.RejectedExecutionException
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.spark.sql.functions._
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
+import org.apache.kyuubi.engine.spark.{ArrayFetchIterator, KyuubiSparkUtil}
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -36,6 +35,9 @@ class ExecuteStatement(
     override val shouldRunAsync: Boolean)
   extends SparkOperation(spark, OperationType.EXECUTE_STATEMENT, session) with Logging {
 
+  private val operationLog: OperationLog =
+    OperationLog.createOperationLog(session.handle, getHandle)
+  override def getOperationLog: Option[OperationLog] = Option(operationLog)
   private var result: DataFrame = _
 
   override protected def resultSchema: StructType = {
@@ -63,18 +65,8 @@ class ExecuteStatement(
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
       spark.sparkContext.setJobGroup(statementId, statement)
       result = spark.sql(statement)
-      val castCols = result.schema.map { field =>
-        field.dataType match {
-          case BooleanType | ByteType | ShortType | IntegerType | LongType |
-               FloatType | DoubleType | BinaryType | StringType =>
-            col(field.name)
-          case _ => col(field.name).cast(StringType)
-        }
-      }
-      debug(s"original result queryExecution: ${result.queryExecution}")
-      val castedResult = result.select(castCols: _*)
-      debug(s"casted result queryExecution: ${castedResult.queryExecution}")
-      iter = castedResult.collect().toList.iterator
+      debug(result.queryExecution)
+      iter = new ArrayFetchIterator(result.collect())
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)

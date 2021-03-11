@@ -21,13 +21,14 @@ import java.nio.ByteBuffer
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TColumn, TColumnDesc, TPrimitiveTypeEntry, TRow, TRowSet, TStringColumn, TTableSchema, TTypeDesc, TTypeEntry, TTypeId}
+import org.apache.hive.service.rpc.thrift.{TColumn, TColumnDesc, TPrimitiveTypeEntry, TRowSet, TStringColumn, TTableSchema, TTypeDesc, TTypeEntry, TTypeId}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.ThriftUtils
 
 class NoopOperation(typ: OperationType, session: Session, shouldFail: Boolean = false)
   extends AbstractOperation(typ, session) {
@@ -75,7 +76,7 @@ class NoopOperation(typ: OperationType, session: Session, shouldFail: Boolean = 
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
     val col = TColumn.stringVal(new TStringColumn(Seq(typ.toString).asJava, ByteBuffer.allocate(0)))
-    val tRowSet = new TRowSet(0, new java.util.ArrayList[TRow](0))
+    val tRowSet = ThriftUtils.newEmptyRowSet
     tRowSet.addToColumns(col)
     tRowSet
   }

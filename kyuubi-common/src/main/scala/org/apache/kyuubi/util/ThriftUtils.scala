@@ -15,9 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi
+package org.apache.kyuubi.util
 
 import org.apache.hive.service.rpc.thrift.{TRow, TRowSet, TStatus, TStatusCode}
+
+import org.apache.kyuubi.KyuubiSQLException
 
 object ThriftUtils {
 
@@ -27,6 +29,8 @@ object ThriftUtils {
     }
   }
 
-  val EMPTY_ROW_SET = new TRowSet(0, new java.util.ArrayList[TRow](0))
+  def newEmptyRowSet: TRowSet = new TRowSet(0, new java.util.ArrayList[TRow](0))
+
+  val EMPTY_ROW_SET: TRowSet = newEmptyRowSet
 
 }
