@@ -7,8 +7,8 @@
 
 # Kinit Auxiliary Service
 
-In order to work w/ a kerberos-enabled cluster, Kyuubi provides this kinit auxiliary service.
-It will periodically re-kinit w/ to keep the Ticket Cache fresh.
+In order to work with a kerberos-enabled cluster, Kyuubi provides this kinit auxiliary service.
+It will periodically re-kinit with to keep the Ticket Cache fresh.
 
 
 ## Installing and Configuring the Kerberos Clients
@@ -31,7 +31,7 @@ Replace or configure `krb5.conf` to point to the KDC.
 ## Kerberos Ticket
 
 Kerberos client is aimed to generate a Ticket Cache file.
-Then, Kyuubi can use this Ticket Cache to authenticate w/ those kerberized services,
+Then, Kyuubi can use this Ticket Cache to authenticate with those kerberized services,
 e.g. HDFS, YARN, and Hive Metastore server, etc.
 
 A Kerberos ticket cache contains a service and a client principal names,

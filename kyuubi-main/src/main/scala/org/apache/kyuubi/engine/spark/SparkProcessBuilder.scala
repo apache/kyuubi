@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.io.IOException
+import java.io.{File, FilenameFilter, IOException}
 import java.nio.file.{Files, Path, Paths}
 
 import scala.collection.mutable.ArrayBuffer
@@ -38,24 +38,24 @@ class SparkProcessBuilder(
   import SparkProcessBuilder._
 
   override protected val executable: String = {
-    val path = env.get("SPARK_HOME").map { sparkHome =>
-      Paths.get(sparkHome, "bin", SPARK_SUBMIT_FILE).toAbsolutePath
-    } getOrElse {
-      val sparkVer = SPARK_COMPILE_VERSION
-      val hadoopVer = HADOOP_COMPILE_VERSION.take(3)
+    val sparkHomeOpt = env.get("SPARK_HOME").orElse {
       val kyuubiPattern = "/kyuubi/"
       val cwd = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
       val idx = kyuubiPattern.length + cwd.lastIndexOf(kyuubiPattern)
       val kyuubiDevHome = cwd.substring(0, idx)
-      Paths.get(
-        kyuubiDevHome,
-        "externals",
-        "kyuubi-download",
-        "target",
-        s"spark-$sparkVer-bin-hadoop$hadoopVer",
-        "bin", SPARK_SUBMIT_FILE)
+      Paths.get(kyuubiDevHome, "externals", "kyuubi-download", "target").toFile
+        .listFiles(new FilenameFilter {
+        override def accept(dir: File, name: String): Boolean = {
+          dir.isDirectory && name.startsWith("spark-")
+        }
+      }).headOption.map(_.getAbsolutePath)
     }
-    path.toAbsolutePath.toFile.getCanonicalPath
+
+    sparkHomeOpt.map{ dir =>
+      Paths.get(dir, "bin", SPARK_SUBMIT_FILE).toAbsolutePath.toFile.getCanonicalPath
+    }.getOrElse {
+      throw KyuubiSQLException("SPARK_HOME is not set!")
+    }
   }
 
   override def mainClass: String = "org.apache.kyuubi.engine.spark.SparkSQLEngine"

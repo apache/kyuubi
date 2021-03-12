@@ -20,23 +20,23 @@ These are essential components required for Kyuubi to startup. For quick start d
 
 Components| Role | Optional | Version | Remarks
 --- | --- | --- | --- | ---
-Java | Java<br>Runtime<br>Environment | Required | 1.8 | Kyuubi is pre-built w/ Java 1.8
+Java | Java<br>Runtime<br>Environment | Required | 1.8 | Kyuubi is pre-built with Java 1.8
 Spark | Distribute<br>SQL<br>Engine | Optional | 3.0.x | By default Kyuubi is pre-built w/<br> a Apache Spark release inside at<br> `$KYUUBI_HOME/externals`
-HDFS | Distributed<br>File<br>System |  Optional | referenced<br>by<br>Spark | Hadoop Distributed File System is a <br>part of Hadoop framework, used to<br> store and process the datasets.<br> You can interact w/ any<br> Spark-compatible versions of HDFS.
+HDFS | Distributed<br>File<br>System |  Optional | referenced<br>by<br>Spark | Hadoop Distributed File System is a <br>part of Hadoop framework, used to<br> store and process the datasets.<br> You can interact with any<br> Spark-compatible versions of HDFS.
 Hive | Metastore | Optional | referenced<br>by<br>Spark | Hive Metastore for Spark SQL to connect
 Zookeeper | Service<br>Discovery | Optional | Any<br>zookeeper<br>ensemble<br>compatible<br>with<br>curator(2.7.1) | By default, Kyuubi provides a<br> embeded Zookeeper server inside for<br> non-production use.
 
-Additionally, if you want to work with other Spark compatible systems or plugins, you only need to take care of them as using them w/ regular Spark applications. For example, you can run Spark SQL engines created by the Kyuubi on any kind of cluster manager, including YARN, Kubernetes, Mesos, e.t.c... Or, you can manipulate data from different data sources w/ the Spark Datasource API, e.g. Delta Lake, Apache Hudi, Apache Iceberg, Apache Kudu and e.t.c...
+Additionally, if you want to work with other Spark compatible systems or plugins, you only need to take care of them as using them with regular Spark applications. For example, you can run Spark SQL engines created by the Kyuubi on any cluster manager, including YARN, Kubernetes, Mesos, e.t.c... Or, you can manipulate data from different data sources with the Spark Datasource API, e.g. Delta Lake, Apache Hudi, Apache Iceberg, Apache Kudu and e.t.c...
 
 ## Installation
 
-To install Kyuubi, you need to unpack the tarball. For example, 
+To install Kyuubi, you need to unpack the tarball. For example,
 
 ```bash
 tar zxf kyuubi-1.0.2-bin-spark-3.0.1.tar.gz
 ```
 
-This will result in the creation of a subdirectory named `kyuubi-1.0.2-bin-spark-3.0.1` shown below, where the `1.0.2` is the Kyuubi version and `3.0.1` is the pre-built Spark version.
+This will result in the creation of a subdirectory named `kyuubi-1.0.2-bin-spark-3.0.1` shown below, where the `1.0.2` is the Kyuubi version, and `3.0.1` is the pre-built Spark version.
 
 ```bash
 kyuubi-1.0.2-bin-spark-3.0.1
@@ -61,24 +61,24 @@ From top to bottom are:
 
 - LICENSE: the [APACHE LICENSE, VERSION 2.0](https://www.apache.org/licenses/LICENSE-2.0) we claim to obey.
 - RELEASE: the build information of this package
-- bin: the entry of the Kyuubi server w/ `kyuubi` as the startup script.
-- conf: all the defaults used by Kyuubi Server itself or creating session with Spark applications.
+- bin: the entry of the Kyuubi server with `kyuubi` as the startup script.
+- conf: all the defaults used by Kyuubi Server itself or creating a session with Spark applications.
 - externals
   - engines: contains all kinds of SQL engines that we support, e.g. Apache Spark, Apache Flink(coming soon).
   - spark-3.0.1-bin-hadoop2.7: a pre-downloaded official Spark release, used as default.
 - jars: packages needed by the Kyuubi server.
-- logs: Where the logs of Kyuubi server locates.
-- pid: stores the pid file of Kyuubi server instance.
-- work: the root of the working directories of all the forked sub-processes a.k.a. SQL engines. 
+- logs: Where the logs of the Kyuubi server locates.
+- pid: stores the PID file of the Kyuubi server instance.
+- work: the root of the working directories of all the forked sub-processes, a.k.a. SQL engines.
 
 
 ## Running Kyuubi
 
-As mentioned above, for a quick start deployment, the only you need to be sure is that your java runtime environment is correct.
+As mentioned above, for a quick start deployment, then only you need to be sure is that your java runtime environment is correct.
 
 ### Setup JAVA
 
-Your can either set it system-widely,  e.g. in the `.bashrc` file.
+You can either set it system-widely,  e.g. in the `.bashrc` file.
 
 ```bash
 java -version
@@ -98,8 +98,8 @@ Java HotSpot(TM) 64-Bit Server VM 18.9 (build 11.0.5+10-LTS, mixed mode)
 
 ```
 
-But, the recommended place to set `JAVA_HOME` is `$KYUUBI_HOME/conf/kyuubi-env.sh`, as the ways above are too flaky.
-The `JAVA_HOME` in `$KYUUBI_HOME/conf/kyuubi-env.sh` will take precedence of others.
+The recommended place to set `JAVA_HOME` is `$KYUUBI_HOME/conf/kyuubi-env.sh`, as the ways above are too flaky.
+The `JAVA_HOME` in `$KYUUBI_HOME/conf/kyuubi-env.sh` will take others' precedence.
 
 ### Starting Kyuubi
 
@@ -108,7 +108,7 @@ The `JAVA_HOME` in `$KYUUBI_HOME/conf/kyuubi-env.sh` will take precedence of oth
 bin/kyuubi start
 ```
 
-During the server starts, it will print all essential environment variables on the screen, you may check whether they are expected.
+It will print all essential environment variables on the screen during the server starts, and you may check whether they are expected.
 
 ```logtalk
 Starting Kyuubi Server from /Users/kentyao/kyuubi/kyuubi-1.0.2-bin-spark-3.0.1
@@ -138,7 +138,7 @@ Welcome to
 
 If all goes well, this will result in the creation of the Kyuubi server instance with a `PID` stored in `$KYUUBI_HOME/pid/kyuubi-<username>-org.apache.kyuubi.server.KyuubiServer.pid`
 
-Then, you can get the JDBC connection url at the end of log file, e.g.
+Then, you can get the JDBC connection URL at the end of the log file, e.g.
 
 ```
 FrontendService: Starting and exposing JDBC connection at: jdbc:hive2://localhost:10009/
@@ -146,7 +146,7 @@ FrontendService: Starting and exposing JDBC connection at: jdbc:hive2://localhos
 
 If something goes wrong, you shall be able to find some clues in the log file too.
 
-Alternatively, it can be run in the foreground, with the logs and other output written to stdout/stderr. 
+Alternatively, it can run in the foreground, with the logs and other output written to stdout/stderr.
 Both streams should be captured if using a supervision system like `supervisord`.
 
 ```bash
@@ -160,7 +160,7 @@ and a builtin beeline tool can be found within the pre-built Spark package in th
 
 ### Opening a Connection
 
-The command below will tell Kyuubi server to create a session with itself. 
+The command below will tell the Kyuubi server to create a session with itself.
 
 ```logtalk
 bin/beeline -u 'jdbc:hive2://localhost:10009/'
@@ -174,9 +174,9 @@ Beeline version 2.3.7 by Apache Hive
 
 In this case, the session will create for the user named 'anonymous'.
 
-Kyuubi will create a Spark SQL engine application using `kyuubi-spark-sql-engine-<version>.jar` if there is no existing one.
-It will cost a while for the application to be ready before the session is fully established.
-Otherwise, an existing application will be resued and the time cost here is negligible.
+Kyuubi will create a Spark SQL engine application using `kyuubi-spark-sql-engine-<version>.jar`.
+It will cost a while for the application to be ready before fully establishing the session.
+Otherwise, an existing application will be resued, and the time cost here is negligible.
 
 Similarly, you can create a session for another user(or principal, subject, and maybe something else you defined), e.g. named `kentyao`,
 
@@ -186,7 +186,7 @@ bin/beeline -u 'jdbc:hive2://localhost:10009/' -n kentyao
 
 The formerly created Spark application for user 'anonymous' will not be reused in this case, while a brand new application will be submitted for user 'kentyao' instead.
 
-Then, you can see 3 processes running in your local environment, including one `KyuubiServer` instance and 2 `SparkSubmit` instance as the SQL engines.
+Then, you can see 3 processes running in your local environment, including one `KyuubiServer` instance and 2 `SparkSubmit` instances as the SQL engines.
 
 ```
 75730 Jps
@@ -222,9 +222,9 @@ If the beeline session is successfully connected, then you can run any query sup
 1 row selected (1.466 seconds)
 ```
 
-As shown in the above case, you can retrieve all the operation logs, the result schema, and the result to your client side in the beeline console.
+As shown in the above case, you can retrieve all the operation logs, the result schema, and the result to your client-side in the beeline console.
 
-Additionally, some usefully information about the background Spark SQL application that associated with this connection is also printed in the operation log.
+Additionally, some useful information about the background Spark SQL application associated with this connection is also printed in the operation log.
 For example, you can get the Spark web UI from the log for debugging or tuning.
 
 ![](../imgs/spark_jobs_page.png)
@@ -246,6 +246,6 @@ Stop Kyuubi by running the following in the `$KYUUBI_HOME` directory:
 bin/kyuubi.sh stop
 ```
 
-The `KyuubiServer` instance will be stopped immediately while the SQL engines application will still be alive for a while.
+The `KyuubiServer` instance will be stopped immediately while the SQL engine's application will still be alive for a while.
 
-If you start kyuubi again before the SQL engine application terminate itself, they will reconnect to the newly create `KyuubiServer` instance.
+If you start Kyuubi again before the SQL engine application terminates itself, it will reconnect to the newly created `KyuubiServer` instance.

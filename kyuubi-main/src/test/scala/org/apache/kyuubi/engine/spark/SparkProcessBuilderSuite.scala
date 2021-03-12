@@ -18,13 +18,15 @@
 package org.apache.kyuubi.engine.spark
 
 import java.io.File
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Path, Paths, StandardOpenOption}
+import java.time.Duration
 import java.util.concurrent.{Executors, TimeUnit}
 
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{KerberizedTestHelper, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_LOG_TIMEOUT
 import org.apache.kyuubi.service.ServiceUtils
 
 class SparkProcessBuilderSuite extends KerberizedTestHelper {
@@ -178,6 +180,29 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     (1 to 10).foreach { _ =>
       atomicTest()
     }
+  }
+
+  test("overwrite log file should cleanup before write") {
+    val fakeWorkDir = Files.createTempDirectory("fake")
+    val conf = KyuubiConf()
+    conf.set(ENGINE_LOG_TIMEOUT, Duration.ofDays(1).toMillis)
+    val builder1 = new FakeSparkProcessBuilder(conf) {
+      override val workingDir: Path = fakeWorkDir
+    }
+    val file1 = builder1.engineLog
+    Files.write(file1.toPath, "a".getBytes(), StandardOpenOption.APPEND)
+    assert(file1.length() == 1)
+    Files.write(file1.toPath, "a".getBytes(), StandardOpenOption.APPEND)
+    assert(file1.length() == 2)
+    file1.setLastModified(System.currentTimeMillis() - Duration.ofDays(1).toMillis - 1000)
+
+    val builder2 = new FakeSparkProcessBuilder(conf) {
+      override val workingDir: Path = fakeWorkDir
+    }
+    val file2 = builder2.engineLog
+    assert(file1.getAbsolutePath == file2.getAbsolutePath)
+    Files.write(file2.toPath, "a".getBytes(), StandardOpenOption.APPEND)
+    assert(file2.length() == 1)
   }
 }
 

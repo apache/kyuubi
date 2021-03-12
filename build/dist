@@ -128,6 +128,11 @@ SPARK_VERSION=$("$MVN" help:evaluate -Dexpression=spark.version $@ 2>/dev/null\
     | grep -v "WARNING"\
     | tail -n 1)
 
+SPARK_HADOOP_VERSION=$("$MVN" help:evaluate -Dexpression=hadoop.binary.version $@ 2>/dev/null\
+    | grep -v "INFO"\
+    | grep -v "WARNING"\
+    | tail -n 1)
+
 HADOOP_VERSION=$("$MVN" help:evaluate -Dexpression=hadoop.version $@ 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
@@ -141,10 +146,12 @@ HIVE_VERSION=$("$MVN" help:evaluate -Dexpression=hive.version $@ 2>/dev/null\
 echo "Building Kyuubi package of version $VERSION against Spark version - $SPARK_VERSION"
 
 if [[ "$NAME" == "none" ]]; then
+  SPARK_HADOOP_VERSION_SUFFIX="-hadoop${SPARK_HADOOP_VERSION}"
+
   if [[ "$SPARK_PROVIDED" == "true" ]]; then
     NAME="without-spark"
   else
-    NAME="spark-"${SPARK_VERSION:0:3}
+    NAME="spark-"${SPARK_VERSION:0:3}$SPARK_HADOOP_VERSION_SUFFIX
   fi
 fi
 
@@ -180,21 +187,17 @@ echo "Hadoop $HADOOP_VERSION" >> "$DISTDIR/RELEASE"
 echo "Hive $HIVE_VERSION" >> "$DISTDIR/RELEASE"
 echo "Build flags: $@" >> "$DISTDIR/RELEASE"
 
-# Copy jars
+# Copy kyuubi server jars
 cp -r "$KYUUBI_HOME/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/" "$DISTDIR/jars"
-## cp engines
 
-if [[ ${HIVE_VERSION:0:3} == "2.3" ]]; then
-  HIVE_VERSION_SUFFIX=""
-else
-  HIVE_VERSION_SUFFIX="-hive1.2"
-fi
+# Copy spark engines
+cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine-$VERSION.jar" "$DISTDIR/externals/engines/spark"
 
 if [[ "$SPARK_PROVIDED" != "true" ]]; then
-  cp -r "$KYUUBI_HOME/externals/kyuubi-download/target/spark-$SPARK_VERSION-bin-hadoop${HADOOP_VERSION:0:3}$HIVE_VERSION_SUFFIX/" \
-        "$DISTDIR/externals/spark-$SPARK_VERSION-bin-hadoop${HADOOP_VERSION:0:3}$HIVE_VERSION_SUFFIX/"
+  # Copy spark binary dist
+  cp -r "$KYUUBI_HOME/externals/kyuubi-download/target/spark-$SPARK_VERSION-bin-hadoop${SPARK_HADOOP_VERSION}$HIVE_VERSION_SUFFIX/" \
+        "$DISTDIR/externals/spark-$SPARK_VERSION-bin-hadoop${SPARK_HADOOP_VERSION}$HIVE_VERSION_SUFFIX/"
 fi
-cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine-$VERSION.jar" "$DISTDIR/externals/engines/spark"
 
 # Copy license and ASF files
 cp "$KYUUBI_HOME/LICENSE" "$DISTDIR"
