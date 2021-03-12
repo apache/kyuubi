@@ -8,7 +8,7 @@ Please go to [Download DataGrip](https://www.jetbrains.com/datagrip/download) to
 ### Get Kyuubi Started
 [Get kyuubi server started](https://kyuubi.readthedocs.io/en/latest/quick_start/quick_start.html) before you try DataGrip with kyuubi.
 
-For debugging purpose, you can use ```tail -f``` or ```tailf``` to track the server log.
+For debugging purpose, you can use `tail -f` or `tailf` to track the server log.
 ## Configurations
 ### Start DataGrip
 After you install DataGrip, just launch it.
@@ -21,7 +21,7 @@ You should first download the missing driver files. Just click on the link below
 
 ![datasource and driver](../imgs/dataGrip/datasource_and_driver.png)
 ### Generic JDBC Connection Settings
-After install drivers, you should configure the right host and port which you can find in kyuubi server log. By default, we use ```localhost``` and ```10009``` to configure.
+After install drivers, you should configure the right host and port which you can find in kyuubi server log. By default, we use `localhost` and `10009` to configure.
 
 Of curse, you can fill other configs.
 
