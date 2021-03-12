@@ -10,13 +10,19 @@ about: Create a report to help us improve
 
 ### 2. Environments
 
-#### 2.1 Version
+#### 2.1 Versions
 
+- Kyuubi
   - [ ] 1.1.0
   - [ ] 1.0.3
   - [ ] 0.8.x and earlier <!-- Please update Kyuubi, versions of 0.x are no longer supported by the community -->
 
-#### 2. 2 Kyuubi Configurations
+- Spark
+  - [ ] 3.1.x
+  - [ ] 3.0.x
+  - [ ] 2.4.x and earlier <!-- Please update Spark, versions of 2.x are no longer supported by the community -->
+
+#### 2.2 Kyuubi Configurations
 
 #### 2.3 Spark Configurations
 
@@ -26,6 +32,7 @@ about: Create a report to help us improve
 #### 3.1 Operations
 
 #### 3.2 Expected behavior
+
 <!-- A clear and concise description of what you expected to happen. -->
 
 #### 3.3 Actual behavior
