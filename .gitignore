@@ -48,3 +48,4 @@ embedded_zookeeper/
 /docs/_build/
 /kyuubi-common/metrics/
 **/operation_logs/
+lib/
