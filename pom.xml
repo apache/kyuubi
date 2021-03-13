@@ -96,6 +96,7 @@
         <maven.plugin.dependency.version>3.1.1</maven.plugin.dependency.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
         <maven.plugin.download.version>1.6.0</maven.plugin.download.version>
+        <maven.plugin.rat.version>0.13</maven.plugin.rat.version>
     </properties>
 
     <repositories>
@@ -1164,6 +1165,48 @@
                     <artifactId>download-maven-plugin</artifactId>
                     <version>${maven.plugin.download.version}</version>
                 </plugin>
+
+                <plugin>
+                    <groupId>org.apache.rat</groupId>
+                    <artifactId>apache-rat-plugin</artifactId>
+                    <version>${maven.plugin.rat.version}</version>
+                    <inherited>true</inherited>
+                    <executions>
+                        <execution>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>check</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <excludeSubProjects>false</excludeSubProjects>
+                        <numUnapprovedLicenses>0</numUnapprovedLicenses>
+                        <licenseFamilies>
+                            <licenseFamily implementation="org.apache.rat.license.SimpleLicenseFamily">
+                                <familyName>Apache License 2.0</familyName>
+                            </licenseFamily>
+                        </licenseFamilies>
+                        <excludes>
+                            <exclude>**/.*/**</exclude>
+                            <exclude>**/*.prefs</exclude>
+                            <exclude>**/*.log</exclude>
+                            <exclude>**/*.md</exclude>
+                            <exclude>**/*.iml</exclude>
+                            <exclude>**/target/**</exclude>
+                            <exclude>**/out/**</exclude>
+                            <exclude>**/spark-warehouse/**</exclude>
+                            <exclude>**/metastore_db/**</exclude>
+                            <exclude>**/licenses/LICENSE*</exclude>
+                            <exclude>**/licenses-binary/LICENSE*</exclude>
+                            <exclude>**/dependency-reduced-pom.xml</exclude>
+                            <exclude>**/scalastyle-output.xml</exclude>
+                            <exclude>docs/**</exclude>
+                            <exclude>bin/kyuubi-logo</exclude>
+                            <exclude>build/scala-*/**</exclude>
+                        </excludes>
+                    </configuration>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -1242,6 +1285,11 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.rat</groupId>
+                <artifactId>apache-rat-plugin</artifactId>
             </plugin>
         </plugins>
     </build>
