@@ -55,6 +55,8 @@ jobs:
         run: |
           mvn clean install ${{ matrix.profiles }} -Dmaven.javadoc.skip=true -V
           bash <(curl -s https://codecov.io/bash)
+      - name: Check License
+        run: dev/check-license
       - name: Detected Dependency List Change
         run: build/dependency.sh
       - name: Collect unit tests log
