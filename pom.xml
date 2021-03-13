@@ -1191,7 +1191,6 @@
                             <exclude>**/.*/**</exclude>
                             <exclude>**/*.prefs</exclude>
                             <exclude>**/*.log</exclude>
-                            <exclude>**/.idea/**</exclude>
                             <exclude>**/*.md</exclude>
                             <exclude>**/*.iml</exclude>
                             <exclude>**/target/**</exclude>
