@@ -19,6 +19,7 @@
 
 #
 # kyuubi.authentication           NONE
+# kyuubi.frontend.bind.host       localhost
 # kyuubi.frontend.bind.port       10009
 #
 
