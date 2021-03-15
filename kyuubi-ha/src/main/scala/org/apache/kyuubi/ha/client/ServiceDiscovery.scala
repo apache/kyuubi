@@ -26,14 +26,14 @@ import javax.security.auth.login.Configuration
 import scala.collection.JavaConverters._
 
 import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
-import org.apache.curator.framework.recipes.nodes.PersistentNode
+import org.apache.curator.framework.recipes.nodes.PersistentEphemeralNode
 import org.apache.curator.framework.state.{ConnectionState, ConnectionStateListener}
 import org.apache.curator.framework.state.ConnectionState.{CONNECTED, LOST, RECONNECTED}
 import org.apache.curator.retry._
 import org.apache.curator.utils.ZKPaths
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager.JaasConfiguration
-import org.apache.zookeeper.CreateMode.{EPHEMERAL_SEQUENTIAL, PERSISTENT}
+import org.apache.zookeeper.CreateMode.PERSISTENT
 import org.apache.zookeeper.KeeperException
 import org.apache.zookeeper.KeeperException.NodeExistsException
 
@@ -58,14 +58,14 @@ abstract class ServiceDiscovery private (
     this(classOf[ServiceDiscovery].getSimpleName, server)
 
   private var _zkClient: CuratorFramework = _
-  private var _serviceNode: PersistentNode = _
+  private var _serviceNode: PersistentEphemeralNode = _
   /**
    * a pre-defined namespace used to publish the instance of the associate service
    */
   private var _namespace: String = _
 
   def zkClient: CuratorFramework = _zkClient
-  def serviceNode: PersistentNode = _serviceNode
+  def serviceNode: PersistentEphemeralNode = _serviceNode
   def namespace: String = _namespace
 
   override def initialize(conf: KyuubiConf): Unit = {
@@ -118,10 +118,9 @@ abstract class ServiceDiscovery private (
       namespace,
       s"serviceUri=$instance;version=$KYUUBI_VERSION;sequence=")
     try {
-      _serviceNode = new PersistentNode(
+      _serviceNode = new PersistentEphemeralNode(
         zkClient,
-        EPHEMERAL_SEQUENTIAL,
-        false,
+        PersistentEphemeralNode.Mode.EPHEMERAL_SEQUENTIAL,
         pathPrefix,
         instance.getBytes(StandardCharsets.UTF_8))
       serviceNode.start()
