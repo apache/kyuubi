@@ -201,15 +201,34 @@
    limitations under the License.
 
 ------------------------------------------------------------------------------------
-This product bundles various third-party components under other open source licenses.
-This section summarizes those components and their licenses. See licenses/
-for text of these licenses.
+This project bundles some components that are also licensed under the Apache
+License Version 2.0:
 
+commons-codec:commons-codec
+org.apache.commons:commons-lang3
+org.apache.curator:curator-client
+org.apache.curator:curator-framework
+org.apache.curator:curator-recipes
+org.apache.curator:curator-test
+com.google.guava:failureaccess
+com.google.guava:guava
+org.apache.hadoop:hadoop-client-api
+org.apache.hadoop:hadoop-client-runtime
+org.apache.hive:hive-service-rpc
+org.apache.htrace:htrace-core4
+org.javassist:javassist
+org.apache.thrift:libfb303
+org.apache.thrift:libthrift
+log4j:log4j
+org.apache.zookeeper:zookeeper
+spark-*-bin-*.tgz
 
-Apache Software Foundation License 2.0
---------------------------------------
+BSD 3-Clause
+------------
+org.scala-lang:scala-library
 
-kyuubi-common/src/main/scala/org/apache/kyuubi/Logging.scala
-kyuubi-common/src/test/scala/org/apache/kyuubi/KerberizedTestHelper.scala
-externals/kyuubi-spark-sql-engine/src/main/scala/org/apache/kyuubi/engine/spark/FetchIterator.scala
-externals/kyuubi-spark-sql-engine/src/main/scala/org/apache/kyuubi/engine/spark/shim/CatalogShim_v3_0.scala
+MIT License
+-----------
+org.slf4j:slf4j-api
+org.slf4j:slf4j-log4j12
+org.slf4j:jcl-over-slf4j

@@ -185,7 +185,7 @@ object ServiceDiscovery {
     val retryPolicy = RetryPolicies.withName(retryPolicyName) match {
       case ONE_TIME => new RetryOneTime(baseSleepTime)
       case N_TIME => new RetryNTimes(maxRetries, baseSleepTime)
-      case BONDED_EXPONENTIAL_BACKOFF =>
+      case BOUNDED_EXPONENTIAL_BACKOFF =>
         new BoundedExponentialBackoffRetry(baseSleepTime, maxSleepTime, maxRetries)
       case UNTIL_ELAPSED => new RetryUntilElapsed(maxSleepTime, baseSleepTime)
       case _ => new ExponentialBackoffRetry(baseSleepTime, maxRetries)

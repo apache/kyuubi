@@ -11,6 +11,22 @@ on:
       - branch-*
 
 jobs:
+  rat:
+    name: Check License
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: '1.8'
+      - run: build/mvn org.apache.rat:apache-rat-plugin:check
+      - name: Upload rat report
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: rat
+          path: "**/target/rat*.txt"
+
   build:
     name: Build
     runs-on: ubuntu-latest
@@ -55,15 +71,11 @@ jobs:
         run: |
           mvn clean install ${{ matrix.profiles }} -Dmaven.javadoc.skip=true -V
           bash <(curl -s https://codecov.io/bash)
-      - name: Collect unit tests log
-        run: |
-          mv kyuubi-common/target/unit-tests.log kyuubi-common_unit-tests.log
-          mv kyuubi-main/target/unit-tests.log kyuubi-main_unit-tests.log
+      - name: Detected Dependency List Change
+        run: build/dependency.sh
       - name: Upload unit tests log
+        if: failure()
         uses: actions/upload-artifact@v2
         with:
           name: unit-tests-log
-          path: |
-            kyuubi-common_unit-tests.log
-            kyuubi-main_unit-tests.log
-          retention-days: 30
+          path: "**/target/unit-tests.log"
