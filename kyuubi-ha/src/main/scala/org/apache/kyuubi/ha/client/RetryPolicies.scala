@@ -36,7 +36,7 @@ object RetryPolicies extends Enumeration {
      /** A retry policy that retries a set number of times with an increasing (up to a maximum
       *  bound) sleep time between retries
       */
-     BONDED_EXPONENTIAL_BACKOFF,
+     BOUNDED_EXPONENTIAL_BACKOFF,
 
      /** A retry policy that retries until a given amount of time elapses */
      UNTIL_ELAPSED = Value
