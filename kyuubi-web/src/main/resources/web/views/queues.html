@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 上述3个meta标签*必须*放在最前面，任何其他内容都*必须*跟随其后！ -->
+    <title>Kyuubi</title>
+    <link rel="shortcut icon" th:href="@{/favicon.ico}" type="image/x-icon">
+    <!-- Bootstrap -->
+    <link th:href="@{/bootstrap/css/bootstrap.min.css}" rel="stylesheet">
+    <link th:href="@{/bootstrap/css/bootstrap-theme.css}" rel="stylesheet">
+    <link th:href="@{/theme.css}" rel="stylesheet">
+    <link th:href="@{/datetime/bootstrap-datetimepicker.min.css}" rel="stylesheet">
+
+    <script th:src="@{/common.js}"></script>
+    <!-- jQuery (Bootstrap 的所有 JavaScript 插件都依赖 jQuery，所以必须放在前边) -->
+    <script th:src="@{/jquery-3.5.1.min.js}"></script>
+    <!-- 加载 Bootstrap 的所有 JavaScript 插件。你也可以根据需要只加载单个插件。 -->
+    <script th:src="@{/bootstrap/js/bootstrap.min.js}"></script>
+    <script th:src="@{/datetime/moment.min.js}"></script>
+    <script th:src="@{/datetime/bootstrap-datetimepicker.min.js}"></script>
+    <script th:src="@{/bootstrap-notify.min.js}"></script>
+    <!--    <link th:src="@{/select/bootstrap-select.min.css}" rel="stylesheet">-->
+    <!--    <script th:src="@{/select/bootstrap-select.min.js}"></script>-->
+</head>
+
+<body>
+<style>
+        label {
+            width: 100px;
+            text-align: center;
+        }
+    </style>
+<script type="text/javascript" th:inline="javascript">
+        /*<![CDATA[*/
+        ctxPath = /*[[${#httpServletRequest.getScheme() + "://" + #httpServletRequest.getServerName() + ":" + #httpServletRequest.getServerPort() + #httpServletRequest.getContextPath()}]]*/ '';
+    /*]]>*/
+
+    </script>
+
+<!-- Fixed navbar -->
+<nav class="navbar navbar-inverse navbar-fixed-top">
+    <a class="navbar-brand navbar-left" style="padding:5px">
+        <img th:src="@{/logo.png}" style="display:inline-block;height: 100%;" />
+        Kyuubi
+    </a>
+    <div class="container">
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
+                    aria-expanded="false" aria-controls="navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+            <ul class="nav navbar-nav">
+                <li><a th:href="@{/rest/index}">Home</a></li>
+                <li><a th:href="@{/rest/contexts}">Contexts</a></li>
+                <li><a th:href="@{/rest/sessions}">Sessions</a></li>
+                <li><a th:href="@{/rest/statements}">Statements</a></li>
+                <li class="active"><a th:href="@{/rest/queues}">Queues</a></li>
+                <li><a th:href="@{/rest/envs}">Envs</a></li>
+                <!--                <li><a href="#history">History</a></li>-->
+<!--                <li><a th:href="@{/rest/metrics/metrics(pretty=true)}" target="_blank">Metrics</a></li>-->
+            </ul>
+            <div class="nav navbar-nav navbar-right">
+                <button class="btn btn-inverse" style="margin-top: 10px" onclick="logout()"><strong>Logout</strong>
+                </button>
+            </div>
+        </div>
+        <!--/.nav-collapse -->
+    </div>
+</nav>
+
+<div class="container theme-showcase" role="main">
+
+    <div class="container">
+        <div>
+            <form class="form-inline" role="form" id="myForm">
+                <div class="form-group">
+                    <label for="username">用户</label>
+                    <input type="text" class="form-control" id="username" name="username">
+                </div>
+                <div class="form-group">
+                    <label for="queue">队列</label>
+                    <input type="text" class="form-control" id="queue" name="queue">
+                </div>
+                <button type="button" class="btn btn-default" id="add">新增或更新</button>
+            </form>
+        </div>
+
+        <div style="padding-top: 10px">
+            <table class="table table-bordered table-hover">
+                <thead>
+                <tr>
+                    <th>用户</th>
+                    <th>队列</th>
+                    <th>已用资源</th>
+<!--                    <th>可用资源</th>-->
+                    <th>操作</th>
+                </tr>
+                </thead>
+                <tr th:each="queue : ${queues}">
+                    <td th:text="${queue.username}"></td>
+                    <td th:text="${queue.queue}"></td>
+                    <td th:text="${queue.used}"></td>
+<!--                    <td th:text="${queue.available}"></td>-->
+                    <td>
+                        <a class="btn btn-default btn-xs" target="_blank"
+                           th:href="${yarnUrl} + '/cluster/scheduler?openQueues=' + ${queue.queue}">Yarn</a>
+                        <button type="button" class="btn btn-xs btn-danger "
+                                th:if="${queue.username != '默认队列'}"
+                                th:attr="del-username=${queue.username}">删除
+                        </button>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        <div style="padding-top: 15px">
+            <p>
+                Note:<br/>
+                    （1）默认队列仅能通过Kyuubi配置文件修改，重启后生效<br/>
+                    （2）多级队列，需要队列全名, 假设从根队列创建队列A， 从A队列创建子队列B， 则输入B队列时需要: A.B 或 root.A.B
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="myModalLabel">提示</h4>
+            </div>
+            <div class="modal-body">确认删除吗？</div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" id="ensure-button">确认</button>
+            </div>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal -->
+</div>
+<script>
+        var pgx = new Object();
+        $(function () {
+            $("button[del-username]").on("click", function () {
+                var username = $(this).attr("del-username")
+                pgx.username = username;
+                $('#myModal').modal('show');
+            });
+
+            $("#ensure-button").on('click', function() {
+                 var username = pgx.username;
+                 $.ajax({
+                    url: ctxPath + '/rest/queues/del',
+                    type: 'POST',
+                    data: { username: username },
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.code === 0) {
+                            $.notify({
+                                message: "操作成功"
+                            }, {
+                                'type': 'success',
+                                onShown: function () {
+                                    location.reload();
+                                }
+                            });
+                        } else {
+                            $.notify({
+                                message: data.msg
+                            }, {
+                                'type': 'danger'
+                            });
+                        }
+                    },
+                    error: function () {
+                        $('#loadingModal').modal('hide');
+                        $.notify({
+                            message: "操作失败，服务器异常"
+                        }, {
+                            'type': 'danger'
+                        });
+                    }
+                })
+            });
+
+            $("#add").on('click', function () {
+                $.ajax({
+                    url: ctxPath + '/rest/queues/addOrUpdate',
+                    type: 'POST',
+                    data: $('#myForm').serialize(),
+                    dataType: 'json',
+                    success: function (data) {
+                        if (data.code === 0) {
+                            $.notify({
+                                message: "操作成功"
+                            }, {
+                                'type': 'success',
+                                onShown: function () {
+                                    location.reload();
+                                }
+                            });
+                        } else {
+                            $.notify({
+                                message: data.msg
+                            }, {
+                                'type': 'danger'
+                            });
+                        }
+                    },
+                    error: function () {
+                        $('#loadingModal').modal('hide');
+                        $.notify({
+                            message: "操作失败，服务器异常"
+                        }, {
+                            'type': 'danger'
+                        });
+                    }
+                })
+            });
+        });
+    </script>
+</body>
+
+</html>
