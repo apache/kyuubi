@@ -30,6 +30,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.util.NamedThreadFactory
 
 trait ProcBuilder {
+
   import ProcBuilder._
 
   protected def executable: String

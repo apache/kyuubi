@@ -96,6 +96,7 @@
         <maven.plugin.dependency.version>3.1.1</maven.plugin.dependency.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
         <maven.plugin.download.version>1.6.0</maven.plugin.download.version>
+        <maven.plugin.silencer.version>1.6.0</maven.plugin.silencer.version>
         <maven.plugin.rat.version>0.13</maven.plugin.rat.version>
     </properties>
 
@@ -1022,6 +1023,9 @@
                             <arg>-feature</arg>
                             <arg>-explaintypes</arg>
                             <arg>-Yno-adapted-args</arg>
+                            <arg>-P:silencer:globalFilters=.*deprecated.*</arg>
+                            <arg>-Xfatal-warnings</arg>
+                            <arg>-Ywarn-unused:imports</arg>
                         </args>
                         <jvmArgs>
                             <jvmArg>-Xms1024m</jvmArg>
@@ -1035,6 +1039,13 @@
                             <javacArg>${java.version}</javacArg>
                             <javacArg>-Xlint:all,-serial,-path,-try</javacArg>
                         </javacArgs>
+                        <compilerPlugins>
+                            <compilerPlugin>
+                                <groupId>com.github.ghik</groupId>
+                                <artifactId>silencer-plugin_${scala.version}</artifactId>
+                                <version>${maven.plugin.silencer.version}</version>
+                            </compilerPlugin>
+                        </compilerPlugins>
                     </configuration>
                 </plugin>
 

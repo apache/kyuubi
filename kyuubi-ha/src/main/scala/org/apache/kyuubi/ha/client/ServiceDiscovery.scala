@@ -24,7 +24,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 import javax.security.auth.login.Configuration
 
 import scala.collection.JavaConverters._
-import scala.util.control.NonFatal
 
 import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
 import org.apache.curator.framework.recipes.nodes.PersistentEphemeralNode
