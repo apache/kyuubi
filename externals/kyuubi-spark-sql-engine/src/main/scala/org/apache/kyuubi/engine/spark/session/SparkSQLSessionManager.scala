@@ -102,8 +102,8 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     try {
       spark.conf.set(key, value)
     } catch {
-      case _: AnalysisException =>
-        warn(s"Spark config $key is not modifiable during running, ignored it")
+      case e: AnalysisException =>
+        warn(e.getMessage())
     }
   }
 
