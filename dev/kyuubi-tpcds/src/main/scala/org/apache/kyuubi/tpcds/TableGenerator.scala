@@ -52,7 +52,6 @@ case class TableGenerator(
 
   private def toDF: DataFrame = {
     val rawRDD = ss.sparkContext.parallelize(1 to parallelism, parallelism).flatMap { i =>
-      val parallel = s"-PARALLEL $parallelism -child $i"
       val os = System.getProperty("os.name").split(' ')(0).toLowerCase
       val loader = Thread.currentThread().getContextClassLoader
 
@@ -85,20 +84,21 @@ case class TableGenerator(
       val cmd = s"./dsdgen" +
         s" -TABLE $name" +
         s" -SCALE $scaleFactor" +
-        s" $parallel" +
+        s" -PARALLEL $parallelism" +
+        s" -child $i" +
         s" -DISTRIBUTIONS tpcds.idx" +
         s" -FORCE Y" +
         s" -QUIET Y"
 
       val builder = new ProcessBuilder(cmd.split(" "): _*)
       builder.directory(tempDir)
-      logger.info(s"Start $cmd at " + builder.directory())
       builder.redirectError(Redirect.INHERIT)
-      val data = Paths.get(tempDir.toString, s"${name}_${i}_$parallelism.dat")
+      logger.info(s"Start $cmd at " + builder.directory())
       val process = builder.start()
       val res = process.waitFor()
 
       logger.info(s"Finish w/ $res" + cmd)
+      val data = Paths.get(tempDir.toString, s"${name}_${i}_$parallelism.dat")
       val iterator = if (Files.exists(data)) {
         new BufferedSource(new FileInputStream(data.toFile), 8192).getLines()
       } else {
