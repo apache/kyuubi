@@ -45,6 +45,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-dao</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_${scala.binary.version}</artifactId>
             <scope>provided</scope>

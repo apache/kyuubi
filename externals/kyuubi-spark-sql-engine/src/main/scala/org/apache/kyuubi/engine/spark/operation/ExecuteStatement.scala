@@ -17,16 +17,21 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import java.util.Date
 import java.util.concurrent.RejectedExecutionException
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.types._
-
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.engine.spark.{ArrayFetchIterator, KyuubiSparkUtil}
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.Async
+import org.apache.kyuubi.web.dao.StatementDao
+import org.apache.kyuubi.web.model.StatementState
+import org.apache.kyuubi.web.model.entity.KStatement
+import org.apache.spark.KyuubiSparkUtils
 
 class ExecuteStatement(
     spark: SparkSession,
@@ -39,6 +44,26 @@ class ExecuteStatement(
     OperationLog.createOperationLog(session.handle, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
   private var result: DataFrame = _
+
+
+
+  private var fetchedCount = 0L
+
+  val kStatement = new KStatement()
+  kStatement.setCode(statement)
+  kStatement.setContext_id(spark.sparkContext.applicationId)
+  kStatement.setOwner(session.user)
+  kStatement.setQueue(KyuubiSparkUtils.getQueue(spark.sparkContext.getConf))
+  kStatement.setRow_count(0L)
+  kStatement.setRuntime(0L)
+  kStatement.setSession_id(session.handle.toString)
+  kStatement.setStart_time(new Date())
+  kStatement.setStatement_id(getHandle.getHandleIdentifier.toString)
+  kStatement.setStatus(StatementState.waiting.name())
+  Async.async(() => {
+    StatementDao.getInstance().save(kStatement)
+  })
+
 
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
