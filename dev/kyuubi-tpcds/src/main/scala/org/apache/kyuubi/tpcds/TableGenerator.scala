@@ -93,11 +93,11 @@ case class TableGenerator(
       val builder = new ProcessBuilder(cmd.split(" "): _*)
       builder.directory(tempDir)
       builder.redirectError(Redirect.INHERIT)
-      logger.info(s"Start $cmd at " + builder.directory())
+      logger.info(s"Start $cmd at ${builder.directory()}")
       val process = builder.start()
       val res = process.waitFor()
 
-      logger.info(s"Finish w/ $res" + cmd)
+      logger.info(s"Finish w/ $res ${cmd}")
       val data = Paths.get(tempDir.toString, s"${name}_${i}_$parallelism.dat")
       val iterator = if (Files.exists(data)) {
         new BufferedSource(new FileInputStream(data.toFile), 8192).getLines()
