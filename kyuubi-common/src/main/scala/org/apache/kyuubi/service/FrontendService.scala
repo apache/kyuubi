@@ -41,6 +41,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
 
   import FrontendService._
   import KyuubiConf._
+  import OperationHandle._
 
   def this(be: BackendService, oomHook: Runnable) = {
     this(classOf[FrontendService].getSimpleName, be, oomHook)

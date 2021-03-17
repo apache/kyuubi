@@ -20,7 +20,8 @@ package org.apache.kyuubi.service.authentication
 import java.security.Security
 import java.util.Collections
 import javax.security.auth.callback.{Callback, CallbackHandler, NameCallback, PasswordCallback, UnsupportedCallbackException}
-import javax.security.sasl.AuthorizeCallback
+import javax.security.auth.login.LoginException
+import javax.security.sasl.{AuthenticationException, AuthorizeCallback}
 
 import org.apache.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.thrift.{TProcessor, TProcessorFactory}

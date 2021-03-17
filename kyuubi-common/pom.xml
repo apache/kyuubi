@@ -32,6 +32,16 @@
     <name>Kyuubi Project Common</name>
 
     <dependencies>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.6</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -91,6 +101,7 @@
             <artifactId>apacheds-service</artifactId>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
 
     <build>
