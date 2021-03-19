@@ -6,7 +6,6 @@
 .. image:: imgs/kyuubi_logo.png
    :align: center
 
-
 Welcome to Kyuubi's documentation!
 ==================================
 

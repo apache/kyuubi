@@ -91,7 +91,7 @@ html_theme = 'sphinx_rtd_theme'
 #     'logo_only': True
 # }
 
-html_logo = 'imgs/kyuubi_logo_yellow.png'
+html_logo = 'imgs/kyuubi_logo_white.png'
 
 
 pygments_style = 'sphinx'
