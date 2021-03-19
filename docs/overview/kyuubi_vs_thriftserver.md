@@ -146,7 +146,7 @@ For operations like `ADD JAR ...` or `CREATE TEMPORARY FUNCTION  ... USING...`, 
 And there is no such way for deleting when conflicts.
 Besides, since UDFs are loaded directly into the Spark ThriftServer, if they contain some unintentional or malicious logic, such as calling `System.exit(-1)`, which may kill the service directly, or some operations that affect the server behavior globally like Kerberos authentication.
 
-## 3 Kyuubi VS Spark Thrift Server
+## Kyuubi VS Spark Thrift Server
 
 The HiveServer2 is also introduced here for a more comprehensive comparison.
 
@@ -232,8 +232,6 @@ It is instrumental in reducing the workload of the server and improving client c
 For task scheduling that belongs to the compute phase also happens at Kyuubi's Engine side.
 It is not as heavy as the Spark ThriftServer, where there is an intense competition between the client concurrency and the task scheduling.
 In principle, the more executors there are, or the more significant the amount of data processed, the more pressure on the server-side.
-
-### Service Stability
 
 ### Service Stability
 
