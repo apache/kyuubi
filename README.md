@@ -1,4 +1,4 @@
-![](docs/imgs/kyuubi_logo_white.png)![](docs/imgs/kyuubi_logo.png)
+![](docs/imgs/kyuubi_logo.png)
 
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![](https://tokei.rs/b1/github/yaooqinn/kyuubi)](https://github.com/yaooqinn/kyuubi)

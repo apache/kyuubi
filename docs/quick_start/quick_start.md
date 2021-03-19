@@ -1,7 +1,7 @@
 <script async defer src="https://buttons.github.io/buttons.js"></script>
 <div align=center>
 
-![](../imgs/kyuubi_logo_simple.png)
+![](../imgs/kyuubi_logo.png)
 
 </div>
 
