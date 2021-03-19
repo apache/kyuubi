@@ -49,11 +49,11 @@ The only heavyweight case is when there is no `SparkContext` instantiated or cac
 which usually happens when the user is connecting for the first time or has not connected for a long time.
 This one-time cost session maintenance model can meet most of the ad-hoc fast response requirements.
 
-Kyuubi maintains connections to `SparkConext` in a loosely coupled fashion. These `SparkContext's can be Spark programs created locally in client deploy mode by this service instance,
+Kyuubi maintains connections to `SparkConext` in a loosely coupled fashion. These `SparkContexts` can be Spark programs created locally in client deploy mode by this service instance,
 or in Yarn or Kubernetes clusters in cluster deploy mode.
-In highly available mode, these `SparkConext` can also be created by other Kyuubi instances on different machines and shared by this instance.
+In highly available mode, these `SparkConexts` can also be created by other Kyuubi instances on different machines and shared by this instance.
 
-These `SparkConext` instances are essentially remote query execution engine programs hosted by Kyuubi services.
+These `SparkConexts` instances are essentially remote query execution engine programs hosted by Kyuubi services.
 These programs are implemented on Spark SQL and compile, optimize, and execute SQL statements end-to-end and the necessary interaction with the metadata (e.g. Hive Metastore) and storage (e.g. HDFS) services,
 maximizing the power of Spark SQL.
 They can manage their lifecycle, cache and recycle themselves,
