@@ -49,7 +49,7 @@ The only heavyweight case is when there is no `SparkContext` instantiated or cac
 which usually happens when the user is connecting for the first time or has not connected for a long time.
 This one-time cost session maintenance model can meet most of the ad-hoc fast response requirements.
 
-Kyuubi maintains connections to `SparkConext` in a loosely coupled fashion. These `SparkContext's can be Spark programs created locally in client deploy mode by this service instance,
+Kyuubi maintains connections to `SparkConext` in a loosely coupled fashion. These `SparkContext` can be Spark programs created locally in client deploy mode by this service instance,
 or in Yarn or Kubernetes clusters in cluster deploy mode.
 In highly available mode, these `SparkConext` can also be created by other Kyuubi instances on different machines and shared by this instance.
 
