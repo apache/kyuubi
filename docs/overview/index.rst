@@ -10,3 +10,4 @@ Overview
 
     Architecture <architecture>
     kyuubi_vs_hive
+    kyuubi_vs_thriftserver
