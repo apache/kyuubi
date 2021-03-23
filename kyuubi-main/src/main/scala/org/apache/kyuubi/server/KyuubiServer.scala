@@ -26,6 +26,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.ha.server.EmbeddedZkServer
+import org.apache.kyuubi.metrics.{MetricsConf, MetricsSystem}
 import org.apache.kyuubi.service.{AbstractBackendService, KinitAuxiliaryService, Serverable}
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
 
@@ -84,6 +85,11 @@ class KyuubiServer(name: String) extends Serverable(name) {
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val kinit = new KinitAuxiliaryService()
     addService(kinit)
+
+    if (conf.get(MetricsConf.METRICS_ENABLED)) {
+      addService(new MetricsSystem)
+    }
+
     super.initialize(conf)
     if (ServiceDiscovery.supportServiceDiscovery(conf)) {
       addService(discoveryService)
