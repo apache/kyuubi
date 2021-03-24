@@ -95,6 +95,7 @@
         <maven.plugin.jar.version>3.2.0</maven.plugin.jar.version>
         <maven.plugin.assembly.version>3.2.0</maven.plugin.assembly.version>
         <maven.plugin.dependency.version>3.1.1</maven.plugin.dependency.version>
+        <maven.plugin.clean.version>3.1.0</maven.plugin.clean.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
         <maven.plugin.download.version>1.6.0</maven.plugin.download.version>
         <maven.plugin.silencer.version>1.6.0</maven.plugin.silencer.version>
@@ -1147,6 +1148,22 @@
                             </configuration>
                         </execution>
                     </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-clean-plugin</artifactId>
+                    <version>${maven.plugin.clean.version}</version>
+                    <configuration>
+                        <filesets>
+                            <fileset>
+                                <directory>embedded_zookeeper</directory>
+                            </fileset>
+                            <fileset>
+                                <directory>metastore_db</directory>
+                            </fileset>
+                        </filesets>
+                    </configuration>
                 </plugin>
 
                 <plugin>
