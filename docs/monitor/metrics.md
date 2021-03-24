@@ -1,6 +1,12 @@
 # Kyuubi Server Metrics
 
+Kyuubi has a configurable metrics system based on the [Dropwizard Metrics Library](https://metrics.dropwizard.io/).
+This allows users to report Kyuubi metrics to a variety of `kyuubi.metrics.reporters`. 
+The metrics provide instrumentation for specific activities and Kyuubi server.
+
 ## Configurations
+
+The metrics system is configured via `$KYUUBI_HOME/conf/kyuubi-defaults.conf`.
 
 Key | Default | Meaning | Since
 --- | --- | --- | ---
@@ -12,14 +18,21 @@ kyuubi\.metrics<br>\.reporters|<div style='width: 80pt;word-wrap: break-word;whi
 
 ## Metrics
 
-Metrics Name|Type|Added In|Description
----|---|---|---
-exec_async_pool_size|gauge|0.7.0| backend service executive threadpool size
-exec_async_queue_size|gauge|0.7.0| backend service executive threadpool wait queue size
-error_queries|counter|0.7.0| total failed queris
-open_connections|counter|0.7.0| current opened connections
-open_operations|counter|0.7.0| current opened operations
-running_queries|counter|0.7.0| current running sql queries
-spark_session_cache_size|gauge|0.7.0| current caches for SparkSession/SparkContext
-total_connections|counter|0.7.0| cumulative connection count
-total_queries|counter|0.7.0| cumulative sql quries 
+These metrics include:
+
+Metrics Prefix | Metrics Suffix | Type | Since | Description
+---|---|---|---|---
+kyuubi<br/>.exec.pool<br/>.threads.alive ||gauge|1.1.0|<div style='width: 150pt;word-wrap: break-word;white-space: normal'> threads keepAlive in the backend executive thread pool</div>
+kyuubi<br/>.exec.pool<br/>.threads.active ||gauge|1.1.0|<div style='width: 150pt;word-wrap: break-word;white-space: normal'> threads active in the backend executive thread pool</div>
+kyuubi<br/>.connection.total   | | counter | 1.1.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative connection count</div>
+kyuubi<br/>.connection.opened  | | gauge | 1.1.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> current active connection count</div>
+kyuubi<br/>.connection.opened  | `${user}` | counter | 1.1.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> cumulative connections requested by a `${user}`</div>
+kyuubi<br/>.connection.failed  | | counter | 1.1.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative failed connection count</div>
+kyuubi<br/>.connection.failed  | `${user}` | counter | 1.1.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative failed connections for a `${user}`</div>
+kyuubi<br/>.statement.total    | | counter | 1.1.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative opened statement count</div>
+kyuubi<br/>.statement.opened   | | counter | 1.1.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  current opened statement count</div>
+kyuubi<br/>.statement.failed   | `${errorType}` | counter | 1.1.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative failed statement for a particular `${errorType}`, e.g. `AnalysisException`</div>
+kyuubi<br/>.engine.total       | | counter | 1.1.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative created engines</div>
+kyuubi<br/>.engine.timeout     | | counter | 1.1.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative timeout engines</div>
+kyuubi<br/>.engine.failed      | `${user}` | counter | 1.1.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative explicitly failed engine count for a `${user}`</div>
+kyuubi<br/>.engine.failed      | `${errorType}` | counter | 1.1.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> cumulative explicitly failed engine count for a particular `${errorType}`, e.g. `ClassNotFoundException`</div>

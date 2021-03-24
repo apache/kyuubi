@@ -19,21 +19,24 @@ package org.apache.kyuubi.metrics
 
 object MetricsConstants {
 
-  val EXEC_POOL_ALIVE: String = "exec.pool.threads.alive"
-  val EXEC_POOL_ACTIVE: String = "exec.pool.threads.active"
+  private final val KYUUBI = "kyuubi."
 
-  val CONN_OPEN: String = "connection.open"
-  val CONN_FAIL: String = "connection.fail"
-  val CONN_TOTAL: String = "connection.total"
+  final val EXEC_POOL_ALIVE: String = KYUUBI + "exec.pool.threads.alive"
+  final val EXEC_POOL_ACTIVE: String = KYUUBI + "exec.pool.threads.active"
 
-  val SESSION_OPEN_KEY: String = "session.open"
-  val SESSION_TOTAL_KEY: String = "session.total"
+  private final val CONN = KYUUBI + "connection."
 
-  val STATEMENT_OPEN: String = "statement.open"
-  val STATEMENT_FAIL: String = "statement.fail"
-  val STATEMENT_TOTAL: String = "statement.total"
+  final val CONN_OPEN: String = CONN + "opened"
+  final val CONN_FAIL: String = CONN + "failed"
+  final val CONN_TOTAL: String = CONN + "total"
 
-  val ENGINE_FAIL: String = "engine.fail"
-  val ENGINE_TIMEOUT: String = "engine.timeout"
-  val ENGINE_TOTAL: String = "engine.total"
+  private final val STATEMENT = KYUUBI + "statement."
+  final val STATEMENT_OPEN: String = STATEMENT + "opened"
+  final val STATEMENT_FAIL: String = STATEMENT + "failed"
+  final val STATEMENT_TOTAL: String = STATEMENT + "total"
+
+  private final val ENGINE = KYUUBI + "engine."
+  final val ENGINE_FAIL: String = ENGINE + "failed"
+  final val ENGINE_TIMEOUT: String = ENGINE + "timeout"
+  final val ENGINE_TOTAL: String = ENGINE + "total"
 }

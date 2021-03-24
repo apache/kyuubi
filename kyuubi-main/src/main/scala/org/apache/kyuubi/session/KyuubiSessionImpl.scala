@@ -120,8 +120,13 @@ class KyuubiSessionImpl(
               if (exitValue.isEmpty && process.waitFor(1, TimeUnit.SECONDS)) {
                 exitValue = Some(process.exitValue())
                 if (exitValue.get != 0) {
-                  MetricsSystem.tracing(_.incAndGetCount(MetricRegistry.name(ENGINE_FAIL, user)))
-                  throw builder.getError
+                  val error = builder.getError
+                  MetricsSystem.tracing { ms =>
+                    ms.incAndGetCount(MetricRegistry.name(ENGINE_FAIL, user))
+                    ms.incAndGetCount(
+                      MetricRegistry.name(ENGINE_FAIL, error.getClass.getSimpleName))
+                  }
+                  throw error
                 }
               }
               if (started + timeout <= System.currentTimeMillis()) {
