@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.metrics
 
-import java.io.{BufferedWriter, IOException}
+import java.io.BufferedWriter
 import java.nio.charset.StandardCharsets
 import java.nio.file._
 import java.nio.file.attribute.PosixFilePermissions
@@ -39,43 +39,39 @@ class JsonReporterService(registry: MetricRegistry)
   private val jsonMapper = new ObjectMapper().registerModule(
     new MetricsModule(TimeUnit.MILLISECONDS, TimeUnit.MILLISECONDS, false))
   private val timer = new Timer(true)
-  private var tempPath: Path = _
+  private var reportDir: Path = _
   private var reportPath: Path = _
-  private var writer: BufferedWriter = _
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
-    val reportDir = conf.get(METRICS_REPORT_LOCATION)
-    reportPath = Paths.get(reportDir, "report.json").toAbsolutePath
-    tempPath = Paths.get(reportDir, "report.json.tmp").toAbsolutePath
-    writer = Files.newBufferedWriter(
-      tempPath, StandardCharsets.UTF_8, StandardOpenOption.TRUNCATE_EXISTING)
+    reportDir = Paths.get(conf.get(METRICS_REPORT_LOCATION)).toAbsolutePath
+    Files.createDirectories(reportDir)
+    reportPath = Paths.get(reportDir.toString, "report.json").toAbsolutePath
     super.initialize(conf)
   }
 
   override def start(): Unit = synchronized {
     val interval = conf.get(METRICS_REPORT_INTERVAL)
+    var writer: BufferedWriter = null
     timer.schedule(new TimerTask {
       override def run(): Unit = try {
         val json = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(registry)
+        val tmpPath = Files.createTempFile(reportDir, "report", ".json").toAbsolutePath
+        writer = Files.newBufferedWriter(tmpPath, StandardCharsets.UTF_8)
         writer.write(json)
-        writer.flush()
-        Files.setPosixFilePermissions(tempPath, PosixFilePermissions.fromString("rwxr--r--"))
-        Files.move(tempPath, reportPath, StandardCopyOption.REPLACE_EXISTING)
+        writer.close()
+        Files.setPosixFilePermissions(tmpPath, PosixFilePermissions.fromString("rwxr--r--"))
+        Files.move(tmpPath, reportPath, StandardCopyOption.REPLACE_EXISTING)
       } catch {
-        case NonFatal(e) =>
-          error("Error writing metrics to json file" + tempPath, e)
+        case NonFatal(e) => error("Error writing metrics to json file" + reportPath, e)
+      } finally {
+        if (writer != null) writer.close()
       }
     }, interval, interval)
     super.start()
   }
 
   override def stop(): Unit = synchronized {
-    try {
-      if (writer != null) writer.close()
-      timer.cancel()
-    } catch {
-      case _: IOException =>
-    }
+    timer.cancel()
     super.stop()
   }
 }

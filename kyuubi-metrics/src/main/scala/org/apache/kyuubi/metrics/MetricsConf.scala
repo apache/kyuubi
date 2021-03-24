@@ -44,9 +44,9 @@ object MetricsConf {
     .stringConf
     .transform(_.toUpperCase())
     .toSequence
-    .createWithDefault(Seq(JSON.toString, SLF4J.toString))
+    .createWithDefault(Seq(JSON.toString))
 
-  val METRICS_REPORT_LOCATION: ConfigEntry[String] = buildConf("metrics.report.location")
+  val METRICS_REPORT_LOCATION: ConfigEntry[String] = buildConf("metrics.json.report.location")
     .doc("Where the json metrics file located")
     .version("1.1.0")
     .stringConf

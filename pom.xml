@@ -70,7 +70,7 @@
         <hadoop.version>3.2.2</hadoop.version>
         <hadoop.binary.version>2.7</hadoop.binary.version>
         <hive.version>2.3.7</hive.version>
-        <jackson-databind.version>2.11.4</jackson-databind.version>
+        <jackson-databind.version>2.10.0</jackson-databind.version>
         <spark.version>3.0.2</spark.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop${hadoop.binary.version}.tgz</spark.archive.name>
         <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
@@ -1108,6 +1108,7 @@
                             <log4j.configuration>file:src/test/resources/log4j.properties</log4j.configuration>
                             <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
                             <spark.driver.memory>2g</spark.driver.memory>
+                            <kyuubi.metrics.json.report.location>${project.build.directory}/metrics</kyuubi.metrics.json.report.location>
                         </systemProperties>
                         <tagsToExclude>${maven.plugin.scalatest.exclude.tags}</tagsToExclude>
                     </configuration>
@@ -1366,6 +1367,7 @@
             <properties>
                 <spark.version>3.1.1</spark.version>
                 <hadoop.binary.version>2.7</hadoop.binary.version>
+                <jackson-databind.version>2.11.4</jackson-databind.version>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.DataLakeTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>

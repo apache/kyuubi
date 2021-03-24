@@ -21,9 +21,9 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.{TCLIService, TExecuteStatementReq, TFetchOrientation, TFetchResultsReq, TGetOperationStatusReq, TSessionHandle}
 import org.apache.hive.service.rpc.thrift.TOperationState._
-import org.apache.kyuubi.KyuubiSQLException
 
-import org.apache.kyuubi.metrics.MetricsConstants.{STATEMENT_OPEN, STATEMENT_TOTAL}
+import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session

@@ -92,6 +92,7 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 
 #
 # kyuubi.authentication           NONE
+# kyuubi.frontend.bind.host       localhost
 # kyuubi.frontend.bind.port       10009
 #
 
@@ -164,6 +165,15 @@ kyuubi\.kinit\.interval|<div style='width: 80pt;word-wrap: break-word;white-spac
 kyuubi\.kinit\.keytab|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Location of Kyuubi server's keytab.</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.kinit\.max<br>\.attempts|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>10</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>How many times will `kinit` process retry</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.kinit<br>\.principal|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Name of the Kerberos principal.</div>|<div style='width: 20pt'>1.0.0</div>
+
+### Metrics
+
+Key | Default | Meaning | Since
+--- | --- | --- | ---
+kyuubi\.metrics<br>\.enabled|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>true</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Set to true to enable kyuubi metrics system</div>|<div style='width: 20pt'>1.1.0</div>
+kyuubi\.metrics\.json<br>\.report\.location|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>metrics</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Where the json metrics file located</div>|<div style='width: 20pt'>1.1.0</div>
+kyuubi\.metrics\.report<br>\.interval|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT5S</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>How often should report metrics to json/console. no effect on JMX</div>|<div style='width: 20pt'>1.1.0</div>
+kyuubi\.metrics<br>\.reporters|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>JSON</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>A comma separated list for all metrics reporters<ul> <li>JSON - default reporter which outputs measurements to json file periodically</li> <li>CONSOLE - ConsoleReporter which outputs measurements to CONSOLE.</li> <li>SLF4J - Slf4jReporter which outputs measurements to system log.</li> <li>JMX - JmxReporter which listens for new metrics and exposes them as namespaced MBeans.</li> </ul></div>|<div style='width: 20pt'>1.1.0</div>
 
 ### Operation
 
