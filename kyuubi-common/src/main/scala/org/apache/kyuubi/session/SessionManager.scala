@@ -87,7 +87,17 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   def getOpenSessionCount: Int = handleToSession.size()
 
-  override def initialize(conf: KyuubiConf): Unit = {
+  protected def getExecPoolSize: Int = {
+    assert(execPool != null)
+    execPool.getPoolSize
+  }
+
+  protected def getActiveCount: Int = {
+    assert(execPool != null)
+    execPool.getActiveCount
+  }
+
+  override def initialize(conf: KyuubiConf): Unit = synchronized {
     addService(operationManager)
 
     val poolSize: Int = if (isServer) {
@@ -112,12 +122,12 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     super.initialize(conf)
   }
 
-  override def start(): Unit = {
+  override def start(): Unit = synchronized {
     startTimeoutChecker()
     super.start()
   }
 
-  override def stop(): Unit = {
+  override def stop(): Unit = synchronized {
     super.stop()
     shutdown = true
     val shutdownTimeout: Long = if (isServer) {

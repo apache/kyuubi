@@ -17,11 +17,14 @@
 
 package org.apache.kyuubi.session
 
+import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.client.ServiceDiscovery
+import org.apache.kyuubi.metrics.MetricsConstants._
+import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.KyuubiOperationManager
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
@@ -61,6 +64,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       handle
     } catch {
       case e: Throwable =>
+        MetricsSystem.tracing { ms =>
+          ms.incAndGetCount(CONN_FAIL)
+          ms.incAndGetCount(MetricRegistry.name(CONN_FAIL, user))
+        }
         try {
           sessionImpl.close()
         } catch {
@@ -69,6 +76,15 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
         throw KyuubiSQLException(
           s"Error opening session $handle for $username due to ${e.getMessage}", e)
     }
+  }
+
+  override def start(): Unit = synchronized {
+    MetricsSystem.tracing { ms =>
+      ms.registerGauge(CONN_OPEN, getOpenSessionCount, 0)
+      ms.registerGauge(EXEC_POOL_ALIVE, getExecPoolSize, 0)
+      ms.registerGauge(EXEC_POOL_ACTIVE, getActiveCount, 0)
+    }
+    super.start()
   }
 
   override protected def isServer: Boolean = true
