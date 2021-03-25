@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.sql.{DatabaseMetaData, ResultSet, SQLFeatureNotSupportedException, SQLTimeoutException}
+import java.sql.{DatabaseMetaData, ResultSet, SQLFeatureNotSupportedException}
 
 import scala.collection.JavaConverters._
 import scala.util.Random
@@ -744,28 +744,6 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
       tFetchResultsReq.setMaxRows(1000)
       val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
       assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-    }
-  }
-
-  test("SPARK-26533: Support query auto timeout cancel on thriftserver - setQueryTimeout") {
-    withJdbcStatement() { statement =>
-      statement.setQueryTimeout(1)
-      val e = intercept[SQLTimeoutException] {
-        statement.execute("select java_method('java.lang.Thread', 'sleep', 10000L)")
-      }.getMessage
-      assert(e.contains("Query timed out after"))
-
-      statement.setQueryTimeout(0)
-      val rs1 = statement.executeQuery(
-        "select 'test', java_method('java.lang.Thread', 'sleep', 3000L)")
-      rs1.next()
-      assert(rs1.getString(1) == "test")
-
-      statement.setQueryTimeout(-1)
-      val rs2 = statement.executeQuery(
-        "select 'test', java_method('java.lang.Thread', 'sleep', 3000L)")
-      rs2.next()
-      assert(rs2.getString(1) == "test")
     }
   }
 }

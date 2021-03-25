@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.operation
 
-import java.sql.{Date, SQLException, Timestamp}
+import java.sql.{Date, SQLException, SQLTimeoutException, Timestamp}
 
 import scala.collection.JavaConverters._
 
@@ -325,6 +325,28 @@ trait JDBCTests extends BasicJDBCTests {
       assert(metaData.getColumnType(1) === java.sql.Types.VARCHAR)
       assert(metaData.getPrecision(1) === Int.MaxValue)
       assert(metaData.getScale(1) === 0)
+    }
+  }
+
+  test("SPARK-26533: Support query auto timeout cancel on thriftserver - setQueryTimeout") {
+    withJdbcStatement() { statement =>
+      statement.setQueryTimeout(1)
+      val e = intercept[SQLTimeoutException] {
+        statement.execute("select java_method('java.lang.Thread', 'sleep', 10000L)")
+      }.getMessage
+      assert(e.contains("Query timed out after"))
+
+      statement.setQueryTimeout(0)
+      val rs1 = statement.executeQuery(
+        "select 'test', java_method('java.lang.Thread', 'sleep', 3000L)")
+      rs1.next()
+      assert(rs1.getString(1) == "test")
+
+      statement.setQueryTimeout(-1)
+      val rs2 = statement.executeQuery(
+        "select 'test', java_method('java.lang.Thread', 'sleep', 3000L)")
+      rs2.next()
+      assert(rs2.getString(1) == "test")
     }
   }
 }
