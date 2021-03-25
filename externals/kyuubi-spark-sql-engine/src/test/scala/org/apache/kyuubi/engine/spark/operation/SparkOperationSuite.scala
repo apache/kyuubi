@@ -17,7 +17,8 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.sql.{DatabaseMetaData, ResultSet, SQLFeatureNotSupportedException}
+import java.sql.{DatabaseMetaData, ResultSet, SQLFeatureNotSupportedException, SQLTimeoutException}
+import java.util.concurrent.atomic.{AtomicBoolean, AtomicInteger}
 
 import scala.collection.JavaConverters._
 import scala.util.Random
@@ -27,11 +28,15 @@ import org.apache.hive.service.cli.HiveSQLException
 import org.apache.hive.service.rpc.thrift._
 import org.apache.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.hive.service.rpc.thrift.TOperationState._
+import org.apache.spark.TaskKilled
+import org.apache.spark.scheduler.{SparkListener, SparkListenerTaskEnd}
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
 import org.apache.spark.sql.types._
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
+import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
+import org.apache.kyuubi.engine.spark.{Constants, WithSparkSQLEngine}
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.JDBCTests
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
@@ -744,6 +749,98 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
       tFetchResultsReq.setMaxRows(1000)
       val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
       assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+    }
+  }
+
+  test("SPARK-26533: Support query auto timeout cancel on thriftserver - setQueryTimeout") {
+    withJdbcStatement() { statement =>
+      statement.setQueryTimeout(1)
+      val e = intercept[SQLTimeoutException] {
+        statement.execute("select java_method('java.lang.Thread', 'sleep', 10000L)")
+      }.getMessage
+      assert(e.contains("Query timed out after"))
+
+      statement.setQueryTimeout(0)
+      val rs1 = statement.executeQuery(
+        "select 'test', java_method('java.lang.Thread', 'sleep', 3000L)")
+      rs1.next()
+      assert(rs1.getString(1) == "test")
+
+      statement.setQueryTimeout(-1)
+      val rs2 = statement.executeQuery(
+        "select 'test', java_method('java.lang.Thread', 'sleep', 3000L)")
+      rs2.next()
+      assert(rs2.getString(1) == "test")
+    }
+  }
+
+
+  test("SPARK-26533: Support query auto timeout cancel on thriftserver - SQLConf") {
+    withJdbcStatement() { statement =>
+      statement.execute(s"SET ${Constants.THRIFTSERVER_QUERY_TIMEOUT}=1")
+      val e1 = intercept[SQLTimeoutException] {
+        statement.execute("select java_method('java.lang.Thread', 'sleep', 10000L)")
+      }.getMessage
+      assert(e1.contains("Query timed out after"))
+
+      statement.execute(s"SET ${Constants.THRIFTSERVER_QUERY_TIMEOUT}=0")
+      val rs = statement.executeQuery(
+        "select 'test', java_method('java.lang.Thread', 'sleep', 3000L)")
+      rs.next()
+      assert(rs.getString(1) == "test")
+
+      // Uses a smaller timeout value of a config value and an a user-specified one
+      statement.execute(s"SET ${Constants.THRIFTSERVER_QUERY_TIMEOUT}=1")
+      statement.setQueryTimeout(30)
+      val e2 = intercept[SQLTimeoutException] {
+        statement.execute("select java_method('java.lang.Thread', 'sleep', 10000L)")
+      }.getMessage
+      assert(e2.contains("Query timed out after"))
+
+      statement.execute(s"SET ${Constants.THRIFTSERVER_QUERY_TIMEOUT}=30")
+      statement.setQueryTimeout(1)
+      val e3 = intercept[SQLTimeoutException] {
+        statement.execute("select java_method('java.lang.Thread', 'sleep', 10000L)")
+      }.getMessage
+      assert(e3.contains("Query timed out after"))
+    }
+  }
+
+  test("SPARK-33526: Add config to control if cancel invoke interrupt task on thriftserver") {
+    withJdbcStatement() { statement =>
+      val index = new AtomicInteger(0)
+      val forceCancel = new AtomicBoolean(false)
+      val listener = new SparkListener {
+        override def onTaskEnd(taskEnd: SparkListenerTaskEnd): Unit = {
+          assert(taskEnd.reason.isInstanceOf[TaskKilled])
+          if (forceCancel.get()) {
+            assert(System.currentTimeMillis() - taskEnd.taskInfo.launchTime < 1000)
+            index.incrementAndGet()
+          } else {
+            // avoid accuracy, we check 2s instead of 3s.
+            assert(System.currentTimeMillis() - taskEnd.taskInfo.launchTime >= 2000)
+            index.incrementAndGet()
+          }
+        }
+      }
+
+      spark.sparkContext.addSparkListener(listener)
+      try {
+        statement.setQueryTimeout(1)
+        Seq(true, false).foreach { force =>
+          statement.execute(s"SET ${Constants.THRIFTSERVER_FORCE_CANCEL}=$force")
+          forceCancel.set(force)
+          val e1 = intercept[SQLTimeoutException] {
+            statement.execute("select java_method('java.lang.Thread', 'sleep', 3000L)")
+          }.getMessage
+          assert(e1.contains("Query timed out"))
+        }
+        eventually(Timeout(30.seconds)) {
+          assert(index.get() == 2)
+        }
+      } finally {
+        spark.sparkContext.removeSparkListener(listener)
+      }
     }
   }
 }
