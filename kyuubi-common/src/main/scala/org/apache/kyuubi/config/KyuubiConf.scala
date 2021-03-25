@@ -229,6 +229,13 @@ object KyuubiConf {
     .intConf
     .createWithDefault(10)
 
+  val OPERATION_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("operation.idle.timeout")
+    .doc("Operation will be closed when it's not accessed for this duration of time")
+    .version("1.0.0")
+    .timeConf
+    .createWithDefault(Duration.ofHours(3).toMillis)
+
+
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                              Frontend Service Configuration                                 //
   /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -487,12 +494,6 @@ object KyuubiConf {
       .version("1.0.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(10).toMillis)
-
-  val OPERATION_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("operation.idle.timeout")
-    .doc("Operation will be closed when it's not accessed for this duration of time")
-    .version("1.0.0")
-    .timeConf
-    .createWithDefault(Duration.ofHours(3).toMillis)
 
   val OPERATION_STATUS_POLLING_TIMEOUT: ConfigEntry[Long] =
     buildConf("operation.status.polling.timeout")
