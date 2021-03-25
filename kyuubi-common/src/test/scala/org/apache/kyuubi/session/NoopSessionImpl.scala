@@ -19,13 +19,16 @@ package org.apache.kyuubi.session
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
+import org.apache.kyuubi.config.KyuubiConf
+
 class NoopSessionImpl(
     protocol: TProtocolVersion,
     user: String,
     password: String,
     ipAddress: String,
     conf: Map[String, String],
-    sessionManager: SessionManager)
+    sessionManager: SessionManager,
+    val sessionConf: KyuubiConf)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
   override def open(): Unit = {}

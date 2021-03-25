@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.spark.session
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.session.{AbstractSession, SessionManager}
 
 class SparkSessionImpl(
@@ -27,7 +28,8 @@ class SparkSessionImpl(
     password: String,
     ipAddress: String,
     conf: Map[String, String],
-    sessionManager: SessionManager)
+    sessionManager: SessionManager,
+    val sessionConf: KyuubiConf)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
 }
