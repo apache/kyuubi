@@ -503,7 +503,7 @@ object KyuubiConf {
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
   val OPERATION_FORCE_CANCEL: ConfigEntry[Boolean] =
-    buildConf("operation.interruptOnCancel")
+    buildConf("operation.interrupt.on.cancel")
       .doc("When true, all running tasks will be interrupted if one cancels a query. " +
         "When false, all running tasks will remain until finished.")
       .version("1.2.0")
