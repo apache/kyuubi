@@ -521,7 +521,7 @@ object KyuubiConf {
         s"${OPERATION_FORCE_CANCEL.key} together.")
       .version("1.2.0")
       .timeConf
-      .createWithDefault(Duration.ofSeconds(0).toMillis)
+      .createWithDefault(0L)
 
   val ENGINE_SHARED_LEVEL: ConfigEntry[String] = buildConf("session.engine.share.level")
     .doc("The SQL engine App will be shared in different levels, available configs are: <ul>" +

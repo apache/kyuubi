@@ -34,7 +34,7 @@ trait JDBCTestUtils extends KyuubiFunSuite {
   protected val patterns = Seq("", "*", "%", null, ".*", "_*", "_%", ".%")
   protected def jdbcUrl: String
 
-  private[kyuubi] def withMultipleConnectionJdbcStatement(
+  def withMultipleConnectionJdbcStatement(
       tableNames: String*)(fs: (Statement => Unit)*): Unit = {
     val connections = fs.map { _ => DriverManager.getConnection(jdbcUrl, user, "") }
     val statements = connections.map(_.createStatement())
@@ -57,7 +57,7 @@ trait JDBCTestUtils extends KyuubiFunSuite {
     }
   }
 
-  private[kyuubi] def withDatabases(dbNames: String*)(fs: (Statement => Unit)*): Unit = {
+  def withDatabases(dbNames: String*)(fs: (Statement => Unit)*): Unit = {
     val connections = fs.map { _ => DriverManager.getConnection(jdbcUrl, user, "") }
     val statements = connections.map(_.createStatement())
 
@@ -75,11 +75,11 @@ trait JDBCTestUtils extends KyuubiFunSuite {
     }
   }
 
-  private[kyuubi] def withJdbcStatement(tableNames: String*)(f: Statement => Unit): Unit = {
+  def withJdbcStatement(tableNames: String*)(f: Statement => Unit): Unit = {
     withMultipleConnectionJdbcStatement(tableNames: _*)(f)
   }
 
-  private[kyuubi] def withThriftClient(f: TCLIService.Iface => Unit): Unit = {
+  def withThriftClient(f: TCLIService.Iface => Unit): Unit = {
     val hostAndPort = jdbcUrl.stripPrefix("jdbc:hive2://").split("/;").head.split(":")
     val host = hostAndPort.head
     val port = hostAndPort(1).toInt
@@ -96,7 +96,7 @@ trait JDBCTestUtils extends KyuubiFunSuite {
     }
   }
 
-  private[kyuubi] def withSessionHandle(f: (TCLIService.Iface, TSessionHandle) => Unit): Unit = {
+  def withSessionHandle(f: (TCLIService.Iface, TSessionHandle) => Unit): Unit = {
     withThriftClient { client =>
       val req = new TOpenSessionReq()
       req.setUsername(user)
@@ -117,7 +117,7 @@ trait JDBCTestUtils extends KyuubiFunSuite {
     }
   }
 
-  private[kyuubi] def checkGetSchemas(
+  def checkGetSchemas(
       rs: ResultSet, dbNames: Seq[String], catalogName: String = ""): Unit = {
     var count = 0
     while(rs.next()) {

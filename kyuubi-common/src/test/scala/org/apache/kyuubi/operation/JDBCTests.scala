@@ -328,7 +328,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("SPARK-26533: Support query auto timeout cancel on thriftserver - setQueryTimeout") {
+  test("Support query auto timeout cancel on thriftserver - setQueryTimeout") {
     withJdbcStatement() { statement =>
       statement.setQueryTimeout(1)
       val e = intercept[SQLTimeoutException] {

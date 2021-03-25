@@ -32,7 +32,7 @@ import org.apache.kyuubi.operation.JDBCTestUtils
 
 class SparkEngineSuites extends KyuubiFunSuite {
 
-  test("SPARK-33526: Add config to control if cancel invoke interrupt task on thriftserver") {
+  test("Add config to control if cancel invoke interrupt task on thriftserver") {
     Seq(true, false).foreach { force =>
       withSparkJdbcStatement(Map(KyuubiConf.OPERATION_FORCE_CANCEL.key -> force.toString)) {
         case (statement, spark) =>
@@ -62,7 +62,7 @@ class SparkEngineSuites extends KyuubiFunSuite {
             }.getMessage
             assert(e1.contains("Query timed out"))
             eventually(Timeout(30.seconds)) {
-              assert(index.get() == 2)
+              assert(index.get() == 1)
             }
           } finally {
             spark.sparkContext.removeSparkListener(listener)
@@ -76,13 +76,17 @@ class SparkEngineSuites extends KyuubiFunSuite {
       statement: (Statement, SparkSession) => Unit): Unit = {
     val spark = new WithSparkSuite {
       override def withKyuubiConf: Map[String, String] = conf
-      override protected def jdbcUrl: String = s"jdbc:hive2://$connectionUrl/;"
+      override protected def jdbcUrl: String = getJdbcUrl
     }
-
+    spark.startSparkEngine()
     val tmp: Statement => Unit = { tmpStatement =>
       statement(tmpStatement, spark.getSpark)
     }
-    spark.withJdbcStatement()(tmp)
+    try {
+      spark.withJdbcStatement()(tmp)
+    } finally {
+      spark.stopSparkEngine()
+    }
   }
 }
 

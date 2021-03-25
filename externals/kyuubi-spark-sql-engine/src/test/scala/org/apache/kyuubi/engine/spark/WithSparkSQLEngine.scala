@@ -36,7 +36,7 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
     super.beforeAll()
   }
 
-  protected def startSparkEngine(): Unit = {
+  def startSparkEngine(): Unit = {
     val warehousePath = Utils.createTempDir()
     val metastorePath = Utils.createTempDir()
     warehousePath.toFile.delete()
@@ -63,7 +63,7 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
     stopSparkEngine()
   }
 
-  protected def stopSparkEngine(): Unit = {
+  def stopSparkEngine(): Unit = {
     // we need to clean up conf since it's the global config in same jvm.
     withKyuubiConf.foreach { case (k, _) =>
       System.clearProperty(k)
@@ -83,5 +83,5 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
   }
 
   protected def getJdbcUrl: String = s"jdbc:hive2://$connectionUrl/;"
-  private[Kyuubi] def getSpark = spark
+  def getSpark: SparkSession = spark
 }
