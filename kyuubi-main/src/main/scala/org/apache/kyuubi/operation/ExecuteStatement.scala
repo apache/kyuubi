@@ -73,22 +73,11 @@ class ExecuteStatement(
 
       val req = new TExecuteStatementReq(remoteSessionHandle, statement)
       req.setRunAsync(shouldRunAsync)
-      req.setQueryTimeout(getQueryTimeout)
+      req.setQueryTimeout(queryTimeout)
       val resp = client.ExecuteStatement(req)
       verifyTStatus(resp.getStatus)
       _remoteOpHandle = resp.getOperationHandle
     } catch onError()
-  }
-
-  private def getQueryTimeout: Long = {
-    // If a timeout value `queryTimeout` is specified by users and it is smaller than
-    // a session timeout value, we use the user-specified value.
-    val sessionTimeout = session.sessionManager.getConf.get(KyuubiConf.OPERATION_QUERY_TIMEOUT)
-    if (sessionTimeout > 0 && (queryTimeout <= 0 || sessionTimeout < queryTimeout)) {
-      sessionTimeout
-    } else {
-      queryTimeout
-    }
   }
 
   private def waitStatementComplete(): Unit = {

@@ -22,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap
 import org.apache.hive.service.rpc.thrift.{TCLIService, TFetchResultsReq, TRowSet, TSessionHandle}
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.{Session, SessionHandle}
 import org.apache.kyuubi.util.ThriftUtils
@@ -49,6 +50,17 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     tSessionHandle
   }
 
+  private def getQueryTimeout(statementTimeout: Long): Long = {
+    // If a timeout value `queryTimeout` is specified by users and it is smaller than
+    // a session timeout value, we use the user-specified value.
+    val sessionTimeout = getConf.get(KyuubiConf.OPERATION_QUERY_TIMEOUT)
+    if (sessionTimeout > 0 && (statementTimeout <= 0 || sessionTimeout < statementTimeout)) {
+      sessionTimeout
+    } else {
+      statementTimeout
+    }
+  }
+
   def setConnection(
       sessionHandle: SessionHandle,
       client: TCLIService.Iface,
@@ -70,7 +82,7 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     val client = getThriftClient(session.handle)
     val remoteSessionHandle = getRemoteTSessionHandle(session.handle)
     val operation = new ExecuteStatement(
-      session, client, remoteSessionHandle, statement, runAsync, queryTimeout)
+      session, client, remoteSessionHandle, statement, runAsync, getQueryTimeout(queryTimeout))
     addOperation(operation)
   }
 
