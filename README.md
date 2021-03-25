@@ -1,4 +1,5 @@
-# Kyuubi
+![](docs/imgs/kyuubi_logo.png)
+
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![](https://tokei.rs/b1/github/yaooqinn/kyuubi)](https://github.com/yaooqinn/kyuubi)
 ![GitHub top language](https://img.shields.io/github/languages/top/yaooqinn/kyuubi)
@@ -39,6 +40,8 @@ You can find the specific version of Kyuubi documentation as listed below.
 
 - [master/latest](https://kyuubi.readthedocs.io/en/latest/)
 - [stable](https://kyuubi.readthedocs.io/en/stable/)
+- [v1.1.0](https://kyuubi.readthedocs.io/en/v1.1.0/)
+- [v1.0.3](https://kyuubi.readthedocs.io/en/v1.0.3/)
 - [v1.0.2](https://kyuubi.readthedocs.io/en/v1.0.2/)
 - [v1.0.1](https://kyuubi.readthedocs.io/en/v1.0.1/)
 - [v1.0.0](https://kyuubi.readthedocs.io/en/v1.0.0/)

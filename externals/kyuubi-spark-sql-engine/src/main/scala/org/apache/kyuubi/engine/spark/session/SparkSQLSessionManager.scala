@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.spark.session
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{AnalysisException, SparkSession}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARED_LEVEL
@@ -57,19 +57,19 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
         case (k, v) if k.startsWith(SET_PREFIX) =>
           val newKey = k.substring(SET_PREFIX.length)
           if (newKey.startsWith(SYSTEM_PREFIX)) {
-            sparkSession.conf.set(newKey.substring(SYSTEM_PREFIX.length), v)
+            setModifiableConfig(sparkSession, newKey.substring(SYSTEM_PREFIX.length), v)
           } else if (newKey.startsWith(HIVECONF_PREFIX) && newKey.startsWith(SPARK_PREFIX)) {
             setModifiableConfig(sparkSession, newKey.substring(HIVECONF_PREFIX.length), v)
           } else if (newKey.startsWith(HIVECONF_PREFIX)) {
-            sparkSession.conf.set(newKey.substring(HIVECONF_PREFIX.length), v)
+            setModifiableConfig(sparkSession, newKey.substring(HIVECONF_PREFIX.length), v)
           } else if (newKey.startsWith(HIVEVAR_PREFIX) && newKey.startsWith(SPARK_PREFIX)) {
             setModifiableConfig(sparkSession, newKey.substring(HIVEVAR_PREFIX.length), v)
           } else if (newKey.startsWith(HIVEVAR_PREFIX)) {
-            sparkSession.conf.set(newKey.substring(HIVEVAR_PREFIX.length), v)
+            setModifiableConfig(sparkSession, newKey.substring(HIVEVAR_PREFIX.length), v)
           } else if (newKey.startsWith(METACONF_PREFIX) && newKey.startsWith(SPARK_PREFIX)) {
             setModifiableConfig(sparkSession, newKey.substring(METACONF_PREFIX.length), v)
           } else if (newKey.startsWith(METACONF_PREFIX)) {
-            sparkSession.conf.set(newKey.substring(METACONF_PREFIX.length), v)
+            setModifiableConfig(sparkSession, newKey.substring(METACONF_PREFIX.length), v)
           } else {
             setModifiableConfig(sparkSession, k, v)
           }
@@ -99,10 +99,11 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   }
 
   private def setModifiableConfig(spark: SparkSession, key: String, value: String): Unit = {
-    if (spark.conf.isModifiable(key)) {
+    try {
       spark.conf.set(key, value)
-    } else {
-      warn(s"Spark config $key is static and will be ignored")
+    } catch {
+      case e: AnalysisException =>
+        warn(e.getMessage())
     }
   }
 

@@ -24,6 +24,8 @@ import org.apache.hive.service.rpc.thrift.TOperationState._
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.metrics.MetricsConstants._
+import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -64,6 +66,11 @@ class ExecuteStatement(
 
   private def executeStatement(): Unit = {
     try {
+      MetricsSystem.tracing { ms =>
+        ms.incAndGetCount(STATEMENT_OPEN)
+        ms.incAndGetCount(STATEMENT_TOTAL)
+      }
+
       val req = new TExecuteStatementReq(remoteSessionHandle, statement)
       req.setRunAsync(shouldRunAsync)
       req.setQueryTimeout(getQueryTimeout)
@@ -156,5 +163,10 @@ class ExecuteStatement(
       executeStatement()
       setState(OperationState.FINISHED)
     }
+  }
+
+  override def close(): Unit = {
+    MetricsSystem.tracing(_.decAndGetCount(STATEMENT_OPEN))
+    super.close()
   }
 }

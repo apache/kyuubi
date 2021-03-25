@@ -6,7 +6,6 @@
 .. image:: imgs/kyuubi_logo.png
    :align: center
 
-
 Welcome to Kyuubi's documentation!
 ==================================
 
@@ -89,6 +88,7 @@ Kyuubi provides both high availability and load balancing solutions based on Zoo
    Security <security/index>
    client/index
    integrations/index
+   monitor/index
 
 .. toctree::
    :caption: Kyuubi Insider

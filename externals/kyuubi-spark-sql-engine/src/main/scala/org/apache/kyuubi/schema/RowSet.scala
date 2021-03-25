@@ -23,7 +23,7 @@ import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.time.{Instant, LocalDate, ZoneId}
 import java.time.chrono.IsoChronology
-import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder, ResolverStyle}
+import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
 import java.time.temporal.ChronoField
 import java.util.{Date, Locale}
 

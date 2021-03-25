@@ -1,6 +1,6 @@
 <div align=center>
 
-![](../imgs/kyuubi_logo_simple.png)
+![](../imgs/kyuubi_logo.png)
 
 </div>
 
@@ -234,3 +234,20 @@ Error operating EXECUTE_STATEMENT: org.apache.spark.sql.AnalysisException: Can n
 
 If you get this exception when creating a function, you can check your JDK version.
 You should update JDK to JDK1.8.0_121 and later, since JDK1.8.0_121 fix a security issue [Additional access restrictions for URLClassLoader.newInstance](https://www.oracle.com/java/technologies/javase/8u121-relnotes.html).
+
+### Failed to start Spark 3.1 with error msg 'Cannot modify the value of a Spark config'
+Here is the error message
+```java
+Caused by: org.apache.spark.sql.AnalysisException: Cannot modify the value of a Spark config: spark.yarn.queue
+	at org.apache.spark.sql.RuntimeConfig.requireNonStaticConf(RuntimeConfig.scala:156)
+	at org.apache.spark.sql.RuntimeConfig.set(RuntimeConfig.scala:40)
+	at org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager.$anonfun$openSession$2(SparkSQLSessionManager.scala:68)
+	at org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager.$anonfun$openSession$2$adapted(SparkSQLSessionManager.scala:56)
+	at scala.collection.immutable.Map$Map4.foreach(Map.scala:236)
+	at org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager.openSession(SparkSQLSessionManager.scala:56)
+	... 12 more
+```
+
+This is because Spark-3.1 will check the config which you set and throw exception if the config is static or used in other module (e.g. yarn/core).
+
+You can add a config `spark.sql.legacy.setCommandRejectsSparkCoreConfs=false` in `spark-defaults.conf` to disable this behavior.

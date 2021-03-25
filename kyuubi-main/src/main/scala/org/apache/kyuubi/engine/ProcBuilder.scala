@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine
 
-import java.io.{File, FilenameFilter, IOException}
+import java.io.{File, IOException}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
@@ -30,6 +30,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.util.NamedThreadFactory
 
 trait ProcBuilder {
+
   import ProcBuilder._
 
   protected def executable: String
@@ -65,15 +66,11 @@ trait ProcBuilder {
   // Visible for test
   private[kyuubi] var logCaptureThread: Thread = _
 
-  private lazy val engineLog: File = ProcBuilder.synchronized {
+  private[kyuubi] lazy val engineLog: File = ProcBuilder.synchronized {
     val engineLogTimeout = conf.get(KyuubiConf.ENGINE_LOG_TIMEOUT)
     val currentTime = System.currentTimeMillis()
     val processLogPath = workingDir
-    val totalExistsFile = processLogPath.toFile.listFiles(new FilenameFilter() {
-      override def accept(dir: File, name: String): Boolean = {
-        name.startsWith(module)
-      }
-    })
+    val totalExistsFile = processLogPath.toFile.listFiles { (_, name) => name.startsWith(module) }
     val sorted = totalExistsFile.sortBy(_.getName.split("\\.").last.toInt)
     val nextIndex = if (sorted.isEmpty) {
       0
@@ -81,6 +78,18 @@ trait ProcBuilder {
       sorted.last.getName.split("\\.").last.toInt + 1
     }
     val file = sorted.find(_.lastModified() < currentTime - engineLogTimeout)
+      .map { existsFile =>
+        try {
+          // Here we want to overwrite the exists log file
+          existsFile.delete()
+          existsFile.createNewFile()
+          existsFile
+        } catch {
+          case e: Exception =>
+            warn(s"failed to delete engine log file: ${existsFile.getAbsolutePath}", e)
+            null
+        }
+      }
       .getOrElse {
         Files.createDirectories(processLogPath)
         val newLogFile = new File(processLogPath.toFile, s"$module.log.$nextIndex")
@@ -97,8 +106,8 @@ trait ProcBuilder {
     val proc = processBuilder.start()
     val reader = Files.newBufferedReader(engineLog.toPath, StandardCharsets.UTF_8)
 
-    val redirect = new Runnable {
-      override def run(): Unit = try {
+    val redirect: Runnable = { () =>
+      try {
         val maxErrorSize = conf.get(KyuubiConf.ENGINE_ERROR_MAX_SIZE)
         var line: String = reader.readLine
         while (true) {

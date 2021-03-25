@@ -1,0 +1,45 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+commons-codec/1.15//commons-codec-1.15.jar
+commons-lang3/3.10//commons-lang3-3.10.jar
+curator-client/2.12.0//curator-client-2.12.0.jar
+curator-framework/2.12.0//curator-framework-2.12.0.jar
+curator-recipes/2.12.0//curator-recipes-2.12.0.jar
+curator-test/2.12.0//curator-test-2.12.0.jar
+failureaccess/1.0.1//failureaccess-1.0.1.jar
+guava/30.1-jre//guava-30.1-jre.jar
+hadoop-client-api/3.2.2//hadoop-client-api-3.2.2.jar
+hadoop-client-runtime/3.2.2//hadoop-client-runtime-3.2.2.jar
+hive-service-rpc/2.3.7//hive-service-rpc-2.3.7.jar
+htrace-core4/4.1.0-incubating//htrace-core4-4.1.0-incubating.jar
+jackson-annotations/2.11.4//jackson-annotations-2.11.4.jar
+jackson-core/2.11.4//jackson-core-2.11.4.jar
+jackson-databind/2.11.4//jackson-databind-2.11.4.jar
+javassist/3.18.1-GA//javassist-3.18.1-GA.jar
+jcl-over-slf4j/1.7.30//jcl-over-slf4j-1.7.30.jar
+libfb303/0.9.3//libfb303-0.9.3.jar
+libthrift/0.9.3//libthrift-0.9.3.jar
+log4j/1.2.17//log4j-1.2.17.jar
+metrics-core/4.1.1//metrics-core-4.1.1.jar
+metrics-jmx/4.1.1//metrics-jmx-4.1.1.jar
+metrics-json/4.1.1//metrics-json-4.1.1.jar
+metrics-jvm/4.1.1//metrics-jvm-4.1.1.jar
+scala-library/2.12.10//scala-library-2.12.10.jar
+slf4j-api/1.7.30//slf4j-api-1.7.30.jar
+slf4j-log4j12/1.7.30//slf4j-log4j12-1.7.30.jar
+zookeeper/3.4.14//zookeeper-3.4.14.jar

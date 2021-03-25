@@ -3,7 +3,7 @@
 
 <div align=center>
 
-![](../imgs/kyuubi_logo_simple.png)
+![](../imgs/kyuubi_logo.png)
 
 </div>
 
@@ -92,6 +92,7 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 
 #
 # kyuubi.authentication           NONE
+# kyuubi.frontend.bind.host       localhost
 # kyuubi.frontend.bind.port       10009
 #
 
@@ -149,8 +150,8 @@ Key | Default | Meaning | Since
 kyuubi\.ha\.zookeeper<br>\.acl\.enabled|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>false</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Set to true if the zookeeper ensemble is kerberized</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.ha\.zookeeper<br>\.connection\.base\.retry<br>\.wait|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>1000</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Initial amount of time to wait between retries to the zookeeper ensemble</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.ha\.zookeeper<br>\.connection\.max<br>\.retries|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>3</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Max retry times for connecting to the zookeeper ensemble</div>|<div style='width: 20pt'>1.0.0</div>
-kyuubi\.ha\.zookeeper<br>\.connection\.max\.retry<br>\.wait|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>30000</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Max amount of time to wait between retries for BONDED_EXPONENTIAL_BACKOFF policy can reach, or max time until elapsed for UNTIL_ELAPSED policy to connect the zookeeper ensemble</div>|<div style='width: 20pt'>1.0.0</div>
-kyuubi\.ha\.zookeeper<br>\.connection\.retry<br>\.policy|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>EXPONENTIAL_BACKOFF</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The retry policy for connecting to the zookeeper ensemble, all candidates are: <ul><li>ONE_TIME</li><li> N_TIME</li><li> EXPONENTIAL_BACKOFF</li><li> BONDED_EXPONENTIAL_BACKOFF</li><li> UNTIL_ELAPSED</li></ul></div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.ha\.zookeeper<br>\.connection\.max\.retry<br>\.wait|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>30000</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Max amount of time to wait between retries for BOUNDED_EXPONENTIAL_BACKOFF policy can reach, or max time until elapsed for UNTIL_ELAPSED policy to connect the zookeeper ensemble</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.ha\.zookeeper<br>\.connection\.retry<br>\.policy|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>EXPONENTIAL_BACKOFF</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The retry policy for connecting to the zookeeper ensemble, all candidates are: <ul><li>ONE_TIME</li><li> N_TIME</li><li> EXPONENTIAL_BACKOFF</li><li> BOUNDED_EXPONENTIAL_BACKOFF</li><li> UNTIL_ELAPSED</li></ul></div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.ha\.zookeeper<br>\.connection\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>15000</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The timeout(ms) of creating the connection to the zookeeper ensemble</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.ha\.zookeeper<br>\.namespace|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>kyuubi</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The root directory for the service to deploy its instance uri. Additionally, it will creates a -[username] suffixed root directory for each application</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.ha\.zookeeper<br>\.quorum|<div style='width: 80pt;word-wrap: break-word;white-space: normal'></div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The connection string for the zookeeper ensemble</div>|<div style='width: 20pt'>1.0.0</div>
@@ -164,6 +165,15 @@ kyuubi\.kinit\.interval|<div style='width: 80pt;word-wrap: break-word;white-spac
 kyuubi\.kinit\.keytab|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Location of Kyuubi server's keytab.</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.kinit\.max<br>\.attempts|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>10</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>How many times will `kinit` process retry</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.kinit<br>\.principal|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Name of the Kerberos principal.</div>|<div style='width: 20pt'>1.0.0</div>
+
+### Metrics
+
+Key | Default | Meaning | Since
+--- | --- | --- | ---
+kyuubi\.metrics<br>\.enabled|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>true</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Set to true to enable kyuubi metrics system</div>|<div style='width: 20pt'>1.1.0</div>
+kyuubi\.metrics\.json<br>\.report\.location|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>metrics</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Where the json metrics file located</div>|<div style='width: 20pt'>1.1.0</div>
+kyuubi\.metrics\.report<br>\.interval|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT5S</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>How often should report metrics to json/console. no effect on JMX</div>|<div style='width: 20pt'>1.1.0</div>
+kyuubi\.metrics<br>\.reporters|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>JSON</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>A comma separated list for all metrics reporters<ul> <li>JSON - default reporter which outputs measurements to json file periodically</li> <li>CONSOLE - ConsoleReporter which outputs measurements to CONSOLE.</li> <li>SLF4J - Slf4jReporter which outputs measurements to system log.</li> <li>JMX - JmxReporter which listens for new metrics and exposes them as namespaced MBeans.</li> </ul></div>|<div style='width: 20pt'>1.1.0</div>
 
 ### Operation
 
@@ -182,7 +192,7 @@ kyuubi\.session\.engine<br>\.idle\.timeout|<div style='width: 80pt;word-wrap: br
 kyuubi\.session\.engine<br>\.initialize\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT1M</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Timeout for starting the background engine, e.g. SparkSQLEngine.</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session\.engine<br>\.log\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT24H</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>If we use Spark as the engine then the session submit log is the console output of spark-submit. We will retain the session submit log until over the config value.</div>|<div style='width: 20pt'>1.1.0</div>
 kyuubi\.session\.engine<br>\.login\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT15S</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The timeout(ms) of creating the connection to remote sql query engine</div>|<div style='width: 20pt'>1.0.0</div>
-kyuubi\.session\.engine<br>\.share\.level|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>USER</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The SQL engine App will be shared in different levels, available configs are: <ul> <li>CONNECTION: the App will not be shared but only used by the current client connection</li> <li>USER: the App will be shared by all sessions created by a unique username</li> <li>GROUP: the App will be shared within a certain group (NOT YET)</li> <li>SERVER: the App will be shared by Kyuubi servers</li></ul></div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.session\.engine<br>\.share\.level|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>USER</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The SQL engine App will be shared in different levels, available configs are: <ul> <li>CONNECTION: the App will not be shared but only used by the current client connection</li> <li>USER: the App will be shared by all sessions created by a unique username</li> <li>SERVER: the App will be shared by Kyuubi servers</li></ul></div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session\.engine<br>\.spark\.main\.resource|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The package used to create Spark SQL engine remote application. If it is undefined, Kyuubi will use the default</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session\.engine<br>\.startup\.error\.max<br>\.size|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>8192</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>During engine bootstrapping, if error occurs, using this config to limit the length error message(characters).</div>|<div style='width: 20pt'>1.1.0</div>
 kyuubi\.session<br>\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT6H</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>session timeout, it will be closed when it's not accessed for this duration</div>|<div style='width: 20pt'>1.0.0</div>

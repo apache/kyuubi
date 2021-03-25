@@ -63,7 +63,7 @@ object HighAvailabilityConf {
   val HA_ZK_CONN_MAX_RETRY_WAIT: ConfigEntry[Int] =
     buildConf("ha.zookeeper.connection.max.retry.wait")
       .doc(s"Max amount of time to wait between retries for" +
-        s" ${RetryPolicies.BONDED_EXPONENTIAL_BACKOFF} policy can reach, or max time until" +
+        s" ${RetryPolicies.BOUNDED_EXPONENTIAL_BACKOFF} policy can reach, or max time until" +
         s" elapsed for ${RetryPolicies.UNTIL_ELAPSED} policy to connect the zookeeper ensemble")
       .version("1.0.0")
       .intConf

@@ -15,15 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation
+package org.apache.kyuubi.metrics
 
-import org.apache.kyuubi.config.KyuubiConf
+object ReporterType extends Enumeration {
 
-class KyuubiOperationPerGroupSuite extends WithKyuubiServer with JDBCTests {
+  type ReporterType = Value
 
-  override protected def jdbcUrl: String = getJdbcUrl
-
-  override protected val conf: KyuubiConf = {
-    KyuubiConf().set(KyuubiConf.ENGINE_SHARED_LEVEL, "group")
-  }
+  val CONSOLE, JMX, JSON, SLF4J = Value
 }

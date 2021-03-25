@@ -527,7 +527,6 @@ object KyuubiConf {
       " <li>CONNECTION: the App will not be shared but only used by the current client" +
       " connection</li>" +
       " <li>USER: the App will be shared by all sessions created by a unique username</li>" +
-      " <li>GROUP: the App will be shared within a certain group (NOT YET)</li>" +
       " <li>SERVER: the App will be shared by Kyuubi servers</li></ul>")
     .version("1.0.0")
     .stringConf
