@@ -23,7 +23,6 @@ import org.apache.hive.service.rpc.thrift.{TCLIService, TExecuteStatementReq, TF
 import org.apache.hive.service.rpc.thrift.TOperationState._
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
