@@ -502,6 +502,14 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
+  val OPERATION_FORCE_CANCEL: ConfigEntry[Boolean] =
+    buildConf("operation.interruptOnCancel")
+      .doc("When true, all running tasks will be interrupted if one cancels a query. " +
+        "When false, all running tasks will remain until finished.")
+      .version("1.2.0")
+      .booleanConf
+      .createWithDefault(true)
+
   val OPERATION_QUERY_TIMEOUT: ConfigEntry[Long] =
     buildConf("operation.query.timeout")
       .doc("Set a query duration timeout in seconds in Kyuubi. If the timeout is set to " +
@@ -514,14 +522,6 @@ object KyuubiConf {
       .version("1.2.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(0).toMillis)
-
-  val OPERATION_FORCE_CANCEL: ConfigEntry[Boolean] =
-    buildConf("operation.interruptOnCancel")
-      .doc("When true, all running tasks will be interrupted if one cancels a query. " +
-        "When false, all running tasks will remain until finished.")
-      .version("1.2.0")
-      .booleanConf
-      .createWithDefault(true)
 
   val ENGINE_SHARED_LEVEL: ConfigEntry[String] = buildConf("session.engine.share.level")
     .doc("The SQL engine App will be shared in different levels, available configs are: <ul>" +
