@@ -229,13 +229,6 @@ object KyuubiConf {
     .intConf
     .createWithDefault(10)
 
-  val OPERATION_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("operation.idle.timeout")
-    .doc("Operation will be closed when it's not accessed for this duration of time")
-    .version("1.0.0")
-    .timeConf
-    .createWithDefault(Duration.ofHours(3).toMillis)
-
-
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                              Frontend Service Configuration                                 //
   /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -495,12 +488,39 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(10).toMillis)
 
+  val OPERATION_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("operation.idle.timeout")
+    .doc("Operation will be closed when it's not accessed for this duration of time")
+    .version("1.0.0")
+    .timeConf
+    .createWithDefault(Duration.ofHours(3).toMillis)
+
   val OPERATION_STATUS_POLLING_TIMEOUT: ConfigEntry[Long] =
     buildConf("operation.status.polling.timeout")
       .doc("Timeout(ms) for long polling asynchronous running sql query's status")
       .version("1.0.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
+
+  val OPERATION_QUERY_TIMEOUT: ConfigEntry[Long] =
+    buildConf("operation.query.timeout")
+      .doc("Set a query duration timeout in seconds in Kyuubi. If the timeout is set to " +
+        "a positive value, a running query will be cancelled automatically when the timeout is " +
+        "exceeded, otherwise the query continues to run till completion. If timeout values are " +
+        "set for each statement via `java.sql.Statement.setQueryTimeout` and they are smaller " +
+        "than this configuration value, they take precedence. If you set this timeout and prefer " +
+        "to cancel the queries right away without waiting task to finish, consider enabling " +
+        s"${OPERATION_FORCE_CANCEL.key} together.")
+      .version("1.2.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(0).toMillis)
+
+  val OPERATION_FORCE_CANCEL: ConfigEntry[Boolean] =
+    buildConf("operation.interruptOnCancel")
+      .doc("When true, all running tasks will be interrupted if one cancels a query. " +
+        "When false, all running tasks will remain until finished.")
+      .version("1.2.0")
+      .booleanConf
+      .createWithDefault(true)
 
   val ENGINE_SHARED_LEVEL: ConfigEntry[String] = buildConf("session.engine.share.level")
     .doc("The SQL engine App will be shared in different levels, available configs are: <ul>" +
