@@ -45,8 +45,7 @@ class SparkEngineSuites extends KyuubiFunSuite {
                 assert(System.currentTimeMillis() - taskEnd.taskInfo.launchTime < 1000)
                 index.incrementAndGet()
               } else {
-                // avoid accuracy, we check 2s instead of 3s.
-                assert(System.currentTimeMillis() - taskEnd.taskInfo.launchTime >= 2000)
+                assert(System.currentTimeMillis() - taskEnd.taskInfo.launchTime >= 3000)
                 index.incrementAndGet()
               }
             }
@@ -55,10 +54,9 @@ class SparkEngineSuites extends KyuubiFunSuite {
           spark.sparkContext.addSparkListener(listener)
           try {
             statement.setQueryTimeout(1)
-            statement.execute(s"SET ${KyuubiConf.OPERATION_FORCE_CANCEL.key}=$force")
             forceCancel.set(force)
             val e1 = intercept[SQLTimeoutException] {
-              statement.execute("select java_method('java.lang.Thread', 'sleep', 3000L)")
+              statement.execute("select java_method('java.lang.Thread', 'sleep', 5000L)")
             }.getMessage
             assert(e1.contains("Query timed out"))
             eventually(Timeout(30.seconds)) {
