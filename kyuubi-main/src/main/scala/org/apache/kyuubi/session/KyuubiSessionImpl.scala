@@ -48,7 +48,7 @@ class KyuubiSessionImpl(
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: KyuubiSessionManager,
-    sessionConf: KyuubiConf)
+    val sessionConf: KyuubiConf)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
   private def mergeConf(): Unit = {
