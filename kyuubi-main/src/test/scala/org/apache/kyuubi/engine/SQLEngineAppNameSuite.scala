@@ -44,14 +44,6 @@ class SQLEngineAppNameSuite extends KyuubiFunSuite {
     assert(appName.toString ===  s"kyuubi_${USER}_${user}_$id")
   }
 
-  test("QUEUE_LEVEL sql engine app name") {
-    val id = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10).identifier
-    val user = Utils.currentUser
-    val appName = SQLEngineAppName(GROUP, user, id.toString)
-    assert(appName.getZkNamespace("kyuubi") ===
-      ZKPaths.makePath(s"kyuubi_$GROUP", user))
-    assert(appName.toString ===  s"kyuubi_${GROUP}_${user}_$id")
-  }
 
   test("SERVER_LEVEL sql engine app name") {
     val id = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10).identifier
