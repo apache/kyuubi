@@ -40,7 +40,7 @@ class ExecuteStatement(
   extends SparkOperation(spark, OperationType.EXECUTE_STATEMENT, session) with Logging {
 
   private val forceCancel =
-    session.sessionConf.get(KyuubiConf.OPERATION_FORCE_CANCEL)
+    session.sessionManager.getConf.get(KyuubiConf.OPERATION_FORCE_CANCEL)
 
   private val operationLog: OperationLog =
     OperationLog.createOperationLog(session.handle, getHandle)

@@ -19,7 +19,6 @@ package org.apache.kyuubi.session
 
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtocolVersion, TRowSet, TTableSchema}
 
-import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationHandle
 
@@ -29,7 +28,6 @@ trait Session {
   def handle: SessionHandle
 
   def conf: Map[String, String]
-  def sessionConf: KyuubiConf
 
   def user: String
   def password: String

@@ -34,7 +34,7 @@ class NoopSessionManager extends SessionManager("noop") {
     if (conf.get("kyuubi.test.should.fail").exists(_.toBoolean)) {
       throw KyuubiSQLException("Asked to fail")
     }
-    val session = new NoopSessionImpl(protocol, user, password, ipAddress, conf, this, getConf)
+    val session = new NoopSessionImpl(protocol, user, password, ipAddress, conf, this)
     setSession(session.handle, session)
     session.handle
   }
