@@ -69,9 +69,9 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       queryTimeout: Long): Operation = {
     val client = getThriftClient(session.handle)
     val remoteSessionHandle = getRemoteTSessionHandle(session.handle)
-    val operation = new ExecuteStatement(session, client, remoteSessionHandle, statement, runAsync)
+    val operation = new ExecuteStatement(
+      session, client, remoteSessionHandle, statement, runAsync, queryTimeout)
     addOperation(operation)
-
   }
 
   override def newGetTypeInfoOperation(session: Session): Operation = {
@@ -142,7 +142,6 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       session, client, remoteSessionHandle, catalogName, schemaName, functionName)
     addOperation(operation)
   }
-
 
   override def getOperationLogRowSet(
       opHandle: OperationHandle,

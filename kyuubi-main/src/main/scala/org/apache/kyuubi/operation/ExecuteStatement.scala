@@ -23,6 +23,7 @@ import org.apache.hive.service.rpc.thrift.{TCLIService, TExecuteStatementReq, TF
 import org.apache.hive.service.rpc.thrift.TOperationState._
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -31,7 +32,8 @@ class ExecuteStatement(
     client: TCLIService.Iface,
     remoteSessionHandle: TSessionHandle,
     override val statement: String,
-    override val shouldRunAsync: Boolean)
+    override val shouldRunAsync: Boolean,
+    queryTimeout: Long)
   extends KyuubiOperation(
     OperationType.EXECUTE_STATEMENT, session, client, remoteSessionHandle) {
 
@@ -64,10 +66,22 @@ class ExecuteStatement(
     try {
       val req = new TExecuteStatementReq(remoteSessionHandle, statement)
       req.setRunAsync(shouldRunAsync)
+      req.setQueryTimeout(getQueryTimeout)
       val resp = client.ExecuteStatement(req)
       verifyTStatus(resp.getStatus)
       _remoteOpHandle = resp.getOperationHandle
     } catch onError()
+  }
+
+  private def getQueryTimeout: Long = {
+    // If a timeout value `queryTimeout` is specified by users and it is smaller than
+    // a session timeout value, we use the user-specified value.
+    val sessionTimeout = session.sessionManager.getConf.get(KyuubiConf.OPERATION_QUERY_TIMEOUT)
+    if (sessionTimeout > 0 && (queryTimeout <= 0 || sessionTimeout < queryTimeout)) {
+      sessionTimeout
+    } else {
+      queryTimeout
+    }
   }
 
   private def waitStatementComplete(): Unit = {

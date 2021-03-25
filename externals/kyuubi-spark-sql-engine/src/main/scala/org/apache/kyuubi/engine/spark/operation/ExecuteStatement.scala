@@ -25,7 +25,8 @@ import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.engine.spark.{ArrayFetchIterator, Constants, KyuubiSparkUtil}
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.spark.{ArrayFetchIterator, KyuubiSparkUtil}
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -38,20 +39,8 @@ class ExecuteStatement(
     queryTimeout: Long)
   extends SparkOperation(spark, OperationType.EXECUTE_STATEMENT, session) with Logging {
 
-  // If a timeout value `queryTimeout` is specified by users and it is smaller than
-  // a global timeout value, we use the user-specified value.
-  // This code follows the Hive timeout behaviour (See #29933 for details).
-  private val timeout = {
-    val globalTimeout =
-      spark.sessionState.conf.getConfString(Constants.THRIFTSERVER_QUERY_TIMEOUT, "0").toInt
-    if (globalTimeout > 0 && (queryTimeout <= 0 || globalTimeout < queryTimeout)) {
-      globalTimeout
-    } else {
-      queryTimeout
-    }
-  }
   private val forceCancel =
-    spark.sessionState.conf.getConfString(Constants.THRIFTSERVER_FORCE_CANCEL, "true").toBoolean
+    session.sessionManager.getConf.get(KyuubiConf.OPERATION_FORCE_CANCEL)
 
   private val operationLog: OperationLog =
     OperationLog.createOperationLog(session.handle, getHandle)
@@ -121,24 +110,24 @@ class ExecuteStatement(
   }
 
   private def addTimeoutMonitor(): Unit = {
-    if (timeout > 0) {
+    if (queryTimeout > 0) {
       val timeoutExecutor = Executors.newSingleThreadScheduledExecutor()
       timeoutExecutor.schedule(new Runnable {
         override def run(): Unit = {
           try {
             if (getStatus.state != OperationState.TIMEOUT) {
-              info(s"Query with $statementId timed out after $timeout seconds")
+              info(s"Query with $statementId timed out after $queryTimeout seconds")
               cleanup(OperationState.TIMEOUT)
             }
           } catch {
             case NonFatal(e) =>
               setOperationException(KyuubiSQLException(e))
-              error(s"Error cancelling the query after timeout: $timeout seconds")
+              error(s"Error cancelling the query after timeout: $queryTimeout seconds")
           } finally {
             timeoutExecutor.shutdown()
           }
         }
-      }, timeout, TimeUnit.SECONDS)
+      }, queryTimeout, TimeUnit.SECONDS)
     }
   }
 }

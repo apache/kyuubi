@@ -83,4 +83,5 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
   }
 
   protected def getJdbcUrl: String = s"jdbc:hive2://$connectionUrl/;"
+  private[Kyuubi] def getSpark = spark
 }
