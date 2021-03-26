@@ -29,7 +29,7 @@ object MetricsConf {
   val METRICS_ENABLED: ConfigEntry[Boolean] =
     buildConf("metrics.enabled")
       .doc("Set to true to enable kyuubi metrics system")
-      .version("1.1.0")
+      .version("1.2.0")
       .booleanConf
       .createWithDefault(true)
 
@@ -40,7 +40,7 @@ object MetricsConf {
       " <li>SLF4J - Slf4jReporter which outputs measurements to system log.</li>" +
       " <li>JMX - JmxReporter which listens for new metrics and exposes them as namespaced" +
       " MBeans.</li> </ul>")
-    .version("1.1.0")
+    .version("1.2.0")
     .stringConf
     .transform(_.toUpperCase())
     .toSequence
@@ -48,13 +48,13 @@ object MetricsConf {
 
   val METRICS_REPORT_LOCATION: ConfigEntry[String] = buildConf("metrics.json.report.location")
     .doc("Where the json metrics file located")
-    .version("1.1.0")
+    .version("1.2.0")
     .stringConf
     .createWithDefault("metrics")
 
   val METRICS_REPORT_INTERVAL: ConfigEntry[Long] = buildConf("metrics.report.interval")
     .doc("How often should report metrics to json/console. no effect on JMX")
-    .version("1.1.0")
+    .version("1.2.0")
     .timeConf
     .createWithDefault(Duration.ofSeconds(5).toMillis)
 }
