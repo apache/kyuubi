@@ -513,8 +513,8 @@ object KyuubiConf {
   val OPERATION_QUERY_TIMEOUT: ConfigEntry[Long] =
     buildConf("operation.query.timeout")
       .doc("Set a query duration timeout in seconds in Kyuubi. If the timeout is set to " +
-        "a positive value, a running query will be cancelled automatically when the timeout is " +
-        "exceeded, otherwise the query continues to run till completion. If timeout values are " +
+        "a positive value, a running query will be cancelled automatically if timeout. " +
+        "Otherwise the query continues to run till completion. If timeout values are " +
         "set for each statement via `java.sql.Statement.setQueryTimeout` and they are smaller " +
         "than this configuration value, they take precedence. If you set this timeout and prefer " +
         "to cancel the queries right away without waiting task to finish, consider enabling " +
