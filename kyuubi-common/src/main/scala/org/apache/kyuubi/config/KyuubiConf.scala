@@ -522,4 +522,15 @@ object KyuubiConf {
     .transform(_.toUpperCase(Locale.ROOT))
     .checkValues(ShareLevel.values.map(_.toString))
     .createWithDefault(ShareLevel.USER.toString)
+
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //                                   Engine Configuration                                      //
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+
+  val ENGINE_INITIALIZE_SQL: ConfigEntry[String] = buildConf("engine.initialize.sql")
+    .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +
+      "engine before queries.")
+    .version("1.2.0")
+    .stringConf
+    .createWithDefault("SHOW DATABASES")
 }

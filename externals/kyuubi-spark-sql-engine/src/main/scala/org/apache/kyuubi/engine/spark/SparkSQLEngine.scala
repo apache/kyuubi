@@ -96,7 +96,7 @@ object SparkSQLEngine extends Logging {
     }
 
     val session = SparkSession.builder().config(sparkConf).enableHiveSupport().getOrCreate()
-    session.sql("SHOW DATABASES")
+    kyuubiConf.get(KyuubiConf.ENGINE_INITIALIZE_SQL).split(";").foreach(session.sql(_).show)
     session
   }
 
