@@ -74,7 +74,7 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
     var timeCost = ""
     newState match {
       case RUNNING => startTime = System.currentTimeMillis()
-      case ERROR | FINISHED | CANCELED =>
+      case ERROR | FINISHED | CANCELED | TIMEOUT =>
         completedTime = System.currentTimeMillis()
         timeCost = s", time taken: ${(completedTime - startTime) / 1000.0} seconds"
       case _ =>

@@ -49,9 +49,10 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
 
   protected def resultSchema: StructType
 
-  protected def cleanup(targetState: OperationState): Unit = synchronized {
+  protected def cleanup(targetState: OperationState): Unit = state.synchronized {
     if (!isTerminalState(state)) {
       setState(targetState)
+      Option(getBackgroundHandle).foreach(_.cancel(true))
       spark.sparkContext.cancelJobGroup(statementId)
     }
   }
@@ -92,7 +93,11 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
       if (cancel) spark.sparkContext.cancelJobGroup(statementId)
       state.synchronized {
         val errMsg = KyuubiSQLException.stringifyException(e)
-        if (isTerminalState(state)) {
+        if (state == OperationState.TIMEOUT) {
+          val ke = KyuubiSQLException(s"Timeout operating $opType: $errMsg")
+          setOperationException(ke)
+          throw ke
+        } else if (isTerminalState(state)) {
           warn(s"Ignore exception in terminal state with $statementId: $errMsg")
         } else {
           setState(OperationState.ERROR)
