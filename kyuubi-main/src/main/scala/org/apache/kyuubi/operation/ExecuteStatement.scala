@@ -33,7 +33,8 @@ class ExecuteStatement(
     client: TCLIService.Iface,
     remoteSessionHandle: TSessionHandle,
     override val statement: String,
-    override val shouldRunAsync: Boolean)
+    override val shouldRunAsync: Boolean,
+    queryTimeout: Long)
   extends KyuubiOperation(
     OperationType.EXECUTE_STATEMENT, session, client, remoteSessionHandle) {
 
@@ -71,6 +72,7 @@ class ExecuteStatement(
 
       val req = new TExecuteStatementReq(remoteSessionHandle, statement)
       req.setRunAsync(shouldRunAsync)
+      req.setQueryTimeout(queryTimeout)
       val resp = client.ExecuteStatement(req)
       verifyTStatus(resp.getStatus)
       _remoteOpHandle = resp.getOperationHandle
