@@ -116,15 +116,8 @@ class ExecuteStatement(
         ThreadUtils.newDaemonSingleThreadScheduledExecutor("query-timeout-thread")
       timeoutExecutor.schedule(new Runnable {
         override def run(): Unit = {
-          try {
-            cleanup(OperationState.TIMEOUT)
-          } catch {
-            case NonFatal(e) =>
-              setOperationException(KyuubiSQLException(e))
-              error(s"Error cancelling the query after timeout: $queryTimeout seconds")
-          } finally {
-            timeoutExecutor.shutdown()
-          }
+          cleanup(OperationState.TIMEOUT)
+          timeoutExecutor.shutdown()
         }
       }, queryTimeout, TimeUnit.SECONDS)
     }
