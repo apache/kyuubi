@@ -82,7 +82,7 @@ class ConfigEntryWithDefault[T](
     _strConverter: T => String,
     _doc: String,
     _version: String,
-     _type: String) extends ConfigEntry[T] {
+    _type: String) extends ConfigEntry[T] {
   override def defaultValStr: String = strConverter(_defaultVal)
 
   override def defaultVal: Option[T] = Option(_defaultVal)

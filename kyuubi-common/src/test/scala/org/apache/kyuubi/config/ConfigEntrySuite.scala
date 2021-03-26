@@ -22,13 +22,23 @@ import org.apache.kyuubi.KyuubiFunSuite
 class ConfigEntrySuite extends KyuubiFunSuite {
 
   test("optional config entry") {
+    val doc = "this is dummy documentation"
     val e1 = new OptionalConfigEntry[Int](
       "kyuubi.int.spark",
       s => s.toInt + 1,
       v => (v - 1).toString,
-      "this is dummy documentation",
+      doc,
       "<none>",
       "int")
+
+    assert(e1.key === "kyuubi.int.spark")
+    assert(e1.valueConverter("2").get === 3)
+    assert(e1.strConverter(Some(1)) === "0")
+    assert(e1.defaultValStr === ConfigEntry.UNDEFINED)
+    assert(e1.defaultVal.isEmpty)
+    assert(e1.doc === doc)
+    assert(e1.version === "<none>")
+    assert(e1.typ === "int")
 
     val conf = KyuubiConf()
     assert(conf.get(e1).isEmpty)
@@ -51,9 +61,19 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       2,
       s => s.toLong + 1,
       v => (v - 1).toString,
-    "",
-    "",
+    "doc",
+    "0.11.1",
       "long")
+
+    assert(e1.key === "kyuubi.long.spark")
+    assert(e1.valueConverter("2") === 3)
+    assert(e1.strConverter(1) === "0")
+    assert(e1.defaultValStr === "1")
+    assert(e1.defaultVal === Some(2))
+    assert(e1.doc === "doc")
+    assert(e1.version === "0.11.1")
+    assert(e1.typ === "long")
+
     val conf = KyuubiConf()
     assert(conf.get(e1) === 2)
     conf.set(e1.key, "5")
@@ -63,11 +83,22 @@ class ConfigEntrySuite extends KyuubiFunSuite {
   test("config entry with default string") {
     val e1 = new ConfigEntryWithDefaultString[Double](
       "kyuubi.double.spark",
-      "3.0", s => java.lang.Double.valueOf(s),
+      "3.0",
+      s => java.lang.Double.valueOf(s),
       v => v.toString,
-      "",
+      "doc",
       "",
       "double")
+
+    assert(e1.key === "kyuubi.double.spark")
+    assert(e1.valueConverter("2") === 2.0)
+    assert(e1.strConverter(1) === "1.0")
+    assert(e1.defaultValStr === "3.0")
+    assert(e1.defaultVal === Some(3.0))
+    assert(e1.doc === "doc")
+    assert(e1.version === "")
+    assert(e1.typ === "double")
+
     val conf = KyuubiConf()
     assert(conf.get(e1) === 3.0)
     conf.set(e1.asInstanceOf[ConfigEntry[AnyVal]], 5.0)
