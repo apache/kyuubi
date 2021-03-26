@@ -115,7 +115,6 @@ class ExecuteStatement(
       timeoutExecutor.schedule(new Runnable {
         override def run(): Unit = {
           cleanup(OperationState.TIMEOUT)
-          Option(getBackgroundHandle).foreach(_.cancel(true))
           timeoutExecutor.shutdown()
         }
       }, queryTimeout, TimeUnit.SECONDS)
