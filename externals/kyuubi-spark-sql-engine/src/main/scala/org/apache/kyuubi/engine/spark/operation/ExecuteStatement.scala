@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.util.concurrent.{Future, RejectedExecutionException, TimeUnit}
+import java.util.concurrent.{RejectedExecutionException, TimeUnit}
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.types._
@@ -45,7 +45,6 @@ class ExecuteStatement(
     OperationLog.createOperationLog(session.handle, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
   private var result: DataFrame = _
-  private var statementFuture: Option[Future[_]] = _
 
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
@@ -95,7 +94,6 @@ class ExecuteStatement(
       try {
         val sparkSQLSessionManager = session.sessionManager
         val backgroundHandle = sparkSQLSessionManager.submitBackgroundOperation(asyncOperation)
-        statementFuture = Some(backgroundHandle)
         setBackgroundHandle(backgroundHandle)
       } catch {
         case rejected: RejectedExecutionException =>
@@ -117,7 +115,7 @@ class ExecuteStatement(
       timeoutExecutor.schedule(new Runnable {
         override def run(): Unit = {
           cleanup(OperationState.TIMEOUT)
-          statementFuture.foreach(_.cancel(true))
+          getBackgroundHandle.cancel(true)
           timeoutExecutor.shutdown()
         }
       }, queryTimeout, TimeUnit.SECONDS)
