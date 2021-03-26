@@ -19,8 +19,6 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.util.concurrent.{RejectedExecutionException, TimeUnit}
 
-import scala.util.control.NonFatal
-
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.types._
 
@@ -116,18 +114,8 @@ class ExecuteStatement(
         ThreadUtils.newDaemonSingleThreadScheduledExecutor("query-timeout-thread")
       timeoutExecutor.schedule(new Runnable {
         override def run(): Unit = {
-          try {
-            if (getStatus.state != OperationState.TIMEOUT) {
-              info(s"Query with $statementId timed out after $queryTimeout seconds")
-              cleanup(OperationState.TIMEOUT)
-            }
-          } catch {
-            case NonFatal(e) =>
-              setOperationException(KyuubiSQLException(e))
-              error(s"Error cancelling the query after timeout: $queryTimeout seconds")
-          } finally {
-            timeoutExecutor.shutdown()
-          }
+          cleanup(OperationState.TIMEOUT)
+          timeoutExecutor.shutdown()
         }
       }, queryTimeout, TimeUnit.SECONDS)
     }
