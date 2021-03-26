@@ -51,8 +51,8 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
   }
 
   private def getQueryTimeout(clientQueryTimeout: Long): Long = {
-    // If a timeout value `queryTimeout` is specified by users and it is smaller than
-    // a session timeout value, we use the user-specified value.
+    // If clientQueryTimeout is smaller than systemQueryTimeout value,
+    // we use the clientQueryTimeout value.
     val systemQueryTimeout = getConf.get(KyuubiConf.OPERATION_QUERY_TIMEOUT)
     if (clientQueryTimeout > 0 &&
       (systemQueryTimeout <= 0 || clientQueryTimeout < systemQueryTimeout)) {

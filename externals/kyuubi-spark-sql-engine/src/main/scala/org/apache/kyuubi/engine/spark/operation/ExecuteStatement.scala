@@ -30,6 +30,7 @@ import org.apache.kyuubi.engine.spark.{ArrayFetchIterator, KyuubiSparkUtil}
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.ThreadUtils
 
 class ExecuteStatement(
     spark: SparkSession,
@@ -111,7 +112,8 @@ class ExecuteStatement(
 
   private def addTimeoutMonitor(): Unit = {
     if (queryTimeout > 0) {
-      val timeoutExecutor = Executors.newSingleThreadScheduledExecutor()
+      val timeoutExecutor =
+        ThreadUtils.newDaemonSingleThreadScheduledExecutor("query-timeout-thread")
       timeoutExecutor.schedule(new Runnable {
         override def run(): Unit = {
           try {
