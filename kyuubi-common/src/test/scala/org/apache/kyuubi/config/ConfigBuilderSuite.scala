@@ -79,6 +79,6 @@ class ConfigBuilderSuite extends KyuubiFunSuite {
     assert(timeConf.defaultVal.get === 3)
     val kyuubiConf = KyuubiConf().set(timeConf.key, "invalid")
     val e = intercept[IllegalArgumentException](kyuubiConf.get(timeConf))
-    assert(e.getMessage startsWith "The formats accepted are based on the ISO-8601")
+    assert(e.getMessage startsWith "The formats accepted are 1) based on the ISO-8601")
   }
 }

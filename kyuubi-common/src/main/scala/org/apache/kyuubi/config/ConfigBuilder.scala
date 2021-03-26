@@ -18,13 +18,15 @@
 package org.apache.kyuubi.config
 
 import java.time.Duration
-import java.time.format.DateTimeParseException
+
+import scala.util.{Failure, Success, Try}
 
 private[kyuubi] case class ConfigBuilder(key: String) {
 
   private[config] var _doc = ""
   private[config] var _version = ""
   private[config] var _onCreate: Option[ConfigEntry[_] => Unit] = None
+  private[config] var _type = ""
 
   def doc(s: String): ConfigBuilder = {
     _doc = s
@@ -41,28 +43,32 @@ private[kyuubi] case class ConfigBuilder(key: String) {
     this
   }
 
-  private def toNumber[T](s: String, converter: String => T, configType: String): T = {
+  private def toNumber[T](s: String, converter: String => T): T = {
     try {
       converter(s.trim)
     } catch {
       case _: NumberFormatException =>
-        throw new IllegalArgumentException(s"$key should be $configType, but was $s")
+        throw new IllegalArgumentException(s"$key should be ${_type}, but was $s")
     }
   }
 
   def intConf: TypedConfigBuilder[Int] = {
-    new TypedConfigBuilder(this, toNumber(_, _.toInt, "int"))
+    _type = "int"
+    new TypedConfigBuilder(this, toNumber(_, _.toInt))
   }
 
   def longConf: TypedConfigBuilder[Long] = {
-    new TypedConfigBuilder(this, toNumber(_, _.toLong, "long"))
+    _type = "long"
+    new TypedConfigBuilder(this, toNumber(_, _.toLong))
   }
 
   def doubleConf: TypedConfigBuilder[Double] = {
-    new TypedConfigBuilder(this, toNumber(_, _.toDouble, "double"))
+    _type = "double"
+    new TypedConfigBuilder(this, toNumber(_, _.toDouble))
   }
 
   def booleanConf: TypedConfigBuilder[Boolean] = {
+    _type = "boolean"
     def toBoolean(s: String) = try {
       s.trim.toBoolean
     } catch {
@@ -73,18 +79,22 @@ private[kyuubi] case class ConfigBuilder(key: String) {
   }
 
   def stringConf: TypedConfigBuilder[String] = {
+    _type = "string"
     new TypedConfigBuilder(this, identity)
   }
 
   def timeConf: TypedConfigBuilder[Long] = {
+    _type = "duration"
     def timeFromStr(str: String): Long = {
-      try {
-        Duration.parse(str).toMillis
-      } catch {
-        case e: DateTimeParseException =>
-          throw new IllegalArgumentException(s"The formats accepted are based on the ISO-8601" +
-            s" duration format `PnDTnHnMn.nS` with days considered to be exactly 24 hours." +
-            s" $str for $key is not valid", e)
+      val trimmed = str.trim
+      Try(Duration.parse(trimmed).toMillis)
+        .orElse(Try(trimmed.toLong)) match {
+        case Success(millis) => millis
+        case Failure(e) =>
+          throw new IllegalArgumentException(s"The formats accepted are 1) based on the ISO-8601" +
+            s" duration format `PnDTnHnMn.nS` with days considered to be exactly 24 hours. 2) A" +
+            s" plain long value represents total milliseconds, e.g. 2000 means 2 seconds" +
+            s" $trimmed for $key is not valid", e)
       }
     }
 
@@ -129,11 +139,13 @@ private[kyuubi] case class TypedConfigBuilder[T](
 
   /** Turns the config entry into a sequence of values of the underlying type. */
   def toSequence: TypedConfigBuilder[Seq[T]] = {
+    parent._type = "seq"
     TypedConfigBuilder(parent, strToSeq(_, fromStr), seqToStr(_, toStr))
   }
 
   def createOptional: OptionalConfigEntry[T] = {
-    val entry = new OptionalConfigEntry(parent.key, fromStr, toStr, parent._doc, parent._version)
+    val entry = new OptionalConfigEntry(
+      parent.key, fromStr, toStr, parent._doc, parent._version, parent._type)
     parent._onCreate.foreach(_(entry))
     entry
   }
@@ -142,15 +154,15 @@ private[kyuubi] case class TypedConfigBuilder[T](
     case d: String => createWithDefaultString(d)
     case _ =>
       val d = fromStr(toStr(default))
-      val entry =
-        new ConfigEntryWithDefault(parent.key, d, fromStr, toStr, parent._doc, parent._version)
+      val entry = new ConfigEntryWithDefault(
+        parent.key, d, fromStr, toStr, parent._doc, parent._version, parent._type)
       parent._onCreate.foreach(_(entry))
       entry
   }
 
   def createWithDefaultString(default: String): ConfigEntryWithDefaultString[T] = {
     val entry = new ConfigEntryWithDefaultString(
-      parent.key, default, fromStr, toStr, parent._doc, parent._version)
+      parent.key, default, fromStr, toStr, parent._doc, parent._version, parent._type)
     parent._onCreate.foreach(_(entry))
     entry
   }

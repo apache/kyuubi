@@ -23,6 +23,7 @@ trait ConfigEntry[T] {
   def strConverter: T => String
   def doc: String
   def version: String
+  def typ: String
 
   def defaultValStr: String
   def defaultVal: Option[T]
@@ -45,7 +46,8 @@ class OptionalConfigEntry[T](
     rawValueConverter: String => T,
     rawStrConverter: T => String,
     _doc: String,
-    _version: String) extends ConfigEntry[Option[T]] {
+    _version: String,
+    _type: String) extends ConfigEntry[Option[T]] {
   override def valueConverter: String => Option[T] = {
     s => Option(rawValueConverter(s))
   }
@@ -69,6 +71,8 @@ class OptionalConfigEntry[T](
   override def doc: String = _doc
 
   override def version: String = _version
+
+  override def typ: String = _type
 }
 
 class ConfigEntryWithDefault[T](
@@ -77,7 +81,8 @@ class ConfigEntryWithDefault[T](
     _valueConverter: String => T,
     _strConverter: T => String,
     _doc: String,
-    _version: String) extends ConfigEntry[T] {
+    _version: String,
+     _type: String) extends ConfigEntry[T] {
   override def defaultValStr: String = strConverter(_defaultVal)
 
   override def defaultVal: Option[T] = Option(_defaultVal)
@@ -95,6 +100,8 @@ class ConfigEntryWithDefault[T](
   override def doc: String = _doc
 
   override def version: String = _version
+
+  override def typ: String = _type
 }
 
 class ConfigEntryWithDefaultString[T](
@@ -103,7 +110,8 @@ class ConfigEntryWithDefaultString[T](
    _valueConverter: String => T,
    _strConverter: T => String,
    _doc: String,
-   _version: String) extends ConfigEntry[T] {
+   _version: String,
+   _type: String) extends ConfigEntry[T] {
   override def defaultValStr: String = _defaultVal
 
   override def defaultVal: Option[T] = Some(valueConverter(_defaultVal))
@@ -122,6 +130,8 @@ class ConfigEntryWithDefaultString[T](
   override def doc: String = _doc
 
   override def version: String = _version
+
+  override def typ: String = _type
 }
 
 object ConfigEntry {

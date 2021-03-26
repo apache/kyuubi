@@ -117,8 +117,8 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
       newOutput += s"### ${category.capitalize}"
       newOutput += ""
 
-      newOutput += "Key | Default | Meaning | Since"
-      newOutput += "--- | --- | --- | ---"
+      newOutput += "Key | Default | Meaning | Type | Since"
+      newOutput += "--- | --- | --- | --- | ---"
 
       entries.sortBy(_.key).foreach { c =>
         val key = {
@@ -138,8 +138,9 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
         val dft = c.defaultValStr.replace("<", "&lt;").replace(">", "&gt;")
         val seq = Seq(
           key,
-          s"<div style='width: 80pt;word-wrap: break-word;white-space: normal'>$dft</div>",
-          s"<div style='width: 200pt;word-wrap: break-word;white-space: normal'>${c.doc}</div>",
+          s"<div style='width: 65pt;word-wrap: break-word;white-space: normal'>$dft</div>",
+          s"<div style='width: 170pt;word-wrap: break-word;white-space: normal'>${c.doc}</div>",
+          s"<div style='width: 30pt'>${c.typ}</div>",
           s"<div style='width: 20pt'>${c.version}</div>")
         newOutput += seq.mkString("|")
       }

@@ -27,7 +27,8 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       s => s.toInt + 1,
       v => (v - 1).toString,
       "this is dummy documentation",
-      "<none>")
+      "<none>",
+      "int")
 
     val conf = KyuubiConf()
     assert(conf.get(e1).isEmpty)
@@ -36,7 +37,8 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       s => s.toInt + 1,
       v => (v - 1).toString,
       "this is dummy documentation",
-      "<none>"))
+      "<none>",
+      "int"))
     assert(e.getMessage ===
       "requirement failed: Config entry kyuubi.int.spark already registered!")
     conf.set(e1.key, "2")
@@ -50,7 +52,8 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       s => s.toLong + 1,
       v => (v - 1).toString,
     "",
-    "")
+    "",
+      "long")
     val conf = KyuubiConf()
     assert(conf.get(e1) === 2)
     conf.set(e1.key, "5")
@@ -63,7 +66,8 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       "3.0", s => java.lang.Double.valueOf(s),
       v => v.toString,
       "",
-      "")
+      "",
+      "double")
     val conf = KyuubiConf()
     assert(conf.get(e1) === 3.0)
     conf.set(e1.asInstanceOf[ConfigEntry[AnyVal]], 5.0)
