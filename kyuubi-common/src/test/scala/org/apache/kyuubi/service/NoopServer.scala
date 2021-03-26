@@ -32,4 +32,8 @@ class NoopServer extends Serverable("noop") {
   override protected def stopServer(): Unit = {
     throw new KyuubiException("no need to stop me")
   }
+
+
+  override protected val discoveryService: Service = backendService
+  override protected val supportsServiceDiscovery: Boolean = false
 }
