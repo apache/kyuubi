@@ -49,7 +49,7 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
 
   protected def resultSchema: StructType
 
-  protected def cleanup(targetState: OperationState): Unit = synchronized {
+  protected def cleanup(targetState: OperationState): Unit = state.synchronized {
     if (!isTerminalState(state)) {
       setState(targetState)
       spark.sparkContext.cancelJobGroup(statementId)

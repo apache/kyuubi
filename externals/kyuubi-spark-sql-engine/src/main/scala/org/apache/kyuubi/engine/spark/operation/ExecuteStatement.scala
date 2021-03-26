@@ -117,10 +117,7 @@ class ExecuteStatement(
       timeoutExecutor.schedule(new Runnable {
         override def run(): Unit = {
           try {
-            if (getStatus.state != OperationState.TIMEOUT) {
-              info(s"Query with $statementId timed out after $queryTimeout seconds")
-              cleanup(OperationState.TIMEOUT)
-            }
+            cleanup(OperationState.TIMEOUT)
           } catch {
             case NonFatal(e) =>
               setOperationException(KyuubiSQLException(e))
