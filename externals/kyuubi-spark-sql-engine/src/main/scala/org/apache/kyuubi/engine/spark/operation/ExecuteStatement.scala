@@ -17,23 +17,31 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.{RejectedExecutionException, TimeUnit}
+
+import scala.util.control.NonFatal
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.{ArrayFetchIterator, KyuubiSparkUtil}
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.ThreadUtils
 
 class ExecuteStatement(
     spark: SparkSession,
     session: Session,
     protected override val statement: String,
-    override val shouldRunAsync: Boolean)
+    override val shouldRunAsync: Boolean,
+    queryTimeout: Long)
   extends SparkOperation(spark, OperationType.EXECUTE_STATEMENT, session) with Logging {
+
+  private val forceCancel =
+    session.sessionManager.getConf.get(KyuubiConf.OPERATION_FORCE_CANCEL)
 
   private val operationLog: OperationLog =
     OperationLog.createOperationLog(session.handle, getHandle)
@@ -63,7 +71,7 @@ class ExecuteStatement(
       setState(OperationState.RUNNING)
       info(KyuubiSparkUtil.diagnostics(spark))
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
-      spark.sparkContext.setJobGroup(statementId, statement)
+      spark.sparkContext.setJobGroup(statementId, statement, forceCancel)
       result = spark.sql(statement)
       debug(result.queryExecution)
       iter = new ArrayFetchIterator(result.collect())
@@ -76,6 +84,7 @@ class ExecuteStatement(
   }
 
   override protected def runInternal(): Unit = {
+    addTimeoutMonitor()
     if (shouldRunAsync) {
       val asyncOperation = new Runnable {
         override def run(): Unit = {
@@ -98,6 +107,29 @@ class ExecuteStatement(
       }
     } else {
       executeStatement()
+    }
+  }
+
+  private def addTimeoutMonitor(): Unit = {
+    if (queryTimeout > 0) {
+      val timeoutExecutor =
+        ThreadUtils.newDaemonSingleThreadScheduledExecutor("query-timeout-thread")
+      timeoutExecutor.schedule(new Runnable {
+        override def run(): Unit = {
+          try {
+            if (getStatus.state != OperationState.TIMEOUT) {
+              info(s"Query with $statementId timed out after $queryTimeout seconds")
+              cleanup(OperationState.TIMEOUT)
+            }
+          } catch {
+            case NonFatal(e) =>
+              setOperationException(KyuubiSQLException(e))
+              error(s"Error cancelling the query after timeout: $queryTimeout seconds")
+          } finally {
+            timeoutExecutor.shutdown()
+          }
+        }
+      }, queryTimeout, TimeUnit.SECONDS)
     }
   }
 }
