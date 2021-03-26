@@ -32,7 +32,7 @@ import org.apache.kyuubi.operation.JDBCTestUtils
 
 class SparkEngineSuites extends KyuubiFunSuite {
 
-  test("Add config to control if cancel invoke interrupt task on thriftserver") {
+  test("Add config to control if cancel invoke interrupt task on engine") {
     Seq(true, false).foreach { force =>
       withSparkJdbcStatement(Map(KyuubiConf.OPERATION_FORCE_CANCEL.key -> force.toString)) {
         case (statement, spark) =>
