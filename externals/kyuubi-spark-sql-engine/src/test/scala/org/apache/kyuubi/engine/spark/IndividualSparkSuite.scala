@@ -42,7 +42,7 @@ class SparkEngineSuites extends KyuubiFunSuite {
             override def onTaskEnd(taskEnd: SparkListenerTaskEnd): Unit = {
               assert(taskEnd.reason.isInstanceOf[TaskKilled])
               if (forceCancel.get()) {
-                assert(System.currentTimeMillis() - taskEnd.taskInfo.launchTime < 1000)
+                assert(System.currentTimeMillis() - taskEnd.taskInfo.launchTime < 3000)
                 index.incrementAndGet()
               } else {
                 assert(System.currentTimeMillis() - taskEnd.taskInfo.launchTime >= 4000)
