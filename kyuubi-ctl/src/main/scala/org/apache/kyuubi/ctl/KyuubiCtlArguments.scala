@@ -129,7 +129,8 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
          |  - engine
          |
          |Args:
-         |  --zkAddress                 one of the zk ensemble address, using kyuubi-defaults/conf if absent
+         |  --zkAddress                 one of the zk ensemble address, using kyuubi-defaults/conf
+         |                              if absent
          |  --namespace                 the namespace, using kyuubi-defaults/conf if absent
          |  --user
          |  --host
