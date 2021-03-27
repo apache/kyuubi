@@ -1313,6 +1313,7 @@
                             <exclude>docs/**</exclude>
                             <exclude>bin/kyuubi-logo</exclude>
                             <exclude>build/scala-*/**</exclude>
+                            <exclude>**/**/operation_logs/**/**</exclude>
                         </excludes>
                     </configuration>
                 </plugin>
