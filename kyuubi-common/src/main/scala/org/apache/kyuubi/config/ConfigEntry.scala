@@ -29,7 +29,7 @@ trait ConfigEntry[T] {
   def defaultVal: Option[T]
 
   override def toString: String = {
-    s"ConfigEntry(key=$key, defaultValue=$defaultValStr, doc=$doc, version=$version)"
+    s"ConfigEntry(key=$key, defaultValue=$defaultValStr, doc=$doc, version=$version, type=$typ)"
   }
 
   final protected def readString(provider: ConfigProvider): Option[String] = {
