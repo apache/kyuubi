@@ -27,6 +27,8 @@ import scala.collection.JavaConverters._
 import org.apache.commons.lang3.SystemUtils
 import org.apache.hadoop.security.UserGroupInformation
 
+import org.apache.kyuubi.config.internal.Tests.IS_TESTING
+
 private[kyuubi] object Utils extends Logging {
 
   import org.apache.kyuubi.config.KyuubiConf._
@@ -156,4 +158,8 @@ private[kyuubi] object Utils extends Logging {
    * Whether the underlying operating system is Windows.
    */
   val isWindows: Boolean = SystemUtils.IS_OS_WINDOWS
+
+  def isTesting: Boolean = {
+    System.getProperty(IS_TESTING.key) != null
+  }
 }

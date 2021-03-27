@@ -21,6 +21,8 @@ package org.apache.kyuubi
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Outcome}
 import org.scalatest.concurrent.Eventually
 
+import org.apache.kyuubi.config.internal.Tests.IS_TESTING
+
 trait KyuubiFunSuite extends FunSuite
   with BeforeAndAfterAll
   with BeforeAndAfterEach
@@ -29,6 +31,7 @@ trait KyuubiFunSuite extends FunSuite
   with Logging {
   // scalastyle:on
   override def beforeAll(): Unit = {
+    System.setProperty(IS_TESTING.key, "true")
     doThreadPostAudit()
     super.beforeAll()
   }
