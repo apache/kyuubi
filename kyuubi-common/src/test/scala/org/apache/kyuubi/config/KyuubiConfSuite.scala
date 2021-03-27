@@ -112,4 +112,25 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     assert(conf.getUserDefaults("yao").getOption("spark.user.test").get === "c")
   }
 
+  test("time config test") {
+    val kyuubiConf = KyuubiConf()
+    kyuubiConf.set(OPERATION_IDLE_TIMEOUT, 1000L)
+    assert(kyuubiConf.get(OPERATION_IDLE_TIMEOUT) === 1000L)
+    kyuubiConf.set(OPERATION_IDLE_TIMEOUT.key, "1000")
+    assert(kyuubiConf.get(OPERATION_IDLE_TIMEOUT) === 1000L)
+    kyuubiConf.set(OPERATION_IDLE_TIMEOUT.key, "  1000  ")
+    assert(kyuubiConf.get(OPERATION_IDLE_TIMEOUT) === 1000L)
+    kyuubiConf.set(OPERATION_IDLE_TIMEOUT.key, "1000A")
+    val e = intercept[IllegalArgumentException](kyuubiConf.get(OPERATION_IDLE_TIMEOUT))
+    assert(e.getMessage.contains("ISO-8601"))
+    kyuubiConf.set(OPERATION_IDLE_TIMEOUT.key, "  P1DT2H3.2S  ")
+
+    assert(kyuubiConf.get(OPERATION_IDLE_TIMEOUT) ===
+      Duration.ofDays(1)
+        .plusHours(2)
+        .plusSeconds(3)
+        .plusMillis(200)
+        .toMillis)
+  }
+
 }
