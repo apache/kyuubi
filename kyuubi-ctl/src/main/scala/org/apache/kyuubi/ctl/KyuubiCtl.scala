@@ -19,7 +19,7 @@ package org.apache.kyuubi.ctl
 
 private[ctl] object  KyuubiCtlAction extends Enumeration {
   type KyuubiCtlAction = Value
-  val CREATE, GET, DELETE, LIST = Value
+  val CREATE, GET, DELETE, LIST, HELP = Value
 }
 
 private[ctl] object KyuubiCtlActionRole extends Enumeration {

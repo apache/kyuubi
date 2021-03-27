@@ -45,7 +45,6 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
       info(s"Using properties file: $maybeConfigFile")
     }
     val defaultProperties = Utils.getPropertiesFromFile(maybeConfigFile)
-    // Property files may contain sensitive information, so redact before printing
     if (verbose) {
       defaultProperties.foreach { case (k, v) =>
         info(s"Adding default property: $k=$v")
@@ -80,6 +79,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
       case KyuubiCtlAction.GET => validateActionArguments()
       case KyuubiCtlAction.DELETE => validateActionArguments()
       case KyuubiCtlAction.LIST => validateActionArguments()
+      case KyuubiCtlAction.HELP =>
     }
   }
 
@@ -156,7 +156,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
       case LIST =>
         action = KyuubiCtlAction.LIST
       case HELP =>
-        printUsageAndExit(0)
+        action = KyuubiCtlAction.HELP
       case _ =>
         printUsageAndExit(-1, args.get(0))
     }
@@ -214,7 +214,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
         version = value
 
       case HELP =>
-        printUsageAndExit(0)
+        action = KyuubiCtlAction.HELP
 
       case VERBOSE =>
         verbose = true
@@ -222,7 +222,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
       case _ =>
         fail(s"Unexpected argument '$opt'.")
     }
-    true
+    action != KyuubiCtlAction.HELP
   }
 
   override protected def handleUnknown(opt: String): Boolean = {
