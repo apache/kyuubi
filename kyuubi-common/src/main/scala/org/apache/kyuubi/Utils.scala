@@ -159,6 +159,9 @@ private[kyuubi] object Utils extends Logging {
    */
   val isWindows: Boolean = SystemUtils.IS_OS_WINDOWS
 
+  /**
+   * Indicates whether Kyuubi is currently running unit tests.
+   */
   def isTesting: Boolean = {
     System.getProperty(IS_TESTING.key) != null
   }

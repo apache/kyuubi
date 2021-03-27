@@ -24,14 +24,17 @@ import java.nio.file.{Files, Path, Paths}
 
 import org.apache.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn}
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.session.SessionHandle
 
 object OperationLog extends Logging {
 
-  if ()
-  final val LOG_ROOT: String = "operation_logs"
+  def LOG_ROOT: String = if (Utils.isTesting) {
+    "target/operation_logs"
+  } else {
+    "operation_logs"
+  }
   private final val OPERATION_LOG: InheritableThreadLocal[OperationLog] = {
     new InheritableThreadLocal[OperationLog] {
       override def initialValue(): OperationLog = null
