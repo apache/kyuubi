@@ -75,7 +75,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
     assert(e1.doc === "doc")
     assert(e1.version === "0.11.1")
     assert(e1.typ === "long")
-    assert(e1.toString === s"ConfigEntry(key=kyuubi.long.spark, defaultValue=<undefined>," +
+    assert(e1.toString === s"ConfigEntry(key=kyuubi.long.spark, defaultValue=1," +
       s" doc=doc, version=0.11.1, type=long)")
 
     val conf = KyuubiConf()
