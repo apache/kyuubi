@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.ctl
 
-import scala.reflect.ClassTag
-
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
 
 class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
@@ -28,32 +26,22 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
   val host = "localhost"
   val port = "10000"
 
-  @volatile var exception: Exception = null
-
   /** Check whether the script exits and the given search string is printed. */
   private def testPrematureExit(args: Array[String], searchString: String): Unit = {
     val logAppender = new LogAppender("test premature exit")
     withLogAppender(logAppender) {
       val thread = new Thread {
         override def run() = try {
-          exception = null
           new KyuubiCtlArguments(args)
         } catch {
           case e: Exception =>
-            error(e.getMessage)
-            exception = e
+            error(e)
         }
       }
       thread.start()
       thread.join()
       assert(logAppender.loggingEvents.exists(_.getRenderedMessage.contains(searchString)))
     }
-  }
-
-  private def checkAndResetException[T <: AnyRef](implicit classTag: ClassTag[T]): Unit = {
-    val clazz = classTag.runtimeClass
-    assert(clazz.isAssignableFrom(exception.getClass))
-    exception = null
   }
 
   test("test basic kyuubi service arguments parser") {
@@ -79,11 +67,13 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
 
   test("prints usage on empty input") {
     testPrematureExit(Array.empty[String], "Usage: kyuubi-service")
-    checkAndResetException[KyuubiCtlException]
   }
 
   test("prints usage with only --help") {
     testPrematureExit(Array("--help"), "Usage: kyuubi-service")
-    checkAndResetException[KyuubiCtlException]
+  }
+
+  test("prints error with unrecognized options") {
+    testPrematureExit(Array("create", "--unkonwn"), "Unrecognized option '--unkonwn'")
   }
 }

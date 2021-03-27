@@ -21,7 +21,7 @@ import java.util.{List => JList}
 
 import scala.collection.JavaConverters._
 
-import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
+import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging, Utils}
 import org.apache.kyuubi.ctl.KyuubiCtlAction._
 import org.apache.kyuubi.ctl.KyuubiCtlActionRole._
 import org.apache.kyuubi.ha.HighAvailabilityConf._
@@ -64,10 +64,10 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
 
   private def useDefaultPropertyValueIfMissing(): Unit = {
     if (zkAddress == null) {
-      zkAddress = defaultKyuubiProperties.applyOrElse(HA_ZK_QUORUM.key, null)
+      zkAddress = defaultKyuubiProperties.getOrElse(HA_ZK_QUORUM.key, null)
     }
     if (nameSpace == null) {
-      nameSpace = defaultKyuubiProperties.applyOrElse(HA_ZK_NAMESPACE.key, null)
+      nameSpace = defaultKyuubiProperties.getOrElse(HA_ZK_NAMESPACE.key, null)
     }
     if (version == null) {
       version = KYUUBI_VERSION
@@ -84,14 +84,24 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
   }
 
   private def validateActionArguments(): Unit = {
+    if (zkAddress == null) {
+      fail("Zookeeper address is not specified and no default value to load")
+    }
+    if (nameSpace == null) {
+      fail("Zookeeper namespace is not specified and no default value to load")
+    }
+    if (version == null) {
+      fail("Kyuubi version is not specified and could not found KYUUBI_VERSION in " +
+        "kyuubi-build-info")
+    }
     if (host == null) {
-      error("Must specify host for service")
+      fail("Must specify host for service")
     }
     if (port == null) {
-      error("Must specify port for service")
+      fail("Must specify port for service")
     }
     if (role == KyuubiCtlActionRole.ENGINE && user == null) {
-      error("Must specify user name for engine")
+      fail("Must specify user name for engine")
     }
   }
 
@@ -210,15 +220,17 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
         verbose = true
 
       case _ =>
-        error(s"Unexpected argument '$opt'.")
+        fail(s"Unexpected argument '$opt'.")
     }
     true
   }
 
   override protected def handleUnknown(opt: String): Boolean = {
     if (opt.startsWith("-")) {
-      error(s"Unrecognized option '$opt'.")
+      fail(s"Unrecognized option '$opt'.")
     }
     false
   }
+
+  private def fail(msg: String): Unit = throw new KyuubiException(msg)
 }
