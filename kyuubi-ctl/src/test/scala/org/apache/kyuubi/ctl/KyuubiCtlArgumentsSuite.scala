@@ -65,12 +65,24 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
     assert(opArgs.version == KYUUBI_VERSION)
   }
 
-  test("prints usage on empty input") {
-    testPrematureExit(Array.empty[String], "Usage: kyuubi-ctl")
+  test("treat --help as action") {
+    val args = Seq("--help")
+    val opArgs = new KyuubiCtlArguments(args)
+    assert(opArgs.action == KyuubiCtlAction.HELP)
+
+    val args2 = Seq(
+      "create", "server",
+      "--help",
+      "--user", user,
+      "--host", host,
+      "--port", port
+    )
+    val opArgs2 = new KyuubiCtlArguments(args2)
+    assert(opArgs2.action == KyuubiCtlAction.HELP)
   }
 
-  test("prints usage with only --help") {
-    testPrematureExit(Array("--help"), "Usage: kyuubi-ctl")
+  test("prints usage on empty input") {
+    testPrematureExit(Array.empty[String], "Usage: kyuubi-ctl")
   }
 
   test("prints error with unrecognized options") {
