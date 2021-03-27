@@ -33,6 +33,7 @@
         <module>kyuubi-ha</module>
         <module>kyuubi-main</module>
         <module>kyuubi-metrics</module>
+        <module>kyuubi-ctl</module>
     </modules>
     <packaging>pom</packaging>
 
