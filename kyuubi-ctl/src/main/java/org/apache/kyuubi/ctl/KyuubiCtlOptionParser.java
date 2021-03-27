@@ -54,7 +54,7 @@ class KyuubiCtlOptionParser {
 
   /**
    * List of switches (command line options that do not take parameters) recognized by
-   * kyuubi-service.
+   * kyuubi-ctl.
    */
   final String[][] switches = {
     { HELP },
@@ -71,9 +71,9 @@ class KyuubiCtlOptionParser {
   }
 
   /**
-   * Parse a list of kyuubi-service command line options.
+   * Parse a list of kyuubi-ctl command line options.
    * <p>
-   * See KyuubiServiceArguments.scala for a more formal description of available options.
+   * See KyuubiCtlArguments.scala for a more formal description of available options.
    *
    * @throws IllegalArgumentException If an error is found during parsing.
    */

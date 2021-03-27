@@ -66,11 +66,11 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
   }
 
   test("prints usage on empty input") {
-    testPrematureExit(Array.empty[String], "Usage: kyuubi-service")
+    testPrematureExit(Array.empty[String], "Usage: kyuubi-ctl")
   }
 
   test("prints usage with only --help") {
-    testPrematureExit(Array("--help"), "Usage: kyuubi-service")
+    testPrematureExit(Array("--help"), "Usage: kyuubi-ctl")
   }
 
   test("prints error with unrecognized options") {

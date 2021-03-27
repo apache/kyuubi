@@ -20,5 +20,4 @@ package org.apache.kyuubi.ctl
 import org.apache.kyuubi.KyuubiException
 
 class KyuubiCtlException(exitCode: Int)
-  extends KyuubiException(s"Kyuubi Service Operation exited with $exitCode")
-
+  extends KyuubiException(s"Kyuubi Ctl exited with $exitCode")

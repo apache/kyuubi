@@ -110,7 +110,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
       info("Unknown/unsupported param " + unknownParam)
     }
     val command = sys.env.getOrElse("_KYUUBI_CMD_USAGE",
-      """Usage: kyuubi-service <create|get|delete|list>  <server|engine> --zkAddress ...
+      """Usage: kyuubi-ctl <create|get|delete|list>  <server|engine> --zkAddress ...
         |--namespace ... --user ... --host ... --port ... --version""".stripMargin)
     info(command)
 
