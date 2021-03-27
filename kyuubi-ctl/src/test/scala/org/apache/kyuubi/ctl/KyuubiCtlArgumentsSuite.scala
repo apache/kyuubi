@@ -68,7 +68,7 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
     )
     val opArgs = new KyuubiCtlArguments(args)
     assert(opArgs.action == KyuubiCtlAction.CREATE)
-    assert(opArgs.role == KyuubiCtlRole.SERVER)
+    assert(opArgs.role == KyuubiCtlActionRole.SERVER)
     assert(opArgs.zkAddress == zkAddress)
     assert(opArgs.nameSpace == namespace)
     assert(opArgs.user == user)
@@ -84,5 +84,6 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
 
   test("prints usage with only --help") {
     testPrematureExit(Array("--help"), "Usage: kyuubi-service")
+    checkAndResetException[KyuubiCtlException]
   }
 }

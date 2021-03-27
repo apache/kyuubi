@@ -23,13 +23,13 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Logging, Utils}
 import org.apache.kyuubi.ctl.KyuubiCtlAction._
-import org.apache.kyuubi.ctl.KyuubiCtlRole._
+import org.apache.kyuubi.ctl.KyuubiCtlActionRole._
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 
 class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
   extends KyuubiCtlArgumentsParser with Logging {
   var action: KyuubiCtlAction = null
-  var role: KyuubiCtlRole = null
+  var role: KyuubiCtlActionRole = null
   var zkAddress: String = null
   var nameSpace: String = null
   var user: String = null
@@ -90,7 +90,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
     if (port == null) {
       error("Must specify port for service")
     }
-    if (role == KyuubiCtlRole.ENGINE && user == null) {
+    if (role == KyuubiCtlActionRole.ENGINE && user == null) {
       error("Must specify user name for engine")
     }
   }
@@ -131,10 +131,11 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
     throw new KyuubiCtlException(exitCode)
   }
 
-  override protected def parseOperationAndRole(args: JList[String]): Int = {
-    if (args.size() < 2) {
+  override protected def parseActionAndRole(args: JList[String]): Int = {
+    if (args.isEmpty) {
       printUsageAndExit(-1)
     }
+
     args.get(0) match {
       case CREATE =>
         action = KyuubiCtlAction.CREATE
@@ -144,19 +145,26 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
         action = KyuubiCtlAction.DELETE
       case LIST =>
         action = KyuubiCtlAction.LIST
+      case HELP =>
+        printUsageAndExit(0)
       case _ =>
         printUsageAndExit(-1, args.get(0))
     }
-    args.get(1) match {
-      case SERVER =>
-        role = KyuubiCtlRole.SERVER
-        2
-      case ENGINE =>
-        role = KyuubiCtlRole.ENGINE
-        2
-      case _ =>
-        role = KyuubiCtlRole.SERVER
-        1
+
+    if (args.size() == 1) {
+      1
+    } else {
+      args.get(1) match {
+        case SERVER =>
+          role = KyuubiCtlActionRole.SERVER
+          2
+        case ENGINE =>
+          role = KyuubiCtlActionRole.ENGINE
+          2
+        case _ =>
+          role = KyuubiCtlActionRole.SERVER
+          1
+      }
     }
   }
 

@@ -62,11 +62,11 @@ class KyuubiCtlOptionParser {
   };
 
   /**
-   * Parse operation type and role.
+   * Parse action type and role.
    *
    * @return offset of remaining arguments.
    */
-  protected int parseOperationAndRole(List<String> args) {
+  protected int parseActionAndRole(List<String> args) {
     throw new UnsupportedOperationException();
   }
 
@@ -80,7 +80,7 @@ class KyuubiCtlOptionParser {
   protected final void parse(List<String> args) {
     Pattern eqSeparatedOpt = Pattern.compile("(--[^=]+)=(.+)");
 
-    int idx = parseOperationAndRole(args);
+    int idx = parseActionAndRole(args);
     for (; idx < args.size(); idx++) {
       String arg = args.get(idx);
       String value = null;
