@@ -144,6 +144,9 @@ def merge_pr(pr_num, target_ref, title, body, pr_repo_desc):
     # The string "Closes #%s" string is required for GitHub to correctly close the PR
     merge_message_flags += ["-m", "Closes #%s from %s." % (pr_num, pr_repo_desc)]
 
+    for issueId in re.findall("KYUUBI #[0-9]{3,5}", title):
+        merge_message_flags += ["-m", issueId.replace("KYUUBI", "Closes")]
+
     for c in commits:
         merge_message_flags += ["-m", c]
 
