@@ -104,6 +104,13 @@ private[kyuubi] case class ConfigBuilder(key: String) {
 
     new TypedConfigBuilder[Long](this, timeFromStr, timeToStr)
   }
+
+  def fallbackConf[T](fallback: ConfigEntry[T]): ConfigEntry[T] = {
+    val entry =
+      new ConfigEntryFallback[T](key, _doc, _version, fallback)
+    _onCreate.foreach(_(entry))
+    entry
+  }
 }
 
 private[kyuubi] case class TypedConfigBuilder[T](

@@ -415,12 +415,18 @@ object KyuubiConf {
     .checkValue(_ > Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
     .createWithDefault(Duration.ofMinutes(5).toMillis)
 
+  @deprecated(s"using ${SESSION_IDLE_TIMEOUT.key} instead", "1.2.0")
   val SESSION_TIMEOUT: ConfigEntry[Long] = buildConf("session.timeout")
-    .doc("session timeout, it will be closed when it's not accessed for this duration")
+    .doc("(deprecated)session timeout, it will be closed when it's not accessed for this duration")
     .version("1.0.0")
     .timeConf
     .checkValue(_ >= Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
     .createWithDefault(Duration.ofHours(6).toMillis)
+
+  val SESSION_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("session.idle.timeout")
+    .doc("session idle timeout, it will be closed when it's not accessed for this duration")
+    .version("1.2.0")
+    .fallbackConf(SESSION_TIMEOUT)
 
   val ENGINE_CHECK_INTERVAL: ConfigEntry[Long] = buildConf("session.engine.check.interval")
     .doc("The check interval for engine timeout")
@@ -446,8 +452,7 @@ object KyuubiConf {
     buildConf("backend.engine.exec.pool.size")
       .doc("Number of threads in the operation execution thread pool of SQL engine applications")
       .version("1.0.0")
-      .intConf
-      .createWithDefault(100)
+      .fallbackConf(SERVER_EXEC_POOL_SIZE)
 
   val SERVER_EXEC_WAIT_QUEUE_SIZE: ConfigEntry[Int] =
     buildConf("backend.server.exec.pool.wait.queue.size")
@@ -461,8 +466,7 @@ object KyuubiConf {
       .doc("Size of the wait queue for the operation execution thread pool in SQL engine" +
         " applications")
       .version("1.0.0")
-      .intConf
-      .createWithDefault(100)
+      .fallbackConf(SERVER_EXEC_WAIT_QUEUE_SIZE)
 
   val SERVER_EXEC_KEEPALIVE_TIME: ConfigEntry[Long] =
     buildConf("backend.server.exec.pool.keepalive.time")
@@ -477,8 +481,7 @@ object KyuubiConf {
       .doc("Time(ms) that an idle async thread of the operation execution thread pool will wait" +
         " for a new task to arrive before terminating in SQL engine applications")
       .version("1.0.0")
-      .timeConf
-      .createWithDefault(Duration.ofSeconds(60).toMillis)
+      .fallbackConf(SERVER_EXEC_KEEPALIVE_TIME)
 
   val SERVER_EXEC_POOL_SHUTDOWN_TIMEOUT: ConfigEntry[Long] =
     buildConf("backend.server.exec.pool.shutdown.timeout")
@@ -492,8 +495,7 @@ object KyuubiConf {
       .doc("Timeout(ms) for the operation execution thread pool to terminate in SQL engine" +
         " applications")
       .version("1.0.0")
-      .timeConf
-      .createWithDefault(Duration.ofSeconds(10).toMillis)
+      .fallbackConf(SERVER_EXEC_POOL_SHUTDOWN_TIMEOUT)
 
   val OPERATION_STATUS_POLLING_TIMEOUT: ConfigEntry[Long] =
     buildConf("operation.status.polling.timeout")

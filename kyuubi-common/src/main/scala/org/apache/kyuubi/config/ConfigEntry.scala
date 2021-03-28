@@ -134,6 +134,32 @@ class ConfigEntryWithDefaultString[T](
   override def typ: String = _type
 }
 
+class ConfigEntryFallback[T](
+  _key: String,
+  _doc: String,
+  _version: String,
+  fallback: ConfigEntry[T]) extends ConfigEntry[T] {
+  override def defaultValStr: String = fallback.defaultValStr
+
+  override def defaultVal: Option[T] = fallback.defaultVal
+
+  override def readFrom(conf: ConfigProvider): T = {
+    readString(conf).map(valueConverter).getOrElse(fallback.readFrom(conf))
+  }
+
+  override def key: String = _key
+
+  override def valueConverter: String => T = fallback.valueConverter
+
+  override def strConverter: T => String = fallback.strConverter
+
+  override def doc: String = _doc
+
+  override def version: String = _version
+
+  override def typ: String = fallback.typ
+}
+
 object ConfigEntry {
   val UNDEFINED = "<undefined>"
 
