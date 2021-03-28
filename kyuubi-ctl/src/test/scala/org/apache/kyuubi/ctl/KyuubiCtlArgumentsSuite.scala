@@ -70,7 +70,7 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
   }
 
   test("treat --help as action") {
-    val args = Seq("--help")
+    val args = Seq("-I")
     val opArgs = new KyuubiCtlArguments(args)
     assert(opArgs.action == KyuubiCtlAction.HELP)
     assert(opArgs.version == KYUUBI_VERSION)
@@ -111,7 +111,7 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
     testPrematureExit(args, "Unknown/unsupported param extraArg1")
   }
 
-  test("test missing arguments") {
+  test("test list action arguments") {
     val args = Array(
       "list"
     )
@@ -128,23 +128,55 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
       "--zkAddress", zkAddress,
       "--namespace", namespace
     )
-    testPrematureExit(args3, "Must specify host")
+    val opArgs = new KyuubiCtlArguments(args3)
+    assert(opArgs.action == KyuubiCtlAction.LIST)
+  }
+  test("test create/get/delete action arguments") {
+    Seq("create", "get", "delete").foreach { op =>
+      val args = Array(
+        op
+      )
+      testPrematureExit(args, "Zookeeper address is not specified")
 
-    val args4 = Array(
-      "list",
-      "--zkAddress", zkAddress,
-      "--namespace", namespace,
-      "--host", host
-    )
-    testPrematureExit(args4, "Must specify port")
+      val args2 = Array(
+        op,
+        "--zkAddress", zkAddress
+      )
+      testPrematureExit(args2, "Zookeeper namespace is not specified")
 
-    val args5 = Array(
-      "list", "engine",
-      "--zkAddress", zkAddress,
-      "--namespace", namespace,
-      "--host", host,
-      "--port", port
-    )
-    testPrematureExit(args5, "Must specify user")
+      val args3 = Array(
+        op,
+        "--zkAddress", zkAddress,
+        "--namespace", namespace
+      )
+      testPrematureExit(args3, "Must specify host")
+
+      val args4 = Array(
+        op,
+        "--zkAddress", zkAddress,
+        "--namespace", namespace,
+        "-h", host
+      )
+      testPrematureExit(args4, "Must specify port")
+
+      val args5 = Array(
+        op, "engine",
+        "--zkAddress", zkAddress,
+        "--namespace", namespace,
+        "-h", host,
+        "-p", port
+      )
+      testPrematureExit(args5, "Must specify user name for engine")
+
+      val args6 = Array(
+        op, "server",
+        "--zkAddress", zkAddress,
+        "--namespace", namespace,
+        "-h", host,
+        "-p", port
+      )
+      val opArgs6 = new KyuubiCtlArguments(args6)
+      assert(opArgs6.action.toString.equalsIgnoreCase(op))
+    }
   }
 }
