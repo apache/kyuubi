@@ -148,4 +148,8 @@ class KyuubiCtlOptionParser {
     }
     return null;
   }
+
+  protected String findSwitches(String name) {
+    return findCliOption(name, switches);
+  }
 }

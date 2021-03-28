@@ -131,6 +131,7 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
     val opArgs = new KyuubiCtlArguments(args3)
     assert(opArgs.action == KyuubiCtlAction.LIST)
   }
+
   test("test create/get/delete action arguments") {
     Seq("create", "get", "delete").foreach { op =>
       val args = Array(
@@ -178,5 +179,12 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
       val opArgs6 = new KyuubiCtlArguments(args6)
       assert(opArgs6.action.toString.equalsIgnoreCase(op))
     }
+  }
+
+  test("set verbose at first") {
+    val args = Seq("--verbose", "list", "-zk", zkAddress, "-ns", namespace)
+    val opArgs = new KyuubiCtlArguments(args)
+    assert(opArgs.verbose)
+    assert(opArgs.action == KyuubiCtlAction.LIST)
   }
 }

@@ -160,40 +160,52 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
   }
 
   override protected def parseActionAndService(args: JList[String]): Int = {
-    if (args.isEmpty) {
-      printUsageAndExit(-1)
-    }
+    var actionParsed = false
+    var serviceParsed = false
+    var offset = 0
 
-    args.get(0) match {
-      case CREATE =>
-        action = KyuubiCtlAction.CREATE
-      case GET =>
-        action = KyuubiCtlAction.GET
-      case DELETE =>
-        action = KyuubiCtlAction.DELETE
-      case LIST =>
-        action = KyuubiCtlAction.LIST
-      case HELP =>
-        action = KyuubiCtlAction.HELP
-      case _ =>
-        printUsageAndExit(-1, args.get(0))
-    }
-
-    if (args.size() == 1) {
-      1
-    } else {
-      args.get(1) match {
-        case SERVER =>
-          service = KyuubiCtlActionService.SERVER
-          2
-        case ENGINE =>
-          service = KyuubiCtlActionService.ENGINE
-          2
-        case _ =>
-          service = KyuubiCtlActionService.SERVER
-          1
+    while(offset < args.size() && needContinueHandle() && !(actionParsed && serviceParsed)) {
+     val arg = args.get(offset)
+      if (!actionParsed) {
+        arg match {
+          case CREATE =>
+            action = KyuubiCtlAction.CREATE
+            actionParsed = true
+          case GET =>
+            action = KyuubiCtlAction.GET
+            actionParsed = true
+          case DELETE =>
+            action = KyuubiCtlAction.DELETE
+            actionParsed = true
+          case LIST =>
+            action = KyuubiCtlAction.LIST
+            actionParsed = true
+          case _ => findSwitches(arg) match {
+            case HELP =>
+              action = KyuubiCtlAction.HELP
+              actionParsed = true
+            case VERBOSE =>
+              verbose = true
+            case _ =>
+              printUsageAndExit(-1, arg)
+          }
+        }
+        offset += 1
+      } else if (needContinueHandle() && !serviceParsed) {
+        arg match {
+          case SERVER =>
+            service = KyuubiCtlActionService.SERVER
+            offset += 1
+          case ENGINE =>
+            service = KyuubiCtlActionService.ENGINE
+            offset += 1
+          case _ =>
+            service = KyuubiCtlActionService.SERVER
+        }
+        serviceParsed = true
       }
     }
+    offset
   }
 
   override def toString: String = {
@@ -210,8 +222,15 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
     """.stripMargin
   }
 
+  private def needContinueHandle(): Boolean = {
+    action != KyuubiCtlAction.HELP
+  }
+
   /** Fill in values by parsing user options. */
   override protected def handle(opt: String, value: String): Boolean = {
+    if (!needContinueHandle()) {
+      return false
+    }
     opt match {
       case ZK_ADDRESS =>
         zkAddress = value
@@ -240,7 +259,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
       case _ =>
         fail(s"Unexpected argument '$opt'.")
     }
-    action != KyuubiCtlAction.HELP
+    needContinueHandle()
   }
 
   override protected def handleUnknown(opt: String): Boolean = {
