@@ -160,6 +160,10 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
   }
 
   override protected def parseActionAndService(args: JList[String]): Int = {
+    if (args.isEmpty) {
+      printUsageAndExit(-1)
+    }
+
     var actionParsed = false
     var serviceParsed = false
     var offset = 0
@@ -195,14 +199,24 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
         arg match {
           case SERVER =>
             service = KyuubiCtlActionService.SERVER
+            serviceParsed = true
             offset += 1
           case ENGINE =>
             service = KyuubiCtlActionService.ENGINE
+            serviceParsed = true
             offset += 1
-          case _ =>
-            service = KyuubiCtlActionService.SERVER
+          case _ => findSwitches(arg) match {
+            case HELP =>
+              action = KyuubiCtlAction.HELP
+              offset += 1
+            case VERBOSE =>
+              verbose = true
+              offset += 1
+            case _ =>
+              service = KyuubiCtlActionService.SERVER
+              serviceParsed = true
+          }
         }
-        serviceParsed = true
       }
     }
     offset
@@ -263,8 +277,12 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
   }
 
   override protected def handleUnknown(opt: String): Boolean = {
-    printUsageAndExit(-1, opt)
-    false
+    if (!needContinueHandle()) {
+      false
+    } else {
+      printUsageAndExit(-1, opt)
+      false
+    }
   }
 
   private def fail(msg: String): Unit = throw new KyuubiException(msg)

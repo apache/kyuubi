@@ -181,10 +181,22 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
     }
   }
 
-  test("set verbose at first") {
-    val args = Seq("--verbose", "list", "-zk", zkAddress, "-ns", namespace)
+  test("test with switches at head") {
+    val args = Seq("--verbose", "list", "engine", "-zk", zkAddress, "-ns", namespace)
     val opArgs = new KyuubiCtlArguments(args)
     assert(opArgs.verbose)
     assert(opArgs.action == KyuubiCtlAction.LIST)
+    assert(opArgs.service == KyuubiCtlActionService.ENGINE)
+
+    val args2 = Seq("list", "-v", "engine", "-zk", zkAddress, "-ns", namespace)
+    val opArgs2 = new KyuubiCtlArguments(args2)
+    assert(opArgs2.verbose)
+    assert(opArgs2.action == KyuubiCtlAction.LIST)
+    assert(opArgs2.service == KyuubiCtlActionService.ENGINE)
+
+    val args3 = Seq("list", "--verbose", "--help", "engine", "-zk", zkAddress, "-ns", namespace)
+    val opArgs3 = new KyuubiCtlArguments(args3)
+    assert(opArgs3.verbose)
+    assert(opArgs3.action == KyuubiCtlAction.HELP)
   }
 }
