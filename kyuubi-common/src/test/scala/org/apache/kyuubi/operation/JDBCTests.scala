@@ -328,7 +328,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("Support query auto timeout cancel on thriftserver - setQueryTimeout") {
+  test("query time out shall respect client-side if no server-side control") {
     withJdbcStatement() { statement =>
       statement.setQueryTimeout(1)
       val e = intercept[SQLTimeoutException] {
