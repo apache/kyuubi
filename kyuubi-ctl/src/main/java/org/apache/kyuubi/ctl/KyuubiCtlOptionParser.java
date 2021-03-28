@@ -117,9 +117,7 @@ class KyuubiCtlOptionParser {
         continue;
       }
 
-      if (!handleUnknown(arg)) {
-        break;
-      }
+      handleUnknown(arg);
     }
   }
 

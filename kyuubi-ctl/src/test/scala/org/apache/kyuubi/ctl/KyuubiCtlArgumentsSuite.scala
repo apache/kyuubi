@@ -77,13 +77,16 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
 
     val args2 = Seq(
       "create", "server",
-      "--user", user,
+      s"--user=$user",
       "--host", host,
+      "--verbose",
+      "--help",
       "--port", port,
-      "--help"
     )
     val opArgs2 = new KyuubiCtlArguments(args2)
     assert(opArgs2.action == KyuubiCtlAction.HELP)
+    assert(opArgs2.user == user)
+    assert(opArgs2.verbose)
   }
 
   test("prints usage on empty input") {
@@ -92,5 +95,36 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
 
   test("prints error with unrecognized options") {
     testPrematureExit(Array("create", "--unkonwn"), "Unknown/unsupported param --unkonwn")
+    testPrematureExit(Array("--unkonwn"), "Unknown/unsupported param --unkonwn")
+  }
+
+  test("test invalid arguments") {
+    testPrematureExit(Array("create", "--user"), "Missing argument for option '--user'")
+  }
+
+  test("test extra unused arguments") {
+    val args = Array(
+      "list",
+      "--zkAddress", zkAddress,
+      "--namespace", namespace,
+      "--user", user,
+      "--host", host,
+      "--port", port,
+      "--version", KYUUBI_VERSION,
+      "extraArg1", "extraArg2"
+    )
+    testPrematureExit(args, "Unknown/unsupported param extraArg1")
+  }
+
+  test("test missing arguments") {
+    val args = Array(
+      "list",
+      "--namespace", namespace,
+      "--user", user,
+      "--host", host,
+      "--port", port,
+      "--version", KYUUBI_VERSION
+    )
+    testPrematureExit(args, "Zookeeper address is not specified")
   }
 }
