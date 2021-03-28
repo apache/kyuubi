@@ -31,7 +31,7 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
     val logAppender = new LogAppender("test premature exit")
     withLogAppender(logAppender) {
       val thread = new Thread {
-        override def run() = try {
+        override def run(): Unit = try {
           new KyuubiCtlArguments(args)
         } catch {
           case e: Exception =>
