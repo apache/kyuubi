@@ -61,6 +61,10 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
 
   validateArguments()
 
+  if (verbose) {
+    info(toString)
+  }
+
   private def useDefaultPropertyValueIfMissing(): Unit = {
     if (zkAddress == null) {
       zkAddress = defaultKyuubiProperties.getOrElse(HA_ZK_QUORUM.key, null)

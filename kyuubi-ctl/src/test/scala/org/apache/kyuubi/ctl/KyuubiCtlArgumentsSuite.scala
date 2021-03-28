@@ -78,7 +78,7 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
     val args2 = Seq(
       "create", "server",
       s"--user=$user",
-      "--host", host,
+      "-h", host,
       "--verbose",
       "--help",
       "--port", port,
@@ -86,6 +86,7 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
     val opArgs2 = new KyuubiCtlArguments(args2)
     assert(opArgs2.action == KyuubiCtlAction.HELP)
     assert(opArgs2.user == user)
+    assert(opArgs2.host == host)
     assert(opArgs2.verbose)
   }
 
@@ -105,12 +106,6 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
   test("test extra unused arguments") {
     val args = Array(
       "list",
-      "--zkAddress", zkAddress,
-      "--namespace", namespace,
-      "--user", user,
-      "--host", host,
-      "--port", port,
-      "--version", KYUUBI_VERSION,
       "extraArg1", "extraArg2"
     )
     testPrematureExit(args, "Unknown/unsupported param extraArg1")
@@ -118,13 +113,38 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
 
   test("test missing arguments") {
     val args = Array(
-      "list",
-      "--namespace", namespace,
-      "--user", user,
-      "--host", host,
-      "--port", port,
-      "--version", KYUUBI_VERSION
+      "list"
     )
     testPrematureExit(args, "Zookeeper address is not specified")
+
+    val args2 = Array(
+      "list",
+      "--zkAddress", zkAddress
+    )
+    testPrematureExit(args2, "Zookeeper namespace is not specified")
+
+    val args3 = Array(
+      "list",
+      "--zkAddress", zkAddress,
+      "--namespace", namespace
+    )
+    testPrematureExit(args3, "Must specify host")
+
+    val args4 = Array(
+      "list",
+      "--zkAddress", zkAddress,
+      "--namespace", namespace,
+      "--host", host
+    )
+    testPrematureExit(args4, "Must specify port")
+
+    val args5 = Array(
+      "list", "engine",
+      "--zkAddress", zkAddress,
+      "--namespace", namespace,
+      "--host", host,
+      "--port", port
+    )
+    testPrematureExit(args5, "Must specify user")
   }
 }
