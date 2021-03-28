@@ -79,15 +79,15 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
   /** Ensure that required fields exists. Call this only once all defaults are loaded. */
   private def validateArguments(): Unit = {
     action match {
-      case KyuubiCtlAction.CREATE => validateActionArguments()
-      case KyuubiCtlAction.GET => validateActionArguments()
-      case KyuubiCtlAction.DELETE => validateActionArguments()
-      case KyuubiCtlAction.LIST => validateActionArguments()
+      case KyuubiCtlAction.CREATE => validateCreateGetDeleteArguments()
+      case KyuubiCtlAction.GET => validateCreateGetDeleteArguments()
+      case KyuubiCtlAction.DELETE => validateCreateGetDeleteArguments()
+      case KyuubiCtlAction.LIST => validateListArguments()
       case KyuubiCtlAction.HELP =>
     }
   }
 
-  private def validateActionArguments(): Unit = {
+  private def validateCreateGetDeleteArguments(): Unit = {
     if (zkAddress == null) {
       fail("Zookeeper address is not specified and no default value to load")
     }
@@ -109,12 +109,23 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
     }
   }
 
+  private def validateListArguments(): Unit = {
+    if (zkAddress == null) {
+      fail("Zookeeper address is not specified and no default value to load")
+    }
+    if (nameSpace == null) {
+      fail("Zookeeper namespace is not specified and no default value to load")
+    }
+  }
+
   private def printUsageAndExit(exitCode: Int, unknownParam: Any = null): Unit = {
     if (unknownParam != null) {
       info("Unknown/unsupported param " + unknownParam)
     }
     val command = sys.env.getOrElse("_KYUUBI_CMD_USAGE",
-      """Usage: kyuubi-ctl <create|get|delete|list>  <server|engine> --zkAddress ...
+      s"""
+        |Kyuubi Ver $KYUUBI_VERSION.
+        |Usage: kyuubi-ctl <create|get|delete|list>  <server|engine> --zkAddress ...
         |--namespace ... --user ... --host ... --port ... --version""".stripMargin)
     info(command)
 
@@ -132,14 +143,16 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
          |  - engine
          |
          |Arguments:
-         |  --zkAddress                 one of the zk ensemble address, using kyuubi-defaults/conf
+         |  --zkAddress, -zk            one of the zk ensemble address, using kyuubi-defaults/conf
          |                              if absent
-         |  --namespace                 the namespace, using kyuubi-defaults/conf if absent
-         |  --host                      hostname or IP address of a service
-         |  --port                      listening port of a service
-         |  --version                   using the compiled KYUUBI_VERSION default, change it if the
+         |  --namespace, -ns            the namespace, using kyuubi-defaults/conf if absent
+         |  --host, -h                  hostname or IP address of a service
+         |  --port, -p                  listening port of a service
+         |  --version, -V               using the compiled KYUUBI_VERSION default, change it if the
          |                              active service is running in another
-         |  --user                      for engine service only, the user name this engine belong to
+         |  --user, -u                  for engine service only, the user name this engine belong to
+         |  --help, -I                  Show this help message and exit.
+         |  --verbose, -v               Print additional debug output.
       """.stripMargin
     )
 
