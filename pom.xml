@@ -30,10 +30,10 @@
         <module>externals/kyuubi-spark-sql-engine</module>
         <module>kyuubi-assembly</module>
         <module>kyuubi-common</module>
+        <module>kyuubi-ctl</module>
         <module>kyuubi-ha</module>
         <module>kyuubi-main</module>
         <module>kyuubi-metrics</module>
-        <module>kyuubi-ctl</module>
     </modules>
     <packaging>pom</packaging>
 

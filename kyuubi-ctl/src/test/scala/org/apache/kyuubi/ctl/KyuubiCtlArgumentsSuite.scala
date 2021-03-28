@@ -45,37 +45,42 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
   }
 
   test("test basic kyuubi service arguments parser") {
-    val args = Seq(
-      "create", "server",
-      "--zkAddress", zkAddress,
-      "--namespace", namespace,
-      "--user", user,
-      "--host", host,
-      "--port", port,
-      "--version", KYUUBI_VERSION
-    )
-    val opArgs = new KyuubiCtlArguments(args)
-    assert(opArgs.action == KyuubiCtlAction.CREATE)
-    assert(opArgs.role == KyuubiCtlActionRole.SERVER)
-    assert(opArgs.zkAddress == zkAddress)
-    assert(opArgs.nameSpace == namespace)
-    assert(opArgs.user == user)
-    assert(opArgs.host == host)
-    assert(opArgs.port == port)
-    assert(opArgs.version == KYUUBI_VERSION)
+    Seq("create", "get", "list", "delete").foreach { command =>
+      Seq("server", "engine").foreach { service =>
+        val args = Seq(
+          command, service,
+          "--zkAddress", zkAddress,
+          "--namespace", namespace,
+          "--user", user,
+          "--host", host,
+          "--port", port,
+          "--version", KYUUBI_VERSION
+        )
+        val opArgs = new KyuubiCtlArguments(args)
+        assert(opArgs.action.toString.equalsIgnoreCase(command))
+        assert(opArgs.service.toString.equalsIgnoreCase(service))
+        assert(opArgs.zkAddress == zkAddress)
+        assert(opArgs.nameSpace == namespace)
+        assert(opArgs.user == user)
+        assert(opArgs.host == host)
+        assert(opArgs.port == port)
+        assert(opArgs.version == KYUUBI_VERSION)
+      }
+    }
   }
 
   test("treat --help as action") {
     val args = Seq("--help")
     val opArgs = new KyuubiCtlArguments(args)
     assert(opArgs.action == KyuubiCtlAction.HELP)
+    assert(opArgs.version == KYUUBI_VERSION)
 
     val args2 = Seq(
       "create", "server",
-      "--help",
       "--user", user,
       "--host", host,
-      "--port", port
+      "--port", port,
+      "--help"
     )
     val opArgs2 = new KyuubiCtlArguments(args2)
     assert(opArgs2.action == KyuubiCtlAction.HELP)

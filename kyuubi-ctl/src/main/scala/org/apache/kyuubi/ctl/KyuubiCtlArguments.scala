@@ -23,13 +23,13 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging, Utils}
 import org.apache.kyuubi.ctl.KyuubiCtlAction._
-import org.apache.kyuubi.ctl.KyuubiCtlActionRole._
+import org.apache.kyuubi.ctl.KyuubiCtlActionService._
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 
 class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
   extends KyuubiCtlArgumentsParser with Logging {
   var action: KyuubiCtlAction = null
-  var role: KyuubiCtlActionRole = null
+  var service: KyuubiCtlActionService = null
   var zkAddress: String = null
   var nameSpace: String = null
   var user: String = null
@@ -100,7 +100,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
     if (port == null) {
       fail("Must specify port for service")
     }
-    if (role == KyuubiCtlActionRole.ENGINE && user == null) {
+    if (service == KyuubiCtlActionService.ENGINE && user == null) {
       fail("Must specify user name for engine")
     }
   }
@@ -116,33 +116,33 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
 
     info(
       s"""
-         |Operations:
-         |  - create                    expose a service to a namespace, this case is rare but
-         |                              sometimes we may want one server to be reached in 2 or more
-         |                              namespaces by different user groups
+         |Command:
+         |  - create                    expose a service to a namespace on the zookeeper cluster of
+         |                              zkAddress manually
          |  - get                       get the service node info
          |  - delete                    delete the specified serviceNode
          |  - list                      list all the service nodes for a particular domain
          |
-         |Role:
+         |Service:
          |  - server                    default
          |  - engine
          |
-         |Args:
+         |Arguments:
          |  --zkAddress                 one of the zk ensemble address, using kyuubi-defaults/conf
          |                              if absent
          |  --namespace                 the namespace, using kyuubi-defaults/conf if absent
-         |  --user
-         |  --host
-         |  --port
-         |  --version
+         |  --host                      hostname or IP address of a service
+         |  --port                      listening port of a service
+         |  --version                   using the compiled KYUUBI_VERSION default, change it if the
+         |                              active service is running in another
+         |  --user                      for engine service only, the user name this engine belong to
       """.stripMargin
     )
 
     throw new KyuubiCtlException(exitCode)
   }
 
-  override protected def parseActionAndRole(args: JList[String]): Int = {
+  override protected def parseActionAndService(args: JList[String]): Int = {
     if (args.isEmpty) {
       printUsageAndExit(-1)
     }
@@ -167,13 +167,13 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
     } else {
       args.get(1) match {
         case SERVER =>
-          role = KyuubiCtlActionRole.SERVER
+          service = KyuubiCtlActionService.SERVER
           2
         case ENGINE =>
-          role = KyuubiCtlActionRole.ENGINE
+          service = KyuubiCtlActionService.ENGINE
           2
         case _ =>
-          role = KyuubiCtlActionRole.SERVER
+          service = KyuubiCtlActionService.SERVER
           1
       }
     }
@@ -182,7 +182,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
   override def toString: String = {
     s"""Parsed arguments:
        |  action                  $action
-       |  role                    $role
+       |  service                 $service
        |  zkAddress               $zkAddress
        |  namespace               $nameSpace
        |  user                    $user

@@ -22,7 +22,7 @@ private[ctl] object  KyuubiCtlAction extends Enumeration {
   val CREATE, GET, DELETE, LIST, HELP = Value
 }
 
-private[ctl] object KyuubiCtlActionRole extends Enumeration {
-  type KyuubiCtlActionRole = Value
+private[ctl] object KyuubiCtlActionService extends Enumeration {
+  type KyuubiCtlActionService = Value
   val SERVER, ENGINE = Value
 }
