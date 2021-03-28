@@ -81,7 +81,7 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
       "-h", host,
       "--verbose",
       "--help",
-      "--port", port,
+      "--port", port
     )
     val opArgs2 = new KyuubiCtlArguments(args2)
     assert(opArgs2.action == KyuubiCtlAction.HELP)
