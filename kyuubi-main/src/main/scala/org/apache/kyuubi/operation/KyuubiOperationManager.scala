@@ -17,12 +17,13 @@
 
 package org.apache.kyuubi.operation
 
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
 import org.apache.hive.service.rpc.thrift.{TCLIService, TFetchResultsReq, TRowSet, TSessionHandle}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.{Session, SessionHandle}
 import org.apache.kyuubi.util.ThriftUtils
@@ -33,6 +34,13 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
 
   private val handleToClient = new ConcurrentHashMap[SessionHandle, TCLIService.Iface]()
   private val handleToTSessionHandle = new ConcurrentHashMap[SessionHandle, TSessionHandle]()
+
+  private var queryTimeout: Option[Long] = None
+
+  override def initialize(conf: KyuubiConf): Unit = {
+    queryTimeout = conf.get(OPERATION_QUERY_TIMEOUT).map(TimeUnit.MILLISECONDS.toSeconds)
+    super.initialize(conf)
+  }
 
   private def getThriftClient(sessionHandle: SessionHandle): TCLIService.Iface = {
     val client = handleToClient.get(sessionHandle)
@@ -53,12 +61,11 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
   private def getQueryTimeout(clientQueryTimeout: Long): Long = {
     // If clientQueryTimeout is smaller than systemQueryTimeout value,
     // we use the clientQueryTimeout value.
-    val systemQueryTimeout = getConf.get(KyuubiConf.OPERATION_QUERY_TIMEOUT)
-    if (clientQueryTimeout > 0 &&
-      (systemQueryTimeout <= 0 || clientQueryTimeout < systemQueryTimeout)) {
-      clientQueryTimeout
-    } else {
-      systemQueryTimeout
+    queryTimeout match {
+      case Some(systemQueryTimeout) if clientQueryTimeout > 0 =>
+        math.min(systemQueryTimeout, clientQueryTimeout)
+      case Some(systemQueryTimeout) => systemQueryTimeout
+      case None => clientQueryTimeout
     }
   }
 

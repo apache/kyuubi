@@ -510,18 +510,18 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
-  val OPERATION_QUERY_TIMEOUT: ConfigEntry[Long] =
+  val OPERATION_QUERY_TIMEOUT: OptionalConfigEntry[Long] =
     buildConf("operation.query.timeout")
-      .doc("Set a query duration timeout in seconds in Kyuubi. If the timeout is set to " +
-        "a positive value, a running query will be cancelled automatically if timeout. " +
-        "Otherwise the query continues to run till completion. If timeout values are " +
-        "set for each statement via `java.sql.Statement.setQueryTimeout` and they are smaller " +
-        "than this configuration value, they take precedence. If you set this timeout and prefer " +
-        "to cancel the queries right away without waiting task to finish, consider enabling " +
-        s"${OPERATION_FORCE_CANCEL.key} together.")
+      .doc("Timeout for query executions at server-side, take affect with client-side timeout(" +
+        "`java.sql.Statement.setQueryTimeout`) together, a running query will be cancelled" +
+        " automatically if timeout. It's off by default, which means only client-side take fully" +
+        " control whether the query should timeout or not. If set, client-side timeout capped at" +
+        " this point. To cancel the queries right away without waiting task to finish, consider" +
+        s" enabling ${OPERATION_FORCE_CANCEL.key} together.")
       .version("1.2.0")
       .timeConf
-      .createWithDefault(Duration.ZERO.toMillis)
+      .checkValue(_ >= 1000, "must >= 1s if set")
+      .createOptional
 
   val ENGINE_SHARED_LEVEL: ConfigEntry[String] = buildConf("session.engine.share.level")
     .doc("The SQL engine App will be shared in different levels, available configs are: <ul>" +

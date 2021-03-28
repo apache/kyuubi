@@ -133,4 +133,29 @@ class KyuubiConfSuite extends KyuubiFunSuite {
         .toMillis)
   }
 
+  test(KyuubiConf.OPERATION_QUERY_TIMEOUT.key) {
+    val kyuubiConf = KyuubiConf()
+    assert(kyuubiConf.get(OPERATION_QUERY_TIMEOUT).isEmpty)
+    kyuubiConf.set(OPERATION_QUERY_TIMEOUT, 1000L)
+    assert(kyuubiConf.get(OPERATION_QUERY_TIMEOUT) === Some(1000L))
+    kyuubiConf.set(OPERATION_QUERY_TIMEOUT.key, "1000")
+    assert(kyuubiConf.get(OPERATION_QUERY_TIMEOUT) ===  Some(1000L))
+    kyuubiConf.set(OPERATION_QUERY_TIMEOUT.key, "  1000  ")
+    assert(kyuubiConf.get(OPERATION_QUERY_TIMEOUT) === Some(1000L))
+    kyuubiConf.set(OPERATION_QUERY_TIMEOUT.key, "1000A")
+    val e = intercept[IllegalArgumentException](kyuubiConf.get(OPERATION_QUERY_TIMEOUT))
+    assert(e.getMessage.contains("ISO-8601"))
+    kyuubiConf.set(OPERATION_QUERY_TIMEOUT.key, "  P1DT2H3.2S  ")
+
+    assert(kyuubiConf.get(OPERATION_QUERY_TIMEOUT) ===
+      Some(Duration.ofDays(1)
+        .plusHours(2)
+        .plusSeconds(3)
+        .plusMillis(200)
+        .toMillis))
+
+    kyuubiConf.set(OPERATION_QUERY_TIMEOUT.key, "0")
+    val e1 = intercept[IllegalArgumentException](kyuubiConf.get(OPERATION_QUERY_TIMEOUT))
+    assert(e1.getMessage.contains("must >= 1s if set"))
+  }
 }
