@@ -76,14 +76,17 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
       version = KYUUBI_VERSION
     }
   }
+
   /** Ensure that required fields exists. Call this only once all defaults are loaded. */
   private def validateArguments(): Unit = {
+    service = Option(service).getOrElse(KyuubiCtlActionService.SERVER)
     action match {
       case KyuubiCtlAction.CREATE => validateCreateGetDeleteArguments()
       case KyuubiCtlAction.GET => validateCreateGetDeleteArguments()
       case KyuubiCtlAction.DELETE => validateCreateGetDeleteArguments()
       case KyuubiCtlAction.LIST => validateListArguments()
       case KyuubiCtlAction.HELP =>
+      case _ => printUsageAndExit(-1)
     }
   }
 

@@ -92,6 +92,8 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
 
   test("prints usage on empty input") {
     testPrematureExit(Array.empty[String], "Usage: kyuubi-ctl")
+    testPrematureExit(Array("--verbose"), "Usage: kyuubi-ctl")
+    testPrematureExit(Array("-v"), "Usage: kyuubi-ctl")
   }
 
   test("prints error with unrecognized options") {
