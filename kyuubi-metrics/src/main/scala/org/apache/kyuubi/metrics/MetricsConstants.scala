@@ -19,24 +19,44 @@ package org.apache.kyuubi.metrics
 
 object MetricsConstants {
 
-  private final val KYUUBI = "kyuubi."
+  final val KYUUBI = "kyuubi"
 
-  final val EXEC_POOL_ALIVE: String = KYUUBI + "exec.pool.threads.alive"
-  final val EXEC_POOL_ACTIVE: String = KYUUBI + "exec.pool.threads.active"
+  final val SERVICE = KYUUBI + ".service"
+  final val ENGINE = KYUUBI + ".engine"
+  final val SESSION = KYUUBI + ".session"
+  final val OPERATION = KYUUBI + ".operation"
 
-  private final val CONN = KYUUBI + "connection."
+  final val SERVICE_EXEC_POOL = SERVICE + ".exec.pool.threads"
 
-  final val CONN_OPEN: String = CONN + "opened"
-  final val CONN_FAIL: String = CONN + "failed"
-  final val CONN_TOTAL: String = CONN + "total"
+  final val T_SHR_LV = "share_level"
 
-  private final val STATEMENT = KYUUBI + "statement."
-  final val STATEMENT_OPEN: String = STATEMENT + "opened"
-  final val STATEMENT_FAIL: String = STATEMENT + "failed"
-  final val STATEMENT_TOTAL: String = STATEMENT + "total"
+  final val T_USER = "user"
 
-  private final val ENGINE = KYUUBI + "engine."
-  final val ENGINE_FAIL: String = ENGINE + "failed"
-  final val ENGINE_TIMEOUT: String = ENGINE + "timeout"
-  final val ENGINE_TOTAL: String = ENGINE + "total"
+  final val T_ERR = "err"
+
+  final val T_STAT = "status"
+  final val STAT_ALIVE = "alive"
+  final val STAT_ACTIVE = "active"
+  final val STAT_OPENED = "opened"
+  final val STAT_FAILED = "failed"
+
+  final val T_SCH = "schedule"
+  final val SCH_SYNC = "sync"
+  final val SCH_ASYNC = "async"
+
+  final val T_OP = "op_type"
+  final val OP_EXEC_STMT = "execute_statement"
+  final val OP_G_CATALOG = "get_catalog"
+  final val OP_G_COL = "get_column"
+  final val OP_G_FUNC = "get_function"
+  final val OP_G_SCHEMA = "get_schema"
+  final val OP_G_TBL = "get_table"
+  final val OP_G_TBL_TYP = "get_table_type"
+  final val OP_G_TYP_INF = "get_type_info"
+
+  final val T_EVT = "event"
+  final val EVT_OPEN = "open"
+  final val EVT_CLOSE = "close"
+  final val EVT_FAIL = "fail"
+  final val EVT_TIMEOUT = "timeout"
 }

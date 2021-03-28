@@ -22,7 +22,6 @@ import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
 
-import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TOpenSessionReq, TProtocolVersion, TSessionHandle}
 import org.apache.thrift.TException
 import org.apache.thrift.protocol.TBinaryProtocol
@@ -37,7 +36,7 @@ import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.ServiceDiscovery._
 import org.apache.kyuubi.metrics.MetricsConstants._
-import org.apache.kyuubi.metrics.MetricsSystem
+import org.apache.kyuubi.metrics.Metrics
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 import org.apache.kyuubi.util.ThriftUtils
 
@@ -91,10 +90,8 @@ class KyuubiSessionImpl(
   private var remoteSessionHandle: TSessionHandle = _
 
   override def open(): Unit = {
-    MetricsSystem.tracing { ms =>
-      ms.incAndGetCount(CONN_TOTAL)
-      ms.incAndGetCount(MetricRegistry.name(CONN_OPEN, user))
-    }
+    Metrics.count(SESSION, T_EVT, EVT_OPEN, T_USER, user)(1)
+    Metrics.inc(SESSION, T_STAT, STAT_OPENED, T_USER, user)(1)
     super.open()
     val zkClient = startZookeeperClient(sessionConf)
     logSessionInfo(s"Connected to Zookeeper")
@@ -109,7 +106,7 @@ class KyuubiSessionImpl(
               .map(_ + ",").getOrElse("") + "KYUUBI")
           sessionConf.set(HA_ZK_NAMESPACE, appZkNamespace)
           val builder = new SparkProcessBuilder(appUser, sessionConf)
-          MetricsSystem.tracing(_.incAndGetCount(ENGINE_TOTAL))
+          Metrics.count(ENGINE, T_EVT, EVT_OPEN)(1)
           try {
             logSessionInfo(s"Launching SQL engine:\n$builder")
             val process = builder.start
@@ -121,17 +118,14 @@ class KyuubiSessionImpl(
                 exitValue = Some(process.exitValue())
                 if (exitValue.get != 0) {
                   val error = builder.getError
-                  MetricsSystem.tracing { ms =>
-                    ms.incAndGetCount(MetricRegistry.name(ENGINE_FAIL, user))
-                    ms.incAndGetCount(
-                      MetricRegistry.name(ENGINE_FAIL, error.getClass.getSimpleName))
-                  }
+                  Metrics.count(ENGINE, T_EVT, EVT_FAIL, T_USER, user,
+                    T_ERR, error.getClass.getSimpleName)(1)
                   throw error
                 }
               }
               if (started + timeout <= System.currentTimeMillis()) {
                 process.destroyForcibly()
-                MetricsSystem.tracing(_.incAndGetCount(MetricRegistry.name(ENGINE_TIMEOUT, user)))
+                Metrics.count(ENGINE, T_EVT, EVT_TIMEOUT, T_USER, user)(1)
                 throw KyuubiSQLException(s"Timed out($timeout ms) to launched Spark with $builder",
                   builder.getError)
               }
@@ -190,7 +184,7 @@ class KyuubiSessionImpl(
       case e: TException =>
         throw KyuubiSQLException("Error while cleaning up the engine resources", e)
     } finally {
-      MetricsSystem.tracing(_.decAndGetCount(MetricRegistry.name(CONN_OPEN, user)))
+      Metrics.dec(SESSION, T_STAT, STAT_OPENED, T_USER, user)(1)
       client = null
       if (transport != null) {
         transport.close()

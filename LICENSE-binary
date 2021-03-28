@@ -216,12 +216,29 @@ org.apache.hadoop:hadoop-client-api
 org.apache.hadoop:hadoop-client-runtime
 org.apache.hive:hive-service-rpc
 org.apache.htrace:htrace-core4
+com.fasterxml.jackson.core:jackson-annotations
+com.fasterxml.jackson.core:jackson-core
+com.fasterxml.jackson.core:jackson-databind
+com.fasterxml.jackson.module:jackson-module-paranamer
+com.fasterxml.jackson.module:jackson-module-scala
 org.javassist:javassist
 org.apache.thrift:libfb303
 org.apache.thrift:libthrift
 log4j:log4j
+io.micrometer:micrometer-core
+io.micrometer:micrometer-registry-prometheus
+io.prometheus:simpleclient
+io.prometheus:simpleclient_common
 org.apache.zookeeper:zookeeper
 spark-*-bin-*.tgz
+
+BSD
+---
+com.thoughtworks.paranamer:paranamer
+
+BSD-2-Clause
+------------
+org.hdrhistogram:HdrHistogram
 
 BSD 3-Clause
 ------------
@@ -232,3 +249,7 @@ MIT License
 org.slf4j:slf4j-api
 org.slf4j:slf4j-log4j12
 org.slf4j:jcl-over-slf4j
+
+CC0 1.0
+-------
+org.latencyutils:LatencyUtils

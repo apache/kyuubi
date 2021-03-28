@@ -17,29 +17,9 @@
 
 package org.apache.kyuubi.metrics
 
-import java.util.concurrent.TimeUnit
+object ExporterType extends Enumeration {
 
-import com.codahale.metrics.{MetricRegistry, Slf4jReporter}
+  type ExporterTypeV2 = Value
 
-import org.apache.kyuubi.metrics.MetricsConf.METRICS_REPORT_INTERVAL
-import org.apache.kyuubi.service.AbstractService
-
-class Slf4jReporterService(registry: MetricRegistry)
-  extends AbstractService("Slf4jReporterService") {
-  private var reporter: Slf4jReporter = _
-
-  override def start(): Unit = synchronized {
-    reporter = Slf4jReporter
-      .forRegistry(registry)
-      .outputTo(this.logger)
-      .build()
-    val interval = conf.get(METRICS_REPORT_INTERVAL)
-    reporter.start(interval, TimeUnit.MILLISECONDS)
-    super.start()
-  }
-
-  override def stop(): Unit = synchronized {
-    if (reporter != null) reporter.close()
-    super.stop()
-  }
+  val JSON, SLF4J, PROMETHEUS = Value
 }

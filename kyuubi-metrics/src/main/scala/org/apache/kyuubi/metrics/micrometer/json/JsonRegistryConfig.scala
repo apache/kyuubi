@@ -15,11 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.metrics
+package org.apache.kyuubi.metrics.micrometer.json
 
-object ReporterType extends Enumeration {
+import io.micrometer.core.instrument.step.StepRegistryConfig
 
-  type ReporterType = Value
+trait JsonRegistryConfig extends StepRegistryConfig {
 
-  val CONSOLE, JMX, JSON, SLF4J = Value
+  override def prefix: String = "json"
+
+  def location: String = get(prefix + ".location")
+}
+
+object JsonRegistryConfig {
+  val DEFAULT: JsonRegistryConfig = (_: String) => null
 }

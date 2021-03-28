@@ -63,15 +63,16 @@
         <scala.binary.version>2.12</scala.binary.version>
 
         <apacheds.version>2.0.0-M15</apacheds.version>
-        <codahale.metrics.version>4.1.1</codahale.metrics.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <commons-lang3.version>3.10</commons-lang3.version>
         <curator.version>2.12.0</curator.version>
+        <google.jsr305.version>3.0.2</google.jsr305.version>
         <guava.version>30.1-jre</guava.version>
         <hadoop.version>3.2.2</hadoop.version>
         <hadoop.binary.version>2.7</hadoop.binary.version>
         <hive.version>2.3.7</hive.version>
+        <micrometer.version>1.6.5</micrometer.version>
         <jackson.version>2.11.4</jackson.version>
         <spark.version>3.0.2</spark.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop${hadoop.binary.version}.tgz</spark.archive.name>
@@ -228,6 +229,12 @@
                         <groupId>com.google.guava</groupId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>jsr305</artifactId>
+                <version>${google.jsr305.version}</version>
             </dependency>
 
             <dependency>
@@ -898,67 +905,15 @@
             </dependency>
 
             <dependency>
-                <groupId>io.dropwizard.metrics</groupId>
-                <artifactId>metrics-core</artifactId>
-                <version>${codahale.metrics.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-api</artifactId>
-                    </exclusion>
-                </exclusions>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-core</artifactId>
+                <version>${micrometer.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>io.dropwizard.metrics</groupId>
-                <artifactId>metrics-jvm</artifactId>
-                <version>${codahale.metrics.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>io.dropwizard.metrics</groupId>
-                        <artifactId>metrics-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>io.dropwizard.metrics</groupId>
-                <artifactId>metrics-jmx</artifactId>
-                <version>${codahale.metrics.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>io.dropwizard.metrics</groupId>
-                        <artifactId>metrics-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-api</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>io.dropwizard.metrics</groupId>
-                <artifactId>metrics-json</artifactId>
-                <version>${codahale.metrics.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>io.dropwizard.metrics</groupId>
-                        <artifactId>metrics-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.fasterxml.jackson.core</groupId>
-                        <artifactId>jackson-databind</artifactId>
-                    </exclusion>
-                </exclusions>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-registry-prometheus</artifactId>
+                <version>${micrometer.version}</version>
             </dependency>
 
             <dependency>
@@ -1157,7 +1112,8 @@
                             <log4j.configuration>file:src/test/resources/log4j.properties</log4j.configuration>
                             <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
                             <spark.driver.memory>2g</spark.driver.memory>
-                            <kyuubi.metrics.json.report.location>${project.build.directory}/metrics</kyuubi.metrics.json.report.location>
+                            <kyuubi.metrics.json.report.location>${project.build.directory}/metrics
+                            </kyuubi.metrics.json.report.location>
                         </systemProperties>
                         <tagsToExclude>${maven.plugin.scalatest.exclude.tags}</tagsToExclude>
                     </configuration>
@@ -1314,6 +1270,7 @@
                             <exclude>**/scalastyle-output.xml</exclude>
                             <exclude>docs/**</exclude>
                             <exclude>bin/kyuubi-logo</exclude>
+                            <exclude>build/apache-maven-*/**</exclude>
                             <exclude>build/scala-*/**</exclude>
                             <exclude>**/**/operation_logs/**/**</exclude>
                         </excludes>
@@ -1423,7 +1380,8 @@
             <properties>
                 <spark.version>3.1.1</spark.version>
                 <hadoop.binary.version>2.7</hadoop.binary.version>
-                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.DataLakeTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.DataLakeTest
+                </maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 
