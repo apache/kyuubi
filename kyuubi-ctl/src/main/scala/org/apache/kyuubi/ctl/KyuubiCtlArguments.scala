@@ -227,9 +227,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
   }
 
   override protected def handleUnknown(opt: String): Boolean = {
-    if (opt.startsWith("-")) {
-      fail(s"Unrecognized option '$opt'.")
-    }
+    printUsageAndExit(-1, opt)
     false
   }
 

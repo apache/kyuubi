@@ -91,6 +91,6 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
   }
 
   test("prints error with unrecognized options") {
-    testPrematureExit(Array("create", "--unkonwn"), "Unrecognized option '--unkonwn'")
+    testPrematureExit(Array("create", "--unkonwn"), "Unknown/unsupported param --unkonwn")
   }
 }
