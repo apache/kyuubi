@@ -111,4 +111,27 @@ class ConfigEntrySuite extends KyuubiFunSuite {
     assert(conf.get(e1) === 5.0)
   }
 
+  test("fallback config entry") {
+    val origin = KyuubiConf.buildConf("origin.spark")
+      .version("1.1.1")
+      .stringConf.createWithDefault("origin")
+    val fallback =
+      new ConfigEntryFallback[String]("kyuubi.fallback.spark", "fallback", "1.2.0", origin)
+
+    assert(fallback.key === "kyuubi.fallback.spark")
+    assert(fallback.valueConverter("2") === "2")
+    assert(fallback.strConverter("2.0") === "2.0")
+    assert(fallback.defaultValStr === "origin")
+    assert(fallback.defaultVal === Some("origin"))
+    assert(fallback.doc === "fallback")
+    assert(fallback.version === "1.2.0")
+    assert(fallback.typ === "string")
+    assert(fallback.toString === s"ConfigEntry(key=kyuubi.fallback.spark, defaultValue=origin," +
+      s" doc=fallback, version=1.2.0, type=string)")
+
+    val conf = KyuubiConf()
+    assert(conf.get(fallback) === "origin")
+    conf.set(origin.key, "new value")
+    assert(conf.get(fallback) === "new value", "fallback to new original key")
+  }
 }
