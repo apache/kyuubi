@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class KyuubiCtlOptionParser {
+abstract class KyuubiCtlOptionParser {
   protected final String ZK_ADDRESS = "--zkAddress";
   protected final String NAMESPACE = "--namespace";
   protected final String USER = "--user";
@@ -62,9 +62,7 @@ class KyuubiCtlOptionParser {
    *
    * @return offset of remaining arguments.
    */
-  protected int parseActionAndService(List<String> args) {
-    throw new UnsupportedOperationException();
-  }
+  protected abstract int parseActionAndService(List<String> args);
 
   /**
    * Parse a list of kyuubi-ctl command line options.
@@ -124,9 +122,7 @@ class KyuubiCtlOptionParser {
    * @param value The value. This will be <i>null</i> if the option does not take a value.
    * @return Whether to continue parsing the argument list.
    */
-  protected boolean handle(String opt, String value) {
-    throw new UnsupportedOperationException();
-  }
+  protected abstract boolean handle(String opt, String value);
 
   /**
    * Callback for when an unrecognized option is parsed.
@@ -134,9 +130,7 @@ class KyuubiCtlOptionParser {
    * @param opt Unrecognized option from the command line.
    * @return Whether to continue parsing the argument list.
    */
-  protected boolean handleUnknown(String opt) {
-    throw new UnsupportedOperationException();
-  }
+  protected abstract boolean handleUnknown(String opt);
 
   private String findCliOption(String name, String[][] available) {
     for (String[] candidates : available) {
