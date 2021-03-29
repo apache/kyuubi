@@ -22,18 +22,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 abstract class KyuubiCtlOptionParser {
-  protected final String ZK_ADDRESS = "--zkAddress";
-  protected final String NAMESPACE = "--namespace";
-  protected final String USER = "--user";
-  protected final String HOST = "--host";
-  protected final String PORT = "--port";
-  protected final String VERSION = "--version";
   protected final String CREATE = "create";
   protected final String GET = "get";
   protected final String DELETE = "delete";
   protected final String LIST = "list";
   protected final String SERVER = "server";
   protected final String ENGINE = "engine";
+
+  protected final String ZK_ADDRESS = "--zkAddress";
+  protected final String NAMESPACE = "--namespace";
+  protected final String USER = "--user";
+  protected final String HOST = "--host";
+  protected final String PORT = "--port";
+  protected final String VERSION = "--version";
 
   // Options that do not take arguments.
   protected final String HELP = "--help";
