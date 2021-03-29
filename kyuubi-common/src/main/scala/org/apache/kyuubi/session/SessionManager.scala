@@ -157,7 +157,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   private def startTimeoutChecker(): Unit = {
     val interval = conf.get(SESSION_CHECK_INTERVAL)
-    val timeout = conf.get(SESSION_TIMEOUT)
+    val timeout = conf.get(SESSION_IDLE_TIMEOUT)
 
     val checkTask = new Runnable {
       override def run(): Unit = {
