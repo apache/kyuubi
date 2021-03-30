@@ -122,8 +122,6 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   }
 
   private val serverOnlyConfEntries: Set[ConfigEntry[_]] = Set(
-    EMBEDDED_ZK_PORT,
-    EMBEDDED_ZK_TEMP_DIR,
     FRONTEND_BIND_HOST,
     FRONTEND_BIND_PORT,
     AUTHENTICATION_METHOD,
@@ -191,18 +189,6 @@ object KyuubiConf {
   def buildConf(key: String): ConfigBuilder = {
     ConfigBuilder("kyuubi." + key).onCreate(register)
   }
-
-  val EMBEDDED_ZK_PORT: ConfigEntry[Int] = buildConf("zookeeper.embedded.port")
-    .doc("The port of the embedded zookeeper server")
-    .version("1.0.0")
-    .intConf
-    .createWithDefault(2181)
-
-  val EMBEDDED_ZK_TEMP_DIR: ConfigEntry[String] = buildConf("zookeeper.embedded.directory")
-    .doc("The temporary directory for the embedded zookeeper server")
-    .version("1.0.0")
-    .stringConf
-    .createWithDefault("embedded_zookeeper")
 
   val SERVER_PRINCIPAL: OptionalConfigEntry[String] = buildConf("kinit.principal")
     .doc("Name of the Kerberos principal.")

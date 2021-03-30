@@ -61,11 +61,11 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     conf.setIfMissing(OPERATION_IDLE_TIMEOUT, 60L)
     assert(conf.get(OPERATION_IDLE_TIMEOUT) === 5)
 
-    conf.setIfMissing(EMBEDDED_ZK_PORT, 2188)
-    assert(conf.get(EMBEDDED_ZK_PORT) === 2188)
+    conf.setIfMissing(FRONTEND_MIN_WORKER_THREADS, 2188)
+    assert(conf.get(FRONTEND_MIN_WORKER_THREADS) === 2188)
 
-    conf.unset(EMBEDDED_ZK_PORT)
-    assert(conf.get(EMBEDDED_ZK_PORT) === 2181)
+    conf.unset(FRONTEND_MIN_WORKER_THREADS)
+    assert(conf.get(FRONTEND_MIN_WORKER_THREADS) === 9)
 
     conf.unset(key)
     assert(conf.getOption(key).isEmpty)

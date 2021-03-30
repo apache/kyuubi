@@ -18,11 +18,25 @@
 package org.apache.kyuubi.zookeeper
 
 import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
-import org.apache.kyuubi.config.KyuubiConf.{EMBEDDED_ZK_PORT, EMBEDDED_ZK_TEMP_DIR, FRONTEND_BIND_HOST}
+import org.apache.kyuubi.config.KyuubiConf.FRONTEND_BIND_HOST
 
 object ZookeeperConf {
 
   private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
+
+  @deprecated(s"using ${ZK_CLIENT_PORT.key} instead", since = "1.2.0")
+  val EMBEDDED_ZK_PORT: ConfigEntry[Int] = buildConf("zookeeper.embedded.port")
+    .doc("The port of the embedded zookeeper server")
+    .version("1.0.0")
+    .intConf
+    .createWithDefault(2181)
+
+  @deprecated(s"using ${ZK_DATA_DIR.key} instead", since = "1.2.0")
+  val EMBEDDED_ZK_TEMP_DIR: ConfigEntry[String] = buildConf("zookeeper.embedded.directory")
+    .doc("The temporary directory for the embedded zookeeper server")
+    .version("1.0.0")
+    .stringConf
+    .createWithDefault("embedded_zookeeper")
 
   val ZK_CLIENT_PORT: ConfigEntry[Int] = buildConf("zookeeper.embedded.client.port")
     .doc("clientPort for the embedded zookeeper server to listen for client connections," +

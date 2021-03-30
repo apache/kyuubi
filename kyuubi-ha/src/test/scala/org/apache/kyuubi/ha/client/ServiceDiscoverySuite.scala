@@ -30,14 +30,14 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.service.{NoopServer, Serverable, ServiceState}
-import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
+import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
 class ServiceDiscoverySuite extends KerberizedTestHelper {
   val zkServer = new EmbeddedZookeeper()
   val conf: KyuubiConf = KyuubiConf()
 
   override def beforeAll(): Unit = {
-    conf.set(KyuubiConf.EMBEDDED_ZK_PORT, 0)
+    conf.set(ZookeeperConf.ZK_CLIENT_PORT, 0)
     zkServer.initialize(conf)
     zkServer.start()
     super.beforeAll()
