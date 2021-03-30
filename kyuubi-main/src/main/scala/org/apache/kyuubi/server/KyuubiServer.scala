@@ -96,6 +96,6 @@ class KyuubiServer(name: String) extends Serverable(name) {
     super.initialize(conf)
   }
 
-  override protected def stopServer(): Unit = KyuubiServer.zkServer.stop()
+  override protected def stopServer(): Unit = {}
 
 }
