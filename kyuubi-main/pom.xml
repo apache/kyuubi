@@ -45,6 +45,12 @@
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-zookeeper</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-metrics</artifactId>
             <version>${project.version}</version>
         </dependency>

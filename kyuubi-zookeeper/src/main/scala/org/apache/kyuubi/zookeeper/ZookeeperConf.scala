@@ -18,7 +18,7 @@
 package org.apache.kyuubi.zookeeper
 
 import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
-import org.apache.kyuubi.config.KyuubiConf.{EMBEDDED_ZK_TEMP_DIR, FRONTEND_BIND_HOST}
+import org.apache.kyuubi.config.KyuubiConf.{EMBEDDED_ZK_PORT, EMBEDDED_ZK_TEMP_DIR, FRONTEND_BIND_HOST}
 
 object ZookeeperConf {
 
@@ -28,8 +28,7 @@ object ZookeeperConf {
     .doc("clientPort for the embedded zookeeper server to listen for client connections," +
       " a client here could be Kyuubi server, engine and JDBC client")
     .version("1.2.0")
-    .intConf
-    .createWithDefault(2081)
+    .fallbackConf(EMBEDDED_ZK_PORT)
 
   val ZK_CLIENT_PORT_ADDRESS: ConfigEntry[Option[String]] =
     buildConf("zookeeper.embedded.client.port.address")
@@ -42,6 +41,18 @@ object ZookeeperConf {
       " snapshots and, unless specified otherwise, the transaction log of updates to the database.")
     .version("1.2.0")
     .fallbackConf(EMBEDDED_ZK_TEMP_DIR)
+
+  val ZK_ELECTION_PORT: ConfigEntry[Int] = buildConf("zookeeper.embedded.election.port")
+    .doc("electionPort for the embedded zookeeper server")
+    .version("1.2.0")
+    .intConf
+    .createWithDefault(0)
+
+  val ZK_QUORUM_PORT: ConfigEntry[Int] = buildConf("zookeeper.embedded.quorum.port")
+    .doc("quorumPort for the embedded zookeeper server")
+    .version("1.2.0")
+    .intConf
+    .createWithDefault(0)
 
   val ZK_DATA_LOG_DIR: ConfigEntry[String] = buildConf("zookeeper.embedded.data.log.dir")
     .doc("dataLogDir for the embedded zookeeper server where writes the transaction log .")
@@ -78,6 +89,13 @@ object ZookeeperConf {
       .version("1.2.0")
       .intConf
       .createOptional
+
+  val ZK_SERVER_ID: ConfigEntry[Int] =
+    buildConf("zookeeper.embedded.server.id")
+      .doc("serverId for the embedded zookeeper server")
+      .version("1.2.0")
+      .intConf
+      .createWithDefault(-1)
 
   val ZK_SERVER_LIST: OptionalConfigEntry[Seq[String]] =
     buildConf("zookeeper.embedded.server.list")

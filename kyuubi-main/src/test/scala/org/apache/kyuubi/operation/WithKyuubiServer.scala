@@ -23,23 +23,23 @@ import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_ACL_ENABLED, HA_ZK_QUORUM}
-import org.apache.kyuubi.ha.server.EmbeddedZkServer
 import org.apache.kyuubi.server.KyuubiServer
+import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
 trait WithKyuubiServer extends KyuubiFunSuite {
 
   protected val conf: KyuubiConf
 
-  private var zkServer: EmbeddedZkServer = _
+  private var zkServer: EmbeddedZookeeper = _
   private var server: KyuubiServer = _
   private val metastore = Utils.createTempDir()
 
   override def beforeAll(): Unit = {
     Files.delete(metastore)
-    zkServer = new EmbeddedZkServer()
-    conf.set(EMBEDDED_ZK_PORT, -1)
+    zkServer = new EmbeddedZookeeper()
+    conf.set(ZookeeperConf.ZK_CLIENT_PORT, -1)
     val zkData = Utils.createTempDir()
-    conf.set(EMBEDDED_ZK_TEMP_DIR, zkData.toString)
+    conf.set(ZookeeperConf.ZK_DATA_DIR, zkData.toString)
     zkServer.initialize(conf)
     zkServer.start()
 

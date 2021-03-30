@@ -29,11 +29,11 @@ import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.server.EmbeddedZkServer
 import org.apache.kyuubi.service.{NoopServer, Serverable, ServiceState}
+import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 
 class ServiceDiscoverySuite extends KerberizedTestHelper {
-  val zkServer = new EmbeddedZkServer()
+  val zkServer = new EmbeddedZookeeper()
   val conf: KyuubiConf = KyuubiConf()
 
   override def beforeAll(): Unit = {

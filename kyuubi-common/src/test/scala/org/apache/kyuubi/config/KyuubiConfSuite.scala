@@ -27,8 +27,8 @@ class KyuubiConfSuite extends KyuubiFunSuite {
 
   test("kyuubi conf defaults") {
     val conf = new KyuubiConf()
-    assert(conf.get(EMBEDDED_ZK_PORT) === 2181)
-    assert(conf.get(EMBEDDED_ZK_TEMP_DIR).endsWith("embedded_zookeeper"))
+    assert(conf.get(SERVER_PRINCIPAL) === None)
+    assert(conf.get(KINIT_MAX_ATTEMPTS) === 10)
     assert(conf.get(OPERATION_IDLE_TIMEOUT) === Duration.ofHours(3).toMillis)
   }
 
@@ -44,7 +44,6 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     assert(conf.getOption("kyuubi.yes").get === "yes")
     assert(conf.getOption("spark.kyuubi.yes").get === "no")
   }
-
 
   test("set and unset conf") {
     val conf = new KyuubiConf()

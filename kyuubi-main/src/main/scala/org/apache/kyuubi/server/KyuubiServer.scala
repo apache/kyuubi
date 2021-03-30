@@ -25,13 +25,13 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
-import org.apache.kyuubi.ha.server.EmbeddedZkServer
 import org.apache.kyuubi.metrics.{MetricsConf, MetricsSystem}
 import org.apache.kyuubi.service.{AbstractBackendService, KinitAuxiliaryService, Serverable}
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
+import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 
 object KyuubiServer extends Logging {
-  private val zkServer = new EmbeddedZkServer()
+  private val zkServer = new EmbeddedZookeeper()
 
   def startServer(conf: KyuubiConf): KyuubiServer = {
     if (!ServiceDiscovery.supportServiceDiscovery(conf)) {
