@@ -87,17 +87,3 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
     spec.getConnectString
   }
 }
-
-object EmbeddedZookeeper {
-  def main(args: Array[String]): Unit = {
-    val conf = new KyuubiConf()
-    val address = conf.get(ZK_CLIENT_PORT_ADDRESS)
-    print(address.getOrElse(""))
-
-    val server = "server.1=1345.22:33"
-    val idx = server.indexOf("=")
-    val a = server.substring(0, idx)
-    val b = server.substring(idx + 1)
-    a + b
-  }
-}

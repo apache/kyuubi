@@ -85,7 +85,6 @@ object ZookeeperConf {
         " connections of a single client identified by IP address")
       .version("1.2.0")
       .intConf
-      .checkValue(_ > 0, "")
       .createWithDefault(120)
 
   val ZK_MIN_SESSION_TIMEOUT: OptionalConfigEntry[Int] =
@@ -110,13 +109,4 @@ object ZookeeperConf {
       .version("1.2.0")
       .intConf
       .createWithDefault(-1)
-
-  val ZK_SERVER_LIST: OptionalConfigEntry[Seq[String]] =
-    buildConf("zookeeper.embedded.server.list")
-      .doc("maxSessionTimeout in milliseconds for the embedded zookeeper server will allow the" +
-        " client to negotiate. Defaults to 20 times the tickTime")
-      .version("1.2.0")
-      .stringConf
-      .toSequence
-      .createOptional
 }
