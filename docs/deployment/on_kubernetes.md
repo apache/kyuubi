@@ -19,13 +19,9 @@ upon the following things.
 
 ## Configurations
 
-### Environment
+### TestCluster
 
-Either `HADOOP_CONF_DIR` is configured and points to the Hadoop client configurations directory,
-usually, `$HADOOP_HOME/etc/hadoop`.
-
-If the `HADOOP_CONF_DIR` points the K8S and HDFS cluster correctly, you should be able to run the `SparkPi` example on
-K8S.
+You can use the blew shell to test you k8s cluster whether it is normal or not.
 
 ```shell
 $SPARK_HOME/bin/spark-submit \
@@ -34,12 +30,6 @@ $SPARK_HOME/bin/spark-submit \
   --conf spark.executor.instances=5 \
   --conf spark.kubernetes.container.image=<spark-image> \
   local:///path/to/examples.jar
-```
-
-If the `Spark Pi` passes, configure below in `$KYUUBI_HOME/conf/kyuubi-env.sh` or `$SPARK_HOME/conf/spark-env.sh`, e.g.
-
-```shell
-echo "export HADOOP_CONF_DIR=/path/to/hadoop/conf" >> $KYUBBI_HOME/conf/kyuubi-env.sh
 ```
 
 ### Spark Properties
