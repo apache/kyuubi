@@ -48,7 +48,6 @@
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-zookeeper</artifactId>
             <version>${project.version}</version>
-            <scope>test</scope>
         </dependency>
 
         <dependency>
