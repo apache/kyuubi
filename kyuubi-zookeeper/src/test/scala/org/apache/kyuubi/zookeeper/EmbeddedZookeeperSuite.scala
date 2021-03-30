@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.ha.server
+package org.apache.kyuubi.zookeeper
 
 import org.apache.curator.framework.CuratorFrameworkFactory
 import org.apache.curator.framework.imps.CuratorFrameworkState
@@ -25,15 +25,15 @@ import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.ServiceState._
 
-class EmbeddedZkServerSuite extends KyuubiFunSuite {
+class EmbeddedZookeeperSuite extends KyuubiFunSuite {
 
   test("embedded zookeeper server") {
-    val zkServer = new EmbeddedZkServer()
+    val zkServer = new EmbeddedZookeeper()
     assert(zkServer.getConf == null)
     assert(zkServer.getName === zkServer.getClass.getSimpleName)
     assert(zkServer.getServiceState === LATENT)
     val conf = KyuubiConf()
-    conf.set(KyuubiConf.EMBEDDED_ZK_PORT, 0)
+    conf.set(ZookeeperConf.ZK_CLIENT_PORT, 0)
     zkServer.stop() // only for test coverage
     zkServer.initialize(conf)
     assert(zkServer.getConf === conf)
@@ -47,9 +47,9 @@ class EmbeddedZkServerSuite extends KyuubiFunSuite {
   }
 
   test("connect test with embedded zookeeper") {
-    val zkServer = new EmbeddedZkServer()
-    assert(zkServer.getConnectString === null)
-    zkServer.initialize(KyuubiConf().set(KyuubiConf.EMBEDDED_ZK_PORT, 0))
+    val zkServer = new EmbeddedZookeeper()
+    intercept[AssertionError](zkServer.getConnectString)
+    zkServer.initialize(KyuubiConf().set(ZookeeperConf.ZK_CLIENT_PORT, 0))
     zkServer.start()
 
     val zkClient = CuratorFrameworkFactory.builder()

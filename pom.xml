@@ -34,6 +34,7 @@
         <module>kyuubi-ha</module>
         <module>kyuubi-main</module>
         <module>kyuubi-metrics</module>
+        <module>kyuubi-zookeeper</module>
     </modules>
     <packaging>pom</packaging>
 
