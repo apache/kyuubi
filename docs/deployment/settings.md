@@ -133,6 +133,13 @@ kyuubi\.delegation<br>\.token\.max\.lifetime|<div style='width: 65pt;word-wrap: 
 kyuubi\.delegation<br>\.token\.renew\.interval|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT168H</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>unused yet</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.0.0</div>
 
 
+### Engine
+
+Key | Default | Meaning | Type | Since
+--- | --- | --- | --- | ---
+kyuubi\.engine<br>\.initialize\.sql|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>SHOW DATABASES</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>SemiColon-separated list of SQL statements to be initialized in the newly created engine before queries.</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.2.0</div>
+
+
 ### Frontend
 
 Key | Default | Meaning | Type | Since
