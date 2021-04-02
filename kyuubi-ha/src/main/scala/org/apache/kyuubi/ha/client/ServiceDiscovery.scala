@@ -18,11 +18,14 @@
 package org.apache.kyuubi.ha.client
 
 import java.io.{File, IOException}
+import java.net.InetAddress
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.security.auth.login.Configuration
+
 import scala.collection.JavaConverters._
+
 import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
 import org.apache.curator.framework.recipes.nodes.PersistentEphemeralNode
 import org.apache.curator.framework.state.{ConnectionState, ConnectionStateListener}
@@ -34,14 +37,13 @@ import org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManage
 import org.apache.zookeeper.CreateMode.PERSISTENT
 import org.apache.zookeeper.KeeperException
 import org.apache.zookeeper.KeeperException.NodeExistsException
+
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.ServiceDiscovery._
 import org.apache.kyuubi.service.{AbstractService, Serverable}
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
-
-import java.net.InetAddress
 
 /**
  * A abstract service for service discovery
@@ -282,8 +284,9 @@ object ServiceDiscovery extends Logging {
     val connectionUrl = s"$canonicalHostName:$port"
 
     val children = zkClient.getChildren.forPath(znodeRoot).asScala
-    children.filter(_.contains(s"serviceUri=${connectionUrl};version=$version;")).foreach { child =>
-      zkClient.delete().forPath(s"""$znodeRoot/$child""")
-    }
+    children.filter(_.startsWith(s"serviceUri=${connectionUrl};version=$version;"))
+      .foreach { child =>
+        zkClient.delete().forPath(s"""$znodeRoot/$child""")
+      }
   }
 }
