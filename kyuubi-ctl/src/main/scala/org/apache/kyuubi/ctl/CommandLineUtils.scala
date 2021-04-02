@@ -17,7 +17,30 @@
 
 package org.apache.kyuubi.ctl
 
-import org.apache.kyuubi.KyuubiException
+import java.io.PrintStream
 
-private[kyuubi] case class KyuubiCtlException(exitCode: Int)
-  extends KyuubiException(s"Kyuubi Ctl exited with $exitCode")
+/**
+ * Contains basic command line parsing functionality and methods to parse some common Kyuubi Ctl
+ * options.
+ */
+private[kyuubi] trait CommandLineUtils extends CommandLineLoggingUtils {
+
+  def main(args: Array[String]): Unit
+}
+
+private[kyuubi] trait CommandLineLoggingUtils {
+  // Exposed for testing
+  private[kyuubi] var exitFn: Int => Unit = (exitCode: Int) => System.exit(exitCode)
+
+  private[kyuubi] var printStream: PrintStream = System.err
+
+  // scalastyle:off println
+  private[kyuubi] def printMessage(msg: Any): Unit = printStream.println(msg)
+  // scalastyle:on println
+
+  private[kyuubi] def printErrorAndExit(msg: Any): Unit = {
+    printMessage("Error: " + msg)
+    printMessage("Run with --help for usage help or --verbose for debug output")
+    exitFn(1)
+  }
+}

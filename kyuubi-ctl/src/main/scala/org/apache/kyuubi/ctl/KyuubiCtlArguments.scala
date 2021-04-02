@@ -61,10 +61,6 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
 
   validateArguments()
 
-  if (verbose) {
-    info(toString)
-  }
-
   private def useDefaultPropertyValueIfMissing(): Unit = {
     if (zkAddress == null) {
       zkAddress = defaultKyuubiProperties.getOrElse(HA_ZK_QUORUM.key, null)
@@ -121,7 +117,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
     }
   }
 
-  private def printUsageAndExit(exitCode: Int, unknownParam: Any = null): Unit = {
+  private[ctl] def printUsageAndExit(exitCode: Int, unknownParam: Any = null): Unit = {
     if (unknownParam != null) {
       info("Unknown/unsupported param " + unknownParam)
     }

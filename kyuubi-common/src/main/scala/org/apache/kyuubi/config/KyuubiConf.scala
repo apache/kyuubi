@@ -30,7 +30,7 @@ import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   import KyuubiConf._
 
-  private val settings = new ConcurrentHashMap[String, String]()
+  private[kyuubi] val settings = new ConcurrentHashMap[String, String]()
   private lazy val reader: ConfigProvider = new ConfigProvider(settings)
 
   if (loadSysDefault) {
