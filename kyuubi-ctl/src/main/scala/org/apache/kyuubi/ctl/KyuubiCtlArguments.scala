@@ -128,7 +128,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
     val command = sys.env.getOrElse("_KYUUBI_CMD_USAGE",
       s"""
         |Kyuubi Ver $KYUUBI_VERSION.
-        |Usage: kyuubi-ctl <create|get|delete|list>  <server|engine> --zkAddress ...
+        |Usage: kyuubi-ctl <create|get|delete|list>  <server|engine> --zk-quorum ...
         |--namespace ... --user ... --host ... --port ... --version""".stripMargin)
     info(command)
 
@@ -146,7 +146,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
          |  - engine
          |
          |Arguments:
-         |  --zkAddress                 one of the zk ensemble address, using kyuubi-defaults/conf
+         |  --zk-quorum                 one of the zk ensemble address, using kyuubi-defaults/conf
          |                              if absent
          |  --namespace                 the namespace, using kyuubi-defaults/conf if absent
          |  --host                      hostname or IP address of a service

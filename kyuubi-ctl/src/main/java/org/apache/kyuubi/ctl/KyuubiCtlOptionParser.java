@@ -29,7 +29,7 @@ abstract class KyuubiCtlOptionParser {
   protected final String SERVER = "server";
   protected final String ENGINE = "engine";
 
-  protected final String ZK_ADDRESS = "--zkAddress";
+  protected final String ZK_ADDRESS = "--zk-quorum";
   protected final String NAMESPACE = "--namespace";
   protected final String USER = "--user";
   protected final String HOST = "--host";
