@@ -17,9 +17,6 @@
 
 package org.apache.kyuubi.ha.client
 
-import org.apache.zookeeper.{WatchedEvent, Watcher}
-
-import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.service.Serverable
 
 /**
@@ -34,36 +31,6 @@ class KyuubiServiceDiscovery private(
     server: Serverable) extends ServiceDiscovery(server) {
   def this(server: Serverable) =
     this(classOf[KyuubiServiceDiscovery].getSimpleName, server)
-
-  override def start(): Unit = {
-    super.start()
-    // Set a watch on the serviceNode
-    val watcher = new DeRegisterWatcher
-    if (zkClient.checkExists.usingWatcher(watcher).forPath(serviceNode.getActualPath) == null) {
-      // No node exists, throw exception
-      throw new KyuubiException(s"Unable to create znode for this Kyuubi " +
-        s"instance[${server.connectionUrl}] on ZooKeeper.")
-    }
-  }
-
-  override def stopGracefully(): Unit = {
-    stop()
-    while (server.backendService != null &&
-      server.backendService.sessionManager.getOpenSessionCount > 0) {
-      Thread.sleep(1000 * 60)
-    }
-    server.stop()
-  }
-
-  class DeRegisterWatcher extends Watcher {
-    override def process(event: WatchedEvent): Unit = {
-      if (event.getType == Watcher.Event.EventType.NodeDeleted) {
-        warn(s"This Kyuubi instance ${server.connectionUrl} is now de-registered from" +
-          s" ZooKeeper. The server will be shut down after the last client session completes.")
-        stopGracefully()
-      }
-    }
-  }
 }
 
 

@@ -33,6 +33,7 @@ import org.apache.curator.retry._
 import org.apache.curator.utils.ZKPaths
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager.JaasConfiguration
+import org.apache.zookeeper.{WatchedEvent, Watcher}
 import org.apache.zookeeper.CreateMode.PERSISTENT
 import org.apache.zookeeper.KeeperException
 import org.apache.zookeeper.KeeperException.NodeExistsException
@@ -137,6 +138,14 @@ abstract class ServiceDiscovery private (
         throw new KyuubiException(
           s"Unable to create a znode for this server instance: $instance", e)
     }
+
+    // Set a watch on the serviceNode
+    val watcher = new DeRegisterWatcher
+    if (zkClient.checkExists.usingWatcher(watcher).forPath(serviceNode.getActualPath) == null) {
+      // No node exists, throw exception
+      throw new KyuubiException(s"Unable to create znode for this Kyuubi " +
+        s"instance[${server.connectionUrl}] on ZooKeeper.")
+    }
     super.start()
   }
 
@@ -164,6 +173,21 @@ abstract class ServiceDiscovery private (
   // stop the server genteelly
   def stopGracefully(): Unit = {
     stop()
+    while (server.backendService != null &&
+      server.backendService.sessionManager.getOpenSessionCount > 0) {
+      Thread.sleep(1000 * 60)
+    }
+    server.stop()
+  }
+
+  class DeRegisterWatcher extends Watcher {
+    override def process(event: WatchedEvent): Unit = {
+      if (event.getType == Watcher.Event.EventType.NodeDeleted) {
+        warn(s"This Kyuubi instance ${server.connectionUrl} is now de-registered from" +
+          s" ZooKeeper. The server will be shut down after the last client session completes.")
+        stopGracefully()
+      }
+    }
   }
 }
 
