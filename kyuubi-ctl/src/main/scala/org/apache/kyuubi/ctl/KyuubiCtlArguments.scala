@@ -125,11 +125,11 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
     if (unknownParam != null) {
       info("Unknown/unsupported param " + unknownParam)
     }
-    val command = sys.env.getOrElse("_KYUUBI_CMD_USAGE",
+    val command =
       s"""
         |Kyuubi Ver $KYUUBI_VERSION.
         |Usage: kyuubi-ctl <create|get|delete|list>  <server|engine> --zk-quorum ...
-        |--namespace ... --user ... --host ... --port ... --version""".stripMargin)
+        |--namespace ... --user ... --host ... --port ... --version""".stripMargin
     info(command)
 
     info(
@@ -146,8 +146,8 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
          |  - engine
          |
          |Arguments:
-         |  --zk-quorum                 one of the zk ensemble address, using kyuubi-defaults/conf
-         |                              if absent
+         |  --zk-quorum                 The connection string for the zookeeper ensemble, using
+         |                              kyuubi-defaults/conf if absent
          |  --namespace                 the namespace, using kyuubi-defaults/conf if absent
          |  --host                      hostname or IP address of a service
          |  --port                      listening port of a service
