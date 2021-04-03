@@ -24,6 +24,7 @@ import javax.security.auth.login.Configuration
 import scala.collection.JavaConverters._
 
 import org.apache.zookeeper.ZooDefs
+import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION}
 import org.apache.kyuubi.config.KyuubiConf
@@ -81,9 +82,10 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
       children.foreach { child =>
         framework.delete().forPath(s"""$znodeRoot/$child""")
       }
-      Thread.sleep(5000)
-      assert(serviceDiscovery.getServiceState === ServiceState.STOPPED)
-      assert(server.getServiceState === ServiceState.STOPPED)
+      eventually(timeout(5.seconds), interval(1.second)) {
+        assert(serviceDiscovery.getServiceState === ServiceState.STOPPED)
+        assert(server.getServiceState === ServiceState.STOPPED)
+      }
     } finally {
       server.stop()
       serviceDiscovery.stop()
@@ -128,6 +130,53 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
       conf.set(KyuubiConf.SERVER_KEYTAB, keytab.getName)
       val e = intercept[IOException](ServiceDiscovery.setUpZooKeeperAuth(conf))
       assert(e.getMessage === s"${KyuubiConf.SERVER_KEYTAB.key} does not exists")
+    }
+  }
+
+  test("KYUUBI-304: Stop engine service gracefully when related zk node is deleted") {
+    val logAppender = new LogAppender("test stop engine gracefully")
+    withLogAppender(logAppender) {
+      val namespace = "kyuubiengine"
+
+      conf
+        .unset(KyuubiConf.SERVER_KEYTAB)
+        .unset(KyuubiConf.SERVER_PRINCIPAL)
+        .set(HA_ZK_QUORUM, zkServer.getConnectString)
+        .set(HA_ZK_NAMESPACE, namespace)
+        .set(KyuubiConf.FRONTEND_BIND_PORT, 0)
+        .set(HA_ZK_ACL_ENABLED, false)
+
+      val server: Serverable = new NoopServer()
+      server.initialize(conf)
+      server.start()
+
+      val znodeRoot = s"/$namespace"
+      val serviceDiscovery = new EngineServiceDiscovery(server)
+      val framework = ServiceDiscovery.startZookeeperClient(conf)
+      try {
+        serviceDiscovery.initialize(conf)
+        serviceDiscovery.start()
+
+        assert(framework.checkExists().forPath("/abc") === null)
+        assert(framework.checkExists().forPath(znodeRoot) !== null)
+        val children = framework.getChildren.forPath(znodeRoot).asScala
+        assert(children.head ===
+          s"serviceUri=${server.connectionUrl};version=$KYUUBI_VERSION;sequence=0000000000")
+
+        children.foreach { child =>
+          framework.delete().forPath(s"""$znodeRoot/$child""")
+        }
+        eventually(timeout(5.seconds), interval(1.second)) {
+          assert(serviceDiscovery.getServiceState === ServiceState.STOPPED)
+          assert(server.getServiceState === ServiceState.STOPPED)
+          val msg = s"This Kyuubi instance ${server.connectionUrl} is now de-registered"
+          assert(logAppender.loggingEvents.exists(_.getRenderedMessage.contains(msg)))
+        }
+      } finally {
+        server.stop()
+        serviceDiscovery.stop()
+        framework.close()
+      }
     }
   }
 }
