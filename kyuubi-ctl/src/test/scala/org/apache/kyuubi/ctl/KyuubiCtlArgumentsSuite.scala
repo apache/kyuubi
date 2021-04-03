@@ -20,7 +20,7 @@ package org.apache.kyuubi.ctl
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
 
 class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
-  val zkAddress = "localhost:2181"
+  val zkQuorum = "localhost:2181"
   val namespace = "kyuubi"
   val user = "kyuubi"
   val host = "localhost"
@@ -49,7 +49,7 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
       Seq("server", "engine").foreach { service =>
         val args = Seq(
           command, service,
-          "--zk-quorum", zkAddress,
+          "--zk-quorum", zkQuorum,
           "--namespace", namespace,
           "--user", user,
           "--host", host,
@@ -59,7 +59,7 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
         val opArgs = new KyuubiCtlArguments(args)
         assert(opArgs.action.toString.equalsIgnoreCase(command))
         assert(opArgs.service.toString.equalsIgnoreCase(service))
-        assert(opArgs.zkAddress == zkAddress)
+        assert(opArgs.zkQuorum == zkQuorum)
         assert(opArgs.nameSpace == namespace)
         assert(opArgs.user == user)
         assert(opArgs.host == host)
@@ -120,13 +120,13 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
 
     val args2 = Array(
       "list",
-      "--zk-quorum", zkAddress
+      "--zk-quorum", zkQuorum
     )
     testPrematureExit(args2, "Zookeeper namespace is not specified")
 
     val args3 = Array(
       "list",
-      "--zk-quorum", zkAddress,
+      "--zk-quorum", zkQuorum,
       "--namespace", namespace
     )
     val opArgs = new KyuubiCtlArguments(args3)
@@ -142,20 +142,20 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
 
       val args2 = Array(
         op,
-        "--zk-quorum", zkAddress
+        "--zk-quorum", zkQuorum
       )
       testPrematureExit(args2, "Zookeeper namespace is not specified")
 
       val args3 = Array(
         op,
-        "--zk-quorum", zkAddress,
+        "--zk-quorum", zkQuorum,
         "--namespace", namespace
       )
       testPrematureExit(args3, "Must specify host")
 
       val args4 = Array(
         op,
-        "--zk-quorum", zkAddress,
+        "--zk-quorum", zkQuorum,
         "--namespace", namespace,
         "--host", host
       )
@@ -163,7 +163,7 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
 
       val args5 = Array(
         op, "engine",
-        "--zk-quorum", zkAddress,
+        "--zk-quorum", zkQuorum,
         "--namespace", namespace,
         "--host", host,
         "--port", port
@@ -172,7 +172,7 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
 
       val args6 = Array(
         op, "server",
-        "--zk-quorum", zkAddress,
+        "--zk-quorum", zkQuorum,
         "--namespace", namespace,
         "--host", host,
         "--port", port
@@ -183,21 +183,21 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
   }
 
   test("test with switches at head") {
-    val args = Seq("--verbose", "list", "engine", "--zk-quorum", zkAddress, "--namespace",
+    val args = Seq("--verbose", "list", "engine", "--zk-quorum", zkQuorum, "--namespace",
       namespace)
     val opArgs = new KyuubiCtlArguments(args)
     assert(opArgs.verbose)
     assert(opArgs.action == KyuubiCtlAction.LIST)
     assert(opArgs.service == KyuubiCtlActionService.ENGINE)
 
-    val args2 = Seq("list", "--verbose", "engine", "--zk-quorum", zkAddress, "--namespace",
+    val args2 = Seq("list", "--verbose", "engine", "--zk-quorum", zkQuorum, "--namespace",
       namespace)
     val opArgs2 = new KyuubiCtlArguments(args2)
     assert(opArgs2.verbose)
     assert(opArgs2.action == KyuubiCtlAction.LIST)
     assert(opArgs2.service == KyuubiCtlActionService.ENGINE)
 
-    val args3 = Seq("list", "--verbose", "--help", "engine", "--zk-quorum", zkAddress,
+    val args3 = Seq("list", "--verbose", "--help", "engine", "--zk-quorum", zkQuorum,
       "--namespace", namespace)
     val opArgs3 = new KyuubiCtlArguments(args3)
     assert(opArgs3.verbose)
