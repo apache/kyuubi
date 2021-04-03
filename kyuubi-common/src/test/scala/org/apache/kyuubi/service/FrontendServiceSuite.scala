@@ -37,6 +37,7 @@ class FrontendServiceSuite extends KyuubiFunSuite {
 
   protected val server = new NoopServer()
   protected val conf = KyuubiConf()
+    .set(KyuubiConf.FRONTEND_BIND_HOST, "127.0.0.1")
     .set(KyuubiConf.FRONTEND_BIND_PORT, 0)
     .set("kyuubi.test.server.should.fail", "false")
 
