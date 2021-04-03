@@ -18,12 +18,11 @@
 package org.apache.kyuubi.ctl
 
 import org.apache.curator.framework.CuratorFramework
+
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.ServiceDiscovery
-
-import java.net.InetAddress
 
 private[ctl] object  KyuubiCtlAction extends Enumeration {
   type KyuubiCtlAction = Value
@@ -59,20 +58,24 @@ private[kyuubi] class KyuubiCtl extends Logging {
 
   private def create(args: KyuubiCtlArguments): Unit = {
     val zkClient = getZkClient(args)
-    val instance = getInstance(args.host, args.port)
-    ServiceDiscovery.createZkNode(zkClient, args.nameSpace, instance)
+    val instance = getInstance(args.host, args.port.toInt)
+    createZkNode(zkClient, args.nameSpace, instance)
   }
 
   private def get(args: KyuubiCtlArguments): Unit = {
-
+    val zkClient = getZkClient(args)
+    val zkNode = getZkNode(zkClient, args.nameSpace, args.host, args.port.toInt)
+    info(s"Zookeeper Node is: $zkNode")
   }
 
   private def delete(args: KyuubiCtlArguments): Unit = {
-
+    val zkClient = getZkClient(args)
+    deleteZkNode(zkClient, args.nameSpace, args.host, args.port.toInt, args.version)
   }
 
   private def list(args: KyuubiCtlArguments): Unit = {
-
+    val zkClient = getZkClient(args)
+    getServerHosts(zkClient, args.nameSpace, getLatestOne = false)
   }
 
   private def printUsage(args: KyuubiCtlArguments): Unit = {

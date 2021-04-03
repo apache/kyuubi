@@ -288,23 +288,49 @@ object ServiceDiscovery extends Logging {
       host: String,
       port: Int,
       version: String): Unit = {
-    val connectionUrl = getInstance(host, port)
-
-    val children = zkClient.getChildren.forPath(znodeRoot).asScala
-    children.filter(_.startsWith(s"serviceUri=${connectionUrl};version=$version;"))
-      .foreach { child =>
-        zkClient.delete().forPath(s"""$znodeRoot/$child""")
+    try {
+      val connectionUrl = getInstance(host, port)
+      val children = zkClient.getChildren.forPath(znodeRoot).asScala
+        .filter(_.startsWith(s"serviceUri=${connectionUrl};version=$version;"))
+      if (children.isEmpty) {
+        info(s"There is no zk node with host:port($connectionUrl), version($version)")
+      } else {
+        val child = children.last
+        val childPath = s"""$znodeRoot/$child"""
+        zkClient.delete().forPath(childPath)
+        info(s"Deleted ${childPath} on Zookeeper")
       }
+    } catch {
+      case e: Exception =>
+        throw new KyuubiException(s"Unable to delete znode with namespace: $znodeRoot, " +
+          s"host:$host, port: $port, version: $version", e)
+    }
   }
 
-  def getZkNode(zkClient: CuratorFramework, namespace: String, host: String, port: Int): String = {
-    val connectionUrl = getInstance(host, port)
-    val children = zkClient.getChildren.forPath(namespace).asScala
-    children.filter(_.startsWith(s"serviceUri=${connectionUrl};")).map(c => s"/$namespace/$c").last
+  def getZkNode(
+      zkClient: CuratorFramework,
+      namespace: String,
+      host: String,
+      port: Int): Option[String] = {
+    try {
+      val connectionUrl = getInstance(host, port)
+      val children = zkClient.getChildren.forPath(namespace).asScala
+        .filter(_.startsWith(s"serviceUri=${connectionUrl};"))
+      Some(children).filter(_.nonEmpty).map(_.last)
+    } catch {
+      case e: Exception =>
+        throw new KyuubiException(s"Unable to get znode with namespace: $namespace, " +
+          s"host:$host, port: $port", e)
+    }
   }
 
   def getInstance(host: String, port: Int): String = {
-    val canonicalHostName = new InetAddress(host).getCanonicalHostName
-    s"$canonicalHostName:$port"
+    try {
+      val canonicalHostName = new InetAddress(host).getCanonicalHostName
+      s"$canonicalHostName:$port"
+    } catch {
+      case e: Exception =>
+        throw new KyuubiException(s"Failed to resolve canonical host name for $host", e)
+    }
   }
 }
