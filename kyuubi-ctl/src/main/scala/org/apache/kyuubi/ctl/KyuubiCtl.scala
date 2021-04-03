@@ -17,9 +17,13 @@
 
 package org.apache.kyuubi.ctl
 
+import org.apache.curator.framework.CuratorFramework
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
+import org.apache.kyuubi.ha.client.ServiceDiscovery
+
+import java.net.InetAddress
 
 private[ctl] object  KyuubiCtlAction extends Enumeration {
   type KyuubiCtlAction = Value
@@ -33,7 +37,7 @@ private[ctl] object KyuubiCtlActionService extends Enumeration {
 
 
 private[kyuubi] class KyuubiCtl extends Logging {
-  import KyuubiCtl._
+  import ServiceDiscovery._
 
   def doAction(args: Array[String]): Unit = {
     val ctlArgs = parseArguments(args)
@@ -54,7 +58,9 @@ private[kyuubi] class KyuubiCtl extends Logging {
   }
 
   private def create(args: KyuubiCtlArguments): Unit = {
-
+    val zkClient = getZkClient(args)
+    val instance = getInstance(args.host, args.port)
+    ServiceDiscovery.createZkNode(zkClient, args.nameSpace, instance)
   }
 
   private def get(args: KyuubiCtlArguments): Unit = {
@@ -73,10 +79,11 @@ private[kyuubi] class KyuubiCtl extends Logging {
     args.printUsageAndExit(0)
   }
 
-  private def getKyuubiConf(args: KyuubiCtlArguments): KyuubiConf = {
+  private def getZkClient(args: KyuubiCtlArguments): CuratorFramework = {
     val conf = new KyuubiConf().loadFileDefaults()
     conf.set(HA_ZK_QUORUM, args.zkAddress)
     conf.set(HA_ZK_NAMESPACE.key, args.nameSpace)
+    ServiceDiscovery.startZookeeperClient(conf)
   }
 }
 

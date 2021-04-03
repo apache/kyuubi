@@ -285,10 +285,10 @@ object ServiceDiscovery extends Logging {
   def deleteZkNode(
       zkClient: CuratorFramework,
       znodeRoot: String,
-      host: String, port: Int,
+      host: String,
+      port: Int,
       version: String): Unit = {
-    val canonicalHostName = new InetAddress(host).getCanonicalHostName
-    val connectionUrl = s"$canonicalHostName:$port"
+    val connectionUrl = getInstance(host, port)
 
     val children = zkClient.getChildren.forPath(znodeRoot).asScala
     children.filter(_.startsWith(s"serviceUri=${connectionUrl};version=$version;"))
@@ -298,9 +298,13 @@ object ServiceDiscovery extends Logging {
   }
 
   def getZkNode(zkClient: CuratorFramework, namespace: String, host: String, port: Int): String = {
-    val canonicalHostName = new InetAddress(host).getCanonicalHostName
-    val connectionUrl = s"$canonicalHostName:$port"
+    val connectionUrl = getInstance(host, port)
     val children = zkClient.getChildren.forPath(namespace).asScala
-    children.filter(_.startsWith(s"serviceUri=${connectionUrl};")).last
+    children.filter(_.startsWith(s"serviceUri=${connectionUrl};")).map(c => s"/$namespace/$c").last
+  }
+
+  def getInstance(host: String, port: Int): String = {
+    val canonicalHostName = new InetAddress(host).getCanonicalHostName
+    s"$canonicalHostName:$port"
   }
 }
