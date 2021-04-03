@@ -146,16 +146,16 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
          |  - engine
          |
          |Arguments:
-         |  --zkAddress, -zk            one of the zk ensemble address, using kyuubi-defaults/conf
+         |  --zkAddress                 one of the zk ensemble address, using kyuubi-defaults/conf
          |                              if absent
-         |  --namespace, -ns            the namespace, using kyuubi-defaults/conf if absent
-         |  --host, -h                  hostname or IP address of a service
-         |  --port, -p                  listening port of a service
-         |  --version, -V               using the compiled KYUUBI_VERSION default, change it if the
+         |  --namespace                 the namespace, using kyuubi-defaults/conf if absent
+         |  --host                      hostname or IP address of a service
+         |  --port                      listening port of a service
+         |  --version                   using the compiled KYUUBI_VERSION default, change it if the
          |                              active service is running in another
-         |  --user, -u                  for engine service only, the user name this engine belong to
-         |  --help, -I                  Show this help message and exit.
-         |  --verbose, -v               Print additional debug output.
+         |  --user                      for engine service only, the user name this engine belong to
+         |  --help                      Show this help message and exit.
+         |  --verbose                   Print additional debug output.
       """.stripMargin
     )
 

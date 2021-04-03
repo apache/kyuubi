@@ -41,12 +41,12 @@ abstract class KyuubiCtlOptionParser {
   protected final String VERBOSE = "--verbose";
 
   final String[][] opts = {
-    { ZK_ADDRESS, "-zk" },
-    { NAMESPACE, "-ns" },
-    { USER, "-u" },
-    { HOST, "-h" },
-    { PORT, "-p" },
-    { VERSION, "-V" },
+    { ZK_ADDRESS },
+    { NAMESPACE },
+    { USER },
+    { HOST },
+    { PORT },
+    { VERSION },
   };
 
   /**
@@ -54,8 +54,8 @@ abstract class KyuubiCtlOptionParser {
    * kyuubi-ctl.
    */
   final String[][] switches = {
-    { HELP, "-I" },
-    { VERBOSE, "-v" },
+    { HELP },
+    { VERBOSE },
   };
 
   /**

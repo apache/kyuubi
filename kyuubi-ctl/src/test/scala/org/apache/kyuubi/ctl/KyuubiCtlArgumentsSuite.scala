@@ -70,7 +70,7 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
   }
 
   test("treat --help as action") {
-    val args = Seq("-I")
+    val args = Seq("--help")
     val opArgs = new KyuubiCtlArguments(args)
     assert(opArgs.action == KyuubiCtlAction.HELP)
     assert(opArgs.version == KYUUBI_VERSION)
@@ -78,7 +78,7 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
     val args2 = Seq(
       "create", "server",
       s"--user=$user",
-      "-h", host,
+      "--host", host,
       "--verbose",
       "--help",
       "--port", port
@@ -93,7 +93,6 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
   test("prints usage on empty input") {
     testPrematureExit(Array.empty[String], "Usage: kyuubi-ctl")
     testPrematureExit(Array("--verbose"), "Usage: kyuubi-ctl")
-    testPrematureExit(Array("-v"), "Usage: kyuubi-ctl")
   }
 
   test("prints error with unrecognized options") {
@@ -158,7 +157,7 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
         op,
         "--zkAddress", zkAddress,
         "--namespace", namespace,
-        "-h", host
+        "--host", host
       )
       testPrematureExit(args4, "Must specify port")
 
@@ -166,8 +165,8 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
         op, "engine",
         "--zkAddress", zkAddress,
         "--namespace", namespace,
-        "-h", host,
-        "-p", port
+        "--host", host,
+        "--port", port
       )
       testPrematureExit(args5, "Must specify user name for engine")
 
@@ -175,8 +174,8 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
         op, "server",
         "--zkAddress", zkAddress,
         "--namespace", namespace,
-        "-h", host,
-        "-p", port
+        "--host", host,
+        "--port", port
       )
       val opArgs6 = new KyuubiCtlArguments(args6)
       assert(opArgs6.action.toString.equalsIgnoreCase(op))
@@ -184,19 +183,22 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
   }
 
   test("test with switches at head") {
-    val args = Seq("--verbose", "list", "engine", "-zk", zkAddress, "-ns", namespace)
+    val args = Seq("--verbose", "list", "engine", "--zkAddress", zkAddress, "--namespace",
+      namespace)
     val opArgs = new KyuubiCtlArguments(args)
     assert(opArgs.verbose)
     assert(opArgs.action == KyuubiCtlAction.LIST)
     assert(opArgs.service == KyuubiCtlActionService.ENGINE)
 
-    val args2 = Seq("list", "-v", "engine", "-zk", zkAddress, "-ns", namespace)
+    val args2 = Seq("list", "--verbose", "engine", "--zkAddress", zkAddress, "--namespace",
+      namespace)
     val opArgs2 = new KyuubiCtlArguments(args2)
     assert(opArgs2.verbose)
     assert(opArgs2.action == KyuubiCtlAction.LIST)
     assert(opArgs2.service == KyuubiCtlActionService.ENGINE)
 
-    val args3 = Seq("list", "--verbose", "--help", "engine", "-zk", zkAddress, "-ns", namespace)
+    val args3 = Seq("list", "--verbose", "--help", "engine", "--zkAddress", zkAddress,
+      "--namespace", namespace)
     val opArgs3 = new KyuubiCtlArguments(args3)
     assert(opArgs3.verbose)
     assert(opArgs3.action == KyuubiCtlAction.HELP)
