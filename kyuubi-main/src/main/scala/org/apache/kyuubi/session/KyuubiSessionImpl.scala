@@ -99,8 +99,9 @@ class KyuubiSessionImpl(
     val zkClient = startZookeeperClient(sessionConf)
     logSessionInfo(s"Connected to Zookeeper")
     try {
-      getServerHost(zkClient, appZkNamespace) match {
-        case Some((host, port)) => openSession(host, port)
+      getServerHosts(zkClient, appZkNamespace) match {
+        case Some(Seq((host, port))) =>
+          openSession(host, port)
         case None =>
           sessionConf.setIfMissing(SparkProcessBuilder.APP_KEY, boundAppName.toString)
           // tag is a seq type with comma-separated
@@ -113,7 +114,7 @@ class KyuubiSessionImpl(
           try {
             logSessionInfo(s"Launching SQL engine:\n$builder")
             val process = builder.start
-            var sh = getServerHost(zkClient, appZkNamespace)
+            var sh = getServerHosts(zkClient, appZkNamespace)
             val started = System.currentTimeMillis()
             var exitValue: Option[Int] = None
             while (sh.isEmpty) {
@@ -135,9 +136,9 @@ class KyuubiSessionImpl(
                 throw KyuubiSQLException(s"Timed out($timeout ms) to launched Spark with $builder",
                   builder.getError)
               }
-              sh = getServerHost(zkClient, appZkNamespace)
+              sh = getServerHosts(zkClient, appZkNamespace)
             }
-            val Some((host, port)) = sh
+            val Some(Seq((host, port))) = sh
             openSession(host, port)
           } finally {
             // we must close the process builder whether session open is success or failure since

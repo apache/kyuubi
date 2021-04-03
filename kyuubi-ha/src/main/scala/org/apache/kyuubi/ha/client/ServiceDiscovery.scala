@@ -216,12 +216,18 @@ object ServiceDiscovery extends Logging {
     zkEnsemble != null && zkEnsemble.nonEmpty
   }
 
-  def getServerHost(zkClient: CuratorFramework, namespace: String): Option[(String, Int)] = {
+  def getServerHosts(
+      zkClient: CuratorFramework,
+      namespace: String,
+      getLatestOne: Boolean = true): Option[Seq[(String, Int)]] = {
     try {
-      val hosts = zkClient.getChildren.forPath(namespace)
-      // TODO: use last one because to avoid touching some maybe-crashed engines
-      // We need a big improvement here.
-      hosts.asScala.lastOption.map { p =>
+      var nodes = zkClient.getChildren.forPath(namespace).asScala
+      if (getLatestOne) {
+        // TODO: use last one because to avoid touching some maybe-crashed engines
+        // We need a big improvement here.
+        nodes = nodes.takeRight(1)
+      }
+      val hosts = nodes.map { p =>
         val path = ZKPaths.makePath(namespace, p)
         val hostPort = new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
         val strings = hostPort.split(":")
@@ -229,6 +235,7 @@ object ServiceDiscovery extends Logging {
         val port = strings(1).toInt
         (host, port)
       }
+      Some(hosts).filter(_.nonEmpty)
     } catch {
       case _: Exception => None
     }
@@ -288,5 +295,12 @@ object ServiceDiscovery extends Logging {
       .foreach { child =>
         zkClient.delete().forPath(s"""$znodeRoot/$child""")
       }
+  }
+
+  def getZkNode(zkClient: CuratorFramework, namespace: String, host: String, port: Int): String = {
+    val canonicalHostName = new InetAddress(host).getCanonicalHostName
+    val connectionUrl = s"$canonicalHostName:$port"
+    val children = zkClient.getChildren.forPath(namespace).asScala
+    children.filter(_.startsWith(s"serviceUri=${connectionUrl};")).last
   }
 }
