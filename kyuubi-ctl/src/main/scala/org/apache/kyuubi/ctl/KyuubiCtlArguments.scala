@@ -30,7 +30,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
   extends KyuubiCtlArgumentsParser with Logging {
   var action: KyuubiCtlAction = null
   var service: KyuubiCtlActionService = null
-  var zkAddress: String = null
+  var zkQuorum: String = null
   var nameSpace: String = null
   var user: String = null
   var host: String = null
@@ -66,8 +66,8 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
   }
 
   private def useDefaultPropertyValueIfMissing(): Unit = {
-    if (zkAddress == null) {
-      zkAddress = defaultKyuubiProperties.getOrElse(HA_ZK_QUORUM.key, null)
+    if (zkQuorum == null) {
+      zkQuorum = defaultKyuubiProperties.getOrElse(HA_ZK_QUORUM.key, null)
     }
     if (nameSpace == null) {
       nameSpace = defaultKyuubiProperties.getOrElse(HA_ZK_NAMESPACE.key, null)
@@ -91,7 +91,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
   }
 
   private def validateCreateGetDeleteArguments(): Unit = {
-    if (zkAddress == null) {
+    if (zkQuorum == null) {
       fail("Zookeeper address is not specified and no default value to load")
     }
     if (nameSpace == null) {
@@ -113,7 +113,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
   }
 
   private def validateListArguments(): Unit = {
-    if (zkAddress == null) {
+    if (zkQuorum == null) {
       fail("Zookeeper address is not specified and no default value to load")
     }
     if (nameSpace == null) {
@@ -125,18 +125,18 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
     if (unknownParam != null) {
       info("Unknown/unsupported param " + unknownParam)
     }
-    val command = sys.env.getOrElse("_KYUUBI_CMD_USAGE",
+    val command =
       s"""
         |Kyuubi Ver $KYUUBI_VERSION.
-        |Usage: kyuubi-ctl <create|get|delete|list>  <server|engine> --zkAddress ...
-        |--namespace ... --user ... --host ... --port ... --version""".stripMargin)
+        |Usage: kyuubi-ctl <create|get|delete|list>  <server|engine> --zk-quorum ...
+        |--namespace ... --user ... --host ... --port ... --version""".stripMargin
     info(command)
 
     info(
       s"""
          |Command:
          |  - create                    expose a service to a namespace on the zookeeper cluster of
-         |                              zkAddress manually
+         |                              zk quorum manually
          |  - get                       get the service node info
          |  - delete                    delete the specified serviceNode
          |  - list                      list all the service nodes for a particular domain
@@ -146,16 +146,16 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
          |  - engine
          |
          |Arguments:
-         |  --zkAddress, -zk            one of the zk ensemble address, using kyuubi-defaults/conf
-         |                              if absent
-         |  --namespace, -ns            the namespace, using kyuubi-defaults/conf if absent
-         |  --host, -h                  hostname or IP address of a service
-         |  --port, -p                  listening port of a service
-         |  --version, -V               using the compiled KYUUBI_VERSION default, change it if the
+         |  --zk-quorum                 The connection string for the zookeeper ensemble, using
+         |                              kyuubi-defaults/conf if absent
+         |  --namespace                 the namespace, using kyuubi-defaults/conf if absent
+         |  --host                      hostname or IP address of a service
+         |  --port                      listening port of a service
+         |  --version                   using the compiled KYUUBI_VERSION default, change it if the
          |                              active service is running in another
-         |  --user, -u                  for engine service only, the user name this engine belong to
-         |  --help, -I                  Show this help message and exit.
-         |  --verbose, -v               Print additional debug output.
+         |  --user                      for engine service only, the user name this engine belong to
+         |  --help                      Show this help message and exit.
+         |  --verbose                   Print additional debug output.
       """.stripMargin
     )
 
@@ -229,7 +229,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
     s"""Parsed arguments:
        |  action                  $action
        |  service                 $service
-       |  zkAddress               $zkAddress
+       |  zkQuorum               $zkQuorum
        |  namespace               $nameSpace
        |  user                    $user
        |  host                    $host
@@ -249,8 +249,8 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
       return false
     }
     opt match {
-      case ZK_ADDRESS =>
-        zkAddress = value
+      case ZK_QUORUM =>
+        zkQuorum = value
 
       case NAMESPACE =>
         nameSpace = value

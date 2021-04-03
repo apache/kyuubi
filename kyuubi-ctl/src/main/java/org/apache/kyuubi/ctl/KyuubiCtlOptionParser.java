@@ -29,7 +29,7 @@ abstract class KyuubiCtlOptionParser {
   protected final String SERVER = "server";
   protected final String ENGINE = "engine";
 
-  protected final String ZK_ADDRESS = "--zkAddress";
+  protected final String ZK_QUORUM = "--zk-quorum";
   protected final String NAMESPACE = "--namespace";
   protected final String USER = "--user";
   protected final String HOST = "--host";
@@ -41,12 +41,12 @@ abstract class KyuubiCtlOptionParser {
   protected final String VERBOSE = "--verbose";
 
   final String[][] opts = {
-    { ZK_ADDRESS, "-zk" },
-    { NAMESPACE, "-ns" },
-    { USER, "-u" },
-    { HOST, "-h" },
-    { PORT, "-p" },
-    { VERSION, "-V" },
+    { ZK_QUORUM },
+    { NAMESPACE },
+    { USER },
+    { HOST },
+    { PORT },
+    { VERSION },
   };
 
   /**
@@ -54,8 +54,8 @@ abstract class KyuubiCtlOptionParser {
    * kyuubi-ctl.
    */
   final String[][] switches = {
-    { HELP, "-I" },
-    { VERBOSE, "-v" },
+    { HELP },
+    { VERBOSE },
   };
 
   /**
