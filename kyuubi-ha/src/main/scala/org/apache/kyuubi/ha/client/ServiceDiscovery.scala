@@ -125,8 +125,8 @@ abstract class ServiceDiscovery private (
         pathPrefix,
         instance.getBytes(StandardCharsets.UTF_8))
       serviceNode.start()
-      val znodeTimeout = 120
-      if (!serviceNode.waitForInitialCreate(znodeTimeout, TimeUnit.SECONDS)) {
+      val znodeTimeout = conf.get(HA_ZK_NODE_TIMEOUT)
+      if (!serviceNode.waitForInitialCreate(znodeTimeout, TimeUnit.MILLISECONDS)) {
         throw new KyuubiException(s"Max znode creation wait time $znodeTimeout s exhausted")
       }
       info(s"Created a ${serviceNode.getActualPath} on ZooKeeper for KyuubiServer uri: " + instance)
