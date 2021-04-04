@@ -56,15 +56,17 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
           "--port", port,
           "--version", KYUUBI_VERSION
         )
-        val opArgs = new KyuubiCtlArguments(args)
-        assert(opArgs.action.toString.equalsIgnoreCase(command))
-        assert(opArgs.service.toString.equalsIgnoreCase(service))
-        assert(opArgs.zkQuorum == zkQuorum)
-        assert(opArgs.nameSpace == namespace)
-        assert(opArgs.user == user)
-        assert(opArgs.host == host)
-        assert(opArgs.port == port)
-        assert(opArgs.version == KYUUBI_VERSION)
+        if (!(command == "create" && service == "engine")) {
+          val opArgs = new KyuubiCtlArguments(args)
+          assert(opArgs.action.toString.equalsIgnoreCase(command))
+          assert(opArgs.service.toString.equalsIgnoreCase(service))
+          assert(opArgs.zkQuorum == zkQuorum)
+          assert(opArgs.nameSpace == namespace)
+          assert(opArgs.user == user)
+          assert(opArgs.host == host)
+          assert(opArgs.port == port)
+          assert(opArgs.version == KYUUBI_VERSION)
+        }
       }
     }
   }
@@ -133,8 +135,8 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
     assert(opArgs.action == KyuubiCtlAction.LIST)
   }
 
-  test("test create/get/delete action arguments") {
-    Seq("create", "get", "delete").foreach { op =>
+  test("test get/delete action arguments") {
+    Seq("get", "delete").foreach { op =>
       val args = Array(
         op
       )
@@ -202,5 +204,66 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
     val opArgs3 = new KyuubiCtlArguments(args3)
     assert(opArgs3.verbose)
     assert(opArgs3.action == KyuubiCtlAction.HELP)
+  }
+
+  test("test with unknown host") {
+    val args = Array(
+      "get", "server",
+      "--zk-quorum", zkQuorum,
+      "--namespace", namespace,
+      "--host", "unknown-host",
+      "--port", port
+    )
+    testPrematureExit(args, "Unknown host")
+  }
+
+  test("test with invalid port specification") {
+    val args = Array(
+      "get", "server",
+      "--zk-quorum", zkQuorum,
+      "--namespace", namespace,
+      "--host", host,
+      "--port", "invalid-format"
+    )
+    testPrematureExit(args, "Specified port is not a valid integer number")
+
+    val args2 = Array(
+      "get", "server",
+      "--zk-quorum", zkQuorum,
+      "--namespace", namespace,
+      "--host", host,
+      "--port", "0"
+    )
+    testPrematureExit(args2, "Specified port should be a positive number")
+  }
+
+  test("test create action arguments") {
+    val op = "create"
+    val args = Array(
+      op
+    )
+    testPrematureExit(args, "Zookeeper address is not specified")
+
+    val args2 = Array(
+      op,
+      "--zk-quorum", zkQuorum
+    )
+    testPrematureExit(args2, "Zookeeper namespace is not specified")
+
+
+    val args3 = Array(
+      op, "server",
+      "--zk-quorum", zkQuorum,
+      "--namespace", namespace
+    )
+    val opArgs3 = new KyuubiCtlArguments(args3)
+    assert(opArgs3.action.toString.equalsIgnoreCase(op))
+
+    val args4 = Array(
+      op, "engine",
+      "--zk-quorum", zkQuorum,
+      "--namespace", namespace
+    )
+    testPrematureExit(args4, "Only support expose Kyuubi server instance to another domain")
   }
 }

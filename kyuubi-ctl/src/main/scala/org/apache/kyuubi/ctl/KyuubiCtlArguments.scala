@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.ctl
 
+import java.net.InetAddress
 import java.util.{List => JList}
 
 import scala.collection.JavaConverters._
@@ -81,43 +82,69 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
   private def validateArguments(): Unit = {
     service = Option(service).getOrElse(KyuubiCtlActionService.SERVER)
     action match {
-      case KyuubiCtlAction.CREATE => validateCreateGetDeleteArguments()
-      case KyuubiCtlAction.GET => validateCreateGetDeleteArguments()
-      case KyuubiCtlAction.DELETE => validateCreateGetDeleteArguments()
-      case KyuubiCtlAction.LIST => validateListArguments()
+      case KyuubiCtlAction.CREATE => validateCreateActionArguments()
+      case KyuubiCtlAction.GET => validateGetDeleteActionArguments()
+      case KyuubiCtlAction.DELETE => validateGetDeleteActionArguments()
+      case KyuubiCtlAction.LIST => validateListActionArguments()
       case KyuubiCtlAction.HELP =>
       case _ => printUsageAndExit(-1)
     }
   }
 
-  private def validateCreateGetDeleteArguments(): Unit = {
+  private def validateCreateActionArguments(): Unit = {
+    if (service != KyuubiCtlActionService.SERVER) {
+      fail("Only support expose Kyuubi server instance to another domain")
+    }
+    validateZkArguments()
+  }
+
+  private def validateGetDeleteActionArguments(): Unit = {
+    validateZkArguments()
+    validateHostAndPort()
+    validateUser()
+  }
+
+  private def validateListActionArguments(): Unit = {
+    validateZkArguments()
+  }
+
+  private def validateZkArguments(): Unit = {
     if (zkQuorum == null) {
       fail("Zookeeper address is not specified and no default value to load")
     }
     if (nameSpace == null) {
       fail("Zookeeper namespace is not specified and no default value to load")
     }
-    if (version == null) {
-      fail("Kyuubi version is not specified and could not found KYUUBI_VERSION in " +
-        "kyuubi-build-info")
-    }
+  }
+
+  private def validateHostAndPort(): Unit = {
     if (host == null) {
       fail("Must specify host for service")
     }
     if (port == null) {
       fail("Must specify port for service")
     }
-    if (service == KyuubiCtlActionService.ENGINE && user == null) {
-      fail("Must specify user name for engine")
+
+    try {
+      host = InetAddress.getByName(host).getCanonicalHostName
+    } catch {
+      case _: Exception =>
+        fail(s"Unknown host: $host")
+    }
+
+    try {
+      if (port.toInt <= 0 ) {
+        fail(s"Specified port should be a positive number")
+      }
+    } catch {
+      case _: NumberFormatException =>
+        fail(s"Specified port is not a valid integer number: $port")
     }
   }
 
-  private def validateListArguments(): Unit = {
-    if (zkQuorum == null) {
-      fail("Zookeeper address is not specified and no default value to load")
-    }
-    if (nameSpace == null) {
-      fail("Zookeeper namespace is not specified and no default value to load")
+  private def validateUser(): Unit = {
+    if (service == KyuubiCtlActionService.ENGINE && user == null) {
+      fail("Must specify user name for engine")
     }
   }
 
