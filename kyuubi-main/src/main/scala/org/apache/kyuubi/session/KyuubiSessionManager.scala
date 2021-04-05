@@ -22,8 +22,8 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.client.ServiceDiscovery
-import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.Metrics
+import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.operation.KyuubiOperationManager
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
@@ -57,6 +57,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     val handle = sessionImpl.handle
     try {
       sessionImpl.open()
+      // TODO session long_task_timer
       setSession(handle, sessionImpl)
       info(s"$username's session with $handle is opened, current opening sessions" +
       s" $getOpenSessionCount")
@@ -75,9 +76,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   }
 
   override def start(): Unit = synchronized {
-    Metrics.registerGauge(SESSION, T_STAT, STAT_ACTIVE) { () => getOpenSessionCount }
-    Metrics.registerGauge(SERVICE_EXEC_POOL, T_STAT, STAT_ALIVE) { () => getExecPoolSize }
-    Metrics.registerGauge(SERVICE_EXEC_POOL, T_STAT, STAT_ACTIVE) { () => getActiveCount }
+    Metrics.registerGauge(SERVICE_THD_POOL_CORE_SIZE,
+      T_NAME, s"$name-exec-pool")() { () => execPool.getCorePoolSize }
+    Metrics.registerGauge(SERVICE_THD_POOL_TASK,
+      T_NAME, s"$name-exec-pool", T_STAT, STAT_ACTIVE)() { () => execPool.getActiveCount }
     super.start()
   }
 

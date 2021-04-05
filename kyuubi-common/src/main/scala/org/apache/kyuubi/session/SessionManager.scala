@@ -50,7 +50,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   protected def isServer: Boolean
 
-  private var execPool: ThreadPoolExecutor = _
+  protected var execPool: ThreadPoolExecutor = _
 
   def submitBackgroundOperation(r: Runnable): Future[_] = execPool.submit(r)
 
@@ -86,16 +86,6 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   }
 
   def getOpenSessionCount: Int = handleToSession.size()
-
-  protected def getExecPoolSize: Int = {
-    assert(execPool != null)
-    execPool.getPoolSize
-  }
-
-  protected def getActiveCount: Int = {
-    assert(execPool != null)
-    execPool.getActiveCount
-  }
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     addService(operationManager)

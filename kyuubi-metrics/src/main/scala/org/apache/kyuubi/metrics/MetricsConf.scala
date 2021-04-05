@@ -33,13 +33,6 @@ object MetricsConf {
       .booleanConf
       .createWithDefault(true)
 
-  val METRICS_HISTOGRAM: ConfigEntry[Boolean] =
-    buildConf("metrics.histogram")
-      .doc("Set to true to enable publish percentiles histogram in summary and timer metrics")
-      .version("1.2.0")
-      .booleanConf
-      .createWithDefault(true)
-
   val METRICS_EXPORTERS: ConfigEntry[Seq[String]] = buildConf("metrics.exporters")
     .doc("A comma separated list for all metrics exporters" +
       "<ul>" +

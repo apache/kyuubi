@@ -23,8 +23,8 @@ import org.apache.hive.service.rpc.thrift.{TCLIService, TExecuteStatementReq, TF
 import org.apache.hive.service.rpc.thrift.TOperationState._
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.Metrics
+import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
@@ -54,6 +54,7 @@ class ExecuteStatement(
   }
 
   override def beforeRun(): Unit = {
+    // TODO long_task_timer start
     OperationLog.setCurrentOperationLog(_operationLog)
     setHasResultSet(true)
     setState(OperationState.PENDING)
@@ -65,8 +66,8 @@ class ExecuteStatement(
 
   private def executeStatement(): Unit = {
     try {
-        Metrics.inc(OPERATION, T_STAT, STAT_OPENED)(1)
-        Metrics.count(OPERATION, T_EVT, EVT_OPEN)(1)
+      Metrics.inc(OPERATION, T_STAT, STAT_OPENED)(1)
+      Metrics.count(OPERATION, T_EVT, EVT_OPEN)(1)
 
       val req = new TExecuteStatementReq(remoteSessionHandle, statement)
       req.setRunAsync(shouldRunAsync)
@@ -115,6 +116,7 @@ class ExecuteStatement(
           setOperationException(ke)
       }
     }
+    // TODO long_task_timer stop here, because we need support sync and async
     // see if anymore log could be fetched
     getQueryLog()
   }

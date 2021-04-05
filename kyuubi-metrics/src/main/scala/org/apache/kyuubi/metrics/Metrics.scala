@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.metrics
 
+import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
 import com.google.common.util.concurrent.AtomicDouble
@@ -28,8 +29,7 @@ object Metrics {
 
   final val percentiles = Array[Double](0.5, 0.75, 0.95, 0.99, 0.999)
 
-  private[metrics] var maybeMetricsService: Option[MicrometerMetricsService] = None
-  private[metrics] var enableHistogram: Boolean = true
+  private[metrics] var maybe: Option[MicrometerMetricsService] = None
 
   private[metrics] val gaugeHolder = new ConcurrentHashMap[Meter.Id, AtomicDouble]
 
@@ -39,10 +39,19 @@ object Metrics {
    * @param name  Name of the gauge being registered.
    * @param tags  Sequence of dimensions for breaking down the name.
    * @param value Amount to add to the counter, which must be positive.
+   * @param unit  Base unit of the counter.
+   * @param desc  Description text of the counter.
    */
   def count(name: String, tags: String*)
-           (value: Double = 1.0): Unit = metrics { ms =>
-    ms.registry.counter(name, Tags.of(tags: _*)).increment(value)
+           (value: Double = 1.0,
+            unit: Option[String] = None,
+            desc: Option[String] = None): Unit = metrics { ms =>
+    Counter.builder(name)
+      .tags(Tags.of(tags: _*))
+      .baseUnit(unit.orNull)
+      .description(desc.orNull)
+      .register(ms.registry)
+      .increment(value)
   }
 
   /**
@@ -50,11 +59,15 @@ object Metrics {
    *
    * @param name  Name of the gauge being registered.
    * @param tags  Sequence of dimensions for breaking down the name.
-   * @param value Amount to add to the gauge
+   * @param value Amount to add to the gauge.
+   * @param unit  Base unit of the gauge.
+   * @param desc  Description text of the gauge.
    */
   def inc(name: String, tags: String*)
-         (value: Double = 1.0): Unit = metrics { ms =>
-    getOrCreateGauge(ms.registry, name, tags: _*).addAndGet(value)
+         (value: Double = 1.0,
+          unit: Option[String] = None,
+          desc: Option[String] = None): Unit = metrics { ms =>
+    getOrCreateGauge(ms.registry, name, tags: _*)(unit, desc).addAndGet(value)
   }
 
   /**
@@ -63,10 +76,14 @@ object Metrics {
    * @param name  Name of the gauge being registered.
    * @param tags  Sequence of dimensions for breaking down the name.
    * @param value Amount to subtract to the gauge
+   * @param unit  Base unit of the gauge.
+   * @param desc  Description text of the gauge.
    */
   def dec(name: String, tags: String*)
-         (value: Double = 1.0): Unit = metrics { ms =>
-    getOrCreateGauge(ms.registry, name, tags: _*).addAndGet(-value)
+         (value: Double = 1.0,
+          unit: Option[String] = None,
+          desc: Option[String] = None): Unit = metrics { ms =>
+    getOrCreateGauge(ms.registry, name, tags: _*)(unit, desc).addAndGet(-value)
   }
 
   /**
@@ -75,10 +92,14 @@ object Metrics {
    * @param name  Name of the gauge being registered.
    * @param tags  Sequence of dimensions for breaking down the name.
    * @param value Amount for an event being measured.
+   * @param unit  Base unit of the gauge.
+   * @param desc  Description text of the gauge.
    */
   def gauge(name: String, tags: String*)
-           (value: Double): Unit = metrics { ms =>
-    getOrCreateGauge(ms.registry, name, tags: _*).set(value)
+           (value: Double,
+            unit: Option[String] = None,
+            desc: Option[String] = None): Unit = metrics { ms =>
+    getOrCreateGauge(ms.registry, name, tags: _*)(unit, desc).set(value)
   }
 
   /**
@@ -86,11 +107,18 @@ object Metrics {
    *
    * @param name Name of the gauge being registered.
    * @param tags Sequence of dimensions for breaking down the name.
+   * @param unit Base unit of the gauge.
+   * @param desc Description text of the gauge.
    * @param func Function that produces an instantaneous gauge value from the state object.
    */
   def registerGauge(name: String, tags: String*)
+                   (unit: Option[String] = None, desc: Option[String] = None)
                    (func: () => Double): Unit = metrics { ms =>
-    ms.registry.gauge(name, Tags.of(tags: _*), func, (func: () => Double) => func())
+    Gauge.builder(name, func, (func: () => Double) => func())
+      .tags(Tags.of(tags: _*))
+      .baseUnit(unit.orNull)
+      .description(desc.orNull)
+      .register(ms.registry)
   }
 
   /**
@@ -99,56 +127,93 @@ object Metrics {
    * @param name  Name of the gauge being registered.
    * @param tags  Sequence of dimensions for breaking down the name.
    * @param value Amount for an event being measured.
+   * @param unit  Base unit of the distributionSummary.
+   * @param desc  Description text of the distributionSummary.
    */
   def summary(name: String, tags: String*)
-             (value: Double): Unit = metrics { ms =>
+             (value: Double,
+              unit: Option[String] = None,
+              desc: Option[String] = None): Unit = metrics { ms =>
     DistributionSummary.builder(name)
       .tags(Tags.of(tags: _*))
+      .baseUnit(unit.orNull)
+      .description(desc.orNull)
+      .publishPercentileHistogram()
       .publishPercentiles(percentiles: _*)
-      .publishPercentileHistogram(enableHistogram)
       .register(ms.registry)
       .record(value)
   }
 
   /**
-   * Executes the callable `func` and records the time taken.
+   * Executes the callable `func` and records the time taken. It's for tracking of a large number
+   * of short running events which typically will complete under a minute.
    *
    * @param name Name of the gauge being registered.
    * @param tags Sequence of dimensions for breaking down the name.
+   * @param desc Description text of the Timer.
    * @param func Function to execute and measure the execution time.
-   * @tparam R he return type of the `func`.
+   * @tparam R The return type of the `func`.
    * @return The return value of `func`.
    */
   def time[R](name: String, tags: String*)
-             (func: => R): R = maybeMetricsService match {
+             (desc: Option[String] = None)
+             (func: () => R): R = maybe match {
     case Some(ms) =>
       Timer.builder(name)
         .tags(Tags.of(tags: _*))
+        .description(desc.orNull)
+        .publishPercentileHistogram()
         .publishPercentiles(percentiles: _*)
-        .publishPercentileHistogram(enableHistogram)
         .register(ms.registry)
-        .recordCallable(() => func)
-    case None => func
+        .recordCallable(() => func())
+    case None => func()
   }
 
-  def longRun[R](name: String, tags: String*)
-                (func: => R): R = maybeMetricsService match {
-    case Some(ms) =>
-      ms.registry.more().longTaskTimer(name, Tags.of(tags: _*)).recordCallable(() => func)
-    case None => func
+  /**
+   * A long task timer is used to track the total duration of all in-flight long-running tasks
+   * and the number of such tasks.
+   *
+   * @param name        Name of the gauge being registered.
+   * @param tags        Sequence of dimensions for breaking down the name.
+   * @param minDuration Sets a lower bound on histogram buckets that are shipped to monitoring
+   *                    systems that support aggregable percentile approximations.
+   * @param maxDuration Sets an upper bound on histogram buckets that are shipped to monitoring
+   *                    systems that support aggregable percentile approximations.
+   * @param desc        Description text of the LongTaskTimer.
+   * @return If [[MetricsConf.METRICS_ENABLED]] enabled, a timing sample with start time recorded,
+   *         otherwise [[None]].
+   */
+  def longTaskTimer(name: String, tags: String*)
+                   (minDuration: Duration = Duration.ZERO,
+                    maxDuration: Duration = Duration.ofHours(24),
+                    desc: Option[String] = None): Option[LongTaskTimer.Sample] = maybe.map { ms =>
+    LongTaskTimer.builder(name)
+      .tags(Tags.of(tags: _*))
+      .description(desc.orNull)
+      .publishPercentileHistogram()
+      .publishPercentiles(percentiles: _*)
+      .minimumExpectedValue(minDuration)
+      .maximumExpectedValue(maxDuration)
+      .register(ms.registry)
+      .start()
   }
 
-  private def metrics(func: MicrometerMetricsService => Unit): Unit = {
-    maybeMetricsService.foreach(func(_))
+  private def metrics[R](func: MicrometerMetricsService => R): Unit = {
+    maybe.foreach(func(_))
   }
 
-  private def getOrCreateGauge(registry: MeterRegistry,
-                               name: String, tags: String*): AtomicDouble = {
+  private def getOrCreateGauge(registry: MeterRegistry, name: String, tags: String*)
+                              (unit: Option[String] = None,
+                               desc: Option[String] = None): AtomicDouble = {
     val _tags = Tags.of(tags: _*)
     val id = new Meter.Id(name, _tags, null, null, Meter.Type.GAUGE)
     gaugeHolder.computeIfAbsent(id, _ => {
       val refValue = new AtomicDouble
-      registry.gauge(name, _tags, refValue)
+      Gauge.builder(name, refValue, (r: AtomicDouble) => r.get)
+        .tags(_tags)
+        .baseUnit(unit.orNull)
+        .description(desc.orNull)
+        .register(registry)
       refValue
     })
   }

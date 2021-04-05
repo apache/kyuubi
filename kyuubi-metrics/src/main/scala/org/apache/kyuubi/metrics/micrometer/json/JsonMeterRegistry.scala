@@ -71,13 +71,13 @@ class JsonMeterRegistry(config: JsonRegistryConfig = JsonRegistryConfig.DEFAULT,
                                   distributionStatisticConfig: DistributionStatisticConfig,
                                   pauseDetector: PauseDetector): Timer =
     new StepTimer(id, clock, distributionStatisticConfig, pauseDetector, getBaseTimeUnit,
-      this.config.step.toMillis, false)
+      this.config.step.toMillis, true)
 
   override def newDistributionSummary(id: Meter.Id,
                                       distributionStatisticConfig: DistributionStatisticConfig,
                                       scale: Double): DistributionSummary =
     new StepDistributionSummary(id, clock, distributionStatisticConfig, scale,
-      this.config.step.toMillis, false)
+      this.config.step.toMillis, true)
 
   override protected def getBaseTimeUnit = TimeUnit.MILLISECONDS
 }

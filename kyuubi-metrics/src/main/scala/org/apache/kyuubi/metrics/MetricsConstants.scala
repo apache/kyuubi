@@ -26,17 +26,21 @@ object MetricsConstants {
   final val SESSION = KYUUBI + ".session"
   final val OPERATION = KYUUBI + ".operation"
 
-  final val SERVICE_EXEC_POOL = SERVICE + ".exec.pool.threads"
+  final val SERVICE_THD_POOL = SERVICE + "thread_pool"
+  final val SERVICE_THD_POOL_CORE_SIZE = SERVICE_THD_POOL + ".core_size"
+  final val SERVICE_THD_POOL_MAX_SIZE = SERVICE_THD_POOL + ".max_size"
+  final val SERVICE_THD_POOL_TASK = SERVICE_THD_POOL + ".task"
 
-  final val T_SHR_LV = "share_level"
-
+  final val T_NAME = "name"
   final val T_USER = "user"
-
-  final val T_ERR = "err"
+  final val T_SHR_LV = "share_level"
+  final val T_EXCEPTION = "exception"
 
   final val T_STAT = "status"
-  final val STAT_ALIVE = "alive"
   final val STAT_ACTIVE = "active"
+  final val STAT_QUEUING = "queuing"
+  final val STAT_SCHEDULED = "scheduled"
+  final val STAT_COMPLETED = "completed"
   final val STAT_OPENED = "opened"
   final val STAT_FAILED = "failed"
 

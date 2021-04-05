@@ -40,7 +40,6 @@ class MetricsSuite extends KyuubiFunSuite {
     jsonReportPath = Utils.createTempDir()
     val conf = KyuubiConf()
       .set(MetricsConf.METRICS_ENABLED, true)
-      .set(MetricsConf.METRICS_HISTOGRAM, true)
       .set(MetricsConf.METRICS_EXPORTERS, ExporterType.values.map(_.toString).toSeq)
       .set(MetricsConf.METRICS_JSON_LOCATION, jsonReportPath.toString)
       .set(MetricsConf.METRICS_JSON_INTERVAL, Duration.ofSeconds(1).toMillis)
@@ -78,9 +77,11 @@ class MetricsSuite extends KyuubiFunSuite {
       Metrics.count(OPERATION, T_EVT, EVT_OPEN)(1)
       check(logAppender, s"$OPERATION{$T_EVT=$EVT_OPEN}")
 
-      Metrics.gauge(SERVICE_EXEC_POOL, T_STAT, STAT_ACTIVE)(20181117)
-      check(logAppender, s"$SERVICE_EXEC_POOL{$T_STAT=$STAT_ACTIVE}")
-      assert(ms.registry.find(SERVICE_EXEC_POOL).tag(T_STAT, STAT_ACTIVE).gauge().value() == 20181117)
+      Metrics.gauge(SERVICE_THD_POOL, T_STAT, STAT_ACTIVE)(20181117)
+      check(logAppender, s"$SERVICE_THD_POOL{$T_STAT=$STAT_ACTIVE}")
+      assertResult(20181117) {
+        ms.registry.find(SERVICE_THD_POOL).tag(T_STAT, STAT_ACTIVE).gauge().value()
+      }
     }
   }
 
@@ -93,7 +94,7 @@ class MetricsSuite extends KyuubiFunSuite {
         assert(logs.asScala.exists(_.contains(searchKey)))
       }
 
-    Metrics.gauge(SERVICE_EXEC_POOL, T_STAT, STAT_ACTIVE)(20181117)
+    Metrics.gauge(SERVICE_THD_POOL, T_STAT, STAT_ACTIVE)(20181117)
     check(Paths.get(jsonReportPath.toAbsolutePath.toString, "report.json"), "20181117")
   }
 }

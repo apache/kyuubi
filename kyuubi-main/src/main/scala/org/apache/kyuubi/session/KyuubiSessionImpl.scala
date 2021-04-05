@@ -35,8 +35,8 @@ import org.apache.kyuubi.engine.ShareLevel.{SERVER, ShareLevel}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.ServiceDiscovery._
-import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.Metrics
+import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 import org.apache.kyuubi.util.ThriftUtils
 
@@ -110,6 +110,8 @@ class KyuubiSessionImpl(
           try {
             logSessionInfo(s"Launching SQL engine:\n$builder")
             val process = builder.start
+            // TODO engine long_task_timer
+            // it may not accurate since engine has separated lifecycle than kyuubi server
             var sh = getServerHost(zkClient, appZkNamespace)
             val started = System.currentTimeMillis()
             var exitValue: Option[Int] = None
@@ -119,7 +121,7 @@ class KyuubiSessionImpl(
                 if (exitValue.get != 0) {
                   val error = builder.getError
                   Metrics.count(ENGINE, T_EVT, EVT_FAIL, T_USER, user,
-                    T_ERR, error.getClass.getSimpleName)(1)
+                    T_EXCEPTION, error.getClass.getSimpleName)(1)
                   throw error
                 }
               }

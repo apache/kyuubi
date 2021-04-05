@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.metrics.micrometer
 
-import io.micrometer.core.instrument.binder.jvm.{ClassLoaderMetrics, JvmGcMetrics, JvmMemoryMetrics, JvmThreadMetrics}
+import io.micrometer.core.instrument.binder.jvm._
 import io.micrometer.core.instrument.binder.system.{FileDescriptorMetrics, ProcessorMetrics}
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry
 
@@ -25,11 +25,11 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.metrics.{ExporterType, Metrics}
 import org.apache.kyuubi.metrics.ExporterType._
-import org.apache.kyuubi.metrics.MetricsConf.{METRICS_EXPORTERS, METRICS_HISTOGRAM}
+import org.apache.kyuubi.metrics.MetricsConf.METRICS_EXPORTERS
 import org.apache.kyuubi.service.CompositeService
 
 class MicrometerMetricsService
-  extends CompositeService("MicrometerMetricsSystem") with Logging {
+  extends CompositeService("MicrometerMetricsService") with Logging {
 
   private[metrics] val registry: CompositeMeterRegistry = new CompositeMeterRegistry
 
@@ -50,13 +50,12 @@ class MicrometerMetricsService
   }
 
   override def start(): Unit = synchronized {
-    Metrics.maybeMetricsService = Some(this)
-    Metrics.enableHistogram = conf.get(METRICS_HISTOGRAM)
+    Metrics.maybe = Some(this)
     super.start()
   }
 
   override def stop(): Unit = synchronized {
-    Metrics.maybeMetricsService = None
+    Metrics.maybe = None
     super.stop()
   }
 }

@@ -50,7 +50,7 @@ abstract class KyuubiOperation(
           warn(s"Ignore exception in terminal state with $statementId: $e")
         } else {
           val errorType = e.getClass.getSimpleName
-          Metrics.count(OPERATION, T_STAT, STAT_FAILED, T_ERR, errorType)(1)
+          Metrics.count(OPERATION, T_STAT, STAT_FAILED, T_EXCEPTION, errorType)(1)
           setState(OperationState.ERROR)
           val ke = e match {
             case kse: KyuubiSQLException => kse

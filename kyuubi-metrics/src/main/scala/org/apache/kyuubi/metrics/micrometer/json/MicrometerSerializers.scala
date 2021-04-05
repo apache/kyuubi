@@ -27,8 +27,10 @@ import com.fasterxml.jackson.databind.{ObjectMapper, SerializerProvider}
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import io.micrometer.core.instrument._
+import io.micrometer.core.instrument.binder.BaseUnits
 import io.micrometer.core.instrument.config.NamingConvention
-import io.micrometer.core.instrument.distribution.ValueAtPercentile
+import io.micrometer.core.instrument.distribution.{HistogramSnapshot, ValueAtPercentile}
+import io.micrometer.core.instrument.step._
 
 trait Helper {
 
@@ -39,6 +41,26 @@ trait Helper {
     gen.writeEndObject()
     gen.writeStringField("base_unit", id.getBaseUnit)
     gen.writeStringField("type", id.getType.name().toLowerCase)
+  }
+
+  def writeHistogramSnapshot(gen: JsonGenerator, snapshot: HistogramSnapshot,
+                             step: Duration, timeUnit: Option[TimeUnit]): Unit = {
+    gen.writeObjectField("count", snapshot.count)
+    gen.writeObjectField("rate", snapshot.count / step.getSeconds)
+    gen.writeStringField("rate_unit", "per_second")
+
+    gen.writeObjectField("total", timeUnit.map(u => snapshot.total(u)).getOrElse(snapshot.total))
+    gen.writeObjectField("mean", timeUnit.map(u => snapshot.mean(u)).getOrElse(snapshot.mean))
+    gen.writeObjectField("max", timeUnit.map(u => snapshot.max(u)).getOrElse(snapshot.max))
+
+    // write percentile, i.e. p50, p75, p95, p99, p999
+    snapshot.percentileValues().foreach { p: ValueAtPercentile =>
+      gen.writeObjectField(percentileKey(p.percentile),
+        timeUnit.map(u => p.value(u)).getOrElse(p.value))
+    }
+    timeUnit.foreach { u =>
+      gen.writeStringField("duration_unit", u.toString.toLowerCase)
+    }
   }
 
   private[json] def percentileKey(p: Double): String = {
@@ -52,6 +74,19 @@ trait Helper {
 }
 
 @SerialVersionUID(1L)
+private class BoxedDoubleSerializer(pattern: String)
+  extends StdSerializer[BoxedDouble](classOf[BoxedDouble]) {
+
+  private val formatter = new DecimalFormat(pattern)
+
+  override def serialize(value: BoxedDouble, gen: JsonGenerator,
+                         provider: SerializerProvider): Unit = {
+    if (value == null) gen.writeNull()
+    else gen.writeNumber(formatter.format(value))
+  }
+}
+
+@SerialVersionUID(1L)
 private class GaugeSerializer(nc: NamingConvention = NamingConvention.dot)
   extends StdSerializer[Gauge](classOf[Gauge]) with Helper {
 
@@ -59,88 +94,117 @@ private class GaugeSerializer(nc: NamingConvention = NamingConvention.dot)
                          provider: SerializerProvider): Unit = {
     gen.writeStartObject()
     writeId(gen, nc, gauge.getId)
-    val v: Double = gauge.value()
-    gen.writeObjectField("value", v)
+    gen.writeObjectField("value", gauge.value())
     gen.writeEndObject()
   }
 }
 
 @SerialVersionUID(1L)
-private class CounterSerializer(nc: NamingConvention = NamingConvention.dot,
-                                step: Duration)
-  extends StdSerializer[Counter](classOf[Counter]) with Helper {
+private class StepCounterSerializer(nc: NamingConvention, step: Duration)
+  extends StdSerializer[StepCounter](classOf[StepCounter]) with Helper {
 
-  override def serialize(counter: Counter, gen: JsonGenerator,
+  override def serialize(counter: StepCounter, gen: JsonGenerator,
                          provider: SerializerProvider): Unit = {
     gen.writeStartObject()
     writeId(gen, nc, counter.getId)
     gen.writeObjectField("count", counter.count)
     gen.writeObjectField("rate", counter.count / step.getSeconds)
+    gen.writeStringField("rate_unit", "per_second")
     gen.writeEndObject()
   }
 }
 
 @SerialVersionUID(1L)
-private class TimerSerializer(nc: NamingConvention = NamingConvention.dot,
-                              val step: Duration)
-  extends StdSerializer[Timer](classOf[Timer]) with Helper {
+private class StepTimerSerializer(nc: NamingConvention, val step: Duration)
+  extends StdSerializer[StepTimer](classOf[StepTimer]) with Helper {
 
-  final val rateUnit: TimeUnit = TimeUnit.SECONDS
-  final val durationUnit: TimeUnit = TimeUnit.MILLISECONDS
-
-  override def serialize(timer: Timer, gen: JsonGenerator,
+  override def serialize(timer: StepTimer, gen: JsonGenerator,
                          provider: SerializerProvider): Unit = {
     gen.writeStartObject()
     writeId(gen, nc, timer.getId)
-    val snapshot = timer.takeSnapshot()
-    gen.writeObjectField("count", snapshot.count)
-    gen.writeObjectField("max", snapshot.max(durationUnit))
-    gen.writeObjectField("mean", snapshot.mean(durationUnit))
-    gen.writeObjectField("total", snapshot.total(durationUnit))
-
-    // write percentile, i.e. p50, p75, p95, p99, p999
-    snapshot.percentileValues().foreach { p: ValueAtPercentile =>
-      gen.writeObjectField(percentileKey(p.percentile), p.value(durationUnit))
-    }
-
-    gen.writeObjectField("rate", snapshot.total() / step.getSeconds)
-    gen.writeStringField("duration_unit", "ms")
-    gen.writeStringField("rate_unit", "tps")
-
+    writeHistogramSnapshot(gen, timer.takeSnapshot(), step, Some(TimeUnit.MILLISECONDS))
     gen.writeEndObject()
   }
 }
 
 @SerialVersionUID(1L)
-private class DistributionSummarySerializer(nc: NamingConvention = NamingConvention.dot,
-                                            val step: Duration)
-  extends StdSerializer[DistributionSummary](classOf[DistributionSummary]) with Helper {
-  override def serialize(summary: DistributionSummary,
+private class StepDistributionSummarySerializer(nc: NamingConvention, val step: Duration)
+  extends StdSerializer[StepDistributionSummary](classOf[StepDistributionSummary]) with Helper {
+  override def serialize(summary: StepDistributionSummary,
                          gen: JsonGenerator,
                          provider: SerializerProvider): Unit = {
-    val snapshot = summary.takeSnapshot()
     gen.writeStartObject()
     writeId(gen, nc, summary.getId)
-    gen.writeObjectField("count", snapshot.count)
-    gen.writeObjectField("max", snapshot.max)
-    gen.writeObjectField("mean", snapshot.mean)
-    gen.writeObjectField("total", snapshot.total)
+    writeHistogramSnapshot(gen, summary.takeSnapshot(), step, None)
+    gen.writeEndObject()
+  }
+}
 
-    // write percentile, i.e. p50, p75, p95, p99, p999
-    snapshot.percentileValues().foreach { p: ValueAtPercentile =>
-      gen.writeObjectField(percentileKey(p.percentile), p.value)
-    }
+@SerialVersionUID(1L)
+private class LongTaskTimerSerializer(nc: NamingConvention, val step: Duration)
+  extends StdSerializer[LongTaskTimer](classOf[LongTaskTimer]) with Helper {
 
-    gen.writeObjectField("rate", snapshot.total() / step.getSeconds)
-    gen.writeStringField("duration_unit", "ms")
-    gen.writeStringField("rate_unit", "tps")
+  override def serialize(timer: LongTaskTimer, gen: JsonGenerator,
+                         provider: SerializerProvider): Unit = {
+    gen.writeStartObject()
+    writeId(gen, nc, timer.getId)
+    gen.writeNumberField("active", timer.activeTasks())
+    gen.writeObjectField("duration", timer.duration(TimeUnit.MILLISECONDS))
+    writeHistogramSnapshot(gen, timer.takeSnapshot(), step, Some(TimeUnit.MILLISECONDS))
+    gen.writeEndObject()
+  }
+}
+
+@SerialVersionUID(1L)
+private class TimeGaugeCounterSerializer(nc: NamingConvention, val step: Duration)
+  extends StdSerializer[TimeGauge](classOf[TimeGauge]) with Helper {
+
+  override def serialize(gauge: TimeGauge, gen: JsonGenerator,
+                         provider: SerializerProvider): Unit = {
+    gen.writeStartObject()
+    writeId(gen, nc, gauge.getId)
+    gen.writeObjectField("value", gauge.value(TimeUnit.MILLISECONDS))
+    gen.writeStringField("duration_unit", BaseUnits.MILLISECONDS)
+    gen.writeEndObject()
+  }
+}
+
+@SerialVersionUID(1L)
+private class StepFunctionCounterSerializer(nc: NamingConvention, val step: Duration)
+  extends StdSerializer[StepFunctionCounter[_]](classOf[StepFunctionCounter[_]]) with Helper {
+
+  override def serialize(counter: StepFunctionCounter[_], gen: JsonGenerator,
+                         provider: SerializerProvider): Unit = {
+    gen.writeStartObject()
+    writeId(gen, nc, counter.getId)
+    gen.writeObjectField("count", counter.count)
+    gen.writeObjectField("rate", counter.count / step.getSeconds)
+    gen.writeStringField("rate_unit", "per_second")
+    gen.writeEndObject()
+  }
+}
+
+@SerialVersionUID(1L)
+private class StepFunctionTimerSerializer(nc: NamingConvention, val step: Duration)
+  extends StdSerializer[StepFunctionTimer[_]](classOf[StepFunctionTimer[_]]) with Helper {
+
+  override def serialize(timer: StepFunctionTimer[_], gen: JsonGenerator,
+                         provider: SerializerProvider): Unit = {
+    gen.writeStartObject()
+    writeId(gen, nc, timer.getId)
+    gen.writeObjectField("count", timer.count)
+    gen.writeObjectField("rate", timer.count / step.getSeconds)
+    gen.writeStringField("rate_unit", "per_second")
+    gen.writeObjectField("total", timer.totalTime(TimeUnit.MILLISECONDS))
+    gen.writeObjectField("mean", timer.mean(TimeUnit.MILLISECONDS))
+    gen.writeStringField("duration_unit", BaseUnits.MILLISECONDS)
 
     gen.writeEndObject()
   }
 }
 
 @SerialVersionUID(1L)
-private class MeterSerializer(nc: NamingConvention = NamingConvention.dot)
+private class MeterSerializer(nc: NamingConvention)
   extends StdSerializer[Meter](classOf[Meter]) with Helper {
 
   override def serialize(meter: Meter, gen: JsonGenerator,
@@ -154,30 +218,21 @@ private class MeterSerializer(nc: NamingConvention = NamingConvention.dot)
   }
 }
 
-@SerialVersionUID(1L)
-private class BoxedDoubleSerializer(pattern: String)
-  extends StdSerializer[BoxedDouble](classOf[BoxedDouble]) {
-
-  private val formatter = new DecimalFormat(pattern)
-
-  override def serialize(value: BoxedDouble, gen: JsonGenerator,
-                         provider: SerializerProvider): Unit = {
-    if (value == null) gen.writeNull() else gen.writeNumber(formatter.format(value))
-  }
-}
-
 object MicrometerSerializers {
 
   def registerSerializers(mapper: ObjectMapper,
                           step: Duration,
                           nc: NamingConvention = NamingConvention.dot): Unit = {
     val module = new SimpleModule("kyuubi-micrometer-module")
-    module.addSerializer(new GaugeSerializer(nc))
-    module.addSerializer(new CounterSerializer(nc, step))
-    module.addSerializer(new TimerSerializer(nc, step))
-    module.addSerializer(new DistributionSummarySerializer(nc, step))
-    module.addSerializer(new MeterSerializer(nc))
     module.addSerializer(new BoxedDoubleSerializer("0.####"))
+    module.addSerializer(new GaugeSerializer(nc))
+    module.addSerializer(new StepCounterSerializer(nc, step))
+    module.addSerializer(new StepTimerSerializer(nc, step))
+    module.addSerializer(new LongTaskTimerSerializer(nc, step))
+    module.addSerializer(new StepDistributionSummarySerializer(nc, step))
+    module.addSerializer(new StepFunctionCounterSerializer(nc, step))
+    module.addSerializer(new StepFunctionTimerSerializer(nc, step))
+    module.addSerializer(new MeterSerializer(nc))
     mapper.registerModule(module)
   }
 }
