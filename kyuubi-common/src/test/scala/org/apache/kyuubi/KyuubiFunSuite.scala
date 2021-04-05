@@ -25,6 +25,7 @@ import org.apache.log4j.spi.LoggingEvent
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Outcome}
 import org.scalatest.concurrent.Eventually
 
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.internal.Tests.IS_TESTING
 
 trait KyuubiFunSuite extends FunSuite
@@ -36,6 +37,7 @@ trait KyuubiFunSuite extends FunSuite
   // scalastyle:on
   override def beforeAll(): Unit = {
     System.setProperty(IS_TESTING.key, "true")
+    System.setProperty(KyuubiConf.FRONTEND_BIND_HOST.key, "127.0.0.1")
     doThreadPostAudit()
     super.beforeAll()
   }
