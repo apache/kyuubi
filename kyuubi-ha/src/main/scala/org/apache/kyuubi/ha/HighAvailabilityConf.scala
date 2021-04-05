@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.ha
 
+import java.time.Duration
+
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf}
@@ -90,4 +92,11 @@ object HighAvailabilityConf {
     .checkValues(RetryPolicies.values.map(_.toString))
     .createWithDefault(RetryPolicies.EXPONENTIAL_BACKOFF.toString)
 
+  val HA_ZK_NODE_TIMEOUT: ConfigEntry[Long] =
+    buildConf("ha.zookeeper.node.creation.timeout")
+    .doc("Timeout for creating zookeeper node")
+    .version("1.2.0")
+    .timeConf
+    .checkValue(_ > 0, "Must be positive")
+    .createWithDefault(Duration.ofSeconds(120).toMillis)
 }
