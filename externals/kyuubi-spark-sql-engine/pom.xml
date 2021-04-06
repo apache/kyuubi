@@ -167,7 +167,8 @@
                         <includes>
                             <include>org.apache.kyuubi:kyuubi-common</include>
                             <include>org.apache.kyuubi:kyuubi-ha</include>
-                            <include>org.apache.curator:*</include>
+                            <include>org.apache.curator:curator-framework</include>
+                            <include>org.apache.curator:curator-recipes</include>
                         </includes>
                     </artifactSet>
                     <relocations>
