@@ -36,7 +36,6 @@ trait KyuubiFunSuite extends FunSuite
   with Logging {
   // scalastyle:on
   System.setProperty(KyuubiConf.FRONTEND_BIND_HOST.key, "127.0.0.1")
-  System.setProperty("spark.driver.bindAddress", "127.0.0.1")
   override def beforeAll(): Unit = {
     System.setProperty(IS_TESTING.key, "true")
     doThreadPostAudit()
