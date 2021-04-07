@@ -170,6 +170,7 @@
                             <include>org.apache.curator:curator-client</include>
                             <include>org.apache.curator:curator-framework</include>
                             <include>org.apache.curator:curator-recipes</include>
+                            <include>org.apache.hive:hive-service-rpc</include>
                         </includes>
                     </artifactSet>
                     <relocations>
@@ -178,6 +179,13 @@
                             <shadedPattern>${kyuubi.shade.packageName}.curator</shadedPattern>
                             <includes>
                                 <include>org.apache.curator.**</include>
+                            </includes>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.hive</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.hive</shadedPattern>
+                            <includes>
+                                <include>org.apache.hive.**</include>
                             </includes>
                         </relocation>
                     </relocations>
