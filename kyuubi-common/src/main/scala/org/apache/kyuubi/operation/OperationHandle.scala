@@ -21,10 +21,9 @@ import java.util.Objects
 
 import scala.language.implicitConversions
 
-import org.apache.hive.service.rpc.thrift.{TOperationHandle, TProtocolVersion}
-
 import org.apache.kyuubi.cli.{Handle, HandleIdentifier}
 import org.apache.kyuubi.operation.OperationType.OperationType
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.{TOperationHandle, TProtocolVersion}
 
 case class OperationHandle(
     identifier: HandleIdentifier,

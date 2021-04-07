@@ -17,10 +17,9 @@
 
 package org.apache.kyuubi.engine
 
-import org.apache.curator.utils.ZKPaths
-
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, ShareLevel}
 import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.shade.curator.utils.ZKPaths
 
 case class SQLEngineAppName(
     sharedLevel: ShareLevel, user: String, sessionId: String) {

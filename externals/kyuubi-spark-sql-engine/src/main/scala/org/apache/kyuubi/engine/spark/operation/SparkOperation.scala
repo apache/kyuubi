@@ -21,7 +21,6 @@ import java.time.ZoneId
 import java.util.regex.Pattern
 
 import org.apache.commons.lang3.StringUtils
-import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
@@ -35,6 +34,7 @@ import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.schema.{RowSet, SchemaHelper}
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.{TRowSet, TTableSchema}
 
 abstract class SparkOperation(spark: SparkSession, opType: OperationType, session: Session)
   extends AbstractOperation(opType, session) {

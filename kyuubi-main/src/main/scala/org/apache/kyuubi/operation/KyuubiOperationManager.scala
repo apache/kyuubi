@@ -19,13 +19,12 @@ package org.apache.kyuubi.operation
 
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TFetchResultsReq, TRowSet, TSessionHandle}
-
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.{Session, SessionHandle}
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.{TCLIService, TFetchResultsReq, TRowSet, TSessionHandle}
 import org.apache.kyuubi.util.ThriftUtils
 
 class KyuubiOperationManager private (name: String) extends OperationManager(name) {

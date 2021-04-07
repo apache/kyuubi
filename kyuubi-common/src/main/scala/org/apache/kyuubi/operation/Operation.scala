@@ -19,11 +19,10 @@ package org.apache.kyuubi.operation
 
 import java.util.concurrent.Future
 
-import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet, TTableSchema}
-
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.{TProtocolVersion, TRowSet, TTableSchema}
 
 trait Operation {
 

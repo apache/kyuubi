@@ -47,6 +47,9 @@ matrix:
 
 install:
   - mvn --version
+  - cd kyuubi-shaded
+  - mvn clean install
+  - cd -
 
 script:
   - mvn clean install $PROFILE -Dmaven.plugin.scalatest.exclude.tags=$EXCLUDE_TAGS -Dmaven.javadoc.skip=true -V

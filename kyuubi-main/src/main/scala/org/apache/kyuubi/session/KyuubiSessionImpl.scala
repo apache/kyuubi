@@ -23,10 +23,6 @@ import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
-import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TOpenSessionReq, TProtocolVersion, TSessionHandle}
-import org.apache.thrift.TException
-import org.apache.thrift.protocol.TBinaryProtocol
-import org.apache.thrift.transport.{TSocket, TTransport}
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -39,6 +35,10 @@ import org.apache.kyuubi.ha.client.ServiceDiscovery._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TOpenSessionReq, TProtocolVersion, TSessionHandle}
+import org.apache.kyuubi.shade.thrift.TException
+import org.apache.kyuubi.shade.thrift.protocol.TBinaryProtocol
+import org.apache.kyuubi.shade.thrift.transport.{TSocket, TTransport}
 import org.apache.kyuubi.util.ThriftUtils
 
 class KyuubiSessionImpl(

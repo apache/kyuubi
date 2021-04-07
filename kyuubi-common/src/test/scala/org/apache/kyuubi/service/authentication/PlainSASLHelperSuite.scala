@@ -19,12 +19,11 @@ package org.apache.kyuubi.service.authentication
 
 import java.security.Security
 
-import org.apache.thrift.transport.{TSaslServerTransport, TSocket}
-
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.{FrontendService, NoopServer}
 import org.apache.kyuubi.service.authentication.PlainSASLServer.SaslPlainProvider
+import org.apache.kyuubi.shade.thrift.transport.{TSaslServerTransport, TSocket}
 
 class PlainSASLHelperSuite extends KyuubiFunSuite {
 

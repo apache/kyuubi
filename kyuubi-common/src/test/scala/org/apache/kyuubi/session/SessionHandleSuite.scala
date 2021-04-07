@@ -17,9 +17,8 @@
 
 package org.apache.kyuubi.session
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
-
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.TProtocolVersion
 
 class SessionHandleSuite extends KyuubiFunSuite {
   test("SessionHandle") {

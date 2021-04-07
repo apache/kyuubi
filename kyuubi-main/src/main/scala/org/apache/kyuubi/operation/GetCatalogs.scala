@@ -17,9 +17,9 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TGetCatalogsReq, TSessionHandle}
-
 import org.apache.kyuubi.session.Session
+
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.{TCLIService, TGetCatalogsReq, TSessionHandle}
 
 class GetCatalogs(
     session: Session,

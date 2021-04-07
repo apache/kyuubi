@@ -17,12 +17,11 @@
 
 package org.apache.kyuubi.engine.spark
 
-import org.apache.curator.framework.CuratorFramework
-
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_ACL_ENABLED, HA_ZK_NAMESPACE, HA_ZK_QUORUM}
 import org.apache.kyuubi.ha.client.ServiceDiscovery
+import org.apache.kyuubi.shade.curator.framework.CuratorFramework
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
 trait WithDiscoverySparkSQLEngine extends WithSparkSQLEngine {

@@ -19,7 +19,7 @@ package org.apache.kyuubi
 
 import java.lang.reflect.{InvocationTargetException, UndeclaredThrowableException}
 
-import org.apache.hive.service.rpc.thrift.TStatusCode
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.TStatusCode
 
 class KyuubiSQLExceptionSuite extends KyuubiFunSuite {
 

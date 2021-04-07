@@ -17,10 +17,9 @@
 
 package org.apache.kyuubi.session
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
-
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.{NoopOperationManager, OperationManager}
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.TProtocolVersion
 
 class NoopSessionManager extends SessionManager("noop") {
   override val operationManager: OperationManager = new NoopOperationManager()

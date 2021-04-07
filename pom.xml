@@ -105,8 +105,6 @@
         <maven.plugin.download.version>1.6.0</maven.plugin.download.version>
         <maven.plugin.silencer.version>1.6.0</maven.plugin.silencer.version>
         <maven.plugin.rat.version>0.13</maven.plugin.rat.version>
-        <!-- Package to use when relocating shaded classes. -->
-        <kyuubi.shade.packageName>org.apache.kyuubi.shade</kyuubi.shade.packageName>
     </properties>
 
     <repositories>
@@ -818,70 +816,6 @@
             </dependency>
 
             <dependency>
-                <groupId>org.apache.curator</groupId>
-                <artifactId>curator-framework</artifactId>
-                <version>${curator.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>zookeeper</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.curator</groupId>
-                <artifactId>curator-test</artifactId>
-                <version>${curator.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>io.netty</groupId>
-                        <artifactId>netty-all</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>jline</groupId>
-                        <artifactId>jline</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>zookeeper</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.google.guava</groupId>
-                        <artifactId>guava</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.curator</groupId>
-                <artifactId>curator-recipes</artifactId>
-                <version>${curator.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>zookeeper</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.curator</groupId>
-                <artifactId>curator-client</artifactId>
-                <version>${curator.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.google.guava</groupId>
-                        <artifactId>guava</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>zookeeper</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
@@ -1441,6 +1375,12 @@
             <properties>
                 <spark.archive.download.skip>true</spark.archive.download.skip>
             </properties>
+        </profile>
+        <profile>
+            <id>kyuubi-shaded</id>
+            <modules>
+                <module>kyuubi-shaded</module>
+            </modules>
         </profile>
     </profiles>
 </project>

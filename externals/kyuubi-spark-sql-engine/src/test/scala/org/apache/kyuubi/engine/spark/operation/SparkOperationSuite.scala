@@ -24,9 +24,6 @@ import scala.util.Random
 
 import org.apache.hive.common.util.HiveVersionInfo
 import org.apache.hive.service.cli.HiveSQLException
-import org.apache.hive.service.rpc.thrift._
-import org.apache.hive.service.rpc.thrift.TCLIService.Iface
-import org.apache.hive.service.rpc.thrift.TOperationState._
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
 import org.apache.spark.sql.types._
 
@@ -35,6 +32,9 @@ import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.JDBCTests
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
+import org.apache.kyuubi.shade.hive.service.rpc.thrift._
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.TCLIService.Iface
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.TOperationState._
 
 class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
 
