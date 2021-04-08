@@ -44,6 +44,10 @@ matrix:
       env:
         - PROFILE="-Pspark-3.0 -Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.1 -Dspark.archive.name=spark-3.1.1-bin-hadoop2.7.tgz"
         - EXCLUDE_TAGS="org.apache.kyuubi.tags.DataLakeTest"
+    - name: Test Kyuubi w/ -Pspark-3.2-snapshot w/ Spark 3.2 nightly build
+      env:
+        - PROFILE="-Pspark-3.2-snapshot -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper"
+        - EXCLUDE_TAGS="org.apache.kyuubi.tags.DataLakeTest"
 
 install:
   - mvn --version
