@@ -84,7 +84,7 @@ Having fun with Hue and Kyuubi!
 
 ![](../imgs/hue/spark_sql_docker.png)
 
-### For CDH 6.x Users
+## For CDH 6.x Users
 
 If you are using CDH 6.x, there is a trick that CDH 6.x blocks Spark in default, you need to modify the configuration to 
 overwrite the `desktop.app_blacklist` to remove this restriction.
