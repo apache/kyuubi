@@ -216,10 +216,17 @@ org.apache.hadoop:hadoop-client-api
 org.apache.hadoop:hadoop-client-runtime
 org.apache.hive:hive-service-rpc
 org.apache.htrace:htrace-core4
+com.fasterxml.jackson.core:jackson-annotations
+com.fasterxml.jackson.core:jackson-core
+com.fasterxml.jackson.core:jackson-databind
 org.javassist:javassist
 org.apache.thrift:libfb303
 org.apache.thrift:libthrift
 log4j:log4j
+io.dropwizard.metrics:metrics-core
+io.dropwizard.metrics:metrics-jmx
+io.dropwizard.metrics:metrics-json
+io.dropwizard.metrics:metrics-jvm
 org.apache.zookeeper:zookeeper
 spark-*-bin-*.tgz
 
