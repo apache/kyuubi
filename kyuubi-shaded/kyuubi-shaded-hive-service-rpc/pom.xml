@@ -28,7 +28,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>kyuubi-shaded-hive-service-rpc</artifactId>
-    <name>Kyuubi Project Shaded Hive Service Rpc</name>
+    <name>Kyuubi Project Shade Hive Service Rpc</name>
     <packaging>jar</packaging>
 
     <dependencies>

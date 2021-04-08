@@ -67,7 +67,6 @@
         <commons-codec.version>1.15</commons-codec.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <commons-lang3.version>3.10</commons-lang3.version>
-        <curator.version>2.12.0</curator.version>
         <guava.version>30.1-jre</guava.version>
         <hadoop.version>3.2.2</hadoop.version>
         <hadoop.binary.version>2.7</hadoop.binary.version>

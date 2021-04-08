@@ -28,7 +28,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>kyuubi-shaded-curator</artifactId>
-    <name>Kyuubi Project Shaded curator</name>
+    <name>Kyuubi Project Shade Apache Curator</name>
     <packaging>jar</packaging>
 
     <dependencies>
