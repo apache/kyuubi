@@ -26,8 +26,8 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.operation.OperationManager
 import org.apache.kyuubi.service.CompositeService
-import org.apache.kyuubi.util.ThreadUtils
 import org.apache.kyuubi.shade.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.util.ThreadUtils
 
 /**
  * The [[SessionManager]] holds the all the connected [[Session]]s, provides us the APIs to
