@@ -95,14 +95,11 @@
     </dependencies>
 
     <build>
-        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
-        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
                 <configuration>
-                    <shadedArtifactAttached>false</shadedArtifactAttached>
                     <artifactSet>
                         <includes>
                             <include>org.apache.curator:curator-client</include>
@@ -129,14 +126,6 @@
                         </relocation>
                     </relocations>
                 </configuration>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

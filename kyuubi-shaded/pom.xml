@@ -22,13 +22,6 @@
     <version>1.2.0-SNAPSHOT</version>
     <modelVersion>4.0.0</modelVersion>
 
-    <parent>
-        <artifactId>kyuubi</artifactId>
-        <groupId>org.apache.kyuubi</groupId>
-        <version>1.2.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
-    </parent>
-
     <groupId>org.apache.kyuubi</groupId>
     <artifactId>kyuubi-shaded</artifactId>
     <name>Kyuubi Project Shaded Dependencies</name>
@@ -46,4 +39,24 @@
         <module>kyuubi-shaded-curator</module>
         <module>kyuubi-shaded-hive-service-rpc</module>
     </modules>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <configuration>
+                    <shadedArtifactAttached>false</shadedArtifactAttached>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
