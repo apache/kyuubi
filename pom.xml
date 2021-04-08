@@ -1430,7 +1430,7 @@
         <profile>
             <id>spark-hadoop-3.2</id>
             <properties>
-                <spark.hadoop.binary.version>3.2</spark.hadoop.binary.version>
+                <hadoop.binary.version>3.2</hadoop.binary.version>
             </properties>
         </profile>
 
