@@ -59,8 +59,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     this.conf = conf
     try {
       hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
-      val serverHost = conf.get(FRONTEND_BIND_HOST)
-      serverAddr = serverHost.map(InetAddress.getByName).getOrElse(InetAddress.getLocalHost)
+      serverAddr = findFrontendServerHost()
       portNum = conf.get(FRONTEND_BIND_PORT)
       val minThreads = conf.get(FRONTEND_MIN_WORKER_THREADS)
       val maxThreads = conf.get(FRONTEND_MAX_WORKER_THREADS)
@@ -102,6 +101,15 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
           s"Failed to initialize frontend service on $serverAddr:$portNum.", e)
     }
     super.initialize(conf)
+  }
+
+  private def findFrontendServerHost(): InetAddress = {
+    val serverHostOverride = System.getenv("KYUUBI_FRONTEND_BIND_HOST")
+    if (serverHostOverride != null) {
+      InetAddress.getByName(serverHostOverride)
+    } else {
+      conf.get(FRONTEND_BIND_HOST).map(InetAddress.getByName).getOrElse(InetAddress.getLocalHost)
+    }
   }
 
   def connectionUrl: String = {
