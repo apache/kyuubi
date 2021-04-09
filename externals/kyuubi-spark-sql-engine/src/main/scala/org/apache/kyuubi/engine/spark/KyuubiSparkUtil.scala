@@ -23,7 +23,8 @@ import org.apache.spark.sql.SparkSession
 
 object KyuubiSparkUtil {
 
-  def diagnostics(spark: SparkSession): String = {
+  lazy val diagnostics: String = {
+    val spark = SparkSession.active
     val sc = spark.sparkContext
     val webUrl = sc.getConf.getOption(
       "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")

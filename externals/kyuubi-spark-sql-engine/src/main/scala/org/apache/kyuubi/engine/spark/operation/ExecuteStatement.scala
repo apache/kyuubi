@@ -67,7 +67,7 @@ class ExecuteStatement(
   private def executeStatement(): Unit = {
     try {
       setState(OperationState.RUNNING)
-      info(KyuubiSparkUtil.diagnostics(spark))
+      info(KyuubiSparkUtil.diagnostics)
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
       spark.sparkContext.setJobGroup(statementId, statement, forceCancel)
       result = spark.sql(statement)

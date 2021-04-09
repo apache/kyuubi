@@ -116,7 +116,7 @@ object SparkSQLEngine extends Logging {
     try {
       spark = createSpark()
       engine = startEngine(spark)
-      info(KyuubiSparkUtil.diagnostics(spark))
+      info(KyuubiSparkUtil.diagnostics)
       // blocking main thread
       countDownLatch.await()
     } catch {
