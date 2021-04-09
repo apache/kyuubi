@@ -75,6 +75,7 @@ jobs:
           mvn clean install ${{ matrix.profiles }} -Dmaven.javadoc.skip=true -V
           bash <(curl -s https://codecov.io/bash)
       - name: Detected Dependency List Change
+        if: ${{ ! contains(matrix.profiles, 'spark-3.2-snapshot') }}
         run: build/dependency.sh
       - name: Upload unit tests log
         if: failure()
