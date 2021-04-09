@@ -20,12 +20,11 @@ package org.apache.kyuubi.operation
 import java.sql.{DriverManager, ResultSet, Statement}
 import java.util.Locale
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TOpenSessionReq, TSessionHandle}
-import org.apache.thrift.protocol.TBinaryProtocol
-import org.apache.thrift.transport.TSocket
-
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TOpenSessionReq, TSessionHandle}
+import org.apache.kyuubi.shade.thrift.protocol.TBinaryProtocol
+import org.apache.kyuubi.shade.thrift.transport.TSocket
 
 trait JDBCTestUtils extends KyuubiFunSuite {
 

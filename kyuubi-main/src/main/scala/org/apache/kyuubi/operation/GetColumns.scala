@@ -17,9 +17,8 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TGetColumnsReq, TSessionHandle}
-
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.{TCLIService, TGetColumnsReq, TSessionHandle}
 
 class GetColumns(
     session: Session,

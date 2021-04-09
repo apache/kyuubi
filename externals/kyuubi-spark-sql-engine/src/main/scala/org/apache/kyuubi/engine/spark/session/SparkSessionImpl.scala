@@ -17,9 +17,8 @@
 
 package org.apache.kyuubi.engine.spark.session
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
-
 import org.apache.kyuubi.session.{AbstractSession, SessionManager}
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.TProtocolVersion
 
 class SparkSessionImpl(
     protocol: TProtocolVersion,

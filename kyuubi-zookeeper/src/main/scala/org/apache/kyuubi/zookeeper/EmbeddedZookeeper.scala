@@ -21,10 +21,9 @@ import java.io.File
 
 import scala.collection.JavaConverters._
 
-import org.apache.curator.test.{InstanceSpec, TestingServer}
-
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.{AbstractService, ServiceState}
+import org.apache.kyuubi.shade.curator.test.{InstanceSpec, TestingServer}
 import org.apache.kyuubi.zookeeper.ZookeeperConf._
 
 class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {

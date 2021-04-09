@@ -21,7 +21,7 @@ import java.sql.{Date, SQLException, SQLTimeoutException, Timestamp}
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq, TStatusCode}
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq, TStatusCode}
 
 trait JDBCTests extends BasicJDBCTests {
   test("execute statement -  select null") {

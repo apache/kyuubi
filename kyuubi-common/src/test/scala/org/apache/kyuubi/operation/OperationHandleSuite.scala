@@ -17,12 +17,11 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
-import org.apache.hive.service.rpc.thrift.TProtocolVersion._
-
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.operation.OperationType._
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.TProtocolVersion._
 
 class OperationHandleSuite extends KyuubiFunSuite {
 

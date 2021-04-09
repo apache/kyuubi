@@ -19,10 +19,10 @@ package org.apache.kyuubi.schema
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TCLIServiceConstants, TTypeId}
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.{TCLIServiceConstants, TTypeId}
 
 class SchemaHelperSuite extends KyuubiFunSuite {
 

@@ -21,11 +21,10 @@ import java.nio.file.{Files, Paths}
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
-
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
 import org.apache.kyuubi.operation.{OperationHandle, OperationType}
 import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.TProtocolVersion
 
 class OperationLogSuite extends KyuubiFunSuite {
 

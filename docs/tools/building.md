@@ -8,9 +8,15 @@
 
 ## Building Kyuubi with Apache Maven
 
+Apache Curator and Hive Service RPC are shaded to avoid conflicts with external jars.
+
+You need install these shaded modules locally at first.
+
 **Kyuubi** is built based on [Apache Maven](http://maven.apache.org),
 
 ```bash
+./build/mvn clean install -pl :kyuubi-shaded-curator,:kyuubi-shaded-hive-service-rpc -am -Pkyuubi-shaded
+
 ./build/mvn clean package -DskipTests
 ```
 

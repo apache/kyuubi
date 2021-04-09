@@ -25,12 +25,6 @@ import javax.security.auth.login.Configuration
 
 import scala.collection.JavaConverters._
 
-import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
-import org.apache.curator.framework.recipes.nodes.PersistentEphemeralNode
-import org.apache.curator.framework.state.{ConnectionState, ConnectionStateListener}
-import org.apache.curator.framework.state.ConnectionState.{CONNECTED, LOST, RECONNECTED}
-import org.apache.curator.retry._
-import org.apache.curator.utils.ZKPaths
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager.JaasConfiguration
 import org.apache.zookeeper.{WatchedEvent, Watcher}
@@ -43,6 +37,12 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.ServiceDiscovery._
 import org.apache.kyuubi.service.{AbstractService, Serverable}
+import org.apache.kyuubi.shade.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
+import org.apache.kyuubi.shade.curator.framework.recipes.nodes.{PersistentEphemeralNode, PersistentNode}
+import org.apache.kyuubi.shade.curator.framework.state.{ConnectionState, ConnectionStateListener}
+import org.apache.kyuubi.shade.curator.framework.state.ConnectionState.{CONNECTED, LOST, RECONNECTED}
+import org.apache.kyuubi.shade.curator.retry._
+import org.apache.kyuubi.shade.curator.utils.ZKPaths
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
 
 /**
@@ -59,14 +59,14 @@ abstract class ServiceDiscovery private (
     this(classOf[ServiceDiscovery].getSimpleName, server)
 
   private var _zkClient: CuratorFramework = _
-  private var _serviceNode: PersistentEphemeralNode = _
+  private var _serviceNode: PersistentNode = _
   /**
    * a pre-defined namespace used to publish the instance of the associate service
    */
   private var _namespace: String = _
 
   def zkClient: CuratorFramework = _zkClient
-  def serviceNode: PersistentEphemeralNode = _serviceNode
+  def serviceNode: PersistentNode = _serviceNode
   def namespace: String = _namespace
 
   override def initialize(conf: KyuubiConf): Unit = {

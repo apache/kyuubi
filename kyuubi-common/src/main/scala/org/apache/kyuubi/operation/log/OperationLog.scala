@@ -22,11 +22,10 @@ import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 
-import org.apache.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn}
-
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn}
 
 object OperationLog extends Logging {
 

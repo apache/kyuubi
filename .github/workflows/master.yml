@@ -67,6 +67,8 @@ jobs:
           key: ${{ runner.os }}-maven-io-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-io-
+      - name: install kyuubi-shaded jars
+        run: mvn clean install -pl :kyuubi-shaded-curator,:kyuubi-shaded-hive-service-rpc -am -Pkyuubi-shaded
       - name: Build with Maven
         run: |
           mvn clean install ${{ matrix.profiles }} -Dmaven.javadoc.skip=true -V

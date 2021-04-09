@@ -24,16 +24,16 @@ import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hive.service.rpc.thrift._
-import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
-import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TThreadPoolServer}
-import org.apache.thrift.transport.{TServerSocket, TTransport}
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.shade.hive.service.rpc.thrift._
+import org.apache.kyuubi.shade.thrift.protocol.{TBinaryProtocol, TProtocol}
+import org.apache.kyuubi.shade.thrift.server.{ServerContext, TServer, TServerEventHandler, TThreadPoolServer}
+import org.apache.kyuubi.shade.thrift.transport.{TServerSocket, TTransport}
 import org.apache.kyuubi.util.{ExecutorPoolCaptureOom, KyuubiHadoopUtils, NamedThreadFactory}
 
 class FrontendService private (name: String, be: BackendService, oomHook: Runnable)

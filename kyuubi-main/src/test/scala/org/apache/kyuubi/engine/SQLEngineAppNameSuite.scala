@@ -17,11 +17,10 @@
 
 package org.apache.kyuubi.engine
 
-import org.apache.curator.utils.ZKPaths
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
-
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.shade.curator.utils.ZKPaths
+import org.apache.kyuubi.shade.hive.service.rpc.thrift.TProtocolVersion
 
 class SQLEngineAppNameSuite extends KyuubiFunSuite {
   import ShareLevel._
