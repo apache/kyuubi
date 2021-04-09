@@ -34,30 +34,28 @@ You can configure the environment variables in `$KYUUBI_HOME/conf/kyuubi-env.sh`
 # limitations under the License.
 #
 #
-# - JAVA_HOME                   Java runtime to use. By default use "java" from PATH.
+# - JAVA_HOME               Java runtime to use. By default use "java" from PATH.
 #
 #
-# - KYUUBI_CONF_DIR             Directory containing the Kyuubi configurations to use.
-#                               (Default: $KYUUBI_HOME/conf)
-# - KYUUBI_LOG_DIR              Directory for Kyuubi server-side logs.
-#                               (Default: $KYUUBI_HOME/logs)
-# - KYUUBI_PID_DIR              Directory stores the Kyuubi instance pid file.
-#                               (Default: $KYUUBI_HOME/pid)
-# - KYUUBI_MAX_LOG_FILES        Maximum number of Kyuubi server logs can rotate to.
-#                               (Default: 5)
-# - KYUUBI_JAVA_OPTS            JVM options for the Kyuubi server itself in the form "-Dx=y".
-#                               (Default: none).
-# - KYUUBI_NICENESS             The scheduling priority for Kyuubi server.
-#                               (Default: 0)
-# - KYUUBI_WORK_DIR_ROOT        Root directory for launching sql engine applications.
-#                               (Default: $KYUUBI_HOME/work)
-# - HADOOP_CONF_DIR             Directory containing the Hadoop / YARN configuration to use.
+# - KYUUBI_CONF_DIR         Directory containing the Kyuubi configurations to use.
+#                           (Default: $KYUUBI_HOME/conf)
+# - KYUUBI_LOG_DIR          Directory for Kyuubi server-side logs.
+#                           (Default: $KYUUBI_HOME/logs)
+# - KYUUBI_PID_DIR          Directory stores the Kyuubi instance pid file.
+#                           (Default: $KYUUBI_HOME/pid)
+# - KYUUBI_MAX_LOG_FILES    Maximum number of Kyuubi server logs can rotate to.
+#                           (Default: 5)
+# - KYUUBI_JAVA_OPTS        JVM options for the Kyuubi server itself in the form "-Dx=y".
+#                           (Default: none).
+# - KYUUBI_NICENESS         The scheduling priority for Kyuubi server.
+#                           (Default: 0)
+# - KYUUBI_WORK_DIR_ROOT    Root directory for launching sql engine applications.
+#                           (Default: $KYUUBI_HOME/work)
+# - HADOOP_CONF_DIR         Directory containing the Hadoop / YARN configuration to use.
 #
-# - SPARK_HOME                  Spark distribution which you would like to use in Kyuubi.
-# - SPARK_CONF_DIR              Optional directory where the Spark configuration lives.
-#                               (Default: $SPARK_HOME/conf)
-#
-# - KYUUBI_FRONTEND_BIND_HOST   IP address for the frontend server to bind to.
+# - SPARK_HOME              Spark distribution which you would like to use in Kyuubi.
+# - SPARK_CONF_DIR          Optional directory where the Spark configuration lives.
+#                           (Default: $SPARK_HOME/conf)
 #
 
 

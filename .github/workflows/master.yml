@@ -39,7 +39,6 @@ jobs:
           - '-Pspark-3.1 -Dhadoop.binary.version=3.2'
     env:
       SPARK_LOCAL_IP: 127.0.0.1
-      KYUUBI_FRONTEND_BIND_HOST: 127.0.0.1
     steps:
       - uses: actions/checkout@v2
       - name: Setup JDK 1.8
