@@ -132,6 +132,17 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
+
+        <repository>
+            <id>Apache Snapshots Repository</id>
+            <url>https://repository.apache.org/snapshots/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
     </repositories>
 
     <pluginRepositories>
@@ -1416,6 +1427,13 @@
 
         <profile>
             <id>spark-3.0</id>
+        </profile>
+
+        <profile>
+            <id>spark-3.2-snapshot</id>
+            <properties>
+                <spark.version>3.2.0-SNAPSHOT</spark.version>
+            </properties>
         </profile>
 
         <profile>
