@@ -72,6 +72,7 @@ trait WithKyuubiServer extends KyuubiFunSuite {
     super.afterAll()
   }
 
+  // TODO: KYUUBI-504: forbid setting FRONTEND_BIND_HOST by connection string in engine side
   protected def getJdbcUrl: String =
-    s"jdbc:hive2://${server.connectionUrl}/;${KyuubiConf.FRONTEND_BIND_HOST.key}=127.0.0.1"
+    s"jdbc:hive2://${server.connectionUrl}/;#${KyuubiConf.FRONTEND_BIND_HOST.key}=127.0.0.1"
 }
