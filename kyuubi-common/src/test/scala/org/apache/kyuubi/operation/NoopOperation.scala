@@ -26,7 +26,7 @@ import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.shade.hive.service.rpc.thrift.{TColumn, TColumnDesc, TPrimitiveTypeEntry, TRowSet, TStringColumn, TTableSchema, TTypeDesc, TTypeEntry, TTypeId}
+import org.apache.kyuubi.shade.hive.service.rpc.thrift._
 import org.apache.kyuubi.util.ThriftUtils
 
 class NoopOperation(typ: OperationType, session: Session, shouldFail: Boolean = false)
