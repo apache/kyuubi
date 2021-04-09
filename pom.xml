@@ -1169,7 +1169,7 @@
                             <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
                             <spark.driver.memory>2g</spark.driver.memory>
                             <kyuubi.metrics.json.report.location>${project.build.directory}/metrics</kyuubi.metrics.json.report.location>
-                            <kyuubi.frontend.bind.host>127.0.0.1</kyuubi.frontend.bind.host>
+                            <kyuubi.frontend.bind.host>localhost</kyuubi.frontend.bind.host>
                         </systemProperties>
                         <tagsToExclude>${maven.plugin.scalatest.exclude.tags}</tagsToExclude>
                     </configuration>

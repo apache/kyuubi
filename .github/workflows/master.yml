@@ -39,7 +39,7 @@ jobs:
           - '-Pspark-3.1 -Dhadoop.binary.version=3.2'
           - '-Pspark-3.2-snapshot -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.DataLakeTest'
     env:
-      SPARK_LOCAL_IP: 127.0.0.1
+      SPARK_LOCAL_IP: localhost
     steps:
       - uses: actions/checkout@v2
       - name: Setup JDK 1.8
