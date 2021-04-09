@@ -133,6 +133,11 @@ SPARK_VERSION=$("$MVN" help:evaluate -Dexpression=spark.version $@ 2>/dev/null\
     | grep -v "WARNING"\
     | tail -n 1)
 
+SPARK_ARCHIVE_NAME=$("$MVN" help:evaluate -Dexpression=spark.archive.name $@ 2>/dev/null\
+    | grep -v "INFO"\
+    | grep -v "WARNING"\
+    | tail -n 1)
+
 SPARK_HADOOP_VERSION=$("$MVN" help:evaluate -Dexpression=hadoop.binary.version $@ 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
@@ -147,6 +152,20 @@ HIVE_VERSION=$("$MVN" help:evaluate -Dexpression=hive.version $@ 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | tail -n 1)
+
+SPARK_ARCHIVE_NAME_NO_EXT=${SPARK_ARCHIVE_NAME%".tgz"}
+FINAL_SPARK_VERSION=$(echo $SPARK_ARCHIVE_NAME_NO_EXT|awk -F'-' '{print $2}')
+FINAL_SPARK_HADOOP_VERSION=${SPARK_ARCHIVE_NAME_NO_EXT#"spark-$FINAL_SPARK_VERSION-bin-hadoop"}
+
+if [[ "$FINAL_SPARK_VERSION" != "$SPARK_VERSION" ]]; then
+  echo "Final spark version is $FINAL_SPARK_VERSION instead of $SPARK_VERSION"
+  SPARK_VERSION=$FINAL_SPARK_VERSION
+fi
+
+if [[ "$FINAL_SPARK_HADOOP_VERSION" != "$SPARK_HADOOP_VERSION" ]]; then
+  echo "Final spark hadoop version is $FINAL_SPARK_HADOOP_VERSION instead of $SPARK_HADOOP_VERSION"
+  SPARK_HADOOP_VERSION=$FINAL_SPARK_HADOOP_VERSION
+fi
 
 echo "Building Kyuubi package of version $VERSION against Spark version - $SPARK_VERSION"
 
