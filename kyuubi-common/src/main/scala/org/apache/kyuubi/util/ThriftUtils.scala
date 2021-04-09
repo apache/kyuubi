@@ -17,8 +17,9 @@
 
 package org.apache.kyuubi.util
 
+import org.apache.hive.service.rpc.thrift.{TRow, TRowSet, TStatus, TStatusCode}
+
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.shade.hive.service.rpc.thrift.{TRow, TRowSet, TStatus, TStatusCode}
 
 object ThriftUtils {
 

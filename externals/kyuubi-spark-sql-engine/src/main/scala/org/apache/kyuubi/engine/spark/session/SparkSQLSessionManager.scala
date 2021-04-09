@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.session
 
+import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.{AnalysisException, SparkSession}
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -25,7 +26,6 @@ import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.session._
-import org.apache.kyuubi.shade.hive.service.rpc.thrift.TProtocolVersion
 
 /**
  * A [[SessionManager]] constructed with [[SparkSession]] which give it the ability to talk with

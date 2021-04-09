@@ -17,8 +17,9 @@
 
 package org.apache.kyuubi.operation
 
+import org.apache.hive.service.rpc.thrift.{TCLIService, TGetTypeInfoReq, TSessionHandle}
+
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.shade.hive.service.rpc.thrift.{TCLIService, TGetTypeInfoReq, TSessionHandle}
 
 class GetTypeInfo(
      session: Session,

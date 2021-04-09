@@ -20,7 +20,7 @@ package org.apache.kyuubi.cli
 import java.nio.ByteBuffer
 import java.util.{Objects, UUID}
 
-import org.apache.kyuubi.shade.hive.service.rpc.thrift.THandleIdentifier
+import org.apache.hive.service.rpc.thrift.THandleIdentifier
 
 class HandleIdentifier(val publicId: UUID, val secretId: UUID) {
 

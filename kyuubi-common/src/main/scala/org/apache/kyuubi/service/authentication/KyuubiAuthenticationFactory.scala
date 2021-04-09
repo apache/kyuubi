@@ -25,14 +25,14 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.authentication.util.KerberosName
 import org.apache.hadoop.security.authorize.ProxyUsers
+import org.apache.hive.service.rpc.thrift.TCLIService.Iface
+import org.apache.thrift.TProcessorFactory
+import org.apache.thrift.transport.{TTransportException, TTransportFactory}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.authentication.AuthTypes._
-import org.apache.kyuubi.shade.hive.service.rpc.thrift.TCLIService.Iface
-import org.apache.kyuubi.shade.thrift.TProcessorFactory
-import org.apache.kyuubi.shade.thrift.transport.{TTransportException, TTransportFactory}
 
 class KyuubiAuthenticationFactory(conf: KyuubiConf) {
 

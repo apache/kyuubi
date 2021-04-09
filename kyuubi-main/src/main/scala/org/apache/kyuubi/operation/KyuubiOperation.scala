@@ -19,6 +19,8 @@ package org.apache.kyuubi.operation
 
 import com.codahale.metrics.MetricRegistry
 import org.apache.commons.lang3.StringUtils
+import org.apache.hive.service.rpc.thrift._
+import org.apache.thrift.transport.TTransportException
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.metrics.MetricsConstants.STATEMENT_FAIL
@@ -26,8 +28,6 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.shade.hive.service.rpc.thrift._
-import org.apache.kyuubi.shade.thrift.transport.TTransportException
 import org.apache.kyuubi.util.ThriftUtils
 
 abstract class KyuubiOperation(

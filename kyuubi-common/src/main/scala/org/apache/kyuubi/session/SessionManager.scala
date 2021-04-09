@@ -21,12 +21,13 @@ import java.util.concurrent.{ConcurrentHashMap, Future, ThreadPoolExecutor, Time
 
 import scala.collection.JavaConverters._
 
+import org.apache.hive.service.rpc.thrift.TProtocolVersion
+
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.operation.OperationManager
 import org.apache.kyuubi.service.CompositeService
-import org.apache.kyuubi.shade.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.kyuubi.util.ThreadUtils
 
 /**

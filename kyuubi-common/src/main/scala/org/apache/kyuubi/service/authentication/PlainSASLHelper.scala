@@ -22,12 +22,13 @@ import java.util.Collections
 import javax.security.auth.callback.{Callback, CallbackHandler, NameCallback, PasswordCallback, UnsupportedCallbackException}
 import javax.security.sasl.AuthorizeCallback
 
+import org.apache.hive.service.rpc.thrift.TCLIService.Iface
+import org.apache.thrift.{TProcessor, TProcessorFactory}
+import org.apache.thrift.transport.{TSaslClientTransport, TSaslServerTransport, TTransport, TTransportFactory}
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.AuthMethods.AuthMethod
 import org.apache.kyuubi.service.authentication.PlainSASLServer.SaslPlainProvider
-import org.apache.kyuubi.shade.hive.service.rpc.thrift.TCLIService.Iface
-import org.apache.kyuubi.shade.thrift.{TProcessor, TProcessorFactory}
-import org.apache.kyuubi.shade.thrift.transport.{TSaslClientTransport, TSaslServerTransport, TTransport, TTransportFactory}
 
 object PlainSASLHelper {
 

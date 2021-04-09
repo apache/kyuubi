@@ -20,13 +20,14 @@ package org.apache.kyuubi.operation
 import java.time.Duration
 import java.util.concurrent.Future
 
+import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet, TTableSchema}
+
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_IDLE_TIMEOUT
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.shade.hive.service.rpc.thrift.{TProtocolVersion, TRowSet, TTableSchema}
 
 abstract class AbstractOperation(opType: OperationType, session: Session)
   extends Operation with Logging {

@@ -24,7 +24,7 @@ import java.sql.SQLException
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
-import org.apache.kyuubi.shade.hive.service.rpc.thrift.{TStatus, TStatusCode}
+import org.apache.hive.service.rpc.thrift.{TStatus, TStatusCode}
 
 class KyuubiSQLException(msg: String, cause: Throwable) extends SQLException(msg, cause) {
   /**

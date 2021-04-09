@@ -17,8 +17,9 @@
 
 package org.apache.kyuubi.operation
 
+import org.apache.hive.service.rpc.thrift.TOperationType
+
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.shade.hive.service.rpc.thrift.TOperationType
 
 class OperationTypeSuite extends KyuubiFunSuite {
 

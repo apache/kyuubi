@@ -17,9 +17,10 @@
 
 package org.apache.kyuubi.operation
 
+import org.apache.hive.service.rpc.thrift.TOperationState
+import org.apache.hive.service.rpc.thrift.TOperationState._
+
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
-import org.apache.kyuubi.shade.hive.service.rpc.thrift.TOperationState
-import org.apache.kyuubi.shade.hive.service.rpc.thrift.TOperationState._
 
 class OperationStateSuite extends KyuubiFunSuite {
   import OperationState._

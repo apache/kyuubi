@@ -17,13 +17,14 @@
 
 package org.apache.kyuubi.operation
 
+import org.apache.hive.service.rpc.thrift._
+
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.LogDivertAppender
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.shade.hive.service.rpc.thrift._
 
 /**
  * The [[OperationManager]] manages all the operations during their lifecycle.

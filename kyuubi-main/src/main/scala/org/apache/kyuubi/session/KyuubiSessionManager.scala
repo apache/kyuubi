@@ -18,6 +18,7 @@
 package org.apache.kyuubi.session
 
 import com.codahale.metrics.MetricRegistry
+import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
@@ -25,7 +26,6 @@ import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.KyuubiOperationManager
-import org.apache.kyuubi.shade.hive.service.rpc.thrift.TProtocolVersion
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 

@@ -17,10 +17,11 @@
 
 package org.apache.kyuubi.service
 
+import org.apache.hive.service.rpc.thrift._
+
 import org.apache.kyuubi.operation.{OperationHandle, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.{SessionHandle, SessionManager}
-import org.apache.kyuubi.shade.hive.service.rpc.thrift._
 
 /**
  * A [[BackendService]] in Kyuubi architecture is responsible for talking to the SQL engine

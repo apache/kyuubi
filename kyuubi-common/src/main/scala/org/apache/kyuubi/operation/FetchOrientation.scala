@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.kyuubi.shade.hive.service.rpc.thrift.TFetchOrientation
+import org.apache.hive.service.rpc.thrift.TFetchOrientation
 
 object FetchOrientation extends Enumeration {
   type FetchOrientation = Value

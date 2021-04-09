@@ -19,12 +19,12 @@ package org.apache.kyuubi.session
 
 import java.time.Duration
 
+import org.apache.hive.service.rpc.thrift._
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Seconds, Span}
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.FrontendServiceSuite
-import org.apache.kyuubi.shade.hive.service.rpc.thrift._
 
 class SessionManagerSuite extends FrontendServiceSuite with Eventually {
 

@@ -47,7 +47,6 @@ matrix:
 
 install:
   - mvn --version
-  - mvn clean install -pl :kyuubi-shaded-curator,:kyuubi-shaded-hive-service-rpc -am -Pkyuubi-shaded
 
 script:
   - mvn clean install $PROFILE -Dmaven.plugin.scalatest.exclude.tags=$EXCLUDE_TAGS -Dmaven.javadoc.skip=true -V

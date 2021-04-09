@@ -39,9 +39,13 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-shaded-curator</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-framework</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-recipes</artifactId>
         </dependency>
 
         <dependency>

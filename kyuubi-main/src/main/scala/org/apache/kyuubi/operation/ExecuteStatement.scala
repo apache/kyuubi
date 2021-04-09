@@ -19,13 +19,14 @@ package org.apache.kyuubi.operation
 
 import scala.collection.JavaConverters._
 
+import org.apache.hive.service.rpc.thrift.{TCLIService, TExecuteStatementReq, TFetchOrientation, TFetchResultsReq, TGetOperationStatusReq, TSessionHandle}
+import org.apache.hive.service.rpc.thrift.TOperationState._
+
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
-import org.apache.kyuubi.shade.hive.service.rpc.thrift.{TCLIService, TExecuteStatementReq, TFetchOrientation, TFetchResultsReq, TGetOperationStatusReq, TSessionHandle}
-import org.apache.kyuubi.shade.hive.service.rpc.thrift.TOperationState._
 
 class ExecuteStatement(
     session: Session,

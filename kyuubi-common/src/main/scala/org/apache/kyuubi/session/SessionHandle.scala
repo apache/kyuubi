@@ -19,8 +19,9 @@ package org.apache.kyuubi.session
 
 import java.util.Objects
 
+import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TSessionHandle}
+
 import org.apache.kyuubi.cli.{Handle, HandleIdentifier}
-import org.apache.kyuubi.shade.hive.service.rpc.thrift.{TProtocolVersion, TSessionHandle}
 
 case class SessionHandle(
     identifier: HandleIdentifier,

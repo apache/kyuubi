@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.session
 
-import org.apache.kyuubi.shade.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 class NoopSessionImpl(
     protocol: TProtocolVersion,
