@@ -75,6 +75,8 @@ jobs:
           bash <(curl -s https://codecov.io/bash)
       - name: Detected Dependency List Change
         run: build/dependency.sh
+      - name: Check build distribution
+        run: ./build/dist --tgz ${{ matrix.profiles }}
       - name: Upload unit tests log
         if: failure()
         uses: actions/upload-artifact@v2

@@ -34,6 +34,8 @@ MAKE_TGZ=false
 SPARK_PROVIDED=false
 NAME=none
 MVN="$KYUUBI_HOME/build/mvn"
+SHADED_MODULES=":kyuubi-shaded-curator,:kyuubi-shaded-hive-service-rpc"
+SHADED_PROFILE="-Pkyuubi-shaded"
 
 function usage {
   set +x
@@ -99,6 +101,9 @@ if [[ -z "$JAVA_HOME" ]]; then
 fi
 
 echo "JAVA_HOME is set to $JAVA_HOME"
+
+echo "Installing Kyuubi shaded modules $SHADED_MODULES with profile $SHADED_PROFILE"
+$MVN clean install -pl $SHADED_MODULES -am $SHADED_PROFILE
 
 if [[ $(command -v git) ]]; then
     GITREV=$(git rev-parse --short HEAD 2>/dev/null || :)

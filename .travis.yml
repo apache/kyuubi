@@ -51,6 +51,7 @@ install:
 
 script:
   - mvn clean install $PROFILE -Dmaven.plugin.scalatest.exclude.tags=$EXCLUDE_TAGS -Dmaven.javadoc.skip=true -V
+  - ./build/dist --tgz $PROFILE
 
 after_success:
   - if [[ -z $EXCLUDE_TAGS ]]; then bash <(curl -s https://codecov.io/bash); fi
