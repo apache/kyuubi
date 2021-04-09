@@ -34,8 +34,6 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: '1.8'
-      - name: Install kyuubi-shaded jars
-        run: ./build/mvn clean install -pl :kyuubi-shaded-curator,:kyuubi-shaded-hive-service-rpc -am -Pkyuubi-shaded
       - name: Make Distribution -Pspark-3.0
         run: ./build/dist --tgz -Pspark-3.0
       - name: Make Distribution -Pspark-3.0 -Dhadoop.binary.version=3.2
