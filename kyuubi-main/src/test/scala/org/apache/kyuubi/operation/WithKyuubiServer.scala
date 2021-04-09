@@ -72,5 +72,6 @@ trait WithKyuubiServer extends KyuubiFunSuite {
     super.afterAll()
   }
 
-  protected def getJdbcUrl: String = s"jdbc:hive2://${server.connectionUrl}/;"
+  protected def getJdbcUrl: String =
+    s"jdbc:hive2://${server.connectionUrl}/;${KyuubiConf.FRONTEND_BIND_HOST.key}=127.0.0.1"
 }
