@@ -105,6 +105,8 @@
         <maven.plugin.download.version>1.6.0</maven.plugin.download.version>
         <maven.plugin.silencer.version>1.6.0</maven.plugin.silencer.version>
         <maven.plugin.rat.version>0.13</maven.plugin.rat.version>
+        <!-- Package to use when relocating shaded classes. -->
+        <kyuubi.shade.packageName>org.apache.kyuubi.shade</kyuubi.shade.packageName>
     </properties>
 
     <repositories>

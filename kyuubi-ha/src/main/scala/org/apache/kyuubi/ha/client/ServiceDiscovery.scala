@@ -26,7 +26,7 @@ import javax.security.auth.login.Configuration
 import scala.collection.JavaConverters._
 
 import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
-import org.apache.curator.framework.recipes.nodes.PersistentEphemeralNode
+import org.apache.curator.framework.recipes.nodes.{PersistentEphemeralNode, PersistentNode}
 import org.apache.curator.framework.state.{ConnectionState, ConnectionStateListener}
 import org.apache.curator.framework.state.ConnectionState.{CONNECTED, LOST, RECONNECTED}
 import org.apache.curator.retry._
@@ -59,14 +59,14 @@ abstract class ServiceDiscovery private (
     this(classOf[ServiceDiscovery].getSimpleName, server)
 
   private var _zkClient: CuratorFramework = _
-  private var _serviceNode: PersistentEphemeralNode = _
+  private var _serviceNode: PersistentNode = _
   /**
    * a pre-defined namespace used to publish the instance of the associate service
    */
   private var _namespace: String = _
 
   def zkClient: CuratorFramework = _zkClient
-  def serviceNode: PersistentEphemeralNode = _serviceNode
+  def serviceNode: PersistentNode = _serviceNode
   def namespace: String = _namespace
 
   override def initialize(conf: KyuubiConf): Unit = {
