@@ -112,13 +112,20 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
     validateZkArguments()
     validateHostAndPort()
     validateUser()
-    defaultKyuubiConf.set(HA_ZK_QUORUM.key, zkQuorum)
-    defaultKyuubiConf.set(HA_ZK_NAMESPACE.key, nameSpace)
+    mergeArgsIntoKyuubiConf()
   }
 
   private def validateListActionArguments(): Unit = {
     validateZkArguments()
+    mergeArgsIntoKyuubiConf()
+
   }
+
+  private def mergeArgsIntoKyuubiConf(): Unit = {
+    defaultKyuubiConf.set(HA_ZK_QUORUM.key, zkQuorum)
+    defaultKyuubiConf.set(HA_ZK_NAMESPACE.key, nameSpace)
+  }
+
 
   private def validateZkArguments(): Unit = {
     if (zkQuorum == null) {

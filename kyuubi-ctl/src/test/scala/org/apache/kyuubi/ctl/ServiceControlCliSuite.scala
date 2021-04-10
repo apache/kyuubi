@@ -18,6 +18,7 @@
 package org.apache.kyuubi.ctl
 
 import java.io.{OutputStream, PrintStream}
+import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -94,6 +95,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
   val port = "10000"
   val user = "kyuubi"
   val ctl = new ServiceControlCli()
+  val counter = new AtomicInteger(0)
 
   override def beforeAll(): Unit = {
     setSystemProperty(HA_ZK_NAMESPACE.key, namespace)
@@ -110,6 +112,10 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     conf.unset(HA_ZK_QUORUM)
     zkServer.stop()
     super.afterAll()
+  }
+
+  private def getUniqueNamespace(): String = {
+    s"${namespace}_${counter.getAndIncrement()}"
   }
 
   test("test help") {
@@ -145,24 +151,38 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
 
 
   test("test expose zk service node to another namespace") {
+    val uniqueNamespace = getUniqueNamespace()
     conf
       .unset(KyuubiConf.SERVER_KEYTAB)
       .unset(KyuubiConf.SERVER_PRINCIPAL)
       .set(HA_ZK_QUORUM, zkServer.getConnectString)
-      .set(HA_ZK_NAMESPACE, namespace)
+      .set(HA_ZK_NAMESPACE, uniqueNamespace)
       .set(KyuubiConf.FRONTEND_BIND_PORT, 0)
+    System.setProperty(HA_ZK_NAMESPACE.key, uniqueNamespace)
 
     withZkClient(conf) { framework =>
-      createZkServiceNode(conf, framework, namespace, "localhost:10000")
-      createZkServiceNode(conf, framework, namespace, "localhost:10001")
+      createZkServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
+      createZkServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
 
-      val newNamespace = s"${namespace}_new"
+      val newNamespace = s"${uniqueNamespace}_new"
       val args = Array(
         "create", "server",
         "--zk-quorum", zkServer.getConnectString,
         "--namespace", newNamespace
       )
-      ctl.doAction(args)
+
+      // scalastyle:off
+      val expectedAns =
+        s"""
+          |+---------------------------------------------------------------------+----------+----------+--------------+
+          ||Service Node                                                         |HOST      |PORT      |VERSION       |
+          |+---------------------------------------------------------------------+----------+----------+--------------+
+          ||serviceUri=localhost:10000;version=1.2.0-SNAPSHOT;sequence=0000000000|localhost |10000     |$KYUUBI_VERSION|
+          ||serviceUri=localhost:10001;version=1.2.0-SNAPSHOT;sequence=0000000001|localhost |10001     |$KYUUBI_VERSION|
+          |+---------------------------------------------------------------------+----------+----------+--------------+
+          |2 row(s)""".stripMargin
+      // scalastyle:on
+      testPrematureExit(args, expectedAns)
       val znodeRoot = s"/$newNamespace"
       val children = framework.getChildren.forPath(znodeRoot).asScala
       assert(children.size == 2)
@@ -173,6 +193,117 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       children.foreach { child =>
         framework.delete().forPath(s"""$znodeRoot/$child""")
       }
+    }
+  }
+
+  test("test list zk service nodes info") {
+    val uniqueNamespace = getUniqueNamespace()
+    conf
+      .unset(KyuubiConf.SERVER_KEYTAB)
+      .unset(KyuubiConf.SERVER_PRINCIPAL)
+      .set(HA_ZK_QUORUM, zkServer.getConnectString)
+      .set(HA_ZK_NAMESPACE, uniqueNamespace)
+      .set(KyuubiConf.FRONTEND_BIND_PORT, 0)
+
+    withZkClient(conf) { framework =>
+      createZkServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
+      createZkServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
+
+      val args = Array(
+        "list", "server",
+        "--zk-quorum", zkServer.getConnectString,
+        "--namespace", uniqueNamespace
+      )
+
+      // scalastyle:off
+      val expectedAns =
+        s"""
+          |+---------------------------------------------------------------------+----------+----------+--------------+
+          ||Service Node                                                         |HOST      |PORT      |VERSION       |
+          |+---------------------------------------------------------------------+----------+----------+--------------+
+          ||serviceUri=localhost:10000;version=1.2.0-SNAPSHOT;sequence=0000000000|localhost |10000     |$KYUUBI_VERSION|
+          ||serviceUri=localhost:10001;version=1.2.0-SNAPSHOT;sequence=0000000001|localhost |10001     |$KYUUBI_VERSION|
+          |+---------------------------------------------------------------------+----------+----------+--------------+
+          |2 row(s)""".stripMargin
+      // scalastyle:on
+
+      testPrematureExit(args, expectedAns)
+    }
+  }
+
+  test("test get zk service nodes info") {
+    val uniqueNamespace = getUniqueNamespace()
+    conf
+      .unset(KyuubiConf.SERVER_KEYTAB)
+      .unset(KyuubiConf.SERVER_PRINCIPAL)
+      .set(HA_ZK_QUORUM, zkServer.getConnectString)
+      .set(HA_ZK_NAMESPACE, uniqueNamespace)
+      .set(KyuubiConf.FRONTEND_BIND_PORT, 0)
+
+    withZkClient(conf) { framework =>
+      createZkServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
+      createZkServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
+
+      val args = Array(
+        "get", "server",
+        "--zk-quorum", zkServer.getConnectString,
+        "--namespace", uniqueNamespace,
+        "--host", "localhost",
+        "--port", "10000"
+      )
+
+      // scalastyle:off
+      val expectedAns =
+        s"""
+          |+---------------------------------------------------------------------+----------+----------+--------------+
+          ||Service Node                                                         |HOST      |PORT      |VERSION       |
+          |+---------------------------------------------------------------------+----------+----------+--------------+
+          ||serviceUri=localhost:10000;version=1.2.0-SNAPSHOT;sequence=0000000000|localhost |10000     |$KYUUBI_VERSION|
+          |+---------------------------------------------------------------------+----------+----------+--------------+
+          |1 row(s)""".stripMargin
+      // scalastyle:on
+
+      testPrematureExit(args, expectedAns)
+    }
+  }
+
+  test("test delete zk service nodes info") {
+    val uniqueNamespace = getUniqueNamespace()
+    conf
+      .unset(KyuubiConf.SERVER_KEYTAB)
+      .unset(KyuubiConf.SERVER_PRINCIPAL)
+      .set(HA_ZK_QUORUM, zkServer.getConnectString)
+      .set(HA_ZK_NAMESPACE, uniqueNamespace)
+      .set(KyuubiConf.FRONTEND_BIND_PORT, 0)
+
+    withZkClient(conf) { framework =>
+      withZkClient(conf) { zc =>
+        createZkServiceNode(conf, zc, uniqueNamespace, "localhost:10000", external = true)
+        createZkServiceNode(conf, zc, uniqueNamespace, "localhost:10001", external = true)
+      }
+
+      val args = Array(
+        "delete", "server",
+        "--zk-quorum", zkServer.getConnectString,
+        "--namespace", uniqueNamespace,
+        "--host", "localhost",
+        "--port", "10000"
+      )
+
+      // scalastyle:off
+      val expectedAns =
+        s"""
+          |Deleted zookeeper nodes:
+          |
+          |+---------------------------------------------------------------------+----------+----------+--------------+
+          ||Service Node                                                         |HOST      |PORT      |VERSION       |
+          |+---------------------------------------------------------------------+----------+----------+--------------+
+          ||serviceUri=localhost:10000;version=1.2.0-SNAPSHOT;sequence=0000000000|localhost |10000     |$KYUUBI_VERSION|
+          |+---------------------------------------------------------------------+----------+----------+--------------+
+          |1 row(s)""".stripMargin
+      // scalastyle:on
+
+      testPrematureExit(args, expectedAns)
     }
   }
 }

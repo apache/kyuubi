@@ -257,35 +257,33 @@ object ServiceDiscovery extends Logging {
   def getServerHost(zkClient: CuratorFramework, namespace: String): Option[(String, Int)] = {
     // TODO: use last one because to avoid touching some maybe-crashed engines
     // We need a big improvement here.
-    val instanceAndVersion = getServerInstanceAndVersions(zkClient, namespace, Some(1))
-    try {
-      Some(instanceAndVersion).filterNot(_.isEmpty).map(_.last._1).map { instance =>
-        val strings = instance.split(":")
-        val host = strings.head
-        val port = strings(1).toInt
-        (host, port)
-      }
-    } catch {
-      case _: Exception => None
+    getServiceNodesInfo(zkClient, namespace, Some(1)) match {
+      case Seq(sn) => Some((sn.host, sn.port))
+      case _ => None
     }
   }
 
-  def getServerInstanceAndVersions(
+  def getServiceNodesInfo(
       zkClient: CuratorFramework,
       namespace: String,
-      sizeOpt: Option[Int] = None): Seq[(String, Option[String])] = {
+      sizeOpt: Option[Int] = None): Seq[ServiceNodeInfo] = {
     try {
       val hosts = zkClient.getChildren.forPath(namespace)
       val size = sizeOpt.getOrElse(hosts.size())
       hosts.asScala.takeRight(size).map { p =>
         val path = ZKPaths.makePath(namespace, p)
         val instance = new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
+        val strings = instance.split(":")
+        val host = strings.head
+        val port = strings(1).toInt
         val version = p.split(";").find(_.startsWith("version=")).map(_.stripPrefix("version="))
         info(s"Get service instance:$instance and version:$version under $namespace")
-        (instance, version)
+        ServiceNodeInfo(p, host, port, version)
       }
     } catch {
-      case _: Exception => Seq.empty
+      case e: Exception =>
+        error(s"Failed to get service node info", e)
+        Seq.empty
     }
   }
 
@@ -343,4 +341,8 @@ object ServiceDiscovery extends Logging {
     }
     serviceNode
   }
+}
+
+case class ServiceNodeInfo(nodeName: String, host: String, port: Int, version: Option[String]) {
+  def instance: String = s"$host:$port"
 }

@@ -17,12 +17,15 @@
 
 package org.apache.kyuubi.ctl
 
+import scala.collection.mutable.ListBuffer
+
 import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.utils.ZKPaths
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.ServiceDiscovery
+import org.apache.kyuubi.ha.client.{ServiceDiscovery, ServiceNodeInfo}
 
 private[ctl] object KyuubiCtlAction extends Enumeration {
   type KyuubiCtlAction = Value
@@ -48,9 +51,10 @@ private[kyuubi] class ServiceControlCli extends Logging {
     }
     ctlArgs.action match {
       case KyuubiCtlAction.CREATE => create(ctlArgs)
+      case KyuubiCtlAction.LIST => list(ctlArgs, filterHostPort = false)
+      case KyuubiCtlAction.GET => list(ctlArgs, filterHostPort = true)
+      case KyuubiCtlAction.DELETE => delete(ctlArgs)
       case KyuubiCtlAction.HELP => printUsage(ctlArgs)
-      // TODO: support other actions
-      case action => throw new UnsupportedOperationException(s"Unsupported action type:$action")
     }
   }
 
@@ -68,16 +72,17 @@ private[kyuubi] class ServiceControlCli extends Logging {
     withZkClient(kyuubiConf) { zkClient =>
       val fromNamespace = kyuubiConf.get(HA_ZK_NAMESPACE)
       val fromZkPath = ZKPaths.makePath(null, fromNamespace)
-      val currentServerInstances = getServerInstanceAndVersions(zkClient, fromZkPath)
-      if (currentServerInstances.isEmpty) {
-        info(s"There is no existing server instance under:$fromNamespace")
-      } else {
+      val currentServerNodes = getServiceNodesInfo(zkClient, fromZkPath)
+      val exposedServiceNodes = ListBuffer[ServiceNodeInfo]()
 
+      if (currentServerNodes.nonEmpty) {
         def doCreate(zc: CuratorFramework): Unit = {
-          currentServerInstances.foreach { case (instance, versionOpt) =>
-            info(s"Exposing server instance:$instance with version:$versionOpt from " +
-              s"$fromNamespace to ${args.zkQuorum}")
-            createZkServiceNode(kyuubiConf, zc, args.nameSpace, instance, versionOpt, true)
+          currentServerNodes.foreach { sn =>
+            info(s"Exposing server instance:${sn.instance} with version:${sn.version}" +
+              s" from $fromNamespace to ${args.zkQuorum}")
+            val newNode = createZkServiceNode(
+              kyuubiConf, zc, args.nameSpace, sn.instance, sn.version, true)
+            exposedServiceNodes += sn.copy(nodeName = newNode.getActualPath.split("/").last)
           }
         }
 
@@ -88,11 +93,84 @@ private[kyuubi] class ServiceControlCli extends Logging {
           withZkClient(kyuubiConf)(doCreate)
         }
       }
+
+      info(s"Kyuubi service nodes exposed to ${args.zkQuorum}")
+      renderServiceNodesInfo(exposedServiceNodes)
+    }
+  }
+
+  /**
+   * List Kyuubi server nodes info.
+   */
+  private def list(args: KyuubiCtlArguments, filterHostPort: Boolean): Unit = {
+    withZkClient(args.defaultKyuubiConf) { zkClient =>
+      val znodeRoot = getZkNamespace(args)
+      val hostPortOpt = if (filterHostPort) Some((args.host, args.port.toInt)) else None
+      val nodes = getServiceNodes(zkClient, znodeRoot, hostPortOpt)
+      info("Zookeeper nodes list:")
+      renderServiceNodesInfo(nodes)
+    }
+  }
+
+  private def getServiceNodes(
+      zkClient: CuratorFramework,
+      znodeRoot: String,
+      hostPortOpt: Option[(String, Int)]): Seq[ServiceNodeInfo] = {
+    val serviceNodes = getServiceNodesInfo(zkClient, znodeRoot)
+    hostPortOpt match {
+      case Some((host, port)) => serviceNodes.filter { sn =>
+        sn.host == host && sn.port == port
+      }
+      case _ => serviceNodes
+    }
+  }
+
+  /**
+   * Delete zookeeper service node with specified host port.
+   */
+  private def delete(args: KyuubiCtlArguments): Unit = {
+    withZkClient(args.defaultKyuubiConf) { zkClient =>
+      val znodeRoot = getZkNamespace(args)
+      val hostPortOpt = Some((args.host, args.port.toInt))
+      val nodesToDelete = getServiceNodes(zkClient, znodeRoot, hostPortOpt)
+
+      nodesToDelete.foreach { node =>
+        val nodePath = s"$znodeRoot/${node.nodeName}"
+        info(s"Deleting zookeeper service node:$nodePath")
+        zkClient.delete().forPath(nodePath)
+      }
+
+      val remainingNodes = getServiceNodes(zkClient, znodeRoot, hostPortOpt)
+      info("The nodes that were not deleted successfully:")
+      renderServiceNodesInfo(remainingNodes)
+
+      val deletedNodes = nodesToDelete.filterNot { node =>
+        remainingNodes.exists(_.nodeName == node.nodeName)
+      }
+      info("Deleted zookeeper nodes:")
+      renderServiceNodesInfo(deletedNodes)
+    }
+  }
+
+  private def getZkNamespace(args: KyuubiCtlArguments): String = {
+    args.service match {
+      case KyuubiCtlActionService.SERVER =>
+        ZKPaths.makePath(null, args.nameSpace)
+      case KyuubiCtlActionService.ENGINE =>
+        ZKPaths.makePath(s"${args.nameSpace}_${ShareLevel.USER}", args.user)
     }
   }
 
   private def printUsage(args: KyuubiCtlArguments): Unit = {
     args.printUsageAndExit(0)
+  }
+
+  private def renderServiceNodesInfo(serviceNodeInfo: Seq[ServiceNodeInfo]): Unit = {
+    val header = Seq("Service Node", "HOST", "PORT", "VERSION")
+    val rows = serviceNodeInfo.sortBy(_.nodeName).map { sn =>
+      Seq(sn.nodeName, sn.host, sn.port.toString, sn.version.getOrElse(""))
+    }
+    info(Tabulator.format(header, rows))
   }
 }
 
@@ -120,6 +198,7 @@ object ServiceControlCli extends CommandLineUtils with Logging {
       override def doAction(args: Array[String]): Unit = {
         try {
           super.doAction(args)
+          exitFn(0)
         } catch {
           case e: KyuubiCtlException =>
             exitFn(e.exitCode)
