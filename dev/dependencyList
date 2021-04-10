@@ -42,3 +42,4 @@ metrics-jvm/4.1.1//metrics-jvm-4.1.1.jar
 scala-library/2.12.10//scala-library-2.12.10.jar
 slf4j-api/1.7.30//slf4j-api-1.7.30.jar
 slf4j-log4j12/1.7.30//slf4j-log4j12-1.7.30.jar
+zookeeper/3.4.14//zookeeper-3.4.14.jar
