@@ -46,8 +46,10 @@ function build_classpath() {
     }' | grep -v "kyuubi" | sort >> "${DEP_PR}"
 }
 
-function git_diff() {
-    the_diff=$(git diff ${DEP} ${DEP_PR})
+function check_diff() {
+    set +e
+    the_diff=$(diff ${DEP} ${DEP_PR})
+    set -e
     rm -rf "${DEP_PR}"
     if [[ -n $the_diff ]]; then
         echo "Dependency List Changed Detected: "
@@ -86,5 +88,4 @@ if [[ "$1" == "--replace" ]]; then
     exit 0
 fi
 
-git_diff
-exit 0
+check_diff
