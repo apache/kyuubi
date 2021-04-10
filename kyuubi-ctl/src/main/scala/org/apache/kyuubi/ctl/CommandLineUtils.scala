@@ -42,7 +42,7 @@ private[kyuubi] trait CommandLineLoggingUtils {
 }
 
 /** Refer the showString method of org.apache.spark.sql.Dataset */
-object Tabulator {
+private[kyuubi] object Tabulator {
 
   /**
    * Regular expression matching full width characters.

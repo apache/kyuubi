@@ -40,7 +40,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
   var version: String = null
   var verbose: Boolean = false
 
-  val defaultKyuubiConf = KyuubiConf().loadFileDefaults()
+  val conf = KyuubiConf().loadFileDefaults()
 
   // Set parameters from command line arguments
   parse(args.asJava)
@@ -52,7 +52,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
 
   private def useDefaultPropertyValueIfMissing(): Unit = {
     if (zkQuorum == null) {
-      defaultKyuubiConf.getOption(HA_ZK_QUORUM.key).foreach { v =>
+      conf.getOption(HA_ZK_QUORUM.key).foreach { v =>
         if (verbose) {
           info(s"Zookeeper quorum is not specified, use value from default conf:$v")
         }
@@ -63,7 +63,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
     // for create action, it only expose Kyuubi service instance to another domain,
     // so we do not use namespace from default conf
     if (action != KyuubiCtlAction.CREATE && nameSpace == null) {
-      defaultKyuubiConf.getOption(HA_ZK_NAMESPACE.key).foreach { v =>
+      conf.getOption(HA_ZK_NAMESPACE.key).foreach { v =>
         if (verbose) {
           info(s"Zookeeper namespace is not specified, use value from default conf:$v")
         }
@@ -98,7 +98,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
     }
     validateZkArguments()
 
-    val defaultNamespace = defaultKyuubiConf.getOption(HA_ZK_NAMESPACE.key)
+    val defaultNamespace = conf.getOption(HA_ZK_NAMESPACE.key)
     if (defaultNamespace.isEmpty || defaultNamespace.get.equals(nameSpace)) {
       fail(
         s"""
@@ -118,14 +118,12 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
   private def validateListActionArguments(): Unit = {
     validateZkArguments()
     mergeArgsIntoKyuubiConf()
-
   }
 
   private def mergeArgsIntoKyuubiConf(): Unit = {
-    defaultKyuubiConf.set(HA_ZK_QUORUM.key, zkQuorum)
-    defaultKyuubiConf.set(HA_ZK_NAMESPACE.key, nameSpace)
+    conf.set(HA_ZK_QUORUM.key, zkQuorum)
+    conf.set(HA_ZK_NAMESPACE.key, nameSpace)
   }
-
 
   private def validateZkArguments(): Unit = {
     if (zkQuorum == null) {

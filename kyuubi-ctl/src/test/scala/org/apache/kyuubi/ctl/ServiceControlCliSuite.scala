@@ -85,6 +85,7 @@ trait TestPrematureExit {
 }
 
 class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
+  import ServiceControlCli._
   import ServiceDiscovery._
 
   val zkServer = new EmbeddedZookeeper()
@@ -177,8 +178,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
           |+---------------------------------------------------------------------+----------+----------+--------------+
           ||Service Node                                                         |HOST      |PORT      |VERSION       |
           |+---------------------------------------------------------------------+----------+----------+--------------+
-          ||serviceUri=localhost:10000;version=1.2.0-SNAPSHOT;sequence=0000000000|localhost |10000     |$KYUUBI_VERSION|
-          ||serviceUri=localhost:10001;version=1.2.0-SNAPSHOT;sequence=0000000001|localhost |10001     |$KYUUBI_VERSION|
+          ||serviceUri=localhost:10000;version=$KYUUBI_VERSION;sequence=0000000000|localhost |10000     |$KYUUBI_VERSION|
+          ||serviceUri=localhost:10001;version=$KYUUBI_VERSION;sequence=0000000001|localhost |10001     |$KYUUBI_VERSION|
           |+---------------------------------------------------------------------+----------+----------+--------------+
           |2 row(s)""".stripMargin
       // scalastyle:on
@@ -194,6 +195,23 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         framework.delete().forPath(s"""$znodeRoot/$child""")
       }
     }
+  }
+
+  test("test get zk namespace for different service type") {
+    val arg1 = Array(
+      "list", "server",
+      "--zk-quorum", zkServer.getConnectString,
+      "--namespace", namespace
+    )
+    assert(getZkNamespace(new KyuubiCtlArguments(arg1)) == s"/$namespace")
+
+    val arg2 = Array(
+      "list", "engine",
+      "--zk-quorum", zkServer.getConnectString,
+      "--namespace", namespace,
+      "--user", user
+    )
+    assert(getZkNamespace(new KyuubiCtlArguments(arg2)) == s"/${namespace}_USER/$user")
   }
 
   test("test list zk service nodes info") {
@@ -221,8 +239,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
           |+---------------------------------------------------------------------+----------+----------+--------------+
           ||Service Node                                                         |HOST      |PORT      |VERSION       |
           |+---------------------------------------------------------------------+----------+----------+--------------+
-          ||serviceUri=localhost:10000;version=1.2.0-SNAPSHOT;sequence=0000000000|localhost |10000     |$KYUUBI_VERSION|
-          ||serviceUri=localhost:10001;version=1.2.0-SNAPSHOT;sequence=0000000001|localhost |10001     |$KYUUBI_VERSION|
+          ||serviceUri=localhost:10000;version=$KYUUBI_VERSION;sequence=0000000000|localhost |10000     |$KYUUBI_VERSION|
+          ||serviceUri=localhost:10001;version=$KYUUBI_VERSION;sequence=0000000001|localhost |10001     |$KYUUBI_VERSION|
           |+---------------------------------------------------------------------+----------+----------+--------------+
           |2 row(s)""".stripMargin
       // scalastyle:on
@@ -258,7 +276,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
           |+---------------------------------------------------------------------+----------+----------+--------------+
           ||Service Node                                                         |HOST      |PORT      |VERSION       |
           |+---------------------------------------------------------------------+----------+----------+--------------+
-          ||serviceUri=localhost:10000;version=1.2.0-SNAPSHOT;sequence=0000000000|localhost |10000     |$KYUUBI_VERSION|
+          ||serviceUri=localhost:10000;version=$KYUUBI_VERSION;sequence=0000000000|localhost |10000     |$KYUUBI_VERSION|
           |+---------------------------------------------------------------------+----------+----------+--------------+
           |1 row(s)""".stripMargin
       // scalastyle:on
@@ -298,7 +316,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
           |+---------------------------------------------------------------------+----------+----------+--------------+
           ||Service Node                                                         |HOST      |PORT      |VERSION       |
           |+---------------------------------------------------------------------+----------+----------+--------------+
-          ||serviceUri=localhost:10000;version=1.2.0-SNAPSHOT;sequence=0000000000|localhost |10000     |$KYUUBI_VERSION|
+          ||serviceUri=localhost:10000;version=$KYUUBI_VERSION;sequence=0000000000|localhost |10000     |$KYUUBI_VERSION|
           |+---------------------------------------------------------------------+----------+----------+--------------+
           |1 row(s)""".stripMargin
       // scalastyle:on

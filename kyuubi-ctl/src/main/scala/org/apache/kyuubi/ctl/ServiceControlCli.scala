@@ -42,6 +42,7 @@ private[ctl] object KyuubiCtlActionService extends Enumeration {
  * See usage in [[KyuubiCtlArguments.printUsageAndExit]].
  */
 private[kyuubi] class ServiceControlCli extends Logging {
+  import ServiceControlCli._
   import ServiceDiscovery._
 
   def doAction(args: Array[String]): Unit = {
@@ -66,7 +67,7 @@ private[kyuubi] class ServiceControlCli extends Logging {
    * Expose Kyuubi server instance to another domain.
    */
   private def create(args: KyuubiCtlArguments): Unit = {
-    val kyuubiConf = args.defaultKyuubiConf
+    val kyuubiConf = args.conf
 
     kyuubiConf.setIfMissing(HA_ZK_QUORUM, args.zkQuorum)
     withZkClient(kyuubiConf) { zkClient =>
@@ -94,7 +95,7 @@ private[kyuubi] class ServiceControlCli extends Logging {
         }
       }
 
-      info(s"Kyuubi service nodes exposed to ${args.zkQuorum}")
+      info(s"Kyuubi service nodes exposed to ${args.zkQuorum}:")
       renderServiceNodesInfo(exposedServiceNodes)
     }
   }
@@ -103,7 +104,7 @@ private[kyuubi] class ServiceControlCli extends Logging {
    * List Kyuubi server nodes info.
    */
   private def list(args: KyuubiCtlArguments, filterHostPort: Boolean): Unit = {
-    withZkClient(args.defaultKyuubiConf) { zkClient =>
+    withZkClient(args.conf) { zkClient =>
       val znodeRoot = getZkNamespace(args)
       val hostPortOpt = if (filterHostPort) Some((args.host, args.port.toInt)) else None
       val nodes = getServiceNodes(zkClient, znodeRoot, hostPortOpt)
@@ -129,7 +130,7 @@ private[kyuubi] class ServiceControlCli extends Logging {
    * Delete zookeeper service node with specified host port.
    */
   private def delete(args: KyuubiCtlArguments): Unit = {
-    withZkClient(args.defaultKyuubiConf) { zkClient =>
+    withZkClient(args.conf) { zkClient =>
       val znodeRoot = getZkNamespace(args)
       val hostPortOpt = Some((args.host, args.port.toInt))
       val nodesToDelete = getServiceNodes(zkClient, znodeRoot, hostPortOpt)
@@ -149,15 +150,6 @@ private[kyuubi] class ServiceControlCli extends Logging {
       }
       info("Deleted zookeeper nodes:")
       renderServiceNodesInfo(deletedNodes)
-    }
-  }
-
-  private def getZkNamespace(args: KyuubiCtlArguments): String = {
-    args.service match {
-      case KyuubiCtlActionService.SERVER =>
-        ZKPaths.makePath(null, args.nameSpace)
-      case KyuubiCtlActionService.ENGINE =>
-        ZKPaths.makePath(s"${args.nameSpace}_${ShareLevel.USER}", args.user)
     }
   }
 
@@ -207,5 +199,14 @@ object ServiceControlCli extends CommandLineUtils with Logging {
     }
 
     ctl.doAction(args)
+  }
+
+  private[ctl] def getZkNamespace(args: KyuubiCtlArguments): String = {
+    args.service match {
+      case KyuubiCtlActionService.SERVER =>
+        ZKPaths.makePath(null, args.nameSpace)
+      case KyuubiCtlActionService.ENGINE =>
+        ZKPaths.makePath(s"${args.nameSpace}_${ShareLevel.USER}", args.user)
+    }
   }
 }
