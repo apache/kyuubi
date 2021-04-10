@@ -88,12 +88,6 @@
             <artifactId>curator-recipes</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-tags_${scala.binary.version}</artifactId>
-            <version>${spark.version}</version>
-        </dependency>
-
         <!-- for EmbeddedZkServer -->
         <dependency>
             <groupId>org.apache.curator</groupId>
