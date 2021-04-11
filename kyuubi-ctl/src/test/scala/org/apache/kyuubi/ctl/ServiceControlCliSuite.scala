@@ -116,7 +116,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
   }
 
   private def getUniqueNamespace(): String = {
-    s"${namespace}_${counter.getAndIncrement()}"
+    s"${namespace}_${"%02d".format(counter.getAndIncrement())}"
   }
 
   test("test help") {
@@ -165,24 +165,23 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       createZkServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
       createZkServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
 
-      val newNamespace = s"${uniqueNamespace}_new"
+      val newNamespace = getUniqueNamespace()
       val args = Array(
         "create", "server",
         "--zk-quorum", zkServer.getConnectString,
         "--namespace", newNamespace
       )
 
-      // scalastyle:off
       val expectedAns =
         s"""
-          |+---------------------------------------------------------------------+----------+----------+--------------+
-          ||Service Node                                                         |HOST      |PORT      |VERSION       |
-          |+---------------------------------------------------------------------+----------+----------+--------------+
-          ||serviceUri=localhost:10000;version=$KYUUBI_VERSION;sequence=0000000000|localhost |10000     |$KYUUBI_VERSION|
-          ||serviceUri=localhost:10001;version=$KYUUBI_VERSION;sequence=0000000001|localhost |10001     |$KYUUBI_VERSION|
-          |+---------------------------------------------------------------------+----------+----------+--------------+
+          |+----------------+----------+----------+--------------+
+          ||   Namespace    |   HOST   |   PORT   |   VERSION    |
+          |+----------------+----------+----------+--------------+
+          ||/$newNamespace|localhost |  10000   |1.2.0-SNAPSHOT|
+          ||/$newNamespace|localhost |  10001   |1.2.0-SNAPSHOT|
+          |+----------------+----------+----------+--------------+
           |2 row(s)""".stripMargin
-      // scalastyle:on
+
       testPrematureExit(args, expectedAns)
       val znodeRoot = s"/$newNamespace"
       val children = framework.getChildren.forPath(znodeRoot).asScala
@@ -233,17 +232,15 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         "--namespace", uniqueNamespace
       )
 
-      // scalastyle:off
       val expectedAns =
         s"""
-          |+---------------------------------------------------------------------+----------+----------+--------------+
-          ||Service Node                                                         |HOST      |PORT      |VERSION       |
-          |+---------------------------------------------------------------------+----------+----------+--------------+
-          ||serviceUri=localhost:10000;version=$KYUUBI_VERSION;sequence=0000000000|localhost |10000     |$KYUUBI_VERSION|
-          ||serviceUri=localhost:10001;version=$KYUUBI_VERSION;sequence=0000000001|localhost |10001     |$KYUUBI_VERSION|
-          |+---------------------------------------------------------------------+----------+----------+--------------+
+          |+----------------+----------+----------+--------------+
+          ||   Namespace    |   HOST   |   PORT   |   VERSION    |
+          |+----------------+----------+----------+--------------+
+          ||/$uniqueNamespace|localhost |  10000   |1.2.0-SNAPSHOT|
+          ||/$uniqueNamespace|localhost |  10001   |1.2.0-SNAPSHOT|
+          |+----------------+----------+----------+--------------+
           |2 row(s)""".stripMargin
-      // scalastyle:on
 
       testPrematureExit(args, expectedAns)
     }
@@ -270,16 +267,14 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         "--port", "10000"
       )
 
-      // scalastyle:off
       val expectedAns =
         s"""
-          |+---------------------------------------------------------------------+----------+----------+--------------+
-          ||Service Node                                                         |HOST      |PORT      |VERSION       |
-          |+---------------------------------------------------------------------+----------+----------+--------------+
-          ||serviceUri=localhost:10000;version=$KYUUBI_VERSION;sequence=0000000000|localhost |10000     |$KYUUBI_VERSION|
-          |+---------------------------------------------------------------------+----------+----------+--------------+
+          |+----------------+----------+----------+--------------+
+          ||   Namespace    |   HOST   |   PORT   |   VERSION    |
+          |+----------------+----------+----------+--------------+
+          ||/$uniqueNamespace|localhost |  10000   |1.2.0-SNAPSHOT|
+          |+----------------+----------+----------+--------------+
           |1 row(s)""".stripMargin
-      // scalastyle:on
 
       testPrematureExit(args, expectedAns)
     }
@@ -308,18 +303,14 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         "--port", "10000"
       )
 
-      // scalastyle:off
       val expectedAns =
         s"""
-          |Deleted zookeeper nodes:
-          |
-          |+---------------------------------------------------------------------+----------+----------+--------------+
-          ||Service Node                                                         |HOST      |PORT      |VERSION       |
-          |+---------------------------------------------------------------------+----------+----------+--------------+
-          ||serviceUri=localhost:10000;version=$KYUUBI_VERSION;sequence=0000000000|localhost |10000     |$KYUUBI_VERSION|
-          |+---------------------------------------------------------------------+----------+----------+--------------+
+          |+----------------+----------+----------+--------------+
+          ||   Namespace    |   HOST   |   PORT   |   VERSION    |
+          |+----------------+----------+----------+--------------+
+          ||/$uniqueNamespace|localhost |  10000   |1.2.0-SNAPSHOT|
+          |+----------------+----------+----------+--------------+
           |1 row(s)""".stripMargin
-      // scalastyle:on
 
       testPrematureExit(args, expectedAns)
     }

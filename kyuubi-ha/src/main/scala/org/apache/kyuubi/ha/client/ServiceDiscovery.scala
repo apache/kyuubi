@@ -278,7 +278,7 @@ object ServiceDiscovery extends Logging {
         val port = strings(1).toInt
         val version = p.split(";").find(_.startsWith("version=")).map(_.stripPrefix("version="))
         info(s"Get service instance:$instance and version:$version under $namespace")
-        ServiceNodeInfo(p, host, port, version)
+        ServiceNodeInfo(namespace, p, host, port, version)
       }
     } catch {
       case e: Exception =>
@@ -343,6 +343,11 @@ object ServiceDiscovery extends Logging {
   }
 }
 
-case class ServiceNodeInfo(nodeName: String, host: String, port: Int, version: Option[String]) {
+case class ServiceNodeInfo(
+    namespace: String,
+    nodeName: String,
+    host: String,
+    port: Int,
+    version: Option[String]) {
   def instance: String = s"$host:$port"
 }

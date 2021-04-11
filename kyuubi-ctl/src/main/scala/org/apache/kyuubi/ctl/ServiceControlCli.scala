@@ -71,19 +71,22 @@ private[kyuubi] class ServiceControlCli extends Logging {
 
     kyuubiConf.setIfMissing(HA_ZK_QUORUM, args.zkQuorum)
     withZkClient(kyuubiConf) { zkClient =>
-      val fromNamespace = kyuubiConf.get(HA_ZK_NAMESPACE)
-      val fromZkPath = ZKPaths.makePath(null, fromNamespace)
-      val currentServerNodes = getServiceNodesInfo(zkClient, fromZkPath)
+      val fromNamespace = ZKPaths.makePath(null, kyuubiConf.get(HA_ZK_NAMESPACE))
+      val toNamespace = getZkNamespace(args)
+
+      val currentServerNodes = getServiceNodesInfo(zkClient, fromNamespace)
       val exposedServiceNodes = ListBuffer[ServiceNodeInfo]()
 
       if (currentServerNodes.nonEmpty) {
         def doCreate(zc: CuratorFramework): Unit = {
           currentServerNodes.foreach { sn =>
             info(s"Exposing server instance:${sn.instance} with version:${sn.version}" +
-              s" from $fromNamespace to ${args.zkQuorum}")
+              s" from $fromNamespace to $toNamespace")
             val newNode = createZkServiceNode(
               kyuubiConf, zc, args.nameSpace, sn.instance, sn.version, true)
-            exposedServiceNodes += sn.copy(nodeName = newNode.getActualPath.split("/").last)
+            exposedServiceNodes += sn.copy(
+              namespace = toNamespace,
+              nodeName = newNode.getActualPath.split("/").last)
           }
         }
 
@@ -95,8 +98,8 @@ private[kyuubi] class ServiceControlCli extends Logging {
         }
       }
 
-      info(s"Kyuubi service nodes exposed to ${args.zkQuorum}:")
-      renderServiceNodesInfo(exposedServiceNodes)
+      val title = s"Kyuubi service nodes exposed"
+      renderServiceNodesInfo(title, exposedServiceNodes)
     }
   }
 
@@ -108,8 +111,9 @@ private[kyuubi] class ServiceControlCli extends Logging {
       val znodeRoot = getZkNamespace(args)
       val hostPortOpt = if (filterHostPort) Some((args.host, args.port.toInt)) else None
       val nodes = getServiceNodes(zkClient, znodeRoot, hostPortOpt)
-      info("Zookeeper nodes list:")
-      renderServiceNodesInfo(nodes)
+
+      val title = "Zookeeper service nodes"
+      renderServiceNodesInfo(title, nodes)
     }
   }
 
@@ -148,8 +152,8 @@ private[kyuubi] class ServiceControlCli extends Logging {
         }
       }
 
-      info("Deleted zookeeper nodes:")
-      renderServiceNodesInfo(deletedNodes)
+      val title = "Deleted zookeeper service nodes"
+      renderServiceNodesInfo(title, deletedNodes)
     }
   }
 
@@ -157,12 +161,12 @@ private[kyuubi] class ServiceControlCli extends Logging {
     args.printUsageAndExit(0)
   }
 
-  private def renderServiceNodesInfo(serviceNodeInfo: Seq[ServiceNodeInfo]): Unit = {
-    val header = Seq("Service Node", "HOST", "PORT", "VERSION")
+  private def renderServiceNodesInfo(title: String, serviceNodeInfo: Seq[ServiceNodeInfo]): Unit = {
+    val header = Seq("Namespace", "HOST", "PORT", "VERSION")
     val rows = serviceNodeInfo.sortBy(_.nodeName).map { sn =>
-      Seq(sn.nodeName, sn.host, sn.port.toString, sn.version.getOrElse(""))
+      Seq(sn.namespace, sn.host, sn.port.toString, sn.version.getOrElse(""))
     }
-    info(Tabulator.format(header, rows))
+    info(Tabulator.format(title, header, rows))
   }
 }
 

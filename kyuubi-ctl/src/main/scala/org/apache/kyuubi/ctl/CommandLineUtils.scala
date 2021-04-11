@@ -74,7 +74,7 @@ private[kyuubi] object Tabulator {
     if (str == null) 0 else str.length + fullWidthRegex.findAllIn(str).size
   }
 
-  def format(header: Seq[String], rows: Seq[Seq[String]]): String = {
+  def format(title: String, header: Seq[String], rows: Seq[Seq[String]]): String = {
     val data = Seq(header).union(rows)
     val sb = new StringBuilder
     val numCols = header.size
@@ -90,12 +90,14 @@ private[kyuubi] object Tabulator {
 
     val paddedRows = data.map { row =>
       row.zipWithIndex.map { case (cell, i) =>
-        StringUtils.rightPad(cell, colWidths(i) - stringHalfWidth(cell) + cell.length)
+        StringUtils.center(cell, colWidths(i))
       }
     }
 
     // Create SeparateLine
     val sep: String = colWidths.map("-" * _).addString(sb, "+", "+", "+\n").toString()
+
+    val titleNewLine = "\n " + StringUtils.center(title, colWidths.sum) + "\n"
 
     // column names
     paddedRows.head.addString(sb, "|", "|", "|\n")
@@ -106,6 +108,6 @@ private[kyuubi] object Tabulator {
     sb.append(sep)
 
     sb.append(s"${rows.size} row(s)\n")
-    "\n" + sb.toString()
+    titleNewLine + sb.toString()
   }
 }
