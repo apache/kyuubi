@@ -83,7 +83,7 @@
 
         <scalatest.version>3.0.3</scalatest.version>
         <iceberg.name>iceberg-spark3-runtime</iceberg.name>
-        <iceberg.version>0.11.0</iceberg.version>
+        <iceberg.version>0.11.1</iceberg.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
