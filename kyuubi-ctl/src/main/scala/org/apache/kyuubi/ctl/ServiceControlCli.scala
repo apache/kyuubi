@@ -135,19 +135,19 @@ private[kyuubi] class ServiceControlCli extends Logging {
       val hostPortOpt = Some((args.host, args.port.toInt))
       val nodesToDelete = getServiceNodes(zkClient, znodeRoot, hostPortOpt)
 
+      val deletedNodes = ListBuffer[ServiceNodeInfo]()
       nodesToDelete.foreach { node =>
         val nodePath = s"$znodeRoot/${node.nodeName}"
         info(s"Deleting zookeeper service node:$nodePath")
-        zkClient.delete().forPath(nodePath)
+        try {
+          zkClient.delete().forPath(nodePath)
+          deletedNodes += node
+        } catch {
+          case e: Exception =>
+            error(s"Failed to delete zookeeper service node:$nodePath", e)
+        }
       }
 
-      val remainingNodes = getServiceNodes(zkClient, znodeRoot, hostPortOpt)
-      info("The nodes that were not deleted successfully:")
-      renderServiceNodesInfo(remainingNodes)
-
-      val deletedNodes = nodesToDelete.filterNot { node =>
-        remainingNodes.exists(_.nodeName == node.nodeName)
-      }
       info("Deleted zookeeper nodes:")
       renderServiceNodesInfo(deletedNodes)
     }
