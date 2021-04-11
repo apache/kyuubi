@@ -17,16 +17,28 @@
 
 package org.apache.kyuubi.engine.spark
 
+import java.sql.SQLException
+
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_INITIALIZE_SQL
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_INITIALIZE_SQL, SESSION_CONF_IGNORE_LIST, SESSION_CONF_RESTRICT_LIST}
 import org.apache.kyuubi.operation.{JDBCTestUtils, WithKyuubiServer}
 
 class SparkSqlEngineSuite extends WithKyuubiServer with JDBCTestUtils  {
   override protected val conf: KyuubiConf = {
-    KyuubiConf().set(ENGINE_INITIALIZE_SQL.key,
+    KyuubiConf().set(ENGINE_INITIALIZE_SQL,
       "CREATE DATABASE IF NOT EXISTS INIT_DB;" +
         "CREATE TABLE IF NOT EXISTS INIT_DB.test(a int);" +
         "INSERT OVERWRITE TABLE INIT_DB.test SELECT 1;")
+      .set(SESSION_CONF_IGNORE_LIST.key, "kyuubi.abc.xyz,spark.sql.abc.xyz")
+      .set(SESSION_CONF_RESTRICT_LIST.key, "kyuubi.xyz.abc,spark.sql.xyz.abc")
+  }
+
+  private var sessionConf: Map[String, String] = Map.empty
+
+  private def withSessionConf[T](conf: Map[String, String])(f: => T): T = {
+    val tempConf = sessionConf
+    sessionConf = conf
+    try f finally { sessionConf = tempConf}
   }
 
   override def afterAll(): Unit = {
@@ -46,5 +58,35 @@ class SparkSqlEngineSuite extends WithKyuubiServer with JDBCTestUtils  {
     }
   }
 
+  test("ignore config via system settings") {
+   withSessionConf(Map(
+     "spark.sql.abc.xyz0" -> "123",
+     "kyuubi.abc.xyz" -> "123",
+     "spark.sql.abc.xyz" -> "123")) {
+     withJdbcStatement() { statement =>
+       val rs1 = statement.executeQuery("SET spark.sql.abc.xyz0")
+       assert(rs1.next())
+       assert(rs1.getString("value") === "123")
+       val rs2 = statement.executeQuery("SET spark.sql.abc.xyz")
+       assert(rs2.next())
+       assert(rs2.getString("value") === "<undefined>", "ignored")
+     }
+   }
+  }
+
+  test("restricted config via system settings") {
+    val e = intercept[SQLException] {
+      withSessionConf(Map(
+        "kyuubi.xyz.abc" -> "123",
+        "kyuubi.abc.xyz0" -> "123")) {
+        withJdbcStatement()( _.execute("SELECT 1"))
+      }
+    }
+
+    assert(e.getMessage.contains("kyuubi.xyz.abc"))
+
+  }
   override protected def jdbcUrl: String = getJdbcUrl
+
+  override protected def configMap: Map[String, String] = sessionConf
 }

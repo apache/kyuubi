@@ -50,27 +50,10 @@ class KyuubiSessionImpl(
     sessionConf: KyuubiConf)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
-  private def mergeConf(): Unit = {
-    conf.foreach {
-      case (k, v) if k.startsWith(SET_PREFIX) =>
-        val newKey = k.substring(SET_PREFIX.length)
-        if (newKey.startsWith(SYSTEM_PREFIX)) {
-          sessionConf.set(newKey.substring(SYSTEM_PREFIX.length), v)
-        } else if (newKey.startsWith(HIVECONF_PREFIX)) {
-          sessionConf.set(newKey.substring(HIVECONF_PREFIX.length), v)
-        } else if (newKey.startsWith(HIVEVAR_PREFIX)) {
-          sessionConf.set(newKey.substring(HIVEVAR_PREFIX.length), v)
-        } else if (newKey.startsWith(METACONF_PREFIX)) {
-          sessionConf.set(newKey.substring(METACONF_PREFIX.length), v)
-        } else {
-          sessionConf.set(k, v)
-        }
-      case ("use:database", _) =>
-      case (key, value) => sessionConf.set(key, value)
-    }
+  normalizedConf.foreach {
+    case ("use:database", _) =>
+    case (key, value) => sessionConf.set(key, value)
   }
-
-  mergeConf()
 
   private val shareLevel: ShareLevel = ShareLevel.withName(sessionConf.get(ENGINE_SHARED_LEVEL))
 
@@ -160,7 +143,7 @@ class KyuubiSessionImpl(
     val req = new TOpenSessionReq()
     req.setUsername(user)
     req.setPassword(passwd)
-    req.setConfiguration(conf.asJava)
+    req.setConfiguration(normalizedConf.asJava)
     logSessionInfo(s"Sending TOpenSessionReq to engine [$host:$port]")
     val resp = client.OpenSession(req)
     logSessionInfo(s"Received TOpenSessionResp from engine [$host:$port]")

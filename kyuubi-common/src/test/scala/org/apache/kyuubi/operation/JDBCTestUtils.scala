@@ -33,10 +33,15 @@ trait JDBCTestUtils extends KyuubiFunSuite {
   protected val user: String = Utils.currentUser
   protected val patterns = Seq("", "*", "%", null, ".*", "_*", "_%", ".%")
   protected def jdbcUrl: String
+  protected def configMap: Map[String, String] = Map.empty
+
+  private def jdbcUrlWithConf: String = {
+    jdbcUrl + configMap.map(kv => kv._1 + "=" + kv._2).mkString(";")
+  }
 
   def withMultipleConnectionJdbcStatement(
       tableNames: String*)(fs: (Statement => Unit)*): Unit = {
-    val connections = fs.map { _ => DriverManager.getConnection(jdbcUrl, user, "") }
+    val connections = fs.map { _ => DriverManager.getConnection(jdbcUrlWithConf, user, "") }
     val statements = connections.map(_.createStatement())
 
     try {
@@ -58,7 +63,7 @@ trait JDBCTestUtils extends KyuubiFunSuite {
   }
 
   def withDatabases(dbNames: String*)(fs: (Statement => Unit)*): Unit = {
-    val connections = fs.map { _ => DriverManager.getConnection(jdbcUrl, user, "") }
+    val connections = fs.map { _ => DriverManager.getConnection(jdbcUrlWithConf, user, "") }
     val statements = connections.map(_.createStatement())
 
     try {

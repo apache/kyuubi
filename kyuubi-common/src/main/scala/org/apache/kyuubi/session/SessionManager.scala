@@ -97,6 +97,43 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     execPool.getActiveCount
   }
 
+  private var _confRestrictList: Set[String] = _
+  private var _confIgnoreList: Set[String] = _
+
+  // strip prefix and validate whether if key is restricted, ignored or valid
+  def validateKey(key: String, value: String): Option[(String, String)] = {
+    val normalizedKey = if (key.startsWith(SET_PREFIX)) {
+      val newKey = key.substring(SET_PREFIX.length)
+      if (newKey.startsWith(SYSTEM_PREFIX)) {
+        newKey.substring(SYSTEM_PREFIX.length)
+      } else if (newKey.startsWith(HIVECONF_PREFIX)) {
+        newKey.substring(HIVECONF_PREFIX.length)
+      } else if (newKey.startsWith(HIVEVAR_PREFIX)) {
+        newKey.substring(HIVEVAR_PREFIX.length)
+      } else if (newKey.startsWith(METACONF_PREFIX)) {
+        newKey.substring(METACONF_PREFIX.length)
+      } else {
+        newKey
+      }
+    } else {
+      key
+    }
+
+    if (_confRestrictList.contains(normalizedKey)) {
+      throw KyuubiSQLException(s"$normalizedKey is a restrict key according to the sever side" +
+        s" configuration, please remove it and retry if you want to proceed")
+    } else if (_confIgnoreList.contains(normalizedKey)) {
+      warn(s"$normalizedKey is a ignored key according to the sever side configuration")
+      None
+    } else {
+      Some((normalizedKey, value))
+    }
+  }
+
+  def validateAndNormalizeConf(config: Map[String, String]): Map[String, String] = config.flatMap {
+    case(k, v) => validateKey(k, v)
+  }
+
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     addService(operationManager)
 
@@ -116,6 +153,9 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     } else {
       conf.get(ENGINE_EXEC_KEEPALIVE_TIME)
     }
+
+    _confRestrictList = conf.get(SESSION_CONF_RESTRICT_LIST).toSet
+    _confIgnoreList = conf.get(SESSION_CONF_IGNORE_LIST).toSet
 
     execPool = ThreadUtils.newDaemonQueuedThreadPool(
       poolSize, waitQueueSize, keepAliveMs, s"$name-exec-pool")

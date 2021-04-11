@@ -52,6 +52,8 @@ abstract class AbstractSession(
     if (lastIdleTime > 0) System.currentTimeMillis() - _lastIdleTime else 0
   }
 
+  val normalizedConf: Map[String, String] = sessionManager.validateAndNormalizeConf(conf)
+
   private final val opHandleSet = new java.util.HashSet[OperationHandle]
 
   private def acquire(userAccess: Boolean): Unit = synchronized {
