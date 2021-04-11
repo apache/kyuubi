@@ -98,8 +98,8 @@ private[kyuubi] class ServiceControlCli extends Logging {
         }
       }
 
-      val title = s"Kyuubi service nodes exposed"
-      renderServiceNodesInfo(title, exposedServiceNodes)
+      val title = "Created zookeeper service nodes"
+      info(renderServiceNodesInfo(title, exposedServiceNodes))
     }
   }
 
@@ -113,7 +113,7 @@ private[kyuubi] class ServiceControlCli extends Logging {
       val nodes = getServiceNodes(zkClient, znodeRoot, hostPortOpt)
 
       val title = "Zookeeper service nodes"
-      renderServiceNodesInfo(title, nodes)
+      info(renderServiceNodesInfo(title, nodes))
     }
   }
 
@@ -153,20 +153,12 @@ private[kyuubi] class ServiceControlCli extends Logging {
       }
 
       val title = "Deleted zookeeper service nodes"
-      renderServiceNodesInfo(title, deletedNodes)
+      info(renderServiceNodesInfo(title, deletedNodes))
     }
   }
 
   private def printUsage(args: ServiceControlCliArguments): Unit = {
     args.printUsageAndExit(0)
-  }
-
-  private def renderServiceNodesInfo(title: String, serviceNodeInfo: Seq[ServiceNodeInfo]): Unit = {
-    val header = Seq("Namespace", "HOST", "PORT", "VERSION")
-    val rows = serviceNodeInfo.sortBy(_.nodeName).map { sn =>
-      Seq(sn.namespace, sn.host, sn.port.toString, sn.version.getOrElse(""))
-    }
-    info(Tabulator.format(title, header, rows))
   }
 }
 
@@ -212,5 +204,14 @@ object ServiceControlCli extends CommandLineUtils with Logging {
       case ServiceControlObject.ENGINE =>
         ZKPaths.makePath(s"${args.nameSpace}_${ShareLevel.USER}", args.user)
     }
+  }
+
+  private[ctl] def renderServiceNodesInfo(
+      title: String, serviceNodeInfo: Seq[ServiceNodeInfo]): String = {
+    val header = Seq("Namespace", "HOST", "PORT", "VERSION")
+    val rows = serviceNodeInfo.sortBy(_.nodeName).map { sn =>
+      Seq(sn.namespace, sn.host, sn.port.toString, sn.version.getOrElse(""))
+    }
+    Tabulator.format(title, header, rows)
   }
 }
