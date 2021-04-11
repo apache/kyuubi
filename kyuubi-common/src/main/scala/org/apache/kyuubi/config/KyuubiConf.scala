@@ -429,7 +429,12 @@ object KyuubiConf {
 
   val SESSION_CONF_IGNORE_LIST: ConfigEntry[Seq[String]] =
     buildConf("session.conf.ignore.list")
-      .doc("Which key should be removed from the user's session conf.")
+      .doc("A comma separated list of ignored keys. If the client connection contains any of" +
+        " them, the key and the corresponding value will be removed silently during engine" +
+        " bootstrap and connection setup." +
+        " Note that this rule is for server-side protection defined via administrators to" +
+        " prevent some essential configs from tampering but will not forbid users to set dynamic" +
+        " configurations via SET syntax.")
       .version("1.2.0")
       .stringConf
       .toSequence
@@ -437,7 +442,12 @@ object KyuubiConf {
 
   val SESSION_CONF_RESTRICT_LIST: ConfigEntry[Seq[String]] =
     buildConf("session.conf.restrict.list")
-      .doc("Restrict the session if the user's session conf has the key.")
+      .doc("A comma separated list of restricted keys. If the client connection contains any of" +
+        " them, the connection will be rejected explicitly during engine bootstrap and connection" +
+        " setup." +
+        " Note that this rule is for server-side protection defined via administrators to" +
+        " prevent some essential configs from tampering but will not forbid users to set dynamic" +
+        " configurations via SET syntax.")
       .version("1.2.0")
       .stringConf
       .toSequence
