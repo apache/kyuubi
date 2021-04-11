@@ -427,6 +427,20 @@ object KyuubiConf {
     .timeConf
     .createWithDefault(Duration.ofMinutes(30L).toMillis)
 
+  val SESSION_CONF_IGNORE_LIST: OptionalConfigEntry[String] =
+    buildConf("session.conf.ignore.list")
+      .doc("Which key should be removed from the user's session conf.")
+      .version("1.2.0")
+      .stringConf
+      .createOptional
+
+  val SESSION_CONF_RESTRICT_LIST: OptionalConfigEntry[String] =
+    buildConf("session.conf.restrict.list")
+      .doc("Restrict the session if the user's session conf has the key.")
+      .version("1.2.0")
+      .stringConf
+      .createOptional
+
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("backend.server.exec.pool.size")
       .doc("Number of threads in the operation execution thread pool of Kyuubi server")
