@@ -38,7 +38,7 @@ class SparkSqlEngineSuite extends WithKyuubiServer with JDBCTestUtils  {
   private def withSessionConf[T](conf: Map[String, String])(f: => T): T = {
     val tempConf = sessionConf
     sessionConf = conf
-    try f finally { sessionConf = tempConf}
+    try f finally { sessionConf = tempConf }
   }
 
   override def afterAll(): Unit = {

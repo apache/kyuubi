@@ -120,10 +120,10 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     }
 
     if (_confRestrictList.contains(normalizedKey)) {
-      throw KyuubiSQLException(s"$normalizedKey is a restrict key according to the sever side" +
+      throw KyuubiSQLException(s"$normalizedKey is a restrict key according to the server-side" +
         s" configuration, please remove it and retry if you want to proceed")
     } else if (_confIgnoreList.contains(normalizedKey)) {
-      warn(s"$normalizedKey is a ignored key according to the sever side configuration")
+      warn(s"$normalizedKey is a ignored key according to the server-side configuration")
       None
     } else {
       Some((normalizedKey, value))
