@@ -27,19 +27,19 @@ import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{ServiceDiscovery, ServiceNodeInfo}
 
-private[ctl] object KyuubiCtlAction extends Enumeration {
-  type KyuubiCtlAction = Value
+private[ctl] object ServiceControlAction extends Enumeration {
+  type ServiceControlAction = Value
   val CREATE, GET, DELETE, LIST, HELP = Value
 }
 
-private[ctl] object KyuubiCtlActionService extends Enumeration {
-  type KyuubiCtlActionService = Value
+private[ctl] object ServiceControlObject extends Enumeration {
+  type ServiceControlObject = Value
   val SERVER, ENGINE = Value
 }
 
 /**
  * Main gateway of lauching a Kyuubi Ctl action.
- * See usage in [[KyuubiCtlArguments.printUsageAndExit]].
+ * See usage in [[ServiceControlCliArguments.printUsageAndExit]].
  */
 private[kyuubi] class ServiceControlCli extends Logging {
   import ServiceControlCli._
@@ -51,22 +51,22 @@ private[kyuubi] class ServiceControlCli extends Logging {
       info(ctlArgs.toString)
     }
     ctlArgs.action match {
-      case KyuubiCtlAction.CREATE => create(ctlArgs)
-      case KyuubiCtlAction.LIST => list(ctlArgs, filterHostPort = false)
-      case KyuubiCtlAction.GET => list(ctlArgs, filterHostPort = true)
-      case KyuubiCtlAction.DELETE => delete(ctlArgs)
-      case KyuubiCtlAction.HELP => printUsage(ctlArgs)
+      case ServiceControlAction.CREATE => create(ctlArgs)
+      case ServiceControlAction.LIST => list(ctlArgs, filterHostPort = false)
+      case ServiceControlAction.GET => list(ctlArgs, filterHostPort = true)
+      case ServiceControlAction.DELETE => delete(ctlArgs)
+      case ServiceControlAction.HELP => printUsage(ctlArgs)
     }
   }
 
-  protected def parseArguments(args: Array[String]): KyuubiCtlArguments = {
-    new KyuubiCtlArguments(args)
+  protected def parseArguments(args: Array[String]): ServiceControlCliArguments = {
+    new ServiceControlCliArguments(args)
   }
 
   /**
    * Expose Kyuubi server instance to another domain.
    */
-  private def create(args: KyuubiCtlArguments): Unit = {
+  private def create(args: ServiceControlCliArguments): Unit = {
     val kyuubiConf = args.conf
 
     kyuubiConf.setIfMissing(HA_ZK_QUORUM, args.zkQuorum)
@@ -106,7 +106,7 @@ private[kyuubi] class ServiceControlCli extends Logging {
   /**
    * List Kyuubi server nodes info.
    */
-  private def list(args: KyuubiCtlArguments, filterHostPort: Boolean): Unit = {
+  private def list(args: ServiceControlCliArguments, filterHostPort: Boolean): Unit = {
     withZkClient(args.conf) { zkClient =>
       val znodeRoot = getZkNamespace(args)
       val hostPortOpt = if (filterHostPort) Some((args.host, args.port.toInt)) else None
@@ -133,7 +133,7 @@ private[kyuubi] class ServiceControlCli extends Logging {
   /**
    * Delete zookeeper service node with specified host port.
    */
-  private def delete(args: KyuubiCtlArguments): Unit = {
+  private def delete(args: ServiceControlCliArguments): Unit = {
     withZkClient(args.conf) { zkClient =>
       val znodeRoot = getZkNamespace(args)
       val hostPortOpt = Some((args.host, args.port.toInt))
@@ -157,7 +157,7 @@ private[kyuubi] class ServiceControlCli extends Logging {
     }
   }
 
-  private def printUsage(args: KyuubiCtlArguments): Unit = {
+  private def printUsage(args: ServiceControlCliArguments): Unit = {
     args.printUsageAndExit(0)
   }
 
@@ -175,8 +175,8 @@ object ServiceControlCli extends CommandLineUtils with Logging {
     val ctl = new ServiceControlCli() {
       self =>
 
-      override protected def parseArguments(args: Array[String]): KyuubiCtlArguments = {
-        new KyuubiCtlArguments(args) {
+      override protected def parseArguments(args: Array[String]): ServiceControlCliArguments = {
+        new ServiceControlCliArguments(args) {
           override def info(msg: => Any): Unit = self.info(msg)
 
           override def warn(msg: => Any): Unit = self.warn(msg)
@@ -196,7 +196,7 @@ object ServiceControlCli extends CommandLineUtils with Logging {
           super.doAction(args)
           exitFn(0)
         } catch {
-          case e: KyuubiCtlException =>
+          case e: ServiceControlCliException =>
             exitFn(e.exitCode)
         }
       }
@@ -205,11 +205,11 @@ object ServiceControlCli extends CommandLineUtils with Logging {
     ctl.doAction(args)
   }
 
-  private[ctl] def getZkNamespace(args: KyuubiCtlArguments): String = {
+  private[ctl] def getZkNamespace(args: ServiceControlCliArguments): String = {
     args.service match {
-      case KyuubiCtlActionService.SERVER =>
+      case ServiceControlObject.SERVER =>
         ZKPaths.makePath(null, args.nameSpace)
-      case KyuubiCtlActionService.ENGINE =>
+      case ServiceControlObject.ENGINE =>
         ZKPaths.makePath(s"${args.nameSpace}_${ShareLevel.USER}", args.user)
     }
   }

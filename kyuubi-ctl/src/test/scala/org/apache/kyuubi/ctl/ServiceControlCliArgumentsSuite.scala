@@ -20,7 +20,7 @@ package org.apache.kyuubi.ctl
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NAMESPACE
 
-class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
+class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
   val zkQuorum = "localhost:2181"
   val namespace = "kyuubi"
   val user = "kyuubi"
@@ -33,7 +33,7 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
     withLogAppender(logAppender) {
       val thread = new Thread {
         override def run(): Unit = try {
-          new KyuubiCtlArguments(args)
+          new ServiceControlCliArguments(args)
         } catch {
           case e: Exception =>
             error(e)
@@ -57,7 +57,7 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
           "--port", port,
           "--version", KYUUBI_VERSION
         )
-        val opArgs = new KyuubiCtlArguments(args)
+        val opArgs = new ServiceControlCliArguments(args)
         assert(opArgs.action.toString.equalsIgnoreCase(op))
         assert(opArgs.service.toString.equalsIgnoreCase(service))
         assert(opArgs.zkQuorum == zkQuorum)
@@ -82,7 +82,7 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
         "--port", port,
         "--version", KYUUBI_VERSION
       )
-      val opArgs = new KyuubiCtlArguments(args)
+      val opArgs = new ServiceControlCliArguments(args)
       assert(opArgs.action.toString.equalsIgnoreCase(op))
       assert(opArgs.service.toString.equalsIgnoreCase(service))
       assert(opArgs.zkQuorum == zkQuorum)
@@ -96,8 +96,8 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
 
   test("treat --help as action") {
     val args = Seq("--help")
-    val opArgs = new KyuubiCtlArguments(args)
-    assert(opArgs.action == KyuubiCtlAction.HELP)
+    val opArgs = new ServiceControlCliArguments(args)
+    assert(opArgs.action == ServiceControlAction.HELP)
     assert(opArgs.version == KYUUBI_VERSION)
 
     val args2 = Seq(
@@ -108,8 +108,8 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
       "--help",
       "--port", port
     )
-    val opArgs2 = new KyuubiCtlArguments(args2)
-    assert(opArgs2.action == KyuubiCtlAction.HELP)
+    val opArgs2 = new ServiceControlCliArguments(args2)
+    assert(opArgs2.action == ServiceControlAction.HELP)
     assert(opArgs2.user == user)
     assert(opArgs2.host == host)
     assert(opArgs2.verbose)
@@ -154,8 +154,8 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
       "--zk-quorum", zkQuorum,
       "--namespace", namespace
     )
-    val opArgs = new KyuubiCtlArguments(args3)
-    assert(opArgs.action == KyuubiCtlAction.LIST)
+    val opArgs = new ServiceControlCliArguments(args3)
+    assert(opArgs.action == ServiceControlAction.LIST)
   }
 
   test("test get/delete action arguments") {
@@ -202,7 +202,7 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
         "--host", host,
         "--port", port
       )
-      val opArgs6 = new KyuubiCtlArguments(args6)
+      val opArgs6 = new ServiceControlCliArguments(args6)
       assert(opArgs6.action.toString.equalsIgnoreCase(op))
     }
   }
@@ -210,23 +210,23 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
   test("test with switches at head") {
     val args = Seq("--verbose", "list", "engine", "--zk-quorum", zkQuorum, "--namespace",
       namespace)
-    val opArgs = new KyuubiCtlArguments(args)
+    val opArgs = new ServiceControlCliArguments(args)
     assert(opArgs.verbose)
-    assert(opArgs.action == KyuubiCtlAction.LIST)
-    assert(opArgs.service == KyuubiCtlActionService.ENGINE)
+    assert(opArgs.action == ServiceControlAction.LIST)
+    assert(opArgs.service == ServiceControlObject.ENGINE)
 
     val args2 = Seq("list", "--verbose", "engine", "--zk-quorum", zkQuorum, "--namespace",
       namespace)
-    val opArgs2 = new KyuubiCtlArguments(args2)
+    val opArgs2 = new ServiceControlCliArguments(args2)
     assert(opArgs2.verbose)
-    assert(opArgs2.action == KyuubiCtlAction.LIST)
-    assert(opArgs2.service == KyuubiCtlActionService.ENGINE)
+    assert(opArgs2.action == ServiceControlAction.LIST)
+    assert(opArgs2.service == ServiceControlObject.ENGINE)
 
     val args3 = Seq("list", "--verbose", "--help", "engine", "--zk-quorum", zkQuorum,
       "--namespace", namespace)
-    val opArgs3 = new KyuubiCtlArguments(args3)
+    val opArgs3 = new ServiceControlCliArguments(args3)
     assert(opArgs3.verbose)
-    assert(opArgs3.action == KyuubiCtlAction.HELP)
+    assert(opArgs3.action == ServiceControlAction.HELP)
   }
 
   test("test with unknown host") {
@@ -274,7 +274,7 @@ class KyuubiCtlArgumentsSuite extends KyuubiFunSuite {
         "--zk-quorum", zkQuorum,
         "--namespace", newNamespace
       )
-      val opArgs2 = new KyuubiCtlArguments(args2)
+      val opArgs2 = new ServiceControlCliArguments(args2)
       assert(opArgs2.action.toString.equalsIgnoreCase(op))
 
       val args4 = Array(

@@ -24,14 +24,14 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ctl.KyuubiCtlAction._
-import org.apache.kyuubi.ctl.KyuubiCtlActionService._
+import org.apache.kyuubi.ctl.ServiceControlAction._
+import org.apache.kyuubi.ctl.ServiceControlObject._
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 
-class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
-  extends KyuubiCtlArgumentsParser with Logging {
-  var action: KyuubiCtlAction = null
-  var service: KyuubiCtlActionService = null
+class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = sys.env)
+  extends ServiceControlCliArgumentsParser with Logging {
+  var action: ServiceControlAction = null
+  var service: ServiceControlObject = null
   var zkQuorum: String = null
   var nameSpace: String = null
   var user: String = null
@@ -62,7 +62,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
 
     // for create action, it only expose Kyuubi service instance to another domain,
     // so we do not use namespace from default conf
-    if (action != KyuubiCtlAction.CREATE && nameSpace == null) {
+    if (action != ServiceControlAction.CREATE && nameSpace == null) {
       conf.getOption(HA_ZK_NAMESPACE.key).foreach { v =>
         if (verbose) {
           info(s"Zookeeper namespace is not specified, use value from default conf:$v")
@@ -81,19 +81,19 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
 
   /** Ensure that required fields exists. Call this only once all defaults are loaded. */
   private def validateArguments(): Unit = {
-    service = Option(service).getOrElse(KyuubiCtlActionService.SERVER)
+    service = Option(service).getOrElse(ServiceControlObject.SERVER)
     action match {
-      case KyuubiCtlAction.CREATE => validateCreateActionArguments()
-      case KyuubiCtlAction.GET => validateGetDeleteActionArguments()
-      case KyuubiCtlAction.DELETE => validateGetDeleteActionArguments()
-      case KyuubiCtlAction.LIST => validateListActionArguments()
-      case KyuubiCtlAction.HELP =>
+      case ServiceControlAction.CREATE => validateCreateActionArguments()
+      case ServiceControlAction.GET => validateGetDeleteActionArguments()
+      case ServiceControlAction.DELETE => validateGetDeleteActionArguments()
+      case ServiceControlAction.LIST => validateListActionArguments()
+      case ServiceControlAction.HELP =>
       case _ => printUsageAndExit(-1)
     }
   }
 
   private def validateCreateActionArguments(): Unit = {
-    if (service != KyuubiCtlActionService.SERVER) {
+    if (service != ServiceControlObject.SERVER) {
       fail("Only support expose Kyuubi server instance to another domain")
     }
     validateZkArguments()
@@ -130,7 +130,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
       fail("Zookeeper quorum is not specified and no default value to load")
     }
     if (nameSpace == null) {
-      if (action == KyuubiCtlAction.CREATE) {
+      if (action == ServiceControlAction.CREATE) {
         fail("Zookeeper namespace is not specified")
       } else {
         fail("Zookeeper namespace is not specified and no default value to load")
@@ -164,7 +164,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
   }
 
   private def validateUser(): Unit = {
-    if (service == KyuubiCtlActionService.ENGINE && user == null) {
+    if (service == ServiceControlObject.ENGINE && user == null) {
       fail("Must specify user name for engine")
     }
   }
@@ -207,7 +207,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
       """.stripMargin
     )
 
-    throw new KyuubiCtlException(exitCode)
+    throw new ServiceControlCliException(exitCode)
   }
 
   override protected def parseActionAndService(args: JList[String]): Int = {
@@ -224,20 +224,20 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
       if (!actionParsed) {
         arg match {
           case CREATE =>
-            action = KyuubiCtlAction.CREATE
+            action = ServiceControlAction.CREATE
             actionParsed = true
           case GET =>
-            action = KyuubiCtlAction.GET
+            action = ServiceControlAction.GET
             actionParsed = true
           case DELETE =>
-            action = KyuubiCtlAction.DELETE
+            action = ServiceControlAction.DELETE
             actionParsed = true
           case LIST =>
-            action = KyuubiCtlAction.LIST
+            action = ServiceControlAction.LIST
             actionParsed = true
           case _ => findSwitches(arg) match {
             case HELP =>
-              action = KyuubiCtlAction.HELP
+              action = ServiceControlAction.HELP
               actionParsed = true
             case VERBOSE =>
               verbose = true
@@ -249,22 +249,22 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
       } else if (needContinueHandle() && !serviceParsed) {
         arg match {
           case SERVER =>
-            service = KyuubiCtlActionService.SERVER
+            service = ServiceControlObject.SERVER
             serviceParsed = true
             offset += 1
           case ENGINE =>
-            service = KyuubiCtlActionService.ENGINE
+            service = ServiceControlObject.ENGINE
             serviceParsed = true
             offset += 1
           case _ => findSwitches(arg) match {
             case HELP =>
-              action = KyuubiCtlAction.HELP
+              action = ServiceControlAction.HELP
               offset += 1
             case VERBOSE =>
               verbose = true
               offset += 1
             case _ =>
-              service = KyuubiCtlActionService.SERVER
+              service = ServiceControlObject.SERVER
               serviceParsed = true
           }
         }
@@ -288,7 +288,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
   }
 
   private def needContinueHandle(): Boolean = {
-    action != KyuubiCtlAction.HELP
+    action != ServiceControlAction.HELP
   }
 
   /** Fill in values by parsing user options. */
@@ -316,7 +316,7 @@ class KyuubiCtlArguments(args: Seq[String], env: Map[String, String] = sys.env)
         version = value
 
       case HELP =>
-        action = KyuubiCtlAction.HELP
+        action = ServiceControlAction.HELP
 
       case VERBOSE =>
         verbose = true

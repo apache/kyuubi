@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-abstract class KyuubiCtlOptionParser {
+abstract class ServiceControlCliOptionParser {
   protected final String CREATE = "create";
   protected final String GET = "get";
   protected final String DELETE = "delete";

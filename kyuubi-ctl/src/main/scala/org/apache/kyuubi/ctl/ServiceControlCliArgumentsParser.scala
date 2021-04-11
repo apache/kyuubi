@@ -17,7 +17,5 @@
 
 package org.apache.kyuubi.ctl
 
-import org.apache.kyuubi.KyuubiException
-
-private[kyuubi] case class KyuubiCtlException(exitCode: Int)
-  extends KyuubiException(s"Kyuubi Ctl exited with $exitCode")
+private[kyuubi] abstract class ServiceControlCliArgumentsParser
+  extends ServiceControlCliOptionParser

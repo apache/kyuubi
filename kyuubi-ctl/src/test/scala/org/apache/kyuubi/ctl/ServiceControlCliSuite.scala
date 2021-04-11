@@ -202,7 +202,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--zk-quorum", zkServer.getConnectString,
       "--namespace", namespace
     )
-    assert(getZkNamespace(new KyuubiCtlArguments(arg1)) == s"/$namespace")
+    assert(getZkNamespace(new ServiceControlCliArguments(arg1)) == s"/$namespace")
 
     val arg2 = Array(
       "list", "engine",
@@ -210,7 +210,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--namespace", namespace,
       "--user", user
     )
-    assert(getZkNamespace(new KyuubiCtlArguments(arg2)) == s"/${namespace}_USER/$user")
+    assert(getZkNamespace(new ServiceControlCliArguments(arg2)) == s"/${namespace}_USER/$user")
   }
 
   test("test list zk service nodes info") {
