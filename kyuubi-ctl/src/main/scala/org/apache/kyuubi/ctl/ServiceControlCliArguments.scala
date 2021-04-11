@@ -33,7 +33,7 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
   var action: ServiceControlAction = null
   var service: ServiceControlObject = null
   var zkQuorum: String = null
-  var nameSpace: String = null
+  var namespace: String = null
   var user: String = null
   var host: String = null
   var port: String = null
@@ -62,12 +62,12 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
 
     // for create action, it only expose Kyuubi service instance to another domain,
     // so we do not use namespace from default conf
-    if (action != ServiceControlAction.CREATE && nameSpace == null) {
+    if (action != ServiceControlAction.CREATE && namespace == null) {
       conf.getOption(HA_ZK_NAMESPACE.key).foreach { v =>
         if (verbose) {
           info(s"Zookeeper namespace is not specified, use value from default conf:$v")
         }
-        nameSpace = v
+        namespace = v
       }
     }
 
@@ -99,11 +99,11 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
     validateZkArguments()
 
     val defaultNamespace = conf.getOption(HA_ZK_NAMESPACE.key)
-    if (defaultNamespace.isEmpty || defaultNamespace.get.equals(nameSpace)) {
+    if (defaultNamespace.isEmpty || defaultNamespace.get.equals(namespace)) {
       fail(
         s"""
           |Only support expose Kyuubi server instance to another domain, but the default
-          |namespace is [$defaultNamespace] and specified namespace is [$nameSpace]
+          |namespace is [$defaultNamespace] and specified namespace is [$namespace]
         """.stripMargin)
     }
   }
@@ -122,14 +122,14 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
 
   private def mergeArgsIntoKyuubiConf(): Unit = {
     conf.set(HA_ZK_QUORUM.key, zkQuorum)
-    conf.set(HA_ZK_NAMESPACE.key, nameSpace)
+    conf.set(HA_ZK_NAMESPACE.key, namespace)
   }
 
   private def validateZkArguments(): Unit = {
     if (zkQuorum == null) {
       fail("Zookeeper quorum is not specified and no default value to load")
     }
-    if (nameSpace == null) {
+    if (namespace == null) {
       if (action == ServiceControlAction.CREATE) {
         fail("Zookeeper namespace is not specified")
       } else {
@@ -277,8 +277,8 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
     s"""Parsed arguments:
        |  action                  $action
        |  service                 $service
-       |  zkQuorum               $zkQuorum
-       |  namespace               $nameSpace
+       |  zkQuorum                $zkQuorum
+       |  namespace               $namespace
        |  user                    $user
        |  host                    $host
        |  port                    $port
@@ -301,7 +301,7 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
         zkQuorum = value
 
       case NAMESPACE =>
-        nameSpace = value
+        namespace = value
 
       case USER =>
         user = value

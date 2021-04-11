@@ -83,7 +83,7 @@ private[kyuubi] class ServiceControlCli extends Logging {
             info(s"Exposing server instance:${sn.instance} with version:${sn.version}" +
               s" from $fromNamespace to $toNamespace")
             val newNode = createZkServiceNode(
-              kyuubiConf, zc, args.nameSpace, sn.instance, sn.version, true)
+              kyuubiConf, zc, args.namespace, sn.instance, sn.version, true)
             exposedServiceNodes += sn.copy(
               namespace = toNamespace,
               nodeName = newNode.getActualPath.split("/").last)
@@ -200,9 +200,9 @@ object ServiceControlCli extends CommandLineUtils with Logging {
   private[ctl] def getZkNamespace(args: ServiceControlCliArguments): String = {
     args.service match {
       case ServiceControlObject.SERVER =>
-        ZKPaths.makePath(null, args.nameSpace)
+        ZKPaths.makePath(null, args.namespace)
       case ServiceControlObject.ENGINE =>
-        ZKPaths.makePath(s"${args.nameSpace}_${ShareLevel.USER}", args.user)
+        ZKPaths.makePath(s"${args.namespace}_${ShareLevel.USER}", args.user)
     }
   }
 
