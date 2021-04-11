@@ -33,15 +33,13 @@ import org.apache.curator.retry._
 import org.apache.curator.utils.ZKPaths
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager.JaasConfiguration
-import org.apache.zookeeper.{WatchedEvent, Watcher}
+import org.apache.zookeeper.{CreateMode, KeeperException, WatchedEvent, Watcher}
 import org.apache.zookeeper.CreateMode.PERSISTENT
-import org.apache.zookeeper.KeeperException
 import org.apache.zookeeper.KeeperException.NodeExistsException
 
-import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException}
+import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.ServiceDiscovery._
 import org.apache.kyuubi.service.{AbstractService, Serverable}
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
 
@@ -54,6 +52,7 @@ import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
 abstract class ServiceDiscovery private (
     name: String,
     server: Serverable) extends AbstractService(name) {
+  import ServiceDiscovery._
 
   def this(server: Serverable) =
     this(classOf[ServiceDiscovery].getSimpleName, server)
@@ -102,42 +101,8 @@ abstract class ServiceDiscovery private (
   }
 
   override def start(): Unit = {
-    val ns = ZKPaths.makePath(null, namespace)
-    try {
-      zkClient
-        .create()
-        .creatingParentsIfNeeded()
-        .withMode(PERSISTENT)
-        .forPath(ns)
-    } catch {
-      case _: NodeExistsException =>  // do nothing
-      case e: KeeperException =>
-        throw new KyuubiException(s"Failed to create namespace '$ns'", e)
-    }
     val instance = server.connectionUrl
-    val pathPrefix = ZKPaths.makePath(
-      namespace,
-      s"serviceUri=$instance;version=$KYUUBI_VERSION;sequence=")
-    try {
-      _serviceNode = new PersistentEphemeralNode(
-        zkClient,
-        PersistentEphemeralNode.Mode.EPHEMERAL_SEQUENTIAL,
-        pathPrefix,
-        instance.getBytes(StandardCharsets.UTF_8))
-      serviceNode.start()
-      val znodeTimeout = conf.get(HA_ZK_NODE_TIMEOUT)
-      if (!serviceNode.waitForInitialCreate(znodeTimeout, TimeUnit.MILLISECONDS)) {
-        throw new KyuubiException(s"Max znode creation wait time $znodeTimeout s exhausted")
-      }
-      info(s"Created a ${serviceNode.getActualPath} on ZooKeeper for KyuubiServer uri: " + instance)
-    } catch {
-      case e: Exception =>
-        if (serviceNode != null) {
-          serviceNode.close()
-        }
-        throw new KyuubiException(
-          s"Unable to create a znode for this server instance: $instance", e)
-    }
+    _serviceNode = createZkServiceNode(conf, zkClient, namespace, instance)
 
     // Set a watch on the serviceNode
     val watcher = new DeRegisterWatcher
@@ -191,7 +156,7 @@ abstract class ServiceDiscovery private (
   }
 }
 
-object ServiceDiscovery {
+object ServiceDiscovery extends Logging {
   import RetryPolicies._
 
   private final lazy val connectionChecker =
@@ -244,6 +209,22 @@ object ServiceDiscovery {
   }
 
   /**
+   * Creates a zookeeper client before calling `f` and close it after calling `f`.
+   */
+  def withZkClient(conf: KyuubiConf)(f: CuratorFramework => Unit): Unit = {
+    val zkClient = startZookeeperClient(conf)
+    try {
+      f(zkClient)
+    } finally {
+      try {
+        zkClient.close()
+      } catch {
+        case e: IOException => error("Failed to release the zkClient", e)
+      }
+    }
+  }
+
+  /**
    * For a kerberized cluster, we dynamically set up the client's JAAS conf.
    *
    * @param conf SparkConf
@@ -274,20 +255,99 @@ object ServiceDiscovery {
   }
 
   def getServerHost(zkClient: CuratorFramework, namespace: String): Option[(String, Int)] = {
-    try {
-      val hosts = zkClient.getChildren.forPath(namespace)
-      // TODO: use last one because to avoid touching some maybe-crashed engines
-      // We need a big improvement here.
-      hosts.asScala.lastOption.map { p =>
-        val path = ZKPaths.makePath(namespace, p)
-        val hostPort = new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
-        val strings = hostPort.split(":")
-        val host = strings.head
-        val port = strings(1).toInt
-        (host, port)
-      }
-    } catch {
-      case _: Exception => None
+    // TODO: use last one because to avoid touching some maybe-crashed engines
+    // We need a big improvement here.
+    getServiceNodesInfo(zkClient, namespace, Some(1)) match {
+      case Seq(sn) => Some((sn.host, sn.port))
+      case _ => None
     }
   }
+
+  def getServiceNodesInfo(
+      zkClient: CuratorFramework,
+      namespace: String,
+      sizeOpt: Option[Int] = None): Seq[ServiceNodeInfo] = {
+    try {
+      val hosts = zkClient.getChildren.forPath(namespace)
+      val size = sizeOpt.getOrElse(hosts.size())
+      hosts.asScala.takeRight(size).map { p =>
+        val path = ZKPaths.makePath(namespace, p)
+        val instance = new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
+        val strings = instance.split(":")
+        val host = strings.head
+        val port = strings(1).toInt
+        val version = p.split(";").find(_.startsWith("version=")).map(_.stripPrefix("version="))
+        info(s"Get service instance:$instance and version:$version under $namespace")
+        ServiceNodeInfo(namespace, p, host, port, version)
+      }
+    } catch {
+      case e: Exception =>
+        error(s"Failed to get service node info", e)
+        Seq.empty
+    }
+  }
+
+  def createZkServiceNode(
+      conf: KyuubiConf,
+      zkClient: CuratorFramework,
+      namespace: String,
+      instance: String,
+      version: Option[String] = None,
+      external: Boolean = false): PersistentNode = {
+    val ns = ZKPaths.makePath(null, namespace)
+    try {
+      zkClient
+        .create()
+        .creatingParentsIfNeeded()
+        .withMode(PERSISTENT)
+        .forPath(ns)
+    } catch {
+      case _: NodeExistsException =>  // do nothing
+      case e: KeeperException =>
+        throw new KyuubiException(s"Failed to create namespace '$ns'", e)
+    }
+    val pathPrefix = ZKPaths.makePath(
+      namespace,
+      s"serviceUri=$instance;version=${version.getOrElse(KYUUBI_VERSION)};sequence=")
+    var serviceNode: PersistentNode = null
+    try {
+      if (external) {
+        serviceNode = new PersistentNode(
+          zkClient,
+          CreateMode.PERSISTENT_SEQUENTIAL,
+          false,
+          pathPrefix,
+          instance.getBytes(StandardCharsets.UTF_8))
+      } else {
+        serviceNode = new PersistentEphemeralNode(
+          zkClient,
+          PersistentEphemeralNode.Mode.EPHEMERAL_SEQUENTIAL,
+          pathPrefix,
+          instance.getBytes(StandardCharsets.UTF_8))
+      }
+      serviceNode.start()
+      val znodeTimeout = conf.get(HA_ZK_NODE_TIMEOUT)
+      if (!serviceNode.waitForInitialCreate(znodeTimeout, TimeUnit.MILLISECONDS)) {
+        throw new KyuubiException(s"Max znode creation wait time $znodeTimeout s exhausted")
+      }
+      info(s"Created a ${serviceNode.getActualPath} on ZooKeeper for KyuubiServer uri: " + instance)
+    } catch {
+      case e: Exception =>
+        if (serviceNode != null) {
+          serviceNode.close()
+        }
+        throw new KyuubiException(
+          s"Unable to create a znode for this server instance: $instance", e)
+    }
+    serviceNode
+  }
+}
+
+case class ServiceNodeInfo(
+    namespace: String,
+    nodeName: String,
+    host: String,
+    port: Int,
+    version: Option[String]) {
+  def instance: String = s"$host:$port"
 }

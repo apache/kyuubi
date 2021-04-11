@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.session
 
-import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
@@ -96,9 +95,8 @@ class KyuubiSessionImpl(
       ms.incAndGetCount(MetricRegistry.name(CONN_OPEN, user))
     }
     super.open()
-    val zkClient = startZookeeperClient(sessionConf)
-    logSessionInfo(s"Connected to Zookeeper")
-    try {
+    withZkClient(sessionConf) { zkClient =>
+      logSessionInfo(s"Connected to Zookeeper")
       getServerHost(zkClient, appZkNamespace) match {
         case Some((host, port)) => openSession(host, port)
         case None =>
@@ -144,12 +142,6 @@ class KyuubiSessionImpl(
             // we have a log capture thread in process builder.
             builder.close()
           }
-      }
-    } finally {
-      try {
-        zkClient.close()
-      } catch {
-        case e: IOException => error("Failed to release the zkClient after session established", e)
       }
     }
   }

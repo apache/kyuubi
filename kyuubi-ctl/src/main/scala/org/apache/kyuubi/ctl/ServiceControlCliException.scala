@@ -19,5 +19,5 @@ package org.apache.kyuubi.ctl
 
 import org.apache.kyuubi.KyuubiException
 
-class KyuubiCtlException(exitCode: Int)
-  extends KyuubiException(s"Kyuubi Ctl exited with $exitCode")
+private[kyuubi] case class ServiceControlCliException(exitCode: Int)
+  extends KyuubiException(s"Kyuubi service control cli exited with $exitCode")

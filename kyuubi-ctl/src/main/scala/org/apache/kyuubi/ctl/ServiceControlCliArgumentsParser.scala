@@ -17,12 +17,5 @@
 
 package org.apache.kyuubi.ctl
 
-private[ctl] object  KyuubiCtlAction extends Enumeration {
-  type KyuubiCtlAction = Value
-  val CREATE, GET, DELETE, LIST, HELP = Value
-}
-
-private[ctl] object KyuubiCtlActionService extends Enumeration {
-  type KyuubiCtlActionService = Value
-  val SERVER, ENGINE = Value
-}
+private[kyuubi] abstract class ServiceControlCliArgumentsParser
+  extends ServiceControlCliOptionParser

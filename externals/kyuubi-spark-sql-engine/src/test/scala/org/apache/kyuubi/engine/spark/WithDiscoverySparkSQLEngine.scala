@@ -62,12 +62,7 @@ trait WithDiscoverySparkSQLEngine extends WithSparkSQLEngine {
   }
 
   def withZkClient(f: CuratorFramework => Unit): Unit = {
-    val zkClient = ServiceDiscovery.startZookeeperClient(kyuubiConf)
-    try {
-      f(zkClient)
-    } finally {
-      zkClient.close()
-    }
+    ServiceDiscovery.withZkClient(kyuubiConf)(f)
   }
 
   protected def getDiscoveryConnectionString: String = {

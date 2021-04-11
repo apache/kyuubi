@@ -64,7 +64,7 @@ trait KyuubiFunSuite extends FunSuite
    * the specified name, then executes the specified function, and in the end removes the log
    * appender and restores the log level if necessary.
    */
-  protected def withLogAppender(
+  final def withLogAppender(
       appender: Appender,
       loggerName: Option[String] = None,
       level: Option[Level] = None)(
@@ -96,5 +96,23 @@ trait KyuubiFunSuite extends FunSuite
     }
     override def close(): Unit = {}
     override def requiresLayout(): Boolean = false
+  }
+
+  final def withSystemProperty(key: String, value: String)(f: => Unit): Unit = {
+    val originValue = System.getProperty(key)
+    setSystemProperty(key, value)
+    try {
+      f
+    } finally {
+      setSystemProperty(key, originValue)
+    }
+  }
+
+  final def setSystemProperty(key: String, value: String): Unit = {
+    if (value == null) {
+      System.clearProperty(key)
+    } else {
+      System.setProperty(key, value)
+    }
   }
 }
