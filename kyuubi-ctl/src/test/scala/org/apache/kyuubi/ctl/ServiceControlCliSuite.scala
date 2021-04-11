@@ -161,10 +161,10 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     val nodes = Seq(ServiceNodeInfo("/kyuubi", "serviceNode", "localhost", 10000, Some("version")))
     val renderedInfo = renderServiceNodesInfo(title, nodes)
     val expected = {
-      "\n               test render               " +
+      s"\n               $title               " +
       """
         |+----------+----------+----------+----------+
-        ||Namespace |   HOST   |   PORT   | VERSION  |
+        ||Namespace |   Host   |   Port   | Version  |
         |+----------+----------+----------+----------+
         || /kyuubi  |localhost |  10000   | version  |
         |+----------+----------+----------+----------+

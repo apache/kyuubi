@@ -208,7 +208,7 @@ object ServiceControlCli extends CommandLineUtils with Logging {
 
   private[ctl] def renderServiceNodesInfo(
       title: String, serviceNodeInfo: Seq[ServiceNodeInfo]): String = {
-    val header = Seq("Namespace", "HOST", "PORT", "VERSION")
+    val header = Seq("Namespace", "Host", "Port", "Version")
     val rows = serviceNodeInfo.sortBy(_.nodeName).map { sn =>
       Seq(sn.namespace, sn.host, sn.port.toString, sn.version.getOrElse(""))
     }
