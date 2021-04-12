@@ -201,6 +201,7 @@ fi
 
 # Copy license and ASF files
 cp "$KYUUBI_HOME/LICENSE" "$DISTDIR"
+cp "$KYUUBI_HOME/LICENSE-binary" "$DISTDIR"
 cp -r "$KYUUBI_HOME/bin" "$DISTDIR"
 cp -r "$KYUUBI_HOME/conf" "$DISTDIR"
 
