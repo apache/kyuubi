@@ -53,26 +53,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     val handle = sessionImpl.handle
     try {
       val sparkSession = spark.newSession()
-      conf.foreach {
-        case (k, v) if k.startsWith(SET_PREFIX) =>
-          val newKey = k.substring(SET_PREFIX.length)
-          if (newKey.startsWith(SYSTEM_PREFIX)) {
-            setModifiableConfig(sparkSession, newKey.substring(SYSTEM_PREFIX.length), v)
-          } else if (newKey.startsWith(HIVECONF_PREFIX) && newKey.startsWith(SPARK_PREFIX)) {
-            setModifiableConfig(sparkSession, newKey.substring(HIVECONF_PREFIX.length), v)
-          } else if (newKey.startsWith(HIVECONF_PREFIX)) {
-            setModifiableConfig(sparkSession, newKey.substring(HIVECONF_PREFIX.length), v)
-          } else if (newKey.startsWith(HIVEVAR_PREFIX) && newKey.startsWith(SPARK_PREFIX)) {
-            setModifiableConfig(sparkSession, newKey.substring(HIVEVAR_PREFIX.length), v)
-          } else if (newKey.startsWith(HIVEVAR_PREFIX)) {
-            setModifiableConfig(sparkSession, newKey.substring(HIVEVAR_PREFIX.length), v)
-          } else if (newKey.startsWith(METACONF_PREFIX) && newKey.startsWith(SPARK_PREFIX)) {
-            setModifiableConfig(sparkSession, newKey.substring(METACONF_PREFIX.length), v)
-          } else if (newKey.startsWith(METACONF_PREFIX)) {
-            setModifiableConfig(sparkSession, newKey.substring(METACONF_PREFIX.length), v)
-          } else {
-            setModifiableConfig(sparkSession, k, v)
-          }
+      sessionImpl.normalizedConf.foreach {
         case ("use:database", database) => sparkSession.catalog.setCurrentDatabase(database)
         case (key, value) => setModifiableConfig(sparkSession, key, value)
       }

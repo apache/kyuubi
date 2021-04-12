@@ -18,15 +18,35 @@
 package org.apache.kyuubi.engine.spark
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_INITIALIZE_SQL
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_INITIALIZE_SQL, SESSION_CONF_IGNORE_LIST, SESSION_CONF_RESTRICT_LIST}
 import org.apache.kyuubi.operation.{JDBCTestUtils, WithKyuubiServer}
 
-class SparkSqlEngineSuite extends WithKyuubiServer with JDBCTestUtils  {
+class SparkSqlEngineSuite extends WithKyuubiServer with JDBCTestUtils {
   override protected val conf: KyuubiConf = {
-    KyuubiConf().set(ENGINE_INITIALIZE_SQL.key,
+    KyuubiConf().set(ENGINE_INITIALIZE_SQL,
       "CREATE DATABASE IF NOT EXISTS INIT_DB;" +
         "CREATE TABLE IF NOT EXISTS INIT_DB.test(a int);" +
         "INSERT OVERWRITE TABLE INIT_DB.test SELECT 1;")
+      .set(SESSION_CONF_IGNORE_LIST.key, "kyuubi.abc.xyz,spark.sql.abc.xyz,spark.sql.abc.var")
+      .set(SESSION_CONF_RESTRICT_LIST.key, "kyuubi.xyz.abc,spark.sql.xyz.abc,spark.sql.xyz.abc.var")
+  }
+
+  private var _sessionConfs: Map[String, String] = Map.empty
+  private var _sparkHiveConfs: Map[String, String] = Map.empty
+  private var _sparkHiveVars: Map[String, String] = Map.empty
+
+  private def withSessionConf[T](
+      sessionConfs: Map[String, String])(
+      sparkHiveConfs: Map[String, String])(
+      sparkHiveVars: Map[String, String])(f: => T): T = {
+    this._sessionConfs = sessionConfs
+    this._sparkHiveConfs = sparkHiveConfs
+    this._sparkHiveVars = sparkHiveVars
+    try f finally {
+      _sparkHiveVars = Map.empty
+      _sparkHiveConfs = Map.empty
+      _sessionConfs = Map.empty
+    }
   }
 
   override def afterAll(): Unit = {
@@ -46,5 +66,58 @@ class SparkSqlEngineSuite extends WithKyuubiServer with JDBCTestUtils  {
     }
   }
 
+  test("ignore config via system settings") {
+    val sessionConf = Map("kyuubi.abc.xyz" -> "123", "kyuubi.abc.xyz0" -> "123")
+    val sparkHiveConfs = Map("spark.sql.abc.xyz" -> "123", "spark.sql.abc.xyz0" -> "123")
+    val sparkHiveVars = Map("spark.sql.abc.var" -> "123", "spark.sql.abc.var0" -> "123")
+    withSessionConf(sessionConf)(sparkHiveConfs)(sparkHiveVars) {
+     withJdbcStatement() { statement =>
+       Seq("spark.sql.abc.xyz", "spark.sql.abc.var").foreach { key =>
+         val rs1 = statement.executeQuery(s"SET ${key}0")
+         assert(rs1.next())
+         assert(rs1.getString("value") === "123")
+         val rs2 = statement.executeQuery(s"SET $key")
+         assert(rs2.next())
+         assert(rs2.getString("value") === "<undefined>", "ignored")
+       }
+     }
+   }
+  }
+
+  test("restricted config via system settings") {
+    val sessionConfMap = Map("kyuubi.xyz.abc" -> "123", "kyuubi.abc.xyz" -> "123")
+    withSessionConf(sessionConfMap)(Map.empty)(Map.empty) {
+      withJdbcStatement() { statement =>
+        sessionConfMap.keys.foreach { key =>
+          val rs = statement.executeQuery(s"SET $key")
+          assert(rs.next())
+          assert(rs.getString("value") === "<undefined>",
+            "session configs do not reach on server-side")
+        }
+
+      }
+    }
+
+    withSessionConf(Map.empty)(Map("spark.sql.xyz.abc" -> "123"))(Map.empty) {
+      assertJDBCConnectionFail()
+    }
+
+    withSessionConf(Map.empty)(Map.empty)(Map("spark.sql.xyz.abc.var" -> "123")) {
+      assertJDBCConnectionFail()
+    }
+  }
+
   override protected def jdbcUrl: String = getJdbcUrl
+
+  override protected def sessionConfigs: Map[String, String] = {
+    super.sessionConfigs ++: _sessionConfs
+  }
+
+  override protected def sparkHiveConfigs: Map[String, String] = {
+    super.sparkHiveConfigs ++: _sparkHiveConfs
+  }
+
+  override protected def sparkHiveVars: Map[String, String] = {
+    super.sparkHiveVars ++: _sparkHiveVars
+  }
 }
