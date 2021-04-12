@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.operation
 
-import java.sql.{DriverManager, ResultSet, Statement}
+import java.sql.{DriverManager, ResultSet, SQLException, Statement}
 import java.util.Locale
 
 import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TOpenSessionReq, TSessionHandle}
@@ -25,6 +25,7 @@ import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
 trait JDBCTestUtils extends KyuubiFunSuite {
@@ -33,10 +34,31 @@ trait JDBCTestUtils extends KyuubiFunSuite {
   protected val user: String = Utils.currentUser
   protected val patterns = Seq("", "*", "%", null, ".*", "_*", "_%", ".%")
   protected def jdbcUrl: String
-  protected def configMap: Map[String, String] = Map.empty
+  protected def sessionConfigs: Map[String, String] = Map.empty
+  protected def sparkHiveConfigs: Map[String, String] = {
+    // TODO: KYUUBI-504: forbid setting FRONTEND_BIND_HOST by connection string in engine side
+    Map(KyuubiConf.FRONTEND_BIND_HOST.key -> "localhost")
+  }
+  protected def sparkHiveVars: Map[String, String] = Map.empty
+
 
   private def jdbcUrlWithConf: String = {
-    jdbcUrl + configMap.map(kv => kv._1 + "=" + kv._2).mkString(";")
+    val sessionConfStr = sessionConfigs.map(kv => kv._1 + "=" + kv._2).mkString(";")
+    val sparkHiveConfStr = if (sparkHiveConfigs.isEmpty) {
+      ""
+    } else {
+      "?" + sparkHiveConfigs.map(kv => kv._1 + "=" + kv._2).mkString(";")
+    }
+    val sparkHiveVarsStr = if (sparkHiveVars.isEmpty) {
+      ""
+    } else {
+      "#" + sparkHiveVars.map(kv => kv._1 + "=" + kv._2).mkString(";")
+    }
+    jdbcUrl + sessionConfStr + sparkHiveConfStr + sparkHiveVarsStr
+  }
+
+  def assertJDBCConnectionFail(jdbcUrl: String = jdbcUrlWithConf): SQLException = {
+    intercept[SQLException](DriverManager.getConnection(jdbcUrl, user, ""))
   }
 
   def withMultipleConnectionJdbcStatement(
