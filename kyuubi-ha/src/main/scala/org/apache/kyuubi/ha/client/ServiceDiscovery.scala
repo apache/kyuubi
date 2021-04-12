@@ -26,7 +26,7 @@ import javax.security.auth.login.Configuration
 import scala.collection.JavaConverters._
 
 import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
-import org.apache.curator.framework.recipes.nodes.{PersistentEphemeralNode, PersistentNode}
+import org.apache.curator.framework.recipes.nodes.PersistentNode
 import org.apache.curator.framework.state.{ConnectionState, ConnectionStateListener}
 import org.apache.curator.framework.state.ConnectionState.{CONNECTED, LOST, RECONNECTED}
 import org.apache.curator.retry._
@@ -319,9 +319,10 @@ object ServiceDiscovery extends Logging {
           pathPrefix,
           instance.getBytes(StandardCharsets.UTF_8))
       } else {
-        serviceNode = new PersistentEphemeralNode(
+        serviceNode = new PersistentNode(
           zkClient,
-          PersistentEphemeralNode.Mode.EPHEMERAL_SEQUENTIAL,
+          CreateMode.EPHEMERAL_SEQUENTIAL,
+          false,
           pathPrefix,
           instance.getBytes(StandardCharsets.UTF_8))
       }
