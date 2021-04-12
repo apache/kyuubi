@@ -199,9 +199,14 @@ if [[ "$SPARK_PROVIDED" != "true" ]]; then
         "$DISTDIR/externals/spark-$SPARK_VERSION-bin-hadoop${SPARK_HADOOP_VERSION}$HIVE_VERSION_SUFFIX/"
 fi
 
-# Copy license and ASF files
-cp "$KYUUBI_HOME/LICENSE" "$DISTDIR"
-cp "$KYUUBI_HOME/LICENSE-binary" "$DISTDIR"
+# Copy license files
+if [ -e "$KYUUBI_HOME/LICENSE-binary" ]; then
+  cp "$KYUUBI_HOME/LICENSE-binary" "$DISTDIR/LICENSE"
+  cp -r "$KYUUBI_HOME/licenses-binary" "$DISTDIR/licenses"
+else
+  echo "Skipping copying LICENSE files"
+fi
+
 cp -r "$KYUUBI_HOME/bin" "$DISTDIR"
 cp -r "$KYUUBI_HOME/conf" "$DISTDIR"
 
