@@ -96,7 +96,7 @@
         <maven.plugin.scalatest.version>2.0.0</maven.plugin.scalatest.version>
         <maven.plugin.scalatest.exclude.tags></maven.plugin.scalatest.exclude.tags>
         <maven.plugin.jacoco.version>0.8.6</maven.plugin.jacoco.version>
-        <maven.plugin.shade.version>3.2.1</maven.plugin.shade.version>
+        <maven.plugin.shade.version>3.2.4</maven.plugin.shade.version>
         <maven.plugin.jar.version>3.2.0</maven.plugin.jar.version>
         <maven.plugin.assembly.version>3.2.0</maven.plugin.assembly.version>
         <maven.plugin.dependency.version>3.1.1</maven.plugin.dependency.version>
