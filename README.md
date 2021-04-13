@@ -29,9 +29,8 @@ It embraces Spark and builds an ecosystem on top of it,
 which allows Kyuubi to quickly expand its existing ecosystem and introduce new features,
 such as cloud-native support and `Data Lake/Lake House` support.
 
-The vision of Kyuubi is to build on top of Apache Spark and Data Lake technologies to unify the portal and become an ideal data lake management platform.
-It can support data processing e.g. ETL, and analytics e.g. BI in a pure SQL way.
-All workloads can be done on one platform, using one copy of data, with one SQL interface.
+The vision of Kyuubi is to unify the portal and become an easy-to-use data lake management platform.
+Different kinds of workloads, such as ETL processing and BI analytics, can be supported by one platform, using one copy of data, with one SQL interface.
 
 ## Online Documentation
 
@@ -73,7 +72,7 @@ Before you start, we recommend that you check the [Contribution Guidelines](http
 The project took its name from a character of a popular Japanese manga - `Naruto`.
 The character is named `Kyuubi Kitsune/Kurama`, which is a nine-tailed fox in mythology.
 `Kyuubi` spread the power and spirit of fire, which is used here to represent the powerful [Apache Spark](http://spark.apache.org).
-Its nine tails stands for end-to-end multi-tenancy support of this project.
+Its nine tails stand for end-to-end multi-tenancy support of this project.
 
 ## License
 
