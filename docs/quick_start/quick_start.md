@@ -21,7 +21,7 @@ These are essential components required for Kyuubi to startup. For quick start d
 Components| Role | Optional | Version | Remarks
 --- | --- | --- | --- | ---
 Java | Java<br>Runtime<br>Environment | Required | 1.8 | Kyuubi is pre-built with Java 1.8
-Spark | Distribute<br>SQL<br>Engine | Optional | 3.0.x | By default Kyuubi is pre-built w/<br> a Apache Spark release inside at<br> `$KYUUBI_HOME/externals`
+Spark | Distribute<br>SQL<br>Engine | Optional | 3.0 and above | By default Kyuubi is pre-built w/<br> a Apache Spark release inside at<br> `$KYUUBI_HOME/externals`
 HDFS | Distributed<br>File<br>System |  Optional | referenced<br>by<br>Spark | Hadoop Distributed File System is a <br>part of Hadoop framework, used to<br> store and process the datasets.<br> You can interact with any<br> Spark-compatible versions of HDFS.
 Hive | Metastore | Optional | referenced<br>by<br>Spark | Hive Metastore for Spark SQL to connect
 Zookeeper | Service<br>Discovery | Optional | Any<br>zookeeper<br>ensemble<br>compatible<br>with<br>curator(2.7.1) | By default, Kyuubi provides a<br> embeded Zookeeper server inside for<br> non-production use.
