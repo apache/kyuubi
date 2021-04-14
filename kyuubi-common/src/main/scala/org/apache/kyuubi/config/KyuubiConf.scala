@@ -533,4 +533,12 @@ object KyuubiConf {
     .version("1.2.0")
     .stringConf
     .createWithDefault("SHOW DATABASES")
+
+  val OPERATION_SCHEDULER_POOL: ConfigEntry[String] = buildConf("operation.scheduler.pool")
+    .doc("The scheduler pool of job. Note that, this config should be used after change Spark " +
+      "config spark.scheduler.mode=FAIR.")
+    .version("1.1.1")
+    .stringConf
+    .transform(_.toLowerCase(Locale.ROOT))
+    .createWithDefault("default")
 }
