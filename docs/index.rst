@@ -11,7 +11,7 @@ Welcome to Kyuubi's documentation!
 
 Kyuubi™ is a unified multi-tenant JDBC interface for large-scale data processing and analytics, built on top of `Apache Spark™ <http://spark.apache.org/>`_.
 
-.. image:: ./imgs/kyuubi_layers.*
+.. image:: ./imgs/kyuubi_layers.png
 
 In general, the complete ecosystem of Kyuubi falls into the hierarchies shown in the above figure, with each layer loosely coupled to the other.
 
