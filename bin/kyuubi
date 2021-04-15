@@ -138,7 +138,7 @@ function start_kyuubi() {
       echo "Full log in $log"
     else
       echo "Welcome to"
-      echo_logo
+      kyuubi_logo
     fi
 }
 
@@ -164,7 +164,7 @@ function stop_kyuubi() {
         if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
           echo "Failed to stop kyuubi after 10 seconds, try 'kill -9 ${TARGET_ID}' forcefully "
         else
-           echo_logo
+           kyuubi_logo
            echo "Bye!"
         fi
       else
@@ -210,7 +210,7 @@ case $1 in
     ;;
 esac
 
-function echo_logo() {
+function kyuubi_logo() {
 echo "  __  __                           __"
 echo " /\ \/\ \                         /\ \      __ "
 echo " \ \ \/'/'  __  __  __  __  __  __\ \ \____/\_\ "
@@ -220,4 +220,5 @@ echo "    \ \_\ \_\/\`____ \ \____/\ \____/ \ \_,__/\ \_\ "
 echo "     \/_/\/_/\`/___/> \/___/  \/___/   \/___/  \/_/ "
 echo "                /\___/ "
 echo "                \/__/ "
+echo " "
 }
