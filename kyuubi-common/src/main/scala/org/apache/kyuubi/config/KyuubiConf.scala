@@ -539,6 +539,5 @@ object KyuubiConf {
       "config spark.scheduler.mode=FAIR.")
     .version("1.1.1")
     .stringConf
-    .transform(_.toLowerCase(Locale.ROOT))
     .createOptional
 }
