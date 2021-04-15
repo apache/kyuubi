@@ -535,4 +535,11 @@ object KyuubiConf {
     .transform(_.toUpperCase(Locale.ROOT))
     .checkValues(ShareLevel.values.map(_.toString))
     .createWithDefault(ShareLevel.USER.toString)
+
+  val OPERATION_SCHEDULER_POOL: OptionalConfigEntry[String] = buildConf("operation.scheduler.pool")
+    .doc("The scheduler pool of job. Note that, this config should be used after change Spark " +
+      "config spark.scheduler.mode=FAIR.")
+    .version("1.1.1")
+    .stringConf
+    .createOptional
 }
