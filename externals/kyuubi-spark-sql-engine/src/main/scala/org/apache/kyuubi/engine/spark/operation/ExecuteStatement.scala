@@ -41,7 +41,7 @@ class ExecuteStatement(
   private val forceCancel =
     session.sessionManager.getConf.get(KyuubiConf.OPERATION_FORCE_CANCEL)
 
-  private[kyuubi] val schedulerPool =
+  private val schedulerPool =
     spark.conf.getOption(KyuubiConf.OPERATION_SCHEDULER_POOL.key).orElse(
       session.sessionManager.getConf.get(KyuubiConf.OPERATION_SCHEDULER_POOL))
 
@@ -109,7 +109,7 @@ class ExecuteStatement(
     }
   }
 
-  def withLocalProperties[T](f: => T): T = {
+  private def withLocalProperties[T](f: => T): T = {
     try {
       spark.sparkContext.setJobGroup(statementId, statement, forceCancel)
       schedulerPool match {
