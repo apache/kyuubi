@@ -16,14 +16,14 @@ Before you start, please read the [Code of Conduct](http://www.apache.org/founda
 ## Prepare github environment
 If you are new to submit a Pull Request, the follow steps are helpful to you.
 
-1. an available [git](https://git-scm.com/downloads), you can run `git version` if you not sure you have
-2. fork [Kyuubi](https://github.com/NetEase/kyuubi) on github, now you have cloned Kyuubi repo 
-3. clone your Kyuubi repo with cmd `git clone https://github.com/${yourname}/kyuubi.git`
-4. create a new branch with cmd `git checkout -b test-branch`
-5. modify the code you want
-6. commit and push code to your Kyuubi repo with commd `git commit -am "comment"; git push test-branch test-branch`
-7. back to [Kyuubi](https://github.com/NetEase/kyuubi), you can a banner about `new pull request`
-8. now we can create a pull request
+1. An available [git](https://git-scm.com/downloads), you can run `git version` if you not sure you have
+2. Fork [Kyuubi](https://github.com/NetEase/kyuubi) on github, now you have cloned Kyuubi repo 
+3. Clone your Kyuubi repo with cmd `git clone https://github.com/${yourname}/kyuubi.git`
+4. Create a new branch with cmd `git checkout -b test-branch`
+5. Modify the code you want
+6. Commit and push code to your Kyuubi repo with commd `git commit -am "comment"; git push test-branch test-branch`
+7. Back to [Kyuubi](https://github.com/NetEase/kyuubi), you can a banner about `new pull request`
+8. Now we can create a pull request
 
 ## Creating a Pull Request
 
