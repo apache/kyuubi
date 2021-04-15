@@ -102,7 +102,7 @@ pygments_style = 'sphinx'
 html_static_path = ['_static']
 htmlhelp_basename = 'Recommonmarkdoc'
 
-github_doc_root = 'https://github.com/yaooqinn/kyuubi/tree/master/docs/'
+github_doc_root = 'https://github.com/NetEase/kyuubi/tree/master/docs/'
 def setup(app):
     app.add_config_value('recommonmark_config', {
         'url_resolver': lambda url: github_doc_root + url,

@@ -32,7 +32,7 @@ KYUUBI_HOME = os.environ.get("KYUUBI_HOME", os.getcwd())
 PR_REMOTE_NAME = os.environ.get("PR_REMOTE_NAME", "origin")
 PUSH_REMOTE_NAME = os.environ.get("PUSH_REMOTE_NAME", "origin")
 GITHUB_OAUTH_KEY = os.environ.get("GITHUB_OAUTH_KEY")
-GITHUB_API_BASE = "https://api.github.com/repos/yaooqinn/kyuubi"
+GITHUB_API_BASE = "https://api.github.com/repos/NetEase/kyuubi"
 BRANCH_PREFIX = "PR_TOOL"
 
 

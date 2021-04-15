@@ -1,15 +1,13 @@
 ![](docs/imgs/kyuubi_logo.png)
 
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
-[![](https://tokei.rs/b1/github/yaooqinn/kyuubi)](https://github.com/yaooqinn/kyuubi)
-![GitHub top language](https://img.shields.io/github/languages/top/yaooqinn/kyuubi)
-[![GitHub release](https://img.shields.io/github/release/yaooqinn/kyuubi.svg)](https://github.com/yaooqinn/kyuubi/releases)
-[![codecov](https://codecov.io/gh/yaooqinn/kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/yaooqinn/kyuubi)
-[![HitCount](http://hits.dwyl.io/yaooqinn/kyuubi.svg)](http://hits.dwyl.io/yaooqinn/kyuubi)
-[![Travis](https://travis-ci.org/yaooqinn/kyuubi.svg?branch=master)](https://travis-ci.org/yaooqinn/kyuubi)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/yaooqinn/kyuubi/Kyuubi/master?style=plastic)
+[![](https://tokei.rs/b1/github/NetEase/kyuubi)](https://github.com/NetEase/kyuubi)
+![GitHub top language](https://img.shields.io/github/languages/top/NetEase/kyuubi)
+[![GitHub release](https://img.shields.io/github/release/NetEaes/kyuubi.svg)](https://github.com/NetEase/kyuubi/releases)
+[![codecov](https://codecov.io/gh/NetEase/kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/NetEase/kyuubi)
+[![Travis](https://travis-ci.org/NetEase/kyuubi.svg?branch=master)](https://travis-ci.org/NetEase/kyuubi)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/NetEase/kyuubi/Kyuubi/master?style=plastic)
 [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.readthedocs.io/en/latest/?badge=latest)
-[![DepShield Badge](https://depshield.sonatype.org/badges/yaooqinn/kyuubi/depshield.svg)](https://depshield.github.io)
 
 Kyuubi is a high-performance universal JDBC and SQL execution engine, built on top of [Apache Spark](http://spark.apache.org).
 The goal of Kyuubi is to facilitate users to handle big data like ordinary data.
@@ -45,7 +43,7 @@ You can find the specific version of Kyuubi documentation as listed below.
 - [v1.0.1](https://kyuubi.readthedocs.io/en/v1.0.1/)
 - [v1.0.0](https://kyuubi.readthedocs.io/en/v1.0.0/)
 
-For 0.8 and earlier versions, please check the [Github Pages](https://yaooqinn.github.io/kyuubi/) directly.
+For 0.8 and earlier versions, please check the [Github Pages](https://NetEase.github.io/kyuubi/) directly.
 
 ## Quick Start
 
@@ -57,8 +55,8 @@ All bits of help are welcome. You can make various types of contributions to Kyu
 
 - Help new users in chat channel or share your success stories with us - [![Gitter](https://badges.gitter.im/kyuubi-on-spark/Lobby.svg)](https://gitter.im/kyuubi-on-spark/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 - Improve Documentation - [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.readthedocs.io/en/latest/?badge=latest)
-- Test releases - [![GitHub release](https://img.shields.io/github/release/yaooqinn/kyuubi.svg)](https://github.com/yaooqinn/kyuubi/releases)
-- Improve test coverage - [![codecov](https://codecov.io/gh/yaooqinn/kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/yaooqinn/kyuubi)
+- Test releases - [![GitHub release](https://img.shields.io/github/release/NetEase/kyuubi.svg)](https://github.com/NetEase/kyuubi/releases)
+- Improve test coverage - [![codecov](https://codecov.io/gh/NetEase/kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/NetEase/kyuubi)
 - Report bugs and better help developers to reproduce
 - Review changes
 - Make a pull request

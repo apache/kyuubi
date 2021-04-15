@@ -51,12 +51,3 @@ kyuubi\.ha\.zookeeper<br>\.connection\.timeout|<div style='width: 80pt;word-wrap
 kyuubi\.ha\.zookeeper<br>\.namespace|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>kyuubi</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The root directory for the service to deploy its instance uri. Additionally, it will creates a -[username] suffixed root directory for each application</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.ha\.zookeeper<br>\.quorum|<div style='width: 80pt;word-wrap: break-word;white-space: normal'></div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The connection string for the zookeeper ensemble</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.ha\.zookeeper<br>\.session\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>60000</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The timeout(ms) of a connected session to be idled</div>|<div style='width: 20pt'>1.0.0</div>
-
-## Additional Documentations
-[Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)  
-[Kyuubi Deployment Guide](https://yaooqinn.github.io/kyuubi/docs/deploy.html)  
-[Kyuubi Containerization Guide](https://yaooqinn.github.io/kyuubi/docs/containerization.html)   
-[Configuration Guide](https://yaooqinn.github.io/kyuubi/docs/configurations.html)  
-[Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html)  
-[Kyuubi ACL Management Guide](https://yaooqinn.github.io/kyuubi/docs/authorization.html)  
-[Kyuubi Architecture](https://yaooqinn.github.io/kyuubi/docs/architecture.html)

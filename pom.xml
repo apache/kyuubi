@@ -90,7 +90,7 @@
 
         <maven.plugin.antrun.version>3.0.0</maven.plugin.antrun.version>
         <maven.plugin.compiler.version>3.8.1</maven.plugin.compiler.version>
-        <!-- DO NOT bump 4.4.0, see https://github.com/yaooqinn/kyuubi/pull/441 -->
+        <!-- DO NOT bump 4.4.0, see https://github.com/NetEase/kyuubi/pull/441 -->
         <maven.plugin.scala.version>4.3.0</maven.plugin.scala.version>
         <maven.plugin.surefire.version>2.22.0</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.0.0</maven.plugin.scalatest.version>
