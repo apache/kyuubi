@@ -34,6 +34,10 @@ if [[ "$@" = *--help ]] || [[ "$@" = *-h ]]; then
   exit 0
 fi
 
+function kyuubi_logo() {
+    cat ${KYUUBI_HOME}/bin/kyuubi-logo | grep -v "^#"
+}
+
 function kyuubi_rotate_log() {
     log=$1;
     
@@ -209,15 +213,3 @@ case $1 in
     usage
     ;;
 esac
-
-function kyuubi_logo() {
-echo "  __  __                           __"
-echo " /\ \/\ \                         /\ \      __ "
-echo " \ \ \/'/'  __  __  __  __  __  __\ \ \____/\_\ "
-echo "  \ \ , <  /\ \/\ \/\ \/\ \/\ \/\ \\\\\ \ '__\`\/\ \ "
-echo "   \ \ \\\\\\\`\\\\\ \ \_\ \ \ \_\ \ \ \_\ \\\\\ \ \L\ \ \ \ "
-echo "    \ \_\ \_\/\`____ \ \____/\ \____/ \ \_,__/\ \_\ "
-echo "     \/_/\/_/\`/___/> \/___/  \/___/   \/___/  \/_/ "
-echo "                /\___/ "
-echo "                \/__/ "
-}
