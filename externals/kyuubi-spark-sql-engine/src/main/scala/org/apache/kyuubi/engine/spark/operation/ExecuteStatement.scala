@@ -41,6 +41,10 @@ class ExecuteStatement(
   private val forceCancel =
     session.sessionManager.getConf.get(KyuubiConf.OPERATION_FORCE_CANCEL)
 
+  private val schedulerPool =
+    spark.conf.getOption(KyuubiConf.OPERATION_SCHEDULER_POOL.key).orElse(
+      session.sessionManager.getConf.get(KyuubiConf.OPERATION_SCHEDULER_POOL))
+
   private val operationLog: OperationLog =
     OperationLog.createOperationLog(session.handle, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
@@ -64,20 +68,17 @@ class ExecuteStatement(
     OperationLog.removeCurrentOperationLog()
   }
 
-  private def executeStatement(): Unit = {
+  private def executeStatement(): Unit = withLocalProperties {
     try {
       setState(OperationState.RUNNING)
       info(KyuubiSparkUtil.diagnostics)
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
-      spark.sparkContext.setJobGroup(statementId, statement, forceCancel)
       result = spark.sql(statement)
       debug(result.queryExecution)
       iter = new ArrayFetchIterator(result.collect())
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
-    } finally {
-      spark.sparkContext.clearJobGroup()
     }
   }
 
@@ -105,6 +106,22 @@ class ExecuteStatement(
       }
     } else {
       executeStatement()
+    }
+  }
+
+  private def withLocalProperties[T](f: => T): T = {
+    try {
+      spark.sparkContext.setJobGroup(statementId, statement, forceCancel)
+      schedulerPool match {
+        case Some(pool) =>
+          spark.sparkContext.setLocalProperty("spark.scheduler.pool", pool)
+        case None =>
+      }
+
+      f
+    } finally {
+      spark.sparkContext.setLocalProperty("spark.scheduler.pool", null)
+      spark.sparkContext.clearJobGroup()
     }
   }
 
