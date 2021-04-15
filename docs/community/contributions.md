@@ -13,6 +13,18 @@ Contributing to Kyuubi including source code, documents, tests e.t.c. means that
 
 Before you start, please read the [Code of Conduct](http://www.apache.org/foundation/policies/conduct.html) carefully, familiarize yourself with it and refer to it whenever you need it.
 
+## Prepare github environment
+If you are new to submit a Pull Request, the follow steps are helpful to you.
+
+1. an available [git](https://git-scm.com/downloads), you can run `git version` if you not sure you have
+2. fork [Kyuubi](https://github.com/NetEase/kyuubi) on github, now you have cloned Kyuubi repo 
+3. clone your Kyuubi repo with cmd `git clone https://github.com/${yourname}/kyuubi.git`
+4. create a new branch with cmd `git checkout -b test-branch`
+5. modify the code you want
+6. commit and push code to your Kyuubi repo with commd `git commit -am "comment"; git push test-branch test-branch`
+7. back to [Kyuubi](https://github.com/NetEase/kyuubi), you can a banner about `new pull request`
+8. now we can create a pull request
+
 ## Creating a Pull Request
 
 When creating a Pull Request, you will automatically get the template below.
