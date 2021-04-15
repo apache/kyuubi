@@ -53,10 +53,10 @@ kyuubi\.ha\.zookeeper<br>\.quorum|<div style='width: 80pt;word-wrap: break-word;
 kyuubi\.ha\.zookeeper<br>\.session\.timeout|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>60000</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>The timeout(ms) of a connected session to be idled</div>|<div style='width: 20pt'>1.0.0</div>
 
 ## Additional Documentations
-[Building Kyuubi](https://yaooqinn.github.io/kyuubi/docs/building.html)  
-[Kyuubi Deployment Guide](https://yaooqinn.github.io/kyuubi/docs/deploy.html)  
-[Kyuubi Containerization Guide](https://yaooqinn.github.io/kyuubi/docs/containerization.html)   
-[Configuration Guide](https://yaooqinn.github.io/kyuubi/docs/configurations.html)  
-[Authentication/Security Guide](https://yaooqinn.github.io/kyuubi/docs/authentication.html)  
-[Kyuubi ACL Management Guide](https://yaooqinn.github.io/kyuubi/docs/authorization.html)  
-[Kyuubi Architecture](https://yaooqinn.github.io/kyuubi/docs/architecture.html)
+[Building Kyuubi](https://NetEase.github.io/kyuubi/docs/building.html)  
+[Kyuubi Deployment Guide](https://NetEase.github.io/kyuubi/docs/deploy.html)  
+[Kyuubi Containerization Guide](https://NetEase.github.io/kyuubi/docs/containerization.html)   
+[Configuration Guide](https://NetEase.github.io/kyuubi/docs/configurations.html)  
+[Authentication/Security Guide](https://NetEase.github.io/kyuubi/docs/authentication.html)  
+[Kyuubi ACL Management Guide](https://NetEase.github.io/kyuubi/docs/authorization.html)  
+[Kyuubi Architecture](https://NetEase.github.io/kyuubi/docs/architecture.html)

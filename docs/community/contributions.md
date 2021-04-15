@@ -2,12 +2,12 @@
 
 # Contribution Guidelines
 
-**Kyuubi** is an [Apache License v2.0](https://github.com/yaooqinn/kyuubi/blob/master/LICENSE) open source software.
+**Kyuubi** is an [Apache License v2.0](https://github.com/NetEase/kyuubi/blob/master/LICENSE) open source software.
 
 Contributing to Kyuubi including source code, documents, tests e.t.c. means that you agree to the Apache License v2.0.
 
-- Better to search the issue history first before reporting an <a class="github-button" href="https://github.com/yaooqinn/kyuubi/issues" data-color-scheme="no-preference: light; light: dark; dark: light;" data-icon="octicon-issue-opened" data-show-count="true" aria-label="Issue yaooqinn/kyuubi on GitHub">Issue</a>
-- Better to create an <a class="github-button" href="https://github.com/yaooqinn/kyuubi/issues" data-color-scheme="no-preference: light; light: dark; dark: light;" data-icon="octicon-issue-opened" data-show-count="true" aria-label="Issue yaooqinn/kyuubi on GitHub">Issue</a> to describe the feature or bug first before make a pull request.
+- Better to search the issue history first before reporting an <a class="github-button" href="https://github.com/NetEase/kyuubi/issues" data-color-scheme="no-preference: light; light: dark; dark: light;" data-icon="octicon-issue-opened" data-show-count="true" aria-label="Issue NetEase/kyuubi on GitHub">Issue</a>
+- Better to create an <a class="github-button" href="https://github.com/NetEase/kyuubi/issues" data-color-scheme="no-preference: light; light: dark; dark: light;" data-icon="octicon-issue-opened" data-show-count="true" aria-label="Issue NetEase/kyuubi on GitHub">Issue</a> to describe the feature or bug first before make a pull request.
 - Better to use English for world widely understanding.
 - Ask us anything 
 
@@ -31,7 +31,7 @@ Here are some tips for you:
 ### _Which issue are you going to fix?_
 <!--
 Replace ${ID} below with the actual issue id from
-https://github.com/yaooqinn/kyuubi/issues,
+https://github.com/NetEase/kyuubi/issues,
 so that the issue will be linked and automatically closed after merging
 -->
 

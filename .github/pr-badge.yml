@@ -5,7 +5,7 @@
 - label: "Preview"
   message: "Closes #$prNumber"
   color: "blue"
-  url: "https://github.com/yaooqinn/kyuubi/pull/$prNumber"
+  url: "https://github.com/NetEase/kyuubi/pull/$prNumber"
 
 - label: "+"
   message: "$additions"

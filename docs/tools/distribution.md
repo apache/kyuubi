@@ -6,7 +6,7 @@
 
 # Building a Runnable Distribution
 
-To create a Kyuubi distribution like those distributed by [Kyuubi Release Page](https://github.com/yaooqinn/kyuubi/releases),
+To create a Kyuubi distribution like those distributed by [Kyuubi Release Page](https://github.com/NetEase/kyuubi/releases),
 and that is laid out so as to be runnable, use `./build/dist` in the project root directory.
 
 For more information on usage, run `./build/dist --help`
