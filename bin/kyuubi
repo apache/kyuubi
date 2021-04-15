@@ -34,6 +34,10 @@ if [[ "$@" = *--help ]] || [[ "$@" = *-h ]]; then
   exit 0
 fi
 
+function kyuubi_logo() {
+    cat ${KYUUBI_HOME}/bin/kyuubi-logo | grep -v "^#"
+}
+
 function kyuubi_rotate_log() {
     log=$1;
     
@@ -138,7 +142,7 @@ function start_kyuubi() {
       echo "Full log in $log"
     else
       echo "Welcome to"
-      cat ${KYUUBI_HOME}/bin/kyuubi-logo
+      kyuubi_logo
     fi
 }
 
@@ -164,7 +168,7 @@ function stop_kyuubi() {
         if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
           echo "Failed to stop kyuubi after 10 seconds, try 'kill -9 ${TARGET_ID}' forcefully "
         else
-           cat ${KYUUBI_HOME}/bin/kyuubi-logo
+           kyuubi_logo
            echo "Bye!"
         fi
       else
