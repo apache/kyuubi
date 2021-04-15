@@ -1327,7 +1327,6 @@
                             <exclude>**/dependency-reduced-pom.xml</exclude>
                             <exclude>**/scalastyle-output.xml</exclude>
                             <exclude>docs/**</exclude>
-                            <exclude>bin/kyuubi-logo</exclude>
                             <exclude>build/scala-*/**</exclude>
                             <exclude>**/**/operation_logs/**/**</exclude>
                         </excludes>
