@@ -3,7 +3,7 @@
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![](https://tokei.rs/b1/github/NetEase/kyuubi)](https://github.com/NetEase/kyuubi)
 ![GitHub top language](https://img.shields.io/github/languages/top/NetEase/kyuubi)
-[![GitHub release](https://img.shields.io/github/release/NetEaes/kyuubi.svg)](https://github.com/NetEase/kyuubi/releases)
+[![GitHub release](https://img.shields.io/github/release/NetEase/kyuubi.svg)](https://github.com/NetEase/kyuubi/releases)
 [![codecov](https://codecov.io/gh/NetEase/kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/NetEase/kyuubi)
 [![Travis](https://travis-ci.org/NetEase/kyuubi.svg?branch=master)](https://travis-ci.org/NetEase/kyuubi)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/NetEase/kyuubi/Kyuubi/master?style=plastic)
