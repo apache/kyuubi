@@ -11,4 +11,5 @@ Community
 
     collaborators
     contributions
+    improvement-proposals
     badges
