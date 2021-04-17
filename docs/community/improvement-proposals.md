@@ -39,7 +39,6 @@ Anyone may propose an KBIP, using the document template below. Please only submi
 
 If an KBIP is too small or incremental and should have been done through the normal JIRA process, a committer should remove the KBIP label.
 
-
 ### KBIP Document Template
 
 A KBIP document is a short document with a few questions, inspired by the Heilmeier Catechism:
