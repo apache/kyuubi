@@ -1,14 +1,14 @@
 # Kyuubi Project Improvement Proposals (KBIP)
 
-The purpose of an KBIP is to inform and involve the user community in major improvements to the Kyuubi codebase throughout the development process, to increase the likelihood that user needs are met.
+The purpose of a KBIP is to inform and involve the user community in major improvements to the Kyuubi codebase throughout the development process, to increase the likelihood that user needs are met.
 
 KBIPs should be used for significant user-facing or cross-cutting changes, not small incremental improvements. When in doubt, if a committer thinks a change needs an KBIP, it does.
 
 ## What is a KBIP?
 
-An KBIP is similar to a product requirement document commonly used in product management.
+A KBIP is similar to a product requirement document commonly used in product management.
 
-An KBIP:
+A KBIP:
 
 - Is a ticket labeled “KBIP” proposing a major improvement or change to Kyuubi
 - Follows the template defined below
@@ -16,11 +16,11 @@ An KBIP:
 
 ## Who?
 
-Any **community member** can help by discussing whether an KBIP is likely to meet their needs, and by proposing KBIPs.
+Any **community member** can help by discussing whether a KBIP is likely to meet their needs, and by proposing KBIPs.
 
-**Contributors** can help by discussing whether an KBIP is likely to be technically feasible.
+**Contributors** can help by discussing whether a KBIP is likely to be technically feasible.
 
-**Committers** can help by discussing whether an KBIP aligns with long-term project goals, and by shepherding KBIPs.
+**Committers** can help by discussing whether a KBIP aligns with long-term project goals, and by shepherding KBIPs.
 
 **KBIP Author** is any community member who authors a KBIP and is committed to pushing the change through the entire process. KBIP authorship can be transferred.
 
@@ -33,11 +33,11 @@ Any **community member** can help by discussing whether an KBIP is likely to mee
 - Uphold the quality of the changes, including verifying whether the changes satisfy the goal of the KBIP and are absent of critical bugs before releasing them
 
 ## KBIP Process
-### Proposing an KBIP
+### Proposing a KBIP
 
-Anyone may propose an KBIP, using the document template below. Please only submit an KBIP if you are willing to help, at least with discussion.
+Anyone may propose a KBIP, using the document template below. Please only submit a KBIP if you are willing to help, at least with discussion.
 
-If an KBIP is too small or incremental and should have been done through the normal JIRA process, a committer should remove the KBIP label.
+If a KBIP is too small or incremental and should have been done through the normal JIRA process, a committer should remove the KBIP label.
 
 ### KBIP Document Template
 
@@ -65,10 +65,10 @@ A KBIP document is a short document with a few questions, inspired by the Heilme
 
 - Appendix C. Optional Rejected Designs: What alternatives were considered? Why were they rejected? If no alternatives have been considered, the problem needs more thought.
 
-### Discussing an KBIP
+### Discussing a KBIP
 
-All discussion of an KBIP should take place in a public forum, preferably the discussion attached to the ticket. Any discussions that happen offline should be made available online for the public via meeting notes summarizing the discussions.
+All discussion of a KBIP should take place in a public forum, preferably the discussion attached to the ticket. Any discussions that happen offline should be made available online for the public via meeting notes summarizing the discussions.
 
-### Implementing an KBIP
+### Implementing a KBIP
 
 Implementation should take place via the [contribution guidelines](./contributions.md). Changes that require KBIPs typically also require design documents to be written and reviewed.
