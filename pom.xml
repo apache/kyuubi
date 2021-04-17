@@ -1442,9 +1442,12 @@
             <id>spark-3.1</id>
             <properties>
                 <spark.version>3.1.1</spark.version>
-                <hadoop.binary.version>2.7</hadoop.binary.version>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.DataLakeTest</maven.plugin.scalatest.exclude.tags>
             </properties>
+        </profile>
+
+        <profile>
+            <id>spark-hadoop-2.7</id>
         </profile>
 
         <profile>
