@@ -1,8 +1,8 @@
 # Kyuubi Project Improvement Proposals (KBIP)
 
-The purpose of a KBIP is to inform and involve the user community in major improvements to the Kyuubi codebase throughout the development process, to increase the likelihood that user needs are met.
+The purpose of a KBIP is to inform and involve the user community in significant improvements to the Kyuubi codebase throughout the development process to increase user needs.
 
-KBIPs should be used for significant user-facing or cross-cutting changes, not small incremental improvements. When in doubt, if a committer thinks a change needs an KBIP, it does.
+KBIPs should be used for significant user-facing or cross-cutting changes, not minor incremental improvements. When in doubt, if a committer thinks a change needs a KBIP, it does.
 
 ## What is a KBIP?
 
@@ -16,7 +16,7 @@ A KBIP:
 
 ## Who?
 
-Any **community member** can help by discussing whether a KBIP is likely to meet their needs, and by proposing KBIPs.
+Any **community member** can help by discussing whether a KBIP is likely to meet their needs and propose KBIPs.
 
 **Contributors** can help by discussing whether a KBIP is likely to be technically feasible.
 
@@ -49,7 +49,7 @@ A KBIP document is a short document with a few questions, inspired by the Heilme
 
 - Q3. How is it done today, and what are the limits of current practice?
 
-- Q4. What is new in your approach and why do you think it will be successful?
+- Q4. What is new in your approach, and why do you think it will be successful?
 
 - Q5. Who cares? If you are successful, what difference will it make?
 
@@ -67,7 +67,7 @@ A KBIP document is a short document with a few questions, inspired by the Heilme
 
 ### Discussing a KBIP
 
-All discussion of a KBIP should take place in a public forum, preferably the discussion attached to the ticket. Any discussions that happen offline should be made available online for the public via meeting notes summarizing the discussions.
+All discussions of a KBIP should take place in a public forum, preferably the discussion attached to the ticket. Any discussion that happen offline should be made available online for the public via meeting notes summarizing the discussions.
 
 ### Implementing a KBIP
 
