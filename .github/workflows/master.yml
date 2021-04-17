@@ -77,14 +77,12 @@ jobs:
       - name: Detected Dependency List Change
         if: ${{ ! contains(matrix.profiles, 'spark-3.2-snapshot') }}
         run: build/dependency.sh
-
       - name: Upload kyuubi spark sql engine log
         if: failre()
         uses: actions/upload-artifact@v2
         with:
           name: kyuubi-spark-sql-engine-log
           path: "**/kyuubi-spark-sql-engine.log*"
-
       - name: Upload unit tests log
         if: failure()
         uses: actions/upload-artifact@v2
