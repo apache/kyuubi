@@ -62,18 +62,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-minikdc</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.directory.server</groupId>
-            <artifactId>apacheds-service</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-zookeeper</artifactId>
             <version>${project.version}</version>
