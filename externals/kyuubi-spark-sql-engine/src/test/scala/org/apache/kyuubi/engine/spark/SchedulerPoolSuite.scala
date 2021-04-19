@@ -25,7 +25,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.operation.JDBCTestUtils
 
-class SchedulerPoolSuite extends WithSparkSuite with JDBCTestUtils {
+class SchedulerPoolSuite extends WithSparkSQLEngine with JDBCTestUtils {
   override protected def jdbcUrl: String = getJdbcUrl
   override def withKyuubiConf: Map[String, String] = {
     val poolFile =
