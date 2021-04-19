@@ -1,3 +1,9 @@
+<div align=center>
+
+![](../imgs/kyuubi_logo.png)
+
+</div>
+
 # Kyuubi Project Improvement Proposals (KBIP)
 
 The purpose of a KBIP is to inform and involve the user community in significant improvements to the Kyuubi codebase throughout the development process to increase user needs.
