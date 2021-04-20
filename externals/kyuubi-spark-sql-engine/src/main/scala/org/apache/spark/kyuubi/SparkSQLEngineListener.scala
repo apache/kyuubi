@@ -27,7 +27,7 @@ import org.apache.kyuubi.service.{Serverable, ServiceState}
 
 class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logging {
 
-  val deregisterExceptions = server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_CLASSES)
+  lazy val deregisterExceptions = server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_CLASSES)
 
   override def onApplicationEnd(event: SparkListenerApplicationEnd): Unit = {
     server.getServiceState match {
