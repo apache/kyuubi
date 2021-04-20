@@ -20,7 +20,7 @@ package org.apache.kyuubi.service
 /**
  * Service states
  */
-private[kyuubi] object ServiceState extends Enumeration {
+object ServiceState extends Enumeration {
   type ServiceState = Value
 
   val

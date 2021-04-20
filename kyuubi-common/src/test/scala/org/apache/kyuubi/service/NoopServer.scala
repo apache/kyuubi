@@ -34,6 +34,6 @@ class NoopServer extends Serverable("noop") {
   }
 
 
-  override protected val discoveryService: Service = backendService
+  override val discoveryService: Service = backendService
   override protected val supportsServiceDiscovery: Boolean = false
 }
