@@ -89,7 +89,7 @@
         <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
 
         <maven.plugin.antrun.version>3.0.0</maven.plugin.antrun.version>
-        <maven.plugin.build.helper>3.2.0</maven.plugin.build.helper>
+        <maven.plugin.build.helper.version>3.2.0</maven.plugin.build.helper.version>
         <maven.plugin.compiler.version>3.8.1</maven.plugin.compiler.version>
         <!-- DO NOT bump 4.4.0, see https://github.com/NetEase/kyuubi/pull/441 -->
         <maven.plugin.scala.version>4.3.0</maven.plugin.scala.version>
@@ -1064,7 +1064,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>build-helper-maven-plugin</artifactId>
-                    <version>${maven.plugin.build.helper}</version>
+                    <version>${maven.plugin.build.helper.version}</version>
                     <executions>
                         <execution>
                             <id>module-timestamp-property</id>
