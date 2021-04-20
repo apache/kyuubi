@@ -89,6 +89,7 @@
         <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
 
         <maven.plugin.antrun.version>3.0.0</maven.plugin.antrun.version>
+        <maven.plugin.build.helper.version>3.2.0</maven.plugin.build.helper.version>
         <maven.plugin.compiler.version>3.8.1</maven.plugin.compiler.version>
         <!-- DO NOT bump 4.4.0, see https://github.com/NetEase/kyuubi/pull/441 -->
         <maven.plugin.scala.version>4.3.0</maven.plugin.scala.version>
@@ -105,6 +106,10 @@
         <maven.plugin.download.version>1.6.0</maven.plugin.download.version>
         <maven.plugin.silencer.version>1.6.0</maven.plugin.silencer.version>
         <maven.plugin.rat.version>0.13</maven.plugin.rat.version>
+
+        <!-- Needed for consistent times -->
+        <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss z</maven.build.timestamp.format>
+
         <!-- Package to use when relocating shaded classes. -->
         <kyuubi.shade.packageName>org.apache.kyuubi.shade</kyuubi.shade.packageName>
     </properties>
@@ -1057,6 +1062,52 @@
                 </plugin>
 
                 <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>${maven.plugin.build.helper.version}</version>
+                    <executions>
+                        <execution>
+                            <id>module-timestamp-property</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>timestamp-property</goal>
+                            </goals>
+                            <configuration>
+                                <name>module.build.timestamp</name>
+                                <pattern>${maven.build.timestamp.format}</pattern>
+                                <timeSource>current</timeSource>
+                                <timeZone>Asia/Shanghai</timeZone>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>local-timestamp-property</id>
+                            <phase>validate</phase>
+                            <goals>
+                                <goal>timestamp-property</goal>
+                            </goals>
+                            <configuration>
+                                <name>local.build.timestamp</name>
+                                <pattern>${maven.build.timestamp.format}</pattern>
+                                <timeSource>build</timeSource>
+                                <timeZone>Asia/Shanghai</timeZone>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>add-scala-sources</id>
+                            <phase>generate-sources</phase>
+                            <goals>
+                                <goal>add-source</goal>
+                            </goals>
+                            <configuration>
+                                <sources>
+                                    <source>src/main/scala-${scala.binary.version}</source>
+                                </sources>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${maven.plugin.compiler.version}</version>
@@ -1350,6 +1401,11 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
             </plugin>
 
             <plugin>
