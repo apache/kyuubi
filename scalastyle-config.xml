@@ -136,7 +136,7 @@ This file is divided into 3 sections:
   <check level="error" class="org.scalastyle.scalariform.NotImplementedErrorUsage" enabled="true"/>
 
   <check customId="funsuite" level="error" class="org.scalastyle.scalariform.TokenChecker" enabled="true">
-    <parameters><parameter name="regex">^FunSuite[A-Za-z]*$</parameter></parameters>
+    <parameters><parameter name="regex">^AnyFunSuite[A-Za-z]*$</parameter></parameters>
     <customMessage>Tests must extend org.apache.kyuubi.KyuubiFunSuite instead.</customMessage>
   </check>
 
