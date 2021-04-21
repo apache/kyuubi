@@ -108,7 +108,8 @@ import scala.util.control.{ControlThrowable, NonFatal}
  *   - `java.lang.VirtualMachineError`
  *   - `java.lang.LinkageError`
  *   - `java.lang.InterruptedException` and `java.lang.ThreadDeath`
- *   - [[scala.util.control.NonFatal fatal exceptions]], excluding `scala.util.control.ControlThrowable`
+ *   - [[scala.util.control.NonFatal fatal exceptions]],
+ *   excluding `scala.util.control.ControlThrowable`
  *   - `scala.util.control.ControlThrowable`
  *   - all other exceptions
  *
