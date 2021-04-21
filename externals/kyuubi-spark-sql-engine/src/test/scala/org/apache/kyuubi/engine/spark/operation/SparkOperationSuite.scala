@@ -654,6 +654,21 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
     }
   }
 
+  test("env:* variables can not be set") {
+    withThriftClient { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername("chengpan")
+      req.setPassword("123")
+      val conf = Map(
+        "set:env:ABC" -> "xyz")
+      req.setConfiguration(conf.asJava)
+      val tOpenSessionResp = client.OpenSession(req)
+      val status = tOpenSessionResp.getStatus
+      assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(status.getErrorMessage contains s"env:* variables can not be set")
+    }
+  }
+
   test("test variable substitution") {
     withThriftClient { client =>
       val req = new TOpenSessionReq()
