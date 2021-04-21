@@ -18,6 +18,11 @@
 // Some object likes `JobFailed` is only accessible in org.apache.spark package
 package org.apache.spark.kyuubi
 
+import java.lang.reflect.{InvocationTargetException, UndeclaredThrowableException}
+
+import scala.annotation.tailrec
+
+import org.apache.spark.SparkException
 import org.apache.spark.scheduler.{JobFailed, SparkListener, SparkListenerApplicationEnd, SparkListenerJobEnd}
 
 import org.apache.kyuubi.Logging
@@ -45,25 +50,34 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
   override def onJobEnd(jobEnd: SparkListenerJobEnd): Unit = {
    jobEnd.jobResult match {
      case JobFailed(e) if e != null =>
+       val cause = findCause(e)
        var deregisterInfo: Option[String] = None
-       if (deregisterExceptions.exists(_.equals(e.getClass.getCanonicalName))) {
+       if (deregisterExceptions.exists(_.equals(cause.getClass.getCanonicalName))) {
          deregisterInfo = Some("Job failed exception class is in the set of " +
            s"${ENGINE_DEREGISTER_EXCEPTION_CLASSES.key}, deregistering the engine.")
-       } else if (e.getMessage != null && deregisterMessages.exists(e.getMessage.contains)) {
+       } else if (cause.getMessage != null &&
+         deregisterMessages.exists(cause.getMessage.contains)) {
          deregisterInfo = Some("Job failed exception message matches the specified " +
            s"${ENGINE_DEREGISTER_EXCEPTION_MESSAGES.key}, deregistering the engine.")
-       } else if (e.getStackTrace != null &&
-         deregisterStacktraces.exists(e.getStackTrace.mkString("\n").contains)) {
+       } else if (cause.getStackTrace != null &&
+         deregisterStacktraces.exists(cause.getStackTrace.mkString("\n").contains)) {
          deregisterInfo = Some("Job failed exception stacktrace matches the specified " +
            s"${ENGINE_DEREGISTER_EXCEPTION_STACKTRACES.key}, deregistering the engine.")
        }
 
        deregisterInfo.foreach { info =>
-         error(info, e)
+         error(info, cause)
          server.discoveryService.asInstanceOf[EngineServiceDiscovery].stop()
        }
 
      case _ =>
    }
+  }
+
+  @tailrec
+  private def findCause(t: Throwable): Throwable = t match {
+    case e @ (_: SparkException | _: UndeclaredThrowableException | _: InvocationTargetException)
+      if e.getCause != null => findCause(e.getCause)
+    case e => e
   }
 }

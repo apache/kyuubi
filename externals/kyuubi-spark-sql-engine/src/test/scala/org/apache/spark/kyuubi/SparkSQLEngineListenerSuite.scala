@@ -15,8 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark
+package org.apache.spark.kyuubi
 
+import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.service.ServiceState
 
 class SparkSQLEngineListenerSuite extends WithSparkSQLEngine {
