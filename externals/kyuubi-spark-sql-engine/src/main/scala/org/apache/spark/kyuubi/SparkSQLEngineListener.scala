@@ -51,7 +51,6 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
    jobEnd.jobResult match {
      case JobFailed(e) if e != null =>
        val cause = findCause(e)
-
        var deregisterInfo: Option[String] = None
        if (deregisterExceptions.exists(_.equals(cause.getClass.getCanonicalName))) {
          deregisterInfo = Some("Job failed exception class is in the set of " +
