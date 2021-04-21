@@ -660,7 +660,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
       req.setUsername("chengpan")
       req.setPassword("123")
       val conf = Map(
-        "env:ABC" -> "xyz")
+        "set:env:ABC" -> "xyz")
       req.setConfiguration(conf.asJava)
       val tOpenSessionResp = client.OpenSession(req)
       val status = tOpenSessionResp.getStatus

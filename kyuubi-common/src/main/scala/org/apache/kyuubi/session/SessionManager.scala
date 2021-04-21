@@ -102,13 +102,11 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   // strip prefix and validate whether if key is restricted, ignored or valid
   def validateKey(key: String, value: String): Option[(String, String)] = {
-    if (key.startsWith(ENV_PREFIX)) {
-      throw KyuubiSQLException(s"$key is forbidden, env:* variables can not be set.")
-    }
-
     val normalizedKey = if (key.startsWith(SET_PREFIX)) {
       val newKey = key.substring(SET_PREFIX.length)
-      if (newKey.startsWith(SYSTEM_PREFIX)) {
+      if (newKey.startsWith(ENV_PREFIX)) {
+        throw KyuubiSQLException(s"$key is forbidden, env:* variables can not be set.")
+      } else if (newKey.startsWith(SYSTEM_PREFIX)) {
         newKey.substring(SYSTEM_PREFIX.length)
       } else if (newKey.startsWith(HIVECONF_PREFIX)) {
         newKey.substring(HIVECONF_PREFIX.length)
