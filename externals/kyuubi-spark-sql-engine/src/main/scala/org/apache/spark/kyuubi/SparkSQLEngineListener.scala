@@ -21,13 +21,15 @@ package org.apache.spark.kyuubi
 import org.apache.spark.scheduler.{JobFailed, SparkListener, SparkListenerApplicationEnd, SparkListenerJobEnd}
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_DEREGISTER_EXCEPTION_CLASSES
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_DEREGISTER_EXCEPTION_CLASSES, ENGINE_DEREGISTER_EXCEPTION_MESSAGES}
 import org.apache.kyuubi.ha.client.EngineServiceDiscovery
 import org.apache.kyuubi.service.{Serverable, ServiceState}
 
 class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logging {
 
+  // the conf of server is null before initialized, use lazy val here
   lazy val deregisterExceptions = server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_CLASSES)
+  lazy val deregisterMessages = server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_MESSAGES)
 
   override def onApplicationEnd(event: SparkListenerApplicationEnd): Unit = {
     server.getServiceState match {
@@ -41,15 +43,21 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
 
   override def onJobEnd(jobEnd: SparkListenerJobEnd): Unit = {
    jobEnd.jobResult match {
-     case JobFailed(e) =>
-       if (e != null && deregisterExceptions.exists(_.equals(e.getClass.getCanonicalName))) {
-         error(
-           s"""
-             | Job failed exception class is in the set of
-             | ${ENGINE_DEREGISTER_EXCEPTION_CLASSES.key}, stopping the engine.
-           """.stripMargin, e)
+     case JobFailed(e) if e != null =>
+       var deregisterInfo: Option[String] = None
+       if (deregisterExceptions.exists(_.equals(e.getClass.getCanonicalName))) {
+         deregisterInfo = Some("Job failed exception class is in the set of " +
+           s"${ENGINE_DEREGISTER_EXCEPTION_CLASSES.key}, stopping the engine.")
+       } else if (e.getMessage != null && deregisterMessages.exists(e.getMessage.contains)) {
+         deregisterInfo = Some("Job failed exception message matches the specified " +
+           s"${ENGINE_DEREGISTER_EXCEPTION_MESSAGES.key}, stopping the engine.")
+       }
+
+       deregisterInfo.foreach { info =>
+         error(info, e)
          server.discoveryService.asInstanceOf[EngineServiceDiscovery].stop()
        }
+
      case _ =>
    }
   }
