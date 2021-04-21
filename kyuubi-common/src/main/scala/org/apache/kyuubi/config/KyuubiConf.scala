@@ -560,6 +560,15 @@ object KyuubiConf {
     .stringConf
     .createWithDefault("SHOW DATABASES")
 
+  val ENGINE_DEREGISTER_EXCEPTION_CLASSES: ConfigEntry[Seq[String]] =
+    buildConf("engine.deregister.exception.classes")
+      .doc("A comma separated list of exception classes. If there is any exception thrown," +
+        " whose class matches the specified classes, the engine would deregister itself.")
+      .version("1.2.0")
+      .stringConf
+      .toSequence
+      .createWithDefault(Nil)
+
   val OPERATION_SCHEDULER_POOL: OptionalConfigEntry[String] = buildConf("operation.scheduler.pool")
     .doc("The scheduler pool of job. Note that, this config should be used after change Spark " +
       "config spark.scheduler.mode=FAIR.")

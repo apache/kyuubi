@@ -83,7 +83,7 @@ class KyuubiServer(name: String) extends Serverable(name) {
   override protected def supportsServiceDiscovery: Boolean = {
     ServiceDiscovery.supportServiceDiscovery(conf)
   }
-  override protected val discoveryService = new KyuubiServiceDiscovery(this)
+  override val discoveryService = new KyuubiServiceDiscovery(this)
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val kinit = new KinitAuxiliaryService()

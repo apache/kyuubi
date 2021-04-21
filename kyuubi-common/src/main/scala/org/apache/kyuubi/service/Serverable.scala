@@ -29,7 +29,7 @@ abstract class Serverable(name: String) extends CompositeService(name) {
   private[kyuubi] val backendService: AbstractBackendService
   private lazy val frontendService = new FrontendService(backendService, OOMHook)
   protected def supportsServiceDiscovery: Boolean
-  protected val discoveryService: Service
+  val discoveryService: Service
 
   def connectionUrl: String = frontendService.connectionUrl
 
