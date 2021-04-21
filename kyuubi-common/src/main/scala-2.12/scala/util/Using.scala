@@ -29,10 +29,10 @@
 
 package scala.util
 
-// Copied from Scala 2.13.5 and tune format to fit Kyuubi code style
 import scala.util.control.{ControlThrowable, NonFatal}
 
-/** A utility for performing automatic resource management. It can be used to perform an
+/**
+ * A utility for performing automatic resource management. It can be used to perform an
  * operation using resources, after which it releases the resources in reverse order
  * of their creation.
  *
@@ -120,7 +120,8 @@ import scala.util.control.{ControlThrowable, NonFatal}
  *                             suppression behavior.
  */
 object Using {
-  /** Performs an operation using a resource, and then releases the resource,
+  /**
+   * Performs an operation using a resource, and then releases the resource,
    * even if the operation throws an exception.
    *
    * $suppressionBehavior
@@ -131,7 +132,8 @@ object Using {
   def apply[R: Releasable, A](resource: => R)(f: R => A): Try[A] =
     Try { Using.resource(resource)(f) }
 
-  /** A resource manager.
+  /**
+   * A resource manager.
    *
    * Resources can be registered with the manager by calling [[acquire `acquire`]];
    * such resources will be released in reverse order of their acquisition
@@ -163,7 +165,8 @@ object Using {
     private var closed = false
     private[this] var resources: List[Resource[_]] = Nil
 
-    /** Registers the specified resource with this manager, so that
+    /**
+     * Registers the specified resource with this manager, so that
      * the resource is released when the manager is closed, and then
      * returns the (unmodified) resource.
      */
@@ -172,7 +175,8 @@ object Using {
       resource
     }
 
-    /** Registers the specified resource with this manager, so that
+    /**
+     * Registers the specified resource with this manager, so that
      * the resource is released when the manager is closed.
      */
     def acquire[R: Releasable](resource: R): Unit = {
@@ -209,7 +213,8 @@ object Using {
   }
 
   object Manager {
-    /** Performs an operation using a `Manager`, then closes the `Manager`,
+    /**
+     * Performs an operation using a `Manager`, then closes the `Manager`,
      * releasing its resources (in reverse order of acquisition).
      *
      * Example:
@@ -262,7 +267,8 @@ object Using {
     else suppress(primary, secondary)
   }
 
-  /** Performs an operation using a resource, and then releases the resource,
+  /**
+   * Performs an operation using a resource, and then releases the resource,
    * even if the operation throws an exception. This method behaves similarly
    * to Java's try-with-resources.
    *
@@ -295,7 +301,8 @@ object Using {
     }
   }
 
-  /** Performs an operation using two resources, and then releases the resources
+  /**
+   * Performs an operation using two resources, and then releases the resources
    * in reverse order, even if the operation throws an exception. This method
    * behaves similarly to Java's try-with-resources.
    *
@@ -311,17 +318,18 @@ object Using {
    *         releasing the resources throws
    */
   def resources[R1: Releasable, R2: Releasable, A](
-                                                    resource1: R1,
-                                                    resource2: => R2
-                                                  )(body: (R1, R2) => A
-                                                  ): A =
+      resource1: R1,
+      resource2: => R2
+    )(body: (R1, R2) => A
+  ): A =
     resource(resource1) { r1 =>
       resource(resource2) { r2 =>
         body(r1, r2)
       }
     }
 
-  /** Performs an operation using three resources, and then releases the resources
+  /**
+   * Performs an operation using three resources, and then releases the resources
    * in reverse order, even if the operation throws an exception. This method
    * behaves similarly to Java's try-with-resources.
    *
@@ -342,7 +350,8 @@ object Using {
       resource1: R1,
       resource2: => R2,
       resource3: => R3
-    )(body: (R1, R2, R3) => A): A =
+    )(body: (R1, R2, R3) => A
+  ): A =
     resource(resource1) { r1 =>
       resource(resource2) { r2 =>
         resource(resource3) { r3 =>
@@ -351,7 +360,8 @@ object Using {
       }
     }
 
-  /** Performs an operation using four resources, and then releases the resources
+  /**
+   * Performs an operation using four resources, and then releases the resources
    * in reverse order, even if the operation throws an exception. This method
    * behaves similarly to Java's try-with-resources.
    *
@@ -375,7 +385,8 @@ object Using {
       resource2: => R2,
       resource3: => R3,
       resource4: => R4
-    )(body: (R1, R2, R3, R4) => A): A =
+    )(body: (R1, R2, R3, R4) => A
+  ): A =
     resource(resource1) { r1 =>
       resource(resource2) { r2 =>
         resource(resource3) { r3 =>
@@ -386,7 +397,8 @@ object Using {
       }
     }
 
-  /** A type class describing how to release a particular type of resource.
+  /**
+   * A type class describing how to release a particular type of resource.
    *
    * A resource is anything which needs to be released, closed, or otherwise cleaned up
    * in some way after it is finished being used, and for which waiting for the object's
