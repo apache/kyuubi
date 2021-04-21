@@ -59,8 +59,8 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
        }
 
        deregisterInfo.foreach { info =>
-         error(info, e)
          server.discoveryService.asInstanceOf[EngineServiceDiscovery].stop()
+         error(info, e)
        }
 
      case _ =>

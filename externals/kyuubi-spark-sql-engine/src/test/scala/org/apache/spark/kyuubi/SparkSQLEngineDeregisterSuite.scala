@@ -21,12 +21,13 @@ import java.util.UUID
 
 import org.apache.spark.SparkException
 import org.apache.spark.sql.internal.SQLConf.{ANSI_ENABLED, DECIMAL_OPERATIONS_ALLOW_PREC_LOSS}
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.WithDiscoverySparkSQLEngine
 import org.apache.kyuubi.service.ServiceState
 
-abstract class SparkSQLEngineDeregisterSuite extends WithDiscoverySparkSQLEngine{
+abstract class SparkSQLEngineDeregisterSuite extends WithDiscoverySparkSQLEngine {
   override def withKyuubiConf: Map[String, String] = {
     super.withKyuubiConf ++ Map(
       ANSI_ENABLED.key -> "true",
@@ -42,7 +43,9 @@ abstract class SparkSQLEngineDeregisterSuite extends WithDiscoverySparkSQLEngine
       "CAST(col3 AS DECIMAL(22,18)) from t"
     assert(engine.discoveryService.getServiceState === ServiceState.STARTED)
     intercept[SparkException](spark.sql(query).collect())
-    assert(engine.discoveryService.getServiceState === ServiceState.STOPPED)
+    eventually(timeout(5.seconds), interval(1.second)) {
+      assert(engine.discoveryService.getServiceState === ServiceState.STOPPED)
+    }
   }
 }
 
