@@ -1463,6 +1463,13 @@
 
     <profiles>
         <profile>
+            <id>mirror-cn</id>
+            <properties>
+                <spark.archive.mirror>https://mirrors.bfsu.edu.cn/apache/spark/spark-${spark.version}</spark.archive.mirror>
+            </properties>
+        </profile>
+
+        <profile>
             <id>tpcds</id>
             <modules>
                 <module>dev/kyuubi-tpcds</module>
