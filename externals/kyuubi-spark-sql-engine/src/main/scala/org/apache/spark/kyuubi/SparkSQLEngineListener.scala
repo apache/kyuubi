@@ -48,14 +48,14 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
        var deregisterInfo: Option[String] = None
        if (deregisterExceptions.exists(_.equals(e.getClass.getCanonicalName))) {
          deregisterInfo = Some("Job failed exception class is in the set of " +
-           s"${ENGINE_DEREGISTER_EXCEPTION_CLASSES.key}, stopping the engine.")
+           s"${ENGINE_DEREGISTER_EXCEPTION_CLASSES.key}, deregistering the engine.")
        } else if (e.getMessage != null && deregisterMessages.exists(e.getMessage.contains)) {
          deregisterInfo = Some("Job failed exception message matches the specified " +
-           s"${ENGINE_DEREGISTER_EXCEPTION_MESSAGES.key}, stopping the engine.")
+           s"${ENGINE_DEREGISTER_EXCEPTION_MESSAGES.key}, deregistering the engine.")
        } else if (e.getStackTrace != null &&
          deregisterStacktraces.exists(e.getStackTrace.mkString("\n").contains)) {
          deregisterInfo = Some("Job failed exception stacktrace matches the specified " +
-           s"${ENGINE_DEREGISTER_EXCEPTION_STACKTRACES.key}, stopping the engine.")
+           s"${ENGINE_DEREGISTER_EXCEPTION_STACKTRACES.key}, deregistering the engine.")
        }
 
        deregisterInfo.foreach { info =>
