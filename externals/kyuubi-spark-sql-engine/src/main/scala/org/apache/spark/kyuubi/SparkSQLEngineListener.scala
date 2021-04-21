@@ -18,6 +18,7 @@
 // Some object likes `JobFailed` is only accessible in org.apache.spark package
 package org.apache.spark.kyuubi
 
+import org.apache.spark.SparkException
 import org.apache.spark.scheduler.{JobFailed, SparkListener, SparkListenerApplicationEnd, SparkListenerJobEnd}
 
 import org.apache.kyuubi.Logging
@@ -45,22 +46,30 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
   override def onJobEnd(jobEnd: SparkListenerJobEnd): Unit = {
    jobEnd.jobResult match {
      case JobFailed(e) if e != null =>
+       // get valuable exception
+       val ve = e match {
+         case se: SparkException if se.getCause != null =>
+           se.getCause
+         case _ => e
+       }
+
        var deregisterInfo: Option[String] = None
-       if (deregisterExceptions.exists(_.equals(e.getClass.getCanonicalName))) {
+       if (deregisterExceptions.exists(_.equals(ve.getClass.getCanonicalName))) {
          deregisterInfo = Some("Job failed exception class is in the set of " +
            s"${ENGINE_DEREGISTER_EXCEPTION_CLASSES.key}, deregistering the engine.")
-       } else if (e.getMessage != null && deregisterMessages.exists(e.getMessage.contains)) {
+       } else if (ve.getMessage != null &&
+         deregisterMessages.exists(ve.getMessage.contains)) {
          deregisterInfo = Some("Job failed exception message matches the specified " +
            s"${ENGINE_DEREGISTER_EXCEPTION_MESSAGES.key}, deregistering the engine.")
-       } else if (e.getStackTrace != null &&
-         deregisterStacktraces.exists(e.getStackTrace.mkString("\n").contains)) {
+       } else if (ve.getStackTrace != null &&
+         deregisterStacktraces.exists(ve.getStackTrace.mkString("\n").contains)) {
          deregisterInfo = Some("Job failed exception stacktrace matches the specified " +
            s"${ENGINE_DEREGISTER_EXCEPTION_STACKTRACES.key}, deregistering the engine.")
        }
 
        deregisterInfo.foreach { info =>
-         server.discoveryService.asInstanceOf[EngineServiceDiscovery].stop()
          error(info, e)
+         server.discoveryService.asInstanceOf[EngineServiceDiscovery].stop()
        }
 
      case _ =>

@@ -42,7 +42,8 @@ abstract class SparkSQLEngineDeregisterSuite extends WithDiscoverySparkSQLEngine
     val query = "SELECT CAST(col1 AS DECIMAL(18,6)) / CAST(col2 AS DECIMAL(18,14)) * " +
       "CAST(col3 AS DECIMAL(22,18)) from t"
     assert(engine.discoveryService.getServiceState === ServiceState.STARTED)
-    intercept[SparkException](spark.sql(query).collect())
+    val e = intercept[SparkException](spark.sql(query).collect())
+    assert(e.getCause.isInstanceOf[ArithmeticException])
     eventually(timeout(5.seconds), interval(1.second)) {
       assert(engine.discoveryService.getServiceState === ServiceState.STOPPED)
     }
@@ -52,20 +53,20 @@ abstract class SparkSQLEngineDeregisterSuite extends WithDiscoverySparkSQLEngine
 class SparkSQLEngineDeregisterExceptionSuite extends SparkSQLEngineDeregisterSuite {
   override def withKyuubiConf: Map[String, String] = {
     super.withKyuubiConf ++ Map(ENGINE_DEREGISTER_EXCEPTION_CLASSES.key ->
-      classOf[SparkException].getCanonicalName)
+      classOf[ArithmeticException].getCanonicalName)
   }
 }
 
 class SparkSQLEngineDeregisterMsgSuite extends SparkSQLEngineDeregisterSuite {
   override def withKyuubiConf: Map[String, String] = {
     super.withKyuubiConf ++ Map(ENGINE_DEREGISTER_EXCEPTION_MESSAGES.key ->
-      classOf[ArithmeticException].getCanonicalName)
+      "cannot be represented as Decimal")
   }
 }
 
 class SparkSQLEngineDeregisterStacktraceSuite extends SparkSQLEngineDeregisterSuite {
   override def withKyuubiConf: Map[String, String] = {
     super.withKyuubiConf ++ Map(ENGINE_DEREGISTER_EXCEPTION_STACKTRACES.key ->
-      "org.apache.spark.scheduler.DAGScheduler.abortStage")
+      "Decimal.toPrecision")
   }
 }
