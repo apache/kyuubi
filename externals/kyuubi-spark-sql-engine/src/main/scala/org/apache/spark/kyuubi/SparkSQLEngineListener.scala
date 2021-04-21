@@ -27,6 +27,7 @@ import org.apache.kyuubi.service.{Serverable, ServiceState}
 
 class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logging {
 
+  // the conf of server is null before initialized, use lazy val here
   lazy val deregisterExceptions = server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_CLASSES)
   lazy val deregisterMessages = server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_MESSAGES)
 
@@ -43,24 +44,17 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
   override def onJobEnd(jobEnd: SparkListenerJobEnd): Unit = {
    jobEnd.jobResult match {
      case JobFailed(e) if e != null =>
-       var shouldDeregister = false
+       var deregisterInfo: Option[String] = None
        if (deregisterExceptions.exists(_.equals(e.getClass.getCanonicalName))) {
-         error(
-           s"""
-             | Job failed exception class is in the set of
-             | ${ENGINE_DEREGISTER_EXCEPTION_CLASSES.key}, stopping the engine.
-           """.stripMargin, e)
-         shouldDeregister = true
-       } else if (deregisterMessages.exists(e.getMessage.contains)) {
-         error(
-           s"""
-             | Job failed exception message matches the specified
-             | ${ENGINE_DEREGISTER_EXCEPTION_MESSAGES.key}, stopping the engine.
-           """.stripMargin, e)
-         shouldDeregister = true
+         deregisterInfo = Some("Job failed exception class is in the set of " +
+           s"${ENGINE_DEREGISTER_EXCEPTION_CLASSES.key}, stopping the engine.")
+       } else if (e.getMessage != null && deregisterMessages.exists(e.getMessage.contains)) {
+         deregisterInfo = Some("Job failed exception message matches the specified " +
+           s"${ENGINE_DEREGISTER_EXCEPTION_MESSAGES.key}, stopping the engine.")
        }
 
-       if (shouldDeregister) {
+       deregisterInfo.foreach { info =>
+         error(info, e)
          server.discoveryService.asInstanceOf[EngineServiceDiscovery].stop()
        }
 
