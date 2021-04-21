@@ -21,7 +21,7 @@ package org.apache.spark.kyuubi
 import org.apache.spark.scheduler.{JobFailed, SparkListener, SparkListenerApplicationEnd, SparkListenerJobEnd}
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_DEREGISTER_EXCEPTION_CLASSES, ENGINE_DEREGISTER_EXCEPTION_MESSAGES}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_DEREGISTER_EXCEPTION_CLASSES, ENGINE_DEREGISTER_EXCEPTION_MESSAGES, ENGINE_DEREGISTER_EXCEPTION_STACKTRACES}
 import org.apache.kyuubi.ha.client.EngineServiceDiscovery
 import org.apache.kyuubi.service.{Serverable, ServiceState}
 
@@ -30,6 +30,7 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
   // the conf of server is null before initialized, use lazy val here
   lazy val deregisterExceptions = server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_CLASSES)
   lazy val deregisterMessages = server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_MESSAGES)
+  lazy val deregisterStacktraces = server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_STACKTRACES)
 
   override def onApplicationEnd(event: SparkListenerApplicationEnd): Unit = {
     server.getServiceState match {
@@ -51,6 +52,10 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
        } else if (e.getMessage != null && deregisterMessages.exists(e.getMessage.contains)) {
          deregisterInfo = Some("Job failed exception message matches the specified " +
            s"${ENGINE_DEREGISTER_EXCEPTION_MESSAGES.key}, stopping the engine.")
+       } else if (e.getStackTrace != null &&
+         deregisterStacktraces.exists(e.getStackTrace.mkString("\n").contains)) {
+         deregisterInfo = Some("Job failed exception stacktrace matches the specified " +
+           s"${ENGINE_DEREGISTER_EXCEPTION_STACKTRACES.key}, stopping the engine.")
        }
 
        deregisterInfo.foreach { info =>

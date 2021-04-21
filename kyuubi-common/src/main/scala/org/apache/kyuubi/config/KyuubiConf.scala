@@ -578,6 +578,16 @@ object KyuubiConf {
       .toSequence
       .createWithDefault(Nil)
 
+  val ENGINE_DEREGISTER_EXCEPTION_STACKTRACES: ConfigEntry[Seq[String]] =
+    buildConf("engine.deregister.exception.stacktraces")
+      .doc("A comma separated list of exception stacktraces. If there is any exception thrown," +
+        " whose stacktrace matches the specified stacktrace list, the engine would deregister" +
+        " itself.")
+      .version("1.2.0")
+      .stringConf
+      .toSequence
+      .createWithDefault(Nil)
+
   val OPERATION_SCHEDULER_POOL: OptionalConfigEntry[String] = buildConf("operation.scheduler.pool")
     .doc("The scheduler pool of job. Note that, this config should be used after change Spark " +
       "config spark.scheduler.mode=FAIR.")
