@@ -20,7 +20,7 @@ package org.apache.spark.kyuubi
 import java.util.UUID
 
 import org.apache.spark.SparkException
-import org.apache.spark.sql.internal.SQLConf.{ANSI_ENABLED, DECIMAL_OPERATIONS_ALLOW_PREC_LOSS}
+import org.apache.spark.sql.internal.SQLConf.ANSI_ENABLED
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.config.KyuubiConf._
@@ -29,18 +29,14 @@ import org.apache.kyuubi.service.ServiceState
 
 abstract class SparkSQLEngineDeregisterSuite extends WithDiscoverySparkSQLEngine {
   override def withKyuubiConf: Map[String, String] = {
-    super.withKyuubiConf ++ Map(
-      ANSI_ENABLED.key -> "true",
-      DECIMAL_OPERATIONS_ALLOW_PREC_LOSS.key -> "false"
-    )
+    super.withKyuubiConf ++ Map(ANSI_ENABLED.key -> "true")
   }
 
   override val namespace: String = s"/kyuubi/deregister_test/${UUID.randomUUID().toString}"
 
   test("deregister when meeting specified exception") {
-    spark.sql("CREATE TABLE t AS SELECT * FROM VALUES(-499.198741, 1, 1)")
-    val query = "SELECT CAST(col1 AS DECIMAL(18,6)) / CAST(col2 AS DECIMAL(18,14)) * " +
-      "CAST(col3 AS DECIMAL(22,18)) from t"
+    spark.sql("CREATE TABLE t AS SELECT * FROM VALUES(CAST(2147483648 as DOUBLE))")
+    val query = "SELECT CAST(col1 AS Integer) from t"
     assert(engine.discoveryService.getServiceState === ServiceState.STARTED)
     val e = intercept[SparkException](spark.sql(query).collect())
     assert(e.getCause.isInstanceOf[ArithmeticException])
@@ -60,13 +56,13 @@ class SparkSQLEngineDeregisterExceptionSuite extends SparkSQLEngineDeregisterSui
 class SparkSQLEngineDeregisterMsgSuite extends SparkSQLEngineDeregisterSuite {
   override def withKyuubiConf: Map[String, String] = {
     super.withKyuubiConf ++ Map(ENGINE_DEREGISTER_EXCEPTION_MESSAGES.key ->
-      "cannot be represented as Decimal")
+      "to int causes overflow")
   }
 }
 
 class SparkSQLEngineDeregisterStacktraceSuite extends SparkSQLEngineDeregisterSuite {
   override def withKyuubiConf: Map[String, String] = {
     super.withKyuubiConf ++ Map(ENGINE_DEREGISTER_EXCEPTION_STACKTRACES.key ->
-      "Decimal.toPrecision")
+      "org.apache.spark")
   }
 }
