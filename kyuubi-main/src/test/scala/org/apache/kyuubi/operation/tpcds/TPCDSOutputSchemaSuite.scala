@@ -74,14 +74,13 @@ class TPCDSOutputSchemaSuite extends WithKyuubiServer with JDBCTestUtils with TP
       try {
         val columnTypes = (1 to result.getMetaData.getColumnCount).map { i =>
           s"${result.getMetaData.getColumnName(i)}:${result.getMetaData.getColumnTypeName(i)}"
-        }.mkString(", ")
-        val columnTypesWithStruct = s"struct<$columnTypes>"
+        }.mkString("struct<", ",", ">\n")
         if (regenerateGoldenFiles) {
-          Files.write(goldenFile, columnTypesWithStruct.getBytes())
+          Files.write(goldenFile, columnTypes.getBytes())
         }
 
         val expected = fileToString(goldenFile)
-        assert(columnTypesWithStruct === expected)
+        assert(columnTypes === expected)
       } finally {
         result.close()
       }
