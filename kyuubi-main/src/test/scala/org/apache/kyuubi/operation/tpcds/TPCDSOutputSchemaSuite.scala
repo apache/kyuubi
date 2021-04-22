@@ -32,7 +32,7 @@ import org.apache.kyuubi.operation.{JDBCTestUtils, WithKyuubiServer}
  *
  * To re-generate golden files for this suite:
  * {{{
- *   KYUUBI_GENERATE_GOLDEN_FILES=1 build/mvn -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.TPCDSOutputSchemaSuite test
+ *   KYUUBI_UPDATE=1 build/mvn -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.TPCDSOutputSchemaSuite test
  * }}}
  */
 // scalastyle:on line.size.limit
@@ -58,7 +58,7 @@ class TPCDSOutputSchemaSuite extends WithKyuubiServer with JDBCTestUtils with TP
     super.afterAll()
   }
 
-  private val regenerateGoldenFiles = sys.env.get("KYUUBI_GENERATE_GOLDEN_FILES").contains("1")
+  private val regenerateGoldenFiles = sys.env.get("KYUUBI_UPDATE").contains("1")
   protected val baseResourcePath: Path = {
     java.nio.file.Paths.get("src", "test", "resources")
   }
