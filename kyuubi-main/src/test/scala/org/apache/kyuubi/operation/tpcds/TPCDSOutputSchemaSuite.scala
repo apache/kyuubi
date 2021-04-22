@@ -40,6 +40,7 @@ class TPCDSOutputSchemaSuite extends WithKyuubiServer with JDBCTestUtils with TP
   override protected val conf: KyuubiConf = KyuubiConf()
   override protected def jdbcUrl: String = getJdbcUrl
   override def database: String = this.getClass.getSimpleName
+  override def format: String = "hive OPTIONS(fileFormat='parquet')"
 
   override def beforeAll(): Unit = {
     super.beforeAll()
