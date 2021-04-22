@@ -1367,7 +1367,7 @@
                             <exclude>build/scala-*/**</exclude>
                             <exclude>**/**/operation_logs/**/**</exclude>
                             <exclude>**/*.sql</exclude>
-                            <exclude>**/*.output.shcema</exclude>
+                            <exclude>**/*.output.schema</exclude>
                         </excludes>
                     </configuration>
                 </plugin>
