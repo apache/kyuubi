@@ -59,10 +59,3 @@ class SparkSQLEngineDeregisterMsgSuite extends SparkSQLEngineDeregisterSuite {
       "to int causes overflow")
   }
 }
-
-class SparkSQLEngineDeregisterStacktraceSuite extends SparkSQLEngineDeregisterSuite {
-  override def withKyuubiConf: Map[String, String] = {
-    super.withKyuubiConf ++ Map(ENGINE_DEREGISTER_EXCEPTION_STACKTRACES.key ->
-      "org.apache.spark")
-  }
-}
