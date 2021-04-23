@@ -52,7 +52,7 @@ import org.apache.hadoop.security.UserGroupInformation;
 public class JDBCTest {
  
     private static String driverName = "org.apache.hive.jdbc.HiveDriver";
-    private static String kyuubiJdbcUrl = "jdbc:hive2://localhost:10009/default;#";
+    private static String kyuubiJdbcUrl = "jdbc:hive2://localhost:10009/default;";
  
     public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException, SQLException {
         String principal = args[0]; // kerberos principal
