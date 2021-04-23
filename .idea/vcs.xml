@@ -22,7 +22,7 @@
         <IssueNavigationLink>
           <option name="issueRegexp" value="#(\d+)" />
           <!--
-            GitHub share the sequence number if issues and pull requests, and it will redirect to
+            GitHub share the sequence number of issues and pull requests, and it will redirect to
             the right place when the the sequence number not match kind.
            -->
           <option name="linkRegexp" value="https://github.com/NetEase/kyuubi/issues/$1" />
