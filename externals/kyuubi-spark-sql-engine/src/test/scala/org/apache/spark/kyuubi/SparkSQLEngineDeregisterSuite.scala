@@ -28,8 +28,13 @@ import org.apache.kyuubi.engine.spark.WithDiscoverySparkSQLEngine
 import org.apache.kyuubi.service.ServiceState
 
 abstract class SparkSQLEngineDeregisterSuite extends WithDiscoverySparkSQLEngine {
+  protected val maxJobFailures: Int = 2
+
   override def withKyuubiConf: Map[String, String] = {
-    super.withKyuubiConf ++ Map(ANSI_ENABLED.key -> "true")
+    super.withKyuubiConf ++ Map(
+      ANSI_ENABLED.key -> "true",
+      ENGINE_DEREGISTER_JOB_MAX_FAILURES.key -> maxJobFailures.toString
+    )
   }
 
   override val namespace: String = s"/kyuubi/deregister_test/${UUID.randomUUID().toString}"
@@ -38,8 +43,10 @@ abstract class SparkSQLEngineDeregisterSuite extends WithDiscoverySparkSQLEngine
     spark.sql("CREATE TABLE t AS SELECT * FROM VALUES(CAST(2147483648 as DOUBLE))")
     val query = "SELECT CAST(col1 AS Integer) from t"
     assert(engine.discoveryService.getServiceState === ServiceState.STARTED)
-    val e = intercept[SparkException](spark.sql(query).collect())
-    assert(e.getCause.isInstanceOf[ArithmeticException])
+    (0 until maxJobFailures).foreach { _ =>
+      val e = intercept[SparkException](spark.sql(query).collect())
+      assert(e.getCause.isInstanceOf[ArithmeticException])
+    }
     eventually(timeout(5.seconds), interval(1.second)) {
       assert(engine.discoveryService.getServiceState === ServiceState.STOPPED)
     }
@@ -57,5 +64,38 @@ class SparkSQLEngineDeregisterMsgSuite extends SparkSQLEngineDeregisterSuite {
   override def withKyuubiConf: Map[String, String] = {
     super.withKyuubiConf ++ Map(ENGINE_DEREGISTER_EXCEPTION_MESSAGES.key ->
       "to int causes overflow")
+  }
+}
+
+class SparkSQLEngineDeregisterExceptionTTLSuite extends WithDiscoverySparkSQLEngine {
+  protected val maxJobFailures: Int = 2
+  protected val deregisterExceptionTTL = 2000
+
+  override def withKyuubiConf: Map[String, String] = {
+    super.withKyuubiConf ++ Map(
+      ANSI_ENABLED.key -> "true",
+      ENGINE_DEREGISTER_EXCEPTION_CLASSES.key -> classOf[ArithmeticException].getCanonicalName,
+      ENGINE_DEREGISTER_JOB_MAX_FAILURES.key -> maxJobFailures.toString,
+      ENGINE_DEREGISTER_EXCEPTION_TTL.key -> deregisterExceptionTTL.toString
+    )
+  }
+
+  override val namespace: String = s"/kyuubi/deregister_test/${UUID.randomUUID().toString}"
+
+  test("deregister exception ttl test") {
+    spark.sql("CREATE TABLE t AS SELECT * FROM VALUES(CAST(2147483648 as DOUBLE))")
+    val query = "SELECT CAST(col1 AS Integer) from t"
+    assert(engine.discoveryService.getServiceState === ServiceState.STARTED)
+
+    intercept[SparkException](spark.sql(query).collect())
+    Thread.sleep(deregisterExceptionTTL + 1000)
+
+    (0 until maxJobFailures).foreach { _ =>
+      val e = intercept[SparkException](spark.sql(query).collect())
+      assert(e.getCause.isInstanceOf[ArithmeticException])
+    }
+    eventually(timeout(5.seconds), interval(1.second)) {
+      assert(engine.discoveryService.getServiceState === ServiceState.STOPPED)
+    }
   }
 }

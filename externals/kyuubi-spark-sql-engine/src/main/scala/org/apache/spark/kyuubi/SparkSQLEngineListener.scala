@@ -19,6 +19,7 @@
 package org.apache.spark.kyuubi
 
 import java.lang.reflect.{InvocationTargetException, UndeclaredThrowableException}
+import java.util.concurrent.atomic.AtomicInteger
 
 import scala.annotation.tailrec
 
@@ -27,7 +28,7 @@ import org.apache.spark.scheduler.{JobFailed, SparkListener, SparkListenerApplic
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_DEREGISTER_EXCEPTION_CLASSES, ENGINE_DEREGISTER_EXCEPTION_MESSAGES}
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.client.EngineServiceDiscovery
 import org.apache.kyuubi.service.{Serverable, ServiceState}
 
@@ -37,6 +38,11 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
   // the conf of server is null before initialized, use lazy val here
   lazy val deregisterExceptions = server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_CLASSES)
   lazy val deregisterMessages = server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_MESSAGES)
+  lazy val deregisterExceptionTTL = server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_TTL)
+  lazy val jobMaxFailures = server.getConf.get(ENGINE_DEREGISTER_JOB_MAX_FAILURES)
+
+  private val jobFailureNum = new AtomicInteger(0)
+  @volatile private var lastFailureTime: Long = 0
 
   override def onApplicationEnd(event: SparkListenerApplicationEnd): Unit = {
     server.getServiceState match {
@@ -61,9 +67,22 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
            s"${ENGINE_DEREGISTER_EXCEPTION_MESSAGES.key}, deregistering the engine.")
        }
 
-       deregisterInfo.foreach { info =>
-         error(info, cause)
-         server.discoveryService.asInstanceOf[EngineServiceDiscovery].stop()
+       deregisterInfo.foreach { din =>
+         val currentTime = System.currentTimeMillis()
+         if (lastFailureTime == 0 || currentTime - lastFailureTime < deregisterExceptionTTL) {
+           jobFailureNum.incrementAndGet()
+         } else {
+           info(s"It has been more than one deregister exception ttl [$deregisterExceptionTTL ms]" +
+             " since last failure, restart counting.")
+           jobFailureNum.set(1)
+         }
+         lastFailureTime = currentTime
+         val curFailures = jobFailureNum.get()
+         error(s"$din, current job failure number is [$curFailures]", e)
+         if (curFailures >= jobMaxFailures) {
+           error(s"Job failed $curFailures times; deregistering the engine")
+           server.discoveryService.asInstanceOf[EngineServiceDiscovery].stop()
+         }
        }
 
      case _ =>

@@ -579,6 +579,27 @@ object KyuubiConf {
       .toSequence
       .createWithDefault(Nil)
 
+  val ENGINE_DEREGISTER_JOB_MAX_FAILURES: ConfigEntry[Int] =
+    buildConf("engine.deregister.job.max.failures")
+      .doc("Number of failures of job before deregistering the engine.")
+      .version("1.2.0")
+      .intConf
+      .checkValue(_ > 0, "must be positive number")
+      .createWithDefault(4)
+
+  val ENGINE_DEREGISTER_EXCEPTION_TTL: ConfigEntry[Long] =
+    buildConf("engine.deregister.exception.ttl")
+      .doc(s"Time to live(TTL) for exceptions pattern specified in" +
+        s" ${ENGINE_DEREGISTER_EXCEPTION_CLASSES.key} and" +
+        s" ${ENGINE_DEREGISTER_EXCEPTION_MESSAGES.key} to deregister engines. Once the total" +
+        s" error count hits the ${ENGINE_DEREGISTER_JOB_MAX_FAILURES.key} within the TTL, an" +
+        s" engine will deregister itself and wait for self-terminated. Otherwise, we suppose" +
+        s" that the engine has recovered from temporary failures.")
+      .version("1.2.0")
+      .timeConf
+      .checkValue(_ > 0, "must be positive number")
+      .createWithDefault(Duration.ofMinutes(30).toMillis)
+
   val OPERATION_SCHEDULER_POOL: OptionalConfigEntry[String] = buildConf("operation.scheduler.pool")
     .doc("The scheduler pool of job. Note that, this config should be used after change Spark " +
       "config spark.scheduler.mode=FAIR.")
