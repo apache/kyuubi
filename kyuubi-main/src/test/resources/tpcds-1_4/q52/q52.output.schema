@@ -1,0 +1,1 @@
+struct<d_year:int,brand_id:int,brand:string,ext_price:decimal>

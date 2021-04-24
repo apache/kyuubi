@@ -1,0 +1,1 @@
+struct<item_sk:int,d_date:date,web_sales:decimal,store_sales:decimal,web_cumulative:decimal,store_cumulative:decimal>
