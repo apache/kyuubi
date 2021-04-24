@@ -1,0 +1,1 @@
+struct<prev_year:int,year:int,i_brand_id:int,i_class_id:int,i_category_id:int,i_manufact_id:int,prev_yr_cnt:bigint,curr_yr_cnt:bigint,sales_cnt_diff:bigint,sales_amt_diff:decimal>

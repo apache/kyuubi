@@ -114,4 +114,5 @@ class TPCDSOutputSchemaSuite extends WithKyuubiServer with JDBCTestUtils with TP
   }
 
   runQueries("tpcds-1_4")
+  runQueries("tpcds-2_7")
 }
