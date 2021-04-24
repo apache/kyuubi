@@ -27,8 +27,8 @@ jobs:
           name: rat
           path: "**/target/rat*.txt"
 
-  build:
-    name: Build
+  build-jdk8:
+    name: Build with JDK8
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -46,6 +46,65 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: '1.8'
+      - uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository/com
+          key: ${{ runner.os }}-maven-com-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-com-
+      - uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository/org
+          key: ${{ runner.os }}-maven-org-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-org-
+      - uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository/net
+          key: ${{ runner.os }}-maven-net-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-net-
+      - uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository/io
+          key: ${{ runner.os }}-maven-io-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-io-
+      - name: Build with Maven
+        run: mvn clean install ${{ matrix.profiles }} -Dmaven.javadoc.skip=true -V
+      - name: Code coverage
+        if: ${{ matrix.profiles == '' }}
+        run: bash <(curl -s https://codecov.io/bash)
+      - name: Detected Dependency List Change
+        if: ${{ ! contains(matrix.profiles, 'spark-3.2-snapshot') }}
+        run: build/dependency.sh
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: unit-tests-log
+          path: |
+            **/target/unit-tests.log
+            **/kyuubi-spark-sql-engine.log*
+  build-jdk11:
+    name: Build with JDK11
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        profiles:
+          - ''
+          - '-Pspark-3.0 -Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.1 -Dspark.archive.name=spark-3.1.1-bin-hadoop2.7.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.DataLakeTest'
+          - '-Pspark-3.1'
+          - '-Pspark-3.1 -Pspark-hadoop-3.2'
+          - '-Pspark-3.2-snapshot -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.DataLakeTest'
+    env:
+      SPARK_LOCAL_IP: localhost
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup JDK 11
+        uses: actions/setup-java@v1
+        with:
+          java-version: 11
       - uses: actions/cache@v1
         with:
           path: ~/.m2/repository/com
