@@ -94,22 +94,21 @@ class TPCDSOutputSchemaSuite extends WithKyuubiServer with JDBCTestUtils with TP
     import scala.collection.JavaConverters._
 
     val validQueries = queries.iterator().asScala.filter { query =>
-      Files.list(query).iterator().asScala.exists { q =>
-        q.getFileName.toString == s"${query.getFileName}.sql"
-      }
+      query.toFile.listFiles().exists(_.getName.endsWith(".sql"))
     }
 
     validQueries.foreach { q =>
       test(q.getFileName.toString) {
-        val queryFile = Paths.get(q.toString, s"${q.getFileName}.sql")
-        val schemaFile = Paths.get(
-          baseResourcePath.toFile.getAbsolutePath,
-          name,
-          q.getFileName.toString,
-          s"${q.getFileName}.output.schema"
-        )
-        val queryString = fileToString(queryFile)
-        runQuery(queryString, schemaFile)
+        q.toFile.listFiles().filter(_.getName.endsWith(".sql")).foreach { qf =>
+          val schemaFile = Paths.get(
+            baseResourcePath.toFile.getAbsolutePath,
+            name,
+            q.getFileName.toString,
+            s"${qf.getName.stripSuffix(".sql")}.output.schema"
+          )
+          val queryString = fileToString(qf.toPath)
+          runQuery(queryString, schemaFile)
+        }
       }
     }
   }
