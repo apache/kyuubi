@@ -501,7 +501,7 @@ trait TPCDSHelper {
     val fields = Seq(
       Field("d_date_sk", int),
       Field("d_date_id", char16),
-      Field("d_date", int),
+      Field("d_date", date),
       Field("d_month_seq", int),
       Field("d_week_seq", int),
       Field("d_quarter_seq", int),
