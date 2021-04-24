@@ -185,6 +185,7 @@ trait TPCDSHelper {
       Field("cr_ship_mode_sk", int),
       Field("cr_warehouse_sk", int),
       Field("cr_reason_sk", int),
+      Field("cr_order_number", int),
       Field("cr_return_quantity", int),
       Field("cr_return_amount", dec_7_2),
       Field("cr_return_tax", dec_7_2),
