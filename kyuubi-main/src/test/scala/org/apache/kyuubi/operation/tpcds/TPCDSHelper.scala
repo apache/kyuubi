@@ -475,6 +475,7 @@ trait TPCDSHelper {
       Field("ca_county", varchar30),
       Field("ca_state", char2),
       Field("ca_zip", char10),
+      Field("ca_country", char20),
       Field("ca_gmt_offset", dec_5_2),
       Field("ca_location_type", char20))
     Table(tableIdent, fields)
