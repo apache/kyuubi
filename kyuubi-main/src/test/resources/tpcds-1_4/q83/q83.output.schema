@@ -1,0 +1,1 @@
+struct<item_id:string,sr_item_qty:bigint,sr_dev:double,cr_item_qty:bigint,cr_dev:double,wr_item_qty:bigint,wr_dev:double,average:decimal>
