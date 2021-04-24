@@ -67,3 +67,10 @@ build/mvn clean package -Dspark.archive.mirror=https://mirrors.bfsu.edu.cn/apach
 ```
 
 Visit [Apache Mirrors](http://www.apache.org/mirrors/) and choose a mirror based on your region.
+
+Specifically for developers in China mainland, you can use the pre-defined profile named `mirror-cn` which use
+`mirrors.bfsu.edu.cn` to speed up Spark Binary downloading. For instance,
+
+```bash
+build/mvn clean package -Pmirror-cn
+```
