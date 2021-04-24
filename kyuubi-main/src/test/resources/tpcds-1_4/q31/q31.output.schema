@@ -1,0 +1,1 @@
+struct<ca_county:string,d_year:int,web_q1_q2_increase:decimal,store_q1_q2_increase:decimal,web_q2_q3_increase:decimal,store_q2_q3_increase:decimal>

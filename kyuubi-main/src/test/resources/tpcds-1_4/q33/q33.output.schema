@@ -1,0 +1,1 @@
+struct<i_manufact_id:int,total_sales:decimal>
