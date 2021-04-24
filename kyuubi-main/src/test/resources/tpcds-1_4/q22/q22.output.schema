@@ -1,0 +1,1 @@
+struct<i_product_name:string,i_brand:string,i_class:string,i_category:string,qoh:double>
