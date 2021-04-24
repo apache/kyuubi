@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics.{ConsoleReporter, MetricRegistry}
 
-import org.apache.kyuubi.metrics.MetricsConf.METRICS_REPORT_INTERVAL
+import org.apache.kyuubi.metrics.MetricsConf.METRICS_CONSOLE_INTERVAL
 import org.apache.kyuubi.service.AbstractService
 
 class ConsoleReporterService(registry: MetricRegistry)
@@ -30,7 +30,7 @@ class ConsoleReporterService(registry: MetricRegistry)
 
   override def start(): Unit = synchronized {
     reporter = ConsoleReporter.forRegistry(registry).build()
-    val interval = conf.get(METRICS_REPORT_INTERVAL)
+    val interval = conf.get(METRICS_CONSOLE_INTERVAL)
     reporter.start(interval, TimeUnit.MILLISECONDS)
     super.start()
   }
