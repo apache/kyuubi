@@ -185,6 +185,7 @@ trait TPCDSHelper {
       Field("cr_ship_mode_sk", int),
       Field("cr_warehouse_sk", int),
       Field("cr_reason_sk", int),
+      Field("cr_order_number", int),
       Field("cr_return_quantity", int),
       Field("cr_return_amount", dec_7_2),
       Field("cr_return_tax", dec_7_2),
@@ -475,6 +476,7 @@ trait TPCDSHelper {
       Field("ca_county", varchar30),
       Field("ca_state", char2),
       Field("ca_zip", char10),
+      Field("ca_country", char20),
       Field("ca_gmt_offset", dec_5_2),
       Field("ca_location_type", char20))
     Table(tableIdent, fields)

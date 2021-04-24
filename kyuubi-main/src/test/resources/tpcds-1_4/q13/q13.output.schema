@@ -1,0 +1,1 @@
+struct<avg(ss_quantity):double,avg(ss_ext_sales_price):decimal,avg(ss_ext_wholesale_cost):decimal,sum(ss_ext_wholesale_cost):decimal>
