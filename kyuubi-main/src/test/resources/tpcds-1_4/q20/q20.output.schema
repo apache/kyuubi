@@ -1,1 +1,0 @@
-struct<i_item_desc:string,i_category:string,i_class:string,i_current_price:decimal,itemrevenue:decimal,revenueratio:decimal>
