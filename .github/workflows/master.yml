@@ -86,6 +86,7 @@ jobs:
           path: |
             **/target/unit-tests.log
             **/kyuubi-spark-sql-engine.log*
+
   build-jdk11:
     name: Build with JDK11
     runs-on: ubuntu-latest
