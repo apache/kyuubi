@@ -7,11 +7,11 @@
 # Getting Started With Hive JDBC
 
 ## How to install JDBC driver
-Kyuubi JDBC driver is fully compatible with the 2.3.* version of hive jdbc driver, so we reuse hive JDBC driver to connect to Kyuubi server.
+Kyuubi JDBC driver is fully compatible with the 2.3.* version of hive JDBC driver, so we reuse hive JDBC driver to connect to Kyuubi server.
 
-Add repository to your maven configuration file which may reside in $MAVEN_HOME/conf/settings.xml.
+Add repository to your maven configuration file which may reside in `$MAVEN_HOME/conf/settings.xml`.
 
-```
+```xml
 <repositories>
   <repository>
     <id>central maven repo</id>
@@ -20,9 +20,9 @@ Add repository to your maven configuration file which may reside in $MAVEN_HOME/
   </repository>
 <repositories>
 ```
-You can add below dependency to your pom file in your application.
+You can add below dependency to your `pom.xml` file in your application.
 
-```
+```xml
 <!-- https://mvnrepository.com/artifact/org.apache.hive/hive-jdbc -->
 <dependency>
     <groupId>org.apache.hive</groupId>
@@ -54,7 +54,7 @@ public class JDBCTest {
     private static String driverName = "org.apache.hive.jdbc.HiveDriver";
     private static String kyuubiJdbcUrl = "jdbc:hive2://localhost:10009/default;";
  
-    public static void main(String[] args) throws IOException, ClassNotFoundException, InterruptedException, SQLException {
+    public static void main(String[] args) throws ClassNotFoundException, SQLException {
         String principal = args[0]; // kerberos principal
         String keytab = args[1]; // keytab file location
         Configuration configuration = new Configuration();
