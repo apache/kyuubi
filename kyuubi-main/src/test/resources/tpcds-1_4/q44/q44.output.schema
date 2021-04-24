@@ -1,0 +1,1 @@
+struct<rnk:int,best_performing:string,worst_performing:string>

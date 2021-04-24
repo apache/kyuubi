@@ -1,0 +1,1 @@
+struct<i_category:string,i_brand:string,s_store_name:string,s_company_name:string,d_year:int,d_moy:int,avg_monthly_sales:decimal,sum_sales:decimal,psum:decimal,nsum:decimal>
