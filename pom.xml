@@ -95,7 +95,8 @@
         <maven.plugin.scala.version>4.3.0</maven.plugin.scala.version>
         <maven.plugin.surefire.version>2.22.0</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.0.0</maven.plugin.scalatest.version>
-        <maven.plugin.scalatest.exclude.tags></maven.plugin.scalatest.exclude.tags>
+        <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest</maven.plugin.scalatest.exclude.tags>
+        <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
         <maven.plugin.jacoco.version>0.8.6</maven.plugin.jacoco.version>
         <maven.plugin.shade.version>3.2.4</maven.plugin.shade.version>
         <maven.plugin.jar.version>3.2.0</maven.plugin.jar.version>
@@ -1217,6 +1218,7 @@
                             <kyuubi.frontend.bind.host>localhost</kyuubi.frontend.bind.host>
                         </systemProperties>
                         <tagsToExclude>${maven.plugin.scalatest.exclude.tags}</tagsToExclude>
+                        <tagsToInclude>${maven.plugin.scalatest.include.tags}</tagsToInclude>
                     </configuration>
                     <executions>
                         <execution>
@@ -1498,7 +1500,7 @@
             <id>spark-3.1</id>
             <properties>
                 <spark.version>3.1.1</spark.version>
-                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.DataLakeTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DataLakeTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 
