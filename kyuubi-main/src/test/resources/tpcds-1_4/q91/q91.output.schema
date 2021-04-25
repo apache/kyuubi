@@ -1,0 +1,1 @@
+struct<Call_Center:string,Call_Center_Name:string,Manager:string,Returns_Loss:decimal>
