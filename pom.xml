@@ -1373,6 +1373,7 @@
                             <exclude>build/scala-*/**</exclude>
                             <exclude>**/**/operation_logs/**/**</exclude>
                             <exclude>**/*.output.schema</exclude>
+                            <exclude>**/report.json</exclude>
                         </excludes>
                     </configuration>
                 </plugin>
