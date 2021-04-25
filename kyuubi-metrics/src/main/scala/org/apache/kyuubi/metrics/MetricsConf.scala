@@ -45,7 +45,7 @@ object MetricsConf {
     .stringConf
     .transform(_.toUpperCase())
     .toSequence
-    .createWithDefault(Seq(SLF4J.toString))
+    .createWithDefault(Seq(JSON.toString))
 
   val METRICS_CONSOLE_INTERVAL: ConfigEntry[Long] = buildConf("metrics.console.interval")
     .doc("How often should report metrics to console")
