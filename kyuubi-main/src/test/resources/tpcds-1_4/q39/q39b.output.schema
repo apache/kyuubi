@@ -1,0 +1,1 @@
+struct<w_warehouse_sk:int,i_item_sk:int,d_moy:int,mean:double,cov:double,w_warehouse_sk:int,i_item_sk:int,d_moy:int,mean:double,cov:double>
