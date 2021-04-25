@@ -41,6 +41,7 @@ class TPCDSOutputSchemaSuite extends WithKyuubiServer with JDBCTestUtils with TP
   override protected def jdbcUrl: String = getJdbcUrl
   override def database: String = this.getClass.getSimpleName
   override def format: String = "hive OPTIONS(fileFormat='parquet')"
+  private val queryNameReg = """([a-z]+)(\d+)""".r("head", "index")
 
   override def beforeAll(): Unit = {
     super.beforeAll()
@@ -88,6 +89,10 @@ class TPCDSOutputSchemaSuite extends WithKyuubiServer with JDBCTestUtils with TP
     }
   }
 
+  private def getQueryIndex(queryName: String): Int = queryName match {
+    case queryNameReg(_, index) => index.toInt
+  }
+
   private def runQueries(name: String): Unit = {
     val queriesRoot = Thread.currentThread().getContextClassLoader.getResource(name)
     val queries = Files.list(Paths.get(queriesRoot.toURI))
@@ -95,10 +100,10 @@ class TPCDSOutputSchemaSuite extends WithKyuubiServer with JDBCTestUtils with TP
 
     val validQueries = queries.iterator().asScala.filter { query =>
       query.toFile.listFiles().exists(_.getName.endsWith(".sql"))
-    }
+    }.toSeq.sortBy(q => getQueryIndex(q.getFileName.toString))
 
     validQueries.foreach { q =>
-      test(q.getFileName.toString) {
+      test(name + "-" + q.getFileName.toString) {
         q.toFile.listFiles().filter(_.getName.endsWith(".sql")).foreach { qf =>
           val schemaFile = Paths.get(
             baseResourcePath.toFile.getAbsolutePath,
