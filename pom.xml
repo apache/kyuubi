@@ -1213,7 +1213,7 @@
                             <log4j.configuration>file:src/test/resources/log4j.properties</log4j.configuration>
                             <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
                             <spark.driver.memory>2g</spark.driver.memory>
-                            <kyuubi.metrics.json.report.location>${project.build.directory}/metrics</kyuubi.metrics.json.report.location>
+                            <kyuubi.metrics.json.location>${project.build.directory}/metrics</kyuubi.metrics.json.location>
                             <kyuubi.frontend.bind.host>localhost</kyuubi.frontend.bind.host>
                         </systemProperties>
                         <tagsToExclude>${maven.plugin.scalatest.exclude.tags}</tagsToExclude>

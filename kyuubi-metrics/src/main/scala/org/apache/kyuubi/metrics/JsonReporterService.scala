@@ -43,14 +43,14 @@ class JsonReporterService(registry: MetricRegistry)
   private var reportPath: Path = _
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
-    reportDir = Paths.get(conf.get(METRICS_REPORT_LOCATION)).toAbsolutePath
+    reportDir = Paths.get(conf.get(METRICS_JSON_LOCATION)).toAbsolutePath
     Files.createDirectories(reportDir)
     reportPath = Paths.get(reportDir.toString, "report.json").toAbsolutePath
     super.initialize(conf)
   }
 
   override def start(): Unit = synchronized {
-    val interval = conf.get(METRICS_REPORT_INTERVAL)
+    val interval = conf.get(METRICS_JSON_INTERVAL)
     var writer: BufferedWriter = null
     timer.schedule(new TimerTask {
       override def run(): Unit = try {
