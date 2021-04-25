@@ -1,0 +1,1 @@
+struct<i_item_desc:string,w_warehouse_name:string,d_week_seq:int,no_promo:bigint,promo:bigint,total_cnt:bigint>

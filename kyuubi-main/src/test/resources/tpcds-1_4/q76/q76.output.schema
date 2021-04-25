@@ -1,0 +1,1 @@
+struct<channel:string,col_name:int,d_year:int,d_qoy:int,i_category:string,sales_cnt:bigint,sales_amt:decimal>
