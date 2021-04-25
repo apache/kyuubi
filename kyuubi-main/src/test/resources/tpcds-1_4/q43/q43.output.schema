@@ -1,0 +1,1 @@
+struct<s_store_name:string,s_store_id:string,sun_sales:decimal,mon_sales:decimal,tue_sales:decimal,wed_sales:decimal,thu_sales:decimal,fri_sales:decimal,sat_sales:decimal>
