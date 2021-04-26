@@ -22,6 +22,7 @@ import java.nio.file.{Files, Path, Paths}
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{JDBCTestUtils, WithKyuubiServer}
+import org.apache.kyuubi.tags.ExtendedSQLTest
 
 // scalastyle:off line.size.limit
 /**
@@ -36,6 +37,7 @@ import org.apache.kyuubi.operation.{JDBCTestUtils, WithKyuubiServer}
  * }}}
  */
 // scalastyle:on line.size.limit
+@ExtendedSQLTest
 class TPCDSOutputSchemaSuite extends WithKyuubiServer with JDBCTestUtils with TPCDSHelper {
   override protected val conf: KyuubiConf = KyuubiConf()
   override protected def jdbcUrl: String = getJdbcUrl
@@ -103,7 +105,7 @@ class TPCDSOutputSchemaSuite extends WithKyuubiServer with JDBCTestUtils with TP
     }.toSeq.sortBy(q => getQueryIndex(q.getFileName.toString))
 
     validQueries.foreach { q =>
-      test(name + "-" + q.getFileName.toString) {
+      test(name + "/" + q.getFileName.toString) {
         q.toFile.listFiles().filter(_.getName.endsWith(".sql")).foreach { qf =>
           val schemaFile = Paths.get(
             baseResourcePath.toFile.getAbsolutePath,

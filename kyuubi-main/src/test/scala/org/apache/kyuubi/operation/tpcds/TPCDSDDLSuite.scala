@@ -19,7 +19,9 @@ package org.apache.kyuubi.operation.tpcds
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{JDBCTestUtils, WithKyuubiServer}
+import org.apache.kyuubi.tags.ExtendedSQLTest
 
+@ExtendedSQLTest
 class TPCDSDDLSuite extends WithKyuubiServer with JDBCTestUtils with TPCDSHelper {
   override protected val conf: KyuubiConf = KyuubiConf()
 
