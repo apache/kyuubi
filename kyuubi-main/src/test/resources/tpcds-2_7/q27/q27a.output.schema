@@ -1,0 +1,1 @@
+struct<i_item_id:string,s_state:string,g_state:int,agg1:double,agg2:decimal,agg3:decimal,agg4:decimal>

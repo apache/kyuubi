@@ -1,0 +1,1 @@
+struct<channel:string,item:int,return_ratio:decimal,return_rank:int,currency_rank:int>

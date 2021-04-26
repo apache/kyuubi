@@ -1,0 +1,1 @@
+struct<cd_gender:string,cd_marital_status:string,cd_education_status:string,cnt1:bigint,cd_purchase_estimate:int,cnt2:bigint,cd_credit_rating:string,cnt3:bigint,cd_dep_count:int,cnt4:bigint,cd_dep_employed_count:int,cnt5:bigint,cd_dep_college_count:int,cnt6:bigint>
