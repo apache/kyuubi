@@ -76,7 +76,7 @@ jobs:
         run: mvn clean install ${{ matrix.profiles }} -Dmaven.javadoc.skip=true -V
       - name: Wild Card Suites Tests
         if: ${{ contains(matrix.profiles, 'wildcardSuites') }}
-        run: ./build/dist && mvn -Dtest=none ${{ matrix.profiles }} test
+        run: mvn clean install -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper && mvn -Dtest=none ${{ matrix.profiles }} test
       - name: Code coverage
         if: ${{ matrix.profiles == '' }}
         run: bash <(curl -s https://codecov.io/bash)

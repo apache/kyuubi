@@ -56,7 +56,7 @@ install:
   - mvn --version
 
 script:
-  - if [[ "$TPCDS_TESTS" == "true" ]]; then ./build/dist && mvn -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.TPCDSOutputSchemaSuite,org.apache.kyuubi.operation.tpcds.TPCDSDDLSuite -Dmaven.plugin.scalatest.exclude.tags="" test; fi
+  - if [[ "$TPCDS_TESTS" == "true" ]]; then mvn clean install -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper && mvn -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.TPCDSOutputSchemaSuite,org.apache.kyuubi.operation.tpcds.TPCDSDDLSuite -Dmaven.plugin.scalatest.exclude.tags="" test; fi
   - if [[ "$TPCDS_TESTS" != "true" ]]; then mvn clean install $PROFILE -Dmaven.plugin.scalatest.exclude.tags=$EXCLUDE_TAGS -Dmaven.javadoc.skip=true -V ;fi
 
 after_success:
