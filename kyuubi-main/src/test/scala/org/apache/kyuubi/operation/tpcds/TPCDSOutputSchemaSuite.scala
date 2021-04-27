@@ -28,12 +28,12 @@ import org.apache.kyuubi.tags.ExtendedSQLTest
 /**
  * To run this test suite:
  * {{{
- *   build/mvn -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.TPCDSOutputSchemaSuite test
+ *   build/mvn -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.TPCDSOutputSchemaSuite -Dmaven.plugin.scalatest.exclude.tags="" test
  *  }}}
  *
  * To re-generate golden files for this suite:
  * {{{
- *   KYUUBI_UPDATE=1 build/mvn -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.TPCDSOutputSchemaSuite test
+ *   KYUUBI_UPDATE=1 build/mvn -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.TPCDSOutputSchemaSuite -Dmaven.plugin.scalatest.exclude.tags="" test
  * }}}
  */
 // scalastyle:on line.size.limit
@@ -121,4 +121,5 @@ class TPCDSOutputSchemaSuite extends WithKyuubiServer with JDBCTestUtils with TP
   }
 
   runQueries("tpcds-1_4")
+  runQueries("tpcds-2_7")
 }

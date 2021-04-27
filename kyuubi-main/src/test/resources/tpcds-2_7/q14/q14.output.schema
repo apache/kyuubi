@@ -1,0 +1,1 @@
+struct<channel:string,i_brand_id:int,i_class_id:int,i_category_id:int,sales:decimal,number_sales:bigint,channel:string,i_brand_id:int,i_class_id:int,i_category_id:int,sales:decimal,number_sales:bigint>
