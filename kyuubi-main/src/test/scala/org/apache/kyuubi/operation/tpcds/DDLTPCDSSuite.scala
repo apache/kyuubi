@@ -17,18 +17,25 @@
 
 package org.apache.kyuubi.operation.tpcds
 
-import org.apache.kyuubi.WithKyuubiServer
+import org.apache.kyuubi.{DeltaSuiteMixin, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.JDBCTestUtils
-import org.apache.kyuubi.tags.ExtendedSQLTest
+import org.apache.kyuubi.tags.{DeltaTest, ExtendedSQLTest}
 
+@DeltaTest
 @ExtendedSQLTest
-class DDLTPCDSSuite extends WithKyuubiServer with JDBCTestUtils with TPCDSHelper {
-  override protected val conf: KyuubiConf = KyuubiConf()
+class DDLTPCDSSuite extends WithKyuubiServer
+  with JDBCTestUtils
+  with TPCDSHelper
+  with DeltaSuiteMixin {
+
+  override protected val conf: KyuubiConf = {
+    val kyuubiConf = KyuubiConf().set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 20000L)
+     extraConfigs.foreach { case (k, v) => kyuubiConf.set(k, v) }
+    kyuubiConf
+  }
 
   override protected def jdbcUrl: String = getJdbcUrl
-
-  override def format: String = "hive OPTIONS(fileFormat='parquet')"
 
   override def database: String = this.getClass.getSimpleName
 
