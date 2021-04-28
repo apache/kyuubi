@@ -15,19 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation.datalake
+package org.apache.kyuubi
 
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.{BasicDeltaJDBCTests, WithKyuubiServer}
-import org.apache.kyuubi.tags.DataLakeTest
+import java.nio.file.Path
 
-@DataLakeTest
-class DeltaOperationSuite extends WithKyuubiServer with BasicDeltaJDBCTests {
-  override protected val conf: KyuubiConf = {
-    val kyuubiConf = KyuubiConf().set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 20000L)
-    deltaConfigs.foreach { case (k, v) => kyuubiConf.set(k, v) }
-    kyuubiConf
+trait DeltaSuiteMixin {
+
+  val format: String = "delta"
+
+  protected val deltaJar: String = {
+    System.getProperty("java.class.path")
+      .split(":")
+      .filter(_.contains("delta-core")).head
   }
 
-  override def jdbcUrl: String = getJdbcUrl
+  protected val warehouse: Path = Utils.createTempDir()
+
+  protected val deltaConfigs = Map(
+    "spark.sql.extensions" -> "io.delta.sql.DeltaSparkSessionExtension",
+    "spark.sql.catalog.spark_catalog" -> "org.apache.spark.sql.delta.catalog.DeltaCatalog",
+    "spark.jars" -> deltaJar)
 }
