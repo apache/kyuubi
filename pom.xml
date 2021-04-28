@@ -67,6 +67,7 @@
         <commons-collections.version>3.2.2</commons-collections.version>
         <commons-lang3.version>3.10</commons-lang3.version>
         <curator.version>2.12.0</curator.version>
+        <delta.version>0.8.0</delta.version>
         <guava.version>30.1-jre</guava.version>
         <hadoop.version>3.2.2</hadoop.version>
         <hadoop.binary.version>2.7</hadoop.binary.version>
@@ -1042,6 +1043,12 @@
                 <groupId>org.apache.iceberg</groupId>
                 <artifactId>${iceberg.name}</artifactId>
                 <version>${iceberg.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.delta</groupId>
+                <artifactId>delta-core_${scala.binary.version}</artifactId>
+                <version>${delta.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

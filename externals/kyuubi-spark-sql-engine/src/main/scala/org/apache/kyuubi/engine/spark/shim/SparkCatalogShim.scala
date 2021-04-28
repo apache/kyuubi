@@ -123,7 +123,7 @@ trait SparkCatalogShim extends Logging {
       methodName: String,
       args: (Class[_], AnyRef)*): Any = {
     val (types, values) = args.unzip
-    val method = obj.getClass.getDeclaredMethod(methodName, types: _*)
+    val method = obj.getClass.getMethod(methodName, types: _*)
     method.setAccessible(true)
     method.invoke(obj, values.toSeq: _*)
   }
@@ -134,7 +134,7 @@ trait SparkCatalogShim extends Logging {
       methodName: String,
       args: (Class[_], AnyRef)*): AnyRef = {
     val (types, values) = args.unzip
-    val method = clazz.getDeclaredMethod(methodName, types: _*)
+    val method = clazz.getMethod(methodName, types: _*)
     method.setAccessible(true)
     method.invoke(obj, values.toSeq: _*)
   }

@@ -26,7 +26,7 @@ trait BasicIcebergJDBCTests extends JDBCTestUtils {
 
   protected def catalog: String = "hadoop_prod"
 
-  protected val iceberg: String = {
+  protected val icebergJar: String = {
     System.getProperty("java.class.path")
       .split(":")
       .filter(_.contains("iceberg-spark")).head
@@ -42,7 +42,7 @@ trait BasicIcebergJDBCTests extends JDBCTestUtils {
     s"spark.sql.catalog.$catalog" -> "org.apache.iceberg.spark.SparkCatalog",
     s"spark.sql.catalog.$catalog.type" -> "hadoop",
     s"spark.sql.catalog.$catalog.warehouse" -> warehouse.toString,
-    "spark.jars" -> iceberg)
+    "spark.jars" -> icebergJar)
 
   test("get catalogs") {
     withJdbcStatement() { statement =>
@@ -128,16 +128,16 @@ trait BasicIcebergJDBCTests extends JDBCTestUtils {
       dbs.foreach(db => statement.execute(s"CREATE NAMESPACE IF NOT EXISTS $db"))
       val metaData = statement.getConnection.getMetaData
 
-      Seq("hadoop_prod").foreach { catalog =>
+      Seq(catalog).foreach { cg =>
         dbs.foreach { db =>
           try {
             statement.execute(
-              s"CREATE TABLE IF NOT EXISTS $catalog.$db.tbl(c STRING) USING iceberg")
+              s"CREATE TABLE IF NOT EXISTS $cg.$db.tbl(c STRING) USING iceberg")
 
-            val rs1 = metaData.getTables(catalog, db, "%", null)
+            val rs1 = metaData.getTables(cg, db, "%", null)
             while (rs1.next()) {
               val catalogName = rs1.getString(TABLE_CAT)
-              assert(catalogName === catalog)
+              assert(catalogName === cg)
               assert(rs1.getString(TABLE_SCHEM) === db)
               assert(rs1.getString(TABLE_NAME) === "tbl")
               assert(rs1.getString(TABLE_TYPE) == "TABLE")
@@ -145,7 +145,7 @@ trait BasicIcebergJDBCTests extends JDBCTestUtils {
             }
             assert(!rs1.next())
           } finally {
-            statement.execute(s"DROP TABLE IF EXISTS $catalog.$db.tbl")
+            statement.execute(s"DROP TABLE IF EXISTS $cg.$db.tbl")
           }
         }
       }

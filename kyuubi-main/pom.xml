@@ -138,6 +138,12 @@
             <artifactId>${iceberg.name}</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>io.delta</groupId>
+            <artifactId>delta-core_${scala.binary.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
