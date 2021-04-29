@@ -178,6 +178,7 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
         if (remoteHandle != null) {
           val or = FetchOrientation.toTFetchOrientation(order)
           val req = new TFetchResultsReq(remoteHandle, or, maxRows)
+          req.setFetchType(1.toShort)
           val resp = client.FetchResults(req)
           ThriftUtils.verifyTStatus(resp.getStatus)
           resp.getResults
