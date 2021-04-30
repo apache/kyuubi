@@ -62,17 +62,19 @@ class KyuubiSessionImpl(
     case _ => user
   }
 
+  private val zkNamespace: String = sessionConf.get(HA_ZK_NAMESPACE)
+
   private val boundAppName: SQLEngineAppName = SQLEngineAppName(shareLevel, appUser, handle)
 
-  private val appZkNamespace: String = boundAppName.getZkNamespace(sessionConf.get(HA_ZK_NAMESPACE))
-
-  private val appZkLockPath = boundAppName.getZkLockPath(sessionConf.get(HA_ZK_NAMESPACE))
+  private val appZkNamespace: String = boundAppName.getZkNamespace(zkNamespace)
 
   private val timeout: Long = sessionConf.get(ENGINE_INIT_TIMEOUT)
 
   private var transport: TTransport = _
   private var client: TCLIService.Client = _
   private var remoteSessionHandle: TSessionHandle = _
+
+  private def appZkLockPath: String = boundAppName.getZkLockPath(zkNamespace)
 
   override def open(): Unit = {
     MetricsSystem.tracing { ms =>
