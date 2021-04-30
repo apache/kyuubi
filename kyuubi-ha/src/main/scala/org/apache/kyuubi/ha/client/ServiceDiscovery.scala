@@ -38,7 +38,7 @@ import org.apache.zookeeper.{CreateMode, KeeperException, WatchedEvent, Watcher}
 import org.apache.zookeeper.CreateMode.PERSISTENT
 import org.apache.zookeeper.KeeperException.NodeExistsException
 
-import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
+import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.service.{AbstractService, Serverable}
@@ -347,14 +347,14 @@ object ServiceDiscovery extends Logging {
   def withLock(
       zkClient: CuratorFramework,
       lockPath: String,
-      lockTimeOutSeconds: Long)(f: => Unit): Unit = {
+      lockTimeOutMilliseconds: Long)(f: => Unit): Unit = {
     var lock: InterProcessSemaphoreMutex = null
     try {
       try {
         lock = new InterProcessSemaphoreMutex(zkClient, ZKPaths.makePath(lockPath, "lock"))
-        lock.acquire(lockTimeOutSeconds, TimeUnit.SECONDS)
+        lock.acquire(lockTimeOutMilliseconds, TimeUnit.MILLISECONDS)
       } catch {
-        case e: Exception => throw new KyuubiException(s"Lock failed on path [$lockPath]", e)
+        case e: Exception => throw KyuubiSQLException(s"Lock failed on path [$lockPath]", e)
       }
       f
     } finally {
