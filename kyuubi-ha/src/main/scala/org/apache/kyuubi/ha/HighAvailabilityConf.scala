@@ -103,7 +103,7 @@ object HighAvailabilityConf {
   val HA_ZK_ENGINE_LOCK_TIMEOUT: ConfigEntry[Long] =
     buildConf("ha.zookeeper.engine.lock.timeout")
       .doc("The timeout(s) of a lock when a engine created")
-      .version("1.0.0")
+      .version("1.2.0")
       .timeConf
-      .createWithDefault(Duration.ofSeconds(30).toMillis)
+      .createWithDefault(Duration.ofSeconds(60).toMillis)
 }

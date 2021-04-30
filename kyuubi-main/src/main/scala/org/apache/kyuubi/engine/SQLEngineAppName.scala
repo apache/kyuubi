@@ -34,6 +34,7 @@ case class SQLEngineAppName(
   }
 
   def getZkLockPath(prefix: String): String = {
+    assert(sharedLevel != CONNECTION)
     sharedLevel match {
       case _ => ZKPaths.makePath(s"${prefix}_$sharedLevel", "lock", user)
     }
