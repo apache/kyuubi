@@ -347,12 +347,12 @@ object ServiceDiscovery extends Logging {
   def withLock(
       zkClient: CuratorFramework,
       lockPath: String,
-      lockTimeOutMilliseconds: Long)(f: => Unit): Unit = {
+      lockTimeout: Long)(f: => Unit): Unit = {
     var lock: InterProcessSemaphoreMutex = null
     try {
       try {
         lock = new InterProcessSemaphoreMutex(zkClient, ZKPaths.makePath(lockPath, "lock"))
-        lock.acquire(lockTimeOutMilliseconds, TimeUnit.MILLISECONDS)
+        lock.acquire(lockTimeout, TimeUnit.MILLISECONDS)
       } catch {
         case e: Exception => throw KyuubiSQLException(s"Lock failed on path [$lockPath]", e)
       }
