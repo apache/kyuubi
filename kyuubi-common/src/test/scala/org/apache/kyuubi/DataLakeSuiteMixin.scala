@@ -19,6 +19,8 @@ package org.apache.kyuubi
 
 import java.nio.file.Path
 
+import org.apache.kyuubi.config.KyuubiConf
+
 trait DataLakeSuiteMixin {
 
   protected val format: String
@@ -30,4 +32,10 @@ trait DataLakeSuiteMixin {
   protected val extraJars: String
 
   protected val extraConfigs: Map[String, String]
+
+  protected val conf: KyuubiConf = {
+    val kyuubiConf = KyuubiConf().set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 20000L)
+    extraConfigs.foreach { case (k, v) => kyuubiConf.set(k, v) }
+    kyuubiConf
+  }
 }
