@@ -21,7 +21,8 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
-import scala.io.Source
+import scala.io.{Codec, Source}
+import scala.util.Using
 import scala.util.control.NonFatal
 
 import org.apache.hadoop.conf.Configuration
@@ -68,7 +69,7 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
    * In this method we rewrite krb5.conf to make kdc and client use the same enctypes
    */
   private def rewriteKrb5Conf(): Unit = {
-    val krb5Conf = Source.fromFile(kdc.getKrb5conf, StandardCharsets.UTF_8.toString).getLines
+    val krb5Conf = Using.resource(Source.fromFile(kdc.getKrb5conf)(Codec.UTF8))(_.getLines)
     var rewritten = false
     val addedConfig =
       addedKrb5Config("default_tkt_enctypes", "aes128-cts-hmac-sha1-96") +
