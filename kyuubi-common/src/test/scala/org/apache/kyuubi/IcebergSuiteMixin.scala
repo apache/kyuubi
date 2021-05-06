@@ -19,21 +19,21 @@ package org.apache.kyuubi
 
 import java.nio.file.Path
 
-trait IcebergSuiteMixin {
+trait IcebergSuiteMixin extends DataLakeSuiteMixin {
 
-  def format: String = "iceberg"
+  override protected val format: String = "iceberg"
 
-  protected def catalog: String = "hadoop_prod"
+  override protected val catalog: String = "hadoop_prod"
 
-  protected val icebergJar: String = {
+  override protected val warehouse: Path = Utils.createTempDir()
+
+  override protected val extraJars: String = {
     System.getProperty("java.class.path")
       .split(":")
       .filter(_.contains("iceberg-spark")).head
   }
 
-  protected val warehouse: Path = Utils.createTempDir()
-
-  protected val icebergConfigs = Map(
+  override protected val extraConfigs = Map(
     "spark.sql.defaultCatalog" -> catalog,
     "spark.sql.extensions" -> "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
     "spark.sql.catalog.spark_catalog" -> "org.apache.iceberg.spark.SparkSessionCatalog",
@@ -41,5 +41,5 @@ trait IcebergSuiteMixin {
     s"spark.sql.catalog.$catalog" -> "org.apache.iceberg.spark.SparkCatalog",
     s"spark.sql.catalog.$catalog.type" -> "hadoop",
     s"spark.sql.catalog.$catalog.warehouse" -> warehouse.toString,
-    "spark.jars" -> icebergJar)
+    "spark.jars" -> extraJars)
 }

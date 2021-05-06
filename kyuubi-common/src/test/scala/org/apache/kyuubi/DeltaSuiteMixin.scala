@@ -19,20 +19,23 @@ package org.apache.kyuubi
 
 import java.nio.file.Path
 
-trait DeltaSuiteMixin {
+trait DeltaSuiteMixin extends DataLakeSuiteMixin {
 
-  val format: String = "delta"
+  override protected val format: String = "delta"
 
-  protected val deltaJar: String = {
+  override protected val catalog: String = "spark_catalog"
+
+  override protected val warehouse: Path = Utils.createTempDir()
+
+  override protected val extraJars: String = {
     System.getProperty("java.class.path")
       .split(":")
       .filter(_.contains("delta-core")).head
   }
 
-  protected val warehouse: Path = Utils.createTempDir()
-
-  protected val deltaConfigs = Map(
+  override protected val extraConfigs = Map(
+    "spark.sql.defaultCatalog" -> catalog,
     "spark.sql.extensions" -> "io.delta.sql.DeltaSparkSessionExtension",
     "spark.sql.catalog.spark_catalog" -> "org.apache.spark.sql.delta.catalog.DeltaCatalog",
-    "spark.jars" -> deltaJar)
+    "spark.jars" -> extraJars)
 }
