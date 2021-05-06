@@ -132,9 +132,7 @@ class KyuubiSessionImpl(
       }
       // Add lock for creating engine except ShareLevel of CONNECTION
       if (shareLevel != ShareLevel.CONNECTION) {
-        withLock(
-          zkClient, appZkLockPath,
-          sessionConf.get(HA_ZK_ENGINE_LOCK_TIMEOUT)) {
+        withLock(zkClient, appZkLockPath, timeout) {
           tryOpenSession
         }
       } else {
