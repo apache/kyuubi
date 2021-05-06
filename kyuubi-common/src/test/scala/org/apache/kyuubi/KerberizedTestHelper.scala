@@ -69,7 +69,7 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
    * In this method we rewrite krb5.conf to make kdc and client use the same enctypes
    */
   private def rewriteKrb5Conf(): Unit = {
-    val krb5Conf = Using.resource(Source.fromFile(kdc.getKrb5conf)(Codec.UTF8))(_.getLines)
+    val krb5Conf = Using.resource(Source.fromFile(kdc.getKrb5conf)(Codec.UTF8))(_.getLines).toSeq
     var rewritten = false
     val addedConfig =
       addedKrb5Config("default_tkt_enctypes", "aes128-cts-hmac-sha1-96") +
