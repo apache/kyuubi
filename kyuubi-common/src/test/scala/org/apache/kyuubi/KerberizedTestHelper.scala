@@ -69,32 +69,34 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
    * In this method we rewrite krb5.conf to make kdc and client use the same enctypes
    */
   private def rewriteKrb5Conf(): Unit = {
-    val krb5Conf = Using.resource(Source.fromFile(kdc.getKrb5conf)(Codec.UTF8))(_.getLines).toSeq
-    var rewritten = false
-    val addedConfig =
-      addedKrb5Config("default_tkt_enctypes", "aes128-cts-hmac-sha1-96") +
-        addedKrb5Config("default_tgs_enctypes", "aes128-cts-hmac-sha1-96") +
-    addedKrb5Config("dns_lookup_realm", "true")
-    val rewriteKrb5Conf = krb5Conf.map(s =>
-      if (s.contains("libdefaults")) {
-        rewritten = true
-        s + addedConfig
+    Using.resource(Source.fromFile(kdc.getKrb5conf)(Codec.UTF8)) { source =>
+      val krb5Conf = source.getLines
+      var rewritten = false
+      val addedConfig =
+        addedKrb5Config("default_tkt_enctypes", "aes128-cts-hmac-sha1-96") +
+          addedKrb5Config("default_tgs_enctypes", "aes128-cts-hmac-sha1-96") +
+          addedKrb5Config("dns_lookup_realm", "true")
+      val rewriteKrb5Conf = krb5Conf.map(s =>
+        if (s.contains("libdefaults")) {
+          rewritten = true
+          s + addedConfig
+        } else {
+          s
+        }).filter(!_.trim.startsWith("#")).mkString(System.lineSeparator())
+
+      val krb5confStr = if (!rewritten) {
+        "[libdefaults]" + addedConfig + System.lineSeparator() +
+          System.lineSeparator() + rewriteKrb5Conf
       } else {
-        s
-      }).filter(!_.trim.startsWith("#")).mkString(System.lineSeparator())
+        rewriteKrb5Conf
+      }
 
-    val krb5confStr = if (!rewritten) {
-      "[libdefaults]" + addedConfig + System.lineSeparator() +
-        System.lineSeparator() + rewriteKrb5Conf
-    } else {
-      rewriteKrb5Conf
+      kdc.getKrb5conf.delete()
+      val writer = Files.newBufferedWriter(kdc.getKrb5conf.toPath, StandardCharsets.UTF_8)
+      writer.write(krb5confStr)
+      writer.close()
+      info(s"krb5.conf file content: $krb5confStr")
     }
-
-    kdc.getKrb5conf.delete()
-    val writer = Files.newBufferedWriter(kdc.getKrb5conf.toPath, StandardCharsets.UTF_8)
-    writer.write(krb5confStr)
-    writer.close()
-    info(s"krb5.conf file content: $krb5confStr")
   }
 
   private def addedKrb5Config(key: String, value: String): String = {
