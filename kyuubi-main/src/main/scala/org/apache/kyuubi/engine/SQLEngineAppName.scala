@@ -32,6 +32,11 @@ case class SQLEngineAppName(
       case _ => ZKPaths.makePath(s"${prefix}_$sharedLevel", user)
     }
   }
+
+  def getZkLockPath(prefix: String): String = {
+    assert(sharedLevel != CONNECTION)
+    ZKPaths.makePath(s"${prefix}_$sharedLevel", "lock", user)
+  }
 }
 
 private[kyuubi] object SQLEngineAppName {
