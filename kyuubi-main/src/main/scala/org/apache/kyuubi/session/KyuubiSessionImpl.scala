@@ -62,15 +62,19 @@ class KyuubiSessionImpl(
     case _ => user
   }
 
+  private val zkNamespace: String = sessionConf.get(HA_ZK_NAMESPACE)
+
   private val boundAppName: SQLEngineAppName = SQLEngineAppName(shareLevel, appUser, handle)
 
-  private val appZkNamespace: String = boundAppName.getZkNamespace(sessionConf.get(HA_ZK_NAMESPACE))
+  private val appZkNamespace: String = boundAppName.getZkNamespace(zkNamespace)
 
   private val timeout: Long = sessionConf.get(ENGINE_INIT_TIMEOUT)
 
   private var transport: TTransport = _
   private var client: TCLIService.Client = _
   private var remoteSessionHandle: TSessionHandle = _
+
+  private def appZkLockPath: String = boundAppName.getZkLockPath(zkNamespace)
 
   override def open(): Unit = {
     MetricsSystem.tracing { ms =>
@@ -80,7 +84,7 @@ class KyuubiSessionImpl(
     super.open()
     withZkClient(sessionConf) { zkClient =>
       logSessionInfo(s"Connected to Zookeeper")
-      getServerHost(zkClient, appZkNamespace) match {
+      def tryOpenSession: Unit = getServerHost(zkClient, appZkNamespace) match {
         case Some((host, port)) => openSession(host, port)
         case None =>
           sessionConf.setIfMissing(SparkProcessBuilder.APP_KEY, boundAppName.toString)
@@ -125,6 +129,14 @@ class KyuubiSessionImpl(
             // we have a log capture thread in process builder.
             builder.close()
           }
+      }
+      // Add lock for creating engine except ShareLevel of CONNECTION
+      if (shareLevel != ShareLevel.CONNECTION) {
+        withLock(zkClient, appZkLockPath, timeout) {
+          tryOpenSession
+        }
+      } else {
+        tryOpenSession
       }
     }
   }
