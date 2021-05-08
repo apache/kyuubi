@@ -26,6 +26,7 @@ import javax.security.auth.login.Configuration
 import scala.collection.JavaConverters._
 
 import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
+import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex
 import org.apache.curator.framework.recipes.nodes.PersistentNode
 import org.apache.curator.framework.state.{ConnectionState, ConnectionStateListener}
 import org.apache.curator.framework.state.ConnectionState.{CONNECTED, LOST, RECONNECTED}
@@ -37,7 +38,7 @@ import org.apache.zookeeper.{CreateMode, KeeperException, WatchedEvent, Watcher}
 import org.apache.zookeeper.CreateMode.PERSISTENT
 import org.apache.zookeeper.KeeperException.NodeExistsException
 
-import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
+import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.service.{AbstractService, Serverable}
@@ -341,6 +342,30 @@ object ServiceDiscovery extends Logging {
           s"Unable to create a znode for this server instance: $instance", e)
     }
     serviceNode
+  }
+
+  def withLock(
+      zkClient: CuratorFramework,
+      lockPath: String,
+      lockTimeout: Long)(f: => Unit): Unit = {
+    var lock: InterProcessSemaphoreMutex = null
+    try {
+      try {
+        lock = new InterProcessSemaphoreMutex(zkClient, ZKPaths.makePath(lockPath, "lock"))
+        lock.acquire(lockTimeout, TimeUnit.MILLISECONDS)
+      } catch {
+        case e: Exception => throw KyuubiSQLException(s"Lock failed on path [$lockPath]", e)
+      }
+      f
+    } finally {
+      try {
+        if (lock != null) {
+          lock.release()
+        }
+      } catch {
+        case _: Exception =>
+      }
+    }
   }
 }
 
