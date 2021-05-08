@@ -32,7 +32,7 @@ class SQLOperationListenerSuite extends WithSparkSQLEngine with JDBCTestUtils {
   override protected def jdbcUrl: String = getJdbcUrl
 
   test("operation listener") {
-    val sql = "select  /*+ REPARTITION(3, a) */  a  from values(1) t(a);"
+    val sql = "select /*+ REPARTITION(3, a) */ a from values(1) t(a);"
     withSessionHandle { (client, handle) =>
       val req = new TExecuteStatementReq()
       req.setSessionHandle(handle)
