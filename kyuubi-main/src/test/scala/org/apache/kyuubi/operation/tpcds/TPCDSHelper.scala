@@ -19,8 +19,8 @@ package org.apache.kyuubi.operation.tpcds
 
 trait TPCDSHelper {
 
-  protected val format: String = "parquet"
-  protected val database: String = "default"
+  protected def format: String = "parquet"
+  protected def database: String = "default"
 
   case class TableIdent(name: String) {
     def qualifiedName: String = database + "." + name

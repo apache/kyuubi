@@ -27,9 +27,9 @@ class TPCDSDDLSuite extends WithKyuubiServer with JDBCTestUtils with TPCDSHelper
 
   override protected def jdbcUrl: String = getJdbcUrl
 
-  override val format: String = "hive OPTIONS(fileFormat='parquet')"
+  override def format: String = "hive OPTIONS(fileFormat='parquet')"
 
-  override val database: String = this.getClass.getSimpleName
+  override def database: String = this.getClass.getSimpleName
 
   override def beforeAll(): Unit = {
     super.beforeAll()

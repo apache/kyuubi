@@ -21,19 +21,19 @@ import java.nio.file.Path
 
 trait DeltaSuiteMixin extends DataLakeSuiteMixin {
 
-  override protected val format: String = "delta"
+  override protected def format: String = "delta"
 
-  override protected val catalog: String = "spark_catalog"
+  override protected def catalog: String = "spark_catalog"
 
-  override protected val warehouse: Path = Utils.createTempDir()
+  override protected def warehouse: Path = Utils.createTempDir()
 
-  override protected val extraJars: String = {
+  override protected def extraJars: String = {
     System.getProperty("java.class.path")
       .split(":")
       .filter(_.contains("delta-core")).head
   }
 
-  override protected val extraConfigs = Map(
+  override protected def extraConfigs = Map(
     "spark.sql.defaultCatalog" -> catalog,
     "spark.sql.extensions" -> "io.delta.sql.DeltaSparkSessionExtension",
     "spark.sql.catalog.spark_catalog" -> "org.apache.spark.sql.delta.catalog.DeltaCatalog",

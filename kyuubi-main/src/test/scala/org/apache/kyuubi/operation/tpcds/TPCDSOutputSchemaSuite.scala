@@ -41,8 +41,8 @@ import org.apache.kyuubi.tags.ExtendedSQLTest
 class TPCDSOutputSchemaSuite extends WithKyuubiServer with JDBCTestUtils with TPCDSHelper {
   override protected val conf: KyuubiConf = KyuubiConf()
   override protected def jdbcUrl: String = getJdbcUrl
-  override val database: String = this.getClass.getSimpleName
-  override val format: String = "hive OPTIONS(fileFormat='parquet')"
+  override def database: String = this.getClass.getSimpleName
+  override def format: String = "hive OPTIONS(fileFormat='parquet')"
   private val queryNameReg = """([a-z]+)(\d+)""".r("head", "index")
 
   override def beforeAll(): Unit = {

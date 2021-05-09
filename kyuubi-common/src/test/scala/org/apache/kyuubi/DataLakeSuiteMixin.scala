@@ -21,13 +21,13 @@ import java.nio.file.Path
 
 trait DataLakeSuiteMixin {
 
-  protected val format: String
+  protected def format: String
 
-  protected val catalog: String
+  protected def catalog: String
 
-  protected val warehouse: Path
+  protected def warehouse: Path
 
-  protected val extraJars: String
+  protected def extraJars: String
 
-  protected val extraConfigs: Map[String, String]
+  protected def extraConfigs: Map[String, String]
 }
