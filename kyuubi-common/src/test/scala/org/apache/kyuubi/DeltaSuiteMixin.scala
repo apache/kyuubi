@@ -15,21 +15,27 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.operation
+package org.apache.kyuubi
 
-import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.operation.BasicDeltaJDBCTests
-import org.apache.kyuubi.tags.DataLakeTest
+import java.nio.file.Path
 
-@DataLakeTest
-class SparkDeltaOperationSuite extends WithSparkSQLEngine with BasicDeltaJDBCTests {
-  override protected def jdbcUrl: String = getJdbcUrl
-  override def withKyuubiConf: Map[String, String] = extraConfigs
+trait DeltaSuiteMixin extends DataLakeSuiteMixin {
 
-  override def afterAll(): Unit = {
-    super.afterAll()
-    for ((k, _) <- extraConfigs) {
-      System.clearProperty(k)
-    }
+  override protected def format: String = "delta"
+
+  override protected def catalog: String = "spark_catalog"
+
+  override protected def warehouse: Path = Utils.createTempDir()
+
+  override protected def extraJars: String = {
+    System.getProperty("java.class.path")
+      .split(":")
+      .filter(_.contains("delta-core")).head
   }
+
+  override protected def extraConfigs = Map(
+    "spark.sql.defaultCatalog" -> catalog,
+    "spark.sql.extensions" -> "io.delta.sql.DeltaSparkSessionExtension",
+    "spark.sql.catalog.spark_catalog" -> "org.apache.spark.sql.delta.catalog.DeltaCatalog",
+    "spark.jars" -> extraJars)
 }

@@ -17,32 +17,10 @@
 
 package org.apache.kyuubi.operation
 
-import java.nio.file.Path
-
-import org.apache.kyuubi.Utils
+import org.apache.kyuubi.IcebergSuiteMixin
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
-trait BasicIcebergJDBCTests extends JDBCTestUtils {
-
-  protected def catalog: String = "hadoop_prod"
-
-  protected val icebergJar: String = {
-    System.getProperty("java.class.path")
-      .split(":")
-      .filter(_.contains("iceberg-spark")).head
-  }
-
-  protected val warehouse: Path = Utils.createTempDir()
-
-  protected val icebergConfigs = Map(
-    "spark.sql.defaultCatalog" -> catalog,
-    "spark.sql.extensions" -> "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
-    "spark.sql.catalog.spark_catalog" -> "org.apache.iceberg.spark.SparkSessionCatalog",
-    "spark.sql.catalog.spark_catalog.type" -> "hive",
-    s"spark.sql.catalog.$catalog" -> "org.apache.iceberg.spark.SparkCatalog",
-    s"spark.sql.catalog.$catalog.type" -> "hadoop",
-    s"spark.sql.catalog.$catalog.warehouse" -> warehouse.toString,
-    "spark.jars" -> icebergJar)
+trait BasicIcebergJDBCTests extends JDBCTestUtils with IcebergSuiteMixin {
 
   test("get catalogs") {
     withJdbcStatement() { statement =>
