@@ -25,7 +25,7 @@ import org.apache.kyuubi.tags.DataLakeTest
 class DeltaOperationSuite extends WithKyuubiServer with BasicDeltaJDBCTests {
   override protected val conf: KyuubiConf = {
     val kyuubiConf = KyuubiConf().set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 20000L)
-    deltaConfigs.foreach {case (k, v) => kyuubiConf.set(k, v) }
+    extraConfigs.foreach { case (k, v) => kyuubiConf.set(k, v) }
     kyuubiConf
   }
 

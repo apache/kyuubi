@@ -15,21 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.operation
+package org.apache.kyuubi
 
-import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.operation.BasicDeltaJDBCTests
-import org.apache.kyuubi.tags.DataLakeTest
+import java.nio.file.Path
 
-@DataLakeTest
-class SparkDeltaOperationSuite extends WithSparkSQLEngine with BasicDeltaJDBCTests {
-  override protected def jdbcUrl: String = getJdbcUrl
-  override def withKyuubiConf: Map[String, String] = extraConfigs
+trait DataLakeSuiteMixin {
 
-  override def afterAll(): Unit = {
-    super.afterAll()
-    for ((k, _) <- extraConfigs) {
-      System.clearProperty(k)
-    }
-  }
+  protected def format: String
+
+  protected def catalog: String
+
+  protected def warehouse: Path
+
+  protected def extraJars: String
+
+  protected def extraConfigs: Map[String, String]
 }
