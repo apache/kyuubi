@@ -539,7 +539,7 @@ object KyuubiConf {
       .createOptional
 
   @deprecated(s"using kyuubi.engine.share.level instead", "1.2.0")
-  val LEGACY_ENGINE_SHARED_LEVEL: ConfigEntry[String] = buildConf("session.engine.share.level")
+  val LEGACY_ENGINE_SHARE_LEVEL: ConfigEntry[String] = buildConf("session.engine.share.level")
     .doc(s"(deprecated) - Using kyuubi.engine.share.level instead")
     .version("1.0.0")
     .stringConf
@@ -571,7 +571,7 @@ object KyuubiConf {
       s" see also ${ENGINE_SHARE_LEVEL_SUB_DOMAIN.key}</li>" +
       " <li>SERVER: the App will be shared by Kyuubi servers</li></ul>")
     .version("1.2.0")
-    .fallbackConf(LEGACY_ENGINE_SHARED_LEVEL)
+    .fallbackConf(LEGACY_ENGINE_SHARE_LEVEL)
 
   val ENGINE_INITIALIZE_SQL: ConfigEntry[String] = buildConf("engine.initialize.sql")
     .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +

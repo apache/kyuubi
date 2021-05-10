@@ -31,14 +31,14 @@ import org.apache.kyuubi.service.ServiceState
  */
 abstract class ShareLevelSparkEngineSuite
   extends WithDiscoverySparkSQLEngine with JDBCTestUtils {
-  def sharedLevel: ShareLevel
+  def shareLevel: ShareLevel
   override def withKyuubiConf: Map[String, String] = {
-    super.withKyuubiConf ++ Map(ENGINE_SHARE_LEVEL.key -> sharedLevel.toString)
+    super.withKyuubiConf ++ Map(ENGINE_SHARE_LEVEL.key -> shareLevel.toString)
   }
   override protected def jdbcUrl: String = getJdbcUrl
   override val namespace: String = {
     // for test, we always use uuid as namespace
-    s"/kyuubi/${sharedLevel.toString}/${UUID.randomUUID().toString}"
+    s"/kyuubi/${shareLevel.toString}/${UUID.randomUUID().toString}"
   }
 
   test("check discovery service is clean up with different share level") {
@@ -46,7 +46,7 @@ abstract class ShareLevelSparkEngineSuite
       assert(engine.getServiceState == ServiceState.STARTED)
       assert(zkClient.checkExists().forPath(namespace) != null)
       withJdbcStatement() {_ => }
-      sharedLevel match {
+      shareLevel match {
         // Connection level, we will cleanup namespace since it's always a global unique value.
         case ShareLevel.CONNECTION =>
           assert(engine.getServiceState == ServiceState.STOPPED)
@@ -60,9 +60,9 @@ abstract class ShareLevelSparkEngineSuite
 }
 
 class ConnectionLevelSparkEngineSuite extends ShareLevelSparkEngineSuite {
-  override def sharedLevel: ShareLevel = ShareLevel.CONNECTION
+  override def shareLevel: ShareLevel = ShareLevel.CONNECTION
 }
 
 class UserLevelSparkEngineSuite extends ShareLevelSparkEngineSuite {
-  override def sharedLevel: ShareLevel = ShareLevel.USER
+  override def shareLevel: ShareLevel = ShareLevel.USER
 }
