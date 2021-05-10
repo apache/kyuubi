@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.operation
 
-import java.time.Duration
 import java.util.concurrent.Future
 
 import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet, TTableSchema}
@@ -35,8 +34,9 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
   import OperationState._
 
   private final val handle = OperationHandle(opType, session.protocol)
-  private final val operationTimeout: Long = session.conf.get(OPERATION_IDLE_TIMEOUT.key)
-    .map(_.toLong).getOrElse(Duration.ofHours(3).toMillis)
+  private final val operationTimeout: Long = {
+    session.sessionManager.getConf.get(OPERATION_IDLE_TIMEOUT)
+  }
 
   protected final val statementId = handle.identifier.toString
 
