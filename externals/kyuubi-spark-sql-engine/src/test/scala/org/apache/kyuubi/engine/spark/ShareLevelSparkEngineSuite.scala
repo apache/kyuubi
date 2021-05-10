@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.spark
 
 import java.util.UUID
 
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARED_LEVEL
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.ShareLevel.ShareLevel
 import org.apache.kyuubi.operation.JDBCTestUtils
@@ -33,7 +33,7 @@ abstract class ShareLevelSparkEngineSuite
   extends WithDiscoverySparkSQLEngine with JDBCTestUtils {
   def sharedLevel: ShareLevel
   override def withKyuubiConf: Map[String, String] = {
-    super.withKyuubiConf ++ Map(ENGINE_SHARED_LEVEL.key-> sharedLevel.toString)
+    super.withKyuubiConf ++ Map(ENGINE_SHARE_LEVEL.key-> sharedLevel.toString)
   }
   override protected def jdbcUrl: String = getJdbcUrl
   override val namespace: String = {

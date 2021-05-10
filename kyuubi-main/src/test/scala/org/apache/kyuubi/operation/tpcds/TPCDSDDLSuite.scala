@@ -17,8 +17,9 @@
 
 package org.apache.kyuubi.operation.tpcds
 
+import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.{JDBCTestUtils, WithKyuubiServer}
+import org.apache.kyuubi.operation.JDBCTestUtils
 import org.apache.kyuubi.tags.ExtendedSQLTest
 
 @ExtendedSQLTest
