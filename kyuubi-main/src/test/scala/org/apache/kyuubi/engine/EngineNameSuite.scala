@@ -27,10 +27,10 @@ class EngineNameSuite extends KyuubiFunSuite {
   import ShareLevel._
 
   test(s"${CONNECTION} shared level engine name") {
-    val id = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10).identifier
+    val id = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
     val user = Utils.currentUser
     Seq(Some("suffix"), None).foreach { maybeSubDomain =>
-      val appName = new EngineName(CONNECTION, user, id.toString, maybeSubDomain)
+      val appName = EngineName(CONNECTION, user, id, maybeSubDomain)
       assert(appName.getEngineSpace("kyuubi") ===
         ZKPaths.makePath(s"kyuubi_$CONNECTION", user, id.toString))
       assert(appName.defaultEngineName ===  s"kyuubi_${CONNECTION}_${user}_$id")

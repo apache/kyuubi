@@ -23,51 +23,51 @@ import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, ShareLevel}
 import org.apache.kyuubi.session.SessionHandle
 
 /**
- * The default engine name
+ * The default engine name, kyuubi_[USER|CONNECTION|SERVER]_username_subdomain?_sessionId
  *
- * @param sharedLevel
- * @param user
- * @param sessionId
+ * @param shareLevel Share level of the engine
+ * @param user Launch user of the engine
+ * @param sessionId Id of the corresponding session in which the engine is created
  */
-case class EngineName(
-    sharedLevel: ShareLevel,
+private[kyuubi] class EngineName private (
+    shareLevel: ShareLevel,
     user: String,
     sessionId: String,
     subDomain: Option[String]) {
 
-  val defaultEngineName: String = sharedLevel match {
-    case CONNECTION => s"kyuubi_${sharedLevel}_${user}_$sessionId"
+  val defaultEngineName: String = shareLevel match {
+    case CONNECTION => s"kyuubi_${shareLevel}_${user}_$sessionId"
     case _ => subDomain match {
-      case Some(domain) => s"kyuubi_${sharedLevel}_${user}_${domain}_$sessionId"
-      case _ => s"kyuubi_${sharedLevel}_${user}_$sessionId"
+      case Some(domain) => s"kyuubi_${shareLevel}_${user}_${domain}_$sessionId"
+      case _ => s"kyuubi_${shareLevel}_${user}_$sessionId"
     }
   }
 
   def getEngineSpace(prefix: String): String = {
-    sharedLevel match {
-      case CONNECTION => ZKPaths.makePath(s"${prefix}_$sharedLevel", user, sessionId)
+    shareLevel match {
+      case CONNECTION => ZKPaths.makePath(s"${prefix}_$shareLevel", user, sessionId)
       case _ => subDomain match {
-        case Some(domain) => ZKPaths.makePath(s"${prefix}_$sharedLevel", user, domain)
-        case None => ZKPaths.makePath(s"${prefix}_$sharedLevel", user)
+        case Some(domain) => ZKPaths.makePath(s"${prefix}_$shareLevel", user, domain)
+        case None => ZKPaths.makePath(s"${prefix}_$shareLevel", user)
       }
     }
   }
 
   def getZkLockPath(prefix: String): String = {
-    assert(sharedLevel != CONNECTION)
+    assert(shareLevel != CONNECTION)
     subDomain match {
-      case Some(domain) => ZKPaths.makePath(s"${prefix}_$sharedLevel", "lock", user, domain)
-      case None => ZKPaths.makePath(s"${prefix}_$sharedLevel", "lock", user)
+      case Some(domain) => ZKPaths.makePath(s"${prefix}_$shareLevel", "lock", user, domain)
+      case None => ZKPaths.makePath(s"${prefix}_$shareLevel", "lock", user)
     }
   }
 }
 
 private[kyuubi] object EngineName {
   def apply(
-    sharedLevel: ShareLevel,
-    user: String,
-    handle: SessionHandle,
-    subDomain: Option[String]): EngineName = {
-    new EngineName(sharedLevel, user, handle.identifier.toString, subDomain)
+      shareLevel: ShareLevel,
+      user: String,
+      handle: SessionHandle,
+      subDomain: Option[String]): EngineName = {
+    new EngineName(shareLevel, user, handle.identifier.toString, subDomain)
   }
 }
