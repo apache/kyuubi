@@ -32,14 +32,10 @@ class SessionManagerSuite extends FrontendServiceSuite with Eventually {
     .set(KyuubiConf.FRONTEND_BIND_PORT, 0)
     .set("kyuubi.test.server.should.fail", "false")
     .set(KyuubiConf.SESSION_CHECK_INTERVAL, Duration.ofSeconds(5).toMillis)
-    .set(KyuubiConf.SESSION_TIMEOUT, Duration.ofSeconds(5).toMillis)
+    .set(KyuubiConf.SESSION_IDLE_TIMEOUT, Duration.ofSeconds(5).toMillis)
+    .set(KyuubiConf.OPERATION_IDLE_TIMEOUT, Duration.ofSeconds(20).toMillis)
 
   test("close expired operations") {
-    sessionConf.put(
-      KyuubiConf.OPERATION_IDLE_TIMEOUT.key,
-      String.valueOf(Duration.ofSeconds(20).toMillis)
-    )
-
     withSessionHandle{ (client, handle) =>
       val req = new TCancelOperationReq()
       val req1 = new TGetSchemasReq(handle)
