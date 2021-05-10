@@ -33,7 +33,7 @@ class EngineNameSuite extends KyuubiFunSuite {
       val appName = EngineName(CONNECTION, user, id, maybeSubDomain)
       assert(appName.getEngineSpace("kyuubi") ===
         ZKPaths.makePath(s"kyuubi_$CONNECTION", user, id.toString))
-      assert(appName.defaultEngineName ===  s"kyuubi_${CONNECTION}_${user}_$id")
+      assert(appName.defaultEngineName ===  s"kyuubi_${CONNECTION}_${user}_${id.identifier}")
       intercept[AssertionError](appName.getZkLockPath("kyuubi"))
     }
   }
