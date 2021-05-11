@@ -19,7 +19,7 @@ package org.apache.kyuubi.ha.client
 
 import scala.util.control.NonFatal
 
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARED_LEVEL
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
 import org.apache.kyuubi.service.Serverable
 
 /**
@@ -36,7 +36,7 @@ class EngineServiceDiscovery private(
 
   override def stop(): Unit = synchronized {
     closeServiceNode()
-    conf.get(ENGINE_SHARED_LEVEL) match {
+    conf.get(ENGINE_SHARE_LEVEL) match {
       // For connection level, we should clean up the namespace in zk in case the disk stress.
       case "CONNECTION" if namespace != null =>
         try {

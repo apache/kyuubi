@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.operation
 
+import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 
 /**
@@ -27,6 +28,6 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with BasicJDBCT
   override protected def jdbcUrl: String = getJdbcUrl
 
   override protected val conf: KyuubiConf = {
-    KyuubiConf().set(KyuubiConf.ENGINE_SHARED_LEVEL, "connection")
+    KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "connection")
   }
 }

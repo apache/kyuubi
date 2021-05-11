@@ -20,6 +20,7 @@ package org.apache.kyuubi.config
 import java.time.Duration
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
+import java.util.regex.Pattern
 
 import scala.collection.JavaConverters._
 
@@ -537,21 +538,40 @@ object KyuubiConf {
       .checkValue(_ >= 1000, "must >= 1s if set")
       .createOptional
 
-  val ENGINE_SHARED_LEVEL: ConfigEntry[String] = buildConf("session.engine.share.level")
-    .doc("The SQL engine App will be shared in different levels, available configs are: <ul>" +
-      " <li>CONNECTION: the App will not be shared but only used by the current client" +
-      " connection</li>" +
-      " <li>USER: the App will be shared by all sessions created by a unique username</li>" +
-      " <li>SERVER: the App will be shared by Kyuubi servers</li></ul>")
+  @deprecated(s"using kyuubi.engine.share.level instead", "1.2.0")
+  val LEGACY_ENGINE_SHARE_LEVEL: ConfigEntry[String] = buildConf("session.engine.share.level")
+    .doc(s"(deprecated) - Using kyuubi.engine.share.level instead")
     .version("1.0.0")
     .stringConf
     .transform(_.toUpperCase(Locale.ROOT))
     .checkValues(ShareLevel.values.map(_.toString))
     .createWithDefault(ShareLevel.USER.toString)
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////
-  //                                   Engine Configuration                                      //
-  /////////////////////////////////////////////////////////////////////////////////////////////////
+  private val validEngineSubDomain: Pattern = "^[a-zA-Z_]{1,10}$".r.pattern
+
+  val ENGINE_SHARE_LEVEL_SUB_DOMAIN: OptionalConfigEntry[String] =
+    buildConf("engine.share.level.sub.domain")
+      .doc("Allow end-users to create a sub-domain for the share level of an engine. A" +
+        " sub-domain is a case-insensitive string values in `^[a-zA-Z_]{1,10}$` form." +
+        " For example, for `USER` share level, an end-user can share a certain engine within" +
+        " a sub-domain, not for all of its clients. End-users are free to create multiple" +
+        " engines in the `USER` share level")
+      .version("1.2.0")
+      .stringConf
+      .transform(_.toLowerCase(Locale.ROOT))
+      .checkValue(validEngineSubDomain.matcher(_).matches(),
+        "must be [1, 10] length alphabet string, e.g. 'abc', 'apache'")
+      .createOptional
+
+  val ENGINE_SHARE_LEVEL: ConfigEntry[String] = buildConf("engine.share.level")
+    .doc("Engines will be shared in different levels, available configs are: <ul>" +
+      " <li>CONNECTION: engine will not be shared but only used by the current client" +
+      " connection</li>" +
+      " <li>USER: engine will be shared by all sessions created by a unique username," +
+      s" see also ${ENGINE_SHARE_LEVEL_SUB_DOMAIN.key}</li>" +
+      " <li>SERVER: the App will be shared by Kyuubi servers</li></ul>")
+    .version("1.2.0")
+    .fallbackConf(LEGACY_ENGINE_SHARE_LEVEL)
 
   val ENGINE_INITIALIZE_SQL: ConfigEntry[String] = buildConf("engine.initialize.sql")
     .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +

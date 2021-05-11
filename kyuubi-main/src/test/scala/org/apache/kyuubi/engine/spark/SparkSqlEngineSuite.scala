@@ -17,16 +17,14 @@
 
 package org.apache.kyuubi.engine.spark
 
+import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_INITIALIZE_SQL, SESSION_CONF_IGNORE_LIST, SESSION_CONF_RESTRICT_LIST}
-import org.apache.kyuubi.operation.{JDBCTestUtils, WithKyuubiServer}
+import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.operation.JDBCTestUtils
 
 class SparkSqlEngineSuite extends WithKyuubiServer with JDBCTestUtils {
   override protected val conf: KyuubiConf = {
-    KyuubiConf().set(ENGINE_INITIALIZE_SQL,
-      "CREATE DATABASE IF NOT EXISTS INIT_DB;" +
-        "CREATE TABLE IF NOT EXISTS INIT_DB.test(a int);" +
-        "INSERT OVERWRITE TABLE INIT_DB.test SELECT 1;")
+    KyuubiConf()
       .set(SESSION_CONF_IGNORE_LIST.key, "kyuubi.abc.xyz,spark.sql.abc.xyz,spark.sql.abc.var")
       .set(SESSION_CONF_RESTRICT_LIST.key, "kyuubi.xyz.abc,spark.sql.xyz.abc,spark.sql.xyz.abc.var")
   }
@@ -46,23 +44,6 @@ class SparkSqlEngineSuite extends WithKyuubiServer with JDBCTestUtils {
       _sparkHiveVars = Map.empty
       _sparkHiveConfs = Map.empty
       _sessionConfs = Map.empty
-    }
-  }
-
-  override def afterAll(): Unit = {
-    withJdbcStatement() { statement =>
-      statement.executeQuery("DROP TABLE IF EXISTS INIT_DB.test")
-      statement.executeQuery("DROP DATABASE IF EXISTS INIT_DB")
-    }
-    super.afterAll()
-  }
-
-  test("KYUUBI-457: Support configurable initialize sql statement for engine startup") {
-    withJdbcStatement() { statement =>
-      val result = statement.executeQuery("SELECT * FROM INIT_DB.test")
-      assert(result.next())
-      assert(result.getInt(1) == 1)
-      assert(!result.next())
     }
   }
 
@@ -104,6 +85,60 @@ class SparkSqlEngineSuite extends WithKyuubiServer with JDBCTestUtils {
 
     withSessionConf(Map.empty)(Map.empty)(Map("spark.sql.xyz.abc.var" -> "123")) {
       assertJDBCConnectionFail()
+    }
+  }
+
+
+  test("Fail connections on invalid sub domains") {
+    Seq("1", ",", "", "a" * 11, "abc.xyz").foreach { invalid =>
+      val sparkHiveConfigs = Map(
+        ENGINE_SHARE_LEVEL.key -> "USER",
+        ENGINE_SHARE_LEVEL_SUB_DOMAIN.key -> invalid)
+      withSessionConf(Map.empty)(sparkHiveConfigs)(Map.empty) {
+        assertJDBCConnectionFail()
+      }
+    }
+  }
+
+  test("Engine isolation with sub domain configurations") {
+    val sparkHiveConfigs = Map(
+      ENGINE_SHARE_LEVEL.key -> "USER",
+      ENGINE_SHARE_LEVEL_SUB_DOMAIN.key -> "spark",
+      "spark.driver.memory" -> "1000M")
+    var mem: String = null
+    withSessionConf(Map.empty)(sparkHiveConfigs)(Map.empty) {
+      withJdbcStatement() { statement =>
+        val rs = statement.executeQuery(s"SET spark.driver.memory")
+        assert(rs.next())
+        mem = rs.getString(2)
+        assert(mem === "1000M")
+      }
+    }
+
+    val sparkHiveConfigs2 = Map(
+      ENGINE_SHARE_LEVEL.key -> "USER",
+      ENGINE_SHARE_LEVEL_SUB_DOMAIN.key -> "spark",
+      "spark.driver.memory" -> "1001M")
+    withSessionConf(Map.empty)(sparkHiveConfigs2)(Map.empty) {
+      withJdbcStatement() { statement =>
+        val rs = statement.executeQuery(s"SET spark.driver.memory")
+        assert(rs.next())
+        mem = rs.getString(2)
+        assert(mem === "1000M", "The sub-domain is same, so the engine reused")
+      }
+    }
+
+    val sparkHiveConfigs3 = Map(
+      ENGINE_SHARE_LEVEL.key -> "USER",
+      ENGINE_SHARE_LEVEL_SUB_DOMAIN.key -> "kyuubi",
+      "spark.driver.memory" -> "1002M")
+    withSessionConf(Map.empty)(sparkHiveConfigs3)(Map.empty) {
+      withJdbcStatement() { statement =>
+        val rs = statement.executeQuery(s"SET spark.driver.memory")
+        assert(rs.next())
+        mem = rs.getString(2)
+        assert(mem === "1002M", "The sub-domain is changed, so the engine recreated")
+      }
     }
   }
 
