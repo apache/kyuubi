@@ -37,7 +37,7 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.session.SessionHandle
 
 /**
- * The default engine name, kyuubi_[USER|CONNECTION|SERVER]_username_subdomain?_sessionId
+ * The description and functionality of an engine at server side
  *
  * @param conf Engine configuration
  * @param user Caller of the engine
@@ -83,6 +83,7 @@ private[kyuubi] class Engine private(conf: KyuubiConf, user: String, sessionId: 
    *   /$serverSpace_USER/$user(/$subDomain)?
    *
    */
+  @VisibleForTesting
   private[kyuubi] lazy val engineSpace: String = shareLevel match {
     case CONNECTION => ZKPaths.makePath(s"${serverSpace}_$shareLevel", appUser, sessionId)
     case _ => subDomain match {

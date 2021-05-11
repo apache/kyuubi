@@ -50,8 +50,8 @@ import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
  * @param server the instance uri a service that used to publish itself
  */
 abstract class ServiceDiscovery private(
-  name: String,
-  server: Serverable) extends AbstractService(name) {
+    name: String,
+    server: Serverable) extends AbstractService(name) {
 
   import ServiceDiscovery._
 
@@ -265,10 +265,10 @@ object ServiceDiscovery extends Logging {
   }
 
   def getServiceNodesInfo(
-    zkClient: CuratorFramework,
-    namespace: String,
-    sizeOpt: Option[Int] = None,
-    silent: Boolean = false): Seq[ServiceNodeInfo] = {
+      zkClient: CuratorFramework,
+      namespace: String,
+      sizeOpt: Option[Int] = None,
+      silent: Boolean = false): Seq[ServiceNodeInfo] = {
     try {
       val hosts = zkClient.getChildren.forPath(namespace)
       val size = sizeOpt.getOrElse(hosts.size())
@@ -291,12 +291,12 @@ object ServiceDiscovery extends Logging {
   }
 
   def createZkServiceNode(
-    conf: KyuubiConf,
-    zkClient: CuratorFramework,
-    namespace: String,
-    instance: String,
-    version: Option[String] = None,
-    external: Boolean = false): PersistentNode = {
+      conf: KyuubiConf,
+      zkClient: CuratorFramework,
+      namespace: String,
+      instance: String,
+      version: Option[String] = None,
+      external: Boolean = false): PersistentNode = {
     val ns = ZKPaths.makePath(null, namespace)
     try {
       zkClient
@@ -348,10 +348,10 @@ object ServiceDiscovery extends Logging {
 }
 
 case class ServiceNodeInfo(
-  namespace: String,
-  nodeName: String,
-  host: String,
-  port: Int,
-  version: Option[String]) {
+    namespace: String,
+    nodeName: String,
+    host: String,
+    port: Int,
+    version: Option[String]) {
   def instance: String = s"$host:$port"
 }
