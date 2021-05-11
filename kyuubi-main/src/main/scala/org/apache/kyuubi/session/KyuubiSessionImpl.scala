@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
-import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TOpenSessionReq, TProtocolVersion, TSessionHandle}
+import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.TException
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.{TSocket, TTransport}
@@ -30,7 +30,7 @@ import org.apache.thrift.transport.{TSocket, TTransport}
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.{ShareLevel, SQLEngineAppName}
+import org.apache.kyuubi.engine.{EngineName, ShareLevel}
 import org.apache.kyuubi.engine.ShareLevel.{SERVER, ShareLevel}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf._
@@ -55,7 +55,8 @@ class KyuubiSessionImpl(
     case (key, value) => sessionConf.set(key, value)
   }
 
-  private val shareLevel: ShareLevel = ShareLevel.withName(sessionConf.get(ENGINE_SHARED_LEVEL))
+  private val shareLevel: ShareLevel = ShareLevel.withName(sessionConf.get(ENGINE_SHARE_LEVEL))
+  private val subDomain: Option[String] = sessionConf.get(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
 
   private val appUser: String = shareLevel match {
     case SERVER => Utils.currentUser
@@ -64,9 +65,9 @@ class KyuubiSessionImpl(
 
   private val zkNamespace: String = sessionConf.get(HA_ZK_NAMESPACE)
 
-  private val boundAppName: SQLEngineAppName = SQLEngineAppName(shareLevel, appUser, handle)
+  private val boundAppName: EngineName = EngineName(shareLevel, appUser, handle, subDomain)
 
-  private val appZkNamespace: String = boundAppName.getZkNamespace(zkNamespace)
+  private val appZkNamespace: String = boundAppName.getEngineSpace(zkNamespace)
 
   private val timeout: Long = sessionConf.get(ENGINE_INIT_TIMEOUT)
 
@@ -87,7 +88,7 @@ class KyuubiSessionImpl(
       def tryOpenSession: Unit = getServerHost(zkClient, appZkNamespace) match {
         case Some((host, port)) => openSession(host, port)
         case None =>
-          sessionConf.setIfMissing(SparkProcessBuilder.APP_KEY, boundAppName.toString)
+          sessionConf.setIfMissing(SparkProcessBuilder.APP_KEY, boundAppName.defaultEngineName)
           // tag is a seq type with comma-separated
           sessionConf.set(SparkProcessBuilder.TAG_KEY,
             sessionConf.getOption(SparkProcessBuilder.TAG_KEY)
@@ -96,7 +97,7 @@ class KyuubiSessionImpl(
           val builder = new SparkProcessBuilder(appUser, sessionConf)
           MetricsSystem.tracing(_.incAndGetCount(ENGINE_TOTAL))
           try {
-            logSessionInfo(s"Launching SQL engine:\n$builder")
+            logSessionInfo(s"Launching engine:\n$builder")
             val process = builder.start
             var sh = getServerHost(zkClient, appZkNamespace)
             val started = System.currentTimeMillis()

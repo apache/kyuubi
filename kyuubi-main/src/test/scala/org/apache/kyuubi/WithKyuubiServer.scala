@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation
+package org.apache.kyuubi
 
 import java.nio.file.Files
 
-import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_ACL_ENABLED, HA_ZK_QUORUM}
