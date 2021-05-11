@@ -184,7 +184,7 @@ echo "Kyuubi $VERSION $GITREVSTRING built for" > "$DISTDIR/RELEASE"
 echo "Java $JAVA_VERSION" >> "$DISTDIR/RELEASE"
 echo "Scala $SCALA_VERSION" >> "$DISTDIR/RELEASE"
 echo "Spark $SPARK_VERSION" >> "$DISTDIR/RELEASE"
-echo "Hadoop $HADOOP_VERSION" >> "$DISTDIR/RELEASE"
+echo "Hadoop $SPARK_HADOOP_VERSION" >> "$DISTDIR/RELEASE"
 echo "Hive $HIVE_VERSION" >> "$DISTDIR/RELEASE"
 echo "Build flags: $@" >> "$DISTDIR/RELEASE"
 
