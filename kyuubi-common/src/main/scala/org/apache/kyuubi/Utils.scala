@@ -17,18 +17,20 @@
 
 package org.apache.kyuubi
 
-import java.io.{File, IOException, InputStreamReader}
+import java.io.{File, InputStreamReader, IOException}
+import java.net.InetAddress
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 import java.util.{Properties, UUID}
+import javax.net.ServerSocketFactory
+
 import scala.collection.JavaConverters._
+import scala.util.Random
+
 import org.apache.commons.lang3.SystemUtils
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.kyuubi.config.internal.Tests.IS_TESTING
 
-import java.net.{InetAddress, ServerSocket}
-import javax.net.ServerSocketFactory
-import scala.util.Random
+import org.apache.kyuubi.config.internal.Tests.IS_TESTING
 
 private[kyuubi] object Utils extends Logging {
 
