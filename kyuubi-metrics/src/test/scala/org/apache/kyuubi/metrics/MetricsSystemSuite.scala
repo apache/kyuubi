@@ -23,6 +23,9 @@ import java.time.Duration
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
+import org.eclipse.jetty.client.HttpClient
+import org.eclipse.jetty.client.api.ContentResponse
+
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 
@@ -41,11 +44,11 @@ class MetricsSystemSuite extends KyuubiFunSuite {
     }
   }
 
-  test("MetricsSystem") {
+  test("metrics - JsonReporter") {
     val reportPath = Utils.createTempDir()
     val conf = KyuubiConf()
       .set(MetricsConf.METRICS_ENABLED, true)
-      .set(MetricsConf.METRICS_REPORTERS, ReporterType.values.map(_.toString).toSeq)
+      .set(MetricsConf.METRICS_REPORTERS, Seq("JSON"))
       .set(MetricsConf.METRICS_JSON_INTERVAL, Duration.ofSeconds(1).toMillis)
       .set(MetricsConf.METRICS_JSON_LOCATION, reportPath.toString)
     val metricsSystem = new MetricsSystem()
@@ -63,4 +66,30 @@ class MetricsSystemSuite extends KyuubiFunSuite {
     metricsSystem.stop()
   }
 
+  test("metrics - PrometheusReporter") {
+    val testPort = 10019
+    val testContextPath = "/metrics"
+
+    val conf = KyuubiConf()
+      .set(MetricsConf.METRICS_ENABLED, true)
+      .set(MetricsConf.METRICS_REPORTERS, Seq("PROMETHEUS"))
+      .set(MetricsConf.METRICS_PROMETHEUS_PORT, testPort)
+      .set(MetricsConf.METRICS_PROMETHEUS_PATH, testContextPath)
+    val metricsSystem = new MetricsSystem()
+    metricsSystem.initialize(conf)
+    metricsSystem.start()
+    metricsSystem.incAndGetCount(MetricsConstants.STATEMENT_TOTAL)
+
+    metricsSystem.decAndGetCount(MetricsConstants.STATEMENT_TOTAL)
+    metricsSystem.registerGauge(MetricsConstants.CONN_OPEN, 20181117, 0)
+
+    val client: HttpClient = new HttpClient
+    client.start()
+    val res: ContentResponse = client.GET(s"http://localhost:$testPort$testContextPath")
+    assert(res.getContentAsString.contains("PS_MarkSweep_count"))
+    assert(res.getContentAsString.contains("kyuubi_connection_opened 2.0181117E7"))
+    client.stop()
+
+    metricsSystem.stop()
+  }
 }

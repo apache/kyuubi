@@ -81,6 +81,7 @@ class MetricsSystem extends CompositeService("MetricsSystem") {
       case SLF4J => addService(new Slf4jReporterService(registry))
       case CONSOLE => addService(new ConsoleReporterService(registry))
       case JMX => addService(new JMXReporterService(registry))
+      case PROMETHEUS => addService(new PrometheusReporterService(registry))
     }
     super.initialize(conf)
   }
