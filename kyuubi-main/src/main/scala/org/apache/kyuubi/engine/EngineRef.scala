@@ -43,7 +43,7 @@ import org.apache.kyuubi.session.SessionHandle
  * @param user Caller of the engine
  * @param sessionId Id of the corresponding session in which the engine is created
  */
-private[kyuubi] class Engine private(conf: KyuubiConf, user: String, sessionId: String)
+private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionId: String)
   extends Logging {
 
   // The corresponding ServerSpace where the engine belongs to
@@ -63,7 +63,7 @@ private[kyuubi] class Engine private(conf: KyuubiConf, user: String, sessionId: 
   }
 
   /**
-   * The default engine name, used as default spark.app.name if not set
+   * The default engine name, used as default `spark.app.name` if not set
    */
   @VisibleForTesting
   private[kyuubi] val defaultEngineName: String = shareLevel match {
@@ -80,7 +80,7 @@ private[kyuubi] class Engine private(conf: KyuubiConf, user: String, sessionId: 
    * For `CONNECTION` share level:
    *   /$serverSpace_CONNECTION/$user/$sessionId
    * For `USER` share level:
-   *   /$serverSpace_USER/$user(/$subDomain)?
+   *   /$serverSpace_USER/$user[/$subDomain]
    *
    */
   @VisibleForTesting
@@ -95,8 +95,6 @@ private[kyuubi] class Engine private(conf: KyuubiConf, user: String, sessionId: 
   /**
    * The distributed lock path used to ensure only once engine being created for non-CONNECTION
    * share level.
-   *   /$serverSpace_USER/lock/$user(/$subDomain)?
-   *
    */
   private def tryWithLock[T](zkClient: CuratorFramework)(f: => T): T = shareLevel match {
     case CONNECTION => f
@@ -125,14 +123,14 @@ private[kyuubi] class Engine private(conf: KyuubiConf, user: String, sessionId: 
       }
   }
 
-  def getEngineAddr(zkClient: CuratorFramework): Option[(String, Int)] = {
+  private def get(zkClient: CuratorFramework): Option[(String, Int)] = {
     getServerHost(zkClient, engineSpace)
   }
 
-  def start(zkClient: CuratorFramework): (String, Int) = tryWithLock(zkClient) {
-    var sh = getEngineAddr(zkClient)
+  private def create(zkClient: CuratorFramework): (String, Int) = tryWithLock(zkClient) {
+    var engineRef = get(zkClient)
     // Get the engine address ahead if another process has succeeded
-    if (sh.nonEmpty) return sh.get
+    if (engineRef.nonEmpty) return engineRef.get
 
     conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
     // tag is a seq type with comma-separated
@@ -146,7 +144,7 @@ private[kyuubi] class Engine private(conf: KyuubiConf, user: String, sessionId: 
       val process = builder.start
       val started = System.currentTimeMillis()
       var exitValue: Option[Int] = None
-      while (sh.isEmpty) {
+      while (engineRef.isEmpty) {
         if (exitValue.isEmpty && process.waitFor(1, TimeUnit.SECONDS)) {
           exitValue = Some(process.exitValue())
           if (exitValue.get != 0) {
@@ -163,22 +161,31 @@ private[kyuubi] class Engine private(conf: KyuubiConf, user: String, sessionId: 
           process.destroyForcibly()
           MetricsSystem.tracing(_.incAndGetCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
           throw KyuubiSQLException(
-            s"Timeout(${Utils.formatDuration(timeout)}) to launched Spark with $builder",
+            s"Timeout($timeout) to launched Spark with $builder",
             builder.getError)
         }
-        sh = getEngineAddr(zkClient)
+        engineRef = get(zkClient)
       }
-      sh.get
+      engineRef.get
     } finally {
       // we must close the process builder whether session open is success or failure since
       // we have a log capture thread in process builder.
       builder.close()
     }
   }
+
+  /**
+   * Get the engine ref from engine space first first or create a new one
+   */
+  def getOrCreate(zkClient: CuratorFramework): (String, Int) = {
+    get(zkClient).getOrElse {
+      create(zkClient)
+    }
+  }
 }
 
-private[kyuubi] object Engine extends Logging {
-  def apply(conf: KyuubiConf, user: String, handle: SessionHandle): Engine = {
-    new Engine(conf, user, handle.identifier.toString)
+private[kyuubi] object EngineRef {
+  def apply(conf: KyuubiConf, user: String, handle: SessionHandle): EngineRef = {
+    new EngineRef(conf, user, handle.identifier.toString)
   }
 }

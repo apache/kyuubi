@@ -28,7 +28,7 @@ import org.apache.thrift.transport.{TSocket, TTransport}
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.Engine
+import org.apache.kyuubi.engine.EngineRef
 import org.apache.kyuubi.ha.client.ServiceDiscovery._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -50,7 +50,7 @@ class KyuubiSessionImpl(
     case (key, value) => sessionConf.set(key, value)
   }
 
-  private val engine: Engine = Engine(sessionConf, user, handle)
+  private val engine: EngineRef = EngineRef(sessionConf, user, handle)
 
   private var transport: TTransport = _
   private var client: TCLIService.Client = _
@@ -63,9 +63,7 @@ class KyuubiSessionImpl(
     }
     super.open()
     withZkClient(sessionConf) { zkClient =>
-      val (host, port) = engine.getEngineAddr(zkClient).getOrElse {
-        engine.start(zkClient)
-      }
+      val (host, port) = engine.getOrCreate(zkClient)
       openSession(host, port)
     }
   }

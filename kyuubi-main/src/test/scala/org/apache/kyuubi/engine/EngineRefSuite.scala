@@ -29,7 +29,7 @@ import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.NamedThreadFactory
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
-class EngineSuite extends KyuubiFunSuite {
+class EngineRefSuite extends KyuubiFunSuite {
   import ShareLevel._
   private val zkServer = new EmbeddedZookeeper
   private val conf = KyuubiConf()
@@ -54,7 +54,7 @@ class EngineSuite extends KyuubiFunSuite {
     Seq(None, Some("suffix")).foreach { domain =>
       conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, CONNECTION.toString)
       domain.foreach(conf.set(KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN.key, _))
-      val engine = Engine(conf, user, id)
+      val engine = EngineRef(conf, user, id)
       assert(engine.engineSpace ===
         ZKPaths.makePath(s"kyuubi_$CONNECTION", user, id.identifier.toString))
       assert(engine.defaultEngineName === s"kyuubi_${CONNECTION}_${user}_${id.identifier}")
@@ -65,12 +65,12 @@ class EngineSuite extends KyuubiFunSuite {
     val id = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
     conf.unset(KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN)
-    val appName = Engine(conf, user, id)
+    val appName = EngineRef(conf, user, id)
     assert(appName.engineSpace === ZKPaths.makePath(s"kyuubi_$USER", user))
     assert(appName.defaultEngineName === s"kyuubi_${USER}_${user}_${id.identifier}")
 
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN.key, "abc")
-    val appName2 = Engine(conf, user, id)
+    val appName2 = EngineRef(conf, user, id)
     assert(appName2.engineSpace ===
       ZKPaths.makePath(s"kyuubi_$USER", user, "abc"))
     assert(appName2.defaultEngineName === s"kyuubi_${USER}_${user}_abc_${id.identifier}")
@@ -80,13 +80,13 @@ class EngineSuite extends KyuubiFunSuite {
     val id = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, SERVER.toString)
     conf.unset(KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN)
-    val appName = Engine(conf, user, id)
+    val appName = EngineRef(conf, user, id)
     assert(appName.engineSpace ===
       ZKPaths.makePath(s"kyuubi_$SERVER", user))
     assert(appName.defaultEngineName ===  s"kyuubi_${SERVER}_${user}_${id.identifier}")
 
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN.key, "abc")
-    val appName2 = Engine(conf, user, id)
+    val appName2 = EngineRef(conf, user, id)
     assert(appName2.engineSpace ===
       ZKPaths.makePath(s"kyuubi_$SERVER", user, "abc"))
     assert(appName2.defaultEngineName ===  s"kyuubi_${SERVER}_${user}_abc_${id.identifier}")
@@ -98,7 +98,7 @@ class EngineSuite extends KyuubiFunSuite {
     conf.set(KyuubiConf.FRONTEND_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_ZK_NAMESPACE, "engine_test")
     conf.set(HighAvailabilityConf.HA_ZK_QUORUM, zkServer.getConnectString)
-    val engine = Engine(conf, user, id)
+    val engine = EngineRef(conf, user, id)
 
     var port1 = 0
     var port2 = 0
@@ -106,7 +106,7 @@ class EngineSuite extends KyuubiFunSuite {
     val r1 = new Runnable {
       override def run(): Unit = {
         ServiceDiscovery.withZkClient(conf) { client =>
-          val hp = engine.start(client)
+          val hp = engine.getOrCreate(client)
           port1 = hp._2
         }
       }
@@ -115,7 +115,7 @@ class EngineSuite extends KyuubiFunSuite {
     val r2 = new Runnable {
       override def run(): Unit = {
         ServiceDiscovery.withZkClient(conf) { client =>
-          val hp = engine.start(client)
+          val hp = engine.getOrCreate(client)
           port2 = hp._2
         }
       }
