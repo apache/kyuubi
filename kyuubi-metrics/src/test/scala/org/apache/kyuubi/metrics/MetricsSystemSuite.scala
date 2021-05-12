@@ -31,7 +31,7 @@ import org.apache.kyuubi.config.KyuubiConf
 
 class MetricsSystemSuite extends KyuubiFunSuite {
 
-  def checkMetrics(path: Path, searchKey: String): Unit = {
+  def checkJsonFileMetrics(path: Path, searchKey: String): Unit = {
     eventually(timeout(10.seconds), interval(500.milliseconds)) {
       val reader = Files.newBufferedReader(path)
       val logs = new java.util.ArrayList[String]
@@ -44,43 +44,18 @@ class MetricsSystemSuite extends KyuubiFunSuite {
     }
   }
 
-  test("metrics - JsonReporter") {
-    val reportPath = Utils.createTempDir()
-    val conf = KyuubiConf()
-      .set(MetricsConf.METRICS_ENABLED, true)
-      .set(MetricsConf.METRICS_REPORTERS, Seq("JSON"))
-      .set(MetricsConf.METRICS_JSON_INTERVAL, Duration.ofSeconds(1).toMillis)
-      .set(MetricsConf.METRICS_JSON_LOCATION, reportPath.toString)
-    val metricsSystem = new MetricsSystem()
-    metricsSystem.initialize(conf)
-    metricsSystem.start()
-    val reportFile = Paths.get(reportPath.toString, "report.json")
-    checkMetrics(reportFile, "PS-MarkSweep.count")
-    metricsSystem.incAndGetCount(MetricsConstants.STATEMENT_TOTAL)
-
-    checkMetrics(reportFile, MetricsConstants.STATEMENT_TOTAL)
-    metricsSystem.decAndGetCount(MetricsConstants.STATEMENT_TOTAL)
-    metricsSystem.registerGauge(MetricsConstants.CONN_OPEN, 20181117, 0)
-    checkMetrics(reportFile, MetricsConstants.CONN_OPEN)
-    checkMetrics(reportFile, "20181117")
-    metricsSystem.stop()
-  }
-
   test("metrics - PrometheusReporter") {
-    val testPort = 10019
-    val testContextPath = "/metrics"
+    val testPort = Utils.findAvailableTcpPort()
+    val testContextPath = "/prometheus-metrics"
 
     val conf = KyuubiConf()
       .set(MetricsConf.METRICS_ENABLED, true)
-      .set(MetricsConf.METRICS_REPORTERS, Seq("PROMETHEUS"))
+      .set(MetricsConf.METRICS_REPORTERS, Seq(ReporterType.PROMETHEUS.toString))
       .set(MetricsConf.METRICS_PROMETHEUS_PORT, testPort)
       .set(MetricsConf.METRICS_PROMETHEUS_PATH, testContextPath)
     val metricsSystem = new MetricsSystem()
     metricsSystem.initialize(conf)
     metricsSystem.start()
-    metricsSystem.incAndGetCount(MetricsConstants.STATEMENT_TOTAL)
-
-    metricsSystem.decAndGetCount(MetricsConstants.STATEMENT_TOTAL)
     metricsSystem.registerGauge(MetricsConstants.CONN_OPEN, 2021, 0)
 
     val client: HttpClient = new HttpClient
@@ -90,6 +65,29 @@ class MetricsSystemSuite extends KyuubiFunSuite {
     assert(res.getContentAsString.contains("kyuubi_connection_opened 2021.0"))
     client.stop()
 
+    metricsSystem.stop()
+  }
+
+  test("metrics - other reporters") {
+    val reportPath = Utils.createTempDir()
+    val conf = KyuubiConf()
+      .set(MetricsConf.METRICS_ENABLED, true)
+      .set(MetricsConf.METRICS_REPORTERS,
+        ReporterType.values.filterNot(_ == ReporterType.PROMETHEUS).map(_.toString).toSeq)
+      .set(MetricsConf.METRICS_JSON_INTERVAL, Duration.ofSeconds(1).toMillis)
+      .set(MetricsConf.METRICS_JSON_LOCATION, reportPath.toString)
+    val metricsSystem = new MetricsSystem()
+    metricsSystem.initialize(conf)
+    metricsSystem.start()
+    val reportFile = Paths.get(reportPath.toString, "report.json")
+    checkJsonFileMetrics(reportFile, "PS-MarkSweep.count")
+    metricsSystem.incAndGetCount(MetricsConstants.STATEMENT_TOTAL)
+
+    checkJsonFileMetrics(reportFile, MetricsConstants.STATEMENT_TOTAL)
+    metricsSystem.decAndGetCount(MetricsConstants.STATEMENT_TOTAL)
+    metricsSystem.registerGauge(MetricsConstants.CONN_OPEN, 20181117, 0)
+    checkJsonFileMetrics(reportFile, MetricsConstants.CONN_OPEN)
+    checkJsonFileMetrics(reportFile, "20181117")
     metricsSystem.stop()
   }
 }

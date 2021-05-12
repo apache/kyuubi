@@ -17,17 +17,18 @@
 
 package org.apache.kyuubi
 
-import java.io.{File, InputStreamReader, IOException}
+import java.io.{File, IOException, InputStreamReader}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 import java.util.{Properties, UUID}
-
 import scala.collection.JavaConverters._
-
 import org.apache.commons.lang3.SystemUtils
 import org.apache.hadoop.security.UserGroupInformation
-
 import org.apache.kyuubi.config.internal.Tests.IS_TESTING
+
+import java.net.{InetAddress, ServerSocket}
+import javax.net.ServerSocketFactory
+import scala.util.Random
 
 private[kyuubi] object Utils extends Logging {
 
@@ -164,5 +165,51 @@ private[kyuubi] object Utils extends Logging {
    */
   def isTesting: Boolean = {
     System.getProperty(IS_TESTING.key) != null
+  }
+
+  /**
+   * Determine if the specified TCP port is currently available on localhost.
+   */
+  def isTcpPortAvailable(port: Int): Boolean = try {
+    val serverSocket = ServerSocketFactory.getDefault
+      .createServerSocket(port, 1, InetAddress.getByName("localhost"))
+    serverSocket.close()
+    true
+  } catch {
+    case _: Exception => false
+  }
+
+  /**
+   * Find an available TCP port randomly selected from the range
+   * [minPort maxPort].
+   *
+   * @param minPort the minimum port number
+   * @param maxPort the maximum port number
+   * @return an available TCP port number
+   * @throws IllegalStateException if no available port could be found
+   */
+  def findAvailableTcpPort(minPort: Int = 1024, maxPort: Int = 65535): Int = {
+    assert(minPort > 0, "'minPort' must be greater than 0")
+    assert(maxPort >= minPort, "'maxPort' must be greater than or equal to 'minPort'")
+    assert(maxPort <= 65535, "'maxPort' must be less than or equal to 65535")
+
+    def pickRandom(min: Int, max: Int): Int = {
+      val range = max - min
+      min + Random.nextInt(range + 1)
+    }
+
+    val portRange = maxPort - minPort
+    var candidatePort = 0
+    var searchCounter = 0
+    do {
+      if (searchCounter > portRange) {
+        throw new IllegalStateException("Could not find an available TCP port" +
+          s" in the range [$minPort, $maxPort] after $searchCounter attempts")
+      }
+      candidatePort = pickRandom(minPort, maxPort)
+      searchCounter += 1
+    } while (!isTcpPortAvailable(candidatePort))
+
+    candidatePort
   }
 }
