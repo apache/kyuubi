@@ -35,6 +35,7 @@
         <module>kyuubi-main</module>
         <module>kyuubi-metrics</module>
         <module>kyuubi-zookeeper</module>
+        <module>externals/kyuubi-sql/kyuubi-sql-spark-3_1</module>
     </modules>
     <packaging>pom</packaging>
 
