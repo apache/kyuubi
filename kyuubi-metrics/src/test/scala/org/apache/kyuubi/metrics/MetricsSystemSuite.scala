@@ -56,16 +56,15 @@ class MetricsSystemSuite extends KyuubiFunSuite {
     metricsSystem.initialize(conf)
     metricsSystem.start()
 
-    val testPort = metricsSystem.getServices
-      .find(_.isInstanceOf[PrometheusReporterService]).get
-      .asInstanceOf[PrometheusReporterService]
-      .httpServer.getURI.getPort
-
     metricsSystem.registerGauge(MetricsConstants.CONN_OPEN, 2021, 0)
+
+    val prometheusHttpServer = metricsSystem.getServices
+      .find(_.isInstanceOf[PrometheusReporterService]).head
+      .asInstanceOf[PrometheusReporterService].httpServer
 
     val client: HttpClient = new HttpClient
     client.start()
-    val res: ContentResponse = client.GET(s"http://localhost:$testPort$testContextPath")
+    val res: ContentResponse = client.GET(prometheusHttpServer.getURI.resolve(testContextPath))
     assert(res.getContentAsString.contains("PS_MarkSweep_count"))
     assert(res.getContentAsString.contains("kyuubi_connection_opened 2021.0"))
     client.stop()

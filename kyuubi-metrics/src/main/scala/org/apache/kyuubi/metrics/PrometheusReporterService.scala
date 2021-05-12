@@ -57,6 +57,7 @@ class PrometheusReporterService(registry: MetricRegistry)
     if (!isStarted) {
       try {
         httpServer.start()
+        info(s"Prometheus metrics HTTP server has started at port ${httpServer.getURI.getPort}.")
       } catch {
         case rethrow: Exception =>
           stopHttpServer()
@@ -79,6 +80,7 @@ class PrometheusReporterService(registry: MetricRegistry)
     if (httpServer != null) {
       try {
         httpServer.stop()
+        info("Prometheus metrics HTTP server has stopped.")
       } catch {
         case err: Exception => error("Cannot safely stop prometheus metrics HTTP server", err)
       } finally {
