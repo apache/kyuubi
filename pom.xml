@@ -35,7 +35,6 @@
         <module>kyuubi-main</module>
         <module>kyuubi-metrics</module>
         <module>kyuubi-zookeeper</module>
-        <module>externals/kyuubi-sql/kyuubi-sql-spark-3_1</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -1528,6 +1527,13 @@
             <properties>
                 <spark.archive.download.skip>true</spark.archive.download.skip>
             </properties>
+        </profile>
+
+        <profile>
+            <id>kyuubi-sql-spark_3.1</id>
+            <modules>
+                <module>dev/kyuubi-sql-spark_3.1</module>
+            </modules>
         </profile>
     </profiles>
 </project>
