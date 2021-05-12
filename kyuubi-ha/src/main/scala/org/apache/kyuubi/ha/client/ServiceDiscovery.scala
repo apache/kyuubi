@@ -26,7 +26,6 @@ import javax.security.auth.login.Configuration
 import scala.collection.JavaConverters._
 
 import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
-import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex
 import org.apache.curator.framework.recipes.nodes.PersistentNode
 import org.apache.curator.framework.state.{ConnectionState, ConnectionStateListener}
 import org.apache.curator.framework.state.ConnectionState.{CONNECTED, LOST, RECONNECTED}
@@ -38,7 +37,7 @@ import org.apache.zookeeper.{CreateMode, KeeperException, WatchedEvent, Watcher}
 import org.apache.zookeeper.CreateMode.PERSISTENT
 import org.apache.zookeeper.KeeperException.NodeExistsException
 
-import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, KyuubiSQLException, Logging}
+import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.service.{AbstractService, Serverable}
@@ -47,12 +46,13 @@ import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
 /**
  * A abstract service for service discovery
  *
- * @param name the name of the service itself
+ * @param name   the name of the service itself
  * @param server the instance uri a service that used to publish itself
  */
-abstract class ServiceDiscovery private (
+abstract class ServiceDiscovery private(
     name: String,
     server: Serverable) extends AbstractService(name) {
+
   import ServiceDiscovery._
 
   def this(server: Serverable) =
@@ -66,7 +66,9 @@ abstract class ServiceDiscovery private (
   private var _namespace: String = _
 
   def zkClient: CuratorFramework = _zkClient
+
   def serviceNode: PersistentNode = _serviceNode
+
   def namespace: String = _namespace
 
   override def initialize(conf: KyuubiConf): Unit = {
@@ -104,7 +106,6 @@ abstract class ServiceDiscovery private (
   override def start(): Unit = {
     val instance = server.connectionUrl
     _serviceNode = createZkServiceNode(conf, zkClient, namespace, instance)
-
     // Set a watch on the serviceNode
     val watcher = new DeRegisterWatcher
     if (zkClient.checkExists.usingWatcher(watcher).forPath(serviceNode.getActualPath) == null) {
@@ -117,7 +118,6 @@ abstract class ServiceDiscovery private (
 
   override def stop(): Unit = {
     closeServiceNode()
-
     if (zkClient != null) zkClient.close()
     super.stop()
   }
@@ -155,9 +155,11 @@ abstract class ServiceDiscovery private (
       }
     }
   }
+
 }
 
 object ServiceDiscovery extends Logging {
+
   import RetryPolicies._
 
   private final lazy val connectionChecker =
@@ -171,7 +173,6 @@ object ServiceDiscovery extends Logging {
     val maxSleepTime = conf.get(HA_ZK_CONN_MAX_RETRY_WAIT)
     val maxRetries = conf.get(HA_ZK_CONN_MAX_RETRIES)
     val retryPolicyName = conf.get(HA_ZK_CONN_RETRY_POLICY)
-
     val retryPolicy = RetryPolicies.withName(retryPolicyName) match {
       case ONE_TIME => new RetryOneTime(baseSleepTime)
       case N_TIME => new RetryNTimes(maxRetries, baseSleepTime)
@@ -180,7 +181,6 @@ object ServiceDiscovery extends Logging {
       case UNTIL_ELAPSED => new RetryUntilElapsed(maxSleepTime, baseSleepTime)
       case _ => new ExponentialBackoffRetry(baseSleepTime, maxRetries)
     }
-
     CuratorFrameworkFactory.builder()
       .connectString(connectionStr)
       .sessionTimeoutMs(sessionTimeout)
@@ -258,7 +258,7 @@ object ServiceDiscovery extends Logging {
   def getServerHost(zkClient: CuratorFramework, namespace: String): Option[(String, Int)] = {
     // TODO: use last one because to avoid touching some maybe-crashed engines
     // We need a big improvement here.
-    getServiceNodesInfo(zkClient, namespace, Some(1)) match {
+    getServiceNodesInfo(zkClient, namespace, Some(1), silent = true) match {
       case Seq(sn) => Some((sn.host, sn.port))
       case _ => None
     }
@@ -267,7 +267,8 @@ object ServiceDiscovery extends Logging {
   def getServiceNodesInfo(
       zkClient: CuratorFramework,
       namespace: String,
-      sizeOpt: Option[Int] = None): Seq[ServiceNodeInfo] = {
+      sizeOpt: Option[Int] = None,
+      silent: Boolean = false): Seq[ServiceNodeInfo] = {
     try {
       val hosts = zkClient.getChildren.forPath(namespace)
       val size = sizeOpt.getOrElse(hosts.size())
@@ -282,9 +283,10 @@ object ServiceDiscovery extends Logging {
         ServiceNodeInfo(namespace, p, host, port, version)
       }
     } catch {
+      case _: Exception if silent => Nil
       case e: Exception =>
         error(s"Failed to get service node info", e)
-        Seq.empty
+        Nil
     }
   }
 
@@ -303,7 +305,7 @@ object ServiceDiscovery extends Logging {
         .withMode(PERSISTENT)
         .forPath(ns)
     } catch {
-      case _: NodeExistsException =>  // do nothing
+      case _: NodeExistsException => // do nothing
       case e: KeeperException =>
         throw new KyuubiException(s"Failed to create namespace '$ns'", e)
     }
@@ -342,30 +344,6 @@ object ServiceDiscovery extends Logging {
           s"Unable to create a znode for this server instance: $instance", e)
     }
     serviceNode
-  }
-
-  def withLock(
-      zkClient: CuratorFramework,
-      lockPath: String,
-      lockTimeout: Long)(f: => Unit): Unit = {
-    var lock: InterProcessSemaphoreMutex = null
-    try {
-      try {
-        lock = new InterProcessSemaphoreMutex(zkClient, ZKPaths.makePath(lockPath, "lock"))
-        lock.acquire(lockTimeout, TimeUnit.MILLISECONDS)
-      } catch {
-        case e: Exception => throw KyuubiSQLException(s"Lock failed on path [$lockPath]", e)
-      }
-      f
-    } finally {
-      try {
-        if (lock != null) {
-          lock.release()
-        }
-      } catch {
-        case _: Exception =>
-      }
-    }
   }
 }
 

@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.session
 
-import java.util.concurrent.TimeUnit
-
 import scala.collection.JavaConverters._
 
 import com.codahale.metrics.MetricRegistry
@@ -27,13 +25,10 @@ import org.apache.thrift.TException
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.{TSocket, TTransport}
 
-import org.apache.kyuubi.{KyuubiSQLException, Utils}
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.{EngineName, ShareLevel}
-import org.apache.kyuubi.engine.ShareLevel.{SERVER, ShareLevel}
-import org.apache.kyuubi.engine.spark.SparkProcessBuilder
-import org.apache.kyuubi.ha.HighAvailabilityConf._
+import org.apache.kyuubi.engine.EngineRef
 import org.apache.kyuubi.ha.client.ServiceDiscovery._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -55,27 +50,11 @@ class KyuubiSessionImpl(
     case (key, value) => sessionConf.set(key, value)
   }
 
-  private val shareLevel: ShareLevel = ShareLevel.withName(sessionConf.get(ENGINE_SHARE_LEVEL))
-  private val subDomain: Option[String] = sessionConf.get(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
-
-  private val appUser: String = shareLevel match {
-    case SERVER => Utils.currentUser
-    case _ => user
-  }
-
-  private val zkNamespace: String = sessionConf.get(HA_ZK_NAMESPACE)
-
-  private val boundAppName: EngineName = EngineName(shareLevel, appUser, handle, subDomain)
-
-  private val appZkNamespace: String = boundAppName.getEngineSpace(zkNamespace)
-
-  private val timeout: Long = sessionConf.get(ENGINE_INIT_TIMEOUT)
+  private val engine: EngineRef = EngineRef(sessionConf, user, handle)
 
   private var transport: TTransport = _
   private var client: TCLIService.Client = _
   private var remoteSessionHandle: TSessionHandle = _
-
-  private def appZkLockPath: String = boundAppName.getZkLockPath(zkNamespace)
 
   override def open(): Unit = {
     MetricsSystem.tracing { ms =>
@@ -84,61 +63,8 @@ class KyuubiSessionImpl(
     }
     super.open()
     withZkClient(sessionConf) { zkClient =>
-      logSessionInfo(s"Connected to Zookeeper")
-      def tryOpenSession: Unit = getServerHost(zkClient, appZkNamespace) match {
-        case Some((host, port)) => openSession(host, port)
-        case None =>
-          sessionConf.setIfMissing(SparkProcessBuilder.APP_KEY, boundAppName.defaultEngineName)
-          // tag is a seq type with comma-separated
-          sessionConf.set(SparkProcessBuilder.TAG_KEY,
-            sessionConf.getOption(SparkProcessBuilder.TAG_KEY)
-              .map(_ + ",").getOrElse("") + "KYUUBI")
-          sessionConf.set(HA_ZK_NAMESPACE, appZkNamespace)
-          val builder = new SparkProcessBuilder(appUser, sessionConf)
-          MetricsSystem.tracing(_.incAndGetCount(ENGINE_TOTAL))
-          try {
-            logSessionInfo(s"Launching engine:\n$builder")
-            val process = builder.start
-            var sh = getServerHost(zkClient, appZkNamespace)
-            val started = System.currentTimeMillis()
-            var exitValue: Option[Int] = None
-            while (sh.isEmpty) {
-              if (exitValue.isEmpty && process.waitFor(1, TimeUnit.SECONDS)) {
-                exitValue = Some(process.exitValue())
-                if (exitValue.get != 0) {
-                  val error = builder.getError
-                  MetricsSystem.tracing { ms =>
-                    ms.incAndGetCount(MetricRegistry.name(ENGINE_FAIL, user))
-                    ms.incAndGetCount(
-                      MetricRegistry.name(ENGINE_FAIL, error.getClass.getSimpleName))
-                  }
-                  throw error
-                }
-              }
-              if (started + timeout <= System.currentTimeMillis()) {
-                process.destroyForcibly()
-                MetricsSystem.tracing(_.incAndGetCount(MetricRegistry.name(ENGINE_TIMEOUT, user)))
-                throw KyuubiSQLException(s"Timed out($timeout ms) to launched Spark with $builder",
-                  builder.getError)
-              }
-              sh = getServerHost(zkClient, appZkNamespace)
-            }
-            val Some((host, port)) = sh
-            openSession(host, port)
-          } finally {
-            // we must close the process builder whether session open is success or failure since
-            // we have a log capture thread in process builder.
-            builder.close()
-          }
-      }
-      // Add lock for creating engine except ShareLevel of CONNECTION
-      if (shareLevel != ShareLevel.CONNECTION) {
-        withLock(zkClient, appZkLockPath, timeout) {
-          tryOpenSession
-        }
-      } else {
-        tryOpenSession
-      }
+      val (host, port) = engine.getOrCreate(zkClient)
+      openSession(host, port)
     }
   }
 
