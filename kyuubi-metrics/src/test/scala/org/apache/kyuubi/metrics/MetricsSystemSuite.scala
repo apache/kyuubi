@@ -58,8 +58,7 @@ class MetricsSystemSuite extends KyuubiFunSuite {
 
     metricsSystem.registerGauge(MetricsConstants.CONN_OPEN, 2021, 0)
 
-    val prometheusHttpServer = metricsSystem.getServices
-      .find(_.isInstanceOf[PrometheusReporterService]).head
+    val prometheusHttpServer = metricsSystem.getServices.head
       .asInstanceOf[PrometheusReporterService].httpServer
 
     val client: HttpClient = new HttpClient
