@@ -45,17 +45,22 @@ class MetricsSystemSuite extends KyuubiFunSuite {
   }
 
   test("metrics - PrometheusReporter") {
-    val testPort = Utils.findAvailableTcpPort()
     val testContextPath = "/prometheus-metrics"
 
     val conf = KyuubiConf()
       .set(MetricsConf.METRICS_ENABLED, true)
       .set(MetricsConf.METRICS_REPORTERS, Seq(ReporterType.PROMETHEUS.toString))
-      .set(MetricsConf.METRICS_PROMETHEUS_PORT, testPort)
+      .set(MetricsConf.METRICS_PROMETHEUS_PORT, 0) // random port
       .set(MetricsConf.METRICS_PROMETHEUS_PATH, testContextPath)
     val metricsSystem = new MetricsSystem()
     metricsSystem.initialize(conf)
     metricsSystem.start()
+
+    val testPort = metricsSystem.getServices
+      .find(_.isInstanceOf[PrometheusReporterService]).get
+      .asInstanceOf[PrometheusReporterService]
+      .httpServer.getURI.getPort
+
     metricsSystem.registerGauge(MetricsConstants.CONN_OPEN, 2021, 0)
 
     val client: HttpClient = new HttpClient

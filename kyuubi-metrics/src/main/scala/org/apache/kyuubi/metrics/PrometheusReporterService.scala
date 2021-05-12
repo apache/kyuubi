@@ -18,6 +18,7 @@
 package org.apache.kyuubi.metrics
 
 import com.codahale.metrics.MetricRegistry
+import com.google.common.annotations.VisibleForTesting
 import io.prometheus.client.CollectorRegistry
 import io.prometheus.client.dropwizard.DropwizardExports
 import io.prometheus.client.exporter.MetricsServlet
@@ -33,7 +34,8 @@ class PrometheusReporterService(registry: MetricRegistry)
 
   private val bridgeRegistry = new CollectorRegistry
 
-  private var httpServer: Server = _
+  @VisibleForTesting
+  private[metrics] var httpServer: Server = _
 
   override def initialize(conf: KyuubiConf): Unit = {
     val port = conf.get(MetricsConf.METRICS_PROMETHEUS_PORT)
