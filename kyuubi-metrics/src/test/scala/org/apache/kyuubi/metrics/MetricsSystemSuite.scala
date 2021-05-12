@@ -81,13 +81,13 @@ class MetricsSystemSuite extends KyuubiFunSuite {
     metricsSystem.incAndGetCount(MetricsConstants.STATEMENT_TOTAL)
 
     metricsSystem.decAndGetCount(MetricsConstants.STATEMENT_TOTAL)
-    metricsSystem.registerGauge(MetricsConstants.CONN_OPEN, 20181117, 0)
+    metricsSystem.registerGauge(MetricsConstants.CONN_OPEN, 2021, 0)
 
     val client: HttpClient = new HttpClient
     client.start()
     val res: ContentResponse = client.GET(s"http://localhost:$testPort$testContextPath")
     assert(res.getContentAsString.contains("PS_MarkSweep_count"))
-    assert(res.getContentAsString.contains("kyuubi_connection_opened 2.0181117E7"))
+    assert(res.getContentAsString.contains("kyuubi_connection_opened 2021.0"))
     client.stop()
 
     metricsSystem.stop()
