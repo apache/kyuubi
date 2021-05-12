@@ -126,7 +126,7 @@ class EngineRefSuite extends KyuubiFunSuite {
     thread1.start()
     thread2.start()
 
-    eventually(timeout(90.seconds), interval(100.microseconds)) {
+    eventually(timeout(90.seconds), interval(1.second)) {
       assert(port1 != 0, "engine started")
       assert(port2 == port1, "engine shared")
     }
