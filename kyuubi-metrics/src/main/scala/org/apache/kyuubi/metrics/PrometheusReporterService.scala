@@ -36,6 +36,7 @@ class PrometheusReporterService(registry: MetricRegistry)
 
   @VisibleForTesting
   private[metrics] var httpServer: Server = _
+  @volatile protected var isStarted = false
 
   override def initialize(conf: KyuubiConf): Unit = {
     val port = conf.get(MetricsConf.METRICS_PROMETHEUS_PORT)
@@ -52,19 +53,25 @@ class PrometheusReporterService(registry: MetricRegistry)
     super.initialize(conf)
   }
 
-  override def start(): Unit = {
-    try {
-      httpServer.start()
-    } catch {
-      case rethrow: Exception =>
-        stopHttpServer()
-        throw new KyuubiException("Cannot start prometheus metrics HTTP server", rethrow)
+  override def start(): Unit = synchronized {
+    if (!isStarted) {
+      try {
+        httpServer.start()
+      } catch {
+        case rethrow: Exception =>
+          stopHttpServer()
+          throw new KyuubiException("Cannot start prometheus metrics HTTP server", rethrow)
+      }
+      isStarted = true
     }
     super.start()
   }
 
-  override def stop(): Unit = {
-    stopHttpServer()
+  override def stop(): Unit = synchronized {
+    if (isStarted) {
+      stopHttpServer()
+      isStarted = false
+    }
     super.stop()
   }
 
