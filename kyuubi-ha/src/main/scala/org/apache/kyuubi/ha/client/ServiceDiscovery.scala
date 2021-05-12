@@ -283,10 +283,10 @@ object ServiceDiscovery extends Logging {
         ServiceNodeInfo(namespace, p, host, port, version)
       }
     } catch {
-      case _: Exception if silent => Seq.empty
+      case _: Exception if silent => Nil
       case e: Exception =>
         error(s"Failed to get service node info", e)
-        Seq.empty
+        Nil
     }
   }
 
