@@ -17,8 +17,9 @@
 
 package org.apache.kyuubi.operation.datalake
 
+import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.{BasicIcebergJDBCTests, WithKyuubiServer}
+import org.apache.kyuubi.operation.BasicIcebergJDBCTests
 import org.apache.kyuubi.tags.DataLakeTest
 
 @DataLakeTest

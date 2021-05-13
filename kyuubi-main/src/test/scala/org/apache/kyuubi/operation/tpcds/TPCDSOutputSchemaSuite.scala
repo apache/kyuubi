@@ -20,8 +20,9 @@ package org.apache.kyuubi.operation.tpcds
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path, Paths}
 
+import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.{JDBCTestUtils, WithKyuubiServer}
+import org.apache.kyuubi.operation.JDBCTestUtils
 import org.apache.kyuubi.tags.ExtendedSQLTest
 
 // scalastyle:off line.size.limit
