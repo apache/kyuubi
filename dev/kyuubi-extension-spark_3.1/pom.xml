@@ -27,7 +27,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>kyuubi-sql-spark_3.1</artifactId>
+    <artifactId>kyuubi-extension-spark_3.1</artifactId>
 
     <properties>
         <spark.version>3.1.1</spark.version>

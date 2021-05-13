@@ -107,7 +107,7 @@
             <dependencies>
                 <dependency>
                     <groupId>org.apache.kyuubi</groupId>
-                    <artifactId>kyuubi-sql-spark_3.1</artifactId>
+                    <artifactId>kyuubi-extension-spark_3.1</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>
