@@ -101,4 +101,16 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>kyuubi-extension-spark_3.1</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-extension-spark_3.1</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 </project>
