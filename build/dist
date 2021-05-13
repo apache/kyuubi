@@ -179,7 +179,6 @@ mkdir -p "$DISTDIR/pid"
 mkdir -p "$DISTDIR/logs"
 mkdir -p "$DISTDIR/work"
 mkdir -p "$DISTDIR/externals/engines/spark"
-mkdir -p "$DISTDIR/tools/kubernetes/{jars, docker}"
 echo "Kyuubi $VERSION $GITREVSTRING built for" > "$DISTDIR/RELEASE"
 echo "Java $JAVA_VERSION" >> "$DISTDIR/RELEASE"
 echo "Scala $SCALA_VERSION" >> "$DISTDIR/RELEASE"
@@ -197,6 +196,13 @@ cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engin
 # Copy kyuubi tools
 cp "$KYUUBI_HOME/tools/kubernetes/cache-file-cleaner/target/cache-file-cleaner-$VERSION.jar" "$DISTDIR/tools/kubernetes/jars"
 cp -r "$KYUUBI_HOME/tools/kubernetes/docker/" "$DISTDIR/tools/kubernetes/docker"
+
+# Copy Kyuubi extension
+SPARK_MID_VERSION=${SPARK_VERSION%.*}
+if [[ -d $"$KYUUBI_HOME/dev/kyuubi-extension-spark_$SPARK_MID_VERSION" ]]; then
+  mkdir -p "$DISTDIR/extension"
+  cp "$KYUUBI_HOME/dev/kyuubi-extension-spark_$SPARK_MID_VERSION/target/kyuubi-extension-spark_$SPARK_MID_VERSION-$VERSION.jar" "$DISTDIR/extension"
+fi
 
 if [[ "$SPARK_PROVIDED" != "true" ]]; then
   # Copy spark binary dist
