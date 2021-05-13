@@ -26,6 +26,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.commons.lang3.SystemUtils
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hadoop.util.ShutdownHookManager
 
 import org.apache.kyuubi.config.internal.Tests.IS_TESTING
 
@@ -164,5 +165,16 @@ private[kyuubi] object Utils extends Logging {
    */
   def isTesting: Boolean = {
     System.getProperty(IS_TESTING.key) != null
+  }
+
+  /**
+    * Add some operations that you want into ShutdownHook
+    * @param hook
+    * @param priority: 0~100
+    */
+  def addHook(hook: Runnable, priority: Int): Unit = {
+    ShutdownHookManager.get().addShutdownHook(
+      hook, priority
+    )
   }
 }
