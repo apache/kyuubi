@@ -178,6 +178,7 @@ rm -rf "$DISTDIR"
 mkdir -p "$DISTDIR/pid"
 mkdir -p "$DISTDIR/logs"
 mkdir -p "$DISTDIR/work"
+mkdir -p "$DISTDIR/extension"
 mkdir -p "$DISTDIR/externals/engines/spark"
 echo "Kyuubi $VERSION $GITREVSTRING built for" > "$DISTDIR/RELEASE"
 echo "Java $JAVA_VERSION" >> "$DISTDIR/RELEASE"
@@ -192,6 +193,12 @@ cp -r "$KYUUBI_HOME/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/" "$DISTDIR
 
 # Copy spark engines
 cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine-$VERSION.jar" "$DISTDIR/externals/engines/spark"
+
+# Copy Kyuubi extension
+SPARK_MID_VERSION=${SPARK_VERSION%.*}
+if [[ -d $"$KYUUBI_HOME/dev/kyuubi-extension-spark_$SPARK_MID_VERSION" ]]; then
+  cp "$KYUUBI_HOME/dev/kyuubi-extension-spark_$SPARK_MID_VERSION/target/kyuubi-extension-spark_$SPARK_MID_VERSION-$VERSION.jar" "$DISTDIR/extension"
+fi
 
 if [[ "$SPARK_PROVIDED" != "true" ]]; then
   # Copy spark binary dist
