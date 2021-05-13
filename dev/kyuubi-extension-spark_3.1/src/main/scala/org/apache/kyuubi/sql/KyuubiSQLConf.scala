@@ -25,7 +25,7 @@ object KyuubiSQLConf {
   val INSERT_REPARTITION_BEFORE_WRITE =
     buildConf("spark.sql.optimizer.insertRepartitionBeforeWrite.enabled")
       .doc("Add repartition node at the top of plan. A approach of merging small files.")
-      .version("0.0.1")
+      .version("1.2.0")
       .booleanConf
       .createWithDefault(true)
 
@@ -34,7 +34,7 @@ object KyuubiSQLConf {
       .doc(s"The partition number if ${INSERT_REPARTITION_BEFORE_WRITE.key} is enabled. " +
         s"If AQE is disabled, the default value is ${SQLConf.SHUFFLE_PARTITIONS}. " +
         s"If AQE is enabled, the default value is none that means depend on AQE.")
-      .version("0.0.1")
+      .version("1.2.0")
       .intConf
       .createOptional
 
@@ -45,7 +45,7 @@ object KyuubiSQLConf {
         s"We will repartition by dynamic partition columns to reduce the small file but that " +
         s"can cause data skew. This config is to extend the partition of dynamic " +
         s"partition column to avoid skew but may generate some small files.")
-      .version("0.0.1")
+      .version("1.2.0")
       .intConf
       .createWithDefault(100)
 
@@ -53,7 +53,7 @@ object KyuubiSQLConf {
     buildConf("spark.sql.optimizer.forceShuffleBeforeJoin.enabled")
       .doc("Ensure shuffle node exists before shuffled join (shj and smj) to make AQE " +
         "`OptimizeSkewedJoin` works (extra shuffle, multi table join).")
-      .version("0.0.1")
+      .version("1.2.0")
       .booleanConf
       .createWithDefault(false)
 
@@ -64,7 +64,7 @@ object KyuubiSQLConf {
         "For example, the raw spark config: `spark.sql.adaptive.advisoryPartitionSizeInBytes`, " +
         "then the final stage config should be: " +
         "`spark.sql.finalStage.adaptive.advisoryPartitionSizeInBytes`.")
-      .version("0.0.1")
+      .version("1.2.0")
       .booleanConf
       .createWithDefault(false)
 }

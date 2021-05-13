@@ -28,10 +28,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>kyuubi-extension-spark_3.1</artifactId>
+    <packaging>jar</packaging>
+    <name>Kyuubi Project Dev Spark Extensions</name>
 
     <properties>
         <spark.version>3.1.1</spark.version>
-        <scala.binary.version>2.12</scala.binary.version>
     </properties>
 
     <dependencies>
@@ -103,7 +104,7 @@
     </dependencies>
 
     <build>
-        <outputDirectory>target/scala-2.12/classes</outputDirectory>
-        <testOutputDirectory>target/scala-2.12/test-classes</testOutputDirectory>
+        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
+        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
     </build>
 </project>

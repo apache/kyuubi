@@ -39,6 +39,7 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
         "org.apache.kyuubi.sql.KyuubiSparkSQLExtension")
       .config(SQLConf.ADAPTIVE_EXECUTION_ENABLED.key, "true")
       .config("spark.hadoop.hive.exec.dynamic.partition.mode", "nonstrict")
+      .config("spark.ui.enabled", "false")
       .enableHiveSupport()
       .getOrCreate()
     setupData()

@@ -1530,7 +1530,7 @@
         </profile>
 
         <profile>
-            <id>kyuubi-sql-spark_3.1</id>
+            <id>kyuubi-extension-spark_3.1</id>
             <modules>
                 <module>dev/kyuubi-extension-spark_3.1</module>
             </modules>
