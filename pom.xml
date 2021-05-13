@@ -73,7 +73,10 @@
         <hadoop.binary.version>2.7</hadoop.binary.version>
         <hive.version>2.3.7</hive.version>
         <jackson.version>2.11.4</jackson.version>
+        <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
+        <jetty.version>9.4.40.v20210413</jetty.version>
         <ldapsdk.version>5.1.4</ldapsdk.version>
+        <prometheus.version>0.10.0</prometheus.version>
         <spark.version>3.0.2</spark.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop${hadoop.binary.version}.tgz</spark.archive.name>
         <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
@@ -999,6 +1002,58 @@
                 <version>${jackson.version}</version>
             </dependency>
 
+            <!--
+              compatible with dropwizard 3.1.x, 3.2.x, 4.0.x, 4.1.x, 4.2.x
+              see https://github.com/prometheus/client_java/issues/662
+              -->
+            <dependency>
+                <groupId>io.prometheus</groupId>
+                <artifactId>simpleclient_dropwizard</artifactId>
+                <version>${prometheus.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>io.dropwizard.metrics</groupId>
+                        <artifactId>metrics-core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>io.prometheus</groupId>
+                <artifactId>simpleclient_servlet</artifactId>
+                <version>${prometheus.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>jakarta.servlet</groupId>
+                <artifactId>jakarta.servlet-api</artifactId>
+                <version>${jakarta.servlet-api.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-client</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-server</artifactId>
+                <version>${jetty.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>javax.servlet</groupId>
+                        <artifactId>javax.servlet-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-servlet</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest_${scala.binary.version}</artifactId>
@@ -1379,6 +1434,7 @@
                             <exclude>**/dependency-reduced-pom.xml</exclude>
                             <exclude>**/scalastyle-output.xml</exclude>
                             <exclude>docs/**</exclude>
+                            <exclude>build/apache-maven-*/**</exclude>
                             <exclude>build/scala-*/**</exclude>
                             <exclude>**/**/operation_logs/**/**</exclude>
                             <exclude>**/*.output.schema</exclude>
