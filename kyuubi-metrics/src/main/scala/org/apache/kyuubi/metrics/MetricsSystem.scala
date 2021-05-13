@@ -32,16 +32,14 @@ class MetricsSystem extends CompositeService("MetricsSystem") {
 
   private val registry = new MetricRegistry
 
-  def incAndGetCount(key: String): Long = synchronized {
+  def incCount(key: String): Unit = {
     val counter = registry.counter(key)
     counter.inc(1L)
-    counter.getCount
   }
 
-  def decAndGetCount(key: String): Long = synchronized {
+  def decCount(key: String): Unit = {
     val counter = registry.counter(key)
     counter.dec(1L)
-    counter.getCount
   }
 
   def registerGauge[T](name: String, value: => T, default: T): Unit = {
