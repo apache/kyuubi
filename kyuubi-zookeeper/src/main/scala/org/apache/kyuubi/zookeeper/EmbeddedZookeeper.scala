@@ -23,6 +23,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.curator.test.{InstanceSpec, TestingServer}
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.{AbstractService, ServiceState}
 import org.apache.kyuubi.zookeeper.ZookeeperConf._
@@ -71,7 +72,9 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
   override def start(): Unit = synchronized {
     server.start()
     info(s"$getName is started at $getConnectString")
-    sys.addShutdownHook(server.close())
+    Utils.addShutdownHook(new Runnable {
+      override def run(): Unit = server.close()
+    }, 50)
     super.start()
   }
 
