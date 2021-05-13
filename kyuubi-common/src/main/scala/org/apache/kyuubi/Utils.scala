@@ -168,13 +168,11 @@ private[kyuubi] object Utils extends Logging {
   }
 
   /**
-    * Add some operations that you want into ShutdownHook
-    * @param hook
-    * @param priority: 0~100
-    */
-  def addHook(hook: Runnable, priority: Int): Unit = {
-    ShutdownHookManager.get().addShutdownHook(
-      hook, priority
-    )
+   * Add some operations that you want into ShutdownHook
+   * @param hook
+   * @param priority: 0~100
+   */
+  def addShutdownHook(hook: Runnable, priority: Int): Unit = {
+    ShutdownHookManager.get().addShutdownHook(hook, priority)
   }
 }

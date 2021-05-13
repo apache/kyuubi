@@ -123,7 +123,8 @@ abstract class ServiceDiscovery private(
   }
 
   // close the EPHEMERAL_SEQUENTIAL node in zk
-  protected def closeServiceNode(): Unit = {if (_serviceNode != null) {
+  protected def closeServiceNode(): Unit = {
+    if (_serviceNode != null) {
       try {
         _serviceNode.close()
       } catch {
