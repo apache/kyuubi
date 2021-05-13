@@ -193,6 +193,13 @@ cp -r "$KYUUBI_HOME/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/" "$DISTDIR
 # Copy spark engines
 cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine-$VERSION.jar" "$DISTDIR/externals/engines/spark"
 
+# Copy Kyuubi extension
+SPARK_MID_VERSION=${SPARK_VERSION%.*}
+if [[ -d $"$KYUUBI_HOME/dev/kyuubi-extension-spark_$SPARK_MID_VERSION" ]]; then
+  mkdir -p "$DISTDIR/extension"
+  cp "$KYUUBI_HOME/dev/kyuubi-extension-spark_$SPARK_MID_VERSION/target/kyuubi-extension-spark_$SPARK_MID_VERSION-$VERSION.jar" "$DISTDIR/extension"
+fi
+
 if [[ "$SPARK_PROVIDED" != "true" ]]; then
   # Copy spark binary dist
   cp -r "$KYUUBI_HOME/externals/kyuubi-download/target/spark-$SPARK_VERSION-bin-hadoop${SPARK_HADOOP_VERSION}$HIVE_VERSION_SUFFIX/" \
