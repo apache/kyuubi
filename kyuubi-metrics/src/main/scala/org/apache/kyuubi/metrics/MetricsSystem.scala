@@ -18,11 +18,9 @@
 package org.apache.kyuubi.metrics
 
 import java.lang.management.ManagementFactory
-import java.util.concurrent.locks.ReentrantLock
 
-import com.codahale.metrics.{Counter, Gauge, MetricRegistry}
-import com.codahale.metrics.jvm.{BufferPoolMetricSet, GarbageCollectorMetricSet, MemoryUsageGaugeSet, ThreadStatesGaugeSet}
-import com.google.common.cache.{CacheBuilder, CacheLoader, LoadingCache}
+import com.codahale.metrics.{Gauge, MetricRegistry}
+import com.codahale.metrics.jvm._
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.metrics.MetricsConf.METRICS_REPORTERS
@@ -33,29 +31,17 @@ import org.apache.kyuubi.service.CompositeService
 class MetricsSystem extends CompositeService("MetricsSystem") {
 
   private val registry = new MetricRegistry
-  private var counters: LoadingCache[String, Counter] = _
-  private val countersLock = new ReentrantLock
 
-  def incAndGetCount(key: String): Long = {
-    try {
-      countersLock.lock()
-      val counter = counters.get(key)
-      counter.inc(1L)
-      counter.getCount
-    } finally {
-      countersLock.unlock()
-    }
+  def incAndGetCount(key: String): Long = synchronized {
+    val counter = registry.counter(key)
+    counter.inc(1L)
+    counter.getCount
   }
 
-  def decAndGetCount(key: String): Long = {
-    try {
-      countersLock.lock()
-      val counter = counters.get(key)
-      counter.dec(1L)
-      counter.getCount
-    } finally {
-      countersLock.unlock()
-    }
+  def decAndGetCount(key: String): Long = synchronized {
+    val counter = registry.counter(key)
+    counter.dec(1L)
+    counter.getCount
   }
 
   def registerGauge[T](name: String, value: => T, default: T): Unit = {
@@ -69,12 +55,6 @@ class MetricsSystem extends CompositeService("MetricsSystem") {
     registry.registerAll(new MemoryUsageGaugeSet)
     registry.registerAll(new BufferPoolMetricSet(ManagementFactory.getPlatformMBeanServer))
     registry.registerAll(new ThreadStatesGaugeSet)
-
-    counters = CacheBuilder.newBuilder().build[String, Counter](
-      new CacheLoader[String, Counter] {
-        override def load(key: String): Counter = registry.counter(key)
-      }
-    )
 
     conf.get(METRICS_REPORTERS).map(ReporterType.withName).foreach {
       case JSON => addService(new JsonReporterService(registry))
