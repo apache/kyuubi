@@ -19,7 +19,7 @@ package org.apache.spark.sql
 
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Cast, Multiply}
 import org.apache.spark.sql.catalyst.plans.logical.RepartitionByExpression
-import org.apache.spark.sql.execution.adaptive.{AdaptiveSparkPlanHelper, CustomShuffleReaderExec}
+import org.apache.spark.sql.execution.adaptive.{AdaptiveSparkPlanHelper, CustomShuffleReaderExec, QueryStageExec}
 import org.apache.spark.sql.execution.exchange.{ENSURE_REQUIREMENTS, ShuffleExchangeLike}
 import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
 import org.apache.spark.sql.test.SQLTestData.TestData
@@ -306,10 +306,15 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
         case customShuffleReader: CustomShuffleReaderExec => customShuffleReader
       }
       assert(shuffleReaders.nonEmpty)
-      shuffleReaders.tail.foreach { readers =>
-        assert(readers.partitionSpecs.length === previousPartitionNum)
+      // reorder stage by stage id to ensure we get the right stage
+      val sortedShuffleReaders = shuffleReaders.sortWith {
+        case (s1, s2) =>
+          s1.child.asInstanceOf[QueryStageExec].id < s2.child.asInstanceOf[QueryStageExec].id
       }
-      assert(shuffleReaders.head.partitionSpecs.length === finalPartitionNum)
+      if (sortedShuffleReaders.length > 1) {
+        assert(sortedShuffleReaders.head.partitionSpecs.length === previousPartitionNum)
+      }
+      assert(sortedShuffleReaders.last.partitionSpecs.length === finalPartitionNum)
       assert(df.rdd.partitions.length === finalPartitionNum)
     }
 
@@ -358,6 +363,32 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
             |""".stripMargin,
           1,
           1)
+
+        // test ReusedExchange
+        checkPartitionNum(
+          """
+            |SELECT t0.c2 FROM (
+            |SELECT t1.c1, count(*) as c2 FROM t1 GROUP BY t1.c1
+            |) t0 JOIN (
+            |SELECT t1.c1, count(*) as c2 FROM t1 GROUP BY t1.c1
+            |) t1 ON t0.c2 = t1.c2
+            |""".stripMargin,
+          3,
+          1
+        )
+
+        // one shuffle reader
+        checkPartitionNum(
+          """
+            |SELECT t0.c1 FROM (
+            |SELECT t1.c1 FROM t1 GROUP BY t1.c1
+            |) t0 JOIN (
+            |SELECT t1.c1 FROM t1 GROUP BY t1.c1
+            |) t1 ON t0.c1 = t1.c1
+            |""".stripMargin,
+          1,
+          1
+        )
       }
     }
   }
