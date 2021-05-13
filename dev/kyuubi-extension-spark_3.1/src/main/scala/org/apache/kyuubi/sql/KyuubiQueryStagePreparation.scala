@@ -25,7 +25,7 @@ import org.apache.spark.sql.execution.{SortExec, SparkPlan}
 import org.apache.spark.sql.execution.adaptive.QueryStageExec
 import org.apache.spark.sql.execution.aggregate.BaseAggregateExec
 import org.apache.spark.sql.execution.command.{ResetCommand, SetCommand}
-import org.apache.spark.sql.execution.exchange.{BroadcastExchangeLike, Exchange, ShuffleExchangeExec, ShuffleExchangeLike}
+import org.apache.spark.sql.execution.exchange.{BroadcastExchangeLike, Exchange, ReusedExchangeExec, ShuffleExchangeExec, ShuffleExchangeLike}
 import org.apache.spark.sql.execution.joins.{ShuffledHashJoinExec, SortMergeJoinExec}
 import org.apache.spark.sql.internal.SQLConf
 
@@ -169,6 +169,7 @@ case class FinalStageConfigIsolation(session: SparkSession) extends Rule[SparkPl
   private def isFinalStage(plan: SparkPlan): Boolean = {
     var shuffleNum = 0
     var broadcastNum = 0
+    var reusedNum = 0
     var queryStageNum = 0
 
     def collectNumber(p: SparkPlan): SparkPlan = {
@@ -180,6 +181,10 @@ case class FinalStageConfigIsolation(session: SparkSession) extends Rule[SparkPl
         case broadcast: BroadcastExchangeLike =>
           broadcastNum += 1
           broadcast
+
+        case reusedExchangeExec: ReusedExchangeExec =>
+          reusedNum += 1
+          reusedExchangeExec
 
         // query stage is leaf node so we need to transform it manually
         case queryStage: QueryStageExec =>
@@ -193,7 +198,7 @@ case class FinalStageConfigIsolation(session: SparkSession) extends Rule[SparkPl
     if (shuffleNum == 0) {
       // we don not care about broadcast stage here since it won't change partition number.
       true
-    } else if (shuffleNum + broadcastNum == queryStageNum) {
+    } else if (shuffleNum + broadcastNum + reusedNum == queryStageNum) {
       true
     } else {
       false
