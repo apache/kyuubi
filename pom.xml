@@ -1531,6 +1531,9 @@
 
         <profile>
             <id>kyuubi-extension-spark_3.1</id>
+            <properties>
+                <spark.version>3.1.1</spark.version>
+            </properties>
             <modules>
                 <module>dev/kyuubi-extension-spark_3.1</module>
             </modules>
