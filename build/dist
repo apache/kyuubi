@@ -199,7 +199,7 @@ cp -r "$KYUUBI_HOME/tools/kubernetes/docker/" "$DISTDIR/tools/kubernetes/docker"
 
 # Copy Kyuubi extension
 SPARK_MID_VERSION=${SPARK_VERSION%.*}
-if [[ -d $"$KYUUBI_HOME/dev/kyuubi-extension-spark_$SPARK_MID_VERSION" ]]; then
+if [[ -f $"$KYUUBI_HOME/dev/kyuubi-extension-spark_$SPARK_MID_VERSION/target/kyuubi-extension-spark_$SPARK_MID_VERSION-$VERSION.jar" ]]; then
   mkdir -p "$DISTDIR/extension"
   cp "$KYUUBI_HOME/dev/kyuubi-extension-spark_$SPARK_MID_VERSION/target/kyuubi-extension-spark_$SPARK_MID_VERSION-$VERSION.jar" "$DISTDIR/extension"
 fi
