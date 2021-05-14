@@ -65,8 +65,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
     } catch {
       case e: Throwable =>
         MetricsSystem.tracing { ms =>
-          ms.incAndGetCount(CONN_FAIL)
-          ms.incAndGetCount(MetricRegistry.name(CONN_FAIL, user))
+          ms.incCount(CONN_FAIL)
+          ms.incCount(MetricRegistry.name(CONN_FAIL, user))
         }
         try {
           sessionImpl.close()

@@ -138,7 +138,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
       conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") + "KYUUBI")
     conf.set(HA_ZK_NAMESPACE, engineSpace)
     val builder = new SparkProcessBuilder(appUser, conf)
-    MetricsSystem.tracing(_.incAndGetCount(ENGINE_TOTAL))
+    MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     try {
       info(s"Launching engine:\n$builder")
       val process = builder.start
@@ -150,16 +150,15 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
           if (exitValue.get != 0) {
             val error = builder.getError
             MetricsSystem.tracing { ms =>
-              ms.incAndGetCount(MetricRegistry.name(ENGINE_FAIL, appUser))
-              ms.incAndGetCount(
-                MetricRegistry.name(ENGINE_FAIL, error.getClass.getSimpleName))
+              ms.incCount(MetricRegistry.name(ENGINE_FAIL, appUser))
+              ms.incCount(MetricRegistry.name(ENGINE_FAIL, error.getClass.getSimpleName))
             }
             throw error
           }
         }
         if (started + timeout <= System.currentTimeMillis()) {
           process.destroyForcibly()
-          MetricsSystem.tracing(_.incAndGetCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
+          MetricsSystem.tracing(_.incCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
           throw KyuubiSQLException(
             s"Timeout($timeout) to launched Spark with $builder",
             builder.getError)
