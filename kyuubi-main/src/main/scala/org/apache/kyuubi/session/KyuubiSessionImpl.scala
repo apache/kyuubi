@@ -58,8 +58,8 @@ class KyuubiSessionImpl(
 
   override def open(): Unit = {
     MetricsSystem.tracing { ms =>
-      ms.incAndGetCount(CONN_TOTAL)
-      ms.incAndGetCount(MetricRegistry.name(CONN_OPEN, user))
+      ms.incCount(CONN_TOTAL)
+      ms.incCount(MetricRegistry.name(CONN_OPEN, user))
     }
     super.open()
     withZkClient(sessionConf) { zkClient =>
@@ -104,7 +104,7 @@ class KyuubiSessionImpl(
       case e: TException =>
         throw KyuubiSQLException("Error while cleaning up the engine resources", e)
     } finally {
-      MetricsSystem.tracing(_.decAndGetCount(MetricRegistry.name(CONN_OPEN, user)))
+      MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))
       client = null
       if (transport != null) {
         transport.close()
