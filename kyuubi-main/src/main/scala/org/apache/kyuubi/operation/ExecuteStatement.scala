@@ -66,8 +66,8 @@ class ExecuteStatement(
   private def executeStatement(): Unit = {
     try {
       MetricsSystem.tracing { ms =>
-        ms.incAndGetCount(STATEMENT_OPEN)
-        ms.incAndGetCount(STATEMENT_TOTAL)
+        ms.incCount(STATEMENT_OPEN)
+        ms.incCount(STATEMENT_TOTAL)
       }
 
       val req = new TExecuteStatementReq(remoteSessionHandle, statement)
@@ -154,7 +154,7 @@ class ExecuteStatement(
   }
 
   override def close(): Unit = {
-    MetricsSystem.tracing(_.decAndGetCount(STATEMENT_OPEN))
+    MetricsSystem.tracing(_.decCount(STATEMENT_OPEN))
     super.close()
   }
 }
