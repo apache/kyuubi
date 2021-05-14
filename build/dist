@@ -195,7 +195,7 @@ cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engin
 
 # Copy Kyuubi extension
 SPARK_MID_VERSION=${SPARK_VERSION%.*}
-if [[ -d $"$KYUUBI_HOME/dev/kyuubi-extension-spark_$SPARK_MID_VERSION" ]]; then
+if [[ -f $"$KYUUBI_HOME/dev/kyuubi-extension-spark_$SPARK_MID_VERSION/target/kyuubi-extension-spark_$SPARK_MID_VERSION-$VERSION.jar" ]]; then
   mkdir -p "$DISTDIR/extension"
   cp "$KYUUBI_HOME/dev/kyuubi-extension-spark_$SPARK_MID_VERSION/target/kyuubi-extension-spark_$SPARK_MID_VERSION-$VERSION.jar" "$DISTDIR/extension"
 fi
