@@ -24,7 +24,7 @@ object KyuubiSQLConf {
 
   val INSERT_REPARTITION_BEFORE_WRITE =
     buildConf("spark.sql.optimizer.insertRepartitionBeforeWrite.enabled")
-      .doc("Add repartition node at the top of plan. A approach of merging small files.")
+      .doc("Add repartition node at the top of query plan. An approach of merging small files.")
       .version("1.2.0")
       .booleanConf
       .createWithDefault(true)
@@ -32,8 +32,8 @@ object KyuubiSQLConf {
   val INSERT_REPARTITION_NUM =
     buildConf("spark.sql.optimizer.insertRepartitionNum")
       .doc(s"The partition number if ${INSERT_REPARTITION_BEFORE_WRITE.key} is enabled. " +
-        s"If AQE is disabled, the default value is ${SQLConf.SHUFFLE_PARTITIONS}. " +
-        s"If AQE is enabled, the default value is none that means depend on AQE.")
+        s"If AQE is disabled, the default value is ${SQLConf.SHUFFLE_PARTITIONS.key}. " +
+        "If AQE is enabled, the default value is none that means depend on AQE.")
       .version("1.2.0")
       .intConf
       .createOptional
@@ -42,9 +42,9 @@ object KyuubiSQLConf {
     buildConf("spark.sql.optimizer.dynamicPartitionInsertionRepartitionNum")
       .doc(s"The partition number of each dynamic partition if " +
         s"${INSERT_REPARTITION_BEFORE_WRITE.key} is enabled. " +
-        s"We will repartition by dynamic partition columns to reduce the small file but that " +
-        s"can cause data skew. This config is to extend the partition of dynamic " +
-        s"partition column to avoid skew but may generate some small files.")
+        "We will repartition by dynamic partition columns to reduce the small file but that " +
+        "can cause data skew. This config is to extend the partition of dynamic " +
+        "partition column to avoid skew but may generate some small files.")
       .version("1.2.0")
       .intConf
       .createWithDefault(100)
@@ -52,15 +52,15 @@ object KyuubiSQLConf {
   val FORCE_SHUFFLE_BEFORE_JOIN =
     buildConf("spark.sql.optimizer.forceShuffleBeforeJoin.enabled")
       .doc("Ensure shuffle node exists before shuffled join (shj and smj) to make AQE " +
-        "`OptimizeSkewedJoin` works (extra shuffle, multi table join).")
+        "`OptimizeSkewedJoin` works (complex scenario join, multi table join).")
       .version("1.2.0")
       .booleanConf
       .createWithDefault(false)
 
   val FINAL_STAGE_CONFIG_ISOLATION =
     buildConf("spark.sql.optimizer.finalStageConfigIsolation.enabled")
-      .doc("If true, the final stage support use different config with previous stage. The final " +
-        "stage config key prefix should be `spark.sql.finalStage.`." +
+      .doc("If true, the final stage support use different config with previous stage. " +
+        "The prefix of final stage config key should be `spark.sql.finalStage.`." +
         "For example, the raw spark config: `spark.sql.adaptive.advisoryPartitionSizeInBytes`, " +
         "then the final stage config should be: " +
         "`spark.sql.finalStage.adaptive.advisoryPartitionSizeInBytes`.")
