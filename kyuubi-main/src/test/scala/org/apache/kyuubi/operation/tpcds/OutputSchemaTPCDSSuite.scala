@@ -29,17 +29,17 @@ import org.apache.kyuubi.tags.ExtendedSQLTest
 /**
  * To run this test suite:
  * {{{
- *   build/mvn -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.TPCDSOutputSchemaSuite -Dmaven.plugin.scalatest.exclude.tags="" test
- *  }}}
+ *   build/mvn test -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.OutputSchemaTPCDSSuite
+ * }}}
  *
  * To re-generate golden files for this suite:
  * {{{
- *   KYUUBI_UPDATE=1 build/mvn -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.TPCDSOutputSchemaSuite -Dmaven.plugin.scalatest.exclude.tags="" test
+ *   KYUUBI_UPDATE=1 build/mvn test -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.OutputSchemaTPCDSSuite
  * }}}
  */
 // scalastyle:on line.size.limit
 @ExtendedSQLTest
-class TPCDSOutputSchemaSuite extends WithKyuubiServer with JDBCTestUtils with TPCDSHelper {
+class OutputSchemaTPCDSSuite extends WithKyuubiServer with JDBCTestUtils with TPCDSHelper {
   override protected val conf: KyuubiConf = KyuubiConf()
   override protected def jdbcUrl: String = getJdbcUrl
   override def database: String = this.getClass.getSimpleName

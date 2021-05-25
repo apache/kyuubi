@@ -23,7 +23,7 @@ import org.apache.kyuubi.operation.JDBCTestUtils
 import org.apache.kyuubi.tags.ExtendedSQLTest
 
 @ExtendedSQLTest
-class TPCDSDDLSuite extends WithKyuubiServer with JDBCTestUtils with TPCDSHelper {
+class DDLTPCDSSuite extends WithKyuubiServer with JDBCTestUtils with TPCDSHelper {
   override protected val conf: KyuubiConf = KyuubiConf()
 
   override protected def jdbcUrl: String = getJdbcUrl

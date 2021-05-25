@@ -124,4 +124,4 @@ jobs:
       - name: Run TPC-DS Schema Tests
         run: |
           mvn clean install -Pspark-3.0 -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper
-          mvn test -Pspark-3.0 -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.TPCDSOutputSchemaSuite,org.apache.kyuubi.operation.tpcds.TPCDSDDLSuite
+          mvn test -Pspark-3.0 -Dtest=none -DwildcardSuites=*TPCDSSuite
