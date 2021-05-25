@@ -36,7 +36,6 @@ jobs:
           - ''
           - '-Pspark-3.0 -Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.1 -Dspark.archive.name=spark-3.1.1-bin-hadoop2.7.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest'
           - '-Pspark-3.1 -Pkyuubi-extension-spark_3.1'
-          - '-Pspark-3.1 -Pkyuubi-extension-spark_3.1 -Pspark-hadoop-3.2'
           - '-Pspark-3.2-snapshot -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper'
     env:
       SPARK_LOCAL_IP: localhost
