@@ -1105,9 +1105,17 @@
                 <artifactId>delta-core_${scala.binary.version}</artifactId>
                 <version>${delta.version}</version>
                 <exclusions>
+                    <!--
+                     Apache Spark already has Antlr and Scala dependencies, and a potential compatibility
+                     issue of Antlr version on delta 1.0.0: https://github.com/delta-io/delta/pull/676
+                     -->
                     <exclusion>
-                        <groupId>*</groupId>
+                        <groupId>org.antlr</groupId>
                         <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.scala-lang</groupId>
+                        <artifactId>scala-library</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1559,6 +1567,7 @@
             <properties>
                 <spark.version>3.0.2</spark.version>
                 <delta.version>0.8.0</delta.version>
+                <maven.plugin.scalatest.exclude.tags></maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 
