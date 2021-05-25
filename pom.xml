@@ -1104,6 +1104,12 @@
                 <groupId>io.delta</groupId>
                 <artifactId>delta-core_${scala.binary.version}</artifactId>
                 <version>${delta.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -1550,6 +1556,10 @@
 
         <profile>
             <id>spark-3.0</id>
+            <properties>
+                <spark.version>3.0.2</spark.version>
+                <delta.version>0.8.0</delta.version>
+            </properties>
         </profile>
 
         <profile>
@@ -1563,6 +1573,7 @@
             <id>spark-3.1</id>
             <properties>
                 <spark.version>3.1.1</spark.version>
+                <delta.version>1.0.0</delta.version>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DataLakeTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
