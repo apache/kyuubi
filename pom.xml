@@ -1574,7 +1574,7 @@
             <properties>
                 <spark.version>3.1.1</spark.version>
                 <delta.version>1.0.0</delta.version>
-                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DataLakeTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 
@@ -1586,6 +1586,7 @@
             <id>spark-hadoop-3.2</id>
             <properties>
                 <hadoop.binary.version>3.2</hadoop.binary.version>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 
