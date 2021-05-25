@@ -294,6 +294,13 @@ object KyuubiConf {
     .checkValues(AuthTypes.values.map(_.toString))
     .createWithDefault(AuthTypes.NONE.toString)
 
+  val AUTHENTICATION_CUSTOM_CLASS: OptionalConfigEntry[String] =
+    buildConf("authentication.custom.class")
+    .doc("User define authentication class.")
+    .version("1.3.0")
+    .stringConf
+    .createOptional
+
   val AUTHENTICATION_LDAP_URL: OptionalConfigEntry[String] = buildConf("authentication.ldap.url")
     .doc("SPACE character separated LDAP connection URL(s).")
     .version("1.0.0")

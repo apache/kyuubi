@@ -17,8 +17,21 @@
 
 package org.apache.kyuubi.service.authentication
 
-object AuthTypes extends Enumeration {
-  type AuthType = Value
+import javax.security.sasl.AuthenticationException
 
-  val NOSASL, NONE, LDAP, KERBEROS, CUSTOM = Value
+import org.apache.kyuubi.Logging
+import org.apache.kyuubi.config.KyuubiConf
+
+class UserDefineAuthenticationProviderImpl(conf: KyuubiConf)
+  extends PasswdAuthenticationProvider with Logging {
+
+  override def authenticate(user: String, password: String): Unit = {
+    val testConfig = conf.getOption("kyuubi.auth.test.url").getOrElse(
+      throw new AuthenticationException("Can not found kyuubi.auth.test.url, please set it."))
+    if (user == "user" && password == "password") {
+      info(s"Success log in of user: $user")
+    } else {
+      throw new AuthenticationException("Username or password is not valid!")
+    }
+  }
 }
