@@ -287,6 +287,7 @@ object KyuubiConf {
       " <li>NOSASL: raw transport.</li>" +
       " <li>NONE: no authentication check.</li>" +
       " <li>KERBEROS: Kerberos/GSSAPI authentication.</li>" +
+      " <li>CUSTOM: User defined authentication.</li>" +
       " <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul>")
     .version("1.0.0")
     .stringConf
@@ -296,7 +297,7 @@ object KyuubiConf {
 
   val AUTHENTICATION_CUSTOM_CLASS: OptionalConfigEntry[String] =
     buildConf("authentication.custom.class")
-    .doc("User define authentication class.")
+    .doc("User defined authentication class.")
     .version("1.3.0")
     .stringConf
     .createOptional
