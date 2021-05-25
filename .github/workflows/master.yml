@@ -70,7 +70,7 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-io-
       - name: Build with Maven
-        run: mvn clean install ${{ matrix.profiles }} -Dmaven.javadoc.skip=true -V
+        run: mvn clean install --no-transfer-progress ${{ matrix.profiles }} -Dmaven.javadoc.skip=true -V
       - name: Code coverage
         if: ${{ matrix.profiles == '' }}
         run: bash <(curl -s https://codecov.io/bash)
@@ -123,5 +123,5 @@ jobs:
             ${{ runner.os }}-maven-io-
       - name: Run TPC-DS Schema Tests
         run: |
-          mvn clean install -Pspark-3.0 -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper
-          mvn test -Pspark-3.0 -Dtest=none -DwildcardSuites=*TPCDSSuite
+          mvn clean install --no-transfer-progress -Pspark-3.0 -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper
+          mvn test --no-transfer-progress -Pspark-3.0 -Dtest=none -DwildcardSuites=*TPCDSSuite

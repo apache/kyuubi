@@ -56,16 +56,16 @@ install:
 script:
   - |
     if [[ "$JOB" == "build" ]]; then
-      mvn clean install $PROFILE -Dmaven.javadoc.skip=true -V
+      mvn clean install --no-transfer-progress $PROFILE -Dmaven.javadoc.skip=true -V
     fi
   - |
     if [[ "$JOB" == "nightly-build" ]]; then
-      mvn clean install $PROFILE -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper -Dmaven.javadoc.skip=true -V
+      mvn clean install --no-transfer-progress $PROFILE -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper -Dmaven.javadoc.skip=true -V
     fi
   - |
     if [[ "$JOB" == "tpcds-tests" ]]; then
-      mvn clean install $PROFILE -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper
-      mvn test $PROFILE -Dtest=none -DwildcardSuites=*TPCDSSuite
+      mvn clean install --no-transfer-progress $PROFILE -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper
+      mvn test --no-transfer-progress $PROFILE -Dtest=none -DwildcardSuites=*TPCDSSuite
     fi
 
 after_success:
