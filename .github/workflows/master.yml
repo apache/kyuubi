@@ -87,7 +87,7 @@ jobs:
             **/kyuubi-spark-sql-engine.log*
 
   tpcds:
-    name: TPC-DS Schema Tests
+    name: TPC-DS Tests
     runs-on: ubuntu-latest
     env:
       SPARK_LOCAL_IP: localhost
@@ -121,7 +121,7 @@ jobs:
           key: ${{ runner.os }}-maven-io-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-io-
-      - name: Run TPC-DS Schema Tests
+      - name: Run TPC-DS Tests
         run: |
           mvn clean install --no-transfer-progress -Pspark-3.0 -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper
           mvn test --no-transfer-progress -Pspark-3.0 -Dtest=none -DwildcardSuites=*TPCDSSuite
