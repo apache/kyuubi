@@ -38,7 +38,6 @@ jobs:
           - '-Pspark-3.1 -Pkyuubi-extension-spark_3.1'
           - '-Pspark-3.1 -Pkyuubi-extension-spark_3.1 -Pspark-hadoop-3.2'
           - '-Pspark-3.2-snapshot -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper'
-          - '-Pspark-3.0 -Dtpcds.tests=true'
     env:
       SPARK_LOCAL_IP: localhost
     steps:
@@ -72,18 +71,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-io-
       - name: Build with Maven
-        if: ${{ ! contains(matrix.profiles, 'tpcds.tests=true') }}
         run: mvn clean install ${{ matrix.profiles }} -Dmaven.javadoc.skip=true -V
-      - name: Wild Card Suites Tests
-        if: ${{ contains(matrix.profiles, 'tpcds.tests=true') }}
-        run: |
-          mvn clean install ${{ matrix.profiles }} -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper
-          mvn test ${{ matrix.profiles }} -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.TPCDSOutputSchemaSuite,org.apache.kyuubi.operation.tpcds.TPCDSDDLSuite
       - name: Code coverage
         if: ${{ matrix.profiles == '' }}
         run: bash <(curl -s https://codecov.io/bash)
       - name: Detected Dependency List Change
-        if: ${{ ! contains(matrix.profiles, 'spark-3.2-snapshot') && ! contains(matrix.profiles, 'tpcds.tests=true') }}
+        if: ${{ ! contains(matrix.profiles, 'spark-3.2-snapshot') }}
         run: build/dependency.sh
       - name: Upload test logs
         if: failure()
@@ -93,3 +86,43 @@ jobs:
           path: |
             **/target/unit-tests.log
             **/kyuubi-spark-sql-engine.log*
+
+  tpcds:
+    name: TPC-DS Schema Tests
+    runs-on: ubuntu-latest
+    env:
+      SPARK_LOCAL_IP: localhost
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup JDK 1.8
+        uses: actions/setup-java@v1
+        with:
+          java-version: '1.8'
+      - uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository/com
+          key: ${{ runner.os }}-maven-com-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-com-
+      - uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository/org
+          key: ${{ runner.os }}-maven-org-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-org-
+      - uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository/net
+          key: ${{ runner.os }}-maven-net-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-net-
+      - uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository/io
+          key: ${{ runner.os }}-maven-io-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-io-
+      - name: Run TPC-DS Schema Tests
+        run: |
+          mvn clean install -Pspark-3.0 -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper
+          mvn test -Pspark-3.0 -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.TPCDSOutputSchemaSuite,org.apache.kyuubi.operation.tpcds.TPCDSDDLSuite
