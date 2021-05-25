@@ -1581,7 +1581,7 @@
         </profile>
 
         <profile>
-            <id>spark-3.2-snapshot</id>
+            <id>spark-master</id>
             <properties>
                 <spark.version>3.2.0-SNAPSHOT</spark.version>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>

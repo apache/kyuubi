@@ -41,9 +41,9 @@ matrix:
       env:
         - PROFILE="-Pspark-3.1 -Pkyuubi-extension-spark_3.1"
         - JOB="build"
-    - name: Test Kyuubi w/ -Pspark-3.2-snapshot w/ Spark 3.2 nightly build
+    - name: Test Kyuubi w/ -Pspark-master w/ Spark 3.2 nightly build
       env:
-        - PROFILE="-Pspark-3.2-snapshot"
+        - PROFILE="-Pspark-master"
         - JOB="nightly-build"
     - name: Test Kyuubi w/ -Pspark-3.0 TPCDS Tests
       env:
