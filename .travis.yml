@@ -31,39 +31,49 @@ matrix:
     - name: Test Kyuubi w/ Default Profile
       env:
         - PROFILE=""
+        - JOB="build"
+        - CODECOV="true"
     - name: Test Kyuubi w/ -Pspark-3.0 and Spark 3.1 binary
       env:
         - PROFILE="-Pspark-3.0 -Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.1 -Dspark.archive.name=spark-3.1.1-bin-hadoop2.7.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest"
+        - JOB="build"
     - name: Test Kyuubi w/ -Pspark-3.1 -Pkyuubi-extension-spark_3.1
       env:
         - PROFILE="-Pspark-3.1 -Pkyuubi-extension-spark_3.1"
+        - JOB="build"
     - name: Test Kyuubi w/ -Pspark-3.1 -Pkyuubi-extension-spark_3.1 -Pspark-hadoop-3.2
       env:
         - PROFILE="-Pspark-3.1 -Pkyuubi-extension-spark_3.1 -Pspark-hadoop-3.2"
+        - JOB="build"
     - name: Test Kyuubi w/ -Pspark-3.2-snapshot w/ Spark 3.2 nightly build
       env:
-        - PROFILE="-Pspark-3.2-snapshot -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper"
+        - PROFILE="-Pspark-3.2-snapshot"
+        - JOB="nightly-build"
     - name: Test Kyuubi w/ -Pspark-3.0 TPCDS Tests
       env:
         - PROFILE="-Pspark-3.0"
-        - TPCDS_TESTS=true
+        - JOB="tpcds-tests"
 
 install:
   - mvn --version
 
 script:
   - |
-    if [[ "$TPCDS_TESTS" == "true" ]]; then
+    if [[ "$JOB" == "build" ]]; then
+      mvn clean install $PROFILE -Dmaven.javadoc.skip=true -V
+    fi
+  - |
+    if [[ "$JOB" == "nightly-build" ]]; then
+      mvn clean install $PROFILE -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper -Dmaven.javadoc.skip=true -V
+    fi
+  - |
+    if [[ "$JOB" == "tpcds-tests" ]]; then
       mvn clean install $PROFILE -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper
       mvn test $PROFILE -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.TPCDSOutputSchemaSuite,org.apache.kyuubi.operation.tpcds.TPCDSDDLSuite
     fi
-  - |
-    if [[ "$TPCDS_TESTS" != "true" ]]; then
-      mvn clean install $PROFILE -Dmaven.javadoc.skip=true -V
-    fi
 
 after_success:
-  - if [[ -z $EXCLUDE_TAGS ]]; then bash <(curl -s https://codecov.io/bash); fi
+  - if [[ "$CODECOV" == "true" ]]; then bash <(curl -s https://codecov.io/bash); fi
 
 after_failure:
   - echo "==== Build with $PROFILE FAILED ===="
