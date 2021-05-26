@@ -18,7 +18,6 @@
 package org.apache.kyuubi.operation
 
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TGetOperationStatusReq, TOperationState, TStatusCode}
-import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
@@ -29,22 +28,15 @@ class KyuubiOperationSuite extends WithKyuubiServer with JDBCTestUtils {
   test("KYUUBI #647 - engine crash") {
     withSessionHandle { (client, handle) =>
       val executeStmtReq = new TExecuteStatementReq()
-      executeStmtReq.setStatement(
-        """
-          | select
-          |   java_method('java.lang.Thread', 'sleep', 1000L),
-          |   java_method('java.lang.System', 'exit', 1)
-          |""".stripMargin)
+      executeStmtReq.setStatement("select java_method('java.lang.System', 'exit', 1)")
       executeStmtReq.setSessionHandle(handle)
       executeStmtReq.setRunAsync(true)
       val executeStmtResp = client.ExecuteStatement(executeStmtReq)
 
-      eventually(timeout(10.seconds), interval(500.milliseconds)) {
-        val getOpStatusReq = new TGetOperationStatusReq(executeStmtResp.getOperationHandle)
-        val getOpStatusResp = client.GetOperationStatus(getOpStatusReq)
-        assert(getOpStatusResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-        assert(getOpStatusResp.getOperationState === TOperationState.ERROR_STATE)
-      }
+      val getOpStatusReq = new TGetOperationStatusReq(executeStmtResp.getOperationHandle)
+      val getOpStatusResp = client.GetOperationStatus(getOpStatusReq)
+      assert(getOpStatusResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      assert(getOpStatusResp.getOperationState === TOperationState.ERROR_STATE)
     }
   }
 
