@@ -26,7 +26,7 @@ import org.apache.kyuubi.config.KyuubiConf
 class KyuubiOperationSuite extends WithKyuubiServer with JDBCTestUtils {
   override protected val conf: KyuubiConf = KyuubiConf()
 
-  test("KYUUBI #647 - remote thrift client crash") {
+  test("KYUUBI #647 - engine crash") {
     withSessionHandle { (client, handle) =>
       val executeStmtReq = new TExecuteStatementReq()
       executeStmtReq.setStatement(
