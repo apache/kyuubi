@@ -1104,6 +1104,20 @@
                 <groupId>io.delta</groupId>
                 <artifactId>delta-core_${scala.binary.version}</artifactId>
                 <version>${delta.version}</version>
+                <exclusions>
+                    <!--
+                     Apache Spark already has Antlr and Scala dependencies, and a potential compatibility
+                     issue of Antlr version on delta 1.0.0: https://github.com/delta-io/delta/pull/676
+                     -->
+                    <exclusion>
+                        <groupId>org.antlr</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.scala-lang</groupId>
+                        <artifactId>scala-library</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -1550,12 +1564,10 @@
 
         <profile>
             <id>spark-3.0</id>
-        </profile>
-
-        <profile>
-            <id>spark-3.2-snapshot</id>
             <properties>
-                <spark.version>3.2.0-SNAPSHOT</spark.version>
+                <spark.version>3.0.2</spark.version>
+                <delta.version>0.8.0</delta.version>
+                <maven.plugin.scalatest.exclude.tags></maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 
@@ -1563,7 +1575,16 @@
             <id>spark-3.1</id>
             <properties>
                 <spark.version>3.1.1</spark.version>
-                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DataLakeTest</maven.plugin.scalatest.exclude.tags>
+                <delta.version>1.0.0</delta.version>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>spark-master</id>
+            <properties>
+                <spark.version>3.2.0-SNAPSHOT</spark.version>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 

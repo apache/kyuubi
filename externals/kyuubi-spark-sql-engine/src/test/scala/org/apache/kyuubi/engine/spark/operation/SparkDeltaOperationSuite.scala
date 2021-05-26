@@ -19,9 +19,9 @@ package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.BasicDeltaJDBCTests
-import org.apache.kyuubi.tags.DataLakeTest
+import org.apache.kyuubi.tags.DeltaTest
 
-@DataLakeTest
+@DeltaTest
 class SparkDeltaOperationSuite extends WithSparkSQLEngine with BasicDeltaJDBCTests {
   override protected def jdbcUrl: String = getJdbcUrl
   override def withKyuubiConf: Map[String, String] = extraConfigs
