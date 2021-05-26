@@ -36,11 +36,7 @@ class CustomAuthenticationProviderImplSuite extends KyuubiFunSuite {
       "org.apache.kyuubi.service.authentication.UserDefineAuthenticationProviderImpl")
     val p1 = getAuthenticationProvider(AuthMethods.withName("CUSTOM"), conf)
     val e2 = intercept[AuthenticationException](p1.authenticate("test", "test"))
-    assert(e2.getMessage.contains("Can not found kyuubi.auth.test.url, please set it."))
-
-    conf.set("kyuubi.auth.test.url", "test")
-    val e3 = intercept[AuthenticationException](p1.authenticate("test", "test"))
-    assert(e3.getMessage.contains("Username or password is not valid!"))
+    assert(e2.getMessage.contains("Username or password is not valid!"))
 
     p1.authenticate("user", "password")
   }

@@ -20,14 +20,11 @@ package org.apache.kyuubi.service.authentication
 import javax.security.sasl.AuthenticationException
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.config.KyuubiConf
 
-class UserDefineAuthenticationProviderImpl(conf: KyuubiConf)
+class UserDefineAuthenticationProviderImpl()
   extends PasswdAuthenticationProvider with Logging {
 
   override def authenticate(user: String, password: String): Unit = {
-    val testConfig = conf.getOption("kyuubi.auth.test.url").getOrElse(
-      throw new AuthenticationException("Can not found kyuubi.auth.test.url, please set it."))
     if (user == "user" && password == "password") {
       info(s"Success log in of user: $user")
     } else {
