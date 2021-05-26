@@ -17,8 +17,18 @@
 
 package org.apache.kyuubi.service.authentication
 
-object AuthTypes extends Enumeration {
-  type AuthType = Value
+import javax.security.sasl.AuthenticationException
 
-  val NOSASL, NONE, LDAP, KERBEROS, CUSTOM = Value
+import org.apache.kyuubi.Logging
+
+class UserDefineAuthenticationProviderImpl()
+  extends PasswdAuthenticationProvider with Logging {
+
+  override def authenticate(user: String, password: String): Unit = {
+    if (user == "user" && password == "password") {
+      info(s"Success log in of user: $user")
+    } else {
+      throw new AuthenticationException("Username or password is not valid!")
+    }
+  }
 }
