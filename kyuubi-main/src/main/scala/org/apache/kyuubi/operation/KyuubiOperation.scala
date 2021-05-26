@@ -44,7 +44,8 @@ abstract class KyuubiOperation(
     ThriftUtils.verifyTStatus(tStatus)
   }
 
-  protected def onError(action: String = "operating"): PartialFunction[Throwable, Unit] = {
+  protected def onError(action: String = "operating",
+                        rethrow: Boolean = true): PartialFunction[Throwable, Unit] = {
     case e: Throwable =>
       state.synchronized {
         if (isTerminalState(state)) {
@@ -66,7 +67,9 @@ abstract class KyuubiOperation(
               KyuubiSQLException(s"Error $action $opType: ${e.getMessage}", e)
           }
           setOperationException(ke)
-          throw ke
+          if (rethrow) {
+            throw ke
+          }
         }
       }
   }

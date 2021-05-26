@@ -91,8 +91,10 @@ class ExecuteStatement(
       isComplete = true
       remoteState match {
         case INITIALIZED_STATE | PENDING_STATE | RUNNING_STATE =>
-          isComplete = false
-          statusResp = client.GetOperationStatus(statusReq)
+          try {
+            statusResp = client.GetOperationStatus(statusReq)
+            isComplete = false
+          } catch onError(rethrow = false)
 
         case FINISHED_STATE =>
           setState(OperationState.FINISHED)
