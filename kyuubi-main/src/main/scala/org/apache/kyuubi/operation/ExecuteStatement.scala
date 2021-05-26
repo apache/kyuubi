@@ -79,7 +79,7 @@ class ExecuteStatement(
     } catch onError()
   }
 
-  private def waitStatementComplete(): Unit = {
+  private def waitStatementComplete(): Unit = try {
     setState(OperationState.RUNNING)
     var statusResp = client.GetOperationStatus(statusReq)
     var isComplete = false
@@ -91,10 +91,8 @@ class ExecuteStatement(
       isComplete = true
       remoteState match {
         case INITIALIZED_STATE | PENDING_STATE | RUNNING_STATE =>
-          try {
-            statusResp = client.GetOperationStatus(statusReq)
-            isComplete = false
-          } catch onError(rethrow = false)
+          isComplete = false
+          statusResp = client.GetOperationStatus(statusReq)
 
         case FINISHED_STATE =>
           setState(OperationState.FINISHED)
@@ -121,7 +119,7 @@ class ExecuteStatement(
     }
     // see if anymore log could be fetched
     getQueryLog()
-  }
+  } catch onError()
 
   private def getQueryLog(): Unit = {
     getOperationLog.foreach { logger =>
