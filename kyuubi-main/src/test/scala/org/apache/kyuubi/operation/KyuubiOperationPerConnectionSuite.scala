@@ -18,6 +18,7 @@
 package org.apache.kyuubi.operation
 
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TGetOperationStatusReq, TOperationState, TStatusCode}
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
@@ -41,10 +42,12 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with BasicJDBCT
       executeStmtReq.setRunAsync(true)
       val executeStmtResp = client.ExecuteStatement(executeStmtReq)
 
-      val getOpStatusReq = new TGetOperationStatusReq(executeStmtResp.getOperationHandle)
-      val getOpStatusResp = client.GetOperationStatus(getOpStatusReq)
-      assert(getOpStatusResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
-      assert(getOpStatusResp.getOperationState === TOperationState.ERROR_STATE)
+      eventually(timeout(10.seconds), interval(500.milliseconds)) {
+        val getOpStatusReq = new TGetOperationStatusReq(executeStmtResp.getOperationHandle)
+        val getOpStatusResp = client.GetOperationStatus(getOpStatusReq)
+        assert(getOpStatusResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        assert(getOpStatusResp.getOperationState === TOperationState.ERROR_STATE)
+      }
     }
   }
 }
