@@ -65,7 +65,7 @@ script:
   - |
     if [[ "$JOB" == "tpcds-tests" ]]; then
       mvn clean install --no-transfer-progress $PROFILE -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper
-      mvn test --no-transfer-progress $PROFILE -Dtest=none -DwildcardSuites=*TPCDSSuite
+      mvn test --no-transfer-progress $PROFILE -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds
     fi
 
 after_success:
