@@ -60,12 +60,7 @@ class DDLTPCDSSuite extends WithKyuubiServer
         val resultSet = statement.executeQuery(s"SELECT * FROM ${tableDef.table.qualifiedName}")
         assert(!resultSet.next())
         val meta = resultSet.getMetaData
-        val fields = if (tableDef.fields.head.isPartitionKey) {
-          tableDef.fields.tail :+ tableDef.fields.head
-        } else {
-          tableDef.fields
-        }
-        fields.zipWithIndex.foreach { case (f, i) =>
+        tableDef.fields.zipWithIndex.foreach { case (f, i) =>
           assert(meta.getColumnName(i + 1) === f.name)
         }
       }
