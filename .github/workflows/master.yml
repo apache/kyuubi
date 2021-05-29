@@ -123,5 +123,5 @@ jobs:
             ${{ runner.os }}-maven-io-
       - name: Run TPC-DS Tests
         run: |
-          mvn clean install --no-transfer-progress -Pspark-3.0 -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper
-          mvn test --no-transfer-progress -Pspark-3.0 -Dtest=none -DwildcardSuites=*TPCDSSuite
+          mvn clean install --no-transfer-progress -Pspark-3.1 -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper
+          mvn test --no-transfer-progress -Pspark-3.1 -Dtest=none -DwildcardSuites=*TPCDSSuite

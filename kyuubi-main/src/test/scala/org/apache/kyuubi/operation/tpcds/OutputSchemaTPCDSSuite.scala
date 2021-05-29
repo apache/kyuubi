@@ -29,12 +29,12 @@ import org.apache.kyuubi.tags.{DeltaTest, ExtendedSQLTest}
 /**
  * To run this test suite:
  * {{{
- *   build/mvn test -Pspark-3.1 -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.OutputSchemaTPCDSSuite
+ *   build/mvn test -Pspark-3.1 -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.OutputSchemaTPCDSSuite -Dmaven.plugin.scalatest.exclude.tags=''
  * }}}
  *
  * To re-generate golden files for this suite:
  * {{{
- *   KYUUBI_UPDATE=1 build/mvn test -Pspark-3.1 -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.OutputSchemaTPCDSSuite
+ *   KYUUBI_UPDATE=1 build/mvn test -Pspark-3.1 -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.OutputSchemaTPCDSSuite -Dmaven.plugin.scalatest.exclude.tags=''
  * }}}
  */
 // scalastyle:on line.size.limit
