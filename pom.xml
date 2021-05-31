@@ -1562,7 +1562,7 @@
         <profile>
             <id>spark-3.1</id>
             <properties>
-                <spark.version>3.1.1</spark.version>
+                <spark.version>3.1.2</spark.version>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DataLakeTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
@@ -1588,7 +1588,7 @@
         <profile>
             <id>kyuubi-extension-spark_3.1</id>
             <properties>
-                <spark.version>3.1.1</spark.version>
+                <spark.version>3.1.2</spark.version>
             </properties>
             <modules>
                 <module>dev/kyuubi-extension-spark_3.1</module>
