@@ -1086,7 +1086,6 @@
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-client-minicluster</artifactId>
                 <version>${hadoop.version}</version>
-                <scope>test</scope>
             </dependency>
 
             <dependency>
