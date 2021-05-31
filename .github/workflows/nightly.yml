@@ -2,7 +2,7 @@ name: Kyuubi Nightly
 
 on:
   schedule:
-    - cron: 0 23 * * *
+    - cron: 0 4 * * *
 
 jobs:
   build:
