@@ -25,12 +25,12 @@ Spark on Kubernetes config master by using a special format.
 
 You can use cmd `kubectl cluster-info` to get api-server host and port.
 
-### Spark Image
+### Docker Image
 
 Kubernetes requires users to supply images that can be deployed into containers within pods.
 
-Spark also ships within a `./bin/docker-image-tool.sh` script that can be used to build and publish the Docker images to use
-with the K8s backend.
+Spark also ships within a `./bin/docker-image-tool.sh` script that can be used to build and publish the Docker images to
+use with the K8s backend.
 
 Example usage is:
 
@@ -97,10 +97,15 @@ see [the Security section of this document](http://spark.apache.org/docs/latest/
 security issues related to volume mounts.
 
 ```shell
---conf spark.kubernetes.driver.volumes.[VolumeType].[VolumeName].mount.path=<mount path>
---conf spark.kubernetes.driver.volumes.[VolumeType].[VolumeName].mount.readOnly=<true|false>
---conf spark.kubernetes.driver.volumes.[VolumeType].[VolumeName].mount.subPath=<mount subPath>
+spark.kubernetes.driver.volumes.<type>.<name>.options.path=<dist_path>
+spark.kubernetes.driver.volumes.<type>.<name>.mount.path=<container_path>
+
+spark.kubernetes.executor.volumes.<type>.<name>.options.path=<dist_path>
+spark.kubernetes.executor.volumes.<type>.<name>.mount.path=<container_path>
 ```
+
+Read [Using Kubernetes Volumes](http://spark.apache.org/docs/latest/running-on-kubernetes.html#using-kubernetes-volumes)
+for more about volumes.
 
 ### PodTemplateFile
 
@@ -112,4 +117,5 @@ To do so, specify the spark properties `spark.kubernetes.driver.podTemplateFile`
 
 ### Other
 
-You can read [spark](http://spark.apache.org/docs/latest/running-on-kubernetes.html) for more information about spark configurations.
+You can read [spark](http://spark.apache.org/docs/latest/running-on-kubernetes.html) for more information about spark
+configurations.
