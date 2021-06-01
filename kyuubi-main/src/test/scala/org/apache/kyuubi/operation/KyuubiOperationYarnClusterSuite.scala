@@ -17,29 +17,29 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.kyuubi.{Utils, WithKyuubiServer, WithMiniYarnCluster}
+import org.apache.kyuubi.WithKyuubiServerWithMiniYarnService
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_INIT_TIMEOUT
-import org.apache.kyuubi.config.internal.Tests.TESTING_HADOOP_CONF_DIR
 
-class KyuubiOperationYarnClusterSuite extends WithKyuubiServer with WithMiniYarnCluster
+class KyuubiOperationYarnClusterSuite extends WithKyuubiServerWithMiniYarnService
   with JDBCTestUtils {
-  override protected def jdbcUrl: String = getJdbcUrl
 
-  override val hadoopConfDir = Utils.createTempDir().toFile
-
-  override protected val conf: KyuubiConf = {
+  override protected val kyuubiServerConf: KyuubiConf = {
     KyuubiConf().set(ENGINE_INIT_TIMEOUT, 300000L)
-      .set("spark.master", "yarn")
-      .set(TESTING_HADOOP_CONF_DIR, hadoopConfDir.getAbsolutePath)
-      .setIfMissing("spark.executor.instances", "1")
   }
+
+  override protected val connectionConf: Map[String, String] = Map(
+    "spark.master" -> "yarn",
+    "spark.executor.instances" -> "1"
+  )
 
   test("KYUUBI #527- Support test with mini yarn cluster") {
     withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery("SELECT 'yarn' AS master")
+      val resultSet = statement.executeQuery("""SELECT "${spark.app.id}" as id""")
       assert(resultSet.next())
-      assert(resultSet.getString("master") === "yarn")
+      assert(resultSet.getString("id").startsWith("application_"))
     }
   }
+
+  override protected def jdbcUrl: String = getJdbcUrl
 }
