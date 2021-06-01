@@ -17,23 +17,6 @@ When you want to run Kyuubi's Spark SQL engines on Kubernetes, you'd better have
 
 ## Configurations
 
-### Test Cluster
-
-You can use the shell code to test your cluster whether it is normal or not.
-
-```shell
-$SPARK_HOME/bin/spark-submit \
- --master k8s://https://<k8s-apiserver-host>:<k8s-apiserver-port> \
- --class org.apache.spark.examples.SparkPi \
- --conf spark.executor.instances=5 \
- --conf spark.dynamicAllocation.enabled=false \
- --conf spark.shuffle.service.enabled=false \
- --conf spark.kubernetes.container.image=<spark-image> \
- local://<path_to_examples.jar>
-```
-
-When running shell, you can use cmd `kubectl describe pod <podName>` to check if the information meets expectations.
-
 ### Master
 
 Spark on Kubernetes config master by using a special format.
@@ -63,6 +46,23 @@ Example usage is:
 ```
 
 Of course, you can build self-made docker image by modifying Dockerfile and source code.
+
+### Test Cluster
+
+You can use the shell code to test your cluster whether it is normal or not.
+
+```shell
+$SPARK_HOME/bin/spark-submit \
+ --master k8s://https://<k8s-apiserver-host>:<k8s-apiserver-port> \
+ --class org.apache.spark.examples.SparkPi \
+ --conf spark.executor.instances=5 \
+ --conf spark.dynamicAllocation.enabled=false \
+ --conf spark.shuffle.service.enabled=false \
+ --conf spark.kubernetes.container.image=<spark-image> \
+ local://<path_to_examples.jar>
+```
+
+When running shell, you can use cmd `kubectl describe pod <podName>` to check if the information meets expectations.
 
 ### ServiceAccount
 
