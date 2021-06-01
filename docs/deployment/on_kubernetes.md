@@ -106,4 +106,4 @@ To do so, specify the spark properties `spark.kubernetes.driver.podTemplateFile`
 
 ### Other
 
-You can read [spark](http://spark.apache.org/docs/latest/running-on-kubernetes.html) for more information about spark configurations.
+You can read Spark's official documentation for [Running on Kubernetes](http://spark.apache.org/docs/latest/running-on-kubernetes.html) for more information.
