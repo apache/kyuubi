@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ScalaCompilerConfiguration">
+    <profile name="Maven 1" modules="kyuubi-tpcds">
+      <option name="deprecationWarnings" value="true" />
+      <option name="uncheckedWarnings" value="true" />
+      <option name="featureWarnings" value="true" />
+      <option name="explainTypeErrors" value="true" />
+      <parameters>
+        <parameter value="-Yno-adapted-args" />
+        <parameter value="-P:silencer:globalFilters=.*deprecated.*" />
+        <parameter value="-Xfatal-warnings" />
+        <parameter value="-Ywarn-unused:imports" />
+      </parameters>
+      <plugins>
+        <plugin path="C:\Users\yangbinjie01\.m2\repository\com\github\ghik\silencer-plugin_2.12.10\1.6.0\silencer-plugin_2.12.10-1.6.0.jar" />
+      </plugins>
+    </profile>
+  </component>
+</project>

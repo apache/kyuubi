@@ -1,0 +1,13 @@
+<component name="libraryTable">
+  <library name="Maven: org.apache.xbean:xbean-asm7-shaded:4.15">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/apache/xbean/xbean-asm7-shaded/4.15/xbean-asm7-shaded-4.15.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$MAVEN_REPOSITORY$/org/apache/xbean/xbean-asm7-shaded/4.15/xbean-asm7-shaded-4.15-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$MAVEN_REPOSITORY$/org/apache/xbean/xbean-asm7-shaded/4.15/xbean-asm7-shaded-4.15-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
