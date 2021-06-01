@@ -39,30 +39,30 @@ class MiniYarnService(name: String) extends AbstractService(name) {
   private var yarnCluster: MiniYARNCluster = _
 
   private def newYarnConfig(): YarnConfiguration = {
-    val yarnConf = new YarnConfiguration()
+    val yarnConfig = new YarnConfiguration()
     // Disable the disk utilization check to avoid the test hanging when people's disks are
     // getting full.
-    yarnConf.set("yarn.nodemanager.disk-health-checker.max-disk-utilization-per-disk-percentage",
+    yarnConfig.set("yarn.nodemanager.disk-health-checker.max-disk-utilization-per-disk-percentage",
       "100.0")
 
     // capacity-scheduler.xml is missing in hadoop-client-minicluster so this is a workaround
-    yarnConf.set("yarn.scheduler.capacity.root.queues", "default")
-    yarnConf.setInt("yarn.scheduler.capacity.root.default.capacity", 100)
-    yarnConf.setFloat("yarn.scheduler.capacity.root.default.user-limit-factor", 1)
-    yarnConf.setInt("yarn.scheduler.capacity.root.default.maximum-capacity", 100)
-    yarnConf.set("yarn.scheduler.capacity.root.default.state", "RUNNING")
-    yarnConf.set("yarn.scheduler.capacity.root.default.acl_submit_applications", "*")
-    yarnConf.set("yarn.scheduler.capacity.root.default.acl_administer_queue", "*")
-    yarnConf.setInt("yarn.scheduler.capacity.node-locality-delay", -1)
+    yarnConfig.set("yarn.scheduler.capacity.root.queues", "default")
+    yarnConfig.setInt("yarn.scheduler.capacity.root.default.capacity", 100)
+    yarnConfig.setFloat("yarn.scheduler.capacity.root.default.user-limit-factor", 1)
+    yarnConfig.setInt("yarn.scheduler.capacity.root.default.maximum-capacity", 100)
+    yarnConfig.set("yarn.scheduler.capacity.root.default.state", "RUNNING")
+    yarnConfig.set("yarn.scheduler.capacity.root.default.acl_submit_applications", "*")
+    yarnConfig.set("yarn.scheduler.capacity.root.default.acl_administer_queue", "*")
+    yarnConfig.setInt("yarn.scheduler.capacity.node-locality-delay", -1)
 
     // Set bind host to localhost to avoid java.net.BindException
-    yarnConf.set("yarn.resourcemanager.bind-host", "localhost")
+    yarnConfig.set("yarn.resourcemanager.bind-host", "localhost")
 
     // enable proxy
     val currentUser = UserGroupInformation.getCurrentUser.getShortUserName
-    yarnConf.set(s"hadoop.proxyuser.$currentUser.groups", "*")
-    yarnConf.set(s"hadoop.proxyuser.$currentUser.hosts", "*")
-    yarnConf
+    yarnConfig.set(s"hadoop.proxyuser.$currentUser.groups", "*")
+    yarnConfig.set(s"hadoop.proxyuser.$currentUser.hosts", "*")
+    yarnConfig
   }
 
   override def initialize(conf: KyuubiConf): Unit = {
