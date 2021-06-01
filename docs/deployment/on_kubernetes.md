@@ -12,7 +12,7 @@ When you want to run Kyuubi's Spark SQL engines on Kubernetes, you'd better have
 
 * Read about [Running Spark On Kubernetes](http://spark.apache.org/docs/latest/running-on-kubernetes.html)
 * An active Kubernetes Cluster
-* KubeCtl
+* Kubectl
 * KubeConfig of the target cluster
 
 ## Configurations
