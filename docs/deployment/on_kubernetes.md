@@ -4,15 +4,15 @@
 
 </div>
 
-# Running Kyuubi on Kubernetes
+# Deploy Kyuubi engines on Kubernetes
 
 ## Requirements
 
 When you want to run Kyuubi's Spark SQL engines on Kubernetes, you'd better have cognition upon the following things.
 
 * Read about [Running Spark On Kubernetes](http://spark.apache.org/docs/latest/running-on-kubernetes.html)
-* An active Kubernetes Cluster
-* Kubectl
+* An active Kubernetes cluster
+* [Kubectl](https://kubernetes.io/docs/reference/kubectl/overview/)
 * KubeConfig of the target cluster
 
 ## Configurations
@@ -23,7 +23,7 @@ You can use the shell code to test your cluster whether it is normal or not.
 
 ```shell
 $SPARK_HOME/bin/spark-submit \
- --master K8s://https://<K8s-apiserver-host>:<K8s-apiserver-port> \
+ --master k8s://https://<k8s-apiserver-host>:<k8s-apiserver-port> \
  --class org.apache.spark.examples.SparkPi \
  --conf spark.executor.instances=5 \
  --conf spark.dynamicAllocation.enabled=false \
@@ -38,7 +38,7 @@ When running shell, you can use cmd `kubectl describe pod <podName>` to check if
 
 Spark on Kubernetes config master by using a special format.
 
-`K8s://https://<K8s-apiserver-host>:<K8s-apiserver-port>`
+`k8s://https://<k8s-apiserver-host>:<k8s-apiserver-port>`
 
 You can use cmd `kubectl cluster-info` to get api-server host and port.
 
