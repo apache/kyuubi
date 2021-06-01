@@ -19,13 +19,14 @@ package org.apache.kyuubi.server
 
 import java.io.File
 import java.net.InetAddress
-import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.server.MiniYARNCluster
+import org.scalatest.concurrent.Eventually._
+import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
@@ -76,13 +77,8 @@ class MiniYarnService(name: String) extends AbstractService(name) {
   override def start(): Unit = {
     yarnCluster.start()
     val config = yarnCluster.getConfig()
-    val startTimeNs = System.nanoTime()
-    while (config.get(YarnConfiguration.RM_ADDRESS).split(":")(1) == "0") {
-      if (System.nanoTime() - startTimeNs > TimeUnit.SECONDS.toNanos(10)) {
-        throw new IllegalStateException("Timed out waiting for RM to come up.")
-      }
-      debug("RM address still not set in configuration, waiting...")
-      TimeUnit.MILLISECONDS.sleep(100)
+    eventually(timeout(10.seconds), interval(100.milliseconds)) {
+      config.get(YarnConfiguration.RM_ADDRESS).split(":")(1) != "0"
     }
     info(s"RM address in configuration is ${config.get(YarnConfiguration.RM_ADDRESS)}")
     super.start()
