@@ -19,11 +19,11 @@ When you want to run Kyuubi's Spark SQL engines on Kubernetes, you'd better have
 
 ### Test Cluster
 
-You can use the blew shell code to test your cluster whether it is normal or not.
+You can use the shell code to test your cluster whether it is normal or not.
 
 ```shell
 $SPARK_HOME/bin/spark-submit \
- --master k8s://https://<k8s-apiserver-host>:<k8s-apiserver-port> \
+ --master K8s://https://<K8s-apiserver-host>:<K8s-apiserver-port> \
  --class org.apache.spark.examples.SparkPi \
  --conf spark.executor.instances=5 \
  --conf spark.dynamicAllocation.enabled=false \
@@ -38,7 +38,7 @@ When running shell, you can use cmd `kubectl describe pod <podName>` to check if
 
 Spark on Kubernetes config master by using a special format.
 
-`k8s://https://<k8s-apiserver-host>:<k8s-apiserver-port>`
+`K8s://https://<K8s-apiserver-host>:<K8s-apiserver-port>`
 
 You can use cmd `kubectl cluster-info` to get api-server host and port.
 
@@ -46,8 +46,8 @@ You can use cmd `kubectl cluster-info` to get api-server host and port.
 
 Kubernetes requires users to supply images that can be deployed into containers within pods.
 
-Spark also ships within a bin/docker-image-tool.sh script that can be used to build and publish the Docker images to use
-with the K8S backend.
+Spark also ships within a `./bin/docker-image-tool.sh` script that can be used to build and publish the Docker images to use
+with the K8s backend.
 
 Example usage is:
 
@@ -77,9 +77,9 @@ following cmd to create serviceAccount (You need to have the kubeconfig which ha
 .
 
 ```shell
-#create serviceAccount
+# create serviceAccount
 kubectl create serviceaccount spark -n <namespace>
-#binding role
+# binding role
 kubectl create clusterrolebinding spark-role --clusterrole=edit --serviceaccount=<namespace>:spark --namespace=<namespace>
 ```
 
