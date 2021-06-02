@@ -27,15 +27,25 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE
+import org.apache.kyuubi.config.internal.Tests
 import org.apache.kyuubi.engine.ProcBuilder
 
 class SparkProcessBuilder(
     override val proxyUser: String,
     override val conf: KyuubiConf,
-    override val env: Map[String, String] = sys.env)
+    envMap: Map[String, String] = sys.env)
   extends ProcBuilder with Logging {
 
   import SparkProcessBuilder._
+
+  override protected def env: Map[String, String] = {
+    val testingHadoopConfDir = conf.getOption(Tests.TESTING_HADOOP_CONF_DIR.key)
+    if (Utils.isTesting && testingHadoopConfDir.isDefined) {
+      envMap ++ Map("HADOOP_CONF_DIR" -> testingHadoopConfDir.get)
+    } else {
+      envMap
+    }
+  }
 
   override protected val executable: String = {
     val sparkHomeOpt = env.get("SPARK_HOME").orElse {
