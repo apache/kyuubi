@@ -15,28 +15,31 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.util
+package org.apache.kyuubi.operation
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.security.SecurityUtil
-
+import org.apache.kyuubi.WithKyuubiServerWithMiniYarnService
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_INIT_TIMEOUT
 
-object KyuubiHadoopUtils {
+class KyuubiOperationYarnClusterSuite extends WithKyuubiServerWithMiniYarnService
+  with JDBCTestUtils {
 
-  def newHadoopConf(conf: KyuubiConf): Configuration = {
-    val hadoopConf = new Configuration()
-    conf.getAll.foreach { case (k, v) => hadoopConf.set(k, v) }
-    hadoopConf
+  override protected val kyuubiServerConf: KyuubiConf = {
+    KyuubiConf().set(ENGINE_INIT_TIMEOUT, 300000L)
   }
 
-  def getServerPrincipal(principal: String): String = {
-    SecurityUtil.getServerPrincipal(principal, "0.0.0.0")
-  }
+  override protected val connectionConf: Map[String, String] = Map(
+    "spark.master" -> "yarn",
+    "spark.executor.instances" -> "1"
+  )
 
-  def toSparkPrefixedConf(hadoopConf: Map[String, String]): Map[String, String] = {
-    hadoopConf.map { case (key, value) =>
-      "spark.hadoop." + key -> value
+  test("KYUUBI #527- Support test with mini yarn cluster") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("""SELECT "${spark.app.id}" as id""")
+      assert(resultSet.next())
+      assert(resultSet.getString("id").startsWith("application_"))
     }
   }
+
+  override protected def jdbcUrl: String = getJdbcUrl
 }
