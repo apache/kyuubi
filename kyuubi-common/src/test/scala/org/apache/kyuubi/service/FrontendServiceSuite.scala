@@ -21,9 +21,11 @@ package org.apache.kyuubi.service
 import java.util
 
 import scala.collection.JavaConverters._
+
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
+
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{OperationHandle, OperationType}
