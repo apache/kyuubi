@@ -21,11 +21,9 @@ package org.apache.kyuubi.service
 import java.util
 
 import scala.collection.JavaConverters._
-
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
-
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{OperationHandle, OperationType}
@@ -480,5 +478,14 @@ class FrontendServiceSuite extends KyuubiFunSuite {
       assert(tRenewDelegationTokenResp.getStatus.getErrorMessage ===
         "Delegation token is not supported")
     }
+  }
+
+  test("engine connect url use hostname") {
+    // default use hostname
+    assert(server.connectionUrl.startsWith("localhost"))
+
+    // use ip address
+    conf.set(KyuubiConf.ENGINE_CONNECTION_URL_USE_HOSTNAME, false)
+    assert(server.connectionUrl.startsWith("127.0.0.1"))
   }
 }

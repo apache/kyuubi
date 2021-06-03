@@ -572,6 +572,14 @@ object KyuubiConf {
         "must be [1, 10] length alphabet string, e.g. 'abc', 'apache'")
       .createOptional
 
+  val ENGINE_CONNECTION_URL_USE_HOSTNAME: ConfigEntry[Boolean] =
+    buildConf("engine.connection.url.use.hostname")
+      .doc("When true, engine register with hostname to zookeeper. When spark run on k8s" +
+        " with cluster mode, set to false to ensure that server can connect to engine")
+      .version("1.3.0")
+      .booleanConf
+      .createWithDefault(true)
+
   val ENGINE_SHARE_LEVEL: ConfigEntry[String] = buildConf("engine.share.level")
     .doc("Engines will be shared in different levels, available configs are: <ul>" +
       " <li>CONNECTION: engine will not be shared but only used by the current client" +

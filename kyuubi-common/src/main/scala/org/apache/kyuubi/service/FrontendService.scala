@@ -108,12 +108,11 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     getServiceState match {
       case s @ ServiceState.LATENT => throw new IllegalStateException(s"Illegal Service State: $s")
       case _ =>
-        // use address if run on k8s
-        val master = conf.getOption("spark.master").getOrElse("local[*]")
-        master match {
-          case _ if !server && master.startsWith("k8s://") =>
-            s"${serverAddr.getHostAddress}:$portNum"
-          case _ => s"${serverAddr.getCanonicalHostName}:$portNum"
+        if (server || conf.get(ENGINE_CONNECTION_URL_USE_HOSTNAME)) {
+          s"${serverAddr.getCanonicalHostName}:$portNum"
+        } else {
+          // engine use address if run on k8s with cluster mode
+          s"${serverAddr.getHostAddress}:$portNum"
         }
     }
   }
