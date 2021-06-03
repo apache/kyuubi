@@ -104,10 +104,17 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     super.initialize(conf)
   }
 
-  def connectionUrl: String = {
+  def connectionUrl(server: Boolean = false): String = {
     getServiceState match {
       case s @ ServiceState.LATENT => throw new IllegalStateException(s"Illegal Service State: $s")
-      case _ => s"${serverAddr.getCanonicalHostName}:$portNum"
+      case _ =>
+        // use address if run on k8s
+        val master = conf.getOption("spark.master").getOrElse("local[*]")
+        master match {
+          case _ if !server && master.startsWith("k8s://") =>
+            s"${serverAddr.getHostAddress}:$portNum"
+          case _ => s"${serverAddr.getCanonicalHostName}:$portNum"
+        }
     }
   }
 
@@ -121,7 +128,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def run(): Unit = try {
-    info(s"Starting and exposing JDBC connection at: jdbc:hive2://$connectionUrl/")
+    info(s"Starting and exposing JDBC connection at: jdbc:hive2://${connectionUrl(true)}/")
     server.foreach(_.serve())
   } catch {
     case _: InterruptedException => error(s"$getName is interrupted")
