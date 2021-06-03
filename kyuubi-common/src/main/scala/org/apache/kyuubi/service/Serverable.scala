@@ -31,7 +31,7 @@ abstract class Serverable(name: String) extends CompositeService(name) {
   protected def supportsServiceDiscovery: Boolean
   val discoveryService: Service
 
-  def connectionUrl: String = frontendService.connectionUrl
+  def connectionUrl: String = frontendService.connectionUrl()
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     this.conf = conf

@@ -481,4 +481,13 @@ class FrontendServiceSuite extends KyuubiFunSuite {
         "Delegation token is not supported")
     }
   }
+
+  test("engine connect url use hostname") {
+    // default use hostname
+    assert(server.connectionUrl.startsWith("localhost"))
+
+    // use ip address
+    conf.set(KyuubiConf.ENGINE_CONNECTION_URL_USE_HOSTNAME, false)
+    assert(server.connectionUrl.startsWith("127.0.0.1"))
+  }
 }
