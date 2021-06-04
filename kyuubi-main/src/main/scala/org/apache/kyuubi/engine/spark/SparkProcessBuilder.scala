@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.spark
 
 import java.io.{File, FilenameFilter, IOException}
+import java.net.URI
 import java.nio.file.{Files, Path, Paths}
 
 import scala.collection.mutable.ArrayBuffer
@@ -74,7 +75,13 @@ class SparkProcessBuilder(
     // 1. get the main resource jar for user specified config first
     val jarName = s"$module-$KYUUBI_VERSION.jar"
     conf.get(ENGINE_SPARK_MAIN_RESOURCE).filter { userSpecified =>
-      Files.exists(Paths.get(userSpecified))
+      // skip check exist if not local file.
+      val uri = new URI(userSpecified)
+      val schema = if (uri.getScheme != null) uri.getScheme else "file"
+      schema match {
+        case "file" => Files.exists(Paths.get(userSpecified))
+        case _ => true
+      }
     }.orElse {
       // 2. get the main resource jar from system build default
       env.get(KyuubiConf.KYUUBI_HOME)
