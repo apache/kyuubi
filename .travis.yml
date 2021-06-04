@@ -55,15 +55,15 @@ install:
 
 script:
   - |
-    if [[ "$JOB" == "build" ]]; then
+    if [[ "$TRAVIS_EVENT_TYPE" != "cron" && "$JOB" == "build" ]]; then
       mvn clean install --no-transfer-progress $PROFILE -Dmaven.javadoc.skip=true -V
     fi
   - |
-    if [[ "$JOB" == "nightly-build" ]]; then
+    if [[ "$TRAVIS_EVENT_TYPE" == "cron" && "$JOB" == "nightly-build" ]]; then
       mvn clean install --no-transfer-progress $PROFILE -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper -Dmaven.javadoc.skip=true -V
     fi
   - |
-    if [[ "$JOB" == "tpcds-tests" ]]; then
+    if [[ "$TRAVIS_EVENT_TYPE" != "cron" && "$JOB" == "tpcds-tests" ]]; then
       mvn clean install --no-transfer-progress $PROFILE -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper
       mvn test --no-transfer-progress $PROFILE -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds
     fi
