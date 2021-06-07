@@ -35,7 +35,7 @@ class SchedulerPoolSuite extends WithSparkSQLEngine with JDBCTestUtils {
       "spark.master" -> "local[2]")
   }
 
-  test("Scheudler pool") {
+  test("Scheduler pool") {
     @volatile var job0Started = false
     @volatile var job1StartTime = 0L
     @volatile var job2StartTime = 0L

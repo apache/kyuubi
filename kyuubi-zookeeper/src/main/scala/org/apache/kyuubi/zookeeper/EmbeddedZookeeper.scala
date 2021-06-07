@@ -72,9 +72,7 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
   override def start(): Unit = synchronized {
     server.start()
     info(s"$getName is started at $getConnectString")
-    Utils.addShutdownHook(new Runnable {
-      override def run(): Unit = server.close()
-    }, 50)
+    Utils.addShutdownHook(() => server.close(), 50)
     super.start()
   }
 
