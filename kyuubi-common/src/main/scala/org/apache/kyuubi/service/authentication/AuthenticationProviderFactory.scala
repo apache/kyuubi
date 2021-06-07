@@ -35,7 +35,7 @@ object AuthenticationProviderFactory {
     case AuthMethods.CUSTOM =>
       val classLoader = Thread.currentThread.getContextClassLoader
       val className = conf.get(KyuubiConf.AUTHENTICATION_CUSTOM_CLASS)
-      if (!className.isDefined) {
+      if (className.isEmpty) {
         throw new AuthenticationException(
           "authentication.custom.class must be set when auth method was CUSTOM.")
       }

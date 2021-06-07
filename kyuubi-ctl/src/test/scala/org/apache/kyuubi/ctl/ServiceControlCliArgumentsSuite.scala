@@ -121,8 +121,8 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
   }
 
   test("prints error with unrecognized options") {
-    testPrematureExit(Array("create", "--unkonwn"), "Unknown/unsupported param --unkonwn")
-    testPrematureExit(Array("--unkonwn"), "Unknown/unsupported param --unkonwn")
+    testPrematureExit(Array("create", "--unknown"), "Unknown/unsupported param --unknown")
+    testPrematureExit(Array("--unknown"), "Unknown/unsupported param --unknown")
   }
 
   test("test invalid arguments") {

@@ -189,8 +189,8 @@ object HadoopThriftAuthBridgeServer {
   class SaslDigestCallbackHandler(secretMgr: KyuubiDelegationTokenManager)
     extends CallbackHandler with Logging {
 
-    def getPasswd(identifer: KyuubiDelegationTokenIdentifier): Array[Char] = {
-      val passwd = secretMgr.retrievePassword(identifer)
+    def getPasswd(identifier: KyuubiDelegationTokenIdentifier): Array[Char] = {
+      val passwd = secretMgr.retrievePassword(identifier)
       new String(Base64.encodeBase64(passwd)).toCharArray
     }
 

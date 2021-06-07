@@ -26,7 +26,7 @@ import org.apache.kyuubi.operation.JDBCTestUtils
 import org.apache.kyuubi.service.ServiceState
 
 /**
- * This suite is to test some behaivor with spark engine in different share level.
+ * This suite is to test some behavior with spark engine in different share level.
  * e.g. cleanup discovery service before stop.
  */
 abstract class ShareLevelSparkEngineSuite

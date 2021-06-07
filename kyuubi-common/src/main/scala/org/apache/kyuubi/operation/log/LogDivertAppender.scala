@@ -38,11 +38,9 @@ class LogDivertAppender extends WriterAppender {
   setWriter(writer)
   setLayout(lo)
 
-  addFilter(new Filter {
-    override def decide(loggingEvent: LoggingEvent): Int = {
-      if (OperationLog.getCurrentOperationLog == null) Filter.DENY else Filter.NEUTRAL
-    }
-  })
+  addFilter { _: LoggingEvent =>
+    if (OperationLog.getCurrentOperationLog == null) Filter.DENY else Filter.NEUTRAL
+  }
 
   /**
    * Overrides WriterAppender.subAppend(), which does the real logging. No need
