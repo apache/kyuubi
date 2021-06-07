@@ -114,7 +114,7 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
       orientation: FetchOrientation,
       supportedOrientations: Set[FetchOrientation]): Unit = {
     if (!supportedOrientations.contains(orientation)) {
-      throw KyuubiSQLException(s"The fetch type $orientation is not supported for this resultset")
+      throw KyuubiSQLException(s"The fetch type $orientation is not supported for this ResultSet.")
     }
   }
 
