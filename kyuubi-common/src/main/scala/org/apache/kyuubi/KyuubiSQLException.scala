@@ -27,18 +27,18 @@ import scala.collection.JavaConverters._
 import org.apache.hive.service.rpc.thrift.{TStatus, TStatusCode}
 
 /**
- * @param msg        a description of the exception
+ * @param reason     a description of the exception
  * @param sqlState   an XOPEN or SQL:2003 code identifying the exception
- * @param errorCode  a database vendor-specific exception code
+ * @param vendorCode a database vendor-specific exception code
  * @param cause      the underlying reason for this [[SQLException]]
  *                   (which is saved for later retrieval by the `getCause()` method);
  *                   may be null indicating the cause is non-existent or unknown.
  */
-class KyuubiSQLException(msg: String, cause: Throwable, sqlState: String, errorCode: Int)
-  extends SQLException(msg, sqlState, errorCode, cause) {
+class KyuubiSQLException(reason: String, sqlState: String, vendorCode: Int, cause: Throwable)
+  extends SQLException(reason, sqlState, vendorCode, cause) {
 
   // for reflection
-  def this(msg: String, cause: Throwable) = this(msg, cause, null, 0)
+  def this(msg: String, cause: Throwable) = this(msg, null, 0, cause)
 
   /**
    * Converts current object to a [[TStatus]] object
@@ -60,11 +60,12 @@ object KyuubiSQLException {
   private final val HEAD_MARK: String = "*"
   private final val SEPARATOR: Char = ':'
 
-  def apply(msg: String,
-            cause: Throwable = null,
-            sqlState: String = null,
-            errorCode: Int = 0): KyuubiSQLException = {
-    new KyuubiSQLException(msg, findCause(cause), sqlState, errorCode)
+  def apply(
+      msg: String,
+      cause: Throwable = null,
+      sqlState: String = null,
+      vendorCode: Int = 0): KyuubiSQLException = {
+    new KyuubiSQLException(msg, sqlState, vendorCode, findCause(cause))
   }
   def apply(cause: Throwable): KyuubiSQLException = {
     val theCause = findCause(cause)
