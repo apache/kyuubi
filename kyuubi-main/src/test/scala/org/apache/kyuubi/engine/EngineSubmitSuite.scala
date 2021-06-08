@@ -19,11 +19,11 @@ package org.apache.kyuubi.engine
 
 import java.util.concurrent.CountDownLatch
 
-import org.apache.kyuubi.{KyuubiSQLException, WithKyuubiServerAndMiniYarnService}
+import org.apache.kyuubi.{KyuubiSQLException, WithKyuubiServerOnYarn}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.JDBCTestUtils
 
-class EngineSubmitSuite extends WithKyuubiServerAndMiniYarnService with JDBCTestUtils {
+class EngineSubmitSuite extends WithKyuubiServerOnYarn with JDBCTestUtils {
   override protected def jdbcUrl: String = getJdbcUrl
   override protected val kyuubiServerConf: KyuubiConf = KyuubiConf()
   override protected val connectionConf: Map[String, String] = {
