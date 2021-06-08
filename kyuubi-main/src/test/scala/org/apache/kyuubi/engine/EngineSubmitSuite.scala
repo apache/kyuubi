@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine
 
+import java.util.concurrent.CountDownLatch
+
 import org.apache.kyuubi.{KyuubiSQLException, WithKyuubiServerWithMiniYarnService}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.JDBCTestUtils
@@ -27,6 +29,7 @@ class EngineSubmitSuite extends WithKyuubiServerWithMiniYarnService with JDBCTes
   override protected val connectionConf: Map[String, String] = {
     Map("spark.yarn.queue" -> "two_cores_queue",
       "spark.master" -> "yarn",
+      "spark.submit.deployMode" -> "cluster",
       "spark.executor.instances" -> "1",
       "spark.driver.cores" -> "1",
       "spark.executor.cores" -> "1",
@@ -36,15 +39,21 @@ class EngineSubmitSuite extends WithKyuubiServerWithMiniYarnService with JDBCTes
 
   test("submit spark app timeout with accepted status") {
     @volatile var appIsRunning = false
+    val lock = new CountDownLatch(1)
     new Thread(() => {
       while (!appIsRunning) { Thread.sleep(100) }
-      withJdbcStatement() { statement =>
-        val exception = intercept[KyuubiSQLException] {
-          statement.execute("select 1")
+      try {
+        withJdbcStatement() { statement =>
+          val exception = intercept[KyuubiSQLException] {
+            statement.execute("select 1")
+          }
+
+          assert(exception.getMessage.contains("Failed to detect the root cause"))
+          assert(exception.getMessage.contains("The last line log"))
+          assert(exception.getMessage.contains("state: ACCEPTED"))
         }
-        assert(exception.getMessage.contains("Failed to detect the root cause"))
-        assert(exception.getMessage.contains("The last line log"))
-        assert(exception.getMessage.contains("state: ACCEPTED"))
+      } finally {
+        lock.countDown()
       }
     }).start()
 
@@ -52,7 +61,7 @@ class EngineSubmitSuite extends WithKyuubiServerWithMiniYarnService with JDBCTes
       appIsRunning = true
       statement.execute("select 1")
       // hold resource so that the queue has no resource for other app
-      Thread.sleep(65000L)
+      lock.wait()
     }
   }
 }
