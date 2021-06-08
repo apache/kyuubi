@@ -63,7 +63,7 @@ trait ProcBuilder {
   }
 
   @volatile private var error: Throwable = UNCAUGHT_ERROR
-  @volatile private var lastRowOfLog: String = _
+  @volatile private var lastRowOfLog: String = "unknown"
   // Visible for test
   private[kyuubi] var logCaptureThread: Thread = _
 
@@ -124,7 +124,7 @@ trait ProcBuilder {
             }
 
             error = KyuubiSQLException(sb.toString() + s"\n See more: $engineLog")
-          } else {
+          } else if (line != null) {
             lastRowOfLog = line
           }
           line = reader.readLine()
