@@ -29,7 +29,7 @@ class EngineSubmitSuite extends WithKyuubiServerWithMiniYarnService with JDBCTes
   override protected val connectionConf: Map[String, String] = {
     Map("spark.yarn.queue" -> "two_cores_queue",
       "spark.master" -> "yarn",
-      "spark.submit.deployMode" -> "cluster",
+      "spark.submit.deployMode" -> "client",
       "spark.executor.instances" -> "1",
       "spark.driver.cores" -> "1",
       "spark.executor.cores" -> "1",
