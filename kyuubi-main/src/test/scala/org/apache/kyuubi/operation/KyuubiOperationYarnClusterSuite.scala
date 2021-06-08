@@ -17,11 +17,11 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.kyuubi.WithKyuubiServerWithMiniYarnService
+import org.apache.kyuubi.WithKyuubiServerOnYarn
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_INIT_TIMEOUT
 
-class KyuubiOperationYarnClusterSuite extends WithKyuubiServerWithMiniYarnService
+class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn
   with JDBCTestUtils {
 
   override protected val kyuubiServerConf: KyuubiConf = {
