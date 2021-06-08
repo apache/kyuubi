@@ -61,7 +61,7 @@ class EngineSubmitSuite extends WithKyuubiServerWithMiniYarnService with JDBCTes
       appIsRunning = true
       statement.execute("select 1")
       // hold resource so that the queue has no resource for other app
-      lock.wait()
+      lock.await()
     }
   }
 }
