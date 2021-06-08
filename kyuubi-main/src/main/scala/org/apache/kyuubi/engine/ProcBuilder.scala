@@ -63,7 +63,7 @@ trait ProcBuilder {
   }
 
   @volatile private var error: Throwable = UNCAUGHT_ERROR
-  private var lastRowOfLog: String = _
+  @volatile private var lastRowOfLog: String = _
   // Visible for test
   private[kyuubi] var logCaptureThread: Thread = _
 
@@ -100,14 +100,6 @@ trait ProcBuilder {
     file.setLastModified(currentTime)
     info(s"Logging to $file")
     file
-  }
-
-  private def checkAcceptedStatus: Option[Throwable] = {
-    if (lastRowOfLog != null && lastRowOfLog.contains("state: ACCEPTED")) {
-      Some(ACCEPTED_ERROR)
-    } else {
-      None
-    }
   }
 
   final def start: Process = synchronized {
@@ -162,8 +154,8 @@ trait ProcBuilder {
     }
     error match {
       case UNCAUGHT_ERROR =>
-        checkAcceptedStatus.getOrElse(KyuubiSQLException(
-          s"Failed to detect the root cause, please check $engineLog at server side if necessary"))
+        KyuubiSQLException(s"Failed to detect the root cause, please check $engineLog at server " +
+          s"side if necessary. The last line log is: $lastRowOfLog")
       case other => other
     }
   }
@@ -173,6 +165,4 @@ object ProcBuilder extends Logging {
   private val PROC_BUILD_LOGGER = new NamedThreadFactory("process-logger-capture", daemon = true)
 
   private val UNCAUGHT_ERROR = new RuntimeException("Uncaught error")
-  private val ACCEPTED_ERROR = KyuubiSQLException(
-    "The last status of Spark App is ACCEPTED, please check your cluster resource.")
 }

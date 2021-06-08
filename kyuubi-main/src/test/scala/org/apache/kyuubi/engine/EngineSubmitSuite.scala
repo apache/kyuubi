@@ -40,11 +40,11 @@ class EngineSubmitSuite extends WithKyuubiServerWithMiniYarnService with JDBCTes
       while (!appIsRunning) { Thread.sleep(100) }
       withJdbcStatement() { statement =>
         val exception = intercept[KyuubiSQLException] {
-          statement.execute("show databases")
+          statement.execute("select 1")
         }
-        assert(exception.getCause != null)
-        assert(exception.getCause.getMessage.contains(
-          "The last status of Spark App is ACCEPTED, please check your cluster resource"))
+        assert(exception.getMessage.contains("Failed to detect the root cause"))
+        assert(exception.getMessage.contains("The last line log"))
+        assert(exception.getMessage.contains("state: ACCEPTED"))
       }
     }).start()
 
