@@ -119,7 +119,7 @@ class OperationLog(path: Path) extends Logging {
       case e: IOException =>
         val absPath = path.toAbsolutePath
         val opHandle = absPath.getFileName
-        throw new KyuubiSQLException(s"Operation[$opHandle] log file $absPath is not found", e)
+        throw KyuubiSQLException(s"Operation[$opHandle] log file $absPath is not found", e)
     }
     val tColumn = TColumn.stringVal(new TStringColumn(logs, ByteBuffer.allocate(0)))
     val tRow = new TRowSet(0, new java.util.ArrayList[TRow](logs.size()))

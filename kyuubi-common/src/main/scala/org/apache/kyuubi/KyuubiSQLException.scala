@@ -26,7 +26,20 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.{TStatus, TStatusCode}
 
-class KyuubiSQLException(msg: String, cause: Throwable) extends SQLException(msg, cause) {
+/**
+ * @param msg        a description of the exception
+ * @param sqlState   an XOPEN or SQL:2003 code identifying the exception
+ * @param errorCode  a database vendor-specific exception code
+ * @param cause      the underlying reason for this [[SQLException]]
+ *                   (which is saved for later retrieval by the `getCause()` method);
+ *                   may be null indicating the cause is non-existent or unknown.
+ */
+class KyuubiSQLException(msg: String, cause: Throwable, sqlState: String, errorCode: Int)
+  extends SQLException(msg, sqlState, errorCode, cause) {
+
+  // for reflection
+  def this(msg: String, cause: Throwable) = this(msg, cause, null, 0)
+
   /**
    * Converts current object to a [[TStatus]] object
    *
@@ -42,27 +55,28 @@ class KyuubiSQLException(msg: String, cause: Throwable) extends SQLException(msg
   }
 }
 
-object KyuubiSQLException {
+object KyuubiSQLException extends Logging {
 
   private final val HEAD_MARK: String = "*"
   private final val SEPARATOR: Char = ':'
 
-  def apply(msg: String, throwable: Throwable): KyuubiSQLException = {
-    new KyuubiSQLException(msg, findCause(throwable))
+  def apply(msg: String,
+            cause: Throwable = null,
+            sqlState: String = null,
+            errorCode: Int = 0): KyuubiSQLException = {
+    new KyuubiSQLException(msg, findCause(cause), sqlState, errorCode)
   }
   def apply(cause: Throwable): KyuubiSQLException = {
     val theCause = findCause(cause)
-    new KyuubiSQLException(theCause.getMessage, theCause)
+    apply(theCause.getMessage, theCause)
   }
-
-  def apply(msg: String): KyuubiSQLException = new KyuubiSQLException(msg, null)
 
   def apply(tStatus: TStatus): KyuubiSQLException = {
     val msg = tStatus.getErrorMessage
     val cause = toCause(tStatus.getInfoMessages.asScala)
     cause match {
       case k: KyuubiSQLException if k.getMessage == msg => k
-      case _ => apply(msg, cause)
+      case _ => apply(msg, cause, tStatus.getSqlState, tStatus.getErrorCode)
     }
   }
 
