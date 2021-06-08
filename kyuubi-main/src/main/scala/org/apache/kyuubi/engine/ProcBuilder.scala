@@ -63,6 +63,7 @@ trait ProcBuilder {
   }
 
   @volatile private var error: Throwable = UNCAUGHT_ERROR
+  @volatile private var lastRowOfLog: String = "unknown"
   // Visible for test
   private[kyuubi] var logCaptureThread: Thread = _
 
@@ -123,6 +124,8 @@ trait ProcBuilder {
             }
 
             error = KyuubiSQLException(sb.toString() + s"\n See more: $engineLog")
+          } else if (line != null) {
+            lastRowOfLog = line
           }
           line = reader.readLine()
         }
@@ -150,8 +153,9 @@ trait ProcBuilder {
       Thread.sleep(1000)
     }
     error match {
-      case UNCAUGHT_ERROR => KyuubiSQLException(
-        s"Failed to detect the root cause, please check $engineLog at server side if necessary")
+      case UNCAUGHT_ERROR =>
+        KyuubiSQLException(s"Failed to detect the root cause, please check $engineLog at server " +
+          s"side if necessary. The last line log is: $lastRowOfLog")
       case other => other
     }
   }
@@ -161,5 +165,4 @@ object ProcBuilder extends Logging {
   private val PROC_BUILD_LOGGER = new NamedThreadFactory("process-logger-capture", daemon = true)
 
   private val UNCAUGHT_ERROR = new RuntimeException("Uncaught error")
-
 }
