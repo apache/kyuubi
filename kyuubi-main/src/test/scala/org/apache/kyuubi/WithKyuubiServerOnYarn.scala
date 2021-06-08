@@ -22,7 +22,12 @@ import org.apache.kyuubi.config.internal.Tests.TESTING_HADOOP_CONF_DIR
 import org.apache.kyuubi.server.MiniYarnService
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
-trait WithKyuubiServerWithMiniYarnService extends WithKyuubiServer {
+/**
+ * To developers:
+ *   You should specify JAVA_HOME before running test with mini yarn server. Otherwise the error
+ * may be thrown `/bin/bash: /bin/java: No such file or directory`.
+ */
+trait WithKyuubiServerOnYarn extends WithKyuubiServer {
   protected val kyuubiServerConf: KyuubiConf
   protected val connectionConf: Map[String, String]
   private var miniYarnService: MiniYarnService = _
