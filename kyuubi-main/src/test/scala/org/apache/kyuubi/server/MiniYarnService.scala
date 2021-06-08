@@ -47,15 +47,23 @@ class MiniYarnService(name: String) extends AbstractService(name) {
       "100.0")
 
     // capacity-scheduler.xml is missing in hadoop-client-minicluster so this is a workaround
-    yarnConfig.set("yarn.scheduler.capacity.root.queues", "default")
+    yarnConfig.set("yarn.scheduler.capacity.root.queues", "default,two_cores_queue")
+
     yarnConfig.setInt("yarn.scheduler.capacity.root.default.capacity", 100)
     yarnConfig.setFloat("yarn.scheduler.capacity.root.default.user-limit-factor", 1)
     yarnConfig.setInt("yarn.scheduler.capacity.root.default.maximum-capacity", 100)
     yarnConfig.set("yarn.scheduler.capacity.root.default.state", "RUNNING")
     yarnConfig.set("yarn.scheduler.capacity.root.default.acl_submit_applications", "*")
     yarnConfig.set("yarn.scheduler.capacity.root.default.acl_administer_queue", "*")
-    yarnConfig.setInt("yarn.scheduler.capacity.node-locality-delay", -1)
 
+    yarnConfig.setInt("yarn.scheduler.capacity.root.two_cores_queue.maximum-capacity", 100)
+    yarnConfig.setInt("yarn.scheduler.capacity.root.two_cores_queue.maximum-applications", 2)
+    yarnConfig.setInt("yarn.scheduler.capacity.root.two_cores_queue.maximum-allocation-vcores", 2)
+    yarnConfig.setFloat("yarn.scheduler.capacity.root.two_cores_queue.user-limit-factor", 1)
+    yarnConfig.set("yarn.scheduler.capacity.root.two_cores_queue.acl_administer_queue", "*")
+    yarnConfig.set("yarn.scheduler.capacity.root.two_cores_queue.acl_administer_queue", "*")
+
+    yarnConfig.setInt("yarn.scheduler.capacity.node-locality-delay", -1)
     // Set bind host to localhost to avoid java.net.BindException
     yarnConfig.set("yarn.resourcemanager.bind-host", "localhost")
 
