@@ -55,7 +55,7 @@ class KyuubiSQLException(msg: String, cause: Throwable, sqlState: String, errorC
   }
 }
 
-object KyuubiSQLException extends Logging {
+object KyuubiSQLException {
 
   private final val HEAD_MARK: String = "*"
   private final val SEPARATOR: Char = ':'

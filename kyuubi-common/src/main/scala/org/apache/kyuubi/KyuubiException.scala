@@ -17,4 +17,7 @@
 
 package org.apache.kyuubi
 
-class KyuubiException(message: String, cause: Throwable = null) extends Exception(message, cause)
+class KyuubiException(message: String, cause: Throwable) extends Exception(message, cause) {
+
+  def this(message: String) = this(message, null)
+}
