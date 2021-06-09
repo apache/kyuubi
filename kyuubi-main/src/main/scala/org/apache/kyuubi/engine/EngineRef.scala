@@ -138,17 +138,18 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
       conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") + "KYUUBI")
     conf.set(HA_ZK_NAMESPACE, engineSpace)
     val builder = new SparkProcessBuilder(appUser, conf)
+    info(s"Launching engine:\n$builder")
+    val process = builder.build
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     try {
-      info(s"Launching engine:\n$builder")
-      val process = builder.start
+      process.start()
       val started = System.currentTimeMillis()
       var exitValue: Option[Int] = None
       while (engineRef.isEmpty) {
-        if (exitValue.isEmpty && process.waitFor(1, TimeUnit.SECONDS)) {
-          exitValue = Some(process.exitValue())
+        if (exitValue.isEmpty && process.checkExited()) {
+          exitValue = Some(process.getExitValue())
           if (exitValue.get != 0) {
-            val error = builder.getError
+            val error = process.getError()
             MetricsSystem.tracing { ms =>
               ms.incCount(MetricRegistry.name(ENGINE_FAIL, appUser))
               ms.incCount(MetricRegistry.name(ENGINE_FAIL, error.getClass.getSimpleName))
@@ -157,11 +158,10 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
           }
         }
         if (started + timeout <= System.currentTimeMillis()) {
-          process.destroyForcibly()
           MetricsSystem.tracing(_.incCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
           throw KyuubiSQLException(
             s"Timeout($timeout) to launched Spark with $builder",
-            builder.getError)
+            process.getError())
         }
         engineRef = get(zkClient)
       }
@@ -169,7 +169,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
     } finally {
       // we must close the process builder whether session open is success or failure since
       // we have a log capture thread in process builder.
-      builder.close()
+      process.stop()
     }
   }
 

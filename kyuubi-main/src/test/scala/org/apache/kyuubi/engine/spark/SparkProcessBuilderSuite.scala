@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.spark
 import java.io.File
 import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import java.time.Duration
-import java.util.concurrent.{Executors, TimeUnit}
+import java.util.concurrent.Executors
 
 import org.scalatest.time.SpanSugar._
 
@@ -28,6 +28,7 @@ import org.apache.kyuubi.{KerberizedTestHelper, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_LOG_TIMEOUT
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE
+import org.apache.kyuubi.engine.EngineProcess
 import org.apache.kyuubi.service.ServiceUtils
 
 class SparkProcessBuilderSuite extends KerberizedTestHelper {
@@ -44,16 +45,18 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     assert(pb.start().waitFor() === 0)
     assert(Files.exists(Paths.get(commands.last)))
 
-    val process = builder.start
+    val process = builder.build
+    process.start()
     assert(process.isAlive)
-    process.destroyForcibly()
+    process.stop()
   }
 
   test("capture error from spark process builder") {
     val processBuilder = new SparkProcessBuilder("kentyao", conf.set("spark.ui.port", "abc"))
-    processBuilder.start
+    val process = processBuilder.build
+    process.start()
     eventually(timeout(90.seconds), interval(500.milliseconds)) {
-      val error = processBuilder.getError
+      val error = process.getError
       assert(error.getMessage.contains(
         "java.lang.IllegalArgumentException: spark.ui.port should be int, but was abc"))
       assert(error.isInstanceOf[KyuubiSQLException])
@@ -62,9 +65,10 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     val processBuilder1 = new SparkProcessBuilder("kentyao",
       conf.set("spark.hive.metastore.uris", "thrift://dummy"))
 
-    processBuilder1.start
+    val process1 = processBuilder1.build
+    process1.start()
     eventually(timeout(90.seconds), interval(500.milliseconds)) {
-      val error1 = processBuilder1.getError
+      val error1 = process1.getError
       assert(
         error1.getMessage.contains("org.apache.hadoop.hive.ql.metadata.HiveException:"))
     }
@@ -75,9 +79,10 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     val msg = "org.apache.spark.sql.hive."
     val pb = new SparkProcessBuilder("kentyao",
       conf.set("spark.hive.metastore.uris", "thrift://dummy"))
-    pb.start
+    val process = pb.build
+    process.start()
     eventually(timeout(90.seconds), interval(500.milliseconds)) {
-      val error1 = pb.getError
+      val error1 = process.getError
       assert(!error1.getMessage.contains("Failed to detect the root cause"))
       assert(error1.getMessage.contains("See more: "))
       assert(error1.getMessage.contains(msg))
@@ -86,9 +91,10 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     val pb2 = new SparkProcessBuilder("kentyao",
       conf.set("spark.hive.metastore.uris", "thrift://dummy")
         .set(KyuubiConf.ENGINE_ERROR_MAX_SIZE, 200))
-    pb2.start
+    val process2 = pb2.build
+    process2.start()
     eventually(timeout(90.seconds), interval(500.milliseconds)) {
-      val error1 = pb2.getError
+      val error1 = process2.getError
       assert(!error1.getMessage.contains("Failed to detect the root cause"))
       assert(error1.getMessage.contains("See more: "))
       assert(!error1.getMessage.contains(msg), "stack trace shall be truncated")
@@ -125,14 +131,15 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
 
   test("log capture should release after close") {
     val process = new FakeSparkProcessBuilder(KyuubiConf())
+    val subProcess = process.build.asInstanceOf[EngineProcess]
     try {
-      val subProcess = process.start
-      assert(!process.logCaptureThread.isInterrupted)
-      subProcess.waitFor(3, TimeUnit.SECONDS)
+      subProcess.start()
+      assert(!subProcess.logCaptureThread.isInterrupted)
+      while (!subProcess.checkExited()) {}
     } finally {
-      process.close()
+      subProcess.stop()
     }
-    assert(process.logCaptureThread.isInterrupted)
+    assert(subProcess.logCaptureThread.isInterrupted)
   }
 
   test(s"sub process log should be overwritten") {
@@ -157,11 +164,12 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
               val pb = new FakeSparkProcessBuilder(config) {
                 override val workingDir: Path = fakeWorkDir
               }
+              val p = pb.build
               try {
-                val p = pb.start
-                p.waitFor()
+                p.start()
+                while (!p.checkExited()) {}
               } finally {
-                pb.close()
+                p.stop()
               }
             }
           })

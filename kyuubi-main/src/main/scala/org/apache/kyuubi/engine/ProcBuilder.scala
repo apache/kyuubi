@@ -17,21 +17,15 @@
 
 package org.apache.kyuubi.engine
 
-import java.io.{File, IOException}
-import java.nio.charset.StandardCharsets
+import java.io.File
 import java.nio.file.{Files, Path}
 
 import scala.collection.JavaConverters._
 
-import org.apache.commons.lang3.StringUtils.containsIgnoreCase
-
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.util.NamedThreadFactory
 
-trait ProcBuilder {
-
-  import ProcBuilder._
+trait ProcBuilder extends Logging {
 
   protected def executable: String
 
@@ -50,22 +44,6 @@ trait ProcBuilder {
   protected def env: Map[String, String]
 
   protected val workingDir: Path
-
-  final lazy val processBuilder: ProcessBuilder = {
-    val pb = new ProcessBuilder(commands: _*)
-
-    val envs = pb.environment()
-    envs.putAll(env.asJava)
-    pb.directory(workingDir.toFile)
-    pb.redirectError(engineLog)
-    pb.redirectOutput(engineLog)
-    pb
-  }
-
-  @volatile private var error: Throwable = UNCAUGHT_ERROR
-  @volatile private var lastRowOfLog: String = "unknown"
-  // Visible for test
-  private[kyuubi] var logCaptureThread: Thread = _
 
   private[kyuubi] lazy val engineLog: File = ProcBuilder.synchronized {
     val engineLogTimeout = conf.get(KyuubiConf.ENGINE_LOG_TIMEOUT)
@@ -102,67 +80,18 @@ trait ProcBuilder {
     file
   }
 
-  final def start: Process = synchronized {
+  final def build: IEngineProcess = {
+    val pb = new ProcessBuilder(commands: _*)
+    val envs = pb.environment()
+    envs.putAll(env.asJava)
+    pb.directory(workingDir.toFile)
+    pb.redirectError(engineLog)
+    pb.redirectOutput(engineLog)
 
-    val proc = processBuilder.start()
-    val reader = Files.newBufferedReader(engineLog.toPath, StandardCharsets.UTF_8)
-
-    val redirect: Runnable = { () =>
-      try {
-        val maxErrorSize = conf.get(KyuubiConf.ENGINE_ERROR_MAX_SIZE)
-        var line: String = reader.readLine
-        while (true) {
-          if (containsIgnoreCase(line, "Exception:") &&
-              !line.contains("at ") && !line.startsWith("Caused by:")) {
-            val sb = new StringBuilder(line)
-            error = KyuubiSQLException(sb.toString() + s"\n See more: $engineLog")
-            line = reader.readLine()
-            while (sb.length < maxErrorSize && line != null &&
-              (line.startsWith("\tat ") || line.startsWith("Caused by: "))) {
-              sb.append("\n" + line)
-              line = reader.readLine()
-            }
-
-            error = KyuubiSQLException(sb.toString() + s"\n See more: $engineLog")
-          } else if (line != null) {
-            lastRowOfLog = line
-          }
-          line = reader.readLine()
-        }
-      } catch {
-        case _: IOException =>
-        case _: InterruptedException =>
-      } finally {
-        reader.close()
-      }
-    }
-
-    logCaptureThread = PROC_BUILD_LOGGER.newThread(redirect)
-    logCaptureThread.start()
-    proc
-  }
-
-  def close(): Unit = {
-    if (logCaptureThread != null) {
-      logCaptureThread.interrupt()
-    }
-  }
-
-  def getError: Throwable = synchronized {
-    if (error == UNCAUGHT_ERROR) {
-      Thread.sleep(1000)
-    }
-    error match {
-      case UNCAUGHT_ERROR =>
-        KyuubiSQLException(s"Failed to detect the root cause, please check $engineLog at server " +
-          s"side if necessary. The last line log is: $lastRowOfLog")
-      case other => other
-    }
+    new EngineProcess(pb, conf, engineLog)
   }
 }
 
-object ProcBuilder extends Logging {
-  private val PROC_BUILD_LOGGER = new NamedThreadFactory("process-logger-capture", daemon = true)
-
-  private val UNCAUGHT_ERROR = new RuntimeException("Uncaught error")
+object ProcBuilder {
+  // just as a lock for engineLog
 }
