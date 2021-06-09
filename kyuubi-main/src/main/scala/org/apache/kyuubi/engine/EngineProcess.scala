@@ -50,6 +50,7 @@ class EngineProcess(processBuilder: ProcessBuilder, conf: KyuubiConf, engineLog:
   extends IEngineProcess {
   assert(processBuilder != null)
 
+  private var hasStarted = false
   private var process: Process = _
   // Visible for test
   private[kyuubi] var logCaptureThread: Thread = _
@@ -57,7 +58,7 @@ class EngineProcess(processBuilder: ProcessBuilder, conf: KyuubiConf, engineLog:
   @volatile private var lastRowOfLog: String = "unknown"
 
   override def start(): Unit = {
-    assert(process == null)
+    require(!hasStarted)
     process = processBuilder.start()
     val reader = Files.newBufferedReader(engineLog.toPath, StandardCharsets.UTF_8)
 
@@ -93,21 +94,27 @@ class EngineProcess(processBuilder: ProcessBuilder, conf: KyuubiConf, engineLog:
 
     logCaptureThread = PROC_BUILD_LOGGER.newThread(redirect)
     logCaptureThread.start()
+
+    hasStarted = true
   }
 
   override def checkExited(): Boolean = {
+    require(hasStarted)
     process.waitFor(1L, TimeUnit.SECONDS)
   }
 
   override def getExitValue(): Int = {
+    require(hasStarted)
     process.exitValue()
   }
 
   override def isAlive(): Boolean = {
+    require(hasStarted)
     process.isAlive
   }
 
   override def getError(): Throwable = {
+    require(hasStarted)
     if (error == UNCAUGHT_ERROR) {
       Thread.sleep(1000)
     }
@@ -120,6 +127,7 @@ class EngineProcess(processBuilder: ProcessBuilder, conf: KyuubiConf, engineLog:
   }
 
   override def stop(): Unit = {
+    require(hasStarted)
     if (process != null) {
       process.destroyForcibly()
     }
