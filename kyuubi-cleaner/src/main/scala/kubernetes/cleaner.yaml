@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kyuubi-cleaner
+  namespace: spark
+spec:
+  selector:
+    matchLabels:
+      name: colocation-service
+  template:
+    metadata:
+      labels:
+        name: colocation-service
+    spec:
+      containers:
+        - image: harbor-beta.cm.service.163.org/spark/kyuubi-cleaner:0.0.21
+          name: cleaner
+          volumeMounts:
+            - name: spark
+              mountPath: /data
+          env:
+            - name: FILE_TIMEOUT
+              value: "1000000"
+            - name: SHUFFLE_DIRS
+              value: "/data/data1,/data/data2"
+            - name: THRESHOLD
+              value: "80"
+      volumes:
+        - name: spark
+          hostPath:
+            path: /spark

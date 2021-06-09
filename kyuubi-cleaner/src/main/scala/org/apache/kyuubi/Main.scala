@@ -69,17 +69,18 @@ object Main {
     })
   }
 
+  import scala.sys.process._
+
   def checkUsed(dir: String, threshold: Int) : Boolean = {
-    val CMD = s"df ${dir} " +
-      s"| grep ${dir} " +
-      "| awk -F \" \" '{print$5}' " +
-      "| sed 's/\\%//g'"
-    print(CMD)
-    CMD.toInt > 100 - threshold
+    val used = (s"df ${dir}" #| s"grep ${dir}").!!
+      .split(" ").filter(_.endsWith("%")) {0}.replace("%", "")
+    print(s"${dir} now used ${used}%")
+    used.toInt > 100 - threshold
   }
 
   def initializeConfiguration(args: Array[String]) : Unit = {
     var argsEnv = args.toList
+    argsEnv.foreach(arg => print(arg + "\n"))
     while(argsEnv.nonEmpty) {
       argsEnv match {
         case ("--file-timeout") :: value :: tail =>
@@ -131,7 +132,9 @@ object Main {
         }
         // Clean up files older than 7 days
         doClean(path.toFile, 604800000)
-        checkUsed(pathStr, threshold)
+        if (checkUsed(pathStr, threshold)) {
+          doClean(path.toFile, 604800000)
+        }
       })
       // Once an hour
       Thread.sleep(3600000)
