@@ -13,7 +13,7 @@ spec:
         name: colocation-service
     spec:
       containers:
-        - image: harbor-beta.cm.service.163.org/spark/kyuubi-cleaner:0.0.21
+        - image: <image>
           name: cleaner
           volumeMounts:
             - name: spark
