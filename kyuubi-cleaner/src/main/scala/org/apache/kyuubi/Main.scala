@@ -131,9 +131,9 @@ object Main {
           throw new IllegalArgumentException(s"this path ${pathStr} is not directory")
         }
         // Clean up files older than 7 days
-        doClean(path.toFile, 604800000)
+        doClean(path.toFile, fileTimeout)
         if (checkUsed(pathStr, threshold)) {
-          doClean(path.toFile, 604800000)
+          doClean(path.toFile, fileTimeout / 10)
         }
       })
       // Once an hour
