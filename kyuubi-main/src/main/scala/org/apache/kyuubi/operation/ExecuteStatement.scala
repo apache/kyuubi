@@ -66,8 +66,8 @@ class ExecuteStatement(
   private def executeStatement(): Unit = {
     try {
       MetricsSystem.tracing { ms =>
-        ms.incAndGetCount(STATEMENT_OPEN)
-        ms.incAndGetCount(STATEMENT_TOTAL)
+        ms.incCount(STATEMENT_OPEN)
+        ms.incCount(STATEMENT_TOTAL)
       }
 
       val req = new TExecuteStatementReq(remoteSessionHandle, statement)
@@ -79,7 +79,7 @@ class ExecuteStatement(
     } catch onError()
   }
 
-  private def waitStatementComplete(): Unit = {
+  private def waitStatementComplete(): Unit = try {
     setState(OperationState.RUNNING)
     var statusResp = client.GetOperationStatus(statusReq)
     var isComplete = false
@@ -119,7 +119,7 @@ class ExecuteStatement(
     }
     // see if anymore log could be fetched
     getQueryLog()
-  }
+  } catch onError()
 
   private def getQueryLog(): Unit = {
     getOperationLog.foreach { logger =>
@@ -154,7 +154,7 @@ class ExecuteStatement(
   }
 
   override def close(): Unit = {
-    MetricsSystem.tracing(_.decAndGetCount(STATEMENT_OPEN))
+    MetricsSystem.tracing(_.decCount(STATEMENT_OPEN))
     super.close()
   }
 }

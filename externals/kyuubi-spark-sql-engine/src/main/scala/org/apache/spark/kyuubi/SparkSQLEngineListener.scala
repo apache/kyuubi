@@ -32,14 +32,23 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.client.EngineServiceDiscovery
 import org.apache.kyuubi.service.{Serverable, ServiceState}
 
+/**
+ * A [[SparkListener]] for engine level events handling
+ *
+ * @param server the corresponding engine
+ */
 class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logging {
   import KyuubiSQLException.stringifyException
 
   // the conf of server is null before initialized, use lazy val here
-  lazy val deregisterExceptions = server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_CLASSES)
-  lazy val deregisterMessages = server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_MESSAGES)
-  lazy val deregisterExceptionTTL = server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_TTL)
-  lazy val jobMaxFailures = server.getConf.get(ENGINE_DEREGISTER_JOB_MAX_FAILURES)
+  private lazy val deregisterExceptions: Seq[String] =
+    server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_CLASSES)
+  private lazy val deregisterMessages: Seq[String] =
+    server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_MESSAGES)
+  private lazy val deregisterExceptionTTL: Long =
+    server.getConf.get(ENGINE_DEREGISTER_EXCEPTION_TTL)
+  private lazy val jobMaxFailures: Int =
+    server.getConf.get(ENGINE_DEREGISTER_JOB_MAX_FAILURES)
 
   private val jobFailureNum = new AtomicInteger(0)
   @volatile private var lastFailureTime: Long = 0

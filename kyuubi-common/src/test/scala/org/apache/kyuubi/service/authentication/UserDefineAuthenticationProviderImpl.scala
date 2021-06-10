@@ -15,27 +15,20 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine
+package org.apache.kyuubi.service.authentication
 
-import org.apache.curator.utils.ZKPaths
+import javax.security.sasl.AuthenticationException
 
-import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, ShareLevel}
-import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.Logging
 
-case class SQLEngineAppName(
-    sharedLevel: ShareLevel, user: String, sessionId: String) {
-  override def toString: String = s"kyuubi_${sharedLevel}_${user}_$sessionId"
+class UserDefineAuthenticationProviderImpl()
+  extends PasswdAuthenticationProvider with Logging {
 
-  def getZkNamespace(prefix: String): String = {
-    sharedLevel match {
-      case CONNECTION => ZKPaths.makePath(s"${prefix}_$sharedLevel", user, sessionId)
-      case _ => ZKPaths.makePath(s"${prefix}_$sharedLevel", user)
+  override def authenticate(user: String, password: String): Unit = {
+    if (user == "user" && password == "password") {
+      info(s"Success log in of user: $user")
+    } else {
+      throw new AuthenticationException("Username or password is not valid!")
     }
-  }
-}
-
-private[kyuubi] object SQLEngineAppName {
-  def apply(sharedLevel: ShareLevel, user: String, handle: SessionHandle): SQLEngineAppName = {
-    SQLEngineAppName(sharedLevel, user, handle.identifier.toString)
   }
 }

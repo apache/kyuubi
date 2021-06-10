@@ -220,6 +220,13 @@ com.fasterxml.jackson.core:jackson-annotations
 com.fasterxml.jackson.core:jackson-core
 com.fasterxml.jackson.core:jackson-databind
 org.javassist:javassist
+org.eclipse.jetty:jetty-http
+org.eclipse.jetty:jetty-io
+org.eclipse.jetty:jetty-security
+org.eclipse.jetty:jetty-server
+org.eclipse.jetty:jetty-servlet
+org.eclipse.jetty:jetty-util-ajax
+org.eclipse.jetty:jetty-util
 org.apache.thrift:libfb303
 org.apache.thrift:libthrift
 log4j:log4j
@@ -227,12 +234,20 @@ io.dropwizard.metrics:metrics-core
 io.dropwizard.metrics:metrics-jmx
 io.dropwizard.metrics:metrics-json
 io.dropwizard.metrics:metrics-jvm
+io.prometheus:simpleclient
+io.prometheus:simpleclient_common
+io.prometheus:simpleclient_dropwizard
+io.prometheus:simpleclient_servlet
 org.apache.zookeeper:zookeeper
 spark-*-bin-*.tgz
 
 BSD 3-Clause
 ------------
 org.scala-lang:scala-library
+
+Eclipse Public License (EPL) 2.0
+--------------------------------
+jakarta.servlet:jakarta.servlet-api https://projects.eclipse.org/projects/ee4j.servlet
 
 MIT License
 -----------

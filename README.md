@@ -5,7 +5,7 @@
 ![GitHub top language](https://img.shields.io/github/languages/top/NetEase/kyuubi)
 [![GitHub release](https://img.shields.io/github/release/NetEase/kyuubi.svg)](https://github.com/NetEase/kyuubi/releases)
 [![codecov](https://codecov.io/gh/NetEase/kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/NetEase/kyuubi)
-[![Travis](https://travis-ci.org/NetEase/kyuubi.svg?branch=master)](https://travis-ci.org/NetEase/kyuubi)
+[![Travis](https://travis-ci.com/NetEase/kyuubi.svg?branch=master)](https://travis-ci.com/NetEase/kyuubi)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/NetEase/kyuubi/Kyuubi/master?style=plastic)
 [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.readthedocs.io/en/latest/?badge=latest)
 

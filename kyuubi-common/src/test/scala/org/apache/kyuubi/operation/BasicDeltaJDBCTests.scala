@@ -17,25 +17,10 @@
 
 package org.apache.kyuubi.operation
 
-import java.nio.file.Path
-
-import org.apache.kyuubi.Utils
+import org.apache.kyuubi.DeltaSuiteMixin
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
-trait BasicDeltaJDBCTests extends JDBCTestUtils {
-
-  protected val deltaJar: String = {
-    System.getProperty("java.class.path")
-      .split(":")
-      .filter(_.contains("delta-core")).head
-  }
-
-  protected val warehouse: Path = Utils.createTempDir()
-
-  protected val deltaConfigs = Map(
-    "spark.sql.extensions" -> "io.delta.sql.DeltaSparkSessionExtension",
-    "spark.sql.catalog.spark_catalog" -> "org.apache.spark.sql.delta.catalog.DeltaCatalog",
-    "spark.jars" -> deltaJar)
+trait BasicDeltaJDBCTests extends JDBCTestUtils with DeltaSuiteMixin {
 
   test("get catalogs") {
     withJdbcStatement() { statement =>
@@ -79,7 +64,7 @@ trait BasicDeltaJDBCTests extends JDBCTestUtils {
     val tableType = "TABLE"
     withJdbcStatement(table) { statement =>
       statement.execute(
-        s"CREATE TABLE IF NOT EXISTS $table(key int) USING delta COMMENT '$table'")
+        s"CREATE TABLE IF NOT EXISTS $table(key int) USING $format COMMENT '$table'")
 
       val metaData = statement.getConnection.getMetaData
       val rs1 = metaData.getTables(null, null, null, null)

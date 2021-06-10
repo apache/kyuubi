@@ -21,7 +21,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.{AnalysisException, SparkSession}
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARED_LEVEL
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
@@ -73,7 +73,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   override def closeSession(sessionHandle: SessionHandle): Unit = {
     super.closeSession(sessionHandle)
     operationManager.removeSparkSession(sessionHandle)
-    if (conf.get(ENGINE_SHARED_LEVEL) == ShareLevel.CONNECTION.toString) {
+    if (conf.get(ENGINE_SHARE_LEVEL) == ShareLevel.CONNECTION.toString) {
       info("Session stopped due to shared level is Connection.")
       stopSession()
     }

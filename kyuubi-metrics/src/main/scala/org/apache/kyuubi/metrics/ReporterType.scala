@@ -21,5 +21,5 @@ object ReporterType extends Enumeration {
 
   type ReporterType = Value
 
-  val CONSOLE, JMX, JSON, SLF4J = Value
+  val CONSOLE, JMX, JSON, PROMETHEUS, SLF4J = Value
 }
