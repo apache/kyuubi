@@ -63,11 +63,13 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
     // for create action, it only expose Kyuubi service instance to another domain,
     // so we do not use namespace from default conf
     if (action != ServiceControlAction.CREATE && namespace == null) {
-      Option(conf.get(HA_ZK_NAMESPACE)).foreach { v =>
+      namespace = conf.getOption(HA_ZK_NAMESPACE.key).getOrElse{
+        val defaultNamespace = conf.get(HA_ZK_NAMESPACE)
         if (verbose) {
-          info(s"Zookeeper namespace is not specified, use value from default conf:$v")
+          info(s"Zookeeper namespace is not specified," +
+            s" use value from default conf:$defaultNamespace")
         }
-        namespace = v
+        defaultNamespace
       }
     }
 
