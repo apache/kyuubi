@@ -52,7 +52,7 @@ abstract class KyuubiOperation(
         } else {
           val errorType = e.getClass.getSimpleName
           MetricsSystem.tracing {
-            _.incAndGetCount(MetricRegistry.name(STATEMENT_FAIL, errorType))
+            _.incCount(MetricRegistry.name(STATEMENT_FAIL, errorType))
           }
           setState(OperationState.ERROR)
           val ke = e match {

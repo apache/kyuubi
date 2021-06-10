@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation
+package org.apache.kyuubi
 
 import java.nio.file.Files
 
-import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_ACL_ENABLED, HA_ZK_QUORUM}
@@ -52,7 +51,7 @@ trait WithKyuubiServer extends KyuubiFunSuite {
     conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
     conf.set(HA_ZK_ACL_ENABLED, false)
 
-    conf.set(ENGINE_INIT_TIMEOUT, 120000L)
+    conf.setIfMissing(ENGINE_INIT_TIMEOUT, 120000L)
     server = KyuubiServer.startServer(conf)
     super.beforeAll()
     Thread.sleep(1500)

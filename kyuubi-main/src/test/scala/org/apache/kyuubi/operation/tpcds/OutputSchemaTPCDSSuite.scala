@@ -20,29 +20,39 @@ package org.apache.kyuubi.operation.tpcds
 import java.nio.charset.Charset
 import java.nio.file.{Files, Path, Paths}
 
+import org.apache.kyuubi.{DeltaSuiteMixin, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.{JDBCTestUtils, WithKyuubiServer}
-import org.apache.kyuubi.tags.ExtendedSQLTest
+import org.apache.kyuubi.operation.JDBCTestUtils
+import org.apache.kyuubi.tags.{DeltaTest, ExtendedSQLTest}
 
 // scalastyle:off line.size.limit
 /**
  * To run this test suite:
  * {{{
- *   build/mvn -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.TPCDSOutputSchemaSuite -Dmaven.plugin.scalatest.exclude.tags="" test
- *  }}}
+ *   build/mvn test -Pspark-3.1 -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.OutputSchemaTPCDSSuite -Dmaven.plugin.scalatest.exclude.tags=''
+ * }}}
  *
  * To re-generate golden files for this suite:
  * {{{
- *   KYUUBI_UPDATE=1 build/mvn -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.TPCDSOutputSchemaSuite -Dmaven.plugin.scalatest.exclude.tags="" test
+ *   KYUUBI_UPDATE=1 build/mvn test -Pspark-3.1 -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.OutputSchemaTPCDSSuite -Dmaven.plugin.scalatest.exclude.tags=''
  * }}}
  */
 // scalastyle:on line.size.limit
+@DeltaTest
 @ExtendedSQLTest
-class TPCDSOutputSchemaSuite extends WithKyuubiServer with JDBCTestUtils with TPCDSHelper {
-  override protected val conf: KyuubiConf = KyuubiConf()
+class OutputSchemaTPCDSSuite extends WithKyuubiServer
+  with JDBCTestUtils
+  with TPCDSHelper
+  with DeltaSuiteMixin {
+
+  override protected val conf: KyuubiConf = {
+    val kyuubiConf = KyuubiConf().set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 20000L)
+    extraConfigs.foreach { case (k, v) => kyuubiConf.set(k, v) }
+    kyuubiConf
+  }
+
   override protected def jdbcUrl: String = getJdbcUrl
   override def database: String = this.getClass.getSimpleName
-  override def format: String = "hive OPTIONS(fileFormat='parquet')"
   private val queryNameReg = """([a-z]+)(\d+)""".r("head", "index")
 
   override def beforeAll(): Unit = {

@@ -23,12 +23,15 @@ import java.time.Duration
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 
+import org.eclipse.jetty.client.HttpClient
+import org.eclipse.jetty.client.api.ContentResponse
+
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 
 class MetricsSystemSuite extends KyuubiFunSuite {
 
-  def checkMetrics(path: Path, searchKey: String): Unit = {
+  def checkJsonFileMetrics(path: Path, searchKey: String): Unit = {
     eventually(timeout(10.seconds), interval(500.milliseconds)) {
       val reader = Files.newBufferedReader(path)
       val logs = new java.util.ArrayList[String]
@@ -41,26 +44,53 @@ class MetricsSystemSuite extends KyuubiFunSuite {
     }
   }
 
-  test("MetricsSystem") {
+  test("metrics - PrometheusReporter") {
+    val testContextPath = "/prometheus-metrics"
+
+    val conf = KyuubiConf()
+      .set(MetricsConf.METRICS_ENABLED, true)
+      .set(MetricsConf.METRICS_REPORTERS, Seq(ReporterType.PROMETHEUS.toString))
+      .set(MetricsConf.METRICS_PROMETHEUS_PORT, 0) // random port
+      .set(MetricsConf.METRICS_PROMETHEUS_PATH, testContextPath)
+    val metricsSystem = new MetricsSystem()
+    metricsSystem.initialize(conf)
+    metricsSystem.start()
+
+    metricsSystem.registerGauge(MetricsConstants.CONN_OPEN, 2021, 0)
+
+    val prometheusHttpServer = metricsSystem.getServices.head
+      .asInstanceOf[PrometheusReporterService].httpServer
+
+    val client: HttpClient = new HttpClient
+    client.start()
+    val res: ContentResponse = client.GET(prometheusHttpServer.getURI.resolve(testContextPath))
+    assert(res.getContentAsString.contains("PS_MarkSweep_count"))
+    assert(res.getContentAsString.contains("kyuubi_connection_opened 2021.0"))
+    client.stop()
+
+    metricsSystem.stop()
+  }
+
+  test("metrics - other reporters") {
     val reportPath = Utils.createTempDir()
     val conf = KyuubiConf()
       .set(MetricsConf.METRICS_ENABLED, true)
-      .set(MetricsConf.METRICS_REPORTERS, ReporterType.values.map(_.toString).toSeq)
+      .set(MetricsConf.METRICS_REPORTERS,
+        ReporterType.values.filterNot(_ == ReporterType.PROMETHEUS).map(_.toString).toSeq)
       .set(MetricsConf.METRICS_JSON_INTERVAL, Duration.ofSeconds(1).toMillis)
       .set(MetricsConf.METRICS_JSON_LOCATION, reportPath.toString)
     val metricsSystem = new MetricsSystem()
     metricsSystem.initialize(conf)
     metricsSystem.start()
     val reportFile = Paths.get(reportPath.toString, "report.json")
-    checkMetrics(reportFile, "PS-MarkSweep.count")
-    metricsSystem.incAndGetCount(MetricsConstants.STATEMENT_TOTAL)
+    checkJsonFileMetrics(reportFile, "PS-MarkSweep.count")
+    metricsSystem.incCount(MetricsConstants.STATEMENT_TOTAL)
 
-    checkMetrics(reportFile, MetricsConstants.STATEMENT_TOTAL)
-    metricsSystem.decAndGetCount(MetricsConstants.STATEMENT_TOTAL)
+    checkJsonFileMetrics(reportFile, MetricsConstants.STATEMENT_TOTAL)
+    metricsSystem.decCount(MetricsConstants.STATEMENT_TOTAL)
     metricsSystem.registerGauge(MetricsConstants.CONN_OPEN, 20181117, 0)
-    checkMetrics(reportFile, MetricsConstants.CONN_OPEN)
-    checkMetrics(reportFile, "20181117")
+    checkJsonFileMetrics(reportFile, MetricsConstants.CONN_OPEN)
+    checkJsonFileMetrics(reportFile, "20181117")
     metricsSystem.stop()
   }
-
 }

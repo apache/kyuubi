@@ -8,13 +8,16 @@ The metrics provide instrumentation for specific activities and Kyuubi server.
 
 The metrics system is configured via `$KYUUBI_HOME/conf/kyuubi-defaults.conf`.
 
-Key | Default | Meaning | Since
---- | --- | --- | ---
-kyuubi\.metrics<br>\.enabled|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>true</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Set to true to enable kyuubi metrics system</div>|<div style='width: 20pt'>1.2.0</div>
-kyuubi\.metrics\.json<br>\.report\.location|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>metrics</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Where the json metrics file located</div>|<div style='width: 20pt'>1.2.0</div>
-kyuubi\.metrics\.report<br>\.interval|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT5S</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>How often should report metrics to json/console. no effect on JMX</div>|<div style='width: 20pt'>1.2.0</div>
-kyuubi\.metrics<br>\.reporters|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>JSON</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>A comma separated list for all metrics reporters<ul> <li>JSON - default reporter which outputs measurements to json file periodically</li> <li>CONSOLE - ConsoleReporter which outputs measurements to CONSOLE.</li> <li>SLF4J - Slf4jReporter which outputs measurements to system log.</li> <li>JMX - JmxReporter which listens for new metrics and exposes them as namespaced MBeans.</li> </ul></div>|<div style='width: 20pt'>1.2.0</div>
-
+Key | Default | Meaning | Type | Since
+--- | --- | --- | --- | ---
+kyuubi\.metrics<br>\.enabled|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>true</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Set to true to enable kyuubi metrics system</div>|<div style='width: 30pt'>boolean</div>|<div style='width: 20pt'>1.2.0</div>
+kyuubi\.metrics<br>\.reporters|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>JSON</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>A comma separated list for all metrics reporters<ul> <li>CONSOLE - ConsoleReporter which outputs measurements to CONSOLE periodically.</li> <li>JMX - JmxReporter which listens for new metrics and exposes them as MBeans.</li>  <li>JSON - JsonReporter which outputs measurements to json file periodically.</li> <li>PROMETHEUS - PrometheusReporter which exposes metrics in prometheus format.</li> <li>SLF4J - Slf4jReporter which outputs measurements to system log periodically.</li></ul></div>|<div style='width: 30pt'>seq</div>|<div style='width: 20pt'>1.2.0</div>
+kyuubi\.metrics<br>\.console\.interval|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT5S</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>How often should report metrics to console</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.2.0</div>
+kyuubi\.metrics\.json<br>\.interval|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT5S</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>How often should report metrics to json file</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.2.0</div>
+kyuubi\.metrics\.json<br>\.location|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>metrics</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Where the json metrics file located</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.2.0</div>
+kyuubi\.metrics<br>\.prometheus\.path|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>/metrics</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>URI context path of prometheus metrics HTTP server</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.2.0</div>
+kyuubi\.metrics<br>\.prometheus\.port|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>10019</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Prometheus metrics HTTP server port</div>|<div style='width: 30pt'>int</div>|<div style='width: 20pt'>1.2.0</div>
+kyuubi\.metrics\.slf4j<br>\.interval|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT5S</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>How often should report metrics to SLF4J logger</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.2.0</div>
 
 ## Metrics
 

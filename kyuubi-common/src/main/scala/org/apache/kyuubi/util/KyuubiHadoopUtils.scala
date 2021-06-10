@@ -33,4 +33,10 @@ object KyuubiHadoopUtils {
   def getServerPrincipal(principal: String): String = {
     SecurityUtil.getServerPrincipal(principal, "0.0.0.0")
   }
+
+  def toSparkPrefixedConf(hadoopConf: Map[String, String]): Map[String, String] = {
+    hadoopConf.map { case (key, value) =>
+      "spark.hadoop." + key -> value
+    }
+  }
 }

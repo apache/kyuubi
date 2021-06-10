@@ -6,16 +6,6 @@ Running Kyuubi in HA mode is to use groups of computers or containers that suppo
 
 Without HA, if a server crashes, Kyuubi will be unavailable until the crashed server is fixed. With HA, this situation will be remedied by hardware/software faults auto detecting, and immediately another Kyuubi service instance will be ready to serve without requiring human intervention. 
 
-## High Availability Mode Types
-
-Kyuubi supports two different types of HA mode. One is load balance mode, and the other active/standby failover.
-
-Load balance mode means that all Kyuubi server instances are active at the first place and their service uri can be reached by clients through the Zookeeper. This mode can greatly reduce the load on the instance itself, on the contrary the load on the cluster manager(YARN) may go higher for there may be more than one Spark application running for a single user who is connected. Another thing you need to know is that applying resources from YARN to launch an application is time consuming.
-
-Active/Standby failover is another option for you to make Kyuubi system highly available. Only one node is the primary node and visible for clients via ZooKeeper and all the others are secondary ones during the service period and invisble. In this mode, the standby will become serviceable only when it has gained the leadership then publish its service uri to ZooKeeper, meanwhile the previous active one's uri will be retired. There will be only one Spark application running on YARN for a single user connected. YARN's load will not be as heavy as in load balance mode and the overhead for launching applications will be certainly reduced. On the other side, the active server will withstand more traffic. Anyway, it is a good choice for those small Hadoop clusters to apply this mode to gain high availability.
-
-The number of user concurrency and the size of your cluster may be two major indicators which you need to weigh against the online environment.
-
 ## Load Balance Mode
 
 Load balancing aims to optimize all Kyuubi service units usage, maximize throughput, minimize response time, and avoid overload of a single unit. Using multiple Kyuubi service units with load balancing instead of a single unit may increase reliability and availability through redundancy. 
@@ -25,16 +15,6 @@ Load balancing aims to optimize all Kyuubi service units usage, maximize through
 With Hive JDBC Driver, a client can specify service discovery mode in JDBC connection string, i.e. `serviceDiscoveryMode=zooKeeper;` and set `zooKeeperNameSpace=kyuubiserver;`, then it can randomly pick one of the Kyuubi service uris from the specified ZooKeeper address in the `/kyuubiserver` path.
 
 When we set `kyuubi.ha.enabled` to `true`, load balance mode is activated by default. Please make sure that you specify the correct ZooKeeper address via `kyuubi.ha.zookeeper.quorum` and `kyuubi.ha.zookeeper.client.port`.
-
-## Active/Standby Failover
-
-Active/Standby failover enables you to use a standby Kyuubi server to take over the functionality of a failed unit. When the active unit fails, it changes to the standby state after fixed while the standby unit changes to the active state.
-
-![](../imgs/ha_failover.png)
-
-A client need not to change any of its behaviours to support load balance or failover mode. But because only the active Kyuubi server will expose its service uri to ZooKeeper in `/kyuubiserver`, clients always randomly pick a server from one and the only choice.
-
-When we set `kyuubi.ha.enabled` to `true` and `kyuubi.ha.mode` to `failover`, failover mode is activated then. Please make sure that you specify the correct ZooKeeper address via `kyuubi.ha.zookeeper.quorum` and `kyuubi.ha.zookeeper.client.port`.
 
 ## Configuring High Availability
 

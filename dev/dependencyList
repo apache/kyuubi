@@ -30,8 +30,16 @@ htrace-core4/4.1.0-incubating//htrace-core4-4.1.0-incubating.jar
 jackson-annotations/2.11.4//jackson-annotations-2.11.4.jar
 jackson-core/2.11.4//jackson-core-2.11.4.jar
 jackson-databind/2.11.4//jackson-databind-2.11.4.jar
+jakarta.servlet-api/4.0.4//jakarta.servlet-api-4.0.4.jar
 javassist/3.18.1-GA//javassist-3.18.1-GA.jar
 jcl-over-slf4j/1.7.30//jcl-over-slf4j-1.7.30.jar
+jetty-http/9.4.40.v20210413//jetty-http-9.4.40.v20210413.jar
+jetty-io/9.4.40.v20210413//jetty-io-9.4.40.v20210413.jar
+jetty-security/9.4.40.v20210413//jetty-security-9.4.40.v20210413.jar
+jetty-server/9.4.40.v20210413//jetty-server-9.4.40.v20210413.jar
+jetty-servlet/9.4.40.v20210413//jetty-servlet-9.4.40.v20210413.jar
+jetty-util-ajax/9.4.40.v20210413//jetty-util-ajax-9.4.40.v20210413.jar
+jetty-util/9.4.40.v20210413//jetty-util-9.4.40.v20210413.jar
 libfb303/0.9.3//libfb303-0.9.3.jar
 libthrift/0.9.3//libthrift-0.9.3.jar
 log4j/1.2.17//log4j-1.2.17.jar
@@ -40,6 +48,10 @@ metrics-jmx/4.1.1//metrics-jmx-4.1.1.jar
 metrics-json/4.1.1//metrics-json-4.1.1.jar
 metrics-jvm/4.1.1//metrics-jvm-4.1.1.jar
 scala-library/2.12.10//scala-library-2.12.10.jar
+simpleclient/0.10.0//simpleclient-0.10.0.jar
+simpleclient_common/0.10.0//simpleclient_common-0.10.0.jar
+simpleclient_dropwizard/0.10.0//simpleclient_dropwizard-0.10.0.jar
+simpleclient_servlet/0.10.0//simpleclient_servlet-0.10.0.jar
 slf4j-api/1.7.30//slf4j-api-1.7.30.jar
 slf4j-log4j12/1.7.30//slf4j-log4j12-1.7.30.jar
 zookeeper/3.4.14//zookeeper-3.4.14.jar

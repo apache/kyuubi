@@ -39,11 +39,11 @@ jobs:
       - name: Make Distribution -Pspark-3.0 -Pspark-hadoop-3.2
         run: ./build/dist --tgz -Pspark-3.0 -Pspark-hadoop-3.2
       - name: Make Distribution -Pspark-3.1 -Pspark-hadoop-2.7
-        run: ./build/dist --tgz -Pspark-3.1 -Pspark-hadoop-2.7
+        run: ./build/dist --tgz -Pspark-3.1 -Pspark-hadoop-2.7 -Pkyuubi-extension-spark_3.1
       - name: Make Distribution -Pspark-3.1 -Pspark-hadoop-3.2
-        run: ./build/dist --tgz -Pspark-3.1 -Pspark-hadoop-3.2
+        run: ./build/dist --tgz -Pspark-3.1 -Pspark-hadoop-3.2 -Pkyuubi-extension-spark_3.1
       - name: Make Distribution --spark-provided
-        run: ./build/dist --tgz --spark-provided
+        run: ./build/dist --tgz --spark-provided -Pkyuubi-extension-spark_3.1
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1

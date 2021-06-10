@@ -19,16 +19,16 @@ package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.BasicIcebergJDBCTests
-import org.apache.kyuubi.tags.DataLakeTest
+import org.apache.kyuubi.tags.IcebergTest
 
-@DataLakeTest
+@IcebergTest
 class SparkIcebergOperationSuite extends WithSparkSQLEngine with BasicIcebergJDBCTests {
   override protected def jdbcUrl: String = getJdbcUrl
-  override def withKyuubiConf: Map[String, String] = icebergConfigs
+  override def withKyuubiConf: Map[String, String] = extraConfigs
 
   override def afterAll(): Unit = {
     super.afterAll()
-    for ((k, _) <- icebergConfigs) {
+    for ((k, _) <- extraConfigs) {
       System.clearProperty(k)
     }
   }

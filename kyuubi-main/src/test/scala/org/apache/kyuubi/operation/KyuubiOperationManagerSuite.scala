@@ -19,6 +19,7 @@ package org.apache.kyuubi.operation
 
 import java.sql.SQLTimeoutException
 
+import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT
 

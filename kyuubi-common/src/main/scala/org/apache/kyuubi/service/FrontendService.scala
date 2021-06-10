@@ -104,10 +104,16 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     super.initialize(conf)
   }
 
-  def connectionUrl: String = {
+  def connectionUrl(server: Boolean = false): String = {
     getServiceState match {
       case s @ ServiceState.LATENT => throw new IllegalStateException(s"Illegal Service State: $s")
-      case _ => s"${serverAddr.getCanonicalHostName}:$portNum"
+      case _ =>
+        if (server || conf.get(ENGINE_CONNECTION_URL_USE_HOSTNAME)) {
+          s"${serverAddr.getCanonicalHostName}:$portNum"
+        } else {
+          // engine use address if run on k8s with cluster mode
+          s"${serverAddr.getHostAddress}:$portNum"
+        }
     }
   }
 
@@ -121,7 +127,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 
   override def run(): Unit = try {
-    info(s"Starting and exposing JDBC connection at: jdbc:hive2://$connectionUrl/")
+    info(s"Starting and exposing JDBC connection at: jdbc:hive2://${connectionUrl(true)}/")
     server.foreach(_.serve())
   } catch {
     case _: InterruptedException => error(s"$getName is interrupted")

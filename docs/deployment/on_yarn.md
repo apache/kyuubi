@@ -4,7 +4,7 @@
 
 </div>
 
-# Running Kyuubi on Yarn
+# Deploy Kyuubi engines on Yarn
 
 ## Requirements
 

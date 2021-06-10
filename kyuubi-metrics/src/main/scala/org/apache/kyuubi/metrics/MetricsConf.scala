@@ -39,6 +39,7 @@ object MetricsConf {
       " <li>CONSOLE - ConsoleReporter which outputs measurements to CONSOLE periodically.</li>" +
       " <li>JMX - JmxReporter which listens for new metrics and exposes them as MBeans.</li> " +
       " <li>JSON - JsonReporter which outputs measurements to json file periodically.</li>" +
+      " <li>PROMETHEUS - PrometheusReporter which exposes metrics in prometheus format.</li>" +
       " <li>SLF4J - Slf4jReporter which outputs measurements to system log periodically.</li>" +
       "</ul>")
     .version("1.2.0")
@@ -64,6 +65,20 @@ object MetricsConf {
     .version("1.2.0")
     .timeConf
     .createWithDefault(Duration.ofSeconds(5).toMillis)
+
+  val METRICS_PROMETHEUS_PORT: ConfigEntry[Int] = buildConf("metrics.prometheus.port")
+    .doc("Prometheus metrics HTTP server port")
+    .version("1.2.0")
+    .intConf
+    .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
+    .createWithDefault(10019)
+
+  val METRICS_PROMETHEUS_PATH: ConfigEntry[String] = buildConf("metrics.prometheus.path")
+    .doc("URI context path of prometheus metrics HTTP server")
+    .version("1.2.0")
+    .stringConf
+    .checkValue(path => path.startsWith("/"), "Context path must start with '/'")
+    .createWithDefault("/metrics")
 
   val METRICS_SLF4J_INTERVAL: ConfigEntry[Long] = buildConf("metrics.slf4j.interval")
     .doc("How often should report metrics to SLF4J logger")

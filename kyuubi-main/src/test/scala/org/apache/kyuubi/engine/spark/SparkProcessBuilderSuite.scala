@@ -27,6 +27,7 @@ import org.scalatest.time.SpanSugar._
 import org.apache.kyuubi.{KerberizedTestHelper, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_LOG_TIMEOUT
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE
 import org.apache.kyuubi.service.ServiceUtils
 
 class SparkProcessBuilderSuite extends KerberizedTestHelper {
@@ -203,6 +204,23 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     assert(file1.getAbsolutePath == file2.getAbsolutePath)
     Files.write(file2.toPath, "a".getBytes(), StandardOpenOption.APPEND)
     assert(file2.length() == 1)
+  }
+
+  test("main resource jar should not check when is not a local file") {
+    val workDir = Files.createTempDirectory("resource")
+    val jarPath = Paths.get(workDir.toString, "test.jar")
+    val hdfsPath = s"hdfs://$jarPath"
+
+    val conf = KyuubiConf()
+    conf.set(ENGINE_SPARK_MAIN_RESOURCE, hdfsPath)
+    val b1 = new SparkProcessBuilder("test", conf)
+    assert(b1.mainResource.get.startsWith("hdfs://"))
+    assert(b1.mainResource.get == hdfsPath)
+
+    // user specified jar not exist, get default jar and expect not equals
+    conf.set(ENGINE_SPARK_MAIN_RESOURCE, jarPath.toString)
+    val b2 = new SparkProcessBuilder("test", conf)
+    assert(b2.mainResource.getOrElse("") != jarPath.toString)
   }
 }
 

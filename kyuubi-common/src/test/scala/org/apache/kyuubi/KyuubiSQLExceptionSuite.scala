@@ -30,7 +30,7 @@ class KyuubiSQLExceptionSuite extends KyuubiFunSuite {
 
     val e0 = new KyuubiException(msg0)
     val e1 = new KyuubiException(msg1, e0)
-    val e2 = new KyuubiSQLException(msg2, e1)
+    val e2 = KyuubiSQLException(msg2, e1)
     assert(e2.toTStatus === KyuubiSQLException.toTStatus(e2))
 
     val e3 = KyuubiSQLException(e2.toTStatus)
@@ -51,6 +51,13 @@ class KyuubiSQLExceptionSuite extends KyuubiFunSuite {
     val e5 = KyuubiSQLException(e0)
     assert(e5.getMessage === msg0)
     assert(e5.getCause === e0)
+
+    val ts1 = KyuubiSQLException(msg2, e0, "01001", 1).toTStatus
+    assert(ts1.getStatusCode === TStatusCode.ERROR_STATUS)
+    assert(ts1.getSqlState === "01001")
+    assert(ts1.getErrorCode === 1)
+    assert(ts1.getErrorMessage === msg2)
+    assert(ts1.getInfoMessages.get(0).startsWith("*"))
   }
 
   test("find the root cause") {
