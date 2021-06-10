@@ -92,7 +92,7 @@ object KubernetesCacheFileCleaner {
       .split(" ").filter(_.endsWith("%")) {0}.replace("%", "")
     logger.info(s"${dir} now used ${used}% space")
 
-    used.toInt >  freeSpaceThreshold
+    used.toInt > freeSpaceThreshold
   }
 
   def initializeConfiguration(args: Array[String]) : Unit = {
