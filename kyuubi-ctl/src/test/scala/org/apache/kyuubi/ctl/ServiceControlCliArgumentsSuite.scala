@@ -145,16 +145,10 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
 
     val args2 = Array(
       "list",
-      "--zk-quorum", zkQuorum
-    )
-    testPrematureExit(args2, "Zookeeper namespace is not specified")
-
-    val args3 = Array(
-      "list",
       "--zk-quorum", zkQuorum,
       "--namespace", namespace
     )
-    val opArgs = new ServiceControlCliArguments(args3)
+    val opArgs = new ServiceControlCliArguments(args2)
     assert(opArgs.action == ServiceControlAction.LIST)
   }
 
@@ -167,42 +161,36 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
 
       val args2 = Array(
         op,
-        "--zk-quorum", zkQuorum
-      )
-      testPrematureExit(args2, "Zookeeper namespace is not specified")
-
-      val args3 = Array(
-        op,
         "--zk-quorum", zkQuorum,
         "--namespace", namespace
       )
-      testPrematureExit(args3, "Must specify host")
+      testPrematureExit(args2, "Must specify host")
 
-      val args4 = Array(
+      val args3 = Array(
         op,
         "--zk-quorum", zkQuorum,
         "--namespace", namespace,
         "--host", host
       )
-      testPrematureExit(args4, "Must specify port")
+      testPrematureExit(args3, "Must specify port")
 
-      val args5 = Array(
+      val args4 = Array(
         op, "engine",
         "--zk-quorum", zkQuorum,
         "--namespace", namespace,
         "--host", host,
         "--port", port
       )
-      testPrematureExit(args5, "Must specify user name for engine")
+      testPrematureExit(args4, "Must specify user name for engine")
 
-      val args6 = Array(
+      val args5 = Array(
         op, "server",
         "--zk-quorum", zkQuorum,
         "--namespace", namespace,
         "--host", host,
         "--port", port
       )
-      val opArgs6 = new ServiceControlCliArguments(args6)
+      val opArgs6 = new ServiceControlCliArguments(args5)
       assert(opArgs6.action.toString.equalsIgnoreCase(op))
     }
   }
@@ -284,5 +272,15 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
       )
       testPrematureExit(args4, "Only support expose Kyuubi server instance to another domain")
     }
+  }
+
+  test("test use default property value if missing") {
+    val args = Array(
+      "list",
+      "--zk-quorum", zkQuorum
+    )
+    val opArgs = new ServiceControlCliArguments(args)
+    assert(opArgs.namespace == namespace)
+    assert(opArgs.version == KYUUBI_VERSION)
   }
 }
