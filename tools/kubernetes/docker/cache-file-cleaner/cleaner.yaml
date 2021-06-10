@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kyuubi-kubernetes-shuffle-file-cleaner
+  namespace: spark
+spec:
+  selector:
+    matchLabels:
+      name: <name>
+  template:
+    metadata:
+      labels:
+        name: <name>
+    spec:
+      containers:
+        - image: <image>
+          name: cleaner
+          volumeMounts:
+            - name: spark
+              mountPath: /data
+          env:
+            - name: CACHE_DIRS
+              value: <"/data/data1,/data/data2">
+      volumes:
+        - name: spark
+          hostPath:
+            path: /spark
