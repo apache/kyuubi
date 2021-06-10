@@ -87,7 +87,7 @@ object KubernetesCacheFileCleaner {
 
   import scala.sys.process._
 
-  def checkUsedMemory(dir: String) : Boolean = {
+  def checkUsedCapacity(dir: String) : Boolean = {
     val used = (s"df ${dir}" #| s"grep ${dir}").!!
       .split(" ").filter(_.endsWith("%")) {0}.replace("%", "")
     logger.info(s"${dir} now used ${used}% space")
@@ -181,10 +181,10 @@ object KubernetesCacheFileCleaner {
         // Clean up files older than $fileExpiredTime
         doClean(path.toFile, fileExpiredTime)
 
-        if (checkUsedMemory(pathStr)) {
+        if (checkUsedCapacity(pathStr)) {
           logger.info("start deep clean job")
           doClean(path.toFile, deepCleanFileExpiredTime)
-          if (checkUsedMemory(pathStr)) {
+          if (checkUsedCapacity(pathStr)) {
             logger.warn(s"after deep clean ${pathStr} " +
               s"used space still higher than ${freeSpaceThreshold}")
           }
