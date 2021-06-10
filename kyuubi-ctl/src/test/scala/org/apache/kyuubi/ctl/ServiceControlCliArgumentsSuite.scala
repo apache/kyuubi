@@ -285,4 +285,14 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
       testPrematureExit(args4, "Only support expose Kyuubi server instance to another domain")
     }
   }
+
+  test("test use default property value if missing") {
+    val args = Array(
+      "list",
+      "--zk-quorum", zkQuorum
+    )
+    val opArgs = new ServiceControlCliArguments(args)
+    assert(opArgs.namespace == namespace)
+    assert(opArgs.version == KYUUBI_VERSION)
+  }
 }
