@@ -1,7 +1,8 @@
 FROM openjdk:8-jre-slim
 
 RUN mkdir /data && \
-    mkdir -p /opt/jars
+    mkdir -p /opt/jars && \
+    mkdir -p /log/cleanerLog
 
 COPY ../jars /opt/jars
 COPY ./entrypoint.sh /opt/entrypoint.sh

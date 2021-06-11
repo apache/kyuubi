@@ -17,16 +17,13 @@
 
 package org.apache.kyuubi.tools.kubernetes
 
-object Constants {
-  val CACHE_DIRS_KEY = "cacheDirs"
-  val FILE_EXPIRED_TIME_KEY = "fileExpiredTime"
-  val FREE_SPACE_THRESHOLD_KEY = "freeSpaceThreshold"
-  val SLEEP_TIME_KEY = "sleepTime"
-  val DEEP_CLEAN_FILE_EXPIRED_TIME_KEY = "deepCleanFileExpiredTime"
+import org.apache.kyuubi.KyuubiFunSuite
 
-  val CACHE_DIRS_DEFAULT_VALUE = ""
-  val FILE_EXPIRED_TIME_DEFAULT_VALUE = "604800000"
-  val FREE_SPACE_THRESHOLD_DEFAULT_VALUE = "60"
-  val SLEEP_TIME_DEFAULT_VALUE = "3600000"
-  val DEEP_CLEAN_FILE_EXPIRED_TIME_DEFAULT_VALUE = "432000000"
+class KubernetesShuffleFileCleanerSuite extends KyuubiFunSuite {
+  test("normal delete") {
+    KubernetesShuffleFileCleaner.main(Array.empty[String])
+  }
+
+  test("configurations") {
+  }
 }
