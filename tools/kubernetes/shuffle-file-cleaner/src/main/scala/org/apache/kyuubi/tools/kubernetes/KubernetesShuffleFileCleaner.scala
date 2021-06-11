@@ -30,7 +30,7 @@ object KubernetesShuffleFileCleaner extends Logging {
   private val freeSpaceThreshold = envMap.getOrDefault(FREE_SPACE_THRESHOLD_KEY,
     FREE_SPACE_THRESHOLD_DEFAULT_VALUE).toInt
   private val cacheDirs = envMap.getOrDefault(CACHE_DIRS_KEY,
-    CACHE_DIRS_DEFAULT_VALUE).split(",")
+    CACHE_DIRS_DEFAULT_VALUE).split(",").filter(!_.equals(""))
   private val fileExpiredTime = envMap.getOrDefault(FILE_EXPIRED_TIME_KEY,
     FILE_EXPIRED_TIME_DEFAULT_VALUE).toLong
   private val sleepTime = envMap.getOrDefault(SLEEP_TIME_KEY,
@@ -42,7 +42,7 @@ object KubernetesShuffleFileCleaner extends Logging {
     info(s"start clean ${dir.getName} with fileExpiredTime ${time}")
 
     // clean blockManager shuffle file
-    dir.listFiles.filter(_.isDirectory).filter(_.getName.startsWith(BLOCK_MANAGER_PREFIX))
+    dir.listFiles.filter(_.isDirectory).filter(_.getName.startsWith("blockmgr"))
       .foreach(blockManagerDir => {
 
         info(s"start check blockManager dir ${blockManagerDir.getName}")
@@ -60,7 +60,7 @@ object KubernetesShuffleFileCleaner extends Logging {
       })
 
     // clean spark cache file
-    dir.listFiles.filter(_.isDirectory).filter(_.getName.startsWith(SPARK_CACHE_DIR_PREFIX))
+    dir.listFiles.filter(_.isDirectory).filter(_.getName.startsWith("spark"))
       .foreach(cacheDir => {
         info(s"start check cache dir ${cacheDir.getName}")
         cacheDir.listFiles.foreach(file => checkAndDeleteFIle(file, time))

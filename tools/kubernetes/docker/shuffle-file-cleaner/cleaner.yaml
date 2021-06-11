@@ -18,6 +18,8 @@ spec:
           volumeMounts:
             - name: spark
               mountPath: /data
+            - name: cleaner-log
+              mountPath: /log/cleanerLog
           env:
             - name: cacheDirs
               value: <"/data/data1,/data/data2">
@@ -31,5 +33,8 @@ spec:
               value: <"432000000">
       volumes:
         - name: spark
+          hostPath:
+            path: /spark
+        - name: cleaner-log
           hostPath:
             path: /spark
