@@ -19,8 +19,16 @@ spec:
             - name: spark
               mountPath: /data
           env:
-            - name: CACHE_DIRS
+            - name: cacheDirs
               value: <"/data/data1,/data/data2">
+            - name: fileExpiredTime
+              value: <"604800000">
+            - name: freeSpaceThreshold
+              value: <"60">
+            - name: sleepTime
+              value: <"3600000">
+            - name: deepCleanFileExpiredTime
+              value: <"432000000">
       volumes:
         - name: spark
           hostPath:
