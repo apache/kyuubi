@@ -25,6 +25,7 @@ import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
+import org.apache.kyuubi.engine.spark.udf.KDFRegistry
 import org.apache.kyuubi.session._
 
 /**
@@ -58,6 +59,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
         case (key, value) => setModifiableConfig(sparkSession, key, value)
       }
       sessionImpl.open()
+      KDFRegistry.registerAll(sparkSession)
       operationManager.setSparkSession(handle, sparkSession)
       setSession(handle, sessionImpl)
       info(s"$user's session with $handle is opened, current opening sessions" +
