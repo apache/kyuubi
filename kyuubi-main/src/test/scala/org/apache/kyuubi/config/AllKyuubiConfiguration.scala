@@ -18,12 +18,12 @@
 package org.apache.kyuubi.config
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path, Paths, StandardOpenOption}
+import java.nio.file.{Files, Path, Paths}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiFunSuite, TestUtils}
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.metrics.MetricsConf
 import org.apache.kyuubi.zookeeper.ZookeeperConf
@@ -45,7 +45,6 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf
  */
 // scalastyle:on line.size.limit
 class AllKyuubiConfiguration extends KyuubiFunSuite {
-  private val update: Boolean = System.getenv("KYUUBI_UPDATE") == "1"
   private val kyuubiHome: String =
     getClass.getProtectionDomain.getCodeSource.getLocation.getPath.split("kyuubi-main")(0)
   private val markdown = Paths.get(kyuubiHome, "docs", "deployment", "settings.md")
@@ -252,34 +251,6 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
       " executor and obey the Spark AQE behavior of Kyuubi system default. On the other hand," +
       " for those users who do not have custom configurations will use system defaults."
 
-    if (update) {
-      val writer = Files.newBufferedWriter(
-        markdown, StandardCharsets.UTF_8,
-        StandardOpenOption.TRUNCATE_EXISTING,
-        StandardOpenOption.CREATE)
-      try {
-        newOutput.foreach { line =>
-          writer.write(line)
-          writer.newLine()
-        }
-      } finally {
-        writer.close()
-      }
-    } else {
-      val expected = new ArrayBuffer[String]()
-
-      val reader = Files.newBufferedReader(markdown, StandardCharsets.UTF_8)
-      var line = reader.readLine()
-      while (line != null) {
-        expected += line
-        line = reader.readLine()
-      }
-      reader.close()
-      val hint = s"$markdown out of date, please update doc with build/mvn test" +
-        s" -DwildcardSuites=${getClass.getCanonicalName}"
-      assert(newOutput.size === expected.size, hint)
-
-      newOutput.zip(expected).foreach { case (out, in) => assert(out === in, hint) }
-    }
+    TestUtils.verifyOutput(markdown, newOutput)
   }
 }
