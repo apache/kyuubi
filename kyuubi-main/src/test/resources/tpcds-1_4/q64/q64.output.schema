@@ -1,0 +1,1 @@
+struct<product_name:string,store_name:string,store_zip:string,b_street_number:string,b_streen_name:string,b_city:string,b_zip:string,c_street_number:string,c_street_name:string,c_city:string,c_zip:string,syear:int,cnt:bigint,s1:decimal,s2:decimal,s3:decimal,s1:decimal,s2:decimal,s3:decimal,syear:int,cnt:bigint>

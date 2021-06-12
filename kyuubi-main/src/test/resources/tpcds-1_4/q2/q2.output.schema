@@ -1,0 +1,1 @@
+struct<d_week_seq1:int,round((sun_sales1 / sun_sales2), 2):decimal,round((mon_sales1 / mon_sales2), 2):decimal,round((tue_sales1 / tue_sales2), 2):decimal,round((wed_sales1 / wed_sales2), 2):decimal,round((thu_sales1 / thu_sales2), 2):decimal,round((fri_sales1 / fri_sales2), 2):decimal,round((sat_sales1 / sat_sales2), 2):decimal>

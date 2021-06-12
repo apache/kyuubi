@@ -1,0 +1,1 @@
+struct<i_item_id:string,i_item_desc:string,i_current_price:decimal>

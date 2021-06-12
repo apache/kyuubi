@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.operation
 
+import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 
 class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
@@ -24,6 +25,6 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
   override protected def jdbcUrl: String = getJdbcUrl
 
   override protected val conf: KyuubiConf = {
-    KyuubiConf().set(KyuubiConf.ENGINE_SHARED_LEVEL, "user")
+    KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "user")
   }
 }

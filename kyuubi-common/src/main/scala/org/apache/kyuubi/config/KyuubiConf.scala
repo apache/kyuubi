@@ -20,6 +20,7 @@ package org.apache.kyuubi.config
 import java.time.Duration
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
+import java.util.regex.Pattern
 
 import scala.collection.JavaConverters._
 
@@ -286,12 +287,21 @@ object KyuubiConf {
       " <li>NOSASL: raw transport.</li>" +
       " <li>NONE: no authentication check.</li>" +
       " <li>KERBEROS: Kerberos/GSSAPI authentication.</li>" +
+      " <li>CUSTOM: User-defined authentication.</li>" +
       " <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul>")
     .version("1.0.0")
     .stringConf
     .transform(_.toUpperCase(Locale.ROOT))
     .checkValues(AuthTypes.values.map(_.toString))
     .createWithDefault(AuthTypes.NONE.toString)
+
+  val AUTHENTICATION_CUSTOM_CLASS: OptionalConfigEntry[String] =
+    buildConf("authentication.custom.class")
+    .doc("User-defined authentication implementation of " +
+      "org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider")
+    .version("1.3.0")
+    .stringConf
+    .createOptional
 
   val AUTHENTICATION_LDAP_URL: OptionalConfigEntry[String] = buildConf("authentication.ldap.url")
     .doc("SPACE character separated LDAP connection URL(s).")
@@ -537,21 +547,48 @@ object KyuubiConf {
       .checkValue(_ >= 1000, "must >= 1s if set")
       .createOptional
 
-  val ENGINE_SHARED_LEVEL: ConfigEntry[String] = buildConf("session.engine.share.level")
-    .doc("The SQL engine App will be shared in different levels, available configs are: <ul>" +
-      " <li>CONNECTION: the App will not be shared but only used by the current client" +
-      " connection</li>" +
-      " <li>USER: the App will be shared by all sessions created by a unique username</li>" +
-      " <li>SERVER: the App will be shared by Kyuubi servers</li></ul>")
+  @deprecated(s"using kyuubi.engine.share.level instead", "1.2.0")
+  val LEGACY_ENGINE_SHARE_LEVEL: ConfigEntry[String] = buildConf("session.engine.share.level")
+    .doc(s"(deprecated) - Using kyuubi.engine.share.level instead")
     .version("1.0.0")
     .stringConf
     .transform(_.toUpperCase(Locale.ROOT))
     .checkValues(ShareLevel.values.map(_.toString))
     .createWithDefault(ShareLevel.USER.toString)
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////
-  //                                   Engine Configuration                                      //
-  /////////////////////////////////////////////////////////////////////////////////////////////////
+  private val validEngineSubDomain: Pattern = "^[a-zA-Z_]{1,10}$".r.pattern
+
+  val ENGINE_SHARE_LEVEL_SUB_DOMAIN: OptionalConfigEntry[String] =
+    buildConf("engine.share.level.sub.domain")
+      .doc("Allow end-users to create a sub-domain for the share level of an engine. A" +
+        " sub-domain is a case-insensitive string values in `^[a-zA-Z_]{1,10}$` form." +
+        " For example, for `USER` share level, an end-user can share a certain engine within" +
+        " a sub-domain, not for all of its clients. End-users are free to create multiple" +
+        " engines in the `USER` share level")
+      .version("1.2.0")
+      .stringConf
+      .transform(_.toLowerCase(Locale.ROOT))
+      .checkValue(validEngineSubDomain.matcher(_).matches(),
+        "must be [1, 10] length alphabet string, e.g. 'abc', 'apache'")
+      .createOptional
+
+  val ENGINE_CONNECTION_URL_USE_HOSTNAME: ConfigEntry[Boolean] =
+    buildConf("engine.connection.url.use.hostname")
+      .doc("When true, engine register with hostname to zookeeper. When spark run on k8s" +
+        " with cluster mode, set to false to ensure that server can connect to engine")
+      .version("1.3.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val ENGINE_SHARE_LEVEL: ConfigEntry[String] = buildConf("engine.share.level")
+    .doc("Engines will be shared in different levels, available configs are: <ul>" +
+      " <li>CONNECTION: engine will not be shared but only used by the current client" +
+      " connection</li>" +
+      " <li>USER: engine will be shared by all sessions created by a unique username," +
+      s" see also ${ENGINE_SHARE_LEVEL_SUB_DOMAIN.key}</li>" +
+      " <li>SERVER: the App will be shared by Kyuubi servers</li></ul>")
+    .version("1.2.0")
+    .fallbackConf(LEGACY_ENGINE_SHARE_LEVEL)
 
   val ENGINE_INITIALIZE_SQL: ConfigEntry[String] = buildConf("engine.initialize.sql")
     .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +
@@ -572,21 +609,33 @@ object KyuubiConf {
   val ENGINE_DEREGISTER_EXCEPTION_MESSAGES: ConfigEntry[Seq[String]] =
     buildConf("engine.deregister.exception.messages")
       .doc("A comma separated list of exception messages. If there is any exception thrown," +
-        " whose message matches the specified message list, the engine would deregister itself.")
+        " whose message or stacktrace matches the specified message list, the engine would" +
+        " deregister itself.")
       .version("1.2.0")
       .stringConf
       .toSequence
       .createWithDefault(Nil)
 
-  val ENGINE_DEREGISTER_EXCEPTION_STACKTRACES: ConfigEntry[Seq[String]] =
-    buildConf("engine.deregister.exception.stacktraces")
-      .doc("A comma separated list of exception stacktraces. If there is any exception thrown," +
-        " whose stacktrace matches the specified stacktrace list, the engine would deregister" +
-        " itself.")
+  val ENGINE_DEREGISTER_JOB_MAX_FAILURES: ConfigEntry[Int] =
+    buildConf("engine.deregister.job.max.failures")
+      .doc("Number of failures of job before deregistering the engine.")
       .version("1.2.0")
-      .stringConf
-      .toSequence
-      .createWithDefault(Nil)
+      .intConf
+      .checkValue(_ > 0, "must be positive number")
+      .createWithDefault(4)
+
+  val ENGINE_DEREGISTER_EXCEPTION_TTL: ConfigEntry[Long] =
+    buildConf("engine.deregister.exception.ttl")
+      .doc(s"Time to live(TTL) for exceptions pattern specified in" +
+        s" ${ENGINE_DEREGISTER_EXCEPTION_CLASSES.key} and" +
+        s" ${ENGINE_DEREGISTER_EXCEPTION_MESSAGES.key} to deregister engines. Once the total" +
+        s" error count hits the ${ENGINE_DEREGISTER_JOB_MAX_FAILURES.key} within the TTL, an" +
+        s" engine will deregister itself and wait for self-terminated. Otherwise, we suppose" +
+        s" that the engine has recovered from temporary failures.")
+      .version("1.2.0")
+      .timeConf
+      .checkValue(_ > 0, "must be positive number")
+      .createWithDefault(Duration.ofMinutes(30).toMillis)
 
   val OPERATION_SCHEDULER_POOL: OptionalConfigEntry[String] = buildConf("operation.scheduler.pool")
     .doc("The scheduler pool of job. Note that, this config should be used after change Spark " +

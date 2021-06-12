@@ -1,0 +1,1 @@
+struct<w_warehouse_name:string,i_item_id:string,inv_before:bigint,inv_after:bigint>

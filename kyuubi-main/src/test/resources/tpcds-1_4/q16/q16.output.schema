@@ -1,0 +1,1 @@
+struct<order count :bigint,total shipping cost :decimal,total net profit :decimal>

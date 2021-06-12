@@ -117,7 +117,7 @@ object KyuubiAuthenticationFactory {
       }
     } catch {
       case e: IOException =>
-        throw new KyuubiSQLException(
+        throw KyuubiSQLException(
           "Failed to validate proxy privilege of " + realUser + " for " + proxyUser, e)
     }
   }

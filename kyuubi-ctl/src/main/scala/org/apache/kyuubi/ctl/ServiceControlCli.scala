@@ -38,7 +38,7 @@ private[ctl] object ServiceControlObject extends Enumeration {
 }
 
 /**
- * Main gateway of lauching a Kyuubi Ctl action.
+ * Main gateway of launching a Kyuubi Ctl action.
  * See usage in [[ServiceControlCliArguments.printUsageAndExit]].
  */
 private[kyuubi] class ServiceControlCli extends Logging {

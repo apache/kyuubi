@@ -1,0 +1,1 @@
+struct<B1_LP:decimal,B1_CNT:bigint,B1_CNTD:bigint,B2_LP:decimal,B2_CNT:bigint,B2_CNTD:bigint,B3_LP:decimal,B3_CNT:bigint,B3_CNTD:bigint,B4_LP:decimal,B4_CNT:bigint,B4_CNTD:bigint,B5_LP:decimal,B5_CNT:bigint,B5_CNTD:bigint,B6_LP:decimal,B6_CNT:bigint,B6_CNTD:bigint>

@@ -21,11 +21,11 @@ Before integrating Kyuubi with Kudu, we strongly suggest that you integrate and 
 ## Kudu Integration with Kyuubi
 
 #### Install Kudu Spark Dependency
-Confirm your Kudu cluster version and download the corresponding kudu spark dependency libary, such as [org.apache.kudu:kudu-spark2_2.11:1.9.0](https://repo1.maven.org/maven2/org/apache/kudu/kudu-spark2_2.11/1.9.0/kudu-spark2_2.11-1.9.0.jar) to `$SPARK_HOME`/jars.
+Confirm your Kudu cluster version and download the corresponding kudu spark dependency library, such as [org.apache.kudu:kudu-spark3_2.12-1.14.0](https://repo1.maven.org/maven2/org/apache/kudu/kudu-spark3_2.12/1.14.0/kudu-spark3_2.12-1.14.0.jar) to `$SPARK_HOME`/jars.
 
 #### Start Kyuubi
 
-Now, you can start Kyuubi server with this kudu embeded Spark distribution.
+Now, you can start Kyuubi server with this kudu embedded Spark distribution.
 
 #### Start Beeline Or Other Client You Prefer
 

@@ -22,13 +22,14 @@ import scala.collection.mutable.ArrayBuffer
 // scalastyle:off
 import org.apache.log4j.{Appender, AppenderSkeleton, Level, Logger}
 import org.apache.log4j.spi.LoggingEvent
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Outcome}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Outcome}
 import org.scalatest.concurrent.Eventually
+import org.scalatest.funsuite.AnyFunSuite
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.internal.Tests.IS_TESTING
 
-trait KyuubiFunSuite extends FunSuite
+trait KyuubiFunSuite extends AnyFunSuite
   with BeforeAndAfterAll
   with BeforeAndAfterEach
   with Eventually

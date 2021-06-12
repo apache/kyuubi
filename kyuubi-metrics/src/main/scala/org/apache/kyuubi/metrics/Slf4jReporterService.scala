@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics.{MetricRegistry, Slf4jReporter}
 
-import org.apache.kyuubi.metrics.MetricsConf.METRICS_REPORT_INTERVAL
+import org.apache.kyuubi.metrics.MetricsConf.METRICS_SLF4J_INTERVAL
 import org.apache.kyuubi.service.AbstractService
 
 class Slf4jReporterService(registry: MetricRegistry)
@@ -33,7 +33,7 @@ class Slf4jReporterService(registry: MetricRegistry)
       .forRegistry(registry)
       .outputTo(this.logger)
       .build()
-    val interval = conf.get(METRICS_REPORT_INTERVAL)
+    val interval = conf.get(METRICS_SLF4J_INTERVAL)
     reporter.start(interval, TimeUnit.MILLISECONDS)
     super.start()
   }

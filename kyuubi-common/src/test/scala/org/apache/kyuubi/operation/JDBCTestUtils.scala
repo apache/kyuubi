@@ -144,8 +144,7 @@ trait JDBCTestUtils extends KyuubiFunSuite {
     }
   }
 
-  def checkGetSchemas(
-      rs: ResultSet, dbNames: Seq[String], catalogName: String = ""): Unit = {
+  def checkGetSchemas(rs: ResultSet, dbNames: Seq[String], catalogName: String = ""): Unit = {
     var count = 0
     while(rs.next()) {
       count += 1

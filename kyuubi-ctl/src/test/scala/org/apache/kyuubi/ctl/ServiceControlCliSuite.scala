@@ -203,12 +203,13 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
 
       testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedCreatedNodes))
       val znodeRoot = s"/$newNamespace"
-      val children = framework.getChildren.forPath(znodeRoot).asScala
+      val children = framework.getChildren.forPath(znodeRoot).asScala.sorted
       assert(children.size == 2)
-      assert(children.head ===
-        s"serviceUri=localhost:10000;version=$KYUUBI_VERSION;sequence=0000000000")
-      assert(children.last ===
-        s"serviceUri=localhost:10001;version=$KYUUBI_VERSION;sequence=0000000001")
+
+      assert(children.head.startsWith(
+        s"serviceUri=localhost:10000;version=$KYUUBI_VERSION;sequence="))
+      assert(children.last.startsWith(
+        s"serviceUri=localhost:10001;version=$KYUUBI_VERSION;sequence="))
       children.foreach { child =>
         framework.delete().forPath(s"""$znodeRoot/$child""")
       }

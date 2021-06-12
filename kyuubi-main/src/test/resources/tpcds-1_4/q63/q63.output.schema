@@ -1,0 +1,1 @@
+struct<i_manager_id:int,sum_sales:decimal,avg_monthly_sales:decimal>

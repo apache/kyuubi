@@ -1,0 +1,1 @@
+struct<i_item_id:string,ca_country:string,ca_state:string,ca_county:string,agg1:decimal,agg2:decimal,agg3:decimal,agg4:decimal,agg5:decimal,agg6:decimal,agg7:decimal>

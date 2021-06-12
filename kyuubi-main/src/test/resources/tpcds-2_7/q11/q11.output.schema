@@ -1,0 +1,1 @@
+struct<customer_id:string,customer_first_name:string,customer_last_name:string,customer_email_address:string>

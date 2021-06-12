@@ -19,8 +19,8 @@ package org.apache.kyuubi.operation.tpcds
 
 trait TPCDSHelper {
 
-  def format: String = "parquet"
-  def database: String = "default"
+  protected def format: String
+  protected def database: String
 
   case class TableIdent(name: String) {
     def qualifiedName: String = database + "." + name
@@ -185,6 +185,7 @@ trait TPCDSHelper {
       Field("cr_ship_mode_sk", int),
       Field("cr_warehouse_sk", int),
       Field("cr_reason_sk", int),
+      Field("cr_order_number", int),
       Field("cr_return_quantity", int),
       Field("cr_return_amount", dec_7_2),
       Field("cr_return_tax", dec_7_2),
@@ -475,6 +476,7 @@ trait TPCDSHelper {
       Field("ca_county", varchar30),
       Field("ca_state", char2),
       Field("ca_zip", char10),
+      Field("ca_country", char20),
       Field("ca_gmt_offset", dec_5_2),
       Field("ca_location_type", char20))
     Table(tableIdent, fields)
@@ -501,7 +503,7 @@ trait TPCDSHelper {
     val fields = Seq(
       Field("d_date_sk", int),
       Field("d_date_id", char16),
-      Field("d_date", int),
+      Field("d_date", date),
       Field("d_month_seq", int),
       Field("d_week_seq", int),
       Field("d_quarter_seq", int),

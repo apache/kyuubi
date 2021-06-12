@@ -1,0 +1,1 @@
+struct<i_manufact_id:int,sum_sales:decimal,avg_quarterly_sales:decimal>

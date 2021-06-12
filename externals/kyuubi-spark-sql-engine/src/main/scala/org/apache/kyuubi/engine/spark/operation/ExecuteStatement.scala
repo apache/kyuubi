@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.util.concurrent.{RejectedExecutionException, TimeUnit}
 
+import org.apache.spark.kyuubi.SQLOperationListener
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.types._
 
@@ -69,16 +70,21 @@ class ExecuteStatement(
   }
 
   private def executeStatement(): Unit = withLocalProperties {
+    val operationListener = new SQLOperationListener(this)
     try {
       setState(OperationState.RUNNING)
       info(KyuubiSparkUtil.diagnostics)
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
+      // TODO: Make it configurable
+      spark.sparkContext.addSparkListener(operationListener)
       result = spark.sql(statement)
       debug(result.queryExecution)
       iter = new ArrayFetchIterator(result.collect())
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
+    } finally {
+      spark.sparkContext.removeSparkListener(operationListener)
     }
   }
 

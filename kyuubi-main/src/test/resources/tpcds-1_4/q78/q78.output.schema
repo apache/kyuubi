@@ -1,0 +1,1 @@
+struct<ratio:double,store_qty:bigint,store_wholesale_cost:decimal,store_sales_price:decimal,other_chan_qty:bigint,other_chan_wholesale_cost:decimal,other_chan_sales_price:decimal>

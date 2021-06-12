@@ -1,0 +1,1 @@
+struct<s_store_name:string,s_company_id:int,s_street_number:string,s_street_name:string,s_street_type:string,s_suite_number:string,s_city:string,s_county:string,s_state:string,s_zip:string,30 days :bigint,31 - 60 days :bigint,61 - 90 days :bigint,91 - 120 days :bigint,>120 days :bigint>
