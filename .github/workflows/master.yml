@@ -32,6 +32,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        java:
+          - '8'
+          - '11'
         profiles:
           - ''
           - '-Pspark-3.0 -Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.2 -Dspark.archive.name=spark-3.1.2-bin-hadoop2.7.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest'
@@ -40,10 +43,10 @@ jobs:
       SPARK_LOCAL_IP: localhost
     steps:
       - uses: actions/checkout@v2
-      - name: Setup JDK 1.8
+      - name: Setup JDK ${{ matrix.java }}
         uses: actions/setup-java@v1
         with:
-          java-version: '1.8'
+          java-version: ${{ matrix.java }}
       - uses: actions/cache@v1
         with:
           path: ~/.m2/repository/com
