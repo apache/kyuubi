@@ -84,7 +84,7 @@ class ExecuteStatement(
     var statusResp = client.GetOperationStatus(statusReq)
     var isComplete = false
     while (!isComplete) {
-      getQueryLog()
+      fetchQueryLog()
       verifyTStatus(statusResp.getStatus)
       val remoteState = statusResp.getOperationState
       info(s"Query[$statementId] in ${remoteState.name()}")
@@ -118,10 +118,10 @@ class ExecuteStatement(
       }
     }
     // see if anymore log could be fetched
-    getQueryLog()
+    fetchQueryLog()
   } catch onError()
 
-  private def getQueryLog(): Unit = {
+  private def fetchQueryLog(): Unit = {
     getOperationLog.foreach { logger =>
       try {
         val resp = client.FetchResults(fetchLogReq)
