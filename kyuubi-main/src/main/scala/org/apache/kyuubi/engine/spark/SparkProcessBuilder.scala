@@ -27,7 +27,7 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LAUNCH_ENV_LIST, ENGINE_SPARK_MAIN_RESOURCE}
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE
 import org.apache.kyuubi.engine.ProcBuilder
 
 class SparkProcessBuilder(
@@ -36,11 +36,6 @@ class SparkProcessBuilder(
   extends ProcBuilder with Logging {
 
   import SparkProcessBuilder._
-
-  override protected def env: Map[String, String] = {
-    val engineEnvMap = Utils.strSeqToMap(conf.get(ENGINE_LAUNCH_ENV_LIST))
-    sys.env ++ engineEnvMap
-  }
 
   override protected val executable: String = {
     val sparkHomeOpt = env.get("SPARK_HOME").orElse {
