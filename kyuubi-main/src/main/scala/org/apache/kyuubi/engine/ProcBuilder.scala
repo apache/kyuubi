@@ -47,9 +47,7 @@ trait ProcBuilder {
 
   protected def conf: KyuubiConf
 
-  protected def env: Map[String, String] = {
-    sys.env ++ conf.getEngineEnvs
-  }
+  protected def env: Map[String, String] = conf.getEnvs
 
   protected val workingDir: Path
 

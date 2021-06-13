@@ -47,7 +47,7 @@ trait WithKyuubiServerOnYarn extends WithKyuubiServer {
     KyuubiHadoopUtils.toSparkPrefixedConf(miniYarnService.getHadoopConf()).foreach { case (k, v) =>
       conf.set(k, v)
     }
-    conf.set(KYUUBI_ENGINE_ENV_PREFIX + "HADOOP_CONF_DIR", miniYarnService.getHadoopConfDir())
+    conf.set(s"$KYUUBI_ENGINE_ENV_PREFIX.HADOOP_CONF_DIR", miniYarnService.getHadoopConfDir)
     super.beforeAll()
   }
 

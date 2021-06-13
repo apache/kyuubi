@@ -101,11 +101,9 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     settings.entrySet().asScala.map(x => (x.getKey, x.getValue)).toMap[String, String]
   }
 
-  /** Get all engine envs as map */
-  def getEngineEnvs: Map[String, String] = {
-    settings.entrySet().asScala.filter(_.getKey.startsWith(KYUUBI_ENGINE_ENV_PREFIX))
-      .map(entry => entry.getKey.stripPrefix(KYUUBI_ENGINE_ENV_PREFIX) -> entry.getValue)
-      .toMap[String, String]
+  /** Get all envs as map */
+  def getEnvs: Map[String, String] = {
+    sys.env ++ getAllWithPrefix(KYUUBI_ENGINE_ENV_PREFIX, "")
   }
 
   /**
@@ -184,7 +182,7 @@ object KyuubiConf {
   /** the default file that contains kyuubi properties */
   final val KYUUBI_CONF_FILE_NAME = "kyuubi-defaults.conf"
   final val KYUUBI_HOME = "KYUUBI_HOME"
-  final val KYUUBI_ENGINE_ENV_PREFIX = "kyuubi.engineEnv."
+  final val KYUUBI_ENGINE_ENV_PREFIX = "kyuubi.engineEnv"
 
   val kyuubiConfEntries: java.util.Map[String, ConfigEntry[_]] =
     java.util.Collections.synchronizedMap(new java.util.HashMap[String, ConfigEntry[_]]())
