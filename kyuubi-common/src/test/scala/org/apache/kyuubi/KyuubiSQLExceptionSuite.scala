@@ -35,7 +35,9 @@ class KyuubiSQLExceptionSuite extends KyuubiFunSuite {
 
     val e3 = KyuubiSQLException(e2.toTStatus)
     assert(e3.getMessage === e2.getMessage)
-    assert(e3.getStackTrace === e2.getStackTrace)
+    e3.getStackTrace.zip(e2.getStackTrace).foreach { case (s1, s2) =>
+      assert(s1.toString === s2.toString)
+    }
     assert(e3.getCause.getMessage === e1.getMessage)
     assert(e3.getCause.getCause.getMessage === e0.getMessage)
 
@@ -46,7 +48,9 @@ class KyuubiSQLExceptionSuite extends KyuubiFunSuite {
 
     val e4 = KyuubiSQLException(ts0)
     assert(e4.getMessage === msg0)
-    assert(e4.getCause.getStackTrace === e0.getStackTrace)
+    e4.getCause.getStackTrace.zip(e0.getStackTrace).take(5).foreach { case (s1, s2) =>
+      assert(s1.toString === s2.toString)
+    }
 
     val e5 = KyuubiSQLException(e0)
     assert(e5.getMessage === msg0)
