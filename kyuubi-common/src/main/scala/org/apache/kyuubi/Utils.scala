@@ -39,6 +39,13 @@ private[kyuubi] object Utils extends Logging {
     s.split(",").map(_.trim).filter(_.nonEmpty)
   }
 
+  def strSeqToMap(s: Seq[String]): Map[String, String] = {
+    s.map(_.trim.split("=")).filter(_.size == 2)
+      .map { arr =>
+        arr.head -> arr.last
+      }.toMap
+  }
+
   def getSystemProperties: Map[String, String] = {
     sys.props.toMap
   }

@@ -637,6 +637,15 @@ object KyuubiConf {
       .checkValue(_ > 0, "must be positive number")
       .createWithDefault(Duration.ofMinutes(30).toMillis)
 
+  val ENGINE_LAUNCH_ENV_LIST: ConfigEntry[Seq[String]] =
+    buildConf("engine.launch.env.list")
+      .doc("A comma separated list of env to transfer for launching engine and each env is" +
+        " separated by a equal sign, e.g. \"HADOOP_CONF_DIR=/etc/hadoop\".")
+      .version("1.3.0")
+      .stringConf
+      .toSequence
+      .createWithDefault(Nil)
+
   val OPERATION_SCHEDULER_POOL: OptionalConfigEntry[String] = buildConf("operation.scheduler.pool")
     .doc("The scheduler pool of job. Note that, this config should be used after change Spark " +
       "config spark.scheduler.mode=FAIR.")
