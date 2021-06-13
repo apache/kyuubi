@@ -101,6 +101,13 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     settings.entrySet().asScala.map(x => (x.getKey, x.getValue)).toMap[String, String]
   }
 
+  /** Get all engine envs as map */
+  def getEngineEnvs: Map[String, String] = {
+    settings.entrySet().asScala.filter(_.getKey.startsWith(KYUUBI_ENGINE_ENV_PREFIX))
+      .map(entry => entry.getKey.stripPrefix(KYUUBI_ENGINE_ENV_PREFIX) -> entry.getValue)
+      .toMap[String, String]
+  }
+
   /**
    * Retrieve key-value pairs from [[KyuubiConf]] starting with `dropped.remainder`, and put them to
    * the result map with the `dropped` of key being dropped.
@@ -177,6 +184,7 @@ object KyuubiConf {
   /** the default file that contains kyuubi properties */
   final val KYUUBI_CONF_FILE_NAME = "kyuubi-defaults.conf"
   final val KYUUBI_HOME = "KYUUBI_HOME"
+  final val KYUUBI_ENGINE_ENV_PREFIX = "kyuubi.engineEnv."
 
   val kyuubiConfEntries: java.util.Map[String, ConfigEntry[_]] =
     java.util.Collections.synchronizedMap(new java.util.HashMap[String, ConfigEntry[_]]())
@@ -636,15 +644,6 @@ object KyuubiConf {
       .timeConf
       .checkValue(_ > 0, "must be positive number")
       .createWithDefault(Duration.ofMinutes(30).toMillis)
-
-  val ENGINE_LAUNCH_ENV_LIST: ConfigEntry[Seq[String]] =
-    buildConf("engine.launch.env.list")
-      .doc("A comma separated list of env to transfer for launching engine and each env is" +
-        " separated by a equal sign, e.g. \"HADOOP_CONF_DIR=/etc/hadoop\".")
-      .version("1.3.0")
-      .stringConf
-      .toSequence
-      .createWithDefault(Nil)
 
   val OPERATION_SCHEDULER_POOL: OptionalConfigEntry[String] = buildConf("operation.scheduler.pool")
     .doc("The scheduler pool of job. Note that, this config should be used after change Spark " +

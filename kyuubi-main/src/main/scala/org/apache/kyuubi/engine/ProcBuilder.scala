@@ -25,9 +25,8 @@ import scala.collection.JavaConverters._
 
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_LAUNCH_ENV_LIST
 import org.apache.kyuubi.util.NamedThreadFactory
 
 trait ProcBuilder {
@@ -49,8 +48,7 @@ trait ProcBuilder {
   protected def conf: KyuubiConf
 
   protected def env: Map[String, String] = {
-    val engineEnvMap = Utils.strSeqToMap(conf.get(ENGINE_LAUNCH_ENV_LIST))
-    sys.env ++ engineEnvMap
+    sys.env ++ conf.getEngineEnvs
   }
 
   protected val workingDir: Path
