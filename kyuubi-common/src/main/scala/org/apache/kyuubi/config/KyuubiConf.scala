@@ -101,6 +101,11 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     settings.entrySet().asScala.map(x => (x.getKey, x.getValue)).toMap[String, String]
   }
 
+  /** Get all envs as map */
+  def getEnvs: Map[String, String] = {
+    sys.env ++ getAllWithPrefix(KYUUBI_ENGINE_ENV_PREFIX, "")
+  }
+
   /**
    * Retrieve key-value pairs from [[KyuubiConf]] starting with `dropped.remainder`, and put them to
    * the result map with the `dropped` of key being dropped.
@@ -177,6 +182,7 @@ object KyuubiConf {
   /** the default file that contains kyuubi properties */
   final val KYUUBI_CONF_FILE_NAME = "kyuubi-defaults.conf"
   final val KYUUBI_HOME = "KYUUBI_HOME"
+  final val KYUUBI_ENGINE_ENV_PREFIX = "kyuubi.engineEnv"
 
   val kyuubiConfEntries: java.util.Map[String, ConfigEntry[_]] =
     java.util.Collections.synchronizedMap(new java.util.HashMap[String, ConfigEntry[_]]())

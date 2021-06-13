@@ -24,9 +24,4 @@ private[kyuubi] object Tests {
     .version("1.2.0")
     .booleanConf
     .createOptional
-
-  val TESTING_HADOOP_CONF_DIR = ConfigBuilder("kyuubi.testing.hadoop.conf.dir")
-    .version("1.3.0")
-    .stringConf
-    .createOptional
 }
