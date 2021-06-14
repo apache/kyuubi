@@ -75,6 +75,7 @@
         <hive.version>2.3.7</hive.version>
         <jackson.version>2.11.4</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
+        <jaxb.version>2.2.11</jaxb.version>
         <jetty.version>9.4.41.v20210516</jetty.version>
         <ldapsdk.version>5.1.4</ldapsdk.version>
         <prometheus.version>0.10.0</prometheus.version>
@@ -1126,6 +1127,18 @@
                         <artifactId>scala-library</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <!--
+              Required for JDK 11. Previous as a transitive dependency of hadoop-client,
+              since SPARK-33212(will be included in Apache Spark 3.2), Apache Spark moved
+              to Hadoop Shaded Client, and Kyuubi always uses Hadoop Shaded Client, thus
+              we need explicitly add this dependency.
+            -->
+            <dependency>
+                <groupId>javax.xml.bind</groupId>
+                <artifactId>jaxb-api</artifactId>
+                <version>${jaxb.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
