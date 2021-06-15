@@ -97,6 +97,7 @@ class MiniYarnService(name: String) extends AbstractService(name) {
 
   override def stop(): Unit = {
     if (yarnCluster != null) yarnCluster.stop()
+    if (hadoopConfDir != null) hadoopConfDir.delete()
     super.stop()
   }
 
@@ -108,6 +109,7 @@ class MiniYarnService(name: String) extends AbstractService(name) {
     }
     val writer = new FileWriter(new File(hadoopConfDir, "yarn-site.xml"))
     configToWrite.writeXml(writer)
+    writer.close()
   }
 
   def getHadoopConfDir(): String = {
