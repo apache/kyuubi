@@ -50,7 +50,7 @@ trait IEngineProcess {
   def stopLogCapture(): Unit
 
   /**
-   * check if the engine process has existed
+   * check if the engine process is existed
    */
   def checkExited(): Boolean
 
