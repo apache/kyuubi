@@ -39,12 +39,13 @@ trait IEngineProcess {
   def start(): Unit
 
   /**
-   * stop the engine process
+   * stop the all the thing about engine process, include log capture thread
    */
   def stop(): Unit
 
   /**
-   * stop the log capture thread, in general this method should be invoked after engine initialized
+   * stop the log capture thread only, in general this method should be invoked after engine
+   * initialized
    */
   def stopLogCapture(): Unit
 
@@ -160,6 +161,7 @@ class EngineProcess(processBuilder: ProcessBuilder, conf: KyuubiConf, engineLog:
     if (process != null) {
       process.destroyForcibly()
     }
+    stopLogCapture()
   }
 
   override def stopLogCapture(): Unit = {
