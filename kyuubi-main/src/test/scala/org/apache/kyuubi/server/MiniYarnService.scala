@@ -18,14 +18,12 @@
 package org.apache.kyuubi.server
 
 
-import java.io.File
+import java.io.{File, FileWriter}
 import java.net.InetAddress
-import java.nio.charset.StandardCharsets
 
 import scala.collection.JavaConverters._
 
-import com.google.common.io.Files
-import org.apache.commons.lang.StringEscapeUtils
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.server.MiniYARNCluster
@@ -102,29 +100,15 @@ class MiniYarnService(name: String) extends AbstractService(name) {
     super.stop()
   }
 
-  def getHadoopConf(): Map[String, String] = {
-    val hostName = InetAddress.getLocalHost.getHostName
-    yarnCluster.getConfig.iterator().asScala.map { kv =>
-      kv.getKey -> kv.getValue.replaceAll(hostName, "localhost")
-    }.toMap
-  }
-
   private def saveHadoopConf(): Unit = {
-    val propertyString = getHadoopConf().map { case (k, v) =>
-      s"""
-         |<property>
-         |  <name>$k</name>
-         |  <value>${StringEscapeUtils.escapeXml(v)}</value>
-         |</property>""".stripMargin
-    }.mkString("\n")
-    val xmlContent =
-      s"""
-         |<configuration>
-         |$propertyString
-         |</configuration>
-         |""".stripMargin
-    val confFile = new File(hadoopConfDir, "yarn-site.xml")
-    Files.write(xmlContent.getBytes(StandardCharsets.UTF_8), confFile)
+    val configToWrite = new Configuration(false)
+
+    val hostName = InetAddress.getLocalHost.getHostName
+    yarnCluster.getConfig.iterator().asScala.foreach { kv =>
+      configToWrite.set(kv.getKey, kv.getValue.replaceAll(hostName, "localhost"))
+    }
+    val writer = new FileWriter(new File(hadoopConfDir, "yarn-site.xml"))
+    configToWrite.writeXml(writer)
   }
 
   def getHadoopConfDir(): String = {
