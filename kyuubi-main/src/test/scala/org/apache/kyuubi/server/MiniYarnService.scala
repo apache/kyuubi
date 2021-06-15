@@ -102,7 +102,6 @@ class MiniYarnService(name: String) extends AbstractService(name) {
 
   private def saveHadoopConf(): Unit = {
     val configToWrite = new Configuration(false)
-
     val hostName = InetAddress.getLocalHost.getHostName
     yarnCluster.getConfig.iterator().asScala.foreach { kv =>
       configToWrite.set(kv.getKey, kv.getValue.replaceAll(hostName, "localhost"))
