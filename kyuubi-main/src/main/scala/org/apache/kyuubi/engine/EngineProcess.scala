@@ -30,15 +30,42 @@ import org.apache.kyuubi.engine.EngineProcess.{PROC_BUILD_LOGGER, UNCAUGHT_ERROR
 import org.apache.kyuubi.util.NamedThreadFactory
 
 /**
- * A wrapper of Process
+ * A wrapper of [[java.lang.Process]]
  */
 trait IEngineProcess {
+  /**
+   * start the engine process
+   */
   def start(): Unit
+
+  /**
+   * stop the engine process
+   */
   def stop(): Unit
 
+  /**
+   * stop the log capture thread, in general this method should be invoked after engine initialized
+   */
+  def stopLogCapture(): Unit
+
+  /**
+   * check if the engine process has existed
+   */
   def checkExited(): Boolean
+
+  /**
+   * check if the engine process is alive
+   */
   def isAlive(): Boolean
+
+  /**
+   * return engine process exit value
+   */
   def getExitValue(): Int
+
+  /**
+   * return the error if engine failed to initialize
+   */
   def getError(): Throwable
 }
 object EngineProcess {
@@ -46,6 +73,9 @@ object EngineProcess {
   val PROC_BUILD_LOGGER = new NamedThreadFactory("process-logger-capture", daemon = true)
 }
 
+/**
+ * Note that: This class is not thread safe.
+ */
 class EngineProcess(processBuilder: ProcessBuilder, conf: KyuubiConf, engineLog: File)
   extends IEngineProcess {
   assert(processBuilder != null)
@@ -127,10 +157,12 @@ class EngineProcess(processBuilder: ProcessBuilder, conf: KyuubiConf, engineLog:
   }
 
   override def stop(): Unit = {
-    require(hasStarted)
     if (process != null) {
       process.destroyForcibly()
     }
+  }
+
+  override def stopLogCapture(): Unit = {
     if (logCaptureThread != null) {
       logCaptureThread.interrupt()
     }

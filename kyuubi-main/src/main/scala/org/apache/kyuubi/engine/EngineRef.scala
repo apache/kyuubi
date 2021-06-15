@@ -158,6 +158,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
           }
         }
         if (started + timeout <= System.currentTimeMillis()) {
+          process.stop()
           MetricsSystem.tracing(_.incCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
           throw KyuubiSQLException(
             s"Timeout($timeout) to launched Spark with $builder",
@@ -169,7 +170,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
     } finally {
       // we must close the process builder whether session open is success or failure since
       // we have a log capture thread in process builder.
-      process.stop()
+      process.stopLogCapture()
     }
   }
 
