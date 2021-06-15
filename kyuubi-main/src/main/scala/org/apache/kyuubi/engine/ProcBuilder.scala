@@ -41,7 +41,7 @@ trait ProcBuilder extends Logging {
 
   protected def conf: KyuubiConf
 
-  protected def env: Map[String, String]
+  protected def env: Map[String, String] = conf.getEnvs
 
   protected val workingDir: Path
 

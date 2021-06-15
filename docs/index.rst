@@ -89,6 +89,7 @@ Kyuubi provides both high availability and load balancing solutions based on Zoo
    client/index
    integrations/index
    monitor/index
+   sql/index
 
 .. toctree::
    :caption: Kyuubi Insider

@@ -15,13 +15,20 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.config.internal
+package org.apache.kyuubi.engine.spark.udf
 
-import org.apache.kyuubi.config.ConfigBuilder
+import org.apache.spark.sql.expressions.UserDefinedFunction
 
-private[kyuubi] object Tests {
-  val IS_TESTING = ConfigBuilder("kyuubi.testing")
-    .version("1.2.0")
-    .booleanConf
-    .createOptional
-}
+/**
+ * A wrapper for Spark' [[UserDefinedFunction]]
+ *
+ * @param name function name
+ * @param udf user-defined function
+ * @param description function description
+ */
+case class KyuubiDefinedFunction(
+    name: String,
+    udf: UserDefinedFunction,
+    description: String,
+    returnType: String,
+    since: String)

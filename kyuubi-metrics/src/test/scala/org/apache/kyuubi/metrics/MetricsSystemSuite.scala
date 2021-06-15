@@ -64,7 +64,7 @@ class MetricsSystemSuite extends KyuubiFunSuite {
     val client: HttpClient = new HttpClient
     client.start()
     val res: ContentResponse = client.GET(prometheusHttpServer.getURI.resolve(testContextPath))
-    assert(res.getContentAsString.contains("PS_MarkSweep_count"))
+    assert(res.getContentAsString.contains("heap_usage"))
     assert(res.getContentAsString.contains("kyuubi_connection_opened 2021.0"))
     client.stop()
 
@@ -83,7 +83,7 @@ class MetricsSystemSuite extends KyuubiFunSuite {
     metricsSystem.initialize(conf)
     metricsSystem.start()
     val reportFile = Paths.get(reportPath.toString, "report.json")
-    checkJsonFileMetrics(reportFile, "PS-MarkSweep.count")
+    checkJsonFileMetrics(reportFile, "heap.usage")
     metricsSystem.incCount(MetricsConstants.STATEMENT_TOTAL)
 
     checkJsonFileMetrics(reportFile, MetricsConstants.STATEMENT_TOTAL)

@@ -23,6 +23,8 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq, TStatusCode}
 
+import org.apache.kyuubi.KYUUBI_VERSION
+
 trait JDBCTests extends BasicJDBCTests {
   test("execute statement -  select null") {
     withJdbcStatement() { statement =>
@@ -348,5 +350,15 @@ trait JDBCTests extends BasicJDBCTests {
       rs2.next()
       assert(rs2.getString(1) == "test")
     }
+  }
+
+  test("kyuubi defined function - kyuubi_version") {
+    withJdbcStatement() { statement =>
+      val rs = statement.executeQuery("SELECT kyuubi_version()")
+      assert(rs.next())
+      assert(rs.getString(1) == KYUUBI_VERSION)
+
+    }
+
   }
 }
