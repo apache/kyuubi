@@ -17,11 +17,15 @@
 
 package org.apache.kyuubi.server
 
+
 import java.io.File
 import java.net.InetAddress
+import java.nio.charset.StandardCharsets
 
 import scala.collection.JavaConverters._
 
+import com.google.common.io.Files
+import org.apache.commons.lang.StringEscapeUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.server.MiniYARNCluster
@@ -60,7 +64,7 @@ class MiniYarnService(name: String) extends AbstractService(name) {
     yarnConfig.setInt("yarn.scheduler.capacity.root.two_cores_queue.maximum-applications", 2)
     yarnConfig.setInt("yarn.scheduler.capacity.root.two_cores_queue.maximum-allocation-vcores", 2)
     yarnConfig.setFloat("yarn.scheduler.capacity.root.two_cores_queue.user-limit-factor", 1)
-    yarnConfig.set("yarn.scheduler.capacity.root.two_cores_queue.acl_administer_queue", "*")
+    yarnConfig.set("yarn.scheduler.capacity.root.two_cores_queue.acl_submit_applications", "*")
     yarnConfig.set("yarn.scheduler.capacity.root.two_cores_queue.acl_administer_queue", "*")
 
     yarnConfig.setInt("yarn.scheduler.capacity.node-locality-delay", -1)
@@ -89,6 +93,7 @@ class MiniYarnService(name: String) extends AbstractService(name) {
       config.get(YarnConfiguration.RM_ADDRESS).split(":")(1) != "0"
     }
     info(s"RM address in configuration is ${config.get(YarnConfiguration.RM_ADDRESS)}")
+    saveHadoopConf()
     super.start()
   }
 
@@ -102,6 +107,24 @@ class MiniYarnService(name: String) extends AbstractService(name) {
     yarnCluster.getConfig.iterator().asScala.map { kv =>
       kv.getKey -> kv.getValue.replaceAll(hostName, "localhost")
     }.toMap
+  }
+
+  private def saveHadoopConf(): Unit = {
+    val propertyString = getHadoopConf().map { case (k, v) =>
+      s"""
+         |<property>
+         |  <name>$k</name>
+         |  <value>${StringEscapeUtils.escapeXml(v)}</value>
+         |</property>""".stripMargin
+    }.mkString("\n")
+    val xmlContent =
+      s"""
+         |<configuration>
+         |$propertyString
+         |</configuration>
+         |""".stripMargin
+    val confFile = new File(hadoopConfDir, "yarn-site.xml")
+    Files.write(xmlContent.getBytes(StandardCharsets.UTF_8), confFile)
   }
 
   def getHadoopConfDir(): String = {
