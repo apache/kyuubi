@@ -17,11 +17,13 @@
 
 package org.apache.kyuubi.server
 
-import java.io.File
+
+import java.io.{File, FileWriter}
 import java.net.InetAddress
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.yarn.conf.YarnConfiguration
 import org.apache.hadoop.yarn.server.MiniYARNCluster
@@ -60,7 +62,7 @@ class MiniYarnService(name: String) extends AbstractService(name) {
     yarnConfig.setInt("yarn.scheduler.capacity.root.two_cores_queue.maximum-applications", 2)
     yarnConfig.setInt("yarn.scheduler.capacity.root.two_cores_queue.maximum-allocation-vcores", 2)
     yarnConfig.setFloat("yarn.scheduler.capacity.root.two_cores_queue.user-limit-factor", 1)
-    yarnConfig.set("yarn.scheduler.capacity.root.two_cores_queue.acl_administer_queue", "*")
+    yarnConfig.set("yarn.scheduler.capacity.root.two_cores_queue.acl_submit_applications", "*")
     yarnConfig.set("yarn.scheduler.capacity.root.two_cores_queue.acl_administer_queue", "*")
 
     yarnConfig.setInt("yarn.scheduler.capacity.node-locality-delay", -1)
@@ -89,19 +91,25 @@ class MiniYarnService(name: String) extends AbstractService(name) {
       config.get(YarnConfiguration.RM_ADDRESS).split(":")(1) != "0"
     }
     info(s"RM address in configuration is ${config.get(YarnConfiguration.RM_ADDRESS)}")
+    saveHadoopConf()
     super.start()
   }
 
   override def stop(): Unit = {
     if (yarnCluster != null) yarnCluster.stop()
+    if (hadoopConfDir != null) hadoopConfDir.delete()
     super.stop()
   }
 
-  def getHadoopConf(): Map[String, String] = {
+  private def saveHadoopConf(): Unit = {
+    val configToWrite = new Configuration(false)
     val hostName = InetAddress.getLocalHost.getHostName
-    yarnCluster.getConfig.iterator().asScala.map { kv =>
-      kv.getKey -> kv.getValue.replaceAll(hostName, "localhost")
-    }.toMap
+    yarnCluster.getConfig.iterator().asScala.foreach { kv =>
+      configToWrite.set(kv.getKey, kv.getValue.replaceAll(hostName, "localhost"))
+    }
+    val writer = new FileWriter(new File(hadoopConfDir, "yarn-site.xml"))
+    configToWrite.writeXml(writer)
+    writer.close()
   }
 
   def getHadoopConfDir(): String = {
