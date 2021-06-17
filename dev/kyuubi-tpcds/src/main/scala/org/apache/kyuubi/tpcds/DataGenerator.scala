@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory
 /**
  * Usage:
  * If you want to generate 10GB data with new database `tpcds_sf10`, you can run the cmd:
- *   `$SPARK_HOME/bin/spark-submit --conf spark.sql.tpcds.scale.factor=10 --conf spark.sql.tpcds.database=tpcds_sf10 --class org.apache.kyuubi.tpcds.DataGenerator kyuubi-tpcds-1.3.0-SNAPSHOT.jar`
+ *   `$SPARK_HOME/bin/spark-submit --conf spark.sql.tpcds.scale.factor=10 --conf spark.sql.tpcds.database=tpcds_sf10 --class org.apache.kyuubi.tpcds.DataGenerator kyuubi-tpcds-*.jar`
  */
 // scalastyle:on line.size.limit
 object DataGenerator {
