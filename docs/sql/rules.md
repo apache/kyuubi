@@ -8,7 +8,7 @@
 
 # Auxiliary SQL extension for Spark SQL
 
-Kyuubi provides SQL extensions out of box. Due to the version compatibility with Apache Spark, currently we only support Apache Spark branch-3.1 (i.e 3.1.1 and 3.1.2).
+Kyuubi provides SQL extension out of box. Due to the version compatibility with Apache Spark, currently we only support Apache Spark branch-3.1 (i.e 3.1.1 and 3.1.2).
 And don't worry, Kyuubi will support the new Apache Spark version in future. Thanks to the adaptive query execution framework (AQE), Kyuubi can do these optimization.
 
 ## What feature does Kyuubi SQL extension provide
@@ -34,7 +34,7 @@ And don't worry, Kyuubi will support the new Apache Spark version in future. Tha
   we can make staging partition data size small and last partition data size big.
 
 
-## How to use Kyuubi SQL extensions
+## How to use Kyuubi SQL extension
 
 1. you need to choose Apache Spark branch-3.1 or higher version with Kyuubi binary tgz.
 2. if you want to compile Kyuubi by yourself, the maven opt should add `-Pkyuubi-extension-spark_3.1`
