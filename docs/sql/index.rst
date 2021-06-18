@@ -10,5 +10,6 @@ This part describes the use of the SQL References in Kyuubi, including lists of 
     :maxdepth: 2
     :numbered: 3
 
+    rules
     functions
 
