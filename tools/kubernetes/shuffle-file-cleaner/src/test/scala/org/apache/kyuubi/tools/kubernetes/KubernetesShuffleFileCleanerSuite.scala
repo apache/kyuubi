@@ -25,5 +25,12 @@ class KubernetesShuffleFileCleanerSuite extends KyuubiFunSuite {
   }
 
   test("configurations") {
+    // enverinment
+    val envMap = System.getenv()
+
+    assertThrows[IllegalArgumentException] {
+      KubernetesShuffleFileCleaner.initializeConfiguration()
+    }
+
   }
 }

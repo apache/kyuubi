@@ -23,6 +23,23 @@ import java.nio.file.{Files, Paths}
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.tools.kubernetes.Constants._
 
+/*
+* Spark storage shuffle data as the following structure.
+*
+* local-dir1/
+*   blockmgr-uuid/
+*     hash-sub-dir/
+*       shuffle-data
+*       shuffle-index
+*
+* local-dir2/
+*   blockmgr-uuid/
+*     hash-sub-dir/
+*       shuffle-data
+*       shuffle-index
+*
+* ...
+*/
 object KubernetesShuffleFileCleaner extends Logging {
 
   private val envMap = System.getenv()
@@ -36,7 +53,7 @@ object KubernetesShuffleFileCleaner extends Logging {
   private val sleepTime = envMap.getOrDefault(SLEEP_TIME_KEY,
     SLEEP_TIME_DEFAULT_VALUE).toLong
   private val deepCleanFileExpiredTime = envMap.getOrDefault(DEEP_CLEAN_FILE_EXPIRED_TIME_KEY,
-      DEEP_CLEAN_FILE_EXPIRED_TIME_DEFAULT_VALUE).toLong
+    DEEP_CLEAN_FILE_EXPIRED_TIME_DEFAULT_VALUE).toLong
 
   def doClean(dir: File, time: Long) {
     info(s"start clean ${dir.getName} with fileExpiredTime ${time}")
@@ -67,7 +84,7 @@ object KubernetesShuffleFileCleaner extends Logging {
       })
   }
 
-  def checkAndDeleteFIle (file: File, time: Long) : Unit = {
+  def checkAndDeleteFIle(file: File, time: Long): Unit = {
     info(s"check file ${file.getName}")
     if (System.currentTimeMillis() - file.lastModified() > time) {
       if (file.delete()) {
@@ -78,7 +95,7 @@ object KubernetesShuffleFileCleaner extends Logging {
     }
   }
 
-  def checkAndDeleteDir (dir: File) : Unit = {
+  def checkAndDeleteDir(dir: File): Unit = {
     if (dir.listFiles.isEmpty) {
       if (dir.delete()) {
         info(s"delete dir ${dir.getName} success")
@@ -90,16 +107,17 @@ object KubernetesShuffleFileCleaner extends Logging {
 
   import scala.sys.process._
 
-  def checkUsedCapacity(dir: String) : Boolean = {
+  def checkUsedCapacity(dir: String): Boolean = {
     val used = (s"df ${dir}" #| s"grep ${dir}").!!
-      .split(" ").filter(_.endsWith("%")) {0}.replace("%", "")
+      .split(" ").filter(_.endsWith("%")) {
+      0
+    }.replace("%", "")
     info(s"${dir} now used ${used}% space")
 
     used.toInt > freeSpaceThreshold
   }
 
-  def initializeConfiguration(args: Array[String]) : Unit = {
-
+  def initializeConfiguration(): Unit = {
     if (cacheDirs == null || cacheDirs.isEmpty) {
       throw new IllegalArgumentException(s"the env ${CACHE_DIRS_KEY} can not be null")
     }
@@ -133,7 +151,7 @@ object KubernetesShuffleFileCleaner extends Logging {
   }
 
   def main(args: Array[String]): Unit = {
-    initializeConfiguration(args)
+    initializeConfiguration()
 
     while (true) {
       info("start clean job")

@@ -1,4 +1,4 @@
-FROM openjdk:8-jre-slim
+FROM openjdk:8-slim
 
 RUN mkdir /data && \
     mkdir -p /opt/jars && \

@@ -17,10 +17,6 @@
 #
 
 # shellcheck disable=SC2046
-dateTime=$(date "+%Y%m%d%H%M%S")
-
-nohup java -cp ${CLEANER_CLASSPATH} \
+java -cp ${CLEANER_CLASSPATH} \
  org.apache.kyuubi.KubernetesShuffleFileCleaner \
- >/log/cleanerLog/cleaner"${dateTime}".out 2>&1 &
-
-tail -f /log/cleanerLog/cleaner"${dateTime}".out
+ | tee /log/cleanerLog/cleaner$(date "+%Y%m%d%H%M%S").out
