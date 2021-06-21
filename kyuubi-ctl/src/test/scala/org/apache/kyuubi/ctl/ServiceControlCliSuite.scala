@@ -120,9 +120,14 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
   }
 
   /** Get the rendered service node info without title */
-  private def getRenderedNodesInfoWithoutTitle(nodesInfo: Seq[ServiceNodeInfo]): String = {
-    val renderedInfo = renderServiceNodesInfo("", nodesInfo)
-    renderedInfo.substring(renderedInfo.indexOf("|"))
+  private def getRenderedNodesInfoWithoutTitle(nodesInfo: Seq[ServiceNodeInfo],
+                                               verbose: Boolean): String = {
+    val renderedInfo = renderServiceNodesInfo("", nodesInfo, verbose)
+    if (verbose) {
+      renderedInfo.substring(renderedInfo.indexOf("|"))
+    } else {
+      renderedInfo
+    }
   }
 
   test("test help") {
@@ -159,7 +164,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
   test("test render zookeeper service node info") {
     val title = "test render"
     val nodes = Seq(ServiceNodeInfo("/kyuubi", "serviceNode", "localhost", 10000, Some("version")))
-    val renderedInfo = renderServiceNodesInfo(title, nodes)
+    val renderedInfo = renderServiceNodesInfo(title, nodes, true)
     val expected = {
       s"\n               $title               " +
       """
@@ -172,7 +177,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         |""".stripMargin
     }
     assert(renderedInfo == expected)
-    assert(renderedInfo.contains(getRenderedNodesInfoWithoutTitle(nodes)))
+    assert(renderedInfo.contains(getRenderedNodesInfoWithoutTitle(nodes, true)))
   }
 
   test("test expose zk service node to another namespace") {
@@ -201,7 +206,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         ServiceNodeInfo(s"/$newNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION))
       )
 
-      testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedCreatedNodes))
+      testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedCreatedNodes, false))
       val znodeRoot = s"/$newNamespace"
       val children = framework.getChildren.forPath(znodeRoot).asScala.sorted
       assert(children.size == 2)
@@ -257,7 +262,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION))
       )
 
-      testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedNodes))
+      testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedNodes, false))
     }
   }
 
@@ -286,7 +291,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION))
       )
 
-      testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedNodes))
+      testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedNodes, false))
     }
   }
 
@@ -317,7 +322,36 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
         ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION))
       )
 
-      testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedDeletedNodes))
+      testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedDeletedNodes, false))
+    }
+  }
+
+  test("test verbose output") {
+    val uniqueNamespace = getUniqueNamespace()
+    conf
+      .unset(KyuubiConf.SERVER_KEYTAB)
+      .unset(KyuubiConf.SERVER_PRINCIPAL)
+      .set(HA_ZK_QUORUM, zkServer.getConnectString)
+      .set(HA_ZK_NAMESPACE, uniqueNamespace)
+      .set(KyuubiConf.FRONTEND_BIND_PORT, 0)
+
+    withZkClient(conf) { framework =>
+      createZkServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
+      createZkServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
+
+      val args = Array(
+        "list", "server",
+        "--zk-quorum", zkServer.getConnectString,
+        "--namespace", uniqueNamespace,
+        "--verbose"
+      )
+
+      val expectedNodes = Seq(
+        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION)),
+        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION))
+      )
+
+      testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedNodes, true))
     }
   }
 }
