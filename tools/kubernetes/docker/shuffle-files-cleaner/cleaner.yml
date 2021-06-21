@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kyuubi-kubernetes-shuffle-file-cleaner
+  namespace: spark
+spec:
+  selector:
+    matchLabels:
+      name: <name>
+  template:
+    metadata:
+      labels:
+        name: <name>
+    spec:
+      containers:
+        - image: <image>
+          name: cleaner
+          volumeMounts:
+            - name: spark
+              mountPath: /data
+            - name: cleaner-log
+              mountPath: /log/cleanerLog
+          env:
+            - name: cacheDirs
+              value: <"/data/data1,/data/data2">
+            - name: fileExpiredTime
+              value: <"604800000">
+            - name: freeSpaceThreshold
+              value: <"60">
+            - name: sleepTime
+              value: <"3600000">
+            - name: deepCleanFileExpiredTime
+              value: <"432000000">
+      volumes:
+        - name: spark
+          hostPath:
+            path: /spark
+        - name: cleaner-log
+          hostPath:
+            path: /spark
