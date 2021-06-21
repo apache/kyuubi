@@ -37,7 +37,7 @@ trait Logging {
   // Method to get or create the logger for this object
   protected def logger: Logger = {
     if (log_ == null) {
-      initializeLoggerIfNecessary(true)
+      initializeLoggerIfNecessary(false)
       log_ = LoggerFactory.getLogger(loggerName)
     }
     log_
