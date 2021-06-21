@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 
+<<<<<<< HEAD:tools/kubernetes/shuffle-file-cleaner/src/test/scala/org/apache/kyuubi/tools/kubernetes/KubernetesShuffleFileCleanerSuite.scala
 package org.apache.kyuubi.tools.kubernetes
 
 import org.apache.kyuubi.KyuubiFunSuite
@@ -32,5 +33,22 @@ class KubernetesShuffleFileCleanerSuite extends KyuubiFunSuite {
       KubernetesShuffleFileCleaner.initializeConfiguration()
     }
 
+=======
+package org.apache.kyuubi.service.authentication
+
+import javax.security.sasl.AuthenticationException
+
+import org.apache.kyuubi.Logging
+
+class UserDefineAuthenticationProviderImpl()
+  extends PasswdAuthenticationProvider with Logging {
+
+  override def authenticate(user: String, password: String): Unit = {
+    if (user == "user" && password == "password") {
+      info(s"Success log in of user: $user")
+    } else {
+      throw new AuthenticationException("Username or password is not valid!")
+    }
+>>>>>>> origin/feature/kubernetes-shuffle-file-cleaner:kyuubi-common/src/test/scala/org/apache/kyuubi/service/authentication/UserDefineAuthenticationProviderImpl.scala
   }
 }
