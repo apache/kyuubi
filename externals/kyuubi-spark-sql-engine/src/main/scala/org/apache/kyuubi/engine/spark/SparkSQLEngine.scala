@@ -21,7 +21,7 @@ import java.time.Instant
 import java.util.concurrent.CountDownLatch
 
 import org.apache.spark.SparkConf
-import org.apache.spark.kyuubi.{EngineUtils, SparkSQLEngineListener}
+import org.apache.spark.kyuubi.SparkSQLEngineListener
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{Logging, Utils}
@@ -80,6 +80,8 @@ object SparkSQLEngine extends Logging {
 
     val appName = s"kyuubi_${user}_spark_${Instant.now}"
     sparkConf.setIfMissing("spark.app.name", appName)
+    val defaultCat = if (KyuubiSparkUtil.hiveClassesArePresent) "hive" else "in-memory"
+    sparkConf.setIfMissing("spark.sql.catalogImplementation", defaultCat)
 
     kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_BIND_PORT, 0)
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
@@ -96,8 +98,6 @@ object SparkSQLEngine extends Logging {
       }
     }
 
-    val defaultCat = if (EngineUtils.hiveClassesArePresent) "hive" else "in-memory"
-    sparkConf.setIfMissing("spark.sql.catalogImplementation", defaultCat)
     val session = SparkSession.builder.config(sparkConf).getOrCreate
     kyuubiConf.get(KyuubiConf.ENGINE_INITIALIZE_SQL).split(";").foreach(session.sql(_).show)
     session
