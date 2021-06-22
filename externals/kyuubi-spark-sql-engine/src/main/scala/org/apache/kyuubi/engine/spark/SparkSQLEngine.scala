@@ -21,7 +21,7 @@ import java.time.Instant
 import java.util.concurrent.CountDownLatch
 
 import org.apache.spark.SparkConf
-import org.apache.spark.kyuubi.SparkSQLEngineListener
+import org.apache.spark.kyuubi.{EngineUtils, SparkSQLEngineListener}
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{Logging, Utils}
@@ -98,9 +98,8 @@ object SparkSQLEngine extends Logging {
 
     val builder = SparkSession.builder
     builder.config(sparkConf)
-    if (kyuubiConf.get(KyuubiConf.ENGINE_ENABLE_HIVE)) {
-      builder.enableHiveSupport
-    }
+    val defaultCat = if (EngineUtils.hiveClassesArePresent) "hive" else "in-memory"
+    kyuubiConf.setIfMissing("spark.sql.catalogImplementation", defaultCat)
     val session = builder.getOrCreate
     kyuubiConf.get(KyuubiConf.ENGINE_INITIALIZE_SQL).split(";").foreach(session.sql(_).show)
     session

@@ -643,14 +643,6 @@ object KyuubiConf {
       .checkValue(_ > 0, "must be positive number")
       .createWithDefault(Duration.ofMinutes(30).toMillis)
 
-  val ENGINE_ENABLE_HIVE: ConfigEntry[Boolean] =
-    buildConf("engine.hive.enabled")
-      .doc(s"Enables Hive support, including connectivity to a persistent Hive metastore, " +
-        "support for Hive serdes, and Hive user-defined functions.")
-      .version("1.3.0")
-      .booleanConf
-      .createWithDefault(true)
-
   val OPERATION_SCHEDULER_POOL: OptionalConfigEntry[String] = buildConf("operation.scheduler.pool")
     .doc("The scheduler pool of job. Note that, this config should be used after change Spark " +
       "config spark.scheduler.mode=FAIR.")
