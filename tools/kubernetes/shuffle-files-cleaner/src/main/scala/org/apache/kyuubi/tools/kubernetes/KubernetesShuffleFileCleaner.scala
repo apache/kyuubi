@@ -47,7 +47,8 @@ object KubernetesShuffleFileCleaner extends Logging {
   private val freeSpaceThreshold = envMap.getOrDefault(FREE_SPACE_THRESHOLD_KEY,
     FREE_SPACE_THRESHOLD_DEFAULT_VALUE).toInt
   private val cacheDirs = envMap.getOrDefault(CACHE_DIRS_KEY,
-    CACHE_DIRS_DEFAULT_VALUE).split(",").filter(!_.equals(""))
+    throw new IllegalArgumentException(s"the env ${CACHE_DIRS_KEY} can not be null"))
+    .split(",").filter(!_.equals(""))
   private val fileExpiredTime = envMap.getOrDefault(FILE_EXPIRED_TIME_KEY,
     FILE_EXPIRED_TIME_DEFAULT_VALUE).toLong
   private val sleepTime = envMap.getOrDefault(SLEEP_TIME_KEY,
@@ -114,14 +115,10 @@ object KubernetesShuffleFileCleaner extends Logging {
     }.replace("%", "")
     info(s"${dir} now used ${used}% space")
 
-    used.toInt > freeSpaceThreshold
+    used.toInt > (100 - freeSpaceThreshold)
   }
 
   def initializeConfiguration(): Unit = {
-    if (cacheDirs == null || cacheDirs.isEmpty) {
-      throw new IllegalArgumentException(s"the env ${CACHE_DIRS_KEY} can not be null")
-    }
-
     if (fileExpiredTime < 0) {
       throw new IllegalArgumentException(s"the env ${FILE_EXPIRED_TIME_KEY} " +
         s"should be greater than 0")

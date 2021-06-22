@@ -1,7 +1,24 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: kyuubi-kubernetes-shuffle-file-cleaner
+  # daemonSet nameSpace
   namespace: spark
 spec:
   selector:
@@ -13,24 +30,33 @@ spec:
         name: <name>
     spec:
       containers:
+        # container image
         - image: <image>
           name: cleaner
+          # volume dirs where store log and need to clean shuffle files
           volumeMounts:
             - name: spark
               mountPath: /data
             - name: cleaner-log
               mountPath: /log/cleanerLog
           env:
+            # set env to manager cleaner running
+            # the target dirs which in container
             - name: cacheDirs
               value: <"/data/data1,/data/data2">
+            # cleaner will clean More distant shuffle files
             - name: fileExpiredTime
               value: <"604800000">
-            - name: freeSpaceThreshold
-              value: <"60">
-            - name: sleepTime
-              value: <"3600000">
+            # deep clean fileExpiredTime
             - name: deepCleanFileExpiredTime
               value: <"432000000">
+            # after first clean, if free Space low than threshold
+            # trigger deep clean
+            - name: freeSpaceThreshold
+              value: <"60">
+            # cleaner clean sleep times after cleaning
+            - name: sleepTime
+              value: <"3600000">
       volumes:
         - name: spark
           hostPath:
