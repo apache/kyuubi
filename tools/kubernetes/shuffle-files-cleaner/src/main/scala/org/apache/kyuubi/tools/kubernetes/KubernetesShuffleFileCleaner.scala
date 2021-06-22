@@ -158,38 +158,44 @@ object KubernetesShuffleFileCleaner extends Logging {
   def main(args: Array[String]): Unit = {
     initializeConfiguration()
     val threadPool = initializeThreadPool()
-    while (true) {
-      info("start clean job")
-      cacheDirs.foreach(pathStr => {
-        val path = Paths.get(pathStr)
+    try {
+      while (true) {
+        info("start clean job")
+        cacheDirs.foreach(pathStr => {
+          val path = Paths.get(pathStr)
 
-        if (!Files.exists(path)) {
-          throw new IllegalArgumentException(s"this path ${pathStr} does not exists")
-        }
-
-        if (!Files.isDirectory(path)) {
-          throw new IllegalArgumentException(s"this path ${pathStr} is not directory")
-        }
-
-        // Clean up files older than $fileExpiredTime
-        threadPool.execute(() => {
-          doClean(path.toFile, fileExpiredTime)
-        })
-
-        if (checkUsedCapacity(pathStr)) {
-          info("start deep clean job")
-          // Clean up files older than $deepCleanFileExpiredTime
-          threadPool.execute(() => {
-            doClean(path.toFile, deepCleanFileExpiredTime)
-          })
-          if (checkUsedCapacity(pathStr)) {
-            warn(s"after deep clean ${pathStr} " +
-              s"used space still higher than ${freeSpaceThreshold}")
+          if (!Files.exists(path)) {
+            throw new IllegalArgumentException(s"this path ${pathStr} does not exists")
           }
-        }
-      })
-      // Once $sleepTime
-      Thread.sleep(sleepTime)
+
+          if (!Files.isDirectory(path)) {
+            throw new IllegalArgumentException(s"this path ${pathStr} is not directory")
+          }
+
+          // Clean up files older than $fileExpiredTime
+          threadPool.execute(() => {
+            doClean(path.toFile, fileExpiredTime)
+          })
+
+          if (checkUsedCapacity(pathStr)) {
+            info("start deep clean job")
+            // Clean up files older than $deepCleanFileExpiredTime
+            threadPool.execute(() => {
+              doClean(path.toFile, deepCleanFileExpiredTime)
+            })
+            if (checkUsedCapacity(pathStr)) {
+              warn(s"after deep clean ${pathStr} " +
+                s"used space still higher than ${freeSpaceThreshold}")
+            }
+          }
+        })
+        // Once $sleepTime
+        Thread.sleep(sleepTime)
+      }
+    } catch {
+      case exception: Exception => throw exception
+    } finally {
+      threadPool.shutdown()
     }
   }
 }
