@@ -96,7 +96,12 @@ object SparkSQLEngine extends Logging {
       }
     }
 
-    val session = SparkSession.builder().config(sparkConf).enableHiveSupport().getOrCreate()
+    val builder = SparkSession.builder
+    builder.config(sparkConf)
+    if (kyuubiConf.get(KyuubiConf.ENGINE_ENABLE_HIVE)) {
+      builder.enableHiveSupport
+    }
+    val session = builder.getOrCreate
     kyuubiConf.get(KyuubiConf.ENGINE_INITIALIZE_SQL).split(";").foreach(session.sql(_).show)
     session
   }
