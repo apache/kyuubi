@@ -14,12 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
 apiVersion: apps/v1
+# A DaemonSet ensures that all (or some) Nodes run a copy of a Pod.
 kind: DaemonSet
 metadata:
   name: kyuubi-kubernetes-shuffle-file-cleaner
-  # daemonSet nameSpace
-  namespace: spark
+  # NameSpace help assigned daemonSet to the designated cluster resource
+  namespace: <namespace:default>
 spec:
   selector:
     matchLabels:
@@ -30,12 +32,12 @@ spec:
         name: <name>
     spec:
       containers:
-        # container image
+        # container image which build by ./Dockerfile
         - image: <image>
           name: cleaner
           # volume dirs where store log and need to clean shuffle files
           volumeMounts:
-            - name: spark
+            - name: shuffle-files-dirs
               mountPath: /data
             - name: cleaner-log
               mountPath: /log/cleanerLog
@@ -58,9 +60,9 @@ spec:
             - name: sleepTime
               value: <"3600000">
       volumes:
-        - name: spark
+        - name: shuffle-files-dirs
           hostPath:
-            path: /spark
+            path: <shuffleFilesDirs>
         - name: cleaner-log
           hostPath:
-            path: /spark
+            path: <logDir>
