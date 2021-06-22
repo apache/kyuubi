@@ -84,9 +84,6 @@ object SparkSQLEngine extends Logging {
     kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_BIND_PORT, 0)
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
 
-    val defaultCat = if (EngineUtils.hiveClassesArePresent) "hive" else "in-memory"
-    kyuubiConf.setIfMissing("spark.sql.catalogImplementation", defaultCat)
-
     // Pass kyuubi config from spark with `spark.kyuubi`
     val sparkToKyuubiPrefix = "spark.kyuubi."
     sparkConf.getAllWithPrefix(sparkToKyuubiPrefix).foreach { case (k, v) =>
@@ -99,6 +96,8 @@ object SparkSQLEngine extends Logging {
       }
     }
 
+    val defaultCat = if (EngineUtils.hiveClassesArePresent) "hive" else "in-memory"
+    sparkConf.setIfMissing("spark.sql.catalogImplementation", defaultCat)
     val session = SparkSession.builder.config(sparkConf).getOrCreate
     kyuubiConf.get(KyuubiConf.ENGINE_INITIALIZE_SQL).split(";").foreach(session.sql(_).show)
     session
