@@ -39,4 +39,17 @@ object KyuubiSparkUtil {
        |           Start time: ${Instant.ofEpochMilli(sc.startTime)}
        |           User: ${sc.sparkUser}""".stripMargin
   }
+
+  /**
+   * @return true if Hive classes can be loaded, otherwise false.
+   */
+  private[spark] def hiveClassesArePresent: Boolean = {
+    try {
+      Class.forName("org.apache.spark.sql.hive.HiveSessionStateBuilder")
+      Class.forName("org.apache.hadoop.hive.conf.HiveConf")
+      true
+    } catch {
+      case _: ClassNotFoundException | _: NoClassDefFoundError => false
+    }
+  }
 }
