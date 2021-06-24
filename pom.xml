@@ -74,7 +74,7 @@
         <hive.version>2.3.7</hive.version>
         <jackson.version>2.11.4</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
-        <jetty.version>9.4.40.v20210413</jetty.version>
+        <jetty.version>9.4.41.v20210516</jetty.version>
         <ldapsdk.version>5.1.4</ldapsdk.version>
         <prometheus.version>0.10.0</prometheus.version>
         <spark.version>3.0.2</spark.version>
