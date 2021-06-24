@@ -64,8 +64,9 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
       user
     }
 
+    val guidKey = conf.get(AUTHENTICATION_LDAP_GUIDKEY)
     val bindDn = conf.get(AUTHENTICATION_LDAP_BASEDN) match {
-      case Some(dn) => "uid=" + u + "," + dn
+      case Some(dn) => guidKey + "=" + u + "," + dn
       case _ => u
     }
 
