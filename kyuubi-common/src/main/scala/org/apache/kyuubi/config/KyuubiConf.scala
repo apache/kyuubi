@@ -314,6 +314,14 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val AUTHENTICATION_LDAP_GUIDKEY: ConfigEntry[String] =
+    buildConf("authentication.ldap.guidKey")
+      .doc("LDAP attribute name whose values are unique in this LDAP server." +
+        "For example:uid or cn.")
+      .version("1.2.0")
+      .stringConf
+      .createWithDefault("uid")
+
   val DELEGATION_KEY_UPDATE_INTERVAL: ConfigEntry[Long] =
     buildConf("delegation.key.update.interval")
       .doc("unused yet")
