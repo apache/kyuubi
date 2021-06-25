@@ -17,12 +17,12 @@
 
 package org.apache.kyuubi.tpcds
 
-import java.io.{FileInputStream, InputStream}
+import java.io.InputStream
 import java.lang.ProcessBuilder.Redirect
 import java.nio.file.{Files, Paths}
 import java.nio.file.attribute.PosixFilePermissions._
 
-import scala.io.BufferedSource
+import scala.io.Source
 
 import org.apache.spark.{KyuubiSparkUtils, SparkEnv}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
@@ -97,10 +97,13 @@ case class TableGenerator(
       val process = builder.start()
       val res = process.waitFor()
 
-      logger.info(s"Finish w/ $res ${cmd}")
+      logger.info(s"Finish w/ $res $cmd")
       val data = Paths.get(tempDir.toString, s"${name}_${i}_$parallelism.dat")
       val iterator = if (Files.exists(data)) {
-        new BufferedSource(new FileInputStream(data.toFile), 8192).getLines()
+        // ... realized that when opening the dat files I should use the “Cp1252” encoding.
+        // https://github.com/databricks/spark-sql-perf/pull/104
+        // noinspection SourceNotClosed
+        Source.fromFile(data.toFile, "cp1252", 8192).getLines
       } else {
         logger.warn(s"No data generated in child $i")
         Nil
