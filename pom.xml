@@ -59,7 +59,7 @@
     <properties>
         <java.version>1.8</java.version>
         <maven.version>3.6.3</maven.version>
-        <scala.version>2.12.10</scala.version>
+        <scala.version>2.12.14</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
 
         <codahale.metrics.version>4.1.1</codahale.metrics.version>
@@ -85,7 +85,7 @@
         <slf4j.version>1.7.30</slf4j.version>
         <zookeeper.version>3.4.14</zookeeper.version>
 
-        <scalatest.version>3.2.8</scalatest.version>
+        <scalatest.version>3.2.9</scalatest.version>
         <iceberg.name>iceberg-spark3-runtime</iceberg.name>
         <iceberg.version>0.11.1</iceberg.version>
 
@@ -96,7 +96,7 @@
         <maven.plugin.build.helper.version>3.2.0</maven.plugin.build.helper.version>
         <maven.plugin.compiler.version>3.8.1</maven.plugin.compiler.version>
         <!-- DO NOT bump 4.4.0, see https://github.com/NetEase/kyuubi/pull/441 -->
-        <maven.plugin.scala.version>4.3.0</maven.plugin.scala.version>
+        <maven.plugin.scala.version>4.5.3</maven.plugin.scala.version>
         <maven.plugin.surefire.version>2.22.0</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.0.0</maven.plugin.scalatest.version>
         <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest</maven.plugin.scalatest.exclude.tags>
