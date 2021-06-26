@@ -183,7 +183,7 @@
         <pluginRepository>
             <id>apache</id>
             <name>Apache Repository Snapshots</name>
-            <url>http://repository.apache.org/snapshots</url>
+            <url>https://repository.apache.org/snapshots</url>
             <releases>
                 <enabled>false</enabled>
             </releases>
