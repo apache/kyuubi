@@ -59,7 +59,7 @@
     <properties>
         <java.version>1.8</java.version>
         <maven.version>3.6.3</maven.version>
-        <scala.version>2.12.10</scala.version>
+        <scala.version>2.12.14</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
 
         <codahale.metrics.version>4.1.1</codahale.metrics.version>
@@ -109,7 +109,7 @@
         <maven.plugin.clean.version>3.1.0</maven.plugin.clean.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
         <maven.plugin.download.version>1.6.0</maven.plugin.download.version>
-        <maven.plugin.silencer.version>1.6.0</maven.plugin.silencer.version>
+        <maven.plugin.silencer.version>1.7.5</maven.plugin.silencer.version>
         <maven.plugin.rat.version>0.13</maven.plugin.rat.version>
 
         <!-- Needed for consistent times -->
