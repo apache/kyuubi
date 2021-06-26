@@ -110,6 +110,11 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
           sql(s"CREATE TABLE tmp1 $storage PARTITIONED BY(c2) AS " +
             s"SELECT * FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)")
         }
+
+        withTable("tmp1") {
+          sql(s"CREATE TABLE tmp1 $storage PARTITIONED BY(c2) AS " +
+            s"SELECT * FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2) DISTRIBUTE BY rand()")
+        }
       }
     }
   }
