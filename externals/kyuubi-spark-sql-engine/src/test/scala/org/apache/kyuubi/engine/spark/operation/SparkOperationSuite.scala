@@ -33,10 +33,10 @@ import org.apache.spark.sql.types._
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.operation.JDBCTests
+import org.apache.kyuubi.operation.HiveJDBCTests
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
-class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
+class SparkOperationSuite extends WithSparkSQLEngine with HiveJDBCTests {
 
   override protected def jdbcUrl: String = getJdbcUrl
   override def withKyuubiConf: Map[String, String] = Map.empty
@@ -81,7 +81,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
          |CREATE TABLE IF NOT EXISTS $dftSchema.$tableName (
          |  ${schema.toDDL}
          |)
-         |using parquet""".stripMargin
+         |USING parquet""".stripMargin
 
     withJdbcStatement(tableName) { statement =>
       statement.execute(ddl)
@@ -148,7 +148,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
 
   test("get columns operation should handle interval column properly") {
     val viewName = "view_interval"
-    val ddl = s"CREATE GLOBAL TEMP VIEW $viewName as select interval 1 day as i"
+    val ddl = s"CREATE GLOBAL TEMP VIEW $viewName AS SELECT INTERVAL 1 DAY AS i"
 
     withJdbcStatement(viewName) { statement =>
       statement.execute(ddl)
@@ -175,7 +175,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with JDBCTests {
 
   test("handling null in view for get columns operations") {
     val viewName = "view_null"
-    val ddl = s"CREATE GLOBAL TEMP VIEW $viewName as select null as n"
+    val ddl = s"CREATE GLOBAL TEMP VIEW $viewName AS SELECT NULL AS n"
 
     withJdbcStatement(viewName) { statement =>
       statement.execute(ddl)
