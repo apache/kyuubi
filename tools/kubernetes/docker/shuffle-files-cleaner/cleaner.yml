@@ -21,48 +21,49 @@ kind: DaemonSet
 metadata:
   name: kyuubi-kubernetes-shuffle-file-cleaner
   # NameSpace help assigned daemonSet to the designated cluster resource
-  namespace: <namespace:default>
+  namespace: default
 spec:
   selector:
     matchLabels:
-      name: <name>
+      name: shuffler-cleaner
   template:
     metadata:
       labels:
-        name: <name>
+        name:shuffler-cleaner
     spec:
       containers:
-        # container image which build by ./Dockerfile
+        # Container image which build by ./Dockerfile
         - image: <image>
           name: cleaner
-          # volume dirs where store log and need to clean shuffle files
           volumeMounts:
             - name: shuffle-files-dirs
               mountPath: /data
             - name: cleaner-log
               mountPath: /log/cleanerLog
           env:
-            # set env to manager cleaner running
+            # Set env to manager cleaner running
             # the target dirs which in container
             - name: cacheDirs
-              value: <"/data/data1,/data/data2">
-            # cleaner will clean More distant shuffle files
+              value: /data/data1,/data/data2
+            # Cleaner will clean More distant shuffle files
             - name: fileExpiredTime
-              value: <"604800000">
-            # deep clean fileExpiredTime
+              value: 604800000
+            # Deep clean fileExpiredTime
             - name: deepCleanFileExpiredTime
-              value: <"432000000">
-            # after first clean, if free Space low than threshold
+              value: 432000000
+            # After first clean, if free Space low than threshold
             # trigger deep clean
             - name: freeSpaceThreshold
-              value: <"60">
-            # cleaner clean sleep times after cleaning
+              value: 60
+            # Cleaner clean sleep times after cleaning
             - name: sleepTime
-              value: <"3600000">
+              value: 3600000
       volumes:
+        # Directory on the host which store shuffle dirs
         - name: shuffle-files-dirs
           hostPath:
-            path: <shuffleFilesDirs>
+            path: /shuffleFilesDirs
+        # Directory on the host which you want to store clean log
         - name: cleaner-log
           hostPath:
-            path: <logDir>
+            path: /logDir
