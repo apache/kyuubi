@@ -21,9 +21,7 @@ CLASS="org.apache.kyuubi.ctl.ServiceControlCli"
 
 export KYUUBI_HOME="$(cd "$(dirname "$0")"/..; pwd)"
 
-echo "Starting Kyuubi Service Control Client from ${KYUUBI_HOME}"
-
-. "${KYUUBI_HOME}/bin/load-kyuubi-env.sh"
+. "${KYUUBI_HOME}/bin/load-kyuubi-env.sh" -s
 
 if [[ -z ${JAVA_HOME} ]]; then
   echo "Error: JAVA_HOME IS NOT SET! CANNOT PROCEED."

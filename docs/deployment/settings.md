@@ -304,6 +304,10 @@ log4j.appender.console=org.apache.log4j.ConsoleAppender
 log4j.appender.console.target=System.err
 log4j.appender.console.layout=org.apache.log4j.PatternLayout
 log4j.appender.console.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{2}: %m%n
+
+# Set the default kyuubi-ctl log level to WARN. When running the kyuubi-ctl, the
+# log level for this class is used to overwrite the root logger's log level.
+log4j.logger.org.apache.kyuubi.ctl.ServiceControlCli=ERROR
 ```
 
 ## Other Configurations

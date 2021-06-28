@@ -30,20 +30,14 @@ trait Logging {
 
   // Method to get the logger name for this object
   protected def loggerName: String = {
-    // Ignore trailing $'s in the class names for Scala objects
-    this.getClass.getName.stripSuffix("$")
+    // Ignore anon$'s of super class and trailing $'s in the class names for Scala objects
+    this.getClass.getName.split('$')(0)
   }
 
   // Method to get or create the logger for this object
   protected def logger: Logger = {
     if (log_ == null) {
-      if (!Logging.initialized) {
-        Logging.initLock.synchronized {
-          if (!Logging.initialized) {
-            initializeLogging()
-          }
-        }
-      }
+      initializeLoggerIfNecessary(false)
       log_ = LoggerFactory.getLogger(loggerName)
     }
     log_
@@ -85,7 +79,17 @@ trait Logging {
     }
   }
 
-  private def initializeLogging(): Unit = {
+  protected def initializeLoggerIfNecessary(isInterpreter: Boolean): Unit = {
+    if (!Logging.initialized) {
+      Logging.initLock.synchronized {
+        if (!Logging.initialized) {
+          initializeLogging(isInterpreter)
+        }
+      }
+    }
+  }
+
+  private def initializeLogging(isInterpreter: Boolean): Unit = {
     if (Logging.isLog4j12) {
       val log4j12Initialized = LogManager.getRootLogger.getAllAppenders.hasMoreElements
       // scalastyle:off println
@@ -103,6 +107,13 @@ trait Logging {
       val rootLogger = LogManager.getRootLogger
       if (Logging.defaultRootLevel == null) {
         Logging.defaultRootLevel = rootLogger.getLevel
+      }
+
+      if (isInterpreter) {
+        // set kyuubi ctl log level, default ERROR
+        val ctlLogger = LogManager.getLogger(loggerName)
+        val ctlLevel = Option(ctlLogger.getLevel()).getOrElse(Level.ERROR)
+        rootLogger.setLevel(ctlLevel)
       }
       // scalastyle:on println
     }

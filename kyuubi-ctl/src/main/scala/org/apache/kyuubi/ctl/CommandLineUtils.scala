@@ -74,8 +74,9 @@ private[kyuubi] object Tabulator {
     if (str == null) 0 else str.length + fullWidthRegex.findAllIn(str).size
   }
 
-  def format(title: String, header: Seq[String], rows: Seq[Seq[String]]): String = {
-    val data = Seq(header).union(rows)
+  def format(title: String, header: Seq[String], rows: Seq[Seq[String]],
+             verbose: Boolean): String = {
+    val data = if (verbose) Seq(header).union(rows) else rows
     val sb = new StringBuilder
     val numCols = header.size
     // We set a minimum column width at '10'
@@ -94,20 +95,25 @@ private[kyuubi] object Tabulator {
       }
     }
 
-    // Create SeparateLine
-    val sep: String = colWidths.map("-" * _).addString(sb, "+", "+", "+\n").toString()
+    if (verbose) {
+      // Create SeparateLine
+      val sep: String = colWidths.map("-" * _).addString(sb, "+", "+", "+\n").toString()
 
-    val titleNewLine = "\n " + StringUtils.center(title, colWidths.sum) + "\n"
+      val titleNewLine = "\n " + StringUtils.center(title, colWidths.sum) + "\n"
 
-    // column names
-    paddedRows.head.addString(sb, "|", "|", "|\n")
-    sb.append(sep)
+      // column names
+      paddedRows.head.addString(sb, "|", "|", "|\n")
+      sb.append(sep)
 
-    // data
-    paddedRows.tail.foreach(_.addString(sb, "|", "|", "|\n"))
-    sb.append(sep)
+      // data
+      paddedRows.tail.foreach(_.addString(sb, "|", "|", "|\n"))
+      sb.append(sep)
 
-    sb.append(s"${rows.size} row(s)\n")
-    titleNewLine + sb.toString()
+      sb.append(s"${rows.size} row(s)\n")
+      titleNewLine + sb.toString()
+    } else {
+      paddedRows.foreach(_.addString(sb, "", "", "\n"))
+      sb.toString()
+    }
   }
 }
