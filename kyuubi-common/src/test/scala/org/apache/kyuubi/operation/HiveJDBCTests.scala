@@ -90,6 +90,11 @@ trait HiveJDBCTests extends BasicJDBCTests {
       while(rs7.next()) {
         assert(rs7.getString(TABLE_NAME) == view_test)
       }
+
+      statement.execute(s"DROP TABLE IF EXISTS ${schemas(0)}.$table_test")
+      statement.execute(s"DROP TABLE IF EXISTS ${schemas(1)}.$table_external_test")
+      statement.execute(s"DROP VIEW IF EXISTS ${schemas(2)}.$view_test")
+      statement.execute(s"DROP VIEW IF EXISTS ${schemas(3)}.$view_global_test")
     }
   }
 }
