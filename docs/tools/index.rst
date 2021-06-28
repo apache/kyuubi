@@ -15,3 +15,4 @@ Develop Tools
     debugging
     community
     developer
+    kubernetes_shuffler_files_cleaner
