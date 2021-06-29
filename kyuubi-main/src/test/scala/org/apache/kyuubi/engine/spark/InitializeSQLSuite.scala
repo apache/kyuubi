@@ -26,8 +26,8 @@ class InitializeSQLSuite extends WithKyuubiServer with JDBCTestUtils {
   override protected val conf: KyuubiConf = {
     KyuubiConf().set(ENGINE_INITIALIZE_SQL.key,
       "CREATE DATABASE IF NOT EXISTS INIT_DB;" +
-        "CREATE TABLE IF NOT EXISTS INIT_DB.test(a int);" +
-        "INSERT OVERWRITE TABLE INIT_DB.test SELECT 1;")
+        "CREATE TABLE IF NOT EXISTS INIT_DB.test(a int) USING CSV;" +
+        "INSERT OVERWRITE TABLE INIT_DB.test VALUES (1);")
   }
 
   override def afterAll(): Unit = {
