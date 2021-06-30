@@ -20,7 +20,9 @@ package org.apache.kyuubi.engine.spark.operation
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.SparkSession
+
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.{Operation, OperationManager}
