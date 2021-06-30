@@ -59,7 +59,6 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
       queryTimeout: Long): Operation = {
     val spark = getSparkSession(session.handle)
     val operation = new ExecuteStatement(spark, session, statement, runAsync, queryTimeout)
-
     addOperation(operation)
   }
 
