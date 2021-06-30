@@ -357,8 +357,6 @@ trait JDBCTests extends BasicJDBCTests {
       val rs = statement.executeQuery("SELECT kyuubi_version()")
       assert(rs.next())
       assert(rs.getString(1) == KYUUBI_VERSION)
-
     }
-
   }
 }
