@@ -81,6 +81,10 @@ object KyuubiSQLException {
     }
   }
 
+  def featureNotSupported(): KyuubiSQLException = {
+    KyuubiSQLException("feature not supported", sqlState = "0A000")
+  }
+
   def toTStatus(e: Exception, verbose: Boolean = false): TStatus = e match {
     case k: KyuubiSQLException => k.toTStatus
     case _ =>
