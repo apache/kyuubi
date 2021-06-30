@@ -17,10 +17,10 @@
 
 package org.apache.spark.kyuubi
 
+import org.apache.spark.scheduler._
+
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.spark.operation.ExecuteStatement
-
-import org.apache.spark.scheduler._
 
 
 class SparkSQLOperationListener(var operation: ExecuteStatement)

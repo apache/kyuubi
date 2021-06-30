@@ -18,6 +18,8 @@
 package org.apache.kyuubi.operation
 
 import org.apache.hive.service.rpc.thrift._
+import org.apache.spark.scheduler._
+import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
@@ -26,8 +28,7 @@ import org.apache.kyuubi.operation.log.LogDivertAppender
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.session.Session
 
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.scheduler._
+
 
 /**
  * The [[OperationManager]] manages all the operations during their lifecycle.
