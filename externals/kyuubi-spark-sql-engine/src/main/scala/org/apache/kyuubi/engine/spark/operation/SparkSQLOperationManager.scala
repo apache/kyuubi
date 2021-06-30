@@ -20,13 +20,13 @@ package org.apache.kyuubi.engine.spark.operation
 import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
-
 import org.apache.spark.sql.SparkSession
-
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.{Session, SessionHandle}
+
+import org.apache.spark.kyuubi.SparkSQLOperationListener
 
 class SparkSQLOperationManager private (name: String) extends OperationManager(name) {
 
@@ -59,6 +59,11 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
       queryTimeout: Long): Operation = {
     val spark = getSparkSession(session.handle)
     val operation = new ExecuteStatement(spark, session, statement, runAsync, queryTimeout)
+
+    val sparkSQLOperationListener = new SparkSQLOperationListener(operation)
+    spark.sparkContext.addSparkListener(sparkSQLOperationListener)
+
+    addListener(operation.getHandle.identifier.toString, sparkSQLOperationListener, spark)
     addOperation(operation)
   }
 

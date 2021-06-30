@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import java.util.Date
 import java.util.concurrent.{RejectedExecutionException, TimeUnit}
 
 import org.apache.spark.kyuubi.SQLOperationListener
@@ -26,6 +27,7 @@ import org.apache.spark.sql.types._
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.{ArrayFetchIterator, KyuubiSparkUtil}
+import org.apache.kyuubi.monitor.entity.KStatement
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -50,6 +52,14 @@ class ExecuteStatement(
     OperationLog.createOperationLog(session.handle, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
   private var result: DataFrame = _
+
+  val kstatement = new KStatement(
+    session.handle.identifier.toString,
+    getHandle.identifier.toString,
+    statement,
+    new Date().getTime,
+    OperationState.INITIALIZED.toString
+  )
 
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
