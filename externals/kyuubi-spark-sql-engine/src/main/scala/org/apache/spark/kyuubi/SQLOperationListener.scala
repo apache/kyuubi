@@ -67,6 +67,8 @@ class SQLOperationListener(operation: Operation) extends StatsReportListener wit
     }
   }
 
+  // You can't get any information about SparkListerJobEnd because you will remove this listener before those data generate
+  // TODO: fix this bug
   override def onJobEnd(jobEnd: SparkListenerJobEnd): Unit = activeJobs.synchronized {
     val jobId = jobEnd.jobId
     if (activeJobs.remove(jobId)) {
