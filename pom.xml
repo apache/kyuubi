@@ -77,7 +77,7 @@
         <jetty.version>9.4.41.v20210516</jetty.version>
         <ldapsdk.version>5.1.4</ldapsdk.version>
         <prometheus.version>0.10.0</prometheus.version>
-        <spark.version>3.0.2</spark.version>
+        <spark.version>3.0.3</spark.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop${hadoop.binary.version}.tgz</spark.archive.name>
         <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
@@ -1572,7 +1572,7 @@
         <profile>
             <id>spark-3.0</id>
             <properties>
-                <spark.version>3.0.2</spark.version>
+                <spark.version>3.0.3</spark.version>
                 <delta.version>0.8.0</delta.version>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest</maven.plugin.scalatest.exclude.tags>
             </properties>
