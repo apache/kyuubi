@@ -18,8 +18,6 @@
 package org.apache.kyuubi.operation
 
 import org.apache.hive.service.rpc.thrift._
-import org.apache.spark.scheduler._
-import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
@@ -27,8 +25,6 @@ import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.LogDivertAppender
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.session.Session
-
-
 
 /**
  * The [[OperationManager]] manages all the operations during their lifecycle.
@@ -39,8 +35,6 @@ import org.apache.kyuubi.session.Session
 abstract class OperationManager(name: String) extends AbstractService(name) {
 
   private final val handleToOperation = new java.util.HashMap[OperationHandle, Operation]()
-  private final val handleToListener = new java.util.HashMap[String, SparkListener]()
-  private var sparkSession: SparkSession = _
 
   override def initialize(conf: KyuubiConf): Unit = {
     LogDivertAppender.initialize()
@@ -79,15 +73,6 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
     operation
   }
 
-  final def addListener(
-                         operationId: String, listener: SparkListener, spark: SparkSession
-                       ): Unit = synchronized {
-    handleToListener.put(operationId, listener)
-    if (sparkSession == null) {
-      sparkSession = spark
-    }
-  }
-
   @throws[KyuubiSQLException]
   final def getOperation(opHandle: OperationHandle): Operation = {
     val operation = synchronized { handleToOperation.get(opHandle) }
@@ -98,10 +83,6 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
   @throws[KyuubiSQLException]
   final def removeOperation(opHandle: OperationHandle): Operation = synchronized {
     val operation = handleToOperation.remove(opHandle)
-    val sparkListener = handleToListener.remove(opHandle.identifier.toString)
-    if (sparkSession != null && sparkListener != null) {
-      sparkSession.sparkContext.removeSparkListener(sparkListener)
-    }
     if (operation == null) throw KyuubiSQLException(s"Invalid $opHandle")
     operation
   }
@@ -148,10 +129,6 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
       val isTimeout = operation != null && operation.isTimedOut
       if (isTimeout) {
         handleToOperation.remove(operation.getHandle)
-        val sparkListener = handleToListener.remove(operation.getHandle.identifier)
-        if (sparkSession != null && sparkListener != null) {
-          sparkSession.sparkContext.removeSparkListener(sparkListener)
-        }
         warn("Operation " + operation.getHandle + " is timed-out and will be closed")
         isTimeout
       } else {

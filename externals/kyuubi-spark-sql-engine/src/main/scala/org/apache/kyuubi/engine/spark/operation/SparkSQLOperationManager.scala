@@ -28,8 +28,6 @@ import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.{Session, SessionHandle}
 
-import org.apache.spark.kyuubi.SparkSQLOperationListener
-
 class SparkSQLOperationManager private (name: String) extends OperationManager(name) {
 
   def this() = this(classOf[SparkSQLOperationManager].getSimpleName)
@@ -62,10 +60,6 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
     val spark = getSparkSession(session.handle)
     val operation = new ExecuteStatement(spark, session, statement, runAsync, queryTimeout)
 
-    val sparkSQLOperationListener = new SparkSQLOperationListener(operation)
-    spark.sparkContext.addSparkListener(sparkSQLOperationListener)
-
-    addListener(operation.getHandle.identifier.toString, sparkSQLOperationListener, spark)
     addOperation(operation)
   }
 
