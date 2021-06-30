@@ -15,22 +15,28 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.util
+package org.apache.kyuubi.operation
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.security.SecurityUtil
+import java.nio.file.Files
 
+import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 
-object KyuubiHadoopUtils {
+class KyuubiOperationHiveSuite extends WithKyuubiServer with HiveJDBCTests {
 
-  def newHadoopConf(conf: KyuubiConf): Configuration = {
-    val hadoopConf = new Configuration()
-    conf.getAll.foreach { case (k, v) => hadoopConf.set(k, v) }
-    hadoopConf
+  private val metastore = {
+    val dir = Utils.createTempDir()
+    Files.deleteIfExists(dir)
+    dir
   }
 
-  def getServerPrincipal(principal: String): String = {
-    SecurityUtil.getServerPrincipal(principal, "0.0.0.0")
+  override protected def jdbcUrl: String = getJdbcUrl
+
+  override protected val conf: KyuubiConf = {
+    KyuubiConf()
+      .set(KyuubiConf.ENGINE_SHARE_LEVEL, "server")
+      .set("spark.sql.catalogImplementation", "hive")
+      .set("spark.hadoop.javax.jdo.option.ConnectionURL",
+        s"jdbc:derby:;databaseName=$metastore;create=true")
   }
 }

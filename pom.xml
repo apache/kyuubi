@@ -60,7 +60,7 @@
     <properties>
         <java.version>1.8</java.version>
         <maven.version>3.6.3</maven.version>
-        <scala.version>2.12.10</scala.version>
+        <scala.version>2.12.14</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
 
         <codahale.metrics.version>4.1.1</codahale.metrics.version>
@@ -75,10 +75,10 @@
         <hive.version>2.3.7</hive.version>
         <jackson.version>2.11.4</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
-        <jetty.version>9.4.40.v20210413</jetty.version>
+        <jetty.version>9.4.41.v20210516</jetty.version>
         <ldapsdk.version>5.1.4</ldapsdk.version>
         <prometheus.version>0.10.0</prometheus.version>
-        <spark.version>3.0.2</spark.version>
+        <spark.version>3.0.3</spark.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop${hadoop.binary.version}.tgz</spark.archive.name>
         <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
@@ -86,7 +86,7 @@
         <slf4j.version>1.7.30</slf4j.version>
         <zookeeper.version>3.4.14</zookeeper.version>
 
-        <scalatest.version>3.2.8</scalatest.version>
+        <scalatest.version>3.2.9</scalatest.version>
         <iceberg.name>iceberg-spark3-runtime</iceberg.name>
         <iceberg.version>0.11.1</iceberg.version>
 
@@ -97,6 +97,7 @@
         <maven.plugin.build.helper.version>3.2.0</maven.plugin.build.helper.version>
         <maven.plugin.compiler.version>3.8.1</maven.plugin.compiler.version>
         <!-- DO NOT bump 4.4.0, see https://github.com/NetEase/kyuubi/pull/441 -->
+        <!-- DO NOT bump 4.5.3, see https://github.com/NetEase/kyuubi/issues/708 -->
         <maven.plugin.scala.version>4.3.0</maven.plugin.scala.version>
         <maven.plugin.surefire.version>2.22.0</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.0.0</maven.plugin.scalatest.version>
@@ -110,7 +111,7 @@
         <maven.plugin.clean.version>3.1.0</maven.plugin.clean.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
         <maven.plugin.download.version>1.6.0</maven.plugin.download.version>
-        <maven.plugin.silencer.version>1.6.0</maven.plugin.silencer.version>
+        <maven.plugin.silencer.version>1.7.5</maven.plugin.silencer.version>
         <maven.plugin.rat.version>0.13</maven.plugin.rat.version>
 
         <!-- Needed for consistent times -->
@@ -184,7 +185,7 @@
         <pluginRepository>
             <id>apache</id>
             <name>Apache Repository Snapshots</name>
-            <url>http://repository.apache.org/snapshots</url>
+            <url>https://repository.apache.org/snapshots</url>
             <releases>
                 <enabled>false</enabled>
             </releases>
@@ -1572,7 +1573,7 @@
         <profile>
             <id>spark-3.0</id>
             <properties>
-                <spark.version>3.0.2</spark.version>
+                <spark.version>3.0.3</spark.version>
                 <delta.version>0.8.0</delta.version>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest</maven.plugin.scalatest.exclude.tags>
             </properties>

@@ -20,7 +20,6 @@ package org.apache.kyuubi
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.KYUUBI_ENGINE_ENV_PREFIX
 import org.apache.kyuubi.server.MiniYarnService
-import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 /**
  * To developers:
@@ -43,10 +42,6 @@ trait WithKyuubiServerOnYarn extends WithKyuubiServer {
     miniYarnService = new MiniYarnService()
     miniYarnService.initialize(new KyuubiConf(false))
     miniYarnService.start()
-
-    KyuubiHadoopUtils.toSparkPrefixedConf(miniYarnService.getHadoopConf()).foreach { case (k, v) =>
-      conf.set(k, v)
-    }
     conf.set(s"$KYUUBI_ENGINE_ENV_PREFIX.HADOOP_CONF_DIR", miniYarnService.getHadoopConfDir)
     super.beforeAll()
   }

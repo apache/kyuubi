@@ -21,10 +21,26 @@ export KYUUBI_HOME="${KYUUBI_HOME:-"$(cd "$(dirname "$0")"/.. || exit; pwd)"}"
 
 export KYUUBI_CONF_DIR="${KYUUBI_CONF_DIR:-"${KYUUBI_HOME}"/conf}"
 
+silent=0
+while getopts "s" arg
+do
+        case $arg in
+             s)
+                silent=1
+                ;;
+             ?)
+             echo "unknown argument"
+        exit 1
+        ;;
+        esac
+done
+
 KYUUBI_ENV_SH="${KYUUBI_CONF_DIR}"/kyuubi-env.sh
 if [[ -f ${KYUUBI_ENV_SH} ]]; then
    set -a
-   echo "Using kyuubi environment file ${KYUUBI_ENV_SH} to initialize..."
+   if [ $silent -eq 0 ]; then
+    echo "Using kyuubi environment file ${KYUUBI_ENV_SH} to initialize..."
+   fi
    . "${KYUUBI_ENV_SH}"
    set +a
 else
@@ -76,15 +92,17 @@ fi
 export SPARK_HOME="${SPARK_HOME:-"${SPARK_BUILTIN}"}"
 
 # Print essential environment variables to console
-echo "JAVA_HOME: ${JAVA_HOME}"
+if [ $silent -eq 0 ]; then
+  echo "JAVA_HOME: ${JAVA_HOME}"
 
-echo "KYUUBI_HOME: ${KYUUBI_HOME}"
-echo "KYUUBI_CONF_DIR: ${KYUUBI_CONF_DIR}"
-echo "KYUUBI_LOG_DIR: ${KYUUBI_LOG_DIR}"
-echo "KYUUBI_PID_DIR: ${KYUUBI_PID_DIR}"
-echo "KYUUBI_WORK_DIR_ROOT: ${KYUUBI_WORK_DIR_ROOT}"
+  echo "KYUUBI_HOME: ${KYUUBI_HOME}"
+  echo "KYUUBI_CONF_DIR: ${KYUUBI_CONF_DIR}"
+  echo "KYUUBI_LOG_DIR: ${KYUUBI_LOG_DIR}"
+  echo "KYUUBI_PID_DIR: ${KYUUBI_PID_DIR}"
+  echo "KYUUBI_WORK_DIR_ROOT: ${KYUUBI_WORK_DIR_ROOT}"
 
-echo "SPARK_HOME: ${SPARK_HOME}"
-echo "SPARK_CONF_DIR: ${SPARK_CONF_DIR}"
+  echo "SPARK_HOME: ${SPARK_HOME}"
+  echo "SPARK_CONF_DIR: ${SPARK_CONF_DIR}"
 
-echo "HADOOP_CONF_DIR: ${HADOOP_CONF_DIR}"
+  echo "HADOOP_CONF_DIR: ${HADOOP_CONF_DIR}"
+fi

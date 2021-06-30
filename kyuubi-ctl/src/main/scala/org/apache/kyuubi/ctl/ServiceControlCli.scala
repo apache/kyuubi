@@ -45,10 +45,17 @@ private[kyuubi] class ServiceControlCli extends Logging {
   import ServiceControlCli._
   import ServiceDiscovery._
 
+  private var verbose: Boolean = false
+
   def doAction(args: Array[String]): Unit = {
+    // Initialize logging if it hasn't been done yet.
+    // Set log level ERROR
+    initializeLoggerIfNecessary(true)
+
     val ctlArgs = parseArguments(args)
-    if (ctlArgs.verbose) {
-      info(ctlArgs.toString)
+    verbose = ctlArgs.verbose
+    if (verbose) {
+      super.info(ctlArgs.toString)
     }
     ctlArgs.action match {
       case ServiceControlAction.CREATE => create(ctlArgs)
@@ -99,7 +106,7 @@ private[kyuubi] class ServiceControlCli extends Logging {
       }
 
       val title = "Created zookeeper service nodes"
-      info(renderServiceNodesInfo(title, exposedServiceNodes))
+      info(renderServiceNodesInfo(title, exposedServiceNodes, verbose))
     }
   }
 
@@ -113,7 +120,7 @@ private[kyuubi] class ServiceControlCli extends Logging {
       val nodes = getServiceNodes(zkClient, znodeRoot, hostPortOpt)
 
       val title = "Zookeeper service nodes"
-      info(renderServiceNodesInfo(title, nodes))
+      info(renderServiceNodesInfo(title, nodes, verbose))
     }
   }
 
@@ -153,7 +160,7 @@ private[kyuubi] class ServiceControlCli extends Logging {
       }
 
       val title = "Deleted zookeeper service nodes"
-      info(renderServiceNodesInfo(title, deletedNodes))
+      info(renderServiceNodesInfo(title, deletedNodes, verbose))
     }
   }
 
@@ -207,11 +214,12 @@ object ServiceControlCli extends CommandLineUtils with Logging {
   }
 
   private[ctl] def renderServiceNodesInfo(
-      title: String, serviceNodeInfo: Seq[ServiceNodeInfo]): String = {
+      title: String, serviceNodeInfo: Seq[ServiceNodeInfo],
+      verbose: Boolean): String = {
     val header = Seq("Namespace", "Host", "Port", "Version")
     val rows = serviceNodeInfo.sortBy(_.nodeName).map { sn =>
       Seq(sn.namespace, sn.host, sn.port.toString, sn.version.getOrElse(""))
     }
-    Tabulator.format(title, header, rows)
+    Tabulator.format(title, header, rows, verbose)
   }
 }

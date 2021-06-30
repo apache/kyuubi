@@ -54,7 +54,7 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
     if (zkQuorum == null) {
       conf.getOption(HA_ZK_QUORUM.key).foreach { v =>
         if (verbose) {
-          info(s"Zookeeper quorum is not specified, use value from default conf:$v")
+          super.info(s"Zookeeper quorum is not specified, use value from default conf:$v")
         }
         zkQuorum = v
       }
@@ -65,14 +65,13 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
     if (action != ServiceControlAction.CREATE && namespace == null) {
       namespace = conf.get(HA_ZK_NAMESPACE)
       if (verbose) {
-        info(s"Zookeeper namespace is not specified," +
-          s" use value from default conf:$namespace")
+        super.info(s"Zookeeper namespace is not specified, use value from default conf:$namespace")
       }
     }
 
     if (version == null) {
       if (verbose) {
-        info(s"version is not specified, use built-in KYUUBI_VERSION:$KYUUBI_VERSION")
+        super.info(s"version is not specified, use built-in KYUUBI_VERSION:$KYUUBI_VERSION")
       }
       version = KYUUBI_VERSION
     }
