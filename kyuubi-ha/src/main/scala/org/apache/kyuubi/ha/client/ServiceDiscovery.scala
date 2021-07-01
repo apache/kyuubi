@@ -49,14 +49,11 @@ import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
  * @param name   the name of the service itself
  * @param server the instance uri a service that used to publish itself
  */
-abstract class ServiceDiscovery private(
+abstract class ServiceDiscovery (
     name: String,
     server: Serverable) extends AbstractService(name) {
 
   import ServiceDiscovery._
-
-  def this(server: Serverable) =
-    this(classOf[ServiceDiscovery].getSimpleName, server)
 
   private var _zkClient: CuratorFramework = _
   private var _serviceNode: PersistentNode = _
