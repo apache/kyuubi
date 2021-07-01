@@ -55,9 +55,6 @@ abstract class ServiceDiscovery (
 
   import ServiceDiscovery._
 
-  def this(server: Serverable) =
-    this(classOf[ServiceDiscovery].getSimpleName, server)
-
   private var _zkClient: CuratorFramework = _
   private var _serviceNode: PersistentNode = _
   /**
