@@ -51,6 +51,8 @@ class ExecuteStatement(
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
   private var result: DataFrame = _
 
+  var operationListener: SQLOperationListener = _
+
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
       new StructType().add("Result", "string")
@@ -70,7 +72,7 @@ class ExecuteStatement(
   }
 
   private def executeStatement(): Unit = withLocalProperties {
-    val operationListener = new SQLOperationListener(this)
+    operationListener = new SQLOperationListener(this)
     try {
       setState(OperationState.RUNNING)
       info(KyuubiSparkUtil.diagnostics)
@@ -83,8 +85,6 @@ class ExecuteStatement(
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
-    } finally {
-      spark.sparkContext.removeSparkListener(operationListener)
     }
   }
 
@@ -143,4 +143,21 @@ class ExecuteStatement(
       }, queryTimeout, TimeUnit.SECONDS)
     }
   }
+
+  override def cancel(): Unit = {
+    spark.sparkContext.removeSparkListener(operationListener)
+    super.cancel()
+  }
+
+  override def close(): Unit = {
+    spark.sparkContext.removeSparkListener(operationListener)
+    super.close()
+  }
+
+  override protected def onError(cancel: Boolean): PartialFunction[Throwable, Unit] = {
+
+    if (cancel) spark.sparkContext.removeSparkListener(operationListener)
+    super.onError(cancel)
+  }
+
 }
