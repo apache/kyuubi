@@ -27,9 +27,9 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>kyuubi-spark-monitor</artifactId>
+    <artifactId>kyuubi-monitor</artifactId>
     <packaging>jar</packaging>
-    <name>Kyuubi Project Monitor</name>
+    <name>Kyuubi Project Spark Monitor</name>
 
     <build>
         <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
