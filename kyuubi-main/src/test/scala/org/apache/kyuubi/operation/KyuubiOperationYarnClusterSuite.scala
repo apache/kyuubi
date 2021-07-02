@@ -21,8 +21,9 @@ import org.apache.kyuubi.WithKyuubiServerOnYarn
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_INIT_TIMEOUT
 
-class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn
-  with JDBCTestUtils {
+class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with JDBCTestUtils {
+
+  override protected def jdbcUrl: String = getJdbcUrl
 
   override protected val kyuubiServerConf: KyuubiConf = {
     KyuubiConf().set(ENGINE_INIT_TIMEOUT, 300000L)
@@ -40,6 +41,4 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn
       assert(resultSet.getString("id").startsWith("application_"))
     }
   }
-
-  override protected def jdbcUrl: String = getJdbcUrl
 }
