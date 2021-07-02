@@ -1,4 +1,4 @@
-# for kyuubi-monitor
+# for kyuubi-spark-monitor
 
 This module's feature:
 - get all SQL's metrics during runtime
