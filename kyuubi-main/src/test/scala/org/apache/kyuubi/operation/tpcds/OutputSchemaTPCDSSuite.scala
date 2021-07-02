@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.operation.tpcds
 
-import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 
 import org.apache.kyuubi.{DeltaSuiteMixin, WithKyuubiServer}
@@ -73,12 +73,10 @@ class OutputSchemaTPCDSSuite extends WithKyuubiServer
   }
 
   private val regenerateGoldenFiles = sys.env.get("KYUUBI_UPDATE").contains("1")
-  protected val baseResourcePath: Path = {
-    java.nio.file.Paths.get("src", "test", "resources")
-  }
+  protected val baseResourcePath: Path = Paths.get("src", "test", "resources")
 
   private def fileToString(file: Path): String = {
-    new String(Files.readAllBytes(file), Charset.forName("UTF-8"))
+    new String(Files.readAllBytes(file), StandardCharsets.UTF_8)
   }
 
   private def runQuery(query: String, goldenFile: Path): Unit = {
