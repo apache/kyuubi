@@ -28,13 +28,13 @@
         <module>dev/kyuubi-codecov</module>
         <module>externals/kyuubi-download</module>
         <module>externals/kyuubi-spark-sql-engine</module>
+        <module>externals/kyuubi-spark-monitor</module>
         <module>kyuubi-assembly</module>
         <module>kyuubi-common</module>
         <module>kyuubi-ctl</module>
         <module>kyuubi-ha</module>
         <module>kyuubi-main</module>
         <module>kyuubi-metrics</module>
-        <module>kyuubi-spark-monitor</module>
         <module>kyuubi-zookeeper</module>
     </modules>
     <packaging>pom</packaging>
