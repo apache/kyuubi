@@ -39,7 +39,7 @@ trait KyuubiFunSuite extends AnyFunSuite
   System.setProperty(KyuubiConf.FRONTEND_BIND_HOST.key, "127.0.0.1")
   override def beforeAll(): Unit = {
     System.setProperty(IS_TESTING.key, "true")
-    doThreadPostAudit()
+    doThreadPreAudit()
     super.beforeAll()
   }
 
