@@ -79,8 +79,9 @@ trait JDBCTestUtils extends KyuubiFunSuite {
       info("Closing statements")
       statements.foreach(_.close())
       info("Closed statements")
-      connections.foreach(_.close())
       info("Closing connections")
+      connections.foreach(_.close())
+      info("Closed connections")
     }
   }
 
