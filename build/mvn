@@ -21,6 +21,11 @@
 _DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Preserve the calling directory
 _CALLING_DIR="$(pwd)"
+# Options used during compilation
+_COMPILE_JVM_OPTS="-Xmx1g"
+if [ "$CI" ]; then
+  _COMPILE_JVM_OPTS="${_COMPILE_JVM_OPTS} --batch-mode --no-transfer-progress"
+fi
 
 # Installs any application tarball given a URL, the expected tarball name,
 # and, optionally, a checkable binary path to determine if the binary has
@@ -102,6 +107,9 @@ install_scala() {
 
 install_scala
 install_mvn
+
+# Set any `mvn` options if not already present
+export MAVEN_OPTS=${MAVEN_OPTS:-"$_COMPILE_JVM_OPTS"}
 
 cd "${_CALLING_DIR}"
 echo "Using \`mvn\` from path: $MVN_BIN" 1>&2
