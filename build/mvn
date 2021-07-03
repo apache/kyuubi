@@ -23,7 +23,7 @@ _DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 _CALLING_DIR="$(pwd)"
 
 if [ "$CI" ]; then
-  export MAVEN_CLI_OPTS="--batch-mode --errors --fail-at-end"
+  export MAVEN_CLI_OPTS="--batch-mode --no-transfer-progress --errors --fail-fast"
 fi
 
 # Installs any application tarball given a URL, the expected tarball name,
