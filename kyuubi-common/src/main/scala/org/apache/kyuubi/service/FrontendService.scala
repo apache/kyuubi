@@ -389,7 +389,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   override def GetPrimaryKeys(req: TGetPrimaryKeysReq): TGetPrimaryKeysResp = {
     debug(req.toString)
     val resp = new TGetPrimaryKeysResp
-    val errStatus = KyuubiSQLException("Feature is not available").toTStatus
+    val errStatus = KyuubiSQLException.featureNotSupported().toTStatus
     resp.setStatus(errStatus)
     resp
   }
@@ -397,7 +397,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   override def GetCrossReference(req: TGetCrossReferenceReq): TGetCrossReferenceResp = {
     debug(req.toString)
     val resp = new TGetCrossReferenceResp
-    val errStatus = KyuubiSQLException("Feature is not available").toTStatus
+    val errStatus = KyuubiSQLException.featureNotSupported().toTStatus
     resp.setStatus(errStatus)
     resp
   }
