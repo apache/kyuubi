@@ -47,7 +47,7 @@ jobs:
           - java: 11
             spark: '3.1'
             spark-hadoop: '3.2'
-            profiles: '-Pkyuubi-extension-spark_3.1 -Djava.version=11'
+            profiles: '-Pkyuubi-extension-spark_3.1'
 
     env:
       SPARK_LOCAL_IP: localhost
