@@ -26,6 +26,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with JDBCTe
   override protected def jdbcUrl: String = getJdbcUrl
 
   override protected val kyuubiServerConf: KyuubiConf = {
+    // TODO KYUUBI #745
     KyuubiConf().set(ENGINE_INIT_TIMEOUT, 600000L)
   }
 

@@ -46,6 +46,7 @@ trait WithKyuubiServer extends KyuubiFunSuite {
     conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
     conf.set(HA_ZK_ACL_ENABLED, false)
 
+    // TODO KYUUBI #745
     conf.setIfMissing(ENGINE_INIT_TIMEOUT, 300000L)
     server = KyuubiServer.startServer(conf)
     super.beforeAll()
