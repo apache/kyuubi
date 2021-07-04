@@ -100,6 +100,12 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
 
     rewriteToConf(Paths.get(kyuubiHome, "conf", "kyuubi-env.sh.template"), newOutput)
 
+    newOutput += "For the environment variables that only needed to be transferred into engine" +
+      " side, you can set it with a Kyuubi configuration item formatted" +
+      " `kyuubi.engineEnv.VAR_NAME`. For example, with `kyuubi.engineEnv.SPARK_DRIVER_MEMORY=4g`," +
+      " the environment variable `SPARK_DRIVER_MEMORY` with value `4g` would be transferred into" +
+      " engine side."
+
     newOutput += ""
     newOutput += "## Kyuubi Configurations"
     newOutput += ""
