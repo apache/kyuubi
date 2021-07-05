@@ -1315,7 +1315,6 @@
                         <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                         <junitxml>.</junitxml>
                         <filereports>TestSuite.txt</filereports>
-                        <!--  <argLine>-Xmx2g -Xms2g -Xss8m -XX:ReservedCodeCacheSize=512M</argLine> -->
                         <environmentVariables>
                             <KYUUBI_WORK_DIR_ROOT>${project.build.directory}/work</KYUUBI_WORK_DIR_ROOT>
                         </environmentVariables>
