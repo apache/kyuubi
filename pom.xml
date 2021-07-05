@@ -88,6 +88,7 @@
         <scala.binary.version>2.12</scala.binary.version>
 
         <antlr4.version>4.8</antlr4.version>
+        <bouncycastle.version>1.60</bouncycastle.version>
         <codahale.metrics.version>4.1.1</codahale.metrics.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-collections.version>3.2.2</commons-collections.version>
@@ -98,7 +99,7 @@
         <delta.version>1.0.0</delta.version>
         <google.jsr305.version>3.0.2</google.jsr305.version>
         <guava.version>30.1-jre</guava.version>
-        <hadoop.version>3.2.2</hadoop.version>
+        <hadoop.version>3.3.1</hadoop.version>
         <hadoop.binary.version>3.2</hadoop.binary.version>
         <hive.version>2.3.7</hive.version>
         <hudi.version>0.9.0</hudi.version>
@@ -1141,6 +1142,19 @@
                         <artifactId>scala-library</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <!-- Used by Yarn Mini Cluster 3.3 -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk15on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk15on</artifactId>
+                <version>${bouncycastle.version}</version>
             </dependency>
 
             <!--
