@@ -86,7 +86,7 @@ class MiniYarnService(name: String) extends AbstractService(name) {
 
   override def start(): Unit = {
     yarnCluster.start()
-    val config = yarnCluster.getConfig()
+    val config = yarnCluster.getConfig
     eventually(timeout(10.seconds), interval(100.milliseconds)) {
       config.get(YarnConfiguration.RM_ADDRESS).split(":")(1) != "0"
     }
@@ -112,7 +112,5 @@ class MiniYarnService(name: String) extends AbstractService(name) {
     writer.close()
   }
 
-  def getHadoopConfDir(): String = {
-    hadoopConfDir.getAbsolutePath
-  }
+  def getHadoopConfDir: String = hadoopConfDir.getAbsolutePath
 }

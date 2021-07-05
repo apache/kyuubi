@@ -32,18 +32,30 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        profiles:
-          - ''
-          - '-Pspark-3.0 -Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.2 -Dspark.archive.name=spark-3.1.2-bin-hadoop2.7.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest'
-          - '-Pspark-3.1 -Pkyuubi-extension-spark_3.1'
+        include:
+          - java: 8
+            spark: '3.0'
+            spark-hadoop: '2.7'
+          - java: 8
+            spark: '3.0'
+            spark-hadoop: '2.7'
+            profiles: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.2 -Dspark.archive.name=spark-3.1.2-bin-hadoop2.7.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest'
+          - java: 8
+            spark: '3.1'
+            spark-hadoop: '3.2'
+            profiles: '-Pkyuubi-extension-spark_3.1'
+          - java: 11
+            spark: '3.1'
+            spark-hadoop: '3.2'
+
     env:
       SPARK_LOCAL_IP: localhost
     steps:
       - uses: actions/checkout@v2
-      - name: Setup JDK 1.8
+      - name: Setup JDK ${{ matrix.java }}
         uses: actions/setup-java@v1
         with:
-          java-version: '1.8'
+          java-version: ${{ matrix.java }}
       - uses: actions/cache@v1
         with:
           path: ~/.m2/repository/com
@@ -69,7 +81,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-io-
       - name: Build with Maven
-        run: ./build/mvn clean install ${{ matrix.profiles }} -Dmaven.javadoc.skip=true -V
+        run: >-
+          ./build/mvn clean install -Dmaven.javadoc.skip=true -V
+          -Pspark-${{ matrix.spark }} -Pspark-hadoop-${{ matrix.spark-hadoop }} ${{ matrix.profiles }}
       - name: Code coverage
         if: ${{ matrix.profiles == '' }}
         run: bash <(curl -s https://codecov.io/bash)
