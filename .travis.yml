@@ -18,7 +18,7 @@ sudo: required
 dist: bionic
 language: scala
 scala:
-  - 2.12.10
+  - 2.12.14
 jdk:
   - openjdk8
   - openjdk11
@@ -29,9 +29,9 @@ cache:
 
 matrix:
   include:
-    - name: Test Kyuubi w/ Default Profile
+    - name: Test Kyuubi w/ -Pspark-3.0 -Pspark-hadoop-2.7
       env:
-        - PROFILE=""
+        - PROFILE="-Pspark-3.0 -Pspark-hadoop-2.7"
         - JOB="build"
         - CODECOV="true"
     - name: Test Kyuubi w/ -Pspark-3.0 and Spark 3.1 binary
