@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import scala.collection.JavaConverters._
 
+import org.apache.spark.scheduler.SparkListener
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -52,13 +53,53 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
 
   def getOpenSparkSessionCount: Int = sessionToSpark.size()
 
+  // This map store the relationship between execution_id and operation_id
+  private final val executionToOperationMap = new ConcurrentHashMap[Long, String]()
+
+  // This map store the relationship between operation_id and listener
+  private final val operationListenerMap = new ConcurrentHashMap[String, SparkListener]()
+
+  def executionIdIsExist(executionId: Long): Boolean = {
+    return executionToOperationMap.containsKey(executionId)
+  }
+
+  def executionIdIsExistNotEmpty(executionId: Long): Boolean = {
+    if (executionToOperationMap.containsKey(executionId) &&
+      !executionToOperationMap.get(executionId).equals("empty")) {
+      return true
+    }
+    return false
+  }
+
+  def addExecutionId(executionId: Long, operationId: String): Unit = {
+    executionToOperationMap.put(executionId, operationId)
+  }
+
+  def setOperationId(executionId: Long, operationId: String): Unit = {
+    executionToOperationMap.put(executionId, operationId)
+  }
+
+  def addOperationToListener(operationId: String, sparkListener: SparkListener): Unit = {
+    operationListenerMap.put(operationId, sparkListener)
+  }
+
+  def removeListener(executionId: Long): SparkListener = synchronized {
+    if (executionIdIsExist(executionId)) {
+      val operationId = executionToOperationMap.remove(executionId)
+      if (!operationId.equals("empty")) {
+        return operationListenerMap.remove(operationId)
+      }
+    }
+    return null
+  }
+
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val spark = getSparkSession(session.handle)
-    val operation = new ExecuteStatement(spark, session, statement, runAsync, queryTimeout)
+    val operation = new ExecuteStatement(spark, session, statement, runAsync, queryTimeout, this)
     addOperation(operation)
   }
 

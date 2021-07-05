@@ -21,8 +21,10 @@ import java.util.Properties
 
 import org.apache.spark.SparkContext.SPARK_JOB_GROUP_ID
 import org.apache.spark.scheduler._
+import org.apache.spark.sql.execution.ui.{SparkListenerSQLExecutionEnd, SparkListenerSQLExecutionStart}
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.engine.spark.operation.ExecuteStatement
 import org.apache.kyuubi.operation.Operation
 import org.apache.kyuubi.operation.log.OperationLog
 
@@ -37,6 +39,7 @@ class SQLOperationListener(operation: Operation) extends StatsReportListener wit
   private val operationId: String = operation.getHandle.identifier.toString
   private val activeJobs = new java.util.HashSet[Int]()
   private val activeStages = new java.util.HashSet[Int]()
+  private val executeStatement = operation.asInstanceOf[ExecuteStatement]
 
   // For broadcast, Spark will introduce a new runId as SPARK_JOB_GROUP_ID, see:
   // https://github.com/apache/spark/pull/24595, So we will miss these logs.
@@ -59,6 +62,12 @@ class SQLOperationListener(operation: Operation) extends StatsReportListener wit
     if (sameGroupId(jobStart.properties)) {
       val jobId = jobStart.jobId
       val stageSize = jobStart.stageInfos.size
+      val executionId = jobStart.properties.getProperty("spark.sql.execution.id")
+      if (!executeStatement.sqlOperationManager
+        .executionIdIsExistNotEmpty(executionId.toLong)) {
+        executeStatement.sqlOperationManager.setOperationId(
+          executionId.toLong, operationId)
+      }
       withOperationLog {
         activeJobs.add(jobId)
         info(s"Query [$operationId]: Job $jobId started with $stageSize stages," +
@@ -107,4 +116,37 @@ class SQLOperationListener(operation: Operation) extends StatsReportListener wit
   override def onTaskEnd(taskEnd: SparkListenerTaskEnd): Unit = activeStages.synchronized {
     if (activeStages.contains(taskEnd.stageId)) super.onTaskEnd(taskEnd)
   }
+
+  // here we will get two kind of event
+  //      - SparkListenerSQLExecutionStart
+  //      - SparkListenerSQLExecutionEnd
+  // 1. get the event: sparkListenerSQLExecutionStart, and get its execution_id.
+  //    then store it in executionToOperationMap, key is execution_id and value is "empty"
+  // 2. when we get the event: SparkListenerJobStart,
+  //    we need to get its execution_id from its properties and its operation_id.
+  //    then store them in executionToOperationMap,
+  //    key is execution_id and value is operation_id
+  // 3. get the event: SparkListenerSQLExecutionEnd, and get its execution_id.
+  //    then remove the data from executionToOperationMap which key is execution_id
+  //    and remove the listener from sparkContext
+  override def onOtherEvent(event: SparkListenerEvent): Unit = {
+
+    event match {
+      // SparkListenerSQLExecutionStart
+      // from this event, you can get physicPlan and logicalPlan
+      case sqlExecutionStart: SparkListenerSQLExecutionStart =>
+        val executionId = sqlExecutionStart.executionId
+        if (!executeStatement.sqlOperationManager.executionIdIsExist(executionId)) {
+          executeStatement.sqlOperationManager.addExecutionId(executionId, "empty")
+        }
+      case sqlExecutionEnd: SparkListenerSQLExecutionEnd =>
+        val executionId = sqlExecutionEnd.executionId
+        val sparkListener = executeStatement.sqlOperationManager.removeListener(executionId)
+        if (sparkListener != null) {
+          executeStatement.removeListener(sparkListener)
+        }
+      case _ =>
+    }
+  }
+
 }

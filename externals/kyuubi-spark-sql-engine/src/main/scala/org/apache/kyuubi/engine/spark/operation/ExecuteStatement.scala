@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine.spark.operation
 import java.util.concurrent.{RejectedExecutionException, TimeUnit}
 
 import org.apache.spark.kyuubi.SQLOperationListener
+import org.apache.spark.scheduler.SparkListener
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.types._
 
@@ -36,7 +37,8 @@ class ExecuteStatement(
     session: Session,
     protected override val statement: String,
     override val shouldRunAsync: Boolean,
-    queryTimeout: Long)
+    queryTimeout: Long,
+    operationManager: SparkSQLOperationManager)
   extends SparkOperation(spark, OperationType.EXECUTE_STATEMENT, session) with Logging {
 
   private val forceCancel =
@@ -51,7 +53,7 @@ class ExecuteStatement(
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
   private var result: DataFrame = _
 
-  var operationListener: SQLOperationListener = _
+  val sqlOperationManager = operationManager.asInstanceOf[SparkSQLOperationManager]
 
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
@@ -72,7 +74,8 @@ class ExecuteStatement(
   }
 
   private def executeStatement(): Unit = withLocalProperties {
-    operationListener = new SQLOperationListener(this)
+    val operationListener = new SQLOperationListener(this)
+    operationManager.addOperationToListener(getHandle.identifier.toString, operationListener)
     try {
       setState(OperationState.RUNNING)
       info(KyuubiSparkUtil.diagnostics)
@@ -85,6 +88,8 @@ class ExecuteStatement(
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
+    } finally {
+      // operationListener.onOtherEvent(new SparkListenerOperationState(this))
     }
   }
 
@@ -144,20 +149,8 @@ class ExecuteStatement(
     }
   }
 
-  override def cancel(): Unit = {
-    spark.sparkContext.removeSparkListener(operationListener)
-    super.cancel()
-  }
-
-  override def close(): Unit = {
-    spark.sparkContext.removeSparkListener(operationListener)
-    super.close()
-  }
-
-  override protected def onError(cancel: Boolean): PartialFunction[Throwable, Unit] = {
-
-    if (cancel) spark.sparkContext.removeSparkListener(operationListener)
-    super.onError(cancel)
+  def removeListener(sparkListener: SparkListener): Unit = {
+    spark.sparkContext.removeSparkListener(sparkListener)
   }
 
 }
