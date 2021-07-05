@@ -657,4 +657,13 @@ object KyuubiConf {
     .version("1.1.1")
     .stringConf
     .createOptional
+
+  val ENGINE_SINGLE_SPARK_SESSION =
+    buildConf("engine.single.spark.session")
+      .doc("When set to true, this engine is running in a single session mode. " +
+        "All the JDBC/ODBC connections share the temporary views, function registries, " +
+        "SQL configuration and the current database.")
+      .version("1.3.0")
+      .booleanConf
+      .createWithDefault(false)
 }
