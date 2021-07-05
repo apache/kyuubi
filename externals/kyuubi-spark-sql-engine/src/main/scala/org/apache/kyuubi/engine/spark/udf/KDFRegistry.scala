@@ -40,7 +40,7 @@ object KDFRegistry {
   val engine_name: KyuubiDefinedFunction = create(
     "engine_name",
     udf(() => SparkContext.getOrCreate().getConf.get("spark.app.name")).asNonNullable(),
-    "Return the engine_name of Kyuubi Server",
+    "Return the spark application name for the associated query engine",
     "string",
     "1.3.0"
   )
