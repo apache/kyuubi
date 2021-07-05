@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.spark.udf
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.SparkContext
+import org.apache.spark.SparkEnv
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions.udf
@@ -39,7 +39,7 @@ object KDFRegistry {
 
   val engine_name: KyuubiDefinedFunction = create(
     "engine_name",
-    udf(() => SparkContext.getOrCreate().getConf.get("spark.app.name")).asNonNullable(),
+    udf(() => SparkEnv.get.conf.get("spark.app.name")).asNonNullable(),
     "Return the spark application name for the associated query engine",
     "string",
     "1.3.0"
