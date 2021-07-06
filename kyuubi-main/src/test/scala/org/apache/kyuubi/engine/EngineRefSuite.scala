@@ -39,6 +39,7 @@ class EngineRefSuite extends KyuubiFunSuite {
     val zkData = Utils.createTempDir()
     conf.set(ZookeeperConf.ZK_DATA_DIR, zkData.toString)
       .set(ZookeeperConf.ZK_CLIENT_PORT, 0)
+      .set("spark.sql.catalogImplementation", "in-memory")
     zkServer.initialize(conf)
     zkServer.start()
     super.beforeAll()

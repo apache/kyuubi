@@ -101,7 +101,7 @@ options (
 
 #### Insert to Kudu table
 
-You should notice that only `INSERT INTO` is supported by Kudu, `OVERWITRE` data is not supported
+You should notice that only `INSERT INTO` is supported by Kudu, `OVERWRITE` data is not supported
 
 ```sql
 0: jdbc:hive2://spark5.jd.163.org:10009/> insert overwrite table kudutest select *  from hive_tbl;

@@ -28,7 +28,7 @@ import org.apache.kyuubi.service.Serverable
  */
 class KyuubiServiceDiscovery private(
     name: String,
-    server: Serverable) extends ServiceDiscovery(server) {
+    server: Serverable) extends ServiceDiscovery(name, server) {
   def this(server: Serverable) =
     this(classOf[KyuubiServiceDiscovery].getSimpleName, server)
 }

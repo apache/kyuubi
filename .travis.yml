@@ -52,21 +52,21 @@ matrix:
         - JOB="tpcds-tests"
 
 install:
-  - mvn --version
+  - ./build/mvn --version
 
 script:
   - |
     if [[ "$TRAVIS_EVENT_TYPE" != "cron" && "$JOB" == "build" ]]; then
-      mvn clean install --no-transfer-progress $PROFILE -Dmaven.javadoc.skip=true -V
+      ./build/mvn clean install $PROFILE -Dmaven.javadoc.skip=true -V
     fi
   - |
     if [[ "$TRAVIS_EVENT_TYPE" == "cron" && "$JOB" == "nightly-build" ]]; then
-      mvn clean install --no-transfer-progress $PROFILE -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper -Dmaven.javadoc.skip=true -V
+      ./build/mvn clean install $PROFILE -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper -Dmaven.javadoc.skip=true -V
     fi
   - |
     if [[ "$TRAVIS_EVENT_TYPE" != "cron" && "$JOB" == "tpcds-tests" ]]; then
-      mvn clean install --no-transfer-progress $PROFILE -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper
-      mvn test --no-transfer-progress $PROFILE -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds
+      ./build/mvn clean install $PROFILE -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper
+      ./build/mvn test $PROFILE -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds
     fi
 
 after_success:

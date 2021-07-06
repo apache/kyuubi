@@ -36,7 +36,7 @@ trait ThreadAudit extends Logging {
           s"thread names: ${remainingThreadNames.mkString(", ")} =====\n")
       }
     } else {
-      warn(s"\n\n= THREAD AUDIT POST ACTION CALLED WITHOUT PRE ACTION IN SUITE $shortName ==\n")
+      warn(s"\n\n== THREAD AUDIT POST ACTION CALLED WITHOUT PRE ACTION IN SUITE $shortName ==\n")
     }
   }
 
