@@ -85,6 +85,8 @@ class ExecuteStatement(
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
+    } finally {
+      statementTimeoutCleaner.foreach(_.shutdown())
     }
   }
 
