@@ -45,9 +45,9 @@ trait JDBCTestUtils extends KyuubiFunSuite {
   protected def sparkHiveVars: Map[String, String] = _sparkHiveVars
 
   def withSessionConf[T](
-    sessionConfs: Map[String, String] = Map.empty)(
-    sparkHiveConfs: Map[String, String])(
-    sparkHiveVars: Map[String, String])(f: => T): T = {
+      sessionConfs: Map[String, String] = Map.empty)(
+      sparkHiveConfs: Map[String, String])(
+      sparkHiveVars: Map[String, String])(f: => T): T = {
     this._sessionConfs = sessionConfs
     this._sparkHiveConfs = sparkHiveConfs
     this._sparkHiveVars = sparkHiveVars
