@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.operation
 
-import java.util.concurrent.CountDownLatch
+import java.sql.SQLException
 
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TGetOperationStatusReq, TOperationState, TStatusCode}
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
@@ -54,30 +54,15 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with JDBCTestUt
   }
 
   test("submit spark app timeout with last log output") {
-    @volatile var appIsRunning = false
-    val lock = new CountDownLatch(1)
-    new Thread(() => {
-      while (!appIsRunning) { Thread.sleep(100) }
-      try {
-        withSessionConf()(Map(KyuubiConf.ENGINE_INIT_TIMEOUT.key -> "3000"))(Map.empty) {
-          withJdbcStatement() { statement =>
-            val exception = intercept[KyuubiSQLException] {
-              statement.execute("select 1")
-            }
-            assert(exception.getMessage.contains("Failed to detect the root cause"))
-            assert(exception.getMessage.contains("The last line log"))
-          }
+    withSessionConf()(Map(KyuubiConf.ENGINE_INIT_TIMEOUT.key -> "3000"))(Map.empty) {
+      val exception = intercept[SQLException] { withJdbcStatement() { statement =>
+        statement.executeQuery("select 1")
+        // no-op
         }
-      } finally {
-        lock.countDown()
       }
-    }).start()
-
-    withJdbcStatement() { statement =>
-      appIsRunning = true
-      statement.execute("select 1")
-      // hold resource so that the queue has no resource for other app
-      lock.await()
+      val verboseMessage = KyuubiSQLException.stringifyException(exception)
+      assert(verboseMessage.contains("Failed to detect the root cause"))
+      assert(verboseMessage.contains("The last line log"))
     }
   }
 }
