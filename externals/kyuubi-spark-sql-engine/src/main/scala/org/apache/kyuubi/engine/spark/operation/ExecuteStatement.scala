@@ -143,5 +143,4 @@ class ExecuteStatement(
       statementTimeoutCleaner = Some(timeoutExecutor)
     }
   }
-
 }
