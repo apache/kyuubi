@@ -88,8 +88,6 @@ class ExecuteStatement(
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
-    } finally {
-      // operationListener.onOtherEvent(new SparkListenerOperationState(this))
     }
   }
 
