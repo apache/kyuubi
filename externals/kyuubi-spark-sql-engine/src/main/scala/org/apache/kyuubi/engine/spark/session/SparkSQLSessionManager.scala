@@ -21,7 +21,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.{AnalysisException, SparkSession}
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SHARE_LEVEL, ENGINE_SINGLE_SPARK_SESSION}
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
@@ -53,7 +53,12 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     val sessionImpl = new SparkSessionImpl(protocol, user, password, ipAddress, conf, this)
     val handle = sessionImpl.handle
     try {
-      val sparkSession = spark.newSession()
+      val sparkSession = if (this.conf.get(ENGINE_SINGLE_SPARK_SESSION)) {
+        spark
+      } else {
+        spark.newSession()
+      }
+
       sessionImpl.normalizedConf.foreach {
         case ("use:database", database) => sparkSession.catalog.setCurrentDatabase(database)
         case (key, value) => setModifiableConfig(sparkSession, key, value)
