@@ -160,7 +160,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
           process.destroyForcibly()
           MetricsSystem.tracing(_.incCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
           throw KyuubiSQLException(
-            s"Timeout($timeout) to launched Spark with $builder",
+            s"Timeout($timeout ms) to launched Spark with $builder",
             builder.getError)
         }
         engineRef = get(zkClient)
