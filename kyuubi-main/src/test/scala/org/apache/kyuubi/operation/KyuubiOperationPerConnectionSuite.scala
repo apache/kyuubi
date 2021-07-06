@@ -17,10 +17,12 @@
 
 package org.apache.kyuubi.operation
 
+import java.util.concurrent.CountDownLatch
+
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TGetOperationStatusReq, TOperationState, TStatusCode}
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
-import org.apache.kyuubi.WithKyuubiServer
+import org.apache.kyuubi.{KyuubiSQLException, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 
 /**
@@ -48,6 +50,34 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with JDBCTestUt
         assert(getOpStatusResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
         assert(getOpStatusResp.getOperationState === TOperationState.ERROR_STATE)
       }
+    }
+  }
+
+  test("submit spark app timeout with last log output") {
+    @volatile var appIsRunning = false
+    val lock = new CountDownLatch(1)
+    new Thread(() => {
+      while (!appIsRunning) { Thread.sleep(100) }
+      try {
+        withSessionConf()(Map(KyuubiConf.ENGINE_INIT_TIMEOUT.key -> "3000"))(Map.empty) {
+          withJdbcStatement() { statement =>
+            val exception = intercept[KyuubiSQLException] {
+              statement.execute("select 1")
+            }
+            assert(exception.getMessage.contains("Failed to detect the root cause"))
+            assert(exception.getMessage.contains("The last line log"))
+          }
+        }
+      } finally {
+        lock.countDown()
+      }
+    }).start()
+
+    withJdbcStatement() { statement =>
+      appIsRunning = true
+      statement.execute("select 1")
+      // hold resource so that the queue has no resource for other app
+      lock.await()
     }
   }
 }
