@@ -143,7 +143,6 @@ class ExecuteStatement(
       timeoutExecutor.schedule(new Runnable {
         override def run(): Unit = {
           cleanup(OperationState.TIMEOUT)
-          timeoutExecutor.shutdown()
         }
       }, queryTimeout, TimeUnit.SECONDS)
       statementTimeoutCleaner = Some(timeoutExecutor)
