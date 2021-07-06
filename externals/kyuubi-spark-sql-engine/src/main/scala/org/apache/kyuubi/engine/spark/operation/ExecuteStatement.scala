@@ -20,7 +20,6 @@ package org.apache.kyuubi.engine.spark.operation
 import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService, TimeUnit}
 
 import org.apache.spark.kyuubi.SQLOperationListener
-import org.apache.spark.scheduler.SparkListener
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.types._
 
@@ -37,8 +36,7 @@ class ExecuteStatement(
     session: Session,
     protected override val statement: String,
     override val shouldRunAsync: Boolean,
-    queryTimeout: Long,
-    operationManager: SparkSQLOperationManager)
+    queryTimeout: Long)
   extends SparkOperation(spark, OperationType.EXECUTE_STATEMENT, session) with Logging {
 
   private val forceCancel =
@@ -54,8 +52,6 @@ class ExecuteStatement(
     OperationLog.createOperationLog(session.handle, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
   private var result: DataFrame = _
-
-  val sqlOperationManager = operationManager.asInstanceOf[SparkSQLOperationManager]
 
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
@@ -76,8 +72,7 @@ class ExecuteStatement(
   }
 
   private def executeStatement(): Unit = withLocalProperties {
-    val operationListener = new SQLOperationListener(this)
-    operationManager.addOperationToListener(getHandle.identifier.toString, operationListener)
+    val operationListener = new SQLOperationListener(this, spark)
     try {
       setState(OperationState.RUNNING)
       info(KyuubiSparkUtil.diagnostics)
@@ -147,10 +142,6 @@ class ExecuteStatement(
       }, queryTimeout, TimeUnit.SECONDS)
       statementTimeoutCleaner = Some(timeoutExecutor)
     }
-  }
-
-  def removeListener(sparkListener: SparkListener): Unit = {
-    spark.sparkContext.removeSparkListener(sparkListener)
   }
 
 }
