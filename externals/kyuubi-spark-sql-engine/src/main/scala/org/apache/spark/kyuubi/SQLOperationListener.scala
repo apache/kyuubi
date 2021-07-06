@@ -34,8 +34,8 @@ import org.apache.kyuubi.operation.log.OperationLog
  *
  * @param operation the corresponding operation
  */
-class SQLOperationListener(operation: Operation,
-                           spark: SparkSession) extends StatsReportListener with Logging {
+class SQLOperationListener(
+    operation: Operation, spark: SparkSession) extends StatsReportListener with Logging {
 
   private val operationId: String = operation.getHandle.identifier.toString
   private val activeJobs = new java.util.HashSet[Int]()
@@ -129,7 +129,6 @@ class SQLOperationListener(operation: Operation,
   //    then remove the data from executionToOperationMap which key is execution_id
   //    and remove the listener from sparkContext
   override def onOtherEvent(event: SparkListenerEvent): Unit = {
-
     event match {
       case sqlExecutionEnd: SparkListenerSQLExecutionEnd =>
         if (executionId.contains(sqlExecutionEnd.executionId)) {
@@ -138,5 +137,4 @@ class SQLOperationListener(operation: Operation,
       case _ =>
     }
   }
-
 }
