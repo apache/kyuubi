@@ -53,11 +53,11 @@ private[kyuubi] class ServiceControlCli extends Logging {
     initializeLoggerIfNecessary(true)
 
     val ctlArgs = parseArguments(args)
-    verbose = ctlArgs.verbose
+    verbose = ctlArgs.cliArgs.verbose
     if (verbose) {
       super.info(ctlArgs.toString)
     }
-    ctlArgs.action match {
+    ctlArgs.cliArgs.action match {
       case ServiceControlAction.CREATE => create(ctlArgs)
       case ServiceControlAction.LIST => list(ctlArgs, filterHostPort = false)
       case ServiceControlAction.GET => list(ctlArgs, filterHostPort = true)
@@ -76,7 +76,7 @@ private[kyuubi] class ServiceControlCli extends Logging {
   private def create(args: ServiceControlCliArguments): Unit = {
     val kyuubiConf = args.conf
 
-    kyuubiConf.setIfMissing(HA_ZK_QUORUM, args.zkQuorum)
+    kyuubiConf.setIfMissing(HA_ZK_QUORUM, args.cliArgs.zkQuorum)
     withZkClient(kyuubiConf) { zkClient =>
       val fromNamespace = ZKPaths.makePath(null, kyuubiConf.get(HA_ZK_NAMESPACE))
       val toNamespace = getZkNamespace(args)
@@ -90,17 +90,17 @@ private[kyuubi] class ServiceControlCli extends Logging {
             info(s"Exposing server instance:${sn.instance} with version:${sn.version}" +
               s" from $fromNamespace to $toNamespace")
             val newNode = createZkServiceNode(
-              kyuubiConf, zc, args.namespace, sn.instance, sn.version, true)
+              kyuubiConf, zc, args.cliArgs.namespace, sn.instance, sn.version, true)
             exposedServiceNodes += sn.copy(
               namespace = toNamespace,
               nodeName = newNode.getActualPath.split("/").last)
           }
         }
 
-        if (kyuubiConf.get(HA_ZK_QUORUM) == args.zkQuorum) {
+        if (kyuubiConf.get(HA_ZK_QUORUM) == args.cliArgs.zkQuorum) {
           doCreate(zkClient)
         } else {
-          kyuubiConf.set(HA_ZK_QUORUM, args.zkQuorum)
+          kyuubiConf.set(HA_ZK_QUORUM, args.cliArgs.zkQuorum)
           withZkClient(kyuubiConf)(doCreate)
         }
       }
@@ -116,7 +116,9 @@ private[kyuubi] class ServiceControlCli extends Logging {
   private def list(args: ServiceControlCliArguments, filterHostPort: Boolean): Unit = {
     withZkClient(args.conf) { zkClient =>
       val znodeRoot = getZkNamespace(args)
-      val hostPortOpt = if (filterHostPort) Some((args.host, args.port.toInt)) else None
+      val hostPortOpt = if (filterHostPort) {
+        Some((args.cliArgs.host, args.cliArgs.port.toInt))
+      } else None
       val nodes = getServiceNodes(zkClient, znodeRoot, hostPortOpt)
 
       val title = "Zookeeper service nodes"
@@ -143,7 +145,7 @@ private[kyuubi] class ServiceControlCli extends Logging {
   private def delete(args: ServiceControlCliArguments): Unit = {
     withZkClient(args.conf) { zkClient =>
       val znodeRoot = getZkNamespace(args)
-      val hostPortOpt = Some((args.host, args.port.toInt))
+      val hostPortOpt = Some((args.cliArgs.host, args.cliArgs.port.toInt))
       val nodesToDelete = getServiceNodes(zkClient, znodeRoot, hostPortOpt)
 
       val deletedNodes = ListBuffer[ServiceNodeInfo]()
@@ -205,11 +207,11 @@ object ServiceControlCli extends CommandLineUtils with Logging {
   }
 
   private[ctl] def getZkNamespace(args: ServiceControlCliArguments): String = {
-    args.service match {
+    args.cliArgs.service match {
       case ServiceControlObject.SERVER =>
-        ZKPaths.makePath(null, args.namespace)
+        ZKPaths.makePath(null, args.cliArgs.namespace)
       case ServiceControlObject.ENGINE =>
-        ZKPaths.makePath(s"${args.namespace}_${ShareLevel.USER}", args.user)
+        ZKPaths.makePath(s"${args.cliArgs.namespace}_${ShareLevel.USER}", args.cliArgs.user)
     }
   }
 

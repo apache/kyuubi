@@ -121,7 +121,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
 
   /** Get the rendered service node info without title */
   private def getRenderedNodesInfoWithoutTitle(nodesInfo: Seq[ServiceNodeInfo],
-                                               verbose: Boolean): String = {
+      verbose: Boolean): String = {
     val renderedInfo = renderServiceNodesInfo("", nodesInfo, verbose)
     if (verbose) {
       renderedInfo.substring(renderedInfo.indexOf("|"))

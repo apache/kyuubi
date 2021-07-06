@@ -83,6 +83,7 @@
         <jetty.version>9.4.41.v20210516</jetty.version>
         <ldapsdk.version>5.1.4</ldapsdk.version>
         <prometheus.version>0.10.0</prometheus.version>
+        <scopt.version>4.0.1</scopt.version>
         <spark.version>3.1.2</spark.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop${hadoop.binary.version}.tgz</spark.archive.name>
         <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
@@ -1166,6 +1167,12 @@
                 <groupId>javax.activation</groupId>
                 <artifactId>activation</artifactId>
                 <version>${javax-activation.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.github.scopt</groupId>
+                <artifactId>scopt_${scala.binary.version}</artifactId>
+                <version>${scopt.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
