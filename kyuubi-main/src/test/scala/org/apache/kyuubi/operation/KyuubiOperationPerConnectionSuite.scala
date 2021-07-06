@@ -54,10 +54,9 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with JDBCTestUt
   }
 
   test("submit spark app timeout with last log output") {
-    withSessionConf()(Map(KyuubiConf.ENGINE_INIT_TIMEOUT.key -> "3000"))(Map.empty) {
-      val exception = intercept[SQLException] { withJdbcStatement() { statement =>
-        statement.executeQuery("select 1")
-        // no-op
+    withSessionConf()(Map(KyuubiConf.ENGINE_INIT_TIMEOUT.key -> "2000"))(Map.empty) {
+      val exception = intercept[SQLException] {
+        withJdbcStatement() { statement => // no-op
         }
       }
       val verboseMessage = KyuubiSQLException.stringifyException(exception)
