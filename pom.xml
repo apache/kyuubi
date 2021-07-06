@@ -102,7 +102,7 @@
         <!-- DO NOT bump 4.5.3, see https://github.com/NetEase/kyuubi/issues/708 -->
         <maven.plugin.scala.version>4.3.0</maven.plugin.scala.version>
         <maven.plugin.surefire.version>2.22.0</maven.plugin.surefire.version>
-        <maven.plugin.scalatest.version>2.0.s</maven.plugin.scalatest.version>
+        <maven.plugin.scalatest.version>2.0.2</maven.plugin.scalatest.version>
         <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
         <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
         <maven.plugin.jacoco.version>0.8.6</maven.plugin.jacoco.version>
