@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.util.concurrent.{RejectedExecutionException, TimeUnit}
+import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService, TimeUnit}
 
 import org.apache.spark.kyuubi.SQLOperationListener
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -45,6 +45,8 @@ class ExecuteStatement(
   private val schedulerPool =
     spark.conf.getOption(KyuubiConf.OPERATION_SCHEDULER_POOL.key).orElse(
       session.sessionManager.getConf.get(KyuubiConf.OPERATION_SCHEDULER_POOL))
+
+  private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
 
   private val operationLog: OperationLog =
     OperationLog.createOperationLog(session.handle, getHandle)
@@ -85,6 +87,7 @@ class ExecuteStatement(
       onError(cancel = true)
     } finally {
       spark.sparkContext.removeSparkListener(operationListener)
+      statementTimeoutCleaner.foreach(_.shutdown())
     }
   }
 
@@ -138,9 +141,9 @@ class ExecuteStatement(
       timeoutExecutor.schedule(new Runnable {
         override def run(): Unit = {
           cleanup(OperationState.TIMEOUT)
-          timeoutExecutor.shutdown()
         }
       }, queryTimeout, TimeUnit.SECONDS)
+      statementTimeoutCleaner = Some(timeoutExecutor)
     }
   }
 }

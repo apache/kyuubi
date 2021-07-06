@@ -30,7 +30,7 @@ import org.apache.kyuubi.service.Serverable
  */
 class EngineServiceDiscovery private(
     name: String,
-    server: Serverable) extends ServiceDiscovery(server) {
+    server: Serverable) extends ServiceDiscovery(name, server) {
   def this(server: Serverable) =
     this(classOf[EngineServiceDiscovery].getSimpleName, server)
 

@@ -26,7 +26,7 @@ import org.apache.kyuubi.config.KyuubiConf
 /**
  * UT with Connection level engine shared cost much time, only run basic jdbc tests.
  */
-class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with BasicJDBCTests {
+class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with JDBCTestUtils {
 
   override protected def jdbcUrl: String = getJdbcUrl
 
@@ -42,7 +42,8 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with BasicJDBCT
       executeStmtReq.setRunAsync(true)
       val executeStmtResp = client.ExecuteStatement(executeStmtReq)
 
-      eventually(timeout(10.seconds), interval(500.milliseconds)) {
+      // TODO KYUUBI #745
+      eventually(timeout(60.seconds), interval(500.milliseconds)) {
         val getOpStatusReq = new TGetOperationStatusReq(executeStmtResp.getOperationHandle)
         val getOpStatusResp = client.GetOperationStatus(getOpStatusReq)
         assert(getOpStatusResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)

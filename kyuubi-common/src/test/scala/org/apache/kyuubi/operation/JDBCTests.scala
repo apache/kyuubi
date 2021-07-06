@@ -26,7 +26,7 @@ import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsRe
 import org.apache.kyuubi.KYUUBI_VERSION
 
 trait JDBCTests extends BasicJDBCTests {
-  test("execute statement -  select null") {
+  test("execute statement - select null") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT NULL AS col")
       assert(resultSet.next())
@@ -38,7 +38,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select boolean") {
+  test("execute statement - select boolean") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT false AS col")
       assert(resultSet.next())
@@ -50,7 +50,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select tinyint") {
+  test("execute statement - select tinyint") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT 1Y AS col")
       assert(resultSet.next())
@@ -62,7 +62,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select smallint") {
+  test("execute statement - select smallint") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT 1S AS col")
       assert(resultSet.next())
@@ -74,7 +74,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select int") {
+  test("execute statement - select int") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT 4 AS col")
       assert(resultSet.next())
@@ -86,7 +86,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select long") {
+  test("execute statement - select long") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT 4L AS col")
       assert(resultSet.next())
@@ -98,7 +98,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select float") {
+  test("execute statement - select float") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT cast(1.2 as float) AS col")
       assert(resultSet.next())
@@ -110,7 +110,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select double") {
+  test("execute statement - select double") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT 4.2D AS col")
       assert(resultSet.next())
@@ -122,7 +122,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select string") {
+  test("execute statement - select string") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT 'kentyao' AS col")
       assert(resultSet.next())
@@ -134,7 +134,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select binary") {
+  test("execute statement - select binary") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT cast('kyuubi' as binary) AS col")
       assert(resultSet.next())
@@ -146,7 +146,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select date") {
+  test("execute statement - select date") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT DATE '2018-11-17' AS col")
       assert(resultSet.next())
@@ -158,7 +158,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select timestamp") {
+  test("execute statement - select timestamp") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT TIMESTAMP '2018-11-17 13:33:33' AS col")
       assert(resultSet.next())
@@ -170,7 +170,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select interval") {
+  test("execute statement - select interval") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT interval '1' day AS col")
       assert(resultSet.next())
@@ -182,7 +182,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select array") {
+  test("execute statement - select array") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery(
         "SELECT array() AS col1, array(1) AS col2, array(null) AS col3")
@@ -357,8 +357,6 @@ trait JDBCTests extends BasicJDBCTests {
       val rs = statement.executeQuery("SELECT kyuubi_version()")
       assert(rs.next())
       assert(rs.getString(1) == KYUUBI_VERSION)
-
     }
-
   }
 }
