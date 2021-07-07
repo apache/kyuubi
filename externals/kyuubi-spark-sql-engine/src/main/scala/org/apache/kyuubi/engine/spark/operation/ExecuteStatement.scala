@@ -19,7 +19,8 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService, TimeUnit}
 
-import org.apache.spark.kyuubi.SQLOperationListener
+import org.apache.spark.kyuubi.{SparkSQLMetrics, SQLOperationListener}
+import org.apache.spark.kyuubi.entity.entity.KStatement
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.types._
 
@@ -53,6 +54,16 @@ class ExecuteStatement(
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
   private var result: DataFrame = _
 
+  var kStatement: KStatement = new KStatement(
+      statement, getHandle.identifier.toString,
+      spark.sparkContext.applicationId,
+      session.getTypeInfo.identifier.toString)
+
+  // store the relationship between operationId and statementDetail in operationStatementMap
+  SparkSQLMetrics.addStatementDetailForOperation(
+    getHandle.identifier.toString, kStatement
+  )
+
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
       new StructType().add("Result", "string")
@@ -72,7 +83,7 @@ class ExecuteStatement(
   }
 
   private def executeStatement(): Unit = withLocalProperties {
-    val operationListener = new SQLOperationListener(this)
+    val operationListener = new SQLOperationListener(this, spark)
     try {
       setState(OperationState.RUNNING)
       info(KyuubiSparkUtil.diagnostics)
