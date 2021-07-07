@@ -22,11 +22,10 @@ import java.sql.{ResultSet, SQLException}
 import scala.collection.JavaConverters._
 
 import org.apache.hive.jdbc.{HiveDatabaseMetaData, HiveQueryResultSet}
+import org.apache.hive.service.cli.HiveSQLException
 import org.apache.hive.service.rpc.thrift.{TGetTablesReq, TSessionHandle, TStatusCode}
 import org.apache.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.thrift.TException
-
-import org.apache.kyuubi.KyuubiSQLException
 
 class KyuubiDatabaseMetaData(conn: KyuubiConnection, client: Iface, sessHandle: TSessionHandle)
   extends HiveDatabaseMetaData(conn, client, sessHandle) {
@@ -49,7 +48,7 @@ class KyuubiDatabaseMetaData(conn: KyuubiConnection, client: Iface, sessHandle: 
     }
     val tStatus = getTableResp.getStatus
     if (tStatus.getStatusCode != TStatusCode.SUCCESS_STATUS) {
-      throw KyuubiSQLException(tStatus)
+      throw new HiveSQLException(tStatus)
     }
     new HiveQueryResultSet.Builder(conn)
       .setClient(client)
