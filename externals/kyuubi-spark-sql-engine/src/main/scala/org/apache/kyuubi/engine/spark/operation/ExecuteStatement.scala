@@ -27,6 +27,7 @@ import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.{ArrayFetchIterator, KyuubiSparkUtil}
 import org.apache.kyuubi.operation.{OperationState, OperationType}
+import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.util.ThreadUtils
@@ -53,6 +54,8 @@ class ExecuteStatement(
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
   private var result: DataFrame = _
 
+  private val operationListener: SQLOperationListener = new SQLOperationListener(this, spark)
+
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
       new StructType().add("Result", "string")
@@ -72,7 +75,6 @@ class ExecuteStatement(
   }
 
   private def executeStatement(): Unit = withLocalProperties {
-    val operationListener = new SQLOperationListener(this, spark)
     try {
       setState(OperationState.RUNNING)
       info(KyuubiSparkUtil.diagnostics)
@@ -144,5 +146,10 @@ class ExecuteStatement(
       }, queryTimeout, TimeUnit.SECONDS)
       statementTimeoutCleaner = Some(timeoutExecutor)
     }
+  }
+
+  override def cleanup(targetState: OperationState): Unit = {
+    spark.sparkContext.removeSparkListener(operationListener)
+    super.cleanup(targetState)
   }
 }
