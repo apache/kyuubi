@@ -36,6 +36,7 @@
         <module>kyuubi-main</module>
         <module>kyuubi-metrics</module>
         <module>kyuubi-zookeeper</module>
+        <module>tools/kubernetes/shuffle-file-cleaner</module>
     </modules>
     <packaging>pom</packaging>
 
