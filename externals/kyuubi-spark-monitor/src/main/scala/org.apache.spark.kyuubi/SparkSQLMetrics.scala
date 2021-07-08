@@ -72,7 +72,6 @@ object SparkSQLMetrics {
     executionStartTimeMap.put(executionId, time)
   }
 
-  // TODO: Function name need to change
   def addFinishTimeForExecutionId(executionId: Long, finishTime: Long): Unit = {
     // Get operationId
     val operationId = executionOperationMap.get(executionId)
