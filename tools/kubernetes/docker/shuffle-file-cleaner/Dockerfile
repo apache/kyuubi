@@ -17,14 +17,14 @@
 FROM openjdk:8-slim
 
 RUN mkdir /data && \
-    mkdir -p /opt/jars && \
+    mkdir -p /opt/shuffle-cleaner && \
     mkdir -p /log/cleanerLog
 
-COPY ../jars /opt/jars
-COPY ./entrypoint.sh /opt/entrypoint.sh
+COPY jars /opt/shuffle-cleaner
+COPY entrypoint.sh /opt/entrypoint.sh
 
 RUN chmod +x /opt/entrypoint.sh
 
-ENV CLEANER_CLASSPATH /opt/jars
+ENV CLEANER_CLASSPATH /opt/shuffle-cleaner/*
 
 ENTRYPOINT ["/opt/entrypoint.sh"]

@@ -15,8 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+mkdir ./jars
+cp -r ../../../../jars/* ./jars/
 
-# shellcheck disable=SC2046
-java -cp ${CLASS_PATH}:${CLEANER_CLASSPATH} \
- org.apache.kyuubi.kubernetes.KubernetesShuffleFileCleaner \
- | tee /log/cleanerLog/cleaner$(date "+%Y%m%d%H%M%S").out
+docker build .

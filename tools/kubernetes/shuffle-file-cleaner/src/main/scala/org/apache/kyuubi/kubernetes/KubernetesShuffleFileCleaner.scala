@@ -22,8 +22,7 @@ import java.nio.file.{Files, Paths}
 import java.util.concurrent.{LinkedBlockingQueue, ThreadPoolExecutor, TimeUnit}
 
 import org.apache.kyuubi.Logging
-
-import Constants._
+import org.apache.kyuubi.kubernetes.Constants._
 /*
 * Spark storage shuffle data as the following structure.
 *
@@ -43,12 +42,13 @@ import Constants._
 */
 object KubernetesShuffleFileCleaner extends Logging {
   private val envMap = System.getenv()
-
   private val freeSpaceThreshold = envMap.getOrDefault(FREE_SPACE_THRESHOLD_KEY,
     FREE_SPACE_THRESHOLD_DEFAULT_VALUE).toInt
-  private val cacheDirs = envMap.getOrDefault(CACHE_DIRS_KEY,
+  private val cacheDirs = if (envMap.containsKey(CACHE_DIRS_KEY)) {
+    envMap.get(CACHE_DIRS_KEY).split(",").filter(!_.equals(""))
+  } else {
     throw new IllegalArgumentException(s"the env ${CACHE_DIRS_KEY} can not be null"))
-    .split(",").filter(!_.equals(""))
+  }
   private val fileExpiredTime = envMap.getOrDefault(FILE_EXPIRED_TIME_KEY,
     FILE_EXPIRED_TIME_DEFAULT_VALUE).toLong
   private val sleepTime = envMap.getOrDefault(SLEEP_TIME_KEY,
