@@ -37,16 +37,18 @@ jobs:
             spark: '3.0'
             spark-hadoop: '2.7'
           - java: 8
-            spark: '3.0'
+            spark: '3.1'
             spark-hadoop: '2.7'
-            profiles: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.2 -Dspark.archive.name=spark-3.1.2-bin-hadoop2.7.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest'
+            profiles: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.0.3 -Dspark.archive.name=spark-3.0.3-bin-hadoop2.7.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest'
           - java: 8
             spark: '3.1'
             spark-hadoop: '3.2'
             profiles: '-Pkyuubi-extension-spark_3.1'
+            codecov: 'true'
           - java: 11
             spark: '3.1'
             spark-hadoop: '3.2'
+            profiles: '-DskipTests -Pspark-provided'
 
     env:
       SPARK_LOCAL_IP: localhost
@@ -85,7 +87,7 @@ jobs:
           ./build/mvn clean install -Dmaven.javadoc.skip=true -V
           -Pspark-${{ matrix.spark }} -Pspark-hadoop-${{ matrix.spark-hadoop }} ${{ matrix.profiles }}
       - name: Code coverage
-        if: ${{ matrix.profiles == '' }}
+        if: ${{ matrix.codecov == 'true' }}
         run: bash <(curl -s https://codecov.io/bash)
       - name: Detected Dependency List Change
         run: build/dependency.sh
@@ -135,5 +137,5 @@ jobs:
             ${{ runner.os }}-maven-io-
       - name: Run TPC-DS Tests
         run: |
-          ./build/mvn clean install -Pspark-3.1 -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper
+          ./build/mvn clean install -Pspark-3.1 -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper,:kyuubi-spark-monitor
           ./build/mvn test -Pspark-3.1 -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds -Dmaven.plugin.scalatest.exclude.tags=''

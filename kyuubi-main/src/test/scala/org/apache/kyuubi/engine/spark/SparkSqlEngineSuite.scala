@@ -29,24 +29,6 @@ class SparkSqlEngineSuite extends WithKyuubiServer with JDBCTestUtils {
       .set(SESSION_CONF_RESTRICT_LIST.key, "kyuubi.xyz.abc,spark.sql.xyz.abc,spark.sql.xyz.abc.var")
   }
 
-  private var _sessionConfs: Map[String, String] = Map.empty
-  private var _sparkHiveConfs: Map[String, String] = Map.empty
-  private var _sparkHiveVars: Map[String, String] = Map.empty
-
-  private def withSessionConf[T](
-      sessionConfs: Map[String, String])(
-      sparkHiveConfs: Map[String, String])(
-      sparkHiveVars: Map[String, String])(f: => T): T = {
-    this._sessionConfs = sessionConfs
-    this._sparkHiveConfs = sparkHiveConfs
-    this._sparkHiveVars = sparkHiveVars
-    try f finally {
-      _sparkHiveVars = Map.empty
-      _sparkHiveConfs = Map.empty
-      _sessionConfs = Map.empty
-    }
-  }
-
   test("ignore config via system settings") {
     val sessionConf = Map("kyuubi.abc.xyz" -> "123", "kyuubi.abc.xyz0" -> "123")
     val sparkHiveConfs = Map("spark.sql.abc.xyz" -> "123", "spark.sql.abc.xyz0" -> "123")
@@ -143,16 +125,4 @@ class SparkSqlEngineSuite extends WithKyuubiServer with JDBCTestUtils {
   }
 
   override protected def jdbcUrl: String = getJdbcUrl
-
-  override protected def sessionConfigs: Map[String, String] = {
-    super.sessionConfigs ++: _sessionConfs
-  }
-
-  override protected def sparkHiveConfigs: Map[String, String] = {
-    super.sparkHiveConfigs ++: _sparkHiveConfs
-  }
-
-  override protected def sparkHiveVars: Map[String, String] = {
-    super.sparkHiveVars ++: _sparkHiveVars
-  }
 }

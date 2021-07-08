@@ -22,7 +22,7 @@ import java.util.Properties
 import org.apache.spark.SparkContext.SPARK_JOB_GROUP_ID
 import org.apache.spark.scheduler._
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.execution.ui.{SparkListenerSQLExecutionEnd, SparkListenerSQLExecutionStart}
+import org.apache.spark.sql.execution.ui.{SparkListenerSQLExecutionEnd}
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.operation.Operation
@@ -63,9 +63,9 @@ class SQLOperationListener(
     if (sameGroupId(jobStart.properties)) {
       val jobId = jobStart.jobId
       val stageSize = jobStart.stageInfos.size
-      val execId = jobStart.properties.getProperty("spark.sql.execution.id")
       if (executionId.isEmpty) {
-        executionId = Some(execId.toLong)
+        executionId = Option(jobStart.properties.getProperty("spark.sql.execution.id"))
+          .map(_.toLong)
       }
       withOperationLog {
         activeJobs.add(jobId)
@@ -118,10 +118,9 @@ class SQLOperationListener(
 
   override def onOtherEvent(event: SparkListenerEvent): Unit = {
     event match {
-      case sqlExecutionEnd: SparkListenerSQLExecutionEnd =>
-        if (executionId.contains(sqlExecutionEnd.executionId)) {
-          spark.sparkContext.removeSparkListener(this)
-        }
+      case sqlExecutionEnd: SparkListenerSQLExecutionEnd if
+          executionId.contains(sqlExecutionEnd.executionId) =>
+        spark.sparkContext.removeSparkListener(this)
       case _ =>
     }
   }
