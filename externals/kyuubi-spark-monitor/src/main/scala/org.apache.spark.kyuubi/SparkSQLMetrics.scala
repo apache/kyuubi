@@ -17,32 +17,57 @@
 
 package org.apache.spark.kyuubi
 
+import java.util
 import java.util.concurrent.ConcurrentHashMap
 
 import org.apache.spark.kyuubi.entity.entity.KStatement
 
+import org.apache.kyuubi.operation.OperationState
+
 object SparkSQLMetrics {
 
-  private final val executionOperationMap = new ConcurrentHashMap[Long, String]()
+  private val executionOperationMap = new ConcurrentHashMap[Long, String]()
 
-  private final val operationStatementMap = new ConcurrentHashMap[String, KStatement]()
+  private val operationStatementMap = new ConcurrentHashMap[String, KStatement]()
 
-  private final val executionPhysicalPlanMap = new java.util.HashMap[Long, String]()
+  private val executionPhysicalPlanMap = new ConcurrentHashMap[Long, String]()
 
-  def addPhysicalPlanForExecution(executionId: Long, physicalPlan: String): Unit = {
+  // This map store each execution startTime
+  private val executionStartTimeMap = new ConcurrentHashMap[Long, Long]()
+
+  def addPhysicalPlanForExecutionId(executionId: Long, physicalPlan: String): Unit = {
     executionPhysicalPlanMap.putIfAbsent(executionId, physicalPlan)
   }
 
-  def addExecutionAndOperationRelation(executionId: Long, operationId: String): Unit = {
-//    if (executionOperationMap.containsKey(executionId)
-//      && executionOperationMap.get(executionId).equals("empty")) {
-//      executionOperationMap.put(executionId, operationId)
-//    }
-    executionOperationMap.putIfAbsent(executionId, operationId)
+  def addPhysicalPlanIntoKs(executionId: Long, operatioId: String): Unit = {
+    // Store the relationship between executionId and OperationId
+    executionOperationMap.putIfAbsent(executionId, operatioId)
+    // Get physicalPlan
+    // TODO: 这个操作如果2次触发，但是第一次已经删除掉了，会造成第二次的数据永远不会删除，需要有判断
+    val physicalPlan = executionPhysicalPlanMap.remove(executionId)
+    operationStatementMap.get(operatioId).setPhysicPlan(physicalPlan)
+    operationStatementMap.get(operatioId).setExecutionId(executionId)
+
+    // Get the time that the state is RUNNING
+    val startTime = executionStartTimeMap.remove(executionId)
+    // Add executionStartTimeMap into ks
+    operationStatementMap.get(operatioId).setStateTime(OperationState.RUNNING.toString, startTime)
   }
 
-  def addStatementDetailForOperation(operationId: String, kStatement: KStatement): Unit = {
+  def addStatementDetailForOperationId(operationId: String, kStatement: KStatement): Unit = {
     operationStatementMap.putIfAbsent(operationId, kStatement)
+  }
+
+  def addEachStateTimeForExecutionId(executionId: Long, state: String, time: Long): Unit = {
+    if (state.equals(OperationState.RUNNING.toString)) {
+      executionStartTimeMap.put(executionId, time)
+    }
+  }
+
+  def addFinishTimeForExecutionId(executionId: Long, finishTime: Long): Unit = {
+    // Get operationId
+    val operationId = executionOperationMap.remove(executionId)
+    operationStatementMap.get(operationId).setStateTime(OperationState.FINISHED.toString, finishTime)
   }
 
 }

@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import java.util.Date
 import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService, TimeUnit}
 
 import org.apache.spark.kyuubi.{SparkSQLMetrics, SQLOperationListener}
@@ -57,10 +58,13 @@ class ExecuteStatement(
   var kStatement: KStatement = new KStatement(
       statement, getHandle.identifier.toString,
       spark.sparkContext.applicationId,
-      session.getTypeInfo.identifier.toString)
+      session.getTypeInfo.identifier.toString,
+      OperationState.INITIALIZED.toString,
+      new Date().getTime
+  )
 
-  // store the relationship between operationId and statementDetail in operationStatementMap
-  SparkSQLMetrics.addStatementDetailForOperation(
+  // Add the relationship between operationId and statementDetail in operationStatementMap
+  SparkSQLMetrics.addStatementDetailForOperationId(
     getHandle.identifier.toString, kStatement
   )
 

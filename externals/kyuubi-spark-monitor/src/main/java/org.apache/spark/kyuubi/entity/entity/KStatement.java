@@ -17,6 +17,9 @@
 
 package org.apache.spark.kyuubi.entity.entity;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class KStatement {
 
     private String statement;
@@ -24,10 +27,9 @@ public class KStatement {
     private String appId;
     private String sessionId;
     private Long executionId;
-    private String state;
-    private Long stateTime;
     private String physicPlan;
     private String logicalPlan;
+    private Map<String, Long> stateTimeMap;
 
     public String getStatement() {
         return statement;
@@ -69,22 +71,6 @@ public class KStatement {
         this.executionId = executionId;
     }
 
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
-    }
-
-    public Long getStateTime() {
-        return stateTime;
-    }
-
-    public void setStateTime(Long stateTime) {
-        this.stateTime = stateTime;
-    }
-
     public String getPhysicPlan() {
         return physicPlan;
     }
@@ -101,13 +87,30 @@ public class KStatement {
         this.logicalPlan = logicalPlan;
     }
 
+    public Map<String, Long> getStateTime() {
+        return stateTimeMap;
+    }
+
+    public void setStateTime(Map<String, Long> stateTimeMap) {
+        this.stateTimeMap.putAll(stateTimeMap);
+    }
+
+    public void setStateTime(String state, Long time) {
+        this.stateTimeMap.put(state, time);
+    }
+
     public KStatement() {
     }
 
-    public KStatement(String statement, String operationId, String appId, String sessionId) {
+    public KStatement(String statement, String operationId,
+                      String appId, String sessionId,
+                      String operationState, Long time) {
         this.statement = statement;
         this.operationId = operationId;
         this.appId = appId;
         this.sessionId = sessionId;
+
+        this.stateTimeMap = new HashMap<String, Long>();
+        stateTimeMap.put(operationState, time);
     }
 }
