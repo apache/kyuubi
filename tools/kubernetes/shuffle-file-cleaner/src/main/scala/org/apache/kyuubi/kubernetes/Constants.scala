@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.tool.kubernetes
+package org.apache.kyuubi.kubernetes
 
 object Constants {
   val CACHE_DIRS_KEY = "cacheDirs"

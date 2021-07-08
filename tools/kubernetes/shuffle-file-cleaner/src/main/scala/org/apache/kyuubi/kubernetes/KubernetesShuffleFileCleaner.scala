@@ -15,15 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.tool.kubernetes
-
-import org.apache.kyuubi.Logging
-import org.apache.tool.kubernetes.Constants._
+package org.apache.kyuubi.kubernetes
 
 import java.io.File
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.{LinkedBlockingQueue, ThreadPoolExecutor, TimeUnit}
 
+import org.apache.kyuubi.Logging
+
+import Constants._
 /*
 * Spark storage shuffle data as the following structure.
 *
