@@ -29,6 +29,7 @@ import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.{ArrayFetchIterator, KyuubiSparkUtil}
 import org.apache.kyuubi.operation.{OperationState, OperationType}
+import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.util.ThreadUtils
@@ -54,6 +55,8 @@ class ExecuteStatement(
     OperationLog.createOperationLog(session.handle, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
   private var result: DataFrame = _
+
+  private val operationListener: SQLOperationListener = new SQLOperationListener(this, spark)
 
   var kStatement: KStatement = new KStatement(
       statement, getHandle.identifier.toString,
@@ -87,7 +90,6 @@ class ExecuteStatement(
   }
 
   private def executeStatement(): Unit = withLocalProperties {
-    val operationListener = new SQLOperationListener(this, spark)
     try {
       setState(OperationState.RUNNING)
       info(KyuubiSparkUtil.diagnostics)
@@ -101,7 +103,6 @@ class ExecuteStatement(
     } catch {
       onError(cancel = true)
     } finally {
-      spark.sparkContext.removeSparkListener(operationListener)
       statementTimeoutCleaner.foreach(_.shutdown())
     }
   }
@@ -160,5 +161,10 @@ class ExecuteStatement(
       }, queryTimeout, TimeUnit.SECONDS)
       statementTimeoutCleaner = Some(timeoutExecutor)
     }
+  }
+
+  override def cleanup(targetState: OperationState): Unit = {
+    spark.sparkContext.removeSparkListener(operationListener)
+    super.cleanup(targetState)
   }
 }

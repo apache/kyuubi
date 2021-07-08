@@ -24,5 +24,3 @@
 #
 
 # Details in https://kyuubi.readthedocs.io/en/latest/deployment/settings.html
-# spark.driver.extraJavaOptions   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005
-# spark.executor.extraJavaOptions   -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005
