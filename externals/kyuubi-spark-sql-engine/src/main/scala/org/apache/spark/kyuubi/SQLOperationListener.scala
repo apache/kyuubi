@@ -19,7 +19,6 @@ package org.apache.spark.kyuubi
 
 import java.util.Properties
 
-import org.apache.spark.SparkContext.SPARK_JOB_GROUP_ID
 import org.apache.spark.scheduler._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.ui.{SparkListenerSQLExecutionEnd}
@@ -47,7 +46,7 @@ class SQLOperationListener(
   // TODO: Fix this until the below ticket resolved
   // https://issues.apache.org/jira/browse/SPARK-34064
   private def sameGroupId(properties: Properties): Boolean = {
-    properties != null && properties.getProperty(SPARK_JOB_GROUP_ID) == operationId
+    properties != null && properties.getProperty("kyuubi.statement.id") == operationId
   }
 
   private def withOperationLog(f : => Unit): Unit = {

@@ -122,6 +122,7 @@ class ExecuteStatement(
   private def withLocalProperties[T](f: => T): T = {
     try {
       spark.sparkContext.setJobGroup(statementId, statement, forceCancel)
+      spark.sparkContext.setLocalProperty("kyuubi.statement.id", statementId)
       schedulerPool match {
         case Some(pool) =>
           spark.sparkContext.setLocalProperty("spark.scheduler.pool", pool)
