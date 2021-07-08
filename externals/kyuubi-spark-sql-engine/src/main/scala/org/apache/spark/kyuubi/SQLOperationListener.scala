@@ -47,8 +47,7 @@ class SQLOperationListener(
   // TODO: Fix this until the below ticket resolved
   // https://issues.apache.org/jira/browse/SPARK-34064
   private def sameGroupId(properties: Properties): Boolean = {
-    properties != null &&
-      properties.getProperty(KYUUBI_STATEMENT_ID_KEY) == operationId
+    properties != null && properties.getProperty(KYUUBI_STATEMENT_ID_KEY) == operationId
   }
 
   private def withOperationLog(f : => Unit): Unit = {
@@ -65,8 +64,7 @@ class SQLOperationListener(
       val jobId = jobStart.jobId
       val stageSize = jobStart.stageInfos.size
       if (executionId.isEmpty) {
-        executionId = Option(
-          jobStart.properties.getProperty(SPARK_SQL_EXECUTION_ID_KEY))
+        executionId = Option(jobStart.properties.getProperty(SPARK_SQL_EXECUTION_ID_KEY))
           .map(_.toLong)
       }
       withOperationLog {
