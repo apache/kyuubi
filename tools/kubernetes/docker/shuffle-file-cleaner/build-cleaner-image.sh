@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+#TODO hard code for now
 cp -r ../../../../jars/* ./jars/
 
 docker build .

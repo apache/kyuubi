@@ -82,6 +82,8 @@ object KubernetesShuffleFileCleaner extends Logging {
       .foreach(cacheDir => {
         info(s"start check cache dir ${cacheDir.getName}")
         cacheDir.listFiles.foreach(file => checkAndDeleteFIle(file, time))
+        // delete empty spark cache file
+        checkAndDeleteDir(cacheDir)
       })
   }
 
