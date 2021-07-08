@@ -47,7 +47,7 @@ object KubernetesShuffleFileCleaner extends Logging {
   private val cacheDirs = if (envMap.containsKey(CACHE_DIRS_KEY)) {
     envMap.get(CACHE_DIRS_KEY).split(",").filter(!_.equals(""))
   } else {
-    throw new IllegalArgumentException(s"the env ${CACHE_DIRS_KEY} can not be null"))
+    throw new IllegalArgumentException(s"the env ${CACHE_DIRS_KEY} can not be null")
   }
   private val fileExpiredTime = envMap.getOrDefault(FILE_EXPIRED_TIME_KEY,
     FILE_EXPIRED_TIME_DEFAULT_VALUE).toLong
