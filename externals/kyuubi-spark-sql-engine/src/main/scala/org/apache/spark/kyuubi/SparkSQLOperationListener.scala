@@ -21,8 +21,6 @@ import org.apache.spark.SparkContext.SPARK_JOB_GROUP_ID
 import org.apache.spark.scheduler.{SparkListenerEvent, SparkListenerJobStart, StatsReportListener}
 import org.apache.spark.sql.execution.ui.{SparkListenerSQLExecutionEnd, SparkListenerSQLExecutionStart}
 
-import org.apache.kyuubi.operation.OperationState
-
 class SparkSQLOperationListener extends StatsReportListener{
 
   override def onOtherEvent(event: SparkListenerEvent): Unit = {
@@ -35,8 +33,7 @@ class SparkSQLOperationListener extends StatsReportListener{
         // Store this SQL's physicalPlan
         SparkSQLMetrics.addPhysicalPlanForExecutionId(executionId, physicalPlan)
         // Store this SQL's state and the time
-        SparkSQLMetrics.addEachStateTimeForExecutionId(
-          executionId, OperationState.RUNNING.toString, startTime)
+        SparkSQLMetrics.addStartTimeForExecutionId(executionId, startTime)
       case sqlExecutionEnd: SparkListenerSQLExecutionEnd =>
         val executionId = sqlExecutionEnd.executionId
         val finishTime = sqlExecutionEnd.time
@@ -50,6 +47,9 @@ class SparkSQLOperationListener extends StatsReportListener{
     val operationId = jobStart.properties.getProperty(SPARK_JOB_GROUP_ID)
     val executionId = jobStart.properties.getProperty("spark.sql.execution.id").toLong
     // Add executionId and physicalPlan into kStatement
-    SparkSQLMetrics.addPhysicalPlanIntoKs(executionId, operationId)
+    // It only needs to be executed once
+    if (!SparkSQLMetrics.operationIsExist(executionId)) {
+      SparkSQLMetrics.addExecutionInfoIntoKs(executionId, operationId)
+    }
   }
 }

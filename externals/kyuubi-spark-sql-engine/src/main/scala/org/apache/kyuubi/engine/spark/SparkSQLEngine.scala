@@ -21,7 +21,7 @@ import java.time.Instant
 import java.util.concurrent.CountDownLatch
 
 import org.apache.spark.SparkConf
-import org.apache.spark.kyuubi.SparkSQLEngineListener
+import org.apache.spark.kyuubi.{SparkSQLEngineListener, SparkSQLOperationListener}
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{Logging, Utils}
@@ -47,6 +47,7 @@ private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
   override def initialize(conf: KyuubiConf): Unit = {
     val listener = new SparkSQLEngineListener(this)
     spark.sparkContext.addSparkListener(listener)
+    spark.sparkContext.addSparkListener(new SparkSQLOperationListener)
     super.initialize(conf)
   }
 

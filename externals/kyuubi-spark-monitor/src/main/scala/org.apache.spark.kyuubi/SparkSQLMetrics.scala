@@ -26,48 +26,70 @@ import org.apache.kyuubi.operation.OperationState
 
 object SparkSQLMetrics {
 
+  // TODO: Need to check data in maps is useful
+  // When we dump data from operationStatementMap, we need to clear the data
+  // in executionOperationMap, executionPhysicalPlanMap and executionStartTimeMap.
+  // This action make sure that we will not store unused data in mem.
   private val executionOperationMap = new ConcurrentHashMap[Long, String]()
+  private val executionPhysicalPlanMap = new ConcurrentHashMap[Long, String]()
+  // This map store each execution startTime
+  private val executionStartTimeMap = new ConcurrentHashMap[Long, Long]()
 
   private val operationStatementMap = new ConcurrentHashMap[String, KStatement]()
 
-  private val executionPhysicalPlanMap = new ConcurrentHashMap[Long, String]()
-
-  // This map store each execution startTime
-  private val executionStartTimeMap = new ConcurrentHashMap[Long, Long]()
+  private var endStateList = new util.ArrayList[String]()
+  endStateList.add(OperationState.FINISHED.toString)
+  endStateList.add(OperationState.CANCELED.toString)
+  endStateList.add(OperationState.CLOSED.toString)
+  endStateList.add(OperationState.ERROR.toString)
+  endStateList.add(OperationState.TIMEOUT.toString)
 
   def addPhysicalPlanForExecutionId(executionId: Long, physicalPlan: String): Unit = {
     executionPhysicalPlanMap.putIfAbsent(executionId, physicalPlan)
   }
 
-  def addPhysicalPlanIntoKs(executionId: Long, operatioId: String): Unit = {
-    // Store the relationship between executionId and OperationId
-    executionOperationMap.putIfAbsent(executionId, operatioId)
-    // Get physicalPlan
-    // TODO: 这个操作如果2次触发，但是第一次已经删除掉了，会造成第二次的数据永远不会删除，需要有判断
-    val physicalPlan = executionPhysicalPlanMap.remove(executionId)
-    operationStatementMap.get(operatioId).setPhysicPlan(physicalPlan)
-    operationStatementMap.get(operatioId).setExecutionId(executionId)
-
-    // Get the time that the state is RUNNING
-    val startTime = executionStartTimeMap.remove(executionId)
-    // Add executionStartTimeMap into ks
-    operationStatementMap.get(operatioId).setStateTime(OperationState.RUNNING.toString, startTime)
+  // It only needs to be executed once for the same statement
+  def addExecutionInfoIntoKs(executionId: Long, operatioId: String): Unit = {
+    if (executionOperationMap.putIfAbsent(executionId, operatioId) == null) {
+      if (executionPhysicalPlanMap.containsKey(executionId)) {
+        operationStatementMap.get(operatioId).setPhysicPlan(
+          executionPhysicalPlanMap.remove(executionId))
+      }
+      operationStatementMap.get(operatioId).setExecutionId(executionId)
+      if (executionStartTimeMap.containsKey(executionId)) {
+        // Add executionStartTimeMap into ks
+        addEachStateTimeForOperationid(
+          operatioId, OperationState.RUNNING.toString, executionStartTimeMap.remove(executionId))
+      }
+    }
   }
 
   def addStatementDetailForOperationId(operationId: String, kStatement: KStatement): Unit = {
     operationStatementMap.putIfAbsent(operationId, kStatement)
   }
 
-  def addEachStateTimeForExecutionId(executionId: Long, state: String, time: Long): Unit = {
-    if (state.equals(OperationState.RUNNING.toString)) {
-      executionStartTimeMap.put(executionId, time)
+  def addStartTimeForExecutionId(executionId: Long, time: Long): Unit = {
+    executionStartTimeMap.put(executionId, time)
+  }
+
+  // TODO: Function name need to change
+  def addFinishTimeForExecutionId(executionId: Long, finishTime: Long): Unit = {
+    // Get operationId
+    val operationId = executionOperationMap.get(executionId)
+    if (operationId != null) {
+      addEachStateTimeForOperationid(operationId, OperationState.FINISHED.toString, finishTime)
     }
   }
 
-  def addFinishTimeForExecutionId(executionId: Long, finishTime: Long): Unit = {
-    // Get operationId
-    val operationId = executionOperationMap.remove(executionId)
-    operationStatementMap.get(operationId).setStateTime(OperationState.FINISHED.toString, finishTime)
+  def addEachStateTimeForOperationid(operationId: String, state: String, time: Long): Unit = {
+    operationStatementMap.get(operationId).setStateTime(state, time)
+     if (endStateList.contains(state)) {
+       // If this statement's state is endState, we should remove data from executionOperationMap
+       executionOperationMap.remove(operationStatementMap.get(operationId).getExecutionId)
+     }
   }
 
+  def operationIsExist(executionId: Long): Boolean = {
+    return executionOperationMap.containsKey(executionId)
+  }
 }

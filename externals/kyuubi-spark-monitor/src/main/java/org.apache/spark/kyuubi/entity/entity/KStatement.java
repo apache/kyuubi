@@ -29,6 +29,7 @@ public class KStatement {
     private Long executionId;
     private String physicPlan;
     private String logicalPlan;
+    // This map store this statement's each state and the time
     private Map<String, Long> stateTimeMap;
 
     public String getStatement() {

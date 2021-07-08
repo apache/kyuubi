@@ -59,14 +59,13 @@ class ExecuteStatement(
   private val operationListener: SQLOperationListener = new SQLOperationListener(this, spark)
 
   var kStatement: KStatement = new KStatement(
-      statement, getHandle.identifier.toString,
-      spark.sparkContext.applicationId,
-      session.getTypeInfo.identifier.toString,
-      OperationState.INITIALIZED.toString,
-      new Date().getTime
-  )
+    statement, getHandle.identifier.toString,
+    spark.sparkContext.applicationId,
+    session.getTypeInfo.identifier.toString,
+    OperationState.INITIALIZED.toString,
+    new Date().getTime)
 
-  // Add the relationship between operationId and statementDetail in operationStatementMap
+  // Store the relationship between operationId and statementDetail
   SparkSQLMetrics.addStatementDetailForOperationId(
     getHandle.identifier.toString, kStatement
   )
@@ -164,6 +163,8 @@ class ExecuteStatement(
   }
 
   override def cleanup(targetState: OperationState): Unit = {
+    SparkSQLMetrics.addEachStateTimeForOperationid(
+      getHandle.identifier.toString, targetState.toString, new Date().getTime)
     spark.sparkContext.removeSparkListener(operationListener)
     super.cleanup(targetState)
   }
