@@ -16,6 +16,7 @@
 # limitations under the License.
 #
 #TODO hard code for now
+cd "${dirname "$0"}"
 cp -r ../../../../jars/* ./jars/
 
 docker build .

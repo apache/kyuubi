@@ -29,7 +29,7 @@ spec:
   template:
     metadata:
       labels:
-        name:shuffler-cleaner
+        name: shuffler-cleaner
     spec:
       containers:
         # Container image which build by ./Dockerfile
