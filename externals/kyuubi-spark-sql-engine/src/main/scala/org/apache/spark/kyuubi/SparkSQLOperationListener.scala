@@ -17,9 +17,10 @@
 
 package org.apache.spark.kyuubi
 
-import org.apache.spark.SparkContext.SPARK_JOB_GROUP_ID
 import org.apache.spark.scheduler.{SparkListenerEvent, SparkListenerJobStart, StatsReportListener}
 import org.apache.spark.sql.execution.ui.{SparkListenerSQLExecutionEnd, SparkListenerSQLExecutionStart}
+
+import org.apache.kyuubi.engine.spark.operation.ExecuteStatement._
 
 class SparkSQLOperationListener extends StatsReportListener{
 
@@ -44,7 +45,7 @@ class SparkSQLOperationListener extends StatsReportListener{
 
   override def onJobStart(jobStart: SparkListenerJobStart): Unit = {
     // TODO: Some metrics need to get: stageIds, stageInfos, this job's startTime and so on
-    val operationId = jobStart.properties.getProperty(SPARK_JOB_GROUP_ID)
+    val operationId = jobStart.properties.getProperty(KYUUBI_STATEMENT_ID_KEY)
     val executionId = jobStart.properties.getProperty("spark.sql.execution.id").toLong
     // Add executionId and physicalPlan into kStatement
     // It only needs to be executed once
