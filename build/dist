@@ -180,7 +180,6 @@ mkdir -p "$DISTDIR/logs"
 mkdir -p "$DISTDIR/work"
 mkdir -p "$DISTDIR/externals/engines/spark"
 mkdir -p "$DISTDIR/tools/kubernetes/jars"
-mkdir -p "$DISTDIR/tools/kubernetes/docker"
 echo "Kyuubi $VERSION $GITREVSTRING built for" > "$DISTDIR/RELEASE"
 echo "Java $JAVA_VERSION" >> "$DISTDIR/RELEASE"
 echo "Scala $SCALA_VERSION" >> "$DISTDIR/RELEASE"
@@ -197,7 +196,7 @@ cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engin
 
 # Copy kyuubi tools
 cp "$KYUUBI_HOME/tools/kubernetes/shuffle-file-cleaner/target/shuffle-files-cleaner-$VERSION.jar" "$DISTDIR/jars/"
-cp -r "$KYUUBI_HOME/tools/kubernetes/docker/*" "$DISTDIR/tools/kubernetes/docker/"
+cp -r "$KYUUBI_HOME/tools/kubernetes/docker/" "$DISTDIR/tools/kubernetes/"
 
 # Copy Kyuubi extension
 SPARK_MID_VERSION=${SPARK_VERSION%.*}
