@@ -42,6 +42,8 @@ class ExecuteStatement(
     queryTimeout: Long)
   extends SparkOperation(spark, OperationType.EXECUTE_STATEMENT, session) with Logging {
 
+  import ExecuteStatement._
+
   private val forceCancel =
     session.sessionManager.getConf.get(KyuubiConf.OPERATION_FORCE_CANCEL)
 
@@ -136,15 +138,17 @@ class ExecuteStatement(
   private def withLocalProperties[T](f: => T): T = {
     try {
       spark.sparkContext.setJobGroup(statementId, statement, forceCancel)
+      spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
       schedulerPool match {
         case Some(pool) =>
-          spark.sparkContext.setLocalProperty("spark.scheduler.pool", pool)
+          spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, pool)
         case None =>
       }
 
       f
     } finally {
-      spark.sparkContext.setLocalProperty("spark.scheduler.pool", null)
+      spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, null)
+      spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, null)
       spark.sparkContext.clearJobGroup()
     }
   }
@@ -168,4 +172,10 @@ class ExecuteStatement(
     spark.sparkContext.removeSparkListener(operationListener)
     super.cleanup(targetState)
   }
+}
+
+object ExecuteStatement {
+  final val KYUUBI_STATEMENT_ID_KEY = "kyuubi.statement.id"
+  final val SPARK_SCHEDULER_POOL_KEY = "spark.scheduler.pool"
+  final val SPARK_SQL_EXECUTION_ID_KEY = "spark.sql.execution.id"
 }

@@ -19,12 +19,12 @@ package org.apache.spark.kyuubi
 
 import java.util.Properties
 
-import org.apache.spark.SparkContext.SPARK_JOB_GROUP_ID
 import org.apache.spark.scheduler._
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.execution.ui.{SparkListenerSQLExecutionEnd}
+import org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.engine.spark.operation.ExecuteStatement._
 import org.apache.kyuubi.operation.Operation
 import org.apache.kyuubi.operation.log.OperationLog
 
@@ -47,7 +47,7 @@ class SQLOperationListener(
   // TODO: Fix this until the below ticket resolved
   // https://issues.apache.org/jira/browse/SPARK-34064
   private def sameGroupId(properties: Properties): Boolean = {
-    properties != null && properties.getProperty(SPARK_JOB_GROUP_ID) == operationId
+    properties != null && properties.getProperty(KYUUBI_STATEMENT_ID_KEY) == operationId
   }
 
   private def withOperationLog(f : => Unit): Unit = {
@@ -64,7 +64,7 @@ class SQLOperationListener(
       val jobId = jobStart.jobId
       val stageSize = jobStart.stageInfos.size
       if (executionId.isEmpty) {
-        executionId = Option(jobStart.properties.getProperty("spark.sql.execution.id"))
+        executionId = Option(jobStart.properties.getProperty(SPARK_SQL_EXECUTION_ID_KEY))
           .map(_.toLong)
       }
       withOperationLog {
