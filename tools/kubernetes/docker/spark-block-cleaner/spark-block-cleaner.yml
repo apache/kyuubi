@@ -33,36 +33,42 @@ spec:
     spec:
       containers:
         # Container image which build by ./Dockerfile
+        # TODO official Image
         - image: <image>
           name: cleaner
           volumeMounts:
-            - name: block-files-dirs
-              mountPath: /data
+            - name: block-files-dir-1
+              mountPath: /data/data1
+            - name: block-files-dir-2
+              mountPath: /data/data2
             - name: cleaner-log
               mountPath: /log/cleanerLog
           env:
             # Set env to manager cleaner running
             # the target dirs which in container
-            - name: cacheDirs
+            - name: CACHE_DIRS
               value: /data/data1,/data/data2
             # Cleaner will clean More distant block files
-            - name: fileExpiredTime
+            - name: FILE_EXPIRED_TIME
               value: 604800000
             # Deep clean fileExpiredTime
-            - name: deepCleanFileExpiredTime
+            - name: DEEP_CLEAN_FILE_EXPIRED_TIME
               value: 432000000
             # After first clean, if free Space low than threshold
             # trigger deep clean
-            - name: freeSpaceThreshold
+            - name: FREE_SPACE_THRESHOLD
               value: 60
             # Cleaner clean sleep times after cleaning
-            - name: sleepTime
+            - name: SLEEP_TIME
               value: 3600000
       volumes:
         # Directory on the host which store block dirs
-        - name: block-files-dirs
+        - name: block-files-dir-1
           hostPath:
-            path: /blockFilesDirs
+            path: /blockFilesDirs/data1
+        - name: block-files-dir-2
+          hostPath:
+            path: /blockFilesDirs/data2
         # Directory on the host which you want to store clean log
         - name: cleaner-log
           hostPath:

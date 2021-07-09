@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.kubernetes
+package org.apache.kyuubi.tools
 
 import java.io.File
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.{LinkedBlockingQueue, ThreadPoolExecutor, TimeUnit}
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.kubernetes.Constants._
+import org.apache.kyuubi.tools.Constants._
 /*
 * Spark storage shuffle data as the following structure.
 *
@@ -42,19 +42,20 @@ import org.apache.kyuubi.kubernetes.Constants._
 */
 object KubernetesSparkBlockCleaner extends Logging {
   private val envMap = System.getenv()
+
   private val freeSpaceThreshold = envMap.getOrDefault(FREE_SPACE_THRESHOLD_KEY,
-    FREE_SPACE_THRESHOLD_DEFAULT_VALUE).toInt
+    "60").toInt
+  private val fileExpiredTime = envMap.getOrDefault(FILE_EXPIRED_TIME_KEY,
+    "604800000").toLong
+  private val sleepTime = envMap.getOrDefault(SLEEP_TIME_KEY,
+    "3600000").toLong
+  private val deepCleanFileExpiredTime = envMap.getOrDefault(DEEP_CLEAN_FILE_EXPIRED_TIME_KEY,
+    "432000000").toLong
   private val cacheDirs = if (envMap.containsKey(CACHE_DIRS_KEY)) {
     envMap.get(CACHE_DIRS_KEY).split(",").filter(!_.equals(""))
   } else {
     throw new IllegalArgumentException(s"the env ${CACHE_DIRS_KEY} can not be null")
   }
-  private val fileExpiredTime = envMap.getOrDefault(FILE_EXPIRED_TIME_KEY,
-    FILE_EXPIRED_TIME_DEFAULT_VALUE).toLong
-  private val sleepTime = envMap.getOrDefault(SLEEP_TIME_KEY,
-    SLEEP_TIME_DEFAULT_VALUE).toLong
-  private val deepCleanFileExpiredTime = envMap.getOrDefault(DEEP_CLEAN_FILE_EXPIRED_TIME_KEY,
-    DEEP_CLEAN_FILE_EXPIRED_TIME_DEFAULT_VALUE).toLong
 
   def doClean(dir: File, time: Long) {
     info(s"start clean ${dir.getName} with fileExpiredTime ${time}")
@@ -197,7 +198,9 @@ object KubernetesSparkBlockCleaner extends Logging {
     } catch {
       case exception: Exception => throw exception
     } finally {
-      threadPool.shutdown()
+      if (threadPool != null) {
+        threadPool.shutdown()
+      }
     }
   }
 }

@@ -15,17 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.kubernetes
+package org.apache.kyuubi.tools
 
 object Constants {
-  val CACHE_DIRS_KEY = "cacheDirs"
-  val FILE_EXPIRED_TIME_KEY = "fileExpiredTime"
-  val FREE_SPACE_THRESHOLD_KEY = "freeSpaceThreshold"
-  val SLEEP_TIME_KEY = "sleepTime"
-  val DEEP_CLEAN_FILE_EXPIRED_TIME_KEY = "deepCleanFileExpiredTime"
-
-  val FILE_EXPIRED_TIME_DEFAULT_VALUE = "604800000"
-  val FREE_SPACE_THRESHOLD_DEFAULT_VALUE = "60"
-  val SLEEP_TIME_DEFAULT_VALUE = "3600000"
-  val DEEP_CLEAN_FILE_EXPIRED_TIME_DEFAULT_VALUE = "432000000"
+  val CACHE_DIRS_KEY = "CACHE_DIRS"
+  val FILE_EXPIRED_TIME_KEY = "FILE_EXPIRED_TIME"
+  val FREE_SPACE_THRESHOLD_KEY = "FREE_SPACE_THRESHOLD"
+  val SLEEP_TIME_KEY = "SLEEP_TIME"
+  val DEEP_CLEAN_FILE_EXPIRED_TIME_KEY = "DEEP_CLEAN_FILE_EXPIRED_TIME"
 }
