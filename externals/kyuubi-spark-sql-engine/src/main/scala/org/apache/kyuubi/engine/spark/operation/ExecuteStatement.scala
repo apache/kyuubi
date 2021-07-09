@@ -17,11 +17,12 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.util.Date
 import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService, TimeUnit}
 
-import org.apache.spark.kyuubi.{SparkSQLMetrics, SQLOperationListener}
-import org.apache.spark.kyuubi.entity.entity.KStatement
+import scala.collection.mutable.Map
+
+import org.apache.spark.kyuubi.{KyuubiStatementMonitor, SQLOperationListener}
+import org.apache.spark.kyuubi.entity.KyuubiStatementInfo
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.types._
 
@@ -60,17 +61,11 @@ class ExecuteStatement(
 
   private val operationListener: SQLOperationListener = new SQLOperationListener(this, spark)
 
-  var kStatement: KStatement = new KStatement(
-    statement, getHandle.identifier.toString,
-    spark.sparkContext.applicationId,
-    session.getTypeInfo.identifier.toString,
-    OperationState.INITIALIZED.toString,
-    new Date().getTime)
-
-  // Store the relationship between operationId and statementDetail
-  SparkSQLMetrics.addStatementDetailForOperationId(
-    getHandle.identifier.toString, kStatement
-  )
+  var kyuubiStatementInfo = KyuubiStatementInfo(
+    statementId, statement, spark.sparkContext.applicationId,
+    session.getTypeInfo.identifier.toString, null,
+    spark.sparkContext.sparkUser, null, Map(state.toString->lastAccessTime))
+  KyuubiStatementMonitor.addStatementDetailForOperationId(statementId, kyuubiStatementInfo)
 
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
@@ -98,6 +93,8 @@ class ExecuteStatement(
       // TODO: Make it configurable
       spark.sparkContext.addSparkListener(operationListener)
       result = spark.sql(statement)
+      KyuubiStatementMonitor.addPhysicalplanByOperationId(
+        statementId, result.queryExecution.toString())
       debug(result.queryExecution)
       iter = new ArrayFetchIterator(result.collect())
       setState(OperationState.FINISHED)
@@ -167,10 +164,19 @@ class ExecuteStatement(
   }
 
   override def cleanup(targetState: OperationState): Unit = {
-    SparkSQLMetrics.addEachStateTimeForOperationid(
-      getHandle.identifier.toString, targetState.toString, new Date().getTime)
     spark.sparkContext.removeSparkListener(operationListener)
     super.cleanup(targetState)
+  }
+
+  override def setState(newState: OperationState): Unit = {
+    super.setState(newState)
+    KyuubiStatementMonitor.addEachStateTimeForOperationid(
+      statementId, newState.toString, lastAccessTime)
+  }
+
+  override def setOperationException(opEx: KyuubiSQLException): Unit = {
+    KyuubiStatementMonitor.addOperationExceptionByOperationId(statementId, opEx.toString)
+    super.setOperationException(opEx)
   }
 }
 
