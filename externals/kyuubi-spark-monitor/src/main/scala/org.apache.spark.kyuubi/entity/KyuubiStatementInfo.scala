@@ -26,10 +26,10 @@ import scala.collection.mutable.Map
  * @param statement
  * @param appId
  * @param sessionId
- * @param physicalPlan
+ * @param physicalPlan: contains physicalPlan, logicPlan and so on
  * @param sparkUser
  * @param exception
- * @param stateTimeMap
+ * @param stateTimeMap: store this statement's every state and the time of occurrence
  */
 case class KyuubiStatementInfo(
     statementId: String,
@@ -39,5 +39,4 @@ case class KyuubiStatementInfo(
     var physicalPlan: String,
     sparkUser: String,
     var exception: String,
-    // This map store the statement's every state and the time of occurrence
     var stateTimeMap: Map[String, Long])
