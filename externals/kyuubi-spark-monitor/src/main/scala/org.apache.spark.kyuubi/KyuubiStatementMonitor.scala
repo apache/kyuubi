@@ -25,13 +25,6 @@ object KyuubiStatementMonitor {
 
   private val operationStatementMap = new ConcurrentHashMap[String, KyuubiStatementInfo]()
 
-//  private var endStateList = new util.ArrayList[String]()
-//  endStateList.add(OperationState.FINISHED.toString)
-//  endStateList.add(OperationState.CANCELED.toString)
-//  endStateList.add(OperationState.CLOSED.toString)
-//  endStateList.add(OperationState.ERROR.toString)
-//  endStateList.add(OperationState.TIMEOUT.toString)
-
   def addStatementDetailForOperationId(
       operationId: String, kyuubiStatementInfo: KyuubiStatementInfo): Unit = {
     operationStatementMap.putIfAbsent(operationId, kyuubiStatementInfo)
@@ -39,7 +32,6 @@ object KyuubiStatementMonitor {
 
   def addEachStateTimeForOperationid(operationId: String, state: String, time: Long): Unit = {
     operationStatementMap.get(operationId).stateTimeMap.put(state, time)
-    print(1231)
   }
 
   def addOperationExceptionByOperationId(operationId: String, operationException: String): Unit = {

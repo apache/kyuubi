@@ -19,6 +19,18 @@ package org.apache.spark.kyuubi.entity
 
 import scala.collection.mutable.Map
 
+/**
+ * This object store the summary infomation about statement.
+ * You can use statementId to get all jobs' or stages' metric that this statement has.
+ * @param statementId
+ * @param statement
+ * @param appId
+ * @param sessionId
+ * @param physicalPlan
+ * @param sparkUser
+ * @param exception
+ * @param stateTimeMap
+ */
 case class KyuubiStatementInfo(
     statementId: String,
     statement: String,
@@ -27,4 +39,5 @@ case class KyuubiStatementInfo(
     var physicalPlan: String,
     sparkUser: String,
     var exception: String,
+    // This map store the statement's every state and the time of occurrence
     var stateTimeMap: Map[String, Long])

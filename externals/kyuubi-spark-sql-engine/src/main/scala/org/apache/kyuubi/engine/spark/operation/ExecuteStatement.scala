@@ -61,10 +61,10 @@ class ExecuteStatement(
 
   private val operationListener: SQLOperationListener = new SQLOperationListener(this, spark)
 
-  var kyuubiStatementInfo = KyuubiStatementInfo(
+  private val kyuubiStatementInfo = KyuubiStatementInfo(
     statementId, statement, spark.sparkContext.applicationId,
     session.getTypeInfo.identifier.toString, null,
-    spark.sparkContext.sparkUser, null, Map(state.toString->lastAccessTime))
+    spark.sparkContext.sparkUser, null, Map(state.toString -> lastAccessTime))
   KyuubiStatementMonitor.addStatementDetailForOperationId(statementId, kyuubiStatementInfo)
 
   override protected def resultSchema: StructType = {
@@ -175,8 +175,8 @@ class ExecuteStatement(
   }
 
   override def setOperationException(opEx: KyuubiSQLException): Unit = {
-    KyuubiStatementMonitor.addOperationExceptionByOperationId(statementId, opEx.toString)
     super.setOperationException(opEx)
+    KyuubiStatementMonitor.addOperationExceptionByOperationId(statementId, opEx.toString)
   }
 }
 
