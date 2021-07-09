@@ -1,4 +1,3 @@
-#!/bin/bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,8 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-#TODO hard code for now
-cd "${dirname "$0"}"
-cp -r ../../../../jars/* ./jars/
+FROM openjdk:8-slim
 
-docker build .
+RUN mkdir /data && \
+    mkdir -p /opt/block-cleaner && \
+    mkdir -p /log/cleanerLog
+
+COPY jars /opt/block-cleaner
+COPY entrypoint.sh /opt/entrypoint.sh
+
+RUN chmod +x /opt/entrypoint.sh
+
+ENV CLEANER_CLASSPATH /opt/block-cleaner/*
+
+ENTRYPOINT ["/opt/entrypoint.sh"]

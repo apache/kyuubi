@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -14,17 +15,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM openjdk:8-slim
 
-RUN mkdir /data && \
-    mkdir -p /opt/shuffle-cleaner && \
-    mkdir -p /log/cleanerLog
+# entrypoint for spark-block-cleaner
 
-COPY jars /opt/shuffle-cleaner
-COPY entrypoint.sh /opt/entrypoint.sh
-
-RUN chmod +x /opt/entrypoint.sh
-
-ENV CLEANER_CLASSPATH /opt/shuffle-cleaner/*
-
-ENTRYPOINT ["/opt/entrypoint.sh"]
+# shellcheck disable=SC2046
+java -cp ${CLASS_PATH}:${CLEANER_CLASSPATH} \
+  org.apache.kyuubi.kubernetes.KubernetesSparkBlockCleaner \
+  | tee /log/cleanerLog/cleaner$(date "+%Y%m%d%H%M%S").out

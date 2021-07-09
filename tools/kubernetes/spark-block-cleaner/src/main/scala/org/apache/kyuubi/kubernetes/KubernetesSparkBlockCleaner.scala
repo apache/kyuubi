@@ -40,7 +40,7 @@ import org.apache.kyuubi.kubernetes.Constants._
 *
 * ...
 */
-object KubernetesShuffleFileCleaner extends Logging {
+object KubernetesSparkBlockCleaner extends Logging {
   private val envMap = System.getenv()
   private val freeSpaceThreshold = envMap.getOrDefault(FREE_SPACE_THRESHOLD_KEY,
     FREE_SPACE_THRESHOLD_DEFAULT_VALUE).toInt

@@ -19,24 +19,24 @@ apiVersion: apps/v1
 # A DaemonSet ensures that all (or some) Nodes run a copy of a Pod.
 kind: DaemonSet
 metadata:
-  name: kyuubi-kubernetes-shuffle-file-cleaner
+  name: kyuubi-kubernetes-spark-block-cleaner
   # NameSpace help assigned daemonSet to the designated cluster resource
   namespace: default
 spec:
   selector:
     matchLabels:
-      name: shuffler-cleaner
+      name: block-cleaner
   template:
     metadata:
       labels:
-        name: shuffler-cleaner
+        name: block-cleaner
     spec:
       containers:
         # Container image which build by ./Dockerfile
         - image: <image>
           name: cleaner
           volumeMounts:
-            - name: shuffle-files-dirs
+            - name: block-files-dirs
               mountPath: /data
             - name: cleaner-log
               mountPath: /log/cleanerLog
@@ -45,7 +45,7 @@ spec:
             # the target dirs which in container
             - name: cacheDirs
               value: /data/data1,/data/data2
-            # Cleaner will clean More distant shuffle files
+            # Cleaner will clean More distant block files
             - name: fileExpiredTime
               value: 604800000
             # Deep clean fileExpiredTime
@@ -59,10 +59,10 @@ spec:
             - name: sleepTime
               value: 3600000
       volumes:
-        # Directory on the host which store shuffle dirs
-        - name: shuffle-files-dirs
+        # Directory on the host which store block dirs
+        - name: block-files-dirs
           hostPath:
-            path: /shuffleFilesDirs
+            path: /blockFilesDirs
         # Directory on the host which you want to store clean log
         - name: cleaner-log
           hostPath:

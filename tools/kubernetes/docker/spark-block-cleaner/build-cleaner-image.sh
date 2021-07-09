@@ -15,8 +15,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+#TODO hard code for now
+cd "${dirname "$0"}"
 
-# shellcheck disable=SC2046
-java -cp ${CLASS_PATH}:${CLEANER_CLASSPATH} \
- org.apache.kyuubi.kubernetes.KubernetesShuffleFileCleaner \
- | tee /log/cleanerLog/cleaner$(date "+%Y%m%d%H%M%S").out
+# Dockerfile can`t perceive upper folder,
+# So copy them to ${KYUUBI_HOME}/tools/kubernetes/docker/spark-block-cleaner
+mkdir ./jars
+cp -r ../../../../jars/* ./jars/
+
+docker build .
