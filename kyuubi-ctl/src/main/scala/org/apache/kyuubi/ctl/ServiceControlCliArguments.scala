@@ -19,7 +19,7 @@ package org.apache.kyuubi.ctl
 
 import java.net.InetAddress
 
-import scopt.{DefaultOEffectSetup, OParser}
+import scopt.OParser
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
@@ -35,76 +35,99 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
   // Set parameters from command line arguments
   parse(args)
 
+  lazy val cliParser = parser()
+
   override def parser(): OParser[Unit, CliArguments] = {
     val builder = OParser.builder[CliArguments]
     import builder._
 
     // Options after action and service
-    val serverOps = Array(
+    val ops = OParser.sequence(
       opt[String]("zk-quorum").abbr("zk")
-        .action((v, c) => c.copy(zkQuorum = v)),
+        .action((v, c) => c.copy(zkQuorum = v))
+        .text("The connection string for the zookeeper ensemble," +
+          " using zk quorum manually."),
       opt[String]('n', "namespace")
-        .action((v, c) => c.copy(namespace = v)),
+        .action((v, c) => c.copy(namespace = v))
+        .text("The namespace, using kyuubi-defaults/conf if absent."),
       opt[String]('s', "host")
-        .action((v, c) => c.copy(host = v)),
+        .action((v, c) => c.copy(host = v))
+        .text("Hostname or IP address of a service."),
       opt[String]('p', "port")
-        .action((v, c) => c.copy(port = v)),
+        .action((v, c) => c.copy(port = v))
+        .text("Listening port of a service."),
       opt[String]('v', "version")
-        .action((v, c) => c.copy(version = v)),
+        .action((v, c) => c.copy(version = v))
+        .text("Using the compiled KYUUBI_VERSION default," +
+          " change it if the active service is running in another."),
       opt[Unit]('b', "verbose")
-        .action((_, c) => c.copy(verbose = true)),
-      opt[Unit]('h', "help")
-        .action((_, c) => c.copy(action = ServiceControlAction.HELP)))
+        .action((_, c) => c.copy(verbose = true))
+        .text("Print additional debug output."))
 
     // for engine service only
-    val engineOps = serverOps :+
-      opt[String]('u', "user")
-        .action((v, c) => c.copy(user = v))
+    val userOps = opt[String]('u', "user")
+      .action((v, c) => c.copy(user = v))
+      .text("The user name this engine belong to.")
 
-    val services = Array(
+    val serverCmd =
       cmd("server").action((_, c) => c.copy(service = ServiceControlObject.SERVER))
-        .children(serverOps: _*),
+    val engineCmd =
       cmd("engine").action((_, c) => c.copy(service = ServiceControlObject.ENGINE))
-        .children(engineOps: _*))
 
     val CtlParser = {
       OParser.sequence(
         programName("kyuubi-ctl"),
-        head("kyuubi", "4.x"),
+        head("kyuubi", KYUUBI_VERSION),
+        ops,
+        note(""),
         cmd("create")
           .action((_, c) => c.copy(action = ServiceControlAction.CREATE))
-          .children(services: _*)
-          ++cmd("get")
+          .children(
+            serverCmd.text("\tExpose Kyuubi server instance to another domain.")),
+        note(""),
+        cmd("get")
           .action((_, c) => c.copy(action = ServiceControlAction.GET))
-          .children(services: _*)
-          ++cmd("delete")
+          .text("\tGet the service/engine node info, host and port needed.")
+          .children(
+            serverCmd.text("\tGet Kyuubi server info of domain"),
+            engineCmd
+              .children(userOps)
+              .text("\tGet Kyuubi engine info belong to a user.")),
+        note(""),
+        cmd("delete")
           .action((_, c) => c.copy(action = ServiceControlAction.DELETE))
-          .children(services: _*)
-          ++cmd("list")
+          .text("\tDelete the specified service/engine node, host and port needed.")
+          .children(
+            serverCmd.text("\tDelete the specified service node for a domain"),
+            engineCmd
+              .children(userOps)
+              .text("\tDelete the specified engine node for user.")),
+        note(""),
+        cmd("list")
           .action((_, c) => c.copy(action = ServiceControlAction.LIST))
-          .required()
-          .children(services: _*),
-        // Use custom help string instead scopt help() function
-        opt[Unit]('h', "help")
-          .action((_, c) => c.copy(action = ServiceControlAction.HELP))
+          .text("\tList all the service/engine nodes for a particular domain.")
+          .children(
+            serverCmd.text("\tList all the service nodes for a particular domain"),
+            engineCmd
+              .children(userOps)
+              .text("\tList all the engine nodes for a user")),
+        checkConfig(f => {
+          if (f.action == null)  failure("Must specify action command: [create|get|delete|list].")
+          else success
+        }),
+        note(""),
+        help('h', "help").text("Show help message and exit.")
       )
     }
     CtlParser
   }
 
-  override def parse(args: Seq[String]): Unit = {
-    OParser.runParser(parser(), args, CliArguments()) match {
-      case (result, effects) =>
-        OParser.runEffects(effects, new DefaultOEffectSetup {
-          // Noting to display, use printUsageAndExit instead
-          override def displayToOut(msg: String): Unit = Unit
-          override def displayToErr(msg: String): Unit = Unit
-          override def reportError(msg: String): Unit = info(msg)
-          override def reportWarning(msg: String): Unit = warn(msg)
+  private[kyuubi] lazy val effectSetup = new KyuubiOEffectSetup
 
-          // ignore terminate
-          override def terminate(exitState: Either[String, Unit]): Unit = ()
-        })
+  override def parse(args: Seq[String]): Unit = {
+    OParser.runParser(cliParser, args, CliArguments()) match {
+      case (result, effects) =>
+        OParser.runEffects(effects, effectSetup)
         result match {
           case Some(arguments) =>
             // Use default property value if not set
@@ -113,8 +136,7 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
             // Validate arguments
             validateArguments()
           case _ =>
-            // arguments are bad, print usage
-            printUsageAndExit(-1)
+            // arguments are bad, do nothing
         }
     }
   }
@@ -156,8 +178,7 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
       case ServiceControlAction.GET => validateGetDeleteActionArguments()
       case ServiceControlAction.DELETE => validateGetDeleteActionArguments()
       case ServiceControlAction.LIST => validateListActionArguments()
-      case ServiceControlAction.HELP =>
-      case _ => printUsageAndExit(-1)
+      case _ => // do nothing
     }
   }
 
@@ -240,49 +261,6 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
     if (cliArgs.service == ServiceControlObject.ENGINE && cliArgs.user == null) {
       fail("Must specify user name for engine, please use -u or --user.")
     }
-  }
-
-  private[ctl] def printUsageAndExit(exitCode: Int, unknownParam: Any = null): Unit = {
-    if (unknownParam != null) {
-      info(unknownParam)
-    }
-    val command =
-      s"""
-        |Kyuubi Ver $KYUUBI_VERSION.
-        |Usage: kyuubi-ctl [create|get|delete|list]  [server|engine] --zk-quorum ...
-        |--namespace ... --user ... --host ... --port ... --version""".stripMargin
-    info(command)
-
-    info(
-      s"""
-         |Command:
-         |  - create                    Expose a service to a namespace on the zookeeper cluster of
-         |                              zk quorum manually.
-         |  - get                       Get the service node info.
-         |  - delete                    Delete the specified serviceNode.
-         |  - list                      List all the service nodes for a particular domain.
-         |
-         |Service:
-         |  - server                    Default.
-         |  - engine
-         |
-         |Options:
-         |  -zk,--zk-quorum <value>     The connection string for the zookeeper ensemble, using
-         |                              kyuubi-defaults/conf if absent.
-         |  -n,--namespace <value>      The namespace, using kyuubi-defaults/conf if absent.
-         |  -s,--host <value>           Hostname or IP address of a service.
-         |  -p,--port <value>           Listening port of a service.
-         |  -v,--version <value>        Using the compiled KYUUBI_VERSION default, change it if the
-         |                              active service is running in another.
-         |  -h,--help                   Show this help message and exit.
-         |  -b,--verbose                Print additional debug output.
-         |
-         | Engine service only:
-         |  -u,--user <value>           The user name this engine belong to.
-      """.stripMargin
-    )
-
-    throw new ServiceControlCliException(exitCode)
   }
 
   override def toString: String = {

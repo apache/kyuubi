@@ -130,11 +130,6 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     }
   }
 
-  test("test help") {
-    val args = Array("--help")
-    testPrematureExit(args, "Usage: kyuubi-ctl")
-  }
-
   test("test expose to same namespace or not specified namespace") {
     conf
       .unset(KyuubiConf.SERVER_KEYTAB)

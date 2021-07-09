@@ -29,7 +29,7 @@ import org.apache.kyuubi.ha.client.{ServiceDiscovery, ServiceNodeInfo}
 
 private[ctl] object ServiceControlAction extends Enumeration {
   type ServiceControlAction = Value
-  val CREATE, GET, DELETE, LIST, HELP = Value
+  val CREATE, GET, DELETE, LIST = Value
 }
 
 private[ctl] object ServiceControlObject extends Enumeration {
@@ -39,7 +39,6 @@ private[ctl] object ServiceControlObject extends Enumeration {
 
 /**
  * Main gateway of launching a Kyuubi Ctl action.
- * See usage in [[ServiceControlCliArguments.printUsageAndExit]].
  */
 private[kyuubi] class ServiceControlCli extends Logging {
   import ServiceControlCli._
@@ -62,7 +61,6 @@ private[kyuubi] class ServiceControlCli extends Logging {
       case ServiceControlAction.LIST => list(ctlArgs, filterHostPort = false)
       case ServiceControlAction.GET => list(ctlArgs, filterHostPort = true)
       case ServiceControlAction.DELETE => delete(ctlArgs)
-      case ServiceControlAction.HELP => printUsage(ctlArgs)
     }
   }
 
@@ -164,10 +162,6 @@ private[kyuubi] class ServiceControlCli extends Logging {
       val title = "Deleted zookeeper service nodes"
       info(renderServiceNodesInfo(title, deletedNodes, verbose))
     }
-  }
-
-  private def printUsage(args: ServiceControlCliArguments): Unit = {
-    args.printUsageAndExit(0)
   }
 }
 

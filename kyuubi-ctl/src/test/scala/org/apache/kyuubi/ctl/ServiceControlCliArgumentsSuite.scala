@@ -45,6 +45,29 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
     }
   }
 
+  /** Check whether the script exits and the given search string is printed. */
+  private def testHelpExit(args: Array[String], searchString: String): Unit = {
+    val logAppender = new LogAppender("test premature exit")
+    withLogAppender(logAppender) {
+      val thread = new Thread {
+        override def run(): Unit = try {
+          new ServiceControlCliArguments(args) {
+            override private[kyuubi] lazy val effectSetup = new KyuubiOEffectSetup {
+              // nothing to do, to handle out stream.
+              override def terminate(exitState: Either[String, Unit]): Unit = ()
+            }
+          }
+        } catch {
+          case e: Exception =>
+            error(e)
+        }
+      }
+      thread.start()
+      thread.join()
+      assert(logAppender.loggingEvents.exists(_.getRenderedMessage.contains(searchString)))
+    }
+  }
+
   test("test basic kyuubi service arguments parser") {
     Seq("get", "list", "delete").foreach { op =>
       Seq("server", "engine").foreach { service =>
@@ -77,7 +100,6 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
         op, service,
         "--zk-quorum", zkQuorum,
         "--namespace", s"${namespace}_new",
-        "--user", user,
         "--host", host,
         "--port", port,
         "--version", KYUUBI_VERSION
@@ -87,37 +109,15 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
       assert(opArgs.cliArgs.service.toString.equalsIgnoreCase(service))
       assert(opArgs.cliArgs.zkQuorum == zkQuorum)
       assert(opArgs.cliArgs.namespace == newNamespace)
-      assert(opArgs.cliArgs.user == user)
       assert(opArgs.cliArgs.host == host)
       assert(opArgs.cliArgs.port == port)
       assert(opArgs.cliArgs.version == KYUUBI_VERSION)
     }
   }
 
-  test("treat --help as action") {
-    val args = Seq("--help")
-    val opArgs = new ServiceControlCliArguments(args)
-    assert(opArgs.cliArgs.action == ServiceControlAction.HELP)
-    assert(opArgs.cliArgs.version == KYUUBI_VERSION)
-
-    val args2 = Seq(
-      "create", "server",
-      s"--user=$user",
-      "--host", host,
-      "--verbose",
-      "--help",
-      "--port", port
-    )
-    val opArgs2 = new ServiceControlCliArguments(args2)
-    assert(opArgs2.cliArgs.action == ServiceControlAction.HELP)
-    assert(opArgs2.cliArgs.user == user)
-    assert(opArgs2.cliArgs.host == host)
-    assert(opArgs2.cliArgs.verbose)
-  }
-
   test("prints usage on empty input") {
-    testPrematureExit(Array.empty[String], "Usage: kyuubi-ctl")
-    testPrematureExit(Array("--verbose"), "Usage: kyuubi-ctl")
+    testPrematureExit(Array.empty[String], "Must specify action command: [create|get|delete|list].")
+    testPrematureExit(Array("--verbose"), "Must specify action command: [create|get|delete|list].")
   }
 
   test("prints error with unrecognized options") {
@@ -126,7 +126,10 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
   }
 
   test("test invalid arguments") {
-    testPrematureExit(Array("create", "--user"), "Missing value after --user")
+    // for server, user option is not support
+    testPrematureExit(Array("create", "--user"), "Unknown option --user")
+    // for engine, user option need a value
+    testPrematureExit(Array("get", "engine", "--user"), "Missing value after --user")
   }
 
   test("test extra unused arguments") {
@@ -248,7 +251,8 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
         "--zk-quorum", zkQuorum,
         "--namespace", newNamespace
       )
-      testPrematureExit(args4, "Only support expose Kyuubi server instance to another domain")
+      // engine is not support, expect scopt print Unknown argument.
+      testPrematureExit(args4, "Unknown argument 'engine'")
     }
   }
 
@@ -286,18 +290,60 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
       }
     }
 
-    // test help
-    val args2 = Array("-h")
-    val opArgs2 = new ServiceControlCliArguments(args2)
-    assert(opArgs2.cliArgs.action == ServiceControlAction.HELP)
-
     // test verbose
-    val args3 = Array(
+    val args2 = Array(
       "list",
       "-zk", zkQuorum,
       "-b"
     )
-    val opArgs3 = new ServiceControlCliArguments(args3)
+    val opArgs3 = new ServiceControlCliArguments(args2)
     assert(opArgs3.cliArgs.verbose)
+  }
+
+  test("test --help") {
+    val helpString =
+    s"""kyuubi $KYUUBI_VERSION
+      |Usage: kyuubi-ctl [create|get|delete|list] [options]
+      |
+      |  -zk, --zk-quorum <value>
+      |                           The connection string for the zookeeper ensemble, using zk quorum manually.
+      |  -n, --namespace <value>  The namespace, using kyuubi-defaults/conf if absent.
+      |  -s, --host <value>       Hostname or IP address of a service.
+      |  -p, --port <value>       Listening port of a service.
+      |  -v, --version <value>    Using the compiled KYUUBI_VERSION default, change it if the active service is running in another.
+      |  -b, --verbose            Print additional debug output.
+      |
+      |Command: create [server]
+      |
+      |Command: create server
+      |	Expose Kyuubi server instance to another domain.
+      |
+      |Command: get [server|engine] [options]
+      |	Get the service/engine node info, host and port needed.
+      |Command: get server
+      |	Get Kyuubi server info of domain
+      |Command: get engine
+      |	Get Kyuubi engine info belong to a user.
+      |  -u, --user <value>       The user name this engine belong to.
+      |
+      |Command: delete [server|engine] [options]
+      |	Delete the specified service/engine node, host and port needed.
+      |Command: delete server
+      |	Delete the specified service node for a domain
+      |Command: delete engine
+      |	Delete the specified engine node for user.
+      |  -u, --user <value>       The user name this engine belong to.
+      |
+      |Command: list [server|engine] [options]
+      |	List all the service/engine nodes for a particular domain.
+      |Command: list server
+      |	List all the service nodes for a particular domain
+      |Command: list engine
+      |	List all the engine nodes for a user
+      |  -u, --user <value>       The user name this engine belong to.
+      |
+      |  -h, --help               Show help message and exit.""".stripMargin
+
+    testHelpExit(Array("--help"), helpString)
   }
 }
