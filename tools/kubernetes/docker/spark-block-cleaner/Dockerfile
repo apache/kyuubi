@@ -14,9 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-FROM openjdk:8-slim
+FROM openjdk:8-jre-slim
 
-RUN mkdir /data && \
+RUN apt-get update && \
+    apt install -y tini && \
+    mkdir /data && \
     mkdir -p /opt/block-cleaner && \
     mkdir -p /log/cleanerLog
 

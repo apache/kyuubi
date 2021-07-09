@@ -19,6 +19,6 @@
 # entrypoint for spark-block-cleaner
 
 # shellcheck disable=SC2046
-exec /usr/bin/tini -s -- "java -cp ${CLASS_PATH}:${CLEANER_CLASSPATH}
-  org.apache.kyuubi.tools.KubernetesSparkBlockCleaner
-  | tee /log/cleanerLog/cleaner$(date "+%Y%m%d%H%M%S").out"
+exec /usr/bin/tini -s -- java -cp "${CLASS_PATH}:${CLEANER_CLASSPATH}" \
+  org.apache.kyuubi.tools.KubernetesSparkBlockCleaner \
+  | tee /log/cleanerLog/cleaner$(date "+%Y%m%d%H%M%S").out
