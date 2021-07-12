@@ -20,7 +20,6 @@ package org.apache.kyuubi.engine.spark.monitor.entity
 import org.apache.spark.scheduler.JobResult
 
 /**
- * This object store the status messages about stages and tasks.
  * @param jobId
  * @param statementId
  * @param stageIds
