@@ -15,32 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.spark.kyuubi.entity
+package org.apache.kyuubi.engine.spark.monitor.entity
+
+import org.apache.spark.scheduler.JobResult
 
 /**
  * This object store the status messages about stages and tasks.
- * You can get the num of activeTasks or completedTasks or activeStages in the job.
  * @param jobId
  * @param statementId
- * @param taskNum
- * @param activeTasks
- * @param failedTasks
- * @param completedTasks
- * @param killedTasks
- * @param skippedTasks
- * @param skippedStages
- * @param activeStages
- * @param failedStages
+ * @param stageIds
+ * @param startTime
+ * @param endTime
+ * @param jobResult
  */
 case class KyuubiJobInfo(
-    jobId: String,
+    jobId: Int,
     statementId: String,
-    var taskNum: Int,
-    var activeTasks: Int,
-    var failedTasks: Int,
-    var completedTasks: Int,
-    var killedTasks: Int,
-    var skippedTasks: Int,
-    var skippedStages: Int,
-    var activeStages: Int,
-    var failedStages: Int)
+    stageIds: Seq[Int],
+    startTime: Long) {
+
+  var endTime: Option[Long] = None
+  var jobResult: JobResult = null
+}

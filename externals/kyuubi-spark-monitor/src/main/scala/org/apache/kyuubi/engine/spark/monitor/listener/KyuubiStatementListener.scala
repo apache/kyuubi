@@ -15,22 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.spark.kyuubi
+package org.apache.kyuubi.engine.spark.monitor.listener
 
 import org.apache.spark.scheduler._
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.engine.spark.operation.ExecuteStatement._
+import org.apache.kyuubi.engine.spark.monitor.KyuubiStatementMonitor
+import org.apache.kyuubi.engine.spark.monitor.entity.KyuubiJobInfo
 
 class KyuubiStatementListener extends StatsReportListener with Logging{
 
   override def onJobStart(jobStart: SparkListenerJobStart): Unit = {
-    val statementId = jobStart.properties.getProperty(KYUUBI_STATEMENT_ID_KEY)
-
+    val statementId = jobStart.properties.getProperty("kyuubi.statement.id")
+    val kyuubiJobInfo = KyuubiJobInfo(
+      jobStart.jobId, statementId, jobStart.stageIds, jobStart.time)
+    KyuubiStatementMonitor.addJobInfoForOperationId(statementId, kyuubiJobInfo)
   }
 
   override def onJobEnd(jobEnd: SparkListenerJobEnd): Unit = {
-
+    KyuubiStatementMonitor.addJobEndInfo(jobEnd)
   }
-
 }
