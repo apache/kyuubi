@@ -130,13 +130,13 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
         OParser.runEffects(effects, effectSetup)
         result match {
           case Some(arguments) =>
-            // Use default property value if not set
+            // use default property value if not set
             cliArgs = useDefaultPropertyValueIfMissing(arguments).copy()
 
-            // Validate arguments
+            // validate arguments
             validateArguments()
           case _ =>
-            // arguments are bad, do nothing
+            // arguments are bad, exit
         }
     }
   }

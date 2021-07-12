@@ -316,22 +316,22 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
       |Command: create [server]
       |
       |Command: create server
-      |	Expose Kyuubi server instance to another domain.
+      |${"\t"}Expose Kyuubi server instance to another domain.
       |
       |Command: get [server|engine] [options]
-      |	Get the service/engine node info, host and port needed.
+      |${"\t"}Get the service/engine node info, host and port needed.
       |Command: get server
-      |	Get Kyuubi server info of domain
+      |${"\t"}Get Kyuubi server info of domain
       |Command: get engine
-      |	Get Kyuubi engine info belong to a user.
+      |${"\t"}Get Kyuubi engine info belong to a user.
       |  -u, --user <value>       The user name this engine belong to.
       |
       |Command: delete [server|engine] [options]
-      |	Delete the specified service/engine node, host and port needed.
+      |${"\t"}Delete the specified service/engine node, host and port needed.
       |Command: delete server
-      |	Delete the specified service node for a domain
+      |${"\t"}Delete the specified service node for a domain
       |Command: delete engine
-      |	Delete the specified engine node for user.
+      |${"\t"}Delete the specified engine node for user.
       |  -u, --user <value>       The user name this engine belong to.
       |
       |Command: list [server|engine] [options]

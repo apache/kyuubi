@@ -52,6 +52,12 @@ private[kyuubi] class ServiceControlCli extends Logging {
     initializeLoggerIfNecessary(true)
 
     val ctlArgs = parseArguments(args)
+
+    // when parse failed, exit
+    if (ctlArgs.cliArgs == null) {
+      sys.exit(1)
+    }
+
     verbose = ctlArgs.cliArgs.verbose
     if (verbose) {
       super.info(ctlArgs.toString)
@@ -177,6 +183,16 @@ object ServiceControlCli extends CommandLineUtils with Logging {
           override def warn(msg: => Any): Unit = self.warn(msg)
 
           override def error(msg: => Any): Unit = self.error(msg)
+
+          override private[kyuubi] lazy val effectSetup = new KyuubiOEffectSetup {
+            override def displayToOut(msg: String): Unit = self.info(msg)
+
+            override def displayToErr(msg: String): Unit = self.info(msg)
+
+            override def reportError(msg: String): Unit = self.info(msg)
+
+            override def reportWarning(msg: String): Unit = self.warn(msg)
+          }
         }
       }
 
