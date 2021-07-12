@@ -15,13 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.entity
+package org.apache.kyuubi.engine.spark.monitor.entity
 
 import scala.collection.mutable.Map
+
+import org.apache.spark.sql.execution.QueryExecution
+
+import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.operation.OperationState.OperationState
 
 /**
  * This object store the summary infomation about statement.
  * You can use statementId to get all jobs' or stages' metric that this statement has.
+ *
  * @param statementId
  * @param statement
  * @param appId
@@ -36,7 +42,7 @@ case class KyuubiStatementInfo(
     statement: String,
     appId: String,
     sessionId: String,
-    var physicalPlan: String,
+    var physicalPlan: QueryExecution,
     sparkUser: String,
-    var exception: String,
-    var stateTimeMap: Map[String, Long])
+    var exception: KyuubiSQLException,
+    stateTimeMap: Map[OperationState, Long])

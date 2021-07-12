@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi
+package org.apache.kyuubi.engine.spark.monitor
 
 import java.util.concurrent.ConcurrentHashMap
 
-import org.apache.kyuubi.entity.KyuubiStatementInfo
+import org.apache.kyuubi.engine.spark.monitor.entity.KyuubiStatementInfo
 
 object KyuubiStatementMonitor {
 
@@ -28,17 +28,5 @@ object KyuubiStatementMonitor {
   def addStatementDetailForOperationId(
       operationId: String, kyuubiStatementInfo: KyuubiStatementInfo): Unit = {
     operationStatementMap.putIfAbsent(operationId, kyuubiStatementInfo)
-  }
-
-  def addEachStateTimeForOperationid(operationId: String, state: String, time: Long): Unit = {
-    operationStatementMap.get(operationId).stateTimeMap.put(state, time)
-  }
-
-  def addOperationExceptionByOperationId(operationId: String, operationException: String): Unit = {
-    operationStatementMap.get(operationId).exception = operationException
-  }
-
-  def addPhysicalplanByOperationId(operationId: String, queryExecution: String): Unit = {
-    operationStatementMap.get(operationId).physicalPlan = queryExecution
   }
 }
