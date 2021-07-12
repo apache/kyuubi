@@ -19,10 +19,10 @@ package org.apache.kyuubi.tools
 
 import java.io.File
 import java.nio.file.{Files, Paths}
-import java.util.concurrent.{LinkedBlockingQueue, ThreadPoolExecutor, TimeUnit}
+import java.util.concurrent.{CountDownLatch, Executors}
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.tools.Constants._
+
 /*
 * Spark storage shuffle data as the following structure.
 *
@@ -41,6 +41,8 @@ import org.apache.kyuubi.tools.Constants._
 * ...
 */
 object KubernetesSparkBlockCleaner extends Logging {
+  import KubernetesSparkBlockCleanerConstants._
+
   private val envMap = System.getenv()
 
   private val freeSpaceThreshold = envMap.getOrDefault(FREE_SPACE_THRESHOLD_KEY,
@@ -54,153 +56,142 @@ object KubernetesSparkBlockCleaner extends Logging {
   private val cacheDirs = if (envMap.containsKey(CACHE_DIRS_KEY)) {
     envMap.get(CACHE_DIRS_KEY).split(",").filter(!_.equals(""))
   } else {
-    throw new IllegalArgumentException(s"the env ${CACHE_DIRS_KEY} can not be null")
+    throw new IllegalArgumentException(s"the env $CACHE_DIRS_KEY must be set")
+  }
+  private val isTesting = envMap.getOrDefault("kyuubi.testing", "false").toBoolean
+  checkConfiguration()
+
+  /**
+   * one thread clean one dir
+   */
+  private val threadPool = Executors.newFixedThreadPool(cacheDirs.length)
+
+  private def checkConfiguration(): Unit = {
+    require(fileExpiredTime > 0,
+      s"the env $FILE_EXPIRED_TIME_KEY should be greater than 0")
+    require(deepCleanFileExpiredTime > 0,
+      s"the env $DEEP_CLEAN_FILE_EXPIRED_TIME_KEY should be greater than 0")
+    require(sleepTime > 0,
+      s"the env $SLEEP_TIME_KEY should be greater than 0")
+    require(freeSpaceThreshold > 0 && freeSpaceThreshold < 100,
+      s"the env $FREE_SPACE_THRESHOLD_KEY should between 0 and 100")
+    require(cacheDirs.nonEmpty, s"the env $CACHE_DIRS_KEY must be set")
+    cacheDirs.foreach { dir =>
+      val path = Paths.get(dir)
+      require(Files.exists(path),
+        s"the input cache dir: $dir does not exists")
+      require(Files.isDirectory(path),
+        s"the input cache dir: $dir should be a directory")
+    }
+
+    info(s"finish initializing configuration, " +
+      s"use $CACHE_DIRS_KEY: ${cacheDirs.mkString(",")},  " +
+      s"$FILE_EXPIRED_TIME_KEY: $fileExpiredTime,  " +
+      s"$FREE_SPACE_THRESHOLD_KEY: $freeSpaceThreshold, " +
+      s"$SLEEP_TIME_KEY: $sleepTime, " +
+      s"$DEEP_CLEAN_FILE_EXPIRED_TIME_KEY: $deepCleanFileExpiredTime")
   }
 
-  def doClean(dir: File, time: Long) {
-    info(s"start clean ${dir.getName} with fileExpiredTime ${time}")
-
+  private def doClean(dir: File, time: Long) {
     // clean blockManager shuffle file
     dir.listFiles.filter(_.isDirectory).filter(_.getName.startsWith("blockmgr"))
-      .foreach(blockManagerDir => {
-
+      .foreach { blockManagerDir =>
         info(s"start check blockManager dir ${blockManagerDir.getName}")
         // check blockManager directory
-        blockManagerDir.listFiles.filter(_.isDirectory).foreach(subDir => {
-
-          info(s"start check sub dir ${subDir.getName}")
+        blockManagerDir.listFiles.filter(_.isDirectory).foreach { subDir =>
+          info(s"start check sub dir ${subDir.getAbsolutePath}")
           // check sub directory
-          subDir.listFiles.foreach(file => checkAndDeleteFIle(file, time))
+          subDir.listFiles.foreach(file => checkAndDeleteFile(file, time))
           // delete empty sub directory
-          checkAndDeleteDir(subDir)
-        })
+          checkAndDeleteFile(subDir, time, true)
+        }
         // delete empty blockManager directory
-        checkAndDeleteDir(blockManagerDir)
-      })
+        checkAndDeleteFile(blockManagerDir, time, true)
+      }
 
     // clean spark cache file
     dir.listFiles.filter(_.isDirectory).filter(_.getName.startsWith("spark"))
-      .foreach(cacheDir => {
-        info(s"start check cache dir ${cacheDir.getName}")
-        cacheDir.listFiles.foreach(file => checkAndDeleteFIle(file, time))
+      .foreach { cacheDir =>
+        info(s"start check cache dir ${cacheDir.getAbsolutePath}")
+        cacheDir.listFiles.foreach(file => checkAndDeleteFile(file, time))
         // delete empty spark cache file
-        checkAndDeleteDir(cacheDir)
-      })
-  }
-
-  def checkAndDeleteFIle(file: File, time: Long): Unit = {
-    info(s"check file ${file.getName}")
-    if (System.currentTimeMillis() - file.lastModified() > time) {
-      if (file.delete()) {
-        info(s"delete file ${file.getName} success")
-      } else {
-        warn(s"delete file ${file.getName} fail")
+        checkAndDeleteFile(cacheDir, time, true)
       }
-    }
   }
 
-  def checkAndDeleteDir(dir: File): Unit = {
-    if (dir.listFiles.isEmpty) {
-      if (dir.delete()) {
-        info(s"delete dir ${dir.getName} success")
+  private def checkAndDeleteFile(file: File, time: Long, isDir: Boolean = false): Unit = {
+    debug(s"check file ${file.getName}")
+    val shouldDeleteFile = if (isDir) {
+      file.listFiles.isEmpty && (System.currentTimeMillis() - file.lastModified() > time)
+    } else {
+      System.currentTimeMillis() - file.lastModified() > time
+    }
+    if (shouldDeleteFile) {
+      if (file.delete()) {
+        debug(s"delete file ${file.getAbsolutePath} success")
       } else {
-        warn(s"delete dir ${dir.getName} fail")
+        warn(s"delete file ${file.getAbsolutePath} fail")
       }
     }
   }
 
   import scala.sys.process._
 
-  def checkUsedCapacity(dir: String): Boolean = {
-    val used = (s"df ${dir}" #| s"grep ${dir}").!!
+  private def needToDeepClean(dir: String): Boolean = {
+    val used = (s"df $dir" #| s"grep $dir").!!
       .split(" ").filter(_.endsWith("%")) {
       0
     }.replace("%", "")
-    info(s"${dir} now used ${used}% space")
+    info(s"$dir now used $used% space")
 
     used.toInt > (100 - freeSpaceThreshold)
   }
 
-  def initializeConfiguration(): Unit = {
-    if (fileExpiredTime < 0) {
-      throw new IllegalArgumentException(s"the env ${FILE_EXPIRED_TIME_KEY} " +
-        s"should be greater than 0")
+  private def doCleanJob(dir: String): Unit = {
+    val startTime = System.currentTimeMillis()
+    val path = Paths.get(dir)
+    info(s"start clean job for $dir")
+    doClean(path.toFile, fileExpiredTime)
+    // re check if the disk has enough space
+    if (needToDeepClean(dir)) {
+      info(s"start deep clean job for $dir")
+      doClean(path.toFile, deepCleanFileExpiredTime)
+      if (needToDeepClean(dir)) {
+        warn(s"after deep clean $dir, used space still higher than $freeSpaceThreshold")
+      }
     }
-
-    if (deepCleanFileExpiredTime < 0) {
-      throw new IllegalArgumentException(s"the env ${DEEP_CLEAN_FILE_EXPIRED_TIME_KEY} " +
-        s"should be greater than 0")
-    }
-
-    if (sleepTime < 0) {
-      throw new IllegalArgumentException(s"the env ${SLEEP_TIME_KEY} " +
-        s"should be greater than 0")
-    }
-
-    if (freeSpaceThreshold < 0 || freeSpaceThreshold > 100) {
-      throw new IllegalArgumentException(s"the env ${FREE_SPACE_THRESHOLD_KEY} " +
-        s"should between 0 and 100")
-    }
-
-    info(s"finish initializing configuration, " +
-      s"use ${CACHE_DIRS_KEY}: ${cacheDirs.mkString(",")},  " +
-      s"${FILE_EXPIRED_TIME_KEY}: ${fileExpiredTime},  " +
-      s"${FREE_SPACE_THRESHOLD_KEY}: ${freeSpaceThreshold}, " +
-      s"${SLEEP_TIME_KEY}: ${sleepTime}, " +
-      s"${DEEP_CLEAN_FILE_EXPIRED_TIME_KEY}: ${deepCleanFileExpiredTime}")
-  }
-
-  def initializeThreadPool(): ThreadPoolExecutor = {
-    new ThreadPoolExecutor(cacheDirs.length,
-      cacheDirs.length * 2,
-      0,
-      TimeUnit.SECONDS,
-      new LinkedBlockingQueue[Runnable]())
+    val finishedTime = System.currentTimeMillis()
+    info(s"clean job $dir finished, elapsed time: ${(finishedTime - startTime) / 1000} s.")
   }
 
   def main(args: Array[String]): Unit = {
-    initializeConfiguration()
-    val threadPool = initializeThreadPool()
-    try {
-      while (true) {
-        info("start clean job")
-        cacheDirs.foreach(pathStr => {
-          val path = Paths.get(pathStr)
-
-          if (!Files.exists(path)) {
-            throw new IllegalArgumentException(s"this path ${pathStr} does not exists")
-          }
-
-          if (!Files.isDirectory(path)) {
-            throw new IllegalArgumentException(s"this path ${pathStr} is not directory")
-          }
-
-          // Clean up files older than $fileExpiredTime
-          threadPool.execute(() => {
-            doClean(path.toFile, fileExpiredTime)
-          })
-
-          if (checkUsedCapacity(pathStr)) {
-            info("start deep clean job")
-            // Clean up files older than $deepCleanFileExpiredTime
-            threadPool.execute(() => {
-              doClean(path.toFile, deepCleanFileExpiredTime)
-            })
-            if (checkUsedCapacity(pathStr)) {
-              warn(s"after deep clean ${pathStr} " +
-                s"used space still higher than ${freeSpaceThreshold}")
-            }
-          }
+    do {
+      info(s"start all clean job")
+      val startTime = System.currentTimeMillis()
+      val hasFinished = new CountDownLatch(cacheDirs.length)
+      cacheDirs.foreach { dir =>
+        threadPool.execute(() => {
+          doCleanJob(dir)
+          hasFinished.countDown()
         })
-        // Once $sleepTime
-        Thread.sleep(sleepTime)
       }
-    } catch {
-      case exception: Exception => throw exception
-    } finally {
-      if (threadPool != null) {
-        threadPool.shutdown()
+      hasFinished.await()
+
+      val usedTime = System.currentTimeMillis() - startTime
+      info(s"finished to clean all dir, elapsed time $usedTime")
+      if (usedTime > sleepTime) {
+        warn(s"clean job elapsed time $usedTime which is greater than $sleepTime")
+      } else {
+        Thread.sleep(sleepTime - usedTime)
       }
-    }
+    } while (!isTesting)
   }
+}
+
+object KubernetesSparkBlockCleanerConstants {
+  val CACHE_DIRS_KEY = "CACHE_DIRS"
+  val FILE_EXPIRED_TIME_KEY = "FILE_EXPIRED_TIME"
+  val FREE_SPACE_THRESHOLD_KEY = "FREE_SPACE_THRESHOLD"
+  val SLEEP_TIME_KEY = "SLEEP_TIME"
+  val DEEP_CLEAN_FILE_EXPIRED_TIME_KEY = "DEEP_CLEAN_FILE_EXPIRED_TIME"
 }
