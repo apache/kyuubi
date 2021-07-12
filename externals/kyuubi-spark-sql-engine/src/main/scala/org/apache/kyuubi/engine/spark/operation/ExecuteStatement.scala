@@ -21,14 +21,14 @@ import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorServic
 
 import scala.collection.mutable.Map
 
-import org.apache.spark.kyuubi.{KyuubiStatementMonitor, SQLOperationListener}
-import org.apache.spark.kyuubi.entity.KyuubiStatementInfo
+import org.apache.spark.kyuubi.SQLOperationListener
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.types._
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.{KyuubiSQLException, KyuubiStatementMonitor, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.{ArrayFetchIterator, KyuubiSparkUtil}
+import org.apache.kyuubi.entity.KyuubiStatementInfo
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog

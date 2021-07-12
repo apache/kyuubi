@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.kyuubi.entity
+package org.apache.kyuubi.entity
 
 import scala.collection.mutable.Map
 

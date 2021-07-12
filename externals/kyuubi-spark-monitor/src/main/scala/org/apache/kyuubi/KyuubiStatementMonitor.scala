@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.spark.kyuubi
+package org.apache.kyuubi
 
 import java.util.concurrent.ConcurrentHashMap
 
-import org.apache.spark.kyuubi.entity.KyuubiStatementInfo
+import org.apache.kyuubi.entity.KyuubiStatementInfo
 
 object KyuubiStatementMonitor {
 
