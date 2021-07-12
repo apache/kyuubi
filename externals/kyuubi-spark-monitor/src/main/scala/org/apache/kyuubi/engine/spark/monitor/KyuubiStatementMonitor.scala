@@ -30,7 +30,8 @@ object KyuubiStatementMonitor {
   // First key is statementId, second key is jobId.
   // From this map. you can get all jobs info by statementId.
   // The second map is used for saving jobEndInfo into KyuubiJobInfo by jobId.
-  private val operationJobsMap = new ConcurrentHashMap[String, ConcurrentHashMap[Int, KyuubiJobInfo]]()
+  private val operationJobsMap = new ConcurrentHashMap[
+    String, ConcurrentHashMap[Int, KyuubiJobInfo]]()
 
   // Store the relationship between jobId and operationId
   // We should remove the data when this job was ended
