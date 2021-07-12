@@ -75,7 +75,7 @@ private[kyuubi] object Tabulator {
   }
 
   def format(title: String, header: Seq[String], rows: Seq[Seq[String]],
-             verbose: Boolean): String = {
+      verbose: Boolean): String = {
     val data = if (verbose) Seq(header).union(rows) else rows
     val sb = new StringBuilder
     val numCols = header.size
