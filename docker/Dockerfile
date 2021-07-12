@@ -16,6 +16,7 @@
 #
 
 # Usage:
+#   use ./build/dist to make binary distributions of Kyuubi
 #   docker build -f docker/Dockerfile -t yaooqinn/kyuubi:tagname .
 #   Options:
 #     -f this docker file
@@ -41,10 +42,7 @@ RUN set -ex && \
     apt-get update && \
     apt install -y bash tini libc6 libpam-modules krb5-user libnss3 procps && \
     useradd -u ${kyuubi_uid} -g root kyuubi && \
-    mkdir ${KYUUBI_HOME} && \
-    mkdir ${KYUUBI_LOG_DIR} && \
-    mkdir ${KYUUBI_PID_DIR} && \
-    mkdir ${KYUUBI_WORK_DIR_ROOT} && \
+    mkdir -p ${KYUUBI_HOME} ${KYUUBI_LOG_DIR} ${KYUUBI_PID_DIR} ${KYUUBI_WORK_DIR_ROOT} && \
     chmod ug+rw -R ${KYUUBI_HOME} && \
     chmod a+rwx -R ${KYUUBI_WORK_DIR_ROOT} && \
     rm -rf /var/cache/apt/*
@@ -56,6 +54,6 @@ COPY externals/engines/spark ${KYUUBI_HOME}/externals/engines/spark
 
 WORKDIR ${KYUUBI_HOME}
 
-CMD [ "/opt/kyuubi/bin/kyuubi", "run" ]
+CMD [ "./bin/kyuubi", "run" ]
 
 USER ${kyuubi_uid}
