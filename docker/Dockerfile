@@ -16,8 +16,11 @@
 #
 
 # Usage:
-# docker build -f docker/Dockerfile -t yaooqinn/kyuubi:tagname .
-
+#   docker build -f docker/Dockerfile -t yaooqinn/kyuubi:tagname .
+#   Options:
+#     -f this docker file
+#     -t the target repo and tag name
+#     more options can be found with -h
 # TODO: REPALCE it with offical spark image iff Apache Spark community deploy
 # Or make one after kyuubi to be setup under ASF
 
