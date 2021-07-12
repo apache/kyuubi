@@ -301,16 +301,20 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
   }
 
   test("test --help") {
+    // some string is too long for check style
+    val zkHelpString = "The connection string for the zookeeper ensemble, using zk quorum manually."
+    val versionHelpString = "Using the compiled KYUUBI_VERSION default," +
+      " change it if the active service is running in another."
     val helpString =
     s"""kyuubi $KYUUBI_VERSION
       |Usage: kyuubi-ctl [create|get|delete|list] [options]
       |
       |  -zk, --zk-quorum <value>
-      |                           The connection string for the zookeeper ensemble, using zk quorum manually.
+      |                           $zkHelpString
       |  -n, --namespace <value>  The namespace, using kyuubi-defaults/conf if absent.
       |  -s, --host <value>       Hostname or IP address of a service.
       |  -p, --port <value>       Listening port of a service.
-      |  -v, --version <value>    Using the compiled KYUUBI_VERSION default, change it if the active service is running in another.
+      |  -v, --version <value>    $versionHelpString
       |  -b, --verbose            Print additional debug output.
       |
       |Command: create [server]
@@ -335,11 +339,11 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
       |  -u, --user <value>       The user name this engine belong to.
       |
       |Command: list [server|engine] [options]
-      |	List all the service/engine nodes for a particular domain.
+      |${"\t"}List all the service/engine nodes for a particular domain.
       |Command: list server
-      |	List all the service nodes for a particular domain
+      |${"\t"}List all the service nodes for a particular domain
       |Command: list engine
-      |	List all the engine nodes for a user
+      |${"\t"}List all the engine nodes for a user
       |  -u, --user <value>       The user name this engine belong to.
       |
       |  -h, --help               Show help message and exit.""".stripMargin
