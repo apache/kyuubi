@@ -131,21 +131,16 @@ object KubernetesSparkBlockCleaner extends Logging {
     } else {
       System.currentTimeMillis() - file.lastModified() > time
     }
-    var hasDeleteFile = false
+    val length = if (isDir) 0 else file.length()
     if (shouldDeleteFile) {
       if (file.delete()) {
         debug(s"delete file ${file.getAbsolutePath} success")
-        hasDeleteFile = !isDir
+        return length
       } else {
         warn(s"delete file ${file.getAbsolutePath} fail")
       }
     }
-
-    if (hasDeleteFile) {
-      file.length()
-    } else {
-      0L
-    }
+    0L
   }
 
   import scala.sys.process._

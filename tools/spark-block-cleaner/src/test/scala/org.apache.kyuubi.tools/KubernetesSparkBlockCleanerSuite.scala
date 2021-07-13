@@ -65,6 +65,7 @@ class KubernetesSparkBlockCleanerSuite extends KyuubiFunSuite {
     data11.createNewFile()
     data11.setLastModified(System.currentTimeMillis() - 10)
     data12.createNewFile()
+    Files.write(data12.toPath, "111".getBytes())
     data12.setLastModified(System.currentTimeMillis() - 10000000)
 
     Files.createDirectories(block2.toPath)
