@@ -22,11 +22,12 @@ import org.apache.spark.scheduler._
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.spark.monitor.KyuubiStatementMonitor
 import org.apache.kyuubi.engine.spark.monitor.entity.KyuubiJobInfo
+import org.apache.kyuubi.operation.AbstractOperation._
 
 class KyuubiStatementListener extends StatsReportListener with Logging{
 
   override def onJobStart(jobStart: SparkListenerJobStart): Unit = {
-    val statementId = jobStart.properties.getProperty("kyuubi.statement.id")
+    val statementId = jobStart.properties.getProperty(KYUUBI_STATEMENT_ID_KEY)
     val kyuubiJobInfo = KyuubiJobInfo(
       jobStart.jobId, statementId, jobStart.stageIds, jobStart.time)
     KyuubiStatementMonitor.addJobInfoForOperationId(statementId, kyuubiJobInfo)

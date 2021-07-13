@@ -162,3 +162,9 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
     }
   }
 }
+
+object AbstractOperation {
+  final val KYUUBI_STATEMENT_ID_KEY = "kyuubi.statement.id"
+  final val SPARK_SCHEDULER_POOL_KEY = "spark.scheduler.pool"
+  final val SPARK_SQL_EXECUTION_ID_KEY = "spark.sql.execution.id"
+}

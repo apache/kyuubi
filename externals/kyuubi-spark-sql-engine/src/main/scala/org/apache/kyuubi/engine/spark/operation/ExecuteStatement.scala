@@ -44,7 +44,7 @@ class ExecuteStatement(
     queryTimeout: Long)
   extends SparkOperation(spark, OperationType.EXECUTE_STATEMENT, session) with Logging {
 
-  import ExecuteStatement._
+  import org.apache.kyuubi.operation.AbstractOperation._
 
   private val forceCancel =
     session.sessionManager.getConf.get(KyuubiConf.OPERATION_FORCE_CANCEL)
@@ -177,10 +177,4 @@ class ExecuteStatement(
     super.setOperationException(opEx)
     kyuubiStatementInfo.exception = opEx
   }
-}
-
-object ExecuteStatement {
-  final val KYUUBI_STATEMENT_ID_KEY = "kyuubi.statement.id"
-  final val SPARK_SCHEDULER_POOL_KEY = "spark.scheduler.pool"
-  final val SPARK_SQL_EXECUTION_ID_KEY = "spark.sql.execution.id"
 }
