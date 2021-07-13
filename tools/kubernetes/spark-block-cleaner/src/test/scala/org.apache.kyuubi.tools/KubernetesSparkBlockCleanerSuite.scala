@@ -18,16 +18,16 @@
 package org.apache.kyuubi.tools
 
 import java.io.File
-import java.nio.file.{Files, Paths}
+import java.nio.file.Files
 import java.util.UUID
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 
-class KubernetesSparkBlockCleanerTest extends KyuubiFunSuite {
+class KubernetesSparkBlockCleanerSuite extends KyuubiFunSuite {
   import KubernetesSparkBlockCleanerConstants._
 
-  private val rootDir = System.getProperty("java.io.tmpdir")
-  private val cacheDir = Seq("1", "2").map(Paths.get(rootDir, _))
+  private val rootDir = Utils.createTempDir()
+  private val cacheDir = Seq("1", "2").map(rootDir.resolve)
   private val block1 = new File(cacheDir.head.toFile, s"blockmgr-${UUID.randomUUID.toString}")
   private val block2 = new File(cacheDir.head.toFile, s"blockmgr-${UUID.randomUUID.toString}")
 

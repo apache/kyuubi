@@ -49,7 +49,7 @@ object KubernetesSparkBlockCleaner extends Logging {
     "60").toInt
   private val fileExpiredTime = envMap.getOrDefault(FILE_EXPIRED_TIME_KEY,
     "604800000").toLong
-  private val sleepTime = envMap.getOrDefault(SLEEP_TIME_KEY,
+  private val scheduleInterval = envMap.getOrDefault(SLEEP_TIME_KEY,
     "3600000").toLong
   private val deepCleanFileExpiredTime = envMap.getOrDefault(DEEP_CLEAN_FILE_EXPIRED_TIME_KEY,
     "432000000").toLong
@@ -71,7 +71,7 @@ object KubernetesSparkBlockCleaner extends Logging {
       s"the env $FILE_EXPIRED_TIME_KEY should be greater than 0")
     require(deepCleanFileExpiredTime > 0,
       s"the env $DEEP_CLEAN_FILE_EXPIRED_TIME_KEY should be greater than 0")
-    require(sleepTime > 0,
+    require(scheduleInterval > 0,
       s"the env $SLEEP_TIME_KEY should be greater than 0")
     require(freeSpaceThreshold > 0 && freeSpaceThreshold < 100,
       s"the env $FREE_SPACE_THRESHOLD_KEY should between 0 and 100")
@@ -88,7 +88,7 @@ object KubernetesSparkBlockCleaner extends Logging {
       s"use $CACHE_DIRS_KEY: ${cacheDirs.mkString(",")},  " +
       s"$FILE_EXPIRED_TIME_KEY: $fileExpiredTime,  " +
       s"$FREE_SPACE_THRESHOLD_KEY: $freeSpaceThreshold, " +
-      s"$SLEEP_TIME_KEY: $sleepTime, " +
+      s"$SLEEP_TIME_KEY: $scheduleInterval, " +
       s"$DEEP_CLEAN_FILE_EXPIRED_TIME_KEY: $deepCleanFileExpiredTime")
   }
 
@@ -179,10 +179,10 @@ object KubernetesSparkBlockCleaner extends Logging {
 
       val usedTime = System.currentTimeMillis() - startTime
       info(s"finished to clean all dir, elapsed time $usedTime")
-      if (usedTime > sleepTime) {
-        warn(s"clean job elapsed time $usedTime which is greater than $sleepTime")
+      if (usedTime > scheduleInterval) {
+        warn(s"clean job elapsed time $usedTime which is greater than $scheduleInterval")
       } else {
-        Thread.sleep(sleepTime - usedTime)
+        Thread.sleep(scheduleInterval - usedTime)
       }
     } while (!isTesting)
   }
