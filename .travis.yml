@@ -16,7 +16,7 @@
 sudo: required
 
 # https://releases.ubuntu.com/ use the latest LTS release of ubuntu
-dist: focal
+dist: bionic
 language: scala
 scala:
   - 2.12.14
