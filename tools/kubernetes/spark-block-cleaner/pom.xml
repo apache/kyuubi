@@ -27,7 +27,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>spark-block-cleaner</artifactId>
-    <name>Kyuubi Tool Kubernetes Spark Block Cleaner</name>
+    <name>Kyuubi Project Spark Block Cleaner</name>
     <packaging>jar</packaging>
 
     <dependencies>
