@@ -21,7 +21,7 @@ import org.apache.spark.scheduler._
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.spark.monitor.KyuubiStatementMonitor
-import org.apache.kyuubi.engine.spark.monitor.entity.KyuubiJobInfo
+import org.apache.kyuubi.engine.spark.monitor.entity.{KyuubiJobInfo, KyuubiStageInfo}
 import org.apache.kyuubi.operation.AbstractOperation._
 
 class KyuubiStatementListener extends StatsReportListener with Logging{
@@ -35,5 +35,16 @@ class KyuubiStatementListener extends StatsReportListener with Logging{
 
   override def onJobEnd(jobEnd: SparkListenerJobEnd): Unit = {
     KyuubiStatementMonitor.addJobEndInfo(jobEnd)
+  }
+
+  override def onStageSubmitted(stageSubmitted: SparkListenerStageSubmitted): Unit = {
+    val statementId = stageSubmitted.properties.getProperty(KYUUBI_STATEMENT_ID_KEY)
+    val stageInfo = stageSubmitted.stageInfo
+    val kyuubiStageInfo = KyuubiStageInfo(stageInfo.stageId, statementId, stageInfo)
+    KyuubiStatementMonitor.addStageInfoForOperationId(statementId, kyuubiStageInfo)
+  }
+
+  override def onStageExecutorMetrics(executorMetrics: SparkListenerStageExecutorMetrics): Unit = {
+
   }
 }

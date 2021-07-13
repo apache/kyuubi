@@ -21,7 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import org.apache.spark.scheduler.SparkListenerJobEnd
 
-import org.apache.kyuubi.engine.spark.monitor.entity.{KyuubiJobInfo, KyuubiStatementInfo}
+import org.apache.kyuubi.engine.spark.monitor.entity.{KyuubiJobInfo, KyuubiStageInfo, KyuubiStatementInfo}
 
 object KyuubiStatementMonitor {
 
@@ -32,6 +32,8 @@ object KyuubiStatementMonitor {
   // The second map is used for saving jobEndInfo into KyuubiJobInfo by jobId.
   private val operationJobsMap = new ConcurrentHashMap[
     String, ConcurrentHashMap[Int, KyuubiJobInfo]]()
+
+  private val operationStagesMap = new ConcurrentHashMap[String, KyuubiStageInfo]()
 
   // Store the relationship between jobId and operationId
   // We should remove the data when this job was ended
@@ -57,5 +59,10 @@ object KyuubiStatementMonitor {
       operationJobsMap.get(operationId).get(jobId).endTime = Option(jobEnd.time)
       operationJobsMap.get(operationId).get(jobId).jobResult = jobEnd.jobResult
     }
+  }
+
+  def addStageInfoForOperationId(operationId: String, kyuubiStageInfo: KyuubiStageInfo): Unit = {
+    operationStagesMap.put(operationId, kyuubiStageInfo)
+    print(123)
   }
 }
