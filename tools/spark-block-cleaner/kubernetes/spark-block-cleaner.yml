@@ -59,7 +59,7 @@ spec:
             - name: FREE_SPACE_THRESHOLD
               value: 60
             # Cleaner clean sleep times after cleaning
-            - name: SLEEP_TIME
+            - name: SCHEDULE_INTERNAL
               value: 3600000
       volumes:
         # Directory on the host which store block dirs

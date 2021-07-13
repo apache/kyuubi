@@ -49,7 +49,7 @@ object KubernetesSparkBlockCleaner extends Logging {
     "60").toInt
   private val fileExpiredTime = envMap.getOrDefault(FILE_EXPIRED_TIME_KEY,
     "604800000").toLong
-  private val scheduleInterval = envMap.getOrDefault(SLEEP_TIME_KEY,
+  private val scheduleInterval = envMap.getOrDefault(SCHEDULE_INTERNAL,
     "3600000").toLong
   private val deepCleanFileExpiredTime = envMap.getOrDefault(DEEP_CLEAN_FILE_EXPIRED_TIME_KEY,
     "432000000").toLong
@@ -72,7 +72,7 @@ object KubernetesSparkBlockCleaner extends Logging {
     require(deepCleanFileExpiredTime > 0,
       s"the env $DEEP_CLEAN_FILE_EXPIRED_TIME_KEY should be greater than 0")
     require(scheduleInterval > 0,
-      s"the env $SLEEP_TIME_KEY should be greater than 0")
+      s"the env $SCHEDULE_INTERNAL should be greater than 0")
     require(freeSpaceThreshold > 0 && freeSpaceThreshold < 100,
       s"the env $FREE_SPACE_THRESHOLD_KEY should between 0 and 100")
     require(cacheDirs.nonEmpty, s"the env $CACHE_DIRS_KEY must be set")
@@ -88,7 +88,7 @@ object KubernetesSparkBlockCleaner extends Logging {
       s"use $CACHE_DIRS_KEY: ${cacheDirs.mkString(",")},  " +
       s"$FILE_EXPIRED_TIME_KEY: $fileExpiredTime,  " +
       s"$FREE_SPACE_THRESHOLD_KEY: $freeSpaceThreshold, " +
-      s"$SLEEP_TIME_KEY: $scheduleInterval, " +
+      s"$SCHEDULE_INTERNAL: $scheduleInterval, " +
       s"$DEEP_CLEAN_FILE_EXPIRED_TIME_KEY: $deepCleanFileExpiredTime")
   }
 
@@ -96,42 +96,55 @@ object KubernetesSparkBlockCleaner extends Logging {
     // clean blockManager shuffle file
     dir.listFiles.filter(_.isDirectory).filter(_.getName.startsWith("blockmgr"))
       .foreach { blockManagerDir =>
-        info(s"start check blockManager dir ${blockManagerDir.getName}")
+        info(s"start check blockManager dir ${blockManagerDir.getCanonicalPath}")
         // check blockManager directory
-        blockManagerDir.listFiles.filter(_.isDirectory).foreach { subDir =>
-          info(s"start check sub dir ${subDir.getAbsolutePath}")
+        val released = blockManagerDir.listFiles.filter(_.isDirectory).map { subDir =>
+          debug(s"start check sub dir ${subDir.getCanonicalPath}")
           // check sub directory
-          subDir.listFiles.foreach(file => checkAndDeleteFile(file, time))
+          val subDirReleased = subDir.listFiles.map(file => checkAndDeleteFile(file, time))
           // delete empty sub directory
           checkAndDeleteFile(subDir, time, true)
+          subDirReleased.sum
         }
         // delete empty blockManager directory
         checkAndDeleteFile(blockManagerDir, time, true)
+        info(s"finished clean blockManager dir ${blockManagerDir.getCanonicalPath}, " +
+          s"released space: ${released.sum / 1024 / 1024} MB.")
       }
 
     // clean spark cache file
     dir.listFiles.filter(_.isDirectory).filter(_.getName.startsWith("spark"))
       .foreach { cacheDir =>
-        info(s"start check cache dir ${cacheDir.getAbsolutePath}")
-        cacheDir.listFiles.foreach(file => checkAndDeleteFile(file, time))
+        info(s"start check cache dir ${cacheDir.getCanonicalPath}")
+        val released = cacheDir.listFiles.map(file => checkAndDeleteFile(file, time))
         // delete empty spark cache file
         checkAndDeleteFile(cacheDir, time, true)
+        info(s"finished clean cache dir ${cacheDir.getCanonicalPath}, " +
+          s"released space: ${released.sum / 1024 / 1024} MB.")
       }
   }
 
-  private def checkAndDeleteFile(file: File, time: Long, isDir: Boolean = false): Unit = {
+  private def checkAndDeleteFile(file: File, time: Long, isDir: Boolean = false): Long = {
     debug(s"check file ${file.getName}")
     val shouldDeleteFile = if (isDir) {
       file.listFiles.isEmpty && (System.currentTimeMillis() - file.lastModified() > time)
     } else {
       System.currentTimeMillis() - file.lastModified() > time
     }
+    var hasDeleteFile = false
     if (shouldDeleteFile) {
       if (file.delete()) {
         debug(s"delete file ${file.getAbsolutePath} success")
+        hasDeleteFile = !isDir
       } else {
         warn(s"delete file ${file.getAbsolutePath} fail")
       }
+    }
+
+    if (hasDeleteFile) {
+      file.length()
+    } else {
+      0L
     }
   }
 
@@ -192,6 +205,6 @@ object KubernetesSparkBlockCleanerConstants {
   val CACHE_DIRS_KEY = "CACHE_DIRS"
   val FILE_EXPIRED_TIME_KEY = "FILE_EXPIRED_TIME"
   val FREE_SPACE_THRESHOLD_KEY = "FREE_SPACE_THRESHOLD"
-  val SLEEP_TIME_KEY = "SLEEP_TIME"
+  val SCHEDULE_INTERNAL = "SCHEDULE_INTERNAL"
   val DEEP_CLEAN_FILE_EXPIRED_TIME_KEY = "DEEP_CLEAN_FILE_EXPIRED_TIME"
 }

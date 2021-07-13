@@ -37,7 +37,6 @@
         <module>kyuubi-main</module>
         <module>kyuubi-metrics</module>
         <module>kyuubi-zookeeper</module>
-        <module>tools/kubernetes/spark-block-cleaner</module>
     </modules>
     <packaging>pom</packaging>
 
@@ -1692,6 +1691,13 @@
             </properties>
             <modules>
                 <module>dev/kyuubi-extension-spark_3.1</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>spark-block-cleaner</id>
+            <modules>
+                <module>tools/spark-block-cleaner</module>
             </modules>
         </profile>
     </profiles>
