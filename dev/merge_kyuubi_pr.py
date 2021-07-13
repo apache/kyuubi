@@ -38,7 +38,7 @@ KYUUBI_HOME = os.environ.get("KYUUBI_HOME", os.getcwd())
 PR_REMOTE_NAME = os.environ.get("PR_REMOTE_NAME", "apache")
 PUSH_REMOTE_NAME = os.environ.get("PUSH_REMOTE_NAME", "apache")
 GITHUB_OAUTH_KEY = os.environ.get("GITHUB_OAUTH_KEY")
-GITHUB_API_BASE = "https://api.github.com/repos/apache/incubator"
+GITHUB_API_BASE = "https://api.github.com/repos/apache/incubator-kyuubi"
 BRANCH_PREFIX = "PR_TOOL"
 
 
