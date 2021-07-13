@@ -53,7 +53,7 @@
     </dependencies>
 
     <build>
-        <outputDirectory>target/scala-2.12/classes</outputDirectory>
-        <testOutputDirectory>target/scala-2.12/test-classes</testOutputDirectory>
+        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
+        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
     </build>
 </project>
