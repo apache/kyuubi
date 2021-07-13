@@ -1,13 +1,13 @@
 ![](docs/imgs/kyuubi_logo.png)
 
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
-[![](https://tokei.rs/b1/github/NetEase/kyuubi)](https://github.com/NetEase/kyuubi)
-![GitHub top language](https://img.shields.io/github/languages/top/NetEase/kyuubi)
-[![GitHub release](https://img.shields.io/github/release/NetEase/kyuubi.svg)](https://github.com/NetEase/kyuubi/releases)
-[![codecov](https://codecov.io/gh/NetEase/kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/NetEase/kyuubi)
-[![Travis](https://travis-ci.com/NetEase/kyuubi.svg?branch=master)](https://travis-ci.com/NetEase/kyuubi)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/NetEase/kyuubi/Kyuubi/master?style=plastic)
-[![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.readthedocs.io/en/latest/?badge=latest)
+[![](https://tokei.rs/b1/github.com/apache/incubator-kyuubi)](https://github.com/apache/incubator-kyuubi)
+![GitHub top language](https://img.shields.io/github/languages/top/apache/incubator-kyuubi)
+[![GitHub release](https://img.shields.io/github/v/release/apache/incubator-kyuubi.svg)](https://github.com/apache/incubator-kyuubi/releases)
+[![codecov](https://codecov.io/gh/apache/incubator-kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/incubator-kyuubi)
+[![Travis](https://api.travis-ci.com/apache/incubator-kyuubi.svg?branch=master)](https://travis-ci.com/apache/incubator-kyuubi)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/apache/incubator-kyuubi/Kyuubi/master?style=plastic)
+[![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.apache.org/?badge=latest)
 
 ## What is Kyuubi?
 
