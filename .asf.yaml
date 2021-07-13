@@ -43,9 +43,12 @@ github:
         required_approving_review_count: 1
   features:
     issues: true
+    discussions: true
     wiki: false
     projects: false
   notifications:
     commits: commits@kyuubi.apache.org
     issues: dev@kyuubi.apache.org
-    pullrequests: dev@kyuubi.apache.org
+    # Redirect notifications for pull requests to commits to reduce noise
+    # as we can link a pull request to the corresponding issue to sync key information
+    pullrequests: commits@kyuubi.apache.org
