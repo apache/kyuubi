@@ -28,11 +28,20 @@ from urllib.request import urlopen
 from urllib.request import Request
 from urllib.error import HTTPError
 
+# For committers:
+# Please check your local git envs via `git remote -v` which should
+# apache	git@github.com:apache/incubator-kyuubi.git (fetch)
+# apache	git@github.com:apache/incubator-kyuubi.git (push)
+# apache-github	git@github.com:apache/incubator-kyuubi.git (fetch)
+# apache-github	git@github.com:apache/incubator-kyuubi.git (push)
+# origin	git@github.com:[ YOUR GITHUB USER NAME ]/incubator-kyuubi.git (fetch)
+# origin	git@github.com:[ YOUR GITHUB USER NAME ]/incubator-kyuubi.git (push)
+
 KYUUBI_HOME = os.environ.get("KYUUBI_HOME", os.getcwd())
-PR_REMOTE_NAME = os.environ.get("PR_REMOTE_NAME", "origin")
-PUSH_REMOTE_NAME = os.environ.get("PUSH_REMOTE_NAME", "origin")
+PR_REMOTE_NAME = os.environ.get("PR_REMOTE_NAME", "apache-github")
+PUSH_REMOTE_NAME = os.environ.get("PUSH_REMOTE_NAME", "apache")
 GITHUB_OAUTH_KEY = os.environ.get("GITHUB_OAUTH_KEY")
-GITHUB_API_BASE = "https://api.github.com/repos/NetEase/kyuubi"
+GITHUB_API_BASE = "https://api.github.com/repos/apache/incubator"
 BRANCH_PREFIX = "PR_TOOL"
 
 
