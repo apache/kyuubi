@@ -17,10 +17,12 @@
 
 package org.apache.kyuubi.operation
 
+import java.sql.SQLException
+
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TGetOperationStatusReq, TOperationState, TStatusCode}
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
-import org.apache.kyuubi.WithKyuubiServer
+import org.apache.kyuubi.{KyuubiSQLException, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 
 /**
@@ -42,12 +44,25 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with JDBCTestUt
       executeStmtReq.setRunAsync(true)
       val executeStmtResp = client.ExecuteStatement(executeStmtReq)
 
-      eventually(timeout(10.seconds), interval(500.milliseconds)) {
+      // TODO KYUUBI #745
+      eventually(timeout(60.seconds), interval(500.milliseconds)) {
         val getOpStatusReq = new TGetOperationStatusReq(executeStmtResp.getOperationHandle)
         val getOpStatusResp = client.GetOperationStatus(getOpStatusReq)
         assert(getOpStatusResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
         assert(getOpStatusResp.getOperationState === TOperationState.ERROR_STATE)
       }
+    }
+  }
+
+  test("submit spark app timeout with last log output") {
+    withSessionConf()(Map(KyuubiConf.ENGINE_INIT_TIMEOUT.key -> "2000"))(Map.empty) {
+      val exception = intercept[SQLException] {
+        withJdbcStatement() { statement => // no-op
+        }
+      }
+      val verboseMessage = KyuubiSQLException.stringifyException(exception)
+      assert(verboseMessage.contains("Failed to detect the root cause"))
+      assert(verboseMessage.contains("The last line log"))
     }
   }
 }

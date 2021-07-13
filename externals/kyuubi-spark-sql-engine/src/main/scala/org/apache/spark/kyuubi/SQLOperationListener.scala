@@ -19,10 +19,12 @@ package org.apache.spark.kyuubi
 
 import java.util.Properties
 
-import org.apache.spark.SparkContext.SPARK_JOB_GROUP_ID
 import org.apache.spark.scheduler._
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.engine.spark.operation.ExecuteStatement._
 import org.apache.kyuubi.operation.Operation
 import org.apache.kyuubi.operation.log.OperationLog
 
@@ -32,18 +34,20 @@ import org.apache.kyuubi.operation.log.OperationLog
  *
  * @param operation the corresponding operation
  */
-class SQLOperationListener(operation: Operation) extends StatsReportListener with Logging {
+class SQLOperationListener(
+    operation: Operation, spark: SparkSession) extends StatsReportListener with Logging {
 
   private val operationId: String = operation.getHandle.identifier.toString
   private val activeJobs = new java.util.HashSet[Int]()
   private val activeStages = new java.util.HashSet[Int]()
+  private var executionId: Option[Long] = None
 
   // For broadcast, Spark will introduce a new runId as SPARK_JOB_GROUP_ID, see:
   // https://github.com/apache/spark/pull/24595, So we will miss these logs.
   // TODO: Fix this until the below ticket resolved
   // https://issues.apache.org/jira/browse/SPARK-34064
   private def sameGroupId(properties: Properties): Boolean = {
-    properties != null && properties.getProperty(SPARK_JOB_GROUP_ID) == operationId
+    properties != null && properties.getProperty(KYUUBI_STATEMENT_ID_KEY) == operationId
   }
 
   private def withOperationLog(f : => Unit): Unit = {
@@ -59,6 +63,10 @@ class SQLOperationListener(operation: Operation) extends StatsReportListener wit
     if (sameGroupId(jobStart.properties)) {
       val jobId = jobStart.jobId
       val stageSize = jobStart.stageInfos.size
+      if (executionId.isEmpty) {
+        executionId = Option(jobStart.properties.getProperty(SPARK_SQL_EXECUTION_ID_KEY))
+          .map(_.toLong)
+      }
       withOperationLog {
         activeJobs.add(jobId)
         info(s"Query [$operationId]: Job $jobId started with $stageSize stages," +
@@ -106,5 +114,14 @@ class SQLOperationListener(operation: Operation) extends StatsReportListener wit
 
   override def onTaskEnd(taskEnd: SparkListenerTaskEnd): Unit = activeStages.synchronized {
     if (activeStages.contains(taskEnd.stageId)) super.onTaskEnd(taskEnd)
+  }
+
+  override def onOtherEvent(event: SparkListenerEvent): Unit = {
+    event match {
+      case sqlExecutionEnd: SparkListenerSQLExecutionEnd if
+          executionId.contains(sqlExecutionEnd.executionId) =>
+        spark.sparkContext.removeSparkListener(this)
+      case _ =>
+    }
   }
 }

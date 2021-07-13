@@ -45,6 +45,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-spark-monitor</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+      
+        <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_${scala.binary.version}</artifactId>
             <scope>provided</scope>
@@ -173,6 +179,7 @@
                         <includes>
                             <include>org.apache.kyuubi:kyuubi-common</include>
                             <include>org.apache.kyuubi:kyuubi-ha</include>
+                            <include>org.apache.kyuubi:kyuubi-spark-monitor</include>
                             <include>org.apache.curator:curator-client</include>
                             <include>org.apache.curator:curator-framework</include>
                             <include>org.apache.curator:curator-recipes</include>
@@ -202,6 +209,20 @@
                         <phase>package</phase>
                         <goals>
                             <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>prepare-test-jar</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>test-jar</goal>
                         </goals>
                     </execution>
                 </executions>

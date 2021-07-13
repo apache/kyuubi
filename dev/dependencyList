@@ -32,6 +32,7 @@ jackson-core/2.11.4//jackson-core-2.11.4.jar
 jackson-databind/2.11.4//jackson-databind-2.11.4.jar
 jakarta.servlet-api/4.0.4//jakarta.servlet-api-4.0.4.jar
 javassist/3.18.1-GA//javassist-3.18.1-GA.jar
+jaxb-api/2.2.11//jaxb-api-2.2.11.jar
 jcl-over-slf4j/1.7.30//jcl-over-slf4j-1.7.30.jar
 jetty-http/9.4.41.v20210516//jetty-http-9.4.41.v20210516.jar
 jetty-io/9.4.41.v20210516//jetty-io-9.4.41.v20210516.jar
@@ -48,6 +49,7 @@ metrics-jmx/4.1.1//metrics-jmx-4.1.1.jar
 metrics-json/4.1.1//metrics-json-4.1.1.jar
 metrics-jvm/4.1.1//metrics-jvm-4.1.1.jar
 scala-library/2.12.14//scala-library-2.12.14.jar
+scopt_2.12/4.0.1//scopt_2.12-4.0.1.jar
 simpleclient/0.10.0//simpleclient-0.10.0.jar
 simpleclient_common/0.10.0//simpleclient_common-0.10.0.jar
 simpleclient_dropwizard/0.10.0//simpleclient_dropwizard-0.10.0.jar
