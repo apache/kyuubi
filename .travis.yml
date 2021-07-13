@@ -15,64 +15,28 @@
 
 sudo: required
 
-dist: bionic
+# https://releases.ubuntu.com/ use the latest LTS release of ubuntu
+dist: focal
 language: scala
 scala:
   - 2.12.14
 jdk:
   - openjdk8
-  - openjdk11
 
 cache:
   directories:
     - $HOME/.m2
 
-matrix:
-  include:
-    - name: Test Kyuubi w/ -Pspark-3.0 -Pspark-hadoop-2.7
-      env:
-        - PROFILE="-Pspark-3.0 -Pspark-hadoop-2.7"
-        - JOB="build"
-    - name: Test Kyuubi w/ -Pspark-3.1 and Spark 3.0 binary
-      env:
-        - PROFILE="-Pspark-3.1 -Pspark-hadoop-2.7 -Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.0.3 -Dspark.archive.name=spark-3.0.3-bin-hadoop2.7.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest"
-        - JOB="build"
-    - name: Test Kyuubi w/ -Pspark-3.1 -Pkyuubi-extension-spark_3.1
-      env:
-        - PROFILE="-Pspark-3.1 -Pkyuubi-extension-spark_3.1"
-        - JOB="build"
-        - CODECOV="true"
-    - name: Test Kyuubi w/ -Pspark-master
-      env:
-        - PROFILE="-Pspark-master"
-        - JOB="nightly-build"
-    - name: Test Kyuubi w/ -Pspark-3.1 TPCDS Tests
-      env:
-        - PROFILE="-Pspark-3.1 -Dmaven.plugin.scalatest.exclude.tags=''"
-        - JOB="tpcds-tests"
-
 install:
   - ./build/mvn --version
 
 script:
-  - |
-    if [[ "$TRAVIS_EVENT_TYPE" != "cron" && "$JOB" == "build" ]]; then
-      ./build/mvn clean install $PROFILE -Dmaven.javadoc.skip=true -V
-    fi
-  - |
-    if [[ "$TRAVIS_EVENT_TYPE" == "cron" && "$JOB" == "nightly-build" ]]; then
-      ./build/mvn clean install $PROFILE -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper -Dmaven.javadoc.skip=true -V
-    fi
-  - |
-    if [[ "$TRAVIS_EVENT_TYPE" != "cron" && "$JOB" == "tpcds-tests" ]]; then
-      ./build/mvn clean install $PROFILE -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper
-      ./build/mvn test $PROFILE -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds
-    fi
+  - ./build/mvn clean install -Dmaven.javadoc.skip=true -V
 
 after_success:
-  - if [[ "$CODECOV" == "true" ]]; then bash <(curl -s https://codecov.io/bash); fi
+  - echo "Travis exited with ${TRAVIS_TEST_RESULT}"
 
 after_failure:
-  - echo "==== Build with $PROFILE FAILED ===="
-  - for log in `find * -name "kyuubi-spark-sql-engine.log*"`; do echo "=========$log========="; cat $log; done
-  - for log in `find * -name "unit-tests.log"`; do echo "=========$log========="; cat $log; done
+  - echo "Travis exited with ${TRAVIS_TEST_RESULT}"
+  - for log in `find * -name "kyuubi-spark-sql-engine.log*"`; do echo "=========$log========="; grep "ERROR" $log -A 100 -B 20; done
+  - for log in `find * -name "unit-tests.log"`;  do echo "=========$log========="; grep "ERROR" $log -A 100 -B 20; done
