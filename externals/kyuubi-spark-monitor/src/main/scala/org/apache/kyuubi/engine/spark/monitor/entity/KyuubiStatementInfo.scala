@@ -41,6 +41,8 @@ case class KyuubiStatementInfo(
     statement: String,
     appId: String,
     sessionId: HandleIdentifier,
-    var queryExecution: QueryExecution,
-    var exception: KyuubiSQLException,
-    stateToTime: Map[OperationState, Long])
+    stateToTime: Map[OperationState, Long]) {
+
+  var queryExecution: QueryExecution = null
+  var exception: KyuubiSQLException = null
+}

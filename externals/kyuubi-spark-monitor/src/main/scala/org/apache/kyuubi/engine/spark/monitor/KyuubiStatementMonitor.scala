@@ -59,7 +59,7 @@ object KyuubiStatementMonitor extends Logging{
    * and dumpping them to a file by threshold.
    */
   // TODO: Need ensure those items have finished. If not, we should put them into this queue again.
-  def removeAndDumpStatementInfoFromQueue(): Unit = {
+  private def removeAndDumpStatementInfoFromQueue(): Unit = {
     // TODO: Just for test
     kyuubiStatementQueue.clear()
   }

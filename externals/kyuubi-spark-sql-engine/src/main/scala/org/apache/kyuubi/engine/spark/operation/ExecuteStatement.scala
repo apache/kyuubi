@@ -64,7 +64,7 @@ class ExecuteStatement(
 
   private val kyuubiStatementInfo = KyuubiStatementInfo(
     statementId, statement, spark.sparkContext.applicationId,
-    session.getTypeInfo.identifier, null, null, Map(state -> lastAccessTime))
+    session.getTypeInfo.identifier, Map(state -> lastAccessTime))
   KyuubiStatementMonitor.putStatementInfoIntoQueue(kyuubiStatementInfo)
 
   override protected def resultSchema: StructType = {
