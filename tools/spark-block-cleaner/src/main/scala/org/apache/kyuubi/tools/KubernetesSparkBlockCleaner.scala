@@ -48,11 +48,11 @@ object KubernetesSparkBlockCleaner extends Logging {
   private val freeSpaceThreshold = envMap.getOrDefault(FREE_SPACE_THRESHOLD_KEY,
     "60").toInt
   private val fileExpiredTime = envMap.getOrDefault(FILE_EXPIRED_TIME_KEY,
-    "604800000").toLong
-  private val scheduleInterval = envMap.getOrDefault(SCHEDULE_INTERNAL,
-    "3600000").toLong
+    "604800").toLong * 1000
+  private val scheduleInterval = envMap.getOrDefault(SCHEDULE_INTERVAL,
+    "3600").toLong * 1000
   private val deepCleanFileExpiredTime = envMap.getOrDefault(DEEP_CLEAN_FILE_EXPIRED_TIME_KEY,
-    "432000000").toLong
+    "432000").toLong * 1000
   private val cacheDirs = if (envMap.containsKey(CACHE_DIRS_KEY)) {
     envMap.get(CACHE_DIRS_KEY).split(",").filter(!_.equals(""))
   } else {
@@ -72,7 +72,7 @@ object KubernetesSparkBlockCleaner extends Logging {
     require(deepCleanFileExpiredTime > 0,
       s"the env $DEEP_CLEAN_FILE_EXPIRED_TIME_KEY should be greater than 0")
     require(scheduleInterval > 0,
-      s"the env $SCHEDULE_INTERNAL should be greater than 0")
+      s"the env $SCHEDULE_INTERVAL should be greater than 0")
     require(freeSpaceThreshold > 0 && freeSpaceThreshold < 100,
       s"the env $FREE_SPACE_THRESHOLD_KEY should between 0 and 100")
     require(cacheDirs.nonEmpty, s"the env $CACHE_DIRS_KEY must be set")
@@ -88,7 +88,7 @@ object KubernetesSparkBlockCleaner extends Logging {
       s"use $CACHE_DIRS_KEY: ${cacheDirs.mkString(",")},  " +
       s"$FILE_EXPIRED_TIME_KEY: $fileExpiredTime,  " +
       s"$FREE_SPACE_THRESHOLD_KEY: $freeSpaceThreshold, " +
-      s"$SCHEDULE_INTERNAL: $scheduleInterval, " +
+      s"$SCHEDULE_INTERVAL: $scheduleInterval, " +
       s"$DEEP_CLEAN_FILE_EXPIRED_TIME_KEY: $deepCleanFileExpiredTime")
   }
 
@@ -200,6 +200,6 @@ object KubernetesSparkBlockCleanerConstants {
   val CACHE_DIRS_KEY = "CACHE_DIRS"
   val FILE_EXPIRED_TIME_KEY = "FILE_EXPIRED_TIME"
   val FREE_SPACE_THRESHOLD_KEY = "FREE_SPACE_THRESHOLD"
-  val SCHEDULE_INTERNAL = "SCHEDULE_INTERNAL"
+  val SCHEDULE_INTERVAL = "SCHEDULE_INTERVAL"
   val DEEP_CLEAN_FILE_EXPIRED_TIME_KEY = "DEEP_CLEAN_FILE_EXPIRED_TIME"
 }

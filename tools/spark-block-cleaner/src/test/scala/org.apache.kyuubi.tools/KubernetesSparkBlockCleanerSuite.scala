@@ -91,7 +91,7 @@ class KubernetesSparkBlockCleanerSuite extends KyuubiFunSuite {
 
   test("test clean") {
     updateEnv(CACHE_DIRS_KEY, cacheDir.mkString(","))
-    updateEnv(FILE_EXPIRED_TIME_KEY, "600000")
+    updateEnv(FILE_EXPIRED_TIME_KEY, "600")
     updateEnv(SCHEDULE_INTERNAL, "1")
     updateEnv("kyuubi.testing", "true")
 
