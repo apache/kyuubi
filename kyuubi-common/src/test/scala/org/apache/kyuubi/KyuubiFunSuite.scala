@@ -26,7 +26,6 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Outcome}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.funsuite.AnyFunSuite
 
-import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.internal.Tests.IS_TESTING
 
 trait KyuubiFunSuite extends AnyFunSuite
