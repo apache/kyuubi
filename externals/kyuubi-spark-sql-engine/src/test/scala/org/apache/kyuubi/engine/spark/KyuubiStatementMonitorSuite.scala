@@ -37,6 +37,11 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
   test("test event tracking: statement") {
     val sql = "select timestamp'2021-06-01'"
     val total: Int = 7
+    // Clear kyuubiStatementQueue first
+    val getQueue = PrivateMethod[
+      ArrayBlockingQueue[KyuubiStatementInfo]](Symbol("kyuubiStatementQueue"))()
+    val kyuubiStatementQueue = KyuubiStatementMonitor.invokePrivate(getQueue)
+    kyuubiStatementQueue.clear()
     withSessionHandle { (client, handle) =>
       for ( a <- 1 to total ) {
         val req = new TExecuteStatementReq()
@@ -46,10 +51,6 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
         val operationHandle = tExecuteStatementResp.getOperationHandle
         waitForOperationToComplete(client, operationHandle)
       }
-
-      val getQueue = PrivateMethod[
-        ArrayBlockingQueue[KyuubiStatementInfo]](Symbol("kyuubiStatementQueue"))()
-      val kyuubiStatementQueue = KyuubiStatementMonitor.invokePrivate(getQueue)
 
       var iterator = kyuubiStatementQueue.iterator()
       while (iterator.hasNext) {
