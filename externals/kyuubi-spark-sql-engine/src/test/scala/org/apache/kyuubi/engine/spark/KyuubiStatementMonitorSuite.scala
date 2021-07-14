@@ -17,15 +17,19 @@
 
 package org.apache.kyuubi.engine.spark
 
+import java.util.concurrent.ArrayBlockingQueue
+
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TGetOperationStatusReq, TOperationHandle}
 import org.apache.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.hive.service.rpc.thrift.TOperationState._
+import org.scalatest.PrivateMethodTester
 
 import org.apache.kyuubi.engine.spark.monitor.KyuubiStatementMonitor
 import org.apache.kyuubi.engine.spark.monitor.entity.KyuubiStatementInfo
 import org.apache.kyuubi.operation.HiveJDBCTests
 
-class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests {
+class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
+    with PrivateMethodTester {
 
   override protected def jdbcUrl: String = getJdbcUrl
   override def withKyuubiConf: Map[String, String] = Map.empty
@@ -42,11 +46,11 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests 
         val operationHandle = tExecuteStatementResp.getOperationHandle
         waitForOperationToComplete(client, operationHandle)
       }
-      val size = KyuubiStatementMonitor.getQueueSize(KyuubiStatementInfo.getClass)
 
-      assert(size === total)
+      val getQueue = PrivateMethod[
+        ArrayBlockingQueue[KyuubiStatementInfo]](Symbol("kyuubiStatementQueue"))()
+      val kyuubiStatementQueue = KyuubiStatementMonitor.invokePrivate(getQueue)
 
-      var kyuubiStatementQueue = KyuubiStatementMonitor.copyQueue(KyuubiStatementInfo.getClass)
       var iterator = kyuubiStatementQueue.iterator()
       while (iterator.hasNext) {
         val kyuubiStatementInfo = iterator.next().asInstanceOf[KyuubiStatementInfo]
@@ -56,7 +60,6 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests 
         assert(kyuubiStatementInfo.queryExecution !== null)
         assert(kyuubiStatementInfo.stateToTime.size === 4)
       }
-      kyuubiStatementQueue = null
       iterator = null
 
       // Test for clear kyuubiStatementQueue
@@ -68,7 +71,7 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests 
       val operationHandle = tExecuteStatementResp.getOperationHandle
       waitForOperationToComplete(client, operationHandle)
 
-      assert(KyuubiStatementMonitor.getQueueSize(KyuubiStatementInfo.getClass) === 1)
+      assert(kyuubiStatementQueue.size() === 1)
     }
   }
 

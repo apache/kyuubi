@@ -19,8 +19,9 @@ package org.apache.kyuubi.engine.spark.monitor
 
 import java.util.concurrent.ArrayBlockingQueue
 
-import org.apache.kyuubi.engine.spark.monitor.entity.{KyuubiInfo, KyuubiStatementInfo}
+import org.apache.kyuubi.engine.spark.monitor.entity.KyuubiStatementInfo
 
+// TODO: Thread Safe need to consider
 object KyuubiStatementMonitor {
 
   /**
@@ -58,24 +59,5 @@ object KyuubiStatementMonitor {
   def removeAndDumpStatementInfoFromQueue(): Unit = {
     // TODO: Just for test
     kyuubiStatementQueue.clear()
-  }
-
-  // TODO: For test
-  def getQueueSize[T](c: Class[T]): Int = {
-    if (c.equals(KyuubiStatementInfo.getClass)) {
-      return kyuubiStatementQueue.size()
-    } else {
-      return -1
-    }
-  }
-
-  // TODO: For test
-  def copyQueue[T](c: Class[T]): ArrayBlockingQueue[KyuubiInfo] = {
-    if (c.equals(KyuubiStatementInfo.getClass)) {
-      val kyuubistatementQueueCopy = new ArrayBlockingQueue[KyuubiInfo](kyuubiStatementQueue.size())
-      kyuubistatementQueueCopy.addAll(kyuubiStatementQueue)
-      return kyuubistatementQueueCopy
-    }
-    return null
   }
 }

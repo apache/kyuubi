@@ -43,4 +43,4 @@ case class KyuubiStatementInfo(
     sessionId: HandleIdentifier,
     var queryExecution: QueryExecution,
     var exception: KyuubiSQLException,
-    stateToTime: Map[OperationState, Long]) extends KyuubiInfo
+    stateToTime: Map[OperationState, Long])
