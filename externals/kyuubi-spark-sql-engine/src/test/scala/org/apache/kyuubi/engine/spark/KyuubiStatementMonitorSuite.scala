@@ -53,7 +53,7 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
 
       var iterator = kyuubiStatementQueue.iterator()
       while (iterator.hasNext) {
-        val kyuubiStatementInfo = iterator.next().asInstanceOf[KyuubiStatementInfo]
+        val kyuubiStatementInfo = iterator.next()
         assert(kyuubiStatementInfo.statement !== null)
         assert(kyuubiStatementInfo.statementId !== null)
         assert(kyuubiStatementInfo.sessionId !== null)

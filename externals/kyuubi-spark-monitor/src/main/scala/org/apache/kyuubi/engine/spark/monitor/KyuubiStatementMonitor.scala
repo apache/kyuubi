@@ -19,10 +19,11 @@ package org.apache.kyuubi.engine.spark.monitor
 
 import java.util.concurrent.ArrayBlockingQueue
 
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.spark.monitor.entity.KyuubiStatementInfo
 
 // TODO: Thread Safe need to consider
-object KyuubiStatementMonitor {
+object KyuubiStatementMonitor extends Logging{
 
   /**
    * This blockingQueue store kyuubiStatementInfo.
@@ -48,7 +49,9 @@ object KyuubiStatementMonitor {
     if (kyuubiStatementQueue.size() >= 7) {
       removeAndDumpStatementInfoFromQueue()
     }
-    kyuubiStatementQueue.put(kyuubiStatementInfo)
+    val isSuccess = kyuubiStatementQueue.add(kyuubiStatementInfo)
+    info(s"Add kyuubiStatementInfo into queue is [$isSuccess], " +
+      s"statementId is [${kyuubiStatementInfo.statementId}]")
   }
 
   /**
