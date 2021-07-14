@@ -16,8 +16,9 @@
 #
 
 # Usage:
-#   use ./build/dist to make binary distributions of Kyuubi
-#   docker build -f docker/Dockerfile -t yaooqinn/kyuubi:tagname .
+#   1. use ./build/dist to make binary distributions of Kyuubi or download a release
+#   2. Untar it and run the docker command below
+#      docker build -f docker/Dockerfile -t yaooqinn/kyuubi:tagname .
 #   Options:
 #     -f this docker file
 #     -t the target repo and tag name

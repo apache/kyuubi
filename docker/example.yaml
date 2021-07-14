@@ -17,7 +17,7 @@
 
 # Usage:
 # Start:
-#   kubectl apply -f https://raw.githubusercontent.com/NetEase/kyuubi/master/docker/example.yaml
+#   kubectl apply -f https://raw.githubusercontent.com/apache/incubator-kyuubi/master/docker/example.yaml
 # Connect:
 #   kubectl port-forward kyuubi-example --address localhost 10009:10009
 # Or
