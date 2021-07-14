@@ -34,7 +34,7 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
   override protected def jdbcUrl: String = getJdbcUrl
   override def withKyuubiConf: Map[String, String] = Map.empty
 
-  test("test event tracking: statement") {
+  test("add kyuubiStatementInfo into queue and remove them by size type threshold") {
     val sql = "select timestamp'2021-06-01'"
     val total: Int = 7
     // Clear kyuubiStatementQueue first
