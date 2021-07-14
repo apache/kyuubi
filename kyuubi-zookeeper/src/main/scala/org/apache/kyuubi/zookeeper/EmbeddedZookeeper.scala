@@ -23,8 +23,8 @@ import java.net.InetAddress
 import scala.collection.JavaConverters._
 
 import org.apache.curator.test.{InstanceSpec, TestingServer}
-import org.apache.kyuubi.Utils
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.{AbstractService, ServiceState}
 import org.apache.kyuubi.zookeeper.ZookeeperConf._
