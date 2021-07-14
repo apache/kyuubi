@@ -54,7 +54,7 @@ def get_json(url):
                   "dev/merge_kyuubi_pr.py to configure an OAuth token for making authenticated " +
                   "GitHub requests.")
         else:
-            print("Unable to fetch URL, exiting: %s" % url)
+            print("Unable to fetch URL, exiting: %s" % url, e)
         sys.exit(-1)
 
 
@@ -252,7 +252,7 @@ def main():
     # Merged pull requests don't appear as merged in the GitHub API;
     # Instead, they're closed by asfgit.
     merge_commits = \
-        [e for e in pr_events if e["event"] == "closed"]
+        [e for e in pr_events if e["event"] == "closed" and e["commit_id"]]
 
     if merge_commits:
         merge_hash = merge_commits[0]["commit_id"]
