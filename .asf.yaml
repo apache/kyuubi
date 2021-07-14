@@ -42,6 +42,4 @@ github:
   notifications:
     commits: commits@kyuubi.apache.org
     issues: dev@kyuubi.apache.org
-    # Redirect notifications for pull requests to commits to reduce noise
-    # as we can link a pull request to the corresponding issue to sync key information
     pullrequests: commits@kyuubi.apache.org
