@@ -48,19 +48,19 @@ spec:
             # the target dirs which in container
             - name: CACHE_DIRS
               value: /data/data1,/data/data2
-            # Cleaner will clean More distant block files
+            # Cleaner will clean More distant block files, seconds
             - name: FILE_EXPIRED_TIME
-              value: 604800000
-            # Deep clean fileExpiredTime
+              value: 604800
+            # Deep clean fileExpiredTime, seconds
             - name: DEEP_CLEAN_FILE_EXPIRED_TIME
-              value: 432000000
+              value: 432000
             # After first clean, if free Space low than threshold
             # trigger deep clean
             - name: FREE_SPACE_THRESHOLD
               value: 60
-            # Cleaner clean sleep times after cleaning
-            - name: SLEEP_TIME
-              value: 3600000
+            # Cleaner clean sleep times after cleaning, seconds
+            - name: SCHEDULE_INTERVAL
+              value: 3600
       volumes:
         # Directory on the host which store block dirs
         - name: block-files-dir-1

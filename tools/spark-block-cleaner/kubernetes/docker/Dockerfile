@@ -23,7 +23,8 @@ RUN apt-get update && \
     mkdir -p /log/cleanerLog
 
 COPY jars /opt/block-cleaner
-COPY entrypoint.sh /opt/entrypoint.sh
+COPY tools/spark-block-cleaner/jars /opt/block-cleaner
+COPY tools/spark-block-cleaner/kubernetes/docker/entrypoint.sh /opt/entrypoint.sh
 
 RUN chmod +x /opt/entrypoint.sh
 
