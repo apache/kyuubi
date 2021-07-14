@@ -177,9 +177,3 @@ class ExecuteStatement(
     kyuubiStatementInfo.exception = opEx
   }
 }
-
-  override def setOperationException(opEx: KyuubiSQLException): Unit = {
-    super.setOperationException(opEx)
-    kyuubiStatementInfo.exception = opEx
-  }
-}

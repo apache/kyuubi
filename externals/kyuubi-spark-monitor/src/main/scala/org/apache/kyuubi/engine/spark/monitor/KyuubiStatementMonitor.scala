@@ -17,10 +17,12 @@
 
 package org.apache.kyuubi.engine.spark.monitor
 
-import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.{ArrayBlockingQueue, ConcurrentHashMap}
+
+import org.apache.spark.scheduler.SparkListenerJobEnd
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.engine.spark.monitor.entity.KyuubiStatementInfo
+import org.apache.kyuubi.engine.spark.monitor.entity.{KyuubiJobInfo, KyuubiStatementInfo}
 
 // TODO: Thread Safe need to consider
 object KyuubiStatementMonitor extends Logging{
@@ -37,6 +39,16 @@ object KyuubiStatementMonitor extends Logging{
    */
   // TODO: Capacity should make configurable
   private val kyuubiStatementQueue = new ArrayBlockingQueue[KyuubiStatementInfo](10)
+
+  // First key is statementId, second key is jobId.
+  // From this map. you can get all jobs info by statementId.
+  // The second map is used for saving jobEndInfo into KyuubiJobInfo by jobId.
+  private val operationJobsMap = new ConcurrentHashMap[
+    String, ConcurrentHashMap[Int, KyuubiJobInfo]]()
+
+  // Store the relationship between jobId and operationId
+  // We should remove the data when this job was ended
+  private val jobOperationMap = new ConcurrentHashMap[Int, String]()
 
   /**
    * This function is used for putting kyuubiStatementInfo into blockingQueue(statementQueue).
@@ -62,5 +74,22 @@ object KyuubiStatementMonitor extends Logging{
   private def removeAndDumpStatementInfoFromQueue(): Unit = {
     // TODO: Just for test
     kyuubiStatementQueue.clear()
+  }
+
+  def addJobInfoForOperationId(operationId: String, kyuubiJobInfo: KyuubiJobInfo): Unit = {
+    if (operationJobsMap.get(operationId) == null) {
+      operationJobsMap.putIfAbsent(operationId, new ConcurrentHashMap[Int, KyuubiJobInfo]())
+    }
+    operationJobsMap.get(operationId).putIfAbsent(kyuubiJobInfo.jobId, kyuubiJobInfo)
+    jobOperationMap.put(kyuubiJobInfo.jobId, operationId)
+  }
+
+  def addJobEndInfo(jobEnd: SparkListenerJobEnd): Unit = {
+    val jobId = jobEnd.jobId
+    val operationId = jobOperationMap.remove(jobId)
+    if (!operationId.isEmpty) {
+      operationJobsMap.get(operationId).get(jobId).endTime = Option(jobEnd.time)
+      operationJobsMap.get(operationId).get(jobId).jobResult = jobEnd.jobResult
+    }
   }
 }
