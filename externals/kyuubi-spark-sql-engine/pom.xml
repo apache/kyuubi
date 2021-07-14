@@ -49,7 +49,7 @@
             <artifactId>kyuubi-spark-monitor</artifactId>
             <version>${project.version}</version>
         </dependency>
-      
+
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_${scala.binary.version}</artifactId>

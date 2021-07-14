@@ -49,6 +49,7 @@ metrics-jmx/4.1.1//metrics-jmx-4.1.1.jar
 metrics-json/4.1.1//metrics-json-4.1.1.jar
 metrics-jvm/4.1.1//metrics-jvm-4.1.1.jar
 scala-library/2.12.14//scala-library-2.12.14.jar
+scopt_2.12/4.0.1//scopt_2.12-4.0.1.jar
 simpleclient/0.10.0//simpleclient-0.10.0.jar
 simpleclient_common/0.10.0//simpleclient_common-0.10.0.jar
 simpleclient_dropwizard/0.10.0//simpleclient_dropwizard-0.10.0.jar
