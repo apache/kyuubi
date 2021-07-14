@@ -51,7 +51,7 @@ def get_json(url):
     except HTTPError as e:
         if "X-RateLimit-Remaining" in e.headers and e.headers["X-RateLimit-Remaining"] == '0':
             print("Exceeded the GitHub API rate limit; see the instructions in " +
-                  "dev/merge_spark_pr.py to configure an OAuth token for making authenticated " +
+                  "dev/merge_kyuubi_pr.py to configure an OAuth token for making authenticated " +
                   "GitHub requests.")
         else:
             print("Unable to fetch URL, exiting: %s" % url)
@@ -136,7 +136,7 @@ def merge_pr(pr_num, target_ref, title, body, pr_repo_desc):
     merge_message_flags += ["-m", title]
     if body is not None:
         # We remove @ symbols from the body to avoid triggering e-mails
-        # to people every time someone creates a public fork of Spark.
+        # to people every time someone creates a public fork of Kyuubi.
         merge_message_flags += ["-m", body.replace("@", "")]
 
     committer_name = run_cmd("git config --get user.name").strip()
