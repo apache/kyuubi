@@ -101,13 +101,14 @@ object KubernetesSparkBlockCleaner extends Logging {
         val released = blockManagerDir.listFiles.filter(_.isDirectory).map { subDir =>
           debug(s"start check sub dir ${subDir.getCanonicalPath}")
           // check sub directory
-          val subDirReleased = subDir.listFiles.map(file => checkAndDeleteFile(file, time))
-          // delete empty sub directory
-          checkAndDeleteFile(subDir, time, true)
-          subDirReleased.sum
+          subDir.listFiles.map(file => checkAndDeleteFile(file, time)).sum
         }
-        // delete empty blockManager directory
-        checkAndDeleteFile(blockManagerDir, time, true)
+        // delete empty blockManager directory and all empty sub directory
+        if (blockManagerDir.listFiles().forall(
+          subDir => subDir.isDirectory && subDir.listFiles().isEmpty)) {
+          blockManagerDir.listFiles().foreach(checkAndDeleteFile(_, time, true))
+          checkAndDeleteFile(blockManagerDir, time, true)
+        }
         info(s"finished clean blockManager dir ${blockManagerDir.getCanonicalPath}, " +
           s"released space: ${released.sum / 1024 / 1024} MB.")
       }
