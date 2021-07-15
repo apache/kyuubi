@@ -32,8 +32,6 @@ import org.apache.kyuubi.operation.OperationState.OperationState
  * @param statement
  * @param appId
  * @param sessionId
- * @param queryExecution: contains physicalPlan, logicPlan and so on
- * @param exception
  * @param stateToTime: store this statement's every state and the time of occurrence
  */
 case class KyuubiStatementInfo(
