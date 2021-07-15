@@ -39,6 +39,7 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
         "org.apache.kyuubi.sql.KyuubiSparkSQLExtension")
       .config(SQLConf.ADAPTIVE_EXECUTION_ENABLED.key, "true")
       .config("spark.hadoop.hive.exec.dynamic.partition.mode", "nonstrict")
+      .config("spark.hadoop.hive.metastore.client.capability.check", "false")
       .config("spark.ui.enabled", "false")
       .enableHiveSupport()
       .getOrCreate()
@@ -328,6 +329,7 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
       SQLConf.SHUFFLE_PARTITIONS.key -> "3",
       KyuubiSQLConf.FINAL_STAGE_CONFIG_ISOLATION.key -> "true",
       "spark.sql.adaptive.advisoryPartitionSizeInBytes" -> "1",
+      "spark.sql.adaptive.coalescePartitions.minPartitionSize" -> "1",
       "spark.sql.finalStage.adaptive.advisoryPartitionSizeInBytes" -> "10000000") {
 
       // use loop to double check final stage config doesn't affect the sql query each other
@@ -372,10 +374,10 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
         // test ReusedExchange
         checkPartitionNum(
           """
-            |SELECT t0.c2 FROM (
-            |SELECT t1.c1, count(*) as c2 FROM t1 GROUP BY t1.c1
+            |SELECT /*+ REPARTITION */ t0.c2 FROM (
+            |SELECT t1.c1, (count(*) + c1) as c2 FROM t1 GROUP BY t1.c1
             |) t0 JOIN (
-            |SELECT t1.c1, count(*) as c2 FROM t1 GROUP BY t1.c1
+            |SELECT t1.c1, (count(*) + c1) as c2 FROM t1 GROUP BY t1.c1
             |) t1 ON t0.c2 = t1.c2
             |""".stripMargin,
           3,
