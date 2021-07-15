@@ -30,6 +30,7 @@ import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TT
 import org.apache.thrift.transport.{TServerSocket, TTransport}
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Logging}
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
@@ -60,7 +61,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     try {
       hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
       val serverHost = conf.get(FRONTEND_BIND_HOST)
-      serverAddr = serverHost.map(InetAddress.getByName).getOrElse(InetAddress.getLocalHost)
+      serverAddr = serverHost.map(InetAddress.getByName).getOrElse(Utils.findLocalInetAddress)
       portNum = conf.get(FRONTEND_BIND_PORT)
       val minThreads = conf.get(FRONTEND_MIN_WORKER_THREADS)
       val maxThreads = conf.get(FRONTEND_MAX_WORKER_THREADS)

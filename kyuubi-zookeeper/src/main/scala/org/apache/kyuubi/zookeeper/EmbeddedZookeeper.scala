@@ -18,6 +18,7 @@
 package org.apache.kyuubi.zookeeper
 
 import java.io.File
+import java.net.InetAddress
 
 import scala.collection.JavaConverters._
 
@@ -53,7 +54,8 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
         "maxSessionTimeout" -> Integer.valueOf(timeout)
       }).toMap[String, Object].asJava
 
-    val hostname = conf.get(ZK_CLIENT_PORT_ADDRESS).orNull
+    val hostname = conf.get(ZK_CLIENT_PORT_ADDRESS).map(InetAddress.getByName)
+      .getOrElse(Utils.findLocalInetAddress).getCanonicalHostName
     spec = new InstanceSpec(
       dataDirectory,
       clientPort,
