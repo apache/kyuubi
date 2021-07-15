@@ -34,6 +34,7 @@ github:
     squash: true
     merge: false
     rebase: false
+  protected_branches: ~
   features:
     issues: true
     discussions: true
