@@ -188,7 +188,7 @@ private[kyuubi] object Utils extends Logging {
 
       for (ni <- reOrderedNetworkIFs) {
         val addresses = ni.getInetAddresses.asScala
-                .filterNot(addr => addr.isLinkLocalAddress || addr.isLoopbackAddress).toSeq
+          .filterNot(addr => addr.isLinkLocalAddress || addr.isLoopbackAddress).toSeq
         if (addresses.nonEmpty) {
           val addr = addresses.find(_.isInstanceOf[Inet4Address]).getOrElse(addresses.head)
           // because of Inet6Address.toHostName may add interface at the end if it knows about it
