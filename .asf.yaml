@@ -18,7 +18,9 @@
 # See: https://cwiki.apache.org/confluence/display/INFRA/git+-+.asf.yaml+features
 
 github:
-  description: "Apache Kyuubi is a distributed multi-tenant JDBC server for large-scale data processing and analytics, built on top of Apache Spark"
+  description: >
+    Apache Kyuubi is a distributed multi-tenant JDBC server for large-scale data processing and analytics,
+    built on top of Apache Spark.
   homepage: https://kyuubi.apache.org/
   labels:
     - spark
