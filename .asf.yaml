@@ -40,7 +40,7 @@ github:
     discussions: true
     wiki: false
     projects: false
-  notifications:
-    commits: commits@kyuubi.apache.org
-    issues: dev@kyuubi.apache.org
-    pullrequests: commits@kyuubi.apache.org
+notifications:
+  commits: commits@kyuubi.apache.org
+  issues: dev@kyuubi.apache.org
+  pullrequests: commits@kyuubi.apache.org
