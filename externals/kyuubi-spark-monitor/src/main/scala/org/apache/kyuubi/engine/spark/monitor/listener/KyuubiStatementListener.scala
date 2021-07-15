@@ -30,7 +30,9 @@ class KyuubiStatementListener extends StatsReportListener with Logging{
     val statementId = jobStart.properties.getProperty(KYUUBI_STATEMENT_ID_KEY)
     val kyuubiJobInfo = KyuubiJobInfo(
       jobStart.jobId, statementId, jobStart.stageIds, jobStart.time)
-    KyuubiStatementMonitor.addJobInfoForOperationId(statementId, kyuubiJobInfo)
+    KyuubiStatementMonitor.putJobInfoIntoQueue(kyuubiJobInfo)
+    info(s"Query [$statementId]: Job ${jobStart.jobId} started with " +
+      s"${jobStart.stageIds.length} stages")
   }
 
   override def onJobEnd(jobEnd: SparkListenerJobEnd): Unit = {

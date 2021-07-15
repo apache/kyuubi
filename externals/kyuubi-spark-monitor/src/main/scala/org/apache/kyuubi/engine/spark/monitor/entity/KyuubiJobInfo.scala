@@ -20,9 +20,12 @@ package org.apache.kyuubi.engine.spark.monitor.entity
 import org.apache.spark.scheduler.JobResult
 
 /**
+ * This object is used for storing the basic data for job.
+ * You can use statementId to get all jobs that belong to this statemnent.
+ * And also you can use statementId and jobId to get all stages that belong to this job.
  * @param jobId
  * @param statementId
- * @param stageIds
+ * @param stageIds: is array
  * @param startTime
  * @param endTime
  * @param jobResult

@@ -27,6 +27,10 @@ import org.apache.kyuubi.engine.spark.monitor.entity.{KyuubiJobInfo, KyuubiState
 // TODO: Thread Safe need to consider
 object KyuubiStatementMonitor extends Logging{
 
+  // TODO: Just for test. We will remove them in the future
+  private val maxCapacity: Int = 10
+  private val maxSize: Int = 7
+
   /**
    * This blockingQueue store kyuubiStatementInfo.
    *
@@ -38,27 +42,41 @@ object KyuubiStatementMonitor extends Logging{
    *      b. this queue's current size
    */
   // TODO: Capacity should make configurable
-  private val kyuubiStatementQueue = new ArrayBlockingQueue[KyuubiStatementInfo](10)
-
-  // First key is statementId, second key is jobId.
-  // From this map. you can get all jobs info by statementId.
-  // The second map is used for saving jobEndInfo into KyuubiJobInfo by jobId.
-  private val operationJobsMap = new ConcurrentHashMap[
-    String, ConcurrentHashMap[Int, KyuubiJobInfo]]()
-
-  // Store the relationship between jobId and operationId
-  // We should remove the data when this job was ended
-  private val jobOperationMap = new ConcurrentHashMap[Int, String]()
+  private val kyuubiStatementQueue = new ArrayBlockingQueue[KyuubiStatementInfo](maxCapacity)
 
   /**
-   * This function is used for putting kyuubiStatementInfo into blockingQueue(statementQueue).
+   * This blockingQueue store kyuubiJobInfo.
+   *
+   * Notice:
+   *    1. When we remove items from this queue, we should ensure those jobs have finished.
+   *       If not, we should put them into this queue again.
+   *    2. There have two kinds of threshold to trigger when to remove items from this queue:
+   *      a. time
+   *      b. this queue's current size
+   */
+  // TODO: Capacity should make configurable
+  private val kyuubiJobQueue = new ArrayBlockingQueue[KyuubiJobInfo](maxCapacity)
+
+  /**
+   * This map store the relationship between jobId and jobInfo.
+   * When the job has finished, all we can get is jobId from the object-jobEnd.
+   * So we need to maintain a mapping relationship to store endTime and jobResult
+   * when this job has finished.
+   *
+   * Notice:
+   *    1. When the job has finished, we need to remove this mapping relationship from this map.
+   */
+  private val jobIdToJobInfoMap = new ConcurrentHashMap[Int, KyuubiJobInfo]()
+
+  /**
+   * This method is used for putting kyuubiStatementInfo into blockingQueue(statementQueue).
    * Every time we put an item into this queue, we should judge this queue's current size at first.
    * If the size is less than threshold, we need to remove items from this queue.
    * @param kyuubiStatementInfo
    */
   // TODO: Lack size type threshold and time type threshold
   def putStatementInfoIntoQueue(kyuubiStatementInfo: KyuubiStatementInfo): Unit = {
-    if (kyuubiStatementQueue.size() >= 7) {
+    if (kyuubiStatementQueue.size() >= maxSize) {
       removeAndDumpStatementInfoFromQueue()
     }
     val isSuccess = kyuubiStatementQueue.add(kyuubiStatementInfo)
@@ -67,7 +85,7 @@ object KyuubiStatementMonitor extends Logging{
   }
 
   /**
-   * This function is used for removing kyuubiStatementInfo from blockingQueue(statementQueue)
+   * This method is used for removing kyuubiStatementInfo from blockingQueue(statementQueue)
    * and dumpping them to a file by threshold.
    */
   // TODO: Need ensure those items have finished. If not, we should put them into this queue again.
@@ -76,20 +94,47 @@ object KyuubiStatementMonitor extends Logging{
     kyuubiStatementQueue.clear()
   }
 
-  def addJobInfoForOperationId(operationId: String, kyuubiJobInfo: KyuubiJobInfo): Unit = {
-    if (operationJobsMap.get(operationId) == null) {
-      operationJobsMap.putIfAbsent(operationId, new ConcurrentHashMap[Int, KyuubiJobInfo]())
+  /**
+   * This method is used for putting kyuubiJobInfo into blockingQueue(jobQueue)
+   * and storing the mapping relationship between jobId and jobInfo.
+   * The reason that we need to maintain a mapping relationship
+   * is we need to store endTime and jobResult
+   * when this job has finished but the object-jobEnd has nothing but jobId.
+   * @param kyuubiJobInfo
+   */
+  // TODO: Lack size type threshold and time type threshold
+  def putJobInfoIntoQueue(kyuubiJobInfo: KyuubiJobInfo): Unit = {
+    if (kyuubiJobQueue.size() >= maxSize) {
+      removeAndDumpJobInfoFromQueue()
     }
-    operationJobsMap.get(operationId).putIfAbsent(kyuubiJobInfo.jobId, kyuubiJobInfo)
-    jobOperationMap.put(kyuubiJobInfo.jobId, operationId)
+    // Put kyuubiJobInfo into kyuubiJobQueue
+    kyuubiJobQueue.add(kyuubiJobInfo)
+    // Store the relationship between jobID and jobInfo
+    jobIdToJobInfoMap.put(kyuubiJobInfo.jobId, kyuubiJobInfo)
   }
 
+  /**
+   * This method is used for removing kyuubiJobInfo from blockingQueue(jobQueue)
+   * and dumpping them to a file by threshold.
+   */
+  // TODO: Need ensure those items have finished. If not, we should put them into this queue again.
+  private def removeAndDumpJobInfoFromQueue(): Unit = {
+    // TODO: Just for test
+    kyuubiJobQueue.clear()
+  }
+
+  /**
+   * This method is used for adding endTime and jobResult into jobInfo.
+   * Those fields can only get when this job has finished.
+   *
+   * Notice:
+   *    1. When this job has finished, you should remove it from jobIdToJobInfoMap.
+   * @param jobEnd
+   */
   def addJobEndInfo(jobEnd: SparkListenerJobEnd): Unit = {
     val jobId = jobEnd.jobId
-    val operationId = jobOperationMap.remove(jobId)
-    if (!operationId.isEmpty) {
-      operationJobsMap.get(operationId).get(jobId).endTime = Option(jobEnd.time)
-      operationJobsMap.get(operationId).get(jobId).jobResult = jobEnd.jobResult
-    }
+    val jobInfo = jobIdToJobInfoMap.remove(jobId)
+    jobInfo.endTime = Option(jobEnd.time)
+    jobInfo.jobResult = jobEnd.jobResult
   }
 }
