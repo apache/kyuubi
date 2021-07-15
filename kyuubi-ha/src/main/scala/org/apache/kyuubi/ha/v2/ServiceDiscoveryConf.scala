@@ -28,6 +28,11 @@ object ServiceDiscoveryConf {
     .stringConf
     .createWithDefault("random")
 
+  val ENGINE_PROVIDER_CORE_SIZE: OptionalConfigEntry[Int] = buildConf("ha.engine.provider.coreSize")
+    .version("1.3.0")
+    .intConf
+    .createOptional
+
   val ENGINE_PROVIDER_TAGS: OptionalConfigEntry[String] = buildConf("ha.engine.provider.tags")
     .version("1.3.0")
     .stringConf

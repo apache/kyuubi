@@ -74,6 +74,15 @@ class EngineServiceDiscoveryClientSuite extends KyuubiFunSuite {
         Some("1.3.0"), 0, Seq("SPARK_3", "p2"))
       val path3 = createZkServiceNode(conf, zkClient, engine3).getActualPath
 
+      // core size
+      conf.set(ServiceDiscoveryConf.ENGINE_PROVIDER_CORE_SIZE, 3)
+      var instance0 = EngineServiceDiscoveryClient.get(namespace, zkClient, conf).getInstance()
+      assert(instance0.isDefined)
+      conf.set(ServiceDiscoveryConf.ENGINE_PROVIDER_CORE_SIZE, 4)
+      instance0 = EngineServiceDiscoveryClient.get(namespace, zkClient, conf).getInstance()
+      assert(instance0.isEmpty)
+      conf.unset(ServiceDiscoveryConf.ENGINE_PROVIDER_CORE_SIZE)
+
       // session number base
       conf.set(ServiceDiscoveryConf.ENGINE_PROVIDER_STRATEGY, SessionNumStrategy.NAME)
       val instance1 = EngineServiceDiscoveryClient.get(namespace, zkClient, conf)
@@ -136,23 +145,6 @@ class EngineServiceDiscoveryClientSuite extends KyuubiFunSuite {
           s"Unable to create a znode for this server instance: ${engine.instance}", e)
     }
     serviceNode
-  }
-
-  def addSession(zkClient: CuratorFramework,
-                 path: String,
-                 sessionId: String): Unit = {
-    val pathPrefix = ZKPaths.makePath(path, sessionId)
-    try {
-      zkClient
-        .create()
-        .creatingParentsIfNeeded()
-        .withMode(CreateMode.EPHEMERAL)
-        .forPath(pathPrefix)
-    } catch {
-      case _: NodeExistsException => // do nothing
-      case e: KeeperException =>
-        throw new KyuubiException(s"Failed to create path '$pathPrefix'", e)
-    }
   }
 
 }

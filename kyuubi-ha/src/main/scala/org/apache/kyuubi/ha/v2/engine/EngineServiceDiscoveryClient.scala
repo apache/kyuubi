@@ -22,7 +22,7 @@ import org.apache.curator.framework.CuratorFramework
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.v2.{InstanceProvider, ProviderStrategy, ServiceDiscoveryClient, ServiceInstance}
 import org.apache.kyuubi.ha.v2.ServiceDiscoveryConf._
-import org.apache.kyuubi.ha.v2.engine.strategies.SessionNumStrategy
+import org.apache.kyuubi.ha.v2.engine.strategies.{CoreSizeStrategy, SessionNumStrategy}
 import org.apache.kyuubi.ha.v2.strategies.RandomStrategy
 
 class EngineServiceDiscoveryClient(provider: InstanceProvider[EngineInstance],
@@ -45,10 +45,16 @@ object EngineServiceDiscoveryClient {
   def get(namespace: String, zkClient: CuratorFramework,
           conf: KyuubiConf): EngineServiceDiscoveryClient = {
 
-    val strategy = conf.get(ENGINE_PROVIDER_STRATEGY).toLowerCase match {
+    var strategy = conf.get(ENGINE_PROVIDER_STRATEGY).toLowerCase match {
       case "random" => RandomStrategy[EngineInstance]()
       case "session_num" => SessionNumStrategy()
       case _ => RandomStrategy[EngineInstance]()
+    }
+
+    conf.get(ENGINE_PROVIDER_CORE_SIZE).foreach {
+      case coreSize: Int if coreSize > 0 =>
+        strategy = new CoreSizeStrategy(coreSize, strategy)
+      case _ =>
     }
 
     val tags: Seq[String] = conf.get(ENGINE_PROVIDER_TAGS)
