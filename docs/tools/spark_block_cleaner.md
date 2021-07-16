@@ -33,7 +33,7 @@ And Spark Block Cleaner will check the disk utilization after clean, if the rema
 
 ## Usage
 
-Before you start using Spark Block Cleaner, you should build its docker images or using official images(TODO).
+Before you start using Spark Block Cleaner, you should build its docker images.
 
 ### Build Block Cleaner Docker Image
 
