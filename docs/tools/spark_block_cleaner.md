@@ -17,7 +17,7 @@ You'd better have cognition upon the following things when you want to use spark
 
 When running Spark On Kubernetes, we encountered such a situation that after using hostPath volume local-dir, the usage rate of the directory storing shuffle files remained high.
 
-So an additional tool is needed to clear the accumulated block files.
+So an additional tool is needed to clean up the accumulated block files.
 
 ## Usage
 
@@ -27,7 +27,7 @@ So an additional tool is needed to clear the accumulated block files.
 ```
 
 ### Modify spark-block-cleaner.yml
-You need to modify the spark-block-cleaner.yml to fit your current environment.
+You need to modify the `spark-block-cleaner.yml` to fit your current environment.
 
 ```yaml
 volumes:
@@ -80,7 +80,7 @@ env:
   - name: CACHE_DIRS
     value: /data/data1,/data/data2
 ```
-You can modify the following parameters in spark-block-cleaner.yml containers envs to control spark-block-cleaner running.
+You can modify the following parameters in `spark-block-cleaner.yml` containers envs to control spark-block-cleaner running.
 
 ### Start daemonSet
 
@@ -88,10 +88,10 @@ After you finishing modifying the above, you can use the following command `kube
 
 ## Related parameters
 
-Name | Default | Meaning
---- | --- | ---
-CACHE_DIRS | /data/data1,/data/data2 | The target dirs in container path which will clean block files.
-FILE_EXPIRED_TIME | 604800 | Cleaner will clean the block files which current time - last modified time  more than the fileExpiredTime.
-DEEP_CLEAN_FILE_EXPIRED_TIME | 432000 | Deep clean will clean the block files which current time - last modified time  more than the deepCleanFileExpiredTime.
-FREE_SPACE_THRESHOLD | 60 | After first clean, if free Space low than threshold trigger deep clean.
-SCHEDULE_INTERVAL | 3600 | Cleaner sleep between cleaning.
+Name | Default | unit | Meaning
+--- | --- | --- | ---
+CACHE_DIRS | /data/data1,/data/data2|  | The target dirs in container path which will clean block files.
+FILE_EXPIRED_TIME | 604800 | seconds | Cleaner will clean the block files which current time - last modified time  more than the fileExpiredTime.
+DEEP_CLEAN_FILE_EXPIRED_TIME | 432000 | seconds | Deep clean will clean the block files which current time - last modified time  more than the deepCleanFileExpiredTime.
+FREE_SPACE_THRESHOLD | 60 | % | After first clean, if free Space low than threshold trigger deep clean.
+SCHEDULE_INTERVAL | 3600 | seconds | Cleaner sleep between cleaning.
