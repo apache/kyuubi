@@ -24,6 +24,7 @@ import org.apache.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.hive.service.rpc.thrift.TOperationState._
 import org.apache.spark.scheduler.JobSucceeded
 import org.scalatest.PrivateMethodTester
+import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.engine.spark.monitor.KyuubiStatementMonitor
 import org.apache.kyuubi.engine.spark.monitor.entity.{KyuubiJobInfo, KyuubiStatementInfo}
@@ -94,12 +95,14 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
 
       val elements = jobIdToJobInfoMap.elements()
       while(elements.hasMoreElements) {
-        val kyuubiJobInfo = elements.nextElement()
-        assert(jobIdToJobInfoMap.size() === 1)
-        assert(kyuubiJobInfo.statementId === OperationHandle(opHandle).identifier.toString)
-        assert(kyuubiJobInfo.stageIds.length === 1)
-        assert(kyuubiJobInfo.jobResult === JobSucceeded)
-        assert(kyuubiJobInfo.endTime !== 0)
+        eventually(timeout(10.seconds)) {
+          val kyuubiJobInfo = elements.nextElement()
+          assert(jobIdToJobInfoMap.size() === 1)
+          assert(kyuubiJobInfo.statementId === OperationHandle(opHandle).identifier.toString)
+          assert(kyuubiJobInfo.stageIds.length === 1)
+          assert(kyuubiJobInfo.jobResult === JobSucceeded)
+          assert(kyuubiJobInfo.endTime !== 0)
+        }
       }
 
       // Test for clear kyuubiJobIdToJobInfoMap when threshold reached
