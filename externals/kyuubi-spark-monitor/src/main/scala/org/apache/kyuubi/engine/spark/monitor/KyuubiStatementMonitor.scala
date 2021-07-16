@@ -136,5 +136,6 @@ object KyuubiStatementMonitor extends Logging{
     val jobInfo = jobIdToJobInfoMap.remove(jobId)
     jobInfo.endTime = Option(jobEnd.time)
     jobInfo.jobResult = jobEnd.jobResult
+    info(s"Job finished. Query [${jobInfo.statementId}]: JobId is [$jobId]")
   }
 }
