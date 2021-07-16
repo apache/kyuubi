@@ -118,6 +118,9 @@ object KyuubiStatementMonitor extends Logging{
    * This method is used for inserting endTime and jobResult.
    * Those fields can only get when this job has finished.
    *
+   * Notice:
+   *    1. endTime and jobResult should consider the thread safe.
+   *
    * @param jobEnd
    */
   def insertEndTimeAndJobResult(jobEnd: SparkListenerJobEnd): Unit = {
