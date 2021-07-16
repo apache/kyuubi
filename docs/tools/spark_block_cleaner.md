@@ -15,15 +15,11 @@ You'd better have cognition upon the following things when you want to use spark
 * [Kubectl](https://kubernetes.io/docs/reference/kubectl/overview/)
 * [Docker](https://www.docker.com/)
 
-## Purpose
-
-During using Spark On Kubernetes with client deploy-mode, we encountered this scenario that the disk responsible for storing Shuffle data accumulates so many files cause the disk overflows.
-
-Therefore, we chose to use Spark Block Cleaner to clear the block files accumulated by Spark.
-
 ## Scenes
 
-When you're using Spark On Kubernetes with Client mode and don't use `emptyDir` for Spark `local-dir` type, you may face the same scenario that executor pods deleted without clean all the Block files.
+When you're using Spark On Kubernetes with Client mode and don't use `emptyDir` for Spark `local-dir` type, you may face the same scenario that executor pods deleted without clean all the Block files. It may cause disk overflow.
+
+Therefore, we chose to use Spark Block Cleaner to clear the block files accumulated by Spark.
 
 ## Principle
 
