@@ -93,7 +93,7 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
       val opHandle = tExecuteStatementResp.getOperationHandle
       waitForOperationToComplete(client, opHandle)
 
-      eventually(timeout(10.seconds)) {
+      eventually(timeout(10.seconds), interval(1.second)) {
         val elements = jobIdToJobInfoMap.elements()
         while (elements.hasMoreElements) {
           val kyuubiJobInfo = elements.nextElement()
