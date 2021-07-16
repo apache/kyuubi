@@ -125,7 +125,7 @@ object KyuubiStatementMonitor extends Logging{
    */
   def insertEndTimeAndJobResult(jobEnd: SparkListenerJobEnd): Unit = {
     val jobInfo = kyuubiJobIdToJobInfoMap.get(jobEnd.jobId)
-    synchronized(jobInfo) {
+    jobInfo.synchronized {
       jobInfo.endTime = jobEnd.time
       jobInfo.jobResult = jobEnd.jobResult
     }
