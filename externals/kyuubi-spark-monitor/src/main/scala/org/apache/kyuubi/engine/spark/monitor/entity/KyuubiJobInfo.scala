@@ -40,6 +40,6 @@ case class KyuubiJobInfo(
     stageIds: Seq[Int],
     startTime: Long) {
 
-  @volatile var endTime: Long = 0
-  @volatile var jobResult: JobResult = null
+  var endTime: Long = 0
+  var jobResult: JobResult = null
 }
