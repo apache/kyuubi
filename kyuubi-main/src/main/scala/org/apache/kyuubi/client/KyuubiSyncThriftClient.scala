@@ -29,8 +29,7 @@ import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.util.ThriftUtils
 
-class KyuubiSyncThriftClient(protocol: TProtocol)
-  extends TCLIService.Client(protocol) {
+class KyuubiSyncThriftClient(protocol: TProtocol) extends TCLIService.Client(protocol) {
 
   @volatile private var _remoteSessionHandle: TSessionHandle = _
 

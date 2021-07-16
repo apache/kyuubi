@@ -20,11 +20,8 @@ package org.apache.kyuubi.operation
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.session.Session
 
-class GetCatalogs(
-    session: Session,
-    client: KyuubiSyncThriftClient)
-  extends KyuubiOperation(
-    OperationType.GET_CATALOGS, session, client) {
+class GetCatalogs(session: Session, client: KyuubiSyncThriftClient)
+  extends KyuubiOperation(OperationType.GET_CATALOGS, session, client) {
 
   override protected def runInternal(): Unit = {
     try {

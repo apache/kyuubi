@@ -23,8 +23,7 @@ import org.apache.kyuubi.session.Session
 class GetTableTypes(
     session: Session,
     client: KyuubiSyncThriftClient)
-  extends KyuubiOperation(
-    OperationType.GET_TABLE_TYPES, session, client) {
+  extends KyuubiOperation(OperationType.GET_TABLE_TYPES, session, client) {
 
   override protected def runInternal(): Unit = {
     try {

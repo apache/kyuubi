@@ -20,11 +20,8 @@ package org.apache.kyuubi.operation
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.session.Session
 
-class GetTypeInfo(
-     session: Session,
-     client: KyuubiSyncThriftClient)
-  extends KyuubiOperation(
-    OperationType.GET_TYPE_INFO, session, client) {
+class GetTypeInfo(session: Session, client: KyuubiSyncThriftClient)
+  extends KyuubiOperation(OperationType.GET_TYPE_INFO, session, client) {
 
   override protected def runInternal(): Unit = {
     try {

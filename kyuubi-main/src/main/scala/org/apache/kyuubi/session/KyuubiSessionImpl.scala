@@ -71,7 +71,6 @@ class KyuubiSessionImpl(
     transport = PlainSASLHelper.getPlainTransport(
       user, passwd, new TSocket(host, port, loginTimeout))
     if (!transport.isOpen) {
-      logSessionInfo(s"Connecting to engine [$host:$port]")
       transport.open()
       logSessionInfo(s"Connected to engine [$host:$port]")
     }

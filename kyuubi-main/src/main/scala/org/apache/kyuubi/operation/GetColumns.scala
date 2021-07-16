@@ -27,8 +27,7 @@ class GetColumns(
     schemaName: String,
     tableName: String,
     columnName: String)
-  extends KyuubiOperation(
-    OperationType.GET_COLUMNS, session, client) {
+  extends KyuubiOperation(OperationType.GET_COLUMNS, session, client) {
 
   override protected def runInternal(): Unit = {
     try {

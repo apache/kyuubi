@@ -26,8 +26,7 @@ class GetFunctions(
     catalogName: String,
     schemaName: String,
     functionName: String)
-  extends KyuubiOperation(
-    OperationType.GET_FUNCTIONS, session, client)  {
+  extends KyuubiOperation(OperationType.GET_FUNCTIONS, session, client)  {
 
   override protected def runInternal(): Unit = {
     try {

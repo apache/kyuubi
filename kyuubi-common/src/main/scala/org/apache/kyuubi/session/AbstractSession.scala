@@ -36,7 +36,7 @@ abstract class AbstractSession(
 
   protected def logSessionInfo(msg: String): Unit = info(s"[$user:$ipAddress] $handle - $msg")
 
-  protected val _handle: SessionHandle = SessionHandle(protocol)
+  private final val _handle: SessionHandle = SessionHandle(protocol)
   override def handle: SessionHandle = _handle
 
   private final val _createTime: Long = System.currentTimeMillis()

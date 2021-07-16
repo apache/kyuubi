@@ -25,8 +25,7 @@ class GetSchemas(
     client: KyuubiSyncThriftClient,
     catalogName: String,
     schemaName: String)
-  extends KyuubiOperation(
-    OperationType.GET_SCHEMAS, session, client) {
+  extends KyuubiOperation(OperationType.GET_SCHEMAS, session, client) {
 
   override protected def runInternal(): Unit = {
     try {
