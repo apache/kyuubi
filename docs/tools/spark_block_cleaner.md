@@ -7,6 +7,7 @@
 # Kubernetes Tools Spark Block Cleaner
 
 ## Requirements
+
 You'd better have cognition upon the following things when you want to use spark-block-cleaner.
 
 * Read this article
@@ -15,14 +16,17 @@ You'd better have cognition upon the following things when you want to use spark
 * [Docker](https://www.docker.com/)
 
 ## Purpose
+
 During using Spark On Kubernetes with client deploy-mode, we encountered this scenario that the disk responsible for storing Shuffle data accumulates so many files cause the disk overflows.
 
 Therefore, we chose to use Spark Block Cleaner to clear the block files accumulated by Spark.
 
 ## Scenes
+
 When you're using Spark On Kubernetes with Client mode and don't use `emptyDir` for Spark `local-dir` type, you may face the same scenario that executor pods deleted without clean all the Block files.
 
 ## Principle
+
 When deploying Spark Block Cleaner, we will configure volumes for the destination folder. Spark Block Cleaner will perceive the folder by the parameter `CACHE_DIRS`. 
 
 Spark Block Cleaner will clear the perceived folder in a fixed loop(which can be configured by `SCHEDULE_INTERVAL`). And Spark Block Cleaner will select folder start with `blockmgr` and `spark` for deletion using the logic Spark uses to create those folders. 
@@ -32,15 +36,18 @@ Before deleting those files, Spark Block Cleaner will determine whether it is a 
 And Spark Block Cleaner will check the disk utilization after clean, if the remaining space is less than the specified value(control by `FREE_SPACE_THRESHOLD`), will trigger deep clean(which file expired time control by `DEEP_CLEAN_FILE_EXPIRED_TIME`).
 
 ## Usage
+
 Before you start using Spark Block Cleaner, you should build its docker images or using official images(TODO).
 
 ### Build Block Cleaner Docker Image
+
 In the `KYUUBI_HOME` directory, you can use the following cmd to build docker image.
 ```shell
     docker build ./tools/spark-block-cleaner/kubernetes/docker
 ```
 
 ### Modify spark-block-cleaner.yml
+
 You need to modify the `${KYUUBI_HOME}/tools/spark-block-cleaner/kubernetes/spark-block-cleaner.yml` to fit your current environment.
 
 In Kyuubi tools, we recommend using `DaemonSet` to start , and we offer default yaml file in daemonSet way.
@@ -100,9 +107,11 @@ env:
 ```
 
 ### Start daemonSet
+
 After you finishing modifying the above, you can use the following command `kubectl apply -f ${KYUUBI_HOME}/tools/spark-block-cleaner/kubernetes/spark-block-cleaner.yml` to start daemonSet.
 
 ## Related parameters
+
 Name | Default | unit | Meaning
 --- | --- | --- | ---
 CACHE_DIRS | /data/data1,/data/data2|  | The target dirs in container path which will clean block files.
