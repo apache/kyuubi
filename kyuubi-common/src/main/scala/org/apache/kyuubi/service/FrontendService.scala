@@ -88,7 +88,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
         .protocolFactory(new TBinaryProtocol.Factory)
         .inputProtocolFactory(
           new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize))
-        .requestTimeout(requestTimeout).requestTimeoutUnit(TimeUnit.SECONDS)
+        .requestTimeout(requestTimeout).requestTimeoutUnit(TimeUnit.MILLISECONDS)
         .beBackoffSlotLength(beBackoffSlotLength)
         .beBackoffSlotLengthUnit(TimeUnit.MILLISECONDS)
         .executorService(executor)
