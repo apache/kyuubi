@@ -32,7 +32,7 @@ spec:
         name: block-cleaner
     spec:
       containers:
-        # Container image which build by ./Dockerfile
+        # Container image which build by Dockerfile
         # TODO official Image
         - image: <image>
           name: cleaner

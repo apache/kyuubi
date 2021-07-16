@@ -15,3 +15,4 @@ Develop Tools
     debugging
     community
     developer
+    spark_block_cleaner
