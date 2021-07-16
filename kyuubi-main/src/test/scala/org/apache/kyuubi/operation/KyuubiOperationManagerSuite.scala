@@ -54,7 +54,7 @@ class KyuubiOperationManagerSuite extends WithKyuubiServer with JDBCTestUtils {
       Range(-1, 20, 5).foreach { clientTimeout =>
         statement.setQueryTimeout(clientTimeout)
         val e = intercept[SQLTimeoutException] {
-          statement.execute("select java_method('java.lang.Thread', 'sleep', 10000L)")
+          statement.executeQuery("select java_method('java.lang.Thread', 'sleep', 10000L)")
         }.getMessage
         assert(e.contains("Query timed out after"))
       }

@@ -17,23 +17,18 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TGetTypeInfoReq, TSessionHandle}
-
+import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.session.Session
 
 class GetTypeInfo(
      session: Session,
-     client: TCLIService.Iface,
-     remoteSessionHandle: TSessionHandle)
+     client: KyuubiSyncThriftClient)
   extends KyuubiOperation(
-    OperationType.GET_TYPE_INFO, session, client, remoteSessionHandle) {
+    OperationType.GET_TYPE_INFO, session, client) {
 
   override protected def runInternal(): Unit = {
     try {
-      val req = new TGetTypeInfoReq(remoteSessionHandle)
-      val resp = client.GetTypeInfo(req)
-      verifyTStatus(resp.getStatus)
-      _remoteOpHandle = resp.getOperationHandle
+      _remoteOpHandle = client.getTypeInfo
     } catch onError()
   }
 }

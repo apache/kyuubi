@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.session
 
-import scala.collection.JavaConverters._
-
 import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.TException
@@ -26,6 +24,7 @@ import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.{TSocket, TTransport}
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.EngineRef
@@ -33,7 +32,6 @@ import org.apache.kyuubi.ha.client.ServiceDiscovery._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
-import org.apache.kyuubi.util.ThriftUtils
 
 class KyuubiSessionImpl(
     protocol: TProtocolVersion,
@@ -53,8 +51,7 @@ class KyuubiSessionImpl(
   private val engine: EngineRef = EngineRef(sessionConf, user, handle)
 
   private var transport: TTransport = _
-  private var client: TCLIService.Client = _
-  private var remoteSessionHandle: TSessionHandle = _
+  private var client: KyuubiSyncThriftClient = _
 
   override def open(): Unit = {
     MetricsSystem.tracing { ms =>
@@ -78,35 +75,22 @@ class KyuubiSessionImpl(
       transport.open()
       logSessionInfo(s"Connected to engine [$host:$port]")
     }
-    client = new TCLIService.Client(new TBinaryProtocol(transport))
-    val req = new TOpenSessionReq()
-    req.setUsername(user)
-    req.setPassword(passwd)
-    req.setConfiguration(normalizedConf.asJava)
-    logSessionInfo(s"Sending TOpenSessionReq to engine [$host:$port]")
-    val resp = client.OpenSession(req)
-    logSessionInfo(s"Received TOpenSessionResp from engine [$host:$port]")
-    ThriftUtils.verifyTStatus(resp.getStatus)
-    remoteSessionHandle = resp.getSessionHandle
-    sessionManager.operationManager.setConnection(handle, client, remoteSessionHandle)
+    client = new KyuubiSyncThriftClient(new TBinaryProtocol(transport))
+    client.openSession(protocol, user, passwd, normalizedConf)
+    sessionManager.operationManager.setConnection(handle, client)
   }
 
   override def close(): Unit = {
     super.close()
     sessionManager.operationManager.removeConnection(handle)
     try {
-      if (remoteSessionHandle != null) {
-        val req = new TCloseSessionReq(remoteSessionHandle)
-        val resp = client.CloseSession(req)
-        ThriftUtils.verifyTStatus(resp.getStatus)
-      }
+      if (client != null) client.closeSession()
     } catch {
       case e: TException =>
         throw KyuubiSQLException("Error while cleaning up the engine resources", e)
     } finally {
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))
-      client = null
-      if (transport != null) {
+      if (transport != null && transport.isOpen) {
         transport.close()
       }
     }

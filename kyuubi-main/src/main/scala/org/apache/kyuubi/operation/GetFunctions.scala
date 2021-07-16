@@ -17,30 +17,21 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TGetFunctionsReq, TSessionHandle}
-
+import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.session.Session
 
 class GetFunctions(
     session: Session,
-    client: TCLIService.Iface,
-    remoteSessionHandle: TSessionHandle,
+    client: KyuubiSyncThriftClient,
     catalogName: String,
     schemaName: String,
     functionName: String)
   extends KyuubiOperation(
-    OperationType.GET_FUNCTIONS, session, client, remoteSessionHandle)  {
+    OperationType.GET_FUNCTIONS, session, client)  {
 
   override protected def runInternal(): Unit = {
     try {
-      val req = new TGetFunctionsReq()
-      req.setSessionHandle(remoteSessionHandle)
-      req.setCatalogName(catalogName)
-      req.setSchemaName(schemaName)
-      req.setFunctionName(functionName)
-      val resp = client.GetFunctions(req)
-      verifyTStatus(resp.getStatus)
-      _remoteOpHandle = resp.getOperationHandle
+      _remoteOpHandle = client.getFunctions(catalogName, schemaName, functionName)
     } catch onError()
   }
 }

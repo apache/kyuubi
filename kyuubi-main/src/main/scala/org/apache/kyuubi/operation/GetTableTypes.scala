@@ -17,24 +17,18 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TGetTableTypesReq, TSessionHandle}
-
+import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.session.Session
 
 class GetTableTypes(
     session: Session,
-    client: TCLIService.Iface,
-    remoteSessionHandle: TSessionHandle)
+    client: KyuubiSyncThriftClient)
   extends KyuubiOperation(
-    OperationType.GET_TABLE_TYPES, session, client, remoteSessionHandle) {
+    OperationType.GET_TABLE_TYPES, session, client) {
 
   override protected def runInternal(): Unit = {
     try {
-      val req = new TGetTableTypesReq()
-      req.setSessionHandle(remoteSessionHandle)
-      val resp = client.GetTableTypes(req)
-      verifyTStatus(resp.getStatus)
-      _remoteOpHandle = resp.getOperationHandle
+      _remoteOpHandle = client.getTableTypes
     } catch onError()
   }
 }

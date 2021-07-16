@@ -17,31 +17,22 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TGetColumnsReq, TSessionHandle}
-
+import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.session.Session
 
 class GetColumns(
     session: Session,
-    client: TCLIService.Iface,
-    remoteSessionHandle: TSessionHandle,
+    client: KyuubiSyncThriftClient,
     catalogName: String,
     schemaName: String,
     tableName: String,
     columnName: String)
   extends KyuubiOperation(
-    OperationType.GET_COLUMNS, session, client, remoteSessionHandle) {
+    OperationType.GET_COLUMNS, session, client) {
 
   override protected def runInternal(): Unit = {
     try {
-      val req = new TGetColumnsReq(remoteSessionHandle)
-      req.setCatalogName(catalogName)
-      req.setSchemaName(schemaName)
-      req.setTableName(tableName)
-      req.setColumnName(columnName)
-      val resp = client.GetColumns(req)
-      verifyTStatus(resp.getStatus)
-      _remoteOpHandle = resp.getOperationHandle
+      _remoteOpHandle = client.getColumns(catalogName, schemaName, tableName, columnName)
     } catch onError()
   }
 }
