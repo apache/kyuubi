@@ -45,33 +45,26 @@ object KyuubiStatementMonitor extends Logging{
   private val kyuubiStatementQueue = new ArrayBlockingQueue[KyuubiStatementInfo](maxCapacity)
 
   /**
-   * This blockingQueue store kyuubiJobInfo.
-   *
-   * Notice:
-   *    1. When we remove items from this queue, we should ensure those jobs have finished.
-   *       If not, we should put them into this queue again.
-   *    2. There have two kinds of threshold to trigger when to remove items from this queue:
-   *      a. time
-   *      b. this queue's current size
-   */
-  // TODO: Capacity should make configurable
-  private val kyuubiJobQueue = new ArrayBlockingQueue[KyuubiJobInfo](maxCapacity)
-
-  /**
    * This map store the relationship between jobId and jobInfo.
    * When the job has finished, all we can get is jobId from the object-jobEnd.
    * So we need to maintain a mapping relationship to store endTime and jobResult
    * when this job has finished.
    *
+   * Key is jobId, value is KyuubiJobInfo.
+   *
    * Notice:
-   *    1. When the job has finished, we need to remove this mapping relationship from this map.
+   *    1. There have two kinds of threshold to trigger when to remove and dump items from this map:
+   *      a. time
+   *      b. this map's current size
    */
-  private val jobIdToJobInfoMap = new ConcurrentHashMap[Int, KyuubiJobInfo]()
+  // TODO: Capacity should make configurable
+  private val kyuubiJobIdToJobInfoMap = new ConcurrentHashMap[Int, KyuubiJobInfo](maxCapacity)
 
   /**
    * This method is used for putting kyuubiStatementInfo into blockingQueue(statementQueue).
    * Every time we put an item into this queue, we should judge this queue's current size at first.
    * If the size is less than threshold, we need to remove items from this queue.
+   *
    * @param kyuubiStatementInfo
    */
   // TODO: Lack size type threshold and time type threshold
@@ -95,47 +88,42 @@ object KyuubiStatementMonitor extends Logging{
   }
 
   /**
-   * This method is used for putting kyuubiJobInfo into blockingQueue(jobQueue)
+   * This method is used for putting kyuubiJobInfo into hashMap(kyuubiJobIdToJobInfoMap)
    * and storing the mapping relationship between jobId and jobInfo.
    * The reason that we need to maintain a mapping relationship
    * is we need to store endTime and jobResult
    * when this job has finished but the object-jobEnd has nothing but jobId.
+   *
    * @param kyuubiJobInfo
    */
   // TODO: Lack size type threshold and time type threshold
-  def putJobInfoIntoQueue(kyuubiJobInfo: KyuubiJobInfo): Unit = {
-    if (kyuubiJobQueue.size() >= maxSize) {
-      removeAndDumpJobInfoFromQueue()
+  def putJobInfoIntoMap(kyuubiJobInfo: KyuubiJobInfo): Unit = {
+    if (kyuubiJobIdToJobInfoMap.size() >= maxSize) {
+      removeAndDumpJobInfoFromMap()
     }
-    // Put kyuubiJobInfo into kyuubiJobQueue
-    kyuubiJobQueue.add(kyuubiJobInfo)
-    // Store the relationship between jobID and jobInfo
-    jobIdToJobInfoMap.put(kyuubiJobInfo.jobId, kyuubiJobInfo)
+    // Put kyuubiJobInfo into kyuubiJobIdToJobInfoMap
+    kyuubiJobIdToJobInfoMap.put(kyuubiJobInfo.jobId, kyuubiJobInfo)
   }
 
   /**
-   * This method is used for removing kyuubiJobInfo from blockingQueue(jobQueue)
+   * This method is used for removing kyuubiJobInfo from hashMap(kyuubiJobIdToJobInfoMap)
    * and dumpping them to a file by threshold.
    */
-  // TODO: Need ensure those items have finished. If not, we should put them into this queue again.
-  private def removeAndDumpJobInfoFromQueue(): Unit = {
+  private def removeAndDumpJobInfoFromMap(): Unit = {
     // TODO: Just for test
-    kyuubiJobQueue.clear()
+    kyuubiJobIdToJobInfoMap.clear()
   }
 
   /**
-   * This method is used for adding endTime and jobResult into jobInfo.
+   * This method is used for inserting endTime and jobResult.
    * Those fields can only get when this job has finished.
    *
-   * Notice:
-   *    1. When this job has finished, you should remove it from jobIdToJobInfoMap.
    * @param jobEnd
    */
-  def addJobEndInfo(jobEnd: SparkListenerJobEnd): Unit = {
-    val jobId = jobEnd.jobId
-    val jobInfo = jobIdToJobInfoMap.remove(jobId)
-    jobInfo.endTime = Option(jobEnd.time)
+  def insertEndTimeAndJobResult(jobEnd: SparkListenerJobEnd): Unit = {
+    val jobInfo = kyuubiJobIdToJobInfoMap.get(jobEnd.jobId)
+    jobInfo.endTime = jobEnd.time
     jobInfo.jobResult = jobEnd.jobResult
-    info(s"Job finished. Query [${jobInfo.statementId}]: JobId is [$jobId]")
+    info(s"Job finished. Query [${jobInfo.statementId}]: JobId is [${jobInfo.jobId}]")
   }
 }

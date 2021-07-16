@@ -44,7 +44,7 @@ class ExecuteStatement(
     queryTimeout: Long)
   extends SparkOperation(spark, OperationType.EXECUTE_STATEMENT, session) with Logging {
 
-  import org.apache.kyuubi.operation.AbstractOperation._
+  import org.apache.kyuubi.KyuubiSparkUtils._
 
   private val forceCancel =
     session.sessionManager.getConf.get(KyuubiConf.OPERATION_FORCE_CANCEL)

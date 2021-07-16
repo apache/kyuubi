@@ -23,12 +23,16 @@ import org.apache.spark.scheduler.JobResult
  * This object is used for storing the basic data for job.
  * You can use statementId to get all jobs that belong to this statemnent.
  * And also you can use statementId and jobId to get all stages that belong to this job.
+ *
+ * Introduce:
+ *    1. According to startTime and endTime, you can get how long did it run,
+ *       and get which stage took the longest time by stageIds.
+ *    2. If this job failed, you can look up which stage cause this situation by stageIds.
+ *
  * @param jobId
  * @param statementId
  * @param stageIds: is array
  * @param startTime
- * @param endTime
- * @param jobResult
  */
 case class KyuubiJobInfo(
     jobId: Int,
@@ -36,6 +40,6 @@ case class KyuubiJobInfo(
     stageIds: Seq[Int],
     startTime: Long) {
 
-  var endTime: Option[Long] = None
+  var endTime: Long = 0
   var jobResult: JobResult = null
 }

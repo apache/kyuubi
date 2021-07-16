@@ -23,8 +23,8 @@ import org.apache.spark.scheduler._
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.ui.SparkListenerSQLExecutionEnd
 
+import org.apache.kyuubi.KyuubiSparkUtils._
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.operation.AbstractOperation._
 import org.apache.kyuubi.operation.Operation
 import org.apache.kyuubi.operation.log.OperationLog
 

@@ -79,14 +79,10 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
 
   test("add kyuubiJobInfo into queue and remove them when threshold reached") {
     val sql = "select timestamp'2021-06-01'"
-    val getJobQueue = PrivateMethod[
-      ArrayBlockingQueue[KyuubiJobInfo]](Symbol("kyuubiJobQueue"))()
     val getJobMap = PrivateMethod[
-      ConcurrentHashMap[Int, KyuubiJobInfo]](Symbol("jobIdToJobInfoMap"))()
+      ConcurrentHashMap[Int, KyuubiJobInfo]](Symbol("kyuubiJobIdToJobInfoMap"))()
 
-    val kyuubiJobQueue = KyuubiStatementMonitor.invokePrivate(getJobQueue)
     val jobIdToJobInfoMap = KyuubiStatementMonitor.invokePrivate(getJobMap)
-    kyuubiJobQueue.clear()
     jobIdToJobInfoMap.clear()
     withSessionHandle { (client, handle) =>
       val req = new TExecuteStatementReq()
@@ -96,13 +92,27 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
       val opHandle = tExecuteStatementResp.getOperationHandle
       waitForOperationToComplete(client, opHandle)
 
-      val kyuubiJobInfo = kyuubiJobQueue.peek()
-      assert(kyuubiJobInfo.statementId === OperationHandle(opHandle).identifier.toString)
-      assert(kyuubiJobQueue.size() === 1)
-      assert(kyuubiJobInfo.stageIds.length === 1)
-      assert(kyuubiJobInfo.jobResult === JobSucceeded)
-      assert(kyuubiJobInfo.endTime !== None)
-      assert(jobIdToJobInfoMap.size() === 0)
+      val elements = jobIdToJobInfoMap.elements()
+      while(elements.hasMoreElements) {
+        val kyuubiJobInfo = elements.nextElement()
+        assert(jobIdToJobInfoMap.size() === 1)
+        assert(kyuubiJobInfo.statementId === OperationHandle(opHandle).identifier.toString)
+        assert(kyuubiJobInfo.stageIds.length === 1)
+        assert(kyuubiJobInfo.jobResult === JobSucceeded)
+        assert(kyuubiJobInfo.endTime !== 0)
+      }
+
+      // Test for clear kyuubiJobIdToJobInfoMap when threshold reached
+      // This function is used for avoiding mem leak
+      for ( a <- 1 to 7 ) {
+        val req = new TExecuteStatementReq()
+        req.setSessionHandle(handle)
+        req.setStatement(sql)
+        val tExecuteStatementResp = client.ExecuteStatement(req)
+        val operationHandle = tExecuteStatementResp.getOperationHandle
+        waitForOperationToComplete(client, operationHandle)
+      }
+      assert(jobIdToJobInfoMap.size() === 1)
     }
   }
 

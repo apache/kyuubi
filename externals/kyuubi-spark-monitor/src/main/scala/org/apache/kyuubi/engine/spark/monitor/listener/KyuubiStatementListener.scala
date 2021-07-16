@@ -19,10 +19,10 @@ package org.apache.kyuubi.engine.spark.monitor.listener
 
 import org.apache.spark.scheduler._
 
+import org.apache.kyuubi.KyuubiSparkUtils._
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.spark.monitor.KyuubiStatementMonitor
 import org.apache.kyuubi.engine.spark.monitor.entity.KyuubiJobInfo
-import org.apache.kyuubi.operation.AbstractOperation._
 
 /**
  * This listener is used for getting metrics about job, stage, executor and stageExecutor.
@@ -34,13 +34,13 @@ class KyuubiStatementListener extends StatsReportListener with Logging{
     val statementId = jobStart.properties.getProperty(KYUUBI_STATEMENT_ID_KEY)
     val kyuubiJobInfo = KyuubiJobInfo(
       jobStart.jobId, statementId, jobStart.stageIds, jobStart.time)
-    KyuubiStatementMonitor.putJobInfoIntoQueue(kyuubiJobInfo)
+    KyuubiStatementMonitor.putJobInfoIntoMap(kyuubiJobInfo)
     info(s"Add jobStartInfo. Query [$statementId]: Job ${jobStart.jobId} started with " +
       s"${jobStart.stageIds.length} stages")
   }
 
   override def onJobEnd(jobEnd: SparkListenerJobEnd): Unit = {
-    KyuubiStatementMonitor.addJobEndInfo(jobEnd)
-    info(s"Add jobEndInfo. Job ${jobEnd.jobId} state is ${jobEnd.jobResult.toString}")
+    KyuubiStatementMonitor.insertEndTimeAndJobResult(jobEnd)
+    info(s"Job end. Job ${jobEnd.jobId} state is ${jobEnd.jobResult.toString}")
   }
 }
