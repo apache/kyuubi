@@ -48,7 +48,7 @@ The above parameters used to help volume hostPath to container path.
 
 Then you should modify following parameter to fit environment.
 
-The `cacheDirs` value should fit your actual situation.
+The `CACHE_DIRS` value should fit your actual situation.
 
 ```yaml
 env:
@@ -58,7 +58,7 @@ env:
     value: /data/data1,/data/data2
 ```
 
-Such as you use /shuffleFilesDirs/data1, /shuffleFilesDirs/data2 to cache shuffle data.
+Such as you used /blockFilesDirs/data1, /blockFilesDirs/data2 as spark-local-dirs to cache shuffle data.
 
 You should modify
 ```yaml
@@ -89,9 +89,9 @@ After you finishing modifying the above, you can use the following command `kube
 ## Related parameters
 
 Name | Default | Meaning
---- | --- | --- |
-CACHE_DIRS | /data/data1,/data/data2 | The target dirs in container path which will clean shuffle files.
-FILE_EXPIRED_TIME | 604800 | Cleaner will clean the shuffle files which current time - last modified time  more than the fileExpiredTime.
-DEEP_CLEAN_FILE_EXPIRED_TIME | 432000 | Deep clean will clean the shuffle files which current time - last modified time  more than the deepCleanFileExpiredTime.
+--- | --- | ---
+CACHE_DIRS | /data/data1,/data/data2 | The target dirs in container path which will clean block files.
+FILE_EXPIRED_TIME | 604800 | Cleaner will clean the block files which current time - last modified time  more than the fileExpiredTime.
+DEEP_CLEAN_FILE_EXPIRED_TIME | 432000 | Deep clean will clean the block files which current time - last modified time  more than the deepCleanFileExpiredTime.
 FREE_SPACE_THRESHOLD | 60 | After first clean, if free Space low than threshold trigger deep clean.
 SCHEDULE_INTERVAL | 3600 | Cleaner sleep between cleaning.
