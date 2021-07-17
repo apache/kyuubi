@@ -49,10 +49,10 @@ class KyuubiSyncThriftClient(protocol: TProtocol) extends TCLIService.Client(pro
   }
 
   def openSession(
-    protocol: TProtocolVersion,
-    user: String,
-    password: String,
-    configs: Map[String, String]): Unit = {
+      protocol: TProtocolVersion,
+      user: String,
+      password: String,
+      configs: Map[String, String]): Unit = {
     val req = new TOpenSessionReq(protocol)
     req.setUsername(user)
     req.setPassword(password)
