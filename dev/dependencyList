@@ -34,6 +34,7 @@ jakarta.servlet-api/4.0.4//jakarta.servlet-api-4.0.4.jar
 javassist/3.18.1-GA//javassist-3.18.1-GA.jar
 jaxb-api/2.2.11//jaxb-api-2.2.11.jar
 jcl-over-slf4j/1.7.30//jcl-over-slf4j-1.7.30.jar
+jcommander/1.81//jcommander-1.81.jar
 jetty-http/9.4.41.v20210516//jetty-http-9.4.41.v20210516.jar
 jetty-io/9.4.41.v20210516//jetty-io-9.4.41.v20210516.jar
 jetty-security/9.4.41.v20210516//jetty-security-9.4.41.v20210516.jar
