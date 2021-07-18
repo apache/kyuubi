@@ -67,7 +67,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     _latestLogoutTime = System.currentTimeMillis()
     val session = handleToSession.remove(sessionHandle)
     if (session == null) {
-      throw KyuubiSQLException(s"Invalid $sessionHandle")
+      warn(s"Invalid $sessionHandle, Failed closing session")
     }
     info(s"$sessionHandle is closed, current opening sessions $getOpenSessionCount")
     session.close()
