@@ -252,11 +252,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
       val runAsync = req.isRunAsync
       // val confOverlay = req.getConfOverlay
       val queryTimeout = req.getQueryTimeout
-      val operationHandle = if (runAsync) {
-        be.executeStatementAsync(sessionHandle, statement, queryTimeout)
-      } else {
-        be.executeStatement(sessionHandle, statement, queryTimeout)
-      }
+      val operationHandle = be.executeStatement(sessionHandle, statement, runAsync, queryTimeout)
       resp.setOperationHandle(operationHandle.toTOperationHandle)
       resp.setStatus(OK_STATUS)
     } catch {

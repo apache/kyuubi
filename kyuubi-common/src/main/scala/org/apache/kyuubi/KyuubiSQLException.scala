@@ -85,6 +85,10 @@ object KyuubiSQLException {
     KyuubiSQLException("feature not supported", sqlState = "0A000")
   }
 
+  def connectionDoesNotExist(): KyuubiSQLException = {
+    new KyuubiSQLException("connection does not exist", "08003", 91001, null)
+  }
+
   def toTStatus(e: Exception, verbose: Boolean = false): TStatus = e match {
     case k: KyuubiSQLException => k.toTStatus
     case _ =>
