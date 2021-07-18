@@ -52,12 +52,6 @@
 
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_${scala.binary.version}</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_${scala.binary.version}</artifactId>
             <scope>provided</scope>
         </dependency>
@@ -70,9 +64,20 @@
             <scope>test</scope>
         </dependency>
 
+        <!--
+          Spark requires `commons-collections` and `commons-io` but got them from transitive
+          dependencies of `hadoop-client`. As we are using Hadoop Shaded Client, we need add
+          them explicitly. See more details at SPARK-33212.
+          -->
         <dependency>
             <groupId>commons-collections</groupId>
             <artifactId>commons-collections</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
             <scope>test</scope>
         </dependency>
 
