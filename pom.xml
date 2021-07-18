@@ -339,17 +339,6 @@
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
-                    <!--
-                      The thrift dependencies will be provided by `hive-service-rpc`
-                      -->
-                    <exclusion>
-                        <groupId>org.apache.thrift</groupId>
-                        <artifactId>libthrift</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.thrift</groupId>
-                        <artifactId>libfb303</artifactId>
-                    </exclusion>
                 </exclusions>
             </dependency>
 
