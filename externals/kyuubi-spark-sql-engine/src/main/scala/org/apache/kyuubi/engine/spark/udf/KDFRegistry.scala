@@ -39,7 +39,7 @@ object KDFRegistry {
   val system_user: KyuubiDefinedFunction = create(
     "system_user",
     udf(() => System.getProperty("user.name")).asNonNullable(),
-    "Return the system name for the associated query engine",
+    "Return the system user name for the associated query engine",
     "string",
     "1.3.0")
 
