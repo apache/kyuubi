@@ -123,10 +123,14 @@ object KyuubiStatementMonitor extends Logging{
    *
    * @param jobEnd
    */
-  def insertEndTimeAndJobResult(jobEnd: SparkListenerJobEnd): Unit = {
+  def insertJobEndTimeAndResult(jobEnd: SparkListenerJobEnd): Unit = {
     val jobInfo = kyuubiJobIdToJobInfoMap.get(jobEnd.jobId)
-    jobInfo.endTime = jobEnd.time
-    jobInfo.jobResult = jobEnd.jobResult
-    info(s"Job finished. Query [${jobInfo.statementId}]: JobId is [${jobInfo.jobId}]")
+    if (jobInfo != null) {
+      jobInfo.endTime = jobEnd.time
+      jobInfo.jobResult = jobEnd.jobResult
+      debug(s"Job finished. Query [${jobInfo.statementId}]: JobId is [${jobInfo.jobId}]")
+    } else {
+      warn(s"JobStartEvent is lost. JobId is [${jobInfo.jobId}]")
+    }
   }
 }

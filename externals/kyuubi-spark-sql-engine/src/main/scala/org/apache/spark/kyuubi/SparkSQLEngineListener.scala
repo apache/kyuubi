@@ -71,12 +71,12 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
     val kyuubiJobInfo = KyuubiJobInfo(
       jobStart.jobId, statementId, jobStart.stageIds, jobStart.time)
     KyuubiStatementMonitor.putJobInfoIntoMap(kyuubiJobInfo)
-    info(s"Add jobStartInfo. Query [$statementId]: Job ${jobStart.jobId} started with " +
+    debug(s"Add jobStartInfo. Query [$statementId]: Job ${jobStart.jobId} started with " +
       s"${jobStart.stageIds.length} stages")
   }
 
   override def onJobEnd(jobEnd: SparkListenerJobEnd): Unit = {
-    KyuubiStatementMonitor.insertEndTimeAndJobResult(jobEnd)
+    KyuubiStatementMonitor.insertJobEndTimeAndResult(jobEnd)
     info(s"Job end. Job ${jobEnd.jobId} state is ${jobEnd.jobResult.toString}")
     jobEnd.jobResult match {
      case JobFailed(e) if e != null =>

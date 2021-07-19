@@ -106,7 +106,7 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
 
       // Test for clear kyuubiJobIdToJobInfoMap when threshold reached
       // This function is used for avoiding mem leak
-      for ( a <- 1 to 7 ) {
+      (1 to 7).foreach { _ =>
         val req = new TExecuteStatementReq()
         req.setSessionHandle(handle)
         req.setStatement(sql)
