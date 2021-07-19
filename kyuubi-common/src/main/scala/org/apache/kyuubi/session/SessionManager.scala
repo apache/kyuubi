@@ -66,11 +66,11 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   def closeSession(sessionHandle: SessionHandle): Unit = {
     _latestLogoutTime = System.currentTimeMillis()
     val session = handleToSession.remove(sessionHandle)
-    if (session == null) {
-      warn(s"Invalid $sessionHandle, Failed closing session")
+    if (session != null) {
+      session.close()
+    } else {
+      warn(s"$sessionHandle is closed, current opening sessions $getOpenSessionCount")
     }
-    info(s"$sessionHandle is closed, current opening sessions $getOpenSessionCount")
-    session.close()
   }
 
   def getSession(sessionHandle: SessionHandle): Session = {
