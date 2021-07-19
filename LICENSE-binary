@@ -239,7 +239,6 @@ io.prometheus:simpleclient_common
 io.prometheus:simpleclient_dropwizard
 io.prometheus:simpleclient_servlet
 org.apache.zookeeper:zookeeper
-spark-*-bin-*.tgz
 
 BSD 3-Clause
 ------------
@@ -249,8 +248,13 @@ Eclipse Public License (EPL) 2.0
 --------------------------------
 jakarta.servlet:jakarta.servlet-api https://projects.eclipse.org/projects/ee4j.servlet
 
+Common Development and Distribution License (CDDL) 1.1
+------------------------------------------------------
+javax.xml.bind:jaxb-api    https://github.com/javaee/jaxb-v2
+
 MIT License
 -----------
 org.slf4j:slf4j-api
 org.slf4j:slf4j-log4j12
 org.slf4j:jcl-over-slf4j
+com.github.scopt:scopt_*

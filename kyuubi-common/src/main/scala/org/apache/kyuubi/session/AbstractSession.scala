@@ -114,29 +114,13 @@ abstract class AbstractSession(
     }
   }
 
-  private def executeStatementInternal(
+  override def executeStatement(
       statement: String,
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle = withAcquireRelease() {
     val operation = sessionManager.operationManager
       .newExecuteStatementOperation(this, statement, runAsync, queryTimeout)
     runOperation(operation)
-  }
-
-  override def executeStatement(statement: String): OperationHandle = withAcquireRelease() {
-    executeStatementInternal(statement, runAsync = false, 0)
-  }
-
-  override def executeStatement(statement: String, queryTimeout: Long): OperationHandle = {
-    executeStatementInternal(statement, runAsync = false, queryTimeout)
-  }
-
-  override def executeStatementAsync(statement: String): OperationHandle = {
-    executeStatementInternal(statement, runAsync = true, 0)
-  }
-
-  override def executeStatementAsync(statement: String, queryTimeout: Long): OperationHandle = {
-    executeStatementInternal(statement, runAsync = true, queryTimeout)
   }
 
   override def getTableTypes: OperationHandle = withAcquireRelease() {

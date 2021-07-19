@@ -18,6 +18,7 @@
 package org.apache.kyuubi
 
 import java.io.{File, InputStreamReader, IOException}
+import java.net.{Inet4Address, InetAddress, NetworkInterface}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 import java.util.{Properties, UUID}
@@ -174,5 +175,33 @@ private[kyuubi] object Utils extends Logging {
    */
   def addShutdownHook(hook: Runnable, priority: Int): Unit = {
     ShutdownHookManager.get().addShutdownHook(hook, priority)
+  }
+
+  /**
+   * This block of code is based on Spark's Utils.findLocalInetAddress()
+   */
+  def findLocalInetAddress: InetAddress = {
+    val address = InetAddress.getLocalHost
+    if (address.isLoopbackAddress) {
+      val activeNetworkIFs = NetworkInterface.getNetworkInterfaces.asScala.toSeq
+      val reOrderedNetworkIFs = if (isWindows) activeNetworkIFs else activeNetworkIFs.reverse
+
+      for (ni <- reOrderedNetworkIFs) {
+        val addresses = ni.getInetAddresses.asScala
+          .filterNot(addr => addr.isLinkLocalAddress || addr.isLoopbackAddress).toSeq
+        if (addresses.nonEmpty) {
+          val addr = addresses.find(_.isInstanceOf[Inet4Address]).getOrElse(addresses.head)
+          // because of Inet6Address.toHostName may add interface at the end if it knows about it
+          val strippedAddress = InetAddress.getByAddress(addr.getAddress)
+          // We've found an address that looks reasonable!
+          warn(s"${address.getHostName} was resolved to a loopback address: " +
+            s"${address.getHostAddress}, using ${strippedAddress.getHostAddress}")
+          return strippedAddress
+        }
+      }
+      warn(s"${address.getHostName} was resolved to a loopback address: ${address.getHostAddress}" +
+        " but we couldn't find any external IP address!")
+    }
+    address
   }
 }

@@ -19,10 +19,11 @@ package org.apache.kyuubi.operation
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TExecuteStatementReq, TFetchOrientation, TFetchResultsReq, TGetOperationStatusReq, TSessionHandle}
+import org.apache.hive.service.rpc.thrift.{TFetchOrientation, TFetchResultsReq, TGetOperationStatusReq}
 import org.apache.hive.service.rpc.thrift.TOperationState._
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.log.OperationLog
@@ -30,13 +31,12 @@ import org.apache.kyuubi.session.Session
 
 class ExecuteStatement(
     session: Session,
-    client: TCLIService.Iface,
-    remoteSessionHandle: TSessionHandle,
+    client: KyuubiSyncThriftClient,
     override val statement: String,
     override val shouldRunAsync: Boolean,
     queryTimeout: Long)
   extends KyuubiOperation(
-    OperationType.EXECUTE_STATEMENT, session, client, remoteSessionHandle) {
+    OperationType.EXECUTE_STATEMENT, session, client) {
 
   private final val _operationLog: OperationLog = if (shouldRunAsync) {
     OperationLog.createOperationLog(session.handle, getHandle)
@@ -69,13 +69,7 @@ class ExecuteStatement(
         ms.incCount(STATEMENT_OPEN)
         ms.incCount(STATEMENT_TOTAL)
       }
-
-      val req = new TExecuteStatementReq(remoteSessionHandle, statement)
-      req.setRunAsync(shouldRunAsync)
-      req.setQueryTimeout(queryTimeout)
-      val resp = client.ExecuteStatement(req)
-      verifyTStatus(resp.getStatus)
-      _remoteOpHandle = resp.getOperationHandle
+      _remoteOpHandle = client.executeStatement(statement, shouldRunAsync, queryTimeout)
     } catch onError()
   }
 

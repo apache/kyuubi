@@ -18,6 +18,12 @@
 #
 
 # Utility for creating well-formed pull request merges and pushing them to Kyuubi
+# For committers:
+# Please check your local git envs via `git remote -v` which should
+# apache	git@github.com:apache/incubator-kyuubi.git (fetch)
+# apache	git@github.com:apache/incubator-kyuubi.git (push)
+# origin	git@github.com:[ YOUR GITHUB USER NAME ]/incubator-kyuubi.git (fetch)
+# origin	git@github.com:[ YOUR GITHUB USER NAME ]/incubator-kyuubi.git (push)
 
 import json
 import os
@@ -29,10 +35,10 @@ from urllib.request import Request
 from urllib.error import HTTPError
 
 KYUUBI_HOME = os.environ.get("KYUUBI_HOME", os.getcwd())
-PR_REMOTE_NAME = os.environ.get("PR_REMOTE_NAME", "origin")
-PUSH_REMOTE_NAME = os.environ.get("PUSH_REMOTE_NAME", "origin")
+PR_REMOTE_NAME = os.environ.get("PR_REMOTE_NAME", "apache")
+PUSH_REMOTE_NAME = os.environ.get("PUSH_REMOTE_NAME", "apache")
 GITHUB_OAUTH_KEY = os.environ.get("GITHUB_OAUTH_KEY")
-GITHUB_API_BASE = "https://api.github.com/repos/NetEase/kyuubi"
+GITHUB_API_BASE = "https://api.github.com/repos/apache/incubator-kyuubi"
 BRANCH_PREFIX = "PR_TOOL"
 
 
@@ -45,10 +51,10 @@ def get_json(url):
     except HTTPError as e:
         if "X-RateLimit-Remaining" in e.headers and e.headers["X-RateLimit-Remaining"] == '0':
             print("Exceeded the GitHub API rate limit; see the instructions in " +
-                  "dev/merge_spark_pr.py to configure an OAuth token for making authenticated " +
+                  "dev/merge_kyuubi_pr.py to configure an OAuth token for making authenticated " +
                   "GitHub requests.")
         else:
-            print("Unable to fetch URL, exiting: %s" % url)
+            print("Unable to fetch URL, exiting: %s" % url, e)
         sys.exit(-1)
 
 
@@ -130,7 +136,7 @@ def merge_pr(pr_num, target_ref, title, body, pr_repo_desc):
     merge_message_flags += ["-m", title]
     if body is not None:
         # We remove @ symbols from the body to avoid triggering e-mails
-        # to people every time someone creates a public fork of Spark.
+        # to people every time someone creates a public fork of Kyuubi.
         merge_message_flags += ["-m", body.replace("@", "")]
 
     committer_name = run_cmd("git config --get user.name").strip()
@@ -246,7 +252,7 @@ def main():
     # Merged pull requests don't appear as merged in the GitHub API;
     # Instead, they're closed by asfgit.
     merge_commits = \
-        [e for e in pr_events if e["event"] == "closed"]
+        [e for e in pr_events if e["event"] == "closed" and e["commit_id"]]
 
     if merge_commits:
         merge_hash = merge_commits[0]["commit_id"]

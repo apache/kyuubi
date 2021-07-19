@@ -368,4 +368,12 @@ trait JDBCTests extends BasicJDBCTests {
       assert(StringUtils.isNotBlank(rs.getString(1)))
     }
   }
+
+  test("kyuubi defined function - system_user") {
+    withJdbcStatement() { statement =>
+      val rs = statement.executeQuery("SELECT system_user()")
+      assert(rs.next())
+      assert(rs.getString(1) == System.getProperty("user.name"))
+    }
+  }
 }

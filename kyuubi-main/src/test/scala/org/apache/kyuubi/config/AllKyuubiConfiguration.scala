@@ -101,6 +101,14 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
     rewriteToConf(Paths.get(kyuubiHome, "conf", "kyuubi-env.sh.template"), newOutput)
 
     newOutput += ""
+    newOutput += "For the environment variables that only needed to be transferred into engine" +
+      " side, you can set it with a Kyuubi configuration item formatted" +
+      " `kyuubi.engineEnv.VAR_NAME`. For example, with `kyuubi.engineEnv.SPARK_DRIVER_MEMORY=4g`," +
+      " the environment variable `SPARK_DRIVER_MEMORY` with value `4g` would be transferred into" +
+      " engine side. With `kyuubi.engineEnv.SPARK_CONF_DIR=/apache/confs/spark/conf`, the" +
+      " value of `SPARK_CONF_DIR` in engine side is set to `/apache/confs/spark/conf`."
+
+    newOutput += ""
     newOutput += "## Kyuubi Configurations"
     newOutput += ""
 
@@ -251,6 +259,6 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
       " executor and obey the Spark AQE behavior of Kyuubi system default. On the other hand," +
       " for those users who do not have custom configurations will use system defaults."
 
-    TestUtils.verifyOutput(markdown, newOutput)
+    TestUtils.verifyOutput(markdown, newOutput, getClass.getCanonicalName)
   }
 }

@@ -54,8 +54,6 @@ class KyuubiDefinedFunctionSuite extends KyuubiFunSuite {
       newOutput += s"${func.name} | ${func.description} | ${func.returnType} | ${func.since}"
     }
     newOutput += ""
-
-    TestUtils.verifyOutput(markdown, newOutput)
+    TestUtils.verifyOutput(markdown, newOutput, getClass.getCanonicalName)
   }
-
 }

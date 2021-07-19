@@ -326,8 +326,8 @@ class FrontendServiceSuite extends KyuubiFunSuite {
       val resp = client.GetPrimaryKeys(req)
       assert(resp.getOperationHandle === null)
       assert(resp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
-      assert(resp.getStatus.getSqlState === null)
-      assert(resp.getStatus.getErrorMessage startsWith "Feature is not available")
+      assert(resp.getStatus.getSqlState === "0A000")
+      assert(resp.getStatus.getErrorMessage startsWith "feature not supported")
     }
   }
 
@@ -338,8 +338,8 @@ class FrontendServiceSuite extends KyuubiFunSuite {
       val resp = client.GetCrossReference(req)
       assert(resp.getOperationHandle === null)
       assert(resp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
-      assert(resp.getStatus.getSqlState === null)
-      assert(resp.getStatus.getErrorMessage startsWith "Feature is not available")
+      assert(resp.getStatus.getSqlState === "0A000")
+      assert(resp.getStatus.getErrorMessage startsWith "feature not supported")
     }
   }
 

@@ -25,7 +25,6 @@ import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
-import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
 trait JDBCTestUtils extends KyuubiFunSuite {
@@ -34,13 +33,26 @@ trait JDBCTestUtils extends KyuubiFunSuite {
   protected val user: String = Utils.currentUser
   protected val patterns = Seq("", "*", "%", null, ".*", "_*", "_%", ".%")
   protected def jdbcUrl: String
-  protected def sessionConfigs: Map[String, String] = Map.empty
-  protected def sparkHiveConfigs: Map[String, String] = {
-    // TODO: KYUUBI-504: forbid setting FRONTEND_BIND_HOST by connection string in engine side
-    Map(KyuubiConf.FRONTEND_BIND_HOST.key -> "localhost")
-  }
-  protected def sparkHiveVars: Map[String, String] = Map.empty
+  private var _sessionConfs: Map[String, String] = Map.empty
+  private var _sparkHiveConfs: Map[String, String] = Map.empty
+  private var _sparkHiveVars: Map[String, String] = Map.empty
+  protected def sessionConfigs: Map[String, String] = _sessionConfs
+  protected def sparkHiveConfigs: Map[String, String] = _sparkHiveConfs
+  protected def sparkHiveVars: Map[String, String] = _sparkHiveVars
 
+  def withSessionConf[T](
+      sessionConfs: Map[String, String] = Map.empty)(
+      sparkHiveConfs: Map[String, String])(
+      sparkHiveVars: Map[String, String])(f: => T): T = {
+    this._sessionConfs = sessionConfs
+    this._sparkHiveConfs = sparkHiveConfs
+    this._sparkHiveVars = sparkHiveVars
+    try f finally {
+      _sparkHiveVars = Map.empty
+      _sparkHiveConfs = Map.empty
+      _sessionConfs = Map.empty
+    }
+  }
 
   private def jdbcUrlWithConf: String = {
     val sessionConfStr = sessionConfigs.map(kv => kv._1 + "=" + kv._2).mkString(";")
@@ -98,8 +110,9 @@ trait JDBCTestUtils extends KyuubiFunSuite {
       info("Closing statements")
       statements.foreach(_.close())
       info("Closed statements")
-      connections.foreach(_.close())
       info("Closing connections")
+      connections.foreach(_.close())
+      info("Closed connections")
     }
   }
 

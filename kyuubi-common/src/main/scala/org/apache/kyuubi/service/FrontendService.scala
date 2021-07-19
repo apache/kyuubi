@@ -30,6 +30,7 @@ import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TT
 import org.apache.thrift.transport.{TServerSocket, TTransport}
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Logging}
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
@@ -60,7 +61,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     try {
       hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
       val serverHost = conf.get(FRONTEND_BIND_HOST)
-      serverAddr = serverHost.map(InetAddress.getByName).getOrElse(InetAddress.getLocalHost)
+      serverAddr = serverHost.map(InetAddress.getByName).getOrElse(Utils.findLocalInetAddress)
       portNum = conf.get(FRONTEND_BIND_PORT)
       val minThreads = conf.get(FRONTEND_MIN_WORKER_THREADS)
       val maxThreads = conf.get(FRONTEND_MAX_WORKER_THREADS)
@@ -87,7 +88,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
         .protocolFactory(new TBinaryProtocol.Factory)
         .inputProtocolFactory(
           new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize))
-        .requestTimeout(requestTimeout).requestTimeoutUnit(TimeUnit.SECONDS)
+        .requestTimeout(requestTimeout).requestTimeoutUnit(TimeUnit.MILLISECONDS)
         .beBackoffSlotLength(beBackoffSlotLength)
         .beBackoffSlotLengthUnit(TimeUnit.MILLISECONDS)
         .executorService(executor)
@@ -251,11 +252,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
       val runAsync = req.isRunAsync
       // val confOverlay = req.getConfOverlay
       val queryTimeout = req.getQueryTimeout
-      val operationHandle = if (runAsync) {
-        be.executeStatementAsync(sessionHandle, statement, queryTimeout)
-      } else {
-        be.executeStatement(sessionHandle, statement, queryTimeout)
-      }
+      val operationHandle = be.executeStatement(sessionHandle, statement, runAsync, queryTimeout)
       resp.setOperationHandle(operationHandle.toTOperationHandle)
       resp.setStatus(OK_STATUS)
     } catch {
@@ -389,7 +386,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   override def GetPrimaryKeys(req: TGetPrimaryKeysReq): TGetPrimaryKeysResp = {
     debug(req.toString)
     val resp = new TGetPrimaryKeysResp
-    val errStatus = KyuubiSQLException("Feature is not available").toTStatus
+    val errStatus = KyuubiSQLException.featureNotSupported().toTStatus
     resp.setStatus(errStatus)
     resp
   }
@@ -397,7 +394,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   override def GetCrossReference(req: TGetCrossReferenceReq): TGetCrossReferenceResp = {
     debug(req.toString)
     val resp = new TGetCrossReferenceResp
-    val errStatus = KyuubiSQLException("Feature is not available").toTStatus
+    val errStatus = KyuubiSQLException.featureNotSupported().toTStatus
     resp.setStatus(errStatus)
     resp
   }
