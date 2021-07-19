@@ -17,16 +17,18 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.{ArrayBlockingQueue, ConcurrentHashMap}
 
-import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TGetOperationStatusReq, TOperationHandle}
+import org.apache.hive.service.rpc.thrift._
 import org.apache.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.hive.service.rpc.thrift.TOperationState._
+import org.apache.spark.scheduler.JobSucceeded
 import org.scalatest.PrivateMethodTester
+import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.engine.spark.monitor.KyuubiStatementMonitor
-import org.apache.kyuubi.engine.spark.monitor.entity.KyuubiStatementInfo
-import org.apache.kyuubi.operation.HiveJDBCTests
+import org.apache.kyuubi.engine.spark.monitor.entity.{KyuubiJobInfo, KyuubiStatementInfo}
+import org.apache.kyuubi.operation.{HiveJDBCTests, OperationHandle}
 
 class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
     with PrivateMethodTester {
@@ -73,6 +75,46 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
       waitForOperationToComplete(client, operationHandle)
 
       assert(kyuubiStatementQueue.size() === 1)
+    }
+  }
+
+  test("add kyuubiJobInfo into queue and remove them when threshold reached") {
+    val sql = "select timestamp'2021-06-01'"
+    val getJobMap = PrivateMethod[
+      ConcurrentHashMap[Int, KyuubiJobInfo]](Symbol("kyuubiJobIdToJobInfoMap"))()
+
+    val jobIdToJobInfoMap = KyuubiStatementMonitor.invokePrivate(getJobMap)
+    jobIdToJobInfoMap.clear()
+    withSessionHandle { (client, handle) =>
+      val req = new TExecuteStatementReq()
+      req.setSessionHandle(handle)
+      req.setStatement(sql)
+      val tExecuteStatementResp = client.ExecuteStatement(req)
+      val opHandle = tExecuteStatementResp.getOperationHandle
+
+      eventually(timeout(10.seconds), interval(100.milliseconds)) {
+        val elements = jobIdToJobInfoMap.elements()
+        while (elements.hasMoreElements) {
+          val kyuubiJobInfo = elements.nextElement()
+          assert(jobIdToJobInfoMap.size() === 1)
+          assert(kyuubiJobInfo.statementId === OperationHandle(opHandle).identifier.toString)
+          assert(kyuubiJobInfo.stageIds.length === 1)
+          assert(kyuubiJobInfo.jobResult === JobSucceeded)
+          assert(kyuubiJobInfo.endTime !== 0)
+        }
+      }
+
+      // Test for clear kyuubiJobIdToJobInfoMap when threshold reached
+      // This function is used for avoiding mem leak
+      (1 to 7).foreach { _ =>
+        val req = new TExecuteStatementReq()
+        req.setSessionHandle(handle)
+        req.setStatement(sql)
+        val tExecuteStatementResp = client.ExecuteStatement(req)
+        val operationHandle = tExecuteStatementResp.getOperationHandle
+        waitForOperationToComplete(client, operationHandle)
+      }
+      assert(jobIdToJobInfoMap.size() === 1)
     }
   }
 
