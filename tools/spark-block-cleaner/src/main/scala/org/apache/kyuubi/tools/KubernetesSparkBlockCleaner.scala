@@ -24,6 +24,7 @@ import java.util.concurrent.{CountDownLatch, Executors}
 import org.apache.log4j.PropertyConfigurator
 
 import org.apache.kyuubi.Logging
+
 /*
 * Spark storage shuffle data as the following structure.
 *
