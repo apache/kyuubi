@@ -24,11 +24,14 @@ import java.util.concurrent.atomic.AtomicInteger
 import scala.annotation.tailrec
 
 import org.apache.spark.SparkException
-import org.apache.spark.scheduler.{JobFailed, SparkListener, SparkListenerApplicationEnd, SparkListenerJobEnd}
+import org.apache.spark.scheduler._
 
+import org.apache.kyuubi.KyuubiSparkUtils.KYUUBI_STATEMENT_ID_KEY
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.spark.monitor.KyuubiStatementMonitor
+import org.apache.kyuubi.engine.spark.monitor.entity.KyuubiJobInfo
 import org.apache.kyuubi.ha.client.EngineServiceDiscovery
 import org.apache.kyuubi.service.{Serverable, ServiceState}
 
@@ -63,8 +66,19 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
     }
   }
 
+  override def onJobStart(jobStart: SparkListenerJobStart): Unit = {
+    val statementId = jobStart.properties.getProperty(KYUUBI_STATEMENT_ID_KEY)
+    val kyuubiJobInfo = KyuubiJobInfo(
+      jobStart.jobId, statementId, jobStart.stageIds, jobStart.time)
+    KyuubiStatementMonitor.putJobInfoIntoMap(kyuubiJobInfo)
+    info(s"Add jobStartInfo. Query [$statementId]: Job ${jobStart.jobId} started with " +
+      s"${jobStart.stageIds.length} stages")
+  }
+
   override def onJobEnd(jobEnd: SparkListenerJobEnd): Unit = {
-   jobEnd.jobResult match {
+    KyuubiStatementMonitor.insertEndTimeAndJobResult(jobEnd)
+    info(s"Job end. Job ${jobEnd.jobId} state is ${jobEnd.jobResult.toString}")
+    jobEnd.jobResult match {
      case JobFailed(e) if e != null =>
        val cause = findCause(e)
        var deregisterInfo: Option[String] = None
