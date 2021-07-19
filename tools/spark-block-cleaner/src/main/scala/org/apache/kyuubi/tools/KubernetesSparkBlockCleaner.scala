@@ -20,8 +20,8 @@ package org.apache.kyuubi.tools
 import java.io.File
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.{CountDownLatch, Executors}
-
 import org.apache.kyuubi.Logging
+import org.apache.log4j.PropertyConfigurator
 
 /*
 * Spark storage shuffle data as the following structure.
@@ -175,6 +175,8 @@ object KubernetesSparkBlockCleaner extends Logging {
 
   def main(args: Array[String]): Unit = {
     do {
+      PropertyConfigurator.configure(
+        Thread.currentThread().getContextClassLoader.getResource("log4j-block-cleaner.properties"))
       info(s"start all clean job")
       val startTime = System.currentTimeMillis()
       val hasFinished = new CountDownLatch(cacheDirs.length)
