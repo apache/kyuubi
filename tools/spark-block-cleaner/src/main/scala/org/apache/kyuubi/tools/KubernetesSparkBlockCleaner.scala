@@ -21,6 +21,8 @@ import java.io.File
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.{CountDownLatch, Executors}
 
+import org.apache.log4j.PropertyConfigurator
+
 import org.apache.kyuubi.Logging
 
 /*
@@ -44,6 +46,9 @@ object KubernetesSparkBlockCleaner extends Logging {
   import KubernetesSparkBlockCleanerConstants._
 
   private val envMap = System.getenv()
+
+  PropertyConfigurator.configure(
+    Thread.currentThread().getContextClassLoader.getResource("log4j-block-cleaner.properties"))
 
   private val freeSpaceThreshold = envMap.getOrDefault(FREE_SPACE_THRESHOLD_KEY,
     "60").toInt
