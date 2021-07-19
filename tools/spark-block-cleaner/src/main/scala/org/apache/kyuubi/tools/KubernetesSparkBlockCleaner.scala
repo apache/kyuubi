@@ -46,6 +46,9 @@ object KubernetesSparkBlockCleaner extends Logging {
 
   private val envMap = System.getenv()
 
+  PropertyConfigurator.configure(
+    Thread.currentThread().getContextClassLoader.getResource("log4j-block-cleaner.properties"))
+
   private val freeSpaceThreshold = envMap.getOrDefault(FREE_SPACE_THRESHOLD_KEY,
     "60").toInt
   private val fileExpiredTime = envMap.getOrDefault(FILE_EXPIRED_TIME_KEY,
@@ -176,8 +179,6 @@ object KubernetesSparkBlockCleaner extends Logging {
 
   def main(args: Array[String]): Unit = {
     do {
-      PropertyConfigurator.configure(
-        Thread.currentThread().getContextClassLoader.getResource("log4j-block-cleaner.properties"))
       info(s"start all clean job")
       val startTime = System.currentTimeMillis()
       val hasFinished = new CountDownLatch(cacheDirs.length)
