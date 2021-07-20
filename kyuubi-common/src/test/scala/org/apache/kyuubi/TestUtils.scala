@@ -26,7 +26,7 @@ import org.scalatest.Assertions.convertToEqualizer
 
 object TestUtils {
 
-  def verifyOutput(markdown: Path, newOutput: ArrayBuffer[String]): Unit = {
+  def verifyOutput(markdown: Path, newOutput: ArrayBuffer[String], agent: String): Unit = {
     if (System.getenv("KYUUBI_UPDATE") == "1") {
       val writer = Files.newBufferedWriter(
         markdown, StandardCharsets.UTF_8,
@@ -51,7 +51,7 @@ object TestUtils {
       }
       reader.close()
       val hint = s"$markdown out of date, please update doc with build/mvn test" +
-        s" -DwildcardSuites=${getClass.getCanonicalName}"
+        s" -DwildcardSuites=$agent"
       assert(newOutput.size === expected.size, hint)
 
       newOutput.zip(expected).foreach { case (out, in) => assert(out === in, hint) }

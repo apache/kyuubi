@@ -44,7 +44,7 @@ class ExecuteStatement(
     queryTimeout: Long)
   extends SparkOperation(spark, OperationType.EXECUTE_STATEMENT, session) with Logging {
 
-  import org.apache.kyuubi.operation.AbstractOperation._
+  import org.apache.kyuubi.KyuubiSparkUtils._
 
   private val forceCancel =
     session.sessionManager.getConf.get(KyuubiConf.OPERATION_FORCE_CANCEL)
@@ -64,9 +64,8 @@ class ExecuteStatement(
 
   private val kyuubiStatementInfo = KyuubiStatementInfo(
     statementId, statement, spark.sparkContext.applicationId,
-    session.getTypeInfo.identifier.toString, null,
-    spark.sparkContext.sparkUser, null, Map(state -> lastAccessTime))
-  KyuubiStatementMonitor.addStatementDetailForOperationId(statementId, kyuubiStatementInfo)
+    session.getTypeInfo.identifier, Map(state -> lastAccessTime))
+  KyuubiStatementMonitor.putStatementInfoIntoQueue(kyuubiStatementInfo)
 
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
@@ -94,7 +93,7 @@ class ExecuteStatement(
       // TODO: Make it configurable
       spark.sparkContext.addSparkListener(operationListener)
       result = spark.sql(statement)
-      kyuubiStatementInfo.physicalPlan = result.queryExecution
+      kyuubiStatementInfo.queryExecution = result.queryExecution
       debug(result.queryExecution)
       iter = new ArrayFetchIterator(result.collect())
       setState(OperationState.FINISHED)
@@ -170,7 +169,7 @@ class ExecuteStatement(
 
   override def setState(newState: OperationState): Unit = {
     super.setState(newState)
-     kyuubiStatementInfo.stateTimeMap.put(newState, lastAccessTime)
+    kyuubiStatementInfo.stateToTime.put(newState, lastAccessTime)
   }
 
   override def setOperationException(opEx: KyuubiSQLException): Unit = {

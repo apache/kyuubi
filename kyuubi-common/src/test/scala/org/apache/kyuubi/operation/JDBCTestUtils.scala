@@ -25,7 +25,6 @@ import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
-import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
 trait JDBCTestUtils extends KyuubiFunSuite {
@@ -38,10 +37,7 @@ trait JDBCTestUtils extends KyuubiFunSuite {
   private var _sparkHiveConfs: Map[String, String] = Map.empty
   private var _sparkHiveVars: Map[String, String] = Map.empty
   protected def sessionConfigs: Map[String, String] = _sessionConfs
-  protected def sparkHiveConfigs: Map[String, String] = {
-    // TODO: KYUUBI-504: forbid setting FRONTEND_BIND_HOST by connection string in engine side
-    Map(KyuubiConf.FRONTEND_BIND_HOST.key -> "localhost") ++: _sparkHiveConfs
-  }
+  protected def sparkHiveConfigs: Map[String, String] = _sparkHiveConfs
   protected def sparkHiveVars: Map[String, String] = _sparkHiveVars
 
   def withSessionConf[T](

@@ -49,10 +49,7 @@ trait BackendService {
   def executeStatement(
       sessionHandle: SessionHandle,
       statement: String,
-      queryTimeout: Long): OperationHandle
-  def executeStatementAsync(
-      sessionHandle: SessionHandle,
-      statement: String,
+      runAsync: Boolean,
       queryTimeout: Long): OperationHandle
 
   def getTypeInfo(sessionHandle: SessionHandle): OperationHandle

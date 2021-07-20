@@ -22,27 +22,25 @@ import scala.collection.mutable.Map
 import org.apache.spark.sql.execution.QueryExecution
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.operation.OperationState.OperationState
 
 /**
  * This object store the summary infomation about statement.
  * You can use statementId to get all jobs' or stages' metric that this statement has.
- *
  * @param statementId
  * @param statement
  * @param appId
  * @param sessionId
- * @param physicalPlan: contains physicalPlan, logicPlan and so on
- * @param sparkUser
- * @param exception
- * @param stateTimeMap: store this statement's every state and the time of occurrence
+ * @param stateToTime: store this statement's every state and the time of occurrence
  */
 case class KyuubiStatementInfo(
     statementId: String,
     statement: String,
     appId: String,
-    sessionId: String,
-    var physicalPlan: QueryExecution,
-    sparkUser: String,
-    var exception: KyuubiSQLException,
-    stateTimeMap: Map[OperationState, Long])
+    sessionId: HandleIdentifier,
+    stateToTime: Map[OperationState, Long]) {
+
+  var queryExecution: QueryExecution = null
+  var exception: KyuubiSQLException = null
+}

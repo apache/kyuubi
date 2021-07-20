@@ -23,6 +23,7 @@ import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.transport.TTransportException
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.metrics.MetricsConstants.STATEMENT_FAIL
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -33,8 +34,7 @@ import org.apache.kyuubi.util.ThriftUtils
 abstract class KyuubiOperation(
     opType: OperationType,
     session: Session,
-    client: TCLIService.Iface,
-    remoteSessionHandle: TSessionHandle) extends AbstractOperation(opType, session) {
+    client: KyuubiSyncThriftClient) extends AbstractOperation(opType, session) {
 
   @volatile protected var _remoteOpHandle: TOperationHandle = _
 
@@ -61,7 +61,7 @@ abstract class KyuubiOperation(
                 StringUtils.isEmpty(te.getMessage) =>
               // https://issues.apache.org/jira/browse/THRIFT-4858
               KyuubiSQLException(
-                s"Error $action $opType: Socket for $remoteSessionHandle is closed", e)
+                s"Error $action $opType: Socket for ${session.handle} is closed", e)
             case _ =>
               KyuubiSQLException(s"Error $action $opType: ${e.getMessage}", e)
           }
@@ -87,9 +87,7 @@ abstract class KyuubiOperation(
   override def cancel(): Unit = {
     if (_remoteOpHandle != null && !isClosedOrCanceled) {
       try {
-        val req = new TCancelOperationReq(_remoteOpHandle)
-        val resp = client.CancelOperation(req)
-        verifyTStatus(resp.getStatus)
+        client.cancelOperation(_remoteOpHandle)
         setState(OperationState.CANCELED)
       } catch onError("cancelling")
     }
@@ -99,9 +97,7 @@ abstract class KyuubiOperation(
     if (_remoteOpHandle != null && !isClosedOrCanceled) {
       try {
         getOperationLog.foreach(_.close())
-        val req = new TCloseOperationReq(_remoteOpHandle)
-        val resp = client.CloseOperation(req)
-        verifyTStatus(resp.getStatus)
+        client.closeOperation(_remoteOpHandle)
         setState(OperationState.CLOSED)
       } catch onError("closing")
     }
@@ -119,23 +115,15 @@ abstract class KyuubiOperation(
       schema.addToColumns(tColumnDesc)
       schema
     } else {
-      val req = new TGetResultSetMetadataReq(_remoteOpHandle)
-      val resp = client.GetResultSetMetadata(req)
-      verifyTStatus(resp.getStatus)
-      resp.getSchema
+      client.getResultSetMetadata(_remoteOpHandle)
     }
-
   }
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet = {
     validateDefaultFetchOrientation(order)
     assertState(OperationState.FINISHED)
     setHasResultSet(true)
-    val req = new TFetchResultsReq(
-      _remoteOpHandle, FetchOrientation.toTFetchOrientation(order), rowSetSize)
-    val resp = client.FetchResults(req)
-    verifyTStatus(resp.getStatus)
-    resp.getResults
+    client.fetchResults(_remoteOpHandle, order, rowSetSize, fetchLog = false)
   }
 
   override def shouldRunAsync: Boolean = false

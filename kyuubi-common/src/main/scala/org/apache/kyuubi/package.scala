@@ -26,6 +26,13 @@ package object kyuubi {
     private val buildFile = "kyuubi-version-info.properties"
     private val buildFileStream =
       Thread.currentThread().getContextClassLoader.getResourceAsStream(buildFile)
+
+    if (buildFileStream == null) {
+      throw new KyuubiException(s"Can not load the core build file: $buildFile, if you meet " +
+        s"this exception when running unit tests " +
+        s"please make sure you have run the `mvn package` or `mvn generate-resources` command.")
+    }
+
     private val unknown = "<unknown>"
     private val props = new Properties()
 

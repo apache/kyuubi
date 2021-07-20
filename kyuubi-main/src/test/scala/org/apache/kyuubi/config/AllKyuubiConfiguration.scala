@@ -259,6 +259,6 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
       " executor and obey the Spark AQE behavior of Kyuubi system default. On the other hand," +
       " for those users who do not have custom configurations will use system defaults."
 
-    TestUtils.verifyOutput(markdown, newOutput)
+    TestUtils.verifyOutput(markdown, newOutput, getClass.getCanonicalName)
   }
 }

@@ -39,11 +39,13 @@ class SparkProcessBuilder(
 
   override protected val executable: String = {
     val sparkHomeOpt = env.get("SPARK_HOME").orElse {
-      val kyuubiPattern = "/kyuubi/"
-      val cwd = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
-      val idx = kyuubiPattern.length + cwd.lastIndexOf(kyuubiPattern)
-      val kyuubiDevHome = cwd.substring(0, idx)
-      Paths.get(kyuubiDevHome, "externals", "kyuubi-download", "target").toFile
+      val cwd = getClass.getProtectionDomain.getCodeSource.getLocation.getPath.split("kyuubi-main")
+      assert(cwd.length > 1)
+      Paths.get(cwd.head)
+        .resolve("externals")
+        .resolve("kyuubi-download")
+        .resolve("target")
+        .toFile
         .listFiles(new FilenameFilter {
         override def accept(dir: File, name: String): Boolean = {
           dir.isDirectory && name.startsWith("spark-")

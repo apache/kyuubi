@@ -72,6 +72,7 @@
         <commons-lang3.version>3.10</commons-lang3.version>
         <curator.version>2.12.0</curator.version>
         <delta.version>1.0.0</delta.version>
+        <google.jsr305.version>3.0.2</google.jsr305.version>
         <guava.version>30.1-jre</guava.version>
         <hadoop.version>3.2.2</hadoop.version>
         <hadoop.binary.version>3.2</hadoop.binary.version>
@@ -83,6 +84,7 @@
         <jetty.version>9.4.41.v20210516</jetty.version>
         <ldapsdk.version>5.1.4</ldapsdk.version>
         <prometheus.version>0.10.0</prometheus.version>
+        <scopt.version>4.0.1</scopt.version>
         <spark.version>3.1.2</spark.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop${hadoop.binary.version}.tgz</spark.archive.name>
         <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
@@ -234,6 +236,18 @@
                 <version>${hadoop.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client-runtime</artifactId>
+                <version>${hadoop.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-logging</groupId>
+                        <artifactId>commons-logging</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
             <!--
               Curator has a hard dependency on Guava, see detail at
               https://cwiki.apache.org/confluence/display/CURATOR/TN13
@@ -244,42 +258,28 @@
                 <version>${guava.version}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>checker-qual</artifactId>
                         <groupId>org.checkerframework</groupId>
+                        <artifactId>checker-qual</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>error_prone_annotations</artifactId>
                         <groupId>com.google.errorprone</groupId>
+                        <artifactId>error_prone_annotations</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>j2objc-annotations</artifactId>
                         <groupId>com.google.j2objc</groupId>
+                        <artifactId>j2objc-annotations</artifactId>
                     </exclusion>
                     <exclusion>
-                        <artifactId>jsr305</artifactId>
-                        <groupId>com.google.code.findbugs</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>listenablefuture</artifactId>
                         <groupId>com.google.guava</groupId>
+                        <artifactId>listenablefuture</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
 
             <dependency>
-                <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-client-runtime</artifactId>
-                <version>${hadoop.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                </exclusions>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>jsr305</artifactId>
+                <version>${google.jsr305.version}</version>
             </dependency>
 
             <dependency>
@@ -312,40 +312,61 @@
                 <version>${commons-lang3.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.apache.spark</groupId>
+                <artifactId>spark-sql_${scala.binary.version}</artifactId>
+                <version>${spark.version}</version>
+                <exclusions>
+                    <!--
+                      Use Hadoop Shaded Client to gain more clean transitive dependencies
+                     -->
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-client</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.spark</groupId>
+                <artifactId>spark-hive_${scala.binary.version}</artifactId>
+                <version>${spark.version}</version>
+                <exclusions>
+                    <!--
+                      Use Hadoop Shaded Client to gain more clean transitive dependencies
+                     -->
+                    <exclusion>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-client</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
 
             <dependency>
                 <groupId>org.apache.spark</groupId>
                 <artifactId>spark-core_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
+                <type>test-jar</type>
                 <exclusions>
+                    <!--
+                      Use Hadoop Shaded Client to gain more clean transitive dependencies
+                     -->
                     <exclusion>
-                        <groupId>org.glassfish.jersey.core</groupId>
-                        <artifactId>*</artifactId>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-client</artifactId>
                     </exclusion>
-                    <exclusion>
-                        <groupId>org.glassfish.jersey.containers</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.glassfish.jersey.inject</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.avro</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.github.luben</groupId>
-                        <artifactId>zstd-jni</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.scala-lang.modules</groupId>
-                        <artifactId>scala-xml_${scala.binary.version}</artifactId>
-                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.spark</groupId>
+                <artifactId>spark-catalyst_${scala.binary.version}</artifactId>
+                <version>${spark.version}</version>
+                <type>test-jar</type>
+                <exclusions>
+                    <!--
+                      Use Hadoop Shaded Client to gain more clean transitive dependencies
+                     -->
                     <exclusion>
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
@@ -357,127 +378,14 @@
                 <groupId>org.apache.spark</groupId>
                 <artifactId>spark-sql_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
+                <type>test-jar</type>
                 <exclusions>
-                    <exclusion>
-                        <groupId>com.univocity</groupId>
-                        <artifactId>univocity-parsers</artifactId>
-                    </exclusion>
+                    <!--
+                      Use Hadoop Shaded Client to gain more clean transitive dependencies
+                     -->
                     <exclusion>
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.spark</groupId>
-                        <artifactId>spark-core_${scala.binary.version}</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.spark</groupId>
-                        <artifactId>spark-launcher_${scala.binary.version}</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.spark</groupId>
-                        <artifactId>spark-kvstore_${scala.binary.version}</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.spark</groupId>
-                        <artifactId>spark-network-common_${scala.binary.version}</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.spark</groupId>
-                        <artifactId>spark-network-shuffle_${scala.binary.version}</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.spark</groupId>
-                        <artifactId>spark-sketch_${scala.binary.version}</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.spark</groupId>
-                        <artifactId>spark-tags_${scala.binary.version}</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.spark-project.spark</groupId>
-                        <artifactId>unused</artifactId>
-                    </exclusion>
-
-                    <exclusion>
-                        <groupId>org.apache.avro</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.orc</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.spark</groupId>
-                <artifactId>spark-hive_${scala.binary.version}</artifactId>
-                <version>${spark.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.spark</groupId>
-                        <artifactId>spark-core_${scala.binary.version}</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.spark</groupId>
-                        <artifactId>spark-sql_${scala.binary.version}</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hive</groupId>
-                        <artifactId>hive-common</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hive</groupId>
-                        <artifactId>hive-serde</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hive</groupId>
-                        <artifactId>hive-service-rpc</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hive</groupId>
-                        <artifactId>hive-llap-client</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hive</groupId>
-                        <artifactId>hive-llap-common</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.spark-project.spark</groupId>
-                        <artifactId>unused</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.avro</groupId>
-                        <artifactId>*</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.thrift</groupId>
-                        <artifactId>libthrift</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.thrift</groupId>
-                        <artifactId>libfb303</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>joda-time</groupId>
-                        <artifactId>joda-time</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.jodd</groupId>
-                        <artifactId>jodd-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.httpcomponents</groupId>
-                        <artifactId>httpclient</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>commons-httpclient</groupId>
-                        <artifactId>commons-httpclient</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -950,64 +858,24 @@
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-core</artifactId>
                 <version>${codahale.metrics.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-api</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-jvm</artifactId>
                 <version>${codahale.metrics.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>io.dropwizard.metrics</groupId>
-                        <artifactId>metrics-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-api</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-jmx</artifactId>
                 <version>${codahale.metrics.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>io.dropwizard.metrics</groupId>
-                        <artifactId>metrics-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-api</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-json</artifactId>
                 <version>${codahale.metrics.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>io.dropwizard.metrics</groupId>
-                        <artifactId>metrics-core</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>com.fasterxml.jackson.core</groupId>
-                        <artifactId>jackson-databind</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
@@ -1030,12 +898,6 @@
                 <groupId>io.prometheus</groupId>
                 <artifactId>simpleclient_dropwizard</artifactId>
                 <version>${prometheus.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>io.dropwizard.metrics</groupId>
-                        <artifactId>metrics-core</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
@@ -1061,6 +923,9 @@
                 <artifactId>jetty-server</artifactId>
                 <version>${jetty.version}</version>
                 <exclusions>
+                    <!--
+                      Use `jakarta.servlet-api` instead.
+                      -->
                     <exclusion>
                         <groupId>javax.servlet</groupId>
                         <artifactId>javax.servlet-api</artifactId>
@@ -1166,6 +1031,12 @@
                 <groupId>javax.activation</groupId>
                 <artifactId>activation</artifactId>
                 <version>${javax-activation.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.github.scopt</groupId>
+                <artifactId>scopt_${scala.binary.version}</artifactId>
+                <version>${scopt.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -1684,6 +1555,13 @@
             </properties>
             <modules>
                 <module>dev/kyuubi-extension-spark_3.1</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>spark-block-cleaner</id>
+            <modules>
+                <module>tools/spark-block-cleaner</module>
             </modules>
         </profile>
     </profiles>

@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.time.Instant
+import java.time.{Instant, LocalDateTime, ZoneId}
 
 import org.apache.spark.sql.SparkSession
 
@@ -29,6 +29,7 @@ object KyuubiSparkUtil {
     val webUrl = sc.getConf.getOption(
       "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")
       .orElse(sc.uiWebUrl).getOrElse("")
+    // scalastyle:off line.size.limit
     s"""
        |           Spark application name: ${sc.appName}
        |                 application ID:  ${sc.applicationId}
@@ -36,8 +37,9 @@ object KyuubiSparkUtil {
        |                 master: ${sc.master}
        |                 deploy mode: ${sc.deployMode}
        |                 version: ${sc.version}
-       |           Start time: ${Instant.ofEpochMilli(sc.startTime)}
+       |           Start time: ${LocalDateTime.ofInstant(Instant.ofEpochMilli(sc.startTime), ZoneId.systemDefault)}
        |           User: ${sc.sparkUser}""".stripMargin
+    // scalastyle:on line.size.limit
   }
 
   /**

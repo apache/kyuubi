@@ -1,0 +1,75 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+apiVersion: apps/v1
+# A DaemonSet ensures that all (or some) Nodes run a copy of a Pod.
+kind: DaemonSet
+metadata:
+  name: kyuubi-kubernetes-spark-block-cleaner
+  # NameSpace help assigned daemonSet to the designated cluster resource
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      name: block-cleaner
+  template:
+    metadata:
+      labels:
+        name: block-cleaner
+    spec:
+      containers:
+        # Container image which build by Dockerfile
+        # TODO official Image
+        - image: <image>
+          name: cleaner
+          volumeMounts:
+            - name: block-files-dir-1
+              mountPath: /data/data1
+            - name: block-files-dir-2
+              mountPath: /data/data2
+            - name: cleaner-log
+              mountPath: /log/cleanerLog
+          env:
+            # Set env to manager cleaner running
+            # the target dirs which in container
+            - name: CACHE_DIRS
+              value: /data/data1,/data/data2
+            # Cleaner will clean More distant block files, seconds
+            - name: FILE_EXPIRED_TIME
+              value: 604800
+            # Deep clean fileExpiredTime, seconds
+            - name: DEEP_CLEAN_FILE_EXPIRED_TIME
+              value: 432000
+            # After first clean, if free Space low than threshold
+            # trigger deep clean
+            - name: FREE_SPACE_THRESHOLD
+              value: 60
+            # Cleaner clean sleep times after cleaning, seconds
+            - name: SCHEDULE_INTERVAL
+              value: 3600
+      volumes:
+        # Directory on the host which store block dirs
+        - name: block-files-dir-1
+          hostPath:
+            path: /blockFilesDirs/data1
+        - name: block-files-dir-2
+          hostPath:
+            path: /blockFilesDirs/data2
+        # Directory on the host which you want to store clean log
+        - name: cleaner-log
+          hostPath:
+            path: /logDir
