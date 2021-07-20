@@ -71,10 +71,10 @@ spec:
         # Directory on the host which store block dirs, see also in `volumeMounts`
         - name: spark-local-dir-1
           hostPath:
-            path: /Users/kentyao/Downloads/data/1
+            path: /tmp/data1
         - name: spark-local-dir-2
           hostPath:
-            path: /Users/kentyao/Downloads/data/2
+            path: /tmp/data2
       # Currently, this ***requires* hostNetwork enabled for he executors to register.
       # In other words, you have to run spark on kubernetes with executor pods' hostNetwork also
       # enabled.
