@@ -17,30 +17,29 @@
 
 package org.apache.kyuubi.engine.spark.monitor.entity
 
-import scala.collection.mutable.Map
-
-import org.apache.spark.sql.execution.QueryExecution
-
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.cli.HandleIdentifier
-import org.apache.kyuubi.operation.OperationState.OperationState
+import org.apache.spark.scheduler.JobResult
 
 /**
- * This object store the summary infomation about statement.
- * You can use statementId to get all jobs' or stages' metric that this statement has.
+ * This object is used for storing the basic data for job.
+ * You can use statementId to get all jobs that belong to this statemnent.
+ * And also you can use statementId and jobId to get all stages that belong to this job.
+ *
+ * Introduce:
+ *    1. According to startTime and endTime, you can get how long did it run,
+ *       and get which stage took the longest time by stageIds.
+ *    2. If this job failed, you can look up which stage cause this situation by stageIds.
+ *
+ * @param jobId
  * @param statementId
- * @param statement
- * @param appId
- * @param sessionId
- * @param stateToTime: store this statement's every state and the time of occurrence
+ * @param stageIds: is array
+ * @param startTime
  */
-case class KyuubiStatementInfo(
+case class KyuubiJobInfo(
+    jobId: Int,
     statementId: String,
-    statement: String,
-    appId: String,
-    sessionId: HandleIdentifier,
-    stateToTime: Map[OperationState, Long]) {
+    stageIds: Seq[Int],
+    startTime: Long) {
 
-  var queryExecution: QueryExecution = null
-  var exception: KyuubiSQLException = null
+  var endTime: Long = 0
+  var jobResult: JobResult = null
 }

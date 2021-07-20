@@ -239,7 +239,6 @@ io.prometheus:simpleclient_common
 io.prometheus:simpleclient_dropwizard
 io.prometheus:simpleclient_servlet
 org.apache.zookeeper:zookeeper
-spark-*-bin-*.tgz
 
 BSD 3-Clause
 ------------

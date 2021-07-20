@@ -15,19 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation
+package org.apache.kyuubi
 
-import org.apache.kyuubi.client.KyuubiSyncThriftClient
-import org.apache.kyuubi.session.Session
-
-class GetTableTypes(
-    session: Session,
-    client: KyuubiSyncThriftClient)
-  extends KyuubiOperation(OperationType.GET_TABLE_TYPES, session, client) {
-
-  override protected def runInternal(): Unit = {
-    try {
-      _remoteOpHandle = client.getTableTypes
-    } catch onError()
-  }
+object KyuubiSparkUtils {
+  final val KYUUBI_STATEMENT_ID_KEY = "kyuubi.statement.id"
+  final val SPARK_SCHEDULER_POOL_KEY = "spark.scheduler.pool"
+  final val SPARK_SQL_EXECUTION_ID_KEY = "spark.sql.execution.id"
 }
