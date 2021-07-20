@@ -34,7 +34,7 @@ spec:
       containers:
         # the image built base on ./docker/Dockerfile
         - image: yaooqinn/kyuubi-shuffle-service:latest
-          name: exterbal-shuffle-server
+          name: external-shuffle-server
           resources:
             limits:
               memory: 1024Mi
