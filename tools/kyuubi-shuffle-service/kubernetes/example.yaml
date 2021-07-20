@@ -1,0 +1,81 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# kubectl apply -f tools/kyuubi-shuffle-service/kubernetes/example.yaml
+
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: kyuubi-shuffle-service
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      name: kyuubi-shuffle-service
+  template:
+    metadata:
+      labels:
+        name: kyuubi-shuffle-service
+    spec:
+      containers:
+        # the image built base on ./docker/Dockerfile
+        - image: yaooqinn/kyuubi-shuffle-service:latest
+          name: exterbal-shuffle-server
+          resources:
+            limits:
+              memory: 1024Mi
+            requests:
+              cpu: 100m
+              memory: 512Mi
+          volumeMounts:
+            - name: spark-local-dir-1
+              mountPath: /opt/spark/data1
+            - name: spark-local-dir-2
+              mountPath: /opt/spark/data2
+          env:
+            # Change this in case of OOM based on you spec.containers.resources.* for
+            # the heap memory of shuffle service proc
+            - name: SPARK_DAEMON_MEMORY
+              value: 512M
+            # SPARK_SHUFFLE_OPTS allows us to pass spark configurations to the shuffle service
+            # spark.local.dir points to spec.containers.volumeMounts.*, shall be same as Spark
+            # app side.
+            # spark.shuffle.cleaner.interval=30s, this currently not work because only can a
+            # MesosExternalBlockStoreClient post ShuffleServiceHeartbeat here to change to app
+            # state for shuffle data clean, which means spark-block-cleaner tool is required
+            # spark.shuffle.service.enabled shall be enabled at least
+            # spark.shuffle.service.port=7337
+            # spark.shuffle.service.db.enabled=true
+            - name: SPARK_SHUFFLE_OPTS
+              value: -Dspark.shuffle.service.enabled=true -Dspark.local.dir=/opt/spark/data1,/opt/spark/data2
+          ports:
+            - name: ess-port
+              containerPort: 7337
+              protocol: TCP
+      terminationGracePeriodSeconds: 30
+      volumes:
+        # Directory on the host which store block dirs, see also in `volumeMounts`
+        - name: spark-local-dir-1
+          hostPath:
+            path: /Users/kentyao/Downloads/data/1
+        - name: spark-local-dir-2
+          hostPath:
+            path: /Users/kentyao/Downloads/data/2
+      # Currently, this ***requires* hostNetwork enabled for he executors to register.
+      # In other words, you have to run spark on kubernetes with executor pods' hostNetwork also
+      # enabled.
+      hostNetwork: true
