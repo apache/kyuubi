@@ -97,15 +97,15 @@ class KyuubiConfSuite extends KyuubiFunSuite {
 
 
   test("get user specific defaults") {
-    val conf = KyuubiConf(false)
-      .set("spark.user.test", "a")
-      .set("___userb___.spark.user.test", "b")
-      .set("___userc___.spark.user.test", "c")
+    sys.props.put("spark.user.test", "a")
+    sys.props.put("___userb___.spark.user.test", "b")
+    sys.props.put("___userc___.spark.user.test", "c")
+    val conf = KyuubiConf()
 
-    val all1 = conf.getUserDefaults("kyuubi").getAll
+    val all1 = conf.getUserDefaults("kyuubi").getAll.filter(_._1 != "kyuubi.testing")
     assert(all1.size === 1)
     assert(all1("spark.user.test") === "a")
-    val all2 = conf.getUserDefaults("userb").getAll
+    val all2 = conf.getUserDefaults("userb").getAll.filter(_._1 != "kyuubi.testing")
     assert(all2.size === 1)
     assert(all2("spark.user.test") === "b")
     assert(conf.getUserDefaults("userc").getOption("spark.user.test").get === "c")

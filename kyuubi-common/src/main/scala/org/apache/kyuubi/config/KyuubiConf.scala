@@ -39,7 +39,9 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   }
 
   private def loadFromMap(props: Map[String, String] = Utils.getSystemProperties): KyuubiConf = {
-    for ((key, value) <- props if key.startsWith("kyuubi.") || key.startsWith("spark.")) {
+    for ((key, value) <- props if key.startsWith("kyuubi.") || key.startsWith("spark.") ||
+        // for user specific defaults
+        key.startsWith("___")) {
       set(key, value)
     }
     this
