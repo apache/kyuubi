@@ -7,9 +7,9 @@ Although there is a feature called shuffle tracking to track the shuffle data an
 
 ## Prerequisites
 
-- Every thing you need to know about Spark on Kubernetes
-- Running Spark on Kubernetes apps with hostNetwork enabled
-- Running this module as a DaemonSet with hostNetwork enabled
+- Everything you need to know about Spark on Kubernetes
+- Running Spark on Kubernetes apps with `hostNetwork` enabled
+- Running this module as a DaemonSet with `hostNetwork` enabled
 - Self-managed shuffle data cleaner as the state of apps will not be posted to this service
   - See: tools/spark-block-cleaner/kubernetes/spark-block-cleaner.yml
 
