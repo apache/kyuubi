@@ -97,10 +97,7 @@ class KyuubiConfSuite extends KyuubiFunSuite {
 
 
   test("get user specific defaults") {
-    sys.props.put("spark.user.test", "a")
-    sys.props.put("___userb___.spark.user.test", "b")
-    sys.props.put("___userc___.spark.user.test", "c")
-    val conf = KyuubiConf()
+    val conf = KyuubiConf().loadFileDefaults()
 
     assert(conf.getUserDefaults("kyuubi").getOption("spark.user.test").get === "a")
     assert(conf.getUserDefaults("userb").getOption("spark.user.test").get === "b")
