@@ -17,74 +17,89 @@
 
 package org.apache.kyuubi.ctl
 
-import scala.collection.JavaConverters._
-import scala.collection.mutable.HashMap
+import java.util.{NoSuchElementException, StringJoiner}
 
-import com.beust.jcommander.JCommander
+import scala.collection.JavaConverters._
+
+import com.beust.jcommander.{DefaultUsageFormatter, JCommander, MissingCommandException, ParameterException}
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.ctl.ServiceType.ServiceType
-import org.apache.kyuubi.ctl.commands.common.{AbstractCommand, UnixStyleUsage}
+import org.apache.kyuubi.ctl.commands.common._
+import org.apache.kyuubi.ctl.commands.common.ServiceType.ServiceType
+import org.apache.kyuubi.ctl.commands.config.ConfigCommandGroup
 import org.apache.kyuubi.ctl.commands.engine._
 import org.apache.kyuubi.ctl.commands.server._
 
-private[ctl] object ServiceType extends Enumeration {
-  type ServiceType = Value
-  val SERVER, ENGINE = Value
-}
-
 class KyuubiCli extends Logging {
 
-  private lazy val commands = initCommands()
+  private lazy val commands = Map(
+    ServiceType.engine -> new EngineCommandGroup,
+    ServiceType.server -> new ServerCommandGroup,
+    ServiceType.config -> new ConfigCommandGroup
+  )
 
-  def initCommands(): HashMap[ServiceType, JCommander] = {
-    // init engine commands
-    val engineCommand = JCommander
-      .newBuilder()
-      .addCommand(new GetEngineCommand)
-      .addCommand(new DeleteEngineCommand)
-      .addCommand(new ListEngineCommand)
-      .build()
+  def printAllCommandUsage(): Unit = {
+    // scalastyle:off println
+    val sj = new StringJoiner("|", "<", ">")
+    ServiceType.values.foreach(v => sj.add(String.valueOf(v)))
+    println(s"Usage: kyuubi-ctl ${sj.toString} [actions] [options] \n")
+    var prefixIndent = 0
+    for (st <- commands.keys) {
+      val prefix = "  " + String.valueOf(st)
+      if (prefix.length > prefixIndent) prefixIndent = prefix.length
+    }
 
-    // init server commands
-    val serverCommand = JCommander
-      .newBuilder()
-      .addCommand(new CreateServerCommand)
-      .addCommand(new GetServerCommand)
-      .addCommand(new DeleteServerCommand)
-      .addCommand(new ListServerCommand)
-      .build()
+    for ((st, group) <- commands) {
+      val prefix = "  " + String.valueOf(st)
+      val info = prefix +
+        DefaultUsageFormatter.s(prefixIndent - prefix.length) + "  " +
+        group.desc()
+      println(info)
+    }
 
-    // register commands
-    HashMap(
-      ServiceType.ENGINE -> engineCommand,
-      ServiceType.SERVER -> serverCommand
-    )
+    print(System.lineSeparator())
+    // scalastyle:off println
   }
 
-  def usage(): Unit = {
+  def printUsageOfJcommander(service: String, action: Option[String],
+                             jcommander: JCommander): Unit = {
     // scalastyle:off println
-    println("Usage: kyuubi-ctl <server|engine> <create|get|delete|list> [options]")
-    for ((service, commander) <- commands) {
-      println(s"[ $service ]")
-      for (cmd <- commander.getCommands.values().asScala) {
+    val act = if (action.isEmpty) "[actions]" else action
+    println(s"Usage: kyuubi-ctl ${service} ${act} [options]")
+    if (action.isEmpty) {
+      for (cmd <- jcommander.getCommands.values().asScala) {
         cmd.setColumnSize(100)
         cmd.setUsageFormatter(new UnixStyleUsage(cmd))
         cmd.usage()
       }
-      print(System.lineSeparator())
+    } else {
+      jcommander.setUsageFormatter(new UnixStyleUsage(jcommander))
+      jcommander.usage()
     }
     // scalastyle:off println
   }
 
   def run(service: ServiceType, args: Array[String]): Unit = {
 
-    val serviceCommand = commands.getOrElse(service, throw new RuntimeException)
+    val serviceCommand = commands.getOrElse(service, throw new RuntimeException).cmd()
 
-    serviceCommand.parse(args: _*)
+    try {
+      serviceCommand.parse(args: _*)
+    } catch {
+      case t: MissingCommandException =>
+        printUsageOfJcommander(String.valueOf(service), Option.empty, serviceCommand)
+        return;
+      case t: ParameterException =>
+        val act = t.getJCommander.getParsedCommand
+        val commander = t.getJCommander.getCommands.get(act)
+        error(s"Parameter error for command: ${act}")
+        printUsageOfJcommander(String.valueOf(service), Option(act), commander)
+        return;
+    }
+
     val parsedCommand = serviceCommand.getCommands.get(serviceCommand.getParsedCommand)
-    parsedCommand.getObjects.asScala.find(_.isInstanceOf[AbstractCommand]).foreach(cmd => {
-      cmd.asInstanceOf[AbstractCommand].run(parsedCommand)
+    parsedCommand.getObjects.asScala.find(_.isInstanceOf[Command]).foreach(cmd => {
+      cmd.asInstanceOf[Command].run(parsedCommand)
     })
 
   }
@@ -94,12 +109,18 @@ class KyuubiCli extends Logging {
 object KyuubiCli extends Logging {
 
   def main(args: Array[String]): Unit = {
-
     val shell = new KyuubiCli
-    if (args(0).equals("--help")) {
-      shell.usage()
+
+    if (args == null || args(0).equals("-h") || args(0).equals("--help") || args.length == 1) {
+      shell.printAllCommandUsage()
     } else {
-      shell.run(ServiceType.withName(args(0).toUpperCase()), args.drop(1))
+      try {
+        shell.run(ServiceType.withName(args(0)), args.drop(1))
+      } catch {
+        case _: NoSuchElementException =>
+          error(s"unknown service type: args(0)")
+          shell.printAllCommandUsage()
+      }
     }
 
   }

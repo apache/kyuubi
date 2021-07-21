@@ -17,12 +17,12 @@
 
 package org.apache.kyuubi.ctl.commands.engine
 
-import com.beust.jcommander.{JCommander, Parameter, Parameters, UnixStyleUsageFormatter}
+import com.beust.jcommander.{JCommander, Parameter, Parameters}
 
-import org.apache.kyuubi.ctl.commands.common.AbstractCommand
+import org.apache.kyuubi.ctl.commands.common.{Command, UnixStyleUsage}
 
 @Parameters(commandNames = Array("list"))
-class ListEngineCommand extends AbstractCommand {
+class ListEngineCommand extends Command {
 
   @Parameter(
     names = Array("-zk", "--zk-quorum"),
@@ -33,33 +33,37 @@ class ListEngineCommand extends AbstractCommand {
   @Parameter(
     names = Array("-n", "--namespace"),
     description = "The namespace, using kyuubi-defaults/conf if absent.",
-    order = 1)
+    order = 2)
   var namespace: String = _
 
   @Parameter(
     names = Array("-s", "--host"),
     description = "Hostname or IP address of a service.",
-    order = 1)
+    order = 3)
   var host: String = _
 
   @Parameter(
     names = Array("-p", "--port"),
     description = "Listening port of a service.",
-    order = 1)
+    order = 4)
   var port: String = _
 
   @Parameter(
     names = Array("-u", "--user"),
     description = "The user name this engine belong to.",
-    order = 1)
+    order = 5)
   var user: String = _
 
-  @Parameter(names = Array("-h", "--help"), help = true, order = 3)
+  @Parameter(names = Array("-h", "--help"), help = true, order = 6)
   var help: Boolean = false
 
   override def run(jc: JCommander): Unit = {
-    jc.setUsageFormatter(new UnixStyleUsageFormatter(jc))
-    jc.usage()
+    if (help) {
+      jc.setUsageFormatter(new UnixStyleUsage(jc))
+      jc.usage()
+    } else {
+      // TODO
+    }
   }
 }
 

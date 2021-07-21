@@ -15,40 +15,22 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.ctl.commands.server
+package org.apache.kyuubi.ctl.commands.config
 
 import com.beust.jcommander.{JCommander, Parameter, Parameters}
 
 import org.apache.kyuubi.ctl.commands.common.{Command, UnixStyleUsage}
 
-@Parameters(commandNames = Array("delete"))
-class DeleteServerCommand extends Command {
+@Parameters(commandNames = Array("set"))
+class SetConfigCommand extends Command {
 
   @Parameter(
-    names = Array("-zk", "--zk-quorum"),
-    description = "The connection string for the zookeeper ensemble, using zk quorum manually.",
-    order = 1)
-  var zkQuorum: String = _
-
-  @Parameter(
-    names = Array("-n", "--namespace"),
-    description = "The namespace, using kyuubi-defaults/conf if absent.",
-    order = 2)
-  var namespace: String = _
-
-  @Parameter(
-    names = Array("-s", "--host"),
-    description = "Hostname or IP address of a service.",
-    order = 3)
-  var host: String = _
-
-  @Parameter(
-    names = Array("-p", "--port"),
+    names = Array("-c", "--cfg"),
     description = "Listening port of a service.",
-    order = 4)
-  var port: String = _
+    order = 1)
+  var config: String = _
 
-  @Parameter(names = Array("-h", "--help"), help = true, order = 5)
+  @Parameter(names = Array("-h", "--help"), help = true, order = 2)
   var help: Boolean = false
 
   override def run(jc: JCommander): Unit = {

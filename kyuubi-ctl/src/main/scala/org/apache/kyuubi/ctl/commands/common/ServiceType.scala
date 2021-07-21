@@ -17,10 +17,7 @@
 
 package org.apache.kyuubi.ctl.commands.common
 
-import com.beust.jcommander.JCommander
-
-trait AbstractCommand {
-
-  def run(jc: JCommander): Unit = {}
-
+object ServiceType extends Enumeration {
+  type ServiceType = Value
+  val server, engine, config = Value
 }
