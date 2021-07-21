@@ -1566,5 +1566,12 @@
                 <module>tools/spark-block-cleaner</module>
             </modules>
         </profile>
+
+        <profile>
+            <id>kubernetes</id>
+            <modules>
+                <module>kubernetes/integration-tests</module>
+            </modules>
+        </profile>
     </profiles>
 </project>
