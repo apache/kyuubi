@@ -192,7 +192,7 @@ object KubernetesSparkBlockCleaner extends Logging {
       hasFinished.await()
 
       val usedTime = System.currentTimeMillis() - startTime
-      info(s"finished to clean all dir, elapsed time $usedTime s")
+      info(s"finished to clean all dir, elapsed time ${usedTime / 1000} s")
       if (usedTime > scheduleInterval) {
         warn(s"clean job elapsed time $usedTime which is greater than $scheduleInterval")
       } else {
