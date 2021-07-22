@@ -115,7 +115,7 @@ object KubernetesSparkBlockCleaner extends Logging {
           checkAndDeleteFile(blockManagerDir, time, true)
         }
         info(s"finished clean blockManager dir ${blockManagerDir.getCanonicalPath}, " +
-          s"released space: ${released.sum / 1024 / 1024} MB.")
+          s"released space: ${released.sum / 1024 / 1024} MB")
       }
 
     // clean spark cache file
@@ -126,7 +126,7 @@ object KubernetesSparkBlockCleaner extends Logging {
         // delete empty spark cache file
         checkAndDeleteFile(cacheDir, time, true)
         info(s"finished clean cache dir ${cacheDir.getCanonicalPath}, " +
-          s"released space: ${released.sum / 1024 / 1024} MB.")
+          s"released space: ${released.sum / 1024 / 1024} MB")
       }
   }
 
@@ -175,7 +175,7 @@ object KubernetesSparkBlockCleaner extends Logging {
       }
     }
     val finishedTime = System.currentTimeMillis()
-    info(s"clean job $dir finished, elapsed time: ${(finishedTime - startTime) / 1000} s.")
+    info(s"clean job $dir finished, elapsed time: ${(finishedTime - startTime) / 1000} s")
   }
 
   def main(args: Array[String]): Unit = {
@@ -192,7 +192,7 @@ object KubernetesSparkBlockCleaner extends Logging {
       hasFinished.await()
 
       val usedTime = System.currentTimeMillis() - startTime
-      info(s"finished to clean all dir, elapsed time $usedTime")
+      info(s"finished to clean all dir, elapsed time $usedTime s")
       if (usedTime > scheduleInterval) {
         warn(s"clean job elapsed time $usedTime which is greater than $scheduleInterval")
       } else {
