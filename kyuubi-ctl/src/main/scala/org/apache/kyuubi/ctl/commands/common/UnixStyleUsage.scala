@@ -27,12 +27,12 @@ import com.beust.jcommander.{DefaultUsageFormatter, JCommander, ParameterDescrip
 class UnixStyleUsage(commander: JCommander) extends DefaultUsageFormatter(commander) {
 
   override def appendMainLine(out: Builder, hasOptions: Boolean,
-                              hasCommands: Boolean, indentCount: Int, indent: String): Unit = {
+      hasCommands: Boolean, indentCount: Int, indent: String): Unit = {
     wrapDescription(out, indentCount, commander.getProgramDisplayName + "\n")
   }
 
   override def appendAllParametersDetails(out: Builder, indentCount: Int, indent: String,
-                                          sortedParameters: List[ParameterDescription]): Unit = {
+      sortedParameters: List[ParameterDescription]): Unit = {
     var prefixIndent = 0
     for (pd <- sortedParameters.asScala) {
       val prefix = "  " + pd.getNames

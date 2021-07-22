@@ -62,7 +62,7 @@ class KyuubiCli extends Logging {
   }
 
   def printUsageOfJcommander(service: String, action: Option[String],
-                             jcommander: JCommander): Unit = {
+      jcommander: JCommander): Unit = {
     // scalastyle:off println
     val act = if (action.isEmpty) "[actions]" else action
     println(s"Usage: kyuubi-ctl ${service} ${act} [options]")
