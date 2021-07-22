@@ -70,12 +70,7 @@
             <post>dev@kyuubi.apache.org</post>
             <subscribe>dev-subscribe@kyuubi.apache.org</subscribe>
             <unsubscribe>dev-unsubscribe@kyuubi.apache.org</unsubscribe>
-        </mailingList>
-        <mailingList>
-            <name>Commits Mailing List</name>
-            <post>commits@kyuubi.apache.org</post>
-            <subscribe>commits-subscribe@kyuubi.apache.org</subscribe>
-            <unsubscribe>commits-unsubscribe@kyuubi.apache.org</unsubscribe>
+            <archive>https://mail-archives.apache.org/mod_mbox/kyuubi-dev</archive>
         </mailingList>
     </mailingLists>
 
@@ -97,6 +92,8 @@
     <properties>
         <java.version>1.8</java.version>
         <maven.version>3.6.3</maven.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
         <scala.version>2.12.14</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
 
