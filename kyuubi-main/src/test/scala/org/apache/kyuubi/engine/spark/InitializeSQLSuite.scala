@@ -58,7 +58,7 @@ class InitializeSQLSuite extends WithKyuubiServer with JDBCTestUtils {
       val result = statement.executeQuery("SELECT COUNT(*) FROM INIT_DB.test WHERE a = 2")
       assert(result.next())
       currentSessionCnt = result.getLong(1)
-      assert(currentSessionCnt >= 0)
+      assert(currentSessionCnt >= 1)
       assert(!result.next())
     }
     // new session
