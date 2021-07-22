@@ -37,5 +37,5 @@ spec:
       protocol: TCP
   type: NodePort
   selector:
-    # some of pod label
+    # same of pod label
     app: kyuubi-server
