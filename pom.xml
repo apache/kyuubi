@@ -85,6 +85,7 @@
         <ldapsdk.version>5.1.4</ldapsdk.version>
         <prometheus.version>0.10.0</prometheus.version>
         <scopt.version>4.0.1</scopt.version>
+        <jcommander.version>1.81</jcommander.version>
         <spark.version>3.1.2</spark.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop${hadoop.binary.version}.tgz</spark.archive.name>
         <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
@@ -1037,6 +1038,12 @@
                 <groupId>com.github.scopt</groupId>
                 <artifactId>scopt_${scala.binary.version}</artifactId>
                 <version>${scopt.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.beust</groupId>
+                <artifactId>jcommander</artifactId>
+                <version>${jcommander.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

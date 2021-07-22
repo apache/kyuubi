@@ -239,6 +239,7 @@ io.prometheus:simpleclient_common
 io.prometheus:simpleclient_dropwizard
 io.prometheus:simpleclient_servlet
 org.apache.zookeeper:zookeeper
+com.beust:jcommander
 
 BSD 3-Clause
 ------------
