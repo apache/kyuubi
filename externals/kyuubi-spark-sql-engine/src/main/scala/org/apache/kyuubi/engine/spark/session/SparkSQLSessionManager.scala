@@ -22,8 +22,10 @@ import org.apache.spark.sql.{AnalysisException, SparkSession}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SHARE_LEVEL, ENGINE_SINGLE_SPARK_SESSION}
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
+import org.apache.kyuubi.engine.spark.SparkSQLEngine.kyuubiConf
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.engine.spark.udf.KDFRegistry
 import org.apache.kyuubi.session._
@@ -69,6 +71,12 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       setSession(handle, sessionImpl)
       info(s"$user's session with $handle is opened, current opening sessions" +
       s" $getOpenSessionCount")
+
+      if (!this.conf.get(ENGINE_SINGLE_SPARK_SESSION)) {
+        kyuubiConf.get(KyuubiConf.ENGINE_SESSION_INITIALIZE_SQL).split(";")
+          .foreach(sparkSession.sql(_).show)
+      }
+
       handle
     } catch {
       case e: Exception =>

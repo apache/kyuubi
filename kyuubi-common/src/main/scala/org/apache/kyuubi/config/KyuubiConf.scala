@@ -613,6 +613,14 @@ object KyuubiConf {
     .stringConf
     .createWithDefault("SHOW DATABASES")
 
+  val ENGINE_SESSION_INITIALIZE_SQL: ConfigEntry[String] =
+    buildConf("engine.session.initialize.sql")
+      .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +
+        "engine session before queries.")
+      .version("1.3.0")
+      .stringConf
+      .createWithDefault("SHOW DATABASES")
+
   val ENGINE_DEREGISTER_EXCEPTION_CLASSES: ConfigEntry[Seq[String]] =
     buildConf("engine.deregister.exception.classes")
       .doc("A comma separated list of exception classes. If there is any exception thrown," +
