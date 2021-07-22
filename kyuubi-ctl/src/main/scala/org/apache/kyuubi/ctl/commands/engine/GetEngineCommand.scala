@@ -18,7 +18,6 @@
 package org.apache.kyuubi.ctl.commands.engine
 
 import com.beust.jcommander.{JCommander, Parameter, Parameters}
-import com.google.common.annotations.VisibleForTesting
 
 import org.apache.kyuubi.ctl.commands.common.{Command, UnixStyleUsage}
 
@@ -67,9 +66,5 @@ class GetEngineCommand extends Command {
     }
   }
 
-  @VisibleForTesting
-  def test(): (String, String, Int) = {
-    (namespace, host, port)
-  }
 }
 

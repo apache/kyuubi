@@ -38,7 +38,9 @@ class KyuubiCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .build()
 
     engineCommand.parse(args: _*)
-    assert(("namespace", "localhost", 65535).equals(getEngineCommand.test()))
+    assert("namespace".equals(getEngineCommand.namespace))
+    assert("localhost".equals(getEngineCommand.host))
+    assert(65535 == getEngineCommand.port)
   }
 
   test("test kyuubi cli usage") {
