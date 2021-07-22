@@ -19,13 +19,13 @@
 # Start:
 #   kubectl apply -f https://raw.githubusercontent.com/apache/incubator-kyuubi/master/docker/kyuubi-pod.yaml
 # Expose port:
-# 1. for tmp test
+# 1. Expose the Pod by port-forward, for temporary test
 #   kubectl port-forward kyuubi-example --address localhost 10009:10009
 #   Connect:
 #     kubectl exec -it kyuubi-example -- /bin/bash
 #
 #     ${SPARK_HOME}/bin/beeline -u 'jdbc:hive2://localhost:10009'
-# 2. use NodePort
+# 2. Expose the Pod as a service with NodePort
 #   see usage of kyuubi-service.yaml
 # Logging
 #   kubectl logs -f kyuubi-example
