@@ -15,10 +15,27 @@
 # limitations under the License.
 #
 
-kyuubi.yes yes
-spark.kyuubi.yes no
-# kyuubi.no no
+# Usage:
+# Start:
+#   kubectl apply -f https://raw.githubusercontent.com/apache/incubator-kyuubi/master/docker/kyuubi-service.yaml
+# Connect:
+#   ${SPARK_HOME}/bin/beeline -u 'jdbc:hive2://${any_hostname_of_k8s_nodes}:30009'
 
-spark.user.test a
-___userb___.spark.user.test b
-___userc___.spark.user.test c
+apiVersion: v1
+kind: Service
+metadata:
+  name: kyuubi-example-service
+spec:
+  ports:
+    # The default port limit is 30000-32767
+    # to change:
+    #   vim kube-apiserver.yaml (usually under path: /etc/kubernetes/manifests/)
+    #   add or change line 'service-node-port-range=1-32767' under kube-apiserver
+    - nodePort: 30009
+      # same of containerPort in pod yaml
+      port: 10009
+      protocol: TCP
+  type: NodePort
+  selector:
+    # same of pod label
+    app: kyuubi-server
