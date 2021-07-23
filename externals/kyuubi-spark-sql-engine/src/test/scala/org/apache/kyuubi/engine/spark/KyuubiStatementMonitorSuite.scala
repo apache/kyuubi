@@ -136,7 +136,7 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
 
         val kyuubiStageInfo = kyuubiStageQueue.peek()
         assert(kyuubiStageInfo.statementId === OperationHandle(opHandle).identifier.toString)
-        assert(kyuubiStageInfo.stageInfo.completionTime !== None)
+        assert(kyuubiStageInfo.stageInfo.completionTime.nonEmpty)
       }
     }
   }
