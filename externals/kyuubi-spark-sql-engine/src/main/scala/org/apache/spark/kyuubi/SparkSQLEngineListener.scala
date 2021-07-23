@@ -31,7 +31,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.monitor.KyuubiStatementMonitor
-import org.apache.kyuubi.engine.spark.monitor.entity.KyuubiJobInfo
+import org.apache.kyuubi.engine.spark.monitor.entity.{KyuubiJobInfo, KyuubiStageInfo}
 import org.apache.kyuubi.ha.client.EngineServiceDiscovery
 import org.apache.kyuubi.service.{Serverable, ServiceState}
 
@@ -77,7 +77,7 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
 
   override def onJobEnd(jobEnd: SparkListenerJobEnd): Unit = {
     KyuubiStatementMonitor.insertJobEndTimeAndResult(jobEnd)
-    info(s"Job end. Job ${jobEnd.jobId} state is ${jobEnd.jobResult.toString}")
+    debug(s"Job end. Job ${jobEnd.jobId} state is ${jobEnd.jobResult.toString}")
     jobEnd.jobResult match {
      case JobFailed(e) if e != null =>
        val cause = findCause(e)
@@ -110,6 +110,13 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
 
      case _ =>
    }
+  }
+
+  override def onStageSubmitted(stageSubmitted: SparkListenerStageSubmitted): Unit = {
+    val statementId = stageSubmitted.properties.getProperty(KYUUBI_STATEMENT_ID_KEY)
+    val kyuubiStageInfo = KyuubiStageInfo(
+      stageSubmitted.stageInfo.stageId, statementId, stageSubmitted.stageInfo)
+    KyuubiStatementMonitor.putStageInfoIntoQueue(kyuubiStageInfo)
   }
 
   @tailrec

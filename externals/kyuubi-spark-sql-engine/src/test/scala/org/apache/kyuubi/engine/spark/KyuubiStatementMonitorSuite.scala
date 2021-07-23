@@ -27,7 +27,7 @@ import org.scalatest.PrivateMethodTester
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.engine.spark.monitor.KyuubiStatementMonitor
-import org.apache.kyuubi.engine.spark.monitor.entity.{KyuubiJobInfo, KyuubiStatementInfo}
+import org.apache.kyuubi.engine.spark.monitor.entity.{KyuubiJobInfo, KyuubiStageInfo, KyuubiStatementInfo}
 import org.apache.kyuubi.operation.{HiveJDBCTests, OperationHandle}
 
 class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
@@ -115,6 +115,29 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
         waitForOperationToComplete(client, operationHandle)
       }
       assert(jobIdToJobInfoMap.size() === 1)
+    }
+  }
+
+  test("add kyuubiStageInfo into queue and remove them when threshold reached") {
+    val sql = "select timestamp'2021-06-01'"
+    val getQueue = PrivateMethod[
+      ArrayBlockingQueue[KyuubiStageInfo]](Symbol("kyuubiStageInfoQueue"))()
+    val kyuubiStageQueue = KyuubiStatementMonitor.invokePrivate(getQueue)
+    kyuubiStageQueue.clear()
+    withSessionHandle { (client, handle) =>
+      val req = new TExecuteStatementReq()
+      req.setSessionHandle(handle)
+      req.setStatement(sql)
+      val tExecuteStatementResp = client.ExecuteStatement(req)
+      val opHandle = tExecuteStatementResp.getOperationHandle
+
+      eventually(timeout(10.seconds), interval(100.milliseconds)) {
+        assert(kyuubiStageQueue.size() === 1)
+
+        val kyuubiStageInfo = kyuubiStageQueue.peek()
+        assert(kyuubiStageInfo.statementId === OperationHandle(opHandle).identifier.toString)
+        assert(kyuubiStageInfo.stageInfo.completionTime !== None)
+      }
     }
   }
 

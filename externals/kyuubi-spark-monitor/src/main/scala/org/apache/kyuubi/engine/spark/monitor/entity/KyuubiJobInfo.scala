@@ -34,6 +34,7 @@ import org.apache.spark.scheduler.JobResult
  * @param stageIds: is array
  * @param startTime
  */
+// TODO: kyuubi-851: Thread safe consider: for statementInfo, jobInfo and stageInfo
 case class KyuubiJobInfo(
     jobId: Int,
     statementId: String,

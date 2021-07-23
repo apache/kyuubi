@@ -34,6 +34,7 @@ import org.apache.kyuubi.operation.OperationState.OperationState
  * @param sessionId
  * @param stateToTime: store this statement's every state and the time of occurrence
  */
+// TODO: kyuubi-851: Thread safe consider: for statementInfo, jobInfo and stageInfo
 case class KyuubiStatementInfo(
     statementId: String,
     statement: String,

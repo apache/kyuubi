@@ -22,13 +22,13 @@ import java.util.concurrent.{ArrayBlockingQueue, ConcurrentHashMap}
 import org.apache.spark.scheduler.SparkListenerJobEnd
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.engine.spark.monitor.entity.{KyuubiJobInfo, KyuubiStatementInfo}
+import org.apache.kyuubi.engine.spark.monitor.entity.{KyuubiJobInfo, KyuubiStageInfo, KyuubiStatementInfo}
 
-// TODO: Thread Safe need to consider
 object KyuubiStatementMonitor extends Logging{
 
-  // TODO: Just for test. We will remove them in the future
+  // TODO: kyuubi-860: Make queue's capacity that store the event tracking data in mem configurable
   private val maxCapacity: Int = 10
+  // TODO: kyuubi-850: Make threshold that trigger when to dump data into file configurable
   private val maxSize: Int = 7
 
   /**
@@ -41,7 +41,6 @@ object KyuubiStatementMonitor extends Logging{
    *      a. time
    *      b. this queue's current size
    */
-  // TODO: Capacity should make configurable
   private val kyuubiStatementQueue = new ArrayBlockingQueue[KyuubiStatementInfo](maxCapacity)
 
   /**
@@ -57,8 +56,19 @@ object KyuubiStatementMonitor extends Logging{
    *      a. time
    *      b. this map's current size
    */
-  // TODO: Capacity should make configurable
   private val kyuubiJobIdToJobInfoMap = new ConcurrentHashMap[Int, KyuubiJobInfo](maxCapacity)
+
+  /**
+   * This blockingQueue store kyuubiStageInfo.
+   *
+   * Notice:
+   *    1. When we remove items from this queue, we should ensure those stages have finished
+   *       If not, we should put them into this queue again.
+   *    2. There have two kinds of threshold to trigger when to remove items from this queue:
+   *      a. time
+   *      b. this queue's current size
+   */
+  private val kyuubiStageInfoQueue = new ArrayBlockingQueue[KyuubiStageInfo](maxCapacity)
 
   /**
    * This method is used for putting kyuubiStatementInfo into blockingQueue(statementQueue).
@@ -67,13 +77,13 @@ object KyuubiStatementMonitor extends Logging{
    *
    * @param kyuubiStatementInfo
    */
-  // TODO: Lack size type threshold and time type threshold
+  // TODO: kyuubi-850: Make threshold that trigger when to dump data into file configurable
   def putStatementInfoIntoQueue(kyuubiStatementInfo: KyuubiStatementInfo): Unit = {
     if (kyuubiStatementQueue.size() >= maxSize) {
       removeAndDumpStatementInfoFromQueue()
     }
     val isSuccess = kyuubiStatementQueue.add(kyuubiStatementInfo)
-    info(s"Add kyuubiStatementInfo into queue is [$isSuccess], " +
+    debug(s"Add kyuubiStatementInfo into queue is [$isSuccess], " +
       s"statementId is [${kyuubiStatementInfo.statementId}]")
   }
 
@@ -81,9 +91,8 @@ object KyuubiStatementMonitor extends Logging{
    * This method is used for removing kyuubiStatementInfo from blockingQueue(statementQueue)
    * and dumpping them to a file by threshold.
    */
-  // TODO: Need ensure those items have finished. If not, we should put them into this queue again.
+  // TODO: kyuubi-846: Dumpping statementInfo from mem
   private def removeAndDumpStatementInfoFromQueue(): Unit = {
-    // TODO: Just for test
     kyuubiStatementQueue.clear()
   }
 
@@ -96,7 +105,7 @@ object KyuubiStatementMonitor extends Logging{
    *
    * @param kyuubiJobInfo
    */
-  // TODO: Lack size type threshold and time type threshold
+  // TODO: kyuubi-850: Make threshold that trigger when to dump data into file configurable
   def putJobInfoIntoMap(kyuubiJobInfo: KyuubiJobInfo): Unit = {
     if (kyuubiJobIdToJobInfoMap.size() >= maxSize) {
       removeAndDumpJobInfoFromMap()
@@ -109,8 +118,8 @@ object KyuubiStatementMonitor extends Logging{
    * This method is used for removing kyuubiJobInfo from hashMap(kyuubiJobIdToJobInfoMap)
    * and dumpping them to a file by threshold.
    */
+  // TODO: kyuubi-847: Dumpping jobInfo from mem into a file
   private def removeAndDumpJobInfoFromMap(): Unit = {
-    // TODO: Just for test
     kyuubiJobIdToJobInfoMap.clear()
   }
 
@@ -132,5 +141,30 @@ object KyuubiStatementMonitor extends Logging{
     } else {
       warn(s"JobStartEvent is lost. JobId is [${jobInfo.jobId}]")
     }
+  }
+
+  /**
+   * This method is used for putting kyuubiStageInfo into blockingQueue.
+   * Every time we put an item into this queue, we should judge this queue's current size at first.
+   * If the size is more than threshold, we need to dump items from this queue.
+   *
+   * @param kyuubiStageInfo
+   */
+  // TODO: kyuubi-850: Make threshold that trigger when to dump data into file configurable
+  def putStageInfoIntoQueue(kyuubiStageInfo: KyuubiStageInfo): Unit = {
+    if (kyuubiStageInfoQueue.size() >= maxSize) {
+      dumpStageInfo()
+    }
+    kyuubiStageInfoQueue.add(kyuubiStageInfo)
+    debug(s"Add kyuubiStageInfo into queue, statementId is [${kyuubiStageInfo.statementId}], " +
+      s"stageId is [${kyuubiStageInfo.stageId}]")
+  }
+
+  /**
+   * This method is used for dumpping kyuubiStageInfo from queue by threshold.
+   */
+  // TODO: kyuubi-848: Dumpping stageInfo from mem
+  private def dumpStageInfo(): Unit = {
+    kyuubiStageInfoQueue.clear()
   }
 }

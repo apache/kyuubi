@@ -19,7 +19,19 @@ package org.apache.kyuubi.engine.spark.monitor.entity
 
 import org.apache.spark.scheduler.StageInfo
 
+/**
+ * This object is used for storing the basic data for stage.
+ * StageInfo store the metrics in its running time.
+ *
+ * In this object, you can use jobId to get all stages that belong to this job and also
+ * you can use statementId to get all stages.
+ *
+ * @param stageId
+ * @param statementId
+ * @param stageInfo
+ */
+// TODO: kyuubi-851: Thread safe consider: for statementInfo, jobInfo and stageInfo
 case class KyuubiStageInfo(
     stageId: Int,
     statementId: String,
-    var stageInfo: StageInfo)
+    stageInfo: StageInfo)
