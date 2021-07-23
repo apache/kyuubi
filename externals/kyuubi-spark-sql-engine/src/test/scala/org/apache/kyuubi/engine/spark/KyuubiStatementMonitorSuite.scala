@@ -118,7 +118,7 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
     }
   }
 
-  test("add kyuubiStageInfo into queue and remove them when threshold reached") {
+  test("add kyuubiStageInfo into queue") {
     val sql = "select timestamp'2021-06-01'"
     val getQueue = PrivateMethod[
       ArrayBlockingQueue[KyuubiStageInfo]](Symbol("kyuubiStageInfoQueue"))()
