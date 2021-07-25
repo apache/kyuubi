@@ -365,7 +365,7 @@ trait JDBCTests extends BasicJDBCTests {
     withJdbcStatement() { statement =>
       val rs = statement.executeQuery("SELECT system_user()")
       assert(rs.next())
-      assert(rs.getString(1).nonEmpty)
+      assert(rs.getString(1) == System.getProperty("user.name"))
     }
   }
 }
