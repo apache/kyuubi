@@ -26,7 +26,6 @@ class KubernetesJDBCTestsSuite extends JDBCTests with Logging {
     val kyuubiServers =
       kubernetesclient
         .pods()
-        .withLabel("kyuubi-role", "KYUUBI_SERVER")
         .list()
         .getItems
     assert(kyuubiServers.size() == 1)
