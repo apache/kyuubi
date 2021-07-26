@@ -126,6 +126,8 @@
         <slf4j.version>1.7.30</slf4j.version>
         <zookeeper.version>3.4.14</zookeeper.version>
 
+        <kubernetes-client.version>5.5.0</kubernetes-client.version>
+
         <scalatest.version>3.2.9</scalatest.version>
         <iceberg.name>iceberg-spark3-runtime</iceberg.name>
         <iceberg.version>0.11.1</iceberg.version>
@@ -421,6 +423,12 @@
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-client</artifactId>
+                <version>${kubernetes-client.version}</version>
             </dependency>
 
             <dependency>
@@ -1597,6 +1605,13 @@
             <id>spark-block-cleaner</id>
             <modules>
                 <module>tools/spark-block-cleaner</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>kubernetes</id>
+            <modules>
+                <module>kubernetes/integration-tests</module>
             </modules>
         </profile>
     </profiles>
