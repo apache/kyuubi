@@ -21,6 +21,8 @@ import java.io.File
 import java.nio.file.{Files, Paths}
 import java.util.concurrent.{CountDownLatch, Executors}
 
+import scala.util.control.NonFatal
+
 import org.apache.log4j.PropertyConfigurator
 
 import org.apache.kyuubi.Logging
@@ -185,8 +187,14 @@ object KubernetesSparkBlockCleaner extends Logging {
       val hasFinished = new CountDownLatch(cacheDirs.length)
       cacheDirs.foreach { dir =>
         threadPool.execute(() => {
-          doCleanJob(dir)
-          hasFinished.countDown()
+          try {
+            doCleanJob(dir)
+          } catch {
+            case NonFatal(e) =>
+              error("failed to clean", e)
+          } finally {
+            hasFinished.countDown()
+          }
         })
       }
       hasFinished.await()
