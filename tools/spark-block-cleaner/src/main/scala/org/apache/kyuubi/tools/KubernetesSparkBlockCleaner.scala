@@ -191,7 +191,7 @@ object KubernetesSparkBlockCleaner extends Logging {
             doCleanJob(dir)
           } catch {
             case NonFatal(e) =>
-              error("failed to clean", e)
+              error(s"failed to clean dir: $dir", e)
           } finally {
             hasFinished.countDown()
           }
