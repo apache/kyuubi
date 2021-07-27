@@ -46,7 +46,7 @@ object KyuubiServer extends Logging {
     server.start()
     Utils.addShutdownHook(new Runnable {
       override def run(): Unit = server.stop()
-    }, 100)
+    }, Utils.SERVER_SHUTDOWN_PRIORITY)
     server
   }
 
