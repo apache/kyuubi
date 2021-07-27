@@ -37,7 +37,6 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
     UIUtils.headerSparkPage(request, parent.name, content, parent)
   }
 
-  /** Generate basic stats of the thrift server program */
   private def generateBasicStats(): Seq[Node] = {
     val timeSinceStart = System.currentTimeMillis() - parent.engine.getStartTime
     <ul class ="list-unstyled">
