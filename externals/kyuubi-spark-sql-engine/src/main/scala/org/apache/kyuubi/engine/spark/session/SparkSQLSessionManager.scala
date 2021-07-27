@@ -17,8 +17,11 @@
 
 package org.apache.kyuubi.engine.spark.session
 
+import java.util.concurrent.atomic.AtomicBoolean
+
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.{AnalysisException, SparkSession}
+
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SHARE_LEVEL, ENGINE_SINGLE_SPARK_SESSION}
 import org.apache.kyuubi.config.KyuubiConf
@@ -28,8 +31,6 @@ import org.apache.kyuubi.engine.spark.SparkSQLEngine.kyuubiConf
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.engine.spark.udf.KDFRegistry
 import org.apache.kyuubi.session._
-
-import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * A [[SessionManager]] constructed with [[SparkSession]] which give it the ability to talk with
