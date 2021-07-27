@@ -608,7 +608,8 @@ object KyuubiConf {
 
   val ENGINE_INITIALIZE_SQL: ConfigEntry[String] = buildConf("engine.initialize.sql")
     .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +
-      "engine before queries.")
+      "engine before queries. This configuration can not be used in JDBC url due to " +
+      "the limitation of Beeline/JDBC driver.")
     .version("1.2.0")
     .stringConf
     .createWithDefault("SHOW DATABASES")
@@ -616,7 +617,8 @@ object KyuubiConf {
   val ENGINE_SESSION_INITIALIZE_SQL: ConfigEntry[String] =
     buildConf("engine.session.initialize.sql")
       .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +
-        "engine session before queries.")
+        "engine session before queries. This configuration can not be used in JDBC url due to " +
+        "the limitation of Beeline/JDBC driver.")
       .version("1.3.0")
       .stringConf
       .createWithDefault("SHOW DATABASES")
