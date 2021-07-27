@@ -22,10 +22,10 @@ import java.util.concurrent.CountDownLatch
 
 import org.apache.spark.SparkConf
 import org.apache.spark.kyuubi.SparkSQLEngineListener
-import org.apache.spark.sql.SparkSession
-import org.apache.kyuubi.Logging
 import org.apache.spark.kyuubi.ui.EngineTab
+import org.apache.spark.sql.SparkSession
 
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.countDownLatch
