@@ -59,7 +59,7 @@ spec:
           protocol: TCP
       volumeMounts:
         - name: kyuubi-defaults
-          mountPath: /opt/kyuubi/conf/
+          mountPath: /opt/kyuubi/conf
   volumes:
     - name: kyuubi-defaults
       configMap:
