@@ -23,8 +23,9 @@ import java.util.concurrent.CountDownLatch
 import org.apache.spark.SparkConf
 import org.apache.spark.kyuubi.SparkSQLEngineListener
 import org.apache.spark.sql.SparkSession
-
 import org.apache.kyuubi.Logging
+import org.apache.spark.kyuubi.ui.EngineTab
+
 import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.countDownLatch
@@ -33,12 +34,12 @@ import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, RetryPolicies, Servi
 import org.apache.kyuubi.service.{Serverable, Service}
 import org.apache.kyuubi.util.SignalRegister
 
-private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
+final class SparkSQLEngine(name: String, spark: SparkSession)
   extends Serverable(name) {
 
   def this(spark: SparkSession) = this(classOf[SparkSQLEngine].getSimpleName, spark)
 
-  override private[kyuubi] val backendService = new SparkSQLBackendService(spark)
+  override val backendService = new SparkSQLBackendService(spark)
   override protected def supportsServiceDiscovery: Boolean = {
     ServiceDiscovery.supportServiceDiscovery(conf)
   }
@@ -111,6 +112,7 @@ object SparkSQLEngine extends Logging {
     // Stop engine before SparkContext stopped to avoid calling a stopped SparkContext
     addShutdownHook(() => engine.stop(), SPARK_CONTEXT_SHUTDOWN_PRIORITY + 1)
     currentEngine = Some(engine)
+    EngineTab(engine)
     engine
   }
 

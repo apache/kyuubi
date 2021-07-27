@@ -15,25 +15,27 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.service
+package org.apache.spark.kyuubi.ui
 
-import org.apache.kyuubi.KyuubiException
+import org.apache.spark.SparkContext
+import org.apache.spark.kyuubi.ui.EngineTab.ui
+import org.apache.spark.ui.{SparkUI, SparkUITab}
 
-class NoopServer extends Serverable("noop") {
-  override val backendService = new NoopBackendService
+import org.apache.kyuubi.Utils
+import org.apache.kyuubi.engine.spark.SparkSQLEngine
 
-  override def start(): Unit = {
-    super.start()
-    if (getConf.getOption("kyuubi.test.server.should.fail").exists(_.toBoolean)) {
-      throw new IllegalArgumentException("should fail")
-    }
+/**
+ * Note that [[SparkUITab]] is private for Spark
+ */
+case class EngineTab(engine: SparkSQLEngine) extends SparkUITab(ui, "kyuubi") {
+  override val name: String = "Kyuubi Query Engine"
+  if (ui != null) {
+    this.attachPage(EnginePage(this))
+    ui.attachTab(this)
+    Utils.addShutdownHook(() => ui.detachTab(this))
   }
+}
 
-  override protected def stopServer(): Unit = {
-    throw new KyuubiException("no need to stop me")
-  }
-
-
-  override val discoveryService: Service = backendService
-  override protected val supportsServiceDiscovery: Boolean = false
+object EngineTab {
+  lazy val ui: SparkUI = SparkContext.getActive.flatMap(_.ui).orNull
 }

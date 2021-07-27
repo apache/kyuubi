@@ -31,7 +31,7 @@ import org.apache.hadoop.util.ShutdownHookManager
 
 import org.apache.kyuubi.config.internal.Tests.IS_TESTING
 
-private[kyuubi] object Utils extends Logging {
+object Utils extends Logging {
 
   import org.apache.kyuubi.config.KyuubiConf._
 

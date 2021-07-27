@@ -36,6 +36,8 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
 
   private final val handleToOperation = new java.util.HashMap[OperationHandle, Operation]()
 
+  def getOperationCount: Int = handleToOperation.size()
+
   override def initialize(conf: KyuubiConf): Unit = {
     LogDivertAppender.initialize()
     super.initialize(conf)
