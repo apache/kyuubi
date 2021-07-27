@@ -25,7 +25,9 @@ class SingleSessionSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
   override def withKyuubiConf: Map[String, String] = {
     Map(ENGINE_SHARE_LEVEL.key -> "SERVER",
-      ENGINE_SINGLE_SPARK_SESSION.key -> "true")
+      ENGINE_SINGLE_SPARK_SESSION.key -> "true",
+      (ENGINE_SESSION_INITIALIZE_SQL.key, "CREATE DATABASE IF NOT EXISTS INIT_DB_SINGLE_SESSION")
+    )
   }
 
   override protected def jdbcUrl: String = s"jdbc:hive2://${engine.connectionUrl}/;#" +
@@ -41,4 +43,10 @@ class SingleSessionSuite extends WithSparkSQLEngine with JDBCTestUtils {
     }
   }
 
+  test("test session initialize sql will not execute in single session mode") {
+    withJdbcStatement() { statement =>
+      val result = statement.executeQuery("SHOW DATABASES LIKE 'INIT_DB_SINGLE_SESSION'")
+      assert(!result.next())
+    }
+  }
 }
