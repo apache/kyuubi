@@ -74,7 +74,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
       if (!this.conf.get(ENGINE_SINGLE_SPARK_SESSION)) {
         kyuubiConf.get(KyuubiConf.ENGINE_SESSION_INITIALIZE_SQL).split(";").foreach { sql =>
-          info(s"execute session init sql: $sql")
+          info(s"Execute session initializing sql: $sql")
           sparkSession.sql(sql).show
         }
       }
