@@ -30,10 +30,8 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
     val content = generateBasicStats() ++
         <br/> ++
       <h4>
-        {parent.engine.backendService.sessionManager.getOpenSessionCount}
-        session(s) are online,
-        running
-        {parent.engine.backendService.sessionManager.operationManager.getOperationCount}
+        {parent.engine.backendService.sessionManager.getOpenSessionCount} session(s) are online,
+        running {parent.engine.backendService.sessionManager.operationManager.getOperationCount}
         operations
       </h4>
     UIUtils.headerSparkPage(request, parent.name, content, parent)
