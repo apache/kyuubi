@@ -19,7 +19,6 @@ package org.apache.kyuubi.engine.spark.session
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.{AnalysisException, SparkSession}
-
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SHARE_LEVEL, ENGINE_SINGLE_SPARK_SESSION}
 import org.apache.kyuubi.config.KyuubiConf
@@ -29,6 +28,8 @@ import org.apache.kyuubi.engine.spark.SparkSQLEngine.kyuubiConf
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
 import org.apache.kyuubi.engine.spark.udf.KDFRegistry
 import org.apache.kyuubi.session._
+
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * A [[SessionManager]] constructed with [[SparkSession]] which give it the ability to talk with
@@ -44,6 +45,8 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   def this(spark: SparkSession) = this(classOf[SparkSQLSessionManager].getSimpleName, spark)
 
   val operationManager = new SparkSQLOperationManager()
+
+  private val singleSparkSessionInitialized = new AtomicBoolean(false)
 
   override def openSession(
       protocol: TProtocolVersion,
@@ -72,11 +75,15 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       info(s"$user's session with $handle is opened, current opening sessions" +
       s" $getOpenSessionCount")
 
-      if (!this.conf.get(ENGINE_SINGLE_SPARK_SESSION)) {
-        kyuubiConf.get(KyuubiConf.ENGINE_SESSION_INITIALIZE_SQL).split(";").foreach { sql =>
-          info(s"Execute session initializing sql: $sql")
-          sparkSession.sql(sql).show
-        }
+      if (singleSparkSessionInitialized.compareAndSet(false, true)
+        || !this.conf.get(ENGINE_SINGLE_SPARK_SESSION)) {
+        kyuubiConf.get(KyuubiConf.ENGINE_SESSION_INITIALIZE_SQL)
+          .split(";")
+          .filter(_.trim.nonEmpty)
+          .foreach { sql =>
+            info(s"Execute session initializing sql: $sql")
+            sparkSession.sql(sql).show
+          }
       }
 
       handle
