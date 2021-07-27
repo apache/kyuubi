@@ -170,6 +170,8 @@ private[kyuubi] object Utils extends Logging {
 
   val DEFAULT_SHUTDOWN_PRIORITY = 100
   val SERVER_SHUTDOWN_PRIORITY = 75
+  // The value follows org.apache.spark.util.ShutdownHookManager.SPARK_CONTEXT_SHUTDOWN_PRIORITY
+  // Hooks need to be invoked before the SparkContext stopped shall use a higher priority.
   val SPARK_CONTEXT_SHUTDOWN_PRIORITY = 50
 
   /**
