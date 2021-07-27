@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.curator.test.{InstanceSpec, TestingServer}
 
-import org.apache.kyuubi.Utils
+import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.{AbstractService, ServiceState}
 import org.apache.kyuubi.zookeeper.ZookeeperConf._
@@ -55,7 +55,7 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
       }).toMap[String, Object].asJava
 
     val hostname = conf.get(ZK_CLIENT_PORT_ADDRESS).map(InetAddress.getByName)
-      .getOrElse(Utils.findLocalInetAddress).getCanonicalHostName
+      .getOrElse(findLocalInetAddress).getCanonicalHostName
     spec = new InstanceSpec(
       dataDirectory,
       clientPort,
@@ -74,7 +74,8 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
   override def start(): Unit = synchronized {
     server.start()
     info(s"$getName is started at $getConnectString")
-    Utils.addShutdownHook(() => server.close(), 50)
+    // Stop the EmbeddedZookeeper after the Kyuubi server stopped
+    addShutdownHook(() => server.close(), SERVER_SHUTDOWN_PRIORITY - 1)
     super.start()
   }
 
