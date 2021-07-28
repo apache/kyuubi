@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine.spark.session
 
-import java.util.concurrent.atomic.AtomicBoolean
-
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.{AnalysisException, SparkSession}
 
@@ -45,8 +43,6 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
   val operationManager = new SparkSQLOperationManager()
 
-  private val singleSparkSessionInitialized = new AtomicBoolean(false)
-
   override def openSession(
       protocol: TProtocolVersion,
       user: String,
@@ -63,8 +59,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
         spark.newSession()
       }
 
-      if (!this.conf.get(ENGINE_SINGLE_SPARK_SESSION)
-        || singleSparkSessionInitialized.compareAndSet(false, true)) {
+      if (!this.conf.get(ENGINE_SINGLE_SPARK_SESSION)) {
         this.conf.get(ENGINE_SESSION_INITIALIZE_SQL)
           .split(";")
           .filter(_.trim.nonEmpty)
