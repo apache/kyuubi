@@ -22,8 +22,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>kyuubi</artifactId>
         <groupId>org.apache.kyuubi</groupId>
+        <artifactId>kyuubi-parent</artifactId>
         <version>1.3.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>

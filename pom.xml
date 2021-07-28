@@ -18,12 +18,62 @@
 
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <parent>
+        <groupId>org.apache</groupId>
+        <artifactId>apache</artifactId>
+        <version>23</version>
+    </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.apache.kyuubi</groupId>
-    <artifactId>kyuubi</artifactId>
-    <name>Kyuubi Project Parent</name>
+    <artifactId>kyuubi-parent</artifactId>
     <version>1.3.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+    <name>Kyuubi Project Parent</name>
+    <url>https://kyuubi.apache.org/</url>
+
+    <scm>
+        <connection>scm:git:git@github.com:apache/incubator-kyuubi.git</connection>
+        <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/incubator-kyuubi.git</developerConnection>
+        <url>scm:git:git@github.com:apache/incubator-kyuubi.git</url>
+        <tag>HEAD</tag>
+    </scm>
+
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>manual</distribution>
+        </license>
+    </licenses>
+
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/apache/incubator-kyuubi/issues</url>
+    </issueManagement>
+
+    <developers>
+        <developer>
+            <id>yaooqinn</id>
+            <name>Kent Yao</name>
+            <email>yao@apache.org</email>
+            <organization>NetEase</organization>
+            <url>https://github.com/yaooqinn</url>
+        </developer>
+    </developers>
+
+    <mailingLists>
+        <mailingList>
+            <name>Dev Mailing List</name>
+            <post>dev@kyuubi.apache.org</post>
+            <subscribe>dev-subscribe@kyuubi.apache.org</subscribe>
+            <unsubscribe>dev-unsubscribe@kyuubi.apache.org</unsubscribe>
+            <archive>https://mail-archives.apache.org/mod_mbox/kyuubi-dev</archive>
+        </mailingList>
+    </mailingLists>
+
     <modules>
         <module>dev/kyuubi-codecov</module>
         <module>externals/kyuubi-download</module>
@@ -38,29 +88,12 @@
         <module>kyuubi-metrics</module>
         <module>kyuubi-zookeeper</module>
     </modules>
-    <packaging>pom</packaging>
-
-    <licenses>
-        <license>
-            <name>The Apache Software License, Version 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
-            <distribution>manual</distribution>
-        </license>
-    </licenses>
-
-    <developers>
-        <developer>
-            <id>yaooqinn</id>
-            <name>Kent Yao</name>
-            <email>yao@apache.org</email>
-            <organization>NetEase</organization>
-            <url>https://github.com/yaooqinn</url>
-        </developer>
-    </developers>
 
     <properties>
         <java.version>1.8</java.version>
         <maven.version>3.6.3</maven.version>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
         <scala.version>2.12.14</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
 
@@ -92,6 +125,8 @@
 
         <slf4j.version>1.7.30</slf4j.version>
         <zookeeper.version>3.4.14</zookeeper.version>
+
+        <kubernetes-client.version>5.5.0</kubernetes-client.version>
 
         <scalatest.version>3.2.9</scalatest.version>
         <iceberg.name>iceberg-spark3-runtime</iceberg.name>
@@ -388,6 +423,12 @@
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-client</artifactId>
+                <version>${kubernetes-client.version}</version>
             </dependency>
 
             <dependency>
@@ -1371,6 +1412,8 @@
                             <exclude>build/scala-*/**</exclude>
                             <exclude>**/**/operation_logs/**/**</exclude>
                             <exclude>**/*.output.schema</exclude>
+                            <exclude>**/kyuubi-*-bin-without-spark/**</exclude>
+                            <exclude>**/kyuubi-*-bin-spark-*/**</exclude>
                         </excludes>
                     </configuration>
                 </plugin>
@@ -1562,6 +1605,13 @@
             <id>spark-block-cleaner</id>
             <modules>
                 <module>tools/spark-block-cleaner</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>kubernetes</id>
+            <modules>
+                <module>kubernetes/integration-tests</module>
             </modules>
         </profile>
     </profiles>

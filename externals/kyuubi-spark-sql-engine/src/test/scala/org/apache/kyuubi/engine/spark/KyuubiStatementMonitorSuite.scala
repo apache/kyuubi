@@ -36,8 +36,8 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
   override protected def jdbcUrl: String = getJdbcUrl
   override def withKyuubiConf: Map[String, String] = Map.empty
 
-  test("add kyuubiStatementInfo into queue and remove them by size type threshold") {
-    val sql = "select timestamp'2021-06-01'"
+  test("add kyuubiStatementInfo into queue") {
+    var baseSql = "select timestamp'2021-06-0"
     val total: Int = 7
     // Clear kyuubiStatementQueue first
     val getQueue = PrivateMethod[
@@ -45,36 +45,20 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
     val kyuubiStatementQueue = KyuubiStatementMonitor.invokePrivate(getQueue)
     kyuubiStatementQueue.clear()
     withSessionHandle { (client, handle) =>
+
       for ( a <- 1 to total ) {
+        val sql = baseSql + a + "'"
         val req = new TExecuteStatementReq()
         req.setSessionHandle(handle)
         req.setStatement(sql)
         val tExecuteStatementResp = client.ExecuteStatement(req)
         val operationHandle = tExecuteStatementResp.getOperationHandle
-        waitForOperationToComplete(client, operationHandle)
+
+        val kyuubiStatementInfo = kyuubiStatementQueue.poll()
+        assert(
+          kyuubiStatementInfo.statementId === OperationHandle(operationHandle).identifier.toString)
+        assert(sql === kyuubiStatementInfo.statement)
       }
-
-      var iterator = kyuubiStatementQueue.iterator()
-      while (iterator.hasNext) {
-        val kyuubiStatementInfo = iterator.next()
-        assert(kyuubiStatementInfo.statement !== null)
-        assert(kyuubiStatementInfo.statementId !== null)
-        assert(kyuubiStatementInfo.sessionId !== null)
-        assert(kyuubiStatementInfo.queryExecution !== null)
-        assert(kyuubiStatementInfo.stateToTime.size === 4)
-      }
-      iterator = null
-
-      // Test for clear kyuubiStatementQueue
-      // This function is used for avoiding mem leak
-      val req = new TExecuteStatementReq()
-      req.setSessionHandle(handle)
-      req.setStatement(sql)
-      val tExecuteStatementResp = client.ExecuteStatement(req)
-      val operationHandle = tExecuteStatementResp.getOperationHandle
-      waitForOperationToComplete(client, operationHandle)
-
-      assert(kyuubiStatementQueue.size() === 1)
     }
   }
 

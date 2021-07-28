@@ -168,12 +168,18 @@ private[kyuubi] object Utils extends Logging {
     System.getProperty(IS_TESTING.key) != null
   }
 
+  val DEFAULT_SHUTDOWN_PRIORITY = 100
+  val SERVER_SHUTDOWN_PRIORITY = 75
+  // The value follows org.apache.spark.util.ShutdownHookManager.SPARK_CONTEXT_SHUTDOWN_PRIORITY
+  // Hooks need to be invoked before the SparkContext stopped shall use a higher priority.
+  val SPARK_CONTEXT_SHUTDOWN_PRIORITY = 50
+
   /**
    * Add some operations that you want into ShutdownHook
    * @param hook
    * @param priority: 0~100
    */
-  def addShutdownHook(hook: Runnable, priority: Int): Unit = {
+  def addShutdownHook(hook: Runnable, priority: Int = DEFAULT_SHUTDOWN_PRIORITY): Unit = {
     ShutdownHookManager.get().addShutdownHook(hook, priority)
   }
 
