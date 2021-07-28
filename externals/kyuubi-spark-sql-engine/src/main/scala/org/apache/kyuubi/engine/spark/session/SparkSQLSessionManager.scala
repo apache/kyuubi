@@ -21,7 +21,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.{AnalysisException, SparkSession}
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SHARE_LEVEL, ENGINE_SINGLE_SPARK_SESSION}
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
@@ -57,6 +57,16 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
         spark
       } else {
         spark.newSession()
+      }
+
+      if (!this.conf.get(ENGINE_SINGLE_SPARK_SESSION)) {
+        this.conf.get(ENGINE_SESSION_INITIALIZE_SQL)
+          .split(";")
+          .filter(_.trim.nonEmpty)
+          .foreach { sql =>
+            info(s"Execute session initializing sql: $sql")
+            sparkSession.sql(sql).show
+          }
       }
 
       sessionImpl.normalizedConf.foreach {
