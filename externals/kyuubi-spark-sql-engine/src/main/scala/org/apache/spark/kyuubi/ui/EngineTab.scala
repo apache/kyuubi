@@ -17,9 +17,7 @@
 
 package org.apache.spark.kyuubi.ui
 
-import org.apache.spark.SparkContext
-import org.apache.spark.kyuubi.ui.EngineTab.ui
-import org.apache.spark.ui.{SparkUI, SparkUITab}
+import org.apache.spark.ui.SparkUITab
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
@@ -27,15 +25,14 @@ import org.apache.kyuubi.engine.spark.SparkSQLEngine
 /**
  * Note that [[SparkUITab]] is private for Spark
  */
-case class EngineTab(engine: SparkSQLEngine) extends SparkUITab(ui, "kyuubi") {
+case class EngineTab(engine: SparkSQLEngine)
+  extends SparkUITab(engine.spark.sparkContext.ui.orNull, "kyuubi") {
+
   override val name: String = "Kyuubi Query Engine"
-  if (ui != null) {
+
+  engine.spark.sparkContext.ui.foreach { ui =>
     this.attachPage(EnginePage(this))
     ui.attachTab(this)
     Utils.addShutdownHook(() => ui.detachTab(this))
   }
-}
-
-object EngineTab {
-  lazy val ui: SparkUI = SparkContext.getActive.flatMap(_.ui).orNull
 }

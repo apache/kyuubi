@@ -34,11 +34,7 @@ import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, RetryPolicies, Servi
 import org.apache.kyuubi.service.{Serverable, Service}
 import org.apache.kyuubi.util.SignalRegister
 
-final class SparkSQLEngine(name: String, spark: SparkSession)
-  extends Serverable(name) {
-
-  def this(spark: SparkSession) = this(classOf[SparkSQLEngine].getSimpleName, spark)
-
+case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngine") {
   override val backendService = new SparkSQLBackendService(spark)
   override protected def supportsServiceDiscovery: Boolean = {
     ServiceDiscovery.supportServiceDiscovery(conf)

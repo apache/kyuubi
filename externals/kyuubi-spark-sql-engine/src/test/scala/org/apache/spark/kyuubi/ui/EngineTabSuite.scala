@@ -20,6 +20,7 @@ package org.apache.spark.kyuubi.ui
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.util.EntityUtils
+import org.apache.spark.SparkContext
 
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.JDBCTestUtils
@@ -29,23 +30,20 @@ class EngineTabSuite extends WithSparkSQLEngine with JDBCTestUtils {
     "spark.ui.enabled" -> "true",
     "spark.ui.port" -> "0")
 
-  private lazy val tab = EngineTab(engine)
-  private lazy val req = new HttpGet(spark.sparkContext.uiWebUrl.get + "/" + tab.prefix)
-  private lazy val client = HttpClients.createDefault()
+  override def beforeAll(): Unit = {
+    SparkContext.getActive.foreach(_.stop())
+    super.beforeAll()
+  }
 
   test("basic stats for engine tab") {
-    assert(tab.name === "Kyuubi Query Engine")
-    assert(tab.prefix === "kyuubi")
-    assert(tab.pages.size === 1)
-    val enginePage = tab.pages(0)
-    assert(enginePage.isInstanceOf[EnginePage])
+    assert(spark.sparkContext.ui.nonEmpty)
+    val client = HttpClients.createDefault()
+    val req = new HttpGet(spark.sparkContext.uiWebUrl.get + "/kyuubi/")
     val response = client.execute(req)
     assert(response.getStatusLine.getStatusCode === 200)
     val resp = EntityUtils.toString(response.getEntity)
     assert(resp.contains("<strong>Background execution pool threads alive: </strong>"))
-  }
-
-  test("active sessions update when there are connections") {
+    assert(resp.contains("0 session(s) are online,"))
     withJdbcStatement() { statement =>
       statement.execute(
         """
