@@ -87,7 +87,7 @@ You can find the specific version of Kyuubi documentation as listed below.
 - [v1.0.1](https://kyuubi.readthedocs.io/en/v1.0.1/)
 - [v1.0.0](https://kyuubi.readthedocs.io/en/v1.0.0/)
 
-For 0.8 and earlier versions, please check the [Github Pages](https://NetEase.github.io/kyuubi/) directly.
+For 0.8 and earlier versions, please check the [Github Pages](https://apache.github.io/incubator-kyuubi/) directly.
 
 ## Quick Start
 
@@ -99,8 +99,8 @@ All bits of help are welcome. You can make various types of contributions to Kyu
 
 - Help new users in chat channel or share your success stories with us - [![Gitter](https://badges.gitter.im/kyuubi-on-spark/Lobby.svg)](https://gitter.im/kyuubi-on-spark/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 - Improve Documentation - [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.readthedocs.io/en/latest/?badge=latest)
-- Test releases - [![GitHub release](https://img.shields.io/github/release/NetEase/kyuubi.svg)](https://github.com/NetEase/kyuubi/releases)
-- Improve test coverage - [![codecov](https://codecov.io/gh/NetEase/kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/NetEase/kyuubi)
+- Test releases - [![GitHub release](https://img.shields.io/github/release/apache/incubator-kyuubi.svg)](https://github.com/apache/incubator-kyuubi//releases)
+- Improve test coverage - [![codecov](https://codecov.io/gh/apache/incubator-kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/incubator-kyuubi)
 - Report bugs and better help developers to reproduce
 - Review changes
 - Make a pull request

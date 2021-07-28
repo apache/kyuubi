@@ -6,8 +6,8 @@
 
 Contributing to Kyuubi including source code, documents, tests e.t.c. means that you agree to the Apache License v2.0.
 
-- Better to search the issue history first before reporting an <a class="github-button" href="https://github.com/apache/incubator-kyuubi/issues" data-color-scheme="no-preference: light; light: dark; dark: light;" data-icon="octicon-issue-opened" data-show-count="true" aria-label="Issue NetEase/kyuubi on GitHub">Issue</a>
-- Better to create an <a class="github-button" href="https://github.com/apache/incubator-kyuubi/issues" data-color-scheme="no-preference: light; light: dark; dark: light;" data-icon="octicon-issue-opened" data-show-count="true" aria-label="Issue NetEase/kyuubi on GitHub">Issue</a> to describe the feature or bug first before make a pull request.
+- Better to search the issue history first before reporting an <a class="github-button" href="https://github.com/apache/incubator-kyuubi/issues" data-color-scheme="no-preference: light; light: dark; dark: light;" data-icon="octicon-issue-opened" data-show-count="true" aria-label="Issue Kyuubi on GitHub">Issue</a>
+- Better to create an <a class="github-button" href="https://github.com/apache/incubator-kyuubi/issues" data-color-scheme="no-preference: light; light: dark; dark: light;" data-icon="octicon-issue-opened" data-show-count="true" aria-label="Issue Kyuubi on GitHub">Issue</a> to describe the feature or bug first before make a pull request.
 - Better to use English for world widely understanding.
 - Ask us anything 
 
