@@ -79,7 +79,6 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       setSession(handle, sessionImpl)
       info(s"$user's session with $handle is opened, current opening sessions" +
       s" $getOpenSessionCount")
-
       handle
     } catch {
       case e: Exception =>
