@@ -63,8 +63,8 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
         spark.newSession()
       }
 
-      if (singleSparkSessionInitialized.compareAndSet(false, true)
-        || !this.conf.get(ENGINE_SINGLE_SPARK_SESSION)) {
+      if (!this.conf.get(ENGINE_SINGLE_SPARK_SESSION)
+        || singleSparkSessionInitialized.compareAndSet(false, true)) {
         this.conf.get(ENGINE_SESSION_INITIALIZE_SQL)
           .split(";")
           .filter(_.trim.nonEmpty)
