@@ -97,7 +97,20 @@ object SparkSQLEngine extends Logging {
     }
 
     val session = SparkSession.builder.config(sparkConf).getOrCreate
-    kyuubiConf.get(KyuubiConf.ENGINE_INITIALIZE_SQL).split(";").foreach(session.sql(_).show)
+    kyuubiConf.get(KyuubiConf.ENGINE_INITIALIZE_SQL)
+      .split(";")
+      .filter(_.trim.nonEmpty)
+      .foreach { sql =>
+        info(s"Execute engine initializing sql: $sql")
+        session.sql(sql).show
+      }
+    kyuubiConf.get(KyuubiConf.ENGINE_SESSION_INITIALIZE_SQL)
+      .split(";")
+      .filter(_.trim.nonEmpty)
+      .foreach { sql =>
+        info(s"Execute session initializing sql: $sql")
+        session.sql(sql).show
+      }
     session
   }
 

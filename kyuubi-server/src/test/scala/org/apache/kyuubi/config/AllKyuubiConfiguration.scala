@@ -46,7 +46,7 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf
 // scalastyle:on line.size.limit
 class AllKyuubiConfiguration extends KyuubiFunSuite {
   private val kyuubiHome: String =
-    getClass.getProtectionDomain.getCodeSource.getLocation.getPath.split("kyuubi-main")(0)
+    getClass.getProtectionDomain.getCodeSource.getLocation.getPath.split("kyuubi-server")(0)
   private val markdown = Paths.get(kyuubiHome, "docs", "deployment", "settings.md")
     .toAbsolutePath
 
