@@ -42,7 +42,7 @@ class KyuubiCli extends Logging {
     // scalastyle:off println
     val sj = new StringJoiner("|", "<", ">")
     ServiceType.values.foreach(v => sj.add(String.valueOf(v)))
-    println(s"Usage: kyuubi-ctl ${sj.toString} [actions] [options] \n")
+    println(s"Usage: kyuubi-ctl ${sj} [actions] [options] \n")
     var prefixIndent = 0
     for (st <- commands.keys) {
       val prefix = "  " + String.valueOf(st)
@@ -111,14 +111,14 @@ object KyuubiCli extends Logging {
   def main(args: Array[String]): Unit = {
     val shell = new KyuubiCli
 
-    if (args == null || args(0).equals("-h") || args(0).equals("--help") || args.length == 1) {
+    if (args.isEmpty || args(0).equals("-h") || args(0).equals("--help")) {
       shell.printAllCommandUsage()
     } else {
       try {
         shell.run(ServiceType.withName(args(0)), args.drop(1))
       } catch {
         case _: NoSuchElementException =>
-          error(s"unknown service type: args(0)")
+          error(s"unknown service type: ${args.head}")
           shell.printAllCommandUsage()
       }
     }
