@@ -39,7 +39,8 @@ class SparkProcessBuilder(
 
   override protected val executable: String = {
     val sparkHomeOpt = env.get("SPARK_HOME").orElse {
-      val cwd = getClass.getProtectionDomain.getCodeSource.getLocation.getPath.split("kyuubi-main")
+      val cwd = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
+        .split("kyuubi-server")
       assert(cwd.length > 1)
       Paths.get(cwd.head)
         .resolve("externals")
