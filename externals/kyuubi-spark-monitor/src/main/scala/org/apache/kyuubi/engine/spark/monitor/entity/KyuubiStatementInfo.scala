@@ -19,12 +19,6 @@ package org.apache.kyuubi.engine.spark.monitor.entity
 
 import scala.collection.mutable.Map
 
-import org.apache.spark.sql.execution.QueryExecution
-
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.cli.HandleIdentifier
-import org.apache.kyuubi.operation.OperationState.OperationState
-
 /**
  * This object store the summary infomation about statement.
  * You can use statementId to get all jobs' or stages' metric that this statement has.
@@ -38,9 +32,9 @@ case class KyuubiStatementInfo(
     statementId: String,
     statement: String,
     appId: String,
-    sessionId: HandleIdentifier,
-    stateToTime: Map[OperationState, Long]) {
+    sessionId: String,
+    stateToTime: Map[String, Long]) {
 
-  var queryExecution: QueryExecution = null
-  var exception: KyuubiSQLException = null
+  var queryExecution: String = null
+  var exception: String = ""
 }

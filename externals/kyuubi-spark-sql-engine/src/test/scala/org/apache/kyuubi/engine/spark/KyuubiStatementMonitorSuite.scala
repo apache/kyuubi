@@ -102,6 +102,30 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
     }
   }
 
+  test("test for dumpping statementInfo into local file and query it by id") {
+    val sql = "select timestamp'2021-06-01'"
+    val dumpLocalDir = KyuubiStatementMonitor
+      .invokePrivate(PrivateMethod[String](Symbol("dumpLocalDir"))())
+    withSessionHandle { (client, handle) =>
+      val req = new TExecuteStatementReq()
+      req.setSessionHandle(handle)
+      req.setStatement(sql)
+      val tExecuteStatementResp = client.ExecuteStatement(req)
+      val tOperationHandle = tExecuteStatementResp.getOperationHandle
+      val statementId = OperationHandle(tOperationHandle).identifier.toString
+      val querySql = new StringBuilder("select count(*) from parquet.`")
+        .append(dumpLocalDir)
+        .append("/statement_info.parquet")
+        .append("` where statementId = \"")
+        .append(statementId)
+        .append("\"")
+        .toString()
+      eventually(timeout(90.seconds), interval(5.seconds)) {
+        assert(1 === spark.sql(querySql).first().get(0))
+      }
+    }
+  }
+
   private def waitForOperationToComplete(client: Iface, op: TOperationHandle): Unit = {
     val req = new TGetOperationStatusReq(op)
     var state = client.GetOperationStatus(req).getOperationState

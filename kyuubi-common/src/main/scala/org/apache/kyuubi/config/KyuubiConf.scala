@@ -668,4 +668,36 @@ object KyuubiConf {
       .version("1.3.0")
       .booleanConf
       .createWithDefault(false)
+
+  val SPARK_MONITOR_STATEMENTINFO_QUEUE_CAPACITY =
+    buildConf("spark.monitor.statementinfo.queue.capacity")
+      .doc("Initial capacity of the queue for storing kyuubiStatementInfo in mem. " +
+        "When the queue's current size reached 0.7*capacity, " +
+        "it will trigger to dump data into file")
+      .version("1.3.0")
+      .intConf
+      .createWithDefault(100)
+
+  val SPARK_MONITOR_TIME_THRESHOLD =
+    buildConf("spark.monitor.time.threshold")
+      .doc("The time interval for dumpping data from mem into file.")
+      .version("1.3.0")
+      .longConf
+      .createWithDefault(60)
+
+  val SPARK_MONITOR_DUMP_LOCAL_ENABLE =
+    buildConf("spark.monitor.dump.local.enable")
+      .doc("This configuration item enable you to store the dumpping data in your local dir.")
+      .version("1.3.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val SPARK_MONITOR_DUMP_LOCAL_DIR =
+    buildConf("spark.monitor.dump.local.dir")
+      .doc("The local dir that store the dumpping data. " +
+        "If you don't set kyuubi.spark.monitor.dump.local.enable to true, " +
+        "this configuration item does not work.")
+      .version("1.3.0")
+      .stringConf
+      .createWithDefault(null)
 }
