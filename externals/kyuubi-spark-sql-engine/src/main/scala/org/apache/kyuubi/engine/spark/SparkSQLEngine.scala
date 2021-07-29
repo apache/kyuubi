@@ -24,7 +24,8 @@ import org.apache.spark.SparkConf
 import org.apache.spark.kyuubi.SparkSQLEngineListener
 import org.apache.spark.sql.SparkSession
 
-import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.Logging
+import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.countDownLatch
 import org.apache.kyuubi.ha.HighAvailabilityConf._
@@ -68,7 +69,7 @@ object SparkSQLEngine extends Logging {
 
   var currentEngine: Option[SparkSQLEngine] = None
 
-  private val user = Utils.currentUser
+  private val user = currentUser
 
   private val countDownLatch = new CountDownLatch(1)
 
@@ -99,7 +100,20 @@ object SparkSQLEngine extends Logging {
     }
 
     val session = SparkSession.builder.config(sparkConf).getOrCreate
-    kyuubiConf.get(KyuubiConf.ENGINE_INITIALIZE_SQL).split(";").foreach(session.sql(_).show)
+    kyuubiConf.get(KyuubiConf.ENGINE_INITIALIZE_SQL)
+      .split(";")
+      .filter(_.trim.nonEmpty)
+      .foreach { sql =>
+        info(s"Execute engine initializing sql: $sql")
+        session.sql(sql).show
+      }
+    kyuubiConf.get(KyuubiConf.ENGINE_SESSION_INITIALIZE_SQL)
+      .split(";")
+      .filter(_.trim.nonEmpty)
+      .foreach { sql =>
+        info(s"Execute session initializing sql: $sql")
+        session.sql(sql).show
+      }
     session
   }
 
@@ -107,7 +121,8 @@ object SparkSQLEngine extends Logging {
     val engine = new SparkSQLEngine(spark)
     engine.initialize(kyuubiConf)
     engine.start()
-    sys.addShutdownHook(engine.stop())
+    // Stop engine before SparkContext stopped to avoid calling a stopped SparkContext
+    addShutdownHook(() => engine.stop(), SPARK_CONTEXT_SHUTDOWN_PRIORITY + 1)
     currentEngine = Some(engine)
     engine
   }

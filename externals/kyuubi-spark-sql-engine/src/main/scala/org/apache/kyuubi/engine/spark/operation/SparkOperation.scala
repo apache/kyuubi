@@ -53,7 +53,7 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
     if (!isTerminalState(state)) {
       setState(targetState)
       Option(getBackgroundHandle).foreach(_.cancel(true))
-      spark.sparkContext.cancelJobGroup(statementId)
+      if (!spark.sparkContext.isStopped) spark.sparkContext.cancelJobGroup(statementId)
     }
   }
 
@@ -90,7 +90,7 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
     // We should use Throwable instead of Exception since `java.lang.NoClassDefFoundError`
     // could be thrown.
     case e: Throwable =>
-      if (cancel) spark.sparkContext.cancelJobGroup(statementId)
+      if (cancel && !spark.sparkContext.isStopped) spark.sparkContext.cancelJobGroup(statementId)
       state.synchronized {
         val errMsg = KyuubiSQLException.stringifyException(e)
         if (state == OperationState.TIMEOUT) {

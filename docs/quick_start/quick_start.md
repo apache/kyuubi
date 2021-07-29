@@ -12,7 +12,7 @@
 
 Currently, Kyuubi maintains all releases on GitHub directly. You can get the most recent stable release of Kyuubi here:
 
-<a class="github-button" href="https://github.com/NetEase/kyuubi/releases" data-color-scheme="no-preference: light; light: dark; dark: light;" data-icon="octicon-download" data-size="large" aria-label="Download NetEase/kyuubi on GitHub">Download</a>
+<a class="github-button" href="https://github.com/apache/incubator-kyuubi/releases" data-color-scheme="no-preference: light; light: dark; dark: light;" data-icon="octicon-download" data-size="large" aria-label="Download Kyuubi on GitHub">Download</a>
 
 ## Requirements
 

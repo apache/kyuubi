@@ -139,3 +139,33 @@ jobs:
         run: |
           ./build/mvn clean install -Pspark-3.1 -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper,:kyuubi-spark-monitor
           ./build/mvn test -Pspark-3.1 -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds -Dmaven.plugin.scalatest.exclude.tags=''
+  minikube-it:
+    name: Minikube Integration Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      # from https://github.com/marketplace/actions/setup-minikube-kubernetes-cluster
+      - name: Setup Minikube
+        uses: manusa/actions-setup-minikube@v2.4.2
+        with:
+          minikube version: 'v1.16.0'
+          kubernetes version: 'v1.19.2'
+      - name: kubectl pre-check
+        run: |
+          kubectl get serviceaccount
+          kubectl create serviceaccount default
+          kubectl get serviceaccount
+      - name: start kyuubi
+        run: kubectl apply -f kubernetes/integration-tests/test-k8s.yaml
+      - name: kyuubi pod check
+        run: kubectl get pods
+      - name: integration tests
+        run: ./build/mvn clean test -Pkubernetes -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: unit-tests-log
+          path: |
+            **/target/unit-tests.log

@@ -19,15 +19,20 @@ package org.apache.kyuubi.engine.spark
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_INITIALIZE_SQL
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_INITIALIZE_SQL, ENGINE_SESSION_INITIALIZE_SQL}
 import org.apache.kyuubi.operation.JDBCTestUtils
 
 class InitializeSQLSuite extends WithKyuubiServer with JDBCTestUtils {
   override protected val conf: KyuubiConf = {
-    KyuubiConf().set(ENGINE_INITIALIZE_SQL.key,
-      "CREATE DATABASE IF NOT EXISTS INIT_DB;" +
-        "CREATE TABLE IF NOT EXISTS INIT_DB.test(a int) USING CSV;" +
-        "INSERT OVERWRITE TABLE INIT_DB.test VALUES (1);")
+    KyuubiConf()
+      .set(ENGINE_INITIALIZE_SQL.key,
+        "CREATE DATABASE IF NOT EXISTS INIT_DB;" +
+          "CREATE TABLE IF NOT EXISTS INIT_DB.test(a int) USING CSV;" +
+          "INSERT OVERWRITE TABLE INIT_DB.test VALUES (1);")
+      .set(ENGINE_SESSION_INITIALIZE_SQL.key,
+        "CREATE DATABASE IF NOT EXISTS INIT_DB;" +
+          "CREATE TABLE IF NOT EXISTS INIT_DB.test(a int) USING CSV;" +
+          "INSERT INTO INIT_DB.test VALUES (2);")
   }
 
   override def afterAll(): Unit = {
@@ -40,9 +45,28 @@ class InitializeSQLSuite extends WithKyuubiServer with JDBCTestUtils {
 
   test("KYUUBI-457: Support configurable initialize sql statement for engine startup") {
     withJdbcStatement() { statement =>
-      val result = statement.executeQuery("SELECT * FROM INIT_DB.test")
+      val result = statement.executeQuery("SELECT * FROM INIT_DB.test WHERE a = 1")
       assert(result.next())
       assert(result.getInt(1) == 1)
+      assert(!result.next())
+    }
+  }
+
+  test("Support configurable initialize sql statement for engine session creation") {
+    var currentSessionCnt: Long = -1
+    withJdbcStatement() { statement =>
+      val result = statement.executeQuery("SELECT COUNT(*) FROM INIT_DB.test WHERE a = 2")
+      assert(result.next())
+      currentSessionCnt = result.getLong(1)
+      assert(currentSessionCnt >= 1)
+      assert(!result.next())
+    }
+    // new session
+    withJdbcStatement() { statement =>
+      val result = statement.executeQuery("SELECT COUNT(*) FROM INIT_DB.test WHERE a = 2")
+      assert(result.next())
+      // use great than or equals to support concurrent test
+      assert(result.getLong(1) >= currentSessionCnt + 1)
       assert(!result.next())
     }
   }
