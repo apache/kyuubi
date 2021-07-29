@@ -29,7 +29,7 @@ build/scala*
 build/test
 target/
 dist/
-kyuubi-*-bin-*
+kyuubi-*-bin*
 *.gz
 logs/
 pid/
