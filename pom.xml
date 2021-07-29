@@ -84,8 +84,8 @@
         <module>kyuubi-ctl</module>
         <module>kyuubi-ha</module>
         <module>kyuubi-hive-jdbc</module>
-        <module>kyuubi-main</module>
         <module>kyuubi-metrics</module>
+        <module>kyuubi-server</module>
         <module>kyuubi-zookeeper</module>
     </modules>
 
