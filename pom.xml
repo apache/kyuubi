@@ -29,21 +29,6 @@
     <groupId>org.apache.kyuubi</groupId>
     <artifactId>kyuubi-parent</artifactId>
     <version>1.3.0-SNAPSHOT</version>
-
-    <modules>
-        <module>dev/kyuubi-codecov</module>
-        <module>externals/kyuubi-download</module>
-        <module>externals/kyuubi-spark-monitor</module>
-        <module>externals/kyuubi-spark-sql-engine</module>
-        <module>kyuubi-assembly</module>
-        <module>kyuubi-common</module>
-        <module>kyuubi-ctl</module>
-        <module>kyuubi-ha</module>
-        <module>kyuubi-hive-jdbc</module>
-        <module>kyuubi-server</module>
-        <module>kyuubi-metrics</module>
-        <module>kyuubi-zookeeper</module>
-    </modules>
     <packaging>pom</packaging>
 
     <name>Kyuubi Project Parent</name>
