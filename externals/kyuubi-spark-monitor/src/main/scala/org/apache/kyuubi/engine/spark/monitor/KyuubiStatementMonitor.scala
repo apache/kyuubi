@@ -17,11 +17,12 @@
 
 package org.apache.kyuubi.engine.spark.monitor
 
-import java.util
 import java.util.concurrent.{ArrayBlockingQueue, ConcurrentHashMap, ScheduledThreadPoolExecutor, TimeUnit}
 
 import org.apache.spark.scheduler.SparkListenerJobEnd
 import org.apache.spark.sql.{Row, SaveMode, SparkSession}
+import org.apache.spark.sql.catalyst.ScalaReflection
+import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -29,6 +30,8 @@ import org.apache.kyuubi.engine.spark.monitor.entity.{KyuubiJobInfo, KyuubiState
 
 // TODO: Thread Safe need to consider
 object KyuubiStatementMonitor extends Logging{
+
+  private val classToStructTyeMap = new java.util.HashMap[Class[_], StructType]()
 
   import org.apache.kyuubi.config.KyuubiConf._
 
@@ -98,11 +101,15 @@ object KyuubiStatementMonitor extends Logging{
    */
   // TODO: Lack size type threshold and time type threshold
   def putStatementInfoIntoQueue(kyuubiStatementInfo: KyuubiStatementInfo): Unit = {
-    if (dumpEnable && kyuubiStatementQueue.size() >= maxSize) {
-      dumpStatementInfoFromQueue()
-      val isSuccess = kyuubiStatementQueue.add(kyuubiStatementInfo)
-      info(s"Add kyuubiStatementInfo into queue is [$isSuccess], " +
-        s"statementId is [${kyuubiStatementInfo.statementId}]")
+    if (dumpEnable) {
+      if (kyuubiStatementQueue.size() >= maxSize) {
+        dumpStatementInfoFromQueue()
+      }
+      if (!kyuubiStatementQueue.contains(kyuubiStatementInfo)) {
+        val isSuccess = kyuubiStatementQueue.add(kyuubiStatementInfo)
+        info(s"Add kyuubiStatementInfo into queue is [$isSuccess], " +
+          s"statementId is [${kyuubiStatementInfo.statementId}]")
+      }
     }
   }
 
@@ -110,26 +117,24 @@ object KyuubiStatementMonitor extends Logging{
    * This method is used for dumpping kyuubiStatementInfo to a file by threshold.
    */
   private def dumpStatementInfoFromQueue(): Unit = kyuubiStatementQueue.synchronized {
-    var statementInfoList = new util.ArrayList[KyuubiStatementInfo]()
+    var statementInfoList: List[KyuubiStatementInfo] = List()
     val size = kyuubiStatementQueue.size()
     (0 to size-1).foreach { _ =>
-      statementInfoList.add(kyuubiStatementQueue.poll())
+      statementInfoList = kyuubiStatementQueue.poll() :: statementInfoList
     }
-    if (DataFrameUtil.getStructType(classOf[KyuubiStatementInfo]).nonEmpty) {
-      val schema = DataFrameUtil.getStructType(classOf[KyuubiStatementInfo]).get
-      val rowList = new util.ArrayList[Row]()
-      statementInfoList.forEach { statementInfo =>
-        val row = DataFrameUtil.getRow(classOf[KyuubiStatementInfo], statementInfo)
-        if (row.nonEmpty) {
-          rowList.add(row.get)
-        }
-      }
-      statementInfoList = null
-      sparkSession.createDataFrame(rowList, schema)
-        .write.mode(SaveMode.Append)
-        .format("parquet")
-        .save(dumpLocalDir + "/statement_info.parquet")
+    var schema = classToStructTyeMap.get(classOf[KyuubiStatementInfo])
+    if (schema == null) {
+      schema = ScalaReflection.schemaFor[KyuubiStatementInfo].dataType.asInstanceOf[StructType]
+      classToStructTyeMap.put(classOf[KyuubiStatementInfo], schema)
     }
+    val rowList = new java.util.ArrayList[Row]()
+    for (kyuubiStatementInfo <- statementInfoList) {
+      rowList.add(Row.fromTuple(kyuubiStatementInfo))
+    }
+    sparkSession.createDataFrame(rowList, schema)
+      .write.mode(SaveMode.Append)
+      .format("parquet")
+      .save(dumpLocalDir + "/statement_info.parquet")
   }
 
   /**

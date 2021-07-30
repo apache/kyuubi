@@ -19,8 +19,6 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService, TimeUnit}
 
-import scala.collection.mutable.Map
-
 import org.apache.spark.kyuubi.SQLOperationListener
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.types._
@@ -31,7 +29,7 @@ import org.apache.kyuubi.engine.spark.{ArrayFetchIterator, KyuubiSparkUtil}
 import org.apache.kyuubi.engine.spark.monitor.KyuubiStatementMonitor
 import org.apache.kyuubi.engine.spark.monitor.entity.KyuubiStatementInfo
 import org.apache.kyuubi.operation.{OperationState, OperationType}
-import org.apache.kyuubi.operation.OperationState.OperationState
+import org.apache.kyuubi.operation.OperationState.{CANCELED, ERROR, FINISHED, OperationState, TIMEOUT}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.util.ThreadUtils
@@ -64,7 +62,7 @@ class ExecuteStatement(
 
   private val kyuubiStatementInfo = KyuubiStatementInfo(
     statementId, statement, spark.sparkContext.applicationId,
-    session.handle.identifier.toString, Map(state.toString -> lastAccessTime))
+    session.handle.identifier.toString, lastAccessTime)
   KyuubiStatementMonitor.putStatementInfoIntoQueue(kyuubiStatementInfo)
 
   override protected def resultSchema: StructType = {
@@ -94,6 +92,7 @@ class ExecuteStatement(
       spark.sparkContext.addSparkListener(operationListener)
       result = spark.sql(statement)
       kyuubiStatementInfo.queryExecution = result.queryExecution.toString()
+      KyuubiStatementMonitor.putStatementInfoIntoQueue(kyuubiStatementInfo)
       debug(result.queryExecution)
       iter = new ArrayFetchIterator(result.collect())
       setState(OperationState.FINISHED)
@@ -169,11 +168,18 @@ class ExecuteStatement(
 
   override def setState(newState: OperationState): Unit = {
     super.setState(newState)
-    kyuubiStatementInfo.stateToTime.put(newState.toString, lastAccessTime)
+    newState match {
+      case ERROR | FINISHED | CANCELED | TIMEOUT =>
+        kyuubiStatementInfo.state = newState.toString
+        kyuubiStatementInfo.finishTime = completedTime
+        KyuubiStatementMonitor.putStatementInfoIntoQueue(kyuubiStatementInfo)
+      case _ =>
+    }
   }
 
   override def setOperationException(opEx: KyuubiSQLException): Unit = {
     super.setOperationException(opEx)
     kyuubiStatementInfo.exception = opEx.toString
+    KyuubiStatementMonitor.putStatementInfoIntoQueue(kyuubiStatementInfo)
   }
 }

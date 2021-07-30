@@ -121,7 +121,7 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
         .append("\"")
         .toString()
       eventually(timeout(90.seconds), interval(5.seconds)) {
-        assert(1 === spark.sql(querySql).first().get(0))
+        assert(spark.sql(querySql).first().get(0).asInstanceOf[Long] >= 1)
       }
     }
   }

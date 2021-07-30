@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine.spark.monitor.entity
 
-import scala.collection.mutable.Map
-
 /**
  * This object store the summary infomation about statement.
  * You can use statementId to get all jobs' or stages' metric that this statement has.
@@ -33,8 +31,9 @@ case class KyuubiStatementInfo(
     statement: String,
     appId: String,
     sessionId: String,
-    stateToTime: Map[String, Long]) {
-
-  var queryExecution: String = null
-  var exception: String = ""
+    startTime: Long,
+    var state: String = "",
+    var finishTime: Long = 0,
+    var queryExecution: String = "",
+    var exception: String = "") {
 }
