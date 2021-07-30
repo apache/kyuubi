@@ -608,10 +608,20 @@ object KyuubiConf {
 
   val ENGINE_INITIALIZE_SQL: ConfigEntry[String] = buildConf("engine.initialize.sql")
     .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +
-      "engine before queries.")
+      "engine before queries. This configuration can not be used in JDBC url due to " +
+      "the limitation of Beeline/JDBC driver.")
     .version("1.2.0")
     .stringConf
     .createWithDefault("SHOW DATABASES")
+
+  val ENGINE_SESSION_INITIALIZE_SQL: ConfigEntry[String] =
+    buildConf("engine.session.initialize.sql")
+      .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +
+        "engine session before queries. This configuration can not be used in JDBC url due to " +
+        "the limitation of Beeline/JDBC driver.")
+      .version("1.3.0")
+      .stringConf
+      .createWithDefault("SHOW DATABASES")
 
   val ENGINE_DEREGISTER_EXCEPTION_CLASSES: ConfigEntry[Seq[String]] =
     buildConf("engine.deregister.exception.classes")
@@ -660,7 +670,7 @@ object KyuubiConf {
     .stringConf
     .createOptional
 
-  val ENGINE_SINGLE_SPARK_SESSION =
+  val ENGINE_SINGLE_SPARK_SESSION: ConfigEntry[Boolean] =
     buildConf("engine.single.spark.session")
       .doc("When set to true, this engine is running in a single session mode. " +
         "All the JDBC/ODBC connections share the temporary views, function registries, " +

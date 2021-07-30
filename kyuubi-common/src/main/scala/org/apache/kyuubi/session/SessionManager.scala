@@ -45,6 +45,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   def latestLogoutTime: Long = _latestLogoutTime
 
   private val handleToSession = new ConcurrentHashMap[SessionHandle, Session]
+
   private val timeoutChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-timeout-checker")
 
@@ -87,12 +88,12 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   def getOpenSessionCount: Int = handleToSession.size()
 
-  protected def getExecPoolSize: Int = {
+  def getExecPoolSize: Int = {
     assert(execPool != null)
     execPool.getPoolSize
   }
 
-  protected def getActiveCount: Int = {
+  def getActiveCount: Int = {
     assert(execPool != null)
     execPool.getActiveCount
   }

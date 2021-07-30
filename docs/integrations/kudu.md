@@ -164,5 +164,5 @@ No rows selected (0.611 seconds)
 ## References
 [https://kudu.apache.org/](https://kudu.apache.org/)
 [https://kudu.apache.org/docs/developing.html#_kudu_integration_with_spark](https://kudu.apache.org/docs/developing.html#_kudu_integration_with_spark)
-[https://github.com/NetEase/kyuubi](https://github.com/NetEase/kyuubi)
+[https://github.com/apache/incubator-kyuubi](https://github.com/apache/incubator-kyuubi)
 [https://spark.apache.org/docs/latest/sql-data-sources.html](https://spark.apache.org/docs/latest/sql-data-sources.html)
