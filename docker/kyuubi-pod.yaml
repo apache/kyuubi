@@ -16,6 +16,8 @@
 #
 
 # Usage:
+# ConfigMap:
+#   kubectl create cm kyuubi-defaults --from-file=${KYUUBI_HOME}/conf/kyuubi-defaults.conf
 # Start:
 #   kubectl apply -f https://raw.githubusercontent.com/apache/incubator-kyuubi/master/docker/kyuubi-pod.yaml
 # Expose port:
@@ -27,8 +29,14 @@
 #     ${SPARK_HOME}/bin/beeline -u 'jdbc:hive2://localhost:10009'
 # 2. Expose the Pod as a service with NodePort
 #   see usage of kyuubi-service.yaml
-# Logging
+# Logging:
 #   kubectl logs -f kyuubi-example
+# Config change:
+# 1. edit ConfigMap
+#   kubectl edit cm kyuubi-defaults
+# 2. restart pod
+#   kubectl delete -f https://raw.githubusercontent.com/apache/incubator-kyuubi/master/docker/kyuubi-pod.yaml
+#   kubectl apply -f https://raw.githubusercontent.com/apache/incubator-kyuubi/master/docker/kyuubi-pod.yaml
 
 apiVersion: v1
 kind: Pod
@@ -49,3 +57,10 @@ spec:
         - name: frontend-port
           containerPort: 10009
           protocol: TCP
+      volumeMounts:
+        - name: kyuubi-defaults
+          mountPath: /opt/kyuubi/conf
+  volumes:
+    - name: kyuubi-defaults
+      configMap:
+        name: kyuubi-defaults

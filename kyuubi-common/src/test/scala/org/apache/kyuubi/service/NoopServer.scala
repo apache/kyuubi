@@ -20,7 +20,7 @@ package org.apache.kyuubi.service
 import org.apache.kyuubi.KyuubiException
 
 class NoopServer extends Serverable("noop") {
-  override private[kyuubi] val backendService = new NoopBackendService
+  override val backendService = new NoopBackendService
 
   override def start(): Unit = {
     super.start()

@@ -25,11 +25,24 @@ class SingleSessionSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
   override def withKyuubiConf: Map[String, String] = {
     Map(ENGINE_SHARE_LEVEL.key -> "SERVER",
-      ENGINE_SINGLE_SPARK_SESSION.key -> "true")
+      ENGINE_SINGLE_SPARK_SESSION.key -> "true",
+      (ENGINE_SESSION_INITIALIZE_SQL.key,
+        "CREATE DATABASE IF NOT EXISTS INIT_DB_SOLO;" +
+        "CREATE TABLE IF NOT EXISTS INIT_DB_SOLO.test(a int) USING CSV;" +
+        "INSERT INTO INIT_DB_SOLO.test VALUES (2);")
+    )
   }
 
-  override protected def jdbcUrl: String = s"jdbc:hive2://${engine.connectionUrl}/;#" +
-    s"spark.ui.enabled=false"
+  override def afterAll(): Unit = {
+    withJdbcStatement() { statement =>
+      statement.executeQuery("DROP TABLE IF EXISTS INIT_DB_SOLO.test")
+      statement.executeQuery("DROP DATABASE IF EXISTS INIT_DB_SOLO")
+    }
+    super.afterAll()
+  }
+
+  override protected def jdbcUrl: String =
+    s"jdbc:hive2://${engine.connectionUrl}/;#spark.ui.enabled=false"
 
   test("test single session") {
     withJdbcStatement() { statement =>
@@ -41,4 +54,19 @@ class SingleSessionSuite extends WithSparkSQLEngine with JDBCTestUtils {
     }
   }
 
+  test("test session initialize sql will only execute once in single session mode") {
+    withJdbcStatement() { statement =>
+      val result = statement.executeQuery("SELECT COUNT(*) FROM INIT_DB_SOLO.test WHERE a = 2")
+      assert(result.next())
+      assert(result.getLong(1) == 1)
+      assert(!result.next())
+    }
+    // the same session
+    withJdbcStatement() { statement =>
+      val result = statement.executeQuery("SELECT COUNT(*) FROM INIT_DB_SOLO.test WHERE a = 2")
+      assert(result.next())
+      assert(result.getLong(1) == 1)
+      assert(!result.next())
+    }
+  }
 }
