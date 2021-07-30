@@ -19,13 +19,39 @@ package org.apache.kyuubi.engine.spark
 
 import java.time.{Instant, LocalDateTime, ZoneId}
 
+import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 
 object KyuubiSparkUtil {
+  // Regular expression for connecting to kubernetes clusters
+  val KUBERNETES_REGEX = """k8s://(.*)""".r
 
   lazy val diagnostics: String = {
-    val spark = SparkSession.active
-    val sc = spark.sparkContext
+    val sc = SparkSession.active.sparkContext
+
+    sc.master match {
+      case KUBERNETES_REGEX(_) => getKubernetesClusterInfo(sc)
+      case _ => defaultClusterInfo(sc)
+    }
+  }
+
+  def getKubernetesClusterInfo(sc: SparkContext): String = {
+    // scalastyle:off line.size.limit
+    s"""
+       |           Spark application name: ${sc.appName}
+       |                 application ID:  ${sc.applicationId}
+       |                 application web UI: ${sc.uiWebUrl}
+       |                 master: ${sc.master}
+       |                 deploy mode: ${sc.deployMode}
+       |                 context: ${sc.getConf.getOption("spark.kubernetes.context").getOrElse("default")}
+       |                 namespace: ${sc.getConf.getOption("spark.kubernetes.namespace").getOrElse("default")}
+       |                 version: ${sc.version}
+       |           Start time: ${LocalDateTime.ofInstant(Instant.ofEpochMilli(sc.startTime), ZoneId.systemDefault)}
+       |           User: ${sc.sparkUser}""".stripMargin
+    // scalastyle:on line.size.limit
+  }
+
+  def defaultClusterInfo(sc: SparkContext): String = {
     val webUrl = sc.getConf.getOption(
       "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")
       .orElse(sc.uiWebUrl).getOrElse("")
