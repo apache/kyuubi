@@ -43,8 +43,8 @@ object KyuubiSparkUtil {
        |                 application web UI: ${sc.uiWebUrl}
        |                 master: ${sc.master}
        |                 deploy mode: ${sc.deployMode}
-       |                 context: ${sc.getConf.getOption("spark.kubernetes.context").getOrElse("default")}
-       |                 namespace: ${sc.getConf.getOption("spark.kubernetes.namespace").getOrElse("default")}
+       |                 context: ${sc.getConf.get("spark.kubernetes.context", "default")}
+       |                 namespace: ${sc.getConf.get("spark.kubernetes.namespace", "default")}
        |                 version: ${sc.version}
        |           Start time: ${LocalDateTime.ofInstant(Instant.ofEpochMilli(sc.startTime), ZoneId.systemDefault)}
        |           User: ${sc.sparkUser}""".stripMargin
