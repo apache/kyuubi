@@ -17,7 +17,7 @@
 
 # Usage:
 # ConfigMap:
-#   kubectl create cm kyuubi-defaults --from-file=${KYUUBI_HOME}/conf/kyuubi-defaults.conf
+#   kubectl apply -f https://raw.githubusercontent.com/apache/incubator-kyuubi/master/docker/kyuubi-configmap.yaml
 # Start:
 #   kubectl apply -f https://raw.githubusercontent.com/apache/incubator-kyuubi/master/docker/kyuubi-pod.yaml
 # Expose port:
