@@ -39,8 +39,8 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
     val engineEventPath = Paths.get(logRoot.toString, "engine", engine.engineId + ".json")
     val reader = Files.newBufferedReader(engineEventPath, StandardCharsets.UTF_8)
 
-    val a = JsonProtocol.jsonToEvent(reader.readLine())
-    assert(a.isInstanceOf[KyuubiEvent])
+    val readEvent = JsonProtocol.jsonToEvent(reader.readLine())
+    assert(readEvent.isInstanceOf[KyuubiEvent])
 
     withJdbcStatement() { statement =>
       val table = engineEventPath.getParent.toString

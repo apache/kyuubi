@@ -22,7 +22,7 @@ import org.apache.spark.sql.types.StructType
 
 trait KyuubiEvent extends SparkListenerEvent {
 
-  def name: String
+  def eventType: String
 
   def schema: StructType
 

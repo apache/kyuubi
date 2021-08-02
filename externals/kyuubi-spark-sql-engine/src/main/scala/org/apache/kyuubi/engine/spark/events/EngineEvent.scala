@@ -69,7 +69,7 @@ case class EngineEvent(
     var state: Int = 0,
     var diagnostic: String = "") extends KyuubiEvent {
 
-  override def name: String = "engine"
+  override def eventType: String = "engine"
 
   override def schema: StructType = Encoders.product[EngineEvent].schema
 
@@ -142,7 +142,6 @@ object EngineEvent {
       executorCore,
       executorMemory,
       maxExecutors,
-      sc.startTime,
-      engine.getServiceState.id)
+      sc.startTime)
   }
 }

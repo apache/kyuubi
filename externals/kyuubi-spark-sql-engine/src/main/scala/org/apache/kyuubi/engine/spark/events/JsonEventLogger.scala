@@ -27,8 +27,10 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.AbstractService
 
 /**
- *
- * @param logName unique
+ * This event logger logs Kyuubi engine events in JSON file format.
+ * The hierarchical directory structure is {ENGINE_EVENT_JSON_LOG_PATH}/{eventType}/{logName}.json
+ * The {eventType} is based on core concepts of the Kyuubi systems, e.g. engine/session/statement
+ * @param logName the engine id formed of appId + attemptId(if any)
  */
 class JsonEventLogger(logName: String)
   extends AbstractService("JsonEventLogger") with EventLogger {
@@ -37,15 +39,15 @@ class JsonEventLogger(logName: String)
   private val writers = new ConcurrentHashMap[String, PrintWriter]()
 
   private def getOrUpdate(event: KyuubiEvent): PrintWriter = {
-    val writer = writers.get(event.name)
+    val writer = writers.get(event.eventType)
     if (writer == null) {
-      val eventDir = Files.createDirectories(Paths.get(logRoot.toString, event.name))
+      val eventDir = Files.createDirectories(Paths.get(logRoot.toString, event.eventType))
       val eventPath = Files.createFile(Paths.get(eventDir.toString, logName +  ".json"))
 
       // TODO: make it support Hadoop compatible filesystems
       val newWriter = new PrintWriter(Files.newBufferedWriter(eventPath, StandardCharsets.UTF_8))
       Files.setPosixFilePermissions(eventPath, PosixFilePermissions.fromString("rwxr--r--"))
-      writers.put(event.name, newWriter)
+      writers.put(event.eventType, newWriter)
       newWriter
     } else {
       writer
@@ -72,6 +74,6 @@ class JsonEventLogger(logName: String)
       writer.println(e.toJson)
       // scalastyle:on println
       writer.flush()
-    case _ =>
+    case _ => // TODO: add extra events handling here
   }
 }
