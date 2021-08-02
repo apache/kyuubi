@@ -679,19 +679,27 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
+  val ENGINE_EVENT_JSON_LOG_PATH: ConfigEntry[String] =
+    buildConf("engine.event.json.log.path")
+      .doc("The location of all the engine events go for the builtin JSON logger")
+      .version("1.3.0")
+      .stringConf
+      .createWithDefault("/tmp/events")
+
   val ENGINE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("engine.event.loggers")
-      .doc("")
+      .doc("A comma separated list of engine history loggers, where engine/session/operation etc" +
+        " events go.<ul>" +
+        " <li>SPARK: the events will be written to the spark history events</li>" +
+        s" <li>JSON: the events will be written to the location of" +
+        s" ${ENGINE_EVENT_JSON_LOG_PATH.key}</li>" +
+        s" <li>JDBC: to be done</li>" +
+        s" <li>CUSTOM: to be done.</li></ul>")
       .version("1.3.0")
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
       .toSequence
       .createWithDefault(Nil)
 
-  val ENGINE_EVENT_JSON_LOG_PATH: ConfigEntry[String] =
-    buildConf("engine.event.json.log.path")
-      .doc("")
-      .version("1.3.0")
-      .stringConf
-      .createWithDefault("events")
+
 }

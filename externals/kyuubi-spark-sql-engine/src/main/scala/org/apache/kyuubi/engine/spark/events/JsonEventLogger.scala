@@ -26,6 +26,10 @@ import java.util.concurrent.ConcurrentHashMap
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.AbstractService
 
+/**
+ *
+ * @param logName unique
+ */
 class JsonEventLogger(logName: String)
   extends AbstractService("JsonEventLogger") with EventLogger {
 
@@ -38,6 +42,7 @@ class JsonEventLogger(logName: String)
       val eventDir = Files.createDirectories(Paths.get(logRoot.toString, event.name))
       val eventPath = Files.createFile(Paths.get(eventDir.toString, logName +  ".json"))
 
+      // TODO: make it support Hadoop compatible filesystems
       val newWriter = new PrintWriter(Files.newBufferedWriter(eventPath, StandardCharsets.UTF_8))
       Files.setPosixFilePermissions(eventPath, PosixFilePermissions.fromString("rwxr--r--"))
       writers.put(event.name, newWriter)

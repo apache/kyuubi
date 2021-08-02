@@ -39,7 +39,7 @@ class EventLoggingService(engine: SparkSQLEngine)
     conf.get(KyuubiConf.ENGINE_EVENT_LOGGERS)
       .map(EventLoggerType.withName)
       .foreach {
-        case EventLoggerType.SPARK_EVENT_LOGGER =>
+        case EventLoggerType.SPARK =>
           eventLoggers += SparkContextHelper.createSparkHistoryLogger
         case EventLoggerType.JSON =>
           val jsonEventLogger = new JsonEventLogger(engine.engineId)

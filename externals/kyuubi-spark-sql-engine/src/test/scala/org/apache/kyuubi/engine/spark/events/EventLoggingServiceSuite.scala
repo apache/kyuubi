@@ -44,7 +44,7 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
     withJdbcStatement() { statement =>
       val table = engineEventPath.getParent.toString
-      val resultSet = statement.executeQuery(s"SELECT * FROM `json`." + table)
+      val resultSet = statement.executeQuery(s"SELECT * FROM `json`.`${table}`")
       while (resultSet.next()) {
         assert(resultSet.getString("Event") === classOf[EngineEvent].getCanonicalName)
         assert(resultSet.getString("applicationId") === spark.sparkContext.applicationId)
