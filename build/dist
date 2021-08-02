@@ -202,11 +202,13 @@ if [[ -f "$KYUUBI_HOME/tools/spark-block-cleaner/target/spark-block-cleaner-$VER
 fi
 
 # Copy Kyuubi extension
-SPARK_MID_VERSION=${SPARK_VERSION%.*}
-if [[ -f $"$KYUUBI_HOME/dev/kyuubi-extension-spark_$SPARK_MID_VERSION/target/kyuubi-extension-spark_$SPARK_MID_VERSION-$VERSION.jar" ]]; then
-  mkdir -p "$DISTDIR/extension"
-  cp "$KYUUBI_HOME/dev/kyuubi-extension-spark_$SPARK_MID_VERSION/target/kyuubi-extension-spark_$SPARK_MID_VERSION-$VERSION.jar" "$DISTDIR/extension"
-fi
+SPARK_EXTENSION_VERSIONS=('3-1')
+for SPARK_EXTENSION_VERSION in ${SPARK_EXTENSION_VERSIONS[@]}; do
+  if [[ -f $"$KYUUBI_HOME/dev/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION-$VERSION.jar" ]]; then
+    mkdir -p "$DISTDIR/extension"
+    cp "$KYUUBI_HOME/dev/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION-$VERSION.jar" "$DISTDIR/extension"
+  fi
+done
 
 if [[ "$SPARK_PROVIDED" != "true" ]]; then
   # Copy spark binary dist
