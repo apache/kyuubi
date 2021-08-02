@@ -37,8 +37,8 @@ And don't worry, Kyuubi will support the new Apache Spark version in future. Tha
 ## How to use Kyuubi SQL extension
 
 1. you need to choose Apache Spark branch-3.1 or higher version with Kyuubi binary tgz.
-2. if you want to compile Kyuubi by yourself, the maven opt should add `-Pkyuubi-extension-spark_3.1`
-3. move the jar(kyuubi-extension-spark_*.jar) which is in $KYUUBI_HOME/extension into $SPARK_HOME/jars
+2. if you want to compile Kyuubi by yourself, the maven opt should add `-Pkyuubi-extension-spark-3-1`
+3. move the jar(`kyuubi-extension-spark-*.jar`) which is in `$KYUUBI_HOME/extension` into `$SPARK_HOME/jars`
 4. add a config into `spark-defaults.conf`, `spark.sql.extensions=org.apache.kyuubi.sql.KyuubiSparkSQLExtension`
 
 Now, you can enjoy the Kyuubi SQL Extension, and also Kyuubi provides some configs to make these feature easy to use.
