@@ -54,7 +54,8 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
     SparkSession.clearActiveSession()
     SparkSession.clearDefaultSession()
     spark = SparkSQLEngine.createSpark()
-    engine = SparkSQLEngine.startEngine(spark)
+    SparkSQLEngine.startEngine(spark)
+    engine = SparkSQLEngine.currentEngine.get
     connectionUrl = engine.connectionUrl
   }
 

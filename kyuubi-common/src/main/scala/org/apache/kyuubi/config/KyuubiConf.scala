@@ -678,4 +678,20 @@ object KyuubiConf {
       .version("1.3.0")
       .booleanConf
       .createWithDefault(false)
+
+  val ENGINE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
+    buildConf("engine.event.loggers")
+      .doc("")
+      .version("1.3.0")
+      .stringConf
+      .transform(_.toUpperCase(Locale.ROOT))
+      .toSequence
+      .createWithDefault(Nil)
+
+  val ENGINE_EVENT_JSON_LOG_PATH: ConfigEntry[String] =
+    buildConf("engine.event.json.log.path")
+      .doc("")
+      .version("1.3.0")
+      .stringConf
+      .createWithDefault("events")
 }

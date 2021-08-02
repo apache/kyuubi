@@ -65,6 +65,7 @@ abstract class Serverable(name: String) extends CompositeService(name) {
         stopServer()
       } catch {
         case t: Throwable =>
+          t.getMessage
           warn(s"Error stopping spark ${t.getMessage}", t)
       }
     }

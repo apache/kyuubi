@@ -32,6 +32,12 @@
     <name>Kyuubi Project Spark Monitor</name>
 
     <dependencies>
+
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common</artifactId>
