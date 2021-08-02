@@ -63,10 +63,14 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     eventLogging.onEvent(engineStatus.setState(ServiceState.STARTED))
   }
 
-  override protected def stopServer(): Unit = {
+  override def stop(): Unit = {
     engineStatus.setState(ServiceState.STOPPED)
     engineStatus.setEndTime(System.currentTimeMillis())
     eventLogging.onEvent(engineStatus)
+    super.stop()
+  }
+
+  override protected def stopServer(): Unit = {
     countDownLatch.countDown()
   }
 

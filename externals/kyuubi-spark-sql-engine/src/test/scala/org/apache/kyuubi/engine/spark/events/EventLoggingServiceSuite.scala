@@ -34,7 +34,6 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
   override protected def jdbcUrl: String = getJdbcUrl
 
-
   test("round-trip for event logging service") {
     val engineEventPath = Paths.get(logRoot.toString, "engine", engine.engineId + ".json")
     val reader = Files.newBufferedReader(engineEventPath, StandardCharsets.UTF_8)
