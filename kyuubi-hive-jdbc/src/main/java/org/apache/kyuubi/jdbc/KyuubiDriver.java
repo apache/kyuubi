@@ -15,25 +15,26 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.jdbc
+package org.apache.kyuubi.jdbc;
 
-import java.sql.{Connection, DriverManager, SQLException}
-import java.util.Properties
+import org.apache.hive.jdbc.HiveDriver;
 
-import org.apache.hive.jdbc.HiveDriver
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.Properties;
 
-class KyuubiDriver extends HiveDriver {
-  override def connect(url: String, info: Properties): Connection = {
-    if (acceptsURL(url)) {
-      new KyuubiConnection(url, info)
-    } else null
-  }
-}
+public class KyuubiDriver extends HiveDriver {
+    static {
+        try {
+            DriverManager.registerDriver(new KyuubiDriver());
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to register driver", e);
+        }
+    }
 
-object KyuubiDriver {
-  try {
-    DriverManager.registerDriver(new KyuubiDriver)
-  } catch {
-    case e: SQLException => throw new RuntimeException("Failed to register driver", e)
-  }
+    @Override
+    public Connection connect(String url, Properties info) throws SQLException {
+        return acceptsURL(url) ? new KyuubiConnection(url, info) : null;
+    }
 }
