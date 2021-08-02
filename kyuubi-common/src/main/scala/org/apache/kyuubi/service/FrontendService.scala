@@ -217,11 +217,12 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
     try {
       be.closeSession(handle)
       resp.setStatus(OK_STATUS)
-      Option(CURRENT_SERVER_CONTEXT.get()).foreach(_.setSessionHandle(null))
     } catch {
       case e: Exception =>
         warn("Error closing session: ", e)
         resp.setStatus(KyuubiSQLException.toTStatus(e))
+    } finally {
+      Option(CURRENT_SERVER_CONTEXT.get()).foreach(_.setSessionHandle(null))
     }
     info(s"Finished closing $handle")
     resp
