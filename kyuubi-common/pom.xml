@@ -32,6 +32,10 @@
     <name>Kyuubi Project Common</name>
 
     <dependencies>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.slf4j</groupId>
