@@ -13,7 +13,7 @@ on:
 jobs:
   rat:
     name: Check License
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-java@v1
@@ -29,7 +29,7 @@ jobs:
 
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         include:
@@ -102,7 +102,7 @@ jobs:
 
   tpcds:
     name: TPC-DS Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       SPARK_LOCAL_IP: localhost
     steps:
@@ -141,7 +141,7 @@ jobs:
           ./build/mvn test -Pspark-3.1 -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds -Dmaven.plugin.scalatest.exclude.tags=''
   minikube-it:
     name: Minikube Integration Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
