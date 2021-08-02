@@ -110,7 +110,7 @@
         <hadoop.version>3.2.2</hadoop.version>
         <hadoop.binary.version>3.2</hadoop.binary.version>
         <hive.version>2.3.7</hive.version>
-        <jackson.version>2.12.3</jackson.version>
+        <jackson.version>2.11.4</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jaxb.version>2.2.11</jaxb.version>
         <javax-activation.version>1.1.1</javax-activation.version>
