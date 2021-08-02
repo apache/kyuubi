@@ -24,7 +24,7 @@ import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.JDBCTestUtils
-q
+
 class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
   import EventLoggerType._
 
