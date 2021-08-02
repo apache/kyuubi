@@ -34,4 +34,6 @@ jobs:
       env:
         ASF_USERNAME: ${{ secrets.NEXUS_USER }}
         ASF_PASSWORD: ${{ secrets.NEXUS_PW }}
-      run: ./build/mvn clean deploy -DskipTests -Pspark-provided -s ./build/release/asf-settings.xml
+      run: |
+        rm -rf ~/.m2/repository/org/apache/kyuubi
+        ./build/mvn clean deploy -DskipTests -Pspark-provided -s ./build/release/asf-settings.xml
