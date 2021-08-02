@@ -24,12 +24,16 @@ import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.JDBCTestUtils
-
+q
 class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
+  import EventLoggerType._
+
   private val logRoot = Utils.createTempDir()
   override def withKyuubiConf: Map[String, String] = Map(
-    KyuubiConf.ENGINE_EVENT_LOGGERS.key -> EventLoggerType.JSON.toString,
-    KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH.key -> logRoot.toString
+    KyuubiConf.ENGINE_EVENT_LOGGERS.key -> s"$JSON,$SPARK",
+    KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH.key -> logRoot.toString,
+    "spark.eventLog.enabled" -> "true",
+    "spark.eventLog.dir" -> logRoot.toString
   )
 
   override protected def jdbcUrl: String = getJdbcUrl
@@ -42,12 +46,20 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
     assert(readEvent.isInstanceOf[KyuubiEvent])
 
     withJdbcStatement() { statement =>
-      val table = engineEventPath.getParent.toString
+      val table = engineEventPath.getParent
       val resultSet = statement.executeQuery(s"SELECT * FROM `json`.`${table}`")
       while (resultSet.next()) {
         assert(resultSet.getString("Event") === classOf[EngineEvent].getCanonicalName)
         assert(resultSet.getString("applicationId") === spark.sparkContext.applicationId)
         assert(resultSet.getString("master") === spark.sparkContext.master)
+      }
+      val table2 = table.getParent
+      val rs2 = statement.executeQuery(s"SELECT * FROM `json`.`${table2}`" +
+        s" where Event = '${classOf[EngineEvent].getCanonicalName}'")
+      while (rs2.next()) {
+        assert(rs2.getString("Event") === classOf[EngineEvent].getCanonicalName)
+        assert(rs2.getString("applicationId") === spark.sparkContext.applicationId)
+        assert(rs2.getString("master") === spark.sparkContext.master)
       }
     }
   }
