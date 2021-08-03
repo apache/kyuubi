@@ -35,31 +35,31 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-common_2.12</artifactId>
+            <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-ha_2.12</artifactId>
+            <artifactId>kyuubi-ha_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-metrics_2.12</artifactId>
+            <artifactId>kyuubi-metrics_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-server_2.12</artifactId>
+            <artifactId>kyuubi-server_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-ctl_2.12</artifactId>
+            <artifactId>kyuubi-ctl_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
 
