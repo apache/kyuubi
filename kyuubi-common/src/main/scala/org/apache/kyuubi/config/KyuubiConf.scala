@@ -684,8 +684,11 @@ object KyuubiConf {
       .doc("The location of all the engine events go for the builtin JSON logger")
       .version("1.3.0")
       .stringConf
-      .createWithDefault("/tmp/events")
+      .createWithDefault("/tmp/kyuubi/events")
 
+  private def isValidEventLoggers(v: Set[String]): Boolean = {
+    v subsetOf(Set("SPARK", "JSON", "JDBC", "CUSTOM"))
+  }
   val ENGINE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("engine.event.loggers")
       .doc("A comma separated list of engine history loggers, where engine/session/operation etc" +
@@ -699,7 +702,6 @@ object KyuubiConf {
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
       .toSequence
+      .checkValue(_.toSet.subsetOf(Set("SPARK", "JSON", "JDBC", "CUSTOM")), "")
       .createWithDefault(Nil)
-
-
 }

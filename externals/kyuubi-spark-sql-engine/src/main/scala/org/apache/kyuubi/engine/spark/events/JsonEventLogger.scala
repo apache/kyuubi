@@ -20,10 +20,11 @@ package org.apache.kyuubi.engine.spark.events
 import java.io.{IOException, PrintWriter}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
-import java.nio.file.attribute.PosixFilePermissions
-import java.util.concurrent.ConcurrentHashMap
+import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
 
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.spark.events.JsonEventLogger.{JSON_LOG_DIR_PERM, JSON_LOG_FILE_PERM}
 import org.apache.kyuubi.service.AbstractService
 
 /**
@@ -33,37 +34,37 @@ import org.apache.kyuubi.service.AbstractService
  * @param logName the engine id formed of appId + attemptId(if any)
  */
 class JsonEventLogger(logName: String)
-  extends AbstractService("JsonEventLogger") with EventLogger {
+  extends AbstractService("JsonEventLogger") with EventLogger with Logging {
 
   private var logRoot: Path = _
-  private val writers = new ConcurrentHashMap[String, PrintWriter]()
+  private val writers = new scala.collection.mutable.HashMap[String, PrintWriter]()
 
-  private def getOrUpdate(event: KyuubiEvent): PrintWriter = {
-    val writer = writers.get(event.eventType)
-    if (writer == null) {
+  private def getOrUpdate(event: KyuubiEvent): PrintWriter = synchronized {
+    writers.getOrElseUpdate(event.eventType, {
       val eventDir = Files.createDirectories(Paths.get(logRoot.toString, event.eventType))
+      Files.setPosixFilePermissions(eventDir, JSON_LOG_DIR_PERM)
       val eventPath = Files.createFile(Paths.get(eventDir.toString, logName +  ".json"))
-
       // TODO: make it support Hadoop compatible filesystems
       val newWriter = new PrintWriter(Files.newBufferedWriter(eventPath, StandardCharsets.UTF_8))
-      Files.setPosixFilePermissions(eventPath, PosixFilePermissions.fromString("rwxr--r--"))
-      writers.put(event.eventType, newWriter)
+      Files.setPosixFilePermissions(eventPath, JSON_LOG_FILE_PERM)
       newWriter
-    } else {
-      writer
-    }
+    })
   }
 
-  override def initialize(conf: KyuubiConf): Unit = {
+  override def initialize(conf: KyuubiConf): Unit = synchronized {
     logRoot = Paths.get(conf.get(KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH)).toAbsolutePath
     Files.setPosixFilePermissions(logRoot, PosixFilePermissions.fromString("rwxrwxr--"))
     super.initialize(conf)
   }
 
-  override def stop(): Unit = {
-    writers.values().forEach { writer => try {
-      writer.close()
-    } catch { case _: IOException => } }
+  override def stop(): Unit = synchronized {
+    writers.foreach { case (name, writer) =>
+      try {
+        writer.close()
+      } catch {
+        case e: IOException => error(s"File to close $name's event writer", e)
+      }
+    }
     super.stop()
   }
 
@@ -76,4 +77,11 @@ class JsonEventLogger(logName: String)
       writer.flush()
     case _ => // TODO: add extra events handling here
   }
+}
+
+object JsonEventLogger {
+  val JSON_LOG_DIR_PERM: java.util.Set[PosixFilePermission] =
+    PosixFilePermissions.fromString("rwxrwxr--")
+  val JSON_LOG_FILE_PERM: java.util.Set[PosixFilePermission] =
+    PosixFilePermissions.fromString("rwxr--r--")
 }

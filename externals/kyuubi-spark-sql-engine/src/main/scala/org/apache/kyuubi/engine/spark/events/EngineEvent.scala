@@ -25,7 +25,6 @@ import org.apache.spark.sql.types.StructType
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
 import org.apache.kyuubi.service.ServiceState
-import org.apache.kyuubi.service.ServiceState.ServiceState
 
 /**
  *
@@ -35,14 +34,8 @@ import org.apache.kyuubi.service.ServiceState.ServiceState
  * @param shareLevel the share level for this engine
  * @param connectionUrl the jdbc connection string
  * @param master the master type, yarn, k8s, local etc.
- * @param deployMode client/ cluster
  * @param sparkVersion short version of spark distribution
  * @param webUrl the tracking url of this engine
- * @param driverCores driver cores specified
- * @param driverMemoryMB driver memory specified
- * @param executorCores executor cores specified
- * @param executorMemoryMB driver memory specified
- * @param maxExecutors max number of executors
  * @param startTime start time
  * @param endTime end time
  * @param state the engine state
@@ -56,18 +49,13 @@ case class EngineEvent(
     shareLevel: String,
     connectionUrl: String,
     master: String,
-    deployMode: String,
     sparkVersion: String,
     webUrl: String,
-    driverCores: Int,
-    driverMemoryMB: Int,
-    executorCores: Int,
-    executorMemoryMB: Int,
-    maxExecutors: Int,
     startTime: Long,
-    var endTime: Long = -1L,
-    var state: Int = 0,
-    var diagnostic: String = "") extends KyuubiEvent {
+    endTime: Long,
+    state: Int,
+    diagnostic: String,
+    settings: Map[String, String]) extends KyuubiEvent {
 
   override def eventType: String = "engine"
 
@@ -76,35 +64,30 @@ case class EngineEvent(
   override def toJson: String = JsonProtocol.productToJson(this)
 
   override def toString: String = {
+    // need to consider deploy mode and cluster to get core and mem
+    val driverCores = settings.getOrElse("spark.driver.cores", 1)
+    val driverMemory = settings.getOrElse("spark.driver.memory", "1g")
+    val executorCore = settings.getOrElse("spark.executor.cores", 2)
+    val executorMemory = settings.getOrElse("spark.executor.memory", "1g")
+    val dae = settings.getOrElse("spark.dynamicAllocation.enabled", "false").toBoolean
+    val maxExecutors = if (dae) {
+      settings.getOrElse("spark.dynamicAllocation.maxExecutors", Int.MaxValue)
+    } else {
+      settings.getOrElse("spark.executor.instances", 2)
+    }
     s"""
        |    Spark application name: $applicationName
        |          application ID:  $applicationId
        |          application web UI: $webUrl
        |          master: $master
-       |          deploy mode: $deployMode
        |          version: $sparkVersion
-       |          driver: [cpu: $driverCores, mem: $driverMemoryMB MB]
-       |          executor: [cpu: $executorCores, mem: $executorMemoryMB MB, maxNum: $maxExecutors]
+       |          driver: [cpu: $driverCores, mem: $driverMemory]
+       |          executor: [cpu: $executorCore, mem: $executorMemory MB, maxNum: $maxExecutors]
        |    Start time: ${new Date(startTime)}
        |    ${if (endTime != -1L) "End time: " + new Date(endTime) else ""}
        |    User: $owner (shared mode: $shareLevel)
        |    State: ${ServiceState(state)}
        |    ${if (diagnostic.nonEmpty) "Diagnostic: " + diagnostic else ""}""".stripMargin
-  }
-
-  def setEndTime(time: Long): this.type = {
-    this.endTime = time
-    this
-  }
-
-  def setDiagnostic(diagnostic: String): this.type = {
-    this.diagnostic = diagnostic
-    this
-  }
-
-  def setState(newState: ServiceState): this.type = {
-    this.state = newState.id
-    this
   }
 }
 
@@ -115,17 +98,6 @@ object EngineEvent {
     val webUrl = sc.getConf.getOption(
       "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")
       .orElse(sc.uiWebUrl).getOrElse("")
-    // need to consider deploy mode and cluster to get core and mem
-    val driverCores = sc.getConf.getInt("spark.driver.cores", 0)
-    val driverMemory = sc.getConf.getSizeAsMb("spark.driver.memory", "1g").toInt
-    val executorCore = sc.getConf.getInt("spark.executor.cores", 1)
-    val executorMemory = sc.getConf.getSizeAsMb("spark.executor.memory", "1g").toInt
-    val dae = sc.getConf.getBoolean("spark.dynamicAllocation.enabled", defaultValue = false)
-    val maxExecutors = if (dae) {
-      sc.getConf.getInt("spark.dynamicAllocation.maxExecutors", Int.MaxValue)
-    } else {
-      sc.getConf.getInt("spark.executor.instances", 1)
-    }
     new EngineEvent(
       sc.applicationId,
       sc.applicationAttemptId,
@@ -134,14 +106,12 @@ object EngineEvent {
       engine.getConf.get(ENGINE_SHARE_LEVEL),
       engine.connectionUrl,
       sc.master,
-      sc.deployMode,
       sc.version,
       webUrl,
-      driverCores,
-      driverMemory,
-      executorCore,
-      executorMemory,
-      maxExecutors,
-      sc.startTime)
+      sc.startTime,
+      endTime = -1L,
+      state = 0,
+      diagnostic = "",
+      sc.getConf.getAll.toMap ++ engine.getConf.getAll)
   }
 }

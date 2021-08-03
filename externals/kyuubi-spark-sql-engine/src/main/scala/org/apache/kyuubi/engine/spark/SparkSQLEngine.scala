@@ -52,7 +52,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     spark.sparkContext.addSparkListener(listener)
     addService(eventLogging)
     super.initialize(conf)
-    eventLogging.onEvent(engineStatus.setState(ServiceState.INITIALIZED))
+    eventLogging.onEvent(engineStatus.copy(state = ServiceState.INITIALIZED.id))
   }
 
   override def start(): Unit = {
@@ -60,13 +60,12 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     // Start engine self-terminating checker after all services are ready and it can be reached by
     // all servers in engine spaces.
     backendService.sessionManager.startTerminatingChecker()
-    eventLogging.onEvent(engineStatus.setState(ServiceState.STARTED))
+    eventLogging.onEvent(engineStatus.copy(state = ServiceState.STARTED.id))
   }
 
   override def stop(): Unit = {
-    engineStatus.setState(ServiceState.STOPPED)
-    engineStatus.setEndTime(System.currentTimeMillis())
-    eventLogging.onEvent(engineStatus)
+    eventLogging.onEvent(
+      engineStatus.copy(state = ServiceState.STOPPED.id, endTime = System.currentTimeMillis()))
     super.stop()
   }
 
@@ -75,8 +74,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
   }
 
   def engineId: String = {
-    (Seq(spark.sparkContext.applicationId) ++ spark.sparkContext.applicationAttemptId)
-      .mkString("_")
+    spark.sparkContext.applicationAttemptId.getOrElse(spark.sparkContext.applicationId)
   }
 }
 
@@ -158,7 +156,7 @@ object SparkSQLEngine extends Logging {
       case t: Throwable =>
         currentEngine.foreach { engine =>
           val status =
-            engine.engineStatus.setDiagnostic(s"Error State SparkSQL Engine ${t.getMessage}")
+            engine.engineStatus.copy(diagnostic = s"Error State SparkSQL Engine ${t.getMessage}")
           EventLoggingService.onEvent(status)
           error(status, t)
           engine.stop()

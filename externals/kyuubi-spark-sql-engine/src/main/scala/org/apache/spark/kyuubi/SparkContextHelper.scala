@@ -21,16 +21,22 @@ import org.apache.spark.SparkContext
 
 import org.apache.kyuubi.engine.spark.events.{EventLogger, KyuubiEvent}
 
+/**
+ * A place to invoke non-public APIs of [[SparkContext]], anything to be added here need to
+ * think twice
+ */
 object SparkContextHelper {
-
-  private def context: Option[SparkContext] = SparkContext.getActive.filter(!_.isStopped)
-
-  def createSparkHistoryLogger: EventLogger = {
-    new EventLogger {
-      override def logEvent(kyuubiEvent: KyuubiEvent): Unit = {
-        context.flatMap(_.eventLogger).foreach(_.onOtherEvent(kyuubiEvent))
-      }
-    }
+  def createSparkHistoryLogger(sc: SparkContext): EventLogger = {
+    new SparkHistoryEventLogger(sc)
   }
+}
 
+/**
+ * A [[EventLogger]] that logs everything to SparkHistory
+ * @param sc SparkContext
+ */
+private class SparkHistoryEventLogger(sc: SparkContext) extends EventLogger {
+  override def logEvent(kyuubiEvent: KyuubiEvent): Unit = {
+    sc.eventLogger.foreach(_.onOtherEvent(kyuubiEvent))
+  }
 }

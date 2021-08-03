@@ -40,13 +40,14 @@ class EventLoggingService(engine: SparkSQLEngine)
       .map(EventLoggerType.withName)
       .foreach {
         case EventLoggerType.SPARK =>
-          eventLoggers += SparkContextHelper.createSparkHistoryLogger
+          eventLoggers += SparkContextHelper.createSparkHistoryLogger(engine.spark.sparkContext)
         case EventLoggerType.JSON =>
           val jsonEventLogger = new JsonEventLogger(engine.engineId)
           addService(jsonEventLogger)
           eventLoggers += jsonEventLogger
-        case _ => // TODO: Add more implementations
-
+        case logger =>
+          // TODO: Add more implementations
+          throw new IllegalArgumentException(s"Unrecognized event logger: $logger")
     }
     super.initialize(conf)
   }
