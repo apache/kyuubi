@@ -65,7 +65,7 @@ class SparkProcessBuilder(
 
   override def mainResource: Option[String] = {
     // 1. get the main resource jar for user specified config first
-    val jarName = s"$module-_$SCALA_COMPILE_VERSION-$KYUUBI_VERSION.jar"
+    val jarName = s"${module}_$SCALA_COMPILE_VERSION-$KYUUBI_VERSION.jar"
     conf.get(ENGINE_SPARK_MAIN_RESOURCE).filter { userSpecified =>
       // skip check exist if not local file.
       val uri = new URI(userSpecified)
