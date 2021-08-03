@@ -191,22 +191,22 @@ echo "Build flags: $@" >> "$DISTDIR/RELEASE"
 cp -r "$KYUUBI_HOME/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/" "$DISTDIR/jars"
 
 # Copy spark engines
-cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine-$VERSION.jar" "$DISTDIR/externals/engines/spark"
+cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/spark"
 
 # Copy kyuubi tools
-if [[ -f "$KYUUBI_HOME/tools/spark-block-cleaner/target/spark-block-cleaner-$VERSION.jar" ]]; then
+if [[ -f "$KYUUBI_HOME/tools/spark-block-cleaner/target/spark-block-cleaner_${SCALA_VERSION}-${VERSION}.jar" ]]; then
   mkdir -p "$DISTDIR/tools/spark-block-cleaner/kubernetes"
   mkdir -p "$DISTDIR/tools/spark-block-cleaner/jars"
   cp -r "$KYUUBI_HOME/tools/spark-block-cleaner/kubernetes/" "$DISTDIR/tools/spark-block-cleaner/"
-  cp "$KYUUBI_HOME/tools/spark-block-cleaner/target/spark-block-cleaner-$VERSION.jar" "$DISTDIR/tools/spark-block-cleaner/jars/"
+  cp "$KYUUBI_HOME/tools/spark-block-cleaner/target/spark-block-cleaner_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/tools/spark-block-cleaner/jars/"
 fi
 
 # Copy Kyuubi extension
 SPARK_EXTENSION_VERSIONS=('3-1')
 for SPARK_EXTENSION_VERSION in ${SPARK_EXTENSION_VERSIONS[@]}; do
-  if [[ -f $"$KYUUBI_HOME/dev/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION-$VERSION.jar" ]]; then
+  if [[ -f $"$KYUUBI_HOME/dev/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION_${SCALA_VERSION}-${VERSION}.jar" ]]; then
     mkdir -p "$DISTDIR/extension"
-    cp "$KYUUBI_HOME/dev/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION-$VERSION.jar" "$DISTDIR/extension"
+    cp "$KYUUBI_HOME/dev/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/extension"
   fi
 done
 

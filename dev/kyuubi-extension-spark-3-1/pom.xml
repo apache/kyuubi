@@ -27,7 +27,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>kyuubi-extension-spark-3-1</artifactId>
+    <artifactId>kyuubi-extension-spark-3-1_2.12</artifactId>
     <packaging>jar</packaging>
     <name>Kyuubi Project Dev Spark Extensions (for Spark 3.1)</name>
 

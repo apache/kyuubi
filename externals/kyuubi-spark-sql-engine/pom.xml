@@ -27,26 +27,26 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>kyuubi-spark-sql-engine</artifactId>
+    <artifactId>kyuubi-spark-sql-engine_2.12</artifactId>
     <name>Kyuubi Project Engine Spark SQL</name>
     <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-common</artifactId>
+            <artifactId>kyuubi-common_2.12</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-ha</artifactId>
+            <artifactId>kyuubi-ha_2.12</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-spark-monitor</artifactId>
+            <artifactId>kyuubi-spark-monitor_2.12</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -58,7 +58,7 @@
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-common</artifactId>
+            <artifactId>kyuubi-common_2.12</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
@@ -165,7 +165,7 @@
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-zookeeper</artifactId>
+            <artifactId>kyuubi-zookeeper_2.12</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>

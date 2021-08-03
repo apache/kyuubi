@@ -27,14 +27,14 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>kyuubi-spark-monitor</artifactId>
+    <artifactId>kyuubi-spark-monitor_2.12</artifactId>
     <packaging>jar</packaging>
     <name>Kyuubi Project Spark Monitor</name>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-common</artifactId>
+            <artifactId>kyuubi-common_2.12</artifactId>
             <version>${project.version}</version>
         </dependency>
 

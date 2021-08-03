@@ -27,50 +27,50 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>kyuubi-codecov</artifactId>
+    <artifactId>kyuubi-codecov_2.12</artifactId>
     <packaging>pom</packaging>
     <name>Kyuubi Project Dev Code Coverage</name>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-common</artifactId>
+            <artifactId>kyuubi-common_2.12</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-ctl</artifactId>
+            <artifactId>kyuubi-ctl_2.12</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-zookeeper</artifactId>
+            <artifactId>kyuubi-zookeeper_2.12</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-ha</artifactId>
+            <artifactId>kyuubi-ha_2.12</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-metrics</artifactId>
+            <artifactId>kyuubi-metrics_2.12</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-server</artifactId>
+            <artifactId>kyuubi-server_2.12</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-spark-sql-engine</artifactId>
+            <artifactId>kyuubi-spark-sql-engine_2.12</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
