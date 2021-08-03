@@ -40,6 +40,7 @@ import org.apache.kyuubi.service.ServiceState
  * @param endTime end time
  * @param state the engine state
  * @param diagnostic caught exceptions if any
+ * @param settings collection of all configurations of spark and kyuubi
  */
 case class EngineEvent(
     applicationId: String,
