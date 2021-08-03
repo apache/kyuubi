@@ -182,9 +182,9 @@
                     <shadedArtifactAttached>false</shadedArtifactAttached>
                     <artifactSet>
                         <includes>
-                            <include>org.apache.kyuubi:kyuubi-common</include>
-                            <include>org.apache.kyuubi:kyuubi-ha</include>
-                            <include>org.apache.kyuubi:kyuubi-spark-monitor</include>
+                            <include>org.apache.kyuubi:kyuubi-common_2.12</include>
+                            <include>org.apache.kyuubi:kyuubi-ha_2.12</include>
+                            <include>org.apache.kyuubi:kyuubi-spark-monitor_2.12</include>
                             <include>org.apache.curator:curator-client</include>
                             <include>org.apache.curator:curator-framework</include>
                             <include>org.apache.curator:curator-recipes</include>
