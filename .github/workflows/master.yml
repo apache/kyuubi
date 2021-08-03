@@ -137,7 +137,7 @@ jobs:
             ${{ runner.os }}-maven-io-
       - name: Run TPC-DS Tests
         run: |
-          ./build/mvn clean install -Pspark-3.1 -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper,:kyuubi-spark-monitor
+          ./build/mvn clean install -Pspark-3.1 -DskipTests -pl :kyuubi-spark-sql-engine_2.12,:kyuubi-common_2.12,:kyuubi-ha_2.12,:kyuubi-zookeeper_2.12,:kyuubi-spark-monitor_2.12
           ./build/mvn test -Pspark-3.1 -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds -Dmaven.plugin.scalatest.exclude.tags=''
   minikube-it:
     name: Minikube Integration Test
