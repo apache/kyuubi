@@ -26,20 +26,20 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>spark-block-cleaner</artifactId>
+    <artifactId>spark-block-cleaner_2.12</artifactId>
     <name>Kyuubi Project Spark Block Cleaner</name>
     <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-common</artifactId>
+            <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-common</artifactId>
+            <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
