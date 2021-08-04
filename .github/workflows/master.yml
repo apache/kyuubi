@@ -154,7 +154,7 @@ jobs:
       - name: kubectl pre-check
         run: |
           kubectl get serviceaccount
-          kubectl create serviceaccount default
+          kubectl create serviceaccount  default
           kubectl get serviceaccount
       - name: start kyuubi
         run: kubectl apply -f kubernetes/integration-tests/test-k8s.yaml
