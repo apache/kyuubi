@@ -22,6 +22,7 @@ metadata:
   labels:
     kyuubi-role: KYUUBI_SERVER
 spec:
+  serviceAccountName: kyuubi
   containers:
     - name: kyuubi-server
       # TODO: replace this with the official repo
