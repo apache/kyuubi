@@ -21,12 +21,15 @@ import java.io.{BufferedOutputStream, FileOutputStream, IOException, PrintWriter
 import java.net.URI
 import java.nio.file.Paths
 
+import scala.collection.mutable.HashMap
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, FSDataOutputStream, Path}
 import org.apache.hadoop.fs.permission.FsPermission
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH
 import org.apache.kyuubi.engine.spark.events.JsonEventLogger.{JSON_LOG_DIR_PERM, JSON_LOG_FILE_PERM}
 import org.apache.kyuubi.service.AbstractService
 
@@ -43,8 +46,7 @@ class JsonEventLogger(logName: String, hadoopConf: Configuration)
 
   private var logRoot: URI = _
   private var fs: FileSystem = _
-  private val writers =
-    new scala.collection.mutable.HashMap[String, Logger]()
+  private val writers = HashMap.empty[String, Logger]
 
   private def getOrUpdate(event: KyuubiEvent): Logger = synchronized {
     writers.getOrElseUpdate(event.eventType, {
@@ -73,7 +75,7 @@ class JsonEventLogger(logName: String, hadoopConf: Configuration)
   }
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
-    logRoot = Paths.get(conf.get(KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH)).toAbsolutePath.toUri
+    logRoot = Paths.get(conf.get(ENGINE_EVENT_JSON_LOG_PATH)).toAbsolutePath.toUri
     fs = FileSystem.get(logRoot, hadoopConf)
     requireLogRootWritable()
     super.initialize(conf)
