@@ -102,7 +102,7 @@ if [ $silent -eq 0 ]; then
   echo "KYUUBI_WORK_DIR_ROOT: ${KYUUBI_WORK_DIR_ROOT}"
 
   echo "SPARK_HOME: ${SPARK_HOME}"
-  echo "SPARK_CONF_DIR: ${SPARK_CONF_DIR}"
+  echo "SPARK_CONF_DIR: ${SPARK_CONF_DIR:-"${SPARK_HOME}/conf"}"
 
   echo "HADOOP_CONF_DIR: ${HADOOP_CONF_DIR}"
 fi
