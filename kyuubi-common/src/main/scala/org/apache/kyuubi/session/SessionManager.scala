@@ -198,6 +198,8 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     }
   }
 
+  def isShutdown: Boolean = shutdown
+
   private def startTimeoutChecker(): Unit = {
     val interval = conf.get(SESSION_CHECK_INTERVAL)
     val timeout = conf.get(SESSION_IDLE_TIMEOUT)
