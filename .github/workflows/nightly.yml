@@ -7,11 +7,11 @@ on:
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         profiles:
-          - '-Pspark-master -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper,:kyuubi-spark-monitor'
+          - '-Pspark-master -pl :kyuubi-spark-sql-engine_2.12,:kyuubi-common_2.12,:kyuubi-ha_2.12,:kyuubi-zookeeper_2.12,:kyuubi-spark-monitor_2.12'
     env:
       SPARK_LOCAL_IP: localhost
     steps:

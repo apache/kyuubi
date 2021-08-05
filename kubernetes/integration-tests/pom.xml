@@ -26,29 +26,29 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
+    <artifactId>kubernetes-integration-tests_2.12</artifactId>
     <name>Kyuubi Kubernetes Integration Tests</name>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>kubernetes-integration-tests</artifactId>
-
     <dependencies>
         <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-client</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-common</artifactId>
+            <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-common</artifactId>
+            <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.fabric8</groupId>
+            <artifactId>kubernetes-client</artifactId>
             <scope>test</scope>
         </dependency>
 

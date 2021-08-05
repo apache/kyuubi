@@ -13,7 +13,7 @@ on:
 jobs:
   rat:
     name: Check License
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-java@v1
@@ -29,7 +29,7 @@ jobs:
 
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     strategy:
       matrix:
         include:
@@ -43,7 +43,7 @@ jobs:
           - java: 8
             spark: '3.1'
             spark-hadoop: '3.2'
-            profiles: '-Pkyuubi-extension-spark_3.1'
+            profiles: '-Pkyuubi-extension-spark-3-1'
             codecov: 'true'
           - java: 11
             spark: '3.1'
@@ -102,7 +102,7 @@ jobs:
 
   tpcds:
     name: TPC-DS Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     env:
       SPARK_LOCAL_IP: localhost
     steps:
@@ -137,11 +137,11 @@ jobs:
             ${{ runner.os }}-maven-io-
       - name: Run TPC-DS Tests
         run: |
-          ./build/mvn clean install -Pspark-3.1 -DskipTests -pl :kyuubi-spark-sql-engine,:kyuubi-common,:kyuubi-ha,:kyuubi-zookeeper,:kyuubi-spark-monitor
+          ./build/mvn clean install -Pspark-3.1 -DskipTests -pl :kyuubi-spark-sql-engine_2.12,:kyuubi-common_2.12,:kyuubi-ha_2.12,:kyuubi-zookeeper_2.12,:kyuubi-spark-monitor_2.12
           ./build/mvn test -Pspark-3.1 -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds -Dmaven.plugin.scalatest.exclude.tags=''
   minikube-it:
     name: Minikube Integration Test
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -154,7 +154,7 @@ jobs:
       - name: kubectl pre-check
         run: |
           kubectl get serviceaccount
-          kubectl create serviceaccount default
+          kubectl create serviceaccount kyuubi
           kubectl get serviceaccount
       - name: start kyuubi
         run: kubectl apply -f kubernetes/integration-tests/test-k8s.yaml

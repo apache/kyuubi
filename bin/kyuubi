@@ -76,7 +76,7 @@ if [[ -z ${SPARK_HOME} ]]; then
   exit 1
 else
   if [[ ! -x "${SPARK_HOME}/bin/spark-submit" ]]; then
-    echo echo "Error: INVALID SPARK DISTRIBUTION! CANNOT PROCEED." >&2
+    echo "Error: INVALID SPARK DISTRIBUTION! CANNOT PROCEED." >&2
     exit 1
   fi
 fi

@@ -110,34 +110,38 @@
         <hadoop.version>3.2.2</hadoop.version>
         <hadoop.binary.version>3.2</hadoop.binary.version>
         <hive.version>2.3.7</hive.version>
+        <iceberg.name>iceberg-spark3-runtime</iceberg.name>
+        <iceberg.version>0.11.1</iceberg.version>
         <jackson.version>2.11.4</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jaxb.version>2.2.11</jaxb.version>
         <javax-activation.version>1.1.1</javax-activation.version>
         <jetty.version>9.4.41.v20210516</jetty.version>
+        <kubernetes-client.version>5.5.0</kubernetes-client.version>
         <ldapsdk.version>5.1.4</ldapsdk.version>
         <prometheus.version>0.10.0</prometheus.version>
+        <scalatest.version>3.2.9</scalatest.version>
         <scopt.version>4.0.1</scopt.version>
+        <slf4j.version>1.7.30</slf4j.version>
         <spark.version>3.1.2</spark.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop${hadoop.binary.version}.tgz</spark.archive.name>
         <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
-
-        <slf4j.version>1.7.30</slf4j.version>
         <zookeeper.version>3.4.14</zookeeper.version>
-
-        <kubernetes-client.version>5.5.0</kubernetes-client.version>
-
-        <scalatest.version>3.2.9</scalatest.version>
-        <iceberg.name>iceberg-spark3-runtime</iceberg.name>
-        <iceberg.version>0.11.1</iceberg.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
 
         <maven.plugin.antrun.version>3.0.0</maven.plugin.antrun.version>
+        <maven.plugin.assembly.version>3.2.0</maven.plugin.assembly.version>
         <maven.plugin.build.helper.version>3.2.0</maven.plugin.build.helper.version>
+        <maven.plugin.clean.version>3.1.0</maven.plugin.clean.version>
         <maven.plugin.compiler.version>3.8.1</maven.plugin.compiler.version>
+        <maven.plugin.dependency.version>3.1.1</maven.plugin.dependency.version>
+        <maven.plugin.deploy.version>3.0.0-M1</maven.plugin.deploy.version>
+        <maven.plugin.download.version>1.6.0</maven.plugin.download.version>
+        <maven.plugin.gpg.version>3.0.1</maven.plugin.gpg.version>
+        <maven.plugin.javadoc.version>3.3.0</maven.plugin.javadoc.version>
         <!-- DO NOT bump 4.4.0, see https://github.com/apache/incubator-kyuubi/pull/441 -->
         <!-- DO NOT bump 4.5.3, see https://github.com/apache/incubator-kyuubi/issues/708 -->
         <maven.plugin.scala.version>4.3.0</maven.plugin.scala.version>
@@ -146,14 +150,11 @@
         <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
         <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
         <maven.plugin.jacoco.version>0.8.6</maven.plugin.jacoco.version>
-        <maven.plugin.shade.version>3.2.4</maven.plugin.shade.version>
         <maven.plugin.jar.version>3.2.0</maven.plugin.jar.version>
-        <maven.plugin.assembly.version>3.2.0</maven.plugin.assembly.version>
-        <maven.plugin.dependency.version>3.1.1</maven.plugin.dependency.version>
-        <maven.plugin.clean.version>3.1.0</maven.plugin.clean.version>
         <maven.plugin.scalastyle.version>1.0.0</maven.plugin.scalastyle.version>
-        <maven.plugin.download.version>1.6.0</maven.plugin.download.version>
+        <maven.plugin.shade.version>3.2.4</maven.plugin.shade.version>
         <maven.plugin.silencer.version>1.7.5</maven.plugin.silencer.version>
+        <maven.plugin.source.version>3.2.1</maven.plugin.source.version>
         <maven.plugin.rat.version>0.13</maven.plugin.rat.version>
 
         <!-- Needed for consistent times -->
@@ -1084,11 +1085,6 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-library</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_${scala.binary.version}</artifactId>
             <scope>test</scope>
@@ -1102,6 +1098,20 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-antrun-plugin</artifactId>
                     <version>${maven.plugin.antrun.version}</version>
+                    <executions>
+                        <execution>
+                            <id>create-tmp-dir</id>
+                            <phase>generate-test-resources</phase>
+                            <goals>
+                                <goal>run</goal>
+                            </goals>
+                            <configuration>
+                                <target>
+                                    <mkdir dir="${project.build.directory}/tmp"/>
+                                </target>
+                            </configuration>
+                        </execution>
+                    </executions>
                 </plugin>
 
                 <plugin>
@@ -1187,6 +1197,13 @@
                             <id>scala-test-compile-first</id>
                             <goals>
                                 <goal>testCompile</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>attach-scaladocs</id>
+                            <phase>verify</phase>
+                            <goals>
+                                <goal>doc-jar</goal>
                             </goals>
                         </execution>
                     </executions>
@@ -1324,6 +1341,28 @@
                                 <includeScope>runtime</includeScope>
                             </configuration>
                         </execution>
+                        <execution>
+                            <id>generate-test-classpath</id>
+                            <phase>test-compile</phase>
+                            <goals>
+                                <goal>build-classpath</goal>
+                            </goals>
+                            <configuration>
+                                <includeScope>test</includeScope>
+                                <outputProperty>test_classpath</outputProperty>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>copy-module-dependencies</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>copy-dependencies</goal>
+                            </goals>
+                            <configuration>
+                                <includeScope>runtime</includeScope>
+                                <outputDirectory>${jars.target.dir}</outputDirectory>
+                            </configuration>
+                        </execution>
                     </executions>
                 </plugin>
 
@@ -1334,13 +1373,49 @@
                     <configuration>
                         <filesets>
                             <fileset>
-                                <directory>embedded_zookeeper</directory>
+                                <directory>${project.basedir}</directory>
+                                <includes>
+                                    <include>**/*.log</include>
+                                </includes>
                             </fileset>
                             <fileset>
-                                <directory>metastore_db</directory>
+                                <directory>${project.basedir}/embedded_zookeeper</directory>
+                            </fileset>
+                            <fileset>
+                                <directory>${project.basedir}/metastore_db</directory>
+                            </fileset>
+                            <fileset>
+                                <directory>${project.basedir}/metrics</directory>
+                            </fileset>
+                            <fileset>
+                                <directory>${project.basedir}/spark-warehouse</directory>
                             </fileset>
                         </filesets>
                     </configuration>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>${maven.plugin.deploy.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>${maven.plugin.source.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>${maven.plugin.javadoc.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-gpg-plugin</artifactId>
+                    <version>${maven.plugin.gpg.version}</version>
                 </plugin>
 
                 <plugin>
@@ -1407,6 +1482,7 @@
                             <exclude>**/licenses-binary/LICENSE*</exclude>
                             <exclude>**/dependency-reduced-pom.xml</exclude>
                             <exclude>**/scalastyle-output.xml</exclude>
+                            <exclude>NOTICE*</exclude>
                             <exclude>docs/**</exclude>
                             <exclude>build/apache-maven-*/**</exclude>
                             <exclude>build/scala-*/**</exclude>
@@ -1421,34 +1497,10 @@
         </pluginManagement>
 
         <plugins>
-            <!-- This plugin dumps the test classpath into a file -->
+            <!-- dump test classpath into a folder -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>generate-test-classpath</id>
-                        <phase>test-compile</phase>
-                        <goals>
-                            <goal>build-classpath</goal>
-                        </goals>
-                        <configuration>
-                            <includeScope>test</includeScope>
-                            <outputProperty>test_classpath</outputProperty>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>copy-module-dependencies</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>copy-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <includeScope>runtime</includeScope>
-                            <outputDirectory>${jars.target.dir}</outputDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
 
             <plugin>
@@ -1486,20 +1538,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>create-tmp-dir</id>
-                        <phase>generate-test-resources</phase>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <configuration>
-                            <target>
-                                <mkdir dir="${project.build.directory}/tmp"/>
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
 
             <plugin>
@@ -1592,12 +1630,9 @@
         </profile>
 
         <profile>
-            <id>kyuubi-extension-spark_3.1</id>
-            <properties>
-                <spark.version>3.1.2</spark.version>
-            </properties>
+            <id>kyuubi-extension-spark-3-1</id>
             <modules>
-                <module>dev/kyuubi-extension-spark_3.1</module>
+                <module>dev/kyuubi-extension-spark-3-1</module>
             </modules>
         </profile>
 
@@ -1613,6 +1648,74 @@
             <modules>
                 <module>kubernetes/integration-tests</module>
             </modules>
+        </profile>
+
+        <profile>
+            <id>apache-release</id>
+            <build>
+                <plugins>
+                    <!-- Prevent the source-release-assembly execution defined in the Apache parent POM
+                         from running so we can control it ourselves -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>source-release-assembly</id>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-deploy-plugin</artifactId>
+                        <inherited>true</inherited>
+                        <configuration>
+                            <updateReleaseInfo>true</updateReleaseInfo>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <configuration>
+                            <quiet>true</quiet>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>sign-release-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 </project>

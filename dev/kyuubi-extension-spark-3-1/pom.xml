@@ -27,11 +27,17 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>kyuubi-extension-spark_3.1</artifactId>
+    <artifactId>kyuubi-extension-spark-3-1_2.12</artifactId>
     <packaging>jar</packaging>
-    <name>Kyuubi Project Dev Spark Extensions</name>
+    <name>Kyuubi Project Dev Spark Extensions (for Spark 3.1)</name>
 
     <dependencies>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_${scala.binary.version}</artifactId>
@@ -106,4 +112,13 @@
         <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
         <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
     </build>
+
+    <profiles>
+        <profile>
+            <id>kyuubi-extension-spark-3-1</id>
+            <properties>
+                <spark.version>3.1.2</spark.version>
+            </properties>
+        </profile>
+    </profiles>
 </project>

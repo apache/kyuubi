@@ -15,25 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.jdbc
+package org.apache.kyuubi.engine.spark.events
 
-import java.sql.{Connection, DriverManager, SQLException}
-import java.util.Properties
+import org.apache.spark.scheduler.SparkListenerEvent
+import org.apache.spark.sql.types.StructType
 
-import org.apache.hive.jdbc.HiveDriver
+trait KyuubiEvent extends SparkListenerEvent {
 
-class KyuubiDriver extends HiveDriver {
-  override def connect(url: String, info: Properties): Connection = {
-    if (acceptsURL(url)) {
-      new KyuubiConnection(url, info)
-    } else null
-  }
-}
+  def eventType: String
 
-object KyuubiDriver {
-  try {
-    DriverManager.registerDriver(new KyuubiDriver)
-  } catch {
-    case e: SQLException => throw new RuntimeException("Failed to register driver", e)
-  }
+  def schema: StructType
+
+  def toJson: String
+
 }
