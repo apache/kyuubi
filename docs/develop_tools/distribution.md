@@ -37,4 +37,4 @@ If you are planing to deploy Kyuubi where `spark` is provided, in other word, it
 ./build/dist --tgz --spark-provided
 ```
 
-Then you will get a Kyuubi distribution without spark binary named `kyuubi-{version}-bin-without-spark.tgz`.
+Then you will get a Kyuubi distribution without spark binary named `kyuubi-{version}-bin.tgz`.
