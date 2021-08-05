@@ -702,4 +702,11 @@ object KyuubiConf {
       .checkValue(_.toSet.subsetOf(Set("SPARK", "JSON", "JDBC", "CUSTOM")),
         "Unsupported event loggers")
       .createWithDefault(Nil)
+
+  val ENGINE_UI_STOP_ENABLED: ConfigEntry[Boolean] =
+    buildConf("engine.ui.stop.enabled")
+      .doc("When true, allows Kyuubi engine to be killed from the web UI.")
+      .version("1.3.0")
+      .booleanConf
+      .createWithDefault(true)
 }
