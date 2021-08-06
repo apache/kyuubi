@@ -35,12 +35,12 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf
  *
  * To run the entire test suite:
  * {{{
- *   build/mvn test -DwildcardSuites=org.apache.kyuubi.config.AllKyuubiConfiguration
+ *   build/mvn test -DwildcardSuites=org.apache.kyuubi.config.AllKyuubiConfiguration -pl '!externals/kyuubi-download'
  * }}}
  *
  * To re-generate golden files for entire suite, run:
  * {{{
- *   KYUUBI_UPDATE=1 build/mvn test -DwildcardSuites=org.apache.kyuubi.config.AllKyuubiConfiguration
+ *   KYUUBI_UPDATE=1 build/mvn test -DwildcardSuites=org.apache.kyuubi.config.AllKyuubiConfiguration -pl '!externals/kyuubi-download'
  * }}}
  */
 // scalastyle:on line.size.limit
