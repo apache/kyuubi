@@ -705,7 +705,7 @@ object KyuubiConf {
 
   val ENGINE_UI_STOP_ENABLED: ConfigEntry[Boolean] =
     buildConf("engine.ui.stop.enabled")
-      .doc("When true, allows Kyuubi engine to be killed from the web UI.")
+      .doc("When true, allows Kyuubi engine to be killed from the Spark Web UI.")
       .version("1.3.0")
       .booleanConf
       .createWithDefault(true)
