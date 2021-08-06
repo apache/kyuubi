@@ -27,8 +27,11 @@ import org.apache.spark.ui.UIUtils.formatDurationVerbose
 
 case class EnginePage(parent: EngineTab) extends WebUIPage("") {
   override def render(request: HttpServletRequest): Seq[Node] = {
-    val content = generateBasicStats() ++
-        <br/> ++
+    val content =
+      generateBasicStats() ++
+      <br/> ++
+      stop(request) ++
+      <br/> ++
       <h4>
         {parent.engine.backendService.sessionManager.getOpenSessionCount} session(s) are online,
         running {parent.engine.backendService.sessionManager.operationManager.getOperationCount}
@@ -61,5 +64,23 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
         {parent.engine.backendService.sessionManager.getActiveCount}
       </li>
     </ul>
+  }
+
+  private def stop(request: HttpServletRequest): Seq[Node] = {
+    val basePath = UIUtils.prependBaseUri(request, parent.basePath)
+    if (parent.killEnabled) {
+      val confirm =
+        s"if (window.confirm('Are you sure you want to kill kyuubi engine ?')) " +
+          "{ this.parentNode.submit(); return true; } else { return false; }"
+      val stopLinkUri = s"$basePath/kyuubi/stop"
+      <ul class ="list-unstyled">
+        <li>
+          <strong>Stop kyuubi engine:  </strong>
+          <a href={stopLinkUri} onclick={confirm} class="stop-link">(kill)</a>
+        </li>
+      </ul>
+    } else {
+      Seq.empty
+    }
   }
 }
