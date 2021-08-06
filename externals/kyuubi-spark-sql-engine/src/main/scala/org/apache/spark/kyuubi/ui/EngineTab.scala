@@ -48,8 +48,16 @@ case class EngineTab(engine: SparkSQLEngine)
       Class.forName("org.apache.spark.ui.SparkUI")
         .getMethod("attachHandler",
           classOf[org.sparkproject.jetty.servlet.ServletContextHandler])
-        .invoke(ui, KyuubiUIUtils.createRedirectHandler(
-          "/kyuubi/stop", "/kyuubi", handleKillRequest, httpMethods = Set("GET", "POST")))
+        .invoke(ui,
+          Class.forName("org.apache.spark.ui.JettyUtils")
+            .getMethod("createRedirectHandler",
+              classOf[String],
+              classOf[String],
+              classOf[(HttpServletRequest) => Unit],
+              classOf[String],
+              classOf[scala.collection.immutable.Set[String]])
+            .invoke(null, "/kyuubi/stop", "/kyuubi", handleKillRequest _, "", Set("GET", "POST"))
+        )
     } catch {
       case NonFatal(e) =>
         warn("Failed to attach handler using SparkUI, please check the Spark version. " +
