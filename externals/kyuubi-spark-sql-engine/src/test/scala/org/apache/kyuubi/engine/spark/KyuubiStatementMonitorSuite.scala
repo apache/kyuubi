@@ -36,6 +36,32 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
   override protected def jdbcUrl: String = getJdbcUrl
   override def withKyuubiConf: Map[String, String] = Map.empty
 
+  test("add kyuubiStatementInfo into queue") {
+    var baseSql = "select timestamp'2021-06-0"
+    val total: Int = 7
+    // Clear kyuubiStatementQueue first
+    val getQueue = PrivateMethod[
+      ArrayBlockingQueue[KyuubiStatementInfo]](Symbol("kyuubiStatementQueue"))()
+    val kyuubiStatementQueue = KyuubiStatementMonitor.invokePrivate(getQueue)
+    kyuubiStatementQueue.clear()
+    withSessionHandle { (client, handle) =>
+
+      for ( a <- 1 to total ) {
+        val sql = baseSql + a + "'"
+        val req = new TExecuteStatementReq()
+        req.setSessionHandle(handle)
+        req.setStatement(sql)
+        val tExecuteStatementResp = client.ExecuteStatement(req)
+        val operationHandle = tExecuteStatementResp.getOperationHandle
+
+        val kyuubiStatementInfo = kyuubiStatementQueue.poll()
+//        assert(
+//          kyuubiStatementInfo.statementId === OperationHandle(operationHandle).identifier.toString)
+//        assert(sql === kyuubiStatementInfo.statement)
+      }
+    }
+  }
+
   test("add kyuubiJobInfo into queue and remove them when threshold reached") {
     val sql = "select timestamp'2021-06-01'"
     val getJobMap = PrivateMethod[
