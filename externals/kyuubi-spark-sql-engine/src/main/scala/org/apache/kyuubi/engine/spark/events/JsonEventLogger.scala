@@ -75,6 +75,12 @@ class JsonEventLogger(logName: String)
       writer.println(e.toJson)
       // scalastyle:on println
       writer.flush()
+    case statement: StatementEvent =>
+      val writer = getOrUpdate(statement)
+      // scalastyle:off println
+      writer.println(statement.toJson)
+      // scalastyle:on println
+      writer.flush()
     case _ => // TODO: add extra events handling here
   }
 }

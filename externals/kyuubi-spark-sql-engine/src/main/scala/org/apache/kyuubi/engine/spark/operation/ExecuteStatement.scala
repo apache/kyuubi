@@ -19,8 +19,6 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService, TimeUnit}
 
-import scala.collection.mutable.Map
-
 import org.apache.spark.kyuubi.SQLOperationListener
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.types._
@@ -28,8 +26,7 @@ import org.apache.spark.sql.types._
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.{ArrayFetchIterator, KyuubiSparkUtil}
-import org.apache.kyuubi.engine.spark.monitor.KyuubiStatementMonitor
-import org.apache.kyuubi.engine.spark.monitor.entity.KyuubiStatementInfo
+import org.apache.kyuubi.engine.spark.events.{EventLoggingService, StatementEvent}
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
@@ -62,10 +59,10 @@ class ExecuteStatement(
 
   private val operationListener: SQLOperationListener = new SQLOperationListener(this, spark)
 
-  private val kyuubiStatementInfo = KyuubiStatementInfo(
+  val statementEvent: StatementEvent = StatementEvent(
     statementId, statement, spark.sparkContext.applicationId,
-    session.getTypeInfo.identifier, Map(state -> lastAccessTime))
-  KyuubiStatementMonitor.putStatementInfoIntoQueue(kyuubiStatementInfo)
+    session.handle.identifier.toString, state.toString, lastAccessTime)
+  EventLoggingService.onEvent(statementEvent)
 
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
@@ -93,7 +90,8 @@ class ExecuteStatement(
       // TODO: Make it configurable
       spark.sparkContext.addSparkListener(operationListener)
       result = spark.sql(statement)
-      kyuubiStatementInfo.queryExecution = result.queryExecution
+      statementEvent.queryExecution = result.queryExecution.toString()
+      EventLoggingService.onEvent(statementEvent)
       debug(result.queryExecution)
       iter = new ArrayFetchIterator(result.collect())
       setState(OperationState.FINISHED)
@@ -169,11 +167,14 @@ class ExecuteStatement(
 
   override def setState(newState: OperationState): Unit = {
     super.setState(newState)
-    kyuubiStatementInfo.stateToTime.put(newState, lastAccessTime)
+    statementEvent.state = newState.toString
+    statementEvent.stateTime = lastAccessTime
+    EventLoggingService.onEvent(statementEvent)
   }
 
   override def setOperationException(opEx: KyuubiSQLException): Unit = {
     super.setOperationException(opEx)
-    kyuubiStatementInfo.exception = opEx
+    statementEvent.exeception = opEx.toString
+    EventLoggingService.onEvent(statementEvent)
   }
 }
