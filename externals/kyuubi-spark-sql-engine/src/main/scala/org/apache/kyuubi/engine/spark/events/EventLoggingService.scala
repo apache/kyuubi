@@ -42,7 +42,8 @@ class EventLoggingService(engine: SparkSQLEngine)
         case EventLoggerType.SPARK =>
           eventLoggers += SparkContextHelper.createSparkHistoryLogger(engine.spark.sparkContext)
         case EventLoggerType.JSON =>
-          val jsonEventLogger = new JsonEventLogger(engine.engineId)
+          val jsonEventLogger =
+            new JsonEventLogger(engine.engineId, engine.spark.sparkContext.hadoopConfiguration)
           addService(jsonEventLogger)
           eventLoggers += jsonEventLogger
         case logger =>
