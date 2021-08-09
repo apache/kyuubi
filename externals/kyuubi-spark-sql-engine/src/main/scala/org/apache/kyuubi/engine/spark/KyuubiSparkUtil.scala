@@ -19,20 +19,24 @@ package org.apache.kyuubi.engine.spark
 
 import java.time.{Instant, LocalDateTime, ZoneId}
 
+import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 
 object KyuubiSparkUtil {
 
+  lazy val globalSparkContext: SparkContext = SparkSession.active.sparkContext
+  lazy val engineId: String =
+    globalSparkContext.applicationAttemptId.getOrElse(globalSparkContext.applicationId)
+
   lazy val diagnostics: String = {
-    val spark = SparkSession.active
-    val sc = spark.sparkContext
+    val sc = globalSparkContext
     val webUrl = sc.getConf.getOption(
       "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")
       .orElse(sc.uiWebUrl).getOrElse("")
     // scalastyle:off line.size.limit
     s"""
        |           Spark application name: ${sc.appName}
-       |                 application ID:  ${sc.applicationId}
+       |                 application ID:  ${engineId}
        |                 application web UI: $webUrl
        |                 master: ${sc.master}
        |                 deploy mode: ${sc.deployMode}

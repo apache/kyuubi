@@ -89,7 +89,7 @@ abstract class AbstractSession(
     }
   }
 
-  private def runOperation(operation: Operation): OperationHandle = {
+  protected def runOperation(operation: Operation): OperationHandle = {
     try {
       val opHandle = operation.getHandle
       operation.run()
