@@ -209,7 +209,6 @@ org.apache.commons:commons-lang3
 org.apache.curator:curator-client
 org.apache.curator:curator-framework
 org.apache.curator:curator-recipes
-org.apache.curator:curator-test
 com.google.guava:failureaccess
 com.google.guava:guava
 org.apache.hadoop:hadoop-client-api

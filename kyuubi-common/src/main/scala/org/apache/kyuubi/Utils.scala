@@ -100,6 +100,17 @@ object Utils extends Logging {
   }
 
   /**
+   * Delete a directory recursively.
+   */
+  def deleteDirectoryRecursively(f: File): Boolean = {
+    if (f.isDirectory) f.listFiles match {
+      case files: Array[File] => files.foreach(deleteDirectoryRecursively)
+      case _ =>
+    }
+    f.delete()
+  }
+
+  /**
    * Create a temporary directory inside the given parent directory. The directory will be
    * automatically deleted when the VM shuts down.
    */

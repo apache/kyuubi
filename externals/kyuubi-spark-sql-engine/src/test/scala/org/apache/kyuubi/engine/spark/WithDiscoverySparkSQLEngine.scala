@@ -39,7 +39,7 @@ trait WithDiscoverySparkSQLEngine extends WithSparkSQLEngine {
     zkServer = new EmbeddedZookeeper()
     val zkData = Utils.createTempDir()
     val tmpConf = KyuubiConf()
-    tmpConf.set(ZookeeperConf.ZK_CLIENT_PORT, -1)
+    tmpConf.set(ZookeeperConf.ZK_CLIENT_PORT, 0)
     tmpConf.set(ZookeeperConf.ZK_DATA_DIR, zkData.toString)
     zkServer.initialize(tmpConf)
     zkServer.start()

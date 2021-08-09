@@ -42,13 +42,6 @@
             <artifactId>zookeeper</artifactId>
         </dependency>
 
-        <!-- Begin: for EmbeddedZkServer -->
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-test</artifactId>
-        </dependency>
-        <!-- End: for EmbeddedZkServer -->
-
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common_${scala.binary.version}</artifactId>

@@ -94,12 +94,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- for EmbeddedZkServer -->
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-test</artifactId>
-        </dependency>
-
         <!-- default package with log4j -->
         <dependency>
             <groupId>org.slf4j</groupId>

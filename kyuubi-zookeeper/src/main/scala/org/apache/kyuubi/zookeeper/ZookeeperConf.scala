@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.zookeeper
 
-import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
+import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf}
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_BIND_HOST
 
 object ZookeeperConf {
@@ -56,12 +56,14 @@ object ZookeeperConf {
     .version("1.2.0")
     .fallbackConf(EMBEDDED_ZK_TEMP_DIR)
 
+  @deprecated(s"the config will be removed", since = "1.3.0")
   val ZK_ELECTION_PORT: ConfigEntry[Int] = buildConf("zookeeper.embedded.election.port")
     .doc("electionPort for the embedded zookeeper server")
     .version("1.2.0")
     .intConf
     .createWithDefault(0)
 
+  @deprecated(s"the config will be removed", since = "1.3.0")
   val ZK_QUORUM_PORT: ConfigEntry[Int] = buildConf("zookeeper.embedded.quorum.port")
     .doc("quorumPort for the embedded zookeeper server")
     .version("1.2.0")
@@ -87,26 +89,34 @@ object ZookeeperConf {
       .intConf
       .createWithDefault(120)
 
-  val ZK_MIN_SESSION_TIMEOUT: OptionalConfigEntry[Int] =
+  val ZK_MIN_SESSION_TIMEOUT: ConfigEntry[Int] =
     buildConf("zookeeper.embedded.min.session.timeout")
       .doc("minSessionTimeout in milliseconds for the embedded zookeeper server will allow the" +
         " client to negotiate. Defaults to 2 times the tickTime")
       .version("1.2.0")
       .intConf
-      .createOptional
+      .createWithDefault(3000 * 2)
 
-  val ZK_MAX_SESSION_TIMEOUT: OptionalConfigEntry[Int] =
+  val ZK_MAX_SESSION_TIMEOUT: ConfigEntry[Int] =
     buildConf("zookeeper.embedded.max.session.timeout")
       .doc("maxSessionTimeout in milliseconds for the embedded zookeeper server will allow the" +
         " client to negotiate. Defaults to 20 times the tickTime")
       .version("1.2.0")
       .intConf
-      .createOptional
+      .createWithDefault(3000 * 20)
 
+  @deprecated(s"the config will be removed", since = "1.3.0")
   val ZK_SERVER_ID: ConfigEntry[Int] =
     buildConf("zookeeper.embedded.server.id")
       .doc("serverId for the embedded zookeeper server")
       .version("1.2.0")
       .intConf
       .createWithDefault(-1)
+
+  val ZK_DELETE_DATA_DIRECTORY_ON_CLOSE: ConfigEntry[Boolean] =
+    buildConf("zookeeper.embedded.delete-data-directory-on-close")
+      .doc("delete the storage directory of embedded zookeeper when service close")
+      .version("1.3.0")
+      .booleanConf
+      .createWithDefault(true)
 }
