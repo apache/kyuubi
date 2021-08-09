@@ -19,7 +19,7 @@ package org.apache.kyuubi.operation
 
 import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
 
-import org.apache.hive.service.rpc.thrift.{TRowSet, TSessionHandle}
+import org.apache.hive.service.rpc.thrift.{TRowSet}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
@@ -34,7 +34,6 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
   def this() = this(classOf[KyuubiOperationManager].getSimpleName)
 
   private val handleToClient = new ConcurrentHashMap[SessionHandle, KyuubiSyncThriftClient]()
-  private val handleToTSessionHandle = new ConcurrentHashMap[SessionHandle, TSessionHandle]()
 
   private var queryTimeout: Option[Long] = None
 
@@ -68,7 +67,6 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
 
   def removeConnection(sessionHandle: SessionHandle): Unit = {
     handleToClient.remove(sessionHandle)
-    handleToTSessionHandle.remove(sessionHandle)
   }
 
   override def newExecuteStatementOperation(
