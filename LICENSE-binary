@@ -218,7 +218,6 @@ org.apache.htrace:htrace-core4
 com.fasterxml.jackson.core:jackson-annotations
 com.fasterxml.jackson.core:jackson-core
 com.fasterxml.jackson.core:jackson-databind
-org.javassist:javassist
 org.eclipse.jetty:jetty-http
 org.eclipse.jetty:jetty-io
 org.eclipse.jetty:jetty-security
