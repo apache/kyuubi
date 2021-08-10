@@ -43,6 +43,8 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
   val operationManager = new SparkSQLOperationManager()
 
+  private lazy val singleSparkSession = conf.get(ENGINE_SINGLE_SPARK_SESSION)
+
   override def openSession(
       protocol: TProtocolVersion,
       user: String,
@@ -53,20 +55,15 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     val sessionImpl = new SparkSessionImpl(protocol, user, password, ipAddress, conf, this)
     val handle = sessionImpl.handle
     try {
-      val sparkSession = if (this.conf.get(ENGINE_SINGLE_SPARK_SESSION)) {
+      val sparkSession = if (singleSparkSession) {
         spark
       } else {
-        spark.newSession()
-      }
-
-      if (!this.conf.get(ENGINE_SINGLE_SPARK_SESSION)) {
-        this.conf.get(ENGINE_SESSION_INITIALIZE_SQL)
-          .split(";")
-          .filter(_.trim.nonEmpty)
-          .foreach { sql =>
-            info(s"Execute session initializing sql: $sql")
-            sparkSession.sql(sql).show
-          }
+        val ss = spark.newSession()
+        this.conf.get(ENGINE_SESSION_INITIALIZE_SQL).foreach { sqlStr =>
+          ss.sparkContext.setJobGroup(handle.identifier.toString, sqlStr, interruptOnCancel = true)
+          ss.sql(sqlStr).isEmpty
+        }
+        ss
       }
 
       sessionImpl.normalizedConf.foreach {

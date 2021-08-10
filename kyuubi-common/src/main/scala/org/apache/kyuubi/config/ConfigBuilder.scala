@@ -145,9 +145,9 @@ private[kyuubi] case class TypedConfigBuilder[T](
   }
 
   /** Turns the config entry into a sequence of values of the underlying type. */
-  def toSequence: TypedConfigBuilder[Seq[T]] = {
+  def toSequence(sp: String = ","): TypedConfigBuilder[Seq[T]] = {
     parent._type = "seq"
-    TypedConfigBuilder(parent, strToSeq(_, fromStr), seqToStr(_, toStr))
+    TypedConfigBuilder(parent, strToSeq(_, fromStr, sp), seqToStr(_, toStr))
   }
 
   def createOptional: OptionalConfigEntry[T] = {

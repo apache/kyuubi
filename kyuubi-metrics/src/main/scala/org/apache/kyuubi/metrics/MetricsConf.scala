@@ -45,7 +45,7 @@ object MetricsConf {
     .version("1.2.0")
     .stringConf
     .transform(_.toUpperCase())
-    .toSequence
+    .toSequence()
     .createWithDefault(Seq(JSON.toString))
 
   val METRICS_CONSOLE_INTERVAL: ConfigEntry[Long] = buildConf("metrics.console.interval")
