@@ -182,7 +182,6 @@
                             <include>org.apache.curator:curator-client</include>
                             <include>org.apache.curator:curator-framework</include>
                             <include>org.apache.curator:curator-recipes</include>
-                            <include>org.javassist:javassist</include>
                         </includes>
                     </artifactSet>
                     <relocations>
