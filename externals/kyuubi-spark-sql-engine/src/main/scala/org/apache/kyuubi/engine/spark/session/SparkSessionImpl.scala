@@ -19,6 +19,8 @@ package org.apache.kyuubi.engine.spark.session
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
+import org.apache.kyuubi.engine.spark.events.{EventLoggingService, SessionEvent}
+import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.session.{AbstractSession, SessionManager}
 
 class SparkSessionImpl(
@@ -29,5 +31,23 @@ class SparkSessionImpl(
     conf: Map[String, String],
     sessionManager: SessionManager)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+
+  private val sessionEvent = SessionEvent(this)
+
+  override def open(): Unit = {
+    EventLoggingService.onEvent(sessionEvent)
+    super.open()
+  }
+
+  override protected def runOperation(operation: Operation): OperationHandle = {
+    sessionEvent.totalOperations += 1
+    super.runOperation(operation)
+  }
+
+  override def close(): Unit = {
+    sessionEvent.endTime = System.currentTimeMillis()
+    EventLoggingService.onEvent(sessionEvent)
+    super.close()
+  }
 
 }
