@@ -463,7 +463,7 @@ object KyuubiConf {
         " configurations via SET syntax.")
       .version("1.2.0")
       .stringConf
-      .toSequence
+      .toSequence()
       .createWithDefault(Nil)
 
   val SESSION_CONF_RESTRICT_LIST: ConfigEntry[Seq[String]] =
@@ -476,7 +476,7 @@ object KyuubiConf {
         " configurations via SET syntax.")
       .version("1.2.0")
       .stringConf
-      .toSequence
+      .toSequence()
       .createWithDefault(Nil)
 
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
@@ -606,22 +606,25 @@ object KyuubiConf {
     .version("1.2.0")
     .fallbackConf(LEGACY_ENGINE_SHARE_LEVEL)
 
-  val ENGINE_INITIALIZE_SQL: ConfigEntry[String] = buildConf("engine.initialize.sql")
-    .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +
-      "engine before queries. This configuration can not be used in JDBC url due to " +
-      "the limitation of Beeline/JDBC driver.")
-    .version("1.2.0")
-    .stringConf
-    .createWithDefault("SHOW DATABASES")
+  val ENGINE_INITIALIZE_SQL: ConfigEntryWithDefaultString[Seq[String]] =
+    buildConf("engine.initialize.sql")
+      .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +
+        "engine before queries. This configuration can not be used in JDBC url due to " +
+        "the limitation of Beeline/JDBC driver.")
+      .version("1.2.0")
+      .stringConf
+      .toSequence(";")
+      .createWithDefaultString("SHOW DATABASES")
 
-  val ENGINE_SESSION_INITIALIZE_SQL: ConfigEntry[String] =
+  val ENGINE_SESSION_INITIALIZE_SQL: ConfigEntryWithDefaultString[Seq[String]] =
     buildConf("engine.session.initialize.sql")
       .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +
         "engine session before queries. This configuration can not be used in JDBC url due to " +
         "the limitation of Beeline/JDBC driver.")
       .version("1.3.0")
       .stringConf
-      .createWithDefault("SHOW DATABASES")
+      .toSequence(";")
+      .createWithDefaultString("SHOW DATABASES")
 
   val ENGINE_DEREGISTER_EXCEPTION_CLASSES: ConfigEntry[Seq[String]] =
     buildConf("engine.deregister.exception.classes")
@@ -629,7 +632,7 @@ object KyuubiConf {
         " whose class matches the specified classes, the engine would deregister itself.")
       .version("1.2.0")
       .stringConf
-      .toSequence
+      .toSequence()
       .createWithDefault(Nil)
 
   val ENGINE_DEREGISTER_EXCEPTION_MESSAGES: ConfigEntry[Seq[String]] =
@@ -639,7 +642,7 @@ object KyuubiConf {
         " deregister itself.")
       .version("1.2.0")
       .stringConf
-      .toSequence
+      .toSequence()
       .createWithDefault(Nil)
 
   val ENGINE_DEREGISTER_JOB_MAX_FAILURES: ConfigEntry[Int] =
@@ -698,7 +701,7 @@ object KyuubiConf {
       .version("1.3.0")
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
-      .toSequence
+      .toSequence()
       .checkValue(_.toSet.subsetOf(Set("SPARK", "JSON", "JDBC", "CUSTOM")),
         "Unsupported event loggers")
       .createWithDefault(Nil)

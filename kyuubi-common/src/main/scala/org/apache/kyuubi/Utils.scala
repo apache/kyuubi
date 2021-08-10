@@ -35,9 +35,9 @@ object Utils extends Logging {
 
   import org.apache.kyuubi.config.KyuubiConf._
 
-  def strToSeq(s: String): Seq[String] = {
+  def strToSeq(s: String, sp: String = ","): Seq[String] = {
     require(s != null)
-    s.split(",").map(_.trim).filter(_.nonEmpty)
+    s.split(sp).map(_.trim).filter(_.nonEmpty)
   }
 
   def getSystemProperties: Map[String, String] = {
