@@ -69,7 +69,7 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
       while (rs3.next()) {
         assert(rs3.getString("Event") === classOf[SessionEvent].getCanonicalName)
         assert(rs3.getString("username") === Utils.currentUser)
-        assert(rs3.getString("applicationId") === spark.sparkContext.applicationId)
+        assert(rs3.getString("engineId") === spark.sparkContext.applicationId)
         assert(rs3.getInt("totalOperations") === 0,
           "update num of operations after session close as statement event will track these")
       }
@@ -77,11 +77,10 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
     withJdbcStatement() { statement =>
       val rs = statement.executeQuery(s"SELECT * FROM `json`.`${sessionEventPath.getParent}`" +
-        s" where totalOperations > 0")
-      while (rs.next()) {
-        // there 3 statements executed above
-        assert(rs.getInt("totalOperations") === 3)
-      }
+        " where totalOperations > 0")
+      assert(rs.next())
+      // there 3 statements executed above
+      assert(rs.getInt("totalOperations") === 3)
     }
   }
 }

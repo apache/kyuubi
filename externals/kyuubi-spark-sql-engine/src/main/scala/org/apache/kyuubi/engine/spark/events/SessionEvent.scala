@@ -26,7 +26,7 @@ import org.apache.kyuubi.session.Session
 /**
  * Event Tracking for user sessions
  * @param sessionId the identifier of a session
- * @param applicationId the engine id
+ * @param engineId the engine id
  * @param startTime Start time
  * @param endTime End time
  * @param ip Client IP address
@@ -34,7 +34,7 @@ import org.apache.kyuubi.session.Session
  */
 case class SessionEvent(
     sessionId: String,
-    applicationId: String,
+    engineId: String,
     username: String,
     ip: String,
     startTime: Long,
