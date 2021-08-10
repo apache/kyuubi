@@ -606,7 +606,7 @@ object KyuubiConf {
     .version("1.2.0")
     .fallbackConf(LEGACY_ENGINE_SHARE_LEVEL)
 
-  val ENGINE_INITIALIZE_SQL: ConfigEntryWithDefaultString[Seq[String]] =
+  val ENGINE_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
     buildConf("engine.initialize.sql")
       .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +
         "engine before queries. This configuration can not be used in JDBC url due to " +
@@ -616,7 +616,7 @@ object KyuubiConf {
       .toSequence(";")
       .createWithDefaultString("SHOW DATABASES")
 
-  val ENGINE_SESSION_INITIALIZE_SQL: ConfigEntryWithDefaultString[Seq[String]] =
+  val ENGINE_SESSION_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
     buildConf("engine.session.initialize.sql")
       .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +
         "engine session before queries. This configuration can not be used in JDBC url due to " +
