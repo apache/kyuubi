@@ -24,8 +24,9 @@ import org.apache.spark.sql.SparkSession
 
 object KyuubiSparkUtil {
 
-  lazy val globalSparkContext: SparkContext = SparkSession.active.sparkContext
-  lazy val engineId: String =
+  def globalSparkContext: SparkContext = SparkSession.active.sparkContext
+
+  def engineId: String =
     globalSparkContext.applicationAttemptId.getOrElse(globalSparkContext.applicationId)
 
   lazy val diagnostics: String = {
@@ -36,7 +37,7 @@ object KyuubiSparkUtil {
     // scalastyle:off line.size.limit
     s"""
        |           Spark application name: ${sc.appName}
-       |                 application ID:  ${engineId}
+       |                 application ID: ${engineId}
        |                 application web UI: $webUrl
        |                 master: ${sc.master}
        |                 deploy mode: ${sc.deployMode}
