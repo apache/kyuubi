@@ -56,20 +56,6 @@ object ZookeeperConf {
     .version("1.2.0")
     .fallbackConf(EMBEDDED_ZK_TEMP_DIR)
 
-  @deprecated(s"the config will be removed", since = "1.3.0")
-  val ZK_ELECTION_PORT: ConfigEntry[Int] = buildConf("zookeeper.embedded.election.port")
-    .doc("electionPort for the embedded zookeeper server")
-    .version("1.2.0")
-    .intConf
-    .createWithDefault(0)
-
-  @deprecated(s"the config will be removed", since = "1.3.0")
-  val ZK_QUORUM_PORT: ConfigEntry[Int] = buildConf("zookeeper.embedded.quorum.port")
-    .doc("quorumPort for the embedded zookeeper server")
-    .version("1.2.0")
-    .intConf
-    .createWithDefault(0)
-
   val ZK_DATA_LOG_DIR: ConfigEntry[String] = buildConf("zookeeper.embedded.data.log.dir")
     .doc("dataLogDir for the embedded zookeeper server where writes the transaction log .")
     .version("1.2.0")
@@ -104,12 +90,4 @@ object ZookeeperConf {
       .version("1.2.0")
       .intConf
       .createWithDefault(3000 * 20)
-
-  @deprecated(s"the config will be removed", since = "1.3.0")
-  val ZK_SERVER_ID: ConfigEntry[Int] =
-    buildConf("zookeeper.embedded.server.id")
-      .doc("serverId for the embedded zookeeper server")
-      .version("1.2.0")
-      .intConf
-      .createWithDefault(-1)
 }
