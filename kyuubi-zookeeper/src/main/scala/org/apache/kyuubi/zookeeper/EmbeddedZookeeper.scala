@@ -32,11 +32,11 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
   private var zks: ZooKeeperServer = _
   private var serverFactory: NIOServerCnxnFactory = _
   private var dataDirectory: File = _
-  private var deleteDataDirectoryOnClose: Boolean = _
+  // TODO: Is it right in prod?
+  private val deleteDataDirectoryOnClose = true
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     dataDirectory = new File(conf.get(ZK_DATA_DIR))
-    deleteDataDirectoryOnClose = conf.get(ZK_DELETE_DATA_DIRECTORY_ON_CLOSE)
     val clientPort = conf.get(ZK_CLIENT_PORT)
     val tickTime = conf.get(ZK_TICK_TIME)
     val maxClientCnxns = conf.get(ZK_MAX_CLIENT_CONNECTIONS)

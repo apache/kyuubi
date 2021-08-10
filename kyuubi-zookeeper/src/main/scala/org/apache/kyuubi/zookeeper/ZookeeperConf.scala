@@ -112,11 +112,4 @@ object ZookeeperConf {
       .version("1.2.0")
       .intConf
       .createWithDefault(-1)
-
-  val ZK_DELETE_DATA_DIRECTORY_ON_CLOSE: ConfigEntry[Boolean] =
-    buildConf("zookeeper.embedded.delete-data-directory-on-close")
-      .doc("delete the storage directory of embedded zookeeper when service close")
-      .version("1.3.0")
-      .booleanConf
-      .createWithDefault(true)
 }
