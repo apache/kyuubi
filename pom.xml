@@ -62,6 +62,26 @@
             <organization>NetEase</organization>
             <url>https://github.com/yaooqinn</url>
         </developer>
+        <developer>
+            <id>ulysses-you</id>
+            <name>Xiduo You</name>
+            <email>ulyssesyou@apache.org</email>
+            <organization>NetEase</organization>
+            <url>https://github.com/ulysses-you</url>
+        </developer>
+        <developer>
+            <id>pan3793</id>
+            <name>Cheng Pan</name>
+            <email>chengpan@apache.org</email>
+            <url>https://github.com/pan3793</url>
+        </developer>
+        <developer>
+            <id>turbofei</id>
+            <name>Fei Wang</name>
+            <email>feiwang@apache.org</email>
+            <organization>eBay</organization>
+            <url>https://github.com/turbofei</url>
+        </developer>
     </developers>
 
     <mailingLists>
