@@ -56,18 +56,11 @@
 
     <developers>
         <developer>
-            <id>yaooqinn</id>
-            <name>Kent Yao</name>
-            <email>yao@apache.org</email>
-            <organization>NetEase</organization>
-            <url>https://github.com/yaooqinn</url>
-        </developer>
-        <developer>
-            <id>ulysses-you</id>
-            <name>Xiduo You</name>
-            <email>ulyssesyou@apache.org</email>
-            <organization>NetEase</organization>
-            <url>https://github.com/ulysses-you</url>
+            <id>aajisaka</id>
+            <name>Akira Ajisaka</name>
+            <email>aajisaka@apache.org</email>
+            <organization>Yahoo</organization>
+            <url>https://github.com/aajisaka</url>
         </developer>
         <developer>
             <id>pan3793</id>
@@ -81,6 +74,48 @@
             <email>feiwang@apache.org</email>
             <organization>eBay</organization>
             <url>https://github.com/turbofei</url>
+        </developer>
+        <developer>
+            <id>jhx1008</id>
+            <name>Hongxiang Jiang</name>
+            <email>jhx1008@apache.org</email>
+            <organization>NetEase</organization>
+            <url>https://github.com/jhx1008</url>
+        </developer>
+        <developer>
+            <id>ningjiang</id>
+            <name>Willem Ning Jiang</name>
+            <email>ningjiang@apache.org</email>
+            <organization>Huawai</organization>
+            <url>https://github.com/ningjiang</url>
+        </developer>
+        <developer>
+            <id>ulysses-you</id>
+            <name>Xiduo You</name>
+            <email>ulyssesyou@apache.org</email>
+            <organization>NetEase</organization>
+            <url>https://github.com/ulysses-you</url>
+        </developer>
+        <developer>
+            <id>yaooqinn</id>
+            <name>Kent Yao</name>
+            <email>yao@apache.org</email>
+            <organization>NetEase</organization>
+            <url>https://github.com/yaooqinn</url>
+        </developer>
+        <developer>
+            <id>zhangduo</id>
+            <name>Duo Zhang</name>
+            <email>zhangduo@apache.org</email>
+            <organization>Xiaomi</organization>
+            <url>https://github.com/apache9</url>
+        </developer>
+        <developer>
+            <id>zjffdu</id>
+            <name>Jeff Zhang</name>
+            <email>zjffdu@apache.org</email>
+            <organization>Alibaba</organization>
+            <url>https://github.com/zjffdu</url>
         </developer>
     </developers>
 
