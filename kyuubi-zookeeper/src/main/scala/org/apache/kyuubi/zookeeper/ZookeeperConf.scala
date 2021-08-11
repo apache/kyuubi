@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.zookeeper
 
-import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
+import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf}
 import org.apache.kyuubi.config.KyuubiConf.FRONTEND_BIND_HOST
 
 object ZookeeperConf {
@@ -56,18 +56,6 @@ object ZookeeperConf {
     .version("1.2.0")
     .fallbackConf(EMBEDDED_ZK_TEMP_DIR)
 
-  val ZK_ELECTION_PORT: ConfigEntry[Int] = buildConf("zookeeper.embedded.election.port")
-    .doc("electionPort for the embedded zookeeper server")
-    .version("1.2.0")
-    .intConf
-    .createWithDefault(0)
-
-  val ZK_QUORUM_PORT: ConfigEntry[Int] = buildConf("zookeeper.embedded.quorum.port")
-    .doc("quorumPort for the embedded zookeeper server")
-    .version("1.2.0")
-    .intConf
-    .createWithDefault(0)
-
   val ZK_DATA_LOG_DIR: ConfigEntry[String] = buildConf("zookeeper.embedded.data.log.dir")
     .doc("dataLogDir for the embedded zookeeper server where writes the transaction log .")
     .version("1.2.0")
@@ -87,26 +75,19 @@ object ZookeeperConf {
       .intConf
       .createWithDefault(120)
 
-  val ZK_MIN_SESSION_TIMEOUT: OptionalConfigEntry[Int] =
+  val ZK_MIN_SESSION_TIMEOUT: ConfigEntry[Int] =
     buildConf("zookeeper.embedded.min.session.timeout")
       .doc("minSessionTimeout in milliseconds for the embedded zookeeper server will allow the" +
         " client to negotiate. Defaults to 2 times the tickTime")
       .version("1.2.0")
       .intConf
-      .createOptional
+      .createWithDefault(3000 * 2)
 
-  val ZK_MAX_SESSION_TIMEOUT: OptionalConfigEntry[Int] =
+  val ZK_MAX_SESSION_TIMEOUT: ConfigEntry[Int] =
     buildConf("zookeeper.embedded.max.session.timeout")
       .doc("maxSessionTimeout in milliseconds for the embedded zookeeper server will allow the" +
         " client to negotiate. Defaults to 20 times the tickTime")
       .version("1.2.0")
       .intConf
-      .createOptional
-
-  val ZK_SERVER_ID: ConfigEntry[Int] =
-    buildConf("zookeeper.embedded.server.id")
-      .doc("serverId for the embedded zookeeper server")
-      .version("1.2.0")
-      .intConf
-      .createWithDefault(-1)
+      .createWithDefault(3000 * 20)
 }

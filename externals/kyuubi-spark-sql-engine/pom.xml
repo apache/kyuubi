@@ -158,12 +158,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-test</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-zookeeper_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
@@ -188,8 +182,6 @@
                             <include>org.apache.curator:curator-client</include>
                             <include>org.apache.curator:curator-framework</include>
                             <include>org.apache.curator:curator-recipes</include>
-                            <include>org.apache.curator:curator-test</include>
-                            <include>org.javassist:javassist</include>
                         </includes>
                     </artifactSet>
                     <relocations>

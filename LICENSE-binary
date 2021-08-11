@@ -209,7 +209,6 @@ org.apache.commons:commons-lang3
 org.apache.curator:curator-client
 org.apache.curator:curator-framework
 org.apache.curator:curator-recipes
-org.apache.curator:curator-test
 com.google.guava:failureaccess
 com.google.guava:guava
 org.apache.hadoop:hadoop-client-api
@@ -219,7 +218,6 @@ org.apache.htrace:htrace-core4
 com.fasterxml.jackson.core:jackson-annotations
 com.fasterxml.jackson.core:jackson-core
 com.fasterxml.jackson.core:jackson-databind
-org.javassist:javassist
 org.eclipse.jetty:jetty-http
 org.eclipse.jetty:jetty-io
 org.eclipse.jetty:jetty-security
