@@ -21,6 +21,8 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, Cast, Multiply}
 import org.apache.spark.sql.catalyst.plans.logical.RepartitionByExpression
 import org.apache.spark.sql.execution.adaptive.{AdaptiveSparkPlanHelper, CustomShuffleReaderExec, QueryStageExec}
 import org.apache.spark.sql.execution.exchange.{ENSURE_REQUIREMENTS, ShuffleExchangeLike}
+import org.apache.spark.sql.hive.HiveUtils
+import org.apache.spark.sql.hive.execution.OptimizedCreateHiveTableAsSelectCommand
 import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
 import org.apache.spark.sql.test.SQLTestData.TestData
 import org.apache.spark.sql.test.SQLTestUtils
@@ -396,6 +398,25 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
           1,
           1
         )
+      }
+    }
+  }
+
+  test("OptimizedCreateHiveTableAsSelectCommand") {
+    withTempView("v") {
+      withSQLConf(HiveUtils.CONVERT_METASTORE_PARQUET.key -> "true",
+        HiveUtils.CONVERT_METASTORE_CTAS.key -> "true") {
+        withTable("t") {
+          val df = sql(s"CREATE TABLE t STORED AS parquet AS SELECT 1 as a")
+          val ctas = df.queryExecution.analyzed.collect {
+            case _: OptimizedCreateHiveTableAsSelectCommand => true
+          }
+          assert(ctas.size == 1)
+          val repartition = df.queryExecution.analyzed.collect {
+            case _: RepartitionByExpression => true
+          }
+          assert(repartition.size == 1)
+        }
       }
     }
   }
