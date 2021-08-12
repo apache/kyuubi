@@ -12,4 +12,5 @@ Community
     collaborators
     contributions
     improvement-proposals
+    release
     badges
