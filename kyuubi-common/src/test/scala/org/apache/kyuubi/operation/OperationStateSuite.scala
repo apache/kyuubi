@@ -21,14 +21,15 @@ import org.apache.hive.service.rpc.thrift.TOperationState
 import org.apache.hive.service.rpc.thrift.TOperationState._
 
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
+import org.apache.kyuubi.operation.OperationState._
 
 class OperationStateSuite extends KyuubiFunSuite {
-  import OperationState._
   test("toTOperationState") {
     val to = OperationState.toTOperationState _
     assert(to(INITIALIZED) === INITIALIZED_STATE)
     assert(to(PENDING) === PENDING_STATE)
     assert(to(RUNNING) === RUNNING_STATE)
+    assert(to(COMPILED) === RUNNING_STATE) // mapping complied to running state
     assert(to(FINISHED) === FINISHED_STATE)
     assert(to(CANCELED) === CANCELED_STATE)
     assert(to(CLOSED) === CLOSED_STATE)
@@ -38,14 +39,25 @@ class OperationStateSuite extends KyuubiFunSuite {
   }
 
   test("validate transition") {
-    (OperationState.values -- Set(PENDING, RUNNING, TIMEOUT, CANCELED, CLOSED)).foreach { state =>
-      intercept[KyuubiSQLException](OperationState.validateTransition(INITIALIZED, state))
-    }
+    (OperationState.values -- Set(PENDING, RUNNING, COMPILED, TIMEOUT, CANCELED, CLOSED))
+      .foreach { state =>
+        intercept[KyuubiSQLException](OperationState.validateTransition(INITIALIZED, state))
+      }
 
-    (OperationState.values -- Set(RUNNING, FINISHED, TIMEOUT, CANCELED, CLOSED, ERROR))
+    (OperationState.values -- Set(RUNNING, COMPILED, FINISHED, TIMEOUT, CANCELED, CLOSED, ERROR))
       .foreach { state =>
         intercept[KyuubiSQLException](OperationState.validateTransition(PENDING, state))
-    }
+      }
+
+    (OperationState.values -- Set(RUNNING, COMPILED, FINISHED, TIMEOUT, CANCELED, CLOSED, ERROR))
+      .foreach { state =>
+        intercept[KyuubiSQLException](OperationState.validateTransition(RUNNING, state))
+      }
+
+    (OperationState.values -- Set(RUNNING, COMPILED, FINISHED, TIMEOUT, CANCELED, CLOSED, ERROR))
+      .foreach { state =>
+        intercept[KyuubiSQLException](OperationState.validateTransition(COMPILED, state))
+      }
 
     (OperationState.values -- Set(FINISHED, TIMEOUT, CANCELED, CLOSED, ERROR)).foreach { state =>
       intercept[KyuubiSQLException](OperationState.validateTransition(FINISHED, state))
