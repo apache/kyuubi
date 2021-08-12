@@ -93,6 +93,7 @@ class ExecuteStatement(
       // TODO: Make it configurable
       spark.sparkContext.addSparkListener(operationListener)
       result = spark.sql(statement)
+      setState(OperationState.COMPILED)
       kyuubiStatementInfo.queryExecution = result.queryExecution
       debug(result.queryExecution)
       iter = new ArrayFetchIterator(result.collect())

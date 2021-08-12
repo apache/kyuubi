@@ -20,20 +20,30 @@ package org.apache.kyuubi.operation
 import scala.language.implicitConversions
 
 import org.apache.hive.service.rpc.thrift.TOperationState
+import org.apache.hive.service.rpc.thrift.TOperationState._
 
 import org.apache.kyuubi.KyuubiSQLException
 
 object OperationState extends Enumeration {
-  import TOperationState._
 
   type OperationState = Value
 
-  val INITIALIZED, PENDING, RUNNING, FINISHED, TIMEOUT, CANCELED, CLOSED, ERROR, UNKNOWN = Value
+  val INITIALIZED,
+      PENDING,
+      RUNNING,
+      COMPILED,
+      FINISHED,
+      TIMEOUT,
+      CANCELED,
+      CLOSED,
+      ERROR,
+      UNKNOWN = Value
 
   implicit def toTOperationState(from: OperationState): TOperationState = from match {
     case INITIALIZED => INITIALIZED_STATE
     case PENDING => PENDING_STATE
     case RUNNING => RUNNING_STATE
+    case COMPILED => RUNNING_STATE
     case FINISHED => FINISHED_STATE
     case TIMEOUT => TIMEDOUT_STATE
     case CANCELED => CANCELED_STATE
@@ -42,24 +52,14 @@ object OperationState extends Enumeration {
     case UNKNOWN => UKNOWN_STATE
   }
 
-  implicit def fromTOperationState(from: TOperationState): OperationState = from match {
-    case INITIALIZED_STATE => INITIALIZED
-    case PENDING_STATE => PENDING
-    case RUNNING_STATE => RUNNING
-    case FINISHED_STATE => FINISHED
-    case TIMEDOUT_STATE => TIMEOUT
-    case CANCELED_STATE => CANCELED
-    case CLOSED_STATE => CLOSED
-    case ERROR_STATE => ERROR
-    case UKNOWN_STATE => UNKNOWN
-  }
-
   def validateTransition(oldState: OperationState, newState: OperationState): Unit = {
     oldState match {
       case INITIALIZED if Set(PENDING, RUNNING, TIMEOUT, CANCELED, CLOSED).contains(newState) =>
       case PENDING
-        if Set(RUNNING, FINISHED, TIMEOUT, CANCELED, CLOSED, ERROR).contains(newState) =>
-      case RUNNING if Set(FINISHED, TIMEOUT, CANCELED, CLOSED, ERROR).contains(newState) =>
+        if Set(RUNNING, COMPILED, FINISHED, TIMEOUT, CANCELED, CLOSED, ERROR).contains(newState) =>
+      case RUNNING
+        if Set(COMPILED, FINISHED, TIMEOUT, CANCELED, CLOSED, ERROR).contains(newState) =>
+      case COMPILED if Set(FINISHED, TIMEOUT, CANCELED, CLOSED, ERROR).contains(newState) =>
       case FINISHED | CANCELED | TIMEOUT | ERROR if CLOSED.equals(newState) =>
       case _ => throw KyuubiSQLException(
         s"Illegal Operation state transition from $oldState to $newState")
