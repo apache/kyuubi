@@ -403,20 +403,18 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
   }
 
   test("OptimizedCreateHiveTableAsSelectCommand") {
-    withTempView("v") {
-      withSQLConf(HiveUtils.CONVERT_METASTORE_PARQUET.key -> "true",
-        HiveUtils.CONVERT_METASTORE_CTAS.key -> "true") {
-        withTable("t") {
-          val df = sql(s"CREATE TABLE t STORED AS parquet AS SELECT 1 as a")
-          val ctas = df.queryExecution.analyzed.collect {
-            case _: OptimizedCreateHiveTableAsSelectCommand => true
-          }
-          assert(ctas.size == 1)
-          val repartition = df.queryExecution.analyzed.collect {
-            case _: RepartitionByExpression => true
-          }
-          assert(repartition.size == 1)
+    withSQLConf(HiveUtils.CONVERT_METASTORE_PARQUET.key -> "true",
+      HiveUtils.CONVERT_METASTORE_CTAS.key -> "true") {
+      withTable("t") {
+        val df = sql(s"CREATE TABLE t STORED AS parquet AS SELECT 1 as a")
+        val ctas = df.queryExecution.analyzed.collect {
+          case _: OptimizedCreateHiveTableAsSelectCommand => true
         }
+        assert(ctas.size == 1)
+        val repartition = df.queryExecution.analyzed.collect {
+          case _: RepartitionByExpression => true
+        }
+        assert(repartition.size == 1)
       }
     }
   }
