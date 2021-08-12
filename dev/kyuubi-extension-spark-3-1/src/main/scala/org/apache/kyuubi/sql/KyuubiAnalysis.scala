@@ -18,6 +18,7 @@
 package org.apache.kyuubi.sql
 
 import java.util.Random
+
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Cast, Expression, Literal, Multiply, Rand}
 import org.apache.spark.sql.catalyst.plans.logical._
@@ -27,6 +28,7 @@ import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationComm
 import org.apache.spark.sql.hive.execution.{CreateHiveTableAsSelectCommand, InsertIntoHiveTable, OptimizedCreateHiveTableAsSelectCommand}
 import org.apache.spark.sql.internal.StaticSQLConf
 import org.apache.spark.sql.types.IntegerType
+
 import org.apache.kyuubi.sql.RepartitionBeforeWriteHelper._
 
 /**
