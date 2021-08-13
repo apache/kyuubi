@@ -24,7 +24,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf
-import org.apache.kyuubi.ha.client.ServiceDiscovery
+import org.apache.kyuubi.ha.client.ZooKeeperClientProvider
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.NamedThreadFactory
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
@@ -106,7 +106,7 @@ class EngineRefSuite extends KyuubiFunSuite {
 
     val r1 = new Runnable {
       override def run(): Unit = {
-        ServiceDiscovery.withZkClient(conf) { client =>
+        ZooKeeperClientProvider.withZkClient(conf) { client =>
           val hp = engine.getOrCreate(client)
           port1 = hp._2
         }
@@ -115,7 +115,7 @@ class EngineRefSuite extends KyuubiFunSuite {
 
     val r2 = new Runnable {
       override def run(): Unit = {
-        ServiceDiscovery.withZkClient(conf) { client =>
+        ZooKeeperClientProvider.withZkClient(conf) { client =>
           val hp = engine.getOrCreate(client)
           port2 = hp._2
         }

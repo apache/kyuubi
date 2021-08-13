@@ -17,22 +17,18 @@
 
 package org.apache.kyuubi.ha.client
 
-import java.io.{File, IOException}
+import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
-import javax.security.auth.login.Configuration
 
 import scala.collection.JavaConverters._
 
-import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
+import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.framework.recipes.nodes.PersistentNode
 import org.apache.curator.framework.state.{ConnectionState, ConnectionStateListener}
 import org.apache.curator.framework.state.ConnectionState.{CONNECTED, LOST, RECONNECTED}
-import org.apache.curator.retry._
 import org.apache.curator.utils.ZKPaths
-import org.apache.hadoop.security.UserGroupInformation
-import org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager.JaasConfiguration
 import org.apache.zookeeper.{CreateMode, KeeperException, WatchedEvent, Watcher}
 import org.apache.zookeeper.CreateMode.PERSISTENT
 import org.apache.zookeeper.KeeperException.NodeExistsException
@@ -41,7 +37,7 @@ import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.service.{AbstractService, Serverable}
-import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
+import org.apache.kyuubi.util.ThreadUtils
 
 /**
  * A abstract service for service discovery
@@ -54,6 +50,7 @@ abstract class ServiceDiscovery (
     server: Serverable) extends AbstractService(name) {
 
   import ServiceDiscovery._
+  import ZooKeeperClientProvider._
 
   private var _zkClient: CuratorFramework = _
   private var _serviceNode: PersistentNode = _
@@ -73,7 +70,6 @@ abstract class ServiceDiscovery (
     _namespace = conf.get(HA_ZK_NAMESPACE)
     val maxSleepTime = conf.get(HA_ZK_CONN_MAX_RETRY_WAIT)
     val maxRetries = conf.get(HA_ZK_CONN_MAX_RETRIES)
-    setUpZooKeeperAuth(conf)
     _zkClient = buildZookeeperClient(conf)
     zkClient.getConnectionStateListenable.addListener(new ConnectionStateListener {
       private val isConnected = new AtomicBoolean(false)
@@ -157,95 +153,8 @@ abstract class ServiceDiscovery (
 
 object ServiceDiscovery extends Logging {
 
-  import RetryPolicies._
-
   private final lazy val connectionChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor("zk-connection-checker")
-
-  def buildZookeeperClient(conf: KyuubiConf): CuratorFramework = {
-    val connectionStr = conf.get(HA_ZK_QUORUM)
-    val sessionTimeout = conf.get(HA_ZK_SESSION_TIMEOUT)
-    val connectionTimeout = conf.get(HA_ZK_CONN_TIMEOUT)
-    val baseSleepTime = conf.get(HA_ZK_CONN_BASE_RETRY_WAIT)
-    val maxSleepTime = conf.get(HA_ZK_CONN_MAX_RETRY_WAIT)
-    val maxRetries = conf.get(HA_ZK_CONN_MAX_RETRIES)
-    val retryPolicyName = conf.get(HA_ZK_CONN_RETRY_POLICY)
-    val retryPolicy = RetryPolicies.withName(retryPolicyName) match {
-      case ONE_TIME => new RetryOneTime(baseSleepTime)
-      case N_TIME => new RetryNTimes(maxRetries, baseSleepTime)
-      case BOUNDED_EXPONENTIAL_BACKOFF =>
-        new BoundedExponentialBackoffRetry(baseSleepTime, maxSleepTime, maxRetries)
-      case UNTIL_ELAPSED => new RetryUntilElapsed(maxSleepTime, baseSleepTime)
-      case _ => new ExponentialBackoffRetry(baseSleepTime, maxRetries)
-    }
-    CuratorFrameworkFactory.builder()
-      .connectString(connectionStr)
-      .sessionTimeoutMs(sessionTimeout)
-      .connectionTimeoutMs(connectionTimeout)
-      .aclProvider(new ZooKeeperACLProvider(conf))
-      .retryPolicy(retryPolicy)
-      .build()
-  }
-
-  /**
-   * Create a [[CuratorFramework]] instance to be used as the ZooKeeper client
-   * Use the [[ZooKeeperACLProvider]] to create appropriate ACLs
-   */
-  def startZookeeperClient(conf: KyuubiConf): CuratorFramework = {
-    val connectionStr = conf.get(HA_ZK_QUORUM)
-    val sessionTimeout = conf.get(HA_ZK_SESSION_TIMEOUT)
-    val connectionTimeout = conf.get(HA_ZK_CONN_TIMEOUT)
-    val retryPolicy = new ExponentialBackoffRetry(1000, 3)
-    val client = CuratorFrameworkFactory.builder()
-      .connectString(connectionStr)
-      .sessionTimeoutMs(sessionTimeout)
-      .connectionTimeoutMs(connectionTimeout)
-      .retryPolicy(retryPolicy)
-      .build()
-    client.start()
-    client
-  }
-
-  /**
-   * Creates a zookeeper client before calling `f` and close it after calling `f`.
-   */
-  def withZkClient(conf: KyuubiConf)(f: CuratorFramework => Unit): Unit = {
-    val zkClient = startZookeeperClient(conf)
-    try {
-      f(zkClient)
-    } finally {
-      try {
-        zkClient.close()
-      } catch {
-        case e: IOException => error("Failed to release the zkClient", e)
-      }
-    }
-  }
-
-  /**
-   * For a kerberized cluster, we dynamically set up the client's JAAS conf.
-   *
-   * @param conf SparkConf
-   * @return
-   */
-  @throws[Exception]
-  def setUpZooKeeperAuth(conf: KyuubiConf): Unit = {
-    if (conf.get(HA_ZK_ACL_ENABLED)) {
-      val keyTabFile = conf.get(KyuubiConf.SERVER_KEYTAB)
-      val maybePrincipal = conf.get(KyuubiConf.SERVER_PRINCIPAL)
-      val kerberized = maybePrincipal.isDefined && keyTabFile.isDefined
-      if (UserGroupInformation.isSecurityEnabled && kerberized) {
-        if (!new File(keyTabFile.get).exists()) {
-          throw new IOException(s"${KyuubiConf.SERVER_KEYTAB.key} does not exists")
-        }
-        System.setProperty("zookeeper.sasl.clientconfig", "KyuubiZooKeeperClient")
-        var principal = maybePrincipal.get
-        principal = KyuubiHadoopUtils.getServerPrincipal(principal)
-        val jaasConf = new JaasConfiguration("KyuubiZooKeeperClient", principal, keyTabFile.get)
-        Configuration.setConfiguration(jaasConf)
-      }
-    }
-  }
 
   def supportServiceDiscovery(conf: KyuubiConf): Boolean = {
     val zkEnsemble = conf.get(HA_ZK_QUORUM)
