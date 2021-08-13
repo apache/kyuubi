@@ -27,11 +27,12 @@ The release process consists of several steps:
 
 1. Decide to release
 2. Prepare for the release
-3. Build a release candidate
-4. Vote on the release candidate
-5. If necessary, fix any issues and go back to step 3.
-6. Finalize the release
-7. Promote the release
+3. Cut branch iff for __major__ release
+4. Build a release candidate
+5. Vote on the release candidate
+6. If necessary, fix any issues and go back to step 3.
+7. Finalize the release
+8. Promote the release
 
 ## Decide to release
 
@@ -71,7 +72,7 @@ export ASF_PASSWORD=<your apache password>
 
 #### Subversion
 
-`svn` is required for Apache release, please refer to
+Besides on `git`, `svn` is also required for Apache release, please refer to
 https://www.apache.org/dev/version-control.html#https-svn for details.
 
 #### GPG Key
@@ -103,4 +104,91 @@ svn checkout --depth=files "https://dist.apache.org/repos/dist/dev/incubator/kyu
 svn commit --username "${ASF_USERNAME}" --password "${ASF_PASSWORD}" --message "Update KEYS"
 ```
 
+## Cut branch iff for major release
 
+Kyuubi use version pattern `{MAJOR_VERSION}.{MINOR_VERSION}.{PATCH_VERSION}[-{OPTIONAL_SUFFIX}]`, e.g. `1.3.0-incubating`.
+__Major Release__ means `MAJOR_VERSION` or `MINOR_VERSION` changed, and __Patch Release__ means `PATCH_VERSION` changed.
+
+The main step towards preparing a major release is to create a release branch. This is done via standard Git branching
+mechanism and should be announced to the community once the branch is created.
+
+The release branch pattern is `branch-{MAJOR_VERSION}.{MINOR_VERSION}`, e.g. `branch-1.3`.
+
+After cutting release branch, don't forget bump version in `master` branch.
+
+## Build a release candidate
+
+1. Set environment variables.
+
+```shell
+export RELEASE_VERSION=<release version, e.g. 1.3.0-incubating>
+export RELEASE_RC_NO=<RC number, e.g. 0>
+```
+
+2. Bump version.
+
+```shell
+build/mvn versions:set -DgenerateBackupPoms=false \
+  -DnewVersion="${RELEASE_VERSION}" \
+  -Pkubernetes,kyuubi-extension-spark-3-1,spark-block-cleaner,tpcds
+
+git add .
+git commit -m "[RELEASE] Bump ${RELEASE_VERSION}"
+```
+
+3. Create a git tag for the release candidate.
+
+The tag pattern is `v${RELEASE_VERSION}-rc${RELEASE_RC_NO}`, e.g. `v1.3.0-incubating-rc0`
+
+4. Package the release binaries & sources, and upload them to the Apache staging SVN repo. Publish jars to the Apache
+staging Maven repo.
+
+```shell
+build/release/releas.sh publish
+```
+
+## Vote on the release candidate
+
+The release voting takes place on the Apache Kyuubi (Incubating) developers list (the (P)PMC is voting).
+
+- If possible, attach a draft of the release notes with the email.
+- Recommend represent voting closing time in UTC format.
+- Make sure the email is in text format and the links are correct
+
+Once the vote is done, you should also send out a summary email with the totals, with a subject that looks
+something like __[VOTE][RESULT] ....__
+
+## Finalize the Release
+
+__Be Careful!__
+
+__THIS STEP IS IRREVERSIBLE so make sure you selected the correct staging repository.__
+__Once you move the artifacts into the release folder, they cannot be removed.__
+
+After the vote passes, to upload the binaries to Apache mirrors, you move the binaries from dev directory (this should
+be where they are voted) to release directory. This "moving" is the only way you can add stuff to the actual release
+directory. (Note: only (P)PMC members can move to release directory)
+
+Move the sub-directory in "dev" to the corresponding directory in "release". If you've added your signing key to the
+KEYS file, also update the release copy.
+
+```shell
+build/release/releas.sh finalize
+```
+
+Verify that the resources are present in https://www.apache.org/dist/incubator/kyuubi/. It may take a while for them
+to be visible. This will be mirrored throughout the Apache network.
+
+For Maven Central Repository, you can Release from the [Apache Nexus Repository Manager](https://repository.apache.org/).
+Log in, open Staging Repositories, find the one voted on, select and click Release and confirm. If successful, it should
+show up under https://repository.apache.org/content/repositories/releases/org/apache/kyuubi/ and the same under 
+https://repository.apache.org/content/groups/maven-staging-group/org/apache/kyuubi/ (look for the correct release version).
+After some time this will be sync’d to [Maven Central](https://search.maven.org/) automatically.
+
+## Promote the release
+
+### Create an Announcement
+
+Once everything is working create an announcement on the website and then send an e-mail to the mailing list.
+
+Enjoy an adult beverage of your choice, and congratulations on making a Kyuubi release.
