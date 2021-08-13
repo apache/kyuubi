@@ -27,7 +27,7 @@ abstract class Serverable(name: String) extends CompositeService(name) {
   private val started = new AtomicBoolean(false)
 
   val backendService: AbstractBackendService
-  private lazy val frontendService = new FrontendService(backendService, OOMHook)
+  private lazy val frontendService = new ThriftFrontendService(backendService, OOMHook)
   protected def supportsServiceDiscovery: Boolean
   val discoveryService: Service
 

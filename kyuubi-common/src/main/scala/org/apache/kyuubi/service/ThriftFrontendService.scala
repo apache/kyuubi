@@ -37,14 +37,14 @@ import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{ExecutorPoolCaptureOom, KyuubiHadoopUtils, NamedThreadFactory}
 
-class FrontendService private (name: String, be: BackendService, oomHook: Runnable)
+class ThriftFrontendService private(name: String, be: BackendService, oomHook: Runnable)
   extends AbstractService(name) with TCLIService.Iface with Runnable with Logging {
 
-  import FrontendService._
+  import ThriftFrontendService._
   import KyuubiConf._
 
   def this(be: BackendService, oomHook: Runnable) = {
-    this(classOf[FrontendService].getSimpleName, be, oomHook)
+    this(classOf[ThriftFrontendService].getSimpleName, be, oomHook)
   }
 
   private var server: Option[TServer] = None
@@ -545,7 +545,7 @@ class FrontendService private (name: String, be: BackendService, oomHook: Runnab
   }
 }
 
-object FrontendService {
+object ThriftFrontendService {
   final val OK_STATUS = new TStatus(TStatusCode.SUCCESS_STATUS)
 
   final val CURRENT_SERVER_CONTEXT = new ThreadLocal[FeServiceServerContext]()
