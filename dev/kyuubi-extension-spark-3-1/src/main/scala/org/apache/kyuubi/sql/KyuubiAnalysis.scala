@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.CreateDataSourceTableAsSelectCommand
 import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand
-import org.apache.spark.sql.hive.execution.{CreateHiveTableAsSelectCommand, InsertIntoHiveTable}
+import org.apache.spark.sql.hive.execution.{CreateHiveTableAsSelectCommand, InsertIntoHiveTable, OptimizedCreateHiveTableAsSelectCommand}
 import org.apache.spark.sql.internal.StaticSQLConf
 import org.apache.spark.sql.types.IntegerType
 
@@ -128,6 +128,26 @@ case class RepartitionBeforeWriteHive(session: SparkSession) extends Rule[Logica
       }
 
     case c @ CreateHiveTableAsSelectCommand(table, query, _, _)
+      if query.resolved && table.bucketSpec.isEmpty && canInsertRepartitionByExpression(query) =>
+      val dynamicPartitionColumns =
+        query.output.filter(attr => table.partitionColumnNames.contains(attr.name))
+      if (dynamicPartitionColumns.isEmpty) {
+        c.copy(query =
+          RepartitionByExpression(
+            Seq.empty,
+            query,
+            conf.getConf(KyuubiSQLConf.INSERT_REPARTITION_NUM)))
+      } else {
+        val extended = dynamicPartitionColumns ++ dynamicPartitionExtraExpression(
+          conf.getConf(KyuubiSQLConf.DYNAMIC_PARTITION_INSERTION_REPARTITION_NUM))
+        c.copy(query =
+          RepartitionByExpression(
+            extended,
+            query,
+            conf.getConf(KyuubiSQLConf.INSERT_REPARTITION_NUM)))
+      }
+
+    case c @ OptimizedCreateHiveTableAsSelectCommand(table, query, _, _)
       if query.resolved && table.bucketSpec.isEmpty && canInsertRepartitionByExpression(query) =>
       val dynamicPartitionColumns =
         query.output.filter(attr => table.partitionColumnNames.contains(attr.name))
