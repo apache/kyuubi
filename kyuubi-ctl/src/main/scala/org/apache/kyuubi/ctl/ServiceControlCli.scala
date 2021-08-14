@@ -25,7 +25,7 @@ import org.apache.curator.utils.ZKPaths
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.{ServiceDiscovery, ServiceNodeInfo}
+import org.apache.kyuubi.ha.client.{ServiceDiscovery, ServiceNodeInfo, ZooKeeperClientProvider}
 
 private[ctl] object ServiceControlAction extends Enumeration {
   type ServiceControlAction = Value
@@ -43,6 +43,7 @@ private[ctl] object ServiceControlObject extends Enumeration {
 private[kyuubi] class ServiceControlCli extends Logging {
   import ServiceControlCli._
   import ServiceDiscovery._
+  import ZooKeeperClientProvider._
 
   private var verbose: Boolean = false
 
