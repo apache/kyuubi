@@ -99,4 +99,10 @@ object HighAvailabilityConf {
     .timeConf
     .checkValue(_ > 0, "Must be positive")
     .createWithDefault(Duration.ofSeconds(120).toMillis)
+
+  // This option will not be exposed to the user.
+  val HA_ZK_ENGINE_SESSION_ID: ConfigEntry[String] = ConfigBuilder("kyuubi.ha.engine.session.id")
+    .version("1.2.0")
+    .stringConf
+    .createWithDefault("-1")
 }

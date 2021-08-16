@@ -94,7 +94,7 @@ private[kyuubi] class ServiceControlCli extends Logging {
           currentServerNodes.foreach { sn =>
             info(s"Exposing server instance:${sn.instance} with version:${sn.version}" +
               s" from $fromNamespace to $toNamespace")
-            val newNode = createZkServiceNode(
+            val newNode = createServiceNode(
               kyuubiConf, zc, args.cliArgs.namespace, sn.instance, sn.version, true)
             exposedServiceNodes += sn.copy(
               namespace = toNamespace,
