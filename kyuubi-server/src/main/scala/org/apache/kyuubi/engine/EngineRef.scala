@@ -126,7 +126,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
 
   private def get(zkClient: CuratorFramework): Option[(String, Int)] = {
     getServerHost(zkClient, engineSpace)
-      .filter(_.sessionId.exists(_.equals(sessionId)))
+      .filter(_.createSessionId.exists(_.equals(sessionId)))
       .map(data => (data.host, data.port))
   }
 

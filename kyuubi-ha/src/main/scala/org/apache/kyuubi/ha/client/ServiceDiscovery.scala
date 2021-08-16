@@ -256,6 +256,6 @@ case class ServiceNodeInfo(
     host: String,
     port: Int,
     version: Option[String],
-    sessionId: Option[String]) {
+    createSessionId: Option[String]) {
   def instance: String = s"$host:$port"
 }
