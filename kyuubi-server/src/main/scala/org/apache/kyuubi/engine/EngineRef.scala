@@ -181,9 +181,11 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
    * Get the engine ref from engine space first first or create a new one
    */
   def getOrCreate(zkClient: CuratorFramework): (String, Int) = {
-    get(zkClient).getOrElse {
-      create(zkClient)
-    }
+    getServerHost(zkClient, engineSpace)
+      .map(data => (data.host, data.port))
+      .getOrElse {
+        create(zkClient)
+      }
   }
 }
 
