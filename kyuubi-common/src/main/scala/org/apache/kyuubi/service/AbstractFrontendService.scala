@@ -17,27 +17,12 @@
 
 package org.apache.kyuubi.service
 
-import org.apache.kyuubi.KyuubiException
+/**
+ * A basic abstraction for frontend services.
+ */
+abstract class AbstractFrontendService(name: String, be: BackendService)
+  extends CompositeService(name) {
 
-class NoopServer extends Serverable("noop") {
+  def connectionUrl(server: Boolean = false): String
 
-  private val OOMHook = new Runnable { override def run(): Unit = stop() }
-
-  override val backendService = new NoopBackendService
-  override val frontendService = new ThriftFrontendService(backendService, OOMHook)
-
-  override def start(): Unit = {
-    super.start()
-    if (getConf.getOption("kyuubi.test.server.should.fail").exists(_.toBoolean)) {
-      throw new IllegalArgumentException("should fail")
-    }
-  }
-
-  override protected def stopServer(): Unit = {
-    throw new KyuubiException("no need to stop me")
-  }
-
-
-  override val discoveryService: Service = backendService
-  override protected val supportsServiceDiscovery: Boolean = false
 }
