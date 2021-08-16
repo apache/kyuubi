@@ -21,7 +21,7 @@ import java.time.Duration
 
 import org.apache.hadoop.security.UserGroupInformation
 
-import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf}
+import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
 import org.apache.kyuubi.ha.client.RetryPolicies
 
 object HighAvailabilityConf {
@@ -101,7 +101,8 @@ object HighAvailabilityConf {
     .createWithDefault(Duration.ofSeconds(120).toMillis)
 
   // This option will not be exposed to the user.
-  val HA_ZK_ENGINE_SESSION_ID: ConfigEntry[String] = ConfigBuilder("kyuubi.ha.engine.session.id")
+  val HA_ZK_ENGINE_SESSION_ID: OptionalConfigEntry[String] =
+    ConfigBuilder("kyuubi.ha.engine.session.id")
     .version("1.3.0")
     .stringConf
     .createOptional
