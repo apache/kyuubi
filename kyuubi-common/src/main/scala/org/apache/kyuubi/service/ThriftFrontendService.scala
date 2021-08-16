@@ -38,7 +38,7 @@ import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{ExecutorPoolCaptureOom, KyuubiHadoopUtils, NamedThreadFactory}
 
 class ThriftFrontendService private(name: String, be: BackendService, oomHook: Runnable)
-  extends AbstractService(name) with TCLIService.Iface with Runnable with Logging {
+  extends AbstractFrontendService(name, be) with TCLIService.Iface with Runnable with Logging {
 
   import ThriftFrontendService._
   import KyuubiConf._
@@ -105,7 +105,7 @@ class ThriftFrontendService private(name: String, be: BackendService, oomHook: R
     super.initialize(conf)
   }
 
-  def connectionUrl(server: Boolean = false): String = {
+  override def connectionUrl(server: Boolean = false): String = {
     getServiceState match {
       case s @ ServiceState.LATENT => throw new IllegalStateException(s"Illegal Service State: $s")
       case _ =>
