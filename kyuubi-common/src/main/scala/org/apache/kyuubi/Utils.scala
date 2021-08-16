@@ -21,6 +21,8 @@ import java.io.{File, InputStreamReader, IOException}
 import java.net.{Inet4Address, InetAddress, NetworkInterface}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
+import java.time.{Instant, LocalDateTime, ZoneId}
+import java.time.format.DateTimeFormatter
 import java.util.{Properties, UUID}
 
 import scala.collection.JavaConverters._
@@ -220,5 +222,13 @@ object Utils extends Logging {
         " but we couldn't find any external IP address!")
     }
     address
+  }
+
+  /**
+   * return date of format yyyyMMdd
+   */
+  def getCurrentDate: String = {
+    LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault)
+      .format(DateTimeFormatter.ofPattern("yyyyMMdd"))
   }
 }

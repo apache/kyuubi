@@ -27,7 +27,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, FSDataOutputStream, Path}
 import org.apache.hadoop.fs.permission.FsPermission
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH
 import org.apache.kyuubi.engine.spark.events.JsonEventLogger.{JSON_LOG_DIR_PERM, JSON_LOG_FILE_PERM}
@@ -35,8 +35,9 @@ import org.apache.kyuubi.service.AbstractService
 
 /**
  * This event logger logs Kyuubi engine events in JSON file format.
- * The hierarchical directory structure is {ENGINE_EVENT_JSON_LOG_PATH}/{eventType}/{logName}.json
- * The {eventType} is based on core concepts of the Kyuubi systems, e.g. engine/session/statement
+ * The hierarchical directory structure is:
+ *   ${ENGINE_EVENT_JSON_LOG_PATH}/day=${date}/event=${eventType}/${logName}.json
+ * The ${eventType} is based on core concepts of the Kyuubi systems, e.g. engine/session/statement
  * @param logName the engine id formed of appId + attemptId(if any)
  */
 class JsonEventLogger(logName: String, hadoopConf: Configuration)
@@ -44,13 +45,15 @@ class JsonEventLogger(logName: String, hadoopConf: Configuration)
 
   type Logger = (PrintWriter, Option[FSDataOutputStream])
 
+  private val currentDate = Utils.getCurrentDate
   private var logRoot: URI = _
   private var fs: FileSystem = _
   private val writers = HashMap.empty[String, Logger]
 
   private def getOrUpdate(event: KyuubiEvent): Logger = synchronized {
     writers.getOrElseUpdate(event.eventType, {
-      val eventPath = new Path(new Path(logRoot), event.eventType)
+      val eventPath =
+        new Path(new Path(new Path(logRoot), s"day=$currentDate"), s"event=${event.eventType}")
       FileSystem.mkdirs(fs, eventPath, JSON_LOG_DIR_PERM)
       val logFile = new Path(eventPath, logName + ".json")
       var hadoopDataStream: FSDataOutputStream = null
