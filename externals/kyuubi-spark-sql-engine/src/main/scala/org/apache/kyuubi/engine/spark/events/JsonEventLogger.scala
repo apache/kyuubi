@@ -51,9 +51,9 @@ class JsonEventLogger(logName: String, hadoopConf: Configuration)
   private val writers = HashMap.empty[String, Logger]
 
   private def getOrUpdate(event: KyuubiEvent): Logger = synchronized {
-    writers.getOrElseUpdate(event.eventType + event.datePartition, {
-      val eventPath = new Path(
-        new Path(new Path(logRoot), s"${event.eventType}"), s"day=${event.datePartition}")
+    val partitions = event.partitions.map(kv => s"${kv._1}=${kv._2}").mkString("/")
+    writers.getOrElseUpdate(partitions, {
+      val eventPath = new Path(new Path(logRoot), partitions)
       FileSystem.mkdirs(fs, eventPath, JSON_LOG_DIR_PERM)
       val logFile = new Path(eventPath, logName + ".json")
       var hadoopDataStream: FSDataOutputStream = null
