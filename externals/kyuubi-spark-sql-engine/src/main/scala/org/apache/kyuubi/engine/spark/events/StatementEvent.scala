@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine.spark.events
 
-import java.util.Date
-
 import org.apache.spark.sql.Encoders
 import org.apache.spark.sql.types.StructType
 
@@ -43,9 +41,5 @@ case class StatementEvent(
     var queryExecution: String = "",
     var exeception: String = "") extends KyuubiEvent {
 
-  override def eventType: String = "statement"
-
   override def schema: StructType = Encoders.product[StatementEvent].schema
-
-  override def toJson: String = JsonProtocol.productToJson(this)
 }

@@ -99,20 +99,6 @@ class JsonEventLogger(logName: String, hadoopConf: Configuration)
     // scalastyle:on println
     writer.flush()
     stream.foreach(_.hflush())
-  override def logEvent(kyuubiEvent: KyuubiEvent): Unit = kyuubiEvent match {
-    case e: EngineEvent =>
-      val writer = getOrUpdate(e)
-      // scalastyle:off println
-      writer.println(e.toJson)
-      // scalastyle:on println
-      writer.flush()
-    case statement: StatementEvent =>
-      val writer = getOrUpdate(statement)
-      // scalastyle:off println
-      writer.println(statement.toJson)
-      // scalastyle:on println
-      writer.flush()
-    case _ => // TODO: add extra events handling here
   }
 }
 

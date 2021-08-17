@@ -26,8 +26,6 @@ import org.scalatest.time.SpanSugar._
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, WithSparkSQLEngine}
-import org.apache.kyuubi.operation.JDBCTestUtils
-import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.operation.{JDBCTestUtils, OperationHandle}
 
 class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
@@ -80,6 +78,15 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
       }
     }
 
+    withJdbcStatement() { statement =>
+      val rs = statement.executeQuery(s"SELECT * FROM `json`.`${sessionEventPath.getParent}`" +
+        " where totalOperations > 0")
+      assert(rs.next())
+      // there 3 statements executed above
+      assert(rs.getInt("totalOperations") === 3)
+    }
+  }
+
   test("statementEvent: generate, dump and query") {
     val statementEventPath = Paths.get(logRoot.toString, "statement", engine.engineId + ".json")
     val sql = "select timestamp'2021-06-01'"
@@ -98,15 +105,6 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
           .where(s"statementId = '${statementId}'")
           .count() >= 1)
       }
-    }
-  }
-
-    withJdbcStatement() { statement =>
-      val rs = statement.executeQuery(s"SELECT * FROM `json`.`${sessionEventPath.getParent}`" +
-        " where totalOperations > 0")
-      assert(rs.next())
-      // there 3 statements executed above
-      assert(rs.getInt("totalOperations") === 3)
     }
   }
 }
