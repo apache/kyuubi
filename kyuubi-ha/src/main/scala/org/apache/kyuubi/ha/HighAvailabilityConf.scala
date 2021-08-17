@@ -103,7 +103,7 @@ object HighAvailabilityConf {
   // This option will not be exposed to the user.
   val HA_ZK_ENGINE_SESSION_ID: OptionalConfigEntry[String] =
     ConfigBuilder("kyuubi.ha.engine.session.id")
-    .version("1.3.0")
+    .version("1.4.0")
     .stringConf
     .createOptional
 }
