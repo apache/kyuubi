@@ -36,8 +36,9 @@ import org.apache.kyuubi.service.AbstractService
 /**
  * This event logger logs Kyuubi engine events in JSON file format.
  * The hierarchical directory structure is:
- *   ${ENGINE_EVENT_JSON_LOG_PATH}/day=${date}/event=${eventType}/${logName}.json
+ *   ${ENGINE_EVENT_JSON_LOG_PATH}/event=${eventType}/day=${date}/${logName}.json
  * The ${eventType} is based on core concepts of the Kyuubi systems, e.g. engine/session/statement
+ * The ${date} is based on the time of events, e.g. engine.startTime, statement.startTime
  * @param logName the engine id formed of appId + attemptId(if any)
  */
 class JsonEventLogger(logName: String, hadoopConf: Configuration)
