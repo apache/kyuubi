@@ -27,10 +27,9 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, FSDataOutputStream, Path}
 import org.apache.hadoop.fs.permission.FsPermission
 
-import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.engine.spark.events.JsonEventLogger.{JSON_LOG_DIR_PERM, JSON_LOG_FILE_PERM}
 import org.apache.kyuubi.service.AbstractService
 
@@ -46,15 +45,14 @@ class JsonEventLogger(logName: String, hadoopConf: Configuration)
 
   type Logger = (PrintWriter, Option[FSDataOutputStream])
 
-  private val currentDate = Utils.getDateFromTimestamp(KyuubiSparkUtil.engineStartTime)
   private var logRoot: URI = _
   private var fs: FileSystem = _
   private val writers = HashMap.empty[String, Logger]
 
   private def getOrUpdate(event: KyuubiEvent): Logger = synchronized {
-    writers.getOrElseUpdate(event.eventType, {
-      val eventPath =
-        new Path(new Path(new Path(logRoot), s"day=$currentDate"), s"event=${event.eventType}")
+    writers.getOrElseUpdate(event.eventType + event.datePartition, {
+      val eventPath = new Path(
+        new Path(new Path(logRoot), s"event=${event.eventType}"), s"day=${event.datePartition}")
       FileSystem.mkdirs(fs, eventPath, JSON_LOG_DIR_PERM)
       val logFile = new Path(eventPath, logName + ".json")
       var hadoopDataStream: FSDataOutputStream = null

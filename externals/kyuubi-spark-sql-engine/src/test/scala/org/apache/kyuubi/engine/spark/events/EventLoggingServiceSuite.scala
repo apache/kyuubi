@@ -45,9 +45,9 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
   test("round-trip for event logging service") {
     val engineEventPath = Paths.get(
-      logRoot.toString, s"day=$currentDate", "event=engine", KyuubiSparkUtil.engineId + ".json")
+      logRoot.toString, "event=engine", s"day=$currentDate", KyuubiSparkUtil.engineId + ".json")
     val sessionEventPath = Paths.get(
-      logRoot.toString, s"day=$currentDate", "event=session", KyuubiSparkUtil.engineId + ".json")
+      logRoot.toString, "event=session", s"day=$currentDate", KyuubiSparkUtil.engineId + ".json")
     val engineEventReader = Files.newBufferedReader(engineEventPath, StandardCharsets.UTF_8)
 
     val readEvent = JsonProtocol.jsonToEvent(engineEventReader.readLine())

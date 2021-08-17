@@ -22,6 +22,7 @@ import java.util.Date
 import org.apache.spark.sql.Encoders
 import org.apache.spark.sql.types.StructType
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
 import org.apache.kyuubi.service.ServiceState
@@ -59,6 +60,7 @@ case class EngineEvent(
     settings: Map[String, String]) extends KyuubiEvent {
 
   override def schema: StructType = Encoders.product[EngineEvent].schema
+  override def datePartition: String = Utils.getDateFromTimestamp(startTime)
 
   override def toString: String = {
     // need to consider deploy mode and cluster to get core and mem

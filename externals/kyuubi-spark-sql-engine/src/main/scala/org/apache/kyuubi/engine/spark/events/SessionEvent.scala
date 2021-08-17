@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine.spark.events
 import org.apache.spark.sql.Encoders
 import org.apache.spark.sql.types.StructType
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.session.Session
 
@@ -42,6 +43,7 @@ case class SessionEvent(
     var totalOperations: Int = 0) extends KyuubiEvent {
 
   override def schema: StructType = Encoders.product[SessionEvent].schema
+  override def datePartition: String = Utils.getDateFromTimestamp(startTime)
 }
 
 object SessionEvent {
