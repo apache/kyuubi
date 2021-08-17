@@ -43,7 +43,8 @@ case class SessionEvent(
     var totalOperations: Int = 0) extends KyuubiEvent {
 
   override def schema: StructType = Encoders.product[SessionEvent].schema
-  override def datePartition: String = Utils.getDateFromTimestamp(startTime)
+  override lazy val partitions: Seq[(String, String)] =
+    ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
 }
 
 object SessionEvent {

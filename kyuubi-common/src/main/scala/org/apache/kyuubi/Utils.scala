@@ -21,13 +21,12 @@ import java.io.{File, InputStreamReader, IOException}
 import java.net.{Inet4Address, InetAddress, NetworkInterface}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
-import java.time.{Instant, LocalDateTime, ZoneId}
-import java.time.format.DateTimeFormatter
-import java.util.{Properties, UUID}
+import java.util.{Properties, TimeZone, UUID}
 
 import scala.collection.JavaConverters._
 
 import org.apache.commons.lang3.SystemUtils
+import org.apache.commons.lang3.time.DateFormatUtils
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.util.ShutdownHookManager
 
@@ -228,7 +227,6 @@ object Utils extends Logging {
    * return date of format yyyyMMdd
    */
   def getDateFromTimestamp(time: Long): String = {
-    LocalDateTime.ofInstant(Instant.ofEpochMilli(time), ZoneId.systemDefault)
-      .format(DateTimeFormatter.ofPattern("yyyyMMdd"))
+    DateFormatUtils.format(time, "yyyyMMdd", TimeZone.getDefault)
   }
 }

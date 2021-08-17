@@ -60,7 +60,8 @@ case class EngineEvent(
     settings: Map[String, String]) extends KyuubiEvent {
 
   override def schema: StructType = Encoders.product[EngineEvent].schema
-  override def datePartition: String = Utils.getDateFromTimestamp(startTime)
+  override lazy val partitions: Seq[(String, String)] =
+    ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
 
   override def toString: String = {
     // need to consider deploy mode and cluster to get core and mem
