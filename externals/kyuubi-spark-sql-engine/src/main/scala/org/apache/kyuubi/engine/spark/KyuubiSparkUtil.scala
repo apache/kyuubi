@@ -29,8 +29,6 @@ object KyuubiSparkUtil {
   def engineId: String =
     globalSparkContext.applicationAttemptId.getOrElse(globalSparkContext.applicationId)
 
-  def engineStartTime: Long = globalSparkContext.startTime
-
   lazy val diagnostics: String = {
     val sc = globalSparkContext
     val webUrl = sc.getConf.getOption(
