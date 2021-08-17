@@ -101,9 +101,12 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
       val statementId = OperationHandle(opHandle).identifier.toString
 
       eventually(timeout(60.seconds), interval(5.seconds)) {
-        assert(spark.sql(s"select * from `json`.`${table}`")
+        val result = spark.sql(s"select * from `json`.`${table}`")
           .where(s"statementId = '${statementId}'")
-          .count() >= 1)
+
+        assert(result.select("statementId").first().get(0) === statementId)
+        assert(result.count() >= 1)
+        assert(result.select("statement").first().get(0) === sql)
       }
     }
   }

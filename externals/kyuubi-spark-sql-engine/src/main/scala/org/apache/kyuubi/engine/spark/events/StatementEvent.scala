@@ -22,10 +22,10 @@ import org.apache.spark.sql.types.StructType
 
 /**
  *
- * @param statementId
- * @param statement
- * @param appId
- * @param sessionId
+ * @param statementId: the identifier of operationHandler
+ * @param statement: the sql that you execute
+ * @param appId: application id a.k.a, the unique id for engine
+ * @param sessionId: the identifier of a session
  * @param state: store each state that the sql has
  * @param stateTime: the time that the sql's state change
  * @param queryExecution: contains logicPlan and physicalPlan
