@@ -48,16 +48,4 @@ case class StatementEvent(
   override def schema: StructType = Encoders.product[StatementEvent].schema
 
   override def toJson: String = JsonProtocol.productToJson(this)
-
-  override def toString: String = {
-    s"""
-       |    Statement application ID: $appId
-       |              statement:  $statement
-       |              statement ID: $statementId
-       |              session ID: $sessionId
-       |    State time: ${new Date(stateTime)}
-       |    State: $state
-       |    ${if (queryExecution.nonEmpty) "QueryExecution: " + queryExecution else ""}
-       |    ${if (exeception.nonEmpty) "Exeception: " + exeception else ""}""".stripMargin
-  }
 }
