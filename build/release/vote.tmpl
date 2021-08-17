@@ -1,0 +1,52 @@
+Please vote on releasing the following candidate as Apache Kyuubi (Incubating) version {version}.
+
+The vote is open until {deadline} and passes if a majority +1 (P)PMC votes are cast,
+with a minimum of 3 +1 votes.
+
+[ ] +1 Release this package as Apache Kyuubi (Incubating) {version}
+[ ] -1 Do not release this package because ...
+
+To learn more about Apache Kyuubi (Incubating), please see https://kyuubi.apache.org/
+
+The tag to be voted on is {tag} (commit {tag_commit}):
+https://github.com/apache/incubator-kyuubi/tree/{tag}
+
+The release files, including signatures, digests, etc. can be found at:
+https://dist.apache.org/repos/dist/dev/incubator/kyuubi/{tag}
+
+Signatures used for Kyuubi RCs can be found in this file:
+https://dist.apache.org/repos/dist/dev/incubator/kyuubi/KEYS
+
+The staging repository for this release can be found at:
+https://repository.apache.org/content/repositories/orgapachekyuubi-{repo_id}/
+
+FAQ
+
+=================================
+How can I help test this release?
+=================================
+
+If you are a Kyuubi user, you can help us test this release by taking
+an existing Kyuubi workload and running on this release candidate, then
+reporting any regressions.
+
+In the Java/Scala, you can add the staging repository to your projects resolvers
+and test with the RC (make sure to clean up the artifact cache before/after so
+you don't end up building with a out of date RC going forward).
+
+==============================================================
+What should happen to GitHub issues still targeting {version}?
+==============================================================
+
+Committers should look at those and triage. Extremely important bug fixes,
+documentation, and API tweaks that impact compatibility should be worked on
+immediately. Everything else please retarget to an appropriate release.
+
+=======================
+But my bug isn't fixed?
+=======================
+
+In order to make timely releases, we will typically not hold the release unless
+the bug in question is a regression from the previous release. That being said,
+if there is something which is a regression that has not been correctly targeted
+please ping me or a committer to help target the issue.

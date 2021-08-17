@@ -22,7 +22,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.kyuubi.SparkContextHelper
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.spark.SparkSQLEngine
+import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, SparkSQLEngine}
 import org.apache.kyuubi.engine.spark.events.EventLoggingService._service
 import org.apache.kyuubi.service.CompositeService
 
@@ -42,7 +42,8 @@ class EventLoggingService(engine: SparkSQLEngine)
         case EventLoggerType.SPARK =>
           eventLoggers += SparkContextHelper.createSparkHistoryLogger(engine.spark.sparkContext)
         case EventLoggerType.JSON =>
-          val jsonEventLogger = new JsonEventLogger(engine.engineId)
+          val jsonEventLogger = new JsonEventLogger(KyuubiSparkUtil.engineId,
+            engine.spark.sparkContext.hadoopConfiguration)
           addService(jsonEventLogger)
           eventLoggers += jsonEventLogger
         case logger =>

@@ -15,6 +15,10 @@
 
 sudo: required
 
+branches:
+  only:
+    - master
+
 # https://releases.ubuntu.com/ use the latest LTS release of ubuntu
 dist: bionic
 language: scala

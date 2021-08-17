@@ -24,14 +24,13 @@ import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet, TTableSche
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_IDLE_TIMEOUT
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
 abstract class AbstractOperation(opType: OperationType, session: Session)
   extends Operation with Logging {
-
-  import OperationState._
 
   private final val handle = OperationHandle(opType, session.protocol)
   private final val operationTimeout: Long = {

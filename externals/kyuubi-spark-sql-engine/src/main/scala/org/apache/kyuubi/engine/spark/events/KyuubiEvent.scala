@@ -17,15 +17,19 @@
 
 package org.apache.kyuubi.engine.spark.events
 
+import java.util.Locale
+
 import org.apache.spark.scheduler.SparkListenerEvent
 import org.apache.spark.sql.types.StructType
 
-trait KyuubiEvent extends SparkListenerEvent {
+trait KyuubiEvent extends SparkListenerEvent with Product {
 
-  def eventType: String
+  final def eventType: String = {
+    this.getClass.getSimpleName.stripSuffix("Event").toLowerCase(Locale.ROOT)
+  }
 
   def schema: StructType
 
-  def toJson: String
+  final def toJson: String = JsonProtocol.productToJson(this)
 
 }

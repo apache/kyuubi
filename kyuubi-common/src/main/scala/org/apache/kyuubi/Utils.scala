@@ -35,9 +35,9 @@ object Utils extends Logging {
 
   import org.apache.kyuubi.config.KyuubiConf._
 
-  def strToSeq(s: String): Seq[String] = {
+  def strToSeq(s: String, sp: String = ","): Seq[String] = {
     require(s != null)
-    s.split(",").map(_.trim).filter(_.nonEmpty)
+    s.split(sp).map(_.trim).filter(_.nonEmpty)
   }
 
   def getSystemProperties: Map[String, String] = {
@@ -97,6 +97,17 @@ object Utils extends Logging {
     }
     throw new IOException("Failed to create a temp directory (under " + root + ") after " +
       MAX_DIR_CREATION_ATTEMPTS + " attempts!", error)
+  }
+
+  /**
+   * Delete a directory recursively.
+   */
+  def deleteDirectoryRecursively(f: File): Boolean = {
+    if (f.isDirectory) f.listFiles match {
+      case files: Array[File] => files.foreach(deleteDirectoryRecursively)
+      case _ =>
+    }
+    f.delete()
   }
 
   /**

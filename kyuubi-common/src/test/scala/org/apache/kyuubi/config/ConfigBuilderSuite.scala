@@ -64,7 +64,7 @@ class ConfigBuilderSuite extends KyuubiFunSuite {
     assert(stringConf.defaultVal.get === "kent, yao")
     val sequenceConf = ConfigBuilder("kyuubi.sequence.conf")
       .stringConf
-      .toSequence
+      .toSequence()
       .createWithDefault(Nil)
     assert(sequenceConf.defaultVal.get.isEmpty)
     val kyuubiConf = KyuubiConf().set(sequenceConf.key, "kyuubi,kent")

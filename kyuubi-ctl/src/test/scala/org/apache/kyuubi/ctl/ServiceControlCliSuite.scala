@@ -26,7 +26,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_NAMESPACE, HA_ZK_QUORUM}
-import org.apache.kyuubi.ha.client.{ServiceDiscovery, ServiceNodeInfo}
+import org.apache.kyuubi.ha.client.{ServiceDiscovery, ServiceNodeInfo, ZooKeeperClientProvider}
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
 trait TestPrematureExit {
@@ -87,6 +87,7 @@ trait TestPrematureExit {
 class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
   import ServiceControlCli._
   import ServiceDiscovery._
+  import ZooKeeperClientProvider._
 
   val zkServer = new EmbeddedZookeeper()
   val conf: KyuubiConf = KyuubiConf()

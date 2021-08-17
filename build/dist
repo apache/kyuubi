@@ -145,20 +145,19 @@ HIVE_VERSION=$("$MVN" help:evaluate -Dexpression=hive.version $@ 2>/dev/null\
 
 echo "Building Kyuubi package of version $VERSION against Spark version - $SPARK_VERSION"
 
+SUFFIX="-$NAME"
 if [[ "$NAME" == "none" ]]; then
-  SPARK_HADOOP_VERSION_SUFFIX="-hadoop${SPARK_HADOOP_VERSION}"
-
   if [[ "$SPARK_PROVIDED" == "true" ]]; then
-    NAME="without-spark"
+    SUFFIX=""
   else
-    NAME="spark-"${SPARK_VERSION:0:3}$SPARK_HADOOP_VERSION_SUFFIX
+    SUFFIX="-spark-${SPARK_VERSION:0:3}-hadoop${SPARK_HADOOP_VERSION}"
   fi
 fi
 
 if [[ "$MAKE_TGZ" == "true" ]]; then
-  echo "Making kyuubi-$VERSION-bin-$NAME.tar.gz"
+  echo "Making kyuubi-$VERSION-bin$SUFFIX.tgz"
 else
-  echo "Making distribution for Kyuubi $VERSION named $NAME in '$DISTDIR'..."
+  echo "Making distribution for Kyuubi $VERSION in '$DISTDIR'..."
 fi
 
 MVN_DIST_OPT="-DskipTests"
@@ -217,22 +216,19 @@ if [[ "$SPARK_PROVIDED" != "true" ]]; then
 fi
 
 # Copy license files
-if [ -e "$KYUUBI_HOME/LICENSE-binary" ]; then
-  cp "$KYUUBI_HOME/LICENSE-binary" "$DISTDIR/LICENSE"
-  cp -r "$KYUUBI_HOME/licenses-binary" "$DISTDIR/licenses"
-else
-  echo "Skipping copying LICENSE files"
-fi
+cp "$KYUUBI_HOME/LICENSE-binary" "$DISTDIR/LICENSE"
+cp -r "$KYUUBI_HOME/licenses-binary" "$DISTDIR/licenses"
+$KYUUBI_HOME/build/release/collect-licenses.sh "$DISTDIR" "$DISTDIR"
 
 cp -r "$KYUUBI_HOME/bin" "$DISTDIR"
 cp -r "$KYUUBI_HOME/conf" "$DISTDIR"
 cp -r "$KYUUBI_HOME/docker" "$DISTDIR"
 
 if [[ "$MAKE_TGZ" == "true" ]]; then
-  TARDIR_NAME=kyuubi-$VERSION-bin-$NAME
+  TARDIR_NAME="kyuubi-$VERSION-bin$SUFFIX"
   TARDIR="$KYUUBI_HOME/$TARDIR_NAME"
   rm -rf "$TARDIR"
   cp -r "$DISTDIR" "$TARDIR"
-  tar czf "$TARDIR_NAME.tar.gz" -C "$KYUUBI_HOME" "$TARDIR_NAME"
+  tar czf "$TARDIR_NAME.tgz" -C "$KYUUBI_HOME" "$TARDIR_NAME"
   rm -rf "$TARDIR"
 fi

@@ -64,7 +64,7 @@ class ExecuteStatement(
 
   private val kyuubiStatementInfo = KyuubiStatementInfo(
     statementId, statement, spark.sparkContext.applicationId,
-    session.getTypeInfo.identifier, Map(state -> lastAccessTime))
+    session.handle.identifier, Map(state -> lastAccessTime))
   KyuubiStatementMonitor.putStatementInfoIntoQueue(kyuubiStatementInfo)
 
   override protected def resultSchema: StructType = {
@@ -93,6 +93,8 @@ class ExecuteStatement(
       // TODO: Make it configurable
       spark.sparkContext.addSparkListener(operationListener)
       result = spark.sql(statement)
+      // TODO( #921): COMPILED need consider eagerly executed commands
+      setState(OperationState.COMPILED)
       kyuubiStatementInfo.queryExecution = result.queryExecution
       debug(result.queryExecution)
       iter = new ArrayFetchIterator(result.collect())

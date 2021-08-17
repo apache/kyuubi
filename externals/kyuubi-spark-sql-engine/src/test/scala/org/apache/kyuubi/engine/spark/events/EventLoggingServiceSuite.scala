@@ -22,7 +22,7 @@ import java.nio.file.{Files, Paths}
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
+import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, WithSparkSQLEngine}
 import org.apache.kyuubi.operation.JDBCTestUtils
 
 class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
@@ -39,10 +39,12 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
   override protected def jdbcUrl: String = getJdbcUrl
 
   test("round-trip for event logging service") {
-    val engineEventPath = Paths.get(logRoot.toString, "engine", engine.engineId + ".json")
-    val reader = Files.newBufferedReader(engineEventPath, StandardCharsets.UTF_8)
+    val engineEventPath = Paths.get(logRoot.toString, "engine", KyuubiSparkUtil.engineId + ".json")
+    val sessionEventPath =
+      Paths.get(logRoot.toString, "session", KyuubiSparkUtil.engineId + ".json")
+    val engineEventReader = Files.newBufferedReader(engineEventPath, StandardCharsets.UTF_8)
 
-    val readEvent = JsonProtocol.jsonToEvent(reader.readLine())
+    val readEvent = JsonProtocol.jsonToEvent(engineEventReader.readLine())
     assert(readEvent.isInstanceOf[KyuubiEvent])
 
     withJdbcStatement() { statement =>
@@ -61,7 +63,24 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
         assert(rs2.getString("applicationId") === spark.sparkContext.applicationId)
         assert(rs2.getString("master") === spark.sparkContext.master)
       }
+
+      val table3 = sessionEventPath.getParent
+      val rs3 = statement.executeQuery(s"SELECT * FROM `json`.`${table3}`")
+      while (rs3.next()) {
+        assert(rs3.getString("Event") === classOf[SessionEvent].getCanonicalName)
+        assert(rs3.getString("username") === Utils.currentUser)
+        assert(rs3.getString("engineId") === spark.sparkContext.applicationId)
+        assert(rs3.getInt("totalOperations") === 0,
+          "update num of operations after session close as statement event will track these")
+      }
+    }
+
+    withJdbcStatement() { statement =>
+      val rs = statement.executeQuery(s"SELECT * FROM `json`.`${sessionEventPath.getParent}`" +
+        " where totalOperations > 0")
+      assert(rs.next())
+      // there 3 statements executed above
+      assert(rs.getInt("totalOperations") === 3)
     }
   }
-
 }

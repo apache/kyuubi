@@ -21,8 +21,8 @@ import org.apache.kyuubi.Utils
 
 object ConfigHelpers {
 
-  def strToSeq[T](str: String, converter: String => T): Seq[T] = {
-    Utils.strToSeq(str).map(converter)
+  def strToSeq[T](str: String, converter: String => T, sp: String): Seq[T] = {
+    Utils.strToSeq(str, sp).map(converter)
   }
 
   def seqToStr[T](v: Seq[T], stringConverter: T => String): String = {

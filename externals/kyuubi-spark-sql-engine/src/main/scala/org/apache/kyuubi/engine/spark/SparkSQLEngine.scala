@@ -28,6 +28,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.countDownLatch
 import org.apache.kyuubi.engine.spark.events.{EngineEvent, EventLoggingService}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
@@ -115,19 +116,11 @@ object SparkSQLEngine extends Logging {
     }
 
     val session = SparkSession.builder.config(sparkConf).getOrCreate
-    kyuubiConf.get(KyuubiConf.ENGINE_INITIALIZE_SQL)
-      .split(";")
-      .filter(_.trim.nonEmpty)
-      .foreach { sql =>
-        info(s"Execute engine initializing sql: $sql")
-        session.sql(sql).show
-      }
-    kyuubiConf.get(KyuubiConf.ENGINE_SESSION_INITIALIZE_SQL)
-      .split(";")
-      .filter(_.trim.nonEmpty)
-      .foreach { sql =>
-        info(s"Execute session initializing sql: $sql")
-        session.sql(sql).show
+    (kyuubiConf.get(ENGINE_INITIALIZE_SQL) ++ kyuubiConf.get(ENGINE_SESSION_INITIALIZE_SQL))
+      .foreach { sqlStr =>
+        session.sparkContext.setJobGroup(appName, sqlStr, interruptOnCancel = true)
+        debug(s"Execute session initializing sql: $sqlStr")
+        session.sql(sqlStr).isEmpty
       }
     session
   }

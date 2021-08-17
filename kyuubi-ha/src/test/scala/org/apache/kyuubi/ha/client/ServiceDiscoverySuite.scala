@@ -34,7 +34,7 @@ import org.apache.kyuubi.service.{NoopServer, Serverable, ServiceState}
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
 class ServiceDiscoverySuite extends KerberizedTestHelper {
-  import ServiceDiscovery._
+  import ZooKeeperClientProvider._
 
   val zkServer = new EmbeddedZookeeper()
   val conf: KyuubiConf = KyuubiConf()
@@ -118,7 +118,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
       conf.set(KyuubiConf.SERVER_PRINCIPAL, principal)
       conf.set(HighAvailabilityConf.HA_ZK_ACL_ENABLED, true)
 
-      ServiceDiscovery.setUpZooKeeperAuth(conf)
+      ZooKeeperClientProvider.setUpZooKeeperAuth(conf)
       val configuration = Configuration.getConfiguration
       val entries = configuration.getAppConfigurationEntry("KyuubiZooKeeperClient")
 
@@ -130,7 +130,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
       assert(options("useKeyTab").toString.toBoolean)
 
       conf.set(KyuubiConf.SERVER_KEYTAB, keytab.getName)
-      val e = intercept[IOException](ServiceDiscovery.setUpZooKeeperAuth(conf))
+      val e = intercept[IOException](ZooKeeperClientProvider.setUpZooKeeperAuth(conf))
       assert(e.getMessage === s"${KyuubiConf.SERVER_KEYTAB.key} does not exists")
     }
   }
