@@ -58,11 +58,7 @@ case class EngineEvent(
     diagnostic: String,
     settings: Map[String, String]) extends KyuubiEvent {
 
-  override def eventType: String = "engine"
-
   override def schema: StructType = Encoders.product[EngineEvent].schema
-
-  override def toJson: String = JsonProtocol.productToJson(this)
 
   override def toString: String = {
     // need to consider deploy mode and cluster to get core and mem

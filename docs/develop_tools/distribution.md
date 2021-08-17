@@ -29,7 +29,7 @@ For instance,
 ./build/dist --name custom-name --tgz
 ```
 
-This results a Kyuubi distribution named `kyuubi-{version}-bin-custom-name.tar.gz` for you.
+This results a Kyuubi distribution named `kyuubi-{version}-bin-custom-name.tgz` for you.
 
 If you are planing to deploy Kyuubi where `spark` is provided, in other word, it's not required to bundle spark binary, use 
 
@@ -37,4 +37,4 @@ If you are planing to deploy Kyuubi where `spark` is provided, in other word, it
 ./build/dist --tgz --spark-provided
 ```
 
-Then you will get a Kyuubi distribution without spark binary named `kyuubi-{version}-bin-without-spark.tar.gz`.
+Then you will get a Kyuubi distribution without spark binary named `kyuubi-{version}-bin.tgz`.

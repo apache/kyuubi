@@ -32,7 +32,7 @@ trait WithKyuubiServer extends KyuubiFunSuite {
 
   override def beforeAll(): Unit = {
     zkServer = new EmbeddedZookeeper()
-    conf.set(ZookeeperConf.ZK_CLIENT_PORT, -1)
+    conf.set(ZookeeperConf.ZK_CLIENT_PORT, 0)
     val zkData = Utils.createTempDir()
     conf.set(ZookeeperConf.ZK_DATA_DIR, zkData.toString)
     zkServer.initialize(conf)

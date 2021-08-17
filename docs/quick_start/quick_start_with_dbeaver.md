@@ -36,10 +36,10 @@ Welcome to
                 \/__/
 ```
 
-For debugging purpose, you can `tail -f` or `tailf` to track the server log like:
+For debugging purpose, you can `tail -f` to track the server log like:
 
 ```logtalk
-$ tail -f /Users/kentyao/Downloads/kyuubi/kyuubi-1.0.2-bin-spark-3.0.1/logs/kyuubi-kentyao-org.apache.kyuubi.server.KyuubiServer-hulk.local.out
+$ tail -f /Users/kentyao/Downloads/kyuubi/kyuubi-1.3.0-incubating-bin/logs/kyuubi-kentyao-org.apache.kyuubi.server.KyuubiServer-hulk.local.out
 2021-01-16 03:27:35.449 INFO server.NIOServerCnxnFactory: Accepted socket connection from /127.0.0.1:65320
 2021-01-16 03:27:35.453 INFO server.ZooKeeperServer: Client attempting to establish new session at /127.0.0.1:65320
 2021-01-16 03:27:35.455 INFO persistence.FileTxnLog: Creating new log file: log.1

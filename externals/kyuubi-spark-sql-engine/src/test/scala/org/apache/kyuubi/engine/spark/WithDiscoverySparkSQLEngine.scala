@@ -22,7 +22,7 @@ import org.apache.curator.framework.CuratorFramework
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_ACL_ENABLED, HA_ZK_NAMESPACE, HA_ZK_QUORUM}
-import org.apache.kyuubi.ha.client.ServiceDiscovery
+import org.apache.kyuubi.ha.client.ZooKeeperClientProvider
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
 trait WithDiscoverySparkSQLEngine extends WithSparkSQLEngine {
@@ -39,7 +39,7 @@ trait WithDiscoverySparkSQLEngine extends WithSparkSQLEngine {
     zkServer = new EmbeddedZookeeper()
     val zkData = Utils.createTempDir()
     val tmpConf = KyuubiConf()
-    tmpConf.set(ZookeeperConf.ZK_CLIENT_PORT, -1)
+    tmpConf.set(ZookeeperConf.ZK_CLIENT_PORT, 0)
     tmpConf.set(ZookeeperConf.ZK_DATA_DIR, zkData.toString)
     zkServer.initialize(tmpConf)
     zkServer.start()
@@ -62,7 +62,7 @@ trait WithDiscoverySparkSQLEngine extends WithSparkSQLEngine {
   }
 
   def withZkClient(f: CuratorFramework => Unit): Unit = {
-    ServiceDiscovery.withZkClient(kyuubiConf)(f)
+    ZooKeeperClientProvider.withZkClient(kyuubiConf)(f)
   }
 
   protected def getDiscoveryConnectionString: String = {

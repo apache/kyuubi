@@ -90,6 +90,9 @@ class ExecuteStatement(
       // TODO: Make it configurable
       spark.sparkContext.addSparkListener(operationListener)
       result = spark.sql(statement)
+      // TODO( #921): COMPILED need consider eagerly executed commands
+      setState(OperationState.COMPILED)
+      kyuubiStatementInfo.queryExecution = result.queryExecution
       statementEvent.queryExecution = result.queryExecution.toString()
       EventLoggingService.onEvent(statementEvent)
       debug(result.queryExecution)

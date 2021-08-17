@@ -20,7 +20,6 @@ commons-lang3/3.10//commons-lang3-3.10.jar
 curator-client/2.12.0//curator-client-2.12.0.jar
 curator-framework/2.12.0//curator-framework-2.12.0.jar
 curator-recipes/2.12.0//curator-recipes-2.12.0.jar
-curator-test/2.12.0//curator-test-2.12.0.jar
 failureaccess/1.0.1//failureaccess-1.0.1.jar
 guava/30.1-jre//guava-30.1-jre.jar
 hadoop-client-api/3.2.2//hadoop-client-api-3.2.2.jar
@@ -31,7 +30,6 @@ jackson-annotations/2.11.4//jackson-annotations-2.11.4.jar
 jackson-core/2.11.4//jackson-core-2.11.4.jar
 jackson-databind/2.11.4//jackson-databind-2.11.4.jar
 jakarta.servlet-api/4.0.4//jakarta.servlet-api-4.0.4.jar
-javassist/3.18.1-GA//javassist-3.18.1-GA.jar
 jaxb-api/2.2.11//jaxb-api-2.2.11.jar
 jcl-over-slf4j/1.7.30//jcl-over-slf4j-1.7.30.jar
 jetty-http/9.4.41.v20210516//jetty-http-9.4.41.v20210516.jar
