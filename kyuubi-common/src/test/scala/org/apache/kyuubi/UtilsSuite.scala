@@ -119,8 +119,6 @@ class UtilsSuite extends KyuubiFunSuite {
       Utils.majorMinorVersion(HADOOP_COMPILE_VERSION)._1)
     assert(Utils.minorVersion(KYUUBI_VERSION) ===
       Utils.majorMinorVersion(KYUUBI_VERSION)._2)
-    assert(Utils.shortVersion(KYUUBI_VERSION) ===
-      KYUUBI_VERSION.stripSuffix("-SNAPSHOT"))
     intercept[IllegalArgumentException](Utils.shortVersion("-" + KYUUBI_VERSION))
     intercept[IllegalArgumentException](Utils.majorMinorVersion("-" + KYUUBI_VERSION))
   }
