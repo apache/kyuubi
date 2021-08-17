@@ -36,7 +36,7 @@ import org.apache.kyuubi.service.AbstractService
 /**
  * This event logger logs Kyuubi engine events in JSON file format.
  * The hierarchical directory structure is:
- *   ${ENGINE_EVENT_JSON_LOG_PATH}/event=${eventType}/day=${date}/${logName}.json
+ *   ${ENGINE_EVENT_JSON_LOG_PATH}/${eventType}/day=${date}/${logName}.json
  * The ${eventType} is based on core concepts of the Kyuubi systems, e.g. engine/session/statement
  * The ${date} is based on the time of events, e.g. engine.startTime, statement.startTime
  * @param logName the engine id formed of appId + attemptId(if any)
@@ -53,7 +53,7 @@ class JsonEventLogger(logName: String, hadoopConf: Configuration)
   private def getOrUpdate(event: KyuubiEvent): Logger = synchronized {
     writers.getOrElseUpdate(event.eventType + event.datePartition, {
       val eventPath = new Path(
-        new Path(new Path(logRoot), s"event=${event.eventType}"), s"day=${event.datePartition}")
+        new Path(new Path(logRoot), s"${event.eventType}"), s"day=${event.datePartition}")
       FileSystem.mkdirs(fs, eventPath, JSON_LOG_DIR_PERM)
       val logFile = new Path(eventPath, logName + ".json")
       var hadoopDataStream: FSDataOutputStream = null
