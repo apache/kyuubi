@@ -28,7 +28,7 @@
 
     <groupId>org.apache.kyuubi</groupId>
     <artifactId>kyuubi-parent</artifactId>
-    <version>1.3.0-SNAPSHOT</version>
+    <version>1.3.0-incubating</version>
     <packaging>pom</packaging>
 
     <name>Kyuubi Project Parent</name>
