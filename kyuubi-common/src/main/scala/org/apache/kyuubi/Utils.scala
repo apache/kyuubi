@@ -227,8 +227,8 @@ object Utils extends Logging {
   /**
    * return date of format yyyyMMdd
    */
-  def getCurrentDate: String = {
-    LocalDateTime.ofInstant(Instant.now(), ZoneId.systemDefault)
+  def getDateFromTimestamp(time: Long): String = {
+    LocalDateTime.ofInstant(Instant.ofEpochMilli(time), ZoneId.systemDefault)
       .format(DateTimeFormatter.ofPattern("yyyyMMdd"))
   }
 }

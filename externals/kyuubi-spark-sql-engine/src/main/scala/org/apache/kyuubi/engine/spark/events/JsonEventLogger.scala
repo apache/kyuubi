@@ -30,6 +30,7 @@ import org.apache.hadoop.fs.permission.FsPermission
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.engine.spark.events.JsonEventLogger.{JSON_LOG_DIR_PERM, JSON_LOG_FILE_PERM}
 import org.apache.kyuubi.service.AbstractService
 
@@ -45,7 +46,7 @@ class JsonEventLogger(logName: String, hadoopConf: Configuration)
 
   type Logger = (PrintWriter, Option[FSDataOutputStream])
 
-  private val currentDate = Utils.getCurrentDate
+  private val currentDate = Utils.getDateFromTimestamp(KyuubiSparkUtil.engineStartTime)
   private var logRoot: URI = _
   private var fs: FileSystem = _
   private val writers = HashMap.empty[String, Logger]

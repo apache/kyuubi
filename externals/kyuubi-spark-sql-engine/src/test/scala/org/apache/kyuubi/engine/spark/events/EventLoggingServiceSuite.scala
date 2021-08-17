@@ -32,7 +32,7 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
   import EventLoggerType._
 
   private val logRoot = Utils.createTempDir()
-  private val currentDate = Utils.getCurrentDate
+  private val currentDate = Utils.getDateFromTimestamp(KyuubiSparkUtil.engineStartTime)
 
   override def withKyuubiConf: Map[String, String] = Map(
     KyuubiConf.ENGINE_EVENT_LOGGERS.key -> s"$JSON,$SPARK",
