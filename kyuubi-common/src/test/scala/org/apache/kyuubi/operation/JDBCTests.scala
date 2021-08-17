@@ -352,7 +352,9 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("kyuubi defined function - kyuubi_version") {
+  // TODO: https://github.com/apache/incubator-kyuubi/issues/937
+  // Kyuubi docker image has not updated to lastest version
+  ignore("kyuubi defined function - kyuubi_version") {
     withJdbcStatement() { statement =>
       val rs = statement.executeQuery("SELECT kyuubi_version()")
       assert(rs.next())
