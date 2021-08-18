@@ -16,18 +16,26 @@
 #
 
 # Usage:
-#   1. use ./build/dist to make binary distributions of Kyuubi or download a release
-#   2. Untar it and run the docker command below
-#      docker build -f docker/Dockerfile -t yaooqinn/kyuubi:tagname .
+#   Run the docker command below
+#      docker build --build-arg MVN_ARG="-Pmirror-cn" -f docker/Dockerfile -t apache/kyuubi:tagname .
 #   Options:
 #     -f this docker file
 #     -t the target repo and tag name
 #     more options can be found with -h
-# TODO: REPALCE it with offical spark image iff Apache Spark community deploy
-# Or make one after kyuubi to be setup under ASF
 
-ARG SPARK_IMAGE=yaooqinn/spark:3.0.3
-FROM ${SPARK_IMAGE}
+FROM maven:3.6-jdk-8 as builder
+
+ARG MVN_ARG
+
+ADD . /workspace/kyuubi
+WORKDIR /workspace/kyuubi
+
+RUN ./build/dist ${MVN_ARG} && \
+    mv /workspace/kyuubi/dist /opt/kyuubi && \
+    rm -rf ~/.m2 && \
+    rm -rf /workspace/kyuubi
+
+FROM openjdk:8-jdk
 
 ARG kyuubi_uid=10009
 
@@ -38,20 +46,17 @@ ENV KYUUBI_LOG_DIR ${KYUUBI_HOME}/logs
 ENV KYUUBI_PID_DIR ${KYUUBI_HOME}/pid
 ENV KYUUBI_WORK_DIR_ROOT ${KYUUBI_HOME}/work
 
+COPY --from=builder /opt/kyuubi ${KYUUBI_HOME}
+
 RUN set -ex && \
-    sed -i 's/http:\/\/deb.\(.*\)/https:\/\/deb.\1/g' /etc/apt/sources.list && \
     apt-get update && \
+    DEBIAN_FRONTEND=noninteractive \
     apt install -y bash tini libc6 libpam-modules krb5-user libnss3 procps && \
     useradd -u ${kyuubi_uid} -g root kyuubi && \
     mkdir -p ${KYUUBI_HOME} ${KYUUBI_LOG_DIR} ${KYUUBI_PID_DIR} ${KYUUBI_WORK_DIR_ROOT} && \
     chmod ug+rw -R ${KYUUBI_HOME} && \
     chmod a+rwx -R ${KYUUBI_WORK_DIR_ROOT} && \
     rm -rf /var/cache/apt/*
-
-COPY bin ${KYUUBI_HOME}/bin
-COPY conf ${KYUUBI_HOME}/conf
-COPY jars ${KYUUBI_HOME}/jars
-COPY externals/engines/spark ${KYUUBI_HOME}/externals/engines/spark
 
 WORKDIR ${KYUUBI_HOME}
 
