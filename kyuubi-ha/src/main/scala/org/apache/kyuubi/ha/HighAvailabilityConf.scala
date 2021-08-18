@@ -100,9 +100,11 @@ object HighAvailabilityConf {
     .checkValue(_ > 0, "Must be positive")
     .createWithDefault(Duration.ofSeconds(120).toMillis)
 
-  // This option will not be exposed to the user.
   val HA_ZK_ENGINE_SESSION_ID: OptionalConfigEntry[String] =
-    ConfigBuilder("kyuubi.ha.engine.session.id")
+    buildConf("ha.engine.session.id")
+    .doc("The sessionId will be attached to zookeeper node when engine started, " +
+      "and the kyuubi server will check it cyclically.")
+    .internal
     .version("1.4.0")
     .stringConf
     .createOptional
