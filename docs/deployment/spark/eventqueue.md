@@ -17,7 +17,6 @@
 
 ## Event Queue Capacity
 
-
 ```properties
 # spark.scheduler.revive.interval                                    1s
 # spark.scheduler.listenerbus.eventqueue.capacity                    100000

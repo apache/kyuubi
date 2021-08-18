@@ -16,7 +16,6 @@
  -->
 
 ```properties
-
 ## Spark Executor Sizing
 # spark.executor.instances        100
 # spark.executor.cores            4

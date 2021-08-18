@@ -26,5 +26,4 @@
 # spark.yarn.am.cores           4
 # spark.yarn.am.memory	        2g
 # spark.yarn.am.memoryOverhead	1024
-
 ```

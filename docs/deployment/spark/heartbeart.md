@@ -15,7 +15,6 @@
  - limitations under the License.
  -->
 
-
 ## Executor Heartbeat
 
 ```properties

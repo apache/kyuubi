@@ -16,7 +16,6 @@
  -->
 
 ```properties
-
 ## Shuffle Behavior
 # spark.shuffle.compress                                    true
 # spark.shuffle.detectCorrupt                               true

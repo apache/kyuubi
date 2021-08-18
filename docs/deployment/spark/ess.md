@@ -15,7 +15,6 @@
  - limitations under the License.
  -->
 
-
 ```properties
 ## External Shuffle Service
 # spark.shuffle.service.enabled                             true

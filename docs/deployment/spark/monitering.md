@@ -17,7 +17,7 @@
 
 ```properties
 ## Event Logging for History Server
- spark.eventLog.enabled                            true
+# spark.eventLog.enabled                            true
 # spark.eventLog.dir                                hdfs://hadoop-dfs/history
 # spark.eventLog.compress                           true
 # spark.eventLog.longForm.enabled                   true
