@@ -123,7 +123,7 @@ https://www.apache.org/dev/openpgp.html#export-public-key
 ```shell
 svn checkout --depth=files "https://dist.apache.org/repos/dist/dev/incubator/kyuubi" work/svn-kyuubi
 cd work/svn-kyuubi
-... edit svn-kyuubi/KEYS file
+... edit KEYS file
 svn commit --username "${ASF_USERNAME}" --password "${ASF_PASSWORD}" --message "Update KEYS"
 ```
 
@@ -210,7 +210,7 @@ After some time this will be sync’d to [Maven Central](https://search.maven.or
 
 ## Promote the release
 
-## Update Website
+### Update Website
 
 TODO
 
