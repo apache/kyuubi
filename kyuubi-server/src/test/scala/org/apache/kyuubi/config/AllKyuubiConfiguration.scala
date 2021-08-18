@@ -119,7 +119,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
 
     KyuubiConf.kyuubiConfEntries.values().asScala
       .toSeq
-      .filter(cfg => !cfg.internal)
+      .filterNot(_.internal)
       .groupBy(_.key.split("\\.")(1))
       .toSeq.sortBy(_._1).foreach { case (category, entries) =>
 
