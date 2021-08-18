@@ -29,11 +29,11 @@ import org.apache.thrift.transport.TSocket
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{OperationHandle, OperationType}
-import org.apache.kyuubi.service.FrontendService.{FeServiceServerContext, SERVER_VERSION}
+import org.apache.kyuubi.service.ThriftFrontendService.{FeServiceServerContext, SERVER_VERSION}
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 import org.apache.kyuubi.session.SessionHandle
 
-class FrontendServiceSuite extends KyuubiFunSuite {
+class ThriftFrontendServiceSuite extends KyuubiFunSuite {
 
   protected val server = new NoopServer()
   protected val conf = KyuubiConf()
