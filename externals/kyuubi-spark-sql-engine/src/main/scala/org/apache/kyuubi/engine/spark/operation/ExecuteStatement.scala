@@ -61,7 +61,7 @@ class ExecuteStatement(
 
   val statementEvent: StatementEvent = StatementEvent(
     statementId, statement, spark.sparkContext.applicationId,
-    session.handle.identifier.toString, state.toString, lastAccessTime)
+    session.handle.identifier.toString, lastAccessTime, state.toString, lastAccessTime)
   EventLoggingService.onEvent(statementEvent)
 
   override protected def resultSchema: StructType = {

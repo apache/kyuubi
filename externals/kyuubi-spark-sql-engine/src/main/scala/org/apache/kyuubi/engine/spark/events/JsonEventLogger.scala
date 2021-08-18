@@ -23,6 +23,7 @@ import java.nio.file.Paths
 
 import scala.collection.mutable.HashMap
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, FSDataOutputStream, Path}
 import org.apache.hadoop.fs.permission.FsPermission
@@ -35,8 +36,10 @@ import org.apache.kyuubi.service.AbstractService
 
 /**
  * This event logger logs Kyuubi engine events in JSON file format.
- * The hierarchical directory structure is {ENGINE_EVENT_JSON_LOG_PATH}/{eventType}/{logName}.json
- * The {eventType} is based on core concepts of the Kyuubi systems, e.g. engine/session/statement
+ * The hierarchical directory structure is:
+ *   ${ENGINE_EVENT_JSON_LOG_PATH}/${eventType}/day=${date}/${logName}.json
+ * The ${eventType} is based on core concepts of the Kyuubi systems, e.g. engine/session/statement
+ * The ${date} is based on the time of events, e.g. engine.startTime, statement.startTime
  * @param logName the engine id formed of appId + attemptId(if any)
  */
 class JsonEventLogger(logName: String, hadoopConf: Configuration)
@@ -49,8 +52,13 @@ class JsonEventLogger(logName: String, hadoopConf: Configuration)
   private val writers = HashMap.empty[String, Logger]
 
   private def getOrUpdate(event: KyuubiEvent): Logger = synchronized {
-    writers.getOrElseUpdate(event.eventType, {
-      val eventPath = new Path(new Path(logRoot), event.eventType)
+    val partitions = event.partitions.map(kv => s"${kv._1}=${kv._2}").mkString(Path.SEPARATOR)
+    writers.getOrElseUpdate(event.eventType + partitions, {
+      val eventPath = if (StringUtils.isEmpty(partitions)) {
+        new Path(new Path(logRoot), event.eventType)
+      } else {
+        new Path(new Path(new Path(logRoot), event.eventType), partitions)
+      }
       FileSystem.mkdirs(fs, eventPath, JSON_LOG_DIR_PERM)
       val logFile = new Path(eventPath, logName + ".json")
       var hadoopDataStream: FSDataOutputStream = null
