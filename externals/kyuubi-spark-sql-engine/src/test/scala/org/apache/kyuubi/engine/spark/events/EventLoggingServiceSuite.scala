@@ -20,10 +20,13 @@ package org.apache.kyuubi.engine.spark.events
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
 
+import org.apache.hive.service.rpc.thrift.TExecuteStatementReq
+import org.scalatest.time.SpanSugar._
+
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, WithSparkSQLEngine}
-import org.apache.kyuubi.operation.JDBCTestUtils
+import org.apache.kyuubi.operation.{JDBCTestUtils, OperationHandle}
 
 class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
   import EventLoggerType._
@@ -81,6 +84,30 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
       assert(rs.next())
       // there 3 statements executed above
       assert(rs.getInt("totalOperations") === 3)
+    }
+  }
+
+  test("statementEvent: generate, dump and query") {
+    val statementEventPath = Paths.get(logRoot.toString, "statement", engine.engineId + ".json")
+    val sql = "select timestamp'2021-06-01'"
+    withSessionHandle { (client, handle) =>
+
+      val table = statementEventPath.getParent
+      val req = new TExecuteStatementReq()
+      req.setSessionHandle(handle)
+      req.setStatement(sql)
+      val tExecuteStatementResp = client.ExecuteStatement(req)
+      val opHandle = tExecuteStatementResp.getOperationHandle
+      val statementId = OperationHandle(opHandle).identifier.toString
+
+      eventually(timeout(60.seconds), interval(5.seconds)) {
+        val result = spark.sql(s"select * from `json`.`${table}`")
+          .where(s"statementId = '${statementId}'")
+
+        assert(result.select("statementId").first().get(0) === statementId)
+        assert(result.count() >= 1)
+        assert(result.select("statement").first().get(0) === sql)
+      }
     }
   }
 }
