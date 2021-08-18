@@ -42,9 +42,9 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
   override def getOperationLog: Option[OperationLog] = None
 
   @volatile protected var state: OperationState = INITIALIZED
-  @volatile protected var startTime: Long = _
+  @volatile protected var startTime: Long = System.currentTimeMillis()
   @volatile protected var completedTime: Long = _
-  @volatile protected var lastAccessTime: Long = System.currentTimeMillis()
+  @volatile protected var lastAccessTime: Long = startTime
 
   @volatile protected var operationException: KyuubiSQLException = _
   @volatile protected var hasResultSet: Boolean = false
@@ -72,7 +72,6 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
     OperationState.validateTransition(state, newState)
     var timeCost = ""
     newState match {
-      case RUNNING => startTime = System.currentTimeMillis()
       case ERROR | FINISHED | CANCELED | TIMEOUT =>
         completedTime = System.currentTimeMillis()
         timeCost = s", time taken: ${(completedTime - startTime) / 1000.0} seconds"

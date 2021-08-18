@@ -20,12 +20,14 @@ package org.apache.kyuubi.engine.spark.events
 import org.apache.spark.sql.Encoders
 import org.apache.spark.sql.types.StructType
 
+import org.apache.kyuubi.Utils
+
 /**
- *
  * @param statementId: the identifier of operationHandler
  * @param statement: the sql that you execute
  * @param appId: application id a.k.a, the unique id for engine
  * @param sessionId: the identifier of a session
+ * @param startTime: the start time of this statement
  * @param state: store each state that the sql has
  * @param stateTime: the time that the sql's state change
  * @param queryExecution: contains logicPlan and physicalPlan
@@ -36,10 +38,13 @@ case class StatementEvent(
     statement: String,
     appId: String,
     sessionId: String,
+    startTime: Long,
     var state: String,
     var stateTime: Long,
     var queryExecution: String = "",
     var exeception: String = "") extends KyuubiEvent {
 
   override def schema: StructType = Encoders.product[StatementEvent].schema
+  override def partitions: Seq[(String, String)] =
+    ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
 }
