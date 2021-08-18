@@ -27,7 +27,7 @@ import org.apache.kyuubi.Utils
  * @param statement: the sql that you execute
  * @param appId: application id a.k.a, the unique id for engine
  * @param sessionId: the identifier of a session
- * @param startTime: the start time of this statement
+ * @param createTime: the create time of this statement
  * @param state: store each state that the sql has
  * @param stateTime: the time that the sql's state change
  * @param queryExecution: contains logicPlan and physicalPlan
@@ -38,7 +38,7 @@ case class StatementEvent(
     statement: String,
     appId: String,
     sessionId: String,
-    startTime: Long,
+    createTime: Long,
     var state: String,
     var stateTime: Long,
     var queryExecution: String = "",
@@ -46,5 +46,5 @@ case class StatementEvent(
 
   override def schema: StructType = Encoders.product[StatementEvent].schema
   override def partitions: Seq[(String, String)] =
-    ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
+    ("day", Utils.getDateFromTimestamp(createTime)) :: Nil
 }
