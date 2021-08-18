@@ -23,6 +23,7 @@ import java.nio.file.Paths
 
 import scala.collection.mutable.HashMap
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, FSDataOutputStream, Path}
 import org.apache.hadoop.fs.permission.FsPermission
@@ -51,9 +52,13 @@ class JsonEventLogger(logName: String, hadoopConf: Configuration)
   private val writers = HashMap.empty[String, Logger]
 
   private def getOrUpdate(event: KyuubiEvent): Logger = synchronized {
-    val partitions = event.partitions.map(kv => s"${kv._1}=${kv._2}").mkString("/")
+    val partitions = event.partitions.map(kv => s"${kv._1}=${kv._2}").mkString(Path.SEPARATOR)
     writers.getOrElseUpdate(event.eventType + partitions, {
-      val eventPath = new Path(new Path(new Path(logRoot), event.eventType), partitions)
+      val eventPath = if (StringUtils.isEmpty(partitions)) {
+        new Path(new Path(logRoot), event.eventType)
+      } else {
+        new Path(new Path(new Path(logRoot), event.eventType), partitions)
+      }
       FileSystem.mkdirs(fs, eventPath, JSON_LOG_DIR_PERM)
       val logFile = new Path(eventPath, logName + ".json")
       var hadoopDataStream: FSDataOutputStream = null
