@@ -33,6 +33,7 @@ import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_SESSION_ID
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NAMESPACE
 import org.apache.kyuubi.ha.client.ServiceDiscovery.getServerHost
+import org.apache.kyuubi.ha.client.ServiceDiscovery.getServiceNodesInfo
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.session.SessionHandle
@@ -125,8 +126,8 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
   }
 
   private def get(zkClient: CuratorFramework): Option[(String, Int)] = {
-    getServerHost(zkClient, engineSpace)
-      .filter(_.createSessionId.exists(_.equals(sessionId)))
+    getServiceNodesInfo(zkClient, engineSpace, silent = true)
+      .find(_.createSessionId.exists(_.equals(sessionId)))
       .map(data => (data.host, data.port))
   }
 
