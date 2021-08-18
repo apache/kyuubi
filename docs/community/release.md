@@ -93,13 +93,19 @@ pub   ed25519/ED4E2E5B 2021-07-02 [SC]
 uid         [ultimate] Cheng Pan <chengpan@apache.org>
 sub   cv25519/C7207C04 2021-07-02 [E]
 ```
-Here, the key ID is the 8-digit hex string in the pub line: ED4E2E5B.
+Here, the key ID is the 8-digit hex string in the pub line: `ED4E2E5B`.
+
+To export the PGP public key, using:
+```shell
+gpg --armor --export ED4E2E5B
+```
 
 The last step is to update the KEYS file with your code signing key 
 https://www.apache.org/dev/openpgp.html#export-public-key
 
 ```shell
-svn checkout --depth=files "https://dist.apache.org/repos/dist/dev/incubator/kyuubi" svn-kyuubi
+svn checkout --depth=files "https://dist.apache.org/repos/dist/dev/incubator/kyuubi" work/svn-kyuubi
+cd work/svn-kyuubi
 ... edit svn-kyuubi/KEYS file
 svn commit --username "${ASF_USERNAME}" --password "${ASF_PASSWORD}" --message "Update KEYS"
 ```
@@ -144,7 +150,7 @@ The tag pattern is `v${RELEASE_VERSION}-rc${RELEASE_RC_NO}`, e.g. `v1.3.0-incuba
 staging Maven repo.
 
 ```shell
-build/release/releas.sh publish
+build/release/release.sh publish
 ```
 
 ## Vote on the release candidate
@@ -173,7 +179,7 @@ Move the sub-directory in "dev" to the corresponding directory in "release". If 
 KEYS file, also update the release copy.
 
 ```shell
-build/release/releas.sh finalize
+build/release/release.sh finalize
 ```
 
 Verify that the resources are present in https://www.apache.org/dist/incubator/kyuubi/. It may take a while for them
@@ -186,6 +192,10 @@ https://repository.apache.org/content/groups/maven-staging-group/org/apache/kyuu
 After some time this will be sync’d to [Maven Central](https://search.maven.org/) automatically.
 
 ## Promote the release
+
+## Update Website
+
+TODO
 
 ### Create an Announcement
 
