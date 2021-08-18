@@ -125,14 +125,14 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
       }
   }
 
-  private def get(zkClient: CuratorFramework): Option[(String, Int)] = {
+  private def getEngineBySessionId(zkClient: CuratorFramework): Option[(String, Int)] = {
     getServiceNodesInfo(zkClient, engineSpace, silent = true)
       .find(_.createSessionId.exists(_.equals(sessionId)))
       .map(data => (data.host, data.port))
   }
 
   private def create(zkClient: CuratorFramework): (String, Int) = tryWithLock(zkClient) {
-    var engineRef = get(zkClient)
+    var engineRef = getEngineBySessionId(zkClient)
     // Get the engine address ahead if another process has succeeded
     if (engineRef.nonEmpty) return engineRef.get
 
@@ -168,7 +168,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
             s"Timeout($timeout ms) to launched Spark with $builder",
             builder.getError)
         }
-        engineRef = get(zkClient)
+        engineRef = getEngineBySessionId(zkClient)
       }
       engineRef.get
     } finally {
