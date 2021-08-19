@@ -17,7 +17,7 @@
 
 # Usage:
 #   Run the docker command below
-#      docker build --build-arg MVN_ARG="-Pmirror-cn" -f docker/Dockerfile -t apache/kyuubi:tagname .
+#      docker build --build-arg MVN_ARG="-Pspark-3.1,spark-hadoop-3.2" -f docker/Dockerfile -t apache/kyuubi:tagname .
 #   Options:
 #     -f this docker file
 #     -t the target repo and tag name
@@ -32,10 +32,13 @@ WORKDIR /workspace/kyuubi
 
 RUN ./build/dist ${MVN_ARG} && \
     mv /workspace/kyuubi/dist /opt/kyuubi && \
+    # Removing stuff saves time because docker creates a temporary layer
     rm -rf ~/.m2 && \
     rm -rf /workspace/kyuubi
 
-FROM openjdk:8-jdk
+ARG BASE_IMAGE=openjdk:8-jdk
+
+FROM ${BASE_IMAGE}
 
 ARG kyuubi_uid=10009
 
