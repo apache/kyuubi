@@ -98,7 +98,7 @@ abstract class ServiceDiscovery (
 
   override def start(): Unit = {
     val instance = server.connectionUrl
-    _serviceNode = createZkServiceNode(conf, zkClient, namespace, instance)
+    _serviceNode = createServiceNode(conf, zkClient, namespace, instance)
     // Set a watch on the serviceNode
     val watcher = new DeRegisterWatcher
     if (zkClient.checkExists.usingWatcher(watcher).forPath(serviceNode.getActualPath) == null) {
@@ -170,6 +170,15 @@ object ServiceDiscovery extends Logging {
     }
   }
 
+  def getEngineBySessionId(
+     zkClient: CuratorFramework,
+     namespace: String,
+     sessionId: String): Option[(String, Int)] = {
+    getServiceNodesInfo(zkClient, namespace, silent = true)
+      .find(_.createSessionId.exists(_.equals(sessionId)))
+      .map(data => (data.host, data.port))
+  }
+
   def getServiceNodesInfo(
       zkClient: CuratorFramework,
       namespace: String,
@@ -185,8 +194,9 @@ object ServiceDiscovery extends Logging {
         val host = strings.head
         val port = strings(1).toInt
         val version = p.split(";").find(_.startsWith("version=")).map(_.stripPrefix("version="))
+        val sessionId = p.split(";").find(_.startsWith("session=")).map(_.stripPrefix("session="))
         info(s"Get service instance:$instance and version:$version under $namespace")
-        ServiceNodeInfo(namespace, p, host, port, version)
+        ServiceNodeInfo(namespace, p, host, port, version, sessionId)
       }
     } catch {
       case _: Exception if silent => Nil
@@ -196,7 +206,7 @@ object ServiceDiscovery extends Logging {
     }
   }
 
-  def createZkServiceNode(
+  def createServiceNode(
       conf: KyuubiConf,
       zkClient: CuratorFramework,
       namespace: String,
@@ -215,26 +225,22 @@ object ServiceDiscovery extends Logging {
       case e: KeeperException =>
         throw new KyuubiException(s"Failed to create namespace '$ns'", e)
     }
+
+    val session = conf.get(HA_ZK_ENGINE_SESSION_ID)
+      .map(sid => s"session=$sid;").getOrElse("")
     val pathPrefix = ZKPaths.makePath(
       namespace,
-      s"serviceUri=$instance;version=${version.getOrElse(KYUUBI_VERSION)};sequence=")
+      s"serviceUri=$instance;version=${version.getOrElse(KYUUBI_VERSION)};${session}sequence=")
     var serviceNode: PersistentNode = null
+    val createMode = if (external) CreateMode.PERSISTENT_SEQUENTIAL
+      else CreateMode.EPHEMERAL_SEQUENTIAL
     try {
-      if (external) {
-        serviceNode = new PersistentNode(
-          zkClient,
-          CreateMode.PERSISTENT_SEQUENTIAL,
-          false,
-          pathPrefix,
-          instance.getBytes(StandardCharsets.UTF_8))
-      } else {
-        serviceNode = new PersistentNode(
-          zkClient,
-          CreateMode.EPHEMERAL_SEQUENTIAL,
-          false,
-          pathPrefix,
-          instance.getBytes(StandardCharsets.UTF_8))
-      }
+      serviceNode = new PersistentNode(
+        zkClient,
+        createMode,
+        false,
+        pathPrefix,
+        instance.getBytes(StandardCharsets.UTF_8))
       serviceNode.start()
       val znodeTimeout = conf.get(HA_ZK_NODE_TIMEOUT)
       if (!serviceNode.waitForInitialCreate(znodeTimeout, TimeUnit.MILLISECONDS)) {
@@ -258,6 +264,7 @@ case class ServiceNodeInfo(
     nodeName: String,
     host: String,
     port: Int,
-    version: Option[String]) {
+    version: Option[String],
+    createSessionId: Option[String]) {
   def instance: String = s"$host:$port"
 }
