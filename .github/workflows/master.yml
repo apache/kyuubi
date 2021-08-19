@@ -175,11 +175,11 @@ jobs:
           kubectl get serviceaccount
       - name: start kyuubi
         run: kubectl apply -f kubernetes/integration-tests/test-k8s.yaml
-      - name: kyuubi pod check
-        run: kubectl get pods
       - name: Sleeep for 2 minutes (only for debug GA)
         run: sleep 120s
         shell: bash
+      - name: kyuubi pod check
+        run: kubectl get pods
       - name: integration tests
         run: ./build/mvn clean test -Pkubernetes -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test
       - name: Upload test logs
