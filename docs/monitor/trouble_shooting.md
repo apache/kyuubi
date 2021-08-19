@@ -1,3 +1,20 @@
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+
 <div align=center>
 
 ![](../imgs/kyuubi_logo.png)
@@ -8,7 +25,7 @@
 
 ## Common Issues
 ### java.lang.UnsupportedClassVersionError .. Unsupported major.minor version 52.0
-```java
+```
 Exception in thread "main" java.lang.UnsupportedClassVersionError: org/apache/kyuubi/server/KyuubiServer : Unsupported major.minor version 52.0
 	at java.lang.ClassLoader.defineClass1(Native Method)
 	at java.lang.ClassLoader.defineClass(ClassLoader.java:803)
@@ -53,7 +70,7 @@ echo "export JAVA_HOME=/path/to/jdk1.8.0_251" >> conf/kyuubi-env.sh
 
 ### org.apache.spark.SparkException: When running with master 'yarn' either HADOOP_CONF_DIR or YARN_CONF_DIR must be set in the environment
 
-```java
+```
 Exception in thread "main" org.apache.spark.SparkException: When running with master 'yarn' either HADOOP_CONF_DIR or YARN_CONF_DIR must be set in the environment.
 	at org.apache.spark.deploy.SparkSubmitArguments.error(SparkSubmitArguments.scala:630)
 	at org.apache.spark.deploy.SparkSubmitArguments.validateSubmitArguments(SparkSubmitArguments.scala:270)
@@ -81,7 +98,7 @@ echo "export HADOOP_CONF_DIR=/path/to/hadoop/conf" >> conf/kyuubi-env.sh
 
 ### org.apache.hadoop.security.AccessControlException: Permission denied: user=hzyanqin, access=WRITE, inode="/user":hdfs:hdfs:drwxr-xr-x
 
-```java
+```
 org.apache.hadoop.security.AccessControlException: Permission denied: user=hzyanqin, access=WRITE, inode="/user":hdfs:hdfs:drwxr-xr-x
 	at org.apache.hadoop.hdfs.server.namenode.FSPermissionChecker.check(FSPermissionChecker.java:350)
 	at org.apache.hadoop.hdfs.server.namenode.FSPermissionChecker.checkPermission(FSPermissionChecker.java:251)
@@ -158,7 +175,7 @@ To fix this problem you need to create this directory first and grant ACL permis
 
 ### org.apache.thrift.TApplicationException: Invalid method name: 'get_table_req'
 
-```java
+```
 Caused by: org.apache.thrift.TApplicationException: Invalid method name: 'get_table_req'
 	at org.apache.thrift.TServiceClient.receiveBase(TServiceClient.java:79)
 	at org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore$Client.recv_get_table_req(ThriftHiveMetastore.java:1567)
@@ -189,7 +206,7 @@ To fix this problem you could use a compatible version for Hive client by config
 
 ### hive.server2.thrift.max.worker.threads
 
-```java
+```
 Unexpected end of file when reading from HS2 server. The root cause might be too many concurrent connections. Please ask the administrator to check the number of active connections, and adjust hive.server2.thrift.max.worker.threads if applicable.
 Error: org.apache.thrift.transport.TTransportException (state=08S01,code=0)
 ```
@@ -199,7 +216,7 @@ In Kyuubi, we should increase `kyuubi.frontend.min.worker.threads` instead of `h
 ### Failed to create function using jar
 `CREATE TEMPORARY FUNCTION TEST AS 'com.netease.UDFTest' using jar 'hdfs:///tmp/udf.jar'`
 
-```java
+```
 Error operating EXECUTE_STATEMENT: org.apache.spark.sql.AnalysisException: Can not load class 'com.netease.UDFTest' when registering the function 'test', please make sure it is on the classpath;
 	at org.apache.spark.sql.catalyst.catalog.SessionCatalog.$anonfun$registerFunction$1(SessionCatalog.scala:1336)
 	at scala.Option.getOrElse(Option.scala:189)
@@ -237,7 +254,7 @@ You should update JDK to JDK1.8.0_121 and later, since JDK1.8.0_121 fix a securi
 
 ### Failed to start Spark 3.1 with error msg 'Cannot modify the value of a Spark config'
 Here is the error message
-```java
+```
 Caused by: org.apache.spark.sql.AnalysisException: Cannot modify the value of a Spark config: spark.yarn.queue
 	at org.apache.spark.sql.RuntimeConfig.requireNonStaticConf(RuntimeConfig.scala:156)
 	at org.apache.spark.sql.RuntimeConfig.set(RuntimeConfig.scala:40)
