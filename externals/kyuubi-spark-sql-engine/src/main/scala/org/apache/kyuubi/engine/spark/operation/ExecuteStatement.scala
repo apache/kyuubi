@@ -91,9 +91,8 @@ class ExecuteStatement(
       spark.sparkContext.addSparkListener(operationListener)
       result = spark.sql(statement)
       // TODO( #921): COMPILED need consider eagerly executed commands
-      setState(OperationState.COMPILED)
       statementEvent.queryExecution = result.queryExecution.toString()
-      EventLoggingService.onEvent(statementEvent)
+      setState(OperationState.COMPILED)
       debug(result.queryExecution)
       iter = new ArrayFetchIterator(result.collect())
       setState(OperationState.FINISHED)
