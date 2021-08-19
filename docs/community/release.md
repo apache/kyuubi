@@ -1,3 +1,20 @@
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+
 Kyuubi Release Guide
 ===
 
@@ -93,15 +110,20 @@ pub   ed25519/ED4E2E5B 2021-07-02 [SC]
 uid         [ultimate] Cheng Pan <chengpan@apache.org>
 sub   cv25519/C7207C04 2021-07-02 [E]
 ```
-Here, the key ID is the 8-digit hex string in the pub line: ED4E2E5B.
+Here, the key ID is the 8-digit hex string in the pub line: `ED4E2E5B`.
+
+To export the PGP public key, using:
+```shell
+gpg --armor --export ED4E2E5B
+```
 
 The last step is to update the KEYS file with your code signing key 
 https://www.apache.org/dev/openpgp.html#export-public-key
 
 ```shell
-svn checkout --depth=files "https://dist.apache.org/repos/dist/dev/incubator/kyuubi" svn-kyuubi
-... edit svn-kyuubi/KEYS file
-svn commit --username "${ASF_USERNAME}" --password "${ASF_PASSWORD}" --message "Update KEYS"
+svn checkout --depth=files "https://dist.apache.org/repos/dist/dev/incubator/kyuubi" work/svn-kyuubi
+... edit work/svn-kyuubi/KEYS file
+svn commit --username "${ASF_USERNAME}" --password "${ASF_PASSWORD}" --message "Update KEYS" work/svn-kyuubi
 ```
 
 ## Cut branch iff for major release
@@ -144,7 +166,7 @@ The tag pattern is `v${RELEASE_VERSION}-rc${RELEASE_RC_NO}`, e.g. `v1.3.0-incuba
 staging Maven repo.
 
 ```shell
-build/release/releas.sh publish
+build/release/release.sh publish
 ```
 
 ## Vote on the release candidate
@@ -173,7 +195,7 @@ Move the sub-directory in "dev" to the corresponding directory in "release". If 
 KEYS file, also update the release copy.
 
 ```shell
-build/release/releas.sh finalize
+build/release/release.sh finalize
 ```
 
 Verify that the resources are present in https://www.apache.org/dist/incubator/kyuubi/. It may take a while for them
@@ -186,6 +208,10 @@ https://repository.apache.org/content/groups/maven-staging-group/org/apache/kyuu
 After some time this will be sync’d to [Maven Central](https://search.maven.org/) automatically.
 
 ## Promote the release
+
+### Update Website
+
+TODO
 
 ### Create an Announcement
 

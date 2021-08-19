@@ -21,39 +21,30 @@ import org.apache.spark.sql.Encoders
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
-import org.apache.kyuubi.session.Session
 
 /**
- * Event Tracking for user sessions
- * @param sessionId the identifier of a session
- * @param engineId the engine id
- * @param startTime Start time
- * @param endTime End time
- * @param ip Client IP address
- * @param totalOperations how many queries and meta calls
+ * @param statementId: the identifier of operationHandler
+ * @param statement: the sql that you execute
+ * @param appId: application id a.k.a, the unique id for engine
+ * @param sessionId: the identifier of a session
+ * @param createTime: the create time of this statement
+ * @param state: store each state that the sql has
+ * @param stateTime: the time that the sql's state change
+ * @param queryExecution: contains logicPlan and physicalPlan
+ * @param exeception: caught exeception if have
  */
-case class SessionEvent(
+case class StatementEvent(
+    statementId: String,
+    statement: String,
+    appId: String,
     sessionId: String,
-    engineId: String,
-    username: String,
-    ip: String,
-    startTime: Long,
-    var endTime: Long = -1L,
-    var totalOperations: Int = 0) extends KyuubiEvent {
+    createTime: Long,
+    var state: String,
+    var stateTime: Long,
+    var queryExecution: String = "",
+    var exeception: String = "") extends KyuubiEvent {
 
-  override def schema: StructType = Encoders.product[SessionEvent].schema
-  override lazy val partitions: Seq[(String, String)] =
-    ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
-}
-
-object SessionEvent {
-  def apply(session: Session): SessionEvent = {
-    new SessionEvent(
-      session.handle.identifier.toString,
-      KyuubiSparkUtil.engineId,
-      session.user,
-      session.ipAddress,
-      session.createTime)
-  }
+  override def schema: StructType = Encoders.product[StatementEvent].schema
+  override def partitions: Seq[(String, String)] =
+    ("day", Utils.getDateFromTimestamp(createTime)) :: Nil
 }

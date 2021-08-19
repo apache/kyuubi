@@ -29,7 +29,8 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       v => (v - 1).toString,
       doc,
       "<none>",
-      "int")
+      "int",
+      false)
 
     assert(e1.key === "kyuubi.int.spark")
     assert(e1.valueConverter("2") === Some(3))
@@ -39,6 +40,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
     assert(e1.doc === doc)
     assert(e1.version === "<none>")
     assert(e1.typ === "int")
+    assert(e1.internal === false)
     assert(e1.toString === s"ConfigEntry(key=kyuubi.int.spark, defaultValue=<undefined>," +
       s" doc=$doc, version=<none>, type=int)")
 
@@ -50,7 +52,8 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       v => (v - 1).toString,
       "this is dummy documentation",
       "<none>",
-      "int"))
+      "int",
+      false))
     assert(e.getMessage ===
       "requirement failed: Config entry kyuubi.int.spark already registered!")
     conf.set(e1.key, "2")
@@ -65,7 +68,8 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       v => (v - 1).toString,
     "doc",
     "0.11.1",
-      "long")
+      "long",
+      false)
 
     assert(e1.key === "kyuubi.long.spark")
     assert(e1.valueConverter("2") === 3)
@@ -75,6 +79,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
     assert(e1.doc === "doc")
     assert(e1.version === "0.11.1")
     assert(e1.typ === "long")
+    assert(e1.internal === false)
     assert(e1.toString === s"ConfigEntry(key=kyuubi.long.spark, defaultValue=1," +
       s" doc=doc, version=0.11.1, type=long)")
 
@@ -92,7 +97,8 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       v => v.toString,
       "doc",
       "",
-      "double")
+      "double",
+      false)
 
     assert(e1.key === "kyuubi.double.spark")
     assert(e1.valueConverter("2") === 2.0)
@@ -102,6 +108,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
     assert(e1.doc === "doc")
     assert(e1.version === "")
     assert(e1.typ === "double")
+    assert(e1.internal === false)
     assert(e1.toString === s"ConfigEntry(key=kyuubi.double.spark, defaultValue=3.0," +
       s" doc=doc, version=, type=double)")
 
@@ -116,7 +123,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
       .version("1.1.1")
       .stringConf.createWithDefault("origin")
     val fallback =
-      new ConfigEntryFallback[String]("kyuubi.fallback.spark", "fallback", "1.2.0", origin)
+      new ConfigEntryFallback[String]("kyuubi.fallback.spark", "fallback", "1.2.0", false, origin)
 
     assert(fallback.key === "kyuubi.fallback.spark")
     assert(fallback.valueConverter("2") === "2")
@@ -126,6 +133,7 @@ class ConfigEntrySuite extends KyuubiFunSuite {
     assert(fallback.doc === "fallback")
     assert(fallback.version === "1.2.0")
     assert(fallback.typ === "string")
+    assert(fallback.internal === false)
     assert(fallback.toString === s"ConfigEntry(key=kyuubi.fallback.spark, defaultValue=origin," +
       s" doc=fallback, version=1.2.0, type=string)")
 

@@ -29,6 +29,7 @@ trait KyuubiEvent extends SparkListenerEvent with Product {
   }
 
   def schema: StructType
+  def partitions: Seq[(String, String)]
 
   final def toJson: String = JsonProtocol.productToJson(this)
 
