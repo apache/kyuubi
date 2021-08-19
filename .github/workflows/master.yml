@@ -171,7 +171,7 @@ jobs:
       - name: kyuubi pod check
         run: kubectl get pods
       - name: integration tests
-        run: ./build/mvn clean test -Pkubernetes -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test
+        run: ./build/mvn clean test -pl :kyuubi-common_2.12,:kubernetes-integration-tests_2.12 -Pkubernetes -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v2
