@@ -23,6 +23,9 @@
 #     -t the target repo and tag name
 #     more options can be found with -h
 
+# declare the BASE_IMAGE argument in the first line. for more detail see: https://github.com/moby/moby/issues/38379
+ARG BASE_IMAGE=openjdk:8-jdk
+
 FROM maven:3.6-jdk-8 as builder
 
 ARG MVN_ARG
@@ -35,8 +38,6 @@ RUN ./build/dist ${MVN_ARG} && \
     # Removing stuff saves time because docker creates a temporary layer
     rm -rf ~/.m2 && \
     rm -rf /workspace/kyuubi
-
-ARG BASE_IMAGE=openjdk:8-jdk
 
 FROM ${BASE_IMAGE}
 
