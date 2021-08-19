@@ -25,8 +25,7 @@ spec:
   serviceAccountName: kyuubi
   containers:
     - name: kyuubi-server
-      # TODO: replace this with the official repo
-      image: localhost:5000/apache/kyuubi:latest
+      image: apache/kyuubi:latest
       imagePullPolicy: IfNotPresent
       env:
         - name: KYUUBI_JAVA_OPTS
