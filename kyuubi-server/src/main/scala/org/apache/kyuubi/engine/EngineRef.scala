@@ -126,7 +126,8 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
   }
 
   private def create(zkClient: CuratorFramework): (String, Int) = tryWithLock(zkClient) {
-    var engineRef = getEngineBySessionId(zkClient, engineSpace, sessionId)
+    // TODO: improve this after support engine pool
+    var engineRef = getServerHost(zkClient, engineSpace)
     // Get the engine address ahead if another process has succeeded
     if (engineRef.nonEmpty) return engineRef.get
 
@@ -177,7 +178,6 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
    */
   def getOrCreate(zkClient: CuratorFramework): (String, Int) = {
     getServerHost(zkClient, engineSpace)
-      .map(data => (data.host, data.port))
       .getOrElse {
         create(zkClient)
       }
