@@ -19,14 +19,19 @@ package org.apache.kyuubi.operation
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TFetchOrientation, TFetchResultsReq, TGetOperationStatusReq}
+import org.apache.hive.service.rpc.thrift.TFetchOrientation
+import org.apache.hive.service.rpc.thrift.TFetchResultsReq
+import org.apache.hive.service.rpc.thrift.TGetOperationStatusReq
 import org.apache.hive.service.rpc.thrift.TOperationState._
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
+import org.apache.kyuubi.events.StatementEvent
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
+import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.server.EventLoggingService
 import org.apache.kyuubi.session.Session
 
 class ExecuteStatement(
@@ -37,6 +42,9 @@ class ExecuteStatement(
     queryTimeout: Long)
   extends KyuubiOperation(
     OperationType.EXECUTE_STATEMENT, session, client) {
+
+  val statementEvent: StatementEvent =
+    StatementEvent(this, statementId, state, lastAccessTime)
 
   private final val _operationLog: OperationLog = if (shouldRunAsync) {
     OperationLog.createOperationLog(session.handle, getHandle)
@@ -52,6 +60,8 @@ class ExecuteStatement(
     req.setFetchType(1.toShort)
     req
   }
+
+  EventLoggingService.onEvent(statementEvent)
 
   override def beforeRun(): Unit = {
     OperationLog.setCurrentOperationLog(_operationLog)
@@ -145,6 +155,19 @@ class ExecuteStatement(
       executeStatement()
       setState(OperationState.FINISHED)
     }
+  }
+
+  override def setState(newState: OperationState): Unit = {
+    super.setState(newState)
+    statementEvent.state = newState.toString
+    statementEvent.stateTime = lastAccessTime
+    EventLoggingService.onEvent(statementEvent)
+  }
+
+  override def setOperationException(opEx: KyuubiSQLException): Unit = {
+    super.setOperationException(opEx)
+    statementEvent.exception = opEx.toString
+    EventLoggingService.onEvent(statementEvent)
   }
 
   override def close(): Unit = {

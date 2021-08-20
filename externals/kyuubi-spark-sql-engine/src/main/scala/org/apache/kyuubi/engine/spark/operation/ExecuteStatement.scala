@@ -175,7 +175,7 @@ class ExecuteStatement(
 
   override def setOperationException(opEx: KyuubiSQLException): Unit = {
     super.setOperationException(opEx)
-    statementEvent.exeception = opEx.toString
+    statementEvent.exception = opEx.toString
     EventLoggingService.onEvent(statementEvent)
   }
 }

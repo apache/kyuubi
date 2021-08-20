@@ -15,18 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.events
+package org.apache.kyuubi.events
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import java.util.Locale
 
-object JsonProtocol {
-
-  private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
-
-  def productToJson[T <: KyuubiEvent](value: T): String = mapper.writeValueAsString(value)
-
-  def jsonToEvent(jsonValue: String): KyuubiEvent = {
-    mapper.readValue(jsonValue, classOf[KyuubiEvent])
+trait KyuubiEvent extends Product {
+  final def eventType: String = {
+    this.getClass.getSimpleName.stripSuffix("Event").toLowerCase(Locale.ROOT)
   }
+
+  def partitions: Seq[(String, String)]
+
+  final def toJson: String = JsonProtocol.productToJson(this)
 }

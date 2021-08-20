@@ -15,32 +15,31 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.events
+package org.apache.kyuubi.server
 
-import org.apache.spark.kyuubi.SparkContextHelper
+import java.net.InetAddress
+
+import org.apache.hadoop.conf.Configuration
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_LOGGERS
-import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, SparkSQLEngine}
-import org.apache.kyuubi.engine.spark.events.EventLoggingService._service
-import org.apache.kyuubi.events.AbstractEventLoggingService
-import org.apache.kyuubi.events.EventLoggerType
+import org.apache.kyuubi.config.KyuubiConf.SERVER_EVENT_JSON_LOG_PATH
+import org.apache.kyuubi.config.KyuubiConf.SERVER_EVENT_LOGGERS
+import org.apache.kyuubi.events.{AbstractEventLoggingService, EventLoggerType}
 import org.apache.kyuubi.events.EventLoggerType.EventLoggerType
 import org.apache.kyuubi.events.JsonEventLogger
+import org.apache.kyuubi.events.KyuubiServerEvent
+import org.apache.kyuubi.server.EventLoggingService._service
 
-class EventLoggingService(engine: SparkSQLEngine)
-  extends AbstractEventLoggingService[KyuubiSparkEvent] {
+class EventLoggingService extends AbstractEventLoggingService[KyuubiServerEvent] {
 
   override protected def getLoggers(conf: KyuubiConf): Seq[EventLoggerType] =
-    conf.get(ENGINE_EVENT_LOGGERS).map(EventLoggerType.withName)
+    conf.get(SERVER_EVENT_LOGGERS).map(EventLoggerType.withName)
 
   override def analyseEventLoggerType: EventLoggerType => Unit = {
-    case EventLoggerType.SPARK =>
-      addEventLogger(SparkContextHelper.createSparkHistoryLogger(engine.spark.sparkContext))
     case EventLoggerType.JSON =>
-      val jsonEventLogger = new JsonEventLogger[KyuubiSparkEvent](KyuubiSparkUtil.engineId,
-        ENGINE_EVENT_JSON_LOG_PATH, engine.spark.sparkContext.hadoopConfiguration)
+      val hostName = InetAddress.getLocalHost.getCanonicalHostName
+      val jsonEventLogger = new JsonEventLogger[KyuubiServerEvent](s"server-$hostName",
+        SERVER_EVENT_JSON_LOG_PATH, new Configuration())
       addService(jsonEventLogger)
       addEventLogger(jsonEventLogger)
     case logger =>
@@ -64,8 +63,7 @@ object EventLoggingService {
 
   private var _service: Option[EventLoggingService] = None
 
-  def onEvent(event: KyuubiSparkEvent): Unit = {
+  def onEvent(event: KyuubiServerEvent): Unit = {
     _service.foreach(_.onEvent(event))
   }
 }
-

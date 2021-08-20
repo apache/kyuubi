@@ -15,29 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.spark.kyuubi
+package org.apache.kyuubi.events
 
-import org.apache.spark.SparkContext
+trait EventLogger[T <: KyuubiEvent] {
 
-import org.apache.kyuubi.engine.spark.events.KyuubiSparkEvent
-import org.apache.kyuubi.events.EventLogger
+  def logEvent(kyuubiEvent: T): Unit
 
-/**
- * A place to invoke non-public APIs of [[SparkContext]], anything to be added here need to
- * think twice
- */
-object SparkContextHelper {
-  def createSparkHistoryLogger(sc: SparkContext): EventLogger[KyuubiSparkEvent] = {
-    new SparkHistoryEventLogger(sc)
-  }
-}
-
-/**
- * A [[EventLogger]] that logs everything to SparkHistory
- * @param sc SparkContext
- */
-private class SparkHistoryEventLogger(sc: SparkContext) extends EventLogger[KyuubiSparkEvent] {
-  override def logEvent(kyuubiEvent: KyuubiSparkEvent): Unit = {
-    sc.eventLogger.foreach(_.onOtherEvent(kyuubiEvent))
-  }
 }

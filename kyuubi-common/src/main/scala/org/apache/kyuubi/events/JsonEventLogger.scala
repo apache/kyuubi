@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.events
+package org.apache.kyuubi.events
 
 import java.io.{BufferedOutputStream, FileOutputStream, IOException, PrintWriter}
 import java.net.URI
@@ -29,9 +29,8 @@ import org.apache.hadoop.fs.{FileSystem, FSDataOutputStream, Path}
 import org.apache.hadoop.fs.permission.FsPermission
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH
-import org.apache.kyuubi.engine.spark.events.JsonEventLogger.{JSON_LOG_DIR_PERM, JSON_LOG_FILE_PERM}
+import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf}
+import org.apache.kyuubi.events.JsonEventLogger._
 import org.apache.kyuubi.service.AbstractService
 
 /**
@@ -42,8 +41,9 @@ import org.apache.kyuubi.service.AbstractService
  * The ${date} is based on the time of events, e.g. engine.startTime, statement.startTime
  * @param logName the engine id formed of appId + attemptId(if any)
  */
-class JsonEventLogger(logName: String, hadoopConf: Configuration)
-  extends AbstractService("JsonEventLogger") with EventLogger with Logging {
+class JsonEventLogger[T <: KyuubiEvent](logName: String,
+    logPath: ConfigEntry[String], hadoopConf: Configuration)
+  extends AbstractService("JsonEventLogger") with EventLogger[T] with Logging {
 
   type Logger = (PrintWriter, Option[FSDataOutputStream])
 
@@ -83,7 +83,7 @@ class JsonEventLogger(logName: String, hadoopConf: Configuration)
   }
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
-    logRoot = Paths.get(conf.get(ENGINE_EVENT_JSON_LOG_PATH)).toAbsolutePath.toUri
+    logRoot = Paths.get(conf.get(logPath)).toAbsolutePath.toUri
     fs = FileSystem.get(logRoot, hadoopConf)
     requireLogRootWritable()
     super.initialize(conf)
@@ -100,7 +100,7 @@ class JsonEventLogger(logName: String, hadoopConf: Configuration)
     super.stop()
   }
 
-  override def logEvent(kyuubiEvent: KyuubiEvent): Unit = {
+  override def logEvent(kyuubiEvent: T): Unit = {
     val (writer, stream) = getOrUpdate(kyuubiEvent)
     // scalastyle:off println
     writer.println(kyuubiEvent.toJson)

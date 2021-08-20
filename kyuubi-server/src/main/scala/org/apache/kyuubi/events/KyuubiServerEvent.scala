@@ -15,22 +15,8 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.events
+package org.apache.kyuubi.events
 
-import java.util.Locale
-
-import org.apache.spark.scheduler.SparkListenerEvent
-import org.apache.spark.sql.types.StructType
-
-trait KyuubiEvent extends SparkListenerEvent with Product {
-
-  final def eventType: String = {
-    this.getClass.getSimpleName.stripSuffix("Event").toLowerCase(Locale.ROOT)
-  }
-
-  def schema: StructType
-  def partitions: Seq[(String, String)]
-
-  final def toJson: String = JsonProtocol.productToJson(this)
+trait KyuubiServerEvent extends KyuubiEvent {
 
 }

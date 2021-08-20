@@ -17,10 +17,14 @@
 
 package org.apache.kyuubi.engine.spark.events
 
-object EventLoggerType extends Enumeration {
+import org.apache.spark.scheduler.SparkListenerEvent
+import org.apache.spark.sql.types.StructType
 
-  type EventLoggerType = Value
+import org.apache.kyuubi.events.KyuubiEvent
 
-  // TODO: Only SPARK is done now
-  val SPARK, JSON, DB, CUSTOM = Value
+
+trait KyuubiSparkEvent extends KyuubiEvent with SparkListenerEvent {
+
+  def schema: StructType
+
 }
