@@ -145,6 +145,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      # https://github.com/docker/build-push-action
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Build Kyuubi Docker Image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: docker/Dockerfile
+          load: true
+          tags: apache/kyuubi:latest
       # from https://github.com/marketplace/actions/setup-minikube-kubernetes-cluster
       - name: Setup Minikube
         uses: manusa/actions-setup-minikube@v2.4.2
@@ -161,7 +171,7 @@ jobs:
       - name: kyuubi pod check
         run: kubectl get pods
       - name: integration tests
-        run: ./build/mvn clean test -Pkubernetes -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test
+        run: ./build/mvn clean test -pl :kyuubi-common_2.12,:kubernetes-integration-tests_2.12 -Pkubernetes -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v2

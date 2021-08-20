@@ -1,0 +1,6 @@
+externals/*/target
+*/target
+target
+.git
+.idea
+.github
