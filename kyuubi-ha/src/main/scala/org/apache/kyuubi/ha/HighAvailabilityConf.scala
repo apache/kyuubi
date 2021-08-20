@@ -22,6 +22,7 @@ import java.time.Duration
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
+import org.apache.kyuubi.engine.ProvidePolicy
 import org.apache.kyuubi.ha.client.RetryPolicies
 
 object HighAvailabilityConf {
@@ -108,4 +109,19 @@ object HighAvailabilityConf {
     .version("1.4.0")
     .stringConf
     .createOptional
+
+  val HA_ZK_ENGINE_POOL_SIZE: ConfigEntry[Int] =
+    buildConf("ha.engine.pool.size")
+      .doc("Maximum number of engines when using USER share level.")
+      .version("1.4.0")
+      .intConf
+      .createWithDefault(1)
+
+  val HA_ZK_ENGINE_PROVIDE_POLICY: ConfigEntry[String] =
+    buildConf("ha.engine.provide.policy")
+      .doc("Multiple engines can be exposed under same space when using USER share level, " +
+        "choose the appropriate strategy according to different scenarios.")
+      .version("1.4.0")
+      .stringConf
+      .createWithDefault(ProvidePolicy.RANDOM.toString)
 }

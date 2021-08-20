@@ -162,21 +162,10 @@ object ServiceDiscovery extends Logging {
   }
 
   def getServerHost(zkClient: CuratorFramework, namespace: String): Option[(String, Int)] = {
-    // TODO: use last one because to avoid touching some maybe-crashed engines
-    // We need a big improvement here.
-    getServiceNodesInfo(zkClient, namespace, Some(1), silent = true) match {
+    getServiceNodesInfo(zkClient, namespace, silent = true) match {
       case Seq(sn) => Some((sn.host, sn.port))
       case _ => None
     }
-  }
-
-  def getEngineBySessionId(
-     zkClient: CuratorFramework,
-     namespace: String,
-     sessionId: String): Option[(String, Int)] = {
-    getServiceNodesInfo(zkClient, namespace, silent = true)
-      .find(_.createSessionId.exists(_.equals(sessionId)))
-      .map(data => (data.host, data.port))
   }
 
   def getServiceNodesInfo(

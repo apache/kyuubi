@@ -21,6 +21,7 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.ha.HighAvailabilityConf
 
 class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
 
@@ -28,6 +29,7 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
 
   override protected val conf: KyuubiConf = {
     KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "user")
+    KyuubiConf().set(HighAvailabilityConf.HA_ZK_ENGINE_POOL_SIZE, 1)
   }
 
   test("ensure two connections in user mode share the same engine") {
