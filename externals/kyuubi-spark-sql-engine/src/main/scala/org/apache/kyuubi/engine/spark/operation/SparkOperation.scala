@@ -18,7 +18,6 @@
 package org.apache.kyuubi.engine.spark.operation
 
 import java.time.ZoneId
-import java.util.regex.Pattern
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
@@ -62,6 +61,8 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
    *
    * Underscores (_) are converted to '.' and percent signs (%) are converted to '.*'.
    *
+   * (referred to Spark's implementation: convertPattern function in file MetadataOperation.java)
+   *
    * @param input the SQL pattern to convert
    * @return the equivalent Java regular expression of the pattern
    */
@@ -71,19 +72,10 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
     } else {
       input
     }
-    val in = res.toIterator
-    val out = new StringBuilder()
-
-    while (in.hasNext) {
-      in.next match {
-        case c if c == '\\' && in.hasNext => Pattern.quote(Character.toString(in.next()))
-        case c if c == '\\' && !in.hasNext => Pattern.quote(Character.toString(c))
-        case '_' => out ++= "."
-        case '%' => out ++= ".*"
-        case c => out ++= Character.toString(c)
-      }
-    }
-    out.result()
+    val wStr = ".*"
+    res
+      .replaceAll("([^\\\\])%", "$1" + wStr).replaceAll("\\\\%", "%").replaceAll("^%", wStr)
+      .replaceAll("([^\\\\])_", "$1.").replaceAll("\\\\_", "_").replaceAll("^_", ".")
   }
 
   protected def onError(cancel: Boolean = false): PartialFunction[Throwable, Unit] = {
