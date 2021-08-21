@@ -363,7 +363,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("kyuubi defined function - engine_name") {
+  ignore("kyuubi defined function - engine_name") {
     withJdbcStatement() { statement =>
       val rs = statement.executeQuery("SELECT engine_name()")
       assert(rs.next())
