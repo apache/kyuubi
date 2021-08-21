@@ -86,7 +86,6 @@ class KyuubiDefinedFunctionSuite extends KyuubiFunSuite {
     KDFRegistry.registeredFunctions.foreach { func =>
       newOutput += s"${func.name} | ${func.description} | ${func.returnType} | ${func.since}"
     }
-
     newOutput += ""
     TestUtils.verifyOutput(markdown, newOutput, getClass.getCanonicalName)
   }

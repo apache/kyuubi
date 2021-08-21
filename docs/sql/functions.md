@@ -30,5 +30,6 @@ Kyuubi provides several auxiliary SQL functions as supplement to Spark's [Built-
 Name | Description | Return Type | Since
 --- | --- | --- | ---
 kyuubi_version | Return the version of Kyuubi Server | string | 1.3.0
+engine_name | Return the spark application name for the associated query engine | string | 1.3.0
 system_user | Return the system user name for the associated query engine | string | 1.3.0
 
