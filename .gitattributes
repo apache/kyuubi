@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-dev/kyuubi-tpcds/src/main/resources/bin/** export-ignore
+dev/kyuubi-tpcds/** export-ignore
 docs/imgs/** export-ignore
 licenses-binary/* export-ignore
 LICENSE-binary export-ignore
