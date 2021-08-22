@@ -210,7 +210,6 @@ Apache Software Foundation License 2.0
 --------------------------------------
 
 kyuubi-common/src/main/scala/org/apache/kyuubi/Logging.scala
-kyuubi-common/src/main/scala-2.12/scala/util/Using.scala
 kyuubi-common/src/test/scala/org/apache/kyuubi/KerberizedTestHelper.scala
 externals/kyuubi-spark-sql-engine/src/main/scala/org/apache/kyuubi/engine/spark/FetchIterator.scala
 externals/kyuubi-spark-sql-engine/src/main/scala/org/apache/kyuubi/engine/spark/shim/CatalogShim_v3_0.scala
