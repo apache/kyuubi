@@ -17,10 +17,10 @@
 
 .github/ export-ignore
 .idea/ export-ignore
-.readthedocs.yml
-.travis.yml
-_config.yml
-codecov.yml
+.readthedocs.yml export-ignore
+.travis.yml export-ignore
+_config.yml export-ignore
+codecov.yml export-ignore
 dev/kyuubi-tpcds/ export-ignore
 docs/ export-ignore
 licenses-binary/ export-ignore
