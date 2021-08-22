@@ -16,8 +16,8 @@
 #
 
 dev/kyuubi-tpcds/** export-ignore
-docs/imgs/** export-ignore
-licenses-binary/* export-ignore
+docs/** export-ignore
+licenses-binary/** export-ignore
 LICENSE-binary export-ignore
 NOTICE-binary export-ignore
 *.bat text eol=crlf
