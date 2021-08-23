@@ -217,9 +217,11 @@ fi
 
 # Copy license files
 cp "$KYUUBI_HOME/DISCLAIMER" "$DISTDIR/DISCLAIMER"
-cp "$KYUUBI_HOME/LICENSE-binary" "$DISTDIR/LICENSE"
-cp -r "$KYUUBI_HOME/licenses-binary" "$DISTDIR/licenses"
-$KYUUBI_HOME/build/release/collect-licenses.sh "$DISTDIR" "$DISTDIR"
+if [[ -f $"$KYUUBI_HOME/LICENSE-binary" ]]; then
+  cp "$KYUUBI_HOME/LICENSE-binary" "$DISTDIR/LICENSE"
+  cp -r "$KYUUBI_HOME/licenses-binary" "$DISTDIR/licenses"
+  $KYUUBI_HOME/build/release/collect-licenses.sh "$DISTDIR" "$DISTDIR"
+fi
 
 cp -r "$KYUUBI_HOME/bin" "$DISTDIR"
 cp -r "$KYUUBI_HOME/conf" "$DISTDIR"
