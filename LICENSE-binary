@@ -201,9 +201,23 @@
    limitations under the License.
 
 ------------------------------------------------------------------------------------
-This project bundles some components that are also licensed under the Apache
-License Version 2.0:
 
+This product includes code from Apache Spark
+
+* org.apache.kyuubi.Logging copied from classes in org.apache.spark.internal.Logging
+* org.apache.kyuubi.engine.spark.FetchIterator copied from org.apache.spark.sql.hive.thriftserver.FetchIterator
+* org.apache.kyuubi.engine.spark.shim.CatalogShim_v3_0 copied some methods from org.apache.spark.sql.catalyst.util
+
+Copyright: 2014 and onwards The Apache Software Foundation
+Home page: https://spark.apache.org/
+License: https://www.apache.org/licenses/LICENSE-2.0
+
+------------------------------------------------------------------------------------
+
+This project bundles some components that are licensed under the
+
+Apache License Version 2.0
+--------------------------
 commons-codec:commons-codec
 org.apache.commons:commons-lang3
 org.apache.curator:curator-client
