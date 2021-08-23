@@ -151,7 +151,7 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
     withSessionConf()(
       Map(HighAvailabilityConf.HA_ZK_ENGINE_POOL_SIZE.key -> "2",
         KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN.key -> "ddd",
-        KyuubiConf.ENGINE_IDLE_TIMEOUT.key -> "120000"
+        KyuubiConf.ENGINE_IDLE_TIMEOUT.key -> "60000"
       ))(Map.empty) {
 
       var r1: String = null
