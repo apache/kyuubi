@@ -18,6 +18,7 @@
 package org.apache.kyuubi.ha
 
 import java.time.Duration
+import java.util.Locale
 
 import org.apache.hadoop.security.UserGroupInformation
 
@@ -115,7 +116,7 @@ object HighAvailabilityConf {
       .doc("Maximum number of engines when using USER share level.")
       .version("1.4.0")
       .intConf
-      .checkValue(s => s > 0 && s < 50, "Invalid Engine Pool Size.")
+      .checkValue(s => s > 0 && s < 50, "Invalid Engine Pool Size, should be between 0 and 50")
       .createWithDefault(1)
 
   val HA_ZK_ENGINE_PROVIDE_POLICY: ConfigEntry[String] =
@@ -124,5 +125,6 @@ object HighAvailabilityConf {
         "choose the appropriate strategy according to different scenarios.")
       .version("1.4.0")
       .stringConf
+      .transform(_.toUpperCase(Locale.ROOT))
       .createWithDefault(ProvidePolicy.RANDOM.toString)
 }
