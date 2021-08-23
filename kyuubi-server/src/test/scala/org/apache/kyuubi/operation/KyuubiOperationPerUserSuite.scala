@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.operation
 
+import java.util.concurrent.CountDownLatch
+
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.WithKyuubiServer
@@ -104,11 +106,14 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
       var r1: String = null
       var r2: String = null
       var r3: String = null
+      val countDownLatch = new CountDownLatch(2)
+
       new Thread {
         override def run(): Unit = withJdbcStatement() { statement =>
           val res = statement.executeQuery("set spark.app.name")
           assert(res.next())
           r1 = res.getString("value")
+          countDownLatch.countDown()
         }
       }.start()
 
@@ -117,8 +122,11 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
           val res = statement.executeQuery("set spark.app.name")
           assert(res.next())
           r2 = res.getString("value")
+          countDownLatch.countDown()
         }
       }.start()
+
+      countDownLatch.await()
 
       new Thread {
         override def run(): Unit = withJdbcStatement() { statement =>
@@ -128,7 +136,7 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
         }
       }.start()
 
-      eventually(timeout(180.seconds), interval(100.milliseconds)) {
+      eventually(timeout(120.seconds), interval(100.milliseconds)) {
         assert(r1 != null && r2 != null && r3 != null)
       }
 
