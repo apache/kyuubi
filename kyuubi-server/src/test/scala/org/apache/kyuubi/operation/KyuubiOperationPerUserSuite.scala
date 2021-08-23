@@ -98,7 +98,7 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
     }
   }
 
-  test("ensure two of three connections share the same engine when engine pool size is 2.") {
+  test("ensure the third connection share the first or second engine when engine pool size is 2.") {
     withSessionConf()(
       Map(HighAvailabilityConf.HA_ZK_ENGINE_POOL_SIZE.key -> "2",
         KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN.key -> "ccc",
@@ -144,6 +144,56 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
 
       assert(r1 != r2)
       assert(r3 === r1 || r3 === r2)
+    }
+  }
+
+  test("ensure the first engine can be used in following connection when engine pool size is 2.") {
+    withSessionConf()(
+      Map(HighAvailabilityConf.HA_ZK_ENGINE_POOL_SIZE.key -> "2",
+        KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN.key -> "ddd",
+        KyuubiConf.ENGINE_IDLE_TIMEOUT.key -> "120000"
+      ))(Map.empty) {
+
+      var r1: String = null
+      var r2: String = null
+      var r3: String = null
+
+      val countDownLatch = new CountDownLatch(1)
+
+      new Thread {
+        override def run(): Unit = withJdbcStatement() { statement =>
+          val res = statement.executeQuery("set spark.app.name")
+          assert(res.next())
+          r1 = res.getString("value")
+          countDownLatch.countDown()
+        }
+      }.start()
+      // the first engine creation is finished.
+      countDownLatch.await()
+
+      // the second and third engine create concurrently.
+      new Thread {
+        override def run(): Unit = withJdbcStatement() { statement =>
+          val res = statement.executeQuery("set spark.app.name")
+          assert(res.next())
+          r2 = res.getString("value")
+        }
+      }.start()
+
+      new Thread {
+        override def run(): Unit = withJdbcStatement() { statement =>
+          val res = statement.executeQuery("set spark.app.name")
+          assert(res.next())
+          r3 = res.getString("value")
+        }
+      }.start()
+
+      eventually(timeout(120.seconds), interval(100.milliseconds)) {
+        assert(r1 != null && r2 != null && r3 != null)
+      }
+
+      // 2 engines and one for 2 connections and the other for 1 connection
+      assert(Set(r1, r2, r3).size == 2)
     }
   }
 
