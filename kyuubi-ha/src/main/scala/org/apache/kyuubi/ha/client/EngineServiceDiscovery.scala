@@ -72,7 +72,7 @@ object EngineServiceDiscovery extends Logging {
       providePolicy: ProvidePolicy): Option[(String, Int)] = {
     providePolicy match {
       case RANDOM =>
-        Random.shuffle(getServiceNodesInfo(zkClient, namespace, silent = true)) match {
+        Random.shuffle(getServiceNodesInfo(zkClient, namespace, silent = true)).take(1) match {
           case Seq(sn) => Some((sn.host, sn.port))
           case _ => None
         }
