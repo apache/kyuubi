@@ -33,7 +33,6 @@ import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, SERVER, ShareLevel, USER
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.EngineServiceDiscovery._
-import org.apache.kyuubi.ha.client.ServiceDiscovery.getServerHost
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.session.SessionHandle
@@ -129,7 +128,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
       }
   }
 
-  private def create(zkClient: CuratorFramework): (String, Int) = tryWithLock(zkClient) {
+  def getOrCreate(zkClient: CuratorFramework): (String, Int) = tryWithLock(zkClient) {
 
     // USER share level support engine pool
     if (shareLevel.equals(USER)) {
@@ -142,14 +141,14 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
       if (notFull) {
         createInternal(zkClient)
       } else {
-        val engineRef = getServerHost(zkClient, engineSpace)
+        val engineRef = getEngineByPolicy(zkClient, engineSpace, providePolicy)
         if (engineRef.nonEmpty) return engineRef.get
         else throw new Exception("Unexpected exception!!!")
       }
 
     } else {
       // CONNECTION and SERVER share level don't support engine pool
-      val engineRef = getServerHost(zkClient, engineSpace)
+      val engineRef = getEngineByPolicy(zkClient, engineSpace, providePolicy)
       if (engineRef.nonEmpty) return engineRef.get
       createInternal(zkClient)
     }
@@ -200,15 +199,6 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
     }
   }
 
-  /**
-   * Get the engine ref from engine space first or create a new one
-   */
-  def getOrCreate(zkClient: CuratorFramework): (String, Int) = {
-    getEngineByPolicy(zkClient, engineSpace, providePolicy)
-      .getOrElse {
-        create(zkClient)
-      }
-  }
 }
 
 private[kyuubi] object EngineRef {
