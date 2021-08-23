@@ -115,6 +115,7 @@ object HighAvailabilityConf {
       .doc("Maximum number of engines when using USER share level.")
       .version("1.4.0")
       .intConf
+      .checkValue(s => s > 0 && s < 50, "Invalid Engine Pool Size.")
       .createWithDefault(1)
 
   val HA_ZK_ENGINE_PROVIDE_POLICY: ConfigEntry[String] =
