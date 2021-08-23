@@ -29,32 +29,70 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
 
   override protected val conf: KyuubiConf = {
     KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "user")
-    KyuubiConf().set(HighAvailabilityConf.HA_ZK_ENGINE_POOL_SIZE, 1)
   }
 
-  test("ensure two connections in user mode share the same engine") {
-    var r1: String = null
-    var r2: String = null
-    new Thread {
-      override def run(): Unit = withJdbcStatement() { statement =>
-        val res = statement.executeQuery("set spark.app.name")
-        assert(res.next())
-        r1 = res.getString("value")
-      }
-    }.start()
+  test("ensure two connections share the same engine when engine pool size is 1.") {
+    withSessionConf()(
+      Map(HighAvailabilityConf.HA_ZK_ENGINE_POOL_SIZE.key -> "1",
+        KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN.key -> "aaa"
+      ))(Map.empty) {
 
-    new Thread {
-      override def run(): Unit = withJdbcStatement() { statement =>
-        val res = statement.executeQuery("set spark.app.name")
-        assert(res.next())
-        r2 = res.getString("value")
-      }
-    }.start()
+      var r1: String = null
+      var r2: String = null
+      new Thread {
+        override def run(): Unit = withJdbcStatement() { statement =>
+          val res = statement.executeQuery("set spark.app.name")
+          assert(res.next())
+          r1 = res.getString("value")
+        }
+      }.start()
 
-    eventually(timeout(120.seconds), interval(100.milliseconds)) {
-      assert(r1 != null && r2 != null)
+      new Thread {
+        override def run(): Unit = withJdbcStatement() { statement =>
+          val res = statement.executeQuery("set spark.app.name")
+          assert(res.next())
+          r2 = res.getString("value")
+        }
+      }.start()
+
+      eventually(timeout(120.seconds), interval(100.milliseconds)) {
+        assert(r1 != null && r2 != null)
+      }
+
+      assert(r1 === r2)
     }
-
-    assert(r1 === r2)
   }
+
+  test("ensure two connections don't share the same engine when engine pool size bigger than 1.") {
+    withSessionConf()(
+      Map(HighAvailabilityConf.HA_ZK_ENGINE_POOL_SIZE.key -> "2",
+        KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN.key -> "bbb"
+      ))(Map.empty) {
+
+      var r1: String = null
+      var r2: String = null
+      new Thread {
+        override def run(): Unit = withJdbcStatement() { statement =>
+          val res = statement.executeQuery("set spark.app.name")
+          assert(res.next())
+          r1 = res.getString("value")
+        }
+      }.start()
+
+      new Thread {
+        override def run(): Unit = withJdbcStatement() { statement =>
+          val res = statement.executeQuery("set spark.app.name")
+          assert(res.next())
+          r2 = res.getString("value")
+        }
+      }.start()
+
+      eventually(timeout(120.seconds), interval(100.milliseconds)) {
+        assert(r1 != null && r2 != null)
+      }
+
+      assert(r1 != r2)
+    }
+  }
+
 }
