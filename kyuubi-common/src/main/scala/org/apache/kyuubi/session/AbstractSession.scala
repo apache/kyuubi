@@ -178,8 +178,8 @@ abstract class AbstractSession(
   }
 
   override def closeOperation(operationHandle: OperationHandle): Unit = withAcquireRelease() {
-    sessionManager.operationManager.closeOperation(operationHandle)
     opHandleSet.remove(operationHandle)
+    sessionManager.operationManager.closeOperation(operationHandle)
   }
 
   override def getResultSetMetadata(
