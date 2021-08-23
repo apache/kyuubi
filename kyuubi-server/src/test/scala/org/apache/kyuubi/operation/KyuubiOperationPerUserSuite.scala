@@ -68,7 +68,8 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
   test("ensure two connections don't share the same engine when engine pool is 2.") {
     withSessionConf()(
       Map(HighAvailabilityConf.HA_ZK_ENGINE_POOL_SIZE.key -> "2",
-        KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN.key -> "bbb"
+        KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN.key -> "bbb",
+        KyuubiConf.ENGINE_IDLE_TIMEOUT.key -> "30000"
       ))(Map.empty) {
 
       var r1: String = null
@@ -100,7 +101,8 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
   test("ensure two of three connections share the same engine when engine pool size is 2.") {
     withSessionConf()(
       Map(HighAvailabilityConf.HA_ZK_ENGINE_POOL_SIZE.key -> "2",
-        KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN.key -> "ccc"
+        KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN.key -> "ccc",
+        KyuubiConf.ENGINE_IDLE_TIMEOUT.key -> "30000"
       ))(Map.empty) {
 
       var r1: String = null
