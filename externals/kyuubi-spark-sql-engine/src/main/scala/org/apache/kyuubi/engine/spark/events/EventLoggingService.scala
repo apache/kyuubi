@@ -26,26 +26,27 @@ import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, SparkSQLEngine}
 import org.apache.kyuubi.engine.spark.events.EventLoggingService._service
 import org.apache.kyuubi.events.AbstractEventLoggingService
 import org.apache.kyuubi.events.EventLoggerType
-import org.apache.kyuubi.events.EventLoggerType.EventLoggerType
 import org.apache.kyuubi.events.JsonEventLogger
 
 class EventLoggingService(engine: SparkSQLEngine)
   extends AbstractEventLoggingService[KyuubiSparkEvent] {
 
-  override protected def getLoggers(conf: KyuubiConf): Seq[EventLoggerType] =
-    conf.get(ENGINE_EVENT_LOGGERS).map(EventLoggerType.withName)
-
-  override def analyseEventLoggerType: EventLoggerType => Unit = {
-    case EventLoggerType.SPARK =>
-      addEventLogger(SparkContextHelper.createSparkHistoryLogger(engine.spark.sparkContext))
-    case EventLoggerType.JSON =>
-      val jsonEventLogger = new JsonEventLogger[KyuubiSparkEvent](KyuubiSparkUtil.engineId,
-        ENGINE_EVENT_JSON_LOG_PATH, engine.spark.sparkContext.hadoopConfiguration)
-      addService(jsonEventLogger)
-      addEventLogger(jsonEventLogger)
-    case logger =>
-      // TODO: Add more implementations
-      throw new IllegalArgumentException(s"Unrecognized event logger: $logger")
+  override def initialize(conf: KyuubiConf): Unit = {
+    conf.get(ENGINE_EVENT_LOGGERS)
+      .map(EventLoggerType.withName)
+      .foreach{
+        case EventLoggerType.SPARK =>
+          addEventLogger(SparkContextHelper.createSparkHistoryLogger(engine.spark.sparkContext))
+        case EventLoggerType.JSON =>
+          val jsonEventLogger = new JsonEventLogger[KyuubiSparkEvent](KyuubiSparkUtil.engineId,
+            ENGINE_EVENT_JSON_LOG_PATH, engine.spark.sparkContext.hadoopConfiguration)
+          addService(jsonEventLogger)
+          addEventLogger(jsonEventLogger)
+        case logger =>
+          // TODO: Add more implementations
+          throw new IllegalArgumentException(s"Unrecognized event logger: $logger")
+      }
+    super.initialize(conf)
   }
 
   override def start(): Unit = {

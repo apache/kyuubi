@@ -25,26 +25,27 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.SERVER_EVENT_JSON_LOG_PATH
 import org.apache.kyuubi.config.KyuubiConf.SERVER_EVENT_LOGGERS
 import org.apache.kyuubi.events.{AbstractEventLoggingService, EventLoggerType}
-import org.apache.kyuubi.events.EventLoggerType.EventLoggerType
 import org.apache.kyuubi.events.JsonEventLogger
 import org.apache.kyuubi.events.KyuubiServerEvent
 import org.apache.kyuubi.server.EventLoggingService._service
 
 class EventLoggingService extends AbstractEventLoggingService[KyuubiServerEvent] {
 
-  override protected def getLoggers(conf: KyuubiConf): Seq[EventLoggerType] =
-    conf.get(SERVER_EVENT_LOGGERS).map(EventLoggerType.withName)
-
-  override def analyseEventLoggerType: EventLoggerType => Unit = {
-    case EventLoggerType.JSON =>
-      val hostName = InetAddress.getLocalHost.getCanonicalHostName
-      val jsonEventLogger = new JsonEventLogger[KyuubiServerEvent](s"server-$hostName",
-        SERVER_EVENT_JSON_LOG_PATH, new Configuration())
-      addService(jsonEventLogger)
-      addEventLogger(jsonEventLogger)
-    case logger =>
-      // TODO: Add more implementations
-      throw new IllegalArgumentException(s"Unrecognized event logger: $logger")
+  override def initialize(conf: KyuubiConf): Unit = {
+    conf.get(SERVER_EVENT_LOGGERS)
+      .map(EventLoggerType.withName)
+      .foreach{
+        case EventLoggerType.JSON =>
+          val hostName = InetAddress.getLocalHost.getCanonicalHostName
+          val jsonEventLogger = new JsonEventLogger[KyuubiServerEvent](s"server-$hostName",
+            SERVER_EVENT_JSON_LOG_PATH, new Configuration())
+          addService(jsonEventLogger)
+          addEventLogger(jsonEventLogger)
+        case logger =>
+          // TODO: Add more implementations
+          throw new IllegalArgumentException(s"Unrecognized event logger: $logger")
+      }
+    super.initialize(conf)
   }
 
   override def start(): Unit = {

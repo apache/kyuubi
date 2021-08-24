@@ -26,23 +26,34 @@ import org.apache.kyuubi.operation.JDBCTestUtils
 import org.apache.kyuubi.operation.OperationState._
 
 class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
+
   private val logRoot = Utils.createTempDir()
+  private val currentDate = Utils.getDateFromTimestamp(System.currentTimeMillis())
+
   override protected val conf: KyuubiConf = {
-    KyuubiConf().set(KyuubiConf.SERVER_EVENT_LOGGERS, Seq("JSON"))
+    KyuubiConf()
+      .set(KyuubiConf.SERVER_EVENT_LOGGERS, Seq("JSON"))
       .set(KyuubiConf.SERVER_EVENT_JSON_LOG_PATH, logRoot.toString)
+      .set(KyuubiConf.ENGINE_EVENT_LOGGERS, Seq("JSON"))
+      .set(KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH, logRoot.toString)
   }
 
   override protected def jdbcUrl: String = getJdbcUrl
 
   test("statementEvent: generate, dump and query") {
     val hostName = InetAddress.getLocalHost.getCanonicalHostName
-    val statementEventPath = Paths.get(logRoot.toString, "statement", hostName + ".json")
+    val serverStatementEventPath =
+      Paths.get(logRoot.toString, "statement", s"day=$currentDate", s"server-$hostName.json")
+    val engineStatementEventPath =
+      Paths.get(logRoot.toString, "statement", s"day=$currentDate", "local-*.json")
     val sql = "select timestamp'2021-06-01'"
 
     withJdbcStatement() { statement =>
       statement.execute(sql)
-      val table = statementEventPath.getParent
-      val resultSet = statement.executeQuery(s"SELECT * FROM `json`.`${table}`" +
+
+      // check server statement events
+      val serverTable = serverStatementEventPath
+      val resultSet = statement.executeQuery(s"SELECT * FROM `json`.`${serverTable}`" +
         "where statement = \"" + sql + "\"")
       val states = Array(INITIALIZED, PENDING, RUNNING, FINISHED, CLOSED)
       var stateIndex = 0
@@ -50,6 +61,20 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
         assert(resultSet.getString("user") == Utils.currentUser)
         assert(resultSet.getString("statement") == sql)
         assert(resultSet.getString("state") == states(stateIndex).toString)
+        stateIndex += 1
+      }
+
+      // check engine statement events
+      val engineTable = engineStatementEventPath
+      val resultSet2 = statement.executeQuery(s"SELECT * FROM `json`.`${engineTable}`" +
+        "where statement = \"" + sql + "\"")
+      val engineStates = Array(INITIALIZED, PENDING, RUNNING, COMPILED, FINISHED)
+      stateIndex = 0
+      while (resultSet2.next()) {
+        assert(resultSet2.getString("Event") ==
+          "org.apache.kyuubi.engine.spark.events.StatementEvent")
+        assert(resultSet2.getString("statement") == sql)
+        assert(resultSet2.getString("state") == engineStates(stateIndex).toString)
         stateIndex += 1
       }
     }

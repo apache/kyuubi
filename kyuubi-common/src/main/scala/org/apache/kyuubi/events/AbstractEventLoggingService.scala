@@ -19,8 +19,6 @@ package org.apache.kyuubi.events
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.events.EventLoggerType.EventLoggerType
 import org.apache.kyuubi.service.CompositeService
 
 abstract class AbstractEventLoggingService[T <: KyuubiEvent]
@@ -28,24 +26,9 @@ abstract class AbstractEventLoggingService[T <: KyuubiEvent]
 
   private val eventLoggers = new ArrayBuffer[EventLogger[T]]()
 
-  /**
-   * Get configured event log type.
-   */
-  protected def getLoggers(conf: KyuubiConf): Seq[EventLoggerType]
-
   def onEvent(event: T): Unit = {
     eventLoggers.foreach(_.logEvent(event))
   }
-
-  override def initialize(conf: KyuubiConf): Unit = {
-    getLoggers(conf).foreach(analyseEventLoggerType)
-    super.initialize(conf)
-  }
-
-  /**
-   * Analyse event logger and add to {@link eventLoggers}.
-   */
-  def analyseEventLoggerType: EventLoggerType => Unit
 
   def addEventLogger(logger: EventLogger[T]): Unit = {
     eventLoggers += logger
