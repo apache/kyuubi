@@ -206,7 +206,7 @@ This product includes code from Apache Spark
 
 * org.apache.kyuubi.Logging copied from classes in org.apache.spark.internal.Logging
 * org.apache.kyuubi.engine.spark.FetchIterator copied from org.apache.spark.sql.hive.thriftserver.FetchIterator
-* org.apache.kyuubi.engine.spark.shim.CatalogShim_v3_0 copied some methods from org.apache.spark.sql.catalyst.util
+* org.apache.kyuubi.engine.spark.shim.CatalogShim_v3_0 copied some methods from org.apache.spark.sql.connector.catalog.CatalogV2Implicits
 
 Copyright: 2014 and onwards The Apache Software Foundation
 Home page: https://spark.apache.org/
