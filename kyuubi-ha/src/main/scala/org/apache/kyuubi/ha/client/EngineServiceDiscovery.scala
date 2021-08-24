@@ -72,10 +72,8 @@ object EngineServiceDiscovery extends Logging {
       providePolicy: ProvidePolicy): Option[(String, Int)] = {
     providePolicy match {
       case RANDOM =>
-        Random.shuffle(getServiceNodesInfo(zkClient, namespace, silent = true)).take(1) match {
-          case Seq(sn) => Some((sn.host, sn.port))
-          case _ => None
-        }
+        Random.shuffle(getServiceNodesInfo(zkClient, namespace, silent = true))
+          .headOption.map(node => (node.host, node.port))
       case _ => throw new IllegalArgumentException(s"Not support provide policy $providePolicy")
     }
   }

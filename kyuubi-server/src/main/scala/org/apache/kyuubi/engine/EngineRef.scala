@@ -25,7 +25,7 @@ import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex
 import org.apache.curator.utils.ZKPaths
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
+import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_INIT_TIMEOUT, ENGINE_SHARE_LEVEL, ENGINE_SHARE_LEVEL_SUB_DOMAIN}
 import org.apache.kyuubi.engine.ProvidePolicy.ProvidePolicy
@@ -141,9 +141,11 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
       if (notFull) {
         createInternal(zkClient)
       } else {
-        val engineRef = getEngineByPolicy(zkClient, engineSpace, providePolicy)
-        if (engineRef.nonEmpty) return engineRef.get
-        else throw new Exception("Unexpected exception!!!")
+        val engineRefOpt = getEngineByPolicy(zkClient, engineSpace, providePolicy)
+        engineRefOpt match {
+          case Some(engineRef) => engineRef
+          case None => throw new KyuubiException("Unexpected exception!!!")
+        }
       }
 
     } else {
