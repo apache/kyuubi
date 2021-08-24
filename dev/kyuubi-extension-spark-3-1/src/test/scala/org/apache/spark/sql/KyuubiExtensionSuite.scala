@@ -28,6 +28,7 @@ import org.apache.spark.sql.test.SQLTestData.TestData
 import org.apache.spark.sql.test.SQLTestUtils
 
 import org.apache.kyuubi.sql.{FinalStageConfigIsolation, KyuubiSQLConf}
+import org.apache.kyuubi.sql.zorder.ZorderException
 
 class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSparkPlanHelper {
 
@@ -889,5 +890,140 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
     // scalastyle:off println
     println("dml simple name is :" + dmlSimpleName)
     // scalastyle:on println
+  }
+
+  test("optimize unpartitioned table") {
+    withSQLConf(SQLConf.SHUFFLE_PARTITIONS.key -> "1") {
+      withTable("up") {
+        sql(s"DROP TABLE IF EXISTS up")
+
+        val target = Seq(Seq(0, 0), Seq(1, 0), Seq(0, 1), Seq(1, 1),
+          Seq(2, 0), Seq(3, 0), Seq(2, 1), Seq(3, 1),
+          Seq(0, 2), Seq(1, 2), Seq(0, 3), Seq(1, 3),
+          Seq(2, 2), Seq(3, 2), Seq(2, 3), Seq(3, 3))
+        sql(s"CREATE TABLE up (c1 INT, c2 INT, c3 INT)")
+        sql(s"INSERT INTO TABLE up VALUES" +
+          "(0,0,2),(0,1,2),(0,2,1),(0,3,3)," +
+          "(1,0,4),(1,1,2),(1,2,1),(1,3,3)," +
+          "(2,0,2),(2,1,1),(2,2,5),(2,3,5)," +
+          "(3,0,3),(3,1,4),(3,2,9),(3,3,0)")
+
+        val e = intercept[ZorderException](sql("OPTIMIZE up WHERE c1 > 1 ZORDER BY c1, c2"))
+        assert(e.getMessage == "Filters are only supported for partitioned table")
+
+        sql("OPTIMIZE up ZORDER BY c1, c2")
+        val res = sql("SELECT c1, c2 FROM up").collect()
+
+        assert(res.length == 16)
+
+        for (i <- target.indices) {
+          val t = target(i)
+          val r = res(i)
+          assert(t(0) == r.getInt(0))
+          assert(t(1) == r.getInt(1))
+        }
+      }
+    }
+  }
+
+  test("optimize partitioned table") {
+    withSQLConf(SQLConf.SHUFFLE_PARTITIONS.key -> "1") {
+      withTable("p") {
+        sql("DROP TABLE IF EXISTS p")
+
+        val target = Seq(Seq(0, 0), Seq(1, 0), Seq(0, 1), Seq(1, 1),
+          Seq(2, 0), Seq(3, 0), Seq(2, 1), Seq(3, 1),
+          Seq(0, 2), Seq(1, 2), Seq(0, 3), Seq(1, 3),
+          Seq(2, 2), Seq(3, 2), Seq(2, 3), Seq(3, 3))
+
+        sql(s"CREATE TABLE p (c1 INT, c2 INT, c3 INT) PARTITIONED BY (id INT)")
+        sql(s"ALTER TABLE p ADD PARTITION (id = 1)")
+        sql(s"ALTER TABLE p ADD PARTITION (id = 2)")
+        sql(s"INSERT INTO TABLE p PARTITION (id = 1) VALUES" +
+          "(0,0,2),(0,1,2),(0,2,1),(0,3,3)," +
+          "(1,0,4),(1,1,2),(1,2,1),(1,3,3)," +
+          "(2,0,2),(2,1,1),(2,2,5),(2,3,5)," +
+          "(3,0,3),(3,1,4),(3,2,9),(3,3,0)")
+        sql(s"INSERT INTO TABLE p PARTITION (id = 2) VALUES" +
+          "(0,0,2),(0,1,2),(0,2,1),(0,3,3)," +
+          "(1,0,4),(1,1,2),(1,2,1),(1,3,3)," +
+          "(2,0,2),(2,1,1),(2,2,5),(2,3,5)," +
+          "(3,0,3),(3,1,4),(3,2,9),(3,3,0)")
+
+        sql(s"OPTIMIZE p ZORDER BY c1, c2")
+
+        val res1 = sql(s"SELECT c1, c2 FROM p WHERE id = 1").collect()
+        val res2 = sql(s"SELECT c1, c2 FROM p WHERE id = 2").collect()
+
+        assert(res1.length == 16)
+        assert(res2.length == 16)
+
+        for (i <- target.indices) {
+          val t = target(i)
+          val r1 = res1(i)
+          assert(t(0) == r1.getInt(0))
+          assert(t(1) == r1.getInt(1))
+
+          val r2 = res2(i)
+          assert(t(0) == r2.getInt(0))
+          assert(t(1) == r2.getInt(1))
+        }
+      }
+    }
+  }
+
+  test("optimize partitioned table with filters") {
+    withSQLConf(SQLConf.SHUFFLE_PARTITIONS.key -> "1") {
+      withTable("p") {
+        sql("DROP TABLE IF EXISTS p")
+
+        val target1 = Seq(Seq(0, 0), Seq(1, 0), Seq(0, 1), Seq(1, 1),
+          Seq(2, 0), Seq(3, 0), Seq(2, 1), Seq(3, 1),
+          Seq(0, 2), Seq(1, 2), Seq(0, 3), Seq(1, 3),
+          Seq(2, 2), Seq(3, 2), Seq(2, 3), Seq(3, 3))
+        val target2 = Seq(Seq(0, 0), Seq(0, 1), Seq(0, 2), Seq(0, 3),
+          Seq(1, 0), Seq(1, 1), Seq(1, 2), Seq(1, 3),
+          Seq(2, 0), Seq(2, 1), Seq(2, 2), Seq(2, 3),
+          Seq(3, 0), Seq(3, 1), Seq(3, 2), Seq(3, 3))
+        sql(s"CREATE TABLE p (c1 INT, c2 INT, c3 INT) PARTITIONED BY (id INT)")
+        sql(s"ALTER TABLE p ADD PARTITION (id = 1)")
+        sql(s"ALTER TABLE p ADD PARTITION (id = 2)")
+        sql(s"INSERT INTO TABLE p PARTITION (id = 1) VALUES" +
+          "(0,0,2),(0,1,2),(0,2,1),(0,3,3)," +
+          "(1,0,4),(1,1,2),(1,2,1),(1,3,3)," +
+          "(2,0,2),(2,1,1),(2,2,5),(2,3,5)," +
+          "(3,0,3),(3,1,4),(3,2,9),(3,3,0)")
+        sql(s"INSERT INTO TABLE p PARTITION (id = 2) VALUES" +
+          "(0,0,2),(0,1,2),(0,2,1),(0,3,3)," +
+          "(1,0,4),(1,1,2),(1,2,1),(1,3,3)," +
+          "(2,0,2),(2,1,1),(2,2,5),(2,3,5)," +
+          "(3,0,3),(3,1,4),(3,2,9),(3,3,0)")
+
+        val e = intercept[ZorderException](
+          sql(s"OPTIMIZE p WHERE id = 1 AND c1 > 1 ZORDER BY c1, c2")
+        )
+        assert(e.getMessage == "Only partition column filters are allowed")
+
+        sql(s"OPTIMIZE p WHERE id = 1 ZORDER BY c1, c2")
+
+        val res1 = sql(s"SELECT c1, c2 FROM p WHERE id = 1").collect()
+        val res2 = sql(s"SELECT c1, c2 FROM p WHERE id = 2").collect()
+
+        assert(res1.length == 16)
+        assert(res2.length == 16)
+
+        for (i <- target1.indices) {
+          val t1 = target1(i)
+          val r1 = res1(i)
+          assert(t1(0) == r1.getInt(0))
+          assert(t1(1) == r1.getInt(1))
+
+          val t2 = target2(i)
+          val r2 = res2(i)
+          assert(t2(0) == r2.getInt(0))
+          assert(t2(1) == r2.getInt(1))
+        }
+      }
+    }
   }
 }
