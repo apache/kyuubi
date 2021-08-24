@@ -161,13 +161,6 @@ object ServiceDiscovery extends Logging {
     zkEnsemble != null && zkEnsemble.nonEmpty
   }
 
-  def getServerHost(zkClient: CuratorFramework, namespace: String): Option[(String, Int)] = {
-    getServiceNodesInfo(zkClient, namespace, silent = true) match {
-      case Seq(sn) => Some((sn.host, sn.port))
-      case _ => None
-    }
-  }
-
   def getServiceNodesInfo(
       zkClient: CuratorFramework,
       namespace: String,

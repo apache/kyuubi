@@ -129,32 +129,23 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
   }
 
   def getOrCreate(zkClient: CuratorFramework): (String, Int) = tryWithLock(zkClient) {
-
     // USER share level support engine pool
     if (shareLevel.equals(USER)) {
-
-      // create engine space
-      createEngineSpaceIfNotExists(zkClient, engineSpace, conf.get(HA_ZK_ENGINE_POOL_SIZE))
-
       // create engine if not reach pool size
-      val notFull = checkEnginePoolCapacity(zkClient, engineSpace)
+      val notFull = checkEnginePoolCapacity(zkClient, engineSpace, conf.get(HA_ZK_ENGINE_POOL_SIZE))
       if (notFull) {
         createInternal(zkClient)
       } else {
-        val engineRefOpt = getEngineByPolicy(zkClient, engineSpace, providePolicy)
-        engineRefOpt match {
+        getEngineByPolicy(zkClient, engineSpace, providePolicy) match {
           case Some(engineRef) => engineRef
           case None => throw new KyuubiException("Unexpected exception!!!")
         }
       }
-
     } else {
       // CONNECTION and SERVER share level don't support engine pool
-      val engineRef = getEngineByPolicy(zkClient, engineSpace, providePolicy)
-      if (engineRef.nonEmpty) return engineRef.get
-      createInternal(zkClient)
+      getEngineByPolicy(zkClient, engineSpace, providePolicy)
+        .getOrElse(createInternal(zkClient))
     }
-
   }
 
   private def createInternal(zkClient: CuratorFramework): (String, Int) = {

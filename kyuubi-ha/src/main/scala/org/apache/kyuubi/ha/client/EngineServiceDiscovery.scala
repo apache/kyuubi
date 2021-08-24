@@ -25,8 +25,8 @@ import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.curator.framework.CuratorFramework
 import org.apache.zookeeper.CreateMode.PERSISTENT
-import org.apache.kyuubi.Logging
 
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
 import org.apache.kyuubi.engine.ProvidePolicy.{ProvidePolicy, RANDOM}
 import org.apache.kyuubi.ha.client.ServiceDiscovery.getServiceNodesInfo
@@ -91,10 +91,10 @@ object EngineServiceDiscovery extends Logging {
   def createEngineSpaceIfNotExists(
       zkClient: CuratorFramework,
       engineSpace: String,
-      poolSize: Int): Unit = {
+      initPoolSize: Int): Unit = {
 
-    val data = mapper.writeValueAsBytes(EngineSpaceData(poolSize))
     if (zkClient.checkExists().forPath(engineSpace) == null) {
+      val data = mapper.writeValueAsBytes(EngineSpaceData(initPoolSize))
       zkClient
         .create()
         .creatingParentsIfNeeded()
@@ -105,8 +105,13 @@ object EngineServiceDiscovery extends Logging {
 
   def checkEnginePoolCapacity(
       zkClient: CuratorFramework,
-      engineSpace: String): Boolean = {
+      engineSpace: String,
+      initPoolSize: Int): Boolean = {
 
+    // Step1: create engine space with initPoolSize
+    createEngineSpaceIfNotExists(zkClient, engineSpace, initPoolSize)
+
+    // Step2: get engine pool size from engine space
     var poolSize: Int = 0
     try {
       val content = zkClient.getData.forPath(engineSpace)
@@ -114,12 +119,13 @@ object EngineServiceDiscovery extends Logging {
     } catch {
       case _: MismatchedInputException =>
         // Compatible with the old version, there is no data in znode.
-        warn("there is no data in znode in old version.")
+        warn("Unable to get pool size from znode in old version.")
         poolSize = 1
       case e: Exception => throw e
     }
     val engineNum = zkClient.getChildren.forPath(engineSpace).size()
 
+    // Step3: compare number of live engines to engine pool size
     engineNum < poolSize
   }
 }
