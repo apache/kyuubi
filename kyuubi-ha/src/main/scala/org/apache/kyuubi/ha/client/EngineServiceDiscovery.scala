@@ -21,11 +21,12 @@ import scala.util.Random
 import scala.util.control.NonFatal
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.exc.MismatchedInputException
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import org.apache.curator.framework.CuratorFramework
 import org.apache.zookeeper.CreateMode.PERSISTENT
-
 import org.apache.kyuubi.Logging
+
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
 import org.apache.kyuubi.engine.ProvidePolicy.{ProvidePolicy, RANDOM}
 import org.apache.kyuubi.ha.client.ServiceDiscovery.getServiceNodesInfo
@@ -106,8 +107,17 @@ object EngineServiceDiscovery extends Logging {
       zkClient: CuratorFramework,
       engineSpace: String): Boolean = {
 
-    val data = zkClient.getData.forPath(engineSpace)
-    val poolSize = mapper.readValue(data, classOf[EngineSpaceData]).poolSize
+    var poolSize: Int = 0
+    try {
+      val content = zkClient.getData.forPath(engineSpace)
+      poolSize = mapper.readValue(content, classOf[EngineSpaceData]).poolSize
+    } catch {
+      case _: MismatchedInputException =>
+        // Compatible with the old version, there is no data in znode.
+        warn("there is no data in znode in old version.")
+        poolSize = 1
+      case e: Exception => throw e
+    }
     val engineNum = zkClient.getChildren.forPath(engineSpace).size()
 
     engineNum < poolSize
