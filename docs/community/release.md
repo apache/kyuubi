@@ -38,8 +38,6 @@ Please remember that publishing software has legal consequences. This guide comp
 
 ### Overview
 
-![release process](../imgs/release/release-process.png)
-
 The release process consists of several steps:
 
 1. Decide to release
