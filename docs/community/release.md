@@ -153,7 +153,7 @@ build/mvn versions:set -DgenerateBackupPoms=false \
   -Pkubernetes,kyuubi-extension-spark-3-1,spark-block-cleaner,tpcds
 
 git add .
-git commit -m "[RELEASE] Bump ${RELEASE_VERSION}"
+git commit -am "[RELEASE] Bump ${RELEASE_VERSION}"
 ```
 
 3. Create a git tag for the release candidate.
