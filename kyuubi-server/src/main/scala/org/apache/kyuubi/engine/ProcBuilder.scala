@@ -65,7 +65,8 @@ trait ProcBuilder {
   @volatile private var error: Throwable = UNCAUGHT_ERROR
   @volatile private var lastRowOfLog: String = "unknown"
   // Visible for test
-  private[kyuubi] var logCaptureThread: Thread = _
+  @volatile private[kyuubi] var logCaptureThreadReleased: Boolean = true
+  private var logCaptureThread: Thread = _
 
   private[kyuubi] lazy val engineLog: File = ProcBuilder.synchronized {
     val engineLogTimeout = conf.get(KyuubiConf.ENGINE_LOG_TIMEOUT)
@@ -136,10 +137,12 @@ trait ProcBuilder {
         case _: IOException =>
         case _: InterruptedException =>
       } finally {
+        logCaptureThreadReleased = true
         reader.close()
       }
     }
 
+    logCaptureThreadReleased = false
     logCaptureThread = PROC_BUILD_LOGGER.newThread(redirect)
     logCaptureThread.start()
     proc
