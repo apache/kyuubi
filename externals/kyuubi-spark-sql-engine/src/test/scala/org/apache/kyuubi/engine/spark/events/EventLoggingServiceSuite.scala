@@ -94,7 +94,7 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
   test("statementEvent: generate, dump and query") {
     val statementEventPath = Paths.get(
-      logRoot.toString, "statement", s"day=$currentDate", engine.engineId + ".json")
+      logRoot.toString, "spark-statement", s"day=$currentDate", engine.engineId + ".json")
     val sql = "select timestamp'2021-06-01'"
     withSessionHandle { (client, handle) =>
 

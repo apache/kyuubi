@@ -43,16 +43,16 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
   test("statementEvent: generate, dump and query") {
     val hostName = InetAddress.getLocalHost.getCanonicalHostName
     val serverStatementEventPath =
-      Paths.get(logRoot.toString, "statement", s"day=$currentDate", s"server-$hostName.json")
+      Paths.get(logRoot.toString, "kyuubi-statement", s"day=$currentDate", s"server-$hostName.json")
     val engineStatementEventPath =
-      Paths.get(logRoot.toString, "statement", s"day=$currentDate", "local-*.json")
+      Paths.get(logRoot.toString, "spark-statement", s"day=$currentDate", "*.json")
     val sql = "select timestamp'2021-06-01'"
 
     withJdbcStatement() { statement =>
       statement.execute(sql)
 
       // check server statement events
-      val serverTable = serverStatementEventPath
+      val serverTable = serverStatementEventPath.getParent
       val resultSet = statement.executeQuery(s"SELECT * FROM `json`.`${serverTable}`" +
         "where statement = \"" + sql + "\"")
       val states = Array(INITIALIZED, PENDING, RUNNING, FINISHED, CLOSED)
@@ -65,14 +65,14 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
       }
 
       // check engine statement events
-      val engineTable = engineStatementEventPath
+      val engineTable = engineStatementEventPath.getParent
       val resultSet2 = statement.executeQuery(s"SELECT * FROM `json`.`${engineTable}`" +
         "where statement = \"" + sql + "\"")
       val engineStates = Array(INITIALIZED, PENDING, RUNNING, COMPILED, FINISHED)
       stateIndex = 0
       while (resultSet2.next()) {
         assert(resultSet2.getString("Event") ==
-          "org.apache.kyuubi.engine.spark.events.StatementEvent")
+          "org.apache.kyuubi.engine.spark.events.SparkStatementEvent")
         assert(resultSet2.getString("statement") == sql)
         assert(resultSet2.getString("state") == engineStates(stateIndex).toString)
         stateIndex += 1

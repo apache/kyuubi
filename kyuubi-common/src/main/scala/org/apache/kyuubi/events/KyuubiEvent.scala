@@ -20,8 +20,10 @@ package org.apache.kyuubi.events
 import java.util.Locale
 
 trait KyuubiEvent extends Product {
-  final def eventType: String = {
-    this.getClass.getSimpleName.stripSuffix("Event").toLowerCase(Locale.ROOT)
+  final lazy val eventType: String = {
+    this.getClass.getSimpleName.stripSuffix("Event")
+      .replaceAll("(.)([A-Z])", "$1-$2")
+      .toLowerCase(Locale.ROOT)
   }
 
   def partitions: Seq[(String, String)]

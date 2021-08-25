@@ -15,36 +15,52 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.events
-
-import org.apache.spark.sql.Encoders
-import org.apache.spark.sql.types.StructType
+package org.apache.kyuubi.events
 
 import org.apache.kyuubi.Utils
+import org.apache.kyuubi.operation.ExecuteStatement
+import org.apache.kyuubi.operation.OperationState.OperationState
 
 /**
+ *
+ * @param user: who connect to kyuubi server
  * @param statementId: the identifier of operationHandler
  * @param statement: the sql that you execute
- * @param appId: application id a.k.a, the unique id for engine
+ * @param remoteIp: the ip of user
  * @param sessionId: the identifier of a session
  * @param createTime: the create time of this statement
  * @param state: store each state that the sql has
  * @param stateTime: the time that the sql's state change
- * @param queryExecution: contains logicPlan and physicalPlan
  * @param exception: caught exception if have
  */
-case class StatementEvent(
+case class KyuubiStatementEvent(
+    user: String,
     statementId: String,
     statement: String,
-    appId: String,
+    remoteIp: String,
     sessionId: String,
     createTime: Long,
     var state: String,
     var stateTime: Long,
-    var queryExecution: String = "",
-    var exception: String = "") extends KyuubiSparkEvent {
-
-  override def schema: StructType = Encoders.product[StatementEvent].schema
+    var exception: String = "") extends KyuubiServerEvent {
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(createTime)) :: Nil
+}
+
+object KyuubiStatementEvent {
+  def apply(statement: ExecuteStatement,
+      statementId: String,
+      state: OperationState,
+      stateTime: Long): KyuubiStatementEvent = {
+    val session = statement.getSession
+    new KyuubiStatementEvent(
+      session.user,
+      statementId,
+      statement.statement,
+      session.ipAddress,
+      session.handle.identifier.toString,
+      stateTime,
+      state.toString,
+      stateTime)
+  }
 }
