@@ -66,7 +66,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
       Option(conf.get(ENGINE_POOL_SIZE))
         .filter(size => size > 0)
         .map(size => {
-          // TODO Currently, we use random policy,
+          // TODO: Currently, we use random policy,
           //  and later we can add a sequential policy, such as AtomicInteger % poolSize.
           val poolSize = size.min(poolThreshold)
           "engine-pool-" + Random.nextInt(poolSize)
