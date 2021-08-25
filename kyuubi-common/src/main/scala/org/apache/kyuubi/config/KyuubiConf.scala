@@ -611,15 +611,14 @@ object KyuubiConf {
       "and controls the upper limit of the engine pool.")
     .version("1.4.0")
     .intConf
-    .checkValue(s => s > 1 && s < 33, "Invalid Engine Pool Threshold Size, " +
-      "should be between 1 and 33.")
+    .checkValue(s => s > 0 && s < 33, "Invalid Engine Pool Threshold Size, " +
+      "should be between 0 and 33.")
     .createWithDefault(9)
 
   val ENGINE_POOL_SIZE: ConfigEntry[Int] = buildConf("engine.pool.size")
     .doc("The size of engine pool. Note that: " +
-      "if the size is less than or equal to 1, the pool will not be enabled;" +
-      "if the size is greater than 1 and less than or equal to system threshold, " +
-      "it's the size of engine pool;" +
+      "if the size is less than 1, the pool will not be enabled;" +
+      "if the size is (>= 1 and <= system threshold), it's the size of engine pool;" +
       "if the size is greater than system threshold, " +
       "the size of engine pool will fallback to system threshold." +
       s" see also ${ENGINE_POOL_SIZE_THRESHOLD.key}.")

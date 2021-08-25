@@ -38,13 +38,11 @@ class KyuubiOperationEnginePoolSuite extends WithKyuubiServer with JDBCTests {
       ))(Map.empty) {
 
       var r1: String = null
-      new Thread {
-        override def run(): Unit = withJdbcStatement() { statement =>
-          val res = statement.executeQuery("set spark.app.name")
-          assert(res.next())
-          r1 = res.getString("value")
-        }
-      }.start()
+      withJdbcStatement() { statement =>
+        val res = statement.executeQuery("set spark.app.name")
+        assert(res.next())
+        r1 = res.getString("value")
+      }
 
       eventually(timeout(120.seconds), interval(100.milliseconds)) {
         assert(r1 != null)
@@ -62,14 +60,11 @@ class KyuubiOperationEnginePoolSuite extends WithKyuubiServer with JDBCTests {
       ))(Map.empty) {
 
       var r1: String = null
-      new Thread {
-        override def run(): Unit = withJdbcStatement() { statement =>
-          val res = statement.executeQuery("set spark.app.name")
-          assert(res.next())
-          r1 = res.getString("value")
-        }
-      }.start()
-
+      withJdbcStatement() { statement =>
+        val res = statement.executeQuery("set spark.app.name")
+        assert(res.next())
+        r1 = res.getString("value")
+      }
 
       eventually(timeout(120.seconds), interval(100.milliseconds)) {
         assert(r1 != null)
