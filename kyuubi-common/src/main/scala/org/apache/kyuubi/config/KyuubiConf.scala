@@ -572,7 +572,7 @@ object KyuubiConf {
     .checkValues(ShareLevel.values.map(_.toString))
     .createWithDefault(ShareLevel.USER.toString)
 
-  private val validEngineSubDomain: Pattern = "^[a-zA-Z_]{1,10}$".r.pattern
+  private val validEngineSubDomain: Pattern = "^[a-zA-Z_-]{1,14}$".r.pattern
 
   val ENGINE_SHARE_LEVEL_SUB_DOMAIN: OptionalConfigEntry[String] =
     buildConf("engine.share.level.sub.domain")

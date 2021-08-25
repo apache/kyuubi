@@ -59,20 +59,25 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
   private val shareLevel: ShareLevel = ShareLevel.withName(conf.get(ENGINE_SHARE_LEVEL))
 
   // This a is a server-side option
-  val poolThreshold: Int = KyuubiConf().loadFileDefaults().get(ENGINE_POOL_SIZE_THRESHOLD)
+  private val poolThreshold: Int = KyuubiConf().loadFileDefaults().get(ENGINE_POOL_SIZE_THRESHOLD)
 
-  private val subDomain: Option[String] = conf.get(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
-    .orElse {
-      Option(conf.get(ENGINE_POOL_SIZE))
-        .filter(size => size > 0)
-        .map(size => {
-          val poolSize = size.min(poolThreshold)
-
-          // TODO: Currently, we use random policy,
-          //  and later we can add a sequential policy, such as AtomicInteger % poolSize.
-          "engine-pool-" + Random.nextInt(poolSize)
-        })
+  private lazy val subDomain: Option[String] = conf.get(ENGINE_SHARE_LEVEL_SUB_DOMAIN).orElse {
+    val clientPoolSize: Int = conf.get(ENGINE_POOL_SIZE)
+    if (conf.get(ENGINE_POOL_SIZE) <= 1) {
+      None
+    } else {
+      val poolSize = if (clientPoolSize <= poolThreshold) {
+        clientPoolSize
+      } else {
+        warn(s"Request engine pool size($clientPoolSize) exceeds, fallback to system threshold " +
+          s"$poolThreshold")
+        poolThreshold
+      }
+      // TODO: Currently, we use random policy,
+      //  and later we can add a sequential policy, such as AtomicInteger % poolSize.
+      Some("engine-pool-" + Random.nextInt(poolSize))
     }
+  }
 
   // Launcher of the engine
   private val appUser: String = shareLevel match {
