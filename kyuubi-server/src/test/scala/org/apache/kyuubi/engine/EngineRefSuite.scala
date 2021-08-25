@@ -107,23 +107,17 @@ class EngineRefSuite extends KyuubiFunSuite {
     val engine2 = EngineRef(conf, user, id)
     assert(engine2.subDomain ===  None)
 
-    // engine pool size = 1
+    // 1 <= engine pool size < threshold
     conf.unset(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
-    conf.set(ENGINE_POOL_SIZE, 1)
+    conf.set(ENGINE_POOL_SIZE, 3)
     val engine3 = EngineRef(conf, user, id)
-    assert(engine3.subDomain ===  None)
-
-    // engine pool size < threshold
-    conf.unset(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
-    conf.set(ENGINE_POOL_SIZE, 8)
-    val engine4 = EngineRef(conf, user, id)
-    assert(engine4.subDomain.get.startsWith("engine-pool-"))
+    assert(engine3.subDomain.get.startsWith("engine-pool-"))
 
     // engine pool size > threshold
     conf.unset(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
     conf.set(ENGINE_POOL_SIZE, 100)
-    val engine5 = EngineRef(conf, user, id)
-    val engineNumber = Integer.parseInt(engine5.subDomain.get.substring(12))
+    val engine4 = EngineRef(conf, user, id)
+    val engineNumber = Integer.parseInt(engine4.subDomain.get.substring(12))
     val threshold = ENGINE_POOL_SIZE_THRESHOLD.defaultVal.get
     assert(engineNumber <= threshold)
   }
