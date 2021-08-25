@@ -35,6 +35,7 @@ import org.apache.zookeeper.KeeperException.NodeExistsException
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.ProvidePolicy.{ProvidePolicy, RANDOM}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.service.{AbstractService, Serverable}
 import org.apache.kyuubi.util.ThreadUtils
@@ -161,24 +162,6 @@ object ServiceDiscovery extends Logging {
     zkEnsemble != null && zkEnsemble.nonEmpty
   }
 
-  def getServerHost(zkClient: CuratorFramework, namespace: String): Option[(String, Int)] = {
-    // TODO: use last one because to avoid touching some maybe-crashed engines
-    // We need a big improvement here.
-    getServiceNodesInfo(zkClient, namespace, Some(1), silent = true) match {
-      case Seq(sn) => Some((sn.host, sn.port))
-      case _ => None
-    }
-  }
-
-  def getEngineBySessionId(
-     zkClient: CuratorFramework,
-     namespace: String,
-     sessionId: String): Option[(String, Int)] = {
-    getServiceNodesInfo(zkClient, namespace, silent = true)
-      .find(_.createSessionId.exists(_.equals(sessionId)))
-      .map(data => (data.host, data.port))
-  }
-
   def getServiceNodesInfo(
       zkClient: CuratorFramework,
       namespace: String,
@@ -256,6 +239,30 @@ object ServiceDiscovery extends Logging {
           s"Unable to create a znode for this server instance: $instance", e)
     }
     serviceNode
+  }
+
+  def getEngineByPolicy(
+     zkClient: CuratorFramework,
+     engineSpace: String,
+     providePolicy: ProvidePolicy): Option[(String, Int)] = {
+    providePolicy match {
+      case RANDOM =>
+        // engineSpace is random
+        getServiceNodesInfo(zkClient, engineSpace, Some(1), silent = true) match {
+          case Seq(sn) => Some((sn.host, sn.port))
+          case _ => None
+        }
+      case _ => throw new IllegalArgumentException(s"Not support provide policy $providePolicy")
+    }
+  }
+
+  def getEngineBySessionId(
+     zkClient: CuratorFramework,
+     namespace: String,
+     sessionId: String): Option[(String, Int)] = {
+    getServiceNodesInfo(zkClient, namespace, silent = true)
+      .find(_.createSessionId.exists(_.equals(sessionId)))
+      .map(data => (data.host, data.port))
   }
 }
 

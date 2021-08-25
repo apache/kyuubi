@@ -19,6 +19,8 @@ package org.apache.kyuubi.engine
 
 import java.util.concurrent.TimeUnit
 
+import scala.util.Random
+
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
 import org.apache.curator.framework.CuratorFramework
@@ -27,13 +29,13 @@ import org.apache.curator.utils.ZKPaths
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_INIT_TIMEOUT, ENGINE_SHARE_LEVEL, ENGINE_SHARE_LEVEL_SUB_DOMAIN}
+import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.ProvidePolicy.ProvidePolicy
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, SERVER, ShareLevel}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_SESSION_ID
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NAMESPACE
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_ENGINE_SESSION_ID, HA_ZK_NAMESPACE}
+import org.apache.kyuubi.ha.client.ServiceDiscovery.getEngineByPolicy
 import org.apache.kyuubi.ha.client.ServiceDiscovery.getEngineBySessionId
-import org.apache.kyuubi.ha.client.ServiceDiscovery.getServerHost
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.session.SessionHandle
@@ -57,6 +59,19 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
   private val shareLevel: ShareLevel = ShareLevel.withName(conf.get(ENGINE_SHARE_LEVEL))
 
   private val subDomain: Option[String] = conf.get(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
+    .orElse {
+      if (conf.get(ENGINE_POOL_ENABLED)) {
+        // engine.pool.size.threshold is a server-side parameter
+        val poolThreshold = KyuubiConf().loadFileDefaults().get(ENGINE_POOL_SIZE_THRESHOLD)
+        val poolSize = conf.get(ENGINE_POOL_SIZE).min(poolThreshold)
+        Some("engine-pool-" + Random.nextInt(poolSize))
+      } else {
+        None
+      }
+    }
+
+  // Engine provide policy
+  private val providePolicy: ProvidePolicy = ProvidePolicy.withName(conf.get(ENGINE_PROVIDE_POLICY))
 
   // Launcher of the engine
   private val appUser: String = shareLevel match {
@@ -126,9 +141,8 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
   }
 
   private def create(zkClient: CuratorFramework): (String, Int) = tryWithLock(zkClient) {
-    // TODO: improve this after support engine pool. (KYUUBI #918)
-    var engineRef = getServerHost(zkClient, engineSpace)
     // Get the engine address ahead if another process has succeeded
+    var engineRef = getEngineByPolicy(zkClient, engineSpace, providePolicy)
     if (engineRef.nonEmpty) return engineRef.get
 
     conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
@@ -177,7 +191,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
    * Get the engine ref from engine space first first or create a new one
    */
   def getOrCreate(zkClient: CuratorFramework): (String, Int) = {
-    getServerHost(zkClient, engineSpace)
+    getEngineByPolicy(zkClient, engineSpace, providePolicy)
       .getOrElse {
         create(zkClient)
       }

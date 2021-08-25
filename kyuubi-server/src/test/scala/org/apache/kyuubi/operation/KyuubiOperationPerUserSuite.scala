@@ -30,29 +30,36 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
     KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "user")
   }
 
-  test("ensure two connections in user mode share the same engine") {
-    var r1: String = null
-    var r2: String = null
-    new Thread {
-      override def run(): Unit = withJdbcStatement() { statement =>
-        val res = statement.executeQuery("set spark.app.name")
-        assert(res.next())
-        r1 = res.getString("value")
-      }
-    }.start()
+  test("ensure two connections share the same engine when engine pool size is 1.") {
+    withSessionConf()(
+      Map(KyuubiConf.ENGINE_POOL_ENABLED.key -> "true",
+        KyuubiConf.ENGINE_POOL_SIZE.key -> "1"
+      ))(Map.empty) {
 
-    new Thread {
-      override def run(): Unit = withJdbcStatement() { statement =>
-        val res = statement.executeQuery("set spark.app.name")
-        assert(res.next())
-        r2 = res.getString("value")
-      }
-    }.start()
+      var r1: String = null
+      var r2: String = null
+      new Thread {
+        override def run(): Unit = withJdbcStatement() { statement =>
+          val res = statement.executeQuery("set spark.app.name")
+          assert(res.next())
+          r1 = res.getString("value")
+        }
+      }.start()
 
-    eventually(timeout(120.seconds), interval(100.milliseconds)) {
-      assert(r1 != null && r2 != null)
+      new Thread {
+        override def run(): Unit = withJdbcStatement() { statement =>
+          val res = statement.executeQuery("set spark.app.name")
+          assert(res.next())
+          r2 = res.getString("value")
+        }
+      }.start()
+
+      eventually(timeout(120.seconds), interval(100.milliseconds)) {
+        assert(r1 != null && r2 != null)
+      }
+
+      assert(r1 === r2)
     }
-
-    assert(r1 === r2)
   }
+
 }

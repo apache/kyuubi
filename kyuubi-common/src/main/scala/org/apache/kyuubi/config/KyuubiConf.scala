@@ -25,7 +25,7 @@ import java.util.regex.Pattern
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{Logging, Utils}
-import org.apache.kyuubi.engine.ShareLevel
+import org.apache.kyuubi.engine.{ProvidePolicy, ShareLevel}
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
@@ -605,6 +605,36 @@ object KyuubiConf {
       " <li>SERVER: the App will be shared by Kyuubi servers</li></ul>")
     .version("1.2.0")
     .fallbackConf(LEGACY_ENGINE_SHARE_LEVEL)
+
+  val ENGINE_PROVIDE_POLICY: ConfigEntry[String] = buildConf("engine.provide.policy")
+    .doc("Multiple engines can be exposed under same space when using engine pool, " +
+      "choose the appropriate strategy according to different scenarios.")
+    .version("1.4.0")
+    .stringConf
+    .transform(_.toUpperCase(Locale.ROOT))
+    .createWithDefault(ProvidePolicy.RANDOM.toString)
+
+  val ENGINE_POOL_ENABLED: ConfigEntry[Boolean] = buildConf("engine.pool.enabled")
+    .doc("When true, kyuubi will provides engine pool feature.")
+    .version("1.4.0")
+    .booleanConf
+    .createWithDefault(false)
+
+  val ENGINE_POOL_SIZE_THRESHOLD: ConfigEntry[Int] = buildConf("engine.pool.size.threshold")
+    .doc("This parameter is introduced as a server-side parameter, " +
+      "and controls the upper limit of the engine pool.")
+    .version("1.4.0")
+    .intConf
+    .checkValue(s => s > 0 && s <= 32, "Invalid Engine Pool Threshold Size, " +
+      "should be between 0 and 33.")
+    .createWithDefault(16)
+
+  val ENGINE_POOL_SIZE: ConfigEntry[Int] = buildConf("engine.pool.size")
+    .doc("Max number of engines that can be provided to clients.")
+    .version("1.4.0")
+    .intConf
+    .checkValue(s => s > 0, "Invalid Engine Pool Size, must be positive number.")
+    .createWithDefault(1)
 
   val ENGINE_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
     buildConf("engine.initialize.sql")
