@@ -25,7 +25,7 @@ import java.util.regex.Pattern
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{Logging, Utils}
-import org.apache.kyuubi.engine.{ProvidePolicy, ShareLevel}
+import org.apache.kyuubi.engine.{ShareLevel}
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
@@ -605,14 +605,6 @@ object KyuubiConf {
       " <li>SERVER: the App will be shared by Kyuubi servers</li></ul>")
     .version("1.2.0")
     .fallbackConf(LEGACY_ENGINE_SHARE_LEVEL)
-
-  val ENGINE_PROVIDE_POLICY: ConfigEntry[String] = buildConf("engine.provide.policy")
-    .doc("Multiple engines can be exposed under same space when using engine pool, " +
-      "choose the appropriate strategy according to different scenarios.")
-    .version("1.4.0")
-    .stringConf
-    .transform(_.toUpperCase(Locale.ROOT))
-    .createWithDefault(ProvidePolicy.RANDOM.toString)
 
   val ENGINE_POOL_ENABLED: ConfigEntry[Boolean] = buildConf("engine.pool.enabled")
     .doc("When true, kyuubi will provides engine pool feature.")

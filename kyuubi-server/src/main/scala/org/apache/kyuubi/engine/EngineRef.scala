@@ -30,12 +30,11 @@ import org.apache.curator.utils.ZKPaths
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.ProvidePolicy.ProvidePolicy
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, SERVER, ShareLevel}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_ENGINE_SESSION_ID, HA_ZK_NAMESPACE}
-import org.apache.kyuubi.ha.client.ServiceDiscovery.getEngineByPolicy
 import org.apache.kyuubi.ha.client.ServiceDiscovery.getEngineBySessionId
+import org.apache.kyuubi.ha.client.ServiceDiscovery.getServerHost
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.session.SessionHandle
@@ -69,9 +68,6 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
         None
       }
     }
-
-  // Engine provide policy
-  private val providePolicy: ProvidePolicy = ProvidePolicy.withName(conf.get(ENGINE_PROVIDE_POLICY))
 
   // Launcher of the engine
   private val appUser: String = shareLevel match {
@@ -142,7 +138,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
 
   private def create(zkClient: CuratorFramework): (String, Int) = tryWithLock(zkClient) {
     // Get the engine address ahead if another process has succeeded
-    var engineRef = getEngineByPolicy(zkClient, engineSpace, providePolicy)
+    var engineRef = getServerHost(zkClient, engineSpace)
     if (engineRef.nonEmpty) return engineRef.get
 
     conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
@@ -191,7 +187,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
    * Get the engine ref from engine space first first or create a new one
    */
   def getOrCreate(zkClient: CuratorFramework): (String, Int) = {
-    getEngineByPolicy(zkClient, engineSpace, providePolicy)
+    getServerHost(zkClient, engineSpace)
       .getOrElse {
         create(zkClient)
       }
