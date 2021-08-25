@@ -32,7 +32,8 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, SERVER, ShareLevel}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
-import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_ENGINE_SESSION_ID, HA_ZK_NAMESPACE}
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_SESSION_ID
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NAMESPACE
 import org.apache.kyuubi.ha.client.ServiceDiscovery.getEngineBySessionId
 import org.apache.kyuubi.ha.client.ServiceDiscovery.getServerHost
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}

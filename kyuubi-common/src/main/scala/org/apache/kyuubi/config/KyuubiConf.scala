@@ -25,7 +25,7 @@ import java.util.regex.Pattern
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{Logging, Utils}
-import org.apache.kyuubi.engine.{ShareLevel}
+import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
