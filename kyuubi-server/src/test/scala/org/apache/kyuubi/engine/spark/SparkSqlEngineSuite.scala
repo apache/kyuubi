@@ -72,7 +72,7 @@ class SparkSqlEngineSuite extends WithKyuubiServer with JDBCTestUtils {
 
 
   test("Fail connections on invalid sub domains") {
-    Seq("1", ",", "", "a" * 11, "abc.xyz").foreach { invalid =>
+    Seq("1", ",", "", "a" * 15, "abc.xyz").foreach { invalid =>
       val sparkHiveConfigs = Map(
         ENGINE_SHARE_LEVEL.key -> "USER",
         ENGINE_SHARE_LEVEL_SUB_DOMAIN.key -> invalid)
