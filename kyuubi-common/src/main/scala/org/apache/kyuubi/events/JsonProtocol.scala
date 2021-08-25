@@ -15,12 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.events
+package org.apache.kyuubi.events
 
-object EventLoggerType extends Enumeration {
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 
-  type EventLoggerType = Value
+object JsonProtocol {
 
-  // TODO: Only SPARK is done now
-  val SPARK, JSON, DB, CUSTOM = Value
+  private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
+
+  def productToJson[T <: KyuubiEvent](value: T): String = mapper.writeValueAsString(value)
+
+  def jsonToEvent[T <: KyuubiEvent](jsonValue: String, cls: Class[T]): KyuubiEvent = {
+    mapper.readValue(jsonValue, cls)
+  }
 }

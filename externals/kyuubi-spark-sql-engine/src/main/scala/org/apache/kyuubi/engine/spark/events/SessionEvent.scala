@@ -40,7 +40,7 @@ case class SessionEvent(
     ip: String,
     startTime: Long,
     var endTime: Long = -1L,
-    var totalOperations: Int = 0) extends KyuubiEvent {
+    var totalOperations: Int = 0) extends KyuubiSparkEvent {
 
   override def schema: StructType = Encoders.product[SessionEvent].schema
   override lazy val partitions: Seq[(String, String)] =
