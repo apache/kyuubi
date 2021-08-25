@@ -577,7 +577,7 @@ object KyuubiConf {
   val ENGINE_SHARE_LEVEL_SUB_DOMAIN: OptionalConfigEntry[String] =
     buildConf("engine.share.level.sub.domain")
       .doc("Allow end-users to create a sub-domain for the share level of an engine. A" +
-        " sub-domain is a case-insensitive string values in `^[a-zA-Z_]{1,10}$` form." +
+        " sub-domain is a case-insensitive string values in `^[a-zA-Z_-]{1,14}$` form." +
         " For example, for `USER` share level, an end-user can share a certain engine within" +
         " a sub-domain, not for all of its clients. End-users are free to create multiple" +
         " engines in the `USER` share level")
