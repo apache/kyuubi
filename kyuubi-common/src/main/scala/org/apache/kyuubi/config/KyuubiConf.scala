@@ -585,7 +585,7 @@ object KyuubiConf {
       .stringConf
       .transform(_.toLowerCase(Locale.ROOT))
       .checkValue(validEngineSubDomain.matcher(_).matches(),
-        "must be [1, 10] length alphabet string, e.g. 'abc', 'apache'")
+        "must be [1, 14] length alphabet string, e.g. 'abc', 'apache'")
       .createOptional
 
   val ENGINE_CONNECTION_URL_USE_HOSTNAME: ConfigEntry[Boolean] =
