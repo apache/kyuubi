@@ -23,6 +23,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider
 import org.apache.kyuubi.session.SessionHandle
@@ -91,6 +92,40 @@ class EngineRefSuite extends KyuubiFunSuite {
     assert(appName2.engineSpace ===
       ZKPaths.makePath(s"kyuubi_$SERVER", user, "abc"))
     assert(appName2.defaultEngineName ===  s"kyuubi_${SERVER}_${user}_abc_${id.identifier}")
+  }
+
+  test(s"check the engine space of engine pool") {
+    val id = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+
+    // test subdomain
+    conf.set(ENGINE_SHARE_LEVEL_SUB_DOMAIN, "abc")
+    val engine1 = EngineRef(conf, user, id)
+    assert(engine1.subDomain ===  Some("abc"))
+
+    // unset domain
+    conf.unset(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
+    val engine2 = EngineRef(conf, user, id)
+    assert(engine2.subDomain ===  None)
+
+    // engine pool size = 1
+    conf.unset(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
+    conf.set(ENGINE_POOL_SIZE, 1)
+    val engine3 = EngineRef(conf, user, id)
+    assert(engine3.subDomain ===  None)
+
+    // engine pool size < threshold
+    conf.unset(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
+    conf.set(ENGINE_POOL_SIZE, 8)
+    val engine4 = EngineRef(conf, user, id)
+    assert(engine4.subDomain.get.startsWith("engine-pool-"))
+
+    // engine pool size > threshold
+    conf.unset(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
+    conf.set(ENGINE_POOL_SIZE, 100)
+    val engine5 = EngineRef(conf, user, id)
+    val engineNumber = Integer.parseInt(engine5.subDomain.get.substring(12))
+    val threshold = ENGINE_POOL_SIZE_THRESHOLD.defaultVal.get
+    assert(engineNumber <= threshold)
   }
 
   test("start and get engine address with lock") {

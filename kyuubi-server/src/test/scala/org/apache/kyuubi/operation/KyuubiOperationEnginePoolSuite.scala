@@ -22,7 +22,7 @@ import org.scalatest.time.SpanSugar._
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 
-class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
+class KyuubiOperationEnginePoolSuite extends WithKyuubiServer with JDBCTests {
 
   override protected def jdbcUrl: String = getJdbcUrl
 
@@ -30,14 +30,13 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
     KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "user")
   }
 
-  test("ensure two connections share the same engine when specifying subDomain.") {
+  test("ensure app name contains engine-pool when engine pool is enabled.") {
     withSessionConf()(
       Map(
-        KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN.key -> "abc"
+        KyuubiConf.ENGINE_POOL_SIZE.key -> "2"
       ))(Map.empty) {
 
       var r1: String = null
-      var r2: String = null
       new Thread {
         override def run(): Unit = withJdbcStatement() { statement =>
           val res = statement.executeQuery("set spark.app.name")
@@ -46,20 +45,11 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
         }
       }.start()
 
-      new Thread {
-        override def run(): Unit = withJdbcStatement() { statement =>
-          val res = statement.executeQuery("set spark.app.name")
-          assert(res.next())
-          r2 = res.getString("value")
-        }
-      }.start()
-
       eventually(timeout(120.seconds), interval(100.milliseconds)) {
-        assert(r1 != null && r2 != null)
+        assert(r1 != null)
       }
 
-      assert(r1 === r2)
+      assert(r1.contains("engine-pool-"))
     }
   }
-
 }

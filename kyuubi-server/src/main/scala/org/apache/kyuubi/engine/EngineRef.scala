@@ -61,7 +61,8 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
   // This a is a server-side option
   private val poolThreshold: Int = KyuubiConf().loadFileDefaults().get(ENGINE_POOL_SIZE_THRESHOLD)
 
-  private lazy val subDomain: Option[String] = conf.get(ENGINE_SHARE_LEVEL_SUB_DOMAIN).orElse {
+  @VisibleForTesting
+  private[kyuubi] val subDomain: Option[String] = conf.get(ENGINE_SHARE_LEVEL_SUB_DOMAIN).orElse {
     val clientPoolSize: Int = conf.get(ENGINE_POOL_SIZE)
     if (conf.get(ENGINE_POOL_SIZE) <= 1) {
       None
@@ -73,8 +74,8 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
           s"$poolThreshold")
         poolThreshold
       }
-      // TODO: Currently, we use random policy,
-      //  and later we can add a sequential policy, such as AtomicInteger % poolSize.
+      // TODO: Currently, we use random policy, and later we can add a sequential policy,
+      //  such as AtomicInteger % poolSize.
       Some("engine-pool-" + Random.nextInt(poolSize))
     }
   }
