@@ -126,13 +126,14 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
   test("log capture should release after close") {
     val process = new FakeSparkProcessBuilder(KyuubiConf())
     try {
+      assert(process.logCaptureThreadReleased)
       val subProcess = process.start
-      assert(!process.logCaptureThread.isInterrupted)
+      assert(!process.logCaptureThreadReleased)
       subProcess.waitFor(3, TimeUnit.SECONDS)
     } finally {
       process.close()
     }
-    assert(process.logCaptureThread.isInterrupted)
+    assert(process.logCaptureThreadReleased)
   }
 
   test(s"sub process log should be overwritten") {
