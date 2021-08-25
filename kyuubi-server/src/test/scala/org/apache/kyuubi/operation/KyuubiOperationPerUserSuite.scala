@@ -32,7 +32,7 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
 
   test("ensure two connections share the same engine when engine pool size is 1.") {
     withSessionConf()(
-      Map(KyuubiConf.ENGINE_POOL_ENABLED.key -> "true",
+      Map(
         KyuubiConf.ENGINE_POOL_SIZE.key -> "1"
       ))(Map.empty) {
 
