@@ -27,12 +27,13 @@ class KyuubiOperationEnginePoolSuite extends WithKyuubiServer with JDBCTests {
   override protected def jdbcUrl: String = getJdbcUrl
 
   override protected val conf: KyuubiConf = {
-    KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "user")
+    KyuubiConf()
   }
 
   test("ensure app name contains engine-pool when engine pool is enabled.") {
     withSessionConf()(
       Map(
+        KyuubiConf.ENGINE_SHARE_LEVEL.key -> "user",
         KyuubiConf.ENGINE_POOL_SIZE.key -> "2"
       ))(Map.empty) {
 
@@ -50,6 +51,31 @@ class KyuubiOperationEnginePoolSuite extends WithKyuubiServer with JDBCTests {
       }
 
       assert(r1.contains("engine-pool-"))
+    }
+  }
+
+  test("ensure the sub-domain doesn't work with the CONNECTION share level.") {
+    withSessionConf()(
+      Map(
+        KyuubiConf.ENGINE_SHARE_LEVEL.key -> "connection",
+        KyuubiConf.ENGINE_POOL_SIZE.key -> "2"
+      ))(Map.empty) {
+
+      var r1: String = null
+      new Thread {
+        override def run(): Unit = withJdbcStatement() { statement =>
+          val res = statement.executeQuery("set spark.app.name")
+          assert(res.next())
+          r1 = res.getString("value")
+        }
+      }.start()
+
+
+      eventually(timeout(120.seconds), interval(100.milliseconds)) {
+        assert(r1 != null)
+      }
+
+      assert(r1.contains("engine-pool-") === false)
     }
   }
 }
