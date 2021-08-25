@@ -133,7 +133,9 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     } finally {
       process.close()
     }
-    assert(process.logCaptureThreadReleased)
+    eventually(timeout(3.seconds), interval(100.milliseconds)) {
+      assert(process.logCaptureThreadReleased)
+    }
   }
 
   test(s"sub process log should be overwritten") {
