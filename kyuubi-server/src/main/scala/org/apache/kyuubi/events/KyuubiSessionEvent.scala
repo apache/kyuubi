@@ -26,8 +26,7 @@ import org.apache.kyuubi.session.KyuubiSessionImpl
  * @param user session user
  * @param clientIp client ip address
  * @param serverIp kyuubi server ip address, it is useful if has multi-instance Kyuubi Server
- * @param historyTag a history tag that can be used to relate the  history session
- *                  (e.g. the app name)
+ * @param historyTag a history tag that can be used to relate the history session (e.g. app name)
  * @param startTime session create time
  * @param state session state, see [[SessionState]]
  * @param stateTime session state update time

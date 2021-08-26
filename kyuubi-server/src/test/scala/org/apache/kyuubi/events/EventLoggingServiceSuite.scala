@@ -22,7 +22,6 @@ import java.nio.file.Paths
 
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.EngineRef
 import org.apache.kyuubi.operation.JDBCTestUtils
 import org.apache.kyuubi.operation.OperationState._
 
@@ -82,7 +81,7 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
   }
 
   test("test Kyuubi session event") {
-    withSessionConf()(Map.empty)(Map(EngineRef.SESSION_HISTORY_TAG -> "test1")) {
+    withSessionConf()(Map.empty)(Map(KyuubiConf.HBO_SESSION_HISTORY_TAG.key -> "test1")) {
       withJdbcStatement() { statement =>
         statement.execute("SELECT 1")
       }
