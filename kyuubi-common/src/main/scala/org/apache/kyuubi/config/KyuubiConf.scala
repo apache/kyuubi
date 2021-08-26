@@ -736,12 +736,8 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////
-  //                         History-Based Optimization Configuration                            //
-  /////////////////////////////////////////////////////////////////////////////////////////////////
-
-  val HBO_SESSION_HISTORY_TAG: OptionalConfigEntry[String] =
-    buildConf("hbo.session.history.tag")
+  val SESSION_NAME: OptionalConfigEntry[String] =
+    buildConf("session.name")
       .doc("Session history tag is used to relate the history session which can help optimize. " +
         "Please set this config using different value for workflows which are session level. " +
         "We use app name by default if this config is not set, and fallback to default engine " +

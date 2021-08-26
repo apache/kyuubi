@@ -182,12 +182,6 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
         create(zkClient)
       }
   }
-
-  def getSessionHistoryTag: String = {
-    conf.getOption(KyuubiConf.HBO_SESSION_HISTORY_TAG.key)
-      .orElse(conf.getOption(SparkProcessBuilder.APP_KEY))
-      .getOrElse(defaultEngineName)
-  }
 }
 
 private[kyuubi] object EngineRef {

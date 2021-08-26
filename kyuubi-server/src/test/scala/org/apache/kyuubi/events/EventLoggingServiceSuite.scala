@@ -81,7 +81,7 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
   }
 
   test("test Kyuubi session event") {
-    withSessionConf()(Map.empty)(Map(KyuubiConf.HBO_SESSION_HISTORY_TAG.key -> "test1")) {
+    withSessionConf()(Map.empty)(Map(KyuubiConf.SESSION_NAME.key -> "test1")) {
       withJdbcStatement() { statement =>
         statement.execute("SELECT 1")
       }
@@ -92,11 +92,11 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
     withSessionConf()(Map.empty)(Map("spark.sql.shuffle.partitions" -> "2")) {
       withJdbcStatement() { statement =>
         val res = statement.executeQuery(
-          s"SELECT * FROM `json`.`$eventPath` where historyTag = 'test1' order by stateTime")
+          s"SELECT * FROM `json`.`$eventPath` where sessionName = 'test1' order by stateTime")
         assert(res.next())
         assert(res.getString("state").equalsIgnoreCase("created"))
         assert(res.getString("user") == Utils.currentUser)
-        assert(res.getString("historyTag") == "test1")
+        assert(res.getString("sessionName") == "test1")
         assert(res.getLong("stateTime") > 0)
         assert(res.getInt("totalOperations") == 0)
         assert(res.next())

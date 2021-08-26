@@ -23,10 +23,11 @@ import org.apache.kyuubi.session.KyuubiSessionImpl
 
 /**
  * @param sessionId server session id
+ * @param sessionName if user not specify it, we use empty string instead
  * @param user session user
  * @param clientIp client ip address
- * @param serverIp kyuubi server ip address, it is useful if has multi-instance Kyuubi Server
- * @param historyTag a history tag that can be used to relate the history session (e.g. app name)
+ * @param serverId A unique Kyuubi server id, e.g. kyuubi server ip address and port,
+ *                 it is useful if has multi-instance Kyuubi Server
  * @param startTime session create time
  * @param state session state, see [[SessionState]]
  * @param stateTime session state update time
@@ -34,10 +35,10 @@ import org.apache.kyuubi.session.KyuubiSessionImpl
  */
 case class KyuubiSessionEvent(
     sessionId: String,
+    sessionName: String,
     user: String,
     clientIp: String,
-    serverIp: String,
-    historyTag: String,
+    serverId: String,
     conf: Map[String, String],
     startTime: Long,
     var state: String,
@@ -50,13 +51,13 @@ case class KyuubiSessionEvent(
 object KyuubiSessionEvent {
   def apply(session: KyuubiSessionImpl): KyuubiSessionEvent = {
     assert(KyuubiServer.kyuubiServer.isDefined)
-    val serverAddr = KyuubiServer.kyuubiServer.get.connectionUrl.split(":").head
+    val serverId = KyuubiServer.kyuubiServer.get.connectionUrl
     KyuubiSessionEvent(
       session.handle.identifier.toString,
+      session.sessionName,
       session.user,
       session.ipAddress,
-      serverAddr,
-      session.historyTag,
+      serverId,
       session.sessionConf.getAll,
       session.createTime,
       session.sessionState.toString,

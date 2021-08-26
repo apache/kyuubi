@@ -56,7 +56,7 @@ class KyuubiSessionImpl(
 
   var sessionState: SessionState = SessionState.CREATED
   var sessionStateTime: Long = createTime
-  val historyTag: String = engine.getSessionHistoryTag
+  val sessionName: String = sessionConf.getOption(KyuubiConf.SESSION_NAME.key).getOrElse("")
   private val sessionEvent = KyuubiSessionEvent.apply(this)
   EventLoggingService.onEvent(sessionEvent)
 
