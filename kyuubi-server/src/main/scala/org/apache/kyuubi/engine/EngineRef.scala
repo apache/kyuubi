@@ -64,7 +64,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
   @VisibleForTesting
   private[kyuubi] val subDomain: Option[String] = conf.get(ENGINE_SHARE_LEVEL_SUB_DOMAIN).orElse {
     val clientPoolSize: Int = conf.get(ENGINE_POOL_SIZE)
-    println(poolThreshold)
+
     if (clientPoolSize > 0) {
       val poolSize = if (clientPoolSize <= poolThreshold) {
         clientPoolSize
