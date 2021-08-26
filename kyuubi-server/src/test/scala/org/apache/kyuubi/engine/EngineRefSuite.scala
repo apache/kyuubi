@@ -94,7 +94,7 @@ class EngineRefSuite extends KyuubiFunSuite {
     assert(appName2.defaultEngineName ===  s"kyuubi_${SERVER}_${user}_abc_${id.identifier}")
   }
 
-  test(s"check the engine space of engine pool") {
+  test("check the engine space of engine pool") {
     val id = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
 
     // test subdomain
