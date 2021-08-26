@@ -100,12 +100,12 @@ class EngineRefSuite extends KyuubiFunSuite {
     // test subdomain
     conf.set(ENGINE_SHARE_LEVEL_SUB_DOMAIN, "abc")
     val engine1 = EngineRef(conf, user, id)
-    assert(engine1.subDomain ===  Some("abc"))
+    assert(engine1.subDomain === Some("abc"))
 
     // unset domain
     conf.unset(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
     val engine2 = EngineRef(conf, user, id)
-    assert(engine2.subDomain ===  None)
+    assert(engine2.subDomain === None)
 
     // 1 <= engine pool size < threshold
     conf.unset(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
