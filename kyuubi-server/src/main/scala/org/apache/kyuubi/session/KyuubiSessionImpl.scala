@@ -35,7 +35,6 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.server.EventLoggingService
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
-import org.apache.kyuubi.session.SessionState.SessionState
 
 class KyuubiSessionImpl(
     protocol: TProtocolVersion,
@@ -54,8 +53,6 @@ class KyuubiSessionImpl(
 
   private val engine: EngineRef = EngineRef(sessionConf, user, handle)
 
-  var sessionState: SessionState = SessionState.CREATED
-  var sessionStateTime: Long = createTime
   val sessionName: String = sessionConf.getOption(KyuubiConf.SESSION_NAME.key).getOrElse("")
   private val sessionEvent = KyuubiSessionEvent.apply(this)
   EventLoggingService.onEvent(sessionEvent)
@@ -71,7 +68,6 @@ class KyuubiSessionImpl(
     super.open()
     withZkClient(sessionConf) { zkClient =>
       val (host, port) = engine.getOrCreate(zkClient)
-      updateState(SessionState.OPENED)
       openSession(host, port)
     }
   }
@@ -87,7 +83,6 @@ class KyuubiSessionImpl(
     }
     client = new KyuubiSyncThriftClient(new TBinaryProtocol(transport))
     client.openSession(protocol, user, passwd, normalizedConf)
-    updateState(SessionState.CONNECTED)
     sessionManager.operationManager.setConnection(handle, client)
   }
 
@@ -105,22 +100,12 @@ class KyuubiSessionImpl(
       case e: TException =>
         throw KyuubiSQLException("Error while cleaning up the engine resources", e)
     } finally {
-      updateState(SessionState.CLOSED)
+      sessionEvent.endTime = System.currentTimeMillis()
+      EventLoggingService.onEvent(sessionEvent)
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))
       if (transport != null && transport.isOpen) {
         transport.close()
       }
     }
   }
-
-  private def updateState(state: SessionState): Unit = {
-    sessionEvent.state = state.toString
-    sessionEvent.stateTime = System.currentTimeMillis()
-    EventLoggingService.onEvent(sessionEvent)
-  }
-}
-
-object SessionState extends Enumeration {
-  type SessionState = Value
-  val CREATED, OPENED, CONNECTED, CLOSED = Value
 }

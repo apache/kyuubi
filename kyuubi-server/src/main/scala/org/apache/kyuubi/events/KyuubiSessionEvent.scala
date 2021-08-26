@@ -29,8 +29,7 @@ import org.apache.kyuubi.session.KyuubiSessionImpl
  * @param serverId A unique Kyuubi server id, e.g. kyuubi server ip address and port,
  *                 it is useful if has multi-instance Kyuubi Server
  * @param startTime session create time
- * @param state session state, see [[SessionState]]
- * @param stateTime session state update time
+ * @param endTime session end time
  * @param totalOperations how many queries and meta calls
  */
 case class KyuubiSessionEvent(
@@ -41,8 +40,7 @@ case class KyuubiSessionEvent(
     serverId: String,
     conf: Map[String, String],
     startTime: Long,
-    var state: String,
-    var stateTime: Long = -1L,
+    var endTime: Long = -1L,
     var totalOperations: Int = 0) extends KyuubiServerEvent {
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
@@ -59,8 +57,6 @@ object KyuubiSessionEvent {
       session.ipAddress,
       serverId,
       session.sessionConf.getAll,
-      session.createTime,
-      session.sessionState.toString,
-      session.sessionStateTime)
+      session.createTime)
   }
 }
