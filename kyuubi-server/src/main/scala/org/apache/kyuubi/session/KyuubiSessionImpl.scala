@@ -28,10 +28,14 @@ import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.EngineRef
+import org.apache.kyuubi.events.KyuubiSessionEvent
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
+import org.apache.kyuubi.operation.{Operation, OperationHandle}
+import org.apache.kyuubi.server.EventLoggingService
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
+import org.apache.kyuubi.session.SessionState.SessionState
 
 class KyuubiSessionImpl(
     protocol: TProtocolVersion,
@@ -42,6 +46,11 @@ class KyuubiSessionImpl(
     sessionManager: KyuubiSessionManager,
     sessionConf: KyuubiConf)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+
+  var sessionState: SessionState = SessionState.CREATED
+  var sessionStateTime: Long = createTime
+  var engineTag: String = _
+  private val sessionEvent = KyuubiSessionEvent.apply(this)
 
   normalizedConf.foreach {
     case ("use:database", _) =>
@@ -61,6 +70,7 @@ class KyuubiSessionImpl(
     super.open()
     withZkClient(sessionConf) { zkClient =>
       val (host, port) = engine.getOrCreate(zkClient)
+      updateState(SessionState.OPENED)
       openSession(host, port)
     }
   }
@@ -76,7 +86,13 @@ class KyuubiSessionImpl(
     }
     client = new KyuubiSyncThriftClient(new TBinaryProtocol(transport))
     client.openSession(protocol, user, passwd, normalizedConf)
+    updateState(SessionState.CONNECTED)
     sessionManager.operationManager.setConnection(handle, client)
+  }
+
+  override protected def runOperation(operation: Operation): OperationHandle = {
+    sessionEvent.totalOperations += 1
+    super.runOperation(operation)
   }
 
   override def close(): Unit = {
@@ -88,10 +104,22 @@ class KyuubiSessionImpl(
       case e: TException =>
         throw KyuubiSQLException("Error while cleaning up the engine resources", e)
     } finally {
+      updateState(SessionState.CLOSED)
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))
       if (transport != null && transport.isOpen) {
         transport.close()
       }
     }
   }
+
+  private def updateState(state: SessionState): Unit = {
+    sessionEvent.state = state.toString
+    sessionEvent.stateTime = System.currentTimeMillis()
+    EventLoggingService.onEvent(sessionEvent)
+  }
+}
+
+object SessionState extends Enumeration {
+  type SessionState = Value
+  val CREATED, OPENED, CONNECTED, CLOSED = Value
 }
