@@ -151,6 +151,16 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     cloned
   }
 
+  private val serverSideConfEntries: Set[ConfigEntry[_]] = Set(
+    ENGINE_POOL_SIZE_THRESHOLD)
+
+  def filterServerSideEntries(map: Map[String, String]): Map[String, String] = {
+    for {
+      (k, v) <- map
+      if !serverSideConfEntries.map(e => e.key).contains(k)
+    } yield (k, v)
+  }
+
   /**
    * This method is used to convert kyuubi configs to configs that Spark could identify.
    * - If the key is start with `spark.`, keep it AS IS as it is a Spark Conf
