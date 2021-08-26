@@ -22,6 +22,7 @@ import java.nio.file.Paths
 
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.EngineRef
 import org.apache.kyuubi.operation.JDBCTestUtils
 import org.apache.kyuubi.operation.OperationState._
 
@@ -76,6 +77,37 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
         assert(resultSet2.getString("statement") == sql)
         assert(resultSet2.getString("state") == engineStates(stateIndex).toString)
         stateIndex += 1
+      }
+    }
+  }
+
+  test("test Kyuubi session event") {
+    withSessionConf()(Map.empty)(Map(EngineRef.SESSION_HISTORY_TAG -> "test1")) {
+      withJdbcStatement() { statement =>
+        statement.execute("SELECT 1")
+      }
+    }
+
+    val eventPath =
+      Paths.get(logRoot.toString, "kyuubi-session", s"day=$currentDate")
+    withSessionConf()(Map.empty)(Map("spark.sql.shuffle.partitions" -> "2")) {
+      withJdbcStatement() { statement =>
+        val res = statement.executeQuery(
+          s"SELECT * FROM `json`.`$eventPath` where historyTag = 'test1' order by stateTime")
+        assert(res.next())
+        assert(res.getString("state").equalsIgnoreCase("created"))
+        assert(res.getString("user") == Utils.currentUser)
+        assert(res.getString("historyTag") == "test1")
+        assert(res.getLong("stateTime") > 0)
+        assert(res.getInt("totalOperations") == 0)
+        assert(res.next())
+        assert(res.getString("state").equalsIgnoreCase("opened"))
+        assert(res.next())
+        assert(res.getString("state").equalsIgnoreCase("connected"))
+        assert(res.next())
+        assert(res.getString("state").equalsIgnoreCase("closed"))
+        assert(res.getInt("totalOperations") == 1)
+        assert(!res.next())
       }
     }
   }

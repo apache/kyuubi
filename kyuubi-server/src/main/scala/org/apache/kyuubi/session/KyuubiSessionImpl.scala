@@ -44,13 +44,8 @@ class KyuubiSessionImpl(
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: KyuubiSessionManager,
-    sessionConf: KyuubiConf)
+    val sessionConf: KyuubiConf)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
-
-  var sessionState: SessionState = SessionState.CREATED
-  var sessionStateTime: Long = createTime
-  var engineTag: String = _
-  private val sessionEvent = KyuubiSessionEvent.apply(this)
 
   normalizedConf.foreach {
     case ("use:database", _) =>
@@ -58,6 +53,12 @@ class KyuubiSessionImpl(
   }
 
   private val engine: EngineRef = EngineRef(sessionConf, user, handle)
+
+  var sessionState: SessionState = SessionState.CREATED
+  var sessionStateTime: Long = createTime
+  val historyTag: String = engine.getSessionHistoryTag
+  private val sessionEvent = KyuubiSessionEvent.apply(this)
+  EventLoggingService.onEvent(sessionEvent)
 
   private var transport: TTransport = _
   private var client: KyuubiSyncThriftClient = _

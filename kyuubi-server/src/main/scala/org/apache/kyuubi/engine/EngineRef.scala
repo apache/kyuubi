@@ -182,9 +182,20 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
         create(zkClient)
       }
   }
+
+  def getSessionHistoryTag: String = {
+    // Session history tag is used to relate the history session.
+    // We use app name by default if it is set, otherwise ise `defaultEngineName`
+    // but that means we can not find the history session
+    conf.getOption(EngineRef.SESSION_HISTORY_TAG)
+      .orElse(conf.getOption(SparkProcessBuilder.APP_KEY))
+      .getOrElse(defaultEngineName)
+  }
 }
 
 private[kyuubi] object EngineRef {
+  val SESSION_HISTORY_TAG = "kyuubi.session.history.tag"
+
   def apply(conf: KyuubiConf, user: String, handle: SessionHandle): EngineRef = {
     new EngineRef(conf, user, handle.identifier.toString)
   }

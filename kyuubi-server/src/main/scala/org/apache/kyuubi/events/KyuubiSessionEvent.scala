@@ -18,27 +18,31 @@
 package org.apache.kyuubi.events
 
 import org.apache.kyuubi.Utils
+import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.session.KyuubiSessionImpl
 
 /**
  * @param sessionId server session id
- * @param username session user
- * @param ip client ip address
+ * @param user session user
+ * @param clientIp client ip address
+ * @param serverIp kyuubi server ip address, it is useful if has multi-instance Kyuubi Server
+ * @param historyTag a history tag that can be used to relate the  history session
+ *                  (e.g. the app name)
  * @param startTime session create time
  * @param state session state, see [[SessionState]]
- * @param stateTime session state time
- * @param engineTag a engine tag that can be used to map a certain engine
- *                  (e.g. the first session id of that engine)
+ * @param stateTime session state update time
  * @param totalOperations how many queries and meta calls
  */
 case class KyuubiSessionEvent(
     sessionId: String,
-    username: String,
-    ip: String,
+    user: String,
+    clientIp: String,
+    serverIp: String,
+    historyTag: String,
+    conf: Map[String, String],
     startTime: Long,
     var state: String,
     var stateTime: Long = -1L,
-    var engineTag: String = "",
     var totalOperations: Int = 0) extends KyuubiServerEvent {
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
@@ -46,10 +50,15 @@ case class KyuubiSessionEvent(
 
 object KyuubiSessionEvent {
   def apply(session: KyuubiSessionImpl): KyuubiSessionEvent = {
+    assert(KyuubiServer.kyuubiServer.isDefined)
+    val serverAddr = KyuubiServer.kyuubiServer.get.connectionUrl.split(":").head
     KyuubiSessionEvent(
       session.handle.identifier.toString,
       session.user,
       session.ipAddress,
+      serverAddr,
+      session.historyTag,
+      session.sessionConf.getAll,
       session.createTime,
       session.sessionState.toString,
       session.sessionStateTime)
