@@ -203,9 +203,9 @@ fi
 # Copy Kyuubi extension
 SPARK_EXTENSION_VERSIONS=('3-1')
 for SPARK_EXTENSION_VERSION in ${SPARK_EXTENSION_VERSIONS[@]}; do
-  if [[ -f $"$KYUUBI_HOME/dev/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION_${SCALA_VERSION}-${VERSION}.jar" ]]; then
+  if [[ -f $"$KYUUBI_HOME/dev/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-${SPARK_EXTENSION_VERSION}_${SCALA_VERSION}-${VERSION}.jar" ]]; then
     mkdir -p "$DISTDIR/extension"
-    cp "$KYUUBI_HOME/dev/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/extension"
+    cp "$KYUUBI_HOME/dev/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-${SPARK_EXTENSION_VERSION}_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/extension"
   fi
 done
 
