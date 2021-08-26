@@ -618,7 +618,7 @@ object KyuubiConf {
     .doc("The size of engine pool. Note that, " +
       "if the size is less than 1, the engine pool will not be enabled; " +
       "otherwise, the size of the engine pool will be " +
-      "min(this, ${ENGINE_POOL_SIZE_THRESHOLD.key}).")
+      s"min(this, ${ENGINE_POOL_SIZE_THRESHOLD.key}).")
     .version("1.4.0")
     .intConf
     .createWithDefault(-1)
