@@ -58,8 +58,13 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
   // Share level of the engine
   private val shareLevel: ShareLevel = ShareLevel.withName(conf.get(ENGINE_SHARE_LEVEL))
 
-  // This a is a server-side option
-  private val poolThreshold: Int = KyuubiConf().loadFileDefaults().get(ENGINE_POOL_SIZE_THRESHOLD)
+  // Server-side engine pool size threshold
+  private[kyuubi] val poolThreshold: Int = {
+    val sysDefaultThreshold: Int = KyuubiConf().loadFileDefaults().get(ENGINE_POOL_SIZE_THRESHOLD)
+    val userDefaultThreshold: Int = conf.get(ENGINE_POOL_SIZE_THRESHOLD)
+
+    Math.min(sysDefaultThreshold, userDefaultThreshold)
+  }
 
   @VisibleForTesting
   private[kyuubi] val subDomain: Option[String] = conf.get(ENGINE_SHARE_LEVEL_SUB_DOMAIN).orElse {
