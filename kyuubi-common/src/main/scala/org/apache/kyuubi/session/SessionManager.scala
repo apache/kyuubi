@@ -133,11 +133,8 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     }
   }
 
-  def validateAndNormalizeConf(config: Map[String, String]): Map[String, String] = {
-    val map = config.flatMap {
-      case(k, v) => validateKey(k, v)
-    }
-    KyuubiConf().filterServerSideEntries(map)
+  def validateAndNormalizeConf(config: Map[String, String]): Map[String, String] = config.flatMap {
+    case(k, v) => validateKey(k, v)
   }
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {

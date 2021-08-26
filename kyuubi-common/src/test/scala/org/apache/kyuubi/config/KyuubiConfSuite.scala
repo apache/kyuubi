@@ -150,10 +150,4 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     val e1 = intercept[IllegalArgumentException](kyuubiConf.get(OPERATION_QUERY_TIMEOUT))
     assert(e1.getMessage.contains("must >= 1s if set"))
   }
-
-  test("test filter server side entries") {
-    val map = Map(ENGINE_POOL_SIZE_THRESHOLD.key -> "5")
-    val res = KyuubiConf().filterServerSideEntries(map)
-    assert(res.isEmpty)
-  }
 }

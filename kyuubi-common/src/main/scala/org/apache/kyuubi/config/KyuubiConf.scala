@@ -151,16 +151,6 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     cloned
   }
 
-  private val serverSideConfEntries: Set[ConfigEntry[_]] = Set(
-    ENGINE_POOL_SIZE_THRESHOLD)
-
-  def filterServerSideEntries(map: Map[String, String]): Map[String, String] = {
-    for {
-      (k, v) <- map
-      if !serverSideConfEntries.map(e => e.key).contains(k)
-    } yield (k, v)
-  }
-
   /**
    * This method is used to convert kyuubi configs to configs that Spark could identify.
    * - If the key is start with `spark.`, keep it AS IS as it is a Spark Conf
@@ -626,12 +616,10 @@ object KyuubiConf {
     .createWithDefault(9)
 
   val ENGINE_POOL_SIZE: ConfigEntry[Int] = buildConf("engine.pool.size")
-    .doc("The size of engine pool. Note that: " +
-      "if the size is less than 1, the pool will not be enabled;" +
-      "if the size is (>= 1 and <= system threshold), it's the size of engine pool;" +
-      "if the size is greater than system threshold, " +
-      "the size of engine pool will fallback to system threshold." +
-      s" see also ${ENGINE_POOL_SIZE_THRESHOLD.key}.")
+    .doc("The size of engine pool. Note that, " +
+      "if the size is less than 1, the engine pool will not be enabled; " +
+      "otherwise, the size of the engine pool will be " +
+      "min(this, ${ENGINE_POOL_SIZE_THRESHOLD.key}).")
     .version("1.4.0")
     .intConf
     .createWithDefault(-1)
