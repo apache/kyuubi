@@ -209,7 +209,7 @@ kyuubi\.ha\.zookeeper<br>\.session\.timeout|<div style='width: 65pt;word-wrap: b
 
 Key | Default | Meaning | Type | Since
 --- | --- | --- | --- | ---
-kyuubi\.hbo\.session<br>\.history\.tag|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Session history tag is used to relate the history session which can help optimize. Please set this config using different value for every workflow with session level. We use app name by default if it is not set, fallback to default engine name if app nameis also not set, but that means we can not find the history session.</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.4.0</div>
+kyuubi\.hbo\.session<br>\.history\.tag|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Session history tag is used to relate the history session which can help optimize. Please set this config using different value for workflows which are session level. We use app name by default if it is not set, fallback to default engine name if app nameis also not set, but that means we can not find the history session.</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.4.0</div>
 
 
 ### Kinit
