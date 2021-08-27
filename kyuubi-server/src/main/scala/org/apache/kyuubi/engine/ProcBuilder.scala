@@ -65,7 +65,8 @@ trait ProcBuilder {
   @volatile private var error: Throwable = UNCAUGHT_ERROR
   @volatile private var lastRowOfLog: String = "unknown"
   // Visible for test
-  private[kyuubi] var logCaptureThread: Thread = _
+  @volatile private[kyuubi] var logCaptureThreadReleased: Boolean = true
+  private var logCaptureThread: Thread = _
 
   private[kyuubi] lazy val engineLog: File = ProcBuilder.synchronized {
     val engineLogTimeout = conf.get(KyuubiConf.ENGINE_LOG_TIMEOUT)
@@ -110,33 +111,38 @@ trait ProcBuilder {
     val redirect: Runnable = { () =>
       try {
         val maxErrorSize = conf.get(KyuubiConf.ENGINE_ERROR_MAX_SIZE)
-        var line: String = reader.readLine
         while (true) {
-          if (containsIgnoreCase(line, "Exception:") &&
+          if (reader.ready()) {
+            var line: String = reader.readLine
+            if (containsIgnoreCase(line, "Exception:") &&
               !line.contains("at ") && !line.startsWith("Caused by:")) {
-            val sb = new StringBuilder(line)
-            error = KyuubiSQLException(sb.toString() + s"\n See more: $engineLog")
-            line = reader.readLine()
-            while (sb.length < maxErrorSize && line != null &&
-              (line.startsWith("\tat ") || line.startsWith("Caused by: "))) {
-              sb.append("\n" + line)
+              val sb = new StringBuilder(line)
+              error = KyuubiSQLException(sb.toString() + s"\n See more: $engineLog")
               line = reader.readLine()
-            }
+              while (sb.length < maxErrorSize && line != null &&
+                (line.startsWith("\tat ") || line.startsWith("Caused by: "))) {
+                sb.append("\n" + line)
+                line = reader.readLine()
+              }
 
-            error = KyuubiSQLException(sb.toString() + s"\n See more: $engineLog")
-          } else if (line != null) {
-            lastRowOfLog = line
+              error = KyuubiSQLException(sb.toString() + s"\n See more: $engineLog")
+            } else if (line != null) {
+              lastRowOfLog = line
+            }
+          } else {
+            Thread.sleep(300)
           }
-          line = reader.readLine()
         }
       } catch {
         case _: IOException =>
         case _: InterruptedException =>
       } finally {
+        logCaptureThreadReleased = true
         reader.close()
       }
     }
 
+    logCaptureThreadReleased = false
     logCaptureThread = PROC_BUILD_LOGGER.newThread(redirect)
     logCaptureThread.start()
     proc

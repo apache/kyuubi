@@ -21,6 +21,7 @@ import java.sql.{Date, SQLException, SQLTimeoutException, Timestamp}
 
 import scala.collection.JavaConverters._
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq, TStatusCode}
 
 import org.apache.kyuubi.KYUUBI_VERSION
@@ -352,11 +353,21 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("kyuubi defined function - kyuubi_version") {
+  // TODO: https://github.com/apache/incubator-kyuubi/issues/937
+  // Kyuubi docker image has not updated to lastest version
+  ignore("kyuubi defined function - kyuubi_version") {
     withJdbcStatement() { statement =>
       val rs = statement.executeQuery("SELECT kyuubi_version()")
       assert(rs.next())
       assert(rs.getString(1) == KYUUBI_VERSION)
+    }
+  }
+
+  ignore("kyuubi defined function - engine_name") {
+    withJdbcStatement() { statement =>
+      val rs = statement.executeQuery("SELECT engine_name()")
+      assert(rs.next())
+      assert(StringUtils.isNotBlank(rs.getString(1)))
     }
   }
 

@@ -20,7 +20,11 @@ package org.apache.kyuubi.service
 import org.apache.kyuubi.KyuubiException
 
 class NoopServer extends Serverable("noop") {
+
+  private val OOMHook = new Runnable { override def run(): Unit = stop() }
+
   override val backendService = new NoopBackendService
+  override val frontendService = new ThriftFrontendService(backendService, OOMHook)
 
   override def start(): Unit = {
     super.start()

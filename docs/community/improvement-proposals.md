@@ -1,53 +1,70 @@
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+
 <div align=center>
 
 ![](../imgs/kyuubi_logo.png)
 
 </div>
 
-# Kyuubi Project Improvement Proposals (KBIP)
+# Kyuubi Project Improvement Proposals (KPIP)
 
-The purpose of a KBIP is to inform and involve the user community in significant improvements to the Kyuubi codebase throughout the development process to increase user needs.
+The purpose of a KPIP is to inform and involve the user community in significant improvements to the Kyuubi codebase throughout the development process to increase user needs.
 
-KBIPs should be used for significant user-facing or cross-cutting changes, not minor incremental improvements. When in doubt, if a committer thinks a change needs a KBIP, it does.
+KPIPs should be used for significant user-facing or cross-cutting changes, not minor incremental improvements. When in doubt, if a committer thinks a change needs a KPIP, it does.
 
-## What is a KBIP?
+## What is a KPIP?
 
-A KBIP is similar to a product requirement document commonly used in product management.
+A KPIP is similar to a product requirement document commonly used in product management.
 
-A KBIP:
+A KPIP:
 
-- Is a ticket labeled “KBIP” proposing a major improvement or change to Kyuubi
+- Is a ticket labeled “KPIP” proposing a major improvement or change to Kyuubi
 - Follows the template defined below
 - Includes discussions on the ticket about the proposal
 
 ## Who?
 
-Any **community member** can help by discussing whether a KBIP is likely to meet their needs and propose KBIPs.
+Any **community member** can help by discussing whether a KPIP is likely to meet their needs and propose KPIPs.
 
-**Contributors** can help by discussing whether a KBIP is likely to be technically feasible.
+**Contributors** can help by discussing whether a KPIP is likely to be technically feasible.
 
-**Committers** can help by discussing whether a KBIP aligns with long-term project goals, and by shepherding KBIPs.
+**Committers** can help by discussing whether a KPIP aligns with long-term project goals, and by shepherding KPIPs.
 
-**KBIP Author** is any community member who authors a KBIP and is committed to pushing the change through the entire process. KBIP authorship can be transferred.
+**KPIP Author** is any community member who authors a KPIP and is committed to pushing the change through the entire process. KPIP authorship can be transferred.
 
-**KBIP Shepherd** is a PMC member who is committed to shepherding the proposed change throughout the entire process. Although the shepherd can delegate or work with other committers in the development process, the shepherd is ultimately responsible for the success or failure of the KBIP. Responsibilities of the shepherd include, but are not limited to:
+**KPIP Shepherd** is a PMC member who is committed to shepherding the proposed change throughout the entire process. Although the shepherd can delegate or work with other committers in the development process, the shepherd is ultimately responsible for the success or failure of the KPIP. Responsibilities of the shepherd include, but are not limited to:
 
 - Be the advocate for the proposed change
 - Help push forward on design and achieve consensus among key stakeholders
 - Review code changes, making sure the change follows project standards
 - Get feedback from users and iterate on the design & implementation
-- Uphold the quality of the changes, including verifying whether the changes satisfy the goal of the KBIP and are absent of critical bugs before releasing them
+- Uphold the quality of the changes, including verifying whether the changes satisfy the goal of the KPIP and are absent of critical bugs before releasing them
 
-## KBIP Process
-### Proposing a KBIP
+## KPIP Process
+### Proposing a KPIP
 
-Anyone may propose a KBIP, using the document template below. Please only submit a KBIP if you are willing to help, at least with discussion.
+Anyone may propose a KPIP, using the document template below. Please only submit a KPIP if you are willing to help, at least with discussion.
 
-If a KBIP is too small or incremental and should have been done through the normal JIRA process, a committer should remove the KBIP label.
+If a KPIP is too small or incremental and should have been done through the normal JIRA process, a committer should remove the KPIP label.
 
-### KBIP Document Template
+### KPIP Document Template
 
-A KBIP document is a short document with a few questions, inspired by the Heilmeier Catechism:
+A KPIP document is a short document with a few questions, inspired by the Heilmeier Catechism:
 
 - Q1. What are you trying to do? Articulate your objectives using absolutely no jargon.
 
@@ -71,10 +88,10 @@ A KBIP document is a short document with a few questions, inspired by the Heilme
 
 - Appendix C. Optional Rejected Designs: What alternatives were considered? Why were they rejected? If no alternatives have been considered, the problem needs more thought.
 
-### Discussing a KBIP
+### Discussing a KPIP
 
-All discussions of a KBIP should take place in a public forum, preferably the discussion attached to the ticket. Any discussion that happen offline should be made available online for the public via meeting notes summarizing the discussions.
+All discussions of a KPIP should take place in a public forum, preferably the discussion attached to the ticket. Any discussion that happen offline should be made available online for the public via meeting notes summarizing the discussions.
 
-### Implementing a KBIP
+### Implementing a KPIP
 
-Implementation should take place via the [contribution guidelines](./contributions.md). Changes that require KBIPs typically also require design documents to be written and reviewed.
+Implementation should take place via the [contribution guidelines](./contributions.md). Changes that require KPIPs typically also require design documents to be written and reviewed.

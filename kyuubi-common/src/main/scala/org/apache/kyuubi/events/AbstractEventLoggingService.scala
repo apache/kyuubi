@@ -15,21 +15,22 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.events
+package org.apache.kyuubi.events
 
-import java.util.Locale
+import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.scheduler.SparkListenerEvent
-import org.apache.spark.sql.types.StructType
+import org.apache.kyuubi.service.CompositeService
 
-trait KyuubiEvent extends SparkListenerEvent with Product {
+abstract class AbstractEventLoggingService[T <: KyuubiEvent]
+  extends CompositeService("EventLogging") {
 
-  final def eventType: String = {
-    this.getClass.getSimpleName.stripSuffix("Event").toLowerCase(Locale.ROOT)
+  private val eventLoggers = new ArrayBuffer[EventLogger[T]]()
+
+  def onEvent(event: T): Unit = {
+    eventLoggers.foreach(_.logEvent(event))
   }
 
-  def schema: StructType
-
-  final def toJson: String = JsonProtocol.productToJson(this)
-
+  def addEventLogger(logger: EventLogger[T]): Unit = {
+    eventLoggers += logger
+  }
 }

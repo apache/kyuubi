@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine.spark.events
 import org.apache.spark.sql.Encoders
 import org.apache.spark.sql.types.StructType
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
 import org.apache.kyuubi.session.Session
 
@@ -39,9 +40,11 @@ case class SessionEvent(
     ip: String,
     startTime: Long,
     var endTime: Long = -1L,
-    var totalOperations: Int = 0) extends KyuubiEvent {
+    var totalOperations: Int = 0) extends KyuubiSparkEvent {
 
   override def schema: StructType = Encoders.product[SessionEvent].schema
+  override lazy val partitions: Seq[(String, String)] =
+    ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
 }
 
 object SessionEvent {

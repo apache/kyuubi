@@ -203,9 +203,9 @@ fi
 # Copy Kyuubi extension
 SPARK_EXTENSION_VERSIONS=('3-1')
 for SPARK_EXTENSION_VERSION in ${SPARK_EXTENSION_VERSIONS[@]}; do
-  if [[ -f $"$KYUUBI_HOME/dev/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION_${SCALA_VERSION}-${VERSION}.jar" ]]; then
+  if [[ -f $"$KYUUBI_HOME/dev/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-${SPARK_EXTENSION_VERSION}_${SCALA_VERSION}-${VERSION}.jar" ]]; then
     mkdir -p "$DISTDIR/extension"
-    cp "$KYUUBI_HOME/dev/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/extension"
+    cp "$KYUUBI_HOME/dev/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-${SPARK_EXTENSION_VERSION}_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/extension"
   fi
 done
 
@@ -216,9 +216,12 @@ if [[ "$SPARK_PROVIDED" != "true" ]]; then
 fi
 
 # Copy license files
-cp "$KYUUBI_HOME/LICENSE-binary" "$DISTDIR/LICENSE"
-cp -r "$KYUUBI_HOME/licenses-binary" "$DISTDIR/licenses"
-$KYUUBI_HOME/build/release/collect-licenses.sh "$DISTDIR" "$DISTDIR"
+cp "$KYUUBI_HOME/DISCLAIMER" "$DISTDIR/DISCLAIMER"
+if [[ -f $"$KYUUBI_HOME/LICENSE-binary" ]]; then
+  cp "$KYUUBI_HOME/LICENSE-binary" "$DISTDIR/LICENSE"
+  cp -r "$KYUUBI_HOME/licenses-binary" "$DISTDIR/licenses"
+  $KYUUBI_HOME/build/release/collect-licenses.sh "$DISTDIR" "$DISTDIR"
+fi
 
 cp -r "$KYUUBI_HOME/bin" "$DISTDIR"
 cp -r "$KYUUBI_HOME/conf" "$DISTDIR"

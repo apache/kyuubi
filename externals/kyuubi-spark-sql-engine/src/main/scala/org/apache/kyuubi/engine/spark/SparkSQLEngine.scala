@@ -33,15 +33,17 @@ import org.apache.kyuubi.engine.spark.SparkSQLEngine.countDownLatch
 import org.apache.kyuubi.engine.spark.events.{EngineEvent, EventLoggingService}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, RetryPolicies, ServiceDiscovery}
-import org.apache.kyuubi.service.{Serverable, Service, ServiceState}
+import org.apache.kyuubi.service.{Serverable, Service, ServiceState, ThriftFrontendService}
 import org.apache.kyuubi.util.SignalRegister
 
 case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngine") {
 
   lazy val engineStatus: EngineEvent = EngineEvent(this)
 
+  private val OOMHook = new Runnable { override def run(): Unit = stop() }
   private val eventLogging = new EventLoggingService(this)
   override val backendService = new SparkSQLBackendService(spark)
+  override val frontendService = new ThriftFrontendService(backendService, OOMHook)
   override val discoveryService: Service = new EngineServiceDiscovery(this)
 
   override protected def supportsServiceDiscovery: Boolean = {

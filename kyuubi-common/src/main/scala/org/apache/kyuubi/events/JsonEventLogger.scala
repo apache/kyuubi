@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.events
+package org.apache.kyuubi.events
 
 import java.io.{BufferedOutputStream, FileOutputStream, IOException, PrintWriter}
 import java.net.URI
@@ -23,24 +23,27 @@ import java.nio.file.Paths
 
 import scala.collection.mutable.HashMap
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, FSDataOutputStream, Path}
 import org.apache.hadoop.fs.permission.FsPermission
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH
-import org.apache.kyuubi.engine.spark.events.JsonEventLogger.{JSON_LOG_DIR_PERM, JSON_LOG_FILE_PERM}
+import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf}
+import org.apache.kyuubi.events.JsonEventLogger._
 import org.apache.kyuubi.service.AbstractService
 
 /**
  * This event logger logs Kyuubi engine events in JSON file format.
- * The hierarchical directory structure is {ENGINE_EVENT_JSON_LOG_PATH}/{eventType}/{logName}.json
- * The {eventType} is based on core concepts of the Kyuubi systems, e.g. engine/session/statement
+ * The hierarchical directory structure is:
+ *   ${ENGINE_EVENT_JSON_LOG_PATH}/${eventType}/day=${date}/${logName}.json
+ * The ${eventType} is based on core concepts of the Kyuubi systems, e.g. engine/session/statement
+ * The ${date} is based on the time of events, e.g. engine.startTime, statement.startTime
  * @param logName the engine id formed of appId + attemptId(if any)
  */
-class JsonEventLogger(logName: String, hadoopConf: Configuration)
-  extends AbstractService("JsonEventLogger") with EventLogger with Logging {
+class JsonEventLogger[T <: KyuubiEvent](logName: String,
+    logPath: ConfigEntry[String], hadoopConf: Configuration)
+  extends AbstractService("JsonEventLogger") with EventLogger[T] with Logging {
 
   type Logger = (PrintWriter, Option[FSDataOutputStream])
 
@@ -49,8 +52,13 @@ class JsonEventLogger(logName: String, hadoopConf: Configuration)
   private val writers = HashMap.empty[String, Logger]
 
   private def getOrUpdate(event: KyuubiEvent): Logger = synchronized {
-    writers.getOrElseUpdate(event.eventType, {
-      val eventPath = new Path(new Path(logRoot), event.eventType)
+    val partitions = event.partitions.map(kv => s"${kv._1}=${kv._2}").mkString(Path.SEPARATOR)
+    writers.getOrElseUpdate(event.eventType + partitions, {
+      val eventPath = if (StringUtils.isEmpty(partitions)) {
+        new Path(new Path(logRoot), event.eventType)
+      } else {
+        new Path(new Path(new Path(logRoot), event.eventType), partitions)
+      }
       FileSystem.mkdirs(fs, eventPath, JSON_LOG_DIR_PERM)
       val logFile = new Path(eventPath, logName + ".json")
       var hadoopDataStream: FSDataOutputStream = null
@@ -75,7 +83,7 @@ class JsonEventLogger(logName: String, hadoopConf: Configuration)
   }
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
-    logRoot = Paths.get(conf.get(ENGINE_EVENT_JSON_LOG_PATH)).toAbsolutePath.toUri
+    logRoot = Paths.get(conf.get(logPath)).toAbsolutePath.toUri
     fs = FileSystem.get(logRoot, hadoopConf)
     requireLogRootWritable()
     super.initialize(conf)
@@ -92,7 +100,7 @@ class JsonEventLogger(logName: String, hadoopConf: Configuration)
     super.stop()
   }
 
-  override def logEvent(kyuubiEvent: KyuubiEvent): Unit = {
+  override def logEvent(kyuubiEvent: T): Unit = {
     val (writer, stream) = getOrUpdate(kyuubiEvent)
     // scalastyle:off println
     writer.println(kyuubiEvent.toJson)

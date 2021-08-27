@@ -24,6 +24,7 @@ trait ConfigEntry[T] {
   def doc: String
   def version: String
   def typ: String
+  def internal: Boolean
 
   def defaultValStr: String
   def defaultVal: Option[T]
@@ -47,7 +48,8 @@ class OptionalConfigEntry[T](
     rawStrConverter: T => String,
     _doc: String,
     _version: String,
-    _type: String) extends ConfigEntry[Option[T]] {
+    _type: String,
+    _internal: Boolean) extends ConfigEntry[Option[T]] {
   override def valueConverter: String => Option[T] = {
     s => Option(rawValueConverter(s))
   }
@@ -73,6 +75,8 @@ class OptionalConfigEntry[T](
   override def version: String = _version
 
   override def typ: String = _type
+
+  override def internal: Boolean = _internal
 }
 
 class ConfigEntryWithDefault[T](
@@ -82,7 +86,8 @@ class ConfigEntryWithDefault[T](
     _strConverter: T => String,
     _doc: String,
     _version: String,
-    _type: String) extends ConfigEntry[T] {
+    _type: String,
+    _internal: Boolean) extends ConfigEntry[T] {
   override def defaultValStr: String = strConverter(_defaultVal)
 
   override def defaultVal: Option[T] = Option(_defaultVal)
@@ -102,6 +107,8 @@ class ConfigEntryWithDefault[T](
   override def version: String = _version
 
   override def typ: String = _type
+
+  override def internal: Boolean = _internal
 }
 
 class ConfigEntryWithDefaultString[T](
@@ -111,7 +118,8 @@ class ConfigEntryWithDefaultString[T](
    _strConverter: T => String,
    _doc: String,
    _version: String,
-   _type: String) extends ConfigEntry[T] {
+   _type: String,
+   _internal: Boolean) extends ConfigEntry[T] {
   override def defaultValStr: String = _defaultVal
 
   override def defaultVal: Option[T] = Some(valueConverter(_defaultVal))
@@ -132,12 +140,15 @@ class ConfigEntryWithDefaultString[T](
   override def version: String = _version
 
   override def typ: String = _type
+
+  override def internal: Boolean = _internal
 }
 
 class ConfigEntryFallback[T](
   _key: String,
   _doc: String,
   _version: String,
+  _internal: Boolean,
   fallback: ConfigEntry[T]) extends ConfigEntry[T] {
   override def defaultValStr: String = fallback.defaultValStr
 
@@ -158,6 +169,8 @@ class ConfigEntryFallback[T](
   override def version: String = _version
 
   override def typ: String = fallback.typ
+
+  override def internal: Boolean = _internal
 }
 
 object ConfigEntry {

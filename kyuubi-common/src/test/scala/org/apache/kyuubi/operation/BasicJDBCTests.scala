@@ -53,6 +53,8 @@ trait BasicJDBCTests extends JDBCTestUtils {
 
       checkGetSchemas(metaData.getSchemas(catalog, "db1"), Seq("db1"), catalog)
       checkGetSchemas(metaData.getSchemas(catalog, "db_not_exist"), Seq.empty, catalog)
+
+      checkGetSchemas(metaData.getSchemas(catalog, "global\\_temp"), Seq("global_temp"), catalog)
     }
   }
 

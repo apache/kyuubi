@@ -24,9 +24,9 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Seconds, Span}
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.service.FrontendServiceSuite
+import org.apache.kyuubi.service.ThriftFrontendServiceSuite
 
-class SessionManagerSuite extends FrontendServiceSuite with Eventually {
+class SessionManagerSuite extends ThriftFrontendServiceSuite with Eventually {
 
   override val conf = KyuubiConf()
     .set(KyuubiConf.FRONTEND_BIND_PORT, 0)

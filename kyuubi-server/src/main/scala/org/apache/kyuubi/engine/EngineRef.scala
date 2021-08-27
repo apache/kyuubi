@@ -19,6 +19,8 @@ package org.apache.kyuubi.engine
 
 import java.util.concurrent.TimeUnit
 
+import scala.util.Random
+
 import com.codahale.metrics.MetricRegistry
 import com.google.common.annotations.VisibleForTesting
 import org.apache.curator.framework.CuratorFramework
@@ -27,10 +29,12 @@ import org.apache.curator.utils.ZKPaths
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_INIT_TIMEOUT, ENGINE_SHARE_LEVEL, ENGINE_SHARE_LEVEL_SUB_DOMAIN}
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, SERVER, ShareLevel}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_SESSION_ID
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NAMESPACE
+import org.apache.kyuubi.ha.client.ServiceDiscovery.getEngineBySessionId
 import org.apache.kyuubi.ha.client.ServiceDiscovery.getServerHost
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -54,7 +58,29 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
   // Share level of the engine
   private val shareLevel: ShareLevel = ShareLevel.withName(conf.get(ENGINE_SHARE_LEVEL))
 
-  private val subDomain: Option[String] = conf.get(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
+  // Server-side engine pool size threshold
+  private val poolThreshold: Int = conf.get(ENGINE_POOL_SIZE_THRESHOLD)
+
+  @VisibleForTesting
+  private[kyuubi] val subDomain: Option[String] = conf.get(ENGINE_SHARE_LEVEL_SUB_DOMAIN).orElse {
+    val clientPoolSize: Int = conf.get(ENGINE_POOL_SIZE)
+
+    if (clientPoolSize > 0) {
+      val poolSize = if (clientPoolSize <= poolThreshold) {
+        clientPoolSize
+      } else {
+        warn(s"Request engine pool size($clientPoolSize) exceeds, fallback to system threshold " +
+          s"$poolThreshold")
+        poolThreshold
+      }
+
+      // TODO: Currently, we use random policy, and later we can add a sequential policy,
+      //  such as AtomicInteger % poolSize.
+      Some("engine-pool-" + Random.nextInt(poolSize))
+    } else {
+      None
+    }
+  }
 
   // Launcher of the engine
   private val appUser: String = shareLevel match {
@@ -123,13 +149,9 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
       }
   }
 
-  private def get(zkClient: CuratorFramework): Option[(String, Int)] = {
-    getServerHost(zkClient, engineSpace)
-  }
-
   private def create(zkClient: CuratorFramework): (String, Int) = tryWithLock(zkClient) {
-    var engineRef = get(zkClient)
     // Get the engine address ahead if another process has succeeded
+    var engineRef = getServerHost(zkClient, engineSpace)
     if (engineRef.nonEmpty) return engineRef.get
 
     conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
@@ -137,6 +159,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
     conf.set(SparkProcessBuilder.TAG_KEY,
       conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") + "KYUUBI")
     conf.set(HA_ZK_NAMESPACE, engineSpace)
+    conf.set(HA_ZK_ENGINE_SESSION_ID, sessionId)
     val builder = new SparkProcessBuilder(appUser, conf)
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     try {
@@ -163,7 +186,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
             s"Timeout($timeout ms) to launched Spark with $builder",
             builder.getError)
         }
-        engineRef = get(zkClient)
+        engineRef = getEngineBySessionId(zkClient, engineSpace, sessionId)
       }
       engineRef.get
     } finally {
@@ -177,9 +200,10 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
    * Get the engine ref from engine space first first or create a new one
    */
   def getOrCreate(zkClient: CuratorFramework): (String, Int) = {
-    get(zkClient).getOrElse {
-      create(zkClient)
-    }
+    getServerHost(zkClient, engineSpace)
+      .getOrElse {
+        create(zkClient)
+      }
   }
 }
 
