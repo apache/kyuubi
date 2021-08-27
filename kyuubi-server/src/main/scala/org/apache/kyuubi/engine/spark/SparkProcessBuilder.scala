@@ -58,7 +58,9 @@ class SparkProcessBuilder(
     sparkHomeOpt.map{ dir =>
       Paths.get(dir, "bin", SPARK_SUBMIT_FILE).toAbsolutePath.toFile.getCanonicalPath
     }.getOrElse {
-      throw KyuubiSQLException("SPARK_HOME is not set!")
+      throw KyuubiSQLException("SPARK_HOME is not set! " +
+        "For more detail information on installing and configuring Spark, please visit " +
+        "https://kyuubi.apache.org/docs/stable/deployment/index.html#")
     }
   }
 
