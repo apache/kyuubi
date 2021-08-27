@@ -572,12 +572,12 @@ object KyuubiConf {
     .checkValues(ShareLevel.values.map(_.toString))
     .createWithDefault(ShareLevel.USER.toString)
 
-  private val validEngineSubDomain: Pattern = "^[a-zA-Z_]{1,10}$".r.pattern
+  private val validEngineSubDomain: Pattern = "^[a-zA-Z_-]{1,14}$".r.pattern
 
   val ENGINE_SHARE_LEVEL_SUB_DOMAIN: OptionalConfigEntry[String] =
     buildConf("engine.share.level.sub.domain")
       .doc("Allow end-users to create a sub-domain for the share level of an engine. A" +
-        " sub-domain is a case-insensitive string values in `^[a-zA-Z_]{1,10}$` form." +
+        " sub-domain is a case-insensitive string values in `^[a-zA-Z_-]{1,14}$` form." +
         " For example, for `USER` share level, an end-user can share a certain engine within" +
         " a sub-domain, not for all of its clients. End-users are free to create multiple" +
         " engines in the `USER` share level")
@@ -585,7 +585,7 @@ object KyuubiConf {
       .stringConf
       .transform(_.toLowerCase(Locale.ROOT))
       .checkValue(validEngineSubDomain.matcher(_).matches(),
-        "must be [1, 10] length alphabet string, e.g. 'abc', 'apache'")
+        "must be [1, 14] length alphabet string, e.g. 'abc', 'apache'")
       .createOptional
 
   val ENGINE_CONNECTION_URL_USE_HOSTNAME: ConfigEntry[Boolean] =
@@ -605,6 +605,23 @@ object KyuubiConf {
       " <li>SERVER: the App will be shared by Kyuubi servers</li></ul>")
     .version("1.2.0")
     .fallbackConf(LEGACY_ENGINE_SHARE_LEVEL)
+
+  val ENGINE_POOL_SIZE_THRESHOLD: ConfigEntry[Int] = buildConf("engine.pool.size.threshold")
+    .doc("This parameter is introduced as a server-side parameter, " +
+      "and controls the upper limit of the engine pool.")
+    .version("1.4.0")
+    .intConf
+    .checkValue(s => s > 0 && s < 33, "Invalid engine pool threshold, it should be in [1, 32]")
+    .createWithDefault(9)
+
+  val ENGINE_POOL_SIZE: ConfigEntry[Int] = buildConf("engine.pool.size")
+    .doc("The size of engine pool. Note that, " +
+      "if the size is less than 1, the engine pool will not be enabled; " +
+      "otherwise, the size of the engine pool will be " +
+      s"min(this, ${ENGINE_POOL_SIZE_THRESHOLD.key}).")
+    .version("1.4.0")
+    .intConf
+    .createWithDefault(-1)
 
   val ENGINE_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
     buildConf("engine.initialize.sql")

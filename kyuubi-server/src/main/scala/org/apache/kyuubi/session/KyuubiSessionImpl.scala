@@ -43,8 +43,10 @@ class KyuubiSessionImpl(
     sessionConf: KyuubiConf)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
+  // TODO: needs improve the hardcode
   normalizedConf.foreach {
     case ("use:database", _) =>
+    case ("kyuubi.engine.pool.size.threshold", _) =>
     case (key, value) => sessionConf.set(key, value)
   }
 
