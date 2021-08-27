@@ -28,7 +28,7 @@
 
     <groupId>org.apache.kyuubi</groupId>
     <artifactId>kyuubi-parent</artifactId>
-    <version>1.3.0-SNAPSHOT</version>
+    <version>1.4.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Kyuubi Project Parent</name>
@@ -166,9 +166,7 @@
         <hadoop.binary.version>3.2</hadoop.binary.version>
         <hive.version>2.3.7</hive.version>
         <iceberg.name>iceberg-spark3-runtime</iceberg.name>
-        <iceberg.version>0.11.1</iceberg.version>
-        <hudi.name>hudi-spark-bundle_2.12</hudi.name>
-        <hudi.version>0.9.0</hudi.version>
+        <iceberg.version>0.12.0</iceberg.version>
         <jackson.version>2.11.4</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jaxb.version>2.2.11</jaxb.version>
@@ -196,7 +194,7 @@
         <maven.plugin.compiler.version>3.8.1</maven.plugin.compiler.version>
         <maven.plugin.dependency.version>3.1.1</maven.plugin.dependency.version>
         <maven.plugin.deploy.version>3.0.0-M1</maven.plugin.deploy.version>
-        <maven.plugin.download.version>1.6.0</maven.plugin.download.version>
+        <maven.plugin.download.version>1.6.6</maven.plugin.download.version>
         <maven.plugin.gpg.version>3.0.1</maven.plugin.gpg.version>
         <maven.plugin.javadoc.version>3.3.0</maven.plugin.javadoc.version>
         <!-- DO NOT bump 4.4.0, see https://github.com/apache/incubator-kyuubi/pull/441 -->
@@ -204,7 +202,7 @@
         <maven.plugin.scala.version>4.3.0</maven.plugin.scala.version>
         <maven.plugin.surefire.version>2.22.0</maven.plugin.surefire.version>
         <maven.plugin.scalatest.version>2.0.2</maven.plugin.scalatest.version>
-        <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
+        <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest</maven.plugin.scalatest.exclude.tags>
         <maven.plugin.scalatest.include.tags></maven.plugin.scalatest.include.tags>
         <maven.plugin.jacoco.version>0.8.6</maven.plugin.jacoco.version>
         <maven.plugin.jar.version>3.2.0</maven.plugin.jar.version>
@@ -1067,12 +1065,6 @@
             </dependency>
 
             <dependency>
-                <groupId>org.apache.hudi</groupId>
-                <artifactId>${hudi.name}</artifactId>
-                <version>${hudi.version}</version>
-            </dependency>
-
-            <dependency>
                 <groupId>io.delta</groupId>
                 <artifactId>delta-core_${scala.binary.version}</artifactId>
                 <version>${delta.version}</version>
@@ -1513,6 +1505,7 @@
                             <exclude>**/*.log</exclude>
                             <exclude>**/*.md</exclude>
                             <exclude>**/*.iml</exclude>
+                            <exclude>**/*.tmpl</exclude>
                             <exclude>**/target/**</exclude>
                             <exclude>**/out/**</exclude>
                             <exclude>**/spark-warehouse/**</exclude>
@@ -1625,7 +1618,7 @@
             <properties>
                 <spark.version>3.0.3</spark.version>
                 <delta.version>0.8.0</delta.version>
-                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 
@@ -1634,7 +1627,7 @@
             <properties>
                 <spark.version>3.1.2</spark.version>
                 <delta.version>1.0.0</delta.version>
-                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 
