@@ -60,7 +60,7 @@ class SparkProcessBuilder(
     }.getOrElse {
       throw KyuubiSQLException("SPARK_HOME is not set! " +
         "For more detail information on installing and configuring Spark, please visit " +
-        "https://kyuubi.apache.org/docs/stable/deployment/index.html")
+        "https://kyuubi.apache.org/docs/stable/deployment/settings.html#environments")
     }
   }
 
