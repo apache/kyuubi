@@ -165,10 +165,9 @@
         <hadoop.version>3.2.2</hadoop.version>
         <hadoop.binary.version>3.2</hadoop.binary.version>
         <hive.version>2.3.7</hive.version>
+        <hudi.version>0.9.0</hudi.version>
         <iceberg.name>iceberg-spark3-runtime</iceberg.name>
         <iceberg.version>0.12.0</iceberg.version>
-        <hudi.name>hudi-spark-bundle_2.12</hudi.name>
-        <hudi.version>0.9.0</hudi.version>
         <jackson.version>2.11.4</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jaxb.version>2.2.11</jaxb.version>
@@ -1068,7 +1067,7 @@
 
             <dependency>
                 <groupId>org.apache.hudi</groupId>
-                <artifactId>${hudi.name}</artifactId>
+                <artifactId>hudi-spark-bundle_${scala.binary.version}</artifactId>
                 <version>${hudi.version}</version>
             </dependency>
 
@@ -1626,7 +1625,7 @@
             <properties>
                 <spark.version>3.0.3</spark.version>
                 <delta.version>0.8.0</delta.version>
-                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 
@@ -1643,7 +1642,7 @@
             <id>spark-master</id>
             <properties>
                 <spark.version>3.2.0-SNAPSHOT</spark.version>
-                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 
