@@ -58,7 +58,7 @@ cp "${NOTICE_BINARY_PREAMBLE}" "${NOTICE}"
 
 LICENSES="${DST}/licenses"
 [ -f "${LICENSES}" ] && rm -r "${LICENSES}"
-find "${TMP}" -name "licenses" -type d -exec cp -r -- "{}" "${DST}" \;
+[ -d "${TMP}" ] && find "${TMP}" -name "licenses" -type d -exec cp -r -- "{}" "${DST}" \;
 
 # Search and collect license files that not bundled in any jars.
 find "${SRC}" -name "LICENSE.*" -type f \
