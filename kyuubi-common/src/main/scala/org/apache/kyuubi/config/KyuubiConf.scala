@@ -738,9 +738,8 @@ object KyuubiConf {
 
   val SESSION_NAME: OptionalConfigEntry[String] =
     buildConf("session.name")
-      .doc("Session name is used to relate the history session which can help optimize. " +
-        "Please set this config using different value for workflows which are session level. " +
-        "This config is none means we can not find the history session.")
+      .doc("A human readable name of session and we use empty string by default. " +
+        "This name will be recorded in event.")
       .version("1.4.0")
       .stringConf
       .createOptional
