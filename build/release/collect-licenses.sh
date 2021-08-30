@@ -47,9 +47,9 @@ for jar_file in $(find -L "${SRC}" -name "*.jar")
 do
   if [[ $(basename $jar_file) != kyuubi-* ]]; then
     DIR="${TMP}/$(basename -- "${jar_file}" .jar)"
-	  mkdir -p "${DIR}"
-	  JAR=$(realpath "${jar_file}")
-	  (cd "${DIR}" && jar xf ${JAR} META-INF/NOTICE META-INF/licenses)
+    mkdir -p "${DIR}"
+    JAR=$(realpath "${jar_file}")
+    (cd "${DIR}" && jar xf ${JAR} META-INF/NOTICE META-INF/licenses)
   fi
 done
 
