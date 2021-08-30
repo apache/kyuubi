@@ -99,5 +99,4 @@ trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
     }
   }
 
-
 }
