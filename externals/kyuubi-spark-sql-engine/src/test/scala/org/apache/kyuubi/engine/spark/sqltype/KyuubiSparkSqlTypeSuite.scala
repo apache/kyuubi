@@ -49,8 +49,8 @@ class KyuubiSparkSqlTypeSuite extends WithSparkSQLEngine with JDBCTestUtils {
     )
 
     // ALTER TABLE RENAME
-    val sql03 = "CREATE TABLE student (name VARCHAR(64), rollno INT) " +
-      "USING PARQUET PARTITIONED BY (age INT);"
+    val sql03 = "CREATE TABLE student (name VARCHAR(64), rollno INT, age INT) " +
+      "USING PARQUET PARTITIONED BY (age);"
     ddlSimpleName.add(
       spark.sessionState.sqlParser.parsePlan(sql03).getClass.getSimpleName
     )
