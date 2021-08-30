@@ -120,7 +120,7 @@ https://www.apache.org/dev/openpgp.html#export-public-key
 
 ```shell
 svn checkout --depth=files "https://dist.apache.org/repos/dist/dev/incubator/kyuubi" work/svn-kyuubi
-... edit work/svn-kyuubi/KEYS file
+(gpg --list-sigs "${ASF_USERNAME}@apache.org" && gpg --export --armor "${ASF_USERNAME}@apache.org") >> KEYS
 svn commit --username "${ASF_USERNAME}" --password "${ASF_PASSWORD}" --message "Update KEYS" work/svn-kyuubi
 ```
 
