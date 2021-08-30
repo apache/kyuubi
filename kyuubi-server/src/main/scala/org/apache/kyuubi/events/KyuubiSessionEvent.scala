@@ -18,6 +18,7 @@
 package org.apache.kyuubi.events
 
 import org.apache.kyuubi.Utils
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.session.KyuubiSessionImpl
 
@@ -28,6 +29,8 @@ import org.apache.kyuubi.session.KyuubiSessionImpl
  * @param clientIP client ip address
  * @param serverIP A unique Kyuubi server id, e.g. kyuubi server ip address and port,
  *                 it is useful if has multi-instance Kyuubi Server
+ * @param clientVersion client version
+ * @param conf session config
  * @param startTime session create time
  * @param endTime session end time
  * @param totalOperations how many queries and meta calls
@@ -38,6 +41,7 @@ case class KyuubiSessionEvent(
     user: String,
     clientIP: String,
     serverIP: String,
+    clientVersion: Int,
     conf: Map[String, String],
     startTime: Long,
     var endTime: Long = -1L,
@@ -50,13 +54,16 @@ object KyuubiSessionEvent {
   def apply(session: KyuubiSessionImpl): KyuubiSessionEvent = {
     assert(KyuubiServer.kyuubiServer.isDefined)
     val serverIP = KyuubiServer.kyuubiServer.get.connectionUrl
+    val sessionName: String =
+      session.sessionConf.getOption(KyuubiConf.SESSION_NAME.key).getOrElse("")
     KyuubiSessionEvent(
       session.handle.identifier.toString,
-      session.sessionName,
+      sessionName,
       session.user,
       session.ipAddress,
       serverIP,
-      session.sessionConf.getAll,
+      session.handle.protocol.getValue,
+      session.normalizedConf,
       session.createTime)
   }
 }

@@ -52,9 +52,7 @@ class KyuubiSessionImpl(
   }
 
   private val engine: EngineRef = EngineRef(sessionConf, user, handle)
-
-  val sessionName: String = sessionConf.getOption(KyuubiConf.SESSION_NAME.key).getOrElse("")
-  private val sessionEvent = KyuubiSessionEvent.apply(this)
+  private val sessionEvent = KyuubiSessionEvent(this)
   EventLoggingService.onEvent(sessionEvent)
 
   private var transport: TTransport = _
