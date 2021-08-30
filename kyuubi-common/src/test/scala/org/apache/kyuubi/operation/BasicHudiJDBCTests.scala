@@ -98,5 +98,4 @@ trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
       assert(!rs3.next())
     }
   }
-
 }
