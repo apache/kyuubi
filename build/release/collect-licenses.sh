@@ -39,8 +39,8 @@ USAGE="$0 <SOURCE_DIRECTORY:-.> <OUTPUT_DIRECTORY:-licenses-output>"
 source "$KYUUBI_DIR/build/util.sh"
 
 if [ "${SRC}" = "-h" ]; then
-	echo "${USAGE}"
-	exit 0
+  echo "${USAGE}"
+  exit 0
 fi
 
 for jar_file in $(find -L "${SRC}" -name "*.jar")
