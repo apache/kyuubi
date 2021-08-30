@@ -88,7 +88,7 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
     }
 
     val eventPath =
-      Paths.get(logRoot.toString, "kyuubi-session", s"day=$currentDate")
+      Paths.get(logRoot.toString, "kyuubi_session", s"day=$currentDate")
     withSessionConf()(Map.empty)(Map("spark.sql.shuffle.partitions" -> "2")) {
       withJdbcStatement() { statement =>
         val res = statement.executeQuery(
