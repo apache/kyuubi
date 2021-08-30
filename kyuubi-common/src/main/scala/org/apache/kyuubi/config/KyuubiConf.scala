@@ -712,4 +712,12 @@ object KyuubiConf {
       .version("1.3.0")
       .booleanConf
       .createWithDefault(true)
+
+  val ENGINE_SQL_TYPE_ENABLED: ConfigEntry[Boolean] =
+    buildConf("engine.sql.type.enabled")
+      .doc("When true, allows Kyuubi engine to judge this SQL's type and set it into sessionConf." +
+        "Through this configuration item, Spark can optimizing configuration dynamic")
+      .version("1.3.0")
+      .booleanConf
+      .createWithDefault(true)
 }

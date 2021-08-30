@@ -25,6 +25,7 @@ import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
+import org.apache.kyuubi.engine.spark.sqltype.KyuubiSparkSQLType
 import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.{Session, SessionHandle}
 
@@ -59,6 +60,8 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
       queryTimeout: Long): Operation = {
     val spark = getSparkSession(session.handle)
     val operation = new ExecuteStatement(spark, session, statement, runAsync, queryTimeout)
+    // Get this sql's type and store it in spark.conf
+    KyuubiSparkSQLType.getAndSetSQLType(spark, statement)
     addOperation(operation)
   }
 
