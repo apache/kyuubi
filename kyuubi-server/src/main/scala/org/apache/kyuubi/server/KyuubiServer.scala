@@ -82,6 +82,8 @@ class KyuubiServer(name: String) extends Serverable(name) {
   def this() = this(classOf[KyuubiServer].getSimpleName)
 
   override val backendService: AbstractBackendService = new KyuubiBackendService()
+  val frontendService = new KyuubiFrontendServices(backendService)
+  private val eventLoggingService: EventLoggingService = new EventLoggingService
   override protected def supportsServiceDiscovery: Boolean = {
     ServiceDiscovery.supportServiceDiscovery(conf)
   }
@@ -90,14 +92,20 @@ class KyuubiServer(name: String) extends Serverable(name) {
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val kinit = new KinitAuxiliaryService()
     addService(kinit)
+    addService(eventLoggingService)
 
     if (conf.get(MetricsConf.METRICS_ENABLED)) {
       addService(new MetricsSystem)
     }
+
+    addService(frontendService)
 
     super.initialize(conf)
   }
 
   override protected def stopServer(): Unit = {}
 
+  override def connectionUrl: String = {
+    frontendService.connectionUrl(true)
+  }
 }

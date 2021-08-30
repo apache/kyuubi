@@ -42,22 +42,25 @@ class SparkProcessBuilder(
       val cwd = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
         .split("kyuubi-server")
       assert(cwd.length > 1)
-      Paths.get(cwd.head)
-        .resolve("externals")
-        .resolve("kyuubi-download")
-        .resolve("target")
-        .toFile
-        .listFiles(new FilenameFilter {
-        override def accept(dir: File, name: String): Boolean = {
-          dir.isDirectory && name.startsWith("spark-")
-        }
-      }).headOption.map(_.getAbsolutePath)
+      Option(
+        Paths.get(cwd.head)
+          .resolve("externals")
+          .resolve("kyuubi-download")
+          .resolve("target")
+          .toFile
+          .listFiles(new FilenameFilter {
+            override def accept(dir: File, name: String): Boolean = {
+              dir.isDirectory && name.startsWith("spark-")}}))
+        .flatMap(_.headOption)
+        .map(_.getAbsolutePath)
     }
 
     sparkHomeOpt.map{ dir =>
       Paths.get(dir, "bin", SPARK_SUBMIT_FILE).toAbsolutePath.toFile.getCanonicalPath
     }.getOrElse {
-      throw KyuubiSQLException("SPARK_HOME is not set!")
+      throw KyuubiSQLException("SPARK_HOME is not set! " +
+        "For more detail information on installing and configuring Spark, please visit " +
+        "https://kyuubi.apache.org/docs/stable/deployment/settings.html#environments")
     }
   }
 

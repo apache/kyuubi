@@ -57,7 +57,7 @@ case class EngineEvent(
     endTime: Long,
     state: Int,
     diagnostic: String,
-    settings: Map[String, String]) extends KyuubiEvent {
+    settings: Map[String, String]) extends KyuubiSparkEvent {
 
   override def schema: StructType = Encoders.product[EngineEvent].schema
   override lazy val partitions: Seq[(String, String)] =

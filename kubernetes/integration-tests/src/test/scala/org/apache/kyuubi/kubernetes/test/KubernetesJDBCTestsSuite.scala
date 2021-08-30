@@ -33,8 +33,13 @@ class KubernetesJDBCTestsSuite extends JDBCTests with Logging {
     val kyuubiServer = kyuubiServers.get(0)
     // Kyuubi server state should be running since mvn compile is quite slowly..
     if (!"running".equalsIgnoreCase(kyuubiServer.getStatus.getPhase)) {
+      val log =
+        kubernetesclient
+          .pods()
+          .withName(kyuubiServer.getMetadata.getName)
+          .getLog
       throw new IllegalStateException(
-        s"Kyuubi server pod state error: ${kyuubiServer.getStatus.getPhase}")
+        s"Kyuubi server pod state error: ${kyuubiServer.getStatus.getPhase}, log:\n$log")
     }
     val kyuubiServerIp = MiniKube.getIp
     val kyuubiServerPort =

@@ -23,20 +23,17 @@ import org.apache.kyuubi.config.KyuubiConf
 
 abstract class Serverable(name: String) extends CompositeService(name) {
 
-  private val OOMHook = new Runnable { override def run(): Unit = stop() }
   private val started = new AtomicBoolean(false)
 
   val backendService: AbstractBackendService
-  private lazy val frontendService = new ThriftFrontendService(backendService, OOMHook)
   protected def supportsServiceDiscovery: Boolean
   val discoveryService: Service
 
-  def connectionUrl: String = frontendService.connectionUrl()
+  def connectionUrl: String
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     this.conf = conf
     addService(backendService)
-    addService(frontendService)
     if (supportsServiceDiscovery) {
       // Service Discovery depends on the frontend service to be ready
       addService(discoveryService)

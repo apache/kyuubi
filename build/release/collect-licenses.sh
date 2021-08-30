@@ -39,16 +39,18 @@ USAGE="$0 <SOURCE_DIRECTORY:-.> <OUTPUT_DIRECTORY:-licenses-output>"
 source "$KYUUBI_DIR/build/util.sh"
 
 if [ "${SRC}" = "-h" ]; then
-	echo "${USAGE}"
-	exit 0
+  echo "${USAGE}"
+  exit 0
 fi
 
-for jar_file in $(find -L "${SRC}" -name "*.jar" | grep -v "kyuubi-")
+for jar_file in $(find -L "${SRC}" -name "*.jar")
 do
-	DIR="${TMP}/$(basename -- "${jar_file}" .jar)"
-	mkdir -p "${DIR}"
-	JAR=$(realpath "${jar_file}")
-	(cd "${DIR}" && jar xf ${JAR} META-INF/NOTICE META-INF/licenses)
+  if [[ "$(basename ${jar_file})" != "kyuubi-"* ]]; then
+    DIR="${TMP}/$(basename -- "${jar_file}" .jar)"
+    mkdir -p "${DIR}"
+    JAR=$(realpath "${jar_file}")
+    (cd "${DIR}" && jar xf ${JAR} META-INF/NOTICE META-INF/licenses)
+  fi
 done
 
 NOTICE="${DST}/NOTICE"

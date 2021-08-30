@@ -17,39 +17,35 @@
 
 package org.apache.kyuubi.engine.spark.events
 
-import scala.collection.mutable.ArrayBuffer
-
 import org.apache.spark.kyuubi.SparkContextHelper
 
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_LOGGERS
 import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, SparkSQLEngine}
 import org.apache.kyuubi.engine.spark.events.EventLoggingService._service
-import org.apache.kyuubi.service.CompositeService
+import org.apache.kyuubi.events.AbstractEventLoggingService
+import org.apache.kyuubi.events.EventLoggerType
+import org.apache.kyuubi.events.JsonEventLogger
 
 class EventLoggingService(engine: SparkSQLEngine)
-  extends CompositeService("EventLogging") {
-
-  private val eventLoggers = new ArrayBuffer[EventLogger]()
-
-  def onEvent(event: KyuubiEvent): Unit = {
-    eventLoggers.foreach(_.logEvent(event))
-  }
+  extends AbstractEventLoggingService[KyuubiSparkEvent] {
 
   override def initialize(conf: KyuubiConf): Unit = {
-    conf.get(KyuubiConf.ENGINE_EVENT_LOGGERS)
+    conf.get(ENGINE_EVENT_LOGGERS)
       .map(EventLoggerType.withName)
-      .foreach {
+      .foreach{
         case EventLoggerType.SPARK =>
-          eventLoggers += SparkContextHelper.createSparkHistoryLogger(engine.spark.sparkContext)
+          addEventLogger(SparkContextHelper.createSparkHistoryLogger(engine.spark.sparkContext))
         case EventLoggerType.JSON =>
-          val jsonEventLogger = new JsonEventLogger(KyuubiSparkUtil.engineId,
-            engine.spark.sparkContext.hadoopConfiguration)
+          val jsonEventLogger = new JsonEventLogger[KyuubiSparkEvent](KyuubiSparkUtil.engineId,
+            ENGINE_EVENT_JSON_LOG_PATH, engine.spark.sparkContext.hadoopConfiguration)
           addService(jsonEventLogger)
-          eventLoggers += jsonEventLogger
+          addEventLogger(jsonEventLogger)
         case logger =>
           // TODO: Add more implementations
           throw new IllegalArgumentException(s"Unrecognized event logger: $logger")
-    }
+      }
     super.initialize(conf)
   }
 
@@ -69,7 +65,7 @@ object EventLoggingService {
 
   private var _service: Option[EventLoggingService] = None
 
-  def onEvent(event: KyuubiEvent): Unit = {
+  def onEvent(event: KyuubiSparkEvent): Unit = {
     _service.foreach(_.onEvent(event))
   }
 }

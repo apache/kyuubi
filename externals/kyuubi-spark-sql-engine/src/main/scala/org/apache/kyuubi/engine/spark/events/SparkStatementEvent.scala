@@ -31,9 +31,9 @@ import org.apache.kyuubi.Utils
  * @param state: store each state that the sql has
  * @param stateTime: the time that the sql's state change
  * @param queryExecution: contains logicPlan and physicalPlan
- * @param exeception: caught exeception if have
+ * @param exception: caught exception if have
  */
-case class StatementEvent(
+case class SparkStatementEvent(
     statementId: String,
     statement: String,
     appId: String,
@@ -42,9 +42,9 @@ case class StatementEvent(
     var state: String,
     var stateTime: Long,
     var queryExecution: String = "",
-    var exeception: String = "") extends KyuubiEvent {
+    var exception: String = "") extends KyuubiSparkEvent {
 
-  override def schema: StructType = Encoders.product[StatementEvent].schema
+  override def schema: StructType = Encoders.product[SparkStatementEvent].schema
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(createTime)) :: Nil
 }
