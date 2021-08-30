@@ -87,7 +87,6 @@ trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
       assert(rs1.getString(TABLE_SCHEM) === schema)
       assert(rs1.getString(TABLE_NAME) == table)
       assert(rs1.getString(TABLE_TYPE) == tableType)
-      assert(rs1.getString(REMARKS) === table)
       assert(!rs1.next())
 
       val rs2 = metaData.getTables(null, null, "table%", Array("TABLE"))
