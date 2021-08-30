@@ -43,9 +43,9 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
   test("statementEvent: generate, dump and query") {
     val hostName = InetAddress.getLocalHost.getCanonicalHostName
     val serverStatementEventPath =
-      Paths.get(logRoot.toString, "kyuubi-statement", s"day=$currentDate", s"server-$hostName.json")
+      Paths.get(logRoot.toString, "kyuubi_statement", s"day=$currentDate", s"server-$hostName.json")
     val engineStatementEventPath =
-      Paths.get(logRoot.toString, "spark-statement", s"day=$currentDate", "*.json")
+      Paths.get(logRoot.toString, "spark_statement", s"day=$currentDate", "*.json")
     val sql = "select timestamp'2021-06-01'"
 
     withJdbcStatement() { statement =>
@@ -76,6 +76,32 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
         assert(resultSet2.getString("statement") == sql)
         assert(resultSet2.getString("state") == engineStates(stateIndex).toString)
         stateIndex += 1
+      }
+    }
+  }
+
+  test("test Kyuubi session event") {
+    withSessionConf()(Map.empty)(Map(KyuubiConf.SESSION_NAME.key -> "test1")) {
+      withJdbcStatement() { statement =>
+        statement.execute("SELECT 1")
+      }
+    }
+
+    val eventPath =
+      Paths.get(logRoot.toString, "kyuubi-session", s"day=$currentDate")
+    withSessionConf()(Map.empty)(Map("spark.sql.shuffle.partitions" -> "2")) {
+      withJdbcStatement() { statement =>
+        val res = statement.executeQuery(
+          s"SELECT * FROM `json`.`$eventPath` where sessionName = 'test1' order by totalOperations")
+        assert(res.next())
+        assert(res.getString("user") == Utils.currentUser)
+        assert(res.getString("sessionName") == "test1")
+        assert(res.getLong("startTime") > 0)
+        assert(res.getInt("totalOperations") == 0)
+        assert(res.next())
+        assert(res.getInt("totalOperations") == 1)
+        assert(res.getLong("endTime") > 0)
+        assert(!res.next())
       }
     }
   }

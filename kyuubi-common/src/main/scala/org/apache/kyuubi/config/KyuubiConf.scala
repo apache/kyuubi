@@ -753,6 +753,15 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  val SESSION_NAME: OptionalConfigEntry[String] =
+    buildConf("session.name")
+      .doc("A human readable name of session and we use empty string by default. " +
+        "This name will be recorded in event. Note that, we only apply this value from " +
+        "session conf.")
+      .version("1.4.0")
+      .stringConf
+      .createOptional
+
   val ENGINE_SQL_TYPE_ENABLED: ConfigEntry[Boolean] =
     buildConf("engine.sql.type.enabled")
       .doc("When true, allows Kyuubi engine to judge this SQL's type and set it into sessionConf." +

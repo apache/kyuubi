@@ -32,6 +32,7 @@ import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 
 object KyuubiServer extends Logging {
   private val zkServer = new EmbeddedZookeeper()
+  private[kyuubi] var kyuubiServer: KyuubiServer = _
 
   def startServer(conf: KyuubiConf): KyuubiServer = {
     if (!ServiceDiscovery.supportServiceDiscovery(conf)) {
@@ -101,6 +102,11 @@ class KyuubiServer(name: String) extends Serverable(name) {
     addService(frontendService)
 
     super.initialize(conf)
+  }
+
+  override def start(): Unit = {
+    super.start()
+    KyuubiServer.kyuubiServer = this
   }
 
   override protected def stopServer(): Unit = {}
