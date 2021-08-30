@@ -103,16 +103,16 @@ gpg --list-keys --keyid-format SHORT
 
 This will list your GPG keys. One of these should reflect your Apache account, for example:
 ```shell
-pub   ed25519/ED4E2E5B 2021-07-02 [SC]
-      2A145AF50886431A8FA86089F07E6C29ED4E2E5B
-uid         [ultimate] Cheng Pan <chengpan@apache.org>
-sub   cv25519/C7207C04 2021-07-02 [E]
+pub   rsa4096 2021-08-30 [SC]
+      8FC8075E1FDC303276C676EE8001952629BCC75D
+uid           [ultimate] Cheng Pan <chengpan@apache.org>
+sub   rsa4096 2021-08-30 [E]
 ```
-Here, the key ID is the 8-digit hex string in the pub line: `ED4E2E5B`.
+Here, the key ID is the 8-digit hex string in the pub line: `29BCC75D`.
 
 To export the PGP public key, using:
 ```shell
-gpg --armor --export ED4E2E5B
+gpg --armor --export 29BCC75D
 ```
 
 The last step is to update the KEYS file with your code signing key 
@@ -120,7 +120,7 @@ https://www.apache.org/dev/openpgp.html#export-public-key
 
 ```shell
 svn checkout --depth=files "https://dist.apache.org/repos/dist/dev/incubator/kyuubi" work/svn-kyuubi
-... edit work/svn-kyuubi/KEYS file
+(gpg --list-sigs "${ASF_USERNAME}@apache.org" && gpg --export --armor "${ASF_USERNAME}@apache.org") >> KEYS
 svn commit --username "${ASF_USERNAME}" --password "${ASF_PASSWORD}" --message "Update KEYS" work/svn-kyuubi
 ```
 
@@ -152,7 +152,6 @@ build/mvn versions:set -DgenerateBackupPoms=false \
   -DnewVersion="${RELEASE_VERSION}" \
   -Pkubernetes,kyuubi-extension-spark-3-1,spark-block-cleaner,tpcds
 
-git add .
 git commit -am "[RELEASE] Bump ${RELEASE_VERSION}"
 ```
 
