@@ -52,10 +52,9 @@ case class KyuubiSessionEvent(
 
 object KyuubiSessionEvent {
   def apply(session: KyuubiSessionImpl): KyuubiSessionEvent = {
-    assert(KyuubiServer.kyuubiServer.isDefined)
-    val serverIP = KyuubiServer.kyuubiServer.get.connectionUrl
-    val sessionName: String =
-      session.sessionConf.getOption(KyuubiConf.SESSION_NAME.key).getOrElse("")
+    assert(KyuubiServer.kyuubiServer != null)
+    val serverIP = KyuubiServer.kyuubiServer.connectionUrl
+    val sessionName: String = session.normalizedConf.getOrElse(KyuubiConf.SESSION_NAME.key, "")
     KyuubiSessionEvent(
       session.handle.identifier.toString,
       sessionName,
@@ -63,7 +62,7 @@ object KyuubiSessionEvent {
       session.ipAddress,
       serverIP,
       session.handle.protocol.getValue,
-      session.normalizedConf,
+      session.conf,
       session.createTime)
   }
 }

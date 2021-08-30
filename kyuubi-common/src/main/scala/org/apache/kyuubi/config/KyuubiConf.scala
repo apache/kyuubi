@@ -739,7 +739,8 @@ object KyuubiConf {
   val SESSION_NAME: OptionalConfigEntry[String] =
     buildConf("session.name")
       .doc("A human readable name of session and we use empty string by default. " +
-        "This name will be recorded in event.")
+        "This name will be recorded in event. Note that, we only apply this value from " +
+        "session conf.")
       .version("1.4.0")
       .stringConf
       .createOptional
