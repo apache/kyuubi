@@ -65,7 +65,8 @@ class KyuubiSparkSqlTypeSuite extends WithSparkSQLEngine with JDBCTestUtils {
     )
 
     // ALTER TABLE RENAME PARTITION
-    val sql06 = "ALTER TABLE default.StudentInfo PARTITION (age='10') RENAME TO PARTITION (age='15');"
+    val sql06 = "ALTER TABLE default.StudentInfo PARTITION (age='10') " +
+      "RENAME TO PARTITION (age='15');"
     ddlSimpleName.add(
       spark.sessionState.sqlParser.parsePlan(sql06).getClass.getSimpleName
     )
@@ -158,7 +159,8 @@ class KyuubiSparkSqlTypeSuite extends WithSparkSQLEngine with JDBCTestUtils {
     )
 
     // CREATE FUNCTION
-    val sql20 = "CREATE FUNCTION test_avg AS 'org.apache.hadoop.hive.ql.udf.generic.GenericUDAFAverage';"
+    val sql20 = "CREATE FUNCTION test_avg AS " +
+      "'org.apache.hadoop.hive.ql.udf.generic.GenericUDAFAverage';"
     ddlSimpleName.add(
       spark.sessionState.sqlParser.parsePlan(sql20).getClass.getSimpleName
     )
