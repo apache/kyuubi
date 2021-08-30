@@ -43,9 +43,9 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
   test("statementEvent: generate, dump and query") {
     val hostName = InetAddress.getLocalHost.getCanonicalHostName
     val serverStatementEventPath =
-      Paths.get(logRoot.toString, "kyuubi-statement", s"day=$currentDate", s"server-$hostName.json")
+      Paths.get(logRoot.toString, "kyuubi_statement", s"day=$currentDate", s"server-$hostName.json")
     val engineStatementEventPath =
-      Paths.get(logRoot.toString, "spark-statement", s"day=$currentDate", "*.json")
+      Paths.get(logRoot.toString, "spark_statement", s"day=$currentDate", "*.json")
     val sql = "select timestamp'2021-06-01'"
 
     withJdbcStatement() { statement =>

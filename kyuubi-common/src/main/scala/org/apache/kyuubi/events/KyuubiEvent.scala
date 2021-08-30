@@ -22,7 +22,7 @@ import java.util.Locale
 trait KyuubiEvent extends Product {
   final lazy val eventType: String = {
     this.getClass.getSimpleName.stripSuffix("Event")
-      .replaceAll("(.)([A-Z])", "$1-$2")
+      .replaceAll("(.)([A-Z])", "$1_$2")
       .toLowerCase(Locale.ROOT)
   }
 
