@@ -201,16 +201,13 @@
    limitations under the License.
 
 ------------------------------------------------------------------------------------
-This product bundles various third-party components under other open source licenses.
-This section summarizes those components and their licenses. See licenses/
-for text of these licenses.
 
+This product includes code from Apache Spark
 
-Apache Software Foundation License 2.0
---------------------------------------
+* org.apache.kyuubi.Logging copied from classes in org.apache.spark.internal.Logging
+* org.apache.kyuubi.engine.spark.FetchIterator copied from org.apache.spark.sql.hive.thriftserver.FetchIterator
+* org.apache.kyuubi.engine.spark.shim.CatalogShim_v3_0 copied some methods from org.apache.spark.sql.connector.catalog.CatalogV2Implicits
 
-kyuubi-common/src/main/scala/org/apache/kyuubi/Logging.scala
-kyuubi-common/src/main/scala-2.12/scala/util/Using.scala
-kyuubi-common/src/test/scala/org/apache/kyuubi/KerberizedTestHelper.scala
-externals/kyuubi-spark-sql-engine/src/main/scala/org/apache/kyuubi/engine/spark/FetchIterator.scala
-externals/kyuubi-spark-sql-engine/src/main/scala/org/apache/kyuubi/engine/spark/shim/CatalogShim_v3_0.scala
+Copyright: 2014 and onwards The Apache Software Foundation
+Home page: https://spark.apache.org/
+License: https://www.apache.org/licenses/LICENSE-2.0

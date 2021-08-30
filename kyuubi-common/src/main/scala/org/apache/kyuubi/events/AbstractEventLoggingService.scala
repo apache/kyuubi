@@ -15,10 +15,22 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.events
+package org.apache.kyuubi.events
 
-trait EventLogger {
+import scala.collection.mutable.ArrayBuffer
 
-  def logEvent(kyuubiEvent: KyuubiEvent): Unit
+import org.apache.kyuubi.service.CompositeService
 
+abstract class AbstractEventLoggingService[T <: KyuubiEvent]
+  extends CompositeService("EventLogging") {
+
+  private val eventLoggers = new ArrayBuffer[EventLogger[T]]()
+
+  def onEvent(event: T): Unit = {
+    eventLoggers.foreach(_.logEvent(event))
+  }
+
+  def addEventLogger(logger: EventLogger[T]): Unit = {
+    eventLoggers += logger
+  }
 }

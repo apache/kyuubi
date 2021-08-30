@@ -26,10 +26,11 @@ import org.scalatest.time.SpanSugar._
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, WithSparkSQLEngine}
+import org.apache.kyuubi.events.EventLoggerType._
+import org.apache.kyuubi.events.JsonProtocol
 import org.apache.kyuubi.operation.{JDBCTestUtils, OperationHandle}
 
 class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
-  import EventLoggerType._
 
   private val logRoot = Utils.createTempDir()
   private val currentDate = Utils.getDateFromTimestamp(System.currentTimeMillis())
@@ -50,8 +51,9 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
       logRoot.toString, "session", s"day=$currentDate", KyuubiSparkUtil.engineId + ".json")
     val engineEventReader = Files.newBufferedReader(engineEventPath, StandardCharsets.UTF_8)
 
-    val readEvent = JsonProtocol.jsonToEvent(engineEventReader.readLine())
-    assert(readEvent.isInstanceOf[KyuubiEvent])
+    val readEvent = JsonProtocol.jsonToEvent(engineEventReader.readLine(),
+      classOf[KyuubiSparkEvent])
+    assert(readEvent.isInstanceOf[KyuubiSparkEvent])
 
     withJdbcStatement() { statement =>
       val table = engineEventPath.getParent
@@ -92,7 +94,7 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
   test("statementEvent: generate, dump and query") {
     val statementEventPath = Paths.get(
-      logRoot.toString, "statement", s"day=$currentDate", engine.engineId + ".json")
+      logRoot.toString, "spark-statement", s"day=$currentDate", engine.engineId + ".json")
     val sql = "select timestamp'2021-06-01'"
     withSessionHandle { (client, handle) =>
 
