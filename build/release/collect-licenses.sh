@@ -45,7 +45,7 @@ fi
 
 for jar_file in $(find -L "${SRC}" -name "*.jar")
 do
-  if [[ $(basename $jar_file) != kyuubi-* ]]; then
+  if [[ "$(basename ${jar_file})" != "kyuubi-"* ]]; then
     DIR="${TMP}/$(basename -- "${jar_file}" .jar)"
     mkdir -p "${DIR}"
     JAR=$(realpath "${jar_file}")
