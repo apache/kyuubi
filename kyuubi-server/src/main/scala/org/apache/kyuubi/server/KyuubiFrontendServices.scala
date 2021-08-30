@@ -19,30 +19,30 @@ package org.apache.kyuubi.server
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.service.{AbstractFrontendService, BackendService, ServiceState, ThriftFrontendService}
+import org.apache.kyuubi.service.{AbstractFrontendService, BackendService, CompositeService, ServiceState, ThriftFrontendService}
 
 /**
  * A kyuubi frontend service is a kind of composite service, which used to
  * composite multiple frontend services for kyuubi server.
  */
-class KyuubiFrontendService private(name: String, be: BackendService)
-  extends AbstractFrontendService(name, be) with Logging {
+class KyuubiFrontendServices private(name: String, be: BackendService)
+  extends CompositeService(name) with Logging {
 
   private val OOMHook = new Runnable { override def run(): Unit = stop() }
 
   def this(be: BackendService) = {
-    this(classOf[KyuubiFrontendService].getSimpleName, be)
+    this(classOf[KyuubiFrontendServices].getSimpleName, be)
   }
 
-  override def connectionUrl(server: Boolean): String = {
+  def connectionUrl(server: Boolean): String = {
     getServiceState match {
       case s @ ServiceState.LATENT => throw new IllegalStateException(s"Illegal Service State: $s")
       case _ =>
         val defaultFEService = getServices(0).asInstanceOf[AbstractFrontendService]
-        if (defaultFEService != null) {
+        if (defaultFEService != null && defaultFEService.isInstanceOf[ThriftFrontendService]) {
           defaultFEService.connectionUrl(server)
         } else {
-          throw new IllegalStateException("Can not find frontend services!")
+          throw new IllegalStateException("Can not find thrift frontend services!")
         }
     }
   }

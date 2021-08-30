@@ -43,7 +43,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
   private val OOMHook = new Runnable { override def run(): Unit = stop() }
   private val eventLogging = new EventLoggingService(this)
   override val backendService = new SparkSQLBackendService(spark)
-  override val frontendService = new ThriftFrontendService(backendService, OOMHook)
+  val frontendService = new ThriftFrontendService(backendService, OOMHook)
   override val discoveryService: Service = new EngineServiceDiscovery(this)
 
   override protected def supportsServiceDiscovery: Boolean = {
@@ -54,6 +54,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     val listener = new SparkSQLEngineListener(this)
     spark.sparkContext.addSparkListener(listener)
     addService(eventLogging)
+    addService(frontendService)
     super.initialize(conf)
     eventLogging.onEvent(engineStatus.copy(state = ServiceState.INITIALIZED.id))
   }
@@ -75,6 +76,8 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
   override protected def stopServer(): Unit = {
     countDownLatch.countDown()
   }
+
+  override def connectionUrl: String = frontendService.connectionUrl()
 
   def engineId: String = {
     spark.sparkContext.applicationAttemptId.getOrElse(spark.sparkContext.applicationId)
