@@ -79,4 +79,30 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
       }
     }
   }
+
+  test("test Kyuubi session event") {
+    withSessionConf()(Map.empty)(Map(KyuubiConf.SESSION_NAME.key -> "test1")) {
+      withJdbcStatement() { statement =>
+        statement.execute("SELECT 1")
+      }
+    }
+
+    val eventPath =
+      Paths.get(logRoot.toString, "kyuubi-session", s"day=$currentDate")
+    withSessionConf()(Map.empty)(Map("spark.sql.shuffle.partitions" -> "2")) {
+      withJdbcStatement() { statement =>
+        val res = statement.executeQuery(
+          s"SELECT * FROM `json`.`$eventPath` where sessionName = 'test1' order by totalOperations")
+        assert(res.next())
+        assert(res.getString("user") == Utils.currentUser)
+        assert(res.getString("sessionName") == "test1")
+        assert(res.getLong("startTime") > 0)
+        assert(res.getInt("totalOperations") == 0)
+        assert(res.next())
+        assert(res.getInt("totalOperations") == 1)
+        assert(res.getLong("endTime") > 0)
+        assert(!res.next())
+      }
+    }
+  }
 }
