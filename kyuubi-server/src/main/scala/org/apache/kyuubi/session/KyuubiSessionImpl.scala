@@ -28,9 +28,12 @@ import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.EngineRef
+import org.apache.kyuubi.events.KyuubiSessionEvent
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
+import org.apache.kyuubi.operation.{Operation, OperationHandle}
+import org.apache.kyuubi.server.EventLoggingService
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
 class KyuubiSessionImpl(
@@ -51,6 +54,8 @@ class KyuubiSessionImpl(
   }
 
   private val engine: EngineRef = EngineRef(sessionConf, user, handle)
+  private val sessionEvent = KyuubiSessionEvent(this)
+  EventLoggingService.onEvent(sessionEvent)
 
   private var transport: TTransport = _
   private var client: KyuubiSyncThriftClient = _
@@ -81,6 +86,11 @@ class KyuubiSessionImpl(
     sessionManager.operationManager.setConnection(handle, client)
   }
 
+  override protected def runOperation(operation: Operation): OperationHandle = {
+    sessionEvent.totalOperations += 1
+    super.runOperation(operation)
+  }
+
   override def close(): Unit = {
     super.close()
     sessionManager.operationManager.removeConnection(handle)
@@ -90,6 +100,8 @@ class KyuubiSessionImpl(
       case e: TException =>
         throw KyuubiSQLException("Error while cleaning up the engine resources", e)
     } finally {
+      sessionEvent.endTime = System.currentTimeMillis()
+      EventLoggingService.onEvent(sessionEvent)
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))
       if (transport != null && transport.isOpen) {
         transport.close()

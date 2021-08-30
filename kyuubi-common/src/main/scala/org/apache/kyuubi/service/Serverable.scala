@@ -26,16 +26,14 @@ abstract class Serverable(name: String) extends CompositeService(name) {
   private val started = new AtomicBoolean(false)
 
   val backendService: AbstractBackendService
-  val frontendService: AbstractFrontendService
   protected def supportsServiceDiscovery: Boolean
   val discoveryService: Service
 
-  def connectionUrl: String = frontendService.connectionUrl()
+  def connectionUrl: String
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     this.conf = conf
     addService(backendService)
-    addService(frontendService)
     if (supportsServiceDiscovery) {
       // Service Discovery depends on the frontend service to be ready
       addService(discoveryService)

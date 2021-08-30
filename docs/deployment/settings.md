@@ -79,6 +79,7 @@ You can configure the environment variables in `$KYUUBI_HOME/conf/kyuubi-env.sh`
 ## Examples ##
 
 # export JAVA_HOME=/usr/jdk64/jdk1.8.0_152
+# export SPARK_HOME=/opt/spark
 # export HADOOP_CONF_DIR=/usr/ndp/current/mapreduce_client/conf
 # export KYUUBI_JAVA_OPTS="-Xmx10g -XX:+UnlockDiagnosticVMOptions -XX:ParGCCardsPerStrideChunk=4096 -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSConcurrentMTEnabled -XX:CMSInitiatingOccupancyFraction=70 -XX:+UseCMSInitiatingOccupancyOnly -XX:+CMSClassUnloadingEnabled -XX:+CMSParallelRemarkEnabled -XX:+UseCondCardMark -XX:MaxDirectMemorySize=1024m  -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./logs -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution -Xloggc:./logs/kyuubi-server-gc-%t.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=5M -XX:NewRatio=3 -XX:MetaspaceSize=512m"
 ```
@@ -258,6 +259,7 @@ kyuubi\.session\.engine<br>\.share\.level|<div style='width: 65pt;word-wrap: bre
 kyuubi\.session\.engine<br>\.spark\.main\.resource|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>The package used to create Spark SQL engine remote application. If it is undefined, Kyuubi will use the default</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.session\.engine<br>\.startup\.error\.max<br>\.size|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>8192</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>During engine bootstrapping, if error occurs, using this config to limit the length error message(characters).</div>|<div style='width: 30pt'>int</div>|<div style='width: 20pt'>1.1.0</div>
 kyuubi\.session\.idle<br>\.timeout|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT6H</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>session idle timeout, it will be closed when it's not accessed for this duration</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.2.0</div>
+kyuubi\.session\.name|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>A human readable name of session and we use empty string by default. This name will be recorded in event. Note that, we only apply this value from session conf.</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.4.0</div>
 kyuubi\.session<br>\.timeout|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT6H</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>(deprecated)session timeout, it will be closed when it's not accessed for this duration</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.0.0</div>
 
 

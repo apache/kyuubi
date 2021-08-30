@@ -32,6 +32,7 @@ import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 
 object KyuubiServer extends Logging {
   private val zkServer = new EmbeddedZookeeper()
+  private[kyuubi] var kyuubiServer: KyuubiServer = _
 
   def startServer(conf: KyuubiConf): KyuubiServer = {
     if (!ServiceDiscovery.supportServiceDiscovery(conf)) {
@@ -82,7 +83,7 @@ class KyuubiServer(name: String) extends Serverable(name) {
   def this() = this(classOf[KyuubiServer].getSimpleName)
 
   override val backendService: AbstractBackendService = new KyuubiBackendService()
-  override val frontendService = new KyuubiFrontendService(backendService)
+  val frontendService = new KyuubiFrontendServices(backendService)
   private val eventLoggingService: EventLoggingService = new EventLoggingService
   override protected def supportsServiceDiscovery: Boolean = {
     ServiceDiscovery.supportServiceDiscovery(conf)
@@ -98,9 +99,19 @@ class KyuubiServer(name: String) extends Serverable(name) {
       addService(new MetricsSystem)
     }
 
+    addService(frontendService)
+
     super.initialize(conf)
+  }
+
+  override def start(): Unit = {
+    super.start()
+    KyuubiServer.kyuubiServer = this
   }
 
   override protected def stopServer(): Unit = {}
 
+  override def connectionUrl: String = {
+    frontendService.connectionUrl(true)
+  }
 }
