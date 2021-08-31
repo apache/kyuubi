@@ -63,6 +63,7 @@ trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
     val table = "table_1_test"
     val schema = "default"
     val tableType = "TABLE"
+
     withJdbcStatement(table) { statement =>
       statement.execute(
         s"""
