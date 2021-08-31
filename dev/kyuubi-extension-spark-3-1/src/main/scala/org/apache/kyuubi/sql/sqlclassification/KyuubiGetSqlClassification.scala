@@ -41,7 +41,7 @@ object KyuubiGetSqlClassification {
       jsonNode = objectMapper.readTree(new File(defaultSqlClassificationFile))
     } catch {
       case e: Exception =>
-        throw new IllegalArgumentException("sql-classification-default.json is not exist")
+        throw new IllegalArgumentException("sql-classification-default.json is not exist.", e)
     }
   }
 
