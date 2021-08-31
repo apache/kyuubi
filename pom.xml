@@ -179,7 +179,7 @@
         <scalatest.version>3.2.9</scalatest.version>
         <scopt.version>4.0.1</scopt.version>
         <slf4j.version>1.7.30</slf4j.version>
-        <spark.version>3.0.0</spark.version>
+        <spark.version>3.1.2</spark.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop${hadoop.binary.version}.tgz</spark.archive.name>
         <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
@@ -1630,15 +1630,15 @@
             </properties>
         </profile>
 
-<!--        <profile>-->
-<!--            <id>java-11</id>-->
-<!--            <activation>-->
-<!--                <jdk>11</jdk>-->
-<!--            </activation>-->
-<!--            <properties>-->
-<!--                <java.version>11</java.version>-->
-<!--            </properties>-->
-<!--        </profile>-->
+        <profile>
+            <id>java-11</id>
+            <activation>
+                <jdk>11</jdk>
+            </activation>
+            <properties>
+                <java.version>11</java.version>
+            </properties>
+        </profile>
 
         <profile>
             <id>spark-3.0</id>
