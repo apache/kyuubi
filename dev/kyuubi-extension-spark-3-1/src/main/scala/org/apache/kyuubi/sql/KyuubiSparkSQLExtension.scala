@@ -19,6 +19,8 @@ package org.apache.kyuubi.sql
 
 import org.apache.spark.sql.SparkSessionExtensions
 
+import org.apache.kyuubi.sql.sqlclassification.KyuubiSqlClassification
+
 // scalastyle:off line.size.limit
 /**
  * Depend on Spark SQL Extension framework, we can use this extension follow steps
@@ -28,6 +30,8 @@ import org.apache.spark.sql.SparkSessionExtensions
 // scalastyle:on line.size.limit
 class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
   override def apply(extensions: SparkSessionExtensions): Unit = {
+    extensions.injectParser{ case (session, parser) =>
+      new KyuubiSqlClassification(session, parser) }
     extensions.injectPostHocResolutionRule(RepartitionBeforeWrite)
     extensions.injectPostHocResolutionRule(RepartitionBeforeWriteHive)
     extensions.injectPostHocResolutionRule(FinalStageConfigIsolationCleanRule)

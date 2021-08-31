@@ -15,21 +15,63 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.sqltype
+package org.apache.spark.sql
 
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.operation.JDBCTestUtils
+import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanHelper
+import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
+import org.apache.spark.sql.test.SQLTestData.TestData
+import org.apache.spark.sql.test.SQLTestUtils
 
-class KyuubiSparkSqlTypeSuite extends WithSparkSQLEngine with JDBCTestUtils {
+import org.apache.kyuubi.sql.KyuubiSQLConf
 
-  override protected def jdbcUrl: String = getJdbcUrl
+class KyuubiSqlClassificationSuite extends QueryTest
+    with SQLTestUtils with AdaptiveSparkPlanHelper {
 
-  // ENGINE_SQL_TYPE_ENABLED
-  override def withKyuubiConf: Map[String, String] = Map(
-    KyuubiConf.ENGINE_SQL_TYPE_ENABLED.key -> "true",
-    KyuubiConf.ENGINE_SINGLE_SPARK_SESSION.key -> "true"
-  )
+  var _spark: SparkSession = _
+  override def spark: SparkSession = _spark
+
+  protected override def beforeAll(): Unit = {
+    _spark = SparkSession.builder()
+      .master("local[1]")
+      .config(StaticSQLConf.SPARK_SESSION_EXTENSIONS.key,
+        "org.apache.kyuubi.sql.KyuubiSparkSQLExtension")
+      .config(SQLConf.ADAPTIVE_EXECUTION_ENABLED.key, "true")
+      .config("spark.hadoop.hive.exec.dynamic.partition.mode", "nonstrict")
+      .config("spark.hadoop.hive.metastore.client.capability.check", "false")
+      .config("spark.ui.enabled", "false")
+      .enableHiveSupport()
+      .getOrCreate()
+    setupData()
+    super.beforeAll()
+  }
+
+  protected override def afterAll(): Unit = {
+    super.afterAll()
+    cleanupData()
+    if (_spark != null) {
+      _spark.stop()
+    }
+  }
+
+  private def setupData(): Unit = {
+    val self = _spark
+    import self.implicits._
+    spark.sparkContext.parallelize(
+      (1 to 100).map(i => TestData(i, i.toString)), 10)
+      .toDF("c1", "c2").createOrReplaceTempView("t1")
+    spark.sparkContext.parallelize(
+      (1 to 10).map(i => TestData(i, i.toString)), 5)
+      .toDF("c1", "c2").createOrReplaceTempView("t2")
+    spark.sparkContext.parallelize(
+      (1 to 50).map(i => TestData(i, i.toString)), 2)
+      .toDF("c1", "c2").createOrReplaceTempView("t3")
+  }
+
+  private def cleanupData(): Unit = {
+    spark.sql("DROP VIEW IF EXISTS t1")
+    spark.sql("DROP VIEW IF EXISTS t2")
+    spark.sql("DROP VIEW IF EXISTS t3")
+  }
 
   test("get simple name for DDL") {
 
@@ -199,19 +241,14 @@ class KyuubiSparkSqlTypeSuite extends WithSparkSQLEngine with JDBCTestUtils {
     // scalastyle:on println
   }
 
-  test("test for sqlType has adding into spark.conf") {
-
-    withJdbcStatement() { statement =>
-
-      import org.apache.kyuubi.KyuubiSparkUtils._
-
-      val sql01 = "CREATE DATABASE inventory;"
-      statement.execute(sql01)
-      assert(spark.conf.get(SQL_TYPE) === "DDL")
-
-      val sql02 = "select timestamp'2021-06-01'"
-      statement.execute(sql02)
-      assert(spark.conf.get(SQL_TYPE) !== "DDL")
+  test("Sql classification for ddl") {
+    withSQLConf(KyuubiSQLConf.SQL_CLASSIFICATION_ENABLED.key -> "true") {
+      withDatabase("inventory") {
+        val df = sql("CREATE DATABASE inventory;")
+        assert(df.sparkSession.conf.get("spark.sql.classification") === "ddl")
+      }
+      val df = sql("select timestamp'2021-06-01'")
+      assert(df.sparkSession.conf.get("spark.sql.classification") !== "ddl")
     }
   }
 }
