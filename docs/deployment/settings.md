@@ -243,6 +243,17 @@ kyuubi\.operation<br>\.scheduler\.pool|<div style='width: 65pt;word-wrap: break-
 kyuubi\.operation<br>\.status\.polling<br>\.timeout|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT5S</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Timeout(ms) for long polling asynchronous running sql query's status</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.0.0</div>
 
 
+### Security
+
+Key | Default | Meaning | Type | Since
+--- | --- | --- | --- | ---
+kyuubi\.security<br>\.credentials\.hadoopfs<br>\.enabled|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>true</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Whether to renew HadoopFS DelegationToken</div>|<div style='width: 30pt'>boolean</div>|<div style='width: 20pt'>1.4.0</div>
+kyuubi\.security<br>\.credentials\.hadoopfs<br>\.urls|<div style='width: 65pt;word-wrap: break-word;white-space: normal'></div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Extra Hadoop filesystem URLs for which to request delegation tokens. The filesystem that hosts fs.defaultFS does not need to be listed here.</div>|<div style='width: 30pt'>seq</div>|<div style='width: 20pt'>1.4.0</div>
+kyuubi\.security<br>\.credentials\.hive<br>\.enabled|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>true</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Whether to renew HiveMetaStore DelegationToken</div>|<div style='width: 30pt'>boolean</div>|<div style='width: 20pt'>1.4.0</div>
+kyuubi\.security<br>\.credentials\.renewal<br>\.interval|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT1H</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>How often Kyuubi renews one user's DelegationTokens</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.4.0</div>
+kyuubi\.security<br>\.credentials\.renewal<br>\.retryWait|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT1M</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>How long to wait before retrying to fetch new credentials after a failure.</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.4.0</div>
+
+
 ### Session
 
 Key | Default | Meaning | Type | Since

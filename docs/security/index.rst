@@ -25,5 +25,6 @@ Kyuubi Security Overview
 
     Authentication <authentication>
     kinit
+    proxyuser
     authorization
 

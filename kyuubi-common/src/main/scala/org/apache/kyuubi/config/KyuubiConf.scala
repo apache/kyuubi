@@ -230,6 +230,42 @@ object KyuubiConf {
     .timeConf
     .createWithDefault(Duration.ofHours(3).toMillis)
 
+  val CREDENTIALS_RENEWAL_INTERVAL: ConfigEntry[Long] =
+    buildConf("security.credentials.renewal.interval")
+      .doc("How often Kyuubi renews one user's DelegationTokens")
+      .version("1.4.0")
+      .timeConf
+      .createWithDefault(Duration.ofHours(1).toMillis)
+
+  val CREDENTIALS_RENEWAL_RETRY_WAIT: ConfigEntry[Long] =
+    buildConf("security.credentials.renewal.retryWait")
+      .doc("How long to wait before retrying to fetch new credentials after a failure.")
+      .version("1.4.0")
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(1).toMillis)
+
+  val CREDENTIALS_HIVE_ENABLED: ConfigEntry[Boolean] =
+    buildConf("security.credentials.hive.enabled")
+      .doc("Whether to renew HiveMetaStore DelegationToken")
+      .version("1.4.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val CREDENTIALS_HADOOP_FS_ENABLED: ConfigEntry[Boolean] =
+    buildConf("security.credentials.hadoopfs.enabled")
+      .doc("Whether to renew HadoopFS DelegationToken")
+      .version("1.4.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val CREDENTIALS_HADOOP_FS_URLS: ConfigEntry[Seq[String]] = KyuubiConf
+    .buildConf("security.credentials.hadoopfs.urls")
+    .doc("Extra Hadoop filesystem URLs for which to request delegation tokens. " +
+      "The filesystem that hosts fs.defaultFS does not need to be listed here.")
+    .version("1.4.0")
+    .stringConf
+    .toSequence()
+    .createWithDefault(Nil)
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                              Frontend Service Configuration                                 //

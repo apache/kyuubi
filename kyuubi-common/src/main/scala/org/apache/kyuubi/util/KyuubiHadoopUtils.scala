@@ -17,7 +17,9 @@
 
 package org.apache.kyuubi.util
 
+import org.apache.commons.codec.binary.Base64
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.io.{DataInputBuffer, DataOutputBuffer, Writable}
 import org.apache.hadoop.security.SecurityUtil
 
 import org.apache.kyuubi.config.KyuubiConf
@@ -33,4 +35,22 @@ object KyuubiHadoopUtils {
   def getServerPrincipal(principal: String): String = {
     SecurityUtil.getServerPrincipal(principal, "0.0.0.0")
   }
+
+  def encodeWritable(obj: Writable): String = {
+    val buf = new DataOutputBuffer
+    obj.write(buf)
+    val encoder = new Base64(0, null, false)
+    val raw = new Array[Byte](buf.getLength)
+    System.arraycopy(buf.getData, 0, raw, 0, buf.getLength)
+    encoder.encodeToString(raw)
+  }
+
+  def decodeWritable(obj: Writable, newValue: String): Unit = {
+    val decoder = new Base64(0, null, false)
+    val buf = new DataInputBuffer
+    val decoded = decoder.decode(newValue)
+    buf.reset(decoded, decoded.length)
+    obj.readFields(buf)
+  }
+
 }
