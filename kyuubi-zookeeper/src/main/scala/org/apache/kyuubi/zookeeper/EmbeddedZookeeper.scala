@@ -18,7 +18,7 @@
 package org.apache.kyuubi.zookeeper
 
 import java.io.File
-import java.net.{InetAddress, InetSocketAddress}
+import java.net.InetSocketAddress
 
 import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
 
@@ -42,8 +42,7 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
     val maxClientCnxns = conf.get(ZK_MAX_CLIENT_CONNECTIONS)
     val minSessionTimeout = conf.get(ZK_MIN_SESSION_TIMEOUT)
     val maxSessionTimeout = conf.get(ZK_MAX_SESSION_TIMEOUT)
-    val hostname = conf.get(ZK_CLIENT_PORT_ADDRESS).map(InetAddress.getByName)
-      .getOrElse(findLocalInetAddress).getCanonicalHostName
+    val hostname = conf.get(ZK_CLIENT_PORT_ADDRESS)
 
     zks = new ZooKeeperServer(dataDirectory, dataDirectory, tickTime)
     zks.setMinSessionTimeout(minSessionTimeout)
