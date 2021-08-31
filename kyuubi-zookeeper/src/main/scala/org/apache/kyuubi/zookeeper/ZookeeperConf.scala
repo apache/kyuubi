@@ -17,10 +17,7 @@
 
 package org.apache.kyuubi.zookeeper
 
-import java.net.InetAddress
-
-import org.apache.kyuubi.Utils
-import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf}
+import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
 
 object ZookeeperConf {
 
@@ -46,13 +43,12 @@ object ZookeeperConf {
     .version("1.2.0")
     .fallbackConf(EMBEDDED_ZK_PORT)
 
-  val ZK_CLIENT_PORT_ADDRESS: ConfigEntry[String] =
+  val ZK_CLIENT_PORT_ADDRESS: OptionalConfigEntry[String] =
     buildConf("zookeeper.embedded.client.port.address")
       .doc("clientPortAddress for the embedded zookeeper server to")
       .version("1.2.0")
       .stringConf
-      .transform(address => InetAddress.getByName(address).getCanonicalHostName)
-      .createWithDefault(Utils.findLocalInetAddress.getCanonicalHostName)
+      .createOptional
 
   val ZK_DATA_DIR: ConfigEntry[String] = buildConf("zookeeper.embedded.data.dir")
     .doc("dataDir for the embedded zookeeper server where stores the in-memory database" +
