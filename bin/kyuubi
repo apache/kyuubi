@@ -74,6 +74,9 @@ fi
 if [[ -z ${SPARK_HOME} ]]; then
   echo "Error: SPARK_HOME IS NOT SET! CANNOT PROCEED." >&2
   exit 1
+elif [[ ! -d ${SPARK_HOME} ]]; then
+  echo "Error: SPARK_HOME[${SPARK_HOME}] DOES NOT EXIST! CANNOT PROCEED." >&2
+  exit 1
 else
   if [[ ! -x "${SPARK_HOME}/bin/spark-submit" ]]; then
     echo "Error: INVALID SPARK DISTRIBUTION! CANNOT PROCEED." >&2
