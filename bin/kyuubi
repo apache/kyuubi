@@ -35,29 +35,29 @@ if [[ "$@" = *--help ]] || [[ "$@" = *-h ]]; then
 fi
 
 function kyuubi_logo() {
-    cat ${KYUUBI_HOME}/bin/kyuubi-logo | grep -v "^#"
+  cat ${KYUUBI_HOME}/bin/kyuubi-logo | grep -v "^#"
 }
 
 function kyuubi_rotate_log() {
-    log=$1;
-    
-    if [[ -z ${KYUUBI_MAX_LOG_FILES} ]]; then
-      num=5
-    elif [[ ${KYUUBI_MAX_LOG_FILES} -gt 0 ]]; then
-      num=${KYUUBI_MAX_LOG_FILES}
-    else
-      echo "Error: KYUUBI_MAX_LOG_FILES must be a positive number, but got ${KYUUBI_MAX_LOG_FILES}"
-      exit -1
-    fi
-    
-    if [ -f "$log" ]; then # rotate logs
-    while [ ${num} -gt 1 ]; do
-        prev=`expr ${num} - 1`
-        [ -f "$log.$prev" ] && mv "$log.$prev" "$log.$num"
-        num=${prev}
-    done
-    mv "$log" "$log.$num";
-    fi
+  log=$1;
+
+  if [[ -z ${KYUUBI_MAX_LOG_FILES} ]]; then
+    num=5
+  elif [[ ${KYUUBI_MAX_LOG_FILES} -gt 0 ]]; then
+    num=${KYUUBI_MAX_LOG_FILES}
+  else
+    echo "Error: KYUUBI_MAX_LOG_FILES must be a positive number, but got ${KYUUBI_MAX_LOG_FILES}"
+    exit -1
+  fi
+
+  if [ -f "$log" ]; then # rotate logs
+  while [ ${num} -gt 1 ]; do
+    prev=`expr ${num} - 1`
+    [ -f "$log.$prev" ] && mv "$log.$prev" "$log.$num"
+    num=${prev}
+  done
+  mv "$log" "$log.$num";
+  fi
 }
 
 export KYUUBI_HOME="$(cd "$(dirname "$0")"/..; pwd)"
@@ -101,100 +101,100 @@ cmd="${RUNNER} ${KYUUBI_JAVA_OPTS} -cp ${KYUUBI_CLASSPATH} $CLASS"
 pid="${KYUUBI_PID_DIR}/kyuubi-$USER-$CLASS.pid"
 
 function start_kyuubi() {
-    if [[ ! -w ${KYUUBI_PID_DIR} ]]; then
-      echo "${USER} does not have 'w' permission to ${KYUUBI_PID_DIR}"
+  if [[ ! -w ${KYUUBI_PID_DIR} ]]; then
+    echo "${USER} does not have 'w' permission to ${KYUUBI_PID_DIR}"
+    exit 1
+  fi
+
+  if [[ ! -w ${KYUUBI_LOG_DIR} ]]; then
+    echo "${USER} does not have 'w' permission to ${KYUUBI_LOG_DIR}"
+    exit 1
+  fi
+
+  if [ -f "$pid" ]; then
+    TARGET_ID="$(cat "$pid")"
+    if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
+      echo "$CLASS running as process $TARGET_ID  Stop it first."
       exit 1
     fi
+  fi
 
-    if [[ ! -w ${KYUUBI_LOG_DIR} ]]; then
-      echo "${USER} does not have 'w' permission to ${KYUUBI_LOG_DIR}"
-      exit 1
+  log="${KYUUBI_LOG_DIR}/kyuubi-$USER-$CLASS-$HOSTNAME.out"
+  kyuubi_rotate_log ${log}
+
+  echo "Starting $CLASS, logging to $log"
+  nohup nice -n "${KYUUBI_NICENESS:-0}" ${cmd} >> ${log} 2>&1 < /dev/null &
+  newpid="$!"
+
+  echo "$newpid" > "$pid"
+
+  # Poll for up to 5 seconds for the java process to start
+  for i in {1..10}
+  do
+    if [[ $(ps -p "$newpid" -o comm=) =~ "java" ]]; then
+       break
     fi
+    sleep 0.5
+  done
 
-    if [ -f "$pid" ]; then
-        TARGET_ID="$(cat "$pid")"
-        if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
-          echo "$CLASS running as process $TARGET_ID  Stop it first."
-          exit 1
-        fi
-    fi
-
-    log="${KYUUBI_LOG_DIR}/kyuubi-$USER-$CLASS-$HOSTNAME.out"
-    kyuubi_rotate_log ${log}
-
-    echo "Starting $CLASS, logging to $log"
-    nohup nice -n "${KYUUBI_NICENESS:-0}" ${cmd} >> ${log} 2>&1 < /dev/null &
-    newpid="$!"
-
-    echo "$newpid" > "$pid"
-
-    # Poll for up to 5 seconds for the java process to start
-    for i in {1..10}
-    do
-        if [[ $(ps -p "$newpid" -o comm=) =~ "java" ]]; then
-           break
-        fi
-        sleep 0.5
-    done
-
-    sleep 2
-    # Check if the process has died; in that case we'll tail the log so the user can see
-    if [[ ! $(ps -p "$newpid" -o comm=) =~ "java" ]]; then
-      echo "Failed to launch: ${cmd}"
-      tail -2 "$log" | sed 's/^/  /'
-      echo "Full log in $log"
-    else
-      echo "Welcome to"
-      kyuubi_logo
-    fi
+  sleep 2
+  # Check if the process has died; in that case we'll tail the log so the user can see
+  if [[ ! $(ps -p "$newpid" -o comm=) =~ "java" ]]; then
+    echo "Failed to launch: ${cmd}"
+    tail -2 "$log" | sed 's/^/  /'
+    echo "Full log in $log"
+  else
+    echo "Welcome to"
+    kyuubi_logo
+  fi
 }
 
 function run_kyuubi() {
-    echo "Starting $CLASS"
-    nice -n "${KYUUBI_NICENESS:-0}" ${cmd}
+  echo "Starting $CLASS"
+  nice -n "${KYUUBI_NICENESS:-0}" ${cmd}
 }
 
 function stop_kyuubi() {
-    if [ -f ${pid} ]; then
-      TARGET_ID="$(cat "$pid")"
-      if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
-        echo "Stopping $CLASS"
-        kill "$TARGET_ID" && rm -f "$pid"
-        for i in {1..20}
-        do
-            sleep 0.5
-            if [[ ! $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
-              break
-            fi
-        done
-
-        if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
-          echo "Failed to stop kyuubi after 10 seconds, try 'kill -9 ${TARGET_ID}' forcefully "
-        else
-           kyuubi_logo
-           echo "Bye!"
+  if [ -f ${pid} ]; then
+    TARGET_ID="$(cat "$pid")"
+    if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
+      echo "Stopping $CLASS"
+      kill "$TARGET_ID" && rm -f "$pid"
+      for i in {1..20}
+      do
+        sleep 0.5
+        if [[ ! $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
+          break
         fi
+      done
+
+      if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
+        echo "Failed to stop kyuubi after 10 seconds, try 'kill -9 ${TARGET_ID}' forcefully "
       else
-        echo "no $CLASS to stop"
+        kyuubi_logo
+        echo "Bye!"
       fi
     else
       echo "no $CLASS to stop"
     fi
+  else
+    echo "no $CLASS to stop"
+  fi
 }
 
 function check_kyuubi() {
-    if [[ -f ${pid} ]]; then
-      TARGET_ID="$(cat "$pid")"
-      if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
-        echo "Kyuubi is running (pid: $TARGET_ID)"
-      else
-        echo "Kyuubi is not running"
-      fi
+  if [[ -f ${pid} ]]; then
+    TARGET_ID="$(cat "$pid")"
+    if [[ $(ps -p "$TARGET_ID" -o comm=) =~ "java" ]]; then
+      echo "Kyuubi is running (pid: $TARGET_ID)"
     else
       echo "Kyuubi is not running"
     fi
-
+  else
+    echo "Kyuubi is not running"
+  fi
 }
+
 case $1 in
   (start | "")
     start_kyuubi

@@ -37,14 +37,14 @@ done
 
 KYUUBI_ENV_SH="${KYUUBI_CONF_DIR}"/kyuubi-env.sh
 if [[ -f ${KYUUBI_ENV_SH} ]]; then
-   set -a
-   if [ $silent -eq 0 ]; then
+  set -a
+  if [ $silent -eq 0 ]; then
     echo "Using kyuubi environment file ${KYUUBI_ENV_SH} to initialize..."
-   fi
-   . "${KYUUBI_ENV_SH}"
-   set +a
+  fi
+  . "${KYUUBI_ENV_SH}"
+  set +a
 else
-   echo "Warn: Not find kyuubi environment file ${KYUUBI_ENV_SH}, using default ones..."
+  echo "Warn: Not find kyuubi environment file ${KYUUBI_ENV_SH}, using default ones..."
 fi
 
 export KYUUBI_LOG_DIR="${KYUUBI_LOG_DIR:-"${KYUUBI_HOME}/logs"}"
@@ -63,9 +63,9 @@ if [[ -e ${KYUUBI_WORK_DIR_ROOT} ]]; then
 fi
 
 if [[ -z ${JAVA_HOME} ]]; then
-   if [[ $(command -v java) ]]; then
-     export JAVA_HOME="$(dirname $(dirname $(which java)))"
-   fi
+  if [[ $(command -v java) ]]; then
+    export JAVA_HOME="$(dirname $(dirname $(which java)))"
+  fi
 fi
 
 export KYUUBI_SCALA_VERSION="${KYUUBI_SCALA_VERSION:-"2.12"}"
