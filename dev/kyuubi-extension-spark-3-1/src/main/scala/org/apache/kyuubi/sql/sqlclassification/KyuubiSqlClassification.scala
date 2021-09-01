@@ -18,56 +18,27 @@
 package org.apache.kyuubi.sql.sqlclassification
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
-import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.internal.SQLConf
-import org.apache.spark.sql.types.{DataType, StructType}
 
-case class KyuubiSqlClassification(session: SparkSession, delegate: ParserInterface)
-  extends ParserInterface {
+import org.apache.kyuubi.sql.KyuubiSQLConf._
+
+case class KyuubiSqlClassification(session: SparkSession) extends Rule[LogicalPlan] {
 
   import KyuubiSqlConf._
 
-  override def parsePlan(sqlText: String): LogicalPlan = {
-    val logicalPlan = delegate.parsePlan(sqlText)
-    if (CLASSIFICATION_ENABLED) {
-      val simpleName = logicalPlan.getClass.getSimpleName
+  override def apply(plan: LogicalPlan): LogicalPlan = {
+    if (CLASSIFICATION_ENABLED && plan.resolved && !plan.analyzed) {
+      val simpleName = plan.getClass.getSimpleName
       val sqlClassification = KyuubiGetSqlClassification.getSqlClassification(simpleName)
       session.conf.set(SPARK_SQL_CLASSIFICATION, sqlClassification)
     }
-    logicalPlan
-  }
-
-  override def parseExpression(sqlText: String): Expression = {
-    delegate.parseExpression(sqlText)
-  }
-
-  override def parseTableIdentifier(sqlText: String): TableIdentifier = {
-    delegate.parseTableIdentifier(sqlText)
-  }
-
-  override def parseFunctionIdentifier(sqlText: String): FunctionIdentifier = {
-    delegate.parseFunctionIdentifier(sqlText)
-  }
-
-  override def parseMultipartIdentifier(sqlText: String): Seq[String] = {
-    delegate.parseMultipartIdentifier(sqlText)
-  }
-
-  override def parseTableSchema(sqlText: String): StructType = {
-    delegate.parseTableSchema(sqlText)
-  }
-
-  override def parseDataType(sqlText: String): DataType = {
-    delegate.parseDataType(sqlText)
+    plan
   }
 }
 
 object KyuubiSqlConf {
-
-  import org.apache.kyuubi.sql.KyuubiSQLConf._
 
   val CLASSIFICATION_ENABLED = SQLConf.get.getConf(SQL_CLASSIFICATION_ENABLED)
   val SPARK_SQL_CLASSIFICATION = "spark.sql.classification"

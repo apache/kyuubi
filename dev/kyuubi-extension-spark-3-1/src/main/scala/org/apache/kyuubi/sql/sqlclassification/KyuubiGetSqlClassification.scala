@@ -47,19 +47,11 @@ object KyuubiGetSqlClassification {
 
   def getSqlClassification(simpleName: String): String = {
 
-    val iteratorSqlClassification = jsonNode.fields()
-    while (iteratorSqlClassification.hasNext) {
-      val item = iteratorSqlClassification.next()
-      val sqlClassififation = item.getKey
-      val simpleNameList = item.getValue
-
-      val nameIterator = simpleNameList.iterator()
-      while (nameIterator.hasNext) {
-        if (simpleName.equals(nameIterator.next().asText())) {
-          return sqlClassififation
-        }
-      }
+    val sqlClassififation = jsonNode.get(simpleName)
+    if (sqlClassififation == null) {
+      return "others"
+    } else {
+      return sqlClassififation.asText()
     }
-    return "others"
   }
 }
