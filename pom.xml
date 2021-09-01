@@ -164,6 +164,7 @@
         <guava.version>30.1-jre</guava.version>
         <hadoop.version>3.2.2</hadoop.version>
         <hadoop.binary.version>3.2</hadoop.binary.version>
+        <hbase.version>1.2.3</hbase.version>
         <hive.version>2.3.7</hive.version>
         <hudi.version>0.9.0</hudi.version>
         <iceberg.name>iceberg-spark3-runtime</iceberg.name>
@@ -175,6 +176,7 @@
         <jetty.version>9.4.41.v20210516</jetty.version>
         <kubernetes-client.version>5.5.0</kubernetes-client.version>
         <ldapsdk.version>5.1.4</ldapsdk.version>
+        <parquet.version>1.10.1</parquet.version>
         <prometheus.version>0.10.0</prometheus.version>
         <scalatest.version>3.2.9</scalatest.version>
         <scopt.version>4.0.1</scopt.version>
@@ -1066,7 +1068,31 @@
             </dependency>
 
             <!-- Hudi dependency
-            TODO: replace this 4 dependency with hudi-spark3-bundle_2.12 -->
+            TODO: replace this 6 dependency with hudi-spark3-bundle_2.12 -->
+            <dependency>
+                <groupId>org.apache.parquet</groupId>
+                <artifactId>parquet-avro</artifactId>
+                <version>${parquet.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.hbase</groupId>
+                <artifactId>hbase-client</artifactId>
+                <version>${hbase.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-all</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.spark</groupId>
+                <artifactId>spark-avro_${scala.binary.version}</artifactId>
+                <version>${spark.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.apache.hudi</groupId>
                 <artifactId>hudi-spark3_${scala.binary.version}</artifactId>
@@ -1105,12 +1131,6 @@
                         <artifactId>hudi-spark-common_2.11</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.spark</groupId>
-                <artifactId>spark-avro_${scala.binary.version}</artifactId>
-                <version>${spark.version}</version>
             </dependency>
 
             <dependency>

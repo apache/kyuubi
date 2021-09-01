@@ -28,9 +28,13 @@ trait HudiSuiteMixin extends DataLakeSuiteMixin {
   override protected def warehouse: Path = Utils.createTempDir()
 
   override protected def extraJars: String = {
+    var extraJars = ""
     System.getProperty("java.class.path")
       .split(":")
-      .filter(_.contains("hudi-spark")).head
+      .filter(_.contains("jar"))
+      .foreach(i => extraJars += i + ",")
+
+    extraJars.substring(0, extraJars.length - 1)
   }
 
   override protected def extraConfigs = Map(
