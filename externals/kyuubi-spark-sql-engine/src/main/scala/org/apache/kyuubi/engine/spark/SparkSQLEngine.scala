@@ -30,7 +30,7 @@ import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.countDownLatch
-import org.apache.kyuubi.engine.spark.events.{EngineEvent, EventLoggingService}
+import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, EventLoggingService}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, RetryPolicies, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, ServiceState}
@@ -51,7 +51,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
   }
 
   override def initialize(conf: KyuubiConf): Unit = {
-    val listener = new SparkSQLEngineListener(this)
+    val listener = new SparkSQLEngineListener(this, new EngineEventsStore(conf))
     spark.sparkContext.addSparkListener(listener)
     addService(eventLogging)
     addService(frontendService)

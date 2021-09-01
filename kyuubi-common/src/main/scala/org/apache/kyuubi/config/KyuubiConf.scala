@@ -877,6 +877,14 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  val ENGINE_UI_SESSION_LIMIT: ConfigEntry[Int] =
+    buildConf("engine.ui.retainedSessions")
+      .doc("The number of SQL client sessions kept in the Kyuubi Query Engine web UI.")
+      .version("1.4.0")
+      .intConf
+      .checkValue(_ > 0, "retained sessions must be positive.")
+      .createWithDefault(200)
+
   val SESSION_NAME: OptionalConfigEntry[String] =
     buildConf("session.name")
       .doc("A human readable name of session and we use empty string by default. " +
