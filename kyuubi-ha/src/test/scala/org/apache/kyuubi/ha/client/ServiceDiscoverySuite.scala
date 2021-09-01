@@ -23,6 +23,7 @@ import javax.security.auth.login.Configuration
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.util.StringUtils
 import org.apache.zookeeper.ZooDefs
 import org.scalatest.time.SpanSugar._
 
@@ -125,8 +126,8 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
       assert(entries.head.getLoginModuleName === "com.sun.security.auth.module.Krb5LoginModule")
       val options = entries.head.getOptions.asScala.toMap
 
-      assert(options("principal") ===
-        s"kentyao/${InetAddress.getLocalHost.getCanonicalHostName}@apache.org")
+      val hostname = StringUtils.toLowerCase(InetAddress.getLocalHost.getCanonicalHostName)
+      assert(options("principal") === s"kentyao/$hostname@apache.org")
       assert(options("useKeyTab").toString.toBoolean)
 
       conf.set(KyuubiConf.SERVER_KEYTAB, keytab.getName)
