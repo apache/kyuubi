@@ -60,12 +60,12 @@ class ThriftFrontendService private(name: String, be: BackendService, oomHook: R
     this.conf = conf
     try {
       hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
-      val serverHost = conf.get(FRONTEND_BIND_HOST)
+      val serverHost = conf.get(FRONTEND_THRIFT_BIND_HOST)
       serverAddr = serverHost.map(InetAddress.getByName).getOrElse(Utils.findLocalInetAddress)
-      portNum = conf.get(FRONTEND_BIND_PORT)
-      val minThreads = conf.get(FRONTEND_MIN_WORKER_THREADS)
-      val maxThreads = conf.get(FRONTEND_MAX_WORKER_THREADS)
-      val keepAliveTime = conf.get(FRONTEND_WORKER_KEEPALIVE_TIME)
+      portNum = conf.get(FRONTEND_THRIFT_BIND_PORT)
+      val minThreads = conf.get(FRONTEND_THRIFT_MIN_WORKER_THREADS)
+      val maxThreads = conf.get(FRONTEND_THRIFT_MAX_WORKER_THREADS)
+      val keepAliveTime = conf.get(FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME)
       val executor = ExecutorPoolCaptureOom(
         name + "Handler-Pool",
         minThreads, maxThreads,
@@ -78,9 +78,9 @@ class ThriftFrontendService private(name: String, be: BackendService, oomHook: R
       portNum = serverSocket.getLocalPort
       val tServerSocket = new TServerSocket(serverSocket)
 
-      val maxMessageSize = conf.get(FRONTEND_MAX_MESSAGE_SIZE)
-      val requestTimeout = conf.get(FRONTEND_LOGIN_TIMEOUT).toInt
-      val beBackoffSlotLength = conf.get(FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH).toInt
+      val maxMessageSize = conf.get(FRONTEND_THRIFT_MAX_MESSAGE_SIZE)
+      val requestTimeout = conf.get(FRONTEND_THRIFT_LOGIN_TIMEOUT).toInt
+      val beBackoffSlotLength = conf.get(FRONTEND_THRIFT_LOGIN_BACKOFF_SLOT_LENGTH).toInt
 
       val args = new TThreadPoolServer.Args(tServerSocket)
         .processorFactory(tProcFactory)

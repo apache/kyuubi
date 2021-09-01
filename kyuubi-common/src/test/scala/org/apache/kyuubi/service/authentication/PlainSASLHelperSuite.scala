@@ -30,7 +30,7 @@ class PlainSASLHelperSuite extends KyuubiFunSuite {
 
   test("PlainSASLHelper") {
     val server = new NoopServer()
-    val conf = KyuubiConf().set(KyuubiConf.FRONTEND_BIND_PORT, 0)
+    val conf = KyuubiConf().set(KyuubiConf.FRONTEND_THRIFT_BIND_PORT, 0)
     server.initialize(conf)
     val service = server.getServices(0).asInstanceOf[ThriftFrontendService]
     val tProcessorFactory = PlainSASLHelper.getProcessFactory(service)

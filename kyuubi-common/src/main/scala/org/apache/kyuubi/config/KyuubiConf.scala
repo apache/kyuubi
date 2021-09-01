@@ -130,8 +130,8 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   }
 
   private val serverOnlyConfEntries: Set[ConfigEntry[_]] = Set(
-    FRONTEND_BIND_HOST,
-    FRONTEND_BIND_PORT,
+    FRONTEND_THRIFT_BIND_HOST,
+    FRONTEND_THRIFT_BIND_PORT,
     AUTHENTICATION_METHOD,
     SERVER_KEYTAB,
     SERVER_PRINCIPAL,
@@ -235,60 +235,117 @@ object KyuubiConf {
   //                              Frontend Service Configuration                                 //
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
+  @deprecated(s"using ${FRONTEND_THRIFT_BIND_HOST.key} instead", "1.4.0")
   val FRONTEND_BIND_HOST: OptionalConfigEntry[String] = buildConf("frontend.bind.host")
-    .doc("Hostname or IP of the machine on which to run the frontend service.")
+    .doc("(deprecated) Hostname or IP of the machine on which to run the thrift frontend service.")
     .version("1.0.0")
     .stringConf
     .createOptional
 
+  val FRONTEND_THRIFT_BIND_HOST: ConfigEntry[Option[String]] =
+    buildConf("frontend.thrift.bind.host")
+    .doc("Hostname or IP of the machine on which to run the thrift frontend service.")
+    .version("1.4.0")
+    .fallbackConf(FRONTEND_BIND_HOST)
+
+  @deprecated(s"using ${FRONTEND_THRIFT_BIND_PORT.key} instead", "1.4.0")
   val FRONTEND_BIND_PORT: ConfigEntry[Int] = buildConf("frontend.bind.port")
-    .doc("Port of the machine on which to run the frontend service.")
+    .doc("(deprecated) Port of the machine on which to run the thrift frontend service.")
     .version("1.0.0")
     .intConf
     .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
     .createWithDefault(10009)
 
+  val FRONTEND_THRIFT_BIND_PORT: ConfigEntry[Int] = buildConf("frontend.thrift.bind.port")
+    .doc("Port of the machine on which to run the thrift frontend service.")
+    .version("1.4.0")
+    .fallbackConf(FRONTEND_BIND_PORT)
+
+  @deprecated(s"using ${FRONTEND_THRIFT_MIN_WORKER_THREADS.key} instead", "1.4.0")
   val FRONTEND_MIN_WORKER_THREADS: ConfigEntry[Int] = buildConf("frontend.min.worker.threads")
-    .doc("Minimum number of threads in the of frontend worker thread pool for the frontend" +
-      " service")
+    .doc("(deprecated) Minimum number of threads in the of frontend worker thread pool for " +
+      "the thrift frontend service")
     .version("1.0.0")
     .intConf
     .createWithDefault(9)
 
+  val FRONTEND_THRIFT_MIN_WORKER_THREADS: ConfigEntry[Int] =
+    buildConf("frontend.thrift.min.worker.threads")
+    .doc("Minimum number of threads in the of frontend worker thread pool for the thrift " +
+      "frontend service")
+    .version("1.4.0")
+    .fallbackConf(FRONTEND_MIN_WORKER_THREADS)
+
+  @deprecated(s"using ${FRONTEND_THRIFT_MAX_WORKER_THREADS.key} instead", "1.4.0")
   val FRONTEND_MAX_WORKER_THREADS: ConfigEntry[Int] = buildConf("frontend.max.worker.threads")
-    .doc("Maximum number of threads in the of frontend worker thread pool for the frontend" +
-      " service")
+    .doc("(deprecated) Maximum number of threads in the of frontend worker thread pool for " +
+      "the thrift frontend service")
     .version("1.0.0")
     .intConf
     .createWithDefault(999)
 
+  val FRONTEND_THRIFT_MAX_WORKER_THREADS: ConfigEntry[Int] =
+    buildConf("frontend.thrift.max.worker.threads")
+    .doc("Maximum number of threads in the of frontend worker thread pool for the thrift " +
+      "frontend service")
+    .version("1.4.0")
+    .fallbackConf(FRONTEND_MAX_WORKER_THREADS)
+
+  @deprecated(s"using ${FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME.key} instead", "1.4.0")
   val FRONTEND_WORKER_KEEPALIVE_TIME: ConfigEntry[Long] =
     buildConf("frontend.worker.keepalive.time")
-      .doc("Keep-alive time (in milliseconds) for an idle worker thread")
+      .doc("(deprecated) Keep-alive time (in milliseconds) for an idle worker thread")
       .version("1.0.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(60).toMillis)
 
+  val FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME: ConfigEntry[Long] =
+    buildConf("frontend.thrift.worker.keepalive.time")
+      .doc("Keep-alive time (in milliseconds) for an idle worker thread")
+      .version("1.4.0")
+      .fallbackConf(FRONTEND_WORKER_KEEPALIVE_TIME)
+
+  @deprecated(s"using ${FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME.key} instead", "1.4.0")
   val FRONTEND_MAX_MESSAGE_SIZE: ConfigEntry[Int] =
     buildConf("frontend.max.message.size")
-      .doc("Maximum message size in bytes a Kyuubi server will accept.")
+      .doc("(deprecated) Maximum message size in bytes a Kyuubi server will accept.")
       .version("1.0.0")
       .intConf
       .createWithDefault(104857600)
 
+  val FRONTEND_THRIFT_MAX_MESSAGE_SIZE: ConfigEntry[Int] =
+    buildConf("frontend.thrift.max.message.size")
+      .doc("Maximum message size in bytes a Kyuubi server will accept.")
+      .version("1.4.0")
+      .fallbackConf(FRONTEND_MAX_MESSAGE_SIZE)
+
+  @deprecated(s"using ${FRONTEND_THRIFT_LOGIN_TIMEOUT.key} instead", "1.4.0")
   val FRONTEND_LOGIN_TIMEOUT: ConfigEntry[Long] =
     buildConf("frontend.login.timeout")
-      .doc("Timeout for Thrift clients during login to the frontend service.")
+      .doc("(deprecated) Timeout for Thrift clients during login to the thrift frontend service.")
       .version("1.0.0")
       .timeConf
       .createWithDefault(Duration.ofSeconds(20).toMillis)
 
+  val FRONTEND_THRIFT_LOGIN_TIMEOUT: ConfigEntry[Long] =
+    buildConf("frontend.thrift.login.timeout")
+      .doc("Timeout for Thrift clients during login to the thrift frontend service.")
+      .version("1.4.0")
+      .fallbackConf(FRONTEND_LOGIN_TIMEOUT)
+
+  @deprecated(s"using ${FRONTEND_THRIFT_LOGIN_BACKOFF_SLOT_LENGTH.key} instead", "1.4.0")
   val FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH: ConfigEntry[Long] =
     buildConf("frontend.backoff.slot.length")
-      .doc("Time to back off during login to the frontend service.")
+      .doc("(deprecated) Time to back off during login to the thrift frontend service.")
       .version("1.0.0")
       .timeConf
       .createWithDefault(Duration.ofMillis(100).toMillis)
+
+  val FRONTEND_THRIFT_LOGIN_BACKOFF_SLOT_LENGTH: ConfigEntry[Long] =
+    buildConf("frontend.thrift.backoff.slot.length")
+      .doc("Time to back off during login to the thrift frontend service.")
+      .version("1.4.0")
+      .fallbackConf(FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH)
 
   val AUTHENTICATION_METHOD: ConfigEntry[String] = buildConf("authentication")
     .doc("Client authentication types.<ul>" +

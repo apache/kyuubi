@@ -26,7 +26,7 @@ class KyuubiServerSuite extends KyuubiFunSuite {
   test("kyuubi server basic") {
     val server = new KyuubiServer()
     server.stop()
-    val conf = KyuubiConf().set(KyuubiConf.FRONTEND_BIND_PORT, 0)
+    val conf = KyuubiConf().set(KyuubiConf.FRONTEND_THRIFT_BIND_PORT, 0)
     assert(server.getServices.isEmpty)
     assert(server.getServiceState === LATENT)
     val e = intercept[IllegalStateException](server.connectionUrl)
@@ -60,7 +60,7 @@ class KyuubiServerSuite extends KyuubiFunSuite {
   }
 
   test("invalid port") {
-    val conf = KyuubiConf().set(KyuubiConf.FRONTEND_BIND_PORT, 100)
+    val conf = KyuubiConf().set(KyuubiConf.FRONTEND_THRIFT_BIND_PORT, 100)
     val e = intercept[KyuubiException](new KyuubiServer().initialize(conf))
     assert(e.getMessage.contains("Failed to initialize frontend service"))
     assert(e.getCause.getMessage === "Invalid Port number")

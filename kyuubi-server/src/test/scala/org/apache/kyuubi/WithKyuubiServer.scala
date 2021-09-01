@@ -40,7 +40,7 @@ trait WithKyuubiServer extends KyuubiFunSuite {
 
     conf.set("spark.ui.enabled", "false")
     conf.setIfMissing("spark.sql.catalogImplementation", "in-memory")
-    conf.set(FRONTEND_BIND_PORT, 0)
+    conf.set(FRONTEND_THRIFT_BIND_PORT, 0)
     conf.setIfMissing(ENGINE_CHECK_INTERVAL, 3000L)
     conf.setIfMissing(ENGINE_IDLE_TIMEOUT, 10000L)
     conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
