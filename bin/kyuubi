@@ -19,7 +19,7 @@
 ## Kyuubi Server Main Entrance
 CLASS="org.apache.kyuubi.server.KyuubiServer"
 
-function usage {
+function usage() {
   echo "Usage: bin/kyuubi command"
   echo "  commands:"
   echo "    start        - Run a Kyuubi server as a daemon"
