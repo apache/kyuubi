@@ -24,15 +24,15 @@ export KYUUBI_CONF_DIR="${KYUUBI_CONF_DIR:-"${KYUUBI_HOME}"/conf}"
 silent=0
 while getopts "s" arg
 do
-        case $arg in
-             s)
-                silent=1
-                ;;
-             ?)
-             echo "unknown argument"
-        exit 1
-        ;;
-        esac
+  case $arg in
+    s)
+      silent=1
+    ;;
+    ?)
+      echo "unknown argument"
+      exit 1
+    ;;
+  esac
 done
 
 KYUUBI_ENV_SH="${KYUUBI_CONF_DIR}"/kyuubi-env.sh
@@ -76,7 +76,7 @@ if [[ -f ${KYUUBI_HOME}/RELEASE ]]; then
   SPARK_BUILTIN="${KYUUBI_HOME}/externals/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD:0:3}"
 fi
 
-if [[ ! -d ${SPARK_BUILTIN} ]]; then
+if [[ ! -f ${KYUUBI_HOME}/RELEASE && ! -d ${SPARK_BUILTIN} ]]; then
   MVN="${MVN:-"${KYUUBI_HOME}/build/mvn"}"
   SPARK_VERSION_BUILD=$("$MVN" help:evaluate -Dexpression=spark.version 2>/dev/null\
     | grep -v "INFO"\
