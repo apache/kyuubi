@@ -51,7 +51,13 @@ class EngineRefSuite extends KyuubiFunSuite {
     super.afterAll()
   }
 
-  test(s"${CONNECTION} shared level engine name") {
+  override def beforeEach(): Unit = {
+    conf.unset(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN)
+    conf.unset(KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN)
+    super.beforeEach()
+  }
+
+  test("CONNECTION shared level engine name") {
     val id = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
     Seq(None, Some("suffix")).foreach { domain =>
       conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, CONNECTION.toString)
@@ -63,10 +69,9 @@ class EngineRefSuite extends KyuubiFunSuite {
     }
   }
 
-  test(s"${USER} shared level engine name") {
+  test("USER shared level engine name") {
     val id = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
-    conf.unset(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN)
     val appName = EngineRef(conf, user, id)
     assert(appName.engineSpace === ZKPaths.makePath(s"kyuubi_$USER", user))
     assert(appName.defaultEngineName === s"kyuubi_${USER}_${user}_${id.identifier}")
@@ -82,10 +87,9 @@ class EngineRefSuite extends KyuubiFunSuite {
     }
   }
 
-  test(s"${SERVER} shared level engine name") {
+  test("SERVER shared level engine name") {
     val id = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, SERVER.toString)
-    conf.unset(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN)
     val appName = EngineRef(conf, user, id)
     assert(appName.engineSpace ===
       ZKPaths.makePath(s"kyuubi_$SERVER", user))
