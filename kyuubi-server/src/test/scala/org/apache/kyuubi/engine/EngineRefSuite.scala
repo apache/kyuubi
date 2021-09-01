@@ -165,8 +165,4 @@ class EngineRefSuite extends KyuubiFunSuite {
       assert(port2 == port1, "engine shared")
     }
   }
-
-  test("") {
-
-  }
 }
