@@ -130,8 +130,10 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   }
 
   private val serverOnlyConfEntries: Set[ConfigEntry[_]] = Set(
-    FRONTEND_THRIFT_BIND_HOST,
-    FRONTEND_THRIFT_BIND_PORT,
+    FRONTEND_BIND_HOST,
+    FRONTEND_BIND_PORT,
+    FRONTEND_THRIFT_BINARY_BIND_HOST,
+    FRONTEND_THRIFT_BINARY_BIND_PORT,
     AUTHENTICATION_METHOD,
     SERVER_KEYTAB,
     SERVER_PRINCIPAL,
@@ -235,29 +237,33 @@ object KyuubiConf {
   //                              Frontend Service Configuration                                 //
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
-  @deprecated(s"using ${FRONTEND_THRIFT_BIND_HOST.key} instead", "1.4.0")
+  @deprecated(s"using ${FRONTEND_THRIFT_BINARY_BIND_HOST.key} instead", "1.4.0")
   val FRONTEND_BIND_HOST: OptionalConfigEntry[String] = buildConf("frontend.bind.host")
-    .doc("(deprecated) Hostname or IP of the machine on which to run the thrift frontend service.")
+    .doc("(deprecated) Hostname or IP of the machine on which to run the thrift frontend service " +
+      "via binary protocol.")
     .version("1.0.0")
     .stringConf
     .createOptional
 
-  val FRONTEND_THRIFT_BIND_HOST: ConfigEntry[Option[String]] =
-    buildConf("frontend.thrift.bind.host")
-    .doc("Hostname or IP of the machine on which to run the thrift frontend service.")
+  val FRONTEND_THRIFT_BINARY_BIND_HOST: ConfigEntry[Option[String]] =
+    buildConf("frontend.thrift.binary.bind.host")
+    .doc("Hostname or IP of the machine on which to run the thrift frontend service " +
+      "via binary protocol.")
     .version("1.4.0")
     .fallbackConf(FRONTEND_BIND_HOST)
 
-  @deprecated(s"using ${FRONTEND_THRIFT_BIND_PORT.key} instead", "1.4.0")
+  @deprecated(s"using ${FRONTEND_THRIFT_BINARY_BIND_PORT.key} instead", "1.4.0")
   val FRONTEND_BIND_PORT: ConfigEntry[Int] = buildConf("frontend.bind.port")
-    .doc("(deprecated) Port of the machine on which to run the thrift frontend service.")
+    .doc("(deprecated) Port of the machine on which to run the thrift frontend service " +
+      "via binary protocol.")
     .version("1.0.0")
     .intConf
     .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
     .createWithDefault(10009)
 
-  val FRONTEND_THRIFT_BIND_PORT: ConfigEntry[Int] = buildConf("frontend.thrift.bind.port")
-    .doc("Port of the machine on which to run the thrift frontend service.")
+  val FRONTEND_THRIFT_BINARY_BIND_PORT: ConfigEntry[Int] =
+    buildConf("frontend.thrift.binary.bind.port")
+    .doc("Port of the machine on which to run the thrift frontend service via binary protocol.")
     .version("1.4.0")
     .fallbackConf(FRONTEND_BIND_PORT)
 

@@ -137,7 +137,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .unset(KyuubiConf.SERVER_PRINCIPAL)
       .set(HA_ZK_QUORUM, zkServer.getConnectString)
       .set(HA_ZK_NAMESPACE, namespace)
-      .set(KyuubiConf.FRONTEND_THRIFT_BIND_PORT, 0)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     val args = Array(
       "create", "server",
@@ -184,7 +184,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .unset(KyuubiConf.SERVER_PRINCIPAL)
       .set(HA_ZK_QUORUM, zkServer.getConnectString)
       .set(HA_ZK_NAMESPACE, uniqueNamespace)
-      .set(KyuubiConf.FRONTEND_THRIFT_BIND_PORT, 0)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     System.setProperty(HA_ZK_NAMESPACE.key, uniqueNamespace)
 
     withZkClient(conf) { framework =>
@@ -242,7 +242,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .unset(KyuubiConf.SERVER_PRINCIPAL)
       .set(HA_ZK_QUORUM, zkServer.getConnectString)
       .set(HA_ZK_NAMESPACE, uniqueNamespace)
-      .set(KyuubiConf.FRONTEND_THRIFT_BIND_PORT, 0)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     withZkClient(conf) { framework =>
       createServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
@@ -270,7 +270,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .unset(KyuubiConf.SERVER_PRINCIPAL)
       .set(HA_ZK_QUORUM, zkServer.getConnectString)
       .set(HA_ZK_NAMESPACE, uniqueNamespace)
-      .set(KyuubiConf.FRONTEND_THRIFT_BIND_PORT, 0)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     withZkClient(conf) { framework =>
       createServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
@@ -299,7 +299,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .unset(KyuubiConf.SERVER_PRINCIPAL)
       .set(HA_ZK_QUORUM, zkServer.getConnectString)
       .set(HA_ZK_NAMESPACE, uniqueNamespace)
-      .set(KyuubiConf.FRONTEND_THRIFT_BIND_PORT, 0)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     withZkClient(conf) { framework =>
       withZkClient(conf) { zc =>
@@ -330,7 +330,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .unset(KyuubiConf.SERVER_PRINCIPAL)
       .set(HA_ZK_QUORUM, zkServer.getConnectString)
       .set(HA_ZK_NAMESPACE, uniqueNamespace)
-      .set(KyuubiConf.FRONTEND_THRIFT_BIND_PORT, 0)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     withZkClient(conf) { framework =>
       createServiceNode(conf, framework, uniqueNamespace, "localhost:10000")

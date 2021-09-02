@@ -60,9 +60,9 @@ class ThriftFrontendService private(name: String, be: BackendService, oomHook: R
     this.conf = conf
     try {
       hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
-      val serverHost = conf.get(FRONTEND_THRIFT_BIND_HOST)
+      val serverHost = conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST)
       serverAddr = serverHost.map(InetAddress.getByName).getOrElse(Utils.findLocalInetAddress)
-      portNum = conf.get(FRONTEND_THRIFT_BIND_PORT)
+      portNum = conf.get(FRONTEND_THRIFT_BINARY_BIND_PORT)
       val minThreads = conf.get(FRONTEND_THRIFT_MIN_WORKER_THREADS)
       val maxThreads = conf.get(FRONTEND_THRIFT_MAX_WORKER_THREADS)
       val keepAliveTime = conf.get(FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME)

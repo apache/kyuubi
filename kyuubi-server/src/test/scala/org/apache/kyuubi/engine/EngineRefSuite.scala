@@ -125,7 +125,7 @@ class EngineRefSuite extends KyuubiFunSuite {
   test("start and get engine address with lock") {
     val id = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
-    conf.set(KyuubiConf.FRONTEND_THRIFT_BIND_PORT, 0)
+    conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_ZK_NAMESPACE, "engine_test")
     conf.set(HighAvailabilityConf.HA_ZK_QUORUM, zkServer.getConnectString)
     val engine = EngineRef(conf, user, id)

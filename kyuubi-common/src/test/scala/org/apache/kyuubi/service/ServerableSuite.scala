@@ -24,7 +24,7 @@ class ServerableSuite extends KyuubiFunSuite {
 
   ignore("Serverable") {
     val serverable1 = new NoopServer()
-    val conf = KyuubiConf().set(KyuubiConf.FRONTEND_THRIFT_BIND_PORT, 0)
+    val conf = KyuubiConf().set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     serverable1.initialize(conf)
     assert(serverable1.getStartTime === 0)
     assert(serverable1.getConf === conf)
@@ -43,7 +43,7 @@ class ServerableSuite extends KyuubiFunSuite {
   }
 
   test("invalid port") {
-    val conf = KyuubiConf().set(KyuubiConf.FRONTEND_THRIFT_BIND_PORT, 100)
+    val conf = KyuubiConf().set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 100)
     val e = intercept[KyuubiException](new NoopServer().initialize(conf))
     assert(e.getMessage.contains("Failed to initialize frontend service"))
     assert(e.getCause.getMessage === "Invalid Port number")
@@ -51,7 +51,7 @@ class ServerableSuite extends KyuubiFunSuite {
 
   test("error start child services") {
     val conf = KyuubiConf()
-      .set(KyuubiConf.FRONTEND_THRIFT_BIND_PORT, 0)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
       .set("kyuubi.test.server.should.fail", "true")
     val server = new NoopServer()
     server.initialize(conf)

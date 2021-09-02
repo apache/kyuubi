@@ -29,7 +29,7 @@ import org.apache.kyuubi.service.ThriftFrontendServiceSuite
 class SessionManagerSuite extends ThriftFrontendServiceSuite with Eventually {
 
   override val conf = KyuubiConf()
-    .set(KyuubiConf.FRONTEND_THRIFT_BIND_PORT, 0)
+    .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     .set("kyuubi.test.server.should.fail", "false")
     .set(KyuubiConf.SESSION_CHECK_INTERVAL, Duration.ofSeconds(5).toMillis)
     .set(KyuubiConf.SESSION_IDLE_TIMEOUT, Duration.ofSeconds(5).toMillis)
