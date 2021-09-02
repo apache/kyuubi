@@ -56,7 +56,7 @@ case class EngineTab(engine: SparkSQLEngine)
               classOf[String],
               classOf[HttpServlet],
               classOf[String])
-            .invoke("/kyuubi/stop", createStopKyuubiServlet(), "")
+            .invoke("/kyuubi/stop", createKyuubiStopServlet(), "")
         )
     } catch {
       case NonFatal(e) =>
@@ -65,7 +65,7 @@ case class EngineTab(engine: SparkSQLEngine)
     }
   }
 
-  private def createStopKyuubiServlet(): HttpServlet = {
+  def createKyuubiStopServlet(): HttpServlet = {
     new HttpServlet {
       override def doGet(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
         handleKillRequest(req, resp)
@@ -75,7 +75,7 @@ case class EngineTab(engine: SparkSQLEngine)
         handleKillRequest(req, resp)
       }
 
-      private def handleKillRequest(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
+      def handleKillRequest(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
         val securityManager = SparkEnv.get.securityManager
         val requestUser = req.getRemoteUser
         if (securityManager.checkAdminPermissions(requestUser)) {
