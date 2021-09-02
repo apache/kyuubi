@@ -104,9 +104,9 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
    * The EngineSpace used to expose itself to the KyuubiServers in `serverSpace`
    *
    * For `CONNECTION` share level:
-   *   /$serverSpace_CONNECTION/$user/$sessionId
+   *   /`serverSpace_CONNECTION`/`user`/`sessionId`
    * For `USER` share level:
-   *   /$serverSpace_USER/$user[/$subDomain]
+   *   /`serverSpace_USER`/`user`[/`subdomain`]
    *
    */
   @VisibleForTesting
