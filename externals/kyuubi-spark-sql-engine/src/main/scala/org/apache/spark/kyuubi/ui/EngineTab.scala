@@ -19,8 +19,10 @@ package org.apache.spark.kyuubi.ui
 
 import javax.servlet.http.HttpServletRequest
 
-import org.apache.spark.ui.SparkUITab
 import scala.util.control.NonFatal
+
+import org.apache.spark.SparkEnv
+import org.apache.spark.ui.SparkUITab
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -66,7 +68,9 @@ case class EngineTab(engine: SparkSQLEngine)
   }
 
   def handleKillRequest(request: HttpServletRequest): Unit = {
-    if (killEnabled && engine != null && engine.getServiceState != ServiceState.STOPPED) {
+    val securityManager = SparkEnv.get.securityManager
+    if (securityManager.checkAdminPermissions(request.getRemoteUser) &&
+      killEnabled && engine != null && engine.getServiceState != ServiceState.STOPPED) {
       engine.stop()
     }
   }
