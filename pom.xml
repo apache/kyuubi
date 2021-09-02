@@ -1067,8 +1067,7 @@
                 <version>${iceberg.version}</version>
             </dependency>
 
-            <!-- Hudi dependency
-            TODO: replace this 6 dependency with hudi-spark3-bundle_2.12 -->
+            <!-- Hudi dependency  -->
             <dependency>
                 <groupId>org.apache.parquet</groupId>
                 <artifactId>parquet-avro</artifactId>
@@ -1083,6 +1082,10 @@
                     <exclusion>
                         <groupId>io.netty</groupId>
                         <artifactId>netty-all</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>jdk.tools</groupId>
+                        <artifactId>jdk.tools</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
