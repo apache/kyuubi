@@ -17,16 +17,18 @@
 
 package org.apache.spark.kyuubi.ui
 
+import java.net.URL
 import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
+
 import scala.util.control.NonFatal
+
 import org.apache.spark.SparkEnv
 import org.apache.spark.ui.SparkUITab
+
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
 import org.apache.kyuubi.service.ServiceState
-
-import java.net.URL
 
 /**
  * Note that [[SparkUITab]] is private for Spark
@@ -55,7 +57,7 @@ case class EngineTab(engine: SparkSQLEngine)
               classOf[String],
               classOf[HttpServlet],
               classOf[String])
-            .invoke("/kyuubi/stop", createKyuubiStopServlet(), "")
+            .invoke("/kyuubi/stop", createRedirectKyuubiStopServlet("/kyuubi", ""), "")
         )
     } catch {
       case NonFatal(e) =>
@@ -64,24 +66,26 @@ case class EngineTab(engine: SparkSQLEngine)
     }
   }
 
-  def createKyuubiStopServlet(): HttpServlet = {
+  def createRedirectKyuubiStopServlet(destPath: String, basePath: String): HttpServlet = {
     new HttpServlet {
       override def doGet(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
-        handleKillRequest(req, resp)
+        doRequest(req, resp)
       }
 
       override def doPost(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
-        handleKillRequest(req, resp)
+        doRequest(req, resp)
       }
 
-      def handleKillRequest(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
+      def doRequest(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
         val securityManager = SparkEnv.get.securityManager
         val requestUser = req.getRemoteUser
         if (securityManager.checkAdminPermissions(requestUser)) {
           if (killEnabled && engine != null && engine.getServiceState != ServiceState.STOPPED) {
             engine.stop()
           }
-          resp.setStatus(HttpServletResponse.SC_OK)
+
+          val newUrl = new URL(new URL(req.getRequestURL.toString), basePath + destPath).toString
+          resp.sendRedirect(newUrl)
         } else {
           resp.sendError(HttpServletResponse.SC_FORBIDDEN,
             s"User $requestUser is allowed to stop this engine, please check `spark.admin.acls`")
