@@ -18,16 +18,15 @@
 package org.apache.spark.kyuubi.ui
 
 import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
-
 import scala.util.control.NonFatal
-
 import org.apache.spark.SparkEnv
 import org.apache.spark.ui.SparkUITab
-
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
 import org.apache.kyuubi.service.ServiceState
+
+import java.net.URL
 
 /**
  * Note that [[SparkUITab]] is private for Spark
@@ -82,6 +81,7 @@ case class EngineTab(engine: SparkSQLEngine)
           if (killEnabled && engine != null && engine.getServiceState != ServiceState.STOPPED) {
             engine.stop()
           }
+          resp.setStatus(HttpServletResponse.SC_OK)
         } else {
           resp.sendError(HttpServletResponse.SC_FORBIDDEN,
             s"User $requestUser is allowed to stop this engine, please check `spark.admin.acls`")
