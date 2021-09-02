@@ -60,7 +60,7 @@ object KyuubiGetSqlClassification {
     jsonNode.map { json =>
       val sqlClassififation = json.get(simpleName)
       if (sqlClassififation == null) {
-        "other"
+        "undefined"
       } else {
         sqlClassififation.asText()
       }
