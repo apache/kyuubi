@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.util
 
+import org.apache.hadoop.io.Text
+
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 
@@ -34,5 +36,13 @@ class KyuubiHadoopUtilsSuite extends KyuubiFunSuite {
     assert(hadoopConf.get(abc) === "xyz")
     assert(hadoopConf.get(xyz) === "abc")
     assert(hadoopConf.get(test) === "t")
+  }
+
+  test("encode/decode Writable object") {
+    val writable = new Text("Hello, World!")
+    val decoded = new Text()
+
+    KyuubiHadoopUtils.decodeWritable(decoded, KyuubiHadoopUtils.encodeWritable(writable))
+    assert(decoded == writable)
   }
 }

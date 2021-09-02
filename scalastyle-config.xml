@@ -206,7 +206,7 @@ This file is divided into 3 sections:
       <parameter name="groups">java,scala,3rdParty,kyuubi</parameter>
       <parameter name="group.java">javax?\..*</parameter>
       <parameter name="group.scala">scala\..*</parameter>
-      <parameter name="group.3rdParty">(?!org\.apache\.kyuubi\.).*</parameter>
+<!--      <parameter name="group.3rdParty">(?!org\.apache\.kyuubi\.).*</parameter>-->
       <parameter name="group.kyuubi">org\.apache\.kyuubi\..*</parameter>
     </parameters>
   </check>
