@@ -656,4 +656,77 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
       assert(df.sparkSession.conf.get("spark.sql.classification") !== "ddl")
     }
   }
+
+  test("get simple name for DML") {
+    import scala.collection.mutable.Set
+    val dmlSimpleName: Set[String] = Set()
+
+    var pre_sql = "CREATE TABLE IF NOT EXISTS students (name VARCHAR(64), address VARCHAR(64)) " +
+      "USING PARQUET PARTITIONED BY (student_id INT);"
+    spark.sql(pre_sql)
+    pre_sql = "CREATE TABLE IF NOT EXISTS PERSONS (name VARCHAR(64), address VARCHAR(64)) " +
+      "USING PARQUET PARTITIONED BY (ssn INT);"
+    spark.sql(pre_sql)
+    pre_sql = "INSERT INTO persons VALUES " +
+      "('Dora Williams', '134 Forest Ave, Menlo Park', 123456789), " +
+      "('Eddie Davis', '245 Market St, Milpitas', 345678901);"
+    spark.sql(pre_sql)
+
+    val sql01 = "INSERT INTO students VALUES ('Amy Smith', '123 Park Ave, San Jose', 111111);"
+    dmlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql01)
+      ).getClass.getSimpleName
+    )
+
+    val sql02 = "INSERT INTO students VALUES " +
+      "('Bob Brown', '456 Taylor St, Cupertino', 222222), " +
+      "('Cathy Johnson', '789 Race Ave, Palo Alto', 333333);"
+    dmlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql02)
+      ).getClass.getSimpleName
+    )
+
+    val sql03 = "INSERT INTO students PARTITION (student_id = 444444) " +
+      "SELECT name, address FROM persons WHERE name = \"Dora Williams\";"
+    dmlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql03)
+      ).getClass.getSimpleName
+    )
+
+    val sql04 = "INSERT INTO students TABLE visiting_students;"
+    dmlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql04)
+      ).getClass.getSimpleName
+    )
+
+    val sql05 = "INSERT INTO students FROM applicants " +
+      "SELECT name, address, id applicants WHERE qualified = true;"
+    dmlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql05)
+      ).getClass.getSimpleName
+    )
+
+    val sql06 = "INSERT INTO students (address, name, student_id) " +
+      "VALUES ('Hangzhou, China', 'Kent Yao', 11215016);"
+    dmlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql06)
+      ).getClass.getSimpleName
+    )
+
+//    val sql07 = "INSERT INTO students PARTITION (student_id = 11215017) " +
+//      "(address, name) VALUES 'Hangzhou, China', 'Kent Yao Jr.');"
+//    dmlSimpleName.add(
+//      spark.sessionState.analyzer.execute(
+//        spark.sessionState.sqlParser.parsePlan(sql07)
+//      ).getClass.getSimpleName
+//    )
+
+    println(123)
+  }
 }
