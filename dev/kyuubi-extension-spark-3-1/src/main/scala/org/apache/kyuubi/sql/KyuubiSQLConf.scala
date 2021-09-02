@@ -71,9 +71,9 @@ object KyuubiSQLConf {
   val SQL_CLASSIFICATION_ENABLED =
     buildConf("kyuubi.spark.sql.classification.enabled")
       .doc("When true, allows Kyuubi engine to judge this SQL's classification " +
-        "and set it into sessionConf." +
+        "and set it into sessionConf. " +
         "Through this configuration item, Spark can optimizing configuration dynamic")
-      .version("1.3.0")
+      .version("1.4.0")
       .booleanConf
       .createWithDefault(true)
 }
