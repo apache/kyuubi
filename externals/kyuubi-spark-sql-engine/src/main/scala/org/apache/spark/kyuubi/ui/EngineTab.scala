@@ -17,7 +17,7 @@
 
 package org.apache.spark.kyuubi.ui
 
-import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
 
 import scala.util.control.NonFatal
 
@@ -52,13 +52,11 @@ case class EngineTab(engine: SparkSQLEngine)
           classOf[org.sparkproject.jetty.servlet.ServletContextHandler])
         .invoke(ui,
           Class.forName("org.apache.spark.ui.JettyUtils")
-            .getMethod("createRedirectHandler",
+            .getMethod("createServletHandler",
               classOf[String],
-              classOf[String],
-              classOf[(HttpServletRequest) => Unit],
-              classOf[String],
-              classOf[scala.collection.immutable.Set[String]])
-            .invoke(null, "/kyuubi/stop", "/kyuubi", handleKillRequest _, "", Set("GET", "POST"))
+              classOf[HttpServlet],
+              classOf[String])
+            .invoke("/kyuubi/stop", createStopKyuubiServlet(), "")
         )
     } catch {
       case NonFatal(e) =>
@@ -67,11 +65,28 @@ case class EngineTab(engine: SparkSQLEngine)
     }
   }
 
-  def handleKillRequest(request: HttpServletRequest): Unit = {
-    val securityManager = SparkEnv.get.securityManager
-    if (securityManager.checkAdminPermissions(request.getRemoteUser) &&
-      killEnabled && engine != null && engine.getServiceState != ServiceState.STOPPED) {
-      engine.stop()
+  private def createStopKyuubiServlet(): HttpServlet = {
+    new HttpServlet {
+      override def doGet(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
+        handleKillRequest(req, resp)
+      }
+
+      override def doPost(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
+        handleKillRequest(req, resp)
+      }
+
+      private def handleKillRequest(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
+        val securityManager = SparkEnv.get.securityManager
+        val requestUser = req.getRemoteUser
+        if (securityManager.checkAdminPermissions(requestUser)) {
+          if (killEnabled && engine != null && engine.getServiceState != ServiceState.STOPPED) {
+            engine.stop()
+          }
+        } else {
+          resp.sendError(HttpServletResponse.SC_FORBIDDEN,
+            s"User $requestUser is allowed to stop this engine, please check `spark.admin.acls`")
+        }
+      }
     }
   }
 }
