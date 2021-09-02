@@ -31,27 +31,42 @@ import org.apache.kyuubi.sql.KyuubiSQLConf._
  */
 object KyuubiGetSqlClassification {
 
-  private val enabled: Boolean = SQLConf.get.getConf(SQL_CLASSIFICATION_ENABLED)
-  private var jsonNode: JsonNode = null
-  if (enabled) {
-    try {
-      val defaultSqlClassificationFile =
-        this.getClass.getClassLoader.getResource("sql-classification-default.json").getPath
-      val objectMapper = new ObjectMapper
-      jsonNode = objectMapper.readTree(new File(defaultSqlClassificationFile))
-    } catch {
-      case e: Exception =>
-        throw new IllegalArgumentException("sql-classification-default.json is not exist.", e)
+  private val jsonNode: Option[JsonNode] = {
+    SQLConf.get.getConf(SQL_CLASSIFICATION_ENABLED) match {
+      case true =>
+        try {
+          val defaultSqlClassificationFile =
+            Thread.currentThread().getContextClassLoader
+              .getResource("sql-classification-default.json").getPath
+          val objectMapper = new ObjectMapper
+          Some(objectMapper.readTree(new File(defaultSqlClassificationFile)))
+        } catch {
+          case e: Exception =>
+            throw new IllegalArgumentException("sql-classification-default.json is not exist.", e)
+        }
+      case false =>
+        None
     }
   }
 
+  /**
+   * Notice:
+   *    You need to make sure that the configuration item: kyuubi.spark.sql.classification.enabled
+    *   is true
+   * @param simpleName: the analyzied_logical_plan's getSimpleName
+   * @return: This sql's classification
+   */
   def getSqlClassification(simpleName: String): String = {
-
-    val sqlClassififation = jsonNode.get(simpleName)
-    if (sqlClassififation == null) {
-      return "others"
-    } else {
-      return sqlClassififation.asText()
-    }
+    jsonNode.map { json =>
+      val sqlClassififation = json.get(simpleName)
+      if (sqlClassififation == null) {
+        "others"
+      } else {
+        sqlClassififation.asText()
+      }
+    }.getOrElse(
+      throw new IllegalArgumentException(
+        "The configuration item: kyuubi.spark.sql.classification.enabled is false")
+    )
   }
 }

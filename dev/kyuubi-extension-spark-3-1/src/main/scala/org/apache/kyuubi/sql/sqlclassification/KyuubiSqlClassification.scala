@@ -20,26 +20,17 @@ package org.apache.kyuubi.sql.sqlclassification
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.internal.SQLConf
 
 import org.apache.kyuubi.sql.KyuubiSQLConf._
 
 case class KyuubiSqlClassification(session: SparkSession) extends Rule[LogicalPlan] {
 
-  import KyuubiSqlConf._
-
   override def apply(plan: LogicalPlan): LogicalPlan = {
-    if (CLASSIFICATION_ENABLED && plan.resolved && !plan.analyzed) {
+    if (conf.getConf(SQL_CLASSIFICATION_ENABLED) && plan.resolved) {
       val simpleName = plan.getClass.getSimpleName
       val sqlClassification = KyuubiGetSqlClassification.getSqlClassification(simpleName)
-      session.conf.set(SPARK_SQL_CLASSIFICATION, sqlClassification)
+      session.conf.set("kyuubi.spark.sql.classification", sqlClassification)
     }
     plan
   }
-}
-
-object KyuubiSqlConf {
-
-  val CLASSIFICATION_ENABLED = SQLConf.get.getConf(SQL_CLASSIFICATION_ENABLED)
-  val SPARK_SQL_CLASSIFICATION = "spark.sql.classification"
 }
