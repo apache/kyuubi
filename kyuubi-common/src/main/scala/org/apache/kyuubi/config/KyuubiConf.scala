@@ -574,19 +574,26 @@ object KyuubiConf {
 
   private val validEngineSubDomain: Pattern = "^[a-zA-Z_-]{1,14}$".r.pattern
 
+  @deprecated(s"using kyuubi.engine.share.level.subdomain instead", "1.4.0")
   val ENGINE_SHARE_LEVEL_SUB_DOMAIN: OptionalConfigEntry[String] =
     buildConf("engine.share.level.sub.domain")
-      .doc("Allow end-users to create a sub-domain for the share level of an engine. A" +
-        " sub-domain is a case-insensitive string values in `^[a-zA-Z_-]{1,14}$` form." +
-        " For example, for `USER` share level, an end-user can share a certain engine within" +
-        " a sub-domain, not for all of its clients. End-users are free to create multiple" +
-        " engines in the `USER` share level")
+      .doc("(deprecated) - Using kyuubi.engine.share.level.subdomain instead")
       .version("1.2.0")
       .stringConf
       .transform(_.toLowerCase(Locale.ROOT))
       .checkValue(validEngineSubDomain.matcher(_).matches(),
         "must be [1, 14] length alphabet string, e.g. 'abc', 'apache'")
       .createOptional
+
+  val ENGINE_SHARE_LEVEL_SUBDOMAIN: ConfigEntry[Option[String]] =
+    buildConf("engine.share.level.subdomain")
+      .doc("Allow end-users to create a subdomain for the share level of an engine. A" +
+        " subdomain is a case-insensitive string values in `^[a-zA-Z_-]{1,14}$` form." +
+        " For example, for `USER` share level, an end-user can share a certain engine within" +
+        " a subdomain, not for all of its clients. End-users are free to create multiple" +
+        " engines in the `USER` share level")
+      .version("1.4.0")
+      .fallbackConf(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
 
   val ENGINE_CONNECTION_URL_USE_HOSTNAME: ConfigEntry[Boolean] =
     buildConf("engine.connection.url.use.hostname")
@@ -601,7 +608,7 @@ object KyuubiConf {
       " <li>CONNECTION: engine will not be shared but only used by the current client" +
       " connection</li>" +
       " <li>USER: engine will be shared by all sessions created by a unique username," +
-      s" see also ${ENGINE_SHARE_LEVEL_SUB_DOMAIN.key}</li>" +
+      s" see also ${ENGINE_SHARE_LEVEL_SUBDOMAIN.key}</li>" +
       " <li>SERVER: the App will be shared by Kyuubi servers</li></ul>")
     .version("1.2.0")
     .fallbackConf(LEGACY_ENGINE_SHARE_LEVEL)

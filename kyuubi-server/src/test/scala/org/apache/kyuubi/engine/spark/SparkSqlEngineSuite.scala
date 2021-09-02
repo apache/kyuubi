@@ -75,7 +75,7 @@ class SparkSqlEngineSuite extends WithKyuubiServer with JDBCTestUtils {
     Seq("1", ",", "", "a" * 15, "abc.xyz").foreach { invalid =>
       val sparkHiveConfigs = Map(
         ENGINE_SHARE_LEVEL.key -> "USER",
-        ENGINE_SHARE_LEVEL_SUB_DOMAIN.key -> invalid)
+        ENGINE_SHARE_LEVEL_SUBDOMAIN.key -> invalid)
       withSessionConf(Map.empty)(sparkHiveConfigs)(Map.empty) {
         assertJDBCConnectionFail()
       }
@@ -85,7 +85,7 @@ class SparkSqlEngineSuite extends WithKyuubiServer with JDBCTestUtils {
   test("Engine isolation with sub domain configurations") {
     val sparkHiveConfigs = Map(
       ENGINE_SHARE_LEVEL.key -> "USER",
-      ENGINE_SHARE_LEVEL_SUB_DOMAIN.key -> "spark",
+      ENGINE_SHARE_LEVEL_SUBDOMAIN.key -> "spark",
       "spark.driver.memory" -> "1000M")
     var mem: String = null
     withSessionConf(Map.empty)(sparkHiveConfigs)(Map.empty) {
@@ -99,7 +99,7 @@ class SparkSqlEngineSuite extends WithKyuubiServer with JDBCTestUtils {
 
     val sparkHiveConfigs2 = Map(
       ENGINE_SHARE_LEVEL.key -> "USER",
-      ENGINE_SHARE_LEVEL_SUB_DOMAIN.key -> "spark",
+      ENGINE_SHARE_LEVEL_SUBDOMAIN.key -> "spark",
       "spark.driver.memory" -> "1001M")
     withSessionConf(Map.empty)(sparkHiveConfigs2)(Map.empty) {
       withJdbcStatement() { statement =>
@@ -112,7 +112,7 @@ class SparkSqlEngineSuite extends WithKyuubiServer with JDBCTestUtils {
 
     val sparkHiveConfigs3 = Map(
       ENGINE_SHARE_LEVEL.key -> "USER",
-      ENGINE_SHARE_LEVEL_SUB_DOMAIN.key -> "kyuubi",
+      ENGINE_SHARE_LEVEL_SUBDOMAIN.key -> "kyuubi",
       "spark.driver.memory" -> "1002M")
     withSessionConf(Map.empty)(sparkHiveConfigs3)(Map.empty) {
       withJdbcStatement() { statement =>
