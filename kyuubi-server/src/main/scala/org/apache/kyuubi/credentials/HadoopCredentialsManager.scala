@@ -17,14 +17,12 @@
 
 package org.apache.kyuubi.credentials
 
-import java.time.Duration
 import java.util.ServiceLoader
 import java.util.concurrent._
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
 
-import com.google.common.cache.{CacheBuilder, CacheLoader, LoadingCache}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.Credentials
 
@@ -34,42 +32,63 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
 
+/**
+ * [[HadoopCredentialsManager]] manages and renews delegation tokens, which are used by SQL engines
+ * to access kerberos secured services.
+ *
+ * Delegation tokens are sent to SQL engines by calling [[sendCredentialsIfNeeded]].
+ * [[sendCredentialsIfNeeded]] executes the following steps:
+ * <ol>
+ * <li>
+ *   Get or create a cached [[LocalCredentialsRef]](contains delegation tokens) object by key
+ *   appUser. If [[LocalCredentialsRef]] is newly created, spawn a scheduled task to renew the
+ *   delegation tokens.
+ * </li>
+ * <li>
+ *   Get or create a cached [[RemoteCredentialsRef]] object by key sessionId.
+ * </li>
+ * <li>
+ *   Compare [[LocalCredentialsRef]] epoch with [[RemoteCredentialsRef]] epoch. (Both epochs are set
+ *   to -1 when created. [[LocalCredentialsRef]] epoch is increased when delegation tokens are
+ *   renewed.)
+ * </li>
+ * <li>
+ *   If epochs are equal, return. Else, send delegation tokens to the SQL engine.
+ * </li>
+ * <li>
+ *   If sending succeeds, set [[RemoteCredentialsRef]] epoch to [[LocalCredentialsRef]] epoch. Else,
+ *   throw a [[KyuubiException]].
+ * </li>
+ * </ol>
+ *
+ * @note [[RemoteCredentialsRef]]s are created in session scope and should be removed using
+ *       [[removeRemoteCredentialsRef]] when session closes.
+ */
 class HadoopCredentialsManager private (name: String) extends AbstractService(name)
     with Logging {
 
   def this() = this(classOf[HadoopCredentialsManager].getSimpleName)
 
-  private val userRefMap = new ConcurrentHashMap[String, UserCredentialsRef]()
-
-  private var engineRefCache: LoadingCache[String, EngineCredentialsRef] = _
+  private val localRefMap = new ConcurrentHashMap[String, LocalCredentialsRef]()
+  private val remoteRefMap = new ConcurrentHashMap[String, RemoteCredentialsRef]()
 
   private var providers: Map[String, HadoopDelegationTokenProvider] = _
-  private var requiredProviders: Map[String, HadoopDelegationTokenProvider] = _
-
   private var renewalInterval: Long = _
   private var renewalRetryWait: Long = _
   private var renewalExecutor: ScheduledExecutorService = _
   private var hadoopConf: Configuration = _
 
   override def initialize(conf: KyuubiConf): Unit = {
-    val cacheLoader = new CacheLoader[String, EngineCredentialsRef] {
-      override def load(key: String): EngineCredentialsRef = new EngineCredentialsRef
-    }
-    engineRefCache = CacheBuilder.newBuilder()
-      .concurrencyLevel(conf.get(KyuubiConf.SERVER_EXEC_POOL_SIZE))
-      .expireAfterAccess(conf.get(KyuubiConf.ENGINE_IDLE_TIMEOUT), TimeUnit.MILLISECONDS)
-      .build(cacheLoader)
-
     hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
-    providers = loadProviders(conf)
-    requiredProviders = providers.filter { case (_, provider) =>
-      val required = provider.delegationTokensRequired(hadoopConf, conf)
-      if (!required) {
-        info(s"Service ${provider.serviceName} does not require a token." +
-          s" Check your configuration to see if security is disabled or not.")
+    providers = HadoopCredentialsManager.loadProviders(conf)
+      .filter { case (_, provider) =>
+        val required = provider.delegationTokensRequired(hadoopConf, conf)
+        if (!required) {
+          info(s"Service ${provider.serviceName} does not require a token." +
+            s" Check your configuration to see if security is disabled or not.")
+        }
+        required
       }
-      required
-    }
     info("Using the following builtin delegation token providers: " +
       s"${providers.keys.mkString(", ")}.")
 
@@ -97,79 +116,80 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
   }
 
   /**
-   * Send credentials to SQL engine if [[HadoopCredentialsManager]] had a newer version.
-   * `appUser`'s credentials are created if not exist.
-   * [[HadoopCredentialsManager]] takes care created credentials' renewal.
-   * @param engineId SQL engine identifier
+   * Send credentials to SQL engine which the specified session is talking to if
+   * [[HadoopCredentialsManager]] has a newer credentials.
+   * @param sessionId Specify the session which is talking with SQL engine
    * @param appUser  User identity that the SQL engine uses.
    * @param send     Function to send encoded credentials to SQL engine
-   * @return `true` if credentials are sent successfully. Else, false.
    * @throws KyuubiException if sending credentials fails.
    */
   def sendCredentialsIfNeeded(
-      engineId: String,
+      sessionId: String,
       appUser: String,
-      send: String => Unit): Boolean = {
+      send: String => Unit): Unit = {
     require(renewalExecutor != null, "renewalExecutor should be initialized")
 
-    val userRef = getUserRef(appUser)
-    val engineRef = getEngineRef(engineId)
-
-    var sent = false
+    val userRef = getOrCreateUserRef(appUser)
+    val engineRef = getOrCreateEngineRef(sessionId)
     if (userRef.getEpoch != engineRef.getEpoch) {
       engineRef synchronized {
         if (userRef.getEpoch != engineRef.getEpoch) {
           val currentEpoch = userRef.getEpoch
           val currentCreds = userRef.getEncodedCredentials
-          info(s"Send new credentials with epoch $currentEpoch to SQL engine $engineId")
+          info(s"Send new credentials with epoch $currentEpoch to SQL engine through session " +
+            s"$sessionId")
           Try(send(currentCreds)) match {
             case Success(_) =>
-              info(s"Update SQL engine epoch from ${engineRef.getEpoch} to $currentEpoch")
+              info(s"Update session scope epoch from ${engineRef.getEpoch} to $currentEpoch")
               engineRef.setEpoch(currentEpoch)
-              sent = true
             case Failure(exception) =>
               throw new KyuubiException(
-                s"Failed to send new credentials to SQL engine $engineId",
+                s"Failed to send new credentials to SQL engine through session $sessionId",
                 exception)
           }
         }
       }
     }
-    sent
+  }
+
+  /**
+   * Remove [[RemoteCredentialsRef]] corresponding to `sessionId`.
+   *
+   * @param sessionId KyuubiSession id
+   */
+  def removeRemoteCredentialsRef(sessionId: String): Unit = {
+    remoteRefMap.remove(sessionId)
   }
 
   // Visible for testing.
-  private[credentials] def getUserRef(appUser: String): UserCredentialsRef =
-    userRefMap.computeIfAbsent(
+  private[credentials] def getOrCreateUserRef(appUser: String): LocalCredentialsRef =
+    localRefMap.computeIfAbsent(
       appUser,
       appUser => {
-        val ref = new UserCredentialsRef(appUser)
+        val ref = new LocalCredentialsRef(appUser)
         scheduleRenewal(ref, 0)
         info(s"Created CredentialsRef for user $appUser and scheduled a renewal task")
         ref
       })
 
   // Visible for testing.
-  private[credentials] def getEngineRef(engineId: String): EngineCredentialsRef =
-    engineRefCache.getUnchecked(engineId)
+  private[credentials] def getOrCreateEngineRef(sessionId: String): RemoteCredentialsRef = {
+    remoteRefMap.computeIfAbsent(sessionId, _ => new RemoteCredentialsRef)
+  }
 
   // Visible for testing.
-  private[credentials] def isProviderLoaded(serviceName: String): Boolean =
+  private[credentials] def containsProvider(serviceName: String): Boolean = {
     providers.contains(serviceName)
+  }
 
-  // Visible for testing.
-  private[credentials] def isProviderRequired(serviceName: String): Boolean =
-    requiredProviders.contains(serviceName)
-
-  private def scheduleRenewal(userRef: UserCredentialsRef, delay: Long): Future[_] = {
-    val _delay = math.max(0, delay)
-    info(s"Scheduling renewal in ${Duration.ofMillis(_delay)}.")
+  private def scheduleRenewal(userRef: LocalCredentialsRef, delay: Long): Future[_] = {
+    info(s"Scheduling renewal in $delay ms.")
 
     val renewalTask = new Runnable {
       override def run(): Unit = {
         try {
           val creds = new Credentials()
-          requiredProviders.values
+          providers.values
             .foreach(_.obtainDelegationTokens(hadoopConf, conf, userRef.getAppUser, creds))
           userRef.updateCredentials(creds)
           scheduleRenewal(userRef, renewalInterval)
@@ -177,17 +197,22 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
           case _: InterruptedException =>
           // Server is shutting down
           case e: Exception =>
-            val duration = Duration.ofMillis(renewalRetryWait)
-            warn(s"Failed to update tokens, will try again in ${duration}", e)
+            warn(s"Failed to update tokens, will try again in $renewalRetryWait ms", e)
             scheduleRenewal(userRef, renewalRetryWait)
         }
       }
     }
 
-    renewalExecutor.schedule(renewalTask, _delay, TimeUnit.MILLISECONDS)
+    renewalExecutor.schedule(renewalTask, delay, TimeUnit.MILLISECONDS)
   }
 
-  private def loadProviders(kyuubiConf: KyuubiConf): Map[String, HadoopDelegationTokenProvider] = {
+}
+
+object HadoopCredentialsManager extends Logging {
+
+  private val providerEnabledConfig = "kyuubi.credentials.%s.enabled"
+
+  def loadProviders(kyuubiConf: KyuubiConf): Map[String, HadoopDelegationTokenProvider] = {
     val loader =
       ServiceLoader.load(classOf[HadoopDelegationTokenProvider], getClass.getClassLoader)
     val providers = mutable.ArrayBuffer[HadoopDelegationTokenProvider]()
@@ -208,11 +233,6 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
       .map { p => (p.serviceName, p) }
       .toMap
   }
-
-}
-
-object HadoopCredentialsManager {
-  private val providerEnabledConfig = "kyuubi.credentials.%s.enabled"
 
   def isServiceEnabled(kyuubiConf: KyuubiConf, serviceName: String): Boolean = {
     val key = providerEnabledConfig.format(serviceName)

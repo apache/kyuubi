@@ -242,6 +242,7 @@ object KyuubiConf {
       .doc("How long to wait before retrying to fetch new credentials after a failure.")
       .version("1.4.0")
       .timeConf
+      .checkValue(t => t > 0, "must be positive integer")
       .createWithDefault(Duration.ofMinutes(1).toMillis)
 
   /////////////////////////////////////////////////////////////////////////////////////////////////

@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.credentials
 
-class EngineCredentialsRef() {
+class RemoteCredentialsRef() {
 
   @volatile
   private var epoch = -1L

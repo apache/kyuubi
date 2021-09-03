@@ -21,7 +21,7 @@ import org.apache.hadoop.security.Credentials
 
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
-class UserCredentialsRef(appUser: String) {
+class LocalCredentialsRef(appUser: String) {
 
   @volatile
   private var epoch = -1L
@@ -37,7 +37,7 @@ class UserCredentialsRef(appUser: String) {
   }
 
   def updateCredentials(creds: Credentials): Unit = {
-    encodedCredentials = KyuubiHadoopUtils.encodeWritable(creds)
+    encodedCredentials = KyuubiHadoopUtils.encodeCredentials(creds)
     epoch += 1
   }
 

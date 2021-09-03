@@ -29,7 +29,7 @@ import org.apache.kyuubi.config.KyuubiConf
 
 class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
 
-  private val engineId = UUID.randomUUID().toString
+  private val sessionId = UUID.randomUUID().toString
   private val appUser = "who"
   private val send = (_: String) => {}
 
@@ -43,33 +43,35 @@ class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
     finally manager.stop()
   }
 
-  test("default configuration") {
+  test("load default providers") {
     ExceptionThrowingDelegationTokenProvider.constructed = false
-    val manager = new HadoopCredentialsManager()
-    manager.initialize(new KyuubiConf(false))
-
-    assert(manager.isProviderLoaded("unstable"))
-    assert(manager.isProviderRequired("unstable"))
-    assert(manager.isProviderLoaded("unrequired"))
-    assert(!manager.isProviderRequired("unrequired"))
+    val providers = HadoopCredentialsManager.loadProviders(new KyuubiConf(false))
+    assert(providers.contains("unstable"))
+    assert(providers.contains("unrequired"))
     // This checks that providers are loaded independently and they have no effect on each other
     assert(ExceptionThrowingDelegationTokenProvider.constructed)
-    assert(!manager.isProviderLoaded("throw"))
+    assert(!providers.contains("throw"))
   }
 
-  test("disable unstable credential provider") {
+  test("disable a provider") {
     val kyuubiConf =
       new KyuubiConf(false).set("kyuubi.credentials.unstable.enabled", "false")
+    val providers = HadoopCredentialsManager.loadProviders(kyuubiConf)
+    assert(!providers.contains("unstable"))
+  }
+
+  test("filter providers when initialize") {
+    // Filter out providers if `delegationTokensRequired` returns false.
     val manager = new HadoopCredentialsManager()
-    manager.initialize(kyuubiConf)
-    assert(!manager.isProviderLoaded("unstable"))
+    manager.initialize(new KyuubiConf(false))
+    assert(!manager.containsProvider("unrequired"))
   }
 
   test("schedule credentials renewal") {
     val kyuubiConf = new KyuubiConf(false)
       .set(KyuubiConf.CREDENTIALS_RENEWAL_INTERVAL, 1000L)
     withStartedManager(kyuubiConf) { manager =>
-      val userRef = manager.getUserRef(appUser)
+      val userRef = manager.getOrCreateUserRef(appUser)
       // Tolerate 100 ms delay
       eventually(timeout(1100.milliseconds), interval(100.milliseconds)) {
         assert(userRef.getEpoch == 1)
@@ -85,7 +87,7 @@ class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
       try {
         UnstableDelegationTokenProvider.throwException = true
 
-        val userRef = manager.getUserRef(appUser)
+        val userRef = manager.getOrCreateUserRef(appUser)
         // Tolerate 100 ms delay
         eventually(timeout(2100.milliseconds), interval(100.milliseconds)) {
           // 1 scheduled call and 2 scheduled retrying call
@@ -103,15 +105,14 @@ class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
       .set(KyuubiConf.CREDENTIALS_RENEWAL_INTERVAL, 1000L)
     withStartedManager(kyuubiConf) { manager =>
       // Trigger UserCredentialsRef's initialization
-      val userRef = manager.getUserRef(appUser)
+      val userRef = manager.getOrCreateUserRef(appUser)
       eventually(interval(100.milliseconds)) {
         assert(userRef.getEpoch == 0)
       }
 
-      val succeed = manager.sendCredentialsIfNeeded(engineId, appUser, send)
-      assert(succeed)
+      manager.sendCredentialsIfNeeded(sessionId, appUser, send)
 
-      val engineRef = manager.getEngineRef(engineId)
+      val engineRef = manager.getOrCreateEngineRef(sessionId)
       assert(engineRef.getEpoch == userRef.getEpoch)
     }
   }
@@ -119,17 +120,18 @@ class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
   test("credentials sending failure") {
     withStartedManager(new KyuubiConf(false)) { manager =>
       // Trigger UserCredentialsRef's initialization
-      val userRef = manager.getUserRef(appUser)
+      val userRef = manager.getOrCreateUserRef(appUser)
       eventually(interval(100.milliseconds)) {
         assert(userRef.getEpoch == 0)
       }
 
       val thrown = intercept[KyuubiException] {
-        manager.sendCredentialsIfNeeded(engineId, appUser, _ => throw new IOException)
+        manager.sendCredentialsIfNeeded(sessionId, appUser, _ => throw new IOException)
       }
 
       assert(thrown.isInstanceOf[KyuubiException])
-      assert(thrown.getMessage == s"Failed to send new credentials to SQL engine $engineId")
+      assert(thrown.getMessage == s"Failed to send new credentials to SQL engine through session" +
+        s" $sessionId")
     }
   }
 }
@@ -142,14 +144,13 @@ private class ExceptionThrowingDelegationTokenProvider extends HadoopDelegationT
 
   override def delegationTokensRequired(
       hadoopConf: Configuration,
-      kyuubiConf: KyuubiConf): Boolean =
-    throw new IllegalArgumentException
+      kyuubiConf: KyuubiConf): Boolean = true
 
   override def obtainDelegationTokens(
       hadoopConf: Configuration,
       kyuubiConf: KyuubiConf,
       owner: String,
-      creds: Credentials): Unit = throw new IllegalArgumentException
+      creds: Credentials): Unit = {}
 
 }
 
