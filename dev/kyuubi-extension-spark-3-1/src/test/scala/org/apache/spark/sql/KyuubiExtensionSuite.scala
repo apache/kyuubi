@@ -419,6 +419,30 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
     }
   }
 
+  test("Sql classification for ddl") {
+    withSQLConf(KyuubiSQLConf.SQL_CLASSIFICATION_ENABLED.key -> "true") {
+      withDatabase("inventory") {
+        val df = sql("CREATE DATABASE inventory;")
+        assert(df.sparkSession.conf.get("kyuubi.spark.sql.classification") === "ddl")
+      }
+      val df = sql("select timestamp'2021-06-01'")
+      assert(df.sparkSession.conf.get("kyuubi.spark.sql.classification") !== "ddl")
+    }
+  }
+
+  test("Sql classification for dml") {
+    withSQLConf(KyuubiSQLConf.SQL_CLASSIFICATION_ENABLED.key -> "true") {
+      val df01 = sql("CREATE TABLE IF NOT EXISTS students " +
+        "(name VARCHAR(64), address VARCHAR(64)) " +
+        "USING PARQUET PARTITIONED BY (student_id INT);")
+      assert(df01.sparkSession.conf.get("kyuubi.spark.sql.classification") === "ddl")
+
+      val df02 = sql("INSERT INTO students VALUES " +
+        "('Amy Smith', '123 Park Ave, San Jose', 111111);")
+      assert(df02.sparkSession.conf.get("kyuubi.spark.sql.classification") === "dml")
+    }
+  }
+
   test("get simple name for DDL") {
 
     import scala.collection.mutable.Set
@@ -646,17 +670,6 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
     // scalastyle:on println
   }
 
-  test("Sql classification for ddl") {
-    withSQLConf(KyuubiSQLConf.SQL_CLASSIFICATION_ENABLED.key -> "true") {
-      withDatabase("inventory") {
-        val df = sql("CREATE DATABASE inventory;")
-        assert(df.sparkSession.conf.get("kyuubi.spark.sql.classification") === "ddl")
-      }
-      val df = sql("select timestamp'2021-06-01'")
-      assert(df.sparkSession.conf.get("kyuubi.spark.sql.classification") !== "ddl")
-    }
-  }
-
   test("get simple name for DML") {
     import scala.collection.mutable.Set
     val dmlSimpleName: Set[String] = Set()
@@ -670,6 +683,18 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
     pre_sql = "INSERT INTO persons VALUES " +
       "('Dora Williams', '134 Forest Ave, Menlo Park', 123456789), " +
       "('Eddie Davis', '245 Market St, Milpitas', 345678901);"
+    spark.sql(pre_sql)
+    pre_sql = "CREATE TABLE IF NOT EXISTS visiting_students " +
+      "(name VARCHAR(64), address VARCHAR(64)) USING PARQUET PARTITIONED BY (student_id INT);"
+    spark.sql(pre_sql)
+    pre_sql = "CREATE TABLE IF NOT EXISTS applicants " +
+      "(name VARCHAR(64), address VARCHAR(64), qualified BOOLEAN) " +
+      "USING PARQUET PARTITIONED BY (student_id INT);"
+    spark.sql(pre_sql)
+    pre_sql = "INSERT INTO applicants VALUES " +
+      "('Helen Davis', '469 Mission St, San Diego', true, 999999), " +
+      "('Ivy King', '367 Leigh Ave, Santa Clara', false, 101010), " +
+      "('Jason Wang', '908 Bird St, Saratoga', true, 121212);"
     spark.sql(pre_sql)
 
     val sql01 = "INSERT INTO students VALUES ('Amy Smith', '123 Park Ave, San Jose', 111111);"
@@ -704,7 +729,7 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
     )
 
     val sql05 = "INSERT INTO students FROM applicants " +
-      "SELECT name, address, id applicants WHERE qualified = true;"
+      "SELECT name, address, student_id WHERE qualified = true;"
     dmlSimpleName.add(
       spark.sessionState.analyzer.execute(
         spark.sessionState.sqlParser.parsePlan(sql05)
@@ -719,14 +744,144 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
       ).getClass.getSimpleName
     )
 
-//    val sql07 = "INSERT INTO students PARTITION (student_id = 11215017) " +
-//      "(address, name) VALUES 'Hangzhou, China', 'Kent Yao Jr.');"
-//    dmlSimpleName.add(
-//      spark.sessionState.analyzer.execute(
-//        spark.sessionState.sqlParser.parsePlan(sql07)
-//      ).getClass.getSimpleName
-//    )
+    val sql07 = "INSERT INTO students PARTITION (student_id = 11215017) " +
+      "(address, name) VALUES ('Hangzhou, China', 'Kent Yao Jr.');"
+    dmlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql07)
+      ).getClass.getSimpleName
+    )
 
-    println(123)
+    val sql08 = "INSERT OVERWRITE students VALUES " +
+      "('Ashua Hill', '456 Erica Ct, Cupertino', 111111), " +
+      "('Brian Reed', '723 Kern Ave, Palo Alto', 222222);"
+    dmlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql08)
+      ).getClass.getSimpleName
+    )
+
+    val sql09 = "INSERT OVERWRITE students PARTITION (student_id = 222222) " +
+      "SELECT name, address FROM persons WHERE name = \"Dora Williams\";"
+    dmlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql09)
+      ).getClass.getSimpleName
+    )
+
+    val sql10 = "INSERT OVERWRITE students TABLE visiting_students;"
+    dmlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql10)
+      ).getClass.getSimpleName
+    )
+
+    val sql11 = "INSERT OVERWRITE students FROM applicants " +
+      "SELECT name, address, student_id WHERE qualified = true;"
+    dmlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql11)
+      ).getClass.getSimpleName
+    )
+
+    val sql12 = "INSERT OVERWRITE students (address, name, student_id) VALUES " +
+      "('Hangzhou, China', 'Kent Yao', 11215016);"
+    dmlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql12)
+      ).getClass.getSimpleName
+    )
+
+    val sql13 = "INSERT OVERWRITE students PARTITION (student_id = 11215016) " +
+      "(address, name) VALUES ('Hangzhou, China', 'Kent Yao Jr.');"
+    dmlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql13)
+      ).getClass.getSimpleName
+    )
+
+    val sql14 = "INSERT OVERWRITE DIRECTORY '/tmp/destination' " +
+      "USING parquet OPTIONS (col1 1, col2 2, col3 'test') " +
+      "SELECT * FROM students;"
+    dmlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql14)
+      ).getClass.getSimpleName
+    )
+
+    val sql15 = "INSERT OVERWRITE DIRECTORY " +
+      "USING parquet " +
+      "OPTIONS ('path' '/tmp/destination', col1 1, col2 2, col3 'test') " +
+      "SELECT * FROM students;"
+    dmlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql15)
+      ).getClass.getSimpleName
+    )
+
+    val sql016 = "INSERT OVERWRITE LOCAL DIRECTORY '/tmp/destination' " +
+      "STORED AS orc " +
+      "SELECT * FROM students;"
+    dmlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql016)
+      ).getClass.getSimpleName
+    )
+
+    val sql017 = "INSERT OVERWRITE LOCAL DIRECTORY '/tmp/destination' " +
+      "ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' " +
+      "SELECT * FROM students;"
+    dmlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql017)
+      ).getClass.getSimpleName
+    )
+
+    pre_sql = "CREATE TABLE IF NOT EXISTS students_test " +
+      "(name VARCHAR(64), address VARCHAR(64)) " +
+      "USING PARQUET PARTITIONED BY (student_id INT) " +
+      "LOCATION '/tmp/destination/';"
+    spark.sql(pre_sql)
+    pre_sql = "INSERT INTO students_test VALUES " +
+      "('Bob Brown', '456 Taylor St, Cupertino', 222222), " +
+      "('Cathy Johnson', '789 Race Ave, Palo Alto', 333333);"
+    spark.sql(pre_sql)
+    pre_sql = "CREATE TABLE IF NOT EXISTS test_load " +
+      "(name VARCHAR(64), address VARCHAR(64), student_id INT) " +
+      "USING HIVE;"
+    spark.sql(pre_sql)
+
+    val sql018 = "LOAD DATA LOCAL INPATH " +
+      "'/tmp/destination/students_test' OVERWRITE INTO TABLE test_load;"
+    dmlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql018)
+      ).getClass.getSimpleName
+    )
+
+    pre_sql = "CREATE TABLE IF NOT EXISTS test_partition " +
+      "(c1 INT, c2 INT, c3 INT) PARTITIONED BY (c2, c3) " +
+      "LOCATION '/tmp/destination/';"
+    spark.sql(pre_sql)
+    pre_sql = "INSERT INTO test_partition PARTITION (c2 = 2, c3 = 3) VALUES (1);"
+    spark.sql(pre_sql)
+    pre_sql = "INSERT INTO test_partition PARTITION (c2 = 5, c3 = 6) VALUES (4);"
+    spark.sql(pre_sql)
+    pre_sql = "INSERT INTO test_partition PARTITION (c2 = 8, c3 = 9) VALUES (7);"
+    spark.sql(pre_sql)
+    pre_sql = "CREATE TABLE IF NOT EXISTS test_load_partition " +
+      "(c1 INT, c2 INT, c3 INT) USING HIVE PARTITIONED BY (c2, c3);"
+    spark.sql(pre_sql)
+
+    val sql019 = "LOAD DATA LOCAL INPATH '/tmp/destination/test_partition/c2=2/c3=3' " +
+      "OVERWRITE INTO TABLE test_load_partition PARTITION (c2=2, c3=3);"
+    dmlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql019)
+      ).getClass.getSimpleName
+    )
+    // scalastyle:off println
+    println("dml simple name is :" + dmlSimpleName)
+    // scalastyle:on println
   }
 }

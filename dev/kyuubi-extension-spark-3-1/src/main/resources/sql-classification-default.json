@@ -26,5 +26,9 @@
   "DropTableCommand": "ddl",
   "TruncateTableCommand": "ddl",
   "AlterTableRecoverPartitionsCommand": "ddl",
-  "SetCatalogAndNamespace": "ddl"
+  "SetCatalogAndNamespace": "ddl",
+  "InsertIntoHadoopFsRelationCommand": "dml",
+  "LoadDataCommand": "dml",
+  "InsertIntoDataSourceDirCommand": "dml",
+  "InsertIntoHiveDirCommand": "dml"
 }
