@@ -78,18 +78,23 @@ case class EngineTab(engine: SparkSQLEngine)
       }
 
       private def doRequest(request: HttpServletRequest, response: HttpServletResponse): Unit = {
-        val securityManager = SparkEnv.get.securityManager
-        val requestUser = request.getRemoteUser
-        if (securityManager.checkAdminPermissions(requestUser)) {
-          if (killEnabled && engine != null && engine.getServiceState != ServiceState.STOPPED) {
-            engine.stop()
-          }
-
-          val newUrl = new URL(new URL(request.getRequestURL.toString), prefixedDestPath).toString
-          response.sendRedirect(newUrl)
-        } else {
+        if (!killEnabled) {
           response.sendError(HttpServletResponse.SC_FORBIDDEN,
-            s"User $requestUser is allowed to stop this engine, please check `spark.admin.acls`")
+            s"It is not allowed to kill Kyuubi engine from the Spark Web UI.")
+        } else {
+          val securityManager = SparkEnv.get.securityManager
+          val requestUser = request.getRemoteUser
+          if (securityManager.checkAdminPermissions(requestUser)) {
+            if (engine != null && engine.getServiceState != ServiceState.STOPPED) {
+              engine.stop()
+            }
+
+            val newUrl = new URL(new URL(request.getRequestURL.toString), prefixedDestPath).toString
+            response.sendRedirect(newUrl)
+          } else {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN,
+              s"User $requestUser is not allowed to stop engine, please check `spark.admin.acls`")
+          }
         }
       }
     }
