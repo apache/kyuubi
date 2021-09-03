@@ -57,7 +57,7 @@ case class EngineTab(engine: SparkSQLEngine)
               classOf[String],
               classOf[HttpServlet],
               classOf[String])
-            .invoke("/kyuubi/stop", createRedirectKyuubiStopServlet("/kyuubi", ""), "")
+            .invoke(null, "/kyuubi/stop", createRedirectKyuubiStopServlet("/kyuubi", ""), "")
         )
     } catch {
       case NonFatal(e) =>
@@ -67,27 +67,28 @@ case class EngineTab(engine: SparkSQLEngine)
   }
 
   def createRedirectKyuubiStopServlet(destPath: String, basePath: String): HttpServlet = {
+    val prefixedDestPath = basePath + destPath
     new HttpServlet {
-      override def doGet(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
-        doRequest(req, resp)
+      override def doGet(request: HttpServletRequest, response: HttpServletResponse): Unit = {
+        doRequest(request, response)
       }
 
-      override def doPost(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
-        doRequest(req, resp)
+      override def doPost(request: HttpServletRequest, response: HttpServletResponse): Unit = {
+        doRequest(request, response)
       }
 
-      def doRequest(req: HttpServletRequest, resp: HttpServletResponse): Unit = {
+      private def doRequest(request: HttpServletRequest, response: HttpServletResponse): Unit = {
         val securityManager = SparkEnv.get.securityManager
-        val requestUser = req.getRemoteUser
+        val requestUser = request.getRemoteUser
         if (securityManager.checkAdminPermissions(requestUser)) {
           if (killEnabled && engine != null && engine.getServiceState != ServiceState.STOPPED) {
             engine.stop()
           }
 
-          val newUrl = new URL(new URL(req.getRequestURL.toString), basePath + destPath).toString
-          resp.sendRedirect(newUrl)
+          val newUrl = new URL(new URL(request.getRequestURL.toString), prefixedDestPath).toString
+          response.sendRedirect(newUrl)
         } else {
-          resp.sendError(HttpServletResponse.SC_FORBIDDEN,
+          response.sendError(HttpServletResponse.SC_FORBIDDEN,
             s"User $requestUser is allowed to stop this engine, please check `spark.admin.acls`")
         }
       }
