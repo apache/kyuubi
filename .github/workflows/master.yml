@@ -90,6 +90,7 @@ jobs:
         if: ${{ matrix.codecov == 'true' }}
         run: bash <(curl -s https://codecov.io/bash)
       - name: Detected Dependency List Change
+        if: ${{ matrix.java == 8 }}
         run: build/dependency.sh
       - name: Upload test logs
         if: failure()

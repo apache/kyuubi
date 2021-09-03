@@ -418,4 +418,242 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
       }
     }
   }
+
+  test("get simple name for DDL") {
+
+    import scala.collection.mutable.Set
+
+    val ddlSimpleName: Set[String] = Set()
+
+    // Notice: When we get Analyzed Logical Plan, the field of LogicalPlan.analyzed.analyzed is true
+
+    // ALTER DATABASE
+    val sql = "CREATE DATABASE inventory;"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql)
+      ).getClass.getSimpleName
+    )
+    val sql02 = "ALTER DATABASE inventory SET DBPROPERTIES " +
+      "('Edited-by' = 'John', 'Edit-date' = '01/01/2001');"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql02)
+      ).getClass.getSimpleName
+    )
+
+    // ALTER TABLE RENAME
+    val sql03 = "CREATE TABLE student (name VARCHAR(64), rollno INT, age INT) " +
+      "USING PARQUET PARTITIONED BY (age);"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql03)
+      ).getClass.getSimpleName
+    )
+    val sql04 = "INSERT INTO student VALUES " +
+      "('zhang', 1, 10),('yu', 2, 11),('xiang', 3, 12),('zhangyuxiang', 4, 17);"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql04)
+      ).getClass.getSimpleName
+    )
+    val sql05 = "ALTER TABLE Student RENAME TO StudentInfo;"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql05)
+      ).getClass.getSimpleName
+    )
+
+    // ALTER TABLE RENAME PARTITION
+    val sql06 = "ALTER TABLE default.StudentInfo PARTITION (age='10') " +
+      "RENAME TO PARTITION (age='15');"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql06)
+      ).getClass.getSimpleName
+    )
+
+    var pre_sql = "CREATE TABLE IF NOT EXISTS StudentInfo " +
+      "(name VARCHAR(64), rollno INT, age INT) USING PARQUET PARTITIONED BY (age);"
+    spark.sql(pre_sql)
+    // ALTER TABLE ADD COLUMNS
+    val sql07 = "ALTER TABLE StudentInfo ADD columns (LastName string, DOB timestamp);"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql07)
+      ).getClass.getSimpleName
+    )
+
+    // ALTER TABLE ALTER COLUMN
+    val sql08 = "ALTER TABLE StudentInfo ALTER COLUMN age COMMENT \"new comment\";"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql08)
+      ).getClass.getSimpleName
+    )
+
+    // ALTER TABLE CHANGE COLUMN
+    val sql09 = "ALTER TABLE StudentInfo CHANGE COLUMN age COMMENT \"new comment123\";"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql09)
+      ).getClass.getSimpleName
+    )
+
+    // ALTER TABLE ADD PARTITION
+    val sql10 = "ALTER TABLE StudentInfo ADD IF NOT EXISTS PARTITION (age=18);"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql10)
+      ).getClass.getSimpleName
+    )
+
+    // ALTER TABLE DROP PARTITION
+    val sql11 = "ALTER TABLE StudentInfo DROP IF EXISTS PARTITION (age=18);"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql11)
+      ).getClass.getSimpleName
+    )
+
+    // CREAT VIEW
+    val sql12 = "CREATE OR REPLACE VIEW studentinfo_view " +
+      "AS SELECT name, rollno FROM studentinfo;"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql12)
+      ).getClass.getSimpleName
+    )
+
+    // ALTER VIEW RENAME TO
+    val sql13 = "ALTER VIEW studentinfo_view RENAME TO studentinfo_view2;"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql13)
+      ).getClass.getSimpleName
+    )
+
+    // ALTER VIEW SET TBLPROPERTIES
+    val sql14 = "ALTER VIEW studentinfo_view2 SET TBLPROPERTIES " +
+      "('created.by.user' = \"zhangyuxiang\", 'created.date' = '08-20-2021' );"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql14)
+      ).getClass.getSimpleName
+    )
+
+    // ALTER VIEW UNSET TBLPROPERTIES
+    val sql15 = "ALTER VIEW studentinfo_view2 UNSET TBLPROPERTIES " +
+      "('created.by.user', 'created.date');"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql15)
+      ).getClass.getSimpleName
+    )
+
+    // ALTER VIEW AS SELECT
+    val sql16 = "ALTER VIEW studentinfo_view2 AS SELECT * FROM studentinfo;"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql16)
+      ).getClass.getSimpleName
+    )
+
+    // CREATE DATASOURCE TABLE AS SELECT
+    val sql17 = "CREATE TABLE student_copy USING CSV AS SELECT * FROM studentinfo;"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql17)
+      ).getClass.getSimpleName
+    )
+
+    // CREATE DATASOURCE TABLE AS LIKE
+    val sql18 = "CREATE TABLE Student_Dupli like studentinfo;"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql18)
+      ).getClass.getSimpleName
+    )
+
+    // USE DATABASE
+    val sql26 = "USE default;"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql26)
+      ).getClass.getSimpleName
+    )
+
+    // DROP DATABASE
+    val sql19 = "DROP DATABASE IF EXISTS inventory_db CASCADE;"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql19)
+      ).getClass.getSimpleName
+    )
+
+    // CREATE FUNCTION
+    val sql20 = "CREATE FUNCTION test_avg AS " +
+      "'org.apache.hadoop.hive.ql.udf.generic.GenericUDAFAverage';"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql20)
+      ).getClass.getSimpleName
+    )
+
+    // DROP FUNCTION
+    val sql21 = "DROP FUNCTION test_avg;"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql21)
+      ).getClass.getSimpleName
+    )
+
+    spark.sql("CREATE TABLE IF NOT EXISTS studentabc (name VARCHAR(64), rollno INT, age INT) " +
+      "USING PARQUET PARTITIONED BY (age);")
+    // DROP TABLE
+    val sql22 = "DROP TABLE IF EXISTS studentabc;"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql22)
+      ).getClass.getSimpleName
+    )
+
+    // DROP VIEW
+    val sql23 = "DROP VIEW studentinfo_view2;"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql23)
+      ).getClass.getSimpleName
+    )
+
+    // TRUNCATE TABLE
+    val sql24 = "TRUNCATE TABLE StudentInfo;"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql24)
+      ).getClass.getSimpleName
+    )
+
+    // REPAIR TABLE
+    val sql25 = "MSCK REPAIR TABLE StudentInfo;"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql25)
+      ).getClass.getSimpleName
+    )
+    // scalastyle:off println
+    println("ddl simple name is :" + ddlSimpleName)
+    // scalastyle:on println
+  }
+
+  test("Sql classification for ddl") {
+    withSQLConf(KyuubiSQLConf.SQL_CLASSIFICATION_ENABLED.key -> "true") {
+      withDatabase("inventory") {
+        val df = sql("CREATE DATABASE inventory;")
+        assert(df.sparkSession.conf.get("kyuubi.spark.sql.classification") === "ddl")
+      }
+      val df = sql("select timestamp'2021-06-01'")
+      assert(df.sparkSession.conf.get("kyuubi.spark.sql.classification") !== "ddl")
+    }
+  }
 }

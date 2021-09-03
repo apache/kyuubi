@@ -62,7 +62,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
   private val poolThreshold: Int = conf.get(ENGINE_POOL_SIZE_THRESHOLD)
 
   @VisibleForTesting
-  private[kyuubi] val subDomain: Option[String] = conf.get(ENGINE_SHARE_LEVEL_SUB_DOMAIN).orElse {
+  private[kyuubi] val subdomain: Option[String] = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN).orElse {
     val clientPoolSize: Int = conf.get(ENGINE_POOL_SIZE)
 
     if (clientPoolSize > 0) {
@@ -94,7 +94,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
   @VisibleForTesting
   private[kyuubi] val defaultEngineName: String = shareLevel match {
     case CONNECTION => s"kyuubi_${shareLevel}_${appUser}_$sessionId"
-    case _ => subDomain match {
+    case _ => subdomain match {
       case Some(domain) => s"kyuubi_${shareLevel}_${appUser}_${domain}_$sessionId"
       case _ => s"kyuubi_${shareLevel}_${appUser}_$sessionId"
     }
@@ -104,15 +104,15 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
    * The EngineSpace used to expose itself to the KyuubiServers in `serverSpace`
    *
    * For `CONNECTION` share level:
-   *   /$serverSpace_CONNECTION/$user/$sessionId
+   *   /`serverSpace_CONNECTION`/`user`/`sessionId`
    * For `USER` share level:
-   *   /$serverSpace_USER/$user[/$subDomain]
+   *   /`serverSpace_USER`/`user`[/`subdomain`]
    *
    */
   @VisibleForTesting
   private[kyuubi] lazy val engineSpace: String = shareLevel match {
     case CONNECTION => ZKPaths.makePath(s"${serverSpace}_$shareLevel", appUser, sessionId)
-    case _ => subDomain match {
+    case _ => subdomain match {
       case Some(domain) => ZKPaths.makePath(s"${serverSpace}_$shareLevel", appUser, domain)
       case None => ZKPaths.makePath(s"${serverSpace}_$shareLevel", appUser)
     }
@@ -126,7 +126,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
     case CONNECTION => f
     case _ =>
       val lockPath =
-        ZKPaths.makePath(s"${serverSpace}_$shareLevel", "lock", appUser, subDomain.orNull)
+        ZKPaths.makePath(s"${serverSpace}_$shareLevel", "lock", appUser, subdomain.orNull)
       var lock: InterProcessSemaphoreMutex = null
       try {
         try {
