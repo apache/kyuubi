@@ -232,6 +232,20 @@ object KyuubiConf {
     .timeConf
     .createWithDefault(Duration.ofHours(3).toMillis)
 
+  val CREDENTIALS_RENEWAL_INTERVAL: ConfigEntry[Long] =
+    buildConf("credentials.renewal.interval")
+      .doc("How often Kyuubi renews one user's DelegationTokens")
+      .version("1.4.0")
+      .timeConf
+      .createWithDefault(Duration.ofHours(1).toMillis)
+
+  val CREDENTIALS_RENEWAL_RETRY_WAIT: ConfigEntry[Long] =
+    buildConf("credentials.renewal.retryWait")
+      .doc("How long to wait before retrying to fetch new credentials after a failure.")
+      .version("1.4.0")
+      .timeConf
+      .checkValue(t => t > 0, "must be positive integer")
+      .createWithDefault(Duration.ofMinutes(1).toMillis)
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                              Frontend Service Configuration                                 //

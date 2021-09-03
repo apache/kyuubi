@@ -22,6 +22,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.credentials.HadoopCredentialsManager
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.KyuubiOperationManager
@@ -31,8 +32,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   def this() = this(classOf[KyuubiSessionManager].getSimpleName)
 
   val operationManager = new KyuubiOperationManager()
+  val credentialsManager = new HadoopCredentialsManager()
 
   override def initialize(conf: KyuubiConf): Unit = {
+    addService(credentialsManager)
     super.initialize(conf)
   }
 
