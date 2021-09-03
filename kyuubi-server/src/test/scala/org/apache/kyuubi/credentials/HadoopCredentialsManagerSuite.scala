@@ -55,7 +55,8 @@ class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
 
   test("disable a provider") {
     val kyuubiConf =
-      new KyuubiConf(false).set("kyuubi.credentials.unstable.enabled", "false")
+      new KyuubiConf(false)
+        .set("kyuubi.credentials.unstable.enabled", "false")
     val providers = HadoopCredentialsManager.loadProviders(kyuubiConf)
     assert(!providers.contains("unstable"))
   }
@@ -65,6 +66,17 @@ class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
     val manager = new HadoopCredentialsManager()
     manager.initialize(new KyuubiConf(false))
     assert(!manager.containsProvider("unrequired"))
+  }
+
+  test("no provider left after initialize") {
+    val kyuubiConf =
+      new KyuubiConf(false)
+        .set("kyuubi.credentials.unstable.enabled", "false")
+    withStartedManager(kyuubiConf) { manager =>
+      // All providers are filtered out either because of being disabled or
+      // because does not require a token
+      assert(manager.renewalExecutor.isEmpty)
+    }
   }
 
   test("schedule credentials renewal") {
@@ -126,10 +138,13 @@ class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
       }
 
       var called = false
-      manager.sendCredentialsIfNeeded(sessionId, appUser, _ => {
-        called = true
-        throw new IOException
-      })
+      manager.sendCredentialsIfNeeded(
+        sessionId,
+        appUser,
+        _ => {
+          called = true
+          throw new IOException
+        })
 
       assert(called)
       assert(manager.getSessionCredentialsEpoch(sessionId) == CredentialsRef.UNSET_EPOCH)

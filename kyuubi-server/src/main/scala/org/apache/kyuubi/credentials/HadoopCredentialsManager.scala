@@ -61,8 +61,17 @@ import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
  * </li>
  * </ol>
  *
- * @note Session credentials epochs are created in session scope and should be removed using
- *       [[removeSessionCredentialsEpoch]] when session closes.
+ * @note
+ * <ol>
+ * <li>
+ *   Session credentials epochs are created in session scope and should be removed using
+ *   [[removeSessionCredentialsEpoch]] when session closes.
+ * </li>
+ * <li>
+ *   [[HadoopCredentialsManager]] does not renew and send credentials if no provider is left after
+ *   initialize.
+ * </li>
+ * </ol>
  */
 class HadoopCredentialsManager private (name: String) extends AbstractService(name)
     with Logging {
@@ -75,8 +84,9 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
   private var providers: Map[String, HadoopDelegationTokenProvider] = _
   private var renewalInterval: Long = _
   private var renewalRetryWait: Long = _
-  private var renewalExecutor: ScheduledExecutorService = _
   private var hadoopConf: Configuration = _
+
+  private[credentials] var renewalExecutor: Option[ScheduledExecutorService] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
     hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
@@ -84,13 +94,18 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
       .filter { case (_, provider) =>
         val required = provider.delegationTokensRequired(hadoopConf, conf)
         if (!required) {
-          info(s"Service ${provider.serviceName} does not require a token." +
+          warn(s"Service ${provider.serviceName} does not require a token." +
             s" Check your configuration to see if security is disabled or not.")
         }
         required
       }
-    info("Using the following builtin delegation token providers: " +
-      s"${providers.keys.mkString(", ")}.")
+
+    if (providers.isEmpty) {
+      warn("No delegation token is required by services.")
+    } else {
+      info("Using the following builtin delegation token providers: " +
+        s"${providers.keys.mkString(", ")}.")
+    }
 
     renewalInterval = conf.get(CREDENTIALS_RENEWAL_INTERVAL)
     renewalRetryWait = conf.get(CREDENTIALS_RENEWAL_RETRY_WAIT)
@@ -98,16 +113,18 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
   }
 
   override def start(): Unit = {
-    renewalExecutor =
-      ThreadUtils.newDaemonSingleThreadScheduledExecutor("Delegation Token Renewal Thread")
+    if (providers.nonEmpty) {
+      renewalExecutor =
+        Some(ThreadUtils.newDaemonSingleThreadScheduledExecutor("Delegation Token Renewal Thread"))
+    }
     super.start()
   }
 
   override def stop(): Unit = {
-    if (renewalExecutor != null) {
-      renewalExecutor.shutdownNow()
+    renewalExecutor.foreach { executor =>
+      executor.shutdownNow()
       try {
-        renewalExecutor.awaitTermination(10, TimeUnit.SECONDS)
+        executor.awaitTermination(10, TimeUnit.SECONDS)
       } catch {
         case _: InterruptedException =>
       }
@@ -127,19 +144,17 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
       sessionId: String,
       appUser: String,
       send: String => Unit): Unit = {
-    require(renewalExecutor != null, "renewalExecutor should be initialized")
-
     val userRef = getOrCreateUserCredentialsRef(appUser)
     val sessionEpoch = getSessionCredentialsEpoch(sessionId)
 
-    if (userRef.getEpoch != sessionEpoch) {
+    if (userRef.getEpoch > sessionEpoch) {
       val currentEpoch = userRef.getEpoch
       val currentCreds = userRef.getEncodedCredentials
       info(s"Send new credentials with epoch $currentEpoch to SQL engine through session " +
         s"$sessionId")
       Try(send(currentCreds)) match {
         case Success(_) =>
-          info(s"Update session credentials epoch from ${sessionEpoch} to $currentEpoch")
+          info(s"Update session credentials epoch from $sessionEpoch to $currentEpoch")
           sessionCredentialsEpochMap.put(sessionId, currentEpoch)
         case Failure(exception) =>
           warn(
@@ -179,9 +194,7 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
     providers.contains(serviceName)
   }
 
-  private def scheduleRenewal(userRef: CredentialsRef, delay: Long): Future[_] = {
-    info(s"Scheduling renewal in $delay ms.")
-
+  private def scheduleRenewal(userRef: CredentialsRef, delay: Long): Unit = {
     val renewalTask = new Runnable {
       override def run(): Unit = {
         try {
@@ -194,13 +207,19 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
           case _: InterruptedException =>
           // Server is shutting down
           case e: Exception =>
-            warn(s"Failed to update tokens, will try again in $renewalRetryWait ms", e)
+            warn(
+              s"Failed to update tokens for ${userRef.getAppUser}, try again in" +
+                s" $renewalRetryWait ms",
+              e)
             scheduleRenewal(userRef, renewalRetryWait)
         }
       }
     }
 
-    renewalExecutor.schedule(renewalTask, delay, TimeUnit.MILLISECONDS)
+    renewalExecutor.foreach { executor =>
+      info(s"Scheduling renewal in $delay ms.")
+      executor.schedule(renewalTask, delay, TimeUnit.MILLISECONDS)
+    }
   }
 
 }

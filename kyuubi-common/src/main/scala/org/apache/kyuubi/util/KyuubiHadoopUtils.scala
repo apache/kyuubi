@@ -17,9 +17,10 @@
 
 package org.apache.kyuubi.util
 
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, DataInputStream, DataOutputStream}
+
 import org.apache.commons.codec.binary.Base64
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.io.{DataInputBuffer, DataOutputBuffer}
 import org.apache.hadoop.security.{Credentials, SecurityUtil}
 
 import org.apache.kyuubi.config.KyuubiConf
@@ -37,21 +38,20 @@ object KyuubiHadoopUtils {
   }
 
   def encodeCredentials(creds: Credentials): String = {
-    val buf = new DataOutputBuffer
-    creds.write(buf)
+    val byteStream = new ByteArrayOutputStream
+    creds.writeTokenStorageToStream(new DataOutputStream(byteStream))
+
     val encoder = new Base64(0, null, false)
-    val raw = new Array[Byte](buf.getLength)
-    System.arraycopy(buf.getData, 0, raw, 0, buf.getLength)
-    encoder.encodeToString(raw)
+    encoder.encodeToString(byteStream.toByteArray)
   }
 
   def decodeCredentials(newValue: String): Credentials = {
-    val creds = new Credentials()
     val decoder = new Base64(0, null, false)
-    val buf = new DataInputBuffer
     val decoded = decoder.decode(newValue)
-    buf.reset(decoded, decoded.length)
-    creds.readFields(buf)
+
+    val byteStream = new ByteArrayInputStream(decoded)
+    val creds = new Credentials()
+    creds.readTokenStorageStream(new DataInputStream(byteStream))
     creds
   }
 
