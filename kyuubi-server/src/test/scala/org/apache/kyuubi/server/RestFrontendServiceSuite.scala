@@ -73,7 +73,7 @@ class RestFrontendServiceSuite extends KyuubiFunSuite{
     assert(frontendService.getServiceState == STARTED)
 
     eventually(timeout(10.seconds), interval(50.milliseconds)) {
-      val html = Source.fromURL("http://localhost:10009/api/v1/ping").mkString
+      val html = Source.fromURL("http://localhost:10099/api/v1/ping").mkString
       assert(html.toLowerCase(Locale.ROOT).equals("pong"))
     }
 

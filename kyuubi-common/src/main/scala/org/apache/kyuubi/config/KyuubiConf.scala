@@ -455,7 +455,7 @@ object KyuubiConf {
     .version("1.4.0")
     .intConf
     .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
-    .createWithDefault(10009)
+    .createWithDefault(10099)
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //
