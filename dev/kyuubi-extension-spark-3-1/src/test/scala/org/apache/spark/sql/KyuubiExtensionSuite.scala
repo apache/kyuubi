@@ -650,10 +650,10 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
     withSQLConf(KyuubiSQLConf.SQL_CLASSIFICATION_ENABLED.key -> "true") {
       withDatabase("inventory") {
         val df = sql("CREATE DATABASE inventory;")
-        assert(df.sparkSession.conf.get("spark.sql.classification") === "ddl")
+        assert(df.sparkSession.conf.get("kyuubi.spark.sql.classification") === "ddl")
       }
       val df = sql("select timestamp'2021-06-01'")
-      assert(df.sparkSession.conf.get("spark.sql.classification") !== "ddl")
+      assert(df.sparkSession.conf.get("kyuubi.spark.sql.classification") !== "ddl")
     }
   }
 
