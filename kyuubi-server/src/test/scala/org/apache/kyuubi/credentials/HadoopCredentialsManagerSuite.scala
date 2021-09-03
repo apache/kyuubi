@@ -24,7 +24,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.Credentials
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
-import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 
 class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
@@ -71,7 +71,7 @@ class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
     val kyuubiConf = new KyuubiConf(false)
       .set(KyuubiConf.CREDENTIALS_RENEWAL_INTERVAL, 1000L)
     withStartedManager(kyuubiConf) { manager =>
-      val userRef = manager.getOrCreateUserRef(appUser)
+      val userRef = manager.getOrCreateUserCredentialsRef(appUser)
       // Tolerate 100 ms delay
       eventually(timeout(1100.milliseconds), interval(100.milliseconds)) {
         assert(userRef.getEpoch == 1)
@@ -87,13 +87,13 @@ class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
       try {
         UnstableDelegationTokenProvider.throwException = true
 
-        val userRef = manager.getOrCreateUserRef(appUser)
+        val userRef = manager.getOrCreateUserCredentialsRef(appUser)
         // Tolerate 100 ms delay
         eventually(timeout(2100.milliseconds), interval(100.milliseconds)) {
           // 1 scheduled call and 2 scheduled retrying call
           assert(UnstableDelegationTokenProvider.exceptionCount == 3)
         }
-        assert(userRef.getEpoch == -1)
+        assert(userRef.getEpoch == CredentialsRef.UNSET_EPOCH)
       } finally {
         UnstableDelegationTokenProvider.throwException = false
       }
@@ -105,33 +105,34 @@ class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
       .set(KyuubiConf.CREDENTIALS_RENEWAL_INTERVAL, 1000L)
     withStartedManager(kyuubiConf) { manager =>
       // Trigger UserCredentialsRef's initialization
-      val userRef = manager.getOrCreateUserRef(appUser)
+      val userRef = manager.getOrCreateUserCredentialsRef(appUser)
       eventually(interval(100.milliseconds)) {
         assert(userRef.getEpoch == 0)
       }
 
       manager.sendCredentialsIfNeeded(sessionId, appUser, send)
 
-      val engineRef = manager.getOrCreateEngineRef(sessionId)
-      assert(engineRef.getEpoch == userRef.getEpoch)
+      val sessionEpoch = manager.getSessionCredentialsEpoch(sessionId)
+      assert(sessionEpoch == userRef.getEpoch)
     }
   }
 
   test("credentials sending failure") {
     withStartedManager(new KyuubiConf(false)) { manager =>
       // Trigger UserCredentialsRef's initialization
-      val userRef = manager.getOrCreateUserRef(appUser)
+      val userRef = manager.getOrCreateUserCredentialsRef(appUser)
       eventually(interval(100.milliseconds)) {
         assert(userRef.getEpoch == 0)
       }
 
-      val thrown = intercept[KyuubiException] {
-        manager.sendCredentialsIfNeeded(sessionId, appUser, _ => throw new IOException)
-      }
+      var called = false
+      manager.sendCredentialsIfNeeded(sessionId, appUser, _ => {
+        called = true
+        throw new IOException
+      })
 
-      assert(thrown.isInstanceOf[KyuubiException])
-      assert(thrown.getMessage == s"Failed to send new credentials to SQL engine through session" +
-        s" $sessionId")
+      assert(called)
+      assert(manager.getSessionCredentialsEpoch(sessionId) == CredentialsRef.UNSET_EPOCH)
     }
   }
 }

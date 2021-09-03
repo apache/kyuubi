@@ -19,12 +19,13 @@ package org.apache.kyuubi.credentials
 
 import org.apache.hadoop.security.Credentials
 
+import org.apache.kyuubi.credentials.CredentialsRef.UNSET_EPOCH
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
-class LocalCredentialsRef(appUser: String) {
+class CredentialsRef(appUser: String) {
 
   @volatile
-  private var epoch = -1L
+  private var epoch = UNSET_EPOCH
 
   private var encodedCredentials: String = _
 
@@ -41,4 +42,8 @@ class LocalCredentialsRef(appUser: String) {
     epoch += 1
   }
 
+}
+
+object CredentialsRef {
+  val UNSET_EPOCH: Long = -1L
 }

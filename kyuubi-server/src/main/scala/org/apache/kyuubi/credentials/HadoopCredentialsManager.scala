@@ -26,7 +26,7 @@ import scala.util.{Failure, Success, Try}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.Credentials
 
-import org.apache.kyuubi.{KyuubiException, Logging}
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.AbstractService
@@ -40,37 +40,37 @@ import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
  * [[sendCredentialsIfNeeded]] executes the following steps:
  * <ol>
  * <li>
- *   Get or create a cached [[LocalCredentialsRef]](contains delegation tokens) object by key
- *   appUser. If [[LocalCredentialsRef]] is newly created, spawn a scheduled task to renew the
+ *   Get or create a cached [[CredentialsRef]](contains delegation tokens) object by key
+ *   appUser. If [[CredentialsRef]] is newly created, spawn a scheduled task to renew the
  *   delegation tokens.
  * </li>
  * <li>
- *   Get or create a cached [[RemoteCredentialsRef]] object by key sessionId.
+ *   Get or create a cached session credentials epoch object by key sessionId.
  * </li>
  * <li>
- *   Compare [[LocalCredentialsRef]] epoch with [[RemoteCredentialsRef]] epoch. (Both epochs are set
- *   to -1 when created. [[LocalCredentialsRef]] epoch is increased when delegation tokens are
+ *   Compare [[CredentialsRef]] epoch with session credentials epoch. (Both epochs are set
+ *   to -1 when created. [[CredentialsRef]] epoch is increased when delegation tokens are
  *   renewed.)
  * </li>
  * <li>
  *   If epochs are equal, return. Else, send delegation tokens to the SQL engine.
  * </li>
  * <li>
- *   If sending succeeds, set [[RemoteCredentialsRef]] epoch to [[LocalCredentialsRef]] epoch. Else,
- *   throw a [[KyuubiException]].
+ *   If sending succeeds, set session credentials epoch to [[CredentialsRef]] epoch. Else,
+ *   record the exception and return.
  * </li>
  * </ol>
  *
- * @note [[RemoteCredentialsRef]]s are created in session scope and should be removed using
- *       [[removeRemoteCredentialsRef]] when session closes.
+ * @note Session credentials epochs are created in session scope and should be removed using
+ *       [[removeSessionCredentialsEpoch]] when session closes.
  */
 class HadoopCredentialsManager private (name: String) extends AbstractService(name)
     with Logging {
 
   def this() = this(classOf[HadoopCredentialsManager].getSimpleName)
 
-  private val localRefMap = new ConcurrentHashMap[String, LocalCredentialsRef]()
-  private val remoteRefMap = new ConcurrentHashMap[String, RemoteCredentialsRef]()
+  private val userCredentialsRefMap = new ConcurrentHashMap[String, CredentialsRef]()
+  private val sessionCredentialsEpochMap = new ConcurrentHashMap[String, Long]()
 
   private var providers: Map[String, HadoopDelegationTokenProvider] = _
   private var renewalInterval: Long = _
@@ -118,10 +118,10 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
   /**
    * Send credentials to SQL engine which the specified session is talking to if
    * [[HadoopCredentialsManager]] has a newer credentials.
+   *
    * @param sessionId Specify the session which is talking with SQL engine
    * @param appUser  User identity that the SQL engine uses.
    * @param send     Function to send encoded credentials to SQL engine
-   * @throws KyuubiException if sending credentials fails.
    */
   def sendCredentialsIfNeeded(
       sessionId: String,
@@ -129,52 +129,49 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
       send: String => Unit): Unit = {
     require(renewalExecutor != null, "renewalExecutor should be initialized")
 
-    val userRef = getOrCreateUserRef(appUser)
-    val engineRef = getOrCreateEngineRef(sessionId)
-    if (userRef.getEpoch != engineRef.getEpoch) {
-      engineRef synchronized {
-        if (userRef.getEpoch != engineRef.getEpoch) {
-          val currentEpoch = userRef.getEpoch
-          val currentCreds = userRef.getEncodedCredentials
-          info(s"Send new credentials with epoch $currentEpoch to SQL engine through session " +
-            s"$sessionId")
-          Try(send(currentCreds)) match {
-            case Success(_) =>
-              info(s"Update session scope epoch from ${engineRef.getEpoch} to $currentEpoch")
-              engineRef.setEpoch(currentEpoch)
-            case Failure(exception) =>
-              throw new KyuubiException(
-                s"Failed to send new credentials to SQL engine through session $sessionId",
-                exception)
-          }
-        }
+    val userRef = getOrCreateUserCredentialsRef(appUser)
+    val sessionEpoch = getSessionCredentialsEpoch(sessionId)
+
+    if (userRef.getEpoch != sessionEpoch) {
+      val currentEpoch = userRef.getEpoch
+      val currentCreds = userRef.getEncodedCredentials
+      info(s"Send new credentials with epoch $currentEpoch to SQL engine through session " +
+        s"$sessionId")
+      Try(send(currentCreds)) match {
+        case Success(_) =>
+          info(s"Update session credentials epoch from ${sessionEpoch} to $currentEpoch")
+          sessionCredentialsEpochMap.put(sessionId, currentEpoch)
+        case Failure(exception) =>
+          warn(
+            s"Failed to send new credentials to SQL engine through session $sessionId",
+            exception)
       }
     }
   }
 
   /**
-   * Remove [[RemoteCredentialsRef]] corresponding to `sessionId`.
+   * Remove session credentials epoch corresponding to `sessionId`.
    *
    * @param sessionId KyuubiSession id
    */
-  def removeRemoteCredentialsRef(sessionId: String): Unit = {
-    remoteRefMap.remove(sessionId)
+  def removeSessionCredentialsEpoch(sessionId: String): Unit = {
+    sessionCredentialsEpochMap.remove(sessionId)
   }
 
   // Visible for testing.
-  private[credentials] def getOrCreateUserRef(appUser: String): LocalCredentialsRef =
-    localRefMap.computeIfAbsent(
+  private[credentials] def getOrCreateUserCredentialsRef(appUser: String): CredentialsRef =
+    userCredentialsRefMap.computeIfAbsent(
       appUser,
       appUser => {
-        val ref = new LocalCredentialsRef(appUser)
+        val ref = new CredentialsRef(appUser)
         scheduleRenewal(ref, 0)
         info(s"Created CredentialsRef for user $appUser and scheduled a renewal task")
         ref
       })
 
   // Visible for testing.
-  private[credentials] def getOrCreateEngineRef(sessionId: String): RemoteCredentialsRef = {
-    remoteRefMap.computeIfAbsent(sessionId, _ => new RemoteCredentialsRef)
+  private[credentials] def getSessionCredentialsEpoch(sessionId: String): Long = {
+    sessionCredentialsEpochMap.getOrDefault(sessionId, CredentialsRef.UNSET_EPOCH)
   }
 
   // Visible for testing.
@@ -182,7 +179,7 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
     providers.contains(serviceName)
   }
 
-  private def scheduleRenewal(userRef: LocalCredentialsRef, delay: Long): Future[_] = {
+  private def scheduleRenewal(userRef: CredentialsRef, delay: Long): Future[_] = {
     info(s"Scheduling renewal in $delay ms.")
 
     val renewalTask = new Runnable {
