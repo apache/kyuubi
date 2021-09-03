@@ -25,7 +25,8 @@ class NoopServer extends Serverable("noop") {
   private val OOMHook = new Runnable { override def run(): Unit = stop() }
 
   override val backendService = new NoopBackendService
-  val frontendService = new ThriftFrontendService(backendService, OOMHook)
+  protected val frontendService: AbstractFrontendService =
+    new ThriftFrontendService(backendService, OOMHook)
 
   override def initialize(conf: KyuubiConf): Unit = {
     addService(frontendService)

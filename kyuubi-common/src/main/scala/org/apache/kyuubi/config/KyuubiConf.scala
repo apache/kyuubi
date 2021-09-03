@@ -134,6 +134,8 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     FRONTEND_BIND_PORT,
     FRONTEND_THRIFT_BINARY_BIND_HOST,
     FRONTEND_THRIFT_BINARY_BIND_PORT,
+    FRONTEND_REST_BIND_HOST,
+    FRONTEND_REST_BIND_PORT,
     AUTHENTICATION_METHOD,
     SERVER_KEYTAB,
     SERVER_PRINCIPAL,
@@ -455,6 +457,19 @@ object KyuubiConf {
     .checkValues(SaslQOP.values.map(_.toString))
     .transform(_.toLowerCase(Locale.ROOT))
     .createWithDefault(SaslQOP.AUTH.toString)
+
+  val FRONTEND_REST_BIND_HOST: OptionalConfigEntry[String] = buildConf("frontend.rest.bind.host")
+    .doc("Hostname or IP of the machine on which to run the REST frontend service.")
+    .version("1.4.0")
+    .stringConf
+    .createOptional
+
+  val FRONTEND_REST_BIND_PORT: ConfigEntry[Int] = buildConf("frontend.rest.bind.port")
+    .doc("Port of the machine on which to run the REST frontend service.")
+    .version("1.4.0")
+    .intConf
+    .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
+    .createWithDefault(10099)
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //

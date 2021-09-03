@@ -106,6 +106,7 @@
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jaxb.version>2.2.11</jaxb.version>
         <javax-activation.version>1.1.1</javax-activation.version>
+        <jersey.version>2.29</jersey.version>
         <jetty.version>9.4.41.v20210516</jetty.version>
         <kubernetes-client.version>5.5.0</kubernetes-client.version>
         <ldapsdk.version>5.1.4</ldapsdk.version>
@@ -1045,6 +1046,31 @@
                 <groupId>com.github.scopt</groupId>
                 <artifactId>scopt_${scala.binary.version}</artifactId>
                 <version>${scopt.version}</version>
+            </dependency>
+
+            <!-- RESTful service required -->
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-server</artifactId>
+                <version>${jersey.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>jakarta.xml.bind</groupId>
+                        <artifactId>jakarta.xml.bind-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.jersey.containers</groupId>
+                <artifactId>jersey-container-servlet-core</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.jersey.inject</groupId>
+                <artifactId>jersey-hk2</artifactId>
+                <version>${jersey.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
