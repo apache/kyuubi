@@ -59,7 +59,7 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
   test("ensure two connections share the same engine when specifying subDomain.") {
     withSessionConf()(
       Map(
-        KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN.key -> "abc"
+        KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key -> "abc"
       ))(Map.empty) {
 
       var r1: String = null

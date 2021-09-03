@@ -63,7 +63,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
       .unset(KyuubiConf.SERVER_PRINCIPAL)
       .set(HA_ZK_QUORUM, zkServer.getConnectString)
       .set(HA_ZK_NAMESPACE, namespace)
-      .set(KyuubiConf.FRONTEND_BIND_PORT, 0)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     val server: Serverable = new NoopServer()
     server.initialize(conf)
@@ -146,7 +146,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
         .unset(KyuubiConf.SERVER_PRINCIPAL)
         .set(HA_ZK_QUORUM, zkServer.getConnectString)
         .set(HA_ZK_NAMESPACE, namespace)
-        .set(KyuubiConf.FRONTEND_BIND_PORT, 0)
+        .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
         .set(HA_ZK_ACL_ENABLED, false)
 
       val server: Serverable = new NoopServer()
