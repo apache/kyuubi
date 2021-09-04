@@ -46,7 +46,7 @@ build/scala*
 build/test
 target/
 dist/
-kyuubi-*-bin*
+apache-kyuubi-*-bin*
 *.gz
 logs/
 pid/

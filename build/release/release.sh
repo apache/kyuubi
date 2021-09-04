@@ -72,8 +72,8 @@ upload_svn_staging() {
   mkdir -p "${SVN_STAGING_DIR}/${RELEASE_TAG}"
   rm -f "${SVN_STAGING_DIR}/${RELEASE_TAG}/*"
 
-  SRC_TGZ_FILE="kyuubi-${RELEASE_VERSION}-source.tgz"
-  BIN_TGZ_FILE="kyuubi-${RELEASE_VERSION}-bin.tgz"
+  SRC_TGZ_FILE="apache-kyuubi-${RELEASE_VERSION}-source.tgz"
+  BIN_TGZ_FILE="apache-kyuubi-${RELEASE_VERSION}-bin.tgz"
 
   echo "Copying release tarballs"
   cp "${RELEASE_DIR}/${SRC_TGZ_FILE}"        "${SVN_STAGING_DIR}/${RELEASE_TAG}/${SRC_TGZ_FILE}"
