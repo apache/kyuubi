@@ -82,9 +82,21 @@ case class EngineTab(engine: SparkSQLEngine)
           response.sendError(HttpServletResponse.SC_FORBIDDEN,
             s"It is not allowed to kill Kyuubi engine from the Spark Web UI.")
         } else {
-          val securityManager = SparkEnv.get.securityManager
+          val securityMgr = SparkEnv.get.securityManager
           val requestUser = request.getRemoteUser
-          if (securityManager.checkAdminPermissions(requestUser)) {
+
+          val effectiveUser = Option(request.getParameter("doAs"))
+            .map { proxy =>
+              if (requestUser != proxy && !securityMgr.checkAdminPermissions(requestUser)) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN,
+                  s"User $requestUser is not allowed to impersonate others.")
+                return
+              }
+              proxy
+            }
+            .getOrElse(requestUser)
+
+          if (securityMgr.checkAdminPermissions(effectiveUser)) {
             if (engine != null && engine.getServiceState != ServiceState.STOPPED) {
               engine.stop()
             }
@@ -93,7 +105,7 @@ case class EngineTab(engine: SparkSQLEngine)
             response.sendRedirect(newUrl)
           } else {
             response.sendError(HttpServletResponse.SC_FORBIDDEN,
-              s"User $requestUser is not allowed to stop engine, please check `spark.admin.acls`")
+              s"User $effectiveUser is not authorized to stop this engine")
           }
         }
       }
