@@ -17,12 +17,11 @@
 
 package org.apache.spark.kyuubi.ui
 
-import java.net.URL
-import javax.servlet.http.{HttpServlet, HttpServletRequest, HttpServletResponse}
+import javax.servlet.http.HttpServletRequest
 
 import scala.util.control.NonFatal
 
-import org.apache.spark.SparkEnv
+import org.apache.spark.{SecurityManager, SparkEnv}
 import org.apache.spark.ui.SparkUITab
 
 import org.apache.kyuubi.{Logging, Utils}
@@ -48,17 +47,25 @@ case class EngineTab(engine: SparkSQLEngine)
   engine.spark.sparkContext.ui.foreach { ui =>
     try {
       // Spark shade the jetty package so here we use reflect
+      val handler = Class.forName("org.apache.spark.ui.JettyUtils")
+        .getMethod("createRedirectHandler",
+          classOf[String],
+          classOf[String],
+          classOf[(HttpServletRequest) => Unit],
+          classOf[String],
+          classOf[scala.collection.immutable.Set[String]])
+        .invoke(null, "/kyuubi/stop", "/kyuubi", handleKillRequest _, "", Set("GET", "POST"))
+
+      Class.forName("org.apache.spark.ui.JettyUtils")
+        .getMethod("addFilters",
+          Class.forName("org.eclipse.jetty.servlet.ServletContextHandler"),
+          classOf[SecurityManager])
+        .invoke(null, handler, SparkEnv.get.securityManager)
+
       Class.forName("org.apache.spark.ui.SparkUI")
         .getMethod("attachHandler",
           classOf[org.sparkproject.jetty.servlet.ServletContextHandler])
-        .invoke(ui,
-          Class.forName("org.apache.spark.ui.JettyUtils")
-            .getMethod("createServletHandler",
-              classOf[String],
-              classOf[HttpServlet],
-              classOf[String])
-            .invoke(null, "/kyuubi/stop", createRedirectKyuubiStopServlet("/kyuubi", ""), "")
-        )
+        .invoke(ui, handler)
     } catch {
       case NonFatal(e) =>
         warn("Failed to attach handler using SparkUI, please check the Spark version. " +
@@ -66,49 +73,9 @@ case class EngineTab(engine: SparkSQLEngine)
     }
   }
 
-  def createRedirectKyuubiStopServlet(destPath: String, basePath: String): HttpServlet = {
-    val prefixedDestPath = basePath + destPath
-    new HttpServlet {
-      override def doGet(request: HttpServletRequest, response: HttpServletResponse): Unit = {
-        doRequest(request, response)
-      }
-
-      override def doPost(request: HttpServletRequest, response: HttpServletResponse): Unit = {
-        doRequest(request, response)
-      }
-
-      private def doRequest(request: HttpServletRequest, response: HttpServletResponse): Unit = {
-        if (!killEnabled) {
-          response.sendError(HttpServletResponse.SC_FORBIDDEN,
-            s"It is not allowed to kill Kyuubi engine from the Spark Web UI.")
-        } else {
-          val securityMgr = SparkEnv.get.securityManager
-          val requestUser = request.getRemoteUser
-
-          val effectiveUser = Option(request.getParameter("doAs"))
-            .map { proxy =>
-              if (requestUser != proxy && !securityMgr.checkAdminPermissions(requestUser)) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN,
-                  s"User $requestUser is not allowed to impersonate others.")
-                return
-              }
-              proxy
-            }
-            .getOrElse(requestUser)
-
-          if (securityMgr.checkAdminPermissions(effectiveUser)) {
-            if (engine != null && engine.getServiceState != ServiceState.STOPPED) {
-              engine.stop()
-            }
-
-            val newUrl = new URL(new URL(request.getRequestURL.toString), prefixedDestPath).toString
-            response.sendRedirect(newUrl)
-          } else {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN,
-              s"User $effectiveUser is not authorized to stop this engine")
-          }
-        }
-      }
+  def handleKillRequest(request: HttpServletRequest): Unit = {
+    if (killEnabled && engine != null && engine.getServiceState != ServiceState.STOPPED) {
+      engine.stop()
     }
   }
 }
