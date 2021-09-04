@@ -50,7 +50,7 @@ if [ "$(uname)" == "Darwin" ]; then
 fi
 
 package_source() {
-  SRC_TGZ_FILE="kyuubi-${RELEASE_VERSION}-source.tgz"
+  SRC_TGZ_FILE="apache-kyuubi-${RELEASE_VERSION}-source.tgz"
   SRC_TGZ="${RELEASE_DIR}/${SRC_TGZ_FILE}"
 
   mkdir -p "${RELEASE_DIR}"
@@ -67,7 +67,7 @@ package_source() {
 }
 
 package_binary() {
-  BIN_TGZ_FILE="kyuubi-${RELEASE_VERSION}-bin.tgz"
+  BIN_TGZ_FILE="apache-kyuubi-${RELEASE_VERSION}-bin.tgz"
   BIN_TGZ="${RELEASE_DIR}/${BIN_TGZ_FILE}"
 
   mkdir -p "${RELEASE_DIR}"

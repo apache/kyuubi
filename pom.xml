@@ -1455,7 +1455,7 @@
                             <exclude>build/scala-*/**</exclude>
                             <exclude>**/**/operation_logs/**/**</exclude>
                             <exclude>**/*.output.schema</exclude>
-                            <exclude>**/kyuubi-*-bin*/**</exclude>
+                            <exclude>**/apache-kyuubi-*-bin*/**</exclude>
                         </excludes>
                     </configuration>
                 </plugin>

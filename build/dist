@@ -155,7 +155,7 @@ if [[ "$NAME" == "none" ]]; then
 fi
 
 if [[ "$MAKE_TGZ" == "true" ]]; then
-  echo "Making kyuubi-$VERSION-bin$SUFFIX.tgz"
+  echo "Making apache-kyuubi-$VERSION-bin$SUFFIX.tgz"
 else
   echo "Making distribution for Kyuubi $VERSION in '$DISTDIR'..."
 fi
@@ -228,7 +228,7 @@ cp -r "$KYUUBI_HOME/conf" "$DISTDIR"
 cp -r "$KYUUBI_HOME/docker" "$DISTDIR"
 
 if [[ "$MAKE_TGZ" == "true" ]]; then
-  TARDIR_NAME="kyuubi-$VERSION-bin$SUFFIX"
+  TARDIR_NAME="apache-kyuubi-$VERSION-bin$SUFFIX"
   TARDIR="$KYUUBI_HOME/$TARDIR_NAME"
   rm -rf "$TARDIR"
   cp -r "$DISTDIR" "$TARDIR"
