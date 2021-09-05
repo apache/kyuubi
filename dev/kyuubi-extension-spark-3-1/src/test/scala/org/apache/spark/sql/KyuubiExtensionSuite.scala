@@ -437,8 +437,14 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
         "USING PARQUET PARTITIONED BY (student_id INT);")
       assert(df01.sparkSession.conf.get("kyuubi.spark.sql.classification") === "ddl")
 
-      val df02 = sql("INSERT INTO students VALUES " +
-        "('Amy Smith', '123 Park Ave, San Jose', 111111);")
+      val sql02 = "INSERT INTO students VALUES ('Amy Smith', '123 Park Ave, San Jose', 111111);"
+      val df02 = sql(sql02)
+
+      // scalastyle:off println
+      println("the query execution is :" + spark.sessionState.executePlan(
+        spark.sessionState.sqlParser.parsePlan(sql02)).toString())
+      // scalastyle:on println
+
       assert(df02.sparkSession.conf.get("kyuubi.spark.sql.classification") === "dml")
     }
   }
