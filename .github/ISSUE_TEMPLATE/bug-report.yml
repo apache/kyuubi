@@ -59,7 +59,7 @@ body:
       required: true
 
   - type: textarea
-    id: logs
+    id: s-logs
     attributes:
       label: Kyuubi Server Log Output
       description: What do you see when you check the log of kyuubi server instance?
@@ -71,7 +71,7 @@ body:
       required: false
 
   - type: textarea
-    id: logs
+    id: e-logs
     attributes:
       label: Kyuubi Engine Log Output
       description: What do you see when you check the log of kyuubi server instance?
@@ -82,7 +82,7 @@ body:
       required: false
 
   - type: textarea
-    id: configurations
+    id: s-configurations
     attributes:
       label: Kyuubi Server Configurations
       placeholder: >
@@ -91,7 +91,7 @@ body:
       required: false
 
   - type: textarea
-    id: configurations
+    id: e-configurations
     attributes:
       label: Kyuubi Engine Configurations
       placeholder: >
@@ -103,8 +103,9 @@ body:
     attributes:
       label: Additional context
       description: Anything else we need to know?
-      placeholder: >
-        Anything else we need to know.
+      placeholder: Anything else we need to know.
+    validations:
+      required: false
 
   - type: checkboxes
     attributes:
