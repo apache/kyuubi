@@ -38,6 +38,6 @@ object SparkContextHelper {
  */
 private class SparkHistoryEventLogger(sc: SparkContext) extends EventLogger[KyuubiSparkEvent] {
   override def logEvent(kyuubiEvent: KyuubiSparkEvent): Unit = {
-    sc.eventLogger.foreach(_.onOtherEvent(kyuubiEvent))
+    sc.listenerBus.post(kyuubiEvent)
   }
 }
