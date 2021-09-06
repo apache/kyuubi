@@ -20,6 +20,8 @@ package org.apache.kyuubi.sql
 import org.apache.spark.sql.SparkSessionExtensions
 
 import org.apache.kyuubi.sql.sqlclassification.KyuubiSqlClassification
+import org.apache.kyuubi.sql.zorder.ZorderBeforeWrite
+import org.apache.kyuubi.sql.zorder.ZorderSparkSqlExtensionsParser
 
 // scalastyle:off line.size.limit
 /**
@@ -30,6 +32,10 @@ import org.apache.kyuubi.sql.sqlclassification.KyuubiSqlClassification
 // scalastyle:on line.size.limit
 class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
   override def apply(extensions: SparkSessionExtensions): Unit = {
+    // inject zorder parser and related rules
+    extensions.injectParser{ case (_, parser) => new ZorderSparkSqlExtensionsParser(parser) }
+    extensions.injectResolutionRule(ZorderBeforeWrite)
+
     extensions.injectPostHocResolutionRule(KyuubiSqlClassification)
     extensions.injectPostHocResolutionRule(RepartitionBeforeWrite)
     extensions.injectPostHocResolutionRule(RepartitionBeforeWriteHive)

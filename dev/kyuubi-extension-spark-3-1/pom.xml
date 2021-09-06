@@ -104,13 +104,36 @@
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
-            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
         </dependency>
     </dependencies>
 
     <build>
         <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
         <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
+        <plugins>
+            <plugin>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-maven-plugin</artifactId>
+                <version>${antlr4.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>antlr4</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <visitor>true</visitor>
+                    <sourceDirectory>./src/main/antlr4/org/apache/kyuubi/zorder</sourceDirectory>
+                    <treatWarningsAsErrors>true</treatWarningsAsErrors>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 
     <profiles>
