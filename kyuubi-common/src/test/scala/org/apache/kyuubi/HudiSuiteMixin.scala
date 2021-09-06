@@ -38,6 +38,7 @@ trait HudiSuiteMixin extends DataLakeSuiteMixin {
   }
 
   override protected def extraConfigs = Map(
+    "spark.sql.catalogImplementation" -> "in-memory",
     "spark.sql.defaultCatalog" -> catalog,
     "spark.sql.extensions" -> "org.apache.spark.sql.hudi.HoodieSparkSessionExtension",
     "spark.serializer" -> "org.apache.spark.serializer.KryoSerializer",
