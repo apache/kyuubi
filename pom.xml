@@ -87,7 +87,7 @@
         <scala.version>2.12.14</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
 
-        <antlr4.version>4.7</antlr4.version>
+        <antlr4.version>4.8</antlr4.version>
         <codahale.metrics.version>4.1.1</codahale.metrics.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-collections.version>3.2.2</commons-collections.version>
@@ -259,12 +259,6 @@
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-reflect</artifactId>
                 <version>${scala.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.antlr</groupId>
-                <artifactId>antlr4-runtime</artifactId>
-                <version>${antlr4.version}</version>
             </dependency>
 
             <dependency>
