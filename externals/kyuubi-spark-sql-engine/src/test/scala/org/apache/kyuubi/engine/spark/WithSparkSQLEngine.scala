@@ -41,6 +41,7 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
     val metastorePath = Utils.createTempDir()
     warehousePath.toFile.delete()
     metastorePath.toFile.delete()
+    System.setProperty("spark.sql.catalogImplementation", "in-memory")
     System.setProperty("javax.jdo.option.ConnectionURL",
       s"jdbc:derby:;databaseName=$metastorePath;create=true")
     System.setProperty("spark.sql.warehouse.dir", warehousePath.toString)
