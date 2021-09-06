@@ -227,7 +227,7 @@ object ServiceDiscovery extends Logging {
     }
 
     val session = conf.get(HA_ZK_ENGINE_REF_ID)
-      .map(sid => s"refId=$sid;").getOrElse("")
+      .map(refId => s"refId=$refId;").getOrElse("")
     val pathPrefix = ZKPaths.makePath(
       namespace,
       s"serviceUri=$instance;version=${version.getOrElse(KYUUBI_VERSION)};${session}sequence=")

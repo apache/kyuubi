@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.session
 
-import java.util.UUID
-
 import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.TException
