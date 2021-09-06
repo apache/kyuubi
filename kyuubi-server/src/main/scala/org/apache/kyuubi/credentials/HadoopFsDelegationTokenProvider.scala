@@ -20,9 +20,12 @@ package org.apache.kyuubi.credentials
 import java.lang.reflect.UndeclaredThrowableException
 import java.security.PrivilegedExceptionAction
 
+import scala.collection.JavaConverters._
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.hadoop.security.{Credentials, UserGroupInformation}
+import org.apache.hadoop.security.{Credentials, SecurityUtil, UserGroupInformation}
+import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
@@ -32,12 +35,10 @@ class HadoopFsDelegationTokenProvider extends HadoopDelegationTokenProvider with
 
   override val serviceName: String = "hadoopfs"
 
-  private var internalConf: Configuration = _
-
   override def delegationTokensRequired(
       hadoopConf: Configuration,
       kyuubiConf: KyuubiConf): Boolean = {
-    UserGroupInformation.isSecurityEnabled
+    SecurityUtil.getAuthenticationMethod(hadoopConf) != AuthenticationMethod.SIMPLE
   }
 
   override def obtainDelegationTokens(
@@ -45,12 +46,11 @@ class HadoopFsDelegationTokenProvider extends HadoopDelegationTokenProvider with
       kyuubiConf: KyuubiConf,
       owner: String,
       creds: Credentials): Unit = {
-    // A FileSystem object are cached in FileSystem.CACHE by a composite key.
+    // FileSystem objects are cached in FileSystem.CACHE by a composite key.
     // The UserGroupInformation object used to create it is part of that key.
-    // If cache is enabled, new FileSystem objects are cached at every method invocation.
-    if (internalConf == null) {
-      internalConf = disableFsCache(kyuubiConf, hadoopConf)
-    }
+    // If cache is enabled, new FileSystem objects are created and cached at every method
+    // invocation.
+    val internalConf = disableFsCache(kyuubiConf, hadoopConf)
 
     doAsProxyUser(owner) {
       val fileSystems =
@@ -62,6 +62,8 @@ class HadoopFsDelegationTokenProvider extends HadoopDelegationTokenProvider with
           fs.addDelegationTokens(null, creds)
         }
       } finally {
+        // Token renewal interval is longer than FileSystems' underlying connections' max idle time.
+        // Close FileSystems won't lose efficiency.
         fileSystems.foreach(_.close())
       }
     }
@@ -72,7 +74,9 @@ class HadoopFsDelegationTokenProvider extends HadoopDelegationTokenProvider with
 object HadoopFsDelegationTokenProvider {
 
   def disableFsCache(kyuubiConf: KyuubiConf, hadoopConf: Configuration): Configuration = {
-    val newConf = new Configuration(hadoopConf)
+    val newConf = new Configuration(false)
+    hadoopConf.iterator().asScala.foreach(e => newConf.set(e.getKey, e.getValue))
+
     hadoopFSsToAccess(kyuubiConf, hadoopConf)
       .foreach(fs => newConf.setBoolean(s"fs.${fs.getScheme}.impl.disable.cache", true))
     newConf
