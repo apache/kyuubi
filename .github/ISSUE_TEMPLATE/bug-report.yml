@@ -19,7 +19,7 @@
 
 name: Kyuubi Bug Report
 title: "[Bug] "
-description: Problems and issues with code of Apache Kyuubi (Incubating)
+description: Describe the bug you encountered with Apache Kyuubi
 labels: [ "bug" ]
 body:
   - type: markdown
@@ -78,6 +78,7 @@ body:
       placeholder: >
         Tips: check the server log under the KYUUBI_HOME/work/[username]/ folder. It is extremely helpful if you copy and paste
         the fragment of logs showing the exact error messages of kyuubi engines.
+      render: logtalk
     validations:
       required: false
 
@@ -87,6 +88,7 @@ body:
       label: Kyuubi Server Configurations
       placeholder: >
         Custom configurations you specified in kyuubi-defaults.conf at server-side
+      render: yaml
     validations:
       required: false
 
@@ -96,13 +98,13 @@ body:
       label: Kyuubi Engine Configurations
       placeholder: >
         Custom configurations you specified in spark-defaults.conf at engine-side
+      render: yaml
     validations:
       required: false
 
   - type: textarea
     attributes:
       label: Additional context
-      description: Anything else we need to know?
       placeholder: Anything else we need to know.
     validations:
       required: false
@@ -111,9 +113,9 @@ body:
     attributes:
       label: Are you willing to submit PR?
       description: >
-        This is absolutely not required, but we are happy to guide you in the contribution process
-        especially if you already have a good understanding of how to implement the fix.
-        Kyuubi is a totally community-driven project and we love to bring new contributors in.
+        A pull request is optional, but we are glad to help you in the contribution process
+        especially if you already know a good understanding of how to implement the fix.
+        Kyuubi is a community-driven project and we love to bring new contributors in.
       options:
         - label: Yes I am willing to submit a PR!
 
