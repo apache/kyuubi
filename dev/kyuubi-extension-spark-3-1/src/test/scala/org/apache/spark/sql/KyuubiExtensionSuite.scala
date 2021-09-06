@@ -26,6 +26,7 @@ import org.apache.spark.sql.hive.execution.OptimizedCreateHiveTableAsSelectComma
 import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
 import org.apache.spark.sql.test.SQLTestData.TestData
 import org.apache.spark.sql.test.SQLTestUtils
+import scala.collection.mutable.Set
 
 import org.apache.kyuubi.sql.{FinalStageConfigIsolation, KyuubiSQLConf}
 
@@ -449,9 +450,19 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
     }
   }
 
-  test("get simple name for DDL") {
+  test("Sql classification for other and dql") {
+    withSQLConf(KyuubiSQLConf.SQL_CLASSIFICATION_ENABLED.key -> "true") {
+      val df01 = sql("SET spark.sql.variable.substitute=false")
+      assert(df01.sparkSession.conf.get("kyuubi.spark.sql.classification") === "other")
 
-    import scala.collection.mutable.Set
+      val sql02 = "select timestamp'2021-06-01'"
+      val df02 = sql(sql02)
+
+      assert(df02.sparkSession.conf.get("kyuubi.spark.sql.classification") === "dql")
+    }
+  }
+
+  test("get simple name for DDL") {
 
     val ddlSimpleName: Set[String] = Set()
 
@@ -677,7 +688,6 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
   }
 
   test("get simple name for DML") {
-    import scala.collection.mutable.Set
     val dmlSimpleName: Set[String] = Set()
 
     var pre_sql = "CREATE TABLE IF NOT EXISTS students (name VARCHAR(64), address VARCHAR(64)) " +
@@ -888,6 +898,375 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
     )
     // scalastyle:off println
     println("dml simple name is :" + dmlSimpleName)
+    // scalastyle:on println
+  }
+
+  test("get simple name for auxiliary statement") {
+    val auxiStatementSimpleName: Set[String] = Set()
+
+    var pre_sql = "CREATE TABLE IF NOT EXISTS students_testtest " +
+      "(name STRING, student_id INT) PARTITIONED BY (student_id);"
+    spark.sql(pre_sql)
+    pre_sql = "INSERT INTO students_testtest PARTITION (student_id = 111111) VALUES ('Mark');"
+    spark.sql(pre_sql)
+    pre_sql = "INSERT INTO students_testtest PARTITION (student_id = 222222) VALUES ('John');"
+    spark.sql(pre_sql)
+
+    val sql01 = "ANALYZE TABLE students COMPUTE STATISTICS NOSCAN;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql01)
+      ).getClass.getSimpleName
+    )
+
+    val sql29 = "SHOW PARTITIONS students_testtest;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql29)
+      ).getClass.getSimpleName
+    )
+
+    val sql30 = "SHOW PARTITIONS students_testtest PARTITION (student_id = 111111);"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql30)
+      ).getClass.getSimpleName
+    )
+
+    val sql31 = "SHOW TABLE EXTENDED LIKE 'students_testtest';"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql31)
+      ).getClass.getSimpleName
+    )
+
+    val sql32 = "SHOW TABLES;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql32)
+      ).getClass.getSimpleName
+    )
+
+    val sql33 = "SHOW TABLES FROM default;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql33)
+      ).getClass.getSimpleName
+    )
+
+    val sql02 = "CACHE TABLE testCache OPTIONS ('storageLevel' 'DISK_ONLY') " +
+      "SELECT * FROM students_testtest;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql02)
+      ).getClass.getSimpleName
+    )
+
+    val sql03 = "CACHE LAZY TABLE testCache OPTIONS ('storageLevel' 'DISK_ONLY') " +
+      "SELECT * FROM students_testtest;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql03)
+      ).getClass.getSimpleName
+    )
+
+    val sql09 = "REFRESH \"hdfs://path/to/table\""
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql09)
+      ).getClass.getSimpleName
+    )
+
+    val sql04 = "UNCACHE TABLE IF EXISTS testCache;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql04)
+      ).getClass.getSimpleName
+    )
+
+    val sql05 = "CLEAR CACHE;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql05)
+      ).getClass.getSimpleName
+    )
+
+    val sql06 = "REFRESH TABLE students_testtest;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql06)
+      ).getClass.getSimpleName
+    )
+
+    pre_sql = "CREATE OR REPLACE VIEW students_testtest_view " +
+      "AS SELECT name, student_id FROM students_testtest;"
+    spark.sql(pre_sql)
+    val sql07 = "REFRESH TABLE default.students_testtest_view;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql07)
+      ).getClass.getSimpleName
+    )
+
+    val sql35 = "SHOW VIEWS;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql35)
+      ).getClass.getSimpleName
+    )
+
+    pre_sql = "DROP VIEW IF EXISTS students_testtest_view;"
+    spark.sql(pre_sql)
+
+    pre_sql = "CREATE FUNCTION IF NOT EXISTS test_avg AS " +
+      "'org.apache.hadoop.hive.ql.udf.generic.GenericUDAFAverage';"
+    spark.sql(pre_sql)
+    val sql08 = "REFRESH FUNCTION test_avg;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql08)
+      ).getClass.getSimpleName
+    )
+
+    val sql15 = "DESC FUNCTION test_avg;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql15)
+      ).getClass.getSimpleName
+    )
+
+    val sql26 = "SHOW FUNCTIONS test_avg;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql26)
+      ).getClass.getSimpleName
+    )
+
+    val sql27 = "SHOW SYSTEM FUNCTIONS concat;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql27)
+      ).getClass.getSimpleName
+    )
+
+    val sql28 = "SHOW FUNCTIONS LIKE 'test*';"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql28)
+      ).getClass.getSimpleName
+    )
+
+    pre_sql = "DROP FUNCTION IF EXISTS test_avg;"
+    spark.sql(pre_sql)
+
+    pre_sql = "CREATE DATABASE IF NOT EXISTS employees COMMENT 'For software companies';"
+    spark.sql(pre_sql)
+    val sql10 = "DESCRIBE DATABASE employees;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql10)
+      ).getClass.getSimpleName
+    )
+
+    val sql23 = "SHOW DATABASES;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql23)
+      ).getClass.getSimpleName
+    )
+
+    val sql24 = "SHOW DATABASES LIKE 'employ*';"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql24)
+      ).getClass.getSimpleName
+    )
+
+    val sql25 = "SHOW SCHEMAS;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql25)
+      ).getClass.getSimpleName
+    )
+
+    pre_sql = "ALTER DATABASE employees SET DBPROPERTIES " +
+      "('Create-by' = 'Kevin', 'Create-date' = '09/01/2019');"
+    val sql11 = "DESCRIBE DATABASE EXTENDED employees;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql11)
+      ).getClass.getSimpleName
+    )
+    pre_sql = "DROP DATABASE IF EXISTS employees;"
+    spark.sql(pre_sql)
+
+    pre_sql = "CREATE TABLE IF NOT EXISTS customer" +
+      "(cust_id INT, state VARCHAR(20), name STRING COMMENT 'Short name') " +
+      "USING parquet PARTITIONED BY (state);"
+    spark.sql(pre_sql)
+    pre_sql = "INSERT INTO customer PARTITION (state = 'AR') VALUES (100, 'Mike');"
+    val sql12 = "DESCRIBE TABLE customer;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql12)
+      ).getClass.getSimpleName
+    )
+
+    val sql21 = "SHOW COLUMNS IN customer;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql21)
+      ).getClass.getSimpleName
+    )
+
+    val sql22 = "SHOW CREATE TABLE customer;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql22)
+      ).getClass.getSimpleName
+    )
+
+    val sql13 = "DESCRIBE TABLE EXTENDED customer PARTITION (state = 'AR');"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql13)
+      ).getClass.getSimpleName
+    )
+
+    val sql14 = "DESCRIBE customer salesdb.customer.name;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql14)
+      ).getClass.getSimpleName
+    )
+    pre_sql = "DROP TABLE IF EXISTS customer;"
+    spark.sql(pre_sql)
+
+    pre_sql = "CREATE TABLE IF NOT EXISTS person " +
+      "(name STRING , age INT COMMENT 'Age column', address STRING);"
+    spark.sql(pre_sql)
+    val sql16 = "DESCRIBE QUERY SELECT age, sum(age) FROM person GROUP BY age;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql16)
+      ).getClass.getSimpleName
+    )
+
+    val sql17 = "DESCRIBE QUERY WITH all_names_cte AS " +
+      "(SELECT name from person) SELECT * FROM all_names_cte;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql17)
+      ).getClass.getSimpleName
+    )
+
+    val sql18 = "DESC QUERY VALUES(100, 'John', 10000.20D) " +
+      "AS employee(id, name, salary);"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql18)
+      ).getClass.getSimpleName
+    )
+
+    val sql19 = "DESC QUERY TABLE person;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql19)
+      ).getClass.getSimpleName
+    )
+
+    val sql20 = "DESCRIBE FROM person SELECT age;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql20)
+      ).getClass.getSimpleName
+    )
+    pre_sql = "DROP TABLE IF EXISTS person;"
+    spark.sql(pre_sql)
+
+    pre_sql = "CREATE TABLE IF NOT EXISTS customer" +
+      "(cust_code INT, name VARCHAR(100), cust_addr STRING) " +
+      "TBLPROPERTIES ('created.by.user' = 'John', 'created.date' = '01-01-2001');"
+    spark.sql(pre_sql)
+    val sql34 = "SHOW TBLPROPERTIES customer;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql34)
+      ).getClass.getSimpleName
+    )
+
+    val sql36 = "SET spark.sql.variable.substitute=false"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql36)
+      ).getClass.getSimpleName
+    )
+
+    val sql37 = "SET"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql37)
+      ).getClass.getSimpleName
+    )
+
+    val sql38 = "SET spark.sql.variable.substitute"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql38)
+      ).getClass.getSimpleName
+    )
+
+    val sql39 = "RESET"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql39)
+      ).getClass.getSimpleName
+    )
+
+    val sql40 = "RESET spark.sql.variable.substitute"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql40)
+      ).getClass.getSimpleName
+    )
+
+    val sql41 = "SET TIME ZONE LOCAL;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql41)
+      ).getClass.getSimpleName
+    )
+
+    val sql42 = "ADD FILE /tmp/test;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql42)
+      ).getClass.getSimpleName
+    )
+
+    val sql43 = "ADD JAR /tmp/test.jar;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql43)
+      ).getClass.getSimpleName
+    )
+
+    val sql44 = "LIST FILE;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql44)
+      ).getClass.getSimpleName
+    )
+
+    val sql45 = "LIST JAR;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql45)
+      ).getClass.getSimpleName
+    )
+
+    // scalastyle:off println
+    println("auxiliary statement simple name is :" + auxiStatementSimpleName)
     // scalastyle:on println
   }
 }
