@@ -28,22 +28,30 @@ import org.apache.kyuubi.sql.KyuubiSQLConf._
  * This object is used for getting sql_classification by the logicalPlan's simpleName.
  * When the configuration item: SQL_CLASSIFICATION_ENABLED is on,
  * we will load the rule from sql-classification-default.json.
+ *
+ * Notice:
+ *  We support the user use the self-defined matching rule: sql-classification.json.
+ *  If there have no this named jsonFile,
+ *  the service will upload the default matching rule: sql-classification-default.json.
  */
 object KyuubiGetSqlClassification {
 
   private val jsonNode: Option[JsonNode] = {
     SQLConf.get.getConf(SQL_CLASSIFICATION_ENABLED) match {
       case true =>
+        val objectMapper = new ObjectMapper
+        var defaultSqlClassificationFile: String = null
         try {
-          val defaultSqlClassificationFile =
-            Thread.currentThread().getContextClassLoader
-              .getResource("sql-classification-default.json").getPath
-          val objectMapper = new ObjectMapper
+          defaultSqlClassificationFile = Thread.currentThread().getContextClassLoader
+            .getResource("sql-classification.json").getPath
           Some(objectMapper.readTree(new File(defaultSqlClassificationFile)))
         } catch {
-          case e: Exception =>
-            throw new IllegalArgumentException("sql-classification-default.json is not exist.", e)
+          case e: NullPointerException =>
+            defaultSqlClassificationFile =
+              Thread.currentThread().getContextClassLoader
+                .getResource("sql-classification-default.json").getPath
         }
+        Some(objectMapper.readTree(new File(defaultSqlClassificationFile)))
       case false =>
         None
     }
