@@ -170,12 +170,12 @@ object ServiceDiscovery extends Logging {
     }
   }
 
-  def getEngineByNamespaceId(
-     zkClient: CuratorFramework,
-     namespace: String,
-     namespaceId: String): Option[(String, Int)] = {
+  def getEngineByRefId(
+      zkClient: CuratorFramework,
+      namespace: String,
+      engineRefId: String): Option[(String, Int)] = {
     getServiceNodesInfo(zkClient, namespace, silent = true)
-      .find(_.createSessionId.exists(_.equals(namespaceId)))
+      .find(_.engineRefId.exists(_.equals(engineRefId)))
       .map(data => (data.host, data.port))
   }
 
@@ -194,9 +194,9 @@ object ServiceDiscovery extends Logging {
         val host = strings.head
         val port = strings(1).toInt
         val version = p.split(";").find(_.startsWith("version=")).map(_.stripPrefix("version="))
-        val sessionId = p.split(";").find(_.startsWith("session=")).map(_.stripPrefix("session="))
+        val engineRefId = p.split(";").find(_.startsWith("refId=")).map(_.stripPrefix("refId="))
         info(s"Get service instance:$instance and version:$version under $namespace")
-        ServiceNodeInfo(namespace, p, host, port, version, sessionId)
+        ServiceNodeInfo(namespace, p, host, port, version, engineRefId)
       }
     } catch {
       case _: Exception if silent => Nil
@@ -226,8 +226,8 @@ object ServiceDiscovery extends Logging {
         throw new KyuubiException(s"Failed to create namespace '$ns'", e)
     }
 
-    val session = conf.get(HA_ZK_ENGINE_NAMESPACE_ID)
-      .map(sid => s"session=$sid;").getOrElse("")
+    val session = conf.get(HA_ZK_ENGINE_REF_ID)
+      .map(sid => s"refId=$sid;").getOrElse("")
     val pathPrefix = ZKPaths.makePath(
       namespace,
       s"serviceUri=$instance;version=${version.getOrElse(KYUUBI_VERSION)};${session}sequence=")
@@ -265,6 +265,6 @@ case class ServiceNodeInfo(
     host: String,
     port: Int,
     version: Option[String],
-    createSessionId: Option[String]) {
+    engineRefId: Option[String]) {
   def instance: String = s"$host:$port"
 }

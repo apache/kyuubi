@@ -100,9 +100,9 @@ object HighAvailabilityConf {
     .checkValue(_ > 0, "Must be positive")
     .createWithDefault(Duration.ofSeconds(120).toMillis)
 
-  val HA_ZK_ENGINE_NAMESPACE_ID: OptionalConfigEntry[String] =
-    buildConf("ha.engine.namespace.id")
-    .doc("The namespace id will be attached to zookeeper node when engine started, " +
+  val HA_ZK_ENGINE_REF_ID: OptionalConfigEntry[String] =
+    buildConf("ha.engine.ref.id")
+    .doc("The engine reference id will be attached to zookeeper node when engine started, " +
       "and the kyuubi server will check it cyclically.")
     .internal
     .version("1.4.0")
