@@ -35,18 +35,23 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
   val kdcConf = MiniKdc.createConf()
   val hostName = "localhost"
   kdcConf.setProperty(MiniKdc.INSTANCE, this.getClass.getSimpleName)
-  kdcConf.setProperty(MiniKdc.ORG_NAME, this.getClass.getSimpleName)
+  // MiniKdc keeps realm config in enum object `KdcServerOption.KDC_REALM`.
+  // Multiple kdcs will be launched when testing if they are defined in the same package.
+  // Using same realms here to avoid authentication failure.
+  kdcConf.setProperty(MiniKdc.ORG_NAME, classOf[KerberizedTestHelper].getSimpleName)
   kdcConf.setProperty(MiniKdc.ORG_DOMAIN, "COM")
   kdcConf.setProperty(MiniKdc.KDC_BIND_ADDRESS, hostName)
   kdcConf.setProperty(MiniKdc.KDC_PORT, "0")
   kdcConf.setProperty(MiniKdc.DEBUG, "true")
 
   private var kdc: MiniKdc = _
+  private var krb5ConfPath: String = _
 
   eventually(timeout(60.seconds), interval(1.second)) {
     try {
       kdc = new MiniKdc(kdcConf, baseDir)
       kdc.start()
+      krb5ConfPath = kdc.getKrb5conf.getAbsolutePath
     } catch {
       case NonFatal(e) =>
         if (kdc != null) {
@@ -124,7 +129,7 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
     val authType = "hadoop.security.authentication"
     try {
       conf.set(authType, "KERBEROS")
-      System.setProperty("java.security.krb5.conf", kdc.getKrb5conf.getAbsolutePath)
+      System.setProperty("java.security.krb5.conf", krb5ConfPath)
       UserGroupInformation.setConfiguration(conf)
       assert(UserGroupInformation.isSecurityEnabled)
       block

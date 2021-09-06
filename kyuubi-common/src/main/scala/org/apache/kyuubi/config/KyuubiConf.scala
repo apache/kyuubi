@@ -249,6 +249,22 @@ object KyuubiConf {
       .checkValue(t => t > 0, "must be positive integer")
       .createWithDefault(Duration.ofMinutes(1).toMillis)
 
+  val CREDENTIALS_HADOOP_FS_ENABLED: ConfigEntry[Boolean] =
+    buildConf("credentials.hadoopfs.enabled")
+      .doc("Whether to renew HadoopFS DelegationToken")
+      .version("1.4.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val CREDENTIALS_HADOOP_FS_URLS: ConfigEntry[Seq[String]] = KyuubiConf
+    .buildConf("credentials.hadoopfs.urls")
+    .doc("Extra Hadoop filesystem URLs for which to request delegation tokens. " +
+      "The filesystem that hosts fs.defaultFS does not need to be listed here.")
+    .version("1.4.0")
+    .stringConf
+    .toSequence()
+    .createWithDefault(Nil)
+
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                              Frontend Service Configuration                                 //
   /////////////////////////////////////////////////////////////////////////////////////////////////
