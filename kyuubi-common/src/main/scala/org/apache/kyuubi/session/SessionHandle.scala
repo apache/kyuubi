@@ -19,7 +19,7 @@ package org.apache.kyuubi.session
 
 import java.util.Objects
 
-import org.apache.hive.service.rpc.thrift.{THandleIdentifier, TProtocolVersion, TSessionHandle}
+import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TSessionHandle}
 
 import org.apache.kyuubi.cli.{Handle, HandleIdentifier}
 
@@ -45,18 +45,14 @@ case class SessionHandle(
 
 object SessionHandle {
   def apply(tHandle: TSessionHandle, protocol: TProtocolVersion): SessionHandle = {
-    SessionHandle(HandleIdentifier(tHandle.getSessionId), protocol)
+    apply(HandleIdentifier(tHandle.getSessionId), protocol)
   }
 
   def apply(tHandle: TSessionHandle): SessionHandle = {
-    SessionHandle(tHandle, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
+    apply(tHandle, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
   }
 
   def apply(protocol: TProtocolVersion): SessionHandle = {
-    SessionHandle(HandleIdentifier(), protocol)
-  }
-
-  def apply(protocol: TProtocolVersion, tHandleId: THandleIdentifier): SessionHandle = {
-    SessionHandle(HandleIdentifier(tHandleId), protocol)
+    apply(HandleIdentifier(), protocol)
   }
 }

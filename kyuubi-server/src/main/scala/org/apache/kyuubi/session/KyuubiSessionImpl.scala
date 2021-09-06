@@ -55,9 +55,7 @@ class KyuubiSessionImpl(
     case (key, value) => sessionConf.set(key, value)
   }
 
-  // only used in engine spec
-  private val namespaceId = UUID.randomUUID().toString
-  private val engine: EngineRef = new EngineRef(sessionConf, user, namespaceId)
+  private val engine: EngineRef = new EngineRef(sessionConf, user)
   private val sessionEvent = KyuubiSessionEvent(this)
   EventLoggingService.onEvent(sessionEvent)
 

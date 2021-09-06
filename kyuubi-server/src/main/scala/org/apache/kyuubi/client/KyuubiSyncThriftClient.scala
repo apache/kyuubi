@@ -64,9 +64,7 @@ class KyuubiSyncThriftClient(protocol: TProtocol) extends TCLIService.Client(pro
     val resp = withLockAcquired(OpenSession(req))
     ThriftUtils.verifyTStatus(resp.getStatus)
     _remoteSessionHandle = resp.getSessionHandle
-    SessionHandle(
-      resp.getServerProtocolVersion,
-      _remoteSessionHandle.getSessionId)
+    SessionHandle(_remoteSessionHandle, protocol)
   }
 
   def closeSession(): Unit = {

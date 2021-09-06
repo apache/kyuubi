@@ -170,12 +170,12 @@ object ServiceDiscovery extends Logging {
     }
   }
 
-  def getEngineBySessionId(
+  def getEngineByNamespaceId(
      zkClient: CuratorFramework,
      namespace: String,
-     sessionId: String): Option[(String, Int)] = {
+     namespaceId: String): Option[(String, Int)] = {
     getServiceNodesInfo(zkClient, namespace, silent = true)
-      .find(_.createSessionId.exists(_.equals(sessionId)))
+      .find(_.createSessionId.exists(_.equals(namespaceId)))
       .map(data => (data.host, data.port))
   }
 
@@ -226,7 +226,7 @@ object ServiceDiscovery extends Logging {
         throw new KyuubiException(s"Failed to create namespace '$ns'", e)
     }
 
-    val session = conf.get(HA_ZK_ENGINE_SESSION_ID)
+    val session = conf.get(HA_ZK_ENGINE_NAMESPACE_ID)
       .map(sid => s"session=$sid;").getOrElse("")
     val pathPrefix = ZKPaths.makePath(
       namespace,

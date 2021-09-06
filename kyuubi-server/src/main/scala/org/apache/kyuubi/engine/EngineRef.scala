@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine
 
 import java.util.concurrent.TimeUnit
+import java.util.UUID
 
 import scala.util.Random
 
@@ -32,9 +33,9 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, SERVER, ShareLevel}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_SESSION_ID
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_NAMESPACE_ID
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NAMESPACE
-import org.apache.kyuubi.ha.client.ServiceDiscovery.getEngineBySessionId
+import org.apache.kyuubi.ha.client.ServiceDiscovery.getEngineByNamespaceId
 import org.apache.kyuubi.ha.client.ServiceDiscovery.getServerHost
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -46,9 +47,11 @@ import org.apache.kyuubi.metrics.MetricsSystem
  * @param user Caller of the engine
  * @param namespaceId Id of the corresponding session in which the engine is created
  */
-private[kyuubi] class EngineRef(conf: KyuubiConf, user: String, namespaceId: String)
+private[kyuubi] class EngineRef(
+    conf: KyuubiConf,
+    user: String,
+    namespaceId: String = UUID.randomUUID().toString)
   extends Logging {
-
   // The corresponding ServerSpace where the engine belongs to
   private val serverSpace: String = conf.get(HA_ZK_NAMESPACE)
 
@@ -103,7 +106,7 @@ private[kyuubi] class EngineRef(conf: KyuubiConf, user: String, namespaceId: Str
    * The EngineSpace used to expose itself to the KyuubiServers in `serverSpace`
    *
    * For `CONNECTION` share level:
-   *   /`serverSpace_CONNECTION`/`user`/`sessionId`
+   *   /`serverSpace_CONNECTION`/`user`/`namespaceId`
    * For `USER` share level:
    *   /`serverSpace_USER`/`user`[/`subdomain`]
    *
@@ -158,7 +161,7 @@ private[kyuubi] class EngineRef(conf: KyuubiConf, user: String, namespaceId: Str
     conf.set(SparkProcessBuilder.TAG_KEY,
       conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") + "KYUUBI")
     conf.set(HA_ZK_NAMESPACE, engineSpace)
-    conf.set(HA_ZK_ENGINE_SESSION_ID, namespaceId)
+    conf.set(HA_ZK_ENGINE_NAMESPACE_ID, namespaceId)
     val builder = new SparkProcessBuilder(appUser, conf)
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     try {
@@ -185,7 +188,7 @@ private[kyuubi] class EngineRef(conf: KyuubiConf, user: String, namespaceId: Str
             s"Timeout($timeout ms) to launched Spark with $builder",
             builder.getError)
         }
-        engineRef = getEngineBySessionId(zkClient, engineSpace, namespaceId)
+        engineRef = getEngineByNamespaceId(zkClient, engineSpace, namespaceId)
       }
       engineRef.get
     } finally {
