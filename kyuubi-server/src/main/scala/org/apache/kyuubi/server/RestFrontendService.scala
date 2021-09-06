@@ -114,11 +114,13 @@ private[server] class RestFrontendService private(name: String, be: BackendServi
   private def stopHttpServer(): Unit = {
     if (jettyServer != null) {
       try {
+        connector.stop()
         jettyServer.stop()
         info("Rest frontend service jetty server has stopped.")
       } catch {
         case err: Exception => error("Cannot safely stop rest frontend service jetty server", err)
       } finally {
+        connector = null
         jettyServer = null
       }
     }

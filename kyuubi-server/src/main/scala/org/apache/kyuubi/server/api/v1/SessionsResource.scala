@@ -21,16 +21,19 @@ import javax.ws.rs.{GET, Path, Produces}
 import javax.ws.rs.core.MediaType
 
 import org.apache.kyuubi.server.api.ApiRequestContext
+import org.apache.kyuubi.server.api.v1.dto.SessionOpenedCount
 
-@Path("/v1")
-private[v1] class ApiRootResource extends ApiRequestContext {
+@Produces(Array(MediaType.APPLICATION_JSON))
+private[v1] class SessionsResource extends ApiRequestContext {
 
   @GET
-  @Path("ping")
-  @Produces(Array(MediaType.TEXT_PLAIN))
-  def ping(): String = "pong"
-
-  @Path("sessions")
-  def sessions: Class[SessionsResource] = classOf[SessionsResource]
+  @Path("count")
+  def sessionCount(): SessionOpenedCount = {
+    val sessionOpenedCount = new SessionOpenedCount()
+    sessionOpenedCount.setOpenSessionCount(
+      backendService.sessionManager.getOpenSessionCount
+    )
+    sessionOpenedCount
+  }
 
 }

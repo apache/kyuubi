@@ -15,22 +15,22 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.api.v1
+package org.apache.kyuubi.server.api.v1.dto;
 
-import javax.ws.rs.{GET, Path, Produces}
-import javax.ws.rs.core.MediaType
+import java.io.Serializable;
 
-import org.apache.kyuubi.server.api.ApiRequestContext
+public class SessionOpenedCount implements Serializable {
 
-@Path("/v1")
-private[v1] class ApiRootResource extends ApiRequestContext {
+  private int openSessionCount;
 
-  @GET
-  @Path("ping")
-  @Produces(Array(MediaType.TEXT_PLAIN))
-  def ping(): String = "pong"
+  public SessionOpenedCount() {
+  }
 
-  @Path("sessions")
-  def sessions: Class[SessionsResource] = classOf[SessionsResource]
+  public int getOpenSessionCount() {
+    return openSessionCount;
+  }
 
+  public void setOpenSessionCount(int openSessionCount) {
+    this.openSessionCount = openSessionCount;
+  }
 }
