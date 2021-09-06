@@ -58,7 +58,7 @@ package_source() {
 
   echo "Creating source release tarball ${SRC_TGZ_FILE}"
 
-  git archive --prefix="kyuubi-${RELEASE_VERSION}-source/" -o "${SRC_TGZ}" HEAD
+  git archive --prefix="apache-kyuubi-${RELEASE_VERSION}-source/" -o "${SRC_TGZ}" HEAD
 
   if [ "$SKIP_GPG" == "false" ] ; then
     gpg --armor --detach-sig "${SRC_TGZ}"
