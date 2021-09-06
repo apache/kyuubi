@@ -147,6 +147,14 @@ kyuubi\.backend\.server<br>\.exec\.pool\.size|<div style='width: 65pt;word-wrap:
 kyuubi\.backend\.server<br>\.exec\.pool\.wait\.queue<br>\.size|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>100</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Size of the wait queue for the operation execution thread pool of Kyuubi server</div>|<div style='width: 30pt'>int</div>|<div style='width: 20pt'>1.0.0</div>
 
 
+### Credentials
+
+Key | Default | Meaning | Type | Since
+--- | --- | --- | --- | ---
+kyuubi\.credentials<br>\.renewal\.interval|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT1H</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>How often Kyuubi renews one user's DelegationTokens</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.4.0</div>
+kyuubi\.credentials<br>\.renewal\.retryWait|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT1M</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>How long to wait before retrying to fetch new credentials after a failure.</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.4.0</div>
+
+
 ### Delegation
 
 Key | Default | Meaning | Type | Since
@@ -190,6 +198,8 @@ kyuubi\.frontend\.login<br>\.timeout|<div style='width: 65pt;word-wrap: break-wo
 kyuubi\.frontend\.max<br>\.message\.size|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>104857600</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>(deprecated) Maximum message size in bytes a Kyuubi server will accept.</div>|<div style='width: 30pt'>int</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.frontend\.max<br>\.worker\.threads|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>999</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>(deprecated) Maximum number of threads in the of frontend worker thread pool for the thrift frontend service</div>|<div style='width: 30pt'>int</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.frontend\.min<br>\.worker\.threads|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>9</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>(deprecated) Minimum number of threads in the of frontend worker thread pool for the thrift frontend service</div>|<div style='width: 30pt'>int</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.frontend\.rest<br>\.bind\.host|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Hostname or IP of the machine on which to run the REST frontend service.</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.4.0</div>
+kyuubi\.frontend\.rest<br>\.bind\.port|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>10099</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Port of the machine on which to run the REST frontend service.</div>|<div style='width: 30pt'>int</div>|<div style='width: 20pt'>1.4.0</div>
 kyuubi\.frontend<br>\.thrift\.backoff\.slot<br>\.length|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT0.1S</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Time to back off during login to the thrift frontend service.</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.4.0</div>
 kyuubi\.frontend<br>\.thrift\.binary\.bind<br>\.host|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Hostname or IP of the machine on which to run the thrift frontend service via binary protocol.</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.4.0</div>
 kyuubi\.frontend<br>\.thrift\.binary\.bind<br>\.port|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>10009</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Port of the machine on which to run the thrift frontend service via binary protocol.</div>|<div style='width: 30pt'>int</div>|<div style='width: 20pt'>1.4.0</div>

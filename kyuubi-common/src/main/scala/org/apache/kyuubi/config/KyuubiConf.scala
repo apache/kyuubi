@@ -134,6 +134,8 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     FRONTEND_BIND_PORT,
     FRONTEND_THRIFT_BINARY_BIND_HOST,
     FRONTEND_THRIFT_BINARY_BIND_PORT,
+    FRONTEND_REST_BIND_HOST,
+    FRONTEND_REST_BIND_PORT,
     AUTHENTICATION_METHOD,
     SERVER_KEYTAB,
     SERVER_PRINCIPAL,
@@ -232,6 +234,20 @@ object KyuubiConf {
     .timeConf
     .createWithDefault(Duration.ofHours(3).toMillis)
 
+  val CREDENTIALS_RENEWAL_INTERVAL: ConfigEntry[Long] =
+    buildConf("credentials.renewal.interval")
+      .doc("How often Kyuubi renews one user's DelegationTokens")
+      .version("1.4.0")
+      .timeConf
+      .createWithDefault(Duration.ofHours(1).toMillis)
+
+  val CREDENTIALS_RENEWAL_RETRY_WAIT: ConfigEntry[Long] =
+    buildConf("credentials.renewal.retryWait")
+      .doc("How long to wait before retrying to fetch new credentials after a failure.")
+      .version("1.4.0")
+      .timeConf
+      .checkValue(t => t > 0, "must be positive integer")
+      .createWithDefault(Duration.ofMinutes(1).toMillis)
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                              Frontend Service Configuration                                 //
@@ -441,6 +457,19 @@ object KyuubiConf {
     .checkValues(SaslQOP.values.map(_.toString))
     .transform(_.toLowerCase(Locale.ROOT))
     .createWithDefault(SaslQOP.AUTH.toString)
+
+  val FRONTEND_REST_BIND_HOST: OptionalConfigEntry[String] = buildConf("frontend.rest.bind.host")
+    .doc("Hostname or IP of the machine on which to run the REST frontend service.")
+    .version("1.4.0")
+    .stringConf
+    .createOptional
+
+  val FRONTEND_REST_BIND_PORT: ConfigEntry[Int] = buildConf("frontend.rest.bind.port")
+    .doc("Port of the machine on which to run the REST frontend service.")
+    .version("1.4.0")
+    .intConf
+    .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
+    .createWithDefault(10099)
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //
