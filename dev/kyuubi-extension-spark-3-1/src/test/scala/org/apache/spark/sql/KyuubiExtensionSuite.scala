@@ -464,6 +464,8 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
 
   test("get simple name for DDL") {
 
+    import scala.collection.mutable.Set
+
     val ddlSimpleName: Set[String] = Set()
 
     // Notice: When we get Analyzed Logical Plan, the field of LogicalPlan.analyzed.analyzed is true
