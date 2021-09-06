@@ -27,6 +27,7 @@ import org.apache.thrift.protocol.TProtocol
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.ThriftUtils
 
 class KyuubiSyncThriftClient(protocol: TProtocol) extends TCLIService.Client(protocol) {
@@ -48,11 +49,14 @@ class KyuubiSyncThriftClient(protocol: TProtocol) extends TCLIService.Client(pro
     } finally lock.unlock()
   }
 
+  /**
+   * Return the engine SessionHandle for kyuubi session so that we can get the same session id
+   */
   def openSession(
       protocol: TProtocolVersion,
       user: String,
       password: String,
-      configs: Map[String, String]): Unit = {
+      configs: Map[String, String]): SessionHandle = {
     val req = new TOpenSessionReq(protocol)
     req.setUsername(user)
     req.setPassword(password)
@@ -60,6 +64,9 @@ class KyuubiSyncThriftClient(protocol: TProtocol) extends TCLIService.Client(pro
     val resp = withLockAcquired(OpenSession(req))
     ThriftUtils.verifyTStatus(resp.getStatus)
     _remoteSessionHandle = resp.getSessionHandle
+    SessionHandle(
+      resp.getServerProtocolVersion,
+      _remoteSessionHandle.getSessionId)
   }
 
   def closeSession(): Unit = {

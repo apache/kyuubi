@@ -97,8 +97,13 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
         assert(res.next())
         assert(res.getString("user") == Utils.currentUser)
         assert(res.getString("sessionName") == "test1")
+        assert(res.getString("sessionId") == "")
         assert(res.getLong("startTime") > 0)
         assert(res.getInt("totalOperations") == 0)
+        assert(res.next())
+        assert(res.getInt("totalOperations") == 0)
+        assert(res.getString("sessionId") != "")
+        assert(res.getLong("openedTime") > 0)
         assert(res.next())
         assert(res.getInt("totalOperations") == 1)
         assert(res.getLong("endTime") > 0)
@@ -122,17 +127,16 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
     withSessionConf()(Map.empty)(Map.empty) {
       withJdbcStatement() { statement =>
         val res = statement.executeQuery(
-          s"SELECT * FROM `json`.`$serverSessionEventPath` where sessionName = '$name' limit 1")
+          s"SELECT * FROM `json`.`$serverSessionEventPath` " +
+            s"where sessionName = '$name' and sessionId != '' limit 1")
         assert(res.next())
         val serverSessionId = res.getString("sessionId")
-        assert(serverSessionId != null)
         assert(!res.next())
 
         val res2 = statement.executeQuery(
           s"SELECT * FROM `json`.`$engineSessionEventPath` " +
             s"where sessionId = '$serverSessionId' limit 1")
         assert(res2.next())
-        assert(!res2.next())
       }
     }
   }

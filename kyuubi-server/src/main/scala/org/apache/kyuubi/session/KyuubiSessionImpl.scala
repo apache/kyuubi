@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.session
 
+import java.util.UUID
+
 import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.TException
@@ -29,7 +31,6 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.EngineRef
 import org.apache.kyuubi.events.KyuubiSessionEvent
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_SESSION_ID
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -54,33 +55,32 @@ class KyuubiSessionImpl(
     case (key, value) => sessionConf.set(key, value)
   }
 
-  private val engine: EngineRef = EngineRef(sessionConf, user, handle)
+  // only used in engine spec
+  private val namespaceId = UUID.randomUUID().toString
+  private val engine: EngineRef = new EngineRef(sessionConf, user, namespaceId)
   private val sessionEvent = KyuubiSessionEvent(this)
   EventLoggingService.onEvent(sessionEvent)
 
   private var transport: TTransport = _
   private var client: KyuubiSyncThriftClient = _
 
+  private var _handle: SessionHandle = _
+  override def handle: SessionHandle = _handle
+
   override def open(): Unit = {
     MetricsSystem.tracing { ms =>
       ms.incCount(CONN_TOTAL)
       ms.incCount(MetricRegistry.name(CONN_OPEN, user))
     }
-    super.open()
     withZkClient(sessionConf) { zkClient =>
       val (host, port) = engine.getOrCreate(zkClient)
       openSession(host, port)
     }
-  }
-
-  private def setSessionIdToEngine(): Map[String, String] = {
-    val existedSessionId = normalizedConf.get(HA_ZK_ENGINE_SESSION_ID.key)
-    assert(existedSessionId.isEmpty, s"${HA_ZK_ENGINE_SESSION_ID.key} can not be changed by user")
-    normalizedConf ++ Map(HA_ZK_ENGINE_SESSION_ID.key -> handle.identifier.toString)
+    // we should call super.open after kyuubi session is already opened
+    super.open()
   }
 
   private def openSession(host: String, port: Int): Unit = {
-    val confWithSessionId = setSessionIdToEngine()
     val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
     val loginTimeout = sessionConf.get(ENGINE_LOGIN_TIMEOUT).toInt
     transport = PlainSASLHelper.getPlainTransport(
@@ -90,8 +90,13 @@ class KyuubiSessionImpl(
       logSessionInfo(s"Connected to engine [$host:$port]")
     }
     client = new KyuubiSyncThriftClient(new TBinaryProtocol(transport))
-    client.openSession(protocol, user, passwd, confWithSessionId)
+    // use engine SessionHandle directly
+    _handle = client.openSession(protocol, user, passwd, normalizedConf)
     sessionManager.operationManager.setConnection(handle, client)
+    sessionEvent.openedTime = System.currentTimeMillis()
+    sessionEvent.sessionId = handle.identifier.toString
+    sessionEvent.clientVersion = handle.protocol.getValue
+    EventLoggingService.onEvent(sessionEvent)
   }
 
   override protected def runOperation(operation: Operation): OperationHandle = {
@@ -101,8 +106,10 @@ class KyuubiSessionImpl(
 
   override def close(): Unit = {
     super.close()
-    sessionManager.operationManager.removeConnection(handle)
-    sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
+    if (handle != null) {
+      sessionManager.operationManager.removeConnection(handle)
+      sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
+    }
     try {
       if (client != null) client.closeSession()
     } catch {
