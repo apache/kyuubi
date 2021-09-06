@@ -53,6 +53,12 @@ object HandleIdentifier {
     new HandleIdentifier(publicId, secretId)
   }
 
+  def apply(sessionId: String): HandleIdentifier = {
+    val publicId = UUID.fromString(sessionId)
+    val secretId = UUID.randomUUID()
+    new HandleIdentifier(publicId, secretId)
+  }
+
   def apply(): HandleIdentifier = {
     val publicId = UUID.randomUUID()
     val secretId = UUID.randomUUID()

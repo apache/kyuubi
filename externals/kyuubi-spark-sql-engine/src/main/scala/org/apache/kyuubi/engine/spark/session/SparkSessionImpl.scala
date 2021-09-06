@@ -20,8 +20,9 @@ package org.apache.kyuubi.engine.spark.session
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.engine.spark.events.{EventLoggingService, SessionEvent}
+import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
-import org.apache.kyuubi.session.{AbstractSession, SessionManager}
+import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
 
 class SparkSessionImpl(
     protocol: TProtocolVersion,
@@ -32,7 +33,13 @@ class SparkSessionImpl(
     sessionManager: SessionManager)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
+  private final val _handle: SessionHandle = {
+    val sessionId = conf.get(HighAvailabilityConf.HA_ZK_ENGINE_SESSION_ID.key)
+    SessionHandle(protocol, sessionId)
+  }
   private val sessionEvent = SessionEvent(this)
+
+  override def handle: SessionHandle = _handle
 
   override def open(): Unit = {
     EventLoggingService.onEvent(sessionEvent)

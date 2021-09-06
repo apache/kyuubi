@@ -45,14 +45,22 @@ case class SessionHandle(
 
 object SessionHandle {
   def apply(tHandle: TSessionHandle, protocol: TProtocolVersion): SessionHandle = {
-    apply(HandleIdentifier(tHandle.getSessionId), protocol)
+    SessionHandle(HandleIdentifier(tHandle.getSessionId), protocol)
   }
 
   def apply(tHandle: TSessionHandle): SessionHandle = {
-    apply(tHandle, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
+    SessionHandle(tHandle, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V1)
   }
 
   def apply(protocol: TProtocolVersion): SessionHandle = {
-    apply(HandleIdentifier(), protocol)
+    SessionHandle(HandleIdentifier(), protocol)
+  }
+
+  def apply(protocol: TProtocolVersion, sessionId: Option[String]): SessionHandle = {
+    if (sessionId.isDefined) {
+      SessionHandle(HandleIdentifier(sessionId.get), protocol)
+    } else {
+      SessionHandle(HandleIdentifier(), protocol)
+    }
   }
 }

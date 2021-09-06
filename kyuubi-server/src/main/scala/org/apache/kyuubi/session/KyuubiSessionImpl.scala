@@ -29,6 +29,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.EngineRef
 import org.apache.kyuubi.events.KyuubiSessionEvent
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_SESSION_ID
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -72,7 +73,14 @@ class KyuubiSessionImpl(
     }
   }
 
+  private def setSessionIdToEngine(): Map[String, String] = {
+    val existedSessionId = normalizedConf.get(HA_ZK_ENGINE_SESSION_ID.key)
+    assert(existedSessionId.isEmpty, s"${HA_ZK_ENGINE_SESSION_ID.key} can not be changed by user")
+    normalizedConf ++ Map(HA_ZK_ENGINE_SESSION_ID.key -> handle.identifier.toString)
+  }
+
   private def openSession(host: String, port: Int): Unit = {
+    val confWithSessionId = setSessionIdToEngine()
     val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
     val loginTimeout = sessionConf.get(ENGINE_LOGIN_TIMEOUT).toInt
     transport = PlainSASLHelper.getPlainTransport(
@@ -82,7 +90,7 @@ class KyuubiSessionImpl(
       logSessionInfo(s"Connected to engine [$host:$port]")
     }
     client = new KyuubiSyncThriftClient(new TBinaryProtocol(transport))
-    client.openSession(protocol, user, passwd, normalizedConf)
+    client.openSession(protocol, user, passwd, confWithSessionId)
     sessionManager.operationManager.setConnection(handle, client)
   }
 
