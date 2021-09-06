@@ -42,6 +42,6 @@ trait HudiSuiteMixin extends DataLakeSuiteMixin {
     "spark.sql.defaultCatalog" -> catalog,
     "spark.sql.extensions" -> "org.apache.spark.sql.hudi.HoodieSparkSessionExtension",
     "spark.serializer" -> "org.apache.spark.serializer.KryoSerializer",
-    "hoodie.bootstrap.index.class" -> "org.apache.hudi.common.bootstrap.index.HFileBootstrapIndex",
+    "hoodie.bootstrap.index.class" -> "org.apache.hudi.common.bootstrap.index.NoOpBootstrapIndex",
     "spark.jars" -> extraJars)
 }
