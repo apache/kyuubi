@@ -1034,12 +1034,20 @@
                 <version>${hudi.version}</version>
                 <exclusions>
                     <exclusion>
+                        <groupId>org.apache.hudi</groupId>
+                        <artifactId>hudi-timeline-service</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>io.dropwizard.metrics</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>io.prometheus</groupId>
                         <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.apache.curator</groupId>
@@ -1052,10 +1060,6 @@
                     <exclusion>
                         <groupId>org.apache.hbase</groupId>
                         <artifactId>hbase-server</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hudi</groupId>
-                        <artifactId>hudi-timeline-service</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.apache.orc</groupId>
@@ -1071,11 +1075,11 @@
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.hudi</groupId>
-                        <artifactId>hudi-spark2_2.11</artifactId>
+                        <artifactId>hudi-spark-common_2.11</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.apache.hudi</groupId>
-                        <artifactId>hudi-spark-common_2.11</artifactId>
+                        <artifactId>hudi-spark2_2.11</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.apache.curator</groupId>
@@ -1088,6 +1092,10 @@
                     <exclusion>
                         <groupId>com.fasterxml.jackson.module</groupId>
                         <artifactId>*</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
