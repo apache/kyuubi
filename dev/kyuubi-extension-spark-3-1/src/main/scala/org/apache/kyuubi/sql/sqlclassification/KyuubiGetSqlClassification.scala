@@ -44,7 +44,6 @@ object KyuubiGetSqlClassification {
         try {
           defaultSqlClassificationFile = Thread.currentThread().getContextClassLoader
             .getResource("sql-classification.json").getPath
-          Some(objectMapper.readTree(new File(defaultSqlClassificationFile)))
         } catch {
           case e: NullPointerException =>
             defaultSqlClassificationFile =
