@@ -17,8 +17,15 @@
 
 package org.apache.kyuubi.util
 
+import scala.util.Random
+
+import org.apache.hadoop.io.Text
+import org.apache.hadoop.security.Credentials
+import org.apache.hadoop.security.token.Token
+
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.service.authentication.KyuubiDelegationTokenIdentifier
 
 class KyuubiHadoopUtilsSuite extends KyuubiFunSuite {
 
@@ -34,5 +41,22 @@ class KyuubiHadoopUtilsSuite extends KyuubiFunSuite {
     assert(hadoopConf.get(abc) === "xyz")
     assert(hadoopConf.get(xyz) === "abc")
     assert(hadoopConf.get(test) === "t")
+  }
+
+  test("encode/decode credentials") {
+    val identifier = new KyuubiDelegationTokenIdentifier()
+    val password = new Array[Byte](128)
+    Random.nextBytes(password)
+    val token = new Token[KyuubiDelegationTokenIdentifier](
+      identifier.getBytes,
+      password,
+      identifier.getKind,
+      new Text(""))
+    val credentials = new Credentials()
+    credentials.addToken(token.getKind, token)
+
+    val decoded = KyuubiHadoopUtils.decodeCredentials(
+      KyuubiHadoopUtils.encodeCredentials(credentials))
+    assert(decoded.getToken(token.getKind) == credentials.getToken(token.getKind))
   }
 }

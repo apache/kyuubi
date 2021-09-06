@@ -50,7 +50,7 @@ if [ "$(uname)" == "Darwin" ]; then
 fi
 
 package_source() {
-  SRC_TGZ_FILE="kyuubi-${RELEASE_VERSION}-source.tgz"
+  SRC_TGZ_FILE="apache-kyuubi-${RELEASE_VERSION}-source.tgz"
   SRC_TGZ="${RELEASE_DIR}/${SRC_TGZ_FILE}"
 
   mkdir -p "${RELEASE_DIR}"
@@ -58,16 +58,16 @@ package_source() {
 
   echo "Creating source release tarball ${SRC_TGZ_FILE}"
 
-  git archive --prefix="kyuubi-${RELEASE_VERSION}-source/" -o "${SRC_TGZ}" HEAD
+  git archive --prefix="apache-kyuubi-${RELEASE_VERSION}-source/" -o "${SRC_TGZ}" HEAD
 
   if [ "$SKIP_GPG" == "false" ] ; then
     gpg --armor --detach-sig "${SRC_TGZ}"
   fi
-  $SHASUM "${SRC_TGZ}" > "${SRC_TGZ}.sha512"
+  (cd "${RELEASE_DIR}" && $SHASUM "${SRC_TGZ_FILE}" > "${SRC_TGZ_FILE}.sha512")
 }
 
 package_binary() {
-  BIN_TGZ_FILE="kyuubi-${RELEASE_VERSION}-bin.tgz"
+  BIN_TGZ_FILE="apache-kyuubi-${RELEASE_VERSION}-bin.tgz"
   BIN_TGZ="${RELEASE_DIR}/${BIN_TGZ_FILE}"
 
   mkdir -p "${RELEASE_DIR}"
@@ -82,7 +82,7 @@ package_binary() {
   if [ "$SKIP_GPG" == "false" ] ; then
     gpg --armor --detach-sig "${BIN_TGZ}"
   fi
-  $SHASUM "${BIN_TGZ}" > "${BIN_TGZ}.sha512"
+  (cd "${RELEASE_DIR}" && $SHASUM "${BIN_TGZ_FILE}" > "${BIN_TGZ_FILE}.sha512")
 }
 
 if [[ "$1" == "source" ]]; then

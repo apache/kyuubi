@@ -94,6 +94,7 @@ class KyuubiSessionImpl(
   override def close(): Unit = {
     super.close()
     sessionManager.operationManager.removeConnection(handle)
+    sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
     try {
       if (client != null) client.closeSession()
     } catch {
