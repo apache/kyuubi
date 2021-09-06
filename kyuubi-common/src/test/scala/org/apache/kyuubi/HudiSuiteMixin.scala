@@ -37,6 +37,11 @@ trait HudiSuiteMixin extends DataLakeSuiteMixin {
     extraJars.substring(0, extraJars.length - 1)
   }
 
+  override protected def tableOptions = Map(
+    "primaryKey" -> "id",
+    "preCombineField" -> "ts",
+    "hoodie.bootstrap.index.class" -> "org.apache.hudi.common.bootstrap.index.NoOpBootstrapIndex")
+
   override protected def extraConfigs = Map(
     "spark.sql.catalogImplementation" -> "in-memory",
     "spark.sql.defaultCatalog" -> catalog,

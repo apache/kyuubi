@@ -33,6 +33,8 @@ trait IcebergSuiteMixin extends DataLakeSuiteMixin {
       .filter(_.contains("iceberg-spark")).head
   }
 
+  override protected def tableOptions = Map()
+
   override protected def extraConfigs = Map(
     "spark.sql.defaultCatalog" -> catalog,
     "spark.sql.extensions" -> "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",

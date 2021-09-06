@@ -65,7 +65,7 @@ trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
     val tableType = "TABLE"
 
     withJdbcStatement(table) { statement =>
-      statement.execute(
+      var sql =
         s"""
            | create table $table (
            |  id int,
@@ -73,12 +73,13 @@ trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
            |  price double,
            |  ts long
            | ) using $format
-           | options (
-           |   primaryKey = 'id',
-           |   preCombineField = 'ts'
-           | )
-       """.stripMargin)
+      """.stripMargin
 
+      if (tableOptions.nonEmpty) {
+        sql += getTableOptions()
+      }
+
+      statement.execute(sql)
       val metaData = statement.getConnection.getMetaData
       val rs1 = metaData.getTables(null, null, null, null)
 
@@ -89,14 +90,21 @@ trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
       assert(rs1.getString(TABLE_NAME) == table)
       assert(rs1.getString(TABLE_TYPE) == tableType)
       assert(!rs1.next())
-
       val rs2 = metaData.getTables(null, null, "table%", Array("TABLE"))
       assert(rs2.next())
       assert(rs2.getString(TABLE_NAME) == table)
       assert(!rs2.next())
-
       val rs3 = metaData.getTables(null, "default", "*", Array("VIEW"))
       assert(!rs3.next())
     }
   }
+
+  def getTableOptions(): String = {
+    var options = "options ("
+    for ((k, v) <- tableOptions) {
+      options += (k + "='" + v + "',")
+    }
+    options.substring(0, options.length() - 1) + ")"
+  }
+
 }

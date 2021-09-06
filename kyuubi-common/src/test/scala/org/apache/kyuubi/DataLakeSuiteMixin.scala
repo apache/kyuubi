@@ -29,5 +29,7 @@ trait DataLakeSuiteMixin {
 
   protected def extraJars: String
 
+  protected def tableOptions: Map[String, String]
+
   protected def extraConfigs: Map[String, String]
 }
