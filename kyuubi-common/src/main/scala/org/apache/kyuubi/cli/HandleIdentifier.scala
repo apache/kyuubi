@@ -33,7 +33,6 @@ class HandleIdentifier(val publicId: UUID, val secretId: UUID) {
     pbb.putLong(publicId.getLeastSignificantBits)
     sbb.putLong(secretId.getMostSignificantBits)
     sbb.putLong(secretId.getLeastSignificantBits)
-
     new THandleIdentifier(ByteBuffer.wrap(guid), ByteBuffer.wrap(secret))
   }
 
