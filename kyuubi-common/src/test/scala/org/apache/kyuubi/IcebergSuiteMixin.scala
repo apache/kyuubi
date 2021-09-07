@@ -34,6 +34,7 @@ trait IcebergSuiteMixin extends DataLakeSuiteMixin {
   }
 
   override protected def extraConfigs = Map(
+    "spark.sql.catalogImplementation" -> "in-memory",
     "spark.sql.defaultCatalog" -> catalog,
     "spark.sql.extensions" -> "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
     "spark.sql.catalog.spark_catalog" -> "org.apache.iceberg.spark.SparkSessionCatalog",
