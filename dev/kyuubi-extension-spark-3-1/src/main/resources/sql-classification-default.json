@@ -56,6 +56,5 @@
   "DescribeTableCommand": "other",
   "ShowColumnsCommand": "other",
   "ClearCacheCommand$": "other",
-  "ShowNamespaces": "other",
-  "Project": "dql"
+  "ShowNamespaces": "other"
 }
