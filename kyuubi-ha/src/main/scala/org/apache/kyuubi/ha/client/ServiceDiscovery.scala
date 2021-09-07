@@ -226,7 +226,7 @@ object ServiceDiscovery extends Logging {
         throw new KyuubiException(s"Failed to create namespace '$ns'", e)
     }
 
-    val session = conf.get(HA_ZK_ENGINE_SESSION_ID)
+    val session = conf.get(HA_ZK_ENGINE_REF_ID)
       .map(sid => s"session=$sid;").getOrElse("")
     val pathPrefix = ZKPaths.makePath(
       namespace,
