@@ -57,9 +57,11 @@ class HadoopFsDelegationTokenProvider extends HadoopDelegationTokenProvider with
         HadoopFsDelegationTokenProvider.hadoopFSsToAccess(kyuubiConf, internalConf)
 
       try {
+        // Renewer is not needed. But setting a renewer can avoid potential NPE.
+        val renewer = UserGroupInformation.getCurrentUser.getUserName
         fileSystems.foreach { fs =>
           info(s"getting token owned by $owner for: $fs")
-          fs.addDelegationTokens(null, creds)
+          fs.addDelegationTokens(renewer, creds)
         }
       } finally {
         // Token renewal interval is longer than FileSystems' underlying connections' max idle time.
