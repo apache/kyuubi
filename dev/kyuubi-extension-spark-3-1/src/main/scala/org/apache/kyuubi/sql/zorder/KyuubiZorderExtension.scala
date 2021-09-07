@@ -15,29 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.spark.kyuubi
+package org.apache.kyuubi.sql.zorder
 
-import org.apache.spark.SparkContext
+import org.apache.spark.sql.SparkSessionExtensions
 
-import org.apache.kyuubi.engine.spark.events.KyuubiSparkEvent
-import org.apache.kyuubi.events.EventLogger
-
-/**
- * A place to invoke non-public APIs of [[SparkContext]], anything to be added here need to
- * think twice
- */
-object SparkContextHelper {
-  def createSparkHistoryLogger(sc: SparkContext): EventLogger[KyuubiSparkEvent] = {
-    new SparkHistoryEventLogger(sc)
-  }
-}
-
-/**
- * A [[EventLogger]] that logs everything to SparkHistory
- * @param sc SparkContext
- */
-private class SparkHistoryEventLogger(sc: SparkContext) extends EventLogger[KyuubiSparkEvent] {
-  override def logEvent(kyuubiEvent: KyuubiSparkEvent): Unit = {
-    sc.listenerBus.post(kyuubiEvent)
+class KyuubiZorderExtension extends (SparkSessionExtensions => Unit) {
+  override def apply(extensions: SparkSessionExtensions): Unit = {
+    extensions.injectParser{ case (_, parser) => new ZorderSparkSqlExtensionsParser(parser) }
   }
 }

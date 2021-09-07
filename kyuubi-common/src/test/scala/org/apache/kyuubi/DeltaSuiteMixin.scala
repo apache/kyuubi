@@ -36,6 +36,7 @@ trait DeltaSuiteMixin extends DataLakeSuiteMixin {
   override protected def tableOptions = Map()
 
   override protected def extraConfigs = Map(
+    "spark.sql.catalogImplementation" -> "in-memory",
     "spark.sql.defaultCatalog" -> catalog,
     "spark.sql.extensions" -> "io.delta.sql.DeltaSparkSessionExtension",
     "spark.sql.catalog.spark_catalog" -> "org.apache.spark.sql.delta.catalog.DeltaCatalog",
