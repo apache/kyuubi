@@ -686,7 +686,7 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
       ).getClass.getSimpleName
     )
     // scalastyle:off println
-    println("ddl simple name is :" + ddlSimpleName)
+    println("ddl simple name is :" + ddlSimpleName.toSeq.sorted)
     // scalastyle:on println
   }
 
@@ -1405,7 +1405,7 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
     )
 
     // scalastyle:off println
-    println("auxiliary statement simple name is :" + auxiStatementSimpleName)
+    println("auxiliary statement simple name is :" + auxiStatementSimpleName.toSeq.sorted)
     // scalastyle:on println
   }
 }
