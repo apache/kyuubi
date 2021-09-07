@@ -33,14 +33,23 @@ trait HudiSuiteMixin extends DataLakeSuiteMixin {
       .split(":")
       .filter(_.contains("jar"))
       .foreach(i => extraJars += i + ",")
-
     extraJars.substring(0, extraJars.length - 1)
   }
 
-  override protected def tableOptions = Map(
-    "primaryKey" -> "id",
-    "preCombineField" -> "ts",
+  override def tableOptions: Map[String, String] = Map(
     "hoodie.bootstrap.index.class" -> "org.apache.hudi.common.bootstrap.index.NoOpBootstrapIndex")
+
+  def getTableOptions(opts: (String, String)*): String = {
+    var options = ""
+    if (tableOptions.nonEmpty || opts.nonEmpty) {
+      for ((k, v) <- tableOptions ++ opts) {
+        options += s"$k='$v',"
+      }
+      options = options.substring(0, options.length() - 1)
+      options = s"options ($options)"
+    }
+    options
+  }
 
   override protected def extraConfigs = Map(
     "spark.sql.catalogImplementation" -> "in-memory",

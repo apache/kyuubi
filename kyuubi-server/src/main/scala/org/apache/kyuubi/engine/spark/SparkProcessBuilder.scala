@@ -55,7 +55,7 @@ class SparkProcessBuilder(
         .map(_.getAbsolutePath)
     }
 
-    sparkHomeOpt.map{ dir =>
+    Option("/Users/zsm/spark-3.0.3-bin-hadoop2.7").map{ dir =>
       Paths.get(dir, "bin", SPARK_SUBMIT_FILE).toAbsolutePath.toFile.getCanonicalPath
     }.getOrElse {
       throw KyuubiSQLException("SPARK_HOME is not set! " +
