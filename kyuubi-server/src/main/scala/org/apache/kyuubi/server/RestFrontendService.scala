@@ -115,12 +115,20 @@ private[server] class RestFrontendService private(name: String, be: BackendServi
     if (jettyServer != null) {
       try {
         connector.stop()
+        info("Rest frontend service server connector has stopped.")
+      } catch {
+        case err: Exception =>
+          error("Cannot safely stop rest frontend service server connector", err)
+      } finally {
+        connector = null
+      }
+
+      try {
         jettyServer.stop()
         info("Rest frontend service jetty server has stopped.")
       } catch {
         case err: Exception => error("Cannot safely stop rest frontend service jetty server", err)
       } finally {
-        connector = null
         jettyServer = null
       }
     }

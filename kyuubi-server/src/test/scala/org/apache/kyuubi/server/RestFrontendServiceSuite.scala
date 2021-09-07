@@ -65,9 +65,9 @@ class RestFrontendServiceSuite extends KyuubiFunSuite{
 
   test("kyuubi rest frontend service http basic") {
     withKyuubiRestServer {
-      (_, _) =>
+      (_, host, port) =>
         eventually(timeout(10.seconds), interval(50.milliseconds)) {
-          val html = Source.fromURL("http://localhost:10099/api/v1/ping").mkString
+          val html = Source.fromURL(s"http://$host:$port/api/v1/ping").mkString
           assert(html.toLowerCase(Locale.ROOT).equals("pong"))
         }
     }
@@ -75,19 +75,19 @@ class RestFrontendServiceSuite extends KyuubiFunSuite{
 
   test("kyuubi rest frontend service for sessions resource") {
     withKyuubiRestServer {
-      (_, _) =>
+      (_, host, port) =>
         val expectedCount = new SessionOpenedCount()
         expectedCount.setOpenSessionCount(1)
         val expectedStr = new ObjectMapper().writeValueAsString(expectedCount)
 
         eventually(timeout(10.seconds), interval(50.milliseconds)) {
-          val html = Source.fromURL("http://localhost:10099/api/v1/sessions/count").mkString
+          val html = Source.fromURL(s"http://$host:$port/api/v1/sessions/count").mkString
           assert(html.toLowerCase(Locale.ROOT).equalsIgnoreCase(expectedStr))
         }
     }
   }
 
-  def withKyuubiRestServer(f: (RestNoopServer, RestFrontendService) => Unit): Unit = {
+  def withKyuubiRestServer(f: (RestFrontendService, String, Int) => Unit): Unit = {
     val server = new RestNoopServer()
     server.stop()
     val conf = KyuubiConf()
@@ -99,7 +99,8 @@ class RestFrontendServiceSuite extends KyuubiFunSuite{
     val frontendService = server.getServices(0).asInstanceOf[RestFrontendService]
 
     try {
-      f(server, frontendService)
+      f(frontendService, conf.get(KyuubiConf.FRONTEND_REST_BIND_HOST).get,
+        conf.get(KyuubiConf.FRONTEND_REST_BIND_PORT))
     } finally {
       server.stop()
     }
