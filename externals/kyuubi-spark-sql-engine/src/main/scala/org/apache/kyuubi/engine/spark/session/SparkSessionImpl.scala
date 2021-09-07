@@ -31,10 +31,9 @@ class SparkSessionImpl(
     conf: Map[String, String],
     sessionManager: SessionManager)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  override val handle: SessionHandle = SessionHandle(protocol)
 
   private val sessionEvent = SessionEvent(this)
-
-  override val handle: SessionHandle = SessionHandle(protocol)
 
   override def open(): Unit = {
     EventLoggingService.onEvent(sessionEvent)
