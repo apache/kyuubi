@@ -50,8 +50,8 @@ singleStatement
     ;
 
 statement
-    : OPTIMIZE multipartIdentifier whereClause? zorderClause         #optimizeZorder
-    | .*?                                                            #passThrough
+    : OPTIMIZE multipartIdentifier whereClause? zorderClause        #optimizeZorder
+    | .*?                                                           #passThrough
     ;
 
 whereClause
@@ -63,9 +63,9 @@ zorderClause
     ;
 
 booleanExpression
-    : query                                                          #logicalQuery
-    | left=booleanExpression operator=AND right=booleanExpression    #logicalBinary
-    | left=booleanExpression operator=OR right=booleanExpression     #logicalBinary
+    : query                                                              #logicalQuery
+    | left=booleanExpression operator=AND right=booleanExpression        #logicalBinary
+    | left=booleanExpression operator=OR right=booleanExpression         #logicalBinary
     ;
 
 query
@@ -77,11 +77,11 @@ comparisonOperator
     ;
 
 constant
-    : NULL                                                            #nullLiteral
-    | identifier STRING                                               #typeConstructor
-    | number                                                          #numericLiteral
-    | booleanValue                                                    #booleanLiteral
-    | STRING+                                                         #stringLiteral
+    : NULL                     #nullLiteral
+    | identifier STRING        #typeConstructor
+    | number                   #numericLiteral
+    | booleanValue             #booleanLiteral
+    | STRING+                  #stringLiteral
     ;
 
 multipartIdentifier
@@ -93,13 +93,13 @@ booleanValue
     ;
 
 number
-    : MINUS? DECIMAL_VALUE            #decimalLiteral
-    | MINUS? INTEGER_VALUE            #integerLiteral
-    | MINUS? BIGINT_LITERAL           #bigIntLiteral
-    | MINUS? SMALLINT_LITERAL         #smallIntLiteral
-    | MINUS? TINYINT_LITERAL          #tinyIntLiteral
-    | MINUS? DOUBLE_LITERAL           #doubleLiteral
-    | MINUS? BIGDECIMAL_LITERAL       #bigDecimalLiteral
+    : MINUS? DECIMAL_VALUE             #decimalLiteral
+    | MINUS? INTEGER_VALUE             #integerLiteral
+    | MINUS? BIGINT_LITERAL            #bigIntLiteral
+    | MINUS? SMALLINT_LITERAL          #smallIntLiteral
+    | MINUS? TINYINT_LITERAL           #tinyIntLiteral
+    | MINUS? DOUBLE_LITERAL            #doubleLiteral
+    | MINUS? BIGDECIMAL_LITERAL        #bigDecimalLiteral
     ;
 
 identifier
