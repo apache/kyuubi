@@ -67,13 +67,8 @@ trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
     val schema = "default"
     val tableType = "TABLE"
 
-    val opts = getTableOptions(
-      "primaryKey" -> "id",
-      "preCombineField" -> "ts"
-    )
-
     withJdbcStatement(table) { statement =>
-      val sql =
+      statement.execute(
         s"""
            | create table $table (
            |  id int,
@@ -81,13 +76,15 @@ trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
            |  price double,
            |  ts long
            | ) using $format
-           | $opts
-      """.stripMargin
-
-      statement.execute(sql)
+           | options (
+           |   primaryKey = 'id',
+           |   preCombineField = 'ts',
+           |   hoodie.bootstrap.index.class = 'org.apache.hudi.common.bootstrap.index.NoOpBootstrapIndex'
+           | )
+       """.stripMargin)
       val metaData = statement.getConnection.getMetaData
-      val rs1 = metaData.getTables(null, null, null, null)
 
+      val rs1 = metaData.getTables(null, null, null, null)
       assert(rs1.next())
       val catalogName = rs1.getString(TABLE_CAT)
       assert(catalogName === "spark_catalog" || catalogName === null)
@@ -95,25 +92,14 @@ trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
       assert(rs1.getString(TABLE_NAME) == table)
       assert(rs1.getString(TABLE_TYPE) == tableType)
       assert(!rs1.next())
+
       val rs2 = metaData.getTables(null, null, "table%", Array("TABLE"))
       assert(rs2.next())
       assert(rs2.getString(TABLE_NAME) == table)
       assert(!rs2.next())
+
       val rs3 = metaData.getTables(null, "default", "*", Array("VIEW"))
       assert(!rs3.next())
     }
   }
-
-  def getTableOptions(customOpts: (String, String)*): String = {
-    var options = ""
-    if (tableOptions.nonEmpty || customOpts.nonEmpty) {
-      for ((k, v) <- tableOptions ++ customOpts) {
-        options += s"$k='$v',"
-      }
-      options = options.substring(0, options.length() - 1)
-      options = s"options ($options)"
-    }
-    options
-  }
-
 }

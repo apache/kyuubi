@@ -99,7 +99,6 @@ trait JDBCTestUtils extends KyuubiFunSuite {
 
   def withDatabases(dbNames: String*)(fs: (Statement => Unit)*): Unit = {
     val connections = fs.map { _ => DriverManager.getConnection(jdbcUrlWithConf, user, "") }
-
     val statements = connections.map(_.createStatement())
 
     try {
