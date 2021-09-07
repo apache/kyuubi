@@ -23,9 +23,6 @@ import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
 
-  val tableOptions: Map[String, String] = Map(
-    "hoodie.bootstrap.index.class" -> "org.apache.hudi.common.bootstrap.index.NoOpBootstrapIndex")
-
   test("get catalogs") {
     withJdbcStatement() { statement =>
       val metaData = statement.getConnection.getMetaData
@@ -82,8 +79,8 @@ trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
            |   hoodie.bootstrap.index.class = 'org.apache.hudi.common.bootstrap.index.NoOpBootstrapIndex'
            | )
        """.stripMargin)
-      val metaData = statement.getConnection.getMetaData
 
+      val metaData = statement.getConnection.getMetaData
       val rs1 = metaData.getTables(null, null, null, null)
       assert(rs1.next())
       val catalogName = rs1.getString(TABLE_CAT)
