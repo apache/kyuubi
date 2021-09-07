@@ -38,7 +38,7 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
-import org.apache.kyuubi.sql.zorder.ZorderSqlExtensionsParser.{BigDecimalLiteralContext, BigIntLiteralContext, BooleanLiteralContext, DecimalLiteralContext, DoubleLiteralContext, ExponentLiteralContext, IntegerLiteralContext, LegacyDecimalLiteralContext, LogicalBinaryContext, MultipartIdentifierContext, NullLiteralContext, NumberContext, OptimizeZorderContext, QueryContext, SingleStatementContext, SmallIntLiteralContext, StringLiteralContext, TinyIntLiteralContext, TypeConstructorContext, ZorderClauseContext}
+import org.apache.kyuubi.sql.zorder.ZorderSqlExtensionsParser.{BigDecimalLiteralContext, BigIntLiteralContext, BooleanLiteralContext, DecimalLiteralContext, DoubleLiteralContext, IntegerLiteralContext, LogicalBinaryContext, MultipartIdentifierContext, NullLiteralContext, NumberContext, OptimizeZorderContext, PassThroughContext, QueryContext, SingleStatementContext, SmallIntLiteralContext, StringLiteralContext, TinyIntLiteralContext, TypeConstructorContext, ZorderClauseContext}
 
 class ZorderSqlAstBuilder extends ZorderSqlExtensionsBaseVisitor[AnyRef] {
   /**
@@ -54,6 +54,8 @@ class ZorderSqlAstBuilder extends ZorderSqlExtensionsBaseVisitor[AnyRef] {
   override def visitSingleStatement(ctx: SingleStatementContext): LogicalPlan = {
     visit(ctx.statement()).asInstanceOf[LogicalPlan]
   }
+
+  override def visitPassThrough(ctx: PassThroughContext): LogicalPlan = null
 
   override def visitOptimizeZorder(ctx: OptimizeZorderContext):
     OptimizeZorderCommand = withOrigin(ctx) {
@@ -225,40 +227,24 @@ class ZorderSqlAstBuilder extends ZorderSqlExtensionsBaseVisitor[AnyRef] {
     Literal(BigDecimal(ctx.getText).underlying())
   }
 
-  /**
-   * Create a decimal literal for a regular decimal number or a scientific decimal number.
-   */
-  override def visitLegacyDecimalLiteral(ctx: LegacyDecimalLiteralContext):
-    Literal = withOrigin(ctx) {
-      Literal(BigDecimal(ctx.getText).underlying())
-  }
-
-  /**
-   * Create a double literal for number with an exponent, e.g. 1E-30
-   */
-  override def visitExponentLiteral(ctx: ExponentLiteralContext): Literal = {
-    numericLiteral(ctx, ctx.getText, /* exponent values don't have a suffix */
-      Double.MinValue, Double.MaxValue, DoubleType.simpleString)(_.toDouble)
-  }
-
   /** Create a numeric literal expression. */
-  private def numericLiteral(ctx: NumberContext,
-                              rawStrippedQualifier: String,
-                              minValue: BigDecimal,
-                              maxValue: BigDecimal,
-                              typeName: String)(converter: String => Any):
-    Literal = withOrigin(ctx) {
-      try {
-        val rawBigDecimal = BigDecimal(rawStrippedQualifier)
-        if (rawBigDecimal < minValue || rawBigDecimal > maxValue) {
-          throw new ParseException(s"Numeric literal ${rawStrippedQualifier} does not " +
-            s"fit in range [${minValue}, ${maxValue}] for type ${typeName}", ctx)
-        }
-        Literal(converter(rawStrippedQualifier))
-      } catch {
-        case e: NumberFormatException =>
-          throw new ParseException(e.getMessage, ctx)
+  private def numericLiteral(
+      ctx: NumberContext,
+      rawStrippedQualifier: String,
+      minValue: BigDecimal,
+      maxValue: BigDecimal,
+      typeName: String)(converter: String => Any): Literal = withOrigin(ctx) {
+    try {
+      val rawBigDecimal = BigDecimal(rawStrippedQualifier)
+      if (rawBigDecimal < minValue || rawBigDecimal > maxValue) {
+        throw new ParseException(s"Numeric literal ${rawStrippedQualifier} does not " +
+          s"fit in range [${minValue}, ${maxValue}] for type ${typeName}", ctx)
       }
+      Literal(converter(rawStrippedQualifier))
+    } catch {
+      case e: NumberFormatException =>
+        throw new ParseException(e.getMessage, ctx)
+    }
   }
 
   /**
@@ -342,5 +328,4 @@ class ZorderSqlAstBuilder extends ZorderSqlExtensionsBaseVisitor[AnyRef] {
   private def typedVisit[T](ctx: ParseTree): T = {
     ctx.accept(this).asInstanceOf[T]
   }
-
 }
