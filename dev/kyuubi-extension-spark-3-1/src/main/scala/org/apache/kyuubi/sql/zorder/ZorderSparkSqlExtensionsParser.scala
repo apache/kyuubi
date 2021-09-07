@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.sql.zorder
 
-import java.util.Locale
-
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.PredictionMode
 import org.antlr.v4.runtime.misc.{Interval, ParseCancellationException}
@@ -33,12 +31,10 @@ import org.apache.spark.sql.types.{DataType, StructType}
 class ZorderSparkSqlExtensionsParser(delegate: ParserInterface) extends ParserInterface {
 
   private lazy val astBuilder = new ZorderSqlAstBuilder
-  override def parsePlan(sqlText: String): LogicalPlan = {
-    if (isZorderCommand(sqlText)) {
-      parse(sqlText) { parser =>
-        astBuilder.visit(parser.singleStatement()) }.asInstanceOf[LogicalPlan]
-    } else {
-      delegate.parsePlan(sqlText)
+  override def parsePlan(sqlText: String): LogicalPlan = parse(sqlText) { parser =>
+    astBuilder.visit(parser.singleStatement()) match {
+      case plan: LogicalPlan => plan
+      case _ => delegate.parsePlan(sqlText)
     }
   }
 
@@ -80,11 +76,6 @@ class ZorderSparkSqlExtensionsParser(delegate: ParserInterface) extends ParserIn
         val position = Origin(e.line, e.startPosition)
         throw new ParseException(Option(command), e.message, position, position)
     }
-  }
-
-  private def isZorderCommand(sqlText: String): Boolean = {
-    val normalized = sqlText.toLowerCase(Locale.ROOT).trim().replaceAll("\\s+", " ")
-    normalized.startsWith("optimize")
   }
 
   override def parseExpression(sqlText: String): Expression = {
