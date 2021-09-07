@@ -16,21 +16,21 @@
   ~ limitations under the License.
   -->
 <project version="4">
-    <component name="IssueNavigationConfiguration">
-        <option name="links">
-            <list>
-                <IssueNavigationLink>
-                    <option name="issueRegexp" value="#(\d+)" />
-                    <!--
-                      GitHub share the sequence number of issues and pull requests, and it will redirect to
-                      the right place when the the sequence number not match kind.
-                     -->
-                    <option name="linkRegexp" value="https://github.com/apache/incubator-kyuubi/issues/$1" />
-                </IssueNavigationLink>
-            </list>
-        </option>
-    </component>
-    <component name="VcsDirectoryMappings">
-        <mapping directory="$PROJECT_DIR$" vcs="Git" />
-    </component>
+  <component name="IssueNavigationConfiguration">
+    <option name="links">
+      <list>
+        <IssueNavigationLink>
+          <option name="issueRegexp" value="#(\d+)" />
+          <!--
+            GitHub share the sequence number of issues and pull requests, and it will redirect to
+            the right place when the the sequence number not match kind.
+           -->
+          <option name="linkRegexp" value="https://github.com/apache/incubator-kyuubi/issues/$1" />
+        </IssueNavigationLink>
+      </list>
+    </option>
+  </component>
+  <component name="VcsDirectoryMappings">
+    <mapping directory="$PROJECT_DIR$" vcs="Git" />
+  </component>
 </project>
