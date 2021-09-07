@@ -86,7 +86,7 @@ object HadoopFsDelegationTokenProvider {
   def hadoopFSsToAccess(kyuubiConf: KyuubiConf, hadoopConf: Configuration): Set[FileSystem] = {
     val defaultFS = FileSystem.get(hadoopConf)
     val filesystemsToAccess = kyuubiConf
-      .get(KyuubiConf.CREDENTIALS_HADOOP_FS_URLS)
+      .get(KyuubiConf.CREDENTIALS_HADOOP_FS_URIS)
       .map(new Path(_).getFileSystem(hadoopConf))
       .toSet
 

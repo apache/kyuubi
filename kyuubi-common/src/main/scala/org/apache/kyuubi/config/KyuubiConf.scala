@@ -256,9 +256,9 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
-  val CREDENTIALS_HADOOP_FS_URLS: ConfigEntry[Seq[String]] =
-    buildConf("credentials.hadoopfs.urls")
-      .doc("Extra Hadoop filesystem URLs for which to request delegation tokens. " +
+  val CREDENTIALS_HADOOP_FS_URIS: ConfigEntry[Seq[String]] =
+    buildConf("credentials.hadoopfs.uris")
+      .doc("Extra Hadoop filesystem URIs for which to request delegation tokens. " +
         "The filesystem that hosts fs.defaultFS does not need to be listed here.")
       .version("1.4.0")
       .stringConf
