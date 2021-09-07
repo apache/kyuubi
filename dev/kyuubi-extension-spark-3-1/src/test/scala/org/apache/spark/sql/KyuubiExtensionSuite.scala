@@ -678,6 +678,13 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
       ).getClass.getSimpleName
     )
 
+    val sql27 = "TRUNCATE TABLE StudentInfo partition(age=10);"
+    ddlSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql27)
+      ).getClass.getSimpleName
+    )
+
     // REPAIR TABLE
     val sql25 = "MSCK REPAIR TABLE StudentInfo;"
     ddlSimpleName.add(
@@ -1051,10 +1058,25 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
     pre_sql = "INSERT INTO students_testtest PARTITION (student_id = 222222) VALUES ('John');"
     spark.sql(pre_sql)
 
-    val sql01 = "ANALYZE TABLE students COMPUTE STATISTICS NOSCAN;"
+    val sql01 = "ANALYZE TABLE students_testtest COMPUTE STATISTICS NOSCAN;"
     auxiStatementSimpleName.add(
       spark.sessionState.analyzer.execute(
         spark.sessionState.sqlParser.parsePlan(sql01)
+      ).getClass.getSimpleName
+    )
+
+    val sql48 = "ANALYZE TABLE students_testtest PARTITION " +
+      "(student_id = 111111) COMPUTE STATISTICS;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql48)
+      ).getClass.getSimpleName
+    )
+
+    val sql49 = "ANALYZE TABLE students_testtest COMPUTE STATISTICS FOR COLUMNS name;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql49)
       ).getClass.getSimpleName
     )
 
@@ -1401,6 +1423,20 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
     auxiStatementSimpleName.add(
       spark.sessionState.analyzer.execute(
         spark.sessionState.sqlParser.parsePlan(sql45)
+      ).getClass.getSimpleName
+    )
+
+    val sql46 = "EXPLAIN select k, sum(v) from values (1, 2), (1, 3) t(k, v) group by k;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql46)
+      ).getClass.getSimpleName
+    )
+
+    val sql47 = "EXPLAIN EXTENDED select k, sum(v) from values (1, 2), (1, 3) t(k, v) group by k;"
+    auxiStatementSimpleName.add(
+      spark.sessionState.analyzer.execute(
+        spark.sessionState.sqlParser.parsePlan(sql47)
       ).getClass.getSimpleName
     )
 
