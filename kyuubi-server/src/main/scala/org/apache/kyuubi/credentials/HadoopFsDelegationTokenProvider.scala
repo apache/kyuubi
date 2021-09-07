@@ -74,6 +74,7 @@ class HadoopFsDelegationTokenProvider extends HadoopDelegationTokenProvider with
 object HadoopFsDelegationTokenProvider {
 
   def disableFsCache(kyuubiConf: KyuubiConf, hadoopConf: Configuration): Configuration = {
+    // Avoid unnecessary disk io by not loading default resources
     val newConf = new Configuration(false)
     hadoopConf.iterator().asScala.foreach(e => newConf.set(e.getKey, e.getValue))
 
