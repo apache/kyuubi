@@ -256,14 +256,14 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
-  val CREDENTIALS_HADOOP_FS_URLS: ConfigEntry[Seq[String]] = KyuubiConf
-    .buildConf("credentials.hadoopfs.urls")
-    .doc("Extra Hadoop filesystem URLs for which to request delegation tokens. " +
-      "The filesystem that hosts fs.defaultFS does not need to be listed here.")
-    .version("1.4.0")
-    .stringConf
-    .toSequence()
-    .createWithDefault(Nil)
+  val CREDENTIALS_HADOOP_FS_URLS: ConfigEntry[Seq[String]] =
+    buildConf("credentials.hadoopfs.urls")
+      .doc("Extra Hadoop filesystem URLs for which to request delegation tokens. " +
+        "The filesystem that hosts fs.defaultFS does not need to be listed here.")
+      .version("1.4.0")
+      .stringConf
+      .toSequence()
+      .createWithDefault(Nil)
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                              Frontend Service Configuration                                 //
