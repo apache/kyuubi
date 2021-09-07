@@ -76,7 +76,7 @@ trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
            | options (
            |   primaryKey = 'id',
            |   preCombineField = 'ts',
-           |   hoodie.bootstrap.index.class = 
+           |   hoodie.bootstrap.index.class =
            |   'org.apache.hudi.common.bootstrap.index.NoOpBootstrapIndex'
            | )
        """.stripMargin)
