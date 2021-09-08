@@ -52,8 +52,7 @@ case class ResolveZorder(session: SparkSession) extends Rule[LogicalPlan] {
   }
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
-    case statement @ OptimizeZorderStatement(tableIdent, query)
-        if statement.resolved =>
+    case OptimizeZorderStatement(tableIdent, query) if query.resolved =>
       checkQueryAllowed(query)
       val tableIdentifier = getTableIdentifier(tableIdent)
       val catalogTable = session.sessionState.catalog.getTableMetadata(tableIdentifier)

@@ -27,6 +27,5 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
 case class OptimizeZorderStatement(
     tableIdentifier: Seq[String],
     child: LogicalPlan) extends UnaryNode {
-  final override lazy val resolved = child.resolved
   override def output: Seq[Attribute] = child.output
 }
