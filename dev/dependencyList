@@ -25,7 +25,10 @@ failureaccess/1.0.1//failureaccess-1.0.1.jar
 guava/30.1-jre//guava-30.1-jre.jar
 hadoop-client-api/3.2.2//hadoop-client-api-3.2.2.jar
 hadoop-client-runtime/3.2.2//hadoop-client-runtime-3.2.2.jar
+hive-common/2.3.7//hive-common-2.3.7.jar
+hive-metastore/2.3.7//hive-metastore-2.3.7.jar
 hive-service-rpc/2.3.7//hive-service-rpc-2.3.7.jar
+hive-shims-common/2.3.7//hive-shims-common-2.3.7.jar
 hk2-api/2.6.1//hk2-api-2.6.1.jar
 hk2-locator/2.6.1//hk2-locator-2.6.1.jar
 hk2-utils/2.6.1//hk2-utils-2.6.1.jar
@@ -36,6 +39,7 @@ jackson-databind/2.11.4//jackson-databind-2.11.4.jar
 jackson-module-jaxb-annotations/2.9.9//jackson-module-jaxb-annotations-2.9.9.jar
 jackson-module-paranamer/2.11.4//jackson-module-paranamer-2.11.4.jar
 jackson-module-scala_2.12/2.11.4//jackson-module-scala_2.12-2.11.4.jar
+jakarta.activation/1.2.1//jakarta.activation-1.2.1.jar
 jakarta.annotation-api/1.3.5//jakarta.annotation-api-1.3.5.jar
 jakarta.inject/2.6.1//jakarta.inject-2.6.1.jar
 jakarta.servlet-api/4.0.4//jakarta.servlet-api-4.0.4.jar
