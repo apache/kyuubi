@@ -26,11 +26,11 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.{ParseTree, TerminalNode}
 import org.apache.spark.sql.AnalysisException
-import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
-import org.apache.spark.sql.catalyst.expressions.{And, EqualNullSafe, EqualTo, Expression, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual, Literal, Not, Or}
+import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRelation, UnresolvedStar}
+import org.apache.spark.sql.catalyst.expressions.{And, Ascending, EqualNullSafe, EqualTo, Expression, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual, Literal, Not, NullsLast, Or, SortOrder}
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.parser.ParserUtils.{string, stringWithoutUnescape, withOrigin}
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project, Sort}
 import org.apache.spark.sql.catalyst.util.DateTimeUtils.{getZoneId, stringToDate, stringToTimestamp}
 import org.apache.spark.sql.catalyst.util.IntervalUtils
 import org.apache.spark.sql.hive.HiveAnalysis.conf
@@ -49,24 +49,40 @@ class ZorderSqlAstBuilder extends ZorderSqlExtensionsBaseVisitor[AnyRef] {
 
   protected def multiPart(ctx: ParserRuleContext): Seq[String] = typedVisit(ctx)
 
-  protected def zorder(ctx: ParserRuleContext): Seq[UnresolvedAttribute] = typedVisit(ctx)
-
   override def visitSingleStatement(ctx: SingleStatementContext): LogicalPlan = {
     visit(ctx.statement()).asInstanceOf[LogicalPlan]
   }
 
   override def visitPassThrough(ctx: PassThroughContext): LogicalPlan = null
 
-  override def visitOptimizeZorder(ctx: OptimizeZorderContext):
-    OptimizeZorderCommand = withOrigin(ctx) {
-      val tableIdent = multiPart(ctx.multipartIdentifier())
-      val whereItem = if (ctx.whereClause() == null) {
-        None
-      } else {
-        Option(expression(ctx.whereClause().booleanExpression()))
-      }
+  override def visitOptimizeZorder(
+      ctx: OptimizeZorderContext): OptimizeZorderStatement = withOrigin(ctx) {
+    val tableIdent = multiPart(ctx.multipartIdentifier())
+    val table = UnresolvedRelation(tableIdent)
 
-      OptimizeZorderCommand(tableIdent, whereItem, zorder(ctx.zorderClause()))
+    val whereClause = if (ctx.whereClause() == null) {
+      None
+    } else {
+      Option(expression(ctx.whereClause().booleanExpression()))
+    }
+
+    val tableWithFilter = whereClause match {
+      case Some(expr) => Filter(expr, table)
+      case None => table
+    }
+
+    val zorderCols = ctx.zorderClause().order.asScala
+      .map(visitMultipartIdentifier)
+      .map(UnresolvedAttribute(_))
+      .toSeq
+
+    val query =
+      Sort(
+        SortOrder(Zorder(zorderCols), Ascending, NullsLast, Seq.empty) :: Nil,
+        true,
+        Project(Seq(UnresolvedStar(None)), tableWithFilter))
+
+    OptimizeZorderStatement(tableIdent, query)
   }
 
   override def visitQuery(ctx: QueryContext): Expression = withOrigin(ctx) {

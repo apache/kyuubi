@@ -22,6 +22,8 @@ import java.nio.charset.Charset
 
 import org.apache.spark.sql.types.Decimal
 
+import org.apache.kyuubi.sql.KyuubiSQLExtensionException
+
 object ZorderBytesUtils {
   def interleaveMultiByteArray(arrays: Array[Array[Byte]]): Array[Byte] = {
     var totalLength = 0
@@ -87,7 +89,7 @@ object ZorderBytesUtils {
       case dec: Decimal =>
         ZorderBytesUtils.longToByte(dec.toLong)
       case other: Any =>
-        throw new ZorderException("Unsupported z-order type: " + other.getClass)
+        throw new KyuubiSQLExtensionException("Unsupported z-order type: " + other.getClass)
     }
   }
 
