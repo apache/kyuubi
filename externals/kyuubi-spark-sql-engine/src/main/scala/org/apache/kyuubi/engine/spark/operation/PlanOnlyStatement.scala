@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.execution.command.{ResetCommand, SetCommand}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.config.KyuubiConf.OperationModes.{ANALYZE, OperationMode, OPTIMIZE, PARSE}
@@ -42,11 +42,16 @@ class PlanOnlyStatement(
     result.schema
   }
 
+  private def isSetOrReset(plan: LogicalPlan): Boolean = {
+    val className = plan.getClass.getSimpleName
+    className == "SetCommand" || className == "ResetCommand"
+  }
+
   override protected def runInternal(): Unit = {
     try {
       val parsed = spark.sessionState.sqlParser.parsePlan(statement)
       parsed match {
-        case _: SetCommand | _: ResetCommand =>
+        case cmd if isSetOrReset(cmd) =>
           result = spark.sql(statement)
           iter = new ArrayFetchIterator(result.collect())
         case otherPlan => mode match {
