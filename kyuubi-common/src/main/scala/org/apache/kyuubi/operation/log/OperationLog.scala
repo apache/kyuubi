@@ -134,7 +134,8 @@ class OperationLog(path: Path) extends Logging {
       Files.delete(path)
     } catch {
       case e: IOException =>
-        error(s"Failed to remove corresponding log file of operation: ${path.toAbsolutePath}", e)
+        throw new IOException(
+          s"Failed to remove corresponding log file of operation: ${path.toAbsolutePath}", e)
     }
   }
 }

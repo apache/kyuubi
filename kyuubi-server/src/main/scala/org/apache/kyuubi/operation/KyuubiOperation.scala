@@ -17,11 +17,12 @@
 
 package org.apache.kyuubi.operation
 
+import java.io.IOException
+
 import com.codahale.metrics.MetricRegistry
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.transport.TTransportException
-
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.metrics.MetricsConstants.STATEMENT_FAIL
@@ -97,6 +98,11 @@ abstract class KyuubiOperation(
     if (_remoteOpHandle != null && !isClosedOrCanceled) {
       try {
         getOperationLog.foreach(_.close())
+      } catch {
+        case e: IOException =>
+          error(e.getMessage, e)
+      }
+      try {
         client.closeOperation(_remoteOpHandle)
         setState(OperationState.CLOSED)
       } catch onError("closing")
