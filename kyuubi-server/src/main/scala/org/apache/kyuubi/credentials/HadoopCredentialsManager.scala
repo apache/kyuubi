@@ -97,6 +97,7 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
         if (!required) {
           warn(s"Service ${provider.serviceName} does not require a token." +
             s" Check your configuration to see if security is disabled or not.")
+          provider.close()
         }
         required
       }
@@ -122,6 +123,7 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
   }
 
   override def stop(): Unit = {
+    providers.values.foreach(_.close())
     renewalExecutor.foreach { executor =>
       executor.shutdownNow()
       try {

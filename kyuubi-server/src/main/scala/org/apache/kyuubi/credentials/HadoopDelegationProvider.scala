@@ -20,10 +20,9 @@ package org.apache.kyuubi.credentials
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.Credentials
 
-import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 
-trait HadoopDelegationTokenProvider extends Logging {
+trait HadoopDelegationTokenProvider {
 
   /**
    * Name of the service to provide delegation tokens. This name should be unique. Kyuubi will
@@ -49,5 +48,10 @@ trait HadoopDelegationTokenProvider extends Logging {
    * @param creds Credentials to add tokens and security keys to.
    */
   def obtainDelegationTokens(owner: String, creds: Credentials): Unit
+
+  /**
+   * Close underlying resources if any
+   */
+  def close(): Unit = {}
 
 }

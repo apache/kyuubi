@@ -66,5 +66,7 @@ class HiveDelegationTokenProvider extends HadoopDelegationTokenProvider with Log
     }
   }
 
+  override def close(): Unit = client.foreach(_.close())
+
   private def tokenAlias: Text = new Text("hive.server2.delegation.token")
 }
