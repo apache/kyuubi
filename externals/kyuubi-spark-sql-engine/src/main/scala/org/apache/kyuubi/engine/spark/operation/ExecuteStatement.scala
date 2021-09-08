@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.spark.operation
 import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService, TimeUnit}
 
 import org.apache.spark.kyuubi.SQLOperationListener
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
@@ -55,7 +55,6 @@ class ExecuteStatement(
   private val operationLog: OperationLog =
     OperationLog.createOperationLog(session.handle, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
-  private var result: DataFrame = _
 
   private val operationListener: SQLOperationListener = new SQLOperationListener(this, spark)
 

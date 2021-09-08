@@ -21,7 +21,7 @@ import java.time.ZoneId
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -45,6 +45,8 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
   }
 
   protected var iter: FetchIterator[Row] = _
+
+  protected var result: DataFrame = _
 
   protected def resultSchema: StructType
 

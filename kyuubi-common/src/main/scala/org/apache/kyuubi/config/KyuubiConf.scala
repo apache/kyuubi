@@ -876,4 +876,19 @@ object KyuubiConf {
       .version("1.4.0")
       .stringConf
       .createOptional
+
+  object OperationModes extends Enumeration {
+    type OperationMode = Value
+    val PARSE, ANALYZE, OPTIMIZE, NONE = Value
+  }
+
+  val OPERATION_PLAN_ONLY: ConfigEntry[String] =
+    buildConf("operation.plan.only.mode")
+      .doc("Whether to perform the statement in a PARSE, ANALYZE, OPTIMIZE only way without " +
+        "executing the query. When it is NONE, the statement will be fully executed")
+      .version("1.4.0")
+      .stringConf
+      .transform(_.toUpperCase(Locale.ROOT))
+      .checkValues(OperationModes.values.map(_.toString))
+      .createWithDefault(OperationModes.NONE.toString)
 }

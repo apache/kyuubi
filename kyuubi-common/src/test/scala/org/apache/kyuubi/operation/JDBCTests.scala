@@ -379,4 +379,31 @@ trait JDBCTests extends BasicJDBCTests {
       assert(rs.getString(1) == System.getProperty("user.name"))
     }
   }
+
+  test("KYUUBI #1059: Plan only operations") {
+    val ddl = "create table t(a int) using parquet"
+    val dql = "select * from t"
+    withJdbcStatement("t") { statement =>
+      try {
+        statement.execute("SET kyuubi.operation.plan.only.mode=optimize")
+        val set = statement.executeQuery(ddl)
+        assert(set.next())
+        assert(set.getString("plan") startsWith "Create")
+        val e1 = intercept[SQLException](statement.executeQuery(dql))
+        assert(e1.getMessage.contains("Table or view not found"))
+        statement.execute("SET kyuubi.operation.plan.only.mode=analyze")
+        val e2 = intercept[SQLException](statement.executeQuery(dql))
+        assert(e2.getMessage.contains("Table or view not found"))
+        statement.execute("SET kyuubi.operation.plan.only.mode=parse")
+        val set1 = statement.executeQuery(dql)
+        assert(set1.next())
+        assert(set1.getString("plan") contains "Unresolved")
+      } finally {
+        statement.executeQuery("SET kyuubi.operation.plan.only.mode=none")
+        statement.executeQuery(ddl)
+        val res = statement.executeQuery(dql)
+        assert(!res.next(), "table t exists in none mode")
+      }
+    }
+  }
 }
