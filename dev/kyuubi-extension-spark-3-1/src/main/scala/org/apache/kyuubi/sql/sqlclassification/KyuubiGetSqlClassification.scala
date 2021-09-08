@@ -18,6 +18,7 @@
 package org.apache.kyuubi.sql.sqlclassification
 
 import java.io.File
+import java.net.URL
 
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import org.apache.spark.sql.internal.SQLConf
@@ -40,16 +41,13 @@ object KyuubiGetSqlClassification {
     SQLConf.get.getConf(SQL_CLASSIFICATION_ENABLED) match {
       case true =>
         val objectMapper = new ObjectMapper
-        var defaultSqlClassificationFile: String = null
-        try {
-          defaultSqlClassificationFile = Thread.currentThread().getContextClassLoader
-            .getResource("sql-classification.json").getPath
-        } catch {
-          case e: NullPointerException =>
-            defaultSqlClassificationFile =
-              Thread.currentThread().getContextClassLoader
-                .getResource("sql-classification-default.json").getPath
+        var url: URL = Thread.currentThread().getContextClassLoader
+          .getResource("sql-classification.json")
+        if (url == null) {
+          url = Thread.currentThread().getContextClassLoader
+            .getResource("sql-classification-default.json")
         }
+        val defaultSqlClassificationFile = url.getPath
         Some(objectMapper.readTree(new File(defaultSqlClassificationFile)))
       case false =>
         None
