@@ -19,6 +19,7 @@ package org.apache
 
 import java.util.Properties
 
+import scala.collection.JavaConverters._
 import scala.util.Try
 
 package object kyuubi {
@@ -34,7 +35,7 @@ package object kyuubi {
     }
 
     private val unknown = "<unknown>"
-    private val props = new Properties()
+    private[kyuubi] val props = new Properties()
 
     try {
       props.load(buildFileStream)
@@ -66,4 +67,5 @@ package object kyuubi {
   val BUILD_USER: String = BuildInfo.user
   val REPO_URL: String = BuildInfo.repoUrl
   val BUILD_DATE: String = BuildInfo.buildDate
+  val VERSION_INFO: Map[String, String] = BuildInfo.props.asScala.toMap
 }

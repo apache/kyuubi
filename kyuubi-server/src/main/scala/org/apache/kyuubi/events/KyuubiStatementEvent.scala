@@ -42,7 +42,7 @@ case class KyuubiStatementEvent(
     createTime: Long,
     var state: String,
     var stateTime: Long,
-    var exception: String = "") extends KyuubiServerEvent {
+    var exception: String = "") extends ServerEvent {
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(createTime)) :: Nil
 }

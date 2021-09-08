@@ -26,10 +26,10 @@ import org.apache.kyuubi.config.KyuubiConf.SERVER_EVENT_JSON_LOG_PATH
 import org.apache.kyuubi.config.KyuubiConf.SERVER_EVENT_LOGGERS
 import org.apache.kyuubi.events.{AbstractEventLoggingService, EventLoggerType}
 import org.apache.kyuubi.events.JsonEventLogger
-import org.apache.kyuubi.events.KyuubiServerEvent
+import org.apache.kyuubi.events.ServerEvent
 import org.apache.kyuubi.server.EventLoggingService._service
 
-class EventLoggingService extends AbstractEventLoggingService[KyuubiServerEvent] {
+class EventLoggingService extends AbstractEventLoggingService[ServerEvent] {
 
   override def initialize(conf: KyuubiConf): Unit = {
     conf.get(SERVER_EVENT_LOGGERS)
@@ -37,7 +37,7 @@ class EventLoggingService extends AbstractEventLoggingService[KyuubiServerEvent]
       .foreach{
         case EventLoggerType.JSON =>
           val hostName = InetAddress.getLocalHost.getCanonicalHostName
-          val jsonEventLogger = new JsonEventLogger[KyuubiServerEvent](s"server-$hostName",
+          val jsonEventLogger = new JsonEventLogger[ServerEvent](s"server-$hostName",
             SERVER_EVENT_JSON_LOG_PATH, new Configuration())
           addService(jsonEventLogger)
           addEventLogger(jsonEventLogger)
@@ -64,7 +64,7 @@ object EventLoggingService {
 
   private var _service: Option[EventLoggingService] = None
 
-  def onEvent(event: KyuubiServerEvent): Unit = {
+  def onEvent(event: ServerEvent): Unit = {
     _service.foreach(_.onEvent(event))
   }
 }

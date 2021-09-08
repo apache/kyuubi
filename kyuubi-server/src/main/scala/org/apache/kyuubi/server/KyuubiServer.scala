@@ -23,6 +23,7 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.events.KyuubiServerEvent
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.metrics.{MetricsConf, MetricsSystem}
@@ -85,6 +86,8 @@ class KyuubiServer(name: String) extends Serverable(name) {
   override val backendService: AbstractBackendService = new KyuubiBackendService()
   val frontendService = new KyuubiFrontendServices(backendService)
   private val eventLoggingService: EventLoggingService = new EventLoggingService
+  private val serverEvent = KyuubiServerEvent()
+
   override protected def supportsServiceDiscovery: Boolean = {
     ServiceDiscovery.supportServiceDiscovery(conf)
   }
@@ -107,9 +110,17 @@ class KyuubiServer(name: String) extends Serverable(name) {
   override def start(): Unit = {
     super.start()
     KyuubiServer.kyuubiServer = this
+
+    serverEvent.serverIP = connectionUrl
+    serverEvent.startTime = getStartTime
+    serverEvent.conf = getConf.getAll
+    EventLoggingService.onEvent(serverEvent)
   }
 
-  override protected def stopServer(): Unit = {}
+  override protected def stopServer(): Unit = {
+    serverEvent.endTime = System.currentTimeMillis()
+    EventLoggingService.onEvent(serverEvent)
+  }
 
   override def connectionUrl: String = {
     frontendService.connectionUrl(true)

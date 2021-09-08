@@ -17,6 +17,33 @@
 
 package org.apache.kyuubi.events
 
-trait KyuubiServerEvent extends KyuubiEvent {
+import scala.collection.JavaConverters._
 
+import org.apache.kyuubi.Utils
+
+/**
+ * @param env the environment of Kyuubi server startup
+ * @param version version info, include Kyuubi version, hadoop compile version .. etc
+ * @param startTime server start time
+ * @param serverIP server ip port
+ * @param conf server config
+ * @param endTime server end time
+ */
+case class KyuubiServerEvent(
+    env: Map[String, String],
+    version: Map[String, String],
+    var startTime: Long = -1,
+    var serverIP: String = null,
+    var conf: Map[String, String] = null,
+    var endTime: Long = -1L) extends ServerEvent {
+  override lazy val partitions: Seq[(String, String)] =
+    ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
+}
+
+object KyuubiServerEvent {
+  def apply(): KyuubiServerEvent = {
+    KyuubiServerEvent(
+      System.getenv().asScala.toMap,
+      org.apache.kyuubi.VERSION_INFO)
+  }
 }

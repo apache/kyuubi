@@ -47,7 +47,7 @@ case class KyuubiSessionEvent(
     var clientVersion: Int = -1,
     var openedTime: Long = -1L,
     var endTime: Long = -1L,
-    var totalOperations: Int = 0) extends KyuubiServerEvent {
+    var totalOperations: Int = 0) extends ServerEvent {
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
 }

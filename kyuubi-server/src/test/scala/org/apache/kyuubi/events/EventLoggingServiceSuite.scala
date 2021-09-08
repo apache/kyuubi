@@ -140,4 +140,27 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
       }
     }
   }
+
+  test("test Kyuubi server event") {
+    val serverEventPath = Paths.get(logRoot.toString, "kyuubi_server", s"day=$currentDate")
+    withSessionConf()(Map.empty)(Map.empty) {
+      withJdbcStatement() { statement =>
+        val res = statement.executeQuery(
+          s"SELECT * FROM `json`.`$serverEventPath` limit 1")
+        assert(res.next())
+        val startTime = res.getLong("startTime")
+        assert(startTime > 0)
+        val serverIP = res.getString("serverIP")
+        assert(serverIP != null && !"".equals(serverIP))
+        val conf = res.getString("conf")
+        assert(conf != null && !"".equals(conf))
+        val version = res.getString("version")
+        assert(version.contains("kyuubi_version"))
+        assert(version.contains("kyuubi_spark_version"))
+        val env = res.getString("env")
+        assert(env != null && !"".equals(env))
+        assert(!res.next())
+      }
+    }
+  }
 }
