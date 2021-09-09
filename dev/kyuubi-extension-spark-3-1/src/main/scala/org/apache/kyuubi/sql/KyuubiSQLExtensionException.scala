@@ -15,6 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.sql.zorder
+package org.apache.kyuubi.sql
 
-class ZorderException(message: String, cause: Throwable = null) extends Exception(message, cause)
+import java.sql.SQLException
+
+class KyuubiSQLExtensionException(reason: String, cause: Throwable)
+  extends SQLException(reason, cause) {
+
+  def this(reason: String) = {
+    this(reason, null)
+  }
+}

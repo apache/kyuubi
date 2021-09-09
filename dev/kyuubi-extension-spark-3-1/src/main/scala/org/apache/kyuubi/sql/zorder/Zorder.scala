@@ -22,6 +22,8 @@ import org.apache.spark.sql.catalyst.expressions.{BoundReference, Expression}
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
 import org.apache.spark.sql.types.{BinaryType, BooleanType, ByteType, DataType, DateType, DecimalType, DoubleType, FloatType, IntegerType, LongType, ShortType, StringType, TimestampType}
 
+import org.apache.kyuubi.sql.KyuubiSQLExtensionException
+
 case class Zorder(children: Seq[Expression]) extends Expression with CodegenFallback {
   private lazy val defaultNullValues = {
     children.map {
@@ -50,10 +52,10 @@ case class Zorder(children: Seq[Expression]) extends Expression with CodegenFall
           case d: DecimalType =>
             Long.MaxValue
           case other: Any =>
-            throw new ZorderException("Unsupported z-order type: " + other.getClass)
+            throw new KyuubiSQLExtensionException("Unsupported z-order type: " + other.getClass)
         }
       case other: Any =>
-        throw new ZorderException("Unknown z-order column: " + other)
+        throw new KyuubiSQLExtensionException("Unknown z-order column: " + other)
     }
   }
 

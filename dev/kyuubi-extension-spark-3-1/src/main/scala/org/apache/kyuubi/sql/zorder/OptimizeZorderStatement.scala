@@ -17,10 +17,15 @@
 
 package org.apache.kyuubi.sql.zorder
 
-import org.apache.spark.sql.SparkSessionExtensions
+import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
 
-class KyuubiZorderExtension extends (SparkSessionExtensions => Unit) {
-  override def apply(extensions: SparkSessionExtensions): Unit = {
-    extensions.injectParser{ case (_, parser) => new ZorderSparkSqlExtensionsParser(parser) }
-  }
+/**
+ * A zorder statement that contains we parsed from SQL.
+ * We should convert this plan to certain command at Analyzer.
+ */
+case class OptimizeZorderStatement(
+    tableIdentifier: Seq[String],
+    child: LogicalPlan) extends UnaryNode {
+  override def output: Seq[Attribute] = child.output
 }
