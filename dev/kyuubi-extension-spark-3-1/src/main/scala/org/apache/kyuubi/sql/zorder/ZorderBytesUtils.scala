@@ -21,6 +21,7 @@ import java.lang.{Double => jDouble, Float => jFloat}
 import java.nio.charset.Charset
 
 import org.apache.spark.sql.types.Decimal
+import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
@@ -71,23 +72,23 @@ object ZorderBytesUtils {
   def toByte(a: Any): Array[Byte] = {
     a match {
       case bo: Boolean =>
-        ZorderBytesUtils.booleanToByte(bo)
+        booleanToByte(bo)
       case b: Byte =>
-        ZorderBytesUtils.byteToByte(b)
+        byteToByte(b)
       case s: Short =>
-        ZorderBytesUtils.shortToByte(s)
+        shortToByte(s)
       case i: Int =>
-        ZorderBytesUtils.intToByte(i)
+        intToByte(i)
       case l: Long =>
-        ZorderBytesUtils.longToByte(l)
+        longToByte(l)
       case f: Float =>
-        ZorderBytesUtils.floatToByte(f)
+        floatToByte(f)
       case d: Double =>
-        ZorderBytesUtils.doubleToByte(d)
-      case str: String =>
-        ZorderBytesUtils.stringToByte(str)
+        doubleToByte(d)
+      case str: UTF8String =>
+        paddingTo8Byte(str.getBytes)
       case dec: Decimal =>
-        ZorderBytesUtils.longToByte(dec.toLong)
+        longToByte(dec.toLong)
       case other: Any =>
         throw new KyuubiSQLExtensionException("Unsupported z-order type: " + other.getClass)
     }

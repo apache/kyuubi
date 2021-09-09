@@ -21,6 +21,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{BoundReference, Expression}
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
 import org.apache.spark.sql.types.{BinaryType, BooleanType, ByteType, DataType, DateType, DecimalType, DoubleType, FloatType, IntegerType, LongType, ShortType, StringType, TimestampType}
+import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
@@ -44,7 +45,7 @@ case class Zorder(children: Seq[Expression]) extends Expression with CodegenFall
           case DoubleType =>
             Double.MaxValue
           case StringType =>
-            ""
+            UTF8String.fromBytes(new Array[Byte](0))
           case TimestampType =>
             Long.MaxValue
           case DateType =>

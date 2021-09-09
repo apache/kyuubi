@@ -76,4 +76,14 @@ object KyuubiSQLConf {
       .version("1.4.0")
       .booleanConf
       .createWithDefault(true)
+
+  val INSERT_ZORDER_BEFORE_WRITING =
+    buildConf("spark.sql.optimizer.insertZorderBeforeWriting.enabled")
+      .doc("When true, we will follow target table properties to insert zorder or not. " +
+        "The key properties are: 1) kyuubi.zorder.enabled; if this property is true, we will " +
+        "insert zorder before writing data. 2) kyuubi.zorder.cols; string split by comma, we " +
+        "will zorder by these cols.")
+      .version("1.4.0")
+      .booleanConf
+      .createWithDefault(true)
 }
