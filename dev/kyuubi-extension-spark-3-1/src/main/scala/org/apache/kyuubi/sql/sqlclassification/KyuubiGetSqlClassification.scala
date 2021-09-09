@@ -18,6 +18,7 @@
 package org.apache.kyuubi.sql.sqlclassification
 
 import java.io.File
+import java.net.URL
 
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import org.apache.spark.sql.internal.SQLConf
@@ -28,22 +29,26 @@ import org.apache.kyuubi.sql.KyuubiSQLConf._
  * This object is used for getting sql_classification by the logicalPlan's simpleName.
  * When the configuration item: SQL_CLASSIFICATION_ENABLED is on,
  * we will load the rule from sql-classification-default.json.
+ *
+ * Notice:
+ *  We support the user use the self-defined matching rule: sql-classification.json.
+ *  If there have no this named jsonFile,
+ *  the service will upload the default matching rule: sql-classification-default.json.
  */
 object KyuubiGetSqlClassification {
 
   private val jsonNode: Option[JsonNode] = {
     SQLConf.get.getConf(SQL_CLASSIFICATION_ENABLED) match {
       case true =>
-        try {
-          val defaultSqlClassificationFile =
-            Thread.currentThread().getContextClassLoader
-              .getResource("sql-classification-default.json").getPath
-          val objectMapper = new ObjectMapper
-          Some(objectMapper.readTree(new File(defaultSqlClassificationFile)))
-        } catch {
-          case e: Exception =>
-            throw new IllegalArgumentException("sql-classification-default.json is not exist.", e)
+        val objectMapper = new ObjectMapper
+        var url: URL = Thread.currentThread().getContextClassLoader
+          .getResource("sql-classification.json")
+        if (url == null) {
+          url = Thread.currentThread().getContextClassLoader
+            .getResource("sql-classification-default.json")
         }
+        val defaultSqlClassificationFile = url.getPath
+        Some(objectMapper.readTree(new File(defaultSqlClassificationFile)))
       case false =>
         None
     }
@@ -60,7 +65,7 @@ object KyuubiGetSqlClassification {
     jsonNode.map { json =>
       val sqlClassififation = json.get(simpleName)
       if (sqlClassififation == null) {
-        "undefined"
+        "dql"
       } else {
         sqlClassififation.asText()
       }
