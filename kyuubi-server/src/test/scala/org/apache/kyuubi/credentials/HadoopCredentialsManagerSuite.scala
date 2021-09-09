@@ -47,6 +47,7 @@ class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
     ExceptionThrowingDelegationTokenProvider.constructed = false
     val providers = HadoopCredentialsManager.loadProviders(new KyuubiConf(false))
     assert(providers.contains("hadoopfs"))
+    assert(providers.contains("hive"))
     assert(providers.contains("unstable"))
     assert(providers.contains("unrequired"))
     // This checks that providers are loaded independently and they have no effect on each other
@@ -159,15 +160,11 @@ private class ExceptionThrowingDelegationTokenProvider extends HadoopDelegationT
 
   override def serviceName: String = "throw"
 
-  override def delegationTokensRequired(
-      hadoopConf: Configuration,
-      kyuubiConf: KyuubiConf): Boolean = true
+  override def initialize(hadoopConf: Configuration, kyuubiConf: KyuubiConf): Unit = {}
 
-  override def obtainDelegationTokens(
-      hadoopConf: Configuration,
-      kyuubiConf: KyuubiConf,
-      owner: String,
-      creds: Credentials): Unit = {}
+  override def delegationTokensRequired(): Boolean = true
+
+  override def obtainDelegationTokens(owner: String, creds: Credentials): Unit = {}
 
 }
 
@@ -179,15 +176,11 @@ private class UnRequiredDelegationTokenProvider extends HadoopDelegationTokenPro
 
   override def serviceName: String = "unrequired"
 
-  override def delegationTokensRequired(
-      hadoopConf: Configuration,
-      kyuubiConf: KyuubiConf): Boolean = false
+  override def initialize(hadoopConf: Configuration, kyuubiConf: KyuubiConf): Unit = {}
 
-  override def obtainDelegationTokens(
-      hadoopConf: Configuration,
-      kyuubiConf: KyuubiConf,
-      owner: String,
-      creds: Credentials): Unit = {}
+  override def delegationTokensRequired(): Boolean = false
+
+  override def obtainDelegationTokens(owner: String, creds: Credentials): Unit = {}
 
 }
 
@@ -195,15 +188,11 @@ private class UnstableDelegationTokenProvider extends HadoopDelegationTokenProvi
 
   override def serviceName: String = "unstable"
 
-  override def delegationTokensRequired(
-      hadoopConf: Configuration,
-      kyuubiConf: KyuubiConf): Boolean = true
+  override def initialize(hadoopConf: Configuration, kyuubiConf: KyuubiConf): Unit = {}
 
-  override def obtainDelegationTokens(
-      hadoopConf: Configuration,
-      kyuubiConf: KyuubiConf,
-      owner: String,
-      creds: Credentials): Unit = {
+  override def delegationTokensRequired(): Boolean = true
+
+  override def obtainDelegationTokens(owner: String, creds: Credentials): Unit = {
     if (UnstableDelegationTokenProvider.throwException) {
       UnstableDelegationTokenProvider.exceptionCount += 1
       throw new IllegalArgumentException

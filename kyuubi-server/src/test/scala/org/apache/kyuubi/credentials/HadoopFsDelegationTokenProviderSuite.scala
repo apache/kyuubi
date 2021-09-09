@@ -34,14 +34,15 @@ class HadoopFsDelegationTokenProviderSuite extends WithSecuredDFSService {
       UserGroupInformation.loginUserFromKeytab(testPrincipal, testKeytab)
 
       val hdfsConf = getHadoopConf()
+      val kyuubiConf = new KyuubiConf(false)
+
+      val provider = new HadoopFsDelegationTokenProvider
+      provider.initialize(hdfsConf, kyuubiConf)
+      assert(provider.delegationTokensRequired())
+
       val owner = "who"
       val credentials = new Credentials()
-      val provider = new HadoopFsDelegationTokenProvider
-      provider.obtainDelegationTokens(
-        hdfsConf,
-        new KyuubiConf(false),
-        owner,
-        credentials)
+      provider.obtainDelegationTokens(owner, credentials)
 
       val token = credentials
         .getToken(new Text(FileSystem.get(hdfsConf).getCanonicalServiceName))

@@ -17,6 +17,7 @@
 
 aopalliance-repackaged/2.6.1//aopalliance-repackaged-2.6.1.jar
 commons-codec/1.15//commons-codec-1.15.jar
+commons-lang/2.6//commons-lang-2.6.jar
 commons-lang3/3.10//commons-lang3-3.10.jar
 curator-client/2.12.0//curator-client-2.12.0.jar
 curator-framework/2.12.0//curator-framework-2.12.0.jar
@@ -25,7 +26,10 @@ failureaccess/1.0.1//failureaccess-1.0.1.jar
 guava/30.1-jre//guava-30.1-jre.jar
 hadoop-client-api/3.2.2//hadoop-client-api-3.2.2.jar
 hadoop-client-runtime/3.2.2//hadoop-client-runtime-3.2.2.jar
+hive-common/2.3.7//hive-common-2.3.7.jar
+hive-metastore/2.3.7//hive-metastore-2.3.7.jar
 hive-service-rpc/2.3.7//hive-service-rpc-2.3.7.jar
+hive-shims-common/2.3.7//hive-shims-common-2.3.7.jar
 hk2-api/2.6.1//hk2-api-2.6.1.jar
 hk2-locator/2.6.1//hk2-locator-2.6.1.jar
 hk2-utils/2.6.1//hk2-utils-2.6.1.jar
