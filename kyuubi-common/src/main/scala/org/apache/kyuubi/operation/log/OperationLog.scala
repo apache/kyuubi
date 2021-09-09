@@ -83,7 +83,7 @@ object OperationLog extends Logging {
   }
 }
 
-class OperationLog(path: Path) extends Logging {
+class OperationLog(path: Path) {
 
   private val writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)
   private val reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)
@@ -134,6 +134,10 @@ class OperationLog(path: Path) extends Logging {
       Files.delete(path)
     } catch {
       case e: IOException =>
+        // Printing log here may cause a deadlock. The lock order of OperationLog.write
+        // is RootLogger -> LogDivertAppender -> OperationLog. If printing log here, the
+        // lock order is OperationLog -> RootLogger. So the exception is thrown and
+        // processing at the invocations
         throw new IOException(
           s"Failed to remove corresponding log file of operation: ${path.toAbsolutePath}", e)
     }
