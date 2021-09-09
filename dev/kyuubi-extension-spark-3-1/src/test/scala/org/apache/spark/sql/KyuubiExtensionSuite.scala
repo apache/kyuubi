@@ -463,6 +463,8 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
     }
   }
 
+  // TODO: #1064
+  // TODO: The matching rule for sql classification should be generated automatically not manually
   test("get simple name for DDL") {
 
     import scala.collection.mutable.Set
@@ -697,6 +699,8 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
     // scalastyle:on println
   }
 
+  // TODO: #1064
+  // TODO: The matching rule for sql classification should be generated automatically not manually
   test("get simple name for DML") {
     import scala.collection.mutable.Set
     val dmlSimpleName: Set[String] = Set()
@@ -1049,6 +1053,8 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
     }
   }
 
+  // TODO: #1064
+  // TODO: The matching rule for sql classification should be generated automatically not manually
   test("get simple name for auxiliary statement") {
     val auxiStatementSimpleName: Set[String] = Set()
 
