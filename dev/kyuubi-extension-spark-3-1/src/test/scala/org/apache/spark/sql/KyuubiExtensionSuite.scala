@@ -28,7 +28,7 @@ import org.apache.spark.sql.test.SQLTestData.TestData
 import org.apache.spark.sql.test.SQLTestUtils
 
 import org.apache.kyuubi.sql.{FinalStageConfigIsolation, KyuubiSQLConf}
-import org.apache.kyuubi.sql.zorder.ZorderException
+import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
 class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSparkPlanHelper {
 
@@ -908,7 +908,9 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
           "(2,0,2),(2,1,1),(2,2,5),(2,3,5)," +
           "(3,0,3),(3,1,4),(3,2,9),(3,3,0)")
 
-        val e = intercept[ZorderException](sql("OPTIMIZE up WHERE c1 > 1 ZORDER BY c1, c2"))
+        val e = intercept[KyuubiSQLExtensionException] {
+          sql("OPTIMIZE up WHERE c1 > 1 ZORDER BY c1, c2")
+        }
         assert(e.getMessage == "Filters are only supported for partitioned table")
 
         sql("OPTIMIZE up ZORDER BY c1, c2")
@@ -999,7 +1001,7 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
           "(2,0,2),(2,1,1),(2,2,5),(2,3,5)," +
           "(3,0,3),(3,1,4),(3,2,9),(3,3,0)")
 
-        val e = intercept[ZorderException](
+        val e = intercept[KyuubiSQLExtensionException](
           sql(s"OPTIMIZE p WHERE id = 1 AND c1 > 1 ZORDER BY c1, c2")
         )
         assert(e.getMessage == "Only partition column filters are allowed")
@@ -1024,6 +1026,17 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
           assert(t2(1) == r2.getInt(1))
         }
       }
+    }
+  }
+
+  test("optimize zorder with datasource table") {
+    // TODO remove this if we support datasource table
+    withTable("t") {
+      sql("CREATE TABLE t (c1 int, c2 int) USING PARQUET")
+      val msg = intercept[KyuubiSQLExtensionException] {
+        sql("OPTIMIZE t ZORDER BY c1, c2")
+      }.getMessage
+      assert(msg.contains("only support hive table"))
     }
   }
 }

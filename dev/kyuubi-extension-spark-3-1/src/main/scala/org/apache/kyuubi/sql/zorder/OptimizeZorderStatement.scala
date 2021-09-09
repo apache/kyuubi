@@ -17,4 +17,15 @@
 
 package org.apache.kyuubi.sql.zorder
 
-class ZorderException(message: String, cause: Throwable = null) extends Exception(message, cause)
+import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
+
+/**
+ * A zorder statement that contains we parsed from SQL.
+ * We should convert this plan to certain command at Analyzer.
+ */
+case class OptimizeZorderStatement(
+    tableIdentifier: Seq[String],
+    child: LogicalPlan) extends UnaryNode {
+  override def output: Seq[Attribute] = child.output
+}
