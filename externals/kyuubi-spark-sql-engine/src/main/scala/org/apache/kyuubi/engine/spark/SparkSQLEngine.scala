@@ -146,7 +146,7 @@ object SparkSQLEngine extends Logging {
       // blocking main thread
       countDownLatch.await()
     } catch {
-      case t: Throwable =>
+      case t: Throwable if currentEngine.isDefined =>
         currentEngine.foreach { engine =>
           val status =
             engine.engineStatus.copy(diagnostic = s"Error State SparkSQL Engine ${t.getMessage}")
@@ -154,6 +154,8 @@ object SparkSQLEngine extends Logging {
           error(status, t)
           engine.stop()
         }
+      case t: Throwable =>
+        error("Create SparkSQL Engine Failed", t)
     } finally {
       if (spark != null) {
         spark.stop()
