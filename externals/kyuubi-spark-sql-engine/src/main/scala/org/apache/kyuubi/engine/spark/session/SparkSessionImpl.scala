@@ -21,7 +21,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.engine.spark.events.{EventLoggingService, SessionEvent}
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
-import org.apache.kyuubi.session.{AbstractSession, SessionManager}
+import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
 
 class SparkSessionImpl(
     protocol: TProtocolVersion,
@@ -31,6 +31,7 @@ class SparkSessionImpl(
     conf: Map[String, String],
     sessionManager: SessionManager)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  override val handle: SessionHandle = SessionHandle(protocol)
 
   private val sessionEvent = SessionEvent(this)
 

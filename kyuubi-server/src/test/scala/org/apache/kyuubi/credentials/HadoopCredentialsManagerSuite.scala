@@ -46,6 +46,7 @@ class HadoopCredentialsManagerSuite extends KyuubiFunSuite {
   test("load default providers") {
     ExceptionThrowingDelegationTokenProvider.constructed = false
     val providers = HadoopCredentialsManager.loadProviders(new KyuubiConf(false))
+    assert(providers.contains("hadoopfs"))
     assert(providers.contains("unstable"))
     assert(providers.contains("unrequired"))
     // This checks that providers are loaded independently and they have no effect on each other

@@ -19,6 +19,7 @@ package org.apache.kyuubi.events
 
 import java.net.InetAddress
 import java.nio.file.Paths
+import java.util.UUID
 
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
@@ -96,12 +97,46 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
         assert(res.next())
         assert(res.getString("user") == Utils.currentUser)
         assert(res.getString("sessionName") == "test1")
+        assert(res.getString("sessionId") == "")
         assert(res.getLong("startTime") > 0)
         assert(res.getInt("totalOperations") == 0)
+        assert(res.next())
+        assert(res.getInt("totalOperations") == 0)
+        assert(res.getString("sessionId") != "")
+        assert(res.getLong("openedTime") > 0)
         assert(res.next())
         assert(res.getInt("totalOperations") == 1)
         assert(res.getLong("endTime") > 0)
         assert(!res.next())
+      }
+    }
+  }
+
+  test("engine session id should be same with server session id") {
+    val name = UUID.randomUUID().toString
+    withSessionConf()(Map.empty)(Map(KyuubiConf.SESSION_NAME.key -> name)) {
+      withJdbcStatement() { statement =>
+        statement.execute("SELECT 1")
+      }
+    }
+
+    val serverSessionEventPath =
+      Paths.get(logRoot.toString, "kyuubi_session", s"day=$currentDate")
+    val engineSessionEventPath =
+      Paths.get(logRoot.toString, "session", s"day=$currentDate")
+    withSessionConf()(Map.empty)(Map.empty) {
+      withJdbcStatement() { statement =>
+        val res = statement.executeQuery(
+          s"SELECT * FROM `json`.`$serverSessionEventPath` " +
+            s"where sessionName = '$name' and sessionId != '' limit 1")
+        assert(res.next())
+        val serverSessionId = res.getString("sessionId")
+        assert(!res.next())
+
+        val res2 = statement.executeQuery(
+          s"SELECT * FROM `json`.`$engineSessionEventPath` " +
+            s"where sessionId = '$serverSessionId' limit 1")
+        assert(res2.next())
       }
     }
   }

@@ -17,27 +17,51 @@
 
 package org.apache.kyuubi.sql.zorder
 
-import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRelation}
-import org.apache.spark.sql.catalyst.expressions.{Ascending, Attribute, Expression, NullsLast, SortOrder}
-import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Sort, UnaryNode}
+import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.catalyst.catalog.CatalogTable
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.execution.SparkPlan
+import org.apache.spark.sql.execution.command.DataWritingCommand
+import org.apache.spark.sql.hive.execution.InsertIntoHiveTable
 
-case class OptimizeZorderCommand(child: LogicalPlan) extends UnaryNode {
-  override def output: Seq[Attribute] = child.output
-}
+import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
-object OptimizeZorderCommand {
+/**
+ * A runnable command for zorder, we delegate to real command to execute
+ */
+case class OptimizeZorderCommand(
+    catalogTable: CatalogTable,
+    query: LogicalPlan) extends DataWritingCommand {
+  override def outputColumnNames: Seq[String] = query.output.map(_.name)
 
-  def apply(tableIdent: Seq[String],
-            whereExp: Option[Expression],
-            sortArr: Seq[UnresolvedAttribute]): OptimizeZorderCommand = {
-    val table = UnresolvedRelation(tableIdent)
-    val child = whereExp match {
-      case Some(x) => Filter(x, table)
-      case None => table
+  private def isHiveTable: Boolean = {
+    catalogTable.provider.isEmpty ||
+      (catalogTable.provider.isDefined && "hive".equalsIgnoreCase(catalogTable.provider.get))
+  }
+
+  private def getWritingCommand(session: SparkSession): DataWritingCommand = {
+    // TODO: Support convert hive relation to datasource relation, can see
+    //  [[org.apache.spark.sql.hive.RelationConversions]]
+    InsertIntoHiveTable(
+      catalogTable,
+      catalogTable.partitionColumnNames.map(p => (p, None)).toMap,
+      query,
+      overwrite = true,
+      ifPartitionNotExists = false,
+      outputColumnNames
+    )
+  }
+
+  override def run(session: SparkSession, child: SparkPlan): Seq[Row] = {
+    // TODO: Support datasource relation
+    // TODO: Support read and insert overwrite the same table for some table format
+    if (!isHiveTable) {
+      throw new KyuubiSQLExtensionException("only support hive table")
     }
 
-    val sortOrder = SortOrder(Zorder(sortArr), Ascending, NullsLast, Seq.empty)
-    val zorderSort = Sort(Seq(sortOrder), true, child)
-    OptimizeZorderCommand(zorderSort)
+    val command = getWritingCommand(session)
+    command.run(session, child)
+    DataWritingCommand.propogateMetrics(session.sparkContext, command, metrics)
+    Seq.empty
   }
 }

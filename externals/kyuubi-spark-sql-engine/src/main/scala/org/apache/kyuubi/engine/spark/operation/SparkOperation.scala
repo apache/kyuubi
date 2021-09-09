@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import java.io.IOException
 import java.time.ZoneId
 
 import org.apache.commons.lang3.StringUtils
@@ -122,7 +123,12 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
 
   override def close(): Unit = {
     cleanup(OperationState.CLOSED)
-    getOperationLog.foreach(_.close())
+    try {
+      getOperationLog.foreach(_.close())
+    } catch {
+      case e: IOException =>
+        error(e.getMessage, e)
+    }
   }
 
   override def getResultSetSchema: TTableSchema = SchemaHelper.toTTableSchema(resultSchema)

@@ -118,7 +118,7 @@
                 <artifactId>antlr4-maven-plugin</artifactId>
                 <configuration>
                     <visitor>true</visitor>
-                    <sourceDirectory>${project.basedir}/src/main/antlr4/org/apache/kyuubi/zorder</sourceDirectory>
+                    <sourceDirectory>${project.basedir}/src/main/antlr4</sourceDirectory>
                 </configuration>
             </plugin>
         </plugins>

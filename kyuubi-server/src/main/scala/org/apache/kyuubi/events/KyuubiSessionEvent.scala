@@ -32,18 +32,20 @@ import org.apache.kyuubi.session.KyuubiSessionImpl
  * @param clientVersion client version
  * @param conf session config
  * @param startTime session create time
+ * @param openedTime session opened time
  * @param endTime session end time
  * @param totalOperations how many queries and meta calls
  */
 case class KyuubiSessionEvent(
-    sessionId: String,
     sessionName: String,
     user: String,
     clientIP: String,
     serverIP: String,
-    clientVersion: Int,
     conf: Map[String, String],
     startTime: Long,
+    var sessionId: String = "",
+    var clientVersion: Int = -1,
+    var openedTime: Long = -1L,
     var endTime: Long = -1L,
     var totalOperations: Int = 0) extends KyuubiServerEvent {
   override def partitions: Seq[(String, String)] =
@@ -56,12 +58,10 @@ object KyuubiSessionEvent {
     val serverIP = KyuubiServer.kyuubiServer.connectionUrl
     val sessionName: String = session.normalizedConf.getOrElse(KyuubiConf.SESSION_NAME.key, "")
     KyuubiSessionEvent(
-      session.handle.identifier.toString,
       sessionName,
       session.user,
       session.ipAddress,
       serverIP,
-      session.handle.protocol.getValue,
       session.conf,
       session.createTime)
   }

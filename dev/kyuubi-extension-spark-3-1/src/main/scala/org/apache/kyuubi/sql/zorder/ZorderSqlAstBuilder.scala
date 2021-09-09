@@ -26,11 +26,11 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.{ParseTree, TerminalNode}
 import org.apache.spark.sql.AnalysisException
-import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
-import org.apache.spark.sql.catalyst.expressions.{And, EqualNullSafe, EqualTo, Expression, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual, Literal, Not, Or}
+import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRelation, UnresolvedStar}
+import org.apache.spark.sql.catalyst.expressions.{And, Ascending, EqualNullSafe, EqualTo, Expression, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual, Literal, Not, NullsLast, Or, SortOrder}
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.parser.ParserUtils.{string, stringWithoutUnescape, withOrigin}
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project, Sort}
 import org.apache.spark.sql.catalyst.util.DateTimeUtils.{getZoneId, stringToDate, stringToTimestamp}
 import org.apache.spark.sql.catalyst.util.IntervalUtils
 import org.apache.spark.sql.hive.HiveAnalysis.conf
@@ -38,7 +38,7 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
-import org.apache.kyuubi.sql.zorder.ZorderSqlExtensionsParser.{BigDecimalLiteralContext, BigIntLiteralContext, BooleanLiteralContext, DecimalLiteralContext, DoubleLiteralContext, ExponentLiteralContext, IntegerLiteralContext, LegacyDecimalLiteralContext, LogicalBinaryContext, MultipartIdentifierContext, NullLiteralContext, NumberContext, OptimizeZorderContext, QueryContext, SingleStatementContext, SmallIntLiteralContext, StringLiteralContext, TinyIntLiteralContext, TypeConstructorContext, ZorderClauseContext}
+import org.apache.kyuubi.sql.zorder.ZorderSqlExtensionsParser.{BigDecimalLiteralContext, BigIntLiteralContext, BooleanLiteralContext, DecimalLiteralContext, DoubleLiteralContext, IntegerLiteralContext, LogicalBinaryContext, MultipartIdentifierContext, NullLiteralContext, NumberContext, OptimizeZorderContext, PassThroughContext, QueryContext, SingleStatementContext, SmallIntLiteralContext, StringLiteralContext, TinyIntLiteralContext, TypeConstructorContext, ZorderClauseContext}
 
 class ZorderSqlAstBuilder extends ZorderSqlExtensionsBaseVisitor[AnyRef] {
   /**
@@ -49,22 +49,40 @@ class ZorderSqlAstBuilder extends ZorderSqlExtensionsBaseVisitor[AnyRef] {
 
   protected def multiPart(ctx: ParserRuleContext): Seq[String] = typedVisit(ctx)
 
-  protected def zorder(ctx: ParserRuleContext): Seq[UnresolvedAttribute] = typedVisit(ctx)
-
   override def visitSingleStatement(ctx: SingleStatementContext): LogicalPlan = {
     visit(ctx.statement()).asInstanceOf[LogicalPlan]
   }
 
-  override def visitOptimizeZorder(ctx: OptimizeZorderContext):
-    OptimizeZorderCommand = withOrigin(ctx) {
-      val tableIdent = multiPart(ctx.multipartIdentifier())
-      val whereItem = if (ctx.whereClause() == null) {
-        None
-      } else {
-        Option(expression(ctx.whereClause().booleanExpression()))
-      }
+  override def visitPassThrough(ctx: PassThroughContext): LogicalPlan = null
 
-      OptimizeZorderCommand(tableIdent, whereItem, zorder(ctx.zorderClause()))
+  override def visitOptimizeZorder(
+      ctx: OptimizeZorderContext): OptimizeZorderStatement = withOrigin(ctx) {
+    val tableIdent = multiPart(ctx.multipartIdentifier())
+    val table = UnresolvedRelation(tableIdent)
+
+    val whereClause = if (ctx.whereClause() == null) {
+      None
+    } else {
+      Option(expression(ctx.whereClause().booleanExpression()))
+    }
+
+    val tableWithFilter = whereClause match {
+      case Some(expr) => Filter(expr, table)
+      case None => table
+    }
+
+    val zorderCols = ctx.zorderClause().order.asScala
+      .map(visitMultipartIdentifier)
+      .map(UnresolvedAttribute(_))
+      .toSeq
+
+    val query =
+      Sort(
+        SortOrder(Zorder(zorderCols), Ascending, NullsLast, Seq.empty) :: Nil,
+        true,
+        Project(Seq(UnresolvedStar(None)), tableWithFilter))
+
+    OptimizeZorderStatement(tableIdent, query)
   }
 
   override def visitQuery(ctx: QueryContext): Expression = withOrigin(ctx) {
@@ -225,40 +243,24 @@ class ZorderSqlAstBuilder extends ZorderSqlExtensionsBaseVisitor[AnyRef] {
     Literal(BigDecimal(ctx.getText).underlying())
   }
 
-  /**
-   * Create a decimal literal for a regular decimal number or a scientific decimal number.
-   */
-  override def visitLegacyDecimalLiteral(ctx: LegacyDecimalLiteralContext):
-    Literal = withOrigin(ctx) {
-      Literal(BigDecimal(ctx.getText).underlying())
-  }
-
-  /**
-   * Create a double literal for number with an exponent, e.g. 1E-30
-   */
-  override def visitExponentLiteral(ctx: ExponentLiteralContext): Literal = {
-    numericLiteral(ctx, ctx.getText, /* exponent values don't have a suffix */
-      Double.MinValue, Double.MaxValue, DoubleType.simpleString)(_.toDouble)
-  }
-
   /** Create a numeric literal expression. */
-  private def numericLiteral(ctx: NumberContext,
-                              rawStrippedQualifier: String,
-                              minValue: BigDecimal,
-                              maxValue: BigDecimal,
-                              typeName: String)(converter: String => Any):
-    Literal = withOrigin(ctx) {
-      try {
-        val rawBigDecimal = BigDecimal(rawStrippedQualifier)
-        if (rawBigDecimal < minValue || rawBigDecimal > maxValue) {
-          throw new ParseException(s"Numeric literal ${rawStrippedQualifier} does not " +
-            s"fit in range [${minValue}, ${maxValue}] for type ${typeName}", ctx)
-        }
-        Literal(converter(rawStrippedQualifier))
-      } catch {
-        case e: NumberFormatException =>
-          throw new ParseException(e.getMessage, ctx)
+  private def numericLiteral(
+      ctx: NumberContext,
+      rawStrippedQualifier: String,
+      minValue: BigDecimal,
+      maxValue: BigDecimal,
+      typeName: String)(converter: String => Any): Literal = withOrigin(ctx) {
+    try {
+      val rawBigDecimal = BigDecimal(rawStrippedQualifier)
+      if (rawBigDecimal < minValue || rawBigDecimal > maxValue) {
+        throw new ParseException(s"Numeric literal ${rawStrippedQualifier} does not " +
+          s"fit in range [${minValue}, ${maxValue}] for type ${typeName}", ctx)
       }
+      Literal(converter(rawStrippedQualifier))
+    } catch {
+      case e: NumberFormatException =>
+        throw new ParseException(e.getMessage, ctx)
+    }
   }
 
   /**
@@ -342,5 +344,4 @@ class ZorderSqlAstBuilder extends ZorderSqlExtensionsBaseVisitor[AnyRef] {
   private def typedVisit[T](ctx: ParseTree): T = {
     ctx.accept(this).asInstanceOf[T]
   }
-
 }

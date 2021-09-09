@@ -27,6 +27,6 @@ class NoopSessionImpl(
     conf: Map[String, String],
     sessionManager: SessionManager)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
-
+  override lazy val handle: SessionHandle = SessionHandle(protocol)
   override def open(): Unit = {}
 }

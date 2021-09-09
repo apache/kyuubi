@@ -19,13 +19,16 @@ package org.apache.kyuubi.server
 
 import java.util.Locale
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.scalatest.time.SpanSugar._
 import scala.io.Source
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.service.NoopServer
+import org.apache.kyuubi.server.api.v1.dto.SessionOpenedCount
+import org.apache.kyuubi.service.{NoopBackendService, NoopServer}
 import org.apache.kyuubi.service.ServiceState._
+import org.apache.kyuubi.session.{NoopSessionImpl, NoopSessionManager, SessionManager}
 
 class RestFrontendServiceSuite extends KyuubiFunSuite{
 
@@ -61,29 +64,63 @@ class RestFrontendServiceSuite extends KyuubiFunSuite{
   }
 
   test("kyuubi rest frontend service http basic") {
+    withKyuubiRestServer {
+      (_, host, port) =>
+        eventually(timeout(10.seconds), interval(50.milliseconds)) {
+          val html = Source.fromURL(s"http://$host:$port/api/v1/ping").mkString
+          assert(html.toLowerCase(Locale.ROOT).equals("pong"))
+        }
+    }
+  }
+
+  test("kyuubi rest frontend service for sessions resource") {
+    withKyuubiRestServer {
+      (_, host, port) =>
+        val expectedCount = new SessionOpenedCount()
+        expectedCount.setOpenSessionCount(1)
+        val expectedStr = new ObjectMapper().writeValueAsString(expectedCount)
+
+        eventually(timeout(10.seconds), interval(50.milliseconds)) {
+          val html = Source.fromURL(s"http://$host:$port/api/v1/sessions/count").mkString
+          assert(html.toLowerCase(Locale.ROOT).equalsIgnoreCase(expectedStr))
+        }
+    }
+  }
+
+  def withKyuubiRestServer(f: (RestFrontendService, String, Int) => Unit): Unit = {
     val server = new RestNoopServer()
     server.stop()
     val conf = KyuubiConf()
     conf.set(KyuubiConf.FRONTEND_REST_BIND_HOST, "localhost")
 
     server.initialize(conf)
-    val frontendService = server.getServices(0).asInstanceOf[RestFrontendService]
     server.start()
-    assert(server.getServiceState === STARTED)
-    assert(frontendService.getServiceState == STARTED)
 
-    eventually(timeout(10.seconds), interval(50.milliseconds)) {
-      val html = Source.fromURL("http://localhost:10099/api/v1/ping").mkString
-      assert(html.toLowerCase(Locale.ROOT).equals("pong"))
+    val frontendService = server.getServices(0).asInstanceOf[RestFrontendService]
+
+    try {
+      f(frontendService, conf.get(KyuubiConf.FRONTEND_REST_BIND_HOST).get,
+        conf.get(KyuubiConf.FRONTEND_REST_BIND_PORT))
+    } finally {
+      server.stop()
     }
-
-    server.stop()
   }
 
   class RestNoopServer extends NoopServer {
-
+    override val backendService: NoopBackendService = new RestMockedBeService
     override val frontendService = new RestFrontendService(backendService)
+  }
 
+  class RestMockedBeService extends NoopBackendService {
+    override val sessionManager: SessionManager = new RestMockedSessionManager()
+  }
+
+  class RestMockedSessionManager extends NoopSessionManager {
+    // It's a ugly and temporally implementation will replace it via creation rest API.
+    var session = new NoopSessionImpl(null, null, null, null, Map(), this)
+    setSession(session.handle, session)
+
+    override protected def isServer: Boolean = true
   }
 
 }

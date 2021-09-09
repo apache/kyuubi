@@ -75,13 +75,14 @@ trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
            | ) using $format
            | options (
            |   primaryKey = 'id',
-           |   preCombineField = 'ts'
+           |   preCombineField = 'ts',
+           |   hoodie.bootstrap.index.class =
+           |   'org.apache.hudi.common.bootstrap.index.NoOpBootstrapIndex'
            | )
        """.stripMargin)
 
       val metaData = statement.getConnection.getMetaData
       val rs1 = metaData.getTables(null, null, null, null)
-
       assert(rs1.next())
       val catalogName = rs1.getString(TABLE_CAT)
       assert(catalogName === "spark_catalog" || catalogName === null)
