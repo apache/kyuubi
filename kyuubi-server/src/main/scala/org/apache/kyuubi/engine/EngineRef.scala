@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine
 
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import scala.util.Random
@@ -32,24 +33,25 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, SERVER, ShareLevel}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_SESSION_ID
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_REF_ID
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NAMESPACE
-import org.apache.kyuubi.ha.client.ServiceDiscovery.getEngineBySessionId
+import org.apache.kyuubi.ha.client.ServiceDiscovery.getEngineByRefId
 import org.apache.kyuubi.ha.client.ServiceDiscovery.getServerHost
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
-import org.apache.kyuubi.session.SessionHandle
 
 /**
  * The description and functionality of an engine at server side
  *
  * @param conf Engine configuration
  * @param user Caller of the engine
- * @param sessionId Id of the corresponding session in which the engine is created
+ * @param engineRefId Id of the corresponding session in which the engine is created
  */
-private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionId: String)
+private[kyuubi] class EngineRef(
+    conf: KyuubiConf,
+    user: String,
+    engineRefId: String = UUID.randomUUID().toString)
   extends Logging {
-
   // The corresponding ServerSpace where the engine belongs to
   private val serverSpace: String = conf.get(HA_ZK_NAMESPACE)
 
@@ -93,10 +95,10 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
    */
   @VisibleForTesting
   private[kyuubi] val defaultEngineName: String = shareLevel match {
-    case CONNECTION => s"kyuubi_${shareLevel}_${appUser}_$sessionId"
+    case CONNECTION => s"kyuubi_${shareLevel}_${appUser}_$engineRefId"
     case _ => subdomain match {
-      case Some(domain) => s"kyuubi_${shareLevel}_${appUser}_${domain}_$sessionId"
-      case _ => s"kyuubi_${shareLevel}_${appUser}_$sessionId"
+      case Some(domain) => s"kyuubi_${shareLevel}_${appUser}_${domain}_$engineRefId"
+      case _ => s"kyuubi_${shareLevel}_${appUser}_$engineRefId"
     }
   }
 
@@ -104,14 +106,14 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
    * The EngineSpace used to expose itself to the KyuubiServers in `serverSpace`
    *
    * For `CONNECTION` share level:
-   *   /`serverSpace_CONNECTION`/`user`/`sessionId`
+   *   /`serverSpace_CONNECTION`/`user`/`engineRefId`
    * For `USER` share level:
    *   /`serverSpace_USER`/`user`[/`subdomain`]
    *
    */
   @VisibleForTesting
   private[kyuubi] lazy val engineSpace: String = shareLevel match {
-    case CONNECTION => ZKPaths.makePath(s"${serverSpace}_$shareLevel", appUser, sessionId)
+    case CONNECTION => ZKPaths.makePath(s"${serverSpace}_$shareLevel", appUser, engineRefId)
     case _ => subdomain match {
       case Some(domain) => ZKPaths.makePath(s"${serverSpace}_$shareLevel", appUser, domain)
       case None => ZKPaths.makePath(s"${serverSpace}_$shareLevel", appUser)
@@ -159,7 +161,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
     conf.set(SparkProcessBuilder.TAG_KEY,
       conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") + "KYUUBI")
     conf.set(HA_ZK_NAMESPACE, engineSpace)
-    conf.set(HA_ZK_ENGINE_SESSION_ID, sessionId)
+    conf.set(HA_ZK_ENGINE_REF_ID, engineRefId)
     val builder = new SparkProcessBuilder(appUser, conf)
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     try {
@@ -186,7 +188,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
             s"Timeout($timeout ms) to launched Spark with $builder",
             builder.getError)
         }
-        engineRef = getEngineBySessionId(zkClient, engineSpace, sessionId)
+        engineRef = getEngineByRefId(zkClient, engineSpace, engineRefId)
       }
       engineRef.get
     } finally {
@@ -204,11 +206,5 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
       .getOrElse {
         create(zkClient)
       }
-  }
-}
-
-private[kyuubi] object EngineRef {
-  def apply(conf: KyuubiConf, user: String, handle: SessionHandle): EngineRef = {
-    new EngineRef(conf, user, handle.identifier.toString)
   }
 }

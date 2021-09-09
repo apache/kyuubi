@@ -96,6 +96,7 @@ object SparkSQLEngine extends Logging {
 
   def createSpark(): SparkSession = {
     val sparkConf = new SparkConf()
+    sparkConf.setIfMissing("spark.sql.execution.topKSortFallbackThreshold", "10000")
     sparkConf.setIfMissing("spark.sql.legacy.castComplexTypesToString.enabled", "true")
     sparkConf.setIfMissing("spark.master", "local")
     sparkConf.setIfMissing("spark.ui.port", "0")
@@ -151,7 +152,7 @@ object SparkSQLEngine extends Logging {
       // blocking main thread
       countDownLatch.await()
     } catch {
-      case t: Throwable =>
+      case t: Throwable if currentEngine.isDefined =>
         currentEngine.foreach { engine =>
           val status =
             engine.engineStatus.copy(diagnostic = s"Error State SparkSQL Engine ${t.getMessage}")
@@ -159,6 +160,8 @@ object SparkSQLEngine extends Logging {
           error(status, t)
           engine.stop()
         }
+      case t: Throwable =>
+        error("Create SparkSQL Engine Failed", t)
     } finally {
       if (spark != null) {
         spark.stop()

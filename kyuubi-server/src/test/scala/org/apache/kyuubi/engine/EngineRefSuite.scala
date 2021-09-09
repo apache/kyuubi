@@ -17,8 +17,9 @@
 
 package org.apache.kyuubi.engine
 
+import java.util.UUID
+
 import org.apache.curator.utils.ZKPaths
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
@@ -26,7 +27,6 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider
-import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.NamedThreadFactory
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
@@ -58,85 +58,85 @@ class EngineRefSuite extends KyuubiFunSuite {
   }
 
   test("CONNECTION shared level engine name") {
-    val id = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+    val id = UUID.randomUUID().toString
     Seq(None, Some("suffix")).foreach { domain =>
       conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, CONNECTION.toString)
       domain.foreach(conf.set(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key, _))
-      val engine = EngineRef(conf, user, id)
+      val engine = new EngineRef(conf, user, id)
       assert(engine.engineSpace ===
-        ZKPaths.makePath(s"kyuubi_$CONNECTION", user, id.identifier.toString))
-      assert(engine.defaultEngineName === s"kyuubi_${CONNECTION}_${user}_${id.identifier}")
+        ZKPaths.makePath(s"kyuubi_$CONNECTION", user, id))
+      assert(engine.defaultEngineName === s"kyuubi_${CONNECTION}_${user}_$id")
     }
   }
 
   test("USER shared level engine name") {
-    val id = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+    val id = UUID.randomUUID().toString
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
-    val appName = EngineRef(conf, user, id)
+    val appName = new EngineRef(conf, user, id)
     assert(appName.engineSpace === ZKPaths.makePath(s"kyuubi_$USER", user))
-    assert(appName.defaultEngineName === s"kyuubi_${USER}_${user}_${id.identifier}")
+    assert(appName.defaultEngineName === s"kyuubi_${USER}_${user}_$id")
 
     Seq(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN,
       KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN).foreach { k =>
       conf.unset(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN)
       conf.set(k.key, "abc")
-      val appName2 = EngineRef(conf, user, id)
+      val appName2 = new EngineRef(conf, user, id)
       assert(appName2.engineSpace ===
         ZKPaths.makePath(s"kyuubi_$USER", user, "abc"))
-      assert(appName2.defaultEngineName === s"kyuubi_${USER}_${user}_abc_${id.identifier}")
+      assert(appName2.defaultEngineName === s"kyuubi_${USER}_${user}_abc_$id")
     }
   }
 
   test("SERVER shared level engine name") {
-    val id = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+    val id = UUID.randomUUID().toString
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, SERVER.toString)
-    val appName = EngineRef(conf, user, id)
+    val appName = new EngineRef(conf, user, id)
     assert(appName.engineSpace ===
       ZKPaths.makePath(s"kyuubi_$SERVER", user))
-    assert(appName.defaultEngineName ===  s"kyuubi_${SERVER}_${user}_${id.identifier}")
+    assert(appName.defaultEngineName ===  s"kyuubi_${SERVER}_${user}_$id")
 
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
-    val appName2 = EngineRef(conf, user, id)
+    val appName2 = new EngineRef(conf, user, id)
     assert(appName2.engineSpace ===
       ZKPaths.makePath(s"kyuubi_$SERVER", user, "abc"))
-    assert(appName2.defaultEngineName ===  s"kyuubi_${SERVER}_${user}_abc_${id.identifier}")
+    assert(appName2.defaultEngineName ===  s"kyuubi_${SERVER}_${user}_abc_$id")
   }
 
   test("check the engine space of engine pool") {
-    val id = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+    val id = UUID.randomUUID().toString
 
     // test subdomain
     conf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
-    val engine1 = EngineRef(conf, user, id)
+    val engine1 = new EngineRef(conf, user, id)
     assert(engine1.subdomain === Some("abc"))
 
     // unset domain
     conf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
-    val engine2 = EngineRef(conf, user, id)
+    val engine2 = new EngineRef(conf, user, id)
     assert(engine2.subdomain === None)
 
     // 1 <= engine pool size < threshold
     conf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
     conf.set(ENGINE_POOL_SIZE, 3)
-    val engine3 = EngineRef(conf, user, id)
+    val engine3 = new EngineRef(conf, user, id)
     assert(engine3.subdomain.get.startsWith("engine-pool-"))
 
     // engine pool size > threshold
     conf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
     conf.set(ENGINE_POOL_SIZE, 100)
-    val engine4 = EngineRef(conf, user, id)
+    val engine4 = new EngineRef(conf, user, id)
     val engineNumber = Integer.parseInt(engine4.subdomain.get.substring(12))
     val threshold = ENGINE_POOL_SIZE_THRESHOLD.defaultVal.get
     assert(engineNumber <= threshold)
   }
 
   test("start and get engine address with lock") {
-    val id = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+    val id = UUID.randomUUID().toString
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_ZK_NAMESPACE, "engine_test")
     conf.set(HighAvailabilityConf.HA_ZK_QUORUM, zkServer.getConnectString)
-    val engine = EngineRef(conf, user, id)
+    val engine = new EngineRef(conf, user, id)
 
     var port1 = 0
     var port2 = 0

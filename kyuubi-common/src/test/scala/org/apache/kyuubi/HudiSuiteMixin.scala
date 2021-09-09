@@ -33,7 +33,6 @@ trait HudiSuiteMixin extends DataLakeSuiteMixin {
       .split(":")
       .filter(_.contains("jar"))
       .foreach(i => extraJars += i + ",")
-
     extraJars.substring(0, extraJars.length - 1)
   }
 
