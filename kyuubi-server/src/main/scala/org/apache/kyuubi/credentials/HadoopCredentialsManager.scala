@@ -92,10 +92,12 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
     hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
     providers = HadoopCredentialsManager.loadProviders(conf)
       .filter { case (_, provider) =>
-        val required = provider.delegationTokensRequired(hadoopConf, conf)
+        provider.initialize(hadoopConf, conf)
+        val required = provider.delegationTokensRequired()
         if (!required) {
           warn(s"Service ${provider.serviceName} does not require a token." +
             s" Check your configuration to see if security is disabled or not.")
+          provider.close()
         }
         required
       }
@@ -121,6 +123,7 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
   }
 
   override def stop(): Unit = {
+    providers.values.foreach(_.close())
     renewalExecutor.foreach { executor =>
       executor.shutdownNow()
       try {
@@ -200,7 +203,7 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
         try {
           val creds = new Credentials()
           providers.values
-            .foreach(_.obtainDelegationTokens(hadoopConf, conf, userRef.getAppUser, creds))
+            .foreach(_.obtainDelegationTokens(userRef.getAppUser, creds))
           userRef.updateCredentials(creds)
           scheduleRenewal(userRef, renewalInterval)
         } catch {

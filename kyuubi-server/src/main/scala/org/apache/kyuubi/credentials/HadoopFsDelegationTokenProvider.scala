@@ -33,28 +33,30 @@ import org.apache.kyuubi.credentials.HadoopFsDelegationTokenProvider.{disableFsC
 
 class HadoopFsDelegationTokenProvider extends HadoopDelegationTokenProvider with Logging {
 
+  private var tokenRequired: Boolean = _
+  private var hadoopConf: Configuration = _
+  private var kyuubiConf: KyuubiConf = _
+
   override val serviceName: String = "hadoopfs"
 
-  override def delegationTokensRequired(
-      hadoopConf: Configuration,
-      kyuubiConf: KyuubiConf): Boolean = {
-    SecurityUtil.getAuthenticationMethod(hadoopConf) != AuthenticationMethod.SIMPLE
-  }
+  override def initialize(hadoopConf: Configuration, kyuubiConf: KyuubiConf): Unit = {
+    this.tokenRequired =
+      SecurityUtil.getAuthenticationMethod(hadoopConf) != AuthenticationMethod.SIMPLE
 
-  override def obtainDelegationTokens(
-      hadoopConf: Configuration,
-      kyuubiConf: KyuubiConf,
-      owner: String,
-      creds: Credentials): Unit = {
     // FileSystem objects are cached in FileSystem.CACHE by a composite key.
     // The UserGroupInformation object used to create it is part of that key.
     // If cache is enabled, new FileSystem objects are created and cached at every method
     // invocation.
-    val internalConf = disableFsCache(kyuubiConf, hadoopConf)
+    this.hadoopConf = disableFsCache(kyuubiConf, hadoopConf)
+    this.kyuubiConf = kyuubiConf
+  }
 
+  override def delegationTokensRequired(): Boolean = tokenRequired
+
+  override def obtainDelegationTokens(owner: String, creds: Credentials): Unit = {
     doAsProxyUser(owner) {
       val fileSystems =
-        HadoopFsDelegationTokenProvider.hadoopFSsToAccess(kyuubiConf, internalConf)
+        HadoopFsDelegationTokenProvider.hadoopFSsToAccess(kyuubiConf, hadoopConf)
 
       try {
         // Renewer is not needed. But setting a renewer can avoid potential NPE.

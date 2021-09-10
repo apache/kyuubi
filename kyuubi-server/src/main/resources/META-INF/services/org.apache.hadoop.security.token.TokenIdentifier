@@ -15,5 +15,4 @@
 # limitations under the License.
 #
 
-org.apache.kyuubi.credentials.HadoopFsDelegationTokenProvider
-org.apache.kyuubi.credentials.HiveDelegationTokenProvider
+org.apache.hadoop.hive.thrift.DelegationTokenIdentifier

@@ -20,10 +20,9 @@ package org.apache.kyuubi.credentials
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.security.Credentials
 
-import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 
-trait HadoopDelegationTokenProvider extends Logging {
+trait HadoopDelegationTokenProvider {
 
   /**
    * Name of the service to provide delegation tokens. This name should be unique. Kyuubi will
@@ -32,22 +31,27 @@ trait HadoopDelegationTokenProvider extends Logging {
   def serviceName: String
 
   /**
+   * Initialize with provided hadoop and kyuubi conf
+   * @param hadoopConf Configuration of current Hadoop Compatible system.
+   */
+  def initialize(hadoopConf: Configuration, kyuubiConf: KyuubiConf): Unit
+
+  /**
    * Returns true if delegation tokens are required for this service. By default, it is based on
    * whether Hadoop security is enabled.
    */
-  def delegationTokensRequired(hadoopConf: Configuration, kyuubiConf: KyuubiConf): Boolean
+  def delegationTokensRequired(): Boolean
 
   /**
    * Obtain delegation tokens for this service.
-   *
-   * @param hadoopConf Configuration of current Hadoop Compatible system.
-   * @param owner      DelegationToken owner.
-   * @param creds      Credentials to add tokens and security keys to.
+   * @param owner DelegationToken owner.
+   * @param creds Credentials to add tokens and security keys to.
    */
-  def obtainDelegationTokens(
-    hadoopConf: Configuration,
-    kyuubiConf: KyuubiConf,
-    owner: String,
-    creds: Credentials): Unit
+  def obtainDelegationTokens(owner: String, creds: Credentials): Unit
+
+  /**
+   * Close underlying resources if any
+   */
+  def close(): Unit = {}
 
 }

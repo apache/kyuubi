@@ -265,6 +265,13 @@ object KyuubiConf {
       .toSequence()
       .createWithDefault(Nil)
 
+  val CREDENTIALS_HIVE_ENABLED: ConfigEntry[Boolean] =
+    buildConf("credentials.hive.enabled")
+      .doc("Whether to renew HiveMetaStore DelegationToken")
+      .version("1.4.0")
+      .booleanConf
+      .createWithDefault(true)
+
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                              Frontend Service Configuration                                 //
   /////////////////////////////////////////////////////////////////////////////////////////////////
