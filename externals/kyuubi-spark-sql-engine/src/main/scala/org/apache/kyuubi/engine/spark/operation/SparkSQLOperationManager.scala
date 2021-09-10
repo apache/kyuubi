@@ -55,6 +55,8 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
 
   def getOpenSparkSessionCount: Int = sessionToSpark.size()
 
+  private lazy val operationModeDefault = getConf.get(OPERATION_PLAN_ONLY)
+
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
@@ -62,13 +64,11 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
       queryTimeout: Long): Operation = {
     val spark = getSparkSession(session.handle)
 
-    val operationMode = {
-      val modeStr = spark.conf.get(OPERATION_PLAN_ONLY.key, NONE.toString).toUpperCase(Locale.ROOT)
-      OperationModes.withName(modeStr)
-    }
-    val operation = operationMode match {
+    val operationModeStr =
+      spark.conf.get(OPERATION_PLAN_ONLY.key, operationModeDefault).toUpperCase(Locale.ROOT)
+    val operation = OperationModes.withName(operationModeStr) match {
       case NONE => new ExecuteStatement(spark, session, statement, runAsync, queryTimeout)
-      case _ => new PlanOnlyStatement(spark, session, statement, operationMode)
+      case mode => new PlanOnlyStatement(spark, session, statement, mode)
     }
     addOperation(operation)
   }
