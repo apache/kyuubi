@@ -33,7 +33,6 @@ import org.apache.kyuubi.sql.zorder.ZorderSparkSqlExtensionsParser
 class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
   override def apply(extensions: SparkSessionExtensions): Unit = {
     // inject zorder parser and related rules
-    // 添加 parser 自定义规则，parser 负责 SQL 解析。
     extensions.injectParser{ case (_, parser) => new ZorderSparkSqlExtensionsParser(parser) }
     extensions.injectResolutionRule(ResolveZorder)
 

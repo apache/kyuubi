@@ -75,9 +75,7 @@ trait JDBCTestUtils extends KyuubiFunSuite {
 
   def withMultipleConnectionJdbcStatement(
       tableNames: String*)(fs: (Statement => Unit)*): Unit = {
-//    val connections = fs.map { _ => DriverManager.getConnection(jdbcUrlWithConf, user, "") }
-        val connections = fs.map { _ => DriverManager.getConnection("jdbc:hive2://hadoop6:10009/", "anonymous", "") }
-
+    val connections = fs.map { _ => DriverManager.getConnection(jdbcUrlWithConf, user, "") }
     val statements = connections.map(_.createStatement())
 
     try {
@@ -100,9 +98,7 @@ trait JDBCTestUtils extends KyuubiFunSuite {
   }
 
   def withDatabases(dbNames: String*)(fs: (Statement => Unit)*): Unit = {
-//    val connections = fs.map { _ => DriverManager.getConnection(jdbcUrlWithConf, user, "") }
-        val connections = fs.map { _ => DriverManager.getConnection("jdbc:hive2://hadoop6:10009/", "anonymous", "") }
-
+    val connections = fs.map { _ => DriverManager.getConnection(jdbcUrlWithConf, user, "") }
     val statements = connections.map(_.createStatement())
 
     try {

@@ -44,7 +44,6 @@ class ZorderSqlAstBuilder extends ZorderSqlExtensionsBaseVisitor[AnyRef] {
   /**
    * Create an expression from the given context. This method just passes the context on to the
    * visitor and only takes care of typing (We assume that the visitor returns an Expression here).
-   * 从给定的上下文创建一个表达式。这个方法只是将上下文传递给访问者并且只负责输入（我们假设访问者在这里返回一个表达式）。
    */
   protected def expression(ctx: ParserRuleContext): Expression = typedVisit(ctx)
 

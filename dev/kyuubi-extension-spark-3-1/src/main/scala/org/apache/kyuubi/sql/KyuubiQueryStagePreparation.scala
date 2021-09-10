@@ -33,7 +33,6 @@ import org.apache.kyuubi.sql.KyuubiSQLConf._
 
 /**
  * Insert shuffle node before join if it doesn't exist to make `OptimizeSkewedJoin` works.
- * 如果它不存在，则在加入之前插入 shuffle 节点以使 `OptimizeSkewedJoin` 工作。
  */
 object InsertShuffleNodeBeforeJoin extends Rule[SparkPlan] {
 
@@ -111,22 +110,6 @@ object InsertShuffleNodeBeforeJoin extends Rule[SparkPlan] {
  * An example of the new finalStage config:
  * `spark.sql.adaptive.advisoryPartitionSizeInBytes` ->
  * `spark.sql.finalStage.adaptive.advisoryPartitionSizeInBytes`
- *
- * 此规则将阶段分为两部分：
- *   1. 上一阶段
- *   2. 最后阶段
- *   对于最后阶段，我们可以注入额外的配置。 如果我们使用 repartition 来优化需要比以前更大的 shuffle 分区大小的小文件，这很有用。
- *
- *   假设我们有一个包含 3 个阶段的查询，那么逻辑机器如下：
- *
- *   设置/重置命令 -> 如果用户设置了 spark 配置，则清除 previousStage 配置。
- *   Query -> AQE -> stage1 -> 准备（使用previousStage覆盖spark配置）
- *         -> AQE -> stage2 -> 准备（使用 spark 配置）
- *         -> AQE -> stage3 -> 准备（使用finalStage 配置覆盖spark 配置， 将 spark 配置存储到 previousStage。）
- *
- *   新的 finalStage 配置示例：
- *   `spark.sql.adaptive.advisoryPartitionSizeInBytes` ->
- *   `spark.sql.finalStage.adaptive.advisoryPartitionSizeInBytes`
  */
 case class FinalStageConfigIsolation(session: SparkSession) extends Rule[SparkPlan] {
   import FinalStageConfigIsolation._

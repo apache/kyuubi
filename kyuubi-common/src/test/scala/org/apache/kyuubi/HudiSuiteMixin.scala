@@ -30,7 +30,7 @@ trait HudiSuiteMixin extends DataLakeSuiteMixin {
   override protected def extraJars: String = {
     System.getProperty("java.class.path")
       .split(":")
-      .filter(i => i.contains("hudi") && i.contains("spark-avro"))
+      .filter(i => i.contains("hudi") || i.contains("spark-avro"))
       .mkString(",")
   }
 
