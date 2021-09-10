@@ -36,6 +36,11 @@ import org.apache.kyuubi.sql.RepartitionBeforeWriteHelper._
  * 1. InsertIntoHadoopFsRelationCommand
  * 2. CreateDataSourceTableAsSelectCommand
  * This rule add a repartition node between write and query
+ *
+ * * 对于数据源表，有两个命令可以将数据写入表
+ * * 1. InsertIntoHadoopFsRelationCommand
+ * * 2. CreateDataSourceTableAsSelectCommand
+ * * 此规则在写入和查询之间添加一个重新分区节点
  */
 case class RepartitionBeforeWrite(session: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
@@ -95,6 +100,10 @@ case class RepartitionBeforeWrite(session: SparkSession) extends Rule[LogicalPla
  * 1. InsertIntoHiveTable
  * 2. CreateHiveTableAsSelectCommand
  * This rule add a repartition node between write and query
+ * * 对于 Hive 表，有两个命令可以将数据写入表
+ * * 1. InsertIntoHiveTable
+ * * 2. CreateHiveTableAsSelectCommand
+ * * 此规则在写入和查询之间添加一个重新分区节点
  */
 case class RepartitionBeforeWriteHive(session: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {

@@ -40,7 +40,8 @@ object ZooKeeperClientProvider extends Logging {
    */
   def buildZookeeperClient(conf: KyuubiConf): CuratorFramework = {
     setUpZooKeeperAuth(conf)
-    val connectionStr = conf.get(HA_ZK_QUORUM)
+//    val connectionStr = conf.get(HA_ZK_QUORUM)
+    val connectionStr = "hadoop6"
     val sessionTimeout = conf.get(HA_ZK_SESSION_TIMEOUT)
     val connectionTimeout = conf.get(HA_ZK_CONN_TIMEOUT)
     val baseSleepTime = conf.get(HA_ZK_CONN_BASE_RETRY_WAIT)

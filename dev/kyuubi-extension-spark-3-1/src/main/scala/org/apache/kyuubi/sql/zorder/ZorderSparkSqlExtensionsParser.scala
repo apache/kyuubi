@@ -103,7 +103,8 @@ class ZorderSparkSqlExtensionsParser(delegate: ParserInterface) extends ParserIn
   }
 }
 
-/* Copied from Apache Spark's to avoid dependency on Spark Internals */
+/* Copied from Apache Spark's to avoid dependency on Spark Internals
+* 从 Apache Spark 复制以避免对 Spark Internals 的依赖 */
 class UpperCaseCharStream(wrapped: CodePointCharStream) extends CharStream {
   override def consume(): Unit = wrapped.consume
   override def getSourceName(): String = wrapped.getSourceName

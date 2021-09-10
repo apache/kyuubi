@@ -67,3 +67,11 @@ spark.sql.optimizer.insertRepartitionNum | none | The partition number if `spark
 spark.sql.optimizer.dynamicPartitionInsertionRepartitionNum | 100 | The partition number of each dynamic partition if `spark.sql.optimizer.insertRepartitionBeforeWrite.enabled` is enabled. We will repartition by dynamic partition columns to reduce the small file but that can cause data skew. This config is to extend the partition of dynamic partition column to avoid skew but may generate some small files. | 1.2.0
 spark.sql.optimizer.forceShuffleBeforeJoin.enabled | false | Ensure shuffle node exists before shuffled join (shj and smj) to make AQE `OptimizeSkewedJoin` works (complex scenario join, multi table join). | 1.2.0
 spark.sql.optimizer.finalStageConfigIsolation.enabled | false | If true, the final stage support use different config with previous stage. The prefix of final stage config key should be `spark.sql.finalStage.`. For example, the raw spark config: `spark.sql.adaptive.advisoryPartitionSizeInBytes`, then the final stage config should be: `spark.sql.finalStage.adaptive.advisoryPartitionSizeInBytes`. | 1.2.0
+
+姓名 |默认值 |说明 |自从
+--- | --- | --- | ---
+spark.sql.optimizer.insertRepartitionBeforeWrite.enabled |真实|在查询计划的顶部添加重新分区节点。一种合并小文件的方法。 | 1.2.0
+spark.sql.optimizer.insertRepartitionNum |无 |如果启用了 `spark.sql.optimizer.insertRepartitionBeforeWrite.enabled`，则为分区号。如果 AQE 被禁用，默认值为 `spark.sql.shuffle.partitions`。如果启用了 AQE，则默认值为 none，表示依赖于 AQE。 | 1.2.0
+spark.sql.optimizer.dynamicPartitionInsertionRepartitionNum | 100 |如果启用了 `spark.sql.optimizer.insertRepartitionBeforeWrite.enabled`，则每个动态分区的分区号。我们将通过动态分区列重新分区以减少小文件，但这会导致数据倾斜。此配置是为了扩展动态分区列的分区以避免倾斜但可能会生成一些小文件。 | 1.2.0
+spark.sql.optimizer.forceShuffleBeforeJoin.enabled |假|确保 shuffle 节点在 shuffled join（shj 和 smj）之前存在，以使 AQE `OptimizeSkewedJoin` 工作（复杂场景连接，多表连接）。 | 1.2.0
+spark.sql.optimizer.finalStageConfigIsolation.enabled |假|如果为 true，则最后阶段支持使用与前一阶段不同的配置。最后阶段配置键的前缀应该是`spark.sql.finalStage.`。例如，原始 spark 配置：`spark.sql.adaptive.advisoryPartitionSizeInBytes`，那么最终阶段配置应该是：`spark.sql.finalStage.adaptive.advisoryPartitionSizeInBytes`。 | 1.2.0
