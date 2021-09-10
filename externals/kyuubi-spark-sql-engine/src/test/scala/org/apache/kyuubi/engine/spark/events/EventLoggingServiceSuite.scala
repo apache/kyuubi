@@ -32,7 +32,7 @@ import org.apache.kyuubi.operation.{JDBCTestUtils, OperationHandle}
 
 class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
-  private val logRoot = Utils.createTempDir()
+  private val logRoot = "file:" + Utils.createTempDir()
   private val currentDate = Utils.getDateFromTimestamp(System.currentTimeMillis())
 
   override def withKyuubiConf: Map[String, String] = Map(
