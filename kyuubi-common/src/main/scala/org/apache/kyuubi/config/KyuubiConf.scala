@@ -684,10 +684,12 @@ object KyuubiConf {
 
   val ENGINE_EVENT_JSON_LOG_PATH: ConfigEntry[String] =
     buildConf("engine.event.json.log.path")
-      .doc("The location of all the engine events go for the builtin JSON logger")
+      .doc("The location of all the engine events go for the builtin JSON logger.<ul>" +
+        "<li>Local Path: start with 'file:'</li>" +
+        "<li>HDFS Path: start with 'hdfs:'</li></ul>")
       .version("1.3.0")
       .stringConf
-      .createWithDefault("/tmp/kyuubi/events")
+      .createWithDefault("file:/tmp/kyuubi/events")
 
   val ENGINE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("engine.event.loggers")
