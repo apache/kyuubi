@@ -18,6 +18,7 @@
 package org.apache.kyuubi.server.api.v1.dto;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 public class SessionOpenedCount implements Serializable {
 
@@ -32,5 +33,22 @@ public class SessionOpenedCount implements Serializable {
 
   public void setOpenSessionCount(int openSessionCount) {
     this.openSessionCount = openSessionCount;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (!(o instanceof SessionOpenedCount)) {
+      return false;
+    }
+    SessionOpenedCount that = (SessionOpenedCount) o;
+    return getOpenSessionCount() == that.getOpenSessionCount();
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(getOpenSessionCount());
   }
 }
