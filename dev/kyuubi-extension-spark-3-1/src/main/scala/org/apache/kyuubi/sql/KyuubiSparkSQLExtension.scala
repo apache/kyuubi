@@ -39,6 +39,7 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
     // InsertZorderBeforeWritingDatasource and InsertZorderBeforeWritingHive
     // should be applied before
     // RepartitionBeforeWrite and RepartitionBeforeWriteHive
+    // because we can only apply one of them (i.e. Global Sort or Repartition)
     extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingDatasource)
     extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingHive)
 

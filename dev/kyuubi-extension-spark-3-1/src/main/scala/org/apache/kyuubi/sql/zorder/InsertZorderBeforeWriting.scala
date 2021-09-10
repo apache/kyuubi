@@ -31,6 +31,7 @@ import org.apache.spark.sql.hive.execution.{CreateHiveTableAsSelectCommand, Inse
 import org.apache.kyuubi.sql.KyuubiSQLConf
 
 /**
+ * TODO: shall we forbid zorder if it's dynamic partition inserts ?
  * Insert zorder before writing datasource if the target table properties has zorder properties
  */
 case class InsertZorderBeforeWritingDatasource(session: SparkSession)
@@ -60,6 +61,7 @@ case class InsertZorderBeforeWritingDatasource(session: SparkSession)
 }
 
 /**
+ * TODO: shall we forbid zorder if it's dynamic partition inserts ?
  * Insert zorder before writing hive if the target table properties has zorder properties
  */
 case class InsertZorderBeforeWritingHive(session: SparkSession)

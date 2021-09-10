@@ -1469,7 +1469,10 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
   }
 
   private def checkZorderTable(
-      enabled: Boolean, cols: String, resHasSort: Boolean): Unit = {
+      enabled: Boolean,
+      cols: String,
+      planHasRepartition: Boolean,
+      resHasSort: Boolean): Unit = {
     def checkSort(plan: LogicalPlan): Unit = {
       assert(plan.isInstanceOf[Sort] === resHasSort)
       if (plan.isInstanceOf[Sort]) {
@@ -1483,86 +1486,102 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
       }
     }
 
-    // hive
-    withSQLConf("spark.sql.hive.convertMetastoreParquet" -> "false") {
-      withTable("zorder_t1", "zorder_t2_true", "zorder_t2_false") {
+    val repartition = if (planHasRepartition) {
+      "/*+ repartition */"
+    } else {
+      ""
+    }
+    withSQLConf("spark.sql.shuffle.partitions" -> "1") {
+      // hive
+      withSQLConf("spark.sql.hive.convertMetastoreParquet" -> "false") {
+        withTable("zorder_t1", "zorder_t2_true", "zorder_t2_false") {
+          sql(
+            s"""
+               |CREATE TABLE zorder_t1 (c1 int, c2 string, c3 long, c4 double) STORED AS PARQUET
+               |TBLPROPERTIES (
+               | 'kyuubi.zorder.enabled' = '$enabled',
+               | 'kyuubi.zorder.cols' = '$cols')
+               |""".stripMargin)
+          val df1 = sql(s"""
+                           |INSERT INTO TABLE zorder_t1
+                           |SELECT $repartition * FROM VALUES(1,'a',2,4D),(2,'b',3,6D)
+                           |""".stripMargin)
+          assert(df1.queryExecution.analyzed.isInstanceOf[InsertIntoHiveTable])
+          checkSort(df1.queryExecution.analyzed.children.head)
+
+          Seq("true", "false").foreach { optimized =>
+            withSQLConf("spark.sql.hive.convertMetastoreCtas" -> optimized,
+              "spark.sql.hive.convertMetastoreParquet" -> optimized) {
+              val df2 =
+                sql(
+                  s"""
+                     |CREATE TABLE zorder_t2_$optimized STORED AS PARQUET
+                     |TBLPROPERTIES (
+                     | 'kyuubi.zorder.enabled' = '$enabled',
+                     | 'kyuubi.zorder.cols' = '$cols')
+                     |
+                     |SELECT $repartition * FROM
+                     |VALUES(1,'a',2,4D),(2,'b',3,6D) AS t(c1 ,c2 , c3, c4)
+                     |""".stripMargin)
+              if (optimized.toBoolean) {
+                assert(df2.queryExecution.analyzed
+                  .isInstanceOf[OptimizedCreateHiveTableAsSelectCommand])
+              } else {
+                assert(df2.queryExecution.analyzed.isInstanceOf[CreateHiveTableAsSelectCommand])
+              }
+              checkSort(df2.queryExecution.analyzed.children.head)
+            }
+          }
+        }
+      }
+
+      // datasource
+      withTable("zorder_t3", "zorder_t4") {
         sql(
           s"""
-             |CREATE TABLE zorder_t1 (c1 int, c2 string, c3 long, c4 double) STORED AS PARQUET
+             |CREATE TABLE zorder_t3 (c1 int, c2 string, c3 long, c4 double) USING PARQUET
              |TBLPROPERTIES (
              | 'kyuubi.zorder.enabled' = '$enabled',
              | 'kyuubi.zorder.cols' = '$cols')
              |""".stripMargin)
-        val df1 = sql("INSERT INTO TABLE zorder_t1 VALUES(1,'a',2,4D),(2,'b',3,6D)")
-        assert(df1.queryExecution.analyzed.isInstanceOf[InsertIntoHiveTable])
+        val df1 = sql(s"""
+                         |INSERT INTO TABLE zorder_t3
+                         |SELECT $repartition * FROM VALUES(1,'a',2,4D),(2,'b',3,6D)
+                         |""".stripMargin)
+        assert(df1.queryExecution.analyzed.isInstanceOf[InsertIntoHadoopFsRelationCommand])
         checkSort(df1.queryExecution.analyzed.children.head)
 
-        Seq("true", "false").foreach { optimized =>
-          withSQLConf("spark.sql.hive.convertMetastoreCtas" -> optimized,
-          "spark.sql.hive.convertMetastoreParquet" -> optimized) {
-            val df2 =
-              sql(
-                s"""
-                  |CREATE TABLE zorder_t2_$optimized STORED AS PARQUET
-                  |TBLPROPERTIES (
-                  | 'kyuubi.zorder.enabled' = '$enabled',
-                  | 'kyuubi.zorder.cols' = '$cols')
-                  |
-                  |SELECT * FROM VALUES(1,'a',2,4D),(2,'b',3,6D) AS t(c1 ,c2 , c3, c4)
-                  |""".stripMargin)
-            if (optimized.toBoolean) {
-              assert(df2.queryExecution.analyzed
-                .isInstanceOf[OptimizedCreateHiveTableAsSelectCommand])
-            } else {
-              assert(df2.queryExecution.analyzed.isInstanceOf[CreateHiveTableAsSelectCommand])
-            }
-            checkSort(df2.queryExecution.analyzed.children.head)
-          }
-        }
+        val df2 =
+          sql(
+            s"""
+               |CREATE TABLE zorder_t4 USING PARQUET
+               |TBLPROPERTIES (
+               | 'kyuubi.zorder.enabled' = '$enabled',
+               | 'kyuubi.zorder.cols' = '$cols')
+               |
+               |SELECT $repartition * FROM
+               |VALUES(1,'a',2,4D),(2,'b',3,6D) AS t(c1 ,c2 , c3, c4)
+               |""".stripMargin)
+        assert(df2.queryExecution.analyzed.isInstanceOf[CreateDataSourceTableAsSelectCommand])
+        checkSort(df2.queryExecution.analyzed.children.head)
       }
-    }
-
-    // datasource
-    withTable("zorder_t3", "zorder_t4") {
-      sql(
-        s"""
-           |CREATE TABLE zorder_t3 (c1 int, c2 string, c3 long, c4 double) USING PARQUET
-           |TBLPROPERTIES (
-           | 'kyuubi.zorder.enabled' = '$enabled',
-           | 'kyuubi.zorder.cols' = '$cols')
-           |""".stripMargin)
-      val df1 = sql("INSERT INTO TABLE zorder_t3 VALUES(1,'a',2,4D),(2,'b',3,6D)")
-      assert(df1.queryExecution.analyzed.isInstanceOf[InsertIntoHadoopFsRelationCommand])
-      checkSort(df1.queryExecution.analyzed.children.head)
-
-      val df2 =
-        sql(
-          s"""
-            |CREATE TABLE zorder_t4 USING PARQUET
-            |TBLPROPERTIES (
-            | 'kyuubi.zorder.enabled' = '$enabled',
-            | 'kyuubi.zorder.cols' = '$cols')
-            |
-            |SELECT * FROM VALUES(1,'a',2,4D),(2,'b',3,6D) AS t(c1 ,c2 , c3, c4)
-            |""".stripMargin)
-      assert(df2.queryExecution.analyzed.isInstanceOf[CreateDataSourceTableAsSelectCommand])
-      checkSort(df2.queryExecution.analyzed.children.head)
     }
   }
 
   test("Support insert zorder by table properties") {
     withSQLConf(KyuubiSQLConf.INSERT_ZORDER_BEFORE_WRITING.key -> "false") {
-      checkZorderTable(true, "c1", false)
-      checkZorderTable(false, "c1", false)
+      checkZorderTable(true, "c1", false, false)
+      checkZorderTable(false, "c1", false, false)
     }
     withSQLConf(KyuubiSQLConf.INSERT_ZORDER_BEFORE_WRITING.key -> "true") {
-      checkZorderTable(true, "", false)
-      checkZorderTable(true, "c5", false)
-      checkZorderTable(true, "c1,c5", false)
-      checkZorderTable(false, "c3", false)
-      checkZorderTable(true, "c3", true)
-      checkZorderTable(true, "c2,c4", true)
-      checkZorderTable(true, "c4, c2, c1, c3", true)
+      checkZorderTable(true, "", false, false)
+      checkZorderTable(true, "c5", false, false)
+      checkZorderTable(true, "c1,c5", false, false)
+      checkZorderTable(false, "c3", false, false)
+      checkZorderTable(true, "c3", true, false)
+      checkZorderTable(true, "c3", false, true)
+      checkZorderTable(true, "c2,c4", false, true)
+      checkZorderTable(true, "c4, c2, c1, c3", false, true)
     }
   }
 }
