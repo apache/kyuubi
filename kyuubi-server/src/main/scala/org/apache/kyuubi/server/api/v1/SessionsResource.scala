@@ -17,14 +17,20 @@
 
 package org.apache.kyuubi.server.api.v1
 
-import javax.ws.rs.{GET, Path, Produces}
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import javax.ws.rs.{Consumes, GET, Path, POST, Produces}
 import javax.ws.rs.core.MediaType
+import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import scala.collection.JavaConverters.mapAsScalaMapConverter
 
 import org.apache.kyuubi.server.api.ApiRequestContext
-import org.apache.kyuubi.server.api.v1.dto.SessionOpenedCount
+import org.apache.kyuubi.server.api.v1.dto.{SessionOpenedCount, SessionOpenRequest}
 
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class SessionsResource extends ApiRequestContext {
+
+  private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
 
   @GET
   @Path("count")
@@ -36,4 +42,15 @@ private[v1] class SessionsResource extends ApiRequestContext {
     sessionOpenedCount
   }
 
+  @POST
+  @Consumes(Array(MediaType.APPLICATION_JSON))
+  def openSession(request : SessionOpenRequest): String = {
+    val sessionHandle = backendService.openSession(
+      TProtocolVersion.findByValue(request.getProtocolVersion),
+      request.getUser,
+      request.getPassword,
+      request.getIpAddr,
+      request.getConfigs.asScala.toMap)
+    mapper.writeValueAsString(sessionHandle)
+  }
 }
