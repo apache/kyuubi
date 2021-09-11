@@ -44,11 +44,11 @@ public class SessionOpenedCount implements Serializable {
       return false;
     }
     SessionOpenedCount that = (SessionOpenedCount) o;
-    return getOpenSessionCount() == that.getOpenSessionCount();
+    return openSessionCount == that.getOpenSessionCount();
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(getOpenSessionCount());
+    return Objects.hash(openSessionCount);
   }
 }
