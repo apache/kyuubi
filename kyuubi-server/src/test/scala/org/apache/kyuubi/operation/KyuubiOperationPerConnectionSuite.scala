@@ -22,7 +22,8 @@ import java.sql.SQLException
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TGetOperationStatusReq, TOperationState, TStatusCode}
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
-import org.apache.kyuubi.{KyuubiSQLException, WithKyuubiServer}
+import org.apache.kyuubi.Utils
+import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 
 /**
@@ -60,7 +61,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with JDBCTestUt
         withJdbcStatement() { statement => // no-op
         }
       }
-      val verboseMessage = KyuubiSQLException.stringifyException(exception)
+      val verboseMessage = Utils.stringifyException(exception)
       assert(verboseMessage.contains("Failed to detect the root cause"))
       assert(verboseMessage.contains("The last line log"))
     }
