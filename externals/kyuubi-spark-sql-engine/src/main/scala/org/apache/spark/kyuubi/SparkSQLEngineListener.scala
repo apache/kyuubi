@@ -27,8 +27,8 @@ import org.apache.spark.SparkException
 import org.apache.spark.scheduler._
 
 import org.apache.kyuubi.KyuubiSparkUtils.KYUUBI_STATEMENT_ID_KEY
-import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.Utils.stringifyException
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.monitor.KyuubiStatementMonitor
 import org.apache.kyuubi.engine.spark.monitor.entity.KyuubiJobInfo
@@ -41,7 +41,6 @@ import org.apache.kyuubi.service.{Serverable, ServiceState}
  * @param server the corresponding engine
  */
 class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logging {
-  import KyuubiSQLException.stringifyException
 
   // the conf of server is null before initialized, use lazy val here
   private lazy val deregisterExceptions: Seq[String] =
