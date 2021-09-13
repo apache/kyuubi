@@ -20,7 +20,10 @@ package org.apache.kyuubi.sql
 import org.apache.spark.sql.SparkSessionExtensions
 
 import org.apache.kyuubi.sql.sqlclassification.KyuubiSqlClassification
+import org.apache.kyuubi.sql.watchdog.MaxHivePartitionStrategy
 import org.apache.kyuubi.sql.zorder.{InsertZorderBeforeWritingDatasource, InsertZorderBeforeWritingHive, ResolveZorder, ZorderSparkSqlExtensionsParser}
+import org.apache.kyuubi.sql.zorder.ResolveZorder
+import org.apache.kyuubi.sql.zorder.ZorderSparkSqlExtensionsParser
 
 // scalastyle:off line.size.limit
 /**
@@ -49,5 +52,6 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
     extensions.injectPostHocResolutionRule(FinalStageConfigIsolationCleanRule)
     extensions.injectQueryStagePrepRule(_ => InsertShuffleNodeBeforeJoin)
     extensions.injectQueryStagePrepRule(FinalStageConfigIsolation(_))
+    extensions.injectPlannerStrategy(MaxHivePartitionStrategy)
   }
 }
