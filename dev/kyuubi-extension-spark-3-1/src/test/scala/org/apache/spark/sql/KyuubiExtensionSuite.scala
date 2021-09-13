@@ -1592,7 +1592,7 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
            |CREATE TABLE test(i int)
            |PARTITIONED BY (p int)
            |STORED AS textfile""".stripMargin)
-      spark.range(0, 10000, 1).selectExpr("id as col")
+      spark.range(0, 10, 1).selectExpr("id as col")
         .createOrReplaceTempView("temp")
 
       for (part <- Range(0, 10)) {
