@@ -54,7 +54,7 @@ case class MaxHivePartitionStrategy(session: SparkSession)
                 Nil
               }
               case _ => val totalPartitions = session
-                .sessionState.catalog.externalCatalog.listPartitions(
+                .sessionState.catalog.externalCatalog.listPartitionNames(
                 relation.tableMeta.database, relation.tableMeta.identifier.table)
                 if (totalPartitions.size > maxHivePartition) {
                   throw new MaxHivePartitionExceedException(
