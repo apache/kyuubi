@@ -20,8 +20,7 @@ package org.apache.kyuubi.sql
 import org.apache.spark.sql.SparkSessionExtensions
 
 import org.apache.kyuubi.sql.sqlclassification.KyuubiSqlClassification
-import org.apache.kyuubi.sql.zorder.ResolveZorder
-import org.apache.kyuubi.sql.zorder.ZorderSparkSqlExtensionsParser
+import org.apache.kyuubi.sql.zorder.{InsertZorderBeforeWritingDatasource, InsertZorderBeforeWritingHive, ResolveZorder, ZorderSparkSqlExtensionsParser}
 
 // scalastyle:off line.size.limit
 /**
@@ -35,6 +34,14 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
     // inject zorder parser and related rules
     extensions.injectParser{ case (_, parser) => new ZorderSparkSqlExtensionsParser(parser) }
     extensions.injectResolutionRule(ResolveZorder)
+
+    // Note that:
+    // InsertZorderBeforeWritingDatasource and InsertZorderBeforeWritingHive
+    // should be applied before
+    // RepartitionBeforeWrite and RepartitionBeforeWriteHive
+    // because we can only apply one of them (i.e. Global Sort or Repartition)
+    extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingDatasource)
+    extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingHive)
 
     extensions.injectPostHocResolutionRule(KyuubiSqlClassification)
     extensions.injectPostHocResolutionRule(RepartitionBeforeWrite)
