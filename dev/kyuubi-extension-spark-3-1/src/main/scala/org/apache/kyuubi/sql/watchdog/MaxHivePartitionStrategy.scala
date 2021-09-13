@@ -37,33 +37,32 @@ case class MaxHivePartitionStrategy(session: SparkSession)
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = {
     conf.getConf(KyuubiSQLConf.WATCHDOG_MAX_HIVEPARTITION) match {
       case Some(maxHivePartition) => plan match {
-        case ScanOperation(_, _, relation: HiveTableRelation) =>
-          if (relation.isPartitioned) {
+        case ScanOperation(_, _, relation: HiveTableRelation) if relation.isPartitioned =>
             relation.prunedPartitions match {
               case Some(prunedPartitions) => if (prunedPartitions.size > maxHivePartition) {
                 throw new MaxHivePartitionExceedException(
-                  s"SQL job scan hive partition: ${prunedPartitions.size} " +
-                    s"exceed restrict of hive scan maxPartition $maxHivePartition \n" +
-                    s"You should optimize your SQL logical according partition structure" +
-                    s" or shorten query scope such as p_date, detail as below: \n" +
-                    s"Table: ${relation.tableMeta.qualifiedName} \n" +
-                    s"Owner: ${relation.tableMeta.owner} \n" +
-                    s"Partition Structure: " +
-                    s"${relation.partitionCols.map(_.name).mkString(" -> ")} \n")
+                  s"""
+                    |SQL job scan hive partition: ${prunedPartitions.size}
+                    |exceed restrict of hive scan maxPartition $maxHivePartition
+                    |You should optimize your SQL logical according partition structure
+                    |or shorten query scope such as p_date, detail as below:
+                    |Table: ${relation.tableMeta.qualifiedName}
+                    |Owner: ${relation.tableMeta.owner}
+                    |Partition Structure: ${relation.partitionCols.map(_.name).mkString(" -> ")}
+                    |""".stripMargin)
               } else {
                 Nil
               }
               case _ => throw new HivePartitionFilterUnusedException(
-                s"Your SQL job scan a whole huge table without any partition filter, " +
-                  s"You should optimize your SQL logical according partition structure" +
-                  s" or shorten query scope such as p_date, detail as below: \n " +
-                  s"Table: ${relation.tableMeta.qualifiedName} \n" +
-                  s"Owner: ${relation.tableMeta.owner} \n" +
-                  s"Partition Structure: ${relation.partitionCols.map(_.name).mkString(" -> ")} \n")
+                s"""
+                   |Your SQL job scan a whole huge table without any partition filter,
+                   |You should optimize your SQL logical according partition structure
+                   |or shorten query scope such as p_date, detail as below:
+                   |Table: ${relation.tableMeta.qualifiedName}
+                   |Owner: ${relation.tableMeta.owner}
+                   |Partition Structure: ${relation.partitionCols.map(_.name).mkString(" -> ")}
+                   |""".stripMargin)
             }
-          } else {
-            Nil
-          }
         case _ => Nil
       }
       case _ => Nil
