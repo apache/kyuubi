@@ -22,10 +22,8 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import javax.ws.rs.{Consumes, GET, Path, POST, Produces}
 import javax.ws.rs.core.MediaType
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
-import scala.collection.JavaConverters.mapAsScalaMapConverter
 
 import org.apache.kyuubi.server.api.ApiRequestContext
-import org.apache.kyuubi.server.api.v1.dto.{SessionOpenedCount, SessionOpenRequest}
 
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class SessionsResource extends ApiRequestContext {
@@ -34,23 +32,20 @@ private[v1] class SessionsResource extends ApiRequestContext {
 
   @GET
   @Path("count")
-  def sessionCount(): SessionOpenedCount = {
-    val sessionOpenedCount = new SessionOpenedCount()
-    sessionOpenedCount.setOpenSessionCount(
-      backendService.sessionManager.getOpenSessionCount
-    )
-    sessionOpenedCount
+  def sessionCount(): String = {
+    mapper.writeValueAsString(SessionOpenCount(backendService.sessionManager.getOpenSessionCount))
   }
 
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
-  def openSession(request : SessionOpenRequest): String = {
+  def openSession(req : String): String = {
+    val request = mapper.readValue(req, classOf[SessionOpenRequest])
     val sessionHandle = backendService.openSession(
-      TProtocolVersion.findByValue(request.getProtocolVersion),
-      request.getUser,
-      request.getPassword,
-      request.getIpAddr,
-      request.getConfigs.asScala.toMap)
+      TProtocolVersion.findByValue(request.protocolVersion),
+      request.user,
+      request.password,
+      request.ipAddr,
+      request.configs)
     mapper.writeValueAsString(sessionHandle)
   }
 }

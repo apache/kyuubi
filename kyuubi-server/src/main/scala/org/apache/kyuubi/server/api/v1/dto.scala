@@ -15,40 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.api.v1.dto;
+package org.apache.kyuubi.server.api.v1
 
-import java.io.Serializable;
-import java.util.Objects;
+case class SessionOpenCount(openSessionCount: Int)
 
-public class SessionOpenedCount implements Serializable {
-
-  private int openSessionCount;
-
-  public SessionOpenedCount() {
-  }
-
-  public int getOpenSessionCount() {
-    return openSessionCount;
-  }
-
-  public void setOpenSessionCount(int openSessionCount) {
-    this.openSessionCount = openSessionCount;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
-    }
-    if (!(o instanceof SessionOpenedCount)) {
-      return false;
-    }
-    SessionOpenedCount that = (SessionOpenedCount) o;
-    return openSessionCount == that.getOpenSessionCount();
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(openSessionCount);
-  }
-}
+case class SessionOpenRequest(
+  protocolVersion: Int,
+  user: String,
+  password: String,
+  ipAddr: String,
+  configs: Map[String, String]
+)
