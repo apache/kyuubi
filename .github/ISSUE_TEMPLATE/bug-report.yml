@@ -25,10 +25,10 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for finding the time to report the issue! We really appreciate the community efforts to improve Kyuubi.
+        Thank you for finding the time to report the issue! We really appreciate the community's efforts to improve Kyuubi.
 
-        It does't really matter whether what you are reporting is a bug or not, just feel free to share the problem you have
-        encountered to the community. For best practices, if it is indeed a bug, please try your best to provide the reproducible
+        It doesn't really matter whether what you are reporting is a bug or not, just feel free to share the problem you have
+        encountered with the community. For best practices, if it is indeed a bug, please try your best to provide the reproducible
         steps. If you want to ask questions or share ideas, please [subscribe to our mailing list](mailto:dev-subscribe@kyuubi.apache.org)
         and send emails to [our mailing list](mailto:dev@kyuubi.apache.org), you can also head to our
         [Discussions](https://github.com/apache/incubator-kyuubi/discussions) tab.
