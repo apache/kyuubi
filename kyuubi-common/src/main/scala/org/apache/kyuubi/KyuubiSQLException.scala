@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi
 
-import java.io.{PrintWriter, StringWriter}
 import java.lang.reflect.{InvocationTargetException, UndeclaredThrowableException}
 import java.sql.SQLException
 
@@ -25,6 +24,8 @@ import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.{TStatus, TStatusCode}
+
+import org.apache.kyuubi.Utils.stringifyException
 
 /**
  * @param reason     a description of the exception
@@ -173,14 +174,6 @@ object KyuubiSQLException {
       ex.setStackTrace(stackTraceElements.toArray)
     }
     ex
-  }
-
-  def stringifyException(e: Throwable): String = {
-    val stm = new StringWriter
-    val wrt = new PrintWriter(stm)
-    e.printStackTrace(wrt)
-    wrt.close()
-    stm.toString
   }
 
   @tailrec

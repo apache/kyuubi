@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi
 
-import java.io.{File, InputStreamReader, IOException}
+import java.io.{File, InputStreamReader, IOException, PrintWriter, StringWriter}
 import java.net.{Inet4Address, InetAddress, NetworkInterface}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
@@ -228,5 +228,16 @@ object Utils extends Logging {
    */
   def getDateFromTimestamp(time: Long): String = {
     DateFormatUtils.format(time, "yyyyMMdd", TimeZone.getDefault)
+  }
+
+  /**
+   * Make a string representation of the exception.
+   */
+  def stringifyException(e: Throwable): String = {
+    val stm = new StringWriter
+    val wrt = new PrintWriter(stm)
+    e.printStackTrace(wrt)
+    wrt.close()
+    stm.toString
   }
 }

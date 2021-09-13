@@ -25,7 +25,7 @@ import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.engine.spark.FetchIterator
 import org.apache.kyuubi.engine.spark.operation.SparkOperation.TIMEZONE_KEY
 import org.apache.kyuubi.operation.{AbstractOperation, OperationState}
@@ -85,7 +85,7 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
     case e: Throwable =>
       if (cancel && !spark.sparkContext.isStopped) spark.sparkContext.cancelJobGroup(statementId)
       state.synchronized {
-        val errMsg = KyuubiSQLException.stringifyException(e)
+        val errMsg = Utils.stringifyException(e)
         if (state == OperationState.TIMEOUT) {
           val ke = KyuubiSQLException(s"Timeout operating $opType: $errMsg")
           setOperationException(ke)
