@@ -118,17 +118,20 @@ class ExecuteStatement(
           val ke = KyuubiSQLException(s"UNKNOWN STATE for $statement")
           setOperationException(ke)
       }
-
-      val appUser = session.asInstanceOf[KyuubiSessionImpl].engine.appUser
-      val sessionManager = session.sessionManager.asInstanceOf[KyuubiSessionManager]
-      sessionManager.credentialsManager.sendCredentialsIfNeeded(
-        session.handle.identifier.toString,
-        appUser,
-        client.sendCredentials)
+      sendCredentialsIfNeeded()
     }
     // see if anymore log could be fetched
     fetchQueryLog()
   } catch onError()
+
+  private def sendCredentialsIfNeeded(): Unit = {
+    val appUser = session.asInstanceOf[KyuubiSessionImpl].engine.appUser
+    val sessionManager = session.sessionManager.asInstanceOf[KyuubiSessionManager]
+    sessionManager.credentialsManager.sendCredentialsIfNeeded(
+      session.handle.identifier.toString,
+      appUser,
+      client.sendCredentials)
+  }
 
   private def fetchQueryLog(): Unit = {
     getOperationLog.foreach { logger =>
