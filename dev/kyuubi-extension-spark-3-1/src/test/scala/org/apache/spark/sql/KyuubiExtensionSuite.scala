@@ -20,8 +20,9 @@ package org.apache.spark.sql
 import scala.collection.mutable.Set
 
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Cast, Multiply}
-import org.apache.spark.sql.catalyst.plans.logical.RepartitionByExpression
+import org.apache.spark.sql.catalyst.plans.logical.{GlobalLimit, RepartitionByExpression}
 import org.apache.spark.sql.execution.adaptive.{CustomShuffleReaderExec, QueryStageExec}
+import org.apache.spark.sql.execution.command.InsertIntoDataSourceDirCommand
 import org.apache.spark.sql.execution.exchange.{ENSURE_REQUIREMENTS, ShuffleExchangeLike}
 import org.apache.spark.sql.hive.HiveUtils
 import org.apache.spark.sql.hive.execution.OptimizedCreateHiveTableAsSelectCommand
@@ -1301,6 +1302,71 @@ class KyuubiExtensionSuite extends KyuubiSparkSQLExtensionTest {
           .queryExecution.sparkPlan)
 
       }
+    }
+  }
+
+  test("test watchdog with query forceMaxOutputRows") {
+
+    withSQLConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS.key -> "10") {
+
+      assert(sql("SELECT * FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)")
+        .queryExecution.analyzed.isInstanceOf[GlobalLimit])
+
+      assert(sql("SELECT * FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2) LIMIT 1")
+        .queryExecution.analyzed.asInstanceOf[GlobalLimit].maxRows.contains(1))
+
+      assert(!sql("SELECT count(*) FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)")
+        .queryExecution.analyzed.isInstanceOf[GlobalLimit])
+
+      assert(sql(
+        """
+          |WITH custom_cte AS (
+          |SELECT * FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)
+          |)
+          |
+          |SELECT * FROM custom_cte
+          |""".stripMargin).queryExecution
+        .analyzed.isInstanceOf[GlobalLimit])
+
+      assert(sql(
+        """
+          |WITH custom_cte AS (
+          |SELECT * FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)
+          |)
+          |
+          |SELECT * FROM custom_cte
+          |LIMIT 1
+          |""".stripMargin).queryExecution
+        .analyzed.asInstanceOf[GlobalLimit].maxRows.contains(1))
+
+      assert(sql(
+        """
+          |INSERT OVERWRITE DIRECTORY
+          |USING PARQUET
+          |OPTIONS ('path' '/tmp/file')
+          |SELECT 1 as a
+          |""".stripMargin).queryExecution
+        .analyzed.asInstanceOf[InsertIntoDataSourceDirCommand].query.isInstanceOf[GlobalLimit])
+
+      assert(sql(
+        """
+          |INSERT OVERWRITE DIRECTORY
+          |USING PARQUET
+          |OPTIONS ('path' '/tmp/file')
+          |SELECT 1 as a
+          |LIMIT 1
+          |""".stripMargin).queryExecution
+        .analyzed.asInstanceOf[InsertIntoDataSourceDirCommand]
+        .query.asInstanceOf[GlobalLimit].maxRows.contains(1))
+
+      assert(!sql(
+        """
+          |INSERT OVERWRITE DIRECTORY
+          |USING PARQUET
+          |OPTIONS ('path' '/tmp/file')
+          |SELECT COUNT(*) as cnt FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)
+          |""".stripMargin).queryExecution
+        .analyzed.asInstanceOf[InsertIntoDataSourceDirCommand].query.isInstanceOf[GlobalLimit])
     }
   }
 }
