@@ -19,7 +19,6 @@ package org.apache.kyuubi.events
 
 import java.io.{BufferedOutputStream, FileOutputStream, IOException, PrintWriter}
 import java.net.URI
-import java.nio.file.Paths
 
 import scala.collection.mutable.HashMap
 
@@ -83,7 +82,7 @@ class JsonEventLogger[T <: KyuubiEvent](logName: String,
   }
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
-    logRoot = Paths.get(conf.get(logPath)).toAbsolutePath.toUri
+    logRoot = URI.create(conf.get(logPath))
     fs = FileSystem.get(logRoot, hadoopConf)
     requireLogRootWritable()
     super.initialize(conf)
