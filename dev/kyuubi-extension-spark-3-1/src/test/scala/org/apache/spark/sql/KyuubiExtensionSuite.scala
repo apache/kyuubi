@@ -34,6 +34,8 @@ import org.apache.spark.sql.test.SQLTestUtils
 import org.apache.kyuubi.sql.{FinalStageConfigIsolation, KyuubiSQLConf}
 import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 import org.apache.kyuubi.sql.zorder.Zorder
+import org.apache.kyuubi.sql.{FinalStageConfigIsolation, KyuubiSQLConf, KyuubiSQLExtensionException}
+import org.apache.kyuubi.sql.watchdog.{HivePartitionFilterUnusedException, MaxHivePartitionExceedException}
 
 class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSparkPlanHelper {
 
@@ -1582,6 +1584,42 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
       checkZorderTable(true, "c3", false, true)
       checkZorderTable(true, "c2,c4", false, true)
       checkZorderTable(true, "c4, c2, c1, c3", false, true)
+    }
+  }
+
+  test("test watchdog with scan maxHivePartitions") {
+    withTable("test", "temp") {
+      sql(
+        s"""
+           |CREATE TABLE test(i int)
+           |PARTITIONED BY (p int)
+           |STORED AS textfile""".stripMargin)
+      spark.range(0, 10000, 1).selectExpr("id as col")
+        .createOrReplaceTempView("temp")
+
+      for (part <- Range(0, 10)) {
+        sql(
+          s"""
+             |INSERT OVERWRITE TABLE test PARTITION (p='$part')
+             |select col from temp""".stripMargin)
+      }
+
+      withSQLConf(KyuubiSQLConf.WATCHDOG_MAX_HIVEPARTITION.key -> "5") {
+
+        sql("SELECT * FROM test where p=1").queryExecution.sparkPlan
+
+        sql(
+          s"SELECT * FROM test WHERE p in (${Range(0, 5).toList.mkString(",")})")
+          .queryExecution.sparkPlan
+
+        intercept[HivePartitionFilterUnusedException](
+          sql("SELECT * FROM test").queryExecution.sparkPlan)
+
+        intercept[MaxHivePartitionExceedException](sql(
+          s"SELECT * FROM test WHERE p in (${Range(0, 6).toList.mkString(",")})")
+          .queryExecution.sparkPlan)
+
+      }
     }
   }
 }
