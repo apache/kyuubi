@@ -28,15 +28,15 @@ import org.apache.kyuubi.operation.OperationState._
 
 class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
 
-  private val logRoot = Utils.createTempDir()
+  private val logRoot = "file:" + Utils.createTempDir().toString
   private val currentDate = Utils.getDateFromTimestamp(System.currentTimeMillis())
 
   override protected val conf: KyuubiConf = {
     KyuubiConf()
       .set(KyuubiConf.SERVER_EVENT_LOGGERS, Seq("JSON"))
-      .set(KyuubiConf.SERVER_EVENT_JSON_LOG_PATH, logRoot.toString)
+      .set(KyuubiConf.SERVER_EVENT_JSON_LOG_PATH, logRoot)
       .set(KyuubiConf.ENGINE_EVENT_LOGGERS, Seq("JSON"))
-      .set(KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH, logRoot.toString)
+      .set(KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH, logRoot)
   }
 
   override protected def jdbcUrl: String = getJdbcUrl
@@ -44,9 +44,9 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
   test("statementEvent: generate, dump and query") {
     val hostName = InetAddress.getLocalHost.getCanonicalHostName
     val serverStatementEventPath =
-      Paths.get(logRoot.toString, "kyuubi_statement", s"day=$currentDate", s"server-$hostName.json")
+      Paths.get(logRoot, "kyuubi_statement", s"day=$currentDate", s"server-$hostName.json")
     val engineStatementEventPath =
-      Paths.get(logRoot.toString, "spark_statement", s"day=$currentDate", "*.json")
+      Paths.get(logRoot, "spark_statement", s"day=$currentDate", "*.json")
     val sql = "select timestamp'2021-06-01'"
 
     withJdbcStatement() { statement =>
@@ -89,7 +89,7 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
     }
 
     val eventPath =
-      Paths.get(logRoot.toString, "kyuubi_session", s"day=$currentDate")
+      Paths.get(logRoot, "kyuubi_session", s"day=$currentDate")
     withSessionConf()(Map.empty)(Map("spark.sql.shuffle.partitions" -> "2")) {
       withJdbcStatement() { statement =>
         val res = statement.executeQuery(
@@ -121,9 +121,9 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
     }
 
     val serverSessionEventPath =
-      Paths.get(logRoot.toString, "kyuubi_session", s"day=$currentDate")
+      Paths.get(logRoot, "kyuubi_session", s"day=$currentDate")
     val engineSessionEventPath =
-      Paths.get(logRoot.toString, "session", s"day=$currentDate")
+      Paths.get(logRoot, "session", s"day=$currentDate")
     withSessionConf()(Map.empty)(Map.empty) {
       withJdbcStatement() { statement =>
         val res = statement.executeQuery(
