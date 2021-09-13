@@ -39,18 +39,18 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
   override def withKyuubiConf: Map[String, String] = Map(
     KyuubiConf.ENGINE_EVENT_LOGGERS.key -> s"$JSON,$SPARK",
-    KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH.key -> logRoot.toString,
+    KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH.key -> logRoot,
     "spark.eventLog.enabled" -> "true",
-    "spark.eventLog.dir" -> logRoot.toString
+    "spark.eventLog.dir" -> logRoot
   )
 
   override protected def jdbcUrl: String = getJdbcUrl
 
   test("round-trip for event logging service") {
     val engineEventPath = Paths.get(
-      logRoot.toString, "engine", s"day=$currentDate", KyuubiSparkUtil.engineId + ".json")
+      logRoot, "engine", s"day=$currentDate", KyuubiSparkUtil.engineId + ".json")
     val sessionEventPath = Paths.get(
-      logRoot.toString, "session", s"day=$currentDate", KyuubiSparkUtil.engineId + ".json")
+      logRoot, "session", s"day=$currentDate", KyuubiSparkUtil.engineId + ".json")
 
     val fileSystem: FileSystem = FileSystem.get(new Configuration())
     val fs: FSDataInputStream = fileSystem.open(new Path(engineEventPath.toString))
@@ -99,7 +99,7 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
   test("statementEvent: generate, dump and query") {
     val statementEventPath = Paths.get(
-      logRoot.toString, "spark_statement", s"day=$currentDate", engine.engineId + ".json")
+      logRoot, "spark_statement", s"day=$currentDate", engine.engineId + ".json")
     val sql = "select timestamp'2021-06-01'"
     withSessionHandle { (client, handle) =>
 
