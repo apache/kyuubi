@@ -19,9 +19,7 @@ package org.apache.kyuubi.operation
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.TFetchOrientation
-import org.apache.hive.service.rpc.thrift.TFetchResultsReq
-import org.apache.hive.service.rpc.thrift.TGetOperationStatusReq
+import org.apache.hive.service.rpc.thrift.{TFetchOrientation, TFetchResultsReq, TGetOperationStatusReq}
 import org.apache.hive.service.rpc.thrift.TOperationState._
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -32,7 +30,7 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.server.EventLoggingService
-import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, Session}
 
 class ExecuteStatement(
     session: Session,
@@ -120,6 +118,13 @@ class ExecuteStatement(
           val ke = KyuubiSQLException(s"UNKNOWN STATE for $statement")
           setOperationException(ke)
       }
+
+      val appUser = session.asInstanceOf[KyuubiSessionImpl].engine.appUser
+      val sessionManager = session.sessionManager.asInstanceOf[KyuubiSessionManager]
+      sessionManager.credentialsManager.sendCredentialsIfNeeded(
+        session.handle.identifier.toString,
+        appUser,
+        client.sendCredentials)
     }
     // see if anymore log could be fetched
     fetchQueryLog()
