@@ -68,4 +68,39 @@ class SessionsResourceSuite extends JerseyTest {
     }
   }
 
+  @Test
+  def testCloseAndCountSession: Unit = {
+    val requestObj = SessionOpenRequest(
+      1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
+
+    val requestObjStr = OBJECT_MAPPER.writeValueAsString(requestObj)
+
+    RestFrontendServiceSuite.withKyuubiRestServer {
+      (_, _, _) =>
+        var response = target(s"api/v1/sessions")
+          .request(MediaType.APPLICATION_JSON_TYPE)
+          .post(Entity.entity(requestObjStr, MediaType.APPLICATION_JSON_TYPE))
+
+        assert(200 == response.getStatus)
+
+        val sessionHandle = OBJECT_MAPPER.readValue(
+          response.readEntity(classOf[String]), classOf[SessionHandle])
+
+        assert(sessionHandle.protocol.getValue == 1)
+        assert(sessionHandle.identifier != null)
+
+        // close a opened session
+        val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
+          s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
+        response = target(s"api/v1/sessions/$serializedSessionHandle").request().delete()
+        assert(200 == response.getStatus)
+
+        // verify the open session count again
+        response = target("api/v1/sessions/count").request().get()
+        val openedSessionCount = OBJECT_MAPPER.readValue(
+          response.readEntity(classOf[String]), classOf[SessionOpenCount])
+        assert(openedSessionCount.openSessionCount == 0)
+    }
+  }
+
 }
