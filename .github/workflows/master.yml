@@ -100,6 +100,7 @@ jobs:
           path: |
             **/target/unit-tests.log
             **/kyuubi-spark-sql-engine.log*
+            **/target/scalastyle-output.xml
 
   tpcds:
     name: TPC-DS Tests
