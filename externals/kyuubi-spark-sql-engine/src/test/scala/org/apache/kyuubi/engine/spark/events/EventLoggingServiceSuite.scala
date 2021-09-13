@@ -17,9 +17,11 @@
 
 package org.apache.kyuubi.engine.spark.events
 
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths}
+import java.io.{BufferedReader, InputStreamReader}
+import java.nio.file.Paths
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, FSDataInputStream, Path}
 import org.apache.hive.service.rpc.thrift.TExecuteStatementReq
 import org.scalatest.time.SpanSugar._
 
@@ -49,7 +51,10 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
       logRoot.toString, "engine", s"day=$currentDate", KyuubiSparkUtil.engineId + ".json")
     val sessionEventPath = Paths.get(
       logRoot.toString, "session", s"day=$currentDate", KyuubiSparkUtil.engineId + ".json")
-    val engineEventReader = Files.newBufferedReader(engineEventPath, StandardCharsets.UTF_8)
+
+    val fileSystem: FileSystem = FileSystem.get(new Configuration())
+    val fs: FSDataInputStream = fileSystem.open(new Path(engineEventPath.toString))
+    val engineEventReader = new BufferedReader(new InputStreamReader(fs))
 
     val readEvent = JsonProtocol.jsonToEvent(engineEventReader.readLine(),
       classOf[KyuubiSparkEvent])
