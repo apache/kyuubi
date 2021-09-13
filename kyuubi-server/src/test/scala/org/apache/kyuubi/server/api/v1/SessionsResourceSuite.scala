@@ -28,7 +28,6 @@ import org.junit.Test
 
 import org.apache.kyuubi.server.RestFrontendServiceSuite
 import org.apache.kyuubi.server.RestFrontendServiceSuite.{OBJECT_MAPPER, TEST_SERVER_PORT}
-import org.apache.kyuubi.server.api.v1.dto.{SessionOpenedCount, SessionOpenRequest}
 import org.apache.kyuubi.session.SessionHandle
 
 class SessionsResourceSuite extends JerseyTest {
@@ -42,20 +41,16 @@ class SessionsResourceSuite extends JerseyTest {
 
   @Test
   def testOpenAndCountSession: Unit = {
-    val requestObj = new SessionOpenRequest
-    requestObj.setProtocolVersion(1)
-    requestObj.setUser("admin")
-    requestObj.setPassword("123456")
-    requestObj.setIpAddr("localhost")
-    val configs = new java.util.HashMap[String, String]
-    configs.put("testConfig", "testValue")
-    requestObj.setConfigs(configs)
+    val requestObj = SessionOpenRequest(
+      1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
+
+    val requestObjStr = OBJECT_MAPPER.writeValueAsString(requestObj)
 
     RestFrontendServiceSuite.withKyuubiRestServer {
       (_, _, _) =>
         var response = target(s"api/v1/sessions")
           .request(MediaType.APPLICATION_JSON_TYPE)
-          .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+          .post(Entity.entity(requestObjStr, MediaType.APPLICATION_JSON_TYPE))
 
         assert(200 == response.getStatus)
 
@@ -66,12 +61,10 @@ class SessionsResourceSuite extends JerseyTest {
         assert(sessionHandle.identifier != null)
 
         // verify the open session count
-        val expectedCount = new SessionOpenedCount()
-        expectedCount.setOpenSessionCount(1)
-
         response = target("api/v1/sessions/count").request().get()
-        val responseObj = response.readEntity(classOf[SessionOpenedCount])
-        assert(responseObj.equals(expectedCount))
+        val openedSessionCount = OBJECT_MAPPER.readValue(
+          response.readEntity(classOf[String]), classOf[SessionOpenCount])
+        assert(openedSessionCount.openSessionCount == 1)
     }
   }
 
