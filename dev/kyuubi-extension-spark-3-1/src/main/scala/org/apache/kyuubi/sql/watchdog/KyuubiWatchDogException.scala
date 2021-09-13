@@ -20,12 +20,6 @@ package org.apache.kyuubi.sql.watchdog
 import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
 final class MaxHivePartitionExceedException(
-  private val reason: String = "",
-  private val cause: Throwable = None.orNull)
-  extends KyuubiSQLExtensionException(reason, cause)
-
-
-final class HivePartitionFilterUnusedException(
-  private val reason: String = "",
-  private val cause: Throwable = None.orNull)
+    private val reason: String = "",
+    private val cause: Throwable = None.orNull)
   extends KyuubiSQLExtensionException(reason, cause)

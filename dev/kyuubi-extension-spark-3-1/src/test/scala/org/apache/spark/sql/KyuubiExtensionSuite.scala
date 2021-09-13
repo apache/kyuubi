@@ -31,11 +31,9 @@ import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
 import org.apache.spark.sql.test.SQLTestData.TestData
 import org.apache.spark.sql.test.SQLTestUtils
 
-import org.apache.kyuubi.sql.{FinalStageConfigIsolation, KyuubiSQLConf}
-import org.apache.kyuubi.sql.KyuubiSQLExtensionException
-import org.apache.kyuubi.sql.zorder.Zorder
 import org.apache.kyuubi.sql.{FinalStageConfigIsolation, KyuubiSQLConf, KyuubiSQLExtensionException}
-import org.apache.kyuubi.sql.watchdog.{HivePartitionFilterUnusedException, MaxHivePartitionExceedException}
+import org.apache.kyuubi.sql.watchdog.MaxHivePartitionExceedException
+import org.apache.kyuubi.sql.zorder.Zorder
 
 class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSparkPlanHelper {
 
@@ -1612,7 +1610,7 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
           s"SELECT * FROM test WHERE p in (${Range(0, 5).toList.mkString(",")})")
           .queryExecution.sparkPlan
 
-        intercept[HivePartitionFilterUnusedException](
+        intercept[MaxHivePartitionExceedException](
           sql("SELECT * FROM test").queryExecution.sparkPlan)
 
         intercept[MaxHivePartitionExceedException](sql(

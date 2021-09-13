@@ -53,15 +53,22 @@ case class MaxHivePartitionStrategy(session: SparkSession)
               } else {
                 Nil
               }
-              case _ => throw new HivePartitionFilterUnusedException(
-                s"""
-                   |Your SQL job scan a whole huge table without any partition filter,
-                   |You should optimize your SQL logical according partition structure
-                   |or shorten query scope such as p_date, detail as below:
-                   |Table: ${relation.tableMeta.qualifiedName}
-                   |Owner: ${relation.tableMeta.owner}
-                   |Partition Structure: ${relation.partitionCols.map(_.name).mkString(" -> ")}
-                   |""".stripMargin)
+              case _ => val totalPartitions = session
+                .sessionState.catalog.externalCatalog.listPartitions(
+                relation.tableMeta.database, relation.tableMeta.identifier.table)
+                if (totalPartitions.size > maxHivePartition) {
+                  throw new MaxHivePartitionExceedException(
+                    s"""
+                       |Your SQL job scan a whole huge table without any partition filter,
+                       |You should optimize your SQL logical according partition structure
+                       |or shorten query scope such as p_date, detail as below:
+                       |Table: ${relation.tableMeta.qualifiedName}
+                       |Owner: ${relation.tableMeta.owner}
+                       |Partition Structure: ${relation.partitionCols.map(_.name).mkString(" -> ")}
+                       |""".stripMargin)
+                   } else {
+                  Nil
+                }
             }
         case _ => Nil
       }
