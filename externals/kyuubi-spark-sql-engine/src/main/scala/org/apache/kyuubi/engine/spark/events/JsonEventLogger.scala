@@ -19,7 +19,6 @@ package org.apache.kyuubi.engine.spark.events
 
 import java.io.{BufferedOutputStream, FileOutputStream, IOException, PrintWriter}
 import java.net.URI
-import java.nio.file.Paths
 
 import scala.collection.mutable.HashMap
 
@@ -83,7 +82,7 @@ class JsonEventLogger(logName: String, hadoopConf: Configuration)
   }
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
-    logRoot = Paths.get(conf.get(ENGINE_EVENT_JSON_LOG_PATH)).toAbsolutePath.toUri
+    logRoot = URI.create(conf.get(ENGINE_EVENT_JSON_LOG_PATH))
     fs = FileSystem.get(logRoot, hadoopConf)
     requireLogRootWritable()
     super.initialize(conf)
