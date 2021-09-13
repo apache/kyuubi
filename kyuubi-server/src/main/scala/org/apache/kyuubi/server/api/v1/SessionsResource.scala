@@ -19,11 +19,14 @@ package org.apache.kyuubi.server.api.v1
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import javax.ws.rs.{Consumes, GET, Path, POST, Produces}
-import javax.ws.rs.core.MediaType
+import java.util.UUID
+import javax.ws.rs.{Consumes, DELETE, GET, Path, PathParam, POST, Produces}
+import javax.ws.rs.core.{MediaType, Response}
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
+import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.server.api.ApiRequestContext
+import org.apache.kyuubi.session.SessionHandle
 
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class SessionsResource extends ApiRequestContext {
@@ -47,5 +50,17 @@ private[v1] class SessionsResource extends ApiRequestContext {
       request.ipAddr,
       request.configs)
     mapper.writeValueAsString(sessionHandle)
+  }
+
+  @DELETE
+  @Path("{sessionHandle}")
+  def closeSession(@PathParam("sessionHandle") sessionHandleStr: String): Response = {
+    val splitSessionHandle = sessionHandleStr.split("\\|")
+    val handleIdentifier = new HandleIdentifier(
+      UUID.fromString(splitSessionHandle(0)), UUID.fromString(splitSessionHandle(1)))
+    val protocolVersion = TProtocolVersion.findByValue(splitSessionHandle(2).toInt)
+    val sessionHandle = new SessionHandle(handleIdentifier, protocolVersion)
+    backendService.closeSession(sessionHandle)
+    Response.ok().build()
   }
 }
