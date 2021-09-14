@@ -22,7 +22,6 @@ import scala.collection.mutable.Set
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Cast, Multiply}
 import org.apache.spark.sql.catalyst.plans.logical.{GlobalLimit, RepartitionByExpression}
 import org.apache.spark.sql.execution.adaptive.{CustomShuffleReaderExec, QueryStageExec}
-import org.apache.spark.sql.execution.command.InsertIntoDataSourceDirCommand
 import org.apache.spark.sql.execution.exchange.{ENSURE_REQUIREMENTS, ShuffleExchangeLike}
 import org.apache.spark.sql.hive.HiveUtils
 import org.apache.spark.sql.hive.execution.OptimizedCreateHiveTableAsSelectCommand
@@ -1320,6 +1319,13 @@ class KyuubiExtensionSuite extends KyuubiSparkSQLExtensionTest {
 
       assert(sql(
         """
+          |SELECT c1, COUNT(*)
+          |FROM VALUES(1, 'a'), (2, 'b') AS t(c1, c2)
+          |GROUP BY c1
+          |""".stripMargin).queryExecution.analyzed.isInstanceOf[GlobalLimit])
+
+      assert(sql(
+        """
           |WITH custom_cte AS (
           |SELECT * FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)
           |)
@@ -1339,34 +1345,27 @@ class KyuubiExtensionSuite extends KyuubiSparkSQLExtensionTest {
           |""".stripMargin).queryExecution
         .analyzed.asInstanceOf[GlobalLimit].maxRows.contains(1))
 
-      assert(sql(
-        """
-          |INSERT OVERWRITE DIRECTORY
-          |USING PARQUET
-          |OPTIONS ('path' '/tmp/file')
-          |SELECT 1 as a
-          |""".stripMargin).queryExecution
-        .analyzed.asInstanceOf[InsertIntoDataSourceDirCommand].query.isInstanceOf[GlobalLimit])
-
-      assert(sql(
-        """
-          |INSERT OVERWRITE DIRECTORY
-          |USING PARQUET
-          |OPTIONS ('path' '/tmp/file')
-          |SELECT 1 as a
-          |LIMIT 1
-          |""".stripMargin).queryExecution
-        .analyzed.asInstanceOf[InsertIntoDataSourceDirCommand]
-        .query.asInstanceOf[GlobalLimit].maxRows.contains(1))
-
       assert(!sql(
         """
-          |INSERT OVERWRITE DIRECTORY
-          |USING PARQUET
-          |OPTIONS ('path' '/tmp/file')
-          |SELECT COUNT(*) as cnt FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)
+          |WITH custom_cte AS (
+          |SELECT * FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)
+          |)
+          |
+          |SELECT COUNT(*) FROM custom_cte
           |""".stripMargin).queryExecution
-        .analyzed.asInstanceOf[InsertIntoDataSourceDirCommand].query.isInstanceOf[GlobalLimit])
+        .analyzed.isInstanceOf[GlobalLimit])
+
+      assert(sql(
+        """
+          |WITH custom_cte AS (
+          |SELECT * FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)
+          |)
+          |
+          |SELECT c1, COUNT(*)
+          |FROM custom_cte
+          |GROUP BY c1
+          |""".stripMargin).queryExecution
+        .analyzed.isInstanceOf[GlobalLimit])
     }
   }
 }
