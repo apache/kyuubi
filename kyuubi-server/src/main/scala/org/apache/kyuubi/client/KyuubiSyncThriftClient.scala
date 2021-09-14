@@ -203,4 +203,14 @@ class KyuubiSyncThriftClient(protocol: TProtocol) extends TCLIService.Client(pro
     ThriftUtils.verifyTStatus(resp.getStatus)
     resp.getResults
   }
+
+  def sendCredentials(encodedCredentials: String): Unit = {
+    // We hacked `TCLIService.Iface.RenewDelegationToken` to transfer Credentials to Spark SQL
+    // engine
+    val req = new TRenewDelegationTokenReq()
+    req.setSessionHandle(_remoteSessionHandle)
+    req.setDelegationToken(encodedCredentials)
+    val resp = RenewDelegationToken(req)
+    ThriftUtils.verifyTStatus(resp.getStatus)
+  }
 }

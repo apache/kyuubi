@@ -236,7 +236,7 @@ object KyuubiConf {
 
   val CREDENTIALS_RENEWAL_INTERVAL: ConfigEntry[Long] =
     buildConf("credentials.renewal.interval")
-      .doc("How often Kyuubi renews one user's DelegationTokens")
+      .doc("How often Kyuubi renews one user's delegation tokens")
       .version("1.4.0")
       .timeConf
       .createWithDefault(Duration.ofHours(1).toMillis)
@@ -251,7 +251,7 @@ object KyuubiConf {
 
   val CREDENTIALS_HADOOP_FS_ENABLED: ConfigEntry[Boolean] =
     buildConf("credentials.hadoopfs.enabled")
-      .doc("Whether to renew HadoopFS DelegationToken")
+      .doc("Whether to renew Hadoop filesystem delegation tokens")
       .version("1.4.0")
       .booleanConf
       .createWithDefault(true)
@@ -267,7 +267,7 @@ object KyuubiConf {
 
   val CREDENTIALS_HIVE_ENABLED: ConfigEntry[Boolean] =
     buildConf("credentials.hive.enabled")
-      .doc("Whether to renew HiveMetaStore DelegationToken")
+      .doc("Whether to renew Hive metastore delegation token")
       .version("1.4.0")
       .booleanConf
       .createWithDefault(true)
