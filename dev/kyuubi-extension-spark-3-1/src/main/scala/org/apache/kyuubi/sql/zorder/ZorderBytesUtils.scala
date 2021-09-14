@@ -18,9 +18,8 @@
 package org.apache.kyuubi.sql.zorder
 
 import java.lang.{Double => jDouble, Float => jFloat}
-import java.nio.charset.Charset
 
-import org.apache.spark.sql.types.Decimal
+import org.apache.spark.sql.types.{BooleanType, ByteType, DataType, DateType, Decimal, DecimalType, DoubleType, FloatType, IntegerType, LongType, ShortType, StringType, TimestampType}
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.kyuubi.sql.KyuubiSQLExtensionException
@@ -86,6 +85,7 @@ object ZorderBytesUtils {
       case d: Double =>
         doubleToByte(d)
       case str: UTF8String =>
+        // truncate or padding str to 8 byte
         paddingTo8Byte(str.getBytes)
       case dec: Decimal =>
         longToByte(dec.toLong)
@@ -146,11 +146,6 @@ object ZorderBytesUtils {
     longToByte(dl)
   }
 
-  def stringToByte(str: String): Array[Byte] = {
-    // truncate or padding str to 8 byte
-    paddingTo8Byte(str.getBytes(Charset.forName("utf-8")))
-  }
-
   def paddingTo8Byte(a: Array[Byte]): Array[Byte] = {
     if (a.length == 8) {
       return a
@@ -174,5 +169,32 @@ object ZorderBytesUtils {
       pos += arr.length
     })
     result
+  }
+
+  def defaultValue(dataType: DataType): Any = dataType match {
+    case BooleanType =>
+      false
+    case ByteType =>
+      Byte.MaxValue
+    case ShortType =>
+      Short.MaxValue
+    case IntegerType =>
+      Int.MaxValue
+    case LongType =>
+      Long.MaxValue
+    case FloatType =>
+      Float.MaxValue
+    case DoubleType =>
+      Double.MaxValue
+    case StringType =>
+      UTF8String.fromBytes(new Array[Byte](0))
+    case TimestampType =>
+      Long.MaxValue
+    case DateType =>
+      Int.MaxValue
+    case _: DecimalType =>
+      Long.MaxValue
+    case other: Any =>
+      throw new KyuubiSQLExtensionException(s"Unsupported z-order type: ${other.catalogString}")
   }
 }
