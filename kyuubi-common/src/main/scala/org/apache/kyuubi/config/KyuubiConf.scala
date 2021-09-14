@@ -242,7 +242,7 @@ object KyuubiConf {
       .createWithDefault(Duration.ofHours(1).toMillis)
 
   val CREDENTIALS_RENEWAL_RETRY_WAIT: ConfigEntry[Long] =
-    buildConf("credentials.renewal.retryWait")
+    buildConf("credentials.renewal.retry.wait")
       .doc("How long to wait before retrying to fetch new credentials after a failure.")
       .version("1.4.0")
       .timeConf
