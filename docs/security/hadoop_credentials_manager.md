@@ -23,10 +23,18 @@
 
 # Hadoop Credentials Manager
 
-Kyuubi engine is submitted with SparkSubmit argument `--proxy-user`. Its delegation tokens of hadoop
-cluster services are obtained by the submitting user and can not be renewed by Kyuubi engine itself.
-Thus, Kyuubi engine's lifetime is limited by the lifetime of delegation tokens.  
-To remove this limitation, Kyuubi renews delegation tokens at server side in Hadoop Credentials Manager.
+In order to pass the authentication of a kerberos secured hadoop cluster, kyuubi currently submits 
+engines in two ways:
+1. Submits with current kerberos user and extra `SparkSubmit` argument `--proxy-user`.
+2. Submits with `spark.kerberos.principal` and `spark.kerberos.keytab` specified.
+
+If engine is submitted with `--proxy-user` specified, its delegation tokens of hadoop cluster 
+services are obtained by current kerberos user and can not be renewed by itself.  
+Thus, engine's lifetime is limited by the lifetime of delegation tokens.  
+To remove this limitation, kyuubi renews delegation tokens at server side in Hadoop Credentials Manager.
+
+Engine submitted with principal and keytab can renew delegation tokens by itself. 
+But for implementation simplicity, kyuubi server will also renew delegation tokens for it.
 
 ## Configurations
 

@@ -25,6 +25,6 @@ Kyuubi Security Overview
 
     Authentication <authentication>
     kinit
-    proxyuser
+    hadoop_credentials_manager
     authorization
 
