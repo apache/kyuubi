@@ -19,8 +19,8 @@ package org.apache.spark.sql
 
 import scala.collection.mutable.Set
 
-import org.apache.spark.sql.catalyst.expressions.{Attribute, Cast, Multiply}
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, RepartitionByExpression, Sort}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Cast, Expression, Literal, Multiply}
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, OneRowRelation, Project, RepartitionByExpression, Sort}
 import org.apache.spark.sql.execution.adaptive.{AdaptiveSparkPlanHelper, CustomShuffleReaderExec, QueryStageExec}
 import org.apache.spark.sql.execution.command.CreateDataSourceTableAsSelectCommand
 import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand
@@ -30,6 +30,7 @@ import org.apache.spark.sql.hive.execution.{CreateHiveTableAsSelectCommand, Inse
 import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
 import org.apache.spark.sql.test.SQLTestData.TestData
 import org.apache.spark.sql.test.SQLTestUtils
+import org.apache.spark.sql.types.{BooleanType, ByteType, DateType, DecimalType, DoubleType, FloatType, IntegerType, LongType, NullType, ShortType, StringType, TimestampType}
 
 import org.apache.kyuubi.sql.{FinalStageConfigIsolation, KyuubiSQLConf, KyuubiSQLExtensionException}
 import org.apache.kyuubi.sql.watchdog.MaxHivePartitionExceedException
@@ -1583,6 +1584,66 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
       checkZorderTable(true, "c2,c4", false, true)
       checkZorderTable(true, "c4, c2, c1, c3", false, true)
     }
+  }
+
+  test("zorder: check unsupported data type") {
+    def checkZorderPlan(zorder: Expression): Unit = {
+      val msg = intercept[AnalysisException] {
+        val plan = Project(Seq(Alias(zorder, "c")()), OneRowRelation())
+        spark.sessionState.analyzer.checkAnalysis(plan)
+      }.getMessage
+      assert(msg.contains("Unsupported z-order type: null"))
+    }
+
+    checkZorderPlan(Zorder(Seq(Literal(null, NullType))))
+    checkZorderPlan(Zorder(Seq(Literal(1, IntegerType), Literal(null, NullType))))
+  }
+
+  test("zorder: check supported data type") {
+    val children = Seq(
+      Literal.create(false, BooleanType),
+      Literal.create(null, BooleanType),
+      Literal.create(1.toByte, ByteType),
+      Literal.create(null, ByteType),
+      Literal.create(1.toShort, ShortType),
+      Literal.create(null, ShortType),
+      Literal.create(1, IntegerType),
+      Literal.create(null, IntegerType),
+      Literal.create(1L, LongType),
+      Literal.create(null, LongType),
+      Literal.create(1f, FloatType),
+      Literal.create(null, FloatType),
+      Literal.create(1d, DoubleType),
+      Literal.create(null, DoubleType),
+      Literal.create("1", StringType),
+      Literal.create(null, StringType),
+      Literal.create(1L, TimestampType),
+      Literal.create(null, TimestampType),
+      Literal.create(1, DateType),
+      Literal.create(null, DateType),
+      Literal.create(BigDecimal(1, 1), DecimalType(1, 1)),
+      Literal.create(null, DecimalType(1, 1))
+    )
+    val zorder = Zorder(children)
+    val plan = Project(Seq(Alias(zorder, "c")()), OneRowRelation())
+    spark.sessionState.analyzer.checkAnalysis(plan)
+    assert(zorder.foldable)
+    val res = zorder.eval().asInstanceOf[Array[Byte]]
+    val expected = Array(
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x50, 0x54, 0x15, 0x05, 0x49, 0x51, 0x54, 0x55, 0x15, 0x45,
+      0x51, 0x54, 0x55, 0x15, 0x45, 0x51, 0x54, 0x55, 0x15, 0x45,
+      0x51, 0x54, 0x55, 0x15, 0x45, 0x51, 0x54, 0x55, 0x15, 0x45,
+      0x44, 0x44, 0x22, 0x22, 0x08, 0x88, 0x82, 0x22, 0x20, 0x88,
+      0x88, 0x22, 0x22, 0x08, 0x88, 0x82, 0x22, 0x20, 0xa8, 0x9a,
+      0x2a, 0x2a, 0x8a, 0x8a, 0xa2, 0xa2, 0xa8, 0xa8, 0xaa, 0x2a,
+      0x2a, 0x8a, 0x8a, 0xa2, 0xa2, 0xa8, 0xa8, 0xaa, 0xca, 0x8a,
+      0xa8, 0xa8, 0xaa, 0x8a, 0x8a, 0xa8, 0xa8, 0xaa, 0x8a, 0x8a,
+      0xa8, 0xa8, 0xaa, 0x8a, 0x8a, 0xa8, 0xa8, 0xaa, 0xb2, 0xa2,
+      0xaa, 0x8a, 0x9a, 0xaa, 0x2a, 0x6a, 0xa8, 0xa8, 0xaa, 0xa2,
+      0xa2, 0xaa, 0x8a, 0x8a, 0xaa, 0x2f, 0x6b, 0xfc)
+      .map(_.toByte)
+    assert(java.util.Arrays.equals(res, expected))
   }
 
   test("test watchdog with scan maxHivePartitions") {
