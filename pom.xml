@@ -1709,7 +1709,6 @@
                             <exclude>**/*.log</exclude>
                             <exclude>**/*.md</exclude>
                             <exclude>**/*.iml</exclude>
-                            <exclude>**/*.tmpl</exclude>
                             <exclude>**/target/**</exclude>
                             <exclude>**/out/**</exclude>
                             <exclude>**/spark-warehouse/**</exclude>
