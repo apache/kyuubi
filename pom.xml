@@ -1725,6 +1725,7 @@
                             <exclude>**/**/operation_logs/**/**</exclude>
                             <exclude>**/*.output.schema</exclude>
                             <exclude>**/apache-kyuubi-*-bin*/**</exclude>
+                            <exclude>**/META-INF/services/*</exclude>
                         </excludes>
                     </configuration>
                 </plugin>
