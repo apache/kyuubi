@@ -20,12 +20,13 @@ package org.apache.kyuubi.sql.zorder
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
+import org.apache.spark.sql.catalyst.expressions.codegen.{CodegenContext, ExprCode, FalseLiteral}
+import org.apache.spark.sql.catalyst.expressions.codegen.Block._
 import org.apache.spark.sql.types.{BinaryType, DataType}
 
 import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
-case class Zorder(children: Seq[Expression]) extends Expression with CodegenFallback {
+case class Zorder(children: Seq[Expression]) extends Expression {
   override def foldable: Boolean = children.forall(_.foldable)
   override def nullable: Boolean = false
   override def dataType: DataType = BinaryType
@@ -42,21 +43,48 @@ case class Zorder(children: Seq[Expression]) extends Expression with CodegenFall
   }
 
   @transient
-  private lazy val defaultNullValues: Seq[Any] = {
-    children.map(child => ZorderBytesUtils.defaultValue(child.dataType))
-  }
+  private lazy val defaultNullValues: Array[Array[Byte]] =
+    children.map(_.dataType)
+      .map(ZorderBytesUtils.defaultValue)
+      .map(ZorderBytesUtils.toByte)
+      .toArray
 
   override def eval(input: InternalRow): Any = {
-    val evaluated = children.zipWithIndex.map { case (child: Expression, index) =>
-      val v = child.eval(input)
-      if (v == null) {
-        defaultNullValues(index)
-      } else {
-        v
-      }
+    val binaryArr = children.zipWithIndex.map {
+      case (child: Expression, index) =>
+        val v = child.eval(input)
+        if (v == null) {
+          defaultNullValues(index)
+        } else {
+          ZorderBytesUtils.toByte(v)
+        }
     }
+    ZorderBytesUtils.interleaveMultiByteArray(binaryArr.toArray)
+  }
 
-    val binaryArr = evaluated.map(ZorderBytesUtils.toByte).toArray
-    ZorderBytesUtils.interleaveMultiByteArray(binaryArr)
+  override protected def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
+    val evals = children.map(_.genCode(ctx))
+    val defaultValues = ctx.addReferenceObj("defaultValues", defaultNullValues)
+    val binaryArray = ctx.freshName("binaryArray")
+    val util = ZorderBytesUtils.getClass.getName.stripSuffix("$")
+    val inputs = evals.zipWithIndex.map {
+      case (eval, index) =>
+        s"""
+           |${eval.code}
+           |if (${eval.isNull}) {
+           |  $binaryArray[$index] = (byte[]) $defaultValues[$index];
+           |} else {
+           |  $binaryArray[$index] = $util.toByte(${eval.value});
+           |}
+           |""".stripMargin
+    }
+    ev.copy(code =
+      code"""
+         |byte[] ${ev.value} = null;
+         |byte[][] $binaryArray = new byte[${evals.length}][];
+         |${inputs.mkString("\n")}
+         |${ev.value} = $util.interleaveMultiByteArray($binaryArray);
+         |""".stripMargin,
+      isNull = FalseLiteral)
   }
 }
