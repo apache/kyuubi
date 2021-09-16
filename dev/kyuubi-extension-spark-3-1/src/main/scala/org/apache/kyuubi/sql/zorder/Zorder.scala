@@ -17,15 +17,15 @@
 
 package org.apache.kyuubi.sql.zorder
 
-import java.util.{Map => JMap, HashMap => JHashMap}
+import java.util.{HashMap => JHashMap, Map => JMap}
 
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 import org.apache.spark.sql.catalyst.expressions.{ComplexTypeMergingExpression, Expression}
-import org.apache.spark.sql.types.{BinaryType, DataType}
 import org.apache.spark.sql.catalyst.expressions.codegen.Block._
 import org.apache.spark.sql.catalyst.expressions.codegen.{CodegenContext, ExprCode}
-import org.apache.spark.internal.Logging
+import org.apache.spark.sql.types.{BinaryType, DataType}
 
 import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
