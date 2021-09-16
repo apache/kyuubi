@@ -18,7 +18,6 @@
 package org.apache.spark.sql
 
 import scala.collection.mutable.Set
-
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Cast, Multiply}
 import org.apache.spark.sql.catalyst.plans.logical.RepartitionByExpression
 import org.apache.spark.sql.execution.adaptive.{AdaptiveSparkPlanHelper, CustomShuffleReaderExec, QueryStageExec}
@@ -28,6 +27,7 @@ import org.apache.spark.sql.hive.execution.OptimizedCreateHiveTableAsSelectComma
 import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
 import org.apache.spark.sql.test.SQLTestData.TestData
 import org.apache.spark.sql.test.SQLTestUtils
+import org.apache.spark.util.Utils
 
 import org.apache.kyuubi.sql.{FinalStageConfigIsolation, KyuubiSQLConf}
 import org.apache.kyuubi.sql.watchdog.MaxHivePartitionExceedException
@@ -58,6 +58,8 @@ class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSpar
     if (_spark != null) {
       _spark.stop()
     }
+    Utils.deleteRecursively(new java.io.File("spark-warehouse"))
+    Utils.deleteRecursively(new java.io.File("metastore_db"))
   }
 
   private def setupData(): Unit = {

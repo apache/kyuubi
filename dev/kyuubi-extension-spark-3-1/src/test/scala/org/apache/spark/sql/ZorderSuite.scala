@@ -29,6 +29,7 @@ import org.apache.spark.sql.hive.execution.{CreateHiveTableAsSelectCommand, Inse
 import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
 import org.apache.spark.sql.test.SQLTestUtils
 import org.apache.spark.sql.types._
+import org.apache.spark.util.Utils
 
 import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
 import org.apache.kyuubi.sql.zorder.Zorder
@@ -61,6 +62,8 @@ trait ZorderSuite extends QueryTest
     if (_spark != null) {
       _spark.stop()
     }
+    Utils.deleteRecursively(new java.io.File("spark-warehouse"))
+    Utils.deleteRecursively(new java.io.File("metastore_db"))
   }
 
   test("optimize unpartitioned table") {
