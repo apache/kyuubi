@@ -23,8 +23,8 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 import org.apache.spark.sql.catalyst.expressions.{ComplexTypeMergingExpression, Expression}
+import org.apache.spark.sql.catalyst.expressions.codegen.{CodegenContext, ExprCode, FalseLiteral}
 import org.apache.spark.sql.catalyst.expressions.codegen.Block._
-import org.apache.spark.sql.catalyst.expressions.codegen.{CodegenContext, ExprCode}
 import org.apache.spark.sql.types.{BinaryType, DataType}
 
 import org.apache.kyuubi.sql.KyuubiSQLExtensionException
@@ -75,32 +75,25 @@ case class Zorder(children: Seq[Expression]) extends ComplexTypeMergingExpressio
     val defaultValues = ctx.addReferenceObj("defaultValues", defaultNullValues)
     val binaryArray = ctx.freshName("binaryArray")
     val util = ZorderBytesUtils.getClass.getName.stripSuffix("$")
-    try {
-      val inputs = evals.zipWithIndex.map {
-        case (eval, index) =>
-          code"""
-              |${eval.code}
-              |if (${eval.isNull}) {
-              |  $binaryArray[$index] = (byte[]) $defaultValues.get($index);
-              |} else {
-              |  $binaryArray[$index] = $util.toByte(
-              |    ${eval.value}
-              |  );
-              |}
-              |""".stripMargin
-      }
-      ev.copy(code =
-        code"""
-            |byte[] ${ev.value} = null;
-            |byte[][] $binaryArray = new byte[${evals.length}][];
-            |${inputs.mkString("\n")}
-            |${ev.value} = $util.interleaveMultiByteArray($binaryArray);
-            |boolean ${ev.isNull} = ${ev.value} == null;
-            |""".stripMargin)
-    } catch {
-      case e: Exception =>
-        logWarning("catch an exception when generate zorder code.", e)
-        throw e
+    val inputs = evals.zipWithIndex.map {
+      case (eval, index) =>
+        s"""
+           |${eval.code}
+           |if (${eval.isNull}) {
+           |  $binaryArray[$index] = (byte[]) $defaultValues.get($index);
+           |} else {
+           |  $binaryArray[$index] = $util.toByte(${eval.value});
+           |}
+           |""".stripMargin
     }
+    ev.copy(code =
+      code"""
+         |byte[] ${ev.value} = null;
+         |byte[][] $binaryArray = new byte[${evals.length}][];
+         |${inputs.mkString("\n")}
+         |${ev.value} = $util.interleaveMultiByteArray($binaryArray);
+         |boolean ${ev.isNull} = ${ev.value} == null;
+         |""".stripMargin,
+      isNull = FalseLiteral)
   }
 }

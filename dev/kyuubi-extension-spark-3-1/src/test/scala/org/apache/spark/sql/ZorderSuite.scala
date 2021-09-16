@@ -412,22 +412,17 @@ trait ZorderSuite extends QueryTest
     val input = spark.range(len + 1)
       .select('id as "c1", explode(sequence(lit(0), lit(len))) as "c2")
     val expected =
-      (Row(0, 3), 10) :: (Row(1, 3), 11) :: (Row(2, 3), 14) :: (Row(3, 3), 15) ::
-        (Row(0, 2), 8) :: (Row(1, 2), 9) :: (Row(2, 2), 12) :: (Row(3, 2), 13) ::
-        (Row(0, 1), 2) :: (Row(1, 1), 3) :: (Row(2, 1), 6) :: (Row(3, 1), 7) ::
-        (Row(0, 0), 0) :: (Row(1, 0), 1) :: (Row(2, 0), 4) :: (Row(3, 0), 5) :: Nil
-    val sortedExpected = expected.sortBy {
-      case (_, index) => index
-    }.map {
-      case (row, _) => row
-    }
-    checkSort(input, sortedExpected)
+      Row(0, 0) :: Row(1, 0) :: Row(0, 1) :: Row(1, 1) :: Row(2, 0) :: Row(3, 0) :: Row(2, 1) :: Row(3, 1) ::
+        Row(0, 2) :: Row(1, 2) :: Row(0, 3) :: Row(1, 3) :: Row(2, 2) :: Row(3, 2) :: Row(2, 3) :: Row(3, 3) :: Nil
+    checkSort(input, expected)
 
     // contains null value case.
     val nullDF = spark.range(1).select(lit(null) cast LongType).as[java.lang.Long]
     val input2 = spark.range(len)
       .union(nullDF)
-      .select('id as "c1", explode(concat(sequence(lit(0), lit(len - 1)), array(lit(null)))) as "c2")
+      .select(
+        'id as "c1",
+        explode(concat(sequence(lit(0), lit(len - 1)), array(lit(null)))) as "c2")
     val expected2 = Row(null, null) :: Row(0, null) :: Row(1, null) :: Row(2, null) ::
       Row(null, 0) :: Row(null, 1) :: Row(null, 2) :: Row(0, 0) ::
       Row(1, 0) :: Row(0, 1) :: Row(1, 1) :: Row(2, 0) ::
