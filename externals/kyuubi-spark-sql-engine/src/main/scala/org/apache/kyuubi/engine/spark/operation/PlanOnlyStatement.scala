@@ -24,6 +24,7 @@ import org.apache.spark.sql.types.StructType
 import org.apache.kyuubi.config.KyuubiConf.OperationModes.{ANALYZE, OperationMode, OPTIMIZE, PARSE}
 import org.apache.kyuubi.engine.spark.{ArrayFetchIterator, IterableFetchIterator}
 import org.apache.kyuubi.operation.OperationType
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
 /**
@@ -35,6 +36,10 @@ class PlanOnlyStatement(
     protected override val statement: String,
     mode: OperationMode)
   extends SparkOperation(spark, OperationType.EXECUTE_STATEMENT, session) {
+
+  private val operationLog: OperationLog =
+    OperationLog.createOperationLog(session.handle, getHandle)
+  override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
   override protected def resultSchema: StructType = if (result == null) {
     new StructType().add("plan", "string")
