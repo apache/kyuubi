@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.sql.zorder
 
-import java.util.{HashMap => JHashMap, Map => JMap}
-
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 import org.apache.spark.sql.catalyst.expressions.Expression
@@ -45,23 +43,18 @@ case class Zorder(children: Seq[Expression]) extends Expression {
   }
 
   @transient
-  private lazy val defaultNullValues: JMap[Int, Array[Byte]] = {
-    val map = new JHashMap[Int, Array[Byte]](children.length)
-    children.zipWithIndex
-      .foreach {
-        case (child, index) =>
-          map.put(index, ZorderBytesUtils.toByte(
-            ZorderBytesUtils.defaultValue(child.dataType)))
-      }
-    map
-  }
+  private lazy val defaultNullValues: Array[Array[Byte]] =
+    children.map(_.dataType)
+      .map(ZorderBytesUtils.defaultValue)
+      .map(ZorderBytesUtils.toByte)
+      .toArray
 
   override def eval(input: InternalRow): Any = {
     val binaryArr = children.zipWithIndex.map {
       case (child: Expression, index) =>
         val v = child.eval(input)
         if (v == null) {
-          defaultNullValues.get(index)
+          defaultNullValues(index)
         } else {
           ZorderBytesUtils.toByte(v)
         }
@@ -79,7 +72,7 @@ case class Zorder(children: Seq[Expression]) extends Expression {
         s"""
            |${eval.code}
            |if (${eval.isNull}) {
-           |  $binaryArray[$index] = (byte[]) $defaultValues.get($index);
+           |  $binaryArray[$index] = (byte[]) $defaultValues[$index];
            |} else {
            |  $binaryArray[$index] = $util.toByte(${eval.value});
            |}
