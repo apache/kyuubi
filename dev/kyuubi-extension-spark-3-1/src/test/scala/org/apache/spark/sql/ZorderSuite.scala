@@ -394,7 +394,7 @@ trait ZorderSuite extends QueryTest
     // TODO: add more datatype unit test
     def checkSort(input: DataFrame, expected: Seq[Row]): Unit = {
       withTempDir { dir =>
-        input.write.mode("overwrite").format("json").save(dir.getCanonicalPath)
+        input.repartition(3).write.mode("overwrite").format("json").save(dir.getCanonicalPath)
         val df = spark.read.format("json")
           .load(dir.getCanonicalPath)
           .repartition(1)
@@ -405,11 +405,12 @@ trait ZorderSuite extends QueryTest
         checkAnswer(result, expected)
       }
     }
+    val session = spark
+    import session.implicits._
     // generate 4 * 4 matrix
     val len = 3
     val input = spark.range(len + 1)
-      .selectExpr("id as c1", s"explode(sequence(0, $len)) as c2")
-      .repartition(3)
+      .select('id as "c1", explode(sequence(lit(0), lit(len))) as "c2")
     val expected =
       (Row(0, 3), 10) :: (Row(1, 3), 11) :: (Row(2, 3), 14) :: (Row(3, 3), 15) ::
         (Row(0, 2), 8) :: (Row(1, 2), 9) :: (Row(2, 2), 12) :: (Row(3, 2), 13) ::
@@ -423,12 +424,10 @@ trait ZorderSuite extends QueryTest
     checkSort(input, sortedExpected)
 
     // contains null value case.
-    val session = spark
-    import session.implicits._
+    val nullDF = spark.range(1).select(lit(null) cast LongType).as[java.lang.Long]
     val input2 = spark.range(len)
-      .union(sql("select null").as[java.lang.Long])
-      .selectExpr("id as c1", s"explode(concat(sequence(0, $len - 1), array(null))) as c2")
-      .repartition(3)
+      .union(nullDF)
+      .select('id as "c1", explode(concat(sequence(lit(0), lit(len - 1)), array(lit(null)))) as "c2")
     val expected2 = Row(null, null) :: Row(0, null) :: Row(1, null) :: Row(2, null) ::
       Row(null, 0) :: Row(null, 1) :: Row(null, 2) :: Row(0, 0) ::
       Row(1, 0) :: Row(0, 1) :: Row(1, 1) :: Row(2, 0) ::
