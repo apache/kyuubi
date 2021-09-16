@@ -19,7 +19,6 @@ package org.apache.kyuubi.sql.zorder
 
 import java.util.{HashMap => JHashMap, Map => JMap}
 
-import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 import org.apache.spark.sql.catalyst.expressions.Expression
@@ -29,7 +28,7 @@ import org.apache.spark.sql.types.{BinaryType, DataType}
 
 import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
-case class Zorder(children: Seq[Expression]) extends Expression with Logging {
+case class Zorder(children: Seq[Expression]) extends Expression {
   override def foldable: Boolean = children.forall(_.foldable)
   override def nullable: Boolean = false
   override def dataType: DataType = BinaryType
