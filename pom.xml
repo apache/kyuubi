@@ -115,6 +115,7 @@
         <ldapsdk.version>5.1.4</ldapsdk.version>
         <parquet.version>1.10.1</parquet.version>
         <prometheus.version>0.10.0</prometheus.version>
+        <scalacheck.version>3.2.9.0</scalacheck.version>
         <scalatest.version>3.2.9</scalatest.version>
         <scopt.version>4.0.1</scopt.version>
         <slf4j.version>1.7.30</slf4j.version>
@@ -407,8 +408,8 @@
 
             <dependency>
                 <groupId>org.scalatestplus</groupId>
-                <artifactId>scalatestplus-scalacheck_${scala.binary.version}</artifactId>
-                <version>3.1.0.0-RC2</version>
+                <artifactId>scalacheck-1-15_${scala.binary.version}</artifactId>
+                <version>${scalacheck.version}</version>
                 <scope>test</scope>
             </dependency>
 
