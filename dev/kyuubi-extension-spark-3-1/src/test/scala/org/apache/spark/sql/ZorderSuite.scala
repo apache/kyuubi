@@ -412,8 +412,10 @@ trait ZorderSuite extends QueryTest
     val input = spark.range(len + 1)
       .select('id as "c1", explode(sequence(lit(0), lit(len))) as "c2")
     val expected =
-      Row(0, 0) :: Row(1, 0) :: Row(0, 1) :: Row(1, 1) :: Row(2, 0) :: Row(3, 0) :: Row(2, 1) :: Row(3, 1) ::
-        Row(0, 2) :: Row(1, 2) :: Row(0, 3) :: Row(1, 3) :: Row(2, 2) :: Row(3, 2) :: Row(2, 3) :: Row(3, 3) :: Nil
+      Row(0, 0) :: Row(1, 0) :: Row(0, 1) :: Row(1, 1) ::
+        Row(2, 0) :: Row(3, 0) :: Row(2, 1) :: Row(3, 1) ::
+        Row(0, 2) :: Row(1, 2) :: Row(0, 3) :: Row(1, 3) ::
+        Row(2, 2) :: Row(3, 2) :: Row(2, 3) :: Row(3, 3) :: Nil
     checkSort(input, expected)
 
     // contains null value case.
