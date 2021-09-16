@@ -92,7 +92,6 @@ case class Zorder(children: Seq[Expression]) extends ComplexTypeMergingExpressio
          |byte[][] $binaryArray = new byte[${evals.length}][];
          |${inputs.mkString("\n")}
          |${ev.value} = $util.interleaveMultiByteArray($binaryArray);
-         |boolean ${ev.isNull} = ${ev.value} == null;
          |""".stripMargin,
       isNull = FalseLiteral)
   }
