@@ -74,7 +74,7 @@ case class Zorder(children: Seq[Expression]) extends ComplexTypeMergingExpressio
     val evals = children.map(_.genCode(ctx))
     val defaultValues = ctx.addReferenceObj("defaultValues", defaultNullValues)
     val binaryArray = ctx.freshName("binaryArray")
-    val util = ZorderBytesUtils.getClass.getName + ".MODULE$"
+    val util = ZorderBytesUtils.getClass.getName.stripSuffix("$")
     try {
       val inputs = evals.zipWithIndex.map {
         case (eval, index) =>

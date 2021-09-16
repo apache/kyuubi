@@ -18,7 +18,8 @@
 package org.apache.spark.sql
 
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.catalyst.expressions.{Alias, Ascending, Expression, Literal, NullsLast, SortOrder}
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.{Alias, Ascending, Expression, ExpressionEvalHelper, Literal, NullsLast, SortOrder}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, OneRowRelation, Project, Sort}
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanHelper
 import org.apache.spark.sql.execution.command.CreateDataSourceTableAsSelectCommand
@@ -34,7 +35,8 @@ import org.apache.kyuubi.sql.zorder.Zorder
 
 trait ZorderSuite extends QueryTest
   with SQLTestUtils
-  with AdaptiveSparkPlanHelper {
+  with AdaptiveSparkPlanHelper
+  with ExpressionEvalHelper {
 
   var _spark: SparkSession = _
   override def spark: SparkSession = _spark
@@ -210,10 +212,10 @@ trait ZorderSuite extends QueryTest
   }
 
   private def checkZorderTable(
-                                enabled: Boolean,
-                                cols: String,
-                                planHasRepartition: Boolean,
-                                resHasSort: Boolean): Unit = {
+      enabled: Boolean,
+      cols: String,
+      planHasRepartition: Boolean,
+      resHasSort: Boolean): Unit = {
     def checkSort(plan: LogicalPlan): Unit = {
       assert(plan.isInstanceOf[Sort] === resHasSort)
       if (plan.isInstanceOf[Sort]) {
@@ -368,7 +370,6 @@ trait ZorderSuite extends QueryTest
     val plan = Project(Seq(Alias(zorder, "c")()), OneRowRelation())
     spark.sessionState.analyzer.checkAnalysis(plan)
     assert(zorder.foldable)
-    val res = zorder.eval().asInstanceOf[Array[Byte]]
     val expected = Array(
       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
       0x50, 0x54, 0x15, 0x05, 0x49, 0x51, 0x54, 0x55, 0x15, 0x45,
@@ -383,7 +384,7 @@ trait ZorderSuite extends QueryTest
       0xaa, 0x8a, 0x9a, 0xaa, 0x2a, 0x6a, 0xa8, 0xa8, 0xaa, 0xa2,
       0xa2, 0xaa, 0x8a, 0x8a, 0xaa, 0x2f, 0x6b, 0xfc)
       .map(_.toByte)
-    assert(java.util.Arrays.equals(res, expected))
+    checkEvaluation(zorder, expected, InternalRow.fromSeq(children))
   }
 
   test("sort with zorder -- int column") {
