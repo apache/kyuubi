@@ -24,6 +24,7 @@ import java.util.concurrent.{Executors, TimeUnit}
 import java.util.regex.Pattern
 
 import org.scalatest.time.SpanSugar._
+
 import org.apache.kyuubi.{KerberizedTestHelper, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_LOG_TIMEOUT

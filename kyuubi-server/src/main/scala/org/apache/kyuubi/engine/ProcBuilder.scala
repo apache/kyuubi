@@ -22,12 +22,14 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 import java.util.regex.Pattern
 
+import scala.collection.JavaConverters._
+
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
+
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.util.NamedThreadFactory
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
 
-import scala.collection.JavaConverters._
 
 trait ProcBuilder {
 
