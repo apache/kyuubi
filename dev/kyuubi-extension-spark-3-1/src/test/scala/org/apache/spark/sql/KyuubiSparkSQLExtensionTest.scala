@@ -39,9 +39,9 @@ trait KyuubiSparkSQLExtensionTest extends QueryTest
         .config(sparkConf)
         .enableHiveSupport()
         .getOrCreate())
-      setupData()
-      super.beforeAll()
     }
+    setupData()
+    super.beforeAll()
   }
 
   protected override def afterAll(): Unit = {
