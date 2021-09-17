@@ -21,67 +21,15 @@ import scala.collection.mutable.Set
 
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Cast, Multiply}
 import org.apache.spark.sql.catalyst.plans.logical.RepartitionByExpression
-import org.apache.spark.sql.execution.adaptive.{AdaptiveSparkPlanHelper, CustomShuffleReaderExec, QueryStageExec}
+import org.apache.spark.sql.execution.adaptive.{CustomShuffleReaderExec, QueryStageExec}
 import org.apache.spark.sql.execution.exchange.{ENSURE_REQUIREMENTS, ShuffleExchangeLike}
 import org.apache.spark.sql.hive.HiveUtils
 import org.apache.spark.sql.hive.execution.OptimizedCreateHiveTableAsSelectCommand
-import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
-import org.apache.spark.sql.test.SQLTestData.TestData
-import org.apache.spark.sql.test.SQLTestUtils
-import org.apache.spark.util.Utils
-
+import org.apache.spark.sql.internal.SQLConf
 import org.apache.kyuubi.sql.{FinalStageConfigIsolation, KyuubiSQLConf}
 import org.apache.kyuubi.sql.watchdog.MaxHivePartitionExceedException
 
-class KyuubiExtensionSuite extends QueryTest with SQLTestUtils with AdaptiveSparkPlanHelper {
-
-  var _spark: SparkSession = _
-  override def spark: SparkSession = _spark
-
-  protected override def beforeAll(): Unit = {
-    _spark = SparkSession.builder()
-      .master("local[1]")
-      .config(StaticSQLConf.SPARK_SESSION_EXTENSIONS.key,
-        "org.apache.kyuubi.sql.KyuubiSparkSQLExtension")
-      .config(SQLConf.ADAPTIVE_EXECUTION_ENABLED.key, "true")
-      .config("spark.hadoop.hive.exec.dynamic.partition.mode", "nonstrict")
-      .config("spark.hadoop.hive.metastore.client.capability.check", "false")
-      .config("spark.ui.enabled", "false")
-      .enableHiveSupport()
-      .getOrCreate()
-    setupData()
-    super.beforeAll()
-  }
-
-  protected override def afterAll(): Unit = {
-    super.afterAll()
-    cleanupData()
-    if (_spark != null) {
-      _spark.stop()
-    }
-    Utils.deleteRecursively(new java.io.File("spark-warehouse"))
-    Utils.deleteRecursively(new java.io.File("metastore_db"))
-  }
-
-  private def setupData(): Unit = {
-    val self = _spark
-    import self.implicits._
-    spark.sparkContext.parallelize(
-      (1 to 100).map(i => TestData(i, i.toString)), 10)
-      .toDF("c1", "c2").createOrReplaceTempView("t1")
-    spark.sparkContext.parallelize(
-      (1 to 10).map(i => TestData(i, i.toString)), 5)
-      .toDF("c1", "c2").createOrReplaceTempView("t2")
-    spark.sparkContext.parallelize(
-      (1 to 50).map(i => TestData(i, i.toString)), 2)
-      .toDF("c1", "c2").createOrReplaceTempView("t3")
-  }
-
-  private def cleanupData(): Unit = {
-    spark.sql("DROP VIEW IF EXISTS t1")
-    spark.sql("DROP VIEW IF EXISTS t2")
-    spark.sql("DROP VIEW IF EXISTS t3")
-  }
+class KyuubiExtensionSuite extends KyuubiSparkSQLExtensionTest {
 
   test("check repartition exists") {
     def check(df: DataFrame): Unit = {
