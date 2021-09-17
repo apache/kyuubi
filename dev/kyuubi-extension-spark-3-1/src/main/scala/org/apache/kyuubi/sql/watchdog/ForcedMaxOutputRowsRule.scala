@@ -19,7 +19,7 @@ package org.apache.kyuubi.sql.watchdog
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.dsl.expressions._
-import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, GlobalLimit, LogicalPlan, Project}
+import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Limit, LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.rules.Rule
 
 import org.apache.kyuubi.sql.KyuubiSQLConf
@@ -41,42 +41,31 @@ import org.apache.kyuubi.sql.KyuubiSQLConf
 * SELECT [c1, c2, ...] FROM CTE ...
 * }}}
 *
-* case 3 (customize yourself):
-*  {{{
-*   INSERT OVERWRITE DIRECTORY (path=STRING)?
-*   USING format OPTIONS ([option1_name "option1_value", option2_name "option2_value", ...])
-*   SELECT ...
-* }}}
 * The Logical Rule add a GlobalLimit node before root project
 * */
 case class ForcedMaxOutputRowsRule(session: SparkSession) extends Rule[LogicalPlan] {
-  override def apply(plan: LogicalPlan): LogicalPlan = {
-    if (!plan.resolved) {
-      plan
-    } else {
-      conf.getConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS) match {
-        case Some(forcedMaxOutputRows) => plan.maxRows match {
-          case Some(maxRows) => if (maxRows > forcedMaxOutputRows) {
-            GlobalLimit(forcedMaxOutputRows, plan)
-          } else {
-            plan
-          }
-          case None => plan match {
-            case project: Project => GlobalLimit(forcedMaxOutputRows, project)
-            case agg: Aggregate => agg.maxRows match {
-              case Some(maxRows) => if (maxRows > forcedMaxOutputRows) {
-                GlobalLimit(forcedMaxOutputRows, agg)
-              } else {
-                agg
-              }
-              case None => GlobalLimit(forcedMaxOutputRows, agg)
-            }
-            // TODO: Customize your required process node
-            case _ => plan
-          }
+
+  private def canInsertLimit(p: LogicalPlan): Boolean = {
+
+    conf.getConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS) match {
+      case Some(forcedMaxOutputRows) => val supported = p match {
+          case _: Project => true
+          case _: Aggregate => true
+          case Limit(_, _) => true
+          case _ => false
         }
-        case None => plan
-      }
+        supported && !p.maxRows.exists(_ <= forcedMaxOutputRows)
+      case None => false
+    }
+
+  }
+
+  override def apply(plan: LogicalPlan): LogicalPlan = {
+    plan match {
+      case p if p.resolved && canInsertLimit(p) => Limit(
+        conf.getConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS).get, plan)
+      case _ => plan
     }
   }
+
 }
