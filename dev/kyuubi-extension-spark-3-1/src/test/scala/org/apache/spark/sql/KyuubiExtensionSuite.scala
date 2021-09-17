@@ -26,6 +26,7 @@ import org.apache.spark.sql.execution.exchange.{ENSURE_REQUIREMENTS, ShuffleExch
 import org.apache.spark.sql.hive.HiveUtils
 import org.apache.spark.sql.hive.execution.OptimizedCreateHiveTableAsSelectCommand
 import org.apache.spark.sql.internal.SQLConf
+
 import org.apache.kyuubi.sql.{FinalStageConfigIsolation, KyuubiSQLConf}
 import org.apache.kyuubi.sql.watchdog.MaxHivePartitionExceedException
 
