@@ -19,15 +19,15 @@ package org.apache.kyuubi.engine
 
 import java.io.{File, IOException}
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path}
-
-import scala.collection.JavaConverters._
+import java.nio.file.{Files, Path, Paths}
+import java.util.regex.Pattern
 
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
-
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.util.NamedThreadFactory
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
+
+import scala.collection.JavaConverters._
 
 trait ProcBuilder {
 
@@ -146,6 +146,38 @@ trait ProcBuilder {
     logCaptureThread = PROC_BUILD_LOGGER.newThread(redirect)
     logCaptureThread.start()
     proc
+  }
+
+  def execKillYarnJob(appId: String): Int = {
+    val hadoopHomeOpt = env.get("HADOOP_HOME").orElse {
+      throw KyuubiSQLException(s"Failed to kill yarn job. HADOOP_HOME is not set! " +
+        "For more detail information on installing and configuring Yarn, please visit " +
+        "https://kyuubi.apache.org/docs/stable/deployment/on_yarn.html")
+    }.map { dir =>
+      Paths.get(dir, "bin", "yarn").toAbsolutePath.toFile.getCanonicalPath
+    }.get
+    val command = hadoopHomeOpt + " application -kill " + appId
+    val pb = new ProcessBuilder("/bin/sh", "-c", command)
+    var exitValue: Option[Int] = None
+
+    try {
+      val process = pb.start()
+      exitValue = Some(process.exitValue())
+    } catch {
+      case e: Exception =>
+        throw KyuubiSQLException(s"Failed to kill yarn job. Command[$command]", e.getCause)
+    }
+    info(s"Successfully kill yarn job $appId")
+    exitValue.get
+  }
+
+  private val APPLICATION_REGEX = Pattern.compile("application_\\d+_\\d+")
+
+  def closeYarnJob(row: String = lastRowOfLog): Unit = {
+    val matcher = APPLICATION_REGEX.matcher(row)
+    if (matcher.find && row.contains("state: ACCEPTED")) {
+      execKillYarnJob(matcher.group)
+    }
   }
 
   def close(): Unit = {

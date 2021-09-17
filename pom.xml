@@ -115,6 +115,7 @@
         <ldapsdk.version>5.1.4</ldapsdk.version>
         <parquet.version>1.10.1</parquet.version>
         <prometheus.version>0.10.0</prometheus.version>
+        <scalacheck.version>3.2.9.0</scalacheck.version>
         <scalatest.version>3.2.9</scalatest.version>
         <scopt.version>4.0.1</scopt.version>
         <slf4j.version>1.7.30</slf4j.version>
@@ -403,6 +404,13 @@
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.scalatestplus</groupId>
+                <artifactId>scalacheck-1-15_${scala.binary.version}</artifactId>
+                <version>${scalacheck.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <dependency>
@@ -1920,9 +1928,6 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-deploy-plugin</artifactId>
                         <inherited>true</inherited>
-                        <configuration>
-                            <updateReleaseInfo>true</updateReleaseInfo>
-                        </configuration>
                     </plugin>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>

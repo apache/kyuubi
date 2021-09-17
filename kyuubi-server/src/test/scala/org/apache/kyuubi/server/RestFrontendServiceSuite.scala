@@ -18,14 +18,21 @@
 package org.apache.kyuubi.server
 
 import java.util.Locale
+import javax.ws.rs.core.Application
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import org.glassfish.jersey.server.ResourceConfig
+import org.glassfish.jersey.test.{JerseyTest, TestProperties}
+import org.glassfish.jersey.test.jetty.JettyTestContainerFactory
+import org.glassfish.jersey.test.spi.TestContainerFactory
+import org.junit.Test
 import org.scalatest.time.SpanSugar._
 import scala.io.Source
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.server.RestFrontendServiceSuite.{withKyuubiRestServer, TEST_SERVER_PORT}
 import org.apache.kyuubi.service.NoopServer
 import org.apache.kyuubi.service.ServiceState._
 
@@ -101,4 +108,39 @@ object RestFrontendServiceSuite {
     }
   }
 
+}
+
+class RestApiBaseSuite extends JerseyTest {
+
+  override def configure: Application = {
+    forceSet(TestProperties.CONTAINER_PORT, TEST_SERVER_PORT.toString)
+    new ResourceConfig(getClass)
+  }
+
+  override def getTestContainerFactory: TestContainerFactory = new JettyTestContainerFactory
+
+}
+
+class RestErrorAndExceptionSuite extends RestApiBaseSuite {
+
+  @Test
+  def testErrorAndExceptionResponse: Unit = {
+    withKyuubiRestServer {
+      (_, _, _) =>
+        // send a not exists request
+        var response = target("api/v1/pong").request().get()
+        assert(404 == response.getStatus)
+        assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("not found"))
+
+        // send a exists request but wrong http method
+        response = target("api/v1/ping").request().post(null)
+        assert(405 == response.getStatus)
+        assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("method not allowed"))
+
+        // send a request but throws a exception on the server side
+        response = target("api/v1/exception").request().get()
+        assert(500 == response.getStatus)
+        assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("server error"))
+    }
+  }
 }

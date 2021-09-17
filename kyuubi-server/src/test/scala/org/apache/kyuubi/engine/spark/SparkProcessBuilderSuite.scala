@@ -21,9 +21,9 @@ import java.io.File
 import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import java.time.Duration
 import java.util.concurrent.{Executors, TimeUnit}
+import java.util.regex.Pattern
 
 import org.scalatest.time.SpanSugar._
-
 import org.apache.kyuubi.{KerberizedTestHelper, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_LOG_TIMEOUT
@@ -224,6 +224,17 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     conf.set(ENGINE_SPARK_MAIN_RESOURCE, jarPath.toString)
     val b2 = new SparkProcessBuilder("test", conf)
     assert(b2.mainResource.getOrElse("") != jarPath.toString)
+  }
+
+  test("test kill application") {
+    val config = KyuubiConf()
+    val pb = new FakeSparkProcessBuilder(config)
+    val regex = Pattern.compile("application_\\d+_\\d+")
+    val lastRowOfLog = "Application report for application_1593587619692_19713 (state: ACCEPTED)"
+    val matcher = regex.matcher(lastRowOfLog)
+    matcher.find
+    val exitValue = pb.execKillYarnJob(matcher.group)
+    assert(exitValue == 0)
   }
 }
 
