@@ -21,14 +21,12 @@ import java.io.File
 import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import java.time.Duration
 import java.util.concurrent.{Executors, TimeUnit}
-import java.util.regex.Pattern
 
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{KerberizedTestHelper, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_LOG_TIMEOUT
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOG_TIMEOUT, ENGINE_SPARK_MAIN_RESOURCE}
 import org.apache.kyuubi.service.ServiceUtils
 
 class SparkProcessBuilderSuite extends KerberizedTestHelper {
@@ -229,14 +227,18 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
 
   test("test kill application") {
     val config = KyuubiConf()
-    val pb = new FakeSparkProcessBuilder(config)
-    val regex = Pattern.compile("application_\\d+_\\d+")
+    val pb: FakeSparkProcessBuilder = new FakeSparkProcessBuilder(config)
     val lastRowOfLog = "Application report for application_1593587619692_19713 (state: ACCEPTED)"
-    val matcher = regex.matcher(lastRowOfLog)
-    matcher.find
-    val exitValue = pb.execKillYarnJob(matcher.group)
-    assert(exitValue == 0)
+
+    val e = intercept[KyuubiSQLException] {
+      pb.closeYarnJob(lastRowOfLog)
+    }
+
+    assert(e.getMessage === "Failed to kill yarn job. " +
+      "HADOOP_HOME is not set! For more detail information on installing and configuring Yarn, " +
+      "please visit https://kyuubi.apache.org/docs/stable/deployment/on_yarn.html")
   }
+
 }
 
 class FakeSparkProcessBuilder(config: KyuubiConf)

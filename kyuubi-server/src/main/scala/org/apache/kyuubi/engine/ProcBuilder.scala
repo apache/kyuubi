@@ -20,16 +20,15 @@ package org.apache.kyuubi.engine
 import java.io.{File, IOException}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
-import java.util.regex.Pattern
 
 import scala.collection.JavaConverters._
+import scala.util.matching.Regex
 
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.util.NamedThreadFactory
-
 
 trait ProcBuilder {
 
@@ -155,8 +154,8 @@ trait ProcBuilder {
       throw KyuubiSQLException(s"Failed to kill yarn job. HADOOP_HOME is not set! " +
         "For more detail information on installing and configuring Yarn, please visit " +
         "https://kyuubi.apache.org/docs/stable/deployment/on_yarn.html")
-    }.map { dir =>
-      Paths.get(dir, "bin", "yarn").toAbsolutePath.toFile.getCanonicalPath
+    }.map { hadoopHome =>
+      Paths.get(hadoopHome, "bin", "yarn").toAbsolutePath.toFile.getCanonicalPath
     }.get
     val command = hadoopHomeOpt + " application -kill " + appId
     val pb = new ProcessBuilder("/bin/sh", "-c", command)
@@ -167,18 +166,18 @@ trait ProcBuilder {
       exitValue = Some(process.exitValue())
     } catch {
       case e: Exception =>
-        throw KyuubiSQLException(s"Failed to kill yarn job. Command[$command]", e.getCause)
+        throw KyuubiSQLException(s"Failed to kill yarn job. command : $command", e.getCause)
     }
-    info(s"Successfully kill yarn job $appId")
     exitValue.get
   }
 
-  private val APPLICATION_REGEX = Pattern.compile("application_\\d+_\\d+")
+  val YARN_APP_NAME_REGEX: Regex = "application_\\d+_\\d+".r
 
   def closeYarnJob(row: String = lastRowOfLog): Unit = {
-    val matcher = APPLICATION_REGEX.matcher(row)
-    if (matcher.find && row.contains("state: ACCEPTED")) {
-      execKillYarnJob(matcher.group)
+    val matcher = YARN_APP_NAME_REGEX.findAllMatchIn(row)
+
+    if (matcher.nonEmpty && row.contains("state: ACCEPTED")) {
+      execKillYarnJob(matcher.next().group(0))
     }
   }
 
