@@ -21,7 +21,6 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.dsl.expressions._
 import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, GlobalLimit, LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.catalyst.trees.Origin
 
 import org.apache.kyuubi.sql.KyuubiSQLConf
 
@@ -57,20 +56,12 @@ case class ForcedMaxOutputRowsRule(session: SparkSession) extends Rule[LogicalPl
     } else {
       conf.getConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS) match {
         case Some(forcedMaxOutputRows) => plan match {
-          case project: Project => project.origin match {
-            case Origin(Some(_), Some(0)) => GlobalLimit(forcedMaxOutputRows, project)
-            case _ => project
+          case project: Project => GlobalLimit(forcedMaxOutputRows, project)
+          case agg: Aggregate => agg.maxRows match {
+            case Some(_) => agg
+            case None => GlobalLimit(forcedMaxOutputRows, agg)
           }
-          case agg: Aggregate => agg.origin match {
-            case Origin(None, None) => agg.maxRows match {
-              case Some(_) => agg
-              case None => GlobalLimit(forcedMaxOutputRows, agg)
-            }
-            case _ => agg
-          }
-
           // TODO: Customize your required process node
-
           case _ => plan
         }
         case _ => plan
