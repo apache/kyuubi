@@ -55,16 +55,27 @@ case class ForcedMaxOutputRowsRule(session: SparkSession) extends Rule[LogicalPl
       plan
     } else {
       conf.getConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS) match {
-        case Some(forcedMaxOutputRows) => plan match {
-          case project: Project => GlobalLimit(forcedMaxOutputRows, project)
-          case agg: Aggregate => agg.maxRows match {
-            case Some(_) => agg
-            case None => GlobalLimit(forcedMaxOutputRows, agg)
+        case Some(forcedMaxOutputRows) => plan.maxRows match {
+          case Some(maxRows) => if (maxRows > forcedMaxOutputRows) {
+            GlobalLimit(forcedMaxOutputRows, plan)
+          } else {
+            plan
           }
-          // TODO: Customize your required process node
-          case _ => plan
+          case None => plan match {
+            case project: Project => GlobalLimit(forcedMaxOutputRows, project)
+            case agg: Aggregate => agg.maxRows match {
+              case Some(maxRows) => if (maxRows > forcedMaxOutputRows) {
+                GlobalLimit(forcedMaxOutputRows, agg)
+              } else {
+                agg
+              }
+              case None => GlobalLimit(forcedMaxOutputRows, agg)
+            }
+            // TODO: Customize your required process node
+            case _ => plan
+          }
         }
-        case _ => plan
+        case None => plan
       }
     }
   }

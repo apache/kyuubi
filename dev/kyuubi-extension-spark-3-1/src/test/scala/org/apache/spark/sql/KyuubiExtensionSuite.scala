@@ -1314,6 +1314,9 @@ class KyuubiExtensionSuite extends KyuubiSparkSQLExtensionTest {
       assert(sql("SELECT * FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2) LIMIT 1")
         .queryExecution.analyzed.asInstanceOf[GlobalLimit].maxRows.contains(1))
 
+      assert(sql("SELECT * FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2) LIMIT 11")
+        .queryExecution.analyzed.asInstanceOf[GlobalLimit].maxRows.contains(10))
+
       assert(!sql("SELECT count(*) FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)")
         .queryExecution.analyzed.isInstanceOf[GlobalLimit])
 
@@ -1345,6 +1348,17 @@ class KyuubiExtensionSuite extends KyuubiSparkSQLExtensionTest {
           |""".stripMargin).queryExecution
         .analyzed.asInstanceOf[GlobalLimit].maxRows.contains(1))
 
+      assert(sql(
+        """
+          |WITH custom_cte AS (
+          |SELECT * FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)
+          |)
+          |
+          |SELECT * FROM custom_cte
+          |LIMIT 11
+          |""".stripMargin).queryExecution
+        .analyzed.asInstanceOf[GlobalLimit].maxRows.contains(10))
+
       assert(!sql(
         """
           |WITH custom_cte AS (
@@ -1366,6 +1380,19 @@ class KyuubiExtensionSuite extends KyuubiSparkSQLExtensionTest {
           |GROUP BY c1
           |""".stripMargin).queryExecution
         .analyzed.isInstanceOf[GlobalLimit])
+
+      assert(sql(
+        """
+          |WITH custom_cte AS (
+          |SELECT * FROM VALUES(1, 'a'),(2, 'b') AS t(c1, c2)
+          |)
+          |
+          |SELECT c1, COUNT(*)
+          |FROM custom_cte
+          |GROUP BY c1
+          |LIMIT 11
+          |""".stripMargin).queryExecution
+        .analyzed.asInstanceOf[GlobalLimit].maxRows.contains(10))
     }
   }
 }
