@@ -21,50 +21,17 @@ import org.apache.spark.SparkConf
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Alias, Ascending, Expression, ExpressionEvalHelper, Literal, NullsLast, SortOrder}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, OneRowRelation, Project, Sort}
-import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanHelper
 import org.apache.spark.sql.execution.command.CreateDataSourceTableAsSelectCommand
 import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.hive.execution.{CreateHiveTableAsSelectCommand, InsertIntoHiveTable, OptimizedCreateHiveTableAsSelectCommand}
-import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
-import org.apache.spark.sql.test.SQLTestUtils
+import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
-import org.apache.spark.util.Utils
 
 import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
 import org.apache.kyuubi.sql.zorder.Zorder
 
-trait ZorderSuite extends QueryTest
-  with SQLTestUtils
-  with AdaptiveSparkPlanHelper
-  with ExpressionEvalHelper {
-
-  var _spark: SparkSession = _
-  override def spark: SparkSession = _spark
-
-  protected override def beforeAll(): Unit = {
-    _spark = SparkSession.builder()
-      .master("local[1]")
-      .config(StaticSQLConf.SPARK_SESSION_EXTENSIONS.key,
-        "org.apache.kyuubi.sql.KyuubiSparkSQLExtension")
-      .config(SQLConf.ADAPTIVE_EXECUTION_ENABLED.key, "true")
-      .config("spark.hadoop.hive.exec.dynamic.partition.mode", "nonstrict")
-      .config("spark.hadoop.hive.metastore.client.capability.check", "false")
-      .config("spark.ui.enabled", "false")
-      .config(sparkConf)
-      .enableHiveSupport()
-      .getOrCreate()
-    super.beforeAll()
-  }
-
-  protected override def afterAll(): Unit = {
-    super.afterAll()
-    if (_spark != null) {
-      _spark.stop()
-    }
-    Utils.deleteRecursively(new java.io.File("spark-warehouse"))
-    Utils.deleteRecursively(new java.io.File("metastore_db"))
-  }
+trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper {
 
   test("optimize unpartitioned table") {
     withSQLConf(SQLConf.SHUFFLE_PARTITIONS.key -> "1") {
@@ -431,13 +398,11 @@ trait ZorderSuite extends QueryTest
       Row(2, 1) :: Row(0, 2) :: Row(1, 2) :: Row(2, 2) :: Nil
     checkSort(input2, expected2)
   }
-
-  def sparkConf(): SparkConf
 }
 
 class ZorderWithCodegenEnabledSuite extends ZorderSuite {
   override def sparkConf(): SparkConf = {
-    val conf = new SparkConf()
+    val conf = super.sparkConf
     conf.set(SQLConf.WHOLESTAGE_CODEGEN_ENABLED.key, "true")
     conf
   }
@@ -445,7 +410,7 @@ class ZorderWithCodegenEnabledSuite extends ZorderSuite {
 
 class ZorderWithCodegenDisabledSuite extends ZorderSuite {
   override def sparkConf(): SparkConf = {
-    val conf = new SparkConf()
+    val conf = super.sparkConf
     conf.set(SQLConf.WHOLESTAGE_CODEGEN_ENABLED.key, "false")
     conf.set(SQLConf.CODEGEN_FACTORY_MODE.key, "NO_CODEGEN")
     conf
