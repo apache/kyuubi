@@ -71,7 +71,7 @@ trait KyuubiSparkSQLExtensionTest extends QueryTest
   }
 
   def sparkConf(): SparkConf = {
-    val basePath = Utils.createTempDir() + getClass.getCanonicalName
+    val basePath = Utils.createTempDir() + "/" + getClass.getCanonicalName
     val metastorePath = basePath + "/metastore_db"
     val warehousePath = basePath + "/warehouse"
     new SparkConf()
