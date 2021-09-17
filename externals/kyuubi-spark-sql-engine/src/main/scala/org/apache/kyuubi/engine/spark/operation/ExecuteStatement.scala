@@ -117,16 +117,14 @@ class ExecuteStatement(
         val backgroundHandle = sparkSQLSessionManager.submitBackgroundOperation(asyncOperation)
         setBackgroundHandle(backgroundHandle)
       } catch {
-        case rejected: RejectedExecutionException =>
-          if (sparkSQLSessionManager.isShutdown) {
-            // ignore this exception since the engine is shutdown
-          } else {
-            setState(OperationState.ERROR)
-            val ke = KyuubiSQLException("Error submitting query in background, query rejected",
-              rejected)
-            setOperationException(ke)
-            throw ke
-          }
+        case rejected: RejectedExecutionException if !sparkSQLSessionManager.isShutdown =>
+          setState(OperationState.ERROR)
+          val ke = KyuubiSQLException("Error submitting query in background, query rejected",
+            rejected)
+          setOperationException(ke)
+          throw ke
+        // ignore this exception since the engine is shutdown
+        case _: RejectedExecutionException =>
       }
     } else {
       executeStatement()
