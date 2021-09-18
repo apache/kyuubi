@@ -15,32 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.server.api.v1
+package org.apache.kyuubi.sql.watchdog
 
-import com.google.common.annotations.VisibleForTesting
-import javax.ws.rs.{GET, Path, Produces}
-import javax.ws.rs.core.{MediaType, Response}
+import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
-import org.apache.kyuubi.server.api.ApiRequestContext
-
-@Path("/v1")
-private[v1] class ApiRootResource extends ApiRequestContext {
-
-  @GET
-  @Path("ping")
-  @Produces(Array(MediaType.TEXT_PLAIN))
-  def ping(): String = "pong"
-
-  @Path("sessions")
-  def sessions: Class[SessionsResource] = classOf[SessionsResource]
-
-  @GET
-  @Path("exception")
-  @Produces(Array(MediaType.TEXT_PLAIN))
-  @VisibleForTesting
-  def test(): Response = {
-    1 / 0
-    Response.ok().build()
-  }
-
-}
+final class MaxHivePartitionExceedException(
+    private val reason: String = "",
+    private val cause: Throwable = None.orNull)
+  extends KyuubiSQLExtensionException(reason, cause)

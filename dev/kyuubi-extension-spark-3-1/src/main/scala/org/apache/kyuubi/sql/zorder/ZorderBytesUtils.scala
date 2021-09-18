@@ -18,9 +18,9 @@
 package org.apache.kyuubi.sql.zorder
 
 import java.lang.{Double => jDouble, Float => jFloat}
-import java.nio.charset.Charset
 
-import org.apache.spark.sql.types.Decimal
+import org.apache.spark.sql.types.{BooleanType, ByteType, DataType, DateType, Decimal, DecimalType, DoubleType, FloatType, IntegerType, LongType, ShortType, StringType, TimestampType}
+import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
@@ -71,23 +71,24 @@ object ZorderBytesUtils {
   def toByte(a: Any): Array[Byte] = {
     a match {
       case bo: Boolean =>
-        ZorderBytesUtils.booleanToByte(bo)
+        booleanToByte(bo)
       case b: Byte =>
-        ZorderBytesUtils.byteToByte(b)
+        byteToByte(b)
       case s: Short =>
-        ZorderBytesUtils.shortToByte(s)
+        shortToByte(s)
       case i: Int =>
-        ZorderBytesUtils.intToByte(i)
+        intToByte(i)
       case l: Long =>
-        ZorderBytesUtils.longToByte(l)
+        longToByte(l)
       case f: Float =>
-        ZorderBytesUtils.floatToByte(f)
+        floatToByte(f)
       case d: Double =>
-        ZorderBytesUtils.doubleToByte(d)
-      case str: String =>
-        ZorderBytesUtils.stringToByte(str)
+        doubleToByte(d)
+      case str: UTF8String =>
+        // truncate or padding str to 8 byte
+        paddingTo8Byte(str.getBytes)
       case dec: Decimal =>
-        ZorderBytesUtils.longToByte(dec.toLong)
+        longToByte(dec.toLong)
       case other: Any =>
         throw new KyuubiSQLExtensionException("Unsupported z-order type: " + other.getClass)
     }
@@ -145,11 +146,6 @@ object ZorderBytesUtils {
     longToByte(dl)
   }
 
-  def stringToByte(str: String): Array[Byte] = {
-    // truncate or padding str to 8 byte
-    paddingTo8Byte(str.getBytes(Charset.forName("utf-8")))
-  }
-
   def paddingTo8Byte(a: Array[Byte]): Array[Byte] = {
     if (a.length == 8) {
       return a
@@ -173,5 +169,32 @@ object ZorderBytesUtils {
       pos += arr.length
     })
     result
+  }
+
+  def defaultValue(dataType: DataType): Any = dataType match {
+    case BooleanType =>
+      false
+    case ByteType =>
+      Byte.MaxValue
+    case ShortType =>
+      Short.MaxValue
+    case IntegerType =>
+      Int.MaxValue
+    case LongType =>
+      Long.MaxValue
+    case FloatType =>
+      Float.MaxValue
+    case DoubleType =>
+      Double.MaxValue
+    case StringType =>
+      UTF8String.fromBytes(new Array[Byte](0))
+    case TimestampType =>
+      Long.MaxValue
+    case DateType =>
+      Int.MaxValue
+    case _: DecimalType =>
+      Long.MaxValue
+    case other: Any =>
+      throw new KyuubiSQLExtensionException(s"Unsupported z-order type: ${other.catalogString}")
   }
 }

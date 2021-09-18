@@ -101,13 +101,13 @@ upload_nexus_staging() {
 finalize_svn() {
   echo "Moving Kyuubi tarballs to the release directory"
   svn mv --username "${ASF_USERNAME}" --password "${ASF_PASSWORD}" --no-auth-cache \
-     --message"Apache Kyuubi ${RELEASE_VERSION}" \
-     "${SVN_STAGING_DIR}/${RELEASE_TAG}" "${SVN_RELEASE_REPO}/kyuubi-${RELEASE_VERSION}"
+     --message "Apache Kyuubi ${RELEASE_VERSION}" \
+     "${SVN_STAGING_REPO}/${RELEASE_TAG}" "${SVN_RELEASE_REPO}/kyuubi-${RELEASE_VERSION}"
   echo "Kyuubi tarballs moved"
 
   echo "Sync'ing KEYS"
   svn checkout --depth=files "${SVN_RELEASE_REPO}" "${SVN_RELEASE_DIR}"
-  curl "$SVN_STAGING_REPO/KEYS" > "${SVN_RELEASE_DIR}/KEYS"
+  curl "${SVN_STAGING_REPO}/KEYS" > "${SVN_RELEASE_DIR}/KEYS"
   svn add "${SVN_RELEASE_DIR}/KEYS"
   (
     cd "${SVN_RELEASE_DIR}" && \

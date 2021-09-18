@@ -76,4 +76,30 @@ object KyuubiSQLConf {
       .version("1.4.0")
       .booleanConf
       .createWithDefault(true)
+
+  val INSERT_ZORDER_BEFORE_WRITING =
+    buildConf("spark.sql.optimizer.insertZorderBeforeWriting.enabled")
+      .doc("When true, we will follow target table properties to insert zorder or not. " +
+        "The key properties are: 1) kyuubi.zorder.enabled; if this property is true, we will " +
+        "insert zorder before writing data. 2) kyuubi.zorder.cols; string split by comma, we " +
+        "will zorder by these cols.")
+      .version("1.4.0")
+      .booleanConf
+      .createWithDefault(true)
+
+  val WATCHDOG_MAX_HIVEPARTITION =
+    buildConf("spark.sql.watchdog.maxHivePartitions")
+      .doc("Add maxHivePartitions Strategy to avoid scan excessive " +
+        "hive partitions on partitioned table, it's optional that works with defined")
+      .version("1.4.0")
+      .intConf
+      .createOptional
+
+  val WATCHDOG_FORCED_MAXOUTPUTROWS =
+    buildConf("spark.sql.watchdog.forcedMaxOutputRows")
+      .doc("Add ForcedMaxOutputRows rule to avoid huge output rows of non-limit query " +
+        "unexpectedly, it's optional that works with defined")
+      .version("1.4.0")
+      .intConf
+      .createOptional
 }
