@@ -17,8 +17,9 @@
 
 package org.apache.kyuubi.server.api.v1
 
+import com.google.common.annotations.VisibleForTesting
 import javax.ws.rs.{GET, Path, Produces}
-import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.{MediaType, Response}
 
 import org.apache.kyuubi.server.api.ApiRequestContext
 
@@ -32,5 +33,14 @@ private[v1] class ApiRootResource extends ApiRequestContext {
 
   @Path("sessions")
   def sessions: Class[SessionsResource] = classOf[SessionsResource]
+
+  @GET
+  @Path("exception")
+  @Produces(Array(MediaType.TEXT_PLAIN))
+  @VisibleForTesting
+  def test(): Response = {
+    1 / 0
+    Response.ok().build()
+  }
 
 }

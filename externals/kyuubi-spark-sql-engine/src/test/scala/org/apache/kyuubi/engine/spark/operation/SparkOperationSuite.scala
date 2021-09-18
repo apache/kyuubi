@@ -22,11 +22,17 @@ import java.sql.{DatabaseMetaData, ResultSet, SQLFeatureNotSupportedException}
 import scala.collection.JavaConverters._
 import scala.util.Random
 
+import org.apache.hadoop.hdfs.security.token.delegation.{DelegationTokenIdentifier => HDFSTokenIdent}
+import org.apache.hadoop.hive.thrift.{DelegationTokenIdentifier => HiveTokenIdent}
+import org.apache.hadoop.io.Text
+import org.apache.hadoop.security.{Credentials, UserGroupInformation}
+import org.apache.hadoop.security.token.{Token, TokenIdentifier}
 import org.apache.hive.common.util.HiveVersionInfo
 import org.apache.hive.service.cli.HiveSQLException
 import org.apache.hive.service.rpc.thrift._
 import org.apache.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.hive.service.rpc.thrift.TOperationState._
+import org.apache.spark.kyuubi.SparkContextHelper
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
 import org.apache.spark.sql.types._
 
@@ -35,6 +41,7 @@ import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.HiveJDBCTests
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
+import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class SparkOperationSuite extends WithSparkSQLEngine with HiveJDBCTests {
 
@@ -760,5 +767,117 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveJDBCTests {
       val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
       assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
     }
+  }
+
+  test("send credentials by TRenewDelegationTokenReq") {
+    // Simulate a secured SparkSQLEngine's credentials
+    val currentTime = System.currentTimeMillis()
+    val hdfsTokenAlias = new Text("HDFS1")
+    val hiveTokenAlias = new Text("hive.server2.delegation.token")
+    val creds1 = createCredentials(currentTime, hdfsTokenAlias.toString, hiveTokenAlias.toString)
+    // SparkSQLEngine may have token alias unknown to Kyuubi Server
+    val unknownTokenAlias = new Text("UNKNOWN")
+    val unknownToken = newHDFSToken(currentTime)
+    creds1.addToken(unknownTokenAlias, unknownToken)
+    SparkContextHelper.updateDelegationTokens(spark.sparkContext, creds1)
+
+    val metastoreUris = "thrift://localhost:9083,thrift://localhost:9084"
+
+    whenMetaStoreURIsSetTo(metastoreUris) { uris =>
+      withThriftClient { client =>
+        val req = new TOpenSessionReq()
+        req.setUsername("username")
+        req.setPassword("password")
+        val tOpenSessionResp = client.OpenSession(req)
+
+        def sendCredentials(client: TCLIService.Iface, credentials: Credentials): Unit = {
+          val renewDelegationTokenReq = new TRenewDelegationTokenReq()
+          renewDelegationTokenReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+          renewDelegationTokenReq.setDelegationToken(
+            KyuubiHadoopUtils.encodeCredentials(credentials))
+          val renewDelegationTokenResp = client.RenewDelegationToken(renewDelegationTokenReq)
+          assert(renewDelegationTokenResp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS)
+        }
+
+        // Send new credentials
+        val creds2 = createCredentials(currentTime + 1, hdfsTokenAlias.toString, uris)
+        // Kyuubi Server may have extra HDFS and Hive delegation tokens
+        val extraHDFSToken = newHDFSToken(currentTime + 1)
+        creds2.addToken(new Text("HDFS2"), extraHDFSToken)
+        sendCredentials(client, creds2)
+        // SparkSQLEngine's tokens should be updated
+        var engineCredentials =
+          KyuubiHadoopUtils.getCredentialsInternal(UserGroupInformation.getCurrentUser)
+        assert(engineCredentials.getToken(hdfsTokenAlias) == creds2.getToken(hdfsTokenAlias))
+        assert(
+          engineCredentials.getToken(hiveTokenAlias) == creds2.getToken(new Text(metastoreUris)))
+        // Unknown tokens should not be updated
+        assert(engineCredentials.getToken(unknownTokenAlias) == unknownToken)
+
+        // Send old credentials
+        val creds3 = createCredentials(currentTime, hdfsTokenAlias.toString, metastoreUris)
+        sendCredentials(client, creds3)
+        // SparkSQLEngine's tokens should not be updated
+        engineCredentials =
+          KyuubiHadoopUtils.getCredentialsInternal(UserGroupInformation.getCurrentUser)
+        assert(engineCredentials.getToken(hdfsTokenAlias) == creds2.getToken(hdfsTokenAlias))
+        assert(
+          engineCredentials.getToken(hiveTokenAlias) == creds2.getToken(new Text(metastoreUris)))
+
+        // No matching tokens
+        val creds4 = createCredentials(currentTime + 2, "HDFS2", "thrift://localhost:9085")
+        sendCredentials(client, creds4)
+        // No token is updated
+        engineCredentials =
+          KyuubiHadoopUtils.getCredentialsInternal(UserGroupInformation.getCurrentUser)
+        assert(engineCredentials.getToken(hdfsTokenAlias) == creds2.getToken(hdfsTokenAlias))
+        assert(
+          engineCredentials.getToken(hiveTokenAlias) == creds2.getToken(new Text(metastoreUris)))
+      }
+    }
+  }
+
+  private def whenMetaStoreURIsSetTo(uris: String)(func: String => Unit): Unit = {
+    val conf = spark.sparkContext.hadoopConfiguration
+    val origin = conf.get("hive.metastore.uris", "")
+    conf.set("hive.metastore.uris", uris)
+    try func.apply(uris) finally {
+      conf.set("hive.metastore.uris", origin)
+    }
+  }
+
+
+  private def createCredentials(
+      issueDate: Long,
+      hdfsTokenAlias: String,
+      hiveTokenAlias: String): Credentials = {
+    val credentials = new Credentials()
+    credentials.addToken(new Text(hdfsTokenAlias), newHDFSToken(issueDate))
+    credentials.addToken(new Text(hiveTokenAlias), newHiveToken(issueDate))
+    credentials
+  }
+
+  private def newHDFSToken(issueDate: Long): Token[TokenIdentifier] = {
+    val who = new Text("who")
+    val tokenId = new HDFSTokenIdent(who, who, who)
+    tokenId.setIssueDate(issueDate)
+    newToken(tokenId)
+  }
+
+  private def newHiveToken(issueDate: Long): Token[TokenIdentifier] = {
+    val who = new Text("who")
+    val tokenId = new HiveTokenIdent(who, who, who)
+    tokenId.setIssueDate(issueDate)
+    newToken(tokenId)
+  }
+
+  private def newToken(tokeIdent: TokenIdentifier): Token[TokenIdentifier] = {
+    val token = new Token[TokenIdentifier]
+    token.setID(tokeIdent.getBytes)
+    token.setKind(tokeIdent.getKind)
+    val bytes = new Array[Byte](128)
+    Random.nextBytes(bytes)
+    token.setPassword(bytes)
+    token
   }
 }
