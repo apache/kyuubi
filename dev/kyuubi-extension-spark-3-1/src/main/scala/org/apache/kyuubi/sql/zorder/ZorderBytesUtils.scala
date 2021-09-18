@@ -171,30 +171,33 @@ object ZorderBytesUtils {
     result
   }
 
-  def defaultValue(dataType: DataType): Any = dataType match {
-    case BooleanType =>
-      false
-    case ByteType =>
-      Byte.MaxValue
-    case ShortType =>
-      Short.MaxValue
-    case IntegerType =>
-      Int.MaxValue
-    case LongType =>
-      Long.MaxValue
-    case FloatType =>
-      Float.MaxValue
-    case DoubleType =>
-      Double.MaxValue
-    case StringType =>
-      UTF8String.fromBytes(new Array[Byte](0))
-    case TimestampType =>
-      Long.MaxValue
-    case DateType =>
-      Int.MaxValue
-    case _: DecimalType =>
-      Long.MaxValue
-    case other: Any =>
-      throw new KyuubiSQLExtensionException(s"Unsupported z-order type: ${other.catalogString}")
+  def defaultValue(dataType: DataType): Array[Byte] = {
+    val v = dataType match {
+      case BooleanType =>
+        false
+      case ByteType =>
+        Byte.MaxValue
+      case ShortType =>
+        Short.MaxValue
+      case IntegerType =>
+        Int.MaxValue
+      case LongType =>
+        Long.MaxValue
+      case FloatType =>
+        Float.MaxValue
+      case DoubleType =>
+        Double.MaxValue
+      case StringType =>
+        UTF8String.fromBytes(new Array[Byte](0))
+      case TimestampType =>
+        Long.MaxValue
+      case DateType =>
+        Int.MaxValue
+      case _: DecimalType =>
+        Long.MaxValue
+      case other: Any =>
+        throw new KyuubiSQLExtensionException(s"Unsupported z-order type: ${other.catalogString}")
+    }
+    toByte(v)
   }
 }
