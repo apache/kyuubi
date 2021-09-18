@@ -230,15 +230,25 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     val pb: FakeSparkProcessBuilder = new FakeSparkProcessBuilder(config)
     val lastRowOfLog = "Application report for application_1593587619692_19713 (state: ACCEPTED)"
 
-    val e = intercept[KyuubiSQLException] {
-      pb.killApplication(lastRowOfLog)
+    val appId = pb.YARN_APP_NAME_REGEX.findFirstIn(lastRowOfLog).get
+
+    val exitValue = pb.execCommand("ls -lt")
+    assert(exitValue == 0)
+
+    var command: Option[String] = None
+    try {
+      command = Some(pb.getCommand(appId))
+    } catch {
+      case e: KyuubiSQLException =>
+        assert(e.getMessage === "Failed to kill yarn job. HADOOP_HOME is not set! " +
+          "For more detail information on installing and configuring Yarn, " +
+          "please visit https://kyuubi.apache.org/docs/stable/deployment/on_yarn.html")
     }
 
-    assert(e.getMessage === "Failed to kill yarn job. " +
-      "HADOOP_HOME is not set! For more detail information on installing and configuring Yarn, " +
-      "please visit https://kyuubi.apache.org/docs/stable/deployment/on_yarn.html")
+    if (command.isDefined) {
+      assert(command.get.contains("application -kill"))
+    }
   }
-
 }
 
 class FakeSparkProcessBuilder(config: KyuubiConf)

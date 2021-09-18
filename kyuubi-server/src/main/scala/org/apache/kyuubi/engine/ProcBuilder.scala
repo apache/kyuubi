@@ -149,21 +149,13 @@ trait ProcBuilder {
     proc
   }
 
-  def execKillYarnJob(appId: String): Int = {
-    val hadoopHomeOpt = env.get("HADOOP_HOME").orElse {
-      throw KyuubiSQLException(s"Failed to kill yarn job. HADOOP_HOME is not set! " +
-        "For more detail information on installing and configuring Yarn, please visit " +
-        "https://kyuubi.apache.org/docs/stable/deployment/on_yarn.html")
-    }.map { hadoopHome =>
-      Paths.get(hadoopHome, "bin", "yarn").toAbsolutePath.toFile.getCanonicalPath
-    }.get
-    val command = hadoopHomeOpt + " application -kill " + appId
+  def execCommand(command: String): Int = {
     val pb = new ProcessBuilder("/bin/sh", "-c", command)
     var exitValue: Option[Int] = None
 
     try {
       val process = pb.start()
-      exitValue = Some(process.exitValue())
+      exitValue = Some(process.waitFor())
     } catch {
       case e: Exception =>
         throw KyuubiSQLException(s"Failed to kill yarn job. command : $command", e.getCause)
@@ -171,15 +163,24 @@ trait ProcBuilder {
     exitValue.get
   }
 
+  def getCommand(appId: String): String = {
+    val hadoopHomeOpt = env.get("HADOOP_HOME").orElse {
+      throw KyuubiSQLException(s"Failed to kill yarn job. HADOOP_HOME is not set! " +
+        "For more detail information on installing and configuring Yarn, please visit " +
+        "https://kyuubi.apache.org/docs/stable/deployment/on_yarn.html")
+    }.map { hadoopHome =>
+      Paths.get(hadoopHome, "bin", "yarn").toAbsolutePath.toFile.getCanonicalPath
+    }.get
+    hadoopHomeOpt + " application -kill " + appId
+  }
+
   val YARN_APP_NAME_REGEX: Regex = "application_\\d+_\\d+".r
 
-  def killApplication(row: String = lastRowOfLog): Unit = {
-    val matcher = YARN_APP_NAME_REGEX.findAllMatchIn(row)
-
-    if (matcher.nonEmpty && row.contains("state: ACCEPTED")) {
-      execKillYarnJob(matcher.next().group(0))
+  def killApplication(line: String = lastRowOfLog): Unit =
+    YARN_APP_NAME_REGEX.findFirstIn(line) match {
+      case Some(appId) if line.contains("state: ACCEPTED") => execCommand(getCommand(appId))
+      case None =>
     }
-  }
 
   def close(): Unit = {
     if (logCaptureThread != null) {
