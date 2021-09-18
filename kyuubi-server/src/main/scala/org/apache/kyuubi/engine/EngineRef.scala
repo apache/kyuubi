@@ -85,7 +85,7 @@ private[kyuubi] class EngineRef(
   }
 
   // Launcher of the engine
-  private val appUser: String = shareLevel match {
+  private[kyuubi] val appUser: String = shareLevel match {
     case SERVER => Utils.currentUser
     case _ => user
   }

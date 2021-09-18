@@ -18,26 +18,16 @@
 package org.apache.kyuubi.server.api.v1
 
 import javax.ws.rs.client.Entity
-import javax.ws.rs.core.{Application, MediaType}
+import javax.ws.rs.core.MediaType
 
-import org.glassfish.jersey.server.ResourceConfig
-import org.glassfish.jersey.test.{JerseyTest, TestProperties}
-import org.glassfish.jersey.test.jetty.JettyTestContainerFactory
-import org.glassfish.jersey.test.spi.TestContainerFactory
 import org.junit.Test
 
+import org.apache.kyuubi.server.RestApiBaseSuite
 import org.apache.kyuubi.server.RestFrontendServiceSuite
-import org.apache.kyuubi.server.RestFrontendServiceSuite.{OBJECT_MAPPER, TEST_SERVER_PORT}
+import org.apache.kyuubi.server.RestFrontendServiceSuite.OBJECT_MAPPER
 import org.apache.kyuubi.session.SessionHandle
 
-class SessionsResourceSuite extends JerseyTest {
-
-  override def configure: Application = {
-    forceSet(TestProperties.CONTAINER_PORT, TEST_SERVER_PORT.toString)
-    new ResourceConfig(getClass)
-  }
-
-  override def getTestContainerFactory: TestContainerFactory = new JettyTestContainerFactory
+class SessionsResourceSuite extends RestApiBaseSuite {
 
   @Test
   def testOpenAndCountSession: Unit = {

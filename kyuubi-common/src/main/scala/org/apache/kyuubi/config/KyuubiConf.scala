@@ -236,13 +236,13 @@ object KyuubiConf {
 
   val CREDENTIALS_RENEWAL_INTERVAL: ConfigEntry[Long] =
     buildConf("credentials.renewal.interval")
-      .doc("How often Kyuubi renews one user's DelegationTokens")
+      .doc("How often Kyuubi renews one user's delegation tokens")
       .version("1.4.0")
       .timeConf
       .createWithDefault(Duration.ofHours(1).toMillis)
 
   val CREDENTIALS_RENEWAL_RETRY_WAIT: ConfigEntry[Long] =
-    buildConf("credentials.renewal.retryWait")
+    buildConf("credentials.renewal.retry.wait")
       .doc("How long to wait before retrying to fetch new credentials after a failure.")
       .version("1.4.0")
       .timeConf
@@ -251,7 +251,7 @@ object KyuubiConf {
 
   val CREDENTIALS_HADOOP_FS_ENABLED: ConfigEntry[Boolean] =
     buildConf("credentials.hadoopfs.enabled")
-      .doc("Whether to renew HadoopFS DelegationToken")
+      .doc("Whether to renew Hadoop filesystem delegation tokens")
       .version("1.4.0")
       .booleanConf
       .createWithDefault(true)
@@ -267,7 +267,7 @@ object KyuubiConf {
 
   val CREDENTIALS_HIVE_ENABLED: ConfigEntry[Boolean] =
     buildConf("credentials.hive.enabled")
-      .doc("Whether to renew HiveMetaStore DelegationToken")
+      .doc("Whether to renew Hive metastore delegation token")
       .version("1.4.0")
       .booleanConf
       .createWithDefault(true)
@@ -885,4 +885,19 @@ object KyuubiConf {
       .version("1.4.0")
       .stringConf
       .createOptional
+
+  object OperationModes extends Enumeration {
+    type OperationMode = Value
+    val PARSE, ANALYZE, OPTIMIZE, NONE = Value
+  }
+
+  val OPERATION_PLAN_ONLY: ConfigEntry[String] =
+    buildConf("operation.plan.only.mode")
+      .doc("Whether to perform the statement in a PARSE, ANALYZE, OPTIMIZE only way without " +
+        "executing the query. When it is NONE, the statement will be fully executed")
+      .version("1.4.0")
+      .stringConf
+      .transform(_.toUpperCase(Locale.ROOT))
+      .checkValues(OperationModes.values.map(_.toString))
+      .createWithDefault(OperationModes.NONE.toString)
 }
