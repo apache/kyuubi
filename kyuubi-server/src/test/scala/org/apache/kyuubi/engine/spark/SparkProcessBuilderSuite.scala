@@ -231,7 +231,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     val lastRowOfLog = "Application report for application_1593587619692_19713 (state: ACCEPTED)"
 
     val e = intercept[KyuubiSQLException] {
-      pb.closeYarnJob(lastRowOfLog)
+      pb.killApplication(lastRowOfLog)
     }
 
     assert(e.getMessage === "Failed to kill yarn job. " +
