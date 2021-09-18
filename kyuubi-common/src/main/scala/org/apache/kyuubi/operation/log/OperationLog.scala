@@ -24,13 +24,17 @@ import java.nio.file.{Files, Path, Paths}
 
 import org.apache.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn}
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.session.SessionHandle
 
 object OperationLog extends Logging {
 
-  final val LOG_ROOT: String = "operation_logs"
+  def LOG_ROOT: String = if (Utils.isTesting) {
+    "target/operation_logs"
+  } else {
+    "operation_logs"
+  }
   private final val OPERATION_LOG: InheritableThreadLocal[OperationLog] = {
     new InheritableThreadLocal[OperationLog] {
       override def initialValue(): OperationLog = null
@@ -79,7 +83,7 @@ object OperationLog extends Logging {
   }
 }
 
-class OperationLog(path: Path) extends Logging {
+class OperationLog(path: Path) {
 
   private val writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)
   private val reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)
@@ -115,7 +119,7 @@ class OperationLog(path: Path) extends Logging {
       case e: IOException =>
         val absPath = path.toAbsolutePath
         val opHandle = absPath.getFileName
-        throw new KyuubiSQLException(s"Operation[$opHandle] log file $absPath is not found", e)
+        throw KyuubiSQLException(s"Operation[$opHandle] log file $absPath is not found", e)
     }
     val tColumn = TColumn.stringVal(new TStringColumn(logs, ByteBuffer.allocate(0)))
     val tRow = new TRowSet(0, new java.util.ArrayList[TRow](logs.size()))
@@ -130,7 +134,12 @@ class OperationLog(path: Path) extends Logging {
       Files.delete(path)
     } catch {
       case e: IOException =>
-        error(s"Failed to remove corresponding log file of operation: ${path.toAbsolutePath}", e)
+        // Printing log here may cause a deadlock. The lock order of OperationLog.write
+        // is RootLogger -> LogDivertAppender -> OperationLog. If printing log here, the
+        // lock order is OperationLog -> RootLogger. So the exception is thrown and
+        // processing at the invocations
+        throw new IOException(
+          s"Failed to remove corresponding log file of operation: ${path.toAbsolutePath}", e)
     }
   }
 }

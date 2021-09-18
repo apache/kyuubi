@@ -17,25 +17,46 @@
 
 package org.apache.kyuubi.engine.spark
 
-import java.time.Instant
+import java.time.{Instant, LocalDateTime, ZoneId}
 
+import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 
 object KyuubiSparkUtil {
 
-  def diagnostics(spark: SparkSession): String = {
-    val sc = spark.sparkContext
+  def globalSparkContext: SparkContext = SparkSession.active.sparkContext
+
+  def engineId: String =
+    globalSparkContext.applicationAttemptId.getOrElse(globalSparkContext.applicationId)
+
+  lazy val diagnostics: String = {
+    val sc = globalSparkContext
     val webUrl = sc.getConf.getOption(
       "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")
       .orElse(sc.uiWebUrl).getOrElse("")
+    // scalastyle:off line.size.limit
     s"""
        |           Spark application name: ${sc.appName}
-       |                 application ID:  ${sc.applicationId}
+       |                 application ID: ${engineId}
        |                 application web UI: $webUrl
        |                 master: ${sc.master}
        |                 deploy mode: ${sc.deployMode}
        |                 version: ${sc.version}
-       |           Start time: ${Instant.ofEpochMilli(sc.startTime)}
+       |           Start time: ${LocalDateTime.ofInstant(Instant.ofEpochMilli(sc.startTime), ZoneId.systemDefault)}
        |           User: ${sc.sparkUser}""".stripMargin
+    // scalastyle:on line.size.limit
+  }
+
+  /**
+   * @return true if Hive classes can be loaded, otherwise false.
+   */
+  private[spark] def hiveClassesArePresent: Boolean = {
+    try {
+      Class.forName("org.apache.spark.sql.hive.HiveSessionStateBuilder")
+      Class.forName("org.apache.hadoop.hive.conf.HiveConf")
+      true
+    } catch {
+      case _: ClassNotFoundException | _: NoClassDefFoundError => false
+    }
   }
 }

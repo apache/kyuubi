@@ -1,3 +1,20 @@
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+
 # Kyuubi On Apache Kudu
 
 ## What is Apache Kudu
@@ -21,11 +38,11 @@ Before integrating Kyuubi with Kudu, we strongly suggest that you integrate and 
 ## Kudu Integration with Kyuubi
 
 #### Install Kudu Spark Dependency
-Confirm your Kudu cluster version and download the corresponding kudu spark dependency libary, such as [org.apache.kudu:kudu-spark2_2.11:1.9.0](https://repo1.maven.org/maven2/org/apache/kudu/kudu-spark2_2.11/1.9.0/kudu-spark2_2.11-1.9.0.jar) to `$SPARK_HOME`/jars.
+Confirm your Kudu cluster version and download the corresponding kudu spark dependency library, such as [org.apache.kudu:kudu-spark3_2.12-1.14.0](https://repo1.maven.org/maven2/org/apache/kudu/kudu-spark3_2.12/1.14.0/kudu-spark3_2.12-1.14.0.jar) to `$SPARK_HOME`/jars.
 
 #### Start Kyuubi
 
-Now, you can start Kyuubi server with this kudu embeded Spark distribution.
+Now, you can start Kyuubi server with this kudu embedded Spark distribution.
 
 #### Start Beeline Or Other Client You Prefer
 
@@ -101,7 +118,7 @@ options (
 
 #### Insert to Kudu table
 
-You should notice that only `INSERT INTO` is supported by Kudu, `OVERWITRE` data is not supported
+You should notice that only `INSERT INTO` is supported by Kudu, `OVERWRITE` data is not supported
 
 ```sql
 0: jdbc:hive2://spark5.jd.163.org:10009/> insert overwrite table kudutest select *  from hive_tbl;
@@ -125,13 +142,13 @@ java.lang.UnsupportedOperationException: overwrite is not yet supported
 	at org.apache.spark.sql.Dataset.<init>(Dataset.scala:190)
 	at org.apache.spark.sql.Dataset$.ofRows(Dataset.scala:75)
 	at org.apache.spark.sql.SparkSQLUtils$.toDataFrame(SparkSQLUtils.scala:39)
-	at yaooqinn.kyuubi.operation.statement.ExecuteStatementInClientMode.execute(ExecuteStatementInClientMode.scala:152)
-	at yaooqinn.kyuubi.operation.statement.ExecuteStatementOperation$$anon$1$$anon$2.run(ExecuteStatementOperation.scala:74)
-	at yaooqinn.kyuubi.operation.statement.ExecuteStatementOperation$$anon$1$$anon$2.run(ExecuteStatementOperation.scala:70)
+	at org.apache.kyuubi.operation.statement.ExecuteStatementInClientMode.execute(ExecuteStatementInClientMode.scala:152)
+	at org.apache.kyuubi.operation.statement.ExecuteStatementOperation$$anon$1$$anon$2.run(ExecuteStatementOperation.scala:74)
+	at org.apache.kyuubi.operation.statement.ExecuteStatementOperation$$anon$1$$anon$2.run(ExecuteStatementOperation.scala:70)
 	at java.security.AccessController.doPrivileged(Native Method)
 	at javax.security.auth.Subject.doAs(Subject.java:422)
 	at org.apache.hadoop.security.UserGroupInformation.doAs(UserGroupInformation.java:1698)
-	at yaooqinn.kyuubi.operation.statement.ExecuteStatementOperation$$anon$1.run(ExecuteStatementOperation.scala:70)
+	at org.apache.kyuubi.operation.statement.ExecuteStatementOperation$$anon$1.run(ExecuteStatementOperation.scala:70)
 	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:511)
 	at java.util.concurrent.FutureTask.run(FutureTask.java:266)
 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
@@ -164,5 +181,5 @@ No rows selected (0.611 seconds)
 ## References
 [https://kudu.apache.org/](https://kudu.apache.org/)
 [https://kudu.apache.org/docs/developing.html#_kudu_integration_with_spark](https://kudu.apache.org/docs/developing.html#_kudu_integration_with_spark)
-[https://github.com/yaooqinn/kyuubi](https://github.com/yaooqinn/kyuubi)
+[https://github.com/apache/incubator-kyuubi](https://github.com/apache/incubator-kyuubi)
 [https://spark.apache.org/docs/latest/sql-data-sources.html](https://spark.apache.org/docs/latest/sql-data-sources.html)

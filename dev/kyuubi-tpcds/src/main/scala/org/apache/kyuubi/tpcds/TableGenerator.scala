@@ -17,12 +17,12 @@
 
 package org.apache.kyuubi.tpcds
 
-import java.io.{FileInputStream, InputStream}
+import java.io.InputStream
 import java.lang.ProcessBuilder.Redirect
 import java.nio.file.{Files, Paths}
 import java.nio.file.attribute.PosixFilePermissions._
 
-import scala.io.BufferedSource
+import scala.io.Source
 
 import org.apache.spark.{KyuubiSparkUtils, SparkEnv}
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
@@ -52,7 +52,6 @@ case class TableGenerator(
 
   private def toDF: DataFrame = {
     val rawRDD = ss.sparkContext.parallelize(1 to parallelism, parallelism).flatMap { i =>
-      val parallel = s"-PARALLEL $parallelism -child $i"
       val os = System.getProperty("os.name").split(' ')(0).toLowerCase
       val loader = Thread.currentThread().getContextClassLoader
 
@@ -85,22 +84,26 @@ case class TableGenerator(
       val cmd = s"./dsdgen" +
         s" -TABLE $name" +
         s" -SCALE $scaleFactor" +
-        s" $parallel" +
+        s" -PARALLEL $parallelism" +
+        s" -child $i" +
         s" -DISTRIBUTIONS tpcds.idx" +
         s" -FORCE Y" +
         s" -QUIET Y"
 
       val builder = new ProcessBuilder(cmd.split(" "): _*)
       builder.directory(tempDir)
-      logger.info(s"Start $cmd at " + builder.directory())
       builder.redirectError(Redirect.INHERIT)
-      val data = Paths.get(tempDir.toString, s"${name}_${i}_$parallelism.dat")
+      logger.info(s"Start $cmd at ${builder.directory()}")
       val process = builder.start()
       val res = process.waitFor()
 
-      logger.info(s"Finish w/ $res" + cmd)
+      logger.info(s"Finish w/ $res $cmd")
+      val data = Paths.get(tempDir.toString, s"${name}_${i}_$parallelism.dat")
       val iterator = if (Files.exists(data)) {
-        new BufferedSource(new FileInputStream(data.toFile), 8192).getLines()
+        // ... realized that when opening the dat files I should use the “Cp1252” encoding.
+        // https://github.com/databricks/spark-sql-perf/pull/104
+        // noinspection SourceNotClosed
+        Source.fromFile(data.toFile, "cp1252", 8192).getLines
       } else {
         logger.warn(s"No data generated in child $i")
         Nil

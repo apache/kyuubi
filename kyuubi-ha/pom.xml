@@ -21,27 +21,21 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.apache.kyuubi</groupId>
-        <artifactId>kyuubi</artifactId>
-        <version>1.1.0-SNAPSHOT</version>
+        <artifactId>kyuubi-parent</artifactId>
+        <version>1.4.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>kyuubi-ha</artifactId>
+    <artifactId>kyuubi-ha_2.12</artifactId>
     <packaging>jar</packaging>
     <name>Kyuubi Project High Availability</name>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-common</artifactId>
+            <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-common</artifactId>
-            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -59,23 +53,9 @@
             <artifactId>zookeeper</artifactId>
         </dependency>
 
-        <!-- Begin: for EmbeddedZkServer -->
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-test</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <!-- End: for EmbeddedZkServer -->
-
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-common</artifactId>
+            <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
@@ -88,8 +68,15 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.directory.server</groupId>
-            <artifactId>apacheds-service</artifactId>
+            <groupId>com.unboundid</groupId>
+            <artifactId>unboundid-ldapsdk</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-zookeeper_${scala.binary.version}</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

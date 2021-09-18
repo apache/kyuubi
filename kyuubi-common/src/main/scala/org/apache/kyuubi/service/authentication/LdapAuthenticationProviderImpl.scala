@@ -21,7 +21,7 @@ import javax.naming.{Context, NamingException}
 import javax.naming.directory.InitialDirContext
 import javax.security.sasl.AuthenticationException
 
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
@@ -64,8 +64,9 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
       user
     }
 
+    val guidKey = conf.get(AUTHENTICATION_LDAP_GUIDKEY)
     val bindDn = conf.get(AUTHENTICATION_LDAP_BASEDN) match {
-      case Some(dn) => "uid=" + u + "," + dn
+      case Some(dn) => guidKey + "=" + u + "," + dn
       case _ => u
     }
 

@@ -1,0 +1,1 @@
+struct<c_last_name:string,c_first_name:string,substr(s_city, 1, 30):string,ss_ticket_number:int,amt:decimal,profit:decimal>

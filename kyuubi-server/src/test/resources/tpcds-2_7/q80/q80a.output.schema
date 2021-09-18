@@ -1,0 +1,1 @@
+struct<channel:string,id:string,sales:decimal,returns:decimal,profit:decimal>

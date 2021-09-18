@@ -1,10 +1,27 @@
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+
 <div align=center>
 
-![](../imgs/kyuubi_logo_simple.png)
+![](../imgs/kyuubi_logo.png)
 
 </div>
 
-# Integration w/ Hive Metastore
+# Integration with Hive Metastore
 
 In this section, you will learn how to configure Kyuubi to interact with Hive Metastore.
 
@@ -110,7 +127,7 @@ hive.metastore.uris | thrift://&lt;host&gt;:&lt;port&gt;,thrift://&lt;host1&gt;:
 ### Via kyuubi-defaults.conf
 
 In `$KYUUBI_HOME/conf/kyuubi-defaults.conf`, all _**Hive primitive configurations**_, e.g. `hive.metastore.uris`,
-and the **_Spark derivatives_**, which are prefixed w/ `spark.hive.` or `spark.hadoop.`, e.g `spark.hive.metastore.uris` or `spark.hadoop.hive.metastore.uris`,
+and the **_Spark derivatives_**, which are prefixed with `spark.hive.` or `spark.hadoop.`, e.g `spark.hive.metastore.uris` or `spark.hadoop.hive.metastore.uris`,
 will be loaded as Hive primitives by the Hive client inside the Spark application.
 
 Kyuubi will take these configurations as system wide defaults for all applications it launches.

@@ -18,6 +18,7 @@
 package org.apache.kyuubi
 
 import java.io.{File, IOException}
+import java.net.InetAddress
 import java.nio.file.Files
 import java.security.PrivilegedExceptionAction
 import java.util.Properties
@@ -118,9 +119,16 @@ class UtilsSuite extends KyuubiFunSuite {
       Utils.majorMinorVersion(HADOOP_COMPILE_VERSION)._1)
     assert(Utils.minorVersion(KYUUBI_VERSION) ===
       Utils.majorMinorVersion(KYUUBI_VERSION)._2)
-    assert(Utils.shortVersion(KYUUBI_VERSION) ===
-      KYUUBI_VERSION.stripSuffix("-SNAPSHOT"))
     intercept[IllegalArgumentException](Utils.shortVersion("-" + KYUUBI_VERSION))
     intercept[IllegalArgumentException](Utils.majorMinorVersion("-" + KYUUBI_VERSION))
+  }
+
+  test("findLocalInetAddress") {
+    val address = InetAddress.getLocalHost
+    if (!address.isLoopbackAddress) {
+      assert(Utils.findLocalInetAddress === InetAddress.getLocalHost)
+    } else {
+      assert(Utils.findLocalInetAddress !== InetAddress.getLocalHost)
+    }
   }
 }

@@ -22,6 +22,7 @@ import org.apache.hive.service.rpc.thrift._
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.operation.log.LogDivertAppender
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.session.Session
@@ -35,6 +36,8 @@ import org.apache.kyuubi.session.Session
 abstract class OperationManager(name: String) extends AbstractService(name) {
 
   private final val handleToOperation = new java.util.HashMap[OperationHandle, Operation]()
+
+  def getOperationCount: Int = handleToOperation.size()
 
   override def initialize(conf: KyuubiConf): Unit = {
     LogDivertAppender.initialize()
@@ -90,7 +93,6 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
   @throws[KyuubiSQLException]
   final def cancelOperation(opHandle: OperationHandle): Unit = {
     val operation = getOperation(opHandle)
-    import OperationState._
     operation.getStatus.state match {
       case CANCELED | CLOSED | FINISHED | ERROR | UNKNOWN =>
       case _ => operation.cancel()

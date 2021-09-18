@@ -17,22 +17,28 @@
 
 package org.apache.kyuubi
 
-import java.io.{File, InputStreamReader, IOException}
+import java.io.{File, InputStreamReader, IOException, PrintWriter, StringWriter}
+import java.net.{Inet4Address, InetAddress, NetworkInterface}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
-import java.util.{Properties, UUID}
+import java.util.{Properties, TimeZone, UUID}
 
 import scala.collection.JavaConverters._
 
+import org.apache.commons.lang3.SystemUtils
+import org.apache.commons.lang3.time.DateFormatUtils
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.hadoop.util.ShutdownHookManager
 
-private[kyuubi] object Utils extends Logging {
+import org.apache.kyuubi.config.internal.Tests.IS_TESTING
+
+object Utils extends Logging {
 
   import org.apache.kyuubi.config.KyuubiConf._
 
-  def strToSeq(s: String): Seq[String] = {
+  def strToSeq(s: String, sp: String = ","): Seq[String] = {
     require(s != null)
-    s.split(",").map(_.trim).filter(_.nonEmpty)
+    s.split(sp).map(_.trim).filter(_.nonEmpty)
   }
 
   def getSystemProperties: Map[String, String] = {
@@ -41,7 +47,7 @@ private[kyuubi] object Utils extends Logging {
 
   def getDefaultPropertiesFile(env: Map[String, String] = sys.env): Option[File] = {
     env.get(KYUUBI_CONF_DIR)
-      .orElse(env.get(KYUUBI_HOME).map(_ + File.separator + "/conf"))
+      .orElse(env.get(KYUUBI_HOME).map(_ + File.separator + "conf"))
       .map( d => new File(d + File.separator + KYUUBI_CONF_FILE_NAME))
       .filter(_.exists())
       .orElse {
@@ -92,6 +98,17 @@ private[kyuubi] object Utils extends Logging {
     }
     throw new IOException("Failed to create a temp directory (under " + root + ") after " +
       MAX_DIR_CREATION_ATTEMPTS + " attempts!", error)
+  }
+
+  /**
+   * Delete a directory recursively.
+   */
+  def deleteDirectoryRecursively(f: File): Boolean = {
+    if (f.isDirectory) f.listFiles match {
+      case files: Array[File] => files.foreach(deleteDirectoryRecursively)
+      case _ =>
+    }
+    f.delete()
   }
 
   /**
@@ -149,5 +166,78 @@ private[kyuubi] object Utils extends Logging {
         throw new IllegalArgumentException(s"Tried to parse '$version' as a project" +
           s" version string, but it could not find the major and minor version numbers.")
     }
+  }
+
+  /**
+   * Whether the underlying operating system is Windows.
+   */
+  val isWindows: Boolean = SystemUtils.IS_OS_WINDOWS
+
+  /**
+   * Indicates whether Kyuubi is currently running unit tests.
+   */
+  def isTesting: Boolean = {
+    System.getProperty(IS_TESTING.key) != null
+  }
+
+  val DEFAULT_SHUTDOWN_PRIORITY = 100
+  val SERVER_SHUTDOWN_PRIORITY = 75
+  // The value follows org.apache.spark.util.ShutdownHookManager.SPARK_CONTEXT_SHUTDOWN_PRIORITY
+  // Hooks need to be invoked before the SparkContext stopped shall use a higher priority.
+  val SPARK_CONTEXT_SHUTDOWN_PRIORITY = 50
+
+  /**
+   * Add some operations that you want into ShutdownHook
+   * @param hook
+   * @param priority: 0~100
+   */
+  def addShutdownHook(hook: Runnable, priority: Int = DEFAULT_SHUTDOWN_PRIORITY): Unit = {
+    ShutdownHookManager.get().addShutdownHook(hook, priority)
+  }
+
+  /**
+   * This block of code is based on Spark's Utils.findLocalInetAddress()
+   */
+  def findLocalInetAddress: InetAddress = {
+    val address = InetAddress.getLocalHost
+    if (address.isLoopbackAddress) {
+      val activeNetworkIFs = NetworkInterface.getNetworkInterfaces.asScala.toSeq
+      val reOrderedNetworkIFs = if (isWindows) activeNetworkIFs else activeNetworkIFs.reverse
+
+      for (ni <- reOrderedNetworkIFs) {
+        val addresses = ni.getInetAddresses.asScala
+          .filterNot(addr => addr.isLinkLocalAddress || addr.isLoopbackAddress).toSeq
+        if (addresses.nonEmpty) {
+          val addr = addresses.find(_.isInstanceOf[Inet4Address]).getOrElse(addresses.head)
+          // because of Inet6Address.toHostName may add interface at the end if it knows about it
+          val strippedAddress = InetAddress.getByAddress(addr.getAddress)
+          // We've found an address that looks reasonable!
+          warn(s"${address.getHostName} was resolved to a loopback address: " +
+            s"${address.getHostAddress}, using ${strippedAddress.getHostAddress}")
+          return strippedAddress
+        }
+      }
+      warn(s"${address.getHostName} was resolved to a loopback address: ${address.getHostAddress}" +
+        " but we couldn't find any external IP address!")
+    }
+    address
+  }
+
+  /**
+   * return date of format yyyyMMdd
+   */
+  def getDateFromTimestamp(time: Long): String = {
+    DateFormatUtils.format(time, "yyyyMMdd", TimeZone.getDefault)
+  }
+
+  /**
+   * Make a string representation of the exception.
+   */
+  def stringifyException(e: Throwable): String = {
+    val stm = new StringWriter
+    val wrt = new PrintWriter(stm)
+    e.printStackTrace(wrt)
+    wrt.close()
+    stm.toString
   }
 }

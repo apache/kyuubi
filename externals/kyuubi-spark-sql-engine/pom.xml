@@ -20,27 +20,33 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>kyuubi</artifactId>
         <groupId>org.apache.kyuubi</groupId>
-        <version>1.1.0-SNAPSHOT</version>
+        <artifactId>kyuubi-parent</artifactId>
+        <version>1.4.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>kyuubi-spark-sql-engine</artifactId>
+    <artifactId>kyuubi-spark-sql-engine_2.12</artifactId>
     <name>Kyuubi Project Engine Spark SQL</name>
     <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-common</artifactId>
+            <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-ha</artifactId>
+            <artifactId>kyuubi-ha_${scala.binary.version}</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-spark-monitor_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -51,20 +57,131 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-common</artifactId>
+            <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
 
+        <!--
+          Spark requires `commons-collections` and `commons-io` but got them from transitive
+          dependencies of `hadoop-client`. As we are using Hadoop Shaded Client, we need add
+          them explicitly. See more details at SPARK-33212.
+          -->
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-hive-thriftserver_${scala.binary.version}</artifactId>
+            <artifactId>spark-hive_${scala.binary.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-common</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-jdbc</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-serde</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-service</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-llap-client</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-llap-common</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client-runtime</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.iceberg</groupId>
+            <artifactId>${iceberg.name}</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-avro_${scala.binary.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hudi</groupId>
+            <artifactId>hudi-spark-common_${scala.binary.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hudi</groupId>
+            <artifactId>hudi-spark3_${scala.binary.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.parquet</groupId>
+            <artifactId>parquet-avro</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hudi</groupId>
+            <artifactId>hudi-spark_${scala.binary.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.delta</groupId>
+            <artifactId>delta-core_${scala.binary.version}</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-zookeeper_${scala.binary.version}</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
-
 
     <build>
         <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
@@ -77,10 +194,23 @@
                     <shadedArtifactAttached>false</shadedArtifactAttached>
                     <artifactSet>
                         <includes>
-                            <include>org.apache.kyuubi:kyuubi-common</include>
-                            <include>org.apache.kyuubi:kyuubi-ha</include>
+                            <include>org.apache.kyuubi:kyuubi-common_${scala.binary.version}</include>
+                            <include>org.apache.kyuubi:kyuubi-ha_${scala.binary.version}</include>
+                            <include>org.apache.kyuubi:kyuubi-spark-monitor_${scala.binary.version}</include>
+                            <include>org.apache.curator:curator-client</include>
+                            <include>org.apache.curator:curator-framework</include>
+                            <include>org.apache.curator:curator-recipes</include>
                         </includes>
                     </artifactSet>
+                    <relocations>
+                        <relocation>
+                            <pattern>org.apache.curator</pattern>
+                            <shadedPattern>${kyuubi.shade.packageName}.org.apache.curator</shadedPattern>
+                            <includes>
+                                <include>org.apache.curator.**</include>
+                            </includes>
+                        </relocation>
+                    </relocations>
                 </configuration>
                 <executions>
                     <execution>
@@ -91,38 +221,20 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>prepare-test-jar</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>spark-2.4</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-shade-plugin</artifactId>
-                        <configuration>
-                            <shadedArtifactAttached>false</shadedArtifactAttached>
-                            <artifactSet>
-                                <includes>
-                                    <include>org.apache.kyuubi:kyuubi-common</include>
-                                    <include>org.apache.kyuubi:kyuubi-ha</include>
-                                    <include>org.apache.hive:hive-service-rpc</include>
-                                </includes>
-                            </artifactSet>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>shade</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

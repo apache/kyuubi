@@ -1,0 +1,1 @@
+struct<d_year:int,i_category_id:int,i_category:string,sum(ss_ext_sales_price):decimal>

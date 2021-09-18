@@ -30,12 +30,14 @@ class KyuubiSQLExceptionSuite extends KyuubiFunSuite {
 
     val e0 = new KyuubiException(msg0)
     val e1 = new KyuubiException(msg1, e0)
-    val e2 = new KyuubiSQLException(msg2, e1)
+    val e2 = KyuubiSQLException(msg2, e1)
     assert(e2.toTStatus === KyuubiSQLException.toTStatus(e2))
 
     val e3 = KyuubiSQLException(e2.toTStatus)
     assert(e3.getMessage === e2.getMessage)
-    assert(e3.getStackTrace === e2.getStackTrace)
+    e3.getStackTrace.zip(e2.getStackTrace).foreach { case (s1, s2) =>
+      assert(s1.toString === s2.toString)
+    }
     assert(e3.getCause.getMessage === e1.getMessage)
     assert(e3.getCause.getCause.getMessage === e0.getMessage)
 
@@ -46,11 +48,20 @@ class KyuubiSQLExceptionSuite extends KyuubiFunSuite {
 
     val e4 = KyuubiSQLException(ts0)
     assert(e4.getMessage === msg0)
-    assert(e4.getCause.getStackTrace === e0.getStackTrace)
+    e4.getCause.getStackTrace.zip(e0.getStackTrace).take(5).foreach { case (s1, s2) =>
+      assert(s1.toString === s2.toString)
+    }
 
     val e5 = KyuubiSQLException(e0)
     assert(e5.getMessage === msg0)
     assert(e5.getCause === e0)
+
+    val ts1 = KyuubiSQLException(msg2, e0, "01001", 1).toTStatus
+    assert(ts1.getStatusCode === TStatusCode.ERROR_STATUS)
+    assert(ts1.getSqlState === "01001")
+    assert(ts1.getErrorCode === 1)
+    assert(ts1.getErrorMessage === msg2)
+    assert(ts1.getInfoMessages.get(0).startsWith("*"))
   }
 
   test("find the root cause") {

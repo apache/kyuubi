@@ -34,8 +34,7 @@ abstract class AbstractSession(
     val conf: Map[String, String],
     val sessionManager: SessionManager) extends Session with Logging {
 
-  private final val _handle: SessionHandle = SessionHandle(protocol)
-  override def handle: SessionHandle = _handle
+  protected def logSessionInfo(msg: String): Unit = info(s"[$user:$ipAddress] $handle - $msg")
 
   private final val _createTime: Long = System.currentTimeMillis()
   override def createTime: Long = _createTime
@@ -49,6 +48,8 @@ abstract class AbstractSession(
   override def getNoOperationTime: Long = {
     if (lastIdleTime > 0) System.currentTimeMillis() - _lastIdleTime else 0
   }
+
+  val normalizedConf: Map[String, String] = sessionManager.validateAndNormalizeConf(conf)
 
   private final val opHandleSet = new java.util.HashSet[OperationHandle]
 
@@ -85,7 +86,7 @@ abstract class AbstractSession(
     }
   }
 
-  private def runOperation(operation: Operation): OperationHandle = {
+  protected def runOperation(operation: Operation): OperationHandle = {
     try {
       val opHandle = operation.getHandle
       operation.run()
@@ -110,29 +111,13 @@ abstract class AbstractSession(
     }
   }
 
-  private def executeStatementInternal(
+  override def executeStatement(
       statement: String,
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle = withAcquireRelease() {
     val operation = sessionManager.operationManager
       .newExecuteStatementOperation(this, statement, runAsync, queryTimeout)
     runOperation(operation)
-  }
-
-  override def executeStatement(statement: String): OperationHandle = withAcquireRelease() {
-    executeStatementInternal(statement, runAsync = false, 0)
-  }
-
-  override def executeStatement(statement: String, queryTimeout: Long): OperationHandle = {
-    executeStatementInternal(statement, runAsync = false, queryTimeout)
-  }
-
-  override def executeStatementAsync(statement: String): OperationHandle = {
-    executeStatementInternal(statement, runAsync = true, 0)
-  }
-
-  override def executeStatementAsync(statement: String, queryTimeout: Long): OperationHandle = {
-    executeStatementInternal(statement, runAsync = true, queryTimeout)
   }
 
   override def getTableTypes: OperationHandle = withAcquireRelease() {
@@ -190,8 +175,8 @@ abstract class AbstractSession(
   }
 
   override def closeOperation(operationHandle: OperationHandle): Unit = withAcquireRelease() {
-    sessionManager.operationManager.closeOperation(operationHandle)
     opHandleSet.remove(operationHandle)
+    sessionManager.operationManager.closeOperation(operationHandle)
   }
 
   override def getResultSetMetadata(
@@ -211,15 +196,18 @@ abstract class AbstractSession(
     }
   }
 
-  override def closeExpiredOperations: Unit = withAcquireRelease() {
+  override def closeExpiredOperations: Unit = {
     val operations = sessionManager.operationManager
       .removeExpiredOperations(opHandleSet.asScala.toSeq)
     operations.foreach { op =>
-      opHandleSet.remove(op.getHandle)
-      try {
-        op.close()
-      } catch {
-        case e: Exception => warn(s"Error closing timed-out operation ${op.getHandle}", e)
+      // After the last expired Handle has been cleaned, the 'lastIdleTime' needs to be updated.
+      withAcquireRelease(false) {
+        opHandleSet.remove(op.getHandle)
+        try {
+          op.close()
+        } catch {
+          case e: Exception => warn(s"Error closing timed-out operation ${op.getHandle}", e)
+        }
       }
     }
   }

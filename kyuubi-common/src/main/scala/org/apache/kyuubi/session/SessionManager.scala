@@ -41,7 +41,11 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   @volatile private var shutdown = false
 
+  @volatile private var _latestLogoutTime: Long = System.currentTimeMillis()
+  def latestLogoutTime: Long = _latestLogoutTime
+
   private val handleToSession = new ConcurrentHashMap[SessionHandle, Session]
+
   private val timeoutChecker =
     ThreadUtils.newDaemonSingleThreadScheduledExecutor(s"$name-timeout-checker")
 
@@ -61,6 +65,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       conf: Map[String, String]): SessionHandle
 
   def closeSession(sessionHandle: SessionHandle): Unit = {
+    _latestLogoutTime = System.currentTimeMillis()
     val session = handleToSession.remove(sessionHandle)
     if (session == null) {
       throw KyuubiSQLException(s"Invalid $sessionHandle")
@@ -83,7 +88,56 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   def getOpenSessionCount: Int = handleToSession.size()
 
-  override def initialize(conf: KyuubiConf): Unit = {
+  def getExecPoolSize: Int = {
+    assert(execPool != null)
+    execPool.getPoolSize
+  }
+
+  def getActiveCount: Int = {
+    assert(execPool != null)
+    execPool.getActiveCount
+  }
+
+  private var _confRestrictList: Set[String] = _
+  private var _confIgnoreList: Set[String] = _
+
+  // strip prefix and validate whether if key is restricted, ignored or valid
+  def validateKey(key: String, value: String): Option[(String, String)] = {
+    val normalizedKey = if (key.startsWith(SET_PREFIX)) {
+      val newKey = key.substring(SET_PREFIX.length)
+      if (newKey.startsWith(ENV_PREFIX)) {
+        throw KyuubiSQLException(s"$key is forbidden, env:* variables can not be set.")
+      } else if (newKey.startsWith(SYSTEM_PREFIX)) {
+        newKey.substring(SYSTEM_PREFIX.length)
+      } else if (newKey.startsWith(HIVECONF_PREFIX)) {
+        newKey.substring(HIVECONF_PREFIX.length)
+      } else if (newKey.startsWith(HIVEVAR_PREFIX)) {
+        newKey.substring(HIVEVAR_PREFIX.length)
+      } else if (newKey.startsWith(METACONF_PREFIX)) {
+        newKey.substring(METACONF_PREFIX.length)
+      } else {
+        newKey
+      }
+    } else {
+      key
+    }
+
+    if (_confRestrictList.contains(normalizedKey)) {
+      throw KyuubiSQLException(s"$normalizedKey is a restrict key according to the server-side" +
+        s" configuration, please remove it and retry if you want to proceed")
+    } else if (_confIgnoreList.contains(normalizedKey)) {
+      warn(s"$normalizedKey is a ignored key according to the server-side configuration")
+      None
+    } else {
+      Some((normalizedKey, value))
+    }
+  }
+
+  def validateAndNormalizeConf(config: Map[String, String]): Map[String, String] = config.flatMap {
+    case(k, v) => validateKey(k, v)
+  }
+
+  override def initialize(conf: KyuubiConf): Unit = synchronized {
     addService(operationManager)
 
     val poolSize: Int = if (isServer) {
@@ -103,17 +157,20 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       conf.get(ENGINE_EXEC_KEEPALIVE_TIME)
     }
 
+    _confRestrictList = conf.get(SESSION_CONF_RESTRICT_LIST).toSet
+    _confIgnoreList = conf.get(SESSION_CONF_IGNORE_LIST).toSet
+
     execPool = ThreadUtils.newDaemonQueuedThreadPool(
       poolSize, waitQueueSize, keepAliveMs, s"$name-exec-pool")
     super.initialize(conf)
   }
 
-  override def start(): Unit = {
+  override def start(): Unit = synchronized {
     startTimeoutChecker()
     super.start()
   }
 
-  override def stop(): Unit = {
+  override def stop(): Unit = synchronized {
     super.stop()
     shutdown = true
     val shutdownTimeout: Long = if (isServer) {
@@ -142,8 +199,8 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   }
 
   private def startTimeoutChecker(): Unit = {
-    val interval = conf.get(KyuubiConf.SESSION_CHECK_INTERVAL)
-    val timeout = conf.get(KyuubiConf.SESSION_TIMEOUT)
+    val interval = conf.get(SESSION_CHECK_INTERVAL)
+    val timeout = conf.get(SESSION_IDLE_TIMEOUT)
 
     val checkTask = new Runnable {
       override def run(): Unit = {
@@ -166,6 +223,23 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       }
     }
 
+    timeoutChecker.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
+  }
+
+  private[kyuubi] def startTerminatingChecker(): Unit = if (!isServer) {
+    // initialize `_latestLogoutTime` at start
+    _latestLogoutTime = System.currentTimeMillis()
+    val interval = conf.get(ENGINE_CHECK_INTERVAL)
+    val idleTimeout = conf.get(ENGINE_IDLE_TIMEOUT)
+    val checkTask = new Runnable {
+      override def run(): Unit = {
+        if (!shutdown &&
+          System.currentTimeMillis() - latestLogoutTime > idleTimeout && getOpenSessionCount <= 0) {
+          info(s"Idled for more than $idleTimeout ms, terminating")
+          sys.exit(0)
+        }
+      }
+    }
     timeoutChecker.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
   }
 }

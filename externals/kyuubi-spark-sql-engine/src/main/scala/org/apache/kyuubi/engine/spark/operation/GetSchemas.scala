@@ -17,12 +17,11 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.util.regex.Pattern
-
-import org.apache.commons.lang3.StringUtils
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.StructType
 
+import org.apache.kyuubi.engine.spark.IterableFetchIterator
+import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
@@ -42,16 +41,9 @@ class GetSchemas(spark: SparkSession, session: Session, catalogName: String, sch
 
   override protected def runInternal(): Unit = {
     try {
-      val schemaPattern = convertSchemaPattern(schema)
-      val databases = spark.sessionState.catalog.listDatabases(schemaPattern)
-      val globalTmpViewDb = spark.sessionState.catalog.globalTempViewManager.database
-      if (StringUtils.isEmpty(schema) || schema == "*"
-        || Pattern.compile(convertSchemaPattern(schema, false))
-        .matcher(globalTmpViewDb).matches()) {
-        iter = (databases :+ globalTmpViewDb).map(Row(_, "")).toList.iterator
-      } else {
-        iter = databases.map(Row(_, "")).toList.iterator
-      }
+      val schemaPattern = toJavaRegex(schema)
+      val rows = SparkCatalogShim().getSchemas(spark, catalogName, schemaPattern)
+      iter = new IterableFetchIterator(rows)
     } catch onError()
   }
 }

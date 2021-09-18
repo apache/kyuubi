@@ -1,20 +1,23 @@
 <!--
-Thanks for sending a pull request!  Here are some tips for you:
+Thanks for sending a pull request!
+
+Here are some tips for you:
   1. If this is your first time, please read our contributor guidelines: https://kyuubi.readthedocs.io/en/latest/community/contributions.html
+  2. If the PR is related to an issue in https://github.com/apache/incubator-kyuubi/issues, add '[KYUUBI #XXXX]' in your PR title, e.g., '[KYUUBI #XXXX] Your PR title ...'.
+  3. If the PR is unfinished, add '[WIP]' in your PR title, e.g., '[WIP][KYUUBI #XXXX] Your PR title ...'.
 -->
 
-### Please add issue ID here?
-<!-- replace ${issue ID} with the actual issue id -->
-Fixes #${issue ID}
-
-### Why are the changes needed?
+### _Why are the changes needed?_
 <!--
 Please clarify why the changes are needed. For instance,
-  1. If you add a feature, you can talk about the user case of it.
+  1. If you add a feature, you can talk about the use case of it.
   2. If you fix a bug, you can clarify why it is a bug.
 -->
 
-### Test Plan:
-- Add some test cases that check the changes thoroughly including negative and positive cases if possible
-- Add screenshots for manual tests if appropriate
-- [Run test](https://kyuubi.readthedocs.io/en/latest/tools/testing.html#running-tests) locally before make a pull request
+
+### _How was this patch tested?_
+- [ ] Add some test cases that check the changes thoroughly including negative and positive cases if possible
+
+- [ ] Add screenshots for manual tests if appropriate
+
+- [ ] [Run test](https://kyuubi.readthedocs.io/en/latest/develop_tools/testing.html#running-tests) locally before make a pull request

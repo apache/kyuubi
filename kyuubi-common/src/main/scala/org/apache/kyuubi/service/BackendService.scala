@@ -19,19 +19,19 @@ package org.apache.kyuubi.service
 
 import org.apache.hive.service.rpc.thrift._
 
-import org.apache.kyuubi.operation.{Operation, OperationHandle, OperationStatus}
+import org.apache.kyuubi.operation.{OperationHandle, OperationStatus}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
-import org.apache.kyuubi.session.{Session, SessionHandle, SessionManager}
+import org.apache.kyuubi.session.{SessionHandle, SessionManager}
 
 /**
  * A [[BackendService]] in Kyuubi architecture is responsible for talking to the SQL engine
  *
- * 1. Open/Close [[Session]]
- * 2. Operate [[Operation]]
- * 3. Manager [[Session]]s via [[SessionManager]]
- * 4. Check [[OperationStatus]]
- * 5. Retrieve [[Operation]] results and metadata
- * 6. Cancel/Close [[Operation]]
+ * 1. Open/Close [[org.apache.kyuubi.session.Session]] <br/>
+ * 2. Operate [[org.apache.kyuubi.operation.Operation]] <br/>
+ * 3. Manager [[org.apache.kyuubi.session.Session]]s via [[SessionManager]] <br/>
+ * 4. Check [[OperationStatus]] <br/>
+ * 5. Retrieve [[org.apache.kyuubi.operation.Operation]] results and metadata <br/>
+ * 6. Cancel/Close [[org.apache.kyuubi.operation.Operation]] <br/>
  *
  */
 trait BackendService {
@@ -49,10 +49,7 @@ trait BackendService {
   def executeStatement(
       sessionHandle: SessionHandle,
       statement: String,
-      queryTimeout: Long): OperationHandle
-  def executeStatementAsync(
-      sessionHandle: SessionHandle,
-      statement: String,
+      runAsync: Boolean,
       queryTimeout: Long): OperationHandle
 
   def getTypeInfo(sessionHandle: SessionHandle): OperationHandle

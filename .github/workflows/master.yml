@@ -1,11 +1,112 @@
 name: Kyuubi
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+      - branch-*
+  pull_request:
+    branches:
+      - master
+      - branch-*
 
 jobs:
+  rat:
+    name: Check License
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v1
+        with:
+          java-version: '1.8'
+      - run: build/mvn org.apache.rat:apache-rat-plugin:check
+      - name: Upload rat report
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: rat
+          path: "**/target/rat*.txt"
+
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        include:
+          - java: 8
+            spark: '3.0'
+            spark-hadoop: '2.7'
+          - java: 8
+            spark: '3.1'
+            spark-hadoop: '2.7'
+            profiles: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.0.3 -Dspark.archive.name=spark-3.0.3-bin-hadoop2.7.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest'
+          - java: 8
+            spark: '3.1'
+            spark-hadoop: '3.2'
+            profiles: '-Pkyuubi-extension-spark-3-1'
+            codecov: 'true'
+          - java: 11
+            spark: '3.1'
+            spark-hadoop: '3.2'
+            profiles: '-DskipTests -Pspark-provided'
+
+    env:
+      SPARK_LOCAL_IP: localhost
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup JDK ${{ matrix.java }}
+        uses: actions/setup-java@v1
+        with:
+          java-version: ${{ matrix.java }}
+      - uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository/com
+          key: ${{ runner.os }}-maven-com-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-com-
+      - uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository/org
+          key: ${{ runner.os }}-maven-org-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-org-
+      - uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository/net
+          key: ${{ runner.os }}-maven-net-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-net-
+      - uses: actions/cache@v1
+        with:
+          path: ~/.m2/repository/io
+          key: ${{ runner.os }}-maven-io-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-io-
+      - name: Build with Maven
+        run: >-
+          ./build/mvn clean install -Dmaven.javadoc.skip=true -V
+          -Pspark-${{ matrix.spark }} -Pspark-hadoop-${{ matrix.spark-hadoop }} ${{ matrix.profiles }}
+      - name: Code coverage
+        if: ${{ matrix.codecov == 'true' }}
+        run: bash <(curl -s https://codecov.io/bash)
+      - name: Detected Dependency List Change
+        if: ${{ matrix.java == 8 }}
+        run: build/dependency.sh
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: unit-tests-log
+          path: |
+            **/target/unit-tests.log
+            **/kyuubi-spark-sql-engine.log*
+            **/target/scalastyle-output.xml
+
+  tpcds:
+    name: TPC-DS Tests
+    runs-on: ubuntu-20.04
+    env:
+      SPARK_LOCAL_IP: localhost
     steps:
       - uses: actions/checkout@v2
       - name: Setup JDK 1.8
@@ -36,27 +137,47 @@ jobs:
           key: ${{ runner.os }}-maven-io-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-io-
-      - name: Build with Maven
+      - name: Run TPC-DS Tests
         run: |
-          mvn clean install -Dmaven.javadoc.skip=true -B -V
-          bash <(curl -s https://codecov.io/bash)
-#      - name: Codecov kyuubi-common
-#        uses: codecov/codecov-action@v1
-#        with:
-#          file: ./kyuubi-common/target/codecov/jacoco.xml
-#          flags: kyuubi-common
-#      - name: Codecov kyuubi-ha
-#        uses: codecov/codecov-action@v1
-#        with:
-#          file: ./kyuubi-ha/target/codecov/jacoco.xml
-#          flags: kyuubi-ha
-#      - name: Codecov kyuubi-spark-sql-engine
-#        uses: codecov/codecov-action@v1
-#        with:
-#          file: ./externals/kyuubi-spark-sql-engine/target/codecov/jacoco.xml
-#          flags: kyuubi-spark-sql-engine
-#      - name: Codecov kyuubi-main
-#        uses: codecov/codecov-action@v1
-#        with:
-#          file: ./kyuubi-main/target/codecov/jacoco.xml
-#          flags: kyuubi-main
+          ./build/mvn clean install -Pspark-3.1 -DskipTests -pl :kyuubi-spark-sql-engine_2.12,:kyuubi-common_2.12,:kyuubi-ha_2.12,:kyuubi-zookeeper_2.12,:kyuubi-spark-monitor_2.12
+          ./build/mvn test -Pspark-3.1 -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds -Dmaven.plugin.scalatest.exclude.tags=''
+  minikube-it:
+    name: Minikube Integration Test
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      # https://github.com/docker/build-push-action
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Build Kyuubi Docker Image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: docker/Dockerfile
+          load: true
+          tags: apache/kyuubi:latest
+      # from https://github.com/marketplace/actions/setup-minikube-kubernetes-cluster
+      - name: Setup Minikube
+        uses: manusa/actions-setup-minikube@v2.4.2
+        with:
+          minikube version: 'v1.16.0'
+          kubernetes version: 'v1.19.2'
+      - name: kubectl pre-check
+        run: |
+          kubectl get serviceaccount
+          kubectl create serviceaccount kyuubi
+          kubectl get serviceaccount
+      - name: start kyuubi
+        run: kubectl apply -f kubernetes/integration-tests/test-k8s.yaml
+      - name: kyuubi pod check
+        run: kubectl get pods
+      - name: integration tests
+        run: ./build/mvn clean test -pl :kyuubi-common_2.12,:kubernetes-integration-tests_2.12 -Pkubernetes -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v2
+        with:
+          name: unit-tests-log
+          path: |
+            **/target/unit-tests.log

@@ -19,15 +19,14 @@ package org.apache.kyuubi
 
 import java.io.File
 import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 
-import scala.io.Source
+import scala.io.{Codec, Source}
 import scala.util.control.NonFatal
 
-import com.google.common.io.Files
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.minikdc.MiniKdc
 import org.apache.hadoop.security.UserGroupInformation
-import org.scalatest.concurrent.Eventually.{eventually, interval, timeout}
 import org.scalatest.time.SpanSugar._
 
 trait KerberizedTestHelper extends KyuubiFunSuite {
@@ -36,18 +35,23 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
   val kdcConf = MiniKdc.createConf()
   val hostName = "localhost"
   kdcConf.setProperty(MiniKdc.INSTANCE, this.getClass.getSimpleName)
-  kdcConf.setProperty(MiniKdc.ORG_NAME, this.getClass.getSimpleName)
+  // MiniKdc keeps realm config in enum object `KdcServerOption.KDC_REALM`.
+  // Multiple kdcs will be launched when testing if they are defined in the same package.
+  // Using same realms here to avoid authentication failure.
+  kdcConf.setProperty(MiniKdc.ORG_NAME, classOf[KerberizedTestHelper].getSimpleName)
   kdcConf.setProperty(MiniKdc.ORG_DOMAIN, "COM")
   kdcConf.setProperty(MiniKdc.KDC_BIND_ADDRESS, hostName)
   kdcConf.setProperty(MiniKdc.KDC_PORT, "0")
   kdcConf.setProperty(MiniKdc.DEBUG, "true")
 
   private var kdc: MiniKdc = _
+  private var krb5ConfPath: String = _
 
   eventually(timeout(60.seconds), interval(1.second)) {
     try {
       kdc = new MiniKdc(kdcConf, baseDir)
       kdc.start()
+      krb5ConfPath = kdc.getKrb5conf.getAbsolutePath
     } catch {
       case NonFatal(e) =>
         if (kdc != null) {
@@ -69,30 +73,37 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
    * In this method we rewrite krb5.conf to make kdc and client use the same enctypes
    */
   private def rewriteKrb5Conf(): Unit = {
-    val krb5Conf = Source.fromFile(kdc.getKrb5conf, StandardCharsets.UTF_8.toString).getLines
-    var rewritten = false
-    val addedConfig =
-      addedKrb5Config("default_tkt_enctypes", "aes128-cts-hmac-sha1-96") +
-        addedKrb5Config("default_tgs_enctypes", "aes128-cts-hmac-sha1-96") +
-    addedKrb5Config("dns_lookup_realm", "true")
-    val rewriteKrb5Conf = krb5Conf.map(s =>
-      if (s.contains("libdefaults")) {
-        rewritten = true
-        s + addedConfig
+    val source = Source.fromFile(kdc.getKrb5conf)(Codec.UTF8)
+    try {
+      val krb5Conf = source.getLines
+      var rewritten = false
+      val addedConfig =
+        addedKrb5Config("default_tkt_enctypes", "aes128-cts-hmac-sha1-96") +
+          addedKrb5Config("default_tgs_enctypes", "aes128-cts-hmac-sha1-96") +
+          addedKrb5Config("dns_lookup_realm", "true")
+      val rewriteKrb5Conf = krb5Conf.map(s =>
+        if (s.contains("libdefaults")) {
+          rewritten = true
+          s + addedConfig
+        } else {
+          s
+        }).filter(!_.trim.startsWith("#")).mkString(System.lineSeparator())
+
+      val krb5confStr = if (!rewritten) {
+        "[libdefaults]" + addedConfig + System.lineSeparator() +
+          System.lineSeparator() + rewriteKrb5Conf
       } else {
-        s
-      }).filter(!_.trim.startsWith("#")).mkString(System.lineSeparator())
+        rewriteKrb5Conf
+      }
 
-    val krb5confStr = if (!rewritten) {
-      "[libdefaults]" + addedConfig + System.lineSeparator() +
-        System.lineSeparator() + rewriteKrb5Conf
-    } else {
-      rewriteKrb5Conf
+      kdc.getKrb5conf.delete()
+      val writer = Files.newBufferedWriter(kdc.getKrb5conf.toPath, StandardCharsets.UTF_8)
+      writer.write(krb5confStr)
+      writer.close()
+      info(s"krb5.conf file content: $krb5confStr")
+    } finally {
+      source.close
     }
-
-    kdc.getKrb5conf.delete()
-    Files.write(krb5confStr, kdc.getKrb5conf, StandardCharsets.UTF_8)
-    info(s"krb5.conf file content: $krb5confStr")
   }
 
   private def addedKrb5Config(key: String, value: String): String = {
@@ -118,7 +129,7 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
     val authType = "hadoop.security.authentication"
     try {
       conf.set(authType, "KERBEROS")
-      System.setProperty("java.security.krb5.conf", kdc.getKrb5conf.getAbsolutePath)
+      System.setProperty("java.security.krb5.conf", krb5ConfPath)
       UserGroupInformation.setConfiguration(conf)
       assert(UserGroupInformation.isSecurityEnabled)
       block

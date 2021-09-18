@@ -17,14 +17,15 @@
 
 package org.apache.kyuubi.engine.spark.session
 
-import java.util.concurrent.TimeUnit
-
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{AnalysisException, SparkSession}
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.ShareLevel
+import org.apache.kyuubi.engine.spark.SparkSQLEngine
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
+import org.apache.kyuubi.engine.spark.udf.KDFRegistry
 import org.apache.kyuubi.session._
 
 /**
@@ -42,8 +43,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
 
   val operationManager = new SparkSQLOperationManager()
 
-  @volatile private var _latestLogoutTime: Long = System.currentTimeMillis()
-  def latestLogoutTime: Long = _latestLogoutTime
+  private lazy val singleSparkSession = conf.get(ENGINE_SINGLE_SPARK_SESSION)
 
   override def openSession(
       protocol: TProtocolVersion,
@@ -55,14 +55,23 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     val sessionImpl = new SparkSessionImpl(protocol, user, password, ipAddress, conf, this)
     val handle = sessionImpl.handle
     try {
-      val sparkSession = spark.newSession()
-      conf.foreach {
-        case (HIVE_VAR_PREFIX(key), value) => setModifiableConfig(sparkSession, key, value)
-        case (HIVE_CONF_PREFIX(key), value) => setModifiableConfig(sparkSession, key, value)
+      val sparkSession = if (singleSparkSession) {
+        spark
+      } else {
+        val ss = spark.newSession()
+        this.conf.get(ENGINE_SESSION_INITIALIZE_SQL).foreach { sqlStr =>
+          ss.sparkContext.setJobGroup(handle.identifier.toString, sqlStr, interruptOnCancel = true)
+          ss.sql(sqlStr).isEmpty
+        }
+        ss
+      }
+
+      sessionImpl.normalizedConf.foreach {
         case ("use:database", database) => sparkSession.catalog.setCurrentDatabase(database)
         case (key, value) => setModifiableConfig(sparkSession, key, value)
       }
       sessionImpl.open()
+      KDFRegistry.registerAll(sparkSession)
       operationManager.setSparkSession(handle, sparkSession)
       setSession(handle, sessionImpl)
       info(s"$user's session with $handle is opened, current opening sessions" +
@@ -76,40 +85,26 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
-    _latestLogoutTime = System.currentTimeMillis()
     super.closeSession(sessionHandle)
     operationManager.removeSparkSession(sessionHandle)
+    if (conf.get(ENGINE_SHARE_LEVEL) == ShareLevel.CONNECTION.toString) {
+      info("Session stopped due to shared level is Connection.")
+      stopSession()
+    }
   }
 
   private def setModifiableConfig(spark: SparkSession, key: String, value: String): Unit = {
-    if (spark.conf.isModifiable(key)) {
+    try {
       spark.conf.set(key, value)
-    } else {
-      warn(s"Spark config $key is static and will be ignored")
+    } catch {
+      case e: AnalysisException =>
+        warn(e.getMessage())
     }
+  }
+
+  private def stopSession(): Unit = {
+    SparkSQLEngine.currentEngine.foreach(_.stop())
   }
 
   override protected def isServer: Boolean = false
-
-  override def start(): Unit = {
-    startTimeoutChecker()
-    super.start()
-  }
-
-  private def startTimeoutChecker(): Unit = {
-    val interval = conf.get(KyuubiConf.ENGINE_CHECK_INTERVAL)
-    val idleTimeout = conf.get(KyuubiConf.ENGINE_IDLE_TIMEOUT)
-    val checkTask = new Runnable {
-      override def run(): Unit = {
-        while (getOpenSessionCount > 0 ||
-          System.currentTimeMillis - latestLogoutTime < idleTimeout) {
-          TimeUnit.MILLISECONDS.sleep(interval)
-        }
-        info(s"Idled for more than $idleTimeout ms, terminating")
-        sys.exit(0)
-      }
-    }
-    submitBackgroundOperation(checkTask)
-  }
-
 }

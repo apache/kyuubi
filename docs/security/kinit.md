@@ -1,14 +1,30 @@
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
 
 <div align=center>
 
-![](../imgs/kyuubi_logo_simple.png)
+![](../imgs/kyuubi_logo.png)
 
 </div>
 
 # Kinit Auxiliary Service
 
-In order to work w/ a kerberos-enabled cluster, Kyuubi provides this kinit auxiliary service.
-It will periodically re-kinit w/ to keep the Ticket Cache fresh.
+In order to work with a kerberos-enabled cluster, Kyuubi provides this kinit auxiliary service.
+It will periodically re-kinit with to keep the Ticket Cache fresh.
 
 
 ## Installing and Configuring the Kerberos Clients
@@ -31,7 +47,7 @@ Replace or configure `krb5.conf` to point to the KDC.
 ## Kerberos Ticket
 
 Kerberos client is aimed to generate a Ticket Cache file.
-Then, Kyuubi can use this Ticket Cache to authenticate w/ those kerberized services,
+Then, Kyuubi can use this Ticket Cache to authenticate with those kerberized services,
 e.g. HDFS, YARN, and Hive Metastore server, etc.
 
 A Kerberos ticket cache contains a service and a client principal names,

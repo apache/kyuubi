@@ -17,11 +17,17 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
+
+import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiConf.{OPERATION_PLAN_ONLY, OperationModes}
+import org.apache.kyuubi.config.KyuubiConf.OperationModes._
+import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.{Session, SessionHandle}
 
@@ -49,15 +55,22 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
 
   def getOpenSparkSessionCount: Int = sessionToSpark.size()
 
+  private lazy val operationModeDefault = getConf.get(OPERATION_PLAN_ONLY)
+
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val spark = getSparkSession(session.handle)
-    val operation = new ExecuteStatement(spark, session, statement, runAsync)
-    addOperation(operation)
 
+    val operationModeStr =
+      spark.conf.get(OPERATION_PLAN_ONLY.key, operationModeDefault).toUpperCase(Locale.ROOT)
+    val operation = OperationModes.withName(operationModeStr) match {
+      case NONE => new ExecuteStatement(spark, session, statement, runAsync, queryTimeout)
+      case mode => new PlanOnlyStatement(spark, session, statement, mode)
+    }
+    addOperation(operation)
   }
 
   override def newGetTypeInfoOperation(session: Session): Operation = {
@@ -88,7 +101,12 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
       tableName: String,
       tableTypes: java.util.List[String]): Operation = {
     val spark = getSparkSession(session.handle)
-    val op = new GetTables(spark, session, catalogName, schemaName, tableName, tableTypes)
+    val tTypes = if (tableTypes == null || tableTypes.isEmpty) {
+      SparkCatalogShim.sparkTableTypes
+    } else {
+      tableTypes.asScala.toSet
+    }
+    val op = new GetTables(spark, session, catalogName, schemaName, tableName, tTypes)
     addOperation(op)
   }
 

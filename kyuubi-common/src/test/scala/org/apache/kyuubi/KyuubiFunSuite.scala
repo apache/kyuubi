@@ -17,17 +17,27 @@
 
 package org.apache.kyuubi
 
-// scalastyle:off
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Outcome}
+import scala.collection.mutable.ArrayBuffer
 
-trait KyuubiFunSuite extends FunSuite
+// scalastyle:off
+import org.apache.log4j.{Appender, AppenderSkeleton, Level, Logger}
+import org.apache.log4j.spi.LoggingEvent
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Outcome}
+import org.scalatest.concurrent.Eventually
+import org.scalatest.funsuite.AnyFunSuite
+
+import org.apache.kyuubi.config.internal.Tests.IS_TESTING
+
+trait KyuubiFunSuite extends AnyFunSuite
   with BeforeAndAfterAll
   with BeforeAndAfterEach
+  with Eventually
   with ThreadAudit
   with Logging {
   // scalastyle:on
   override def beforeAll(): Unit = {
-    doThreadPostAudit()
+    System.setProperty(IS_TESTING.key, "true")
+    doThreadPreAudit()
     super.beforeAll()
   }
 
@@ -45,6 +55,63 @@ trait KyuubiFunSuite extends FunSuite
       test()
     } finally {
       info(s"\n\n===== FINISHED $shortSuiteName: '$testName' =====\n")
+    }
+  }
+
+  /**
+   * Adds a log appender and optionally sets a log level to the root logger or the logger with
+   * the specified name, then executes the specified function, and in the end removes the log
+   * appender and restores the log level if necessary.
+   */
+  final def withLogAppender(
+      appender: Appender,
+      loggerName: Option[String] = None,
+      level: Option[Level] = None)(
+    f: => Unit): Unit = {
+    val logger = loggerName.map(Logger.getLogger).getOrElse(Logger.getRootLogger)
+    val restoreLevel = logger.getLevel
+    logger.addAppender(appender)
+    if (level.isDefined) {
+      logger.setLevel(level.get)
+    }
+    try f finally {
+      logger.removeAppender(appender)
+      if (level.isDefined) {
+        logger.setLevel(restoreLevel)
+      }
+    }
+  }
+
+  class LogAppender(msg: String = "", maxEvents: Int = 1000) extends AppenderSkeleton {
+    val loggingEvents = new ArrayBuffer[LoggingEvent]()
+
+    override def append(loggingEvent: LoggingEvent): Unit = {
+      if (loggingEvents.size >= maxEvents) {
+        val loggingInfo = if (msg == "") "." else s" while logging $msg."
+        throw new IllegalStateException(
+          s"Number of events reached the limit of $maxEvents$loggingInfo")
+      }
+      loggingEvents.append(loggingEvent)
+    }
+    override def close(): Unit = {}
+    override def requiresLayout(): Boolean = false
+  }
+
+  final def withSystemProperty(key: String, value: String)(f: => Unit): Unit = {
+    val originValue = System.getProperty(key)
+    setSystemProperty(key, value)
+    try {
+      f
+    } finally {
+      setSystemProperty(key, originValue)
+    }
+  }
+
+  final def setSystemProperty(key: String, value: String): Unit = {
+    if (value == null) {
+      System.clearProperty(key)
+    } else {
+      System.setProperty(key, value)
     }
   }
 }

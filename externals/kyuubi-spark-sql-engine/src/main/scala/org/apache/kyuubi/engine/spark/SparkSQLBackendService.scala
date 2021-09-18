@@ -20,18 +20,17 @@ package org.apache.kyuubi.engine.spark
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.engine.spark.session.SparkSQLSessionManager
-import org.apache.kyuubi.operation.Operation
 import org.apache.kyuubi.service.AbstractBackendService
-import org.apache.kyuubi.service.BackendService
-import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.session.SessionManager
 
 /**
- * A [[BackendService]] constructed with [[SparkSession]] which give it the ability to talk with
+ * A [[org.apache.kyuubi.service.BackendService]] constructed
+ * with [[SparkSession]] which give it the ability to talk with
  * Spark and let Spark do all the rest heavy work :)
  *
  *  @param name  Service Name
- * @param spark A [[SparkSession]] instance that this backend service holds to run [[Operation]]s.
+ *  @param spark A [[SparkSession]] instance
+ *               that this backend service holds to run [[org.apache.kyuubi.operation.Operation]]s.
  */
 class SparkSQLBackendService(name: String, spark: SparkSession)
   extends AbstractBackendService(name) {
@@ -39,4 +38,6 @@ class SparkSQLBackendService(name: String, spark: SparkSession)
   def this(spark: SparkSession) = this(classOf[SparkSQLBackendService].getSimpleName, spark)
 
   override val sessionManager: SessionManager = new SparkSQLSessionManager(spark)
+
+  def sparkSession: SparkSession = spark
 }

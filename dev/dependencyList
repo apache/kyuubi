@@ -1,0 +1,83 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+aopalliance-repackaged/2.6.1//aopalliance-repackaged-2.6.1.jar
+commons-codec/1.15//commons-codec-1.15.jar
+commons-lang/2.6//commons-lang-2.6.jar
+commons-lang3/3.10//commons-lang3-3.10.jar
+curator-client/2.12.0//curator-client-2.12.0.jar
+curator-framework/2.12.0//curator-framework-2.12.0.jar
+curator-recipes/2.12.0//curator-recipes-2.12.0.jar
+failureaccess/1.0.1//failureaccess-1.0.1.jar
+guava/30.1-jre//guava-30.1-jre.jar
+hadoop-client-api/3.2.2//hadoop-client-api-3.2.2.jar
+hadoop-client-runtime/3.2.2//hadoop-client-runtime-3.2.2.jar
+hive-common/2.3.7//hive-common-2.3.7.jar
+hive-metastore/2.3.7//hive-metastore-2.3.7.jar
+hive-service-rpc/2.3.7//hive-service-rpc-2.3.7.jar
+hive-shims-common/2.3.7//hive-shims-common-2.3.7.jar
+hk2-api/2.6.1//hk2-api-2.6.1.jar
+hk2-locator/2.6.1//hk2-locator-2.6.1.jar
+hk2-utils/2.6.1//hk2-utils-2.6.1.jar
+htrace-core4/4.1.0-incubating//htrace-core4-4.1.0-incubating.jar
+jackson-annotations/2.11.4//jackson-annotations-2.11.4.jar
+jackson-core/2.11.4//jackson-core-2.11.4.jar
+jackson-databind/2.11.4//jackson-databind-2.11.4.jar
+jackson-module-jaxb-annotations/2.9.9//jackson-module-jaxb-annotations-2.9.9.jar
+jackson-module-paranamer/2.11.4//jackson-module-paranamer-2.11.4.jar
+jackson-module-scala_2.12/2.11.4//jackson-module-scala_2.12-2.11.4.jar
+jakarta.annotation-api/1.3.5//jakarta.annotation-api-1.3.5.jar
+jakarta.inject/2.6.1//jakarta.inject-2.6.1.jar
+jakarta.servlet-api/4.0.4//jakarta.servlet-api-4.0.4.jar
+jakarta.validation-api/2.0.2//jakarta.validation-api-2.0.2.jar
+jakarta.ws.rs-api/2.1.6//jakarta.ws.rs-api-2.1.6.jar
+javassist/3.25.0-GA//javassist-3.25.0-GA.jar
+jaxb-api/2.2.11//jaxb-api-2.2.11.jar
+jcl-over-slf4j/1.7.30//jcl-over-slf4j-1.7.30.jar
+jersey-client/2.30//jersey-client-2.30.jar
+jersey-common/2.30//jersey-common-2.30.jar
+jersey-container-servlet-core/2.30//jersey-container-servlet-core-2.30.jar
+jersey-entity-filtering/2.30//jersey-entity-filtering-2.30.jar
+jersey-hk2/2.30//jersey-hk2-2.30.jar
+jersey-media-jaxb/2.30//jersey-media-jaxb-2.30.jar
+jersey-media-json-jackson/2.30//jersey-media-json-jackson-2.30.jar
+jersey-server/2.30//jersey-server-2.30.jar
+jetty-http/9.4.41.v20210516//jetty-http-9.4.41.v20210516.jar
+jetty-io/9.4.41.v20210516//jetty-io-9.4.41.v20210516.jar
+jetty-security/9.4.41.v20210516//jetty-security-9.4.41.v20210516.jar
+jetty-server/9.4.41.v20210516//jetty-server-9.4.41.v20210516.jar
+jetty-servlet/9.4.41.v20210516//jetty-servlet-9.4.41.v20210516.jar
+jetty-util-ajax/9.4.41.v20210516//jetty-util-ajax-9.4.41.v20210516.jar
+jetty-util/9.4.41.v20210516//jetty-util-9.4.41.v20210516.jar
+libfb303/0.9.3//libfb303-0.9.3.jar
+libthrift/0.9.3//libthrift-0.9.3.jar
+log4j/1.2.17//log4j-1.2.17.jar
+metrics-core/4.1.1//metrics-core-4.1.1.jar
+metrics-jmx/4.1.1//metrics-jmx-4.1.1.jar
+metrics-json/4.1.1//metrics-json-4.1.1.jar
+metrics-jvm/4.1.1//metrics-jvm-4.1.1.jar
+osgi-resource-locator/1.0.3//osgi-resource-locator-1.0.3.jar
+paranamer/2.8//paranamer-2.8.jar
+scala-library/2.12.15//scala-library-2.12.15.jar
+scopt_2.12/4.0.1//scopt_2.12-4.0.1.jar
+simpleclient/0.10.0//simpleclient-0.10.0.jar
+simpleclient_common/0.10.0//simpleclient_common-0.10.0.jar
+simpleclient_dropwizard/0.10.0//simpleclient_dropwizard-0.10.0.jar
+simpleclient_servlet/0.10.0//simpleclient_servlet-0.10.0.jar
+slf4j-api/1.7.30//slf4j-api-1.7.30.jar
+slf4j-log4j12/1.7.30//slf4j-log4j12-1.7.30.jar
+zookeeper/3.4.14//zookeeper-3.4.14.jar

@@ -1,0 +1,1 @@
+struct<ca_zip:string,ca_city:string,sum(ws_sales_price):decimal>

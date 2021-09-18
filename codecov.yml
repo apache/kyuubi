@@ -1,3 +1,4 @@
+#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements. See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -12,69 +13,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 codecov:
-  token: 6c25f14f-ec5c-40d2-b2e2-482013acca13
-
-flags:
-  kyuubi-common:
-    paths:
-      - kyuubi-common
-    carryforward: true
-  kyuubi-ha:
-    paths:
-      - kyuubi-ha
-    carryforward: true
-  kyuubi-main:
-    paths:
-      - kyuubi-main
-    carryforward: true
-  kyuubi-spark-sql-engine:
-    paths:
-      - externals/kyuubi-spark-sql-engine
-  aggregate:
-    paths:
-      - dev/kyuubi-codecov
-    carryforward: true
-
-# To see status checks based on flags
-coverage:
-  status:
-    project:
-      default:
-        target: auto
-        flags:
-          - kyuubi-common
-          - kyuubi-ha
-          - kyuubi-main
-          - kyuubi-spark-sql-engine
-      kyuubi-common:
-        target: auto
-        flags:
-          - kyuubi-common
-      kyuubi-ha:
-        target: auto
-        flags:
-          - kyuubi-ha
-      kyuubi-main:
-        target: auto
-        flags:
-          - kyuubi-main
-      kyuubi-spark-sql-engine:
-        target: auto
-        flags:
-          - kyuubi-spark-sql-engine
-      aggregate:
-        target: auto
-        flags:
-          - aggregate
-
-comment:
-  layout: "reach, diff, flags, files"
-  behavior: default
-  require_changes: false
-  require_base: no
-  require_head: yes
-  branches:
-    - "master"
-  show_carryforward_flags: false
+  token: b624e642-b0c8-4d45-94a1-a370888435bb

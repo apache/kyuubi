@@ -17,10 +17,17 @@
 
 package org.apache.kyuubi.operation
 
-import java.sql.{Date, SQLException, Timestamp}
+import java.sql.{Date, SQLException, SQLTimeoutException, Timestamp}
+
+import scala.collection.JavaConverters._
+
+import org.apache.commons.lang3.StringUtils
+import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq, TStatusCode}
+
+import org.apache.kyuubi.KYUUBI_VERSION
 
 trait JDBCTests extends BasicJDBCTests {
-  test("execute statement -  select null") {
+  test("execute statement - select null") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT NULL AS col")
       assert(resultSet.next())
@@ -32,7 +39,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select boolean") {
+  test("execute statement - select boolean") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT false AS col")
       assert(resultSet.next())
@@ -44,7 +51,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select tinyint") {
+  test("execute statement - select tinyint") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT 1Y AS col")
       assert(resultSet.next())
@@ -56,7 +63,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select smallint") {
+  test("execute statement - select smallint") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT 1S AS col")
       assert(resultSet.next())
@@ -68,7 +75,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select int") {
+  test("execute statement - select int") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT 4 AS col")
       assert(resultSet.next())
@@ -80,7 +87,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select long") {
+  test("execute statement - select long") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT 4L AS col")
       assert(resultSet.next())
@@ -92,7 +99,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select float") {
+  test("execute statement - select float") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT cast(1.2 as float) AS col")
       assert(resultSet.next())
@@ -104,7 +111,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select double") {
+  test("execute statement - select double") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT 4.2D AS col")
       assert(resultSet.next())
@@ -116,7 +123,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select string") {
+  test("execute statement - select string") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT 'kentyao' AS col")
       assert(resultSet.next())
@@ -128,7 +135,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select binary") {
+  test("execute statement - select binary") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT cast('kyuubi' as binary) AS col")
       assert(resultSet.next())
@@ -140,7 +147,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select date") {
+  test("execute statement - select date") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT DATE '2018-11-17' AS col")
       assert(resultSet.next())
@@ -152,7 +159,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select timestamp") {
+  test("execute statement - select timestamp") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT TIMESTAMP '2018-11-17 13:33:33' AS col")
       assert(resultSet.next())
@@ -164,7 +171,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select interval") {
+  test("execute statement - select interval") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT interval '1' day AS col")
       assert(resultSet.next())
@@ -176,12 +183,14 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("execute statement -  select array") {
+  test("execute statement - select array") {
     withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery("SELECT array() AS col1, array(1) AS col2")
+      val resultSet = statement.executeQuery(
+        "SELECT array() AS col1, array(1) AS col2, array(null) AS col3")
       assert(resultSet.next())
       assert(resultSet.getObject("col1") === "[]")
       assert(resultSet.getObject("col2") === "[1]")
+      assert(resultSet.getObject("col3") === "[null]")
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.ARRAY)
       assert(metaData.getPrecision(1) === Int.MaxValue)
@@ -193,10 +202,12 @@ trait JDBCTests extends BasicJDBCTests {
 
   test("execute statement - select map") {
     withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery("SELECT map() AS col1, map(1, 2, 3, 4) AS col2")
+      val resultSet = statement.executeQuery(
+        "SELECT map() AS col1, map(1, 2, 3, 4) AS col2, map(1, null) AS col3")
       assert(resultSet.next())
       assert(resultSet.getObject("col1") === "{}")
       assert(resultSet.getObject("col2") === "{1:2,3:4}")
+      assert(resultSet.getObject("col3") === "{1:null}")
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.JAVA_OBJECT)
       assert(metaData.getPrecision(1) === Int.MaxValue)
@@ -209,10 +220,14 @@ trait JDBCTests extends BasicJDBCTests {
   test("execute statement - select struct") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery(
-        "SELECT struct('1', '2') AS col1, named_struct('a', 2, 'b', 4) AS col2")
+        "SELECT struct('1', '2') AS col1," +
+          " named_struct('a', 2, 'b', 4) AS col2," +
+          " named_struct('a', null, 'b', null) AS col3")
       assert(resultSet.next())
-      assert(resultSet.getObject("col1") === "{\"col1\":\"1\",\"col2\":\"2\"}")
-      assert(resultSet.getObject("col2") === "{\"a\":2,\"b\":4}")
+      assert(resultSet.getObject("col1") === """{"col1":"1","col2":"2"}""")
+      assert(resultSet.getObject("col2") === """{"a":2,"b":4}""")
+      assert(resultSet.getObject("col3") === """{"a":null,"b":null}""")
+
       val metaData = resultSet.getMetaData
       assert(metaData.getColumnType(1) === java.sql.Types.STRUCT)
       assert(metaData.getPrecision(1) === Int.MaxValue)
@@ -231,6 +246,168 @@ trait JDBCTests extends BasicJDBCTests {
       }
       assert(e.getMessage
         .contains("The second argument of 'date_sub' function needs to be an integer."))
+    }
+  }
+
+  test("execute statement - select with variable substitution") {
+    withThriftClient { client =>
+      val req = new TOpenSessionReq()
+      req.setUsername("chengpan")
+      req.setPassword("123")
+      val conf = Map(
+        "use:database" -> "default",
+        "set:hiveconf:a" -> "x",
+        "set:hivevar:b" -> "y",
+        "set:metaconf:c" -> "z",
+        "set:system:s" -> "s")
+      req.setConfiguration(conf.asJava)
+      val tOpenSessionResp = client.OpenSession(req)
+      val status = tOpenSessionResp.getStatus
+      assert(status.getStatusCode === TStatusCode.SUCCESS_STATUS)
+
+      val tExecuteStatementReq = new TExecuteStatementReq()
+      tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      // hive matched behaviors
+      tExecuteStatementReq.setStatement(
+        """
+          |select
+          | '${hiveconf:a}' as col_0,
+          | '${hivevar:b}'  as col_1,
+          | '${b}'          as col_2
+          |""".stripMargin)
+      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+      val tFetchResultsReq = new TFetchResultsReq()
+      tFetchResultsReq.setOperationHandle(tExecuteStatementResp.getOperationHandle)
+      tFetchResultsReq.setFetchType(0)
+      tFetchResultsReq.setMaxRows(1)
+      val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
+      assert(tFetchResultsResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      assert(tFetchResultsResp.getResults.getColumns.get(0).getStringVal.getValues.get(0) === "x")
+      assert(tFetchResultsResp.getResults.getColumns.get(1).getStringVal.getValues.get(0) === "y")
+      assert(tFetchResultsResp.getResults.getColumns.get(2).getStringVal.getValues.get(0) === "y")
+
+      val tExecuteStatementReq2 = new TExecuteStatementReq()
+      tExecuteStatementReq2.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      // spark specific behaviors
+      tExecuteStatementReq2.setStatement(
+        """
+          |select
+          | '${a}'             as col_0,
+          | '${hivevar:a}'     as col_1,
+          | '${spark:a}'       as col_2,
+          | '${sparkconf:a}'   as col_3,
+          | '${not_exist_var}' as col_4,
+          | '${c}'             as col_5,
+          | '${s}'             as col_6
+          |""".stripMargin)
+      val tExecuteStatementResp2 = client.ExecuteStatement(tExecuteStatementReq2)
+      val tFetchResultsReq2 = new TFetchResultsReq()
+      tFetchResultsReq2.setOperationHandle(tExecuteStatementResp2.getOperationHandle)
+      tFetchResultsReq2.setFetchType(0)
+      tFetchResultsReq2.setMaxRows(1)
+      val tFetchResultsResp2 = client.FetchResults(tFetchResultsReq2)
+      assert(tFetchResultsResp2.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      assert(tFetchResultsResp2.getResults.getColumns.get(0).getStringVal.getValues.get(0) === "x")
+      assert(tFetchResultsResp2.getResults.getColumns.get(1).getStringVal.getValues.get(0) === "x")
+      assert(tFetchResultsResp2.getResults.getColumns.get(2).getStringVal.getValues.get(0) === "x")
+      assert(tFetchResultsResp2.getResults.getColumns.get(3).getStringVal.getValues.get(0) === "x")
+      // for not exist vars, hive return "${not_exist_var}" itself, but spark return ""
+      assert(tFetchResultsResp2.getResults.getColumns.get(4).getStringVal.getValues.get(0) === "")
+
+      assert(tFetchResultsResp2.getResults.getColumns.get(5).getStringVal.getValues.get(0) === "z")
+      assert(tFetchResultsResp2.getResults.getColumns.get(6).getStringVal.getValues.get(0) === "s")
+    }
+  }
+
+  test("execute statement - select with builtin functions") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("SELECT substring('kentyao', 1)")
+      assert(resultSet.next())
+      assert(resultSet.getString("substring(kentyao, 1, 2147483647)") === "kentyao")
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.VARCHAR)
+      assert(metaData.getPrecision(1) === Int.MaxValue)
+      assert(metaData.getScale(1) === 0)
+    }
+  }
+
+  test("query time out shall respect client-side if no server-side control") {
+    withJdbcStatement() { statement =>
+      statement.setQueryTimeout(1)
+      val e = intercept[SQLTimeoutException] {
+        statement.execute("select java_method('java.lang.Thread', 'sleep', 10000L)")
+      }.getMessage
+      assert(e.contains("Query timed out after"))
+
+      statement.setQueryTimeout(0)
+      val rs1 = statement.executeQuery(
+        "select 'test', java_method('java.lang.Thread', 'sleep', 3000L)")
+      rs1.next()
+      assert(rs1.getString(1) == "test")
+
+      statement.setQueryTimeout(-1)
+      val rs2 = statement.executeQuery(
+        "select 'test', java_method('java.lang.Thread', 'sleep', 3000L)")
+      rs2.next()
+      assert(rs2.getString(1) == "test")
+    }
+  }
+
+  // TODO: https://github.com/apache/incubator-kyuubi/issues/937
+  // Kyuubi docker image has not updated to lastest version
+  ignore("kyuubi defined function - kyuubi_version") {
+    withJdbcStatement() { statement =>
+      val rs = statement.executeQuery("SELECT kyuubi_version()")
+      assert(rs.next())
+      assert(rs.getString(1) == KYUUBI_VERSION)
+    }
+  }
+
+  ignore("kyuubi defined function - engine_name") {
+    withJdbcStatement() { statement =>
+      val rs = statement.executeQuery("SELECT engine_name()")
+      assert(rs.next())
+      assert(StringUtils.isNotBlank(rs.getString(1)))
+    }
+  }
+
+  // dockerfile use kyuubi as user which is not same with non-k8s env.
+  ignore("kyuubi defined function - system_user") {
+    withJdbcStatement() { statement =>
+      val rs = statement.executeQuery("SELECT system_user()")
+      assert(rs.next())
+      assert(rs.getString(1) == System.getProperty("user.name"))
+    }
+  }
+
+  test("KYUUBI #1059: Plan only operations") {
+    val ddl = "create table t(a int) using parquet"
+    val dql = "select * from t"
+    val setkey = "SET kyuubi.operation.plan.only.mode"
+    withJdbcStatement("t") { statement =>
+      try {
+        statement.execute("SET kyuubi.operation.plan.only.mode=optimize")
+        val set = statement.executeQuery(ddl)
+        assert(set.next())
+        assert(set.getString("plan") startsWith "Create")
+        val set0 = statement.executeQuery(setkey)
+        assert(set0.next())
+        assert(set0.getString(2) === "optimize")
+        val e1 = intercept[SQLException](statement.executeQuery(dql))
+        assert(e1.getMessage.contains("Table or view not found"))
+        statement.execute("SET kyuubi.operation.plan.only.mode=analyze")
+        val e2 = intercept[SQLException](statement.executeQuery(dql))
+        assert(e2.getMessage.contains("Table or view not found"))
+        statement.execute("SET kyuubi.operation.plan.only.mode=parse")
+        val set1 = statement.executeQuery(dql)
+        assert(set1.next())
+        assert(set1.getString("plan") contains "Unresolved")
+      } finally {
+        statement.executeQuery("SET kyuubi.operation.plan.only.mode=none")
+        statement.executeQuery(ddl)
+        val res = statement.executeQuery(dql)
+        assert(!res.next(), "table t exists in none mode")
+      }
     }
   }
 }

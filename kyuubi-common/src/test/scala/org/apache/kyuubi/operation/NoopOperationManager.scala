@@ -17,10 +17,11 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.hive.service.rpc.thrift.{TRow, TRowSet}
+import org.apache.hive.service.rpc.thrift.TRowSet
 
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.util.ThriftUtils
 
 class NoopOperationManager extends OperationManager("noop") {
   private val invalid = "invalid"
@@ -90,5 +91,5 @@ class NoopOperationManager extends OperationManager("noop") {
   override def getOperationLogRowSet(
       opHandle: OperationHandle,
       order: FetchOrientation,
-      maxRows: Int): TRowSet = new TRowSet(0, new java.util.ArrayList[TRow](0))
+      maxRows: Int): TRowSet = ThriftUtils.EMPTY_ROW_SET
 }

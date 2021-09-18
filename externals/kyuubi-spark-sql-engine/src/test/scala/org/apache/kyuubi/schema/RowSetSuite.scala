@@ -18,27 +18,27 @@
 package org.apache.kyuubi.schema
 
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 import java.sql.{Date, Timestamp}
+import java.time.{Instant, LocalDate, ZoneId}
 
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.execution.HiveResult
-import org.apache.spark.sql.types.{ArrayType, BinaryType, DateType, DoubleType, IntegerType, MapType, StructType, TimestampType}
+import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.CalendarInterval
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.schema.RowSet.toHiveString
 
 class RowSetSuite extends KyuubiFunSuite {
 
   def genRow(value: Int): Row = {
-    val boolVal = if (value % 3 == 0) {
-      true
-    } else if (value % 3 == 1) {
-      false
-    } else {
-      null
+    val boolVal = value % 3 match {
+      case 0 => true
+      case 1 => false
+      case _ => null
     }
     val byteVal = value.toByte
     val shortVal = value.toShort
@@ -54,6 +54,8 @@ class RowSetSuite extends KyuubiFunSuite {
     val arrVal = Array.fill(value)(doubleVal).toSeq
     val mapVal = Map(value -> doubleVal)
     val interval = new CalendarInterval(value, value, value)
+    val localDate = LocalDate.of(2018, 11, 17)
+    val instant = Instant.now()
 
     Row(boolVal,
       byteVal,
@@ -69,7 +71,9 @@ class RowSetSuite extends KyuubiFunSuite {
       binaryVal,
       arrVal,
       mapVal,
-      interval)
+      interval,
+      localDate,
+      instant)
   }
 
   val schema: StructType = new StructType()
@@ -88,13 +92,16 @@ class RowSetSuite extends KyuubiFunSuite {
     .add("m", "array<double>")
     .add("n", "map<int, double>")
     .add("o", "interval")
+    .add("p", "date")
+    .add("q", "timestamp")
 
 
-  val rows: Seq[Row] = (0 to 10).map(genRow) ++ Seq(
-    Row(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null))
+
+  private val rows: Seq[Row] = (0 to 10).map(genRow) ++ Seq(Row.fromSeq(Seq.fill(17)(null)))
+  private val zoneId: ZoneId = ZoneId.systemDefault()
 
   test("column based set") {
-    val tRowSet = RowSet.toColumnBasedSet(rows, schema)
+    val tRowSet = RowSet.toColumnBasedSet(rows, schema, zoneId)
     assert(tRowSet.getColumns.size() === schema.size)
     assert(tRowSet.getRowsSize === 0)
 
@@ -102,10 +109,10 @@ class RowSetSuite extends KyuubiFunSuite {
     val boolCol = cols.next().getBoolVal
     assert(boolCol.getValuesSize === rows.size)
     boolCol.getValues.asScala.zipWithIndex.foreach { case (b, i) =>
-      if (i % 3 == 0) assert(b)
-      else if (i % 3 == 1) assert(!b)
-      else {
-        assert(b)
+      i % 3 match {
+        case 0 => assert(b)
+        case 1 => assert(!b)
+        case _ => assert(b)
       }
     }
 
@@ -161,14 +168,14 @@ class RowSetSuite extends KyuubiFunSuite {
     dateCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b.isEmpty)
       case (b, i) =>
-        assert(b === HiveResult.toHiveString((Date.valueOf(s"2018-11-${i + 1}"), DateType)))
+        assert(b === toHiveString((Date.valueOf(s"2018-11-${i + 1}"), DateType), zoneId))
     }
 
     val tsCol = cols.next().getStringVal
     tsCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b.isEmpty)
       case (b, i) => assert(b ===
-        HiveResult.toHiveString((Timestamp.valueOf(s"2018-11-17 13:33:33.$i"), TimestampType)))
+        toHiveString((Timestamp.valueOf(s"2018-11-17 13:33:33.$i"), TimestampType), zoneId))
     }
 
     val binCol = cols.next().getBinaryVal
@@ -180,15 +187,15 @@ class RowSetSuite extends KyuubiFunSuite {
     val arrCol = cols.next().getStringVal
     arrCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
-      case (b, i) => assert(b === HiveResult.toHiveString(
-        (Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toSeq, ArrayType(DoubleType))))
+      case (b, i) => assert(b === toHiveString(
+        (Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toSeq, ArrayType(DoubleType)), zoneId))
     }
 
     val mapCol = cols.next().getStringVal
     mapCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
-      case (b, i) => assert(b === HiveResult.toHiveString(
-        (Map(i -> java.lang.Double.valueOf(s"$i.$i")), MapType(IntegerType, DoubleType))))
+      case (b, i) => assert(b === toHiveString(
+        (Map(i -> java.lang.Double.valueOf(s"$i.$i")), MapType(IntegerType, DoubleType)), zoneId))
     }
 
     val intervalCol = cols.next().getStringVal
@@ -199,7 +206,7 @@ class RowSetSuite extends KyuubiFunSuite {
   }
 
   test("row based set") {
-    val tRowSet = RowSet.toRowBasedSet(rows, schema)
+    val tRowSet = RowSet.toRowBasedSet(rows, schema, zoneId)
     assert(tRowSet.getColumnCount === 0)
     assert(tRowSet.getRowsSize === rows.size)
     val iter = tRowSet.getRowsIterator
@@ -229,15 +236,14 @@ class RowSetSuite extends KyuubiFunSuite {
     assert(r6.get(9).getStringVal.getValue === "2018-11-06")
 
     val r7 = iter.next().getColVals
-    assert(r7.get(10).getStringVal.getValue === "2018-11-17 13:33:33.6")
-    assert(r7.get(11).getStringVal.getValue ===
-      HiveResult.toHiveString((Array.fill[Byte](6)(6.toByte), BinaryType)))
+    assert(r7.get(10).getStringVal.getValue === "2018-11-17 13:33:33.600")
+    assert(r7.get(11).getStringVal.getValue === new String(
+      Array.fill[Byte](6)(6.toByte), StandardCharsets.UTF_8))
 
     val r8 = iter.next().getColVals
-    assert(r8.get(12).getStringVal.getValue === HiveResult.toHiveString(
-      (Array.fill(7)(7.7d).toSeq, ArrayType(DoubleType))))
+    assert(r8.get(12).getStringVal.getValue === Array.fill(7)(7.7d).mkString("[", ",", "]"))
     assert(r8.get(13).getStringVal.getValue ===
-      HiveResult.toHiveString((Map(7 -> 7.7d), MapType(IntegerType, DoubleType))))
+      toHiveString((Map(7 -> 7.7d), MapType(IntegerType, DoubleType)), zoneId))
 
     val r9 = iter.next().getColVals
     assert(r9.get(14).getStringVal.getValue === new CalendarInterval(8, 8, 8).toString)
@@ -245,7 +251,7 @@ class RowSetSuite extends KyuubiFunSuite {
 
   test("to row set") {
     TProtocolVersion.values().foreach { proto =>
-      val set = RowSet.toTRowSet(rows, schema, proto)
+      val set = RowSet.toTRowSet(rows, schema, proto, zoneId)
       if (proto.getValue < TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6.getValue) {
         assert(!set.isSetColumns, proto.toString)
         assert(set.isSetRows, proto.toString)
@@ -254,6 +260,5 @@ class RowSetSuite extends KyuubiFunSuite {
         assert(set.isSetRows, proto.toString)
       }
     }
-
   }
 }

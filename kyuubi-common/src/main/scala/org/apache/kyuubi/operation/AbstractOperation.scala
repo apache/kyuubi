@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.operation
 
-import java.time.Duration
 import java.util.concurrent.Future
 
 import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet, TTableSchema}
@@ -25,19 +24,22 @@ import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet, TTableSche
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_IDLE_TIMEOUT
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.operation.OperationType.OperationType
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
 abstract class AbstractOperation(opType: OperationType, session: Session)
   extends Operation with Logging {
 
-  import OperationState._
-
   private final val handle = OperationHandle(opType, session.protocol)
-  private final val operationTimeout: Long = session.conf.get(OPERATION_IDLE_TIMEOUT.key)
-    .map(_.toLong).getOrElse(Duration.ofHours(3).toMillis)
+  private final val operationTimeout: Long = {
+    session.sessionManager.getConf.get(OPERATION_IDLE_TIMEOUT)
+  }
 
   protected final val statementId = handle.identifier.toString
+
+  override def getOperationLog: Option[OperationLog] = None
 
   @volatile protected var state: OperationState = INITIALIZED
   @volatile protected var startTime: Long = _
@@ -71,7 +73,7 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
     var timeCost = ""
     newState match {
       case RUNNING => startTime = System.currentTimeMillis()
-      case ERROR | FINISHED | CANCELED =>
+      case ERROR | FINISHED | CANCELED | TIMEOUT =>
         completedTime = System.currentTimeMillis()
         timeCost = s", time taken: ${(completedTime - startTime) / 1000.0} seconds"
       case _ =>
@@ -111,7 +113,7 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
       orientation: FetchOrientation,
       supportedOrientations: Set[FetchOrientation]): Unit = {
     if (!supportedOrientations.contains(orientation)) {
-      throw KyuubiSQLException(s"The fetch type $orientation is not supported for this resultset")
+      throw KyuubiSQLException(s"The fetch type $orientation is not supported for this ResultSet.")
     }
   }
 

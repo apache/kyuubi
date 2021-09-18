@@ -1,6 +1,23 @@
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+
 <div align=center>
 
-![](../imgs/kyuubi_logo_simple.png)
+![](../imgs/kyuubi_logo.png)
 
 </div>
 
@@ -12,7 +29,7 @@ As the fact that the user claims does not necessarily mean this is true.
 The authentication process of Kyuubi is used to verify the user identity that a client used to talk to the Kyuubi server.
 Once done, a trusted connection will be set up between the client and server if successful; otherwise, rejected.
 
-**Note** that, this authentication only authenticate whether a user can connect w/ Kyuubi server or not.
+**Note** that, this authentication only authenticate whether a user can connect with Kyuubi server or not.
 For other secured services that this user wants to interact with, he/she also needs to pass the authentication process of each service, for instance, Hive Metastore, YARN, HDFS.
 
 In `$KYUUBI_HOME/conf/kyuubi-defaults.conf`, specify `kyuubi.authentication` to one of the authentication types listing below.
@@ -33,7 +50,7 @@ kyuubi\.authentication<br>\.sasl\.qop|<div style='width: 80pt;word-wrap: break-w
 
 #### Using KERBEROS
 
-If you are deploying Kyuubi w/ a kerberized Hadoop cluster, it is strongly recommended that `kyuubi.authentication` should be set to `KERBEROS` too.
+If you are deploying Kyuubi with a kerberized Hadoop cluster, it is strongly recommended that `kyuubi.authentication` should be set to `KERBEROS` too.
 
 Kerberos is a network authentication protocol that provides the tools of authentication and strong cryptography over the network.
 The Kerberos protocol uses strong cryptography so that a client or a server can prove its identity to its server or client across an insecure network connection.
@@ -53,7 +70,7 @@ kyuubi\.kinit\.keytab|<div style='width: 80pt;word-wrap: break-word;white-space:
 
 For example,
 
-- Configure w/ Kyuubi service principal 
+- Configure with Kyuubi service principal 
 ```bash
 kyuubi.authentication=KERBEROS
 kyuubi.kinit.principal=spark/kyuubi.apache.org@KYUUBI.APACHE.ORG
@@ -65,7 +82,7 @@ kyuubi.kinit.keytab=/path/to/kyuuib.keytab
 $ ./bin/kyuubi start
 ```
 
-- Kinit w/ user principal and connect using beeline
+- Kinit with user principal and connect using beeline
 
 ```bash
 $ kinit -kt user.keytab user.principal

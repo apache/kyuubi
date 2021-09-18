@@ -21,36 +21,66 @@ import java.time.Instant
 import java.util.concurrent.CountDownLatch
 
 import org.apache.spark.SparkConf
+import org.apache.spark.kyuubi.SparkSQLEngineListener
+import org.apache.spark.kyuubi.ui.EngineTab
 import org.apache.spark.sql.SparkSession
 
-import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.Logging
+import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.SparkSQLEngine.countDownLatch
+import org.apache.kyuubi.engine.spark.events.{EngineEvent, EventLoggingService}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.{RetryPolicies, ServiceDiscovery}
-import org.apache.kyuubi.service.Serverable
+import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, RetryPolicies, ServiceDiscovery}
+import org.apache.kyuubi.service.{Serverable, Service, ServiceState}
 import org.apache.kyuubi.util.SignalRegister
 
-private[spark] final class SparkSQLEngine(name: String, spark: SparkSession)
-  extends Serverable(name) {
+case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngine") {
 
-  def this(spark: SparkSession) = this(classOf[SparkSQLEngine].getSimpleName, spark)
+  lazy val engineStatus: EngineEvent = EngineEvent(this)
 
-  override private[kyuubi] val backendService = new SparkSQLBackendService(spark)
-  private val discoveryService = new ServiceDiscovery(this)
+  private val OOMHook = new Runnable { override def run(): Unit = stop() }
+  private val eventLogging = new EventLoggingService(this)
+  override val backendService = new SparkSQLBackendService(spark)
+  val frontendService = new SparkThriftFrontendService(backendService, OOMHook)
+  override val discoveryService: Service = new EngineServiceDiscovery(this)
+
+  override protected def supportsServiceDiscovery: Boolean = {
+    ServiceDiscovery.supportServiceDiscovery(conf)
+  }
 
   override def initialize(conf: KyuubiConf): Unit = {
     val listener = new SparkSQLEngineListener(this)
     spark.sparkContext.addSparkListener(listener)
+    addService(eventLogging)
+    addService(frontendService)
     super.initialize(conf)
-    if (ServiceDiscovery.supportServiceDiscovery(conf)) {
-      addService(discoveryService)
-      discoveryService.initialize(conf)
-    }
+    eventLogging.onEvent(engineStatus.copy(state = ServiceState.INITIALIZED.id))
+  }
+
+  override def start(): Unit = {
+    super.start()
+    // Start engine self-terminating checker after all services are ready and it can be reached by
+    // all servers in engine spaces.
+    backendService.sessionManager.startTerminatingChecker()
+    eventLogging.onEvent(engineStatus.copy(state = ServiceState.STARTED.id))
+  }
+
+  override def stop(): Unit = {
+    eventLogging.onEvent(
+      engineStatus.copy(state = ServiceState.STOPPED.id, endTime = System.currentTimeMillis()))
+    super.stop()
   }
 
   override protected def stopServer(): Unit = {
     countDownLatch.countDown()
+  }
+
+  override def connectionUrl: String = frontendService.connectionUrl()
+
+  def engineId: String = {
+    spark.sparkContext.applicationAttemptId.getOrElse(spark.sparkContext.applicationId)
   }
 }
 
@@ -58,24 +88,30 @@ object SparkSQLEngine extends Logging {
 
   val kyuubiConf: KyuubiConf = KyuubiConf()
 
-  private val user = Utils.currentUser
+  var currentEngine: Option[SparkSQLEngine] = None
 
-  private[spark] val countDownLatch = new CountDownLatch(1)
+  private val user = currentUser
+
+  private val countDownLatch = new CountDownLatch(1)
 
   def createSpark(): SparkSession = {
     val sparkConf = new SparkConf()
+    sparkConf.setIfMissing("spark.sql.execution.topKSortFallbackThreshold", "10000")
+    sparkConf.setIfMissing("spark.sql.legacy.castComplexTypesToString.enabled", "true")
     sparkConf.setIfMissing("spark.master", "local")
     sparkConf.setIfMissing("spark.ui.port", "0")
 
     val appName = s"kyuubi_${user}_spark_${Instant.now}"
     sparkConf.setIfMissing("spark.app.name", appName)
+    val defaultCat = if (KyuubiSparkUtil.hiveClassesArePresent) "hive" else "in-memory"
+    sparkConf.setIfMissing("spark.sql.catalogImplementation", defaultCat)
 
-    kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_BIND_PORT, 0)
+    kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
 
-    val prefix = "spark.kyuubi."
-
-    sparkConf.getAllWithPrefix(prefix).foreach { case (k, v) =>
+    // Pass kyuubi config from spark with `spark.kyuubi`
+    val sparkToKyuubiPrefix = "spark.kyuubi."
+    sparkConf.getAllWithPrefix(sparkToKyuubiPrefix).foreach { case (k, v) =>
       kyuubiConf.set(s"kyuubi.$k", v)
     }
 
@@ -85,35 +121,47 @@ object SparkSQLEngine extends Logging {
       }
     }
 
-    val session = SparkSession.builder().config(sparkConf).enableHiveSupport().getOrCreate()
-    session.sql("SHOW DATABASES")
+    val session = SparkSession.builder.config(sparkConf).getOrCreate
+    (kyuubiConf.get(ENGINE_INITIALIZE_SQL) ++ kyuubiConf.get(ENGINE_SESSION_INITIALIZE_SQL))
+      .foreach { sqlStr =>
+        session.sparkContext.setJobGroup(appName, sqlStr, interruptOnCancel = true)
+        debug(s"Execute session initializing sql: $sqlStr")
+        session.sql(sqlStr).isEmpty
+      }
     session
   }
 
-  def startEngine(spark: SparkSession): SparkSQLEngine = {
-    val engine = new SparkSQLEngine(spark)
-    engine.initialize(kyuubiConf)
-    engine.start()
-    sys.addShutdownHook(engine.stop())
-    engine
+  def startEngine(spark: SparkSession): Unit = {
+    currentEngine = Some(new SparkSQLEngine(spark))
+    currentEngine.foreach { engine =>
+      engine.initialize(kyuubiConf)
+      engine.start()
+      // Stop engine before SparkContext stopped to avoid calling a stopped SparkContext
+      addShutdownHook(() => engine.stop(), SPARK_CONTEXT_SHUTDOWN_PRIORITY + 1)
+      EngineTab(engine)
+      info(engine.engineStatus)
+    }
   }
 
   def main(args: Array[String]): Unit = {
     SignalRegister.registerLogger(logger)
     var spark: SparkSession = null
-    var engine: SparkSQLEngine = null
     try {
       spark = createSpark()
-      engine = startEngine(spark)
-      info(KyuubiSparkUtil.diagnostics(spark))
+      startEngine(spark)
       // blocking main thread
       countDownLatch.await()
     } catch {
-      case t: Throwable =>
-        error("Error start SparkSQLEngine", t)
-        if (engine != null) {
+      case t: Throwable if currentEngine.isDefined =>
+        currentEngine.foreach { engine =>
+          val status =
+            engine.engineStatus.copy(diagnostic = s"Error State SparkSQL Engine ${t.getMessage}")
+          EventLoggingService.onEvent(status)
+          error(status, t)
           engine.stop()
         }
+      case t: Throwable =>
+        error("Create SparkSQL Engine Failed", t)
     } finally {
       if (spark != null) {
         spark.stop()

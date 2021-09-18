@@ -19,8 +19,20 @@ package org.apache.kyuubi.tpcds
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
-import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.LoggerFactory
 
+/**
+ * Usage:
+ * <p>
+ * Run following command to generate 10GB data with new database `tpcds_sf10`.
+ * {{{
+ *   `$SPARK_HOME/bin/spark-submit \
+ *      --conf spark.sql.tpcds.scale.factor=10 \
+ *      --conf spark.sql.tpcds.database=tpcds_sf10 \
+ *      --class org.apache.kyuubi.tpcds.DataGenerator \
+ *      kyuubi-tpcds-*.jar`
+ * }}}
+ */
 object DataGenerator {
   private val logger =
     LoggerFactory.getLogger(this.getClass.getSimpleName.stripSuffix("$"))

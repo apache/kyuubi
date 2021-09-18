@@ -22,38 +22,55 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <artifactId>kyuubi</artifactId>
         <groupId>org.apache.kyuubi</groupId>
-        <version>1.1.0-SNAPSHOT</version>
+        <artifactId>kyuubi-parent</artifactId>
+        <version>1.4.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>kyuubi-assembly</artifactId>
+    <artifactId>kyuubi-assembly_2.12</artifactId>
     <packaging>pom</packaging>
     <name>Kyuubi Project Assembly</name>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-common</artifactId>
+            <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-ha</artifactId>
+            <artifactId>kyuubi-ha_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-main</artifactId>
+            <artifactId>kyuubi-metrics_${scala.binary.version}</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-server_${scala.binary.version}</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-ctl_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-common</artifactId>
+            <artifactId>hadoop-client-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-client-runtime</artifactId>
         </dependency>
 
         <dependency>
@@ -71,17 +88,11 @@
             <artifactId>curator-recipes</artifactId>
         </dependency>
 
-        <!-- begin: for EmbeddedZkServer -->
         <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-test</artifactId>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <scope>provided</scope>
         </dependency>
-
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty</artifactId>
-        </dependency>
-        <!-- end: for EmbeddedZkServer -->
 
         <!-- default package with log4j -->
         <dependency>
@@ -90,4 +101,15 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

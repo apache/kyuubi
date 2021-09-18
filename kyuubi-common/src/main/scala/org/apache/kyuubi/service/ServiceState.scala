@@ -20,13 +20,15 @@ package org.apache.kyuubi.service
 /**
  * Service states
  */
-private[kyuubi] object ServiceState extends Enumeration {
+object ServiceState extends Enumeration {
   type ServiceState = Value
-
   val
-  /** Constructed but not initialized */ LATENT,
-  /** Initialized but not started or stopped */ INITIALIZED,
-  /** Started and not stopped */ STARTED,
-  /** Stopped. No further state transitions are permitted */ STOPPED = Value
-
+    /** Constructed but not initialized */
+    LATENT,
+    /** Initialized but not started or stopped */
+    INITIALIZED,
+    /** Started and not stopped */
+    STARTED,
+    /** Stopped. No further state transitions are permitted */
+    STOPPED = Value
 }

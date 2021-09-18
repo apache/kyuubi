@@ -1,0 +1,1 @@
+struct<i_item_id:string,i_item_desc:string,s_store_id:string,s_store_name:string,store_sales_quantity:bigint,store_returns_quantity:bigint,catalog_sales_quantity:bigint>

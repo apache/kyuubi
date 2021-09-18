@@ -17,9 +17,11 @@
 
 package org.apache.kyuubi.ha
 
+import java.time.Duration
+
 import org.apache.hadoop.security.UserGroupInformation
 
-import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf}
+import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
 import org.apache.kyuubi.ha.client.RetryPolicies
 
 object HighAvailabilityConf {
@@ -63,7 +65,7 @@ object HighAvailabilityConf {
   val HA_ZK_CONN_MAX_RETRY_WAIT: ConfigEntry[Int] =
     buildConf("ha.zookeeper.connection.max.retry.wait")
       .doc(s"Max amount of time to wait between retries for" +
-        s" ${RetryPolicies.BONDED_EXPONENTIAL_BACKOFF} policy can reach, or max time until" +
+        s" ${RetryPolicies.BOUNDED_EXPONENTIAL_BACKOFF} policy can reach, or max time until" +
         s" elapsed for ${RetryPolicies.UNTIL_ELAPSED} policy to connect the zookeeper ensemble")
       .version("1.0.0")
       .intConf
@@ -83,11 +85,27 @@ object HighAvailabilityConf {
 
   val HA_ZK_CONN_RETRY_POLICY: ConfigEntry[String] =
     buildConf("ha.zookeeper.connection.retry.policy")
-    .doc("The retry policy for connecting to the zookeeper ensemble, all candidates are:" +
-      s" ${RetryPolicies.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
-    .version("1.0.0")
-    .stringConf
-    .checkValues(RetryPolicies.values.map(_.toString))
-    .createWithDefault(RetryPolicies.EXPONENTIAL_BACKOFF.toString)
+      .doc("The retry policy for connecting to the zookeeper ensemble, all candidates are:" +
+        s" ${RetryPolicies.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
+      .version("1.0.0")
+      .stringConf
+      .checkValues(RetryPolicies.values.map(_.toString))
+      .createWithDefault(RetryPolicies.EXPONENTIAL_BACKOFF.toString)
 
+  val HA_ZK_NODE_TIMEOUT: ConfigEntry[Long] =
+    buildConf("ha.zookeeper.node.creation.timeout")
+      .doc("Timeout for creating zookeeper node")
+      .version("1.2.0")
+      .timeConf
+      .checkValue(_ > 0, "Must be positive")
+      .createWithDefault(Duration.ofSeconds(120).toMillis)
+
+  val HA_ZK_ENGINE_REF_ID: OptionalConfigEntry[String] =
+    buildConf("ha.engine.ref.id")
+      .doc("The engine reference id will be attached to zookeeper node when engine started, " +
+        "and the kyuubi server will check it cyclically.")
+      .internal
+      .version("1.4.0")
+      .stringConf
+      .createOptional
 }

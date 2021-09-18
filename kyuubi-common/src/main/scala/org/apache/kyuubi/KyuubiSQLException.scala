@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi
 
-import java.io.{PrintWriter, StringWriter}
 import java.lang.reflect.{InvocationTargetException, UndeclaredThrowableException}
 import java.sql.SQLException
 
@@ -26,7 +25,22 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.{TStatus, TStatusCode}
 
-class KyuubiSQLException(msg: String, cause: Throwable) extends SQLException(msg, cause) {
+import org.apache.kyuubi.Utils.stringifyException
+
+/**
+ * @param reason     a description of the exception
+ * @param sqlState   an XOPEN or SQL:2003 code identifying the exception
+ * @param vendorCode a database vendor-specific exception code
+ * @param cause      the underlying reason for this [[SQLException]]
+ *                   (which is saved for later retrieval by the `getCause()` method);
+ *                   may be null indicating the cause is non-existent or unknown.
+ */
+class KyuubiSQLException(reason: String, sqlState: String, vendorCode: Int, cause: Throwable)
+  extends SQLException(reason, sqlState, vendorCode, cause) {
+
+  // for reflection
+  def this(msg: String, cause: Throwable) = this(msg, null, 0, cause)
+
   /**
    * Converts current object to a [[TStatus]] object
    *
@@ -47,23 +61,33 @@ object KyuubiSQLException {
   private final val HEAD_MARK: String = "*"
   private final val SEPARATOR: Char = ':'
 
-  def apply(msg: String, throwable: Throwable): KyuubiSQLException = {
-    new KyuubiSQLException(msg, findCause(throwable))
+  def apply(
+      msg: String,
+      cause: Throwable = null,
+      sqlState: String = null,
+      vendorCode: Int = 0): KyuubiSQLException = {
+    new KyuubiSQLException(msg, sqlState, vendorCode, findCause(cause))
   }
   def apply(cause: Throwable): KyuubiSQLException = {
     val theCause = findCause(cause)
-    new KyuubiSQLException(theCause.getMessage, theCause)
+    apply(theCause.getMessage, theCause)
   }
-
-  def apply(msg: String): KyuubiSQLException = new KyuubiSQLException(msg, null)
 
   def apply(tStatus: TStatus): KyuubiSQLException = {
     val msg = tStatus.getErrorMessage
     val cause = toCause(tStatus.getInfoMessages.asScala)
     cause match {
       case k: KyuubiSQLException if k.getMessage == msg => k
-      case _ => apply(msg, cause)
+      case _ => apply(msg, cause, tStatus.getSqlState, tStatus.getErrorCode)
     }
+  }
+
+  def featureNotSupported(): KyuubiSQLException = {
+    KyuubiSQLException("feature not supported", sqlState = "0A000")
+  }
+
+  def connectionDoesNotExist(): KyuubiSQLException = {
+    new KyuubiSQLException("connection does not exist", "08003", 91001, null)
   }
 
   def toTStatus(e: Exception, verbose: Boolean = false): TStatus = e match {
@@ -150,14 +174,6 @@ object KyuubiSQLException {
       ex.setStackTrace(stackTraceElements.toArray)
     }
     ex
-  }
-
-  def stringifyException(e: Throwable): String = {
-    val stm = new StringWriter
-    val wrt = new PrintWriter(stm)
-    e.printStackTrace(wrt)
-    wrt.close()
-    stm.toString
   }
 
   @tailrec

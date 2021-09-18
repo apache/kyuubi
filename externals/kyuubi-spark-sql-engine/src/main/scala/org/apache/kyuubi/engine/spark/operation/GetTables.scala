@@ -17,13 +17,11 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.util.regex.Pattern
-
-import org.apache.commons.lang3.StringUtils
-import org.apache.spark.sql.{Row, SparkSession}
-import org.apache.spark.sql.catalyst.catalog.CatalogTableType
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.StructType
 
+import org.apache.kyuubi.engine.spark.IterableFetchIterator
+import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
@@ -34,15 +32,15 @@ class GetTables(
     catalog: String,
     schema: String,
     tableName: String,
-    tableTypes: java.util.List[String])
+    tableTypes: Set[String])
   extends SparkOperation(spark, OperationType.GET_TABLES, session) {
 
-  private def matched(tableType: CatalogTableType): Boolean = {
-    val commonTableType = tableType match {
-      case CatalogTableType.VIEW => "VIEW"
-      case _ => "TABLE"
-    }
-    tableTypes == null || tableTypes.isEmpty || tableTypes.contains(commonTableType)
+  override def statement: String = {
+    super.statement +
+      s" [catalog: $catalog," +
+      s" schemaPattern: $schema," +
+      s" tablePattern: $tableName," +
+      s" tableTypes: ${tableTypes.mkString("(", ", ", ")")}]"
   }
 
   override protected def resultSchema: StructType = {
@@ -63,48 +61,22 @@ class GetTables(
 
   override protected def runInternal(): Unit = {
     try {
-      val catalog = spark.sessionState.catalog
-      val schemaPattern = convertSchemaPattern(schema)
-      val tablePattern = convertIdentifierPattern(tableName, datanucleusFormat = true)
-      val databases = catalog.listDatabases(schemaPattern)
+      val schemaPattern = toJavaRegex(schema)
+      val tablePattern = toJavaRegex(tableName)
+      val sparkShim = SparkCatalogShim()
+      val catalogTablesAndViews =
+        sparkShim.getCatalogTablesOrViews(spark, catalog, schemaPattern, tablePattern, tableTypes)
 
-      val tables = databases.flatMap { db =>
-        val identifiers = catalog.listTables(db, tablePattern, includeLocalTempViews = false)
-        catalog.getTablesByName(identifiers).filter(t => matched(t.tableType)).map { t =>
-          Row(
-            "",
-            t.database,
-            t.identifier.table,
-            t.tableType.name,
-            t.comment.getOrElse(""),
-            null, null, null, null, null)
-        }
-      }
-
-      val views = if (matched(CatalogTableType.VIEW)) {
-        val globalTempViewDb = catalog.globalTempViewManager.database
-        (if (StringUtils.isEmpty(schema) || schema == "*"
-          || Pattern.compile(convertSchemaPattern(schema, datanucleusFormat = false))
-          .matcher(globalTempViewDb).matches()) {
-          catalog.listTables(globalTempViewDb, tablePattern, includeLocalTempViews = true)
+      val allTableAndViews =
+        if (tableTypes.exists("VIEW".equalsIgnoreCase)) {
+          catalogTablesAndViews ++
+            sparkShim.getTempViews(spark, catalog, schemaPattern, tablePattern)
         } else {
-          catalog.listLocalTempViews(tablePattern)
-        }).map { v =>
-          Row(
-            "",
-            v.database.orNull,
-            v.table,
-            CatalogTableType.VIEW.name,
-            "",
-            null, null, null, null, null)
+          catalogTablesAndViews
         }
-      } else {
-        Seq.empty[Row]
-      }
-      iter = (tables ++ views).toList.iterator
+      iter = new IterableFetchIterator(allTableAndViews)
     } catch {
       onError()
     }
   }
-
 }

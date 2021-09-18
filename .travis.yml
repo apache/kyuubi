@@ -1,3 +1,4 @@
+#
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
@@ -12,13 +13,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 sudo: required
 
+branches:
+  only:
+    - master
+
+# https://releases.ubuntu.com/ use the latest LTS release of ubuntu
 dist: bionic
 language: scala
 scala:
-  - 2.12.10
+  - 2.12.15
 jdk:
   - openjdk8
 
@@ -26,48 +33,16 @@ cache:
   directories:
     - $HOME/.m2
 
-deploy:
-#  - provider: pages
-#    cleanup: false
-#    keep_history: true
-#    github_token: $GITHUB_TOKEN
-#    email: yaooqinn@hotmail.com
-#    name: Kent Yao
-#    on:
-#      branch: master
-#  - provider: releases
-#    api_key: $GITHUB_TOKEN
-#    file_glob: true
-#    file: kyuubi-*.tar.gz
-#    cleanup: false
-#    on:
-#      tags: true
-
 install:
-  - build/mvn --version
-  - build/mvn clean
-
-before_script:
-  - build/mvn help:evaluate -Dexpression=project.version
-  - build/mvn help:evaluate -Dexpression=java.version
-  - build/mvn help:evaluate -Dexpression=scala.binary.version
-  - build/mvn help:evaluate -Dexpression=hadoop.version
-  - build/mvn help:evaluate -Dexpression=hive.version
-
-#jobs:
-#  include:
-#    - stage: spark3.0.0
-#      script:
-#        - build/mvn --no-transfer-progress clean verify -pl :kyuubi-common,:kyuubi-ha,:kyuubi-main,:kyuubi-spark-sql-engine,:kyuubi-codecov,:kyuubi-download,:kyuubi-assembly -Dmaven.javadoc.skip=true -B -V
+  - ./build/mvn --version
 
 script:
-  - build/mvn clean install -Dmaven.javadoc.skip=true -B -V
-
-after_script:
-  - rm -r $HOME/.m2/repository/org/apache/kyuubi
+  - ./build/mvn clean install -Dmaven.javadoc.skip=true -V
 
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
+  - echo "Travis exited with ${TRAVIS_TEST_RESULT}"
 
 after_failure:
-  - for log in `find * -name "unit-tests.log"`; do echo "=========$log========="; cat $log; done
+  - echo "Travis exited with ${TRAVIS_TEST_RESULT}"
+  - for log in `find * -name "kyuubi-spark-sql-engine.log*"`; do echo "=========$log========="; grep "ERROR" $log -A 100 -B 20; done
+  - for log in `find * -name "unit-tests.log"`;  do echo "=========$log========="; grep "ERROR" $log -A 100 -B 20; done

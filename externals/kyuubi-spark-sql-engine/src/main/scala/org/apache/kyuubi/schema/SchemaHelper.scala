@@ -85,4 +85,68 @@ object SchemaHelper {
     }
     tTableSchema
   }
+
+  def toJavaSQLType(sparkType: DataType): Int = sparkType match {
+    case NullType => java.sql.Types.NULL
+    case BooleanType => java.sql.Types.BOOLEAN
+    case ByteType => java.sql.Types.TINYINT
+    case ShortType => java.sql.Types.SMALLINT
+    case IntegerType => java.sql.Types.INTEGER
+    case LongType => java.sql.Types.BIGINT
+    case FloatType => java.sql.Types.FLOAT
+    case DoubleType => java.sql.Types.DOUBLE
+    case StringType => java.sql.Types.VARCHAR
+    case _: DecimalType => java.sql.Types.DECIMAL
+    case DateType => java.sql.Types.DATE
+    case TimestampType => java.sql.Types.TIMESTAMP
+    case BinaryType => java.sql.Types.BINARY
+    case _: ArrayType => java.sql.Types.ARRAY
+    case _: MapType => java.sql.Types.JAVA_OBJECT
+    case _: StructType => java.sql.Types.STRUCT
+    case _ => java.sql.Types.OTHER
+  }
+
+
+  /**
+   * For boolean, numeric and datetime types, it returns the default size of its catalyst type
+   * For struct type, when its elements are fixed-size, the summation of all element sizes will be
+   * returned.
+   * For array, map, string, and binaries, the column size is variable, return null as unknown.
+   */
+  def getColumnSize(sparkType: DataType): Option[Int] = sparkType match {
+    case dt @ (BooleanType | _: NumericType | DateType | TimestampType |
+               CalendarIntervalType | NullType) =>
+      Some(dt.defaultSize)
+    case StructType(fields) =>
+      val sizeArr = fields.map(f => getColumnSize(f.dataType))
+      if (sizeArr.contains(None)) {
+        None
+      } else {
+        Some(sizeArr.map(_.get).sum)
+      }
+    case _ => None
+  }
+
+
+  /**
+   * The number of fractional digits for this type.
+   * Null is returned for data types where this is not applicable.
+   * For boolean and integrals, the decimal digits is 0
+   * For floating types, we follow the IEEE Standard for Floating-Point Arithmetic (IEEE 754)
+   * For timestamp values, we support microseconds
+   * For decimals, it returns the scale
+   */
+  def getDecimalDigits(sparkType: DataType): Option[Int] = sparkType match {
+    case BooleanType | _: IntegerType => Some(0)
+    case FloatType => Some(7)
+    case DoubleType => Some(15)
+    case d: DecimalType => Some(d.scale)
+    case TimestampType => Some(6)
+    case _ => None
+  }
+
+  def getNumPrecRadix(typ: DataType): Option[Int] = typ match {
+    case _: NumericType => Some(10)
+    case _ => None
+  }
 }

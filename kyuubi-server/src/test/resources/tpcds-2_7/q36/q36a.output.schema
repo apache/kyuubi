@@ -1,0 +1,1 @@
+struct<gross_margin:decimal,i_category:string,i_class:string,lochierarchy:int,rank_within_parent:int>

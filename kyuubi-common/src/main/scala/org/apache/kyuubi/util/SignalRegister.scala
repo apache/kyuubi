@@ -21,7 +21,7 @@ import java.util.Collections
 
 import scala.collection.JavaConverters._
 
-import org.apache.commons.lang.SystemUtils
+import org.apache.commons.lang3.SystemUtils
 import org.slf4j.Logger
 import sun.misc.{Signal, SignalHandler}
 

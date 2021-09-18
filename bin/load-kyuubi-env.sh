@@ -21,14 +21,30 @@ export KYUUBI_HOME="${KYUUBI_HOME:-"$(cd "$(dirname "$0")"/.. || exit; pwd)"}"
 
 export KYUUBI_CONF_DIR="${KYUUBI_CONF_DIR:-"${KYUUBI_HOME}"/conf}"
 
+silent=0
+while getopts "s" arg
+do
+  case $arg in
+    s)
+      silent=1
+    ;;
+    ?)
+      echo "unknown argument"
+      exit 1
+    ;;
+  esac
+done
+
 KYUUBI_ENV_SH="${KYUUBI_CONF_DIR}"/kyuubi-env.sh
 if [[ -f ${KYUUBI_ENV_SH} ]]; then
-   set -a
-   echo "Using kyuubi environment file ${KYUUBI_ENV_SH} to initialize..."
-   . "${KYUUBI_ENV_SH}"
-   set +a
+  set -a
+  if [ $silent -eq 0 ]; then
+    echo "Using kyuubi environment file ${KYUUBI_ENV_SH} to initialize..."
+  fi
+  . "${KYUUBI_ENV_SH}"
+  set +a
 else
-   echo "Warn: Not find kyuubi environment file ${KYUUBI_ENV_SH}, using default ones..."
+  echo "Warn: Not find kyuubi environment file ${KYUUBI_ENV_SH}, using default ones..."
 fi
 
 export KYUUBI_LOG_DIR="${KYUUBI_LOG_DIR:-"${KYUUBI_HOME}/logs"}"
@@ -47,40 +63,44 @@ if [[ -e ${KYUUBI_WORK_DIR_ROOT} ]]; then
 fi
 
 if [[ -z ${JAVA_HOME} ]]; then
-   if [[ $(command -v java) ]]; then
-     export JAVA_HOME="$(dirname $(dirname $(which java)))"
-   fi
+  if [[ $(command -v java) ]]; then
+    export JAVA_HOME="$(dirname $(dirname $(which java)))"
+  fi
 fi
 
 export KYUUBI_SCALA_VERSION="${KYUUBI_SCALA_VERSION:-"2.12"}"
-SPARK_VERSION_BUILD="$(grep "Spark " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
-HADOOP_VERSION_BUILD="$(grep "Hadoop " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
-HIVE_VERSION_BUILD="$(grep "Hive " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
 
-if [[ ${HIVE_VERSION_BUILD:0:3} == "2.3" ]]; then
-  HIVE_VERSION_SUFFIX=""
+if [[ -f ${KYUUBI_HOME}/RELEASE ]]; then
+  SPARK_VERSION_BUILD="$(grep "Spark " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
+  HADOOP_VERSION_BUILD="$(grep "Hadoop " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
+  SPARK_BUILTIN="${KYUUBI_HOME}/externals/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD:0:3}"
 else
-  HIVE_VERSION_SUFFIX="-hive1.2"
-fi
-
-SPARK_BUILTIN="${KYUUBI_HOME}/externals/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD:0:3}$HIVE_VERSION_SUFFIX"
-
-if [[ ! -d ${SPARK_BUILTIN} ]]; then
-  SPARK_BUILTIN="${KYUUBI_HOME}/externals/kyuubi-download/target/spark-3.0.1-bin-hadoop2.7"
+  MVN="${MVN:-"${KYUUBI_HOME}/build/mvn"}"
+  SPARK_VERSION_BUILD=$("$MVN" help:evaluate -Dexpression=spark.version 2>/dev/null\
+    | grep -v "INFO"\
+    | grep -v "WARNING"\
+    | tail -n 1)
+  HADOOP_VERSION_BUILD=$("$MVN" help:evaluate -Dexpression=hadoop.binary.version 2>/dev/null\
+    | grep -v "INFO"\
+    | grep -v "WARNING"\
+    | tail -n 1)
+  SPARK_BUILTIN="${KYUUBI_HOME}/externals/kyuubi-download/target/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD}"
 fi
 
 export SPARK_HOME="${SPARK_HOME:-"${SPARK_BUILTIN}"}"
 
 # Print essential environment variables to console
-echo "JAVA_HOME: ${JAVA_HOME}"
+if [ $silent -eq 0 ]; then
+  echo "JAVA_HOME: ${JAVA_HOME}"
 
-echo "KYUUBI_HOME: ${KYUUBI_HOME}"
-echo "KYUUBI_CONF_DIR: ${KYUUBI_CONF_DIR}"
-echo "KYUUBI_LOG_DIR: ${KYUUBI_LOG_DIR}"
-echo "KYUUBI_PID_DIR: ${KYUUBI_PID_DIR}"
-echo "KYUUBI_WORK_DIR_ROOT: ${KYUUBI_WORK_DIR_ROOT}"
+  echo "KYUUBI_HOME: ${KYUUBI_HOME}"
+  echo "KYUUBI_CONF_DIR: ${KYUUBI_CONF_DIR}"
+  echo "KYUUBI_LOG_DIR: ${KYUUBI_LOG_DIR}"
+  echo "KYUUBI_PID_DIR: ${KYUUBI_PID_DIR}"
+  echo "KYUUBI_WORK_DIR_ROOT: ${KYUUBI_WORK_DIR_ROOT}"
 
-echo "SPARK_HOME: ${SPARK_HOME}"
-echo "SPARK_CONF_DIR: ${SPARK_CONF_DIR}"
+  echo "SPARK_HOME: ${SPARK_HOME}"
+  echo "SPARK_CONF_DIR: ${SPARK_CONF_DIR:-"${SPARK_HOME}/conf"}"
 
-echo "HADOOP_CONF_DIR: ${HADOOP_CONF_DIR}"
+  echo "HADOOP_CONF_DIR: ${HADOOP_CONF_DIR}"
+fi

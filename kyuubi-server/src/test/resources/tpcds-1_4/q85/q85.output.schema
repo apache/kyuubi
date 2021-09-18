@@ -1,0 +1,1 @@
+struct<substr(r_reason_desc, 1, 20):string,avg(ws_quantity):double,avg(wr_refunded_cash):decimal,avg(wr_fee):decimal>

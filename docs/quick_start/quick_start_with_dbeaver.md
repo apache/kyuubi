@@ -1,6 +1,23 @@
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one or more
+ - contributor license agreements.  See the NOTICE file distributed with
+ - this work for additional information regarding copyright ownership.
+ - The ASF licenses this file to You under the Apache License, Version 2.0
+ - (the "License"); you may not use this file except in compliance with
+ - the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing, software
+ - distributed under the License is distributed on an "AS IS" BASIS,
+ - WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ - See the License for the specific language governing permissions and
+ - limitations under the License.
+ -->
+
 <div align=center>
 
-![](../imgs/kyuubi_logo_simple.png)
+![](../imgs/kyuubi_logo.png)
 
 </div>
 
@@ -36,10 +53,10 @@ Welcome to
                 \/__/
 ```
 
-For debugging purpose, you can `tail -f` or `tailf` to track the server log like:
+For debugging purpose, you can `tail -f` to track the server log like:
 
 ```logtalk
-$ tail -f /Users/kentyao/Downloads/kyuubi/kyuubi-1.0.2-bin-spark-3.0.1/logs/kyuubi-kentyao-org.apache.kyuubi.server.KyuubiServer-hulk.local.out
+$ tail -f /Users/kentyao/Downloads/kyuubi/kyuubi-1.3.0-incubating-bin/logs/kyuubi-kentyao-org.apache.kyuubi.server.KyuubiServer-hulk.local.out
 2021-01-16 03:27:35.449 INFO server.NIOServerCnxnFactory: Accepted socket connection from /127.0.0.1:65320
 2021-01-16 03:27:35.453 INFO server.ZooKeeperServer: Client attempting to establish new session at /127.0.0.1:65320
 2021-01-16 03:27:35.455 INFO persistence.FileTxnLog: Creating new log file: log.1
