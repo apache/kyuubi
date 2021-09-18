@@ -45,9 +45,9 @@ import org.apache.kyuubi.sql.KyuubiSQLConf
 * */
 case class ForcedMaxOutputRowsRule(session: SparkSession) extends Rule[LogicalPlan] {
 
-  private def canInsertLimit(p: LogicalPlan): Boolean = {
+  private def canInsertLimit(p: LogicalPlan, maxOutputRowsOpt: Option[Int]): Boolean = {
 
-    conf.getConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS) match {
+    maxOutputRowsOpt match {
       case Some(forcedMaxOutputRows) => val supported = p match {
           case _: Project => true
           case _: Aggregate => true
@@ -61,9 +61,10 @@ case class ForcedMaxOutputRowsRule(session: SparkSession) extends Rule[LogicalPl
   }
 
   override def apply(plan: LogicalPlan): LogicalPlan = {
+    val maxOutputRowsOpt = conf.getConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS)
     plan match {
-      case p if p.resolved && canInsertLimit(p) => Limit(
-        conf.getConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS).get, plan)
+      case p if p.resolved && canInsertLimit(p, maxOutputRowsOpt) => Limit(
+        maxOutputRowsOpt.get, plan)
       case _ => plan
     }
   }
