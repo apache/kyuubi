@@ -56,98 +56,98 @@ class WatchDogTest extends KyuubiSparkSQLExtensionTest {
           .queryExecution.sparkPlan)
 
       }
+    }
+  }
 
-      test("test watchdog with query forceMaxOutputRows") {
+  test("test watchdog with query forceMaxOutputRows") {
 
-        withSQLConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS.key -> "10") {
+    withSQLConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS.key -> "10") {
 
-          assert(sql("SELECT * FROM t1")
-            .queryExecution.analyzed.isInstanceOf[GlobalLimit])
+      assert(sql("SELECT * FROM t1")
+        .queryExecution.analyzed.isInstanceOf[GlobalLimit])
 
-          assert(sql("SELECT * FROM t1 LIMIT 1")
-            .queryExecution.analyzed.asInstanceOf[GlobalLimit].maxRows.contains(1))
+      assert(sql("SELECT * FROM t1 LIMIT 1")
+        .queryExecution.analyzed.asInstanceOf[GlobalLimit].maxRows.contains(1))
 
-          assert(sql("SELECT * FROM t1 LIMIT 11")
-            .queryExecution.analyzed.asInstanceOf[GlobalLimit].maxRows.contains(10))
+      assert(sql("SELECT * FROM t1 LIMIT 11")
+        .queryExecution.analyzed.asInstanceOf[GlobalLimit].maxRows.contains(10))
 
-          assert(!sql("SELECT count(*) FROM t1")
-            .queryExecution.analyzed.isInstanceOf[GlobalLimit])
+      assert(!sql("SELECT count(*) FROM t1")
+        .queryExecution.analyzed.isInstanceOf[GlobalLimit])
 
-          assert(sql(
-            """
-              |SELECT c1, COUNT(*)
-              |FROM t1
-              |GROUP BY c1
-              |""".stripMargin).queryExecution.analyzed.isInstanceOf[GlobalLimit])
+      assert(sql(
+        """
+          |SELECT c1, COUNT(*)
+          |FROM t1
+          |GROUP BY c1
+          |""".stripMargin).queryExecution.analyzed.isInstanceOf[GlobalLimit])
 
-          assert(sql(
-            """
-              |WITH custom_cte AS (
-              |SELECT * FROM t1
-              |)
-              |
-              |SELECT * FROM custom_cte
-              |""".stripMargin).queryExecution
-            .analyzed.isInstanceOf[GlobalLimit])
+      assert(sql(
+        """
+          |WITH custom_cte AS (
+          |SELECT * FROM t1
+          |)
+          |
+          |SELECT * FROM custom_cte
+          |""".stripMargin).queryExecution
+        .analyzed.isInstanceOf[GlobalLimit])
 
-          assert(sql(
-            """
-              |WITH custom_cte AS (
-              |SELECT * FROM t1
-              |)
-              |
-              |SELECT * FROM custom_cte
-              |LIMIT 1
-              |""".stripMargin).queryExecution
-            .analyzed.asInstanceOf[GlobalLimit].maxRows.contains(1))
+      assert(sql(
+        """
+          |WITH custom_cte AS (
+          |SELECT * FROM t1
+          |)
+          |
+          |SELECT * FROM custom_cte
+          |LIMIT 1
+          |""".stripMargin).queryExecution
+        .analyzed.asInstanceOf[GlobalLimit].maxRows.contains(1))
 
-          assert(sql(
-            """
-              |WITH custom_cte AS (
-              |SELECT * FROM t1
-              |)
-              |
-              |SELECT * FROM custom_cte
-              |LIMIT 11
-              |""".stripMargin).queryExecution
-            .analyzed.asInstanceOf[GlobalLimit].maxRows.contains(10))
+      assert(sql(
+        """
+          |WITH custom_cte AS (
+          |SELECT * FROM t1
+          |)
+          |
+          |SELECT * FROM custom_cte
+          |LIMIT 11
+          |""".stripMargin).queryExecution
+        .analyzed.asInstanceOf[GlobalLimit].maxRows.contains(10))
 
-          assert(!sql(
-            """
-              |WITH custom_cte AS (
-              |SELECT * FROM t1
-              |)
-              |
-              |SELECT COUNT(*) FROM custom_cte
-              |""".stripMargin).queryExecution
-            .analyzed.isInstanceOf[GlobalLimit])
+      assert(!sql(
+        """
+          |WITH custom_cte AS (
+          |SELECT * FROM t1
+          |)
+          |
+          |SELECT COUNT(*) FROM custom_cte
+          |""".stripMargin).queryExecution
+        .analyzed.isInstanceOf[GlobalLimit])
 
-          assert(sql(
-            """
-              |WITH custom_cte AS (
-              |SELECT * FROM t1
-              |)
-              |
-              |SELECT c1, COUNT(*)
-              |FROM custom_cte
-              |GROUP BY c1
-              |""".stripMargin).queryExecution
-            .analyzed.isInstanceOf[GlobalLimit])
+      assert(sql(
+        """
+          |WITH custom_cte AS (
+          |SELECT * FROM t1
+          |)
+          |
+          |SELECT c1, COUNT(*)
+          |FROM custom_cte
+          |GROUP BY c1
+          |""".stripMargin).queryExecution
+        .analyzed.isInstanceOf[GlobalLimit])
 
-          assert(sql(
-            """
-              |WITH custom_cte AS (
-              |SELECT * FROM t1
-              |)
-              |
-              |SELECT c1, COUNT(*)
-              |FROM custom_cte
-              |GROUP BY c1
-              |LIMIT 11
-              |""".stripMargin).queryExecution
-            .analyzed.asInstanceOf[GlobalLimit].maxRows.contains(10))
-        }
-      }
+      assert(sql(
+        """
+          |WITH custom_cte AS (
+          |SELECT * FROM t1
+          |)
+          |
+          |SELECT c1, COUNT(*)
+          |FROM custom_cte
+          |GROUP BY c1
+          |LIMIT 11
+          |""".stripMargin).queryExecution
+        .analyzed.asInstanceOf[GlobalLimit].maxRows.contains(10))
     }
   }
 }
