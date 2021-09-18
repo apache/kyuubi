@@ -173,7 +173,7 @@ trait ProcBuilder {
 
   val YARN_APP_NAME_REGEX: Regex = "application_\\d+_\\d+".r
 
-  def closeYarnJob(row: String = lastRowOfLog): Unit = {
+  def killApplication(row: String = lastRowOfLog): Unit = {
     val matcher = YARN_APP_NAME_REGEX.findAllMatchIn(row)
 
     if (matcher.nonEmpty && row.contains("state: ACCEPTED")) {
