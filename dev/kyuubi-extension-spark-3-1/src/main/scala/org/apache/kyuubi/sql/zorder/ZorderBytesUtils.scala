@@ -179,9 +179,9 @@ object ZorderBytesUtils {
         Byte.MaxValue
       case ShortType =>
         Short.MaxValue
-      case IntegerType =>
+      case IntegerType | DateType =>
         Int.MaxValue
-      case LongType =>
+      case LongType | TimestampType | _: DecimalType =>
         Long.MaxValue
       case FloatType =>
         Float.MaxValue
@@ -189,12 +189,6 @@ object ZorderBytesUtils {
         Double.MaxValue
       case StringType =>
         UTF8String.fromBytes(new Array[Byte](0))
-      case TimestampType =>
-        Long.MaxValue
-      case DateType =>
-        Int.MaxValue
-      case _: DecimalType =>
-        Long.MaxValue
       case other: Any =>
         throw new KyuubiSQLExtensionException(s"Unsupported z-order type: ${other.catalogString}")
     }
