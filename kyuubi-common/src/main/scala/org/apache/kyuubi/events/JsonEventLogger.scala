@@ -75,7 +75,13 @@ class JsonEventLogger[T <: KyuubiEvent](logName: String,
   }
 
   private def requireLogRootWritable(): Unit = {
-    val fileStatus = fs.getFileStatus(new Path(logRoot))
+    val fileStatus = try {
+      fs.getFileStatus(new Path(logRoot))
+    } catch {
+      case e: IOException =>
+        error(s"Get log directory $logRoot failed", e)
+        throw e
+    }
     if (!fileStatus.isDirectory) {
       throw new IllegalArgumentException(s"Log directory $logRoot is not a directory.")
     }
