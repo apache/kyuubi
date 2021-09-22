@@ -23,13 +23,14 @@ import org.apache.kyuubi.tags.HudiTest
 
 @HudiTest
 class SparkHudiOperationSuite extends WithSparkSQLEngine with BasicHudiJDBCTests {
+
   override protected def jdbcUrl: String = getJdbcUrl
 
   override def withKyuubiConf: Map[String, String] = extraConfigs
 
   override def afterAll(): Unit = {
     super.afterAll()
-    for ((k, _) <- extraConfigs) {
+    for ((k, _) <- withKyuubiConf) {
       System.clearProperty(k)
     }
   }
