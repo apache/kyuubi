@@ -22,7 +22,7 @@ import org.apache.spark.sql.internal.SQLConf
 
 import org.apache.kyuubi.sql.{FinalStageConfigIsolation, KyuubiSQLConf}
 
-class FinalStageConfigIsolationTest extends KyuubiSparkSQLExtensionTest {
+class FinalStageConfigIsolationSuite extends KyuubiSparkSQLExtensionTest {
   test("final stage config set reset check") {
     withSQLConf(KyuubiSQLConf.FINAL_STAGE_CONFIG_ISOLATION.key -> "true",
       "spark.sql.finalStage.adaptive.coalescePartitions.minPartitionNum" -> "1",
