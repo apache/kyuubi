@@ -22,7 +22,7 @@ import org.apache.spark.sql.catalyst.plans.logical.GlobalLimit
 import org.apache.kyuubi.sql.KyuubiSQLConf
 import org.apache.kyuubi.sql.watchdog.MaxHivePartitionExceedException
 
-class WatchDogTest extends KyuubiSparkSQLExtensionTest {
+class WatchDogSuite extends KyuubiSparkSQLExtensionTest {
   test("test watchdog with scan maxHivePartitions") {
     withTable("test", "temp") {
       sql(

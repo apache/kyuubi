@@ -21,7 +21,7 @@ import scala.collection.mutable.Set
 
 import org.apache.kyuubi.sql.KyuubiSQLConf
 
-class SqlClassificationTest extends KyuubiSparkSQLExtensionTest {
+class SqlClassificationSuite extends KyuubiSparkSQLExtensionTest {
   test("Sql classification for ddl") {
     withSQLConf(KyuubiSQLConf.SQL_CLASSIFICATION_ENABLED.key -> "true") {
       withDatabase("inventory") {
