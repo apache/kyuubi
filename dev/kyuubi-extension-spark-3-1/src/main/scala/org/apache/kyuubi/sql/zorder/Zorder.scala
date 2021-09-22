@@ -46,7 +46,6 @@ case class Zorder(children: Seq[Expression]) extends Expression {
   private lazy val defaultNullValues: Array[Array[Byte]] =
     children.map(_.dataType)
       .map(ZorderBytesUtils.defaultValue)
-      .map(ZorderBytesUtils.toByte)
       .toArray
 
   override def eval(input: InternalRow): Any = {
