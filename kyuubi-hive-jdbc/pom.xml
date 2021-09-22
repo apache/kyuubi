@@ -91,6 +91,12 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.iceberg</groupId>
+            <artifactId>${iceberg.name}</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <!--
           Spark requires `commons-collections` and `commons-io` but got them from transitive
           dependencies of `hadoop-client`. As we are using Hadoop Shaded Client, we need add
