@@ -20,6 +20,7 @@ package org.apache.kyuubi.server
 import java.util.Locale
 import javax.ws.rs.core.Application
 
+import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.test.{JerseyTest, TestProperties}
 import org.glassfish.jersey.test.jetty.JettyTestContainerFactory
@@ -34,7 +35,6 @@ import org.apache.kyuubi.server.RestFrontendServiceSuite.{withKyuubiRestServer, 
 import org.apache.kyuubi.server.api.KyuubiScalaObjectMapper
 import org.apache.kyuubi.service.NoopServer
 import org.apache.kyuubi.service.ServiceState._
-import org.glassfish.jersey.client.ClientConfig
 
 class RestFrontendServiceSuite extends KyuubiFunSuite{
 
