@@ -33,7 +33,7 @@ class KyuubiDriverSuite extends WithSparkSQLEngine with IcebergSuiteMixin {
 
   override def afterAll(): Unit = {
     super.afterAll()
-    for ((k, _) <- extraConfigs) {
+    for ((k, _) <- withKyuubiConf) {
       System.clearProperty(k)
     }
   }
