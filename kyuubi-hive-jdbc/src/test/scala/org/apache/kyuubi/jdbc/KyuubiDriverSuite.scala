@@ -52,11 +52,12 @@ class KyuubiDriverSuite extends WithSparkSQLEngine with IcebergSuiteMixin {
       statement.execute(s"CREATE TABLE $table2(key int) using $format")
 
       val resultSet1 = metaData.getTables(SparkCatalogShim.SESSION_CATALOG, "default", "%", null)
-      val resultSet2 = metaData.getTables(catalog, "default", "%", null)
       assert(resultSet1.next())
       assert(resultSet1.getString(1) === SparkCatalogShim.SESSION_CATALOG)
       assert(resultSet1.getString(2) === "default")
       assert(resultSet1.getString(3) === "kyuubi_hive_jdbc")
+
+      val resultSet2 = metaData.getTables(catalog, "default", "%", null)
       assert(resultSet2.next())
       assert(resultSet2.getString(1) === catalog)
       assert(resultSet2.getString(2) === "default")
