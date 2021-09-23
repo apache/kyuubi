@@ -3,7 +3,7 @@ name: Publish Docker image
 on:
   push:
     branches:
-      - docker-dev
+      - dev
 
 jobs:
   push_to_registry:
