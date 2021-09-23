@@ -82,7 +82,7 @@ case class EngineEvent(
        |          master: $master
        |          version: $sparkVersion
        |          driver: [cpu: $driverCores, mem: $driverMemory]
-       |          executor: [cpu: $executorCore, mem: $executorMemory MB, maxNum: $maxExecutors]
+       |          executor: [cpu: $executorCore, mem: $executorMemory, maxNum: $maxExecutors]
        |    Start time: ${new Date(startTime)}
        |    ${if (endTime != -1L) "End time: " + new Date(endTime) else ""}
        |    User: $owner (shared mode: $shareLevel)

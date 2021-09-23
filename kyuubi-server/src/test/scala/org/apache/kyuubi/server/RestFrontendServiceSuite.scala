@@ -20,8 +20,7 @@ package org.apache.kyuubi.server
 import java.util.Locale
 import javax.ws.rs.core.Application
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.test.{JerseyTest, TestProperties}
 import org.glassfish.jersey.test.jetty.JettyTestContainerFactory
@@ -33,6 +32,7 @@ import scala.io.Source
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.RestFrontendServiceSuite.{withKyuubiRestServer, TEST_SERVER_PORT}
+import org.apache.kyuubi.server.api.KyuubiScalaObjectMapper
 import org.apache.kyuubi.service.NoopServer
 import org.apache.kyuubi.service.ServiceState._
 
@@ -85,7 +85,6 @@ object RestFrontendServiceSuite {
     override val frontendServices = Seq(new RestFrontendService(this))
   }
 
-  val OBJECT_MAPPER = new ObjectMapper().registerModule(DefaultScalaModule)
   val TEST_SERVER_PORT = KyuubiConf().get(KyuubiConf.FRONTEND_REST_BIND_PORT)
 
   def withKyuubiRestServer(f: (RestFrontendService, String, Int) => Unit): Unit = {
@@ -112,6 +111,11 @@ class RestApiBaseSuite extends JerseyTest {
   override def configure: Application = {
     forceSet(TestProperties.CONTAINER_PORT, TEST_SERVER_PORT.toString)
     new ResourceConfig(getClass)
+  }
+
+  override def configureClient(config: ClientConfig): Unit = {
+    super.configureClient(config)
+    config.register(classOf[KyuubiScalaObjectMapper])
   }
 
   override def getTestContainerFactory: TestContainerFactory = new JettyTestContainerFactory

@@ -15,23 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.operation
+package org.apache.kyuubi.server.api
 
-import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.operation.BasicIcebergJDBCTests
-import org.apache.kyuubi.tags.IcebergTest
+import javax.ws.rs.ext.ContextResolver
 
-@IcebergTest
-class SparkIcebergOperationSuite extends WithSparkSQLEngine with BasicIcebergJDBCTests {
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 
-  override protected def jdbcUrl: String = getJdbcUrl
+class KyuubiScalaObjectMapper extends ContextResolver[ObjectMapper] {
+  private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
 
-  override def withKyuubiConf: Map[String, String] = extraConfigs
-
-  override def afterAll(): Unit = {
-    super.afterAll()
-    for ((k, _) <- withKyuubiConf) {
-      System.clearProperty(k)
-    }
-  }
+  override def getContext(aClass: Class[_]): ObjectMapper = mapper
 }
