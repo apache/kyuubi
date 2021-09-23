@@ -70,6 +70,7 @@
             <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -83,6 +84,7 @@
             <artifactId>kyuubi-spark-sql-engine_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
             <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
