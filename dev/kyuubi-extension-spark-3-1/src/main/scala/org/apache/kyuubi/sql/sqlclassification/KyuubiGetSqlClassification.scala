@@ -17,10 +17,10 @@
 
 package org.apache.kyuubi.sql.sqlclassification
 
-import java.io.File
 import java.net.URL
 
 import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
+import org.apache.spark.internal.Logging
 import org.apache.spark.sql.internal.SQLConf
 
 import org.apache.kyuubi.sql.KyuubiSQLConf._
@@ -35,20 +35,17 @@ import org.apache.kyuubi.sql.KyuubiSQLConf._
  *  If there have no this named jsonFile,
  *  the service will upload the default matching rule: sql-classification-default.json.
  */
-object KyuubiGetSqlClassification {
-
+object KyuubiGetSqlClassification extends Logging {
   private val jsonNode: Option[JsonNode] = {
     SQLConf.get.getConf(SQL_CLASSIFICATION_ENABLED) match {
       case true =>
         val objectMapper = new ObjectMapper
-        var url: URL = Thread.currentThread().getContextClassLoader
-          .getResource("sql-classification.json")
+        var url: URL = getClass.getClassLoader.getResource("sql-classification.json")
         if (url == null) {
-          url = Thread.currentThread().getContextClassLoader
-            .getResource("sql-classification-default.json")
+          logInfo("sql-classification.json is not found, use default config instead")
+          url = getClass.getClassLoader.getResource("sql-classification-default.json")
         }
-        val defaultSqlClassificationFile = url.getPath
-        Some(objectMapper.readTree(new File(defaultSqlClassificationFile)))
+        Some(objectMapper.readTree(url))
       case false =>
         None
     }
@@ -56,7 +53,7 @@ object KyuubiGetSqlClassification {
 
   /**
    * Notice:
-   *    You need to make sure that the configuration item: kyuubi.spark.sql.classification.enabled
+   *    You need to make sure that the configuration item: SQL_CLASSIFICATION_ENABLED
     *   is true
    * @param simpleName: the analyzied_logical_plan's getSimpleName
    * @return: This sql's classification
@@ -71,7 +68,7 @@ object KyuubiGetSqlClassification {
       }
     }.getOrElse(
       throw new IllegalArgumentException(
-        "The configuration item: kyuubi.spark.sql.classification.enabled is false")
+        s"You should restart engine with: ${SQL_CLASSIFICATION_ENABLED.key} true")
     )
   }
 }
