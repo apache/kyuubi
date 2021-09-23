@@ -22,8 +22,6 @@ import org.apache.kyuubi.config.KyuubiConf
 
 class NoopServer extends Serverable("noop") {
 
-  private val OOMHook = new Runnable { override def run(): Unit = stop() }
-
   override val backendService = new NoopBackendService
   protected val frontendService: AbstractFrontendService =
     new ThriftFrontendService(backendService, OOMHook)

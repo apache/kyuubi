@@ -25,13 +25,11 @@ import org.apache.kyuubi.service.{AbstractFrontendService, BackendService, Compo
  * A kyuubi frontend service is a kind of composite service, which used to
  * composite multiple frontend services for kyuubi server.
  */
-class KyuubiFrontendServices private(name: String, be: BackendService)
+class KyuubiFrontendServices private(name: String, be: BackendService, oomHook: Runnable)
   extends CompositeService(name) with Logging {
 
-  private val OOMHook = new Runnable { override def run(): Unit = stop() }
-
-  def this(be: BackendService) = {
-    this(classOf[KyuubiFrontendServices].getSimpleName, be)
+  def this(be: BackendService, oomHook: Runnable) = {
+    this(classOf[KyuubiFrontendServices].getSimpleName, be, oomHook)
   }
 
   def connectionUrl(server: Boolean): String = {
@@ -48,7 +46,7 @@ class KyuubiFrontendServices private(name: String, be: BackendService)
   }
 
   override def initialize(conf: KyuubiConf): Unit = {
-    addService(new ThriftFrontendService(be, OOMHook))
+    addService(new ThriftFrontendService(be, oomHook))
     super.initialize(conf)
   }
 }

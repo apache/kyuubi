@@ -40,7 +40,6 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
 
   lazy val engineStatus: EngineEvent = EngineEvent(this)
 
-  private val OOMHook = new Runnable { override def run(): Unit = stop() }
   private val eventLogging = new EventLoggingService(this)
   override val backendService = new SparkSQLBackendService(spark)
   val frontendService = new SparkThriftFrontendService(backendService, OOMHook)
