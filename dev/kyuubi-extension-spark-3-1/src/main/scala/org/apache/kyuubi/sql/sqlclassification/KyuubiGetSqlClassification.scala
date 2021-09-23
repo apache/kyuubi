@@ -54,7 +54,7 @@ object KyuubiGetSqlClassification extends Logging {
   /**
    * Notice:
    *    You need to make sure that the configuration item: SQL_CLASSIFICATION_ENABLED
-    *   is true
+   *   is true
    * @param simpleName: the analyzied_logical_plan's getSimpleName
    * @return: This sql's classification
    */
