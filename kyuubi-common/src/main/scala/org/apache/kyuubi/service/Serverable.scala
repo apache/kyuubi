@@ -24,6 +24,7 @@ import org.apache.kyuubi.config.KyuubiConf
 abstract class Serverable(name: String) extends CompositeService(name) {
 
   private val started = new AtomicBoolean(false)
+  protected val OOMHook = new Runnable { override def run(): Unit = stop() }
 
   val backendService: AbstractBackendService
   protected def supportsServiceDiscovery: Boolean

@@ -83,7 +83,7 @@ class KyuubiServer(name: String) extends Serverable(name) {
   def this() = this(classOf[KyuubiServer].getSimpleName)
 
   override val backendService: AbstractBackendService = new KyuubiBackendService()
-  val frontendService = new KyuubiFrontendServices(backendService)
+  val frontendService = new KyuubiFrontendServices(backendService, OOMHook)
   private val eventLoggingService: EventLoggingService = new EventLoggingService
   override protected def supportsServiceDiscovery: Boolean = {
     ServiceDiscovery.supportServiceDiscovery(conf)
