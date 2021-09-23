@@ -48,8 +48,8 @@ class KyuubiDriverSuite extends WithSparkSQLEngine with IcebergSuiteMixin {
     val table1 = s"${SparkCatalogShim.SESSION_CATALOG}.default.kyuubi_hive_jdbc"
     val table2 = s"$catalog.default.hdp_cat_tbl"
     try {
-      statement.execute(s"CREATE TABLE $table1(key int) using parquet")
-      statement.execute(s"CREATE TABLE $table2(key int) using $format")
+      statement.execute(s"CREATE TABLE $table1(key int) USING parquet")
+      statement.execute(s"CREATE TABLE $table2(key int) USING $format")
 
       val resultSet1 = metaData.getTables(SparkCatalogShim.SESSION_CATALOG, "default", "%", null)
       assert(resultSet1.next())
@@ -63,8 +63,8 @@ class KyuubiDriverSuite extends WithSparkSQLEngine with IcebergSuiteMixin {
       assert(resultSet2.getString(2) === "default")
       assert(resultSet2.getString(3) === "hdp_cat_tbl")
     } finally {
-      statement.execute(s"DROP TABLE $table1")
-      statement.execute(s"DROP TABLE $table2")
+      statement.execute(s"DROP TABLE IF EXISTS $table1")
+      statement.execute(s"DROP TABLE IF EXISTS $table2")
       statement.close()
       connection.close()
     }
