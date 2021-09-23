@@ -20,7 +20,6 @@ package org.apache.kyuubi.engine.spark.events
 
 import java.io.IOException
 
-import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.events.EventLoggerType._
@@ -28,12 +27,11 @@ import org.apache.kyuubi.operation.JDBCTestUtils
 
 class EventLoggingWithoutDirectoryServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
-  private val logRoot = "file:///tmp/aaa/bbb"
-  private val currentDate = Utils.getDateFromTimestamp(System.currentTimeMillis())
+  private val noExistentDir = "file:///tmp/aaa/bbb"
 
   override def withKyuubiConf: Map[String, String] = Map(
     KyuubiConf.ENGINE_EVENT_LOGGERS.key -> s"$JSON,$SPARK",
-    KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH.key -> logRoot
+    KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH.key -> noExistentDir
   )
 
   override protected def jdbcUrl: String = getJdbcUrl
@@ -48,7 +46,7 @@ class EventLoggingWithoutDirectoryServiceSuite extends WithSparkSQLEngine with J
     }
   }
 
-  test("get IOException when this file is not exist") {
+  test("throw IOException if event log directory does not exist") {
     assert(exception.isInstanceOf[IOException])
   }
 
