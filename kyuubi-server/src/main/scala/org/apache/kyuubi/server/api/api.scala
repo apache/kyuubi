@@ -62,12 +62,11 @@ private[server] object ApiUtils {
       "org.apache.kyuubi.server.api.v1")
     servlet.setInitParameter(
       ServerProperties.PROVIDER_CLASSNAMES,
-      "org.glassfish.jersey.jackson.JacksonFeature")
+      classOf[KyuubiScalaObjectMapper].getName)
     val handler = new ServletContextHandler(ServletContextHandler.NO_SESSIONS)
     BackendServiceProvider.setBackendService(handler, backendService)
     handler.setContextPath("/api")
     handler.addServlet(servlet, "/*")
     handler
   }
-
 }
