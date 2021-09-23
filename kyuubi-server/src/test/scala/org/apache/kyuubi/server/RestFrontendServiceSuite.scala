@@ -45,7 +45,7 @@ class RestFrontendServiceSuite extends KyuubiFunSuite{
     assert(server.getServices.isEmpty)
     assert(server.getServiceState === LATENT)
     val e = intercept[IllegalStateException](server.frontendServices.head.connectionUrl)
-    assert(e.getMessage === "Illegal Service State: LATENT")
+    assert(e.getMessage startsWith "Illegal Service State: LATENT")
     assert(server.getConf === null)
 
     server.initialize(conf)

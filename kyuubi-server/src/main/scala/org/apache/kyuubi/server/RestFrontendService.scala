@@ -27,7 +27,7 @@ import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT}
 import org.apache.kyuubi.server.api.ApiUtils
-import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service, ServiceState}
+import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
 
 /**
  * A frontend service based on RESTful api via HTTP protocol.

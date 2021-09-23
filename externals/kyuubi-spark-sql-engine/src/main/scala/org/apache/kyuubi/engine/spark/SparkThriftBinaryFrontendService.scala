@@ -27,7 +27,6 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_CONNECTION_URL_USE_HOSTNAME
 import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, ThriftBinaryFrontendService}
-import org.apache.kyuubi.service.ServiceState.LATENT
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class SparkThriftBinaryFrontendService(
