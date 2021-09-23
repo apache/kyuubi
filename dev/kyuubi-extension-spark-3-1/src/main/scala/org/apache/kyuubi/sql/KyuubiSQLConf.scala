@@ -76,7 +76,7 @@ object KyuubiSQLConf {
         "Through this configuration item, Spark can optimizing configuration dynamic")
       .version("1.4.0")
       .booleanConf
-      .createWithDefault(true)
+      .createWithDefault(false)
 
   val INSERT_ZORDER_BEFORE_WRITING =
     buildConf("spark.sql.optimizer.insertZorderBeforeWriting.enabled")
