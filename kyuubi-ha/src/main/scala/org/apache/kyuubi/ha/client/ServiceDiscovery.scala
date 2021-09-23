@@ -36,18 +36,18 @@ import org.apache.zookeeper.KeeperException.NodeExistsException
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.service.{AbstractService, Serverable}
+import org.apache.kyuubi.service.{AbstractService, AbstractFrontendService}
 import org.apache.kyuubi.util.ThreadUtils
 
 /**
  * A abstract service for service discovery
  *
  * @param name   the name of the service itself
- * @param server the instance uri a service that used to publish itself
+ * @param fe the frontend service to publish for service discovery
  */
 abstract class ServiceDiscovery (
     name: String,
-    server: Serverable) extends AbstractService(name) {
+    fe: AbstractFrontendService) extends AbstractService(name) {
 
   import ServiceDiscovery._
   import ZooKeeperClientProvider._
@@ -97,14 +97,14 @@ abstract class ServiceDiscovery (
   }
 
   override def start(): Unit = {
-    val instance = server.connectionUrl
+    val instance = fe.connectionUrl
     _serviceNode = createServiceNode(conf, zkClient, namespace, instance)
     // Set a watch on the serviceNode
     val watcher = new DeRegisterWatcher
     if (zkClient.checkExists.usingWatcher(watcher).forPath(serviceNode.getActualPath) == null) {
       // No node exists, throw exception
       throw new KyuubiException(s"Unable to create znode for this Kyuubi " +
-        s"instance[${server.connectionUrl}] on ZooKeeper.")
+        s"instance[${fe.connectionUrl}] on ZooKeeper.")
     }
     super.start()
   }
@@ -132,17 +132,16 @@ abstract class ServiceDiscovery (
   // stop the server genteelly
   def stopGracefully(): Unit = {
     stop()
-    while (server.backendService != null &&
-      server.backendService.sessionManager.getOpenSessionCount > 0) {
+    while (fe.be != null && fe.be.sessionManager.getOpenSessionCount > 0) {
       Thread.sleep(1000 * 60)
     }
-    server.stop()
+    fe.serverable.stop()
   }
 
   class DeRegisterWatcher extends Watcher {
     override def process(event: WatchedEvent): Unit = {
       if (event.getType == Watcher.Event.EventType.NodeDeleted) {
-        warn(s"This Kyuubi instance ${server.connectionUrl} is now de-registered from" +
+        warn(s"This Kyuubi instance ${fe.connectionUrl} is now de-registered from" +
           s" ZooKeeper. The server will be shut down after the last client session completes.")
         stopGracefully()
       }

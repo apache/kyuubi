@@ -29,7 +29,7 @@ class KyuubiServerSuite extends KyuubiFunSuite {
     val conf = KyuubiConf().set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     assert(server.getServices.isEmpty)
     assert(server.getServiceState === LATENT)
-    val e = intercept[IllegalStateException](server.connectionUrl)
+    val e = intercept[IllegalStateException](server.frontendServices.head.connectionUrl)
     assert(e.getMessage === "Illegal Service State: LATENT")
     assert(server.getConf === null)
 
@@ -40,7 +40,7 @@ class KyuubiServerSuite extends KyuubiFunSuite {
     val backendService = backendServices(0).asInstanceOf[KyuubiBackendService]
     assert(backendService.getServiceState == INITIALIZED)
     assert(backendService.getServices.forall(_.getServiceState === INITIALIZED))
-    assert(server.connectionUrl.split(":").length === 2)
+    assert(server.frontendServices.head.connectionUrl.split(":").length === 2)
     assert(server.getConf === conf)
     assert(server.getStartTime === 0)
     server.stop()

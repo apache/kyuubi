@@ -20,19 +20,15 @@ package org.apache.kyuubi.ha.client
 import scala.util.control.NonFatal
 
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
-import org.apache.kyuubi.service.Serverable
+import org.apache.kyuubi.service.AbstractFrontendService
 
 /**
  * A service for service discovery used by engine side.
  *
- * @param name the name of the service itself
- * @param server the instance uri a service that used to publish itself
+ * @param fe the frontend service to publish for service discovery
  */
-class EngineServiceDiscovery private(
-    name: String,
-    server: Serverable) extends ServiceDiscovery(name, server) {
-  def this(server: Serverable) =
-    this(classOf[EngineServiceDiscovery].getSimpleName, server)
+class EngineServiceDiscovery(
+    fe: AbstractFrontendService) extends ServiceDiscovery("EngineServiceDiscovery", fe) {
 
   override def stop(): Unit = synchronized {
     closeServiceNode()
