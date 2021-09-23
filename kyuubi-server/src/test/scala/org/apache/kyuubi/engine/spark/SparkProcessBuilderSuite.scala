@@ -229,24 +229,19 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     val config = KyuubiConf()
     val pb: FakeSparkProcessBuilder = new FakeSparkProcessBuilder(config)
     val lastRowOfLog = "Application report for application_1593587619692_19713 (state: ACCEPTED)"
-
     val appId = pb.YARN_APP_NAME_REGEX.findFirstIn(lastRowOfLog).get
 
-    val exitValue = pb.execCommand("ls -lt")
-    assert(exitValue == 0)
-
-    var command: Option[String] = None
+    var addresses: Option[List[String]] = None
     try {
-      command = Some(pb.getCommand(appId))
+      addresses = Some(pb.getAddr)
     } catch {
       case e: KyuubiSQLException =>
-        assert(e.getMessage === "Failed to kill yarn job. HADOOP_HOME is not set! " +
-          "For more detail information on installing and configuring Yarn, " +
-          "please visit https://kyuubi.apache.org/docs/stable/deployment/on_yarn.html")
+        assert(e.getMessage === s"Failed to kill yarn job. HADOOP_CONF_DIR is not set! " +
+          "For more detail information on installing and configuring Spark, please visit " +
+          "https://kyuubi.apache.org/docs/stable/deployment/settings.html#environments")
     }
-
-    if (command.isDefined) {
-      assert(command.get.contains("application -kill"))
+    if (addresses.isDefined) {
+      assert(pb.execKill(s"http://${addresses.get.head}/ws/v1/cluster/apps/$appId/state") == 404)
     }
   }
 }
