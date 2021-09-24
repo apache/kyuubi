@@ -122,8 +122,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.hive</groupId>
-            <artifactId>hive-llap-common</artifactId>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-hive-jdbc</artifactId>
+            <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
 
