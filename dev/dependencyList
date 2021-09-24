@@ -63,7 +63,6 @@ jetty-server/9.4.41.v20210516//jetty-server-9.4.41.v20210516.jar
 jetty-servlet/9.4.41.v20210516//jetty-servlet-9.4.41.v20210516.jar
 jetty-util-ajax/9.4.41.v20210516//jetty-util-ajax-9.4.41.v20210516.jar
 jetty-util/9.4.41.v20210516//jetty-util-9.4.41.v20210516.jar
-jul-to-slf4j/1.7.30//jul-to-slf4j-1.7.30.jar
 libfb303/0.9.3//libfb303-0.9.3.jar
 libthrift/0.9.3//libthrift-0.9.3.jar
 log4j/1.2.17//log4j-1.2.17.jar
