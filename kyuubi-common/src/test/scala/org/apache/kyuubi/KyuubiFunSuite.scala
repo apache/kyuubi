@@ -36,7 +36,7 @@ trait KyuubiFunSuite extends AnyFunSuite
   with ThreadAudit
   with Logging {
 
-  // Redirect jcl to sl4j
+  // Redirect jul to sl4j
   SLF4JBridgeHandler.removeHandlersForRootLogger()
   SLF4JBridgeHandler.install()
 
