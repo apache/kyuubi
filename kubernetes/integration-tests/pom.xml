@@ -69,6 +69,7 @@
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-hive-jdbc</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
