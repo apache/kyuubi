@@ -60,11 +60,10 @@ public class KyuubiDatabaseMetaData extends HiveDatabaseMetaData {
         if (tStatus.getStatusCode() != TStatusCode.SUCCESS_STATUS) {
             throw new HiveSQLException(tStatus);
         }
-        new HiveQueryResultSet.Builder(conn)
+        return new HiveQueryResultSet.Builder(conn)
                 .setClient(client)
                 .setSessionHandle(sessHandle)
                 .setStmtHandle(getTableResp.getOperationHandle())
                 .build();
-        return super.getTables(catalog, schemaPattern, tableNamePattern, types);
     }
 }
