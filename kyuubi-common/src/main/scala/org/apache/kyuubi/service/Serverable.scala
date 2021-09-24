@@ -28,12 +28,12 @@ import org.apache.kyuubi.config.KyuubiConf
  *     downstream services
  *   - [1, n] [[AbstractFrontendService]]s as a list to handle different requests from the
  *     upstream callers, e.g. JDBC clients.
+ *
  * @param name the server name
  */
 abstract class Serverable(name: String) extends CompositeService(name) {
 
   private val started = new AtomicBoolean(false)
-  protected val OOMHook = new Runnable { override def run(): Unit = stop() }
 
   val backendService: AbstractBackendService
 

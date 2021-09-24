@@ -15,15 +15,30 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.ha.client
-
-import org.apache.kyuubi.service.FrontendService
+package org.apache.kyuubi.service
 
 /**
- * A service for service discovery used by kyuubi server side.
- * We add another zk watch so that we can stop server more genteelly.
- *
- * @param fe the frontend service to publish for service discovery
+ * A [[FrontendService]] in Kyuubi architecture is responsible for talking requests from clients
  */
-class KyuubiServiceDiscovery(
-    fe: FrontendService) extends ServiceDiscovery("KyuubiServiceDiscovery", fe)
+trait FrontendService {
+
+  /**
+   * The connection url for client to connect
+   */
+  def connectionUrl: String
+
+  /**
+   * A interface of [[Serverable]], e.g. Server/Engines for [[FrontendService]] to call
+   */
+  val serverable: Serverable
+
+  /**
+   * A interface of [[BackendService]], e.g. Server/Engines for [[FrontendService]] to call
+   */
+  final def be: BackendService = serverable.backendService
+
+  /**
+   * An optional `ServiceDiscovery` for [[FrontendService]] to expose itself
+   */
+  val discoveryService: Option[Service]
+}

@@ -36,7 +36,7 @@ import org.apache.zookeeper.KeeperException.NodeExistsException
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.service.{AbstractFrontendService, AbstractService}
+import org.apache.kyuubi.service.{AbstractService, FrontendService}
 import org.apache.kyuubi.util.ThreadUtils
 
 /**
@@ -47,7 +47,7 @@ import org.apache.kyuubi.util.ThreadUtils
  */
 abstract class ServiceDiscovery (
     name: String,
-    fe: AbstractFrontendService) extends AbstractService(name) {
+    fe: FrontendService) extends AbstractService(name) {
 
   import ServiceDiscovery._
   import ZooKeeperClientProvider._

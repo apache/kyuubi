@@ -27,17 +27,13 @@ class SparkThriftBinaryFrontendServiceSuite extends KyuubiFunSuite {
     val service = new SparkThriftBinaryFrontendService(new NoopServer)
     intercept[IllegalStateException](service.connectionUrl)
 
-    try {
-      conf.set(KyuubiConf.ENGINE_CONNECTION_URL_USE_HOSTNAME, true)
-      service.initialize(conf)
-      // default use hostname
-      assert(service.connectionUrl.startsWith("localhost"))
+    conf.set(KyuubiConf.ENGINE_CONNECTION_URL_USE_HOSTNAME, true)
+    service.initialize(conf)
+    // default use hostname
+    assert(service.connectionUrl.startsWith("localhost"))
 
-      // use ip address
-      conf.set(KyuubiConf.ENGINE_CONNECTION_URL_USE_HOSTNAME, false)
-      assert(service.connectionUrl.startsWith("127.0.0.1"))
-    } finally {
-      conf.set(KyuubiConf.ENGINE_CONNECTION_URL_USE_HOSTNAME, true)
-    }
+    // use ip address
+    conf.set(KyuubiConf.ENGINE_CONNECTION_URL_USE_HOSTNAME, false)
+    assert(service.connectionUrl.startsWith("127.0.0.1"))
   }
 }

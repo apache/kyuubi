@@ -20,7 +20,7 @@ package org.apache.kyuubi.ha.client
 import scala.util.control.NonFatal
 
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
-import org.apache.kyuubi.service.AbstractFrontendService
+import org.apache.kyuubi.service.FrontendService
 
 /**
  * A service for service discovery used by engine side.
@@ -28,7 +28,7 @@ import org.apache.kyuubi.service.AbstractFrontendService
  * @param fe the frontend service to publish for service discovery
  */
 class EngineServiceDiscovery(
-    fe: AbstractFrontendService) extends ServiceDiscovery("EngineServiceDiscovery", fe) {
+    fe: FrontendService) extends ServiceDiscovery("EngineServiceDiscovery", fe) {
 
   override def stop(): Unit = synchronized {
     closeServiceNode()

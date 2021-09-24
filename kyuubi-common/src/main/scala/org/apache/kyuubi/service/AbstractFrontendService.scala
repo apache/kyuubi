@@ -26,26 +26,19 @@ import org.apache.kyuubi.service.ServiceState.LATENT
  * backend operations. It also support exposing itself by `ServiceDiscovery` if the concrete
  * frontend service has a Discovery Service as its child.
  *
- * @param name
  */
-abstract class AbstractFrontendService(name: String) extends CompositeService(name) {
+abstract class AbstractFrontendService(name: String)
+  extends CompositeService(name) with FrontendService {
 
-  val serverable: Serverable
-
-  final def be: BackendService = serverable.backendService
-
-  val discoveryService: Option[Service]
-
-  def checkInitialized(): Unit = if (getServiceState == ServiceState.LATENT) {
-    throw new IllegalStateException(
-      s"Illegal Service State: $LATENT for getting the connection URL of $getName")
+  protected def checkInitialized(): Unit = {
+    if (getServiceState == ServiceState.LATENT) {
+      throw new IllegalStateException(
+        s"Illegal Service State: $LATENT for getting the connection URL of $getName")
+    }
   }
-
-  def connectionUrl: String
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     discoveryService.foreach(addService)
     super.initialize(conf)
   }
-
 }
