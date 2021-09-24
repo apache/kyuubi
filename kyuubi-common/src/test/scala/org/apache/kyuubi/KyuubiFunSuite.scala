@@ -25,6 +25,7 @@ import org.apache.log4j.spi.LoggingEvent
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Outcome}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.funsuite.AnyFunSuite
+import org.slf4j.bridge.SLF4JBridgeHandler
 
 import org.apache.kyuubi.config.internal.Tests.IS_TESTING
 
@@ -34,6 +35,11 @@ trait KyuubiFunSuite extends AnyFunSuite
   with Eventually
   with ThreadAudit
   with Logging {
+
+  // Redirect jcl to sl4j
+  SLF4JBridgeHandler.removeHandlersForRootLogger()
+  SLF4JBridgeHandler.install()
+
   // scalastyle:on
   override def beforeAll(): Unit = {
     System.setProperty(IS_TESTING.key, "true")
