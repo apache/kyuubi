@@ -37,17 +37,16 @@ import org.apache.kyuubi.sql.KyuubiSQLConf._
  */
 object KyuubiGetSqlClassification extends Logging {
   private val jsonNode: Option[JsonNode] = {
-    SQLConf.get.getConf(SQL_CLASSIFICATION_ENABLED) match {
-      case true =>
-        val objectMapper = new ObjectMapper
-        var url: URL = getClass.getClassLoader.getResource("sql-classification.json")
-        if (url == null) {
-          logInfo("sql-classification.json is not found, use default config instead")
-          url = getClass.getClassLoader.getResource("sql-classification-default.json")
-        }
-        Some(objectMapper.readTree(url))
-      case false =>
-        None
+    if (SQLConf.get.getConf(SQL_CLASSIFICATION_ENABLED)) {
+      val objectMapper = new ObjectMapper
+      var url: URL = getClass.getClassLoader.getResource("sql-classification.json")
+      if (url == null) {
+        logInfo("sql-classification.json is not found, use default config instead")
+        url = getClass.getClassLoader.getResource("sql-classification-default.json")
+      }
+      Some(objectMapper.readTree(url))
+    } else {
+      None
     }
   }
 
