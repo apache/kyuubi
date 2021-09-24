@@ -19,11 +19,14 @@ package org.apache.kyuubi.engine.spark
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_THRIFT_BINARY_BIND_HOST, FRONTEND_THRIFT_BINARY_BIND_PORT}
 import org.apache.kyuubi.service.NoopServer
 
 class SparkThriftBinaryFrontendServiceSuite extends KyuubiFunSuite {
   test("engine connect url use hostname") {
     val conf = new KyuubiConf()
+      .set(FRONTEND_THRIFT_BINARY_BIND_HOST.key, "localhost")
+      .set(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     val service = new SparkThriftBinaryFrontendService(new NoopServer)
     intercept[IllegalStateException](service.connectionUrl)
 
