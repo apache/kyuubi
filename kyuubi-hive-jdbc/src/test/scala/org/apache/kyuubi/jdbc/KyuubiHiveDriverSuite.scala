@@ -22,10 +22,11 @@ import java.util.Properties
 import org.apache.kyuubi.IcebergSuiteMixin
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
+import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiDatabaseMetaData}
 import org.apache.kyuubi.tags.IcebergTest
 
 @IcebergTest
-class KyuubiDriverSuite extends WithSparkSQLEngine with IcebergSuiteMixin {
+class KyuubiHiveDriverSuite extends WithSparkSQLEngine with IcebergSuiteMixin {
 
   override def withKyuubiConf: Map[String, String] = extraConfigs -
     "spark.sql.defaultCatalog" -
@@ -39,8 +40,8 @@ class KyuubiDriverSuite extends WithSparkSQLEngine with IcebergSuiteMixin {
   }
 
   test("get tables with kyuubi driver") {
-    val kyuubiDriver = new KyuubiDriver()
-    val connection = kyuubiDriver.connect(getJdbcUrl, new Properties())
+    val driver = new KyuubiHiveDriver()
+    val connection = driver.connect(getJdbcUrl, new Properties())
     assert(connection.isInstanceOf[KyuubiConnection])
     val metaData = connection.getMetaData
     assert(metaData.isInstanceOf[KyuubiDatabaseMetaData])

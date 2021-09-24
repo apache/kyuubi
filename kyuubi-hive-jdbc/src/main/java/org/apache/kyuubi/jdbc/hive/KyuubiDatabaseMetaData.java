@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.jdbc;
+package org.apache.kyuubi.jdbc.hive;
 
 import org.apache.hive.jdbc.HiveDatabaseMetaData;
 import org.apache.hive.jdbc.HiveQueryResultSet;
