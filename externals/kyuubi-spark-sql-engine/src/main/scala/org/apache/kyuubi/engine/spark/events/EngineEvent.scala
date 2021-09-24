@@ -82,7 +82,7 @@ case class EngineEvent(
        |          master: $master
        |          version: $sparkVersion
        |          driver: [cpu: $driverCores, mem: $driverMemory]
-       |          executor: [cpu: $executorCore, mem: $executorMemory MB, maxNum: $maxExecutors]
+       |          executor: [cpu: $executorCore, mem: $executorMemory, maxNum: $maxExecutors]
        |    Start time: ${new Date(startTime)}
        |    ${if (endTime != -1L) "End time: " + new Date(endTime) else ""}
        |    User: $owner (shared mode: $shareLevel)
@@ -94,28 +94,29 @@ case class EngineEvent(
 object EngineEvent {
 
   def apply(engine: SparkSQLEngine): EngineEvent = {
-    if (engine.getServiceState.equals(ServiceState.LATENT)) {
+    val sc = engine.spark.sparkContext
+    val webUrl = sc.getConf.getOption(
+      "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")
+      .orElse(sc.uiWebUrl).getOrElse("")
+    val connectionUrl = if (engine.getServiceState.equals(ServiceState.LATENT)) {
       null
     } else {
-      val sc = engine.spark.sparkContext
-      val webUrl = sc.getConf.getOption(
-        "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")
-        .orElse(sc.uiWebUrl).getOrElse("")
-      new EngineEvent(
-        sc.applicationId,
-        sc.applicationAttemptId,
-        sc.appName,
-        sc.sparkUser,
-        engine.getConf.get(ENGINE_SHARE_LEVEL),
-        engine.frontendServices.head.connectionUrl,
-        sc.master,
-        sc.version,
-        webUrl,
-        sc.startTime,
-        endTime = -1L,
-        state = 0,
-        diagnostic = "",
-        sc.getConf.getAll.toMap ++ engine.getConf.getAll)
+      engine.frontendServices.head.connectionUrl
     }
+    new EngineEvent(
+      sc.applicationId,
+      sc.applicationAttemptId,
+      sc.appName,
+      sc.sparkUser,
+      engine.getConf.get(ENGINE_SHARE_LEVEL),
+      connectionUrl,
+      sc.master,
+      sc.version,
+      webUrl,
+      sc.startTime,
+      endTime = -1L,
+      state = 0,
+      diagnostic = "",
+      sc.getConf.getAll.toMap ++ engine.getConf.getAll)
   }
 }

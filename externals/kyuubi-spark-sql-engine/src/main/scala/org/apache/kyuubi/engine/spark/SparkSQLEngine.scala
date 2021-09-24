@@ -61,8 +61,10 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
   }
 
   override def stop(): Unit = {
-    eventLogging.onEvent(
-      engineStatus.copy(state = ServiceState.STOPPED.id, endTime = System.currentTimeMillis()))
+    if (!state.equals(ServiceState.LATENT)) {
+      eventLogging.onEvent(
+        engineStatus.copy(state = ServiceState.STOPPED.id, endTime = System.currentTimeMillis()))
+    }
     super.stop()
   }
 
@@ -145,12 +147,12 @@ object SparkSQLEngine extends Logging {
     } catch {
       case t: Throwable if currentEngine.isDefined =>
         currentEngine.foreach { engine =>
+          val status =
+            engine.engineStatus.copy(diagnostic = s"Error State SparkSQL Engine ${t.getMessage}")
           if (!engine.getServiceState.equals(ServiceState.LATENT)) {
-            val status =
-              engine.engineStatus.copy(diagnostic = s"Error State SparkSQL Engine ${t.getMessage}")
             EventLoggingService.onEvent(status)
-            error(status, t)
           }
+          error(status, t)
           engine.stop()
         }
       case t: Throwable =>
