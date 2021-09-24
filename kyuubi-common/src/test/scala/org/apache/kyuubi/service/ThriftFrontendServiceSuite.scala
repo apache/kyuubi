@@ -29,7 +29,7 @@ import org.apache.thrift.transport.TSocket
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{OperationHandle, OperationType}
-import org.apache.kyuubi.service.ThriftFrontendService.{FeServiceServerContext, SERVER_VERSION}
+import org.apache.kyuubi.service.ThriftBinaryFrontendService.{FeServiceServerContext, SERVER_VERSION}
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 import org.apache.kyuubi.session.SessionHandle
 
@@ -55,7 +55,7 @@ class ThriftFrontendServiceSuite extends KyuubiFunSuite {
   }
 
   protected def withThriftClient(f: TCLIService.Iface => Unit): Unit = {
-    val hostAndPort = server.connectionUrl.split(":")
+    val hostAndPort = server.frontendServices.head.connectionUrl.split(":")
     val host = hostAndPort.head
     val port = hostAndPort(1).toInt
     val socket = new TSocket(host, port)
@@ -480,14 +480,5 @@ class ThriftFrontendServiceSuite extends KyuubiFunSuite {
       assert(tRenewDelegationTokenResp.getStatus.getErrorMessage ===
         "Delegation token is not supported")
     }
-  }
-
-  test("engine connect url use hostname") {
-    // default use hostname
-    assert(server.connectionUrl.startsWith("localhost"))
-
-    // use ip address
-    conf.set(KyuubiConf.ENGINE_CONNECTION_URL_USE_HOSTNAME, false)
-    assert(server.connectionUrl.startsWith("127.0.0.1"))
   }
 }

@@ -15,11 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.jdbc;
+package org.apache.kyuubi.service
 
-/**
- * @deprecated Use `KyuubiHiveDriver` instead.
- */
-@Deprecated
-public class KyuubiDriver extends KyuubiHiveDriver {
+class NoopThriftBinaryFrontendService(override val serverable: Serverable)
+  extends ThriftBinaryFrontendService("NoopThriftBinaryFrontendService", serverable) {
+
+  override val discoveryService: Option[Service] = None
+
+  override def connectionUrl: String = serverAddr.getCanonicalHostName + ":" + portNum
 }

@@ -20,16 +20,17 @@ package org.apache.spark.sql
 import scala.collection.mutable.Set
 
 import org.apache.kyuubi.sql.KyuubiSQLConf
+import org.apache.kyuubi.sql.KyuubiSQLConf._
 
 class SqlClassificationSuite extends KyuubiSparkSQLExtensionTest {
   test("Sql classification for ddl") {
     withSQLConf(KyuubiSQLConf.SQL_CLASSIFICATION_ENABLED.key -> "true") {
       withDatabase("inventory") {
         val df = sql("CREATE DATABASE inventory;")
-        assert(df.sparkSession.conf.get("kyuubi.spark.sql.classification") === "ddl")
+        assert(df.sparkSession.conf.get(SQL_CLASSIFICATION) === "ddl")
       }
       val df = sql("select timestamp'2021-06-01'")
-      assert(df.sparkSession.conf.get("kyuubi.spark.sql.classification") !== "ddl")
+      assert(df.sparkSession.conf.get(SQL_CLASSIFICATION) !== "ddl")
     }
   }
 
@@ -38,7 +39,7 @@ class SqlClassificationSuite extends KyuubiSparkSQLExtensionTest {
       val df01 = sql("CREATE TABLE IF NOT EXISTS students " +
         "(name VARCHAR(64), address VARCHAR(64)) " +
         "USING PARQUET PARTITIONED BY (student_id INT);")
-      assert(df01.sparkSession.conf.get("kyuubi.spark.sql.classification") === "ddl")
+      assert(df01.sparkSession.conf.get(SQL_CLASSIFICATION) === "ddl")
 
       val sql02 = "INSERT INTO students VALUES ('Amy Smith', '123 Park Ave, San Jose', 111111);"
       val df02 = sql(sql02)
@@ -48,19 +49,19 @@ class SqlClassificationSuite extends KyuubiSparkSQLExtensionTest {
         spark.sessionState.sqlParser.parsePlan(sql02)).toString())
       // scalastyle:on println
 
-      assert(df02.sparkSession.conf.get("kyuubi.spark.sql.classification") === "dml")
+      assert(df02.sparkSession.conf.get(SQL_CLASSIFICATION) === "dml")
     }
   }
 
   test("Sql classification for other and dql") {
     withSQLConf(KyuubiSQLConf.SQL_CLASSIFICATION_ENABLED.key -> "true") {
       val df01 = sql("SET spark.sql.variable.substitute=false")
-      assert(df01.sparkSession.conf.get("kyuubi.spark.sql.classification") === "other")
+      assert(df01.sparkSession.conf.get(SQL_CLASSIFICATION) === "other")
 
       val sql02 = "select timestamp'2021-06-01'"
       val df02 = sql(sql02)
 
-      assert(df02.sparkSession.conf.get("kyuubi.spark.sql.classification") === "dql")
+      assert(df02.sparkSession.conf.get(SQL_CLASSIFICATION) === "dql")
     }
   }
 
