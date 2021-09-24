@@ -98,13 +98,18 @@ object EngineEvent {
     val webUrl = sc.getConf.getOption(
       "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")
       .orElse(sc.uiWebUrl).getOrElse("")
+    val connectionUrl = if (engine.getServiceState.equals(ServiceState.LATENT)) {
+      null
+    } else {
+      engine.frontendServices.head.connectionUrl
+    }
     new EngineEvent(
       sc.applicationId,
       sc.applicationAttemptId,
       sc.appName,
       sc.sparkUser,
       engine.getConf.get(ENGINE_SHARE_LEVEL),
-      engine.frontendServices.head.connectionUrl,
+      connectionUrl,
       sc.master,
       sc.version,
       webUrl,
