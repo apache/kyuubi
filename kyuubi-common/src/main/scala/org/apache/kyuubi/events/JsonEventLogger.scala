@@ -75,6 +75,15 @@ class JsonEventLogger[T <: KyuubiEvent](logName: String,
   }
 
   private def requireLogRootWritable(): Unit = {
+    // Create logRoot
+    // Here should notice, if the user has no permission, it will throw exception
+    try {
+      FileSystem.mkdirs(fs, new Path(logRoot), JSON_LOG_DIR_PERM)
+    } catch {
+      case e: IOException =>
+        warn(s"Create logRoot $logRoot failed", e)
+        throw e
+    }
     val fileStatus = fs.getFileStatus(new Path(logRoot))
     if (!fileStatus.isDirectory) {
       throw new IllegalArgumentException(s"Log directory $logRoot is not a directory.")

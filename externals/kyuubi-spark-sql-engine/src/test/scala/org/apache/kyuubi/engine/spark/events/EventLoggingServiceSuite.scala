@@ -34,14 +34,17 @@ import org.apache.kyuubi.operation.{JDBCTestUtils, OperationHandle}
 
 class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
-  private val logRoot = "file:" + Utils.createTempDir().toString
+  private val logRoot = "file://" + Utils.createTempDir().toString
   private val currentDate = Utils.getDateFromTimestamp(System.currentTimeMillis())
+
+  private val fileSystem: FileSystem = FileSystem.get(new Configuration())
+  fileSystem.delete(new Path(logRoot), true)
 
   override def withKyuubiConf: Map[String, String] = Map(
     KyuubiConf.ENGINE_EVENT_LOGGERS.key -> s"$JSON,$SPARK",
     KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH.key -> logRoot,
     "spark.eventLog.enabled" -> "true",
-    "spark.eventLog.dir" -> logRoot
+    "spark.eventLog.dir" -> s"file://${Utils.createTempDir().toString}"
   )
 
   override protected def jdbcUrl: String = getJdbcUrl
@@ -52,7 +55,6 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
     val sessionEventPath = Paths.get(
       logRoot, "session", s"day=$currentDate", KyuubiSparkUtil.engineId + ".json")
 
-    val fileSystem: FileSystem = FileSystem.get(new Configuration())
     val fs: FSDataInputStream = fileSystem.open(new Path(engineEventPath.toString))
     val engineEventReader = new BufferedReader(new InputStreamReader(fs))
 
