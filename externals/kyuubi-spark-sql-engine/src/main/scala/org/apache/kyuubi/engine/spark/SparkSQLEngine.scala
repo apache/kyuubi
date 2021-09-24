@@ -154,10 +154,12 @@ object SparkSQLEngine extends Logging {
     } catch {
       case t: Throwable if currentEngine.isDefined =>
         currentEngine.foreach { engine =>
-          val status =
-            engine.engineStatus.copy(diagnostic = s"Error State SparkSQL Engine ${t.getMessage}")
-          EventLoggingService.onEvent(status)
-          error(status, t)
+          if (!engine.getServiceState.equals(ServiceState.LATENT)) {
+            val status =
+              engine.engineStatus.copy(diagnostic = s"Error State SparkSQL Engine ${t.getMessage}")
+            EventLoggingService.onEvent(status)
+            error(status, t)
+          }
           engine.stop()
         }
       case t: Throwable =>

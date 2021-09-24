@@ -94,24 +94,28 @@ case class EngineEvent(
 object EngineEvent {
 
   def apply(engine: SparkSQLEngine): EngineEvent = {
-    val sc = engine.spark.sparkContext
-    val webUrl = sc.getConf.getOption(
-      "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")
-      .orElse(sc.uiWebUrl).getOrElse("")
-    new EngineEvent(
-      sc.applicationId,
-      sc.applicationAttemptId,
-      sc.appName,
-      sc.sparkUser,
-      engine.getConf.get(ENGINE_SHARE_LEVEL),
-      engine.connectionUrl,
-      sc.master,
-      sc.version,
-      webUrl,
-      sc.startTime,
-      endTime = -1L,
-      state = 0,
-      diagnostic = "",
-      sc.getConf.getAll.toMap ++ engine.getConf.getAll)
+    if (engine.getServiceState.equals(ServiceState.LATENT)) {
+      null
+    } else {
+      val sc = engine.spark.sparkContext
+      val webUrl = sc.getConf.getOption(
+        "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")
+        .orElse(sc.uiWebUrl).getOrElse("")
+      new EngineEvent(
+        sc.applicationId,
+        sc.applicationAttemptId,
+        sc.appName,
+        sc.sparkUser,
+        engine.getConf.get(ENGINE_SHARE_LEVEL),
+        engine.connectionUrl,
+        sc.master,
+        sc.version,
+        webUrl,
+        sc.startTime,
+        endTime = -1L,
+        state = 0,
+        diagnostic = "",
+        sc.getConf.getAll.toMap ++ engine.getConf.getAll)
+    }
   }
 }
