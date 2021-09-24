@@ -18,17 +18,12 @@
 package org.apache.kyuubi.service
 
 import org.apache.kyuubi.KyuubiException
-import org.apache.kyuubi.config.KyuubiConf
 
 class NoopServer extends Serverable("noop") {
-
   override val backendService = new NoopBackendService
-  protected val frontendService: AbstractFrontendService =
-    new ThriftFrontendService(backendService, OOMHook)
 
-  override def initialize(conf: KyuubiConf): Unit = {
-    addService(frontendService)
-    super.initialize(conf)
+  override val frontendServices: Seq[AbstractFrontendService] = {
+    Seq(new NoopThriftBinaryFrontendService(this))
   }
 
   override def start(): Unit = {
@@ -41,9 +36,4 @@ class NoopServer extends Serverable("noop") {
   override protected def stopServer(): Unit = {
     throw new KyuubiException("no need to stop me")
   }
-
-  override val discoveryService: Service = backendService
-  override protected val supportsServiceDiscovery: Boolean = false
-
-  override def connectionUrl: String = frontendService.connectionUrl()
 }

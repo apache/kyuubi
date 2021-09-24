@@ -21,24 +21,28 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import org.apache.kyuubi.config.KyuubiConf
 
+/**
+ * A [[Serverable]] is an abstraction for concreting kyuubi server and engines
+ * It contains
+ *   - one [[AbstractBackendService]] to do the actual operations or interacting with the
+ *     downstream services
+ *   - [1, n] [[AbstractFrontendService]]s as a list to handle different requests from the
+ *     upstream callers, e.g. JDBC clients.
+ *
+ * @param name the server name
+ */
 abstract class Serverable(name: String) extends CompositeService(name) {
 
   private val started = new AtomicBoolean(false)
-  protected val OOMHook = new Runnable { override def run(): Unit = stop() }
 
   val backendService: AbstractBackendService
-  protected def supportsServiceDiscovery: Boolean
-  val discoveryService: Service
 
-  def connectionUrl: String
+  val frontendServices: Seq[AbstractFrontendService]
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     this.conf = conf
     addService(backendService)
-    if (supportsServiceDiscovery) {
-      // Service Discovery depends on the frontend service to be ready
-      addService(discoveryService)
-    }
+    frontendServices.foreach(addService)
     super.initialize(conf)
   }
 

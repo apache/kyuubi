@@ -24,9 +24,9 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
+import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.metrics.{MetricsConf, MetricsSystem}
-import org.apache.kyuubi.service.{AbstractBackendService, KinitAuxiliaryService, Serverable}
+import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendService, KinitAuxiliaryService, Serverable}
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 
@@ -83,12 +83,11 @@ class KyuubiServer(name: String) extends Serverable(name) {
   def this() = this(classOf[KyuubiServer].getSimpleName)
 
   override val backendService: AbstractBackendService = new KyuubiBackendService()
-  val frontendService = new KyuubiFrontendServices(backendService, OOMHook)
+
+  override val frontendServices: Seq[AbstractFrontendService] = Seq(
+    new KyuubiThriftBinaryBinaryFrontendService(this))
+
   private val eventLoggingService: EventLoggingService = new EventLoggingService
-  override protected def supportsServiceDiscovery: Boolean = {
-    ServiceDiscovery.supportServiceDiscovery(conf)
-  }
-  override val discoveryService = new KyuubiServiceDiscovery(this)
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val kinit = new KinitAuxiliaryService()
@@ -98,9 +97,6 @@ class KyuubiServer(name: String) extends Serverable(name) {
     if (conf.get(MetricsConf.METRICS_ENABLED)) {
       addService(new MetricsSystem)
     }
-
-    addService(frontendService)
-
     super.initialize(conf)
   }
 
@@ -110,8 +106,4 @@ class KyuubiServer(name: String) extends Serverable(name) {
   }
 
   override protected def stopServer(): Unit = {}
-
-  override def connectionUrl: String = {
-    frontendService.connectionUrl(true)
-  }
 }

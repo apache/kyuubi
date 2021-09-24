@@ -15,15 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.ha.client
+package org.apache.kyuubi.server
 
-import org.apache.kyuubi.service.FrontendService
+import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
+import org.apache.kyuubi.service.{Serverable, Service, ThriftBinaryFrontendService}
 
-/**
- * A service for service discovery used by kyuubi server side.
- * We add another zk watch so that we can stop server more genteelly.
- *
- * @param fe the frontend service to publish for service discovery
- */
-class KyuubiServiceDiscovery(
-    fe: FrontendService) extends ServiceDiscovery("KyuubiServiceDiscovery", fe)
+class KyuubiThriftBinaryBinaryFrontendService(
+    override val serverable: Serverable)
+  extends ThriftBinaryFrontendService("KyuubiThriftBinaryFrontendService", serverable) {
+
+  override lazy val discoveryService: Option[Service] = {
+    if (ServiceDiscovery.supportServiceDiscovery(conf)) {
+      Some(new KyuubiServiceDiscovery(this))
+    } else {
+      None
+    }
+  }
+
+  override def connectionUrl: String = {
+    checkInitialized()
+    s"${serverAddr.getCanonicalHostName}:$portNum"
+  }
+}

@@ -28,7 +28,7 @@ class ServerableSuite extends KyuubiFunSuite {
     serverable1.initialize(conf)
     assert(serverable1.getStartTime === 0)
     assert(serverable1.getConf === conf)
-    assert(serverable1.connectionUrl.nonEmpty)
+    assert(serverable1.frontendServices.head.connectionUrl.nonEmpty)
     assert(serverable1.getServiceState === ServiceState.INITIALIZED)
     serverable1.start()
     assert(serverable1.getStartTime !== 0)
@@ -37,7 +37,7 @@ class ServerableSuite extends KyuubiFunSuite {
     serverable1.stop()
     assert(serverable1.getStartTime !== 0)
     assert(serverable1.getConf === conf)
-    assert(serverable1.connectionUrl.nonEmpty)
+    assert(serverable1.frontendServices.head.connectionUrl.nonEmpty)
     assert(serverable1.getServiceState === ServiceState.STOPPED)
     serverable1.stop()
   }

@@ -32,7 +32,6 @@ import org.apache.kyuubi.Utils.stringifyException
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.monitor.KyuubiStatementMonitor
 import org.apache.kyuubi.engine.spark.monitor.entity.KyuubiJobInfo
-import org.apache.kyuubi.ha.client.EngineServiceDiscovery
 import org.apache.kyuubi.service.{Serverable, ServiceState}
 
 /**
@@ -103,7 +102,8 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
          error(s"$din, current job failure number is [$curFailures]", e)
          if (curFailures >= jobMaxFailures) {
            error(s"Job failed $curFailures times; deregistering the engine")
-           server.discoveryService.asInstanceOf[EngineServiceDiscovery].stop()
+           val fe = server.frontendServices.head
+           fe.discoveryService.foreach(_.stop())
          }
        }
 

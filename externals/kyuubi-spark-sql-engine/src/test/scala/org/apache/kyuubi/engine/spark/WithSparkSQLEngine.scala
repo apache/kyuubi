@@ -56,7 +56,7 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
     spark = SparkSQLEngine.createSpark()
     SparkSQLEngine.startEngine(spark)
     engine = SparkSQLEngine.currentEngine.get
-    connectionUrl = engine.connectionUrl
+    connectionUrl = engine.frontendServices.head.connectionUrl
   }
 
   override def afterAll(): Unit = {
