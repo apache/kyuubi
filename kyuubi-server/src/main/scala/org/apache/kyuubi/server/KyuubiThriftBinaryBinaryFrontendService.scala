@@ -15,11 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.jdbc;
+package org.apache.kyuubi.server
 
-/**
- * @deprecated Use `KyuubiHiveDriver` instead.
- */
-@Deprecated
-public class KyuubiDriver extends KyuubiHiveDriver {
+import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
+import org.apache.kyuubi.service.{Serverable, Service, ThriftBinaryFrontendService}
+
+class KyuubiThriftBinaryBinaryFrontendService(
+    override val serverable: Serverable)
+  extends ThriftBinaryFrontendService("KyuubiThriftBinaryFrontendService", serverable) {
+
+  override lazy val discoveryService: Option[Service] = {
+    if (ServiceDiscovery.supportServiceDiscovery(conf)) {
+      Some(new KyuubiServiceDiscovery(this))
+    } else {
+      None
+    }
+  }
+
+  override def connectionUrl: String = {
+    checkInitialized()
+    s"${serverAddr.getCanonicalHostName}:$portNum"
+  }
 }

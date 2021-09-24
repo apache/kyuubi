@@ -15,11 +15,30 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.jdbc;
+package org.apache.kyuubi.service
 
 /**
- * @deprecated Use `KyuubiHiveDriver` instead.
+ * A [[FrontendService]] in Kyuubi architecture is responsible for talking requests from clients
  */
-@Deprecated
-public class KyuubiDriver extends KyuubiHiveDriver {
+trait FrontendService {
+
+  /**
+   * The connection url for client to connect
+   */
+  def connectionUrl: String
+
+  /**
+   * A interface of [[Serverable]], e.g. Server/Engines for [[FrontendService]] to call
+   */
+  val serverable: Serverable
+
+  /**
+   * A interface of [[BackendService]], e.g. Server/Engines for [[FrontendService]] to call
+   */
+  final def be: BackendService = serverable.backendService
+
+  /**
+   * An optional `ServiceDiscovery` for [[FrontendService]] to expose itself
+   */
+  val discoveryService: Option[Service]
 }

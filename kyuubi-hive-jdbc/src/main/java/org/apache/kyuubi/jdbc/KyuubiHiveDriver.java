@@ -17,9 +17,28 @@
 
 package org.apache.kyuubi.jdbc;
 
+import org.apache.hive.jdbc.HiveDriver;
+import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.Properties;
+
 /**
- * @deprecated Use `KyuubiHiveDriver` instead.
+ * Kyuubi JDBC driver to connect to Kyuubi server via HiveServer2 thrift protocol.
  */
-@Deprecated
-public class KyuubiDriver extends KyuubiHiveDriver {
+public class KyuubiHiveDriver extends HiveDriver {
+    static {
+        try {
+            DriverManager.registerDriver(new KyuubiHiveDriver());
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to register driver", e);
+        }
+    }
+
+    @Override
+    public Connection connect(String url, Properties info) throws SQLException {
+        return acceptsURL(url) ? new KyuubiConnection(url, info) : null;
+    }
 }

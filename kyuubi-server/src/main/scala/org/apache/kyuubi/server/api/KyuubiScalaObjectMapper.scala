@@ -15,11 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.jdbc;
+package org.apache.kyuubi.server.api
 
-/**
- * @deprecated Use `KyuubiHiveDriver` instead.
- */
-@Deprecated
-public class KyuubiDriver extends KyuubiHiveDriver {
+import javax.ws.rs.ext.ContextResolver
+
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
+
+class KyuubiScalaObjectMapper extends ContextResolver[ObjectMapper] {
+  private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
+
+  override def getContext(aClass: Class[_]): ObjectMapper = mapper
 }
