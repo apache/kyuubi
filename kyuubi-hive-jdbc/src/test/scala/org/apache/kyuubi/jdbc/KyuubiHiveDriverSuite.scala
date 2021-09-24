@@ -69,6 +69,22 @@ class KyuubiHiveDriverSuite extends WithSparkSQLEngine with IcebergSuiteMixin {
       statement.close()
       connection.close()
     }
-    connection
+  }
+
+  test("deprecated KyuubiDriver also works") {
+    val driver = new KyuubiDriver()
+    val connection = driver.connect(getJdbcUrl, new Properties())
+    assert(connection.isInstanceOf[KyuubiConnection])
+    val metaData = connection.getMetaData
+    assert(metaData.isInstanceOf[KyuubiDatabaseMetaData])
+    val statement = connection.createStatement()
+    try {
+      val resultSet = statement.executeQuery(s"SELECT 1")
+      assert(resultSet.next())
+      assert(resultSet.getInt(1) === 1)
+    } finally {
+      statement.close()
+      connection.close()
+    }
   }
 }
