@@ -25,6 +25,9 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
 
+/**
+ * Kyuubi JDBC driver to connect to Kyuubi server via HiveServer2 thrift protocol.
+ */
 public class KyuubiHiveDriver extends HiveDriver {
     static {
         try {
