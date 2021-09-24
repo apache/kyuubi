@@ -36,7 +36,7 @@ import org.apache.zookeeper.KeeperException.NodeExistsException
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.service.{AbstractService, AbstractFrontendService}
+import org.apache.kyuubi.service.{AbstractFrontendService, AbstractService}
 import org.apache.kyuubi.util.ThreadUtils
 
 /**
