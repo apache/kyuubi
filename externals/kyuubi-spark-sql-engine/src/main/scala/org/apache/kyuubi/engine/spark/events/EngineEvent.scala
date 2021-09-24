@@ -107,7 +107,7 @@ object EngineEvent {
         sc.appName,
         sc.sparkUser,
         engine.getConf.get(ENGINE_SHARE_LEVEL),
-        engine.connectionUrl,
+        engine.frontendServices.head.connectionUrl,
         sc.master,
         sc.version,
         webUrl,
