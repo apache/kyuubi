@@ -17,7 +17,11 @@
 
 # Usage:
 #   Run the docker command below
-#      docker build --build-arg MVN_ARG="-Pspark-3.1,spark-hadoop-3.2" -f docker/Dockerfile -t apache/kyuubi:tagname .
+#      docker build \
+#        --build-arg CI="TRUE",MVN_ARG="-Pspark-3.1,spark-hadoop-3.2" \
+#        -f docker/Dockerfile \
+#        -t apache/kyuubi:tagname \
+#        .
 #   Options:
 #     -f this docker file
 #     -t the target repo and tag name
