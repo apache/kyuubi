@@ -42,7 +42,10 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
   kdcConf.setProperty(MiniKdc.ORG_DOMAIN, "COM")
   kdcConf.setProperty(MiniKdc.KDC_BIND_ADDRESS, hostName)
   kdcConf.setProperty(MiniKdc.KDC_PORT, "0")
-  kdcConf.setProperty(MiniKdc.DEBUG, "true")
+  // MiniKdc.DEBUG in kdcConf is set to false by default and will override JVM system property.
+  // Remove it so we can turn on/off kerberos debug message by setting system property
+  // `sun.security.krb5.debug`.
+  kdcConf.remove(MiniKdc.DEBUG)
 
   private var kdc: MiniKdc = _
   private var krb5ConfPath: String = _
