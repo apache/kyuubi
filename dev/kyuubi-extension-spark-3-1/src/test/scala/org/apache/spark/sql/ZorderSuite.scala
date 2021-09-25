@@ -357,21 +357,22 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
     checkEvaluation(zorder, expected, InternalRow.fromSeq(children))
   }
 
+  private def checkSort(input: DataFrame, expected: Seq[Row]): Unit = {
+    withTempDir { dir =>
+      input.repartition(3).write.mode("overwrite").format("json").save(dir.getCanonicalPath)
+      val df = spark.read.format("json")
+        .load(dir.getCanonicalPath)
+        .repartition(1)
+      val exprs = Seq("c1", "c2").map(col).map(_.expr)
+      val sortOrder = SortOrder(Zorder(exprs), Ascending, NullsLast, Seq.empty)
+      val zorderSort = Sort(Seq(sortOrder), true, df.logicalPlan)
+      val result = Dataset.ofRows(spark, zorderSort)
+      checkAnswer(result, expected)
+    }
+  }
+
   test("sort with zorder -- int column") {
     // TODO: add more datatype unit test
-    def checkSort(input: DataFrame, expected: Seq[Row]): Unit = {
-      withTempDir { dir =>
-        input.repartition(3).write.mode("overwrite").format("json").save(dir.getCanonicalPath)
-        val df = spark.read.format("json")
-          .load(dir.getCanonicalPath)
-          .repartition(1)
-        val exprs = Seq("c1", "c2").map(col).map(_.expr)
-        val sortOrder = SortOrder(Zorder(exprs), Ascending, NullsLast, Seq.empty)
-        val zorderSort = Sort(Seq(sortOrder), true, df.logicalPlan)
-        val result = Dataset.ofRows(spark, zorderSort)
-        checkAnswer(result, expected)
-      }
-    }
     val session = spark
     import session.implicits._
     // generate 4 * 4 matrix
@@ -396,6 +397,33 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
       Row(null, 0) :: Row(null, 1) :: Row(null, 2) :: Row(0, 0) ::
       Row(1, 0) :: Row(0, 1) :: Row(1, 1) :: Row(2, 0) ::
       Row(2, 1) :: Row(0, 2) :: Row(1, 2) :: Row(2, 2) :: Nil
+    checkSort(input2, expected2)
+  }
+
+  test("sort with zorder -- string column") {
+    val schema = StructType(StructField("c1", StringType) :: StructField("c2", StringType) :: Nil)
+    val rdd = spark.sparkContext.parallelize(Seq(
+      Row("a", "a"), Row("a", "b"), Row("a", "c"), Row("a", "d"),
+      Row("b", "a"), Row("b", "b"), Row("b", "c"), Row("b", "d"),
+      Row("c", "a"), Row("c", "b"), Row("c", "c"), Row("c", "d"),
+      Row("d", "a"), Row("d", "b"), Row("d", "c"), Row("d", "d")))
+    val input = spark.createDataFrame(rdd, schema)
+    val expected = Row("a", "a") :: Row("b", "a") :: Row("c", "a") :: Row("a", "b") ::
+        Row("a", "c") :: Row("b", "b") :: Row("c", "b") :: Row("b", "c") ::
+        Row("c", "c") :: Row("d", "a") :: Row("d", "b") :: Row("d", "c") ::
+        Row("a", "d") :: Row("b", "d") :: Row("c", "d") :: Row("d", "d") :: Nil
+    checkSort(input, expected)
+
+    val rdd2 = spark.sparkContext.parallelize(Seq(
+      Row(null, "a"), Row("a", "b"), Row("a", "c"), Row("a", null),
+      Row("b", "a"), Row(null, "b"), Row("b", null), Row("b", "d"),
+      Row("c", "a"), Row("c", null), Row(null, "c"), Row("c", "d"),
+      Row("d", null), Row("d", "b"), Row("d", "c"), Row(null, "d"), Row(null, null)))
+    val input2 = spark.createDataFrame(rdd2, schema)
+    val expected2 = Row(null, null) :: Row("a", null) :: Row("b", null) :: Row("c", null) ::
+      Row("d", null) :: Row(null, "a") :: Row(null, "b") :: Row(null, "c") ::
+      Row(null, "d") :: Row("b", "a") :: Row("c", "a") :: Row("a", "b") ::
+      Row("a", "c") :: Row("d", "b") :: Row("d", "c") :: Row("b", "d") :: Row("c", "d") :: Nil
     checkSort(input2, expected2)
   }
 }
