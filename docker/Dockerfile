@@ -35,7 +35,7 @@ FROM maven:3.6-jdk-8 as builder
 ARG CI
 ARG MVN_ARG
 
-ENV CI $CI
+ENV CI ${CI}
 
 ADD . /workspace/kyuubi
 WORKDIR /workspace/kyuubi
