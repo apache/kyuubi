@@ -24,7 +24,6 @@ import org.apache.hive.service.rpc.thrift.{TGetInfoType, TGetInfoValue, TProtoco
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
-import org.apache.kyuubi.operation.log.OperationLog
 
 abstract class AbstractSession(
     val protocol: TProtocolVersion,
@@ -211,9 +210,4 @@ abstract class AbstractSession(
       }
     }
   }
-
-  override def open(): Unit = {
-    OperationLog.createOperationLogRootDirectory(handle)
-  }
-
 }

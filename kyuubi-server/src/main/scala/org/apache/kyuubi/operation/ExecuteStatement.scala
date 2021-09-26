@@ -45,7 +45,7 @@ class ExecuteStatement(
     KyuubiStatementEvent(this, statementId, state, lastAccessTime)
 
   private final val _operationLog: OperationLog = if (shouldRunAsync) {
-    OperationLog.createOperationLog(session.handle, getHandle)
+    OperationLog.createServerOperationLog(session.handle, getHandle)
   } else {
     null
   }

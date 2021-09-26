@@ -53,7 +53,7 @@ class ExecuteStatement(
   private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
 
   private val operationLog: OperationLog =
-    OperationLog.createOperationLog(session.handle, getHandle)
+    OperationLog.createEngineOperationLog(session.handle, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
   private val operationListener: SQLOperationListener = new SQLOperationListener(this, spark)

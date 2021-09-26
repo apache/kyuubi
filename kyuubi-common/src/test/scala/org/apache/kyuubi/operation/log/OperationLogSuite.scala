@@ -37,13 +37,13 @@ class OperationLogSuite extends KyuubiFunSuite {
     val oHandle = OperationHandle(
       OperationType.EXECUTE_STATEMENT, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
 
-    OperationLog.createOperationLogRootDirectory(sHandle)
-    assert(Files.exists(Paths.get(OperationLog.LOG_ROOT, sHandle.identifier.toString)))
-    assert(Files.isDirectory(Paths.get(OperationLog.LOG_ROOT, sHandle.identifier.toString)))
+    OperationLog.createServerOperationLogRootDirectory(sHandle)
+    assert(Files.exists(Paths.get(OperationLog.SERVER_LOG_ROOT, sHandle.identifier.toString)))
+    assert(Files.isDirectory(Paths.get(OperationLog.SERVER_LOG_ROOT, sHandle.identifier.toString)))
 
-    val operationLog = OperationLog.createOperationLog(sHandle, oHandle)
-    val logFile =
-      Paths.get(OperationLog.LOG_ROOT, sHandle.identifier.toString, oHandle.identifier.toString)
+    val operationLog = OperationLog.createServerOperationLog(sHandle, oHandle)
+    val logFile = Paths.get(OperationLog.SERVER_LOG_ROOT, sHandle.identifier.toString,
+      oHandle.identifier.toString)
     assert(Files.exists(logFile))
 
     OperationLog.setCurrentOperationLog(operationLog)
@@ -73,8 +73,8 @@ class OperationLogSuite extends KyuubiFunSuite {
     val oHandle = OperationHandle(
       OperationType.EXECUTE_STATEMENT, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
 
-    OperationLog.createOperationLogRootDirectory(sHandle)
-    val operationLog = OperationLog.createOperationLog(sHandle, oHandle)
+    OperationLog.createServerOperationLogRootDirectory(sHandle)
+    val operationLog = OperationLog.createServerOperationLog(sHandle, oHandle)
     OperationLog.setCurrentOperationLog(operationLog)
 
     LogDivertAppender.initialize()
@@ -103,20 +103,20 @@ class OperationLogSuite extends KyuubiFunSuite {
 
   test("exception when creating log files") {
     val sHandle = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
-    val logRoot = Paths.get(OperationLog.LOG_ROOT, sHandle.identifier.toString).toFile
+    val logRoot = Paths.get(OperationLog.SERVER_LOG_ROOT, sHandle.identifier.toString).toFile
     logRoot.deleteOnExit()
-    Files.createFile(Paths.get(OperationLog.LOG_ROOT, sHandle.identifier.toString))
+    Files.createFile(Paths.get(OperationLog.SERVER_LOG_ROOT, sHandle.identifier.toString))
     assert(logRoot.exists())
-    OperationLog.createOperationLogRootDirectory(sHandle)
+    OperationLog.createServerOperationLogRootDirectory(sHandle)
     assert(logRoot.isFile)
     val oHandle = OperationHandle(
       OperationType.EXECUTE_STATEMENT, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
-    val log = OperationLog.createOperationLog(sHandle, oHandle)
+    val log = OperationLog.createServerOperationLog(sHandle, oHandle)
     assert(log === null)
     logRoot.delete()
 
-    OperationLog.createOperationLogRootDirectory(sHandle)
-    val log1 = OperationLog.createOperationLog(sHandle, oHandle)
+    OperationLog.createServerOperationLogRootDirectory(sHandle)
+    val log1 = OperationLog.createServerOperationLog(sHandle, oHandle)
     log1.write("some msg here \n")
     log1.close()
     log1.write("some msg here again")

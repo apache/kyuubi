@@ -21,6 +21,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.engine.spark.events.{EventLoggingService, SessionEvent}
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
 
 class SparkSessionImpl(
@@ -37,7 +38,7 @@ class SparkSessionImpl(
 
   override def open(): Unit = {
     EventLoggingService.onEvent(sessionEvent)
-    super.open()
+    OperationLog.createEngineOperationLogRootDirectory(handle)
   }
 
   override protected def runOperation(operation: Operation): OperationHandle = {
@@ -50,5 +51,4 @@ class SparkSessionImpl(
     EventLoggingService.onEvent(sessionEvent)
     super.close()
   }
-
 }

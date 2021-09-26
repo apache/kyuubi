@@ -33,6 +33,7 @@ import org.apache.kyuubi.ha.client.ZooKeeperClientProvider._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.server.EventLoggingService
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
@@ -73,8 +74,7 @@ class KyuubiSessionImpl(
       val (host, port) = engine.getOrCreate(zkClient)
       openSession(host, port)
     }
-    // we should call super.open after kyuubi session is already opened
-    super.open()
+    OperationLog.createServerOperationLogRootDirectory(handle)
   }
 
   private def openSession(host: String, port: Int): Unit = {

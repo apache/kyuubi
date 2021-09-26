@@ -25,16 +25,26 @@ import java.nio.file.{Files, Path, Paths}
 import org.apache.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn}
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_OPERATION_LOG_DIR_ROOT, SERVER_OPERATION_LOG_DIR_ROOT}
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.session.SessionHandle
 
 object OperationLog extends Logging {
+  val conf = KyuubiConf()
 
-  def LOG_ROOT: String = if (Utils.isTesting) {
+  def SERVER_LOG_ROOT: String = if (Utils.isTesting) {
     "target/operation_logs"
   } else {
-    "operation_logs"
+    conf.get(SERVER_OPERATION_LOG_DIR_ROOT).getOrElse("operation_logs")
   }
+
+  def ENGINE_LOG_ROOT: String = if (Utils.isTesting) {
+    "target/operation_logs"
+  } else {
+    conf.get(ENGINE_OPERATION_LOG_DIR_ROOT).getOrElse("operation_logs")
+  }
+
   private final val OPERATION_LOG: InheritableThreadLocal[OperationLog] = {
     new InheritableThreadLocal[OperationLog] {
       override def initialValue(): OperationLog = null
@@ -49,12 +59,20 @@ object OperationLog extends Logging {
 
   def removeCurrentOperationLog(): Unit = OPERATION_LOG.remove()
 
+  def createServerOperationLogRootDirectory(sessionHandle: SessionHandle): Unit = {
+    createOperationLogRootDirectory(SERVER_LOG_ROOT, sessionHandle)
+  }
+
+  def createEngineOperationLogRootDirectory(sessionHandle: SessionHandle): Unit = {
+    createOperationLogRootDirectory(ENGINE_LOG_ROOT, sessionHandle)
+  }
+
   /**
-   * The operation log root directory, here we choose $PWD/[[LOG_ROOT]]/$sessionId/ as the root per
-   * session, this directory will delete when JVM exit.
+   * The operation log root directory, this directory will delete when JVM exit.
    */
-  def createOperationLogRootDirectory(sessionHandle: SessionHandle): Unit = {
-    val path = Paths.get(LOG_ROOT, sessionHandle.identifier.toString)
+  private def createOperationLogRootDirectory(
+      rootDir: String, sessionHandle: SessionHandle): Unit = {
+    val path = Paths.get(rootDir, sessionHandle.identifier.toString)
     try {
       Files.createDirectories(path)
       path.toFile.deleteOnExit()
@@ -65,13 +83,12 @@ object OperationLog extends Logging {
   }
 
   /**
-   * Create the OperationLog for each operation, the log file will be located at
-   * $PWD/[[LOG_ROOT]]/$sessionId/$operationId
-   * @return
+   * Create the OperationLog for each operation with specified root dir.
    */
-  def createOperationLog(sessionHandle: SessionHandle, opHandle: OperationHandle): OperationLog = {
+  private def createOperationLog(
+      rootDir: String, sessionHandle: SessionHandle, opHandle: OperationHandle): OperationLog = {
     try {
-      val logPath = Paths.get(LOG_ROOT, sessionHandle.identifier.toString)
+      val logPath = Paths.get(rootDir, sessionHandle.identifier.toString)
       val logFile = Paths.get(logPath.toAbsolutePath.toString, opHandle.identifier.toString)
       info(s"Creating operation log file $logFile")
       new OperationLog(logFile)
@@ -80,6 +97,16 @@ object OperationLog extends Logging {
         error(s"Failed to create operation log for $opHandle in $sessionHandle", e)
         null
     }
+  }
+
+  def createServerOperationLog(
+      sessionHandle: SessionHandle, opHandle: OperationHandle): OperationLog = {
+    createOperationLog(SERVER_LOG_ROOT, sessionHandle, opHandle)
+  }
+
+  def createEngineOperationLog(
+      sessionHandle: SessionHandle, opHandle: OperationHandle): OperationLog = {
+    createOperationLog(ENGINE_LOG_ROOT, sessionHandle, opHandle)
   }
 }
 
