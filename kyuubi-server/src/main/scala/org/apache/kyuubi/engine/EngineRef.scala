@@ -169,14 +169,12 @@ private[kyuubi] class EngineRef(
       val started = System.currentTimeMillis()
       while (engineRef.isEmpty) {
         if (handle.getState == SparkAppHandle.State.FAILED) {
-          val error = handle.getError
+          val error = builder.getError
           MetricsSystem.tracing { ms =>
             ms.incCount(MetricRegistry.name(ENGINE_FAIL, appUser))
-            if(error != null && error.isPresent) {
-              ms.incCount(MetricRegistry.name(ENGINE_FAIL, error.get().getClass.getSimpleName))
-            }
+            ms.incCount(MetricRegistry.name(ENGINE_FAIL, error.getClass.getSimpleName))
           }
-          throw error.get()
+          throw error
         }
 
         if (started + timeout <= System.currentTimeMillis()) {

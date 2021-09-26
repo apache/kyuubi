@@ -43,10 +43,6 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     val pb = new ProcessBuilder(commands.head, "--help")
     assert(pb.start().waitFor() === 0)
     assert(Files.exists(Paths.get(commands.last)))
-
-    val process = builder.start
-    assert(SparkAppHandle.State.values().contains(process.getState))
-    process.stop()
   }
 
   test("capture error from spark process builder") {
