@@ -20,12 +20,16 @@ package org.apache.kyuubi.session
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{NoopOperationManager, OperationManager}
 
 class NoopSessionManager extends SessionManager("noop") {
   override val operationManager: OperationManager = new NoopOperationManager()
 
-  override def LOG_ROOT: String = "target/operation_logs"
+  override def initialize(conf: KyuubiConf): Unit = {
+    _operationLogRoot = "target/operation_logs"
+    super.initialize(conf)
+  }
 
   override def openSession(
       protocol: TProtocolVersion,

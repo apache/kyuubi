@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.session
 
+import java.io.IOException
+import java.nio.file.{Files, Paths}
 import java.util.concurrent.{ConcurrentHashMap, Future, ThreadPoolExecutor, TimeUnit}
 
 import scala.collection.JavaConverters._
@@ -41,7 +43,19 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   @volatile private var shutdown = false
 
-  def LOG_ROOT: String
+  protected var _operationLogRoot: String = null
+
+  def operationLogRoot: String = _operationLogRoot
+
+  private def initOperationLogRootDir(): Unit = {
+    val rootPath = Paths.get(_operationLogRoot)
+    try {
+      Files.createDirectories(rootPath)
+    } catch {
+      case e: IOException =>
+        error(s"Failed to initialize operation log root directory: $rootPath", e)
+    }
+  }
 
   @volatile private var _latestLogoutTime: Long = System.currentTimeMillis()
   def latestLogoutTime: Long = _latestLogoutTime
@@ -141,6 +155,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     addService(operationManager)
+    initOperationLogRootDir()
 
     val poolSize: Int = if (isServer) {
       conf.get(SERVER_EXEC_POOL_SIZE)

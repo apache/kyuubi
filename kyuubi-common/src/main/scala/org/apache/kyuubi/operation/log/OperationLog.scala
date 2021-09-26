@@ -47,7 +47,8 @@ object OperationLog extends Logging {
    * The operation log root directory, this directory will delete when JVM exit.
    */
   def createOperationLogRootDirectory(session: Session): Unit = {
-    val path = Paths.get(session.sessionManager.LOG_ROOT, session.handle.identifier.toString)
+    val path =
+      Paths.get(session.sessionManager.operationLogRoot, session.handle.identifier.toString)
     try {
       Files.createDirectories(path)
       path.toFile.deleteOnExit()
@@ -62,7 +63,8 @@ object OperationLog extends Logging {
    */
   def createOperationLog(session: Session, opHandle: OperationHandle): OperationLog = {
     try {
-      val logPath = Paths.get(session.sessionManager.LOG_ROOT, session.handle.identifier.toString)
+      val logPath =
+        Paths.get(session.sessionManager.operationLogRoot, session.handle.identifier.toString)
       val logFile = Paths.get(logPath.toAbsolutePath.toString, opHandle.identifier.toString)
       info(s"Creating operation log file $logFile")
       new OperationLog(logFile)
