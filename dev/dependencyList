@@ -28,7 +28,9 @@ hadoop-client-api/3.2.2//hadoop-client-api-3.2.2.jar
 hadoop-client-runtime/3.2.2//hadoop-client-runtime-3.2.2.jar
 hive-common/2.3.7//hive-common-2.3.7.jar
 hive-metastore/2.3.7//hive-metastore-2.3.7.jar
+hive-serde/2.3.7//hive-serde-2.3.7.jar
 hive-service-rpc/2.3.7//hive-service-rpc-2.3.7.jar
+hive-shims-0.23/2.3.7//hive-shims-0.23-2.3.7.jar
 hive-shims-common/2.3.7//hive-shims-common-2.3.7.jar
 hk2-api/2.6.1//hk2-api-2.6.1.jar
 hk2-locator/2.6.1//hk2-locator-2.6.1.jar
