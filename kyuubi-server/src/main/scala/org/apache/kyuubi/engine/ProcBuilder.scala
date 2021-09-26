@@ -161,7 +161,4 @@ object ProcBuilder extends Logging {
   private val PROC_BUILD_LOGGER = new NamedThreadFactory("process-logger-capture", daemon = true)
 
   private val UNCAUGHT_ERROR = new RuntimeException("Uncaught error")
-
-  private final val YARN_ADDRESS = "yarn.resourcemanager.webapp.address"
-  private final val YARN_HOSTNAME = "yarn.resourcemanager.hostname"
 }
