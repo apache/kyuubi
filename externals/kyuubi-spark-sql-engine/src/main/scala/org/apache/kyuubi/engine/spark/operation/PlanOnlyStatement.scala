@@ -37,8 +37,7 @@ class PlanOnlyStatement(
     mode: OperationMode)
   extends SparkOperation(spark, OperationType.EXECUTE_STATEMENT, session) {
 
-  private val operationLog: OperationLog =
-    OperationLog.createEngineOperationLog(session.handle, getHandle)
+  private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
   override protected def resultSchema: StructType = if (result == null) {

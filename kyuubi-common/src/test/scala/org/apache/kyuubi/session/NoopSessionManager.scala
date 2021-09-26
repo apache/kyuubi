@@ -25,6 +25,8 @@ import org.apache.kyuubi.operation.{NoopOperationManager, OperationManager}
 class NoopSessionManager extends SessionManager("noop") {
   override val operationManager: OperationManager = new NoopOperationManager()
 
+  override def LOG_ROOT: String = "target/operation_logs"
+
   override def openSession(
       protocol: TProtocolVersion,
       user: String,

@@ -25,7 +25,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
 import org.apache.kyuubi.operation.{OperationHandle, OperationType}
-import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.session.NoopSessionManager
 
 class OperationLogSuite extends KyuubiFunSuite {
 
@@ -33,16 +33,23 @@ class OperationLogSuite extends KyuubiFunSuite {
   val msg2 = "This is just a dummy log message 2"
 
   test("create, delete, read and write to server operation log") {
-    val sHandle = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+    val sessionManager = new NoopSessionManager
+    val sHandle = sessionManager.openSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
+      "kyuubi",
+      "passwd",
+      "localhost",
+      Map.empty)
+    val session = sessionManager.getSession(sHandle)
     val oHandle = OperationHandle(
       OperationType.EXECUTE_STATEMENT, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
 
-    OperationLog.createServerOperationLogRootDirectory(sHandle)
-    assert(Files.exists(Paths.get(OperationLog.SERVER_LOG_ROOT, sHandle.identifier.toString)))
-    assert(Files.isDirectory(Paths.get(OperationLog.SERVER_LOG_ROOT, sHandle.identifier.toString)))
+    OperationLog.createOperationLogRootDirectory(session)
+    assert(Files.exists(Paths.get(sessionManager.LOG_ROOT, sHandle.identifier.toString)))
+    assert(Files.isDirectory(Paths.get(sessionManager.LOG_ROOT, sHandle.identifier.toString)))
 
-    val operationLog = OperationLog.createServerOperationLog(sHandle, oHandle)
-    val logFile = Paths.get(OperationLog.SERVER_LOG_ROOT, sHandle.identifier.toString,
+    val operationLog = OperationLog.createOperationLog(session, oHandle)
+    val logFile = Paths.get(sessionManager.LOG_ROOT, sHandle.identifier.toString,
       oHandle.identifier.toString)
     assert(Files.exists(logFile))
 
@@ -69,12 +76,19 @@ class OperationLogSuite extends KyuubiFunSuite {
   }
 
   test("log divert appender") {
-    val sHandle = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+    val sessionManager = new NoopSessionManager
+    val sHandle = sessionManager.openSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
+      "kyuubi",
+      "passwd",
+      "localhost",
+      Map.empty)
+    val session = sessionManager.getSession(sHandle)
     val oHandle = OperationHandle(
       OperationType.EXECUTE_STATEMENT, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
 
-    OperationLog.createServerOperationLogRootDirectory(sHandle)
-    val operationLog = OperationLog.createServerOperationLog(sHandle, oHandle)
+    OperationLog.createOperationLogRootDirectory(session)
+    val operationLog = OperationLog.createOperationLog(session, oHandle)
     OperationLog.setCurrentOperationLog(operationLog)
 
     LogDivertAppender.initialize()
@@ -102,61 +116,33 @@ class OperationLogSuite extends KyuubiFunSuite {
   }
 
   test("exception when creating log files") {
-    val sHandle = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
-    val logRoot = Paths.get(OperationLog.SERVER_LOG_ROOT, sHandle.identifier.toString).toFile
+    val sessionManager = new NoopSessionManager
+    val sHandle = sessionManager.openSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
+      "kyuubi",
+      "passwd",
+      "localhost",
+      Map.empty)
+    val session = sessionManager.getSession(sHandle)
+
+    val logRoot = Paths.get(sessionManager.LOG_ROOT, sHandle.identifier.toString).toFile
     logRoot.deleteOnExit()
-    Files.createFile(Paths.get(OperationLog.SERVER_LOG_ROOT, sHandle.identifier.toString))
+    Files.createFile(Paths.get(sessionManager.LOG_ROOT, sHandle.identifier.toString))
     assert(logRoot.exists())
-    OperationLog.createServerOperationLogRootDirectory(sHandle)
+    OperationLog.createOperationLogRootDirectory(session)
     assert(logRoot.isFile)
     val oHandle = OperationHandle(
       OperationType.EXECUTE_STATEMENT, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
-    val log = OperationLog.createServerOperationLog(sHandle, oHandle)
+    val log = OperationLog.createOperationLog(session, oHandle)
     assert(log === null)
     logRoot.delete()
 
-    OperationLog.createServerOperationLogRootDirectory(sHandle)
-    val log1 = OperationLog.createServerOperationLog(sHandle, oHandle)
+    OperationLog.createOperationLogRootDirectory(session)
+    val log1 = OperationLog.createOperationLog(session, oHandle)
     log1.write("some msg here \n")
     log1.close()
     log1.write("some msg here again")
     val e = intercept[KyuubiSQLException](log1.read(-1))
     assert(e.getMessage.contains(s"${sHandle.identifier}/${oHandle.identifier}"))
-  }
-
-  test("create, delete, read and write to engine operation log") {
-    val sHandle = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
-    val oHandle = OperationHandle(
-      OperationType.EXECUTE_STATEMENT, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
-
-    OperationLog.createEngineOperationLogRootDirectory(sHandle)
-    assert(Files.exists(Paths.get(OperationLog.ENGINE_LOG_ROOT, sHandle.identifier.toString)))
-    assert(Files.isDirectory(Paths.get(OperationLog.ENGINE_LOG_ROOT, sHandle.identifier.toString)))
-
-    val operationLog = OperationLog.createEngineOperationLog(sHandle, oHandle)
-    val logFile = Paths.get(OperationLog.ENGINE_LOG_ROOT, sHandle.identifier.toString,
-      oHandle.identifier.toString)
-    assert(Files.exists(logFile))
-
-    OperationLog.setCurrentOperationLog(operationLog)
-    assert(OperationLog.getCurrentOperationLog === operationLog)
-
-    OperationLog.removeCurrentOperationLog()
-    assert(OperationLog.getCurrentOperationLog === null)
-
-    operationLog.write(msg1 + "\n")
-    val tRowSet1 = operationLog.read(1)
-    assert(tRowSet1.getColumns.get(0).getStringVal.getValues.get(0) === msg1)
-    val tRowSet2 = operationLog.read(1)
-    assert(tRowSet2.getColumns.get(0).getStringVal.getValues.isEmpty)
-
-    operationLog.write(msg1 + "\n")
-    operationLog.write(msg2 + "\n")
-    val tRowSet3 = operationLog.read(-1).getColumns.get(0).getStringVal.getValues
-    assert(tRowSet3.get(0) === msg1)
-    assert(tRowSet3.get(1) === msg2)
-
-    operationLog.close()
-    assert(!Files.exists(logFile))
   }
 }

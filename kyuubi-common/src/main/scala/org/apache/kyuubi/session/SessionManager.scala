@@ -41,6 +41,8 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   @volatile private var shutdown = false
 
+  def LOG_ROOT: String
+
   @volatile private var _latestLogoutTime: Long = System.currentTimeMillis()
   def latestLogoutTime: Long = _latestLogoutTime
 

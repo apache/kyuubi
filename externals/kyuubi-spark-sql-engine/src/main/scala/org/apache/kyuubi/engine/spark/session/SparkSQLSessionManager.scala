@@ -19,8 +19,7 @@ package org.apache.kyuubi.engine.spark.session
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.{AnalysisException, SparkSession}
-
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
@@ -40,6 +39,12 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   extends SessionManager(name) {
 
   def this(spark: SparkSession) = this(classOf[SparkSQLSessionManager].getSimpleName, spark)
+
+  override def LOG_ROOT: String = if (Utils.isTesting) {
+    "target/engine_operation_logs"
+  } else {
+    conf.get(ENGINE_OPERATION_LOG_DIR_ROOT).getOrElse("engine_operation_logs")
+  }
 
   val operationManager = new SparkSQLOperationManager()
 

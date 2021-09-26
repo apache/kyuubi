@@ -20,8 +20,9 @@ package org.apache.kyuubi.session
 import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.SERVER_OPERATION_LOG_DIR_ROOT
 import org.apache.kyuubi.credentials.HadoopCredentialsManager
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -30,6 +31,12 @@ import org.apache.kyuubi.operation.KyuubiOperationManager
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   def this() = this(classOf[KyuubiSessionManager].getSimpleName)
+
+  override def LOG_ROOT: String = if (Utils.isTesting) {
+    "target/server_operation_logs"
+  } else {
+    conf.get(SERVER_OPERATION_LOG_DIR_ROOT).getOrElse("server_operation_logs")
+  }
 
   val operationManager = new KyuubiOperationManager()
   val credentialsManager = new HadoopCredentialsManager()
