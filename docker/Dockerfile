@@ -39,7 +39,7 @@ ARG MVN_ARG
 #
 # Continuous integration(aka. CI) services like GitHub Actions, Travis always provide
 # an environment variable `CI` in runners, and we detect this variable to run some
-# specific actions, e.g. run `mvn` in batch mode to suppress nosiy logs.
+# specific actions, e.g. run `mvn` in batch mode to suppress noisy logs.
 ARG CI
 ENV CI ${CI}
 
