@@ -34,15 +34,15 @@ object OperationLog extends Logging {
   val conf = KyuubiConf()
 
   def SERVER_LOG_ROOT: String = if (Utils.isTesting) {
-    "target/operation_logs"
+    "target/server_operation_logs"
   } else {
-    conf.get(SERVER_OPERATION_LOG_DIR_ROOT).getOrElse("operation_logs")
+    conf.get(SERVER_OPERATION_LOG_DIR_ROOT).getOrElse("server_operation_logs")
   }
 
   def ENGINE_LOG_ROOT: String = if (Utils.isTesting) {
-    "target/operation_logs"
+    "target/engine_operation_logs"
   } else {
-    conf.get(ENGINE_OPERATION_LOG_DIR_ROOT).getOrElse("operation_logs")
+    conf.get(ENGINE_OPERATION_LOG_DIR_ROOT).getOrElse("engine_operation_logs")
   }
 
   private final val OPERATION_LOG: InheritableThreadLocal[OperationLog] = {
