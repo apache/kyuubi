@@ -119,10 +119,36 @@ class SparkProcessBuilder(
     }
   }
 
+  def sparkHome: String = {
+    env.get("SPARK_HOME").orElse {
+      val cwd = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
+        .split("kyuubi-server")
+      assert(cwd.length > 1)
+      Option(
+        Paths.get(cwd.head)
+          .resolve("externals")
+          .resolve("kyuubi-download")
+          .resolve("target")
+          .toFile
+          .listFiles(new FilenameFilter {
+            override def accept(dir: File, name: String): Boolean = {
+              dir.isDirectory && name.startsWith("spark-")
+            }
+          }))
+        .flatMap(_.headOption)
+        .map(_.getAbsolutePath)
+    }.getOrElse {
+      throw KyuubiSQLException("SPARK_HOME is not set! " +
+        "For more detail information on installing and configuring Spark, please visit " +
+        "https://kyuubi.apache.org/docs/stable/deployment/settings.html#environments")
+    }
+  }
+
   override protected val launcher: SparkLauncher = {
     val sparkLauncher = new SparkLauncher()
       .setMainClass(mainClass)
       .setAppResource(mainResource.get)
+      .setSparkHome(sparkHome)
 
     conf.toSparkPrefixedConf.foreach { case (k, v) =>
       sparkLauncher.setConf(k, v)
