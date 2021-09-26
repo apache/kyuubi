@@ -23,6 +23,7 @@ import java.nio.file.{Files, Path, Paths}
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.spark.launcher.SparkLauncher
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
@@ -118,6 +119,27 @@ class SparkProcessBuilder(
     }
   }
 
+  override protected val launcher: SparkLauncher = {
+    val sparkLauncher = new SparkLauncher()
+      .setMainClass(mainClass)
+      .setAppResource(mainResource.get)
+
+    conf.toSparkPrefixedConf.foreach { case (k, v) =>
+      sparkLauncher.setConf(k, v)
+    }
+
+    // if the keytab is specified, PROXY_USER is not supported
+    if (!useKeytab()) {
+      sparkLauncher.addSparkArg(PROXY_USER, proxyUser)
+    }
+
+    sparkLauncher.directory(workingDir.toFile)
+    sparkLauncher.redirectError(engineLog)
+    sparkLauncher.redirectOutput(engineLog)
+
+    sparkLauncher
+  }
+
   override protected def commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
     buffer += executable
@@ -127,7 +149,7 @@ class SparkProcessBuilder(
       buffer += CONF
       buffer += s"$k=$v"
     }
-    // iff the keytab is specified, PROXY_USER is not supported
+    // if the keytab is specified, PROXY_USER is not supported
     if (!useKeytab()) {
       buffer += PROXY_USER
       buffer += proxyUser

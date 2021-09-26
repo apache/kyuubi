@@ -21,17 +21,8 @@ import java.io.{File, IOException}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
-import scala.collection.JavaConverters._
-import scala.collection.convert.ImplicitConversions.`iterable AsScalaIterable`
-import scala.util.matching.Regex
-
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.shaded.net.minidev.json.JSONObject
-import org.apache.hadoop.shaded.org.apache.http.client.methods.{CloseableHttpResponse, HttpPut}
-import org.apache.hadoop.shaded.org.apache.http.entity.{ContentType, StringEntity}
-import org.apache.hadoop.shaded.org.apache.http.impl.client.HttpClients
-import org.apache.hadoop.shaded.org.apache.http.util.EntityUtils
+import org.apache.spark.launcher.{SparkAppHandle, SparkLauncher}
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
@@ -57,18 +48,9 @@ trait ProcBuilder {
 
   protected def env: Map[String, String] = conf.getEnvs
 
+  protected def launcher: SparkLauncher
+
   protected val workingDir: Path
-
-  final lazy val processBuilder: ProcessBuilder = {
-    val pb = new ProcessBuilder(commands: _*)
-
-    val envs = pb.environment()
-    envs.putAll(env.asJava)
-    pb.directory(workingDir.toFile)
-    pb.redirectError(engineLog)
-    pb.redirectOutput(engineLog)
-    pb
-  }
 
   @volatile private var error: Throwable = UNCAUGHT_ERROR
   @volatile private var lastRowOfLog: String = "unknown"
@@ -111,9 +93,9 @@ trait ProcBuilder {
     file
   }
 
-  final def start: Process = synchronized {
+  final def start: SparkAppHandle = synchronized {
 
-    val proc = processBuilder.start()
+    val sparkAppHandle: SparkAppHandle = launcher.startApplication()
     val reader = Files.newBufferedReader(engineLog.toPath, StandardCharsets.UTF_8)
 
     val redirect: Runnable = { () =>
@@ -153,73 +135,8 @@ trait ProcBuilder {
     logCaptureThreadReleased = false
     logCaptureThread = PROC_BUILD_LOGGER.newThread(redirect)
     logCaptureThread.start()
-    proc
+    sparkAppHandle
   }
-
-  def getAddr: List[String] = {
-    val conf: Configuration = new Configuration(false)
-    val yarnConf = System.getenv("HADOOP_CONF_DIR") match {
-      case null => throw KyuubiSQLException(
-        s"Failed to kill yarn job. HADOOP_CONF_DIR is not set! " +
-          "For more detail information on installing and configuring Spark, please visit " +
-          "https://kyuubi.apache.org/docs/stable/deployment/settings.html#environments")
-      case value => value + "yarn-site.xml"
-    }
-    conf.addResource(new org.apache.hadoop.fs.Path(yarnConf))
-
-    var hostAndIp: Map[String, String] = Map()
-    conf foreach {
-      case property if property.getKey.contains(YARN_ADDRESS) =>
-        val s = property.getValue.split(":")
-        hostAndIp += (s(0) -> s(1))
-      case property if (property.getKey.contains(YARN_HOSTNAME)
-        && !hostAndIp.contains(property.getValue)) =>
-        hostAndIp += (property.getValue -> "8088")
-      case _ =>
-    }
-    hostAndIp.map(addr => s"${addr._1}:${addr._2}").toList
-  }
-
-  def execKill(url: String): Int = {
-    val httpPut = new HttpPut(url)
-    val params = new JSONObject
-    params.put("state", "KILLED")
-    val stringEntity = new StringEntity(params.toString(), ContentType.APPLICATION_JSON)
-    httpPut.setEntity(stringEntity)
-    val httpClient = HttpClients.createDefault()
-    try {
-      val response: CloseableHttpResponse = httpClient.execute(httpPut)
-      val resEntity = response.getEntity
-      EntityUtils.consume(resEntity)
-      response.getStatusLine.getStatusCode
-    } catch {
-      case e: Exception =>
-        info(s"Failed to request $url, due to ${e.getMessage}")
-        404
-    }
-  }
-
-  val YARN_APP_NAME_REGEX: Regex = "application_\\d+_\\d+".r
-
-  def killApplication(line: String = lastRowOfLog): Unit =
-    YARN_APP_NAME_REGEX.findFirstIn(line) match {
-      case Some(appId) if line.contains("state: ACCEPTED") =>
-        val addresses = getAddr
-        var isSuccess = false
-        var n = 0
-        while (!isSuccess && addresses.size > n) {
-          val result = execKill(s"http://${addresses(n)}/ws/v1/cluster/apps/$appId/state")
-          result match {
-            case _ if result == 202 || result == 200 =>
-              isSuccess = true
-            case _ if n == (addresses.size - 1) =>
-              throw KyuubiSQLException(s"Failed to kill $appId, please kill it manually.")
-            case _ =>
-              n += 1
-          }
-        }
-      case None =>
-    }
 
   def close(): Unit = {
     if (logCaptureThread != null) {

@@ -232,6 +232,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-core_${scala.binary.version}</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.hudi</groupId>
             <artifactId>hudi-spark3_${scala.binary.version}</artifactId>
             <scope>test</scope>

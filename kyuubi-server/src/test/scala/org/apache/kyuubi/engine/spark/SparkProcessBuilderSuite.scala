@@ -20,14 +20,14 @@ package org.apache.kyuubi.engine.spark
 import java.io.File
 import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import java.time.Duration
-import java.util.concurrent.{Executors, TimeUnit}
+import java.util.concurrent.Executors
 
 import org.scalatest.time.SpanSugar._
-
 import org.apache.kyuubi.{KerberizedTestHelper, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOG_TIMEOUT, ENGINE_SPARK_MAIN_RESOURCE}
 import org.apache.kyuubi.service.ServiceUtils
+import org.apache.spark.launcher.SparkAppHandle
 
 class SparkProcessBuilderSuite extends KerberizedTestHelper {
   private def conf = KyuubiConf().set("kyuubi.on", "off")
@@ -44,8 +44,8 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     assert(Files.exists(Paths.get(commands.last)))
 
     val process = builder.start
-    assert(process.isAlive)
-    process.destroyForcibly()
+    assert(SparkAppHandle.State.values().contains(process.getState))
+    process.stop()
   }
 
   test("capture error from spark process builder") {
@@ -128,7 +128,6 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
       assert(process.logCaptureThreadReleased)
       val subProcess = process.start
       assert(!process.logCaptureThreadReleased)
-      subProcess.waitFor(3, TimeUnit.SECONDS)
     } finally {
       process.close()
     }
@@ -161,7 +160,6 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
               }
               try {
                 val p = pb.start
-                p.waitFor()
               } finally {
                 pb.close()
               }
@@ -223,26 +221,6 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     conf.set(ENGINE_SPARK_MAIN_RESOURCE, jarPath.toString)
     val b2 = new SparkProcessBuilder("test", conf)
     assert(b2.mainResource.getOrElse("") != jarPath.toString)
-  }
-
-  test("test kill application") {
-    val config = KyuubiConf()
-    val pb: FakeSparkProcessBuilder = new FakeSparkProcessBuilder(config)
-    val lastRowOfLog = "Application report for application_1593587619692_19713 (state: ACCEPTED)"
-    val appId = pb.YARN_APP_NAME_REGEX.findFirstIn(lastRowOfLog).get
-
-    var addresses: Option[List[String]] = None
-    try {
-      addresses = Some(pb.getAddr)
-    } catch {
-      case e: KyuubiSQLException =>
-        assert(e.getMessage === s"Failed to kill yarn job. HADOOP_CONF_DIR is not set! " +
-          "For more detail information on installing and configuring Spark, please visit " +
-          "https://kyuubi.apache.org/docs/stable/deployment/settings.html#environments")
-    }
-    if (addresses.isDefined) {
-      assert(pb.execKill(s"http://${addresses.get.head}/ws/v1/cluster/apps/$appId/state") == 404)
-    }
   }
 }
 
