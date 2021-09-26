@@ -172,7 +172,9 @@ private[kyuubi] class EngineRef(
           val error = handle.getError
           MetricsSystem.tracing { ms =>
             ms.incCount(MetricRegistry.name(ENGINE_FAIL, appUser))
-            ms.incCount(MetricRegistry.name(ENGINE_FAIL, error.get().getClass.getSimpleName))
+            if(error != null && error.isPresent) {
+              ms.incCount(MetricRegistry.name(ENGINE_FAIL, error.get().getClass.getSimpleName))
+            }
           }
           throw error.get()
         }
