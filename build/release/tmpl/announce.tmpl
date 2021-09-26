@@ -20,11 +20,30 @@ Title: [ANNOUNCE] Release Apache Kyuubi(Incubating) {release_version}
 Content:
 Hi all,
 
+# (To user@spark.apache.org)
+# Hello Spark Community,
+##
+
 The Apache Kyuubi(Incubating) community is pleased to announce that
 Apache Kyuubi(Incubating) {release_version} has been released!
 
 Apache Kyuubi(Incubating) is a distributed multi-tenant JDBC server for
-large-scale data processing and analytics, built on top of Apache Spark.
+large-scale data processing and analytics, built on top of Apache Spark
+and designed to support more engines (i.e. Flink).
+
+Kyuubi provides a pure SQL gateway through Thrift JDBC/ODBC interface
+for end-users to manipulate large-scale data with pre-programmed and
+extensible Spark SQL engines.
+
+We are aiming to make Kyuubi an “out-of-the-box” tool for data warehouses
+and data lakes.
+
+This “out-of-the-box” model minimizes the barriers and costs for end-users
+to use Spark at the client side.
+
+At the server-side, Kyuubi server and engines' multi-tenant architecture
+provides the administrators a way to achieve computing resource isolation,
+data security, high availability, high client concurrency, etc.
 
 The full release notes and download links are available at:
 Release Notes: https://kyuubi.apache.org/release/{release_version}.html
