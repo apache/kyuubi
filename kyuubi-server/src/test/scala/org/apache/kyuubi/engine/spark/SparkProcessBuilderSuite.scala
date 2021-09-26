@@ -22,7 +22,6 @@ import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import java.time.Duration
 import java.util.concurrent.Executors
 
-import org.apache.spark.launcher.SparkAppHandle
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{KerberizedTestHelper, KyuubiSQLException, Utils}
