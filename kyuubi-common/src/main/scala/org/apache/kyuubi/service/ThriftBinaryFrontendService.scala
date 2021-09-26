@@ -105,6 +105,7 @@ abstract class ThriftBinaryFrontendService(name: String)
         s" [$minThreads, $maxThreads] worker threads")
     } catch {
       case e: Throwable =>
+        error(e)
         throw new KyuubiException(
           s"Failed to initialize frontend service on $serverAddr:$portNum.",
           e)

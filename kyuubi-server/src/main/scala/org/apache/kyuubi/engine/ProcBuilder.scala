@@ -53,6 +53,8 @@ trait ProcBuilder {
 
   protected def env: Map[String, String] = conf.getEnvs
 
+  protected def childProcEnv: Map[String, String] = env
+
   protected val extraEngineLog: Option[OperationLog]
 
   protected val workingDir: Path
@@ -61,7 +63,7 @@ trait ProcBuilder {
     val pb = new ProcessBuilder(commands: _*)
 
     val envs = pb.environment()
-    envs.putAll(env.asJava)
+    envs.putAll(childProcEnv.asJava)
     pb.directory(workingDir.toFile)
     pb.redirectError(engineLog)
     pb.redirectOutput(engineLog)
@@ -169,7 +171,7 @@ trait ProcBuilder {
           case Some(kyuubiHome) =>
             val pb = new ProcessBuilder("/bin/sh", s"$kyuubiHome/bin/stop-application.sh", appId)
             pb.environment()
-              .putAll(env.asJava)
+              .putAll(childProcEnv.asJava)
             pb.redirectError(Redirect.appendTo(engineLog))
             pb.redirectOutput(Redirect.appendTo(engineLog))
             val process = pb.start()

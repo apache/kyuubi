@@ -42,17 +42,15 @@ abstract class FlinkOperation(
   extends AbstractOperation(opType, session) {
 
   protected val sessionContext: SessionContext = {
-    session.asInstanceOf[FlinkSessionImpl].getSessionContext
+    session.asInstanceOf[FlinkSessionImpl].sessionContext
   }
 
-  protected var executor: Executor = _
+  protected var executor: Executor = session.asInstanceOf[FlinkSessionImpl].executor
 
-  protected def setExecutor(executor: Executor): Unit = {
-    this.executor = session.asInstanceOf[FlinkSessionImpl].getExecutor
-  }
+  protected def setExecutor(executor: Executor): Unit = this.executor = executor
 
   protected var sessionId: String = {
-    session.asInstanceOf[FlinkSessionImpl].getSessionId
+    session.asInstanceOf[FlinkSessionImpl].sessionId
   }
 
   protected var resultSet: ResultSet = _

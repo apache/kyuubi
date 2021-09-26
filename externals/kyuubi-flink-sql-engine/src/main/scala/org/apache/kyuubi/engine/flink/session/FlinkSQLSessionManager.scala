@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.flink.session
 
 import org.apache.flink.table.client.gateway.Executor
-import org.apache.flink.table.client.gateway.context.DefaultContext
+import org.apache.flink.table.client.gateway.context.{DefaultContext, SessionContext}
 import org.apache.flink.table.client.gateway.local.LocalExecutor
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
@@ -44,8 +44,22 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
       password: String,
       ipAddress: String,
       conf: Map[String, String]): SessionHandle = {
-    executor.openSession("")
-    null
+
+    val sessionHandle = SessionHandle(protocol)
+    val sessionId = sessionHandle.identifier.toString
+    val sessionContext = SessionContext.create(engineContext, sessionId)
+    val sessionImpl = new FlinkSessionImpl(
+      protocol,
+      user,
+      password,
+      ipAddress,
+      conf,
+      this,
+      sessionHandle,
+      sessionContext)
+    executor.openSession(sessionId)
+    setSession(sessionHandle, sessionImpl)
+    sessionHandle
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {

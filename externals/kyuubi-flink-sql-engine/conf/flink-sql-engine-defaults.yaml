@@ -1,0 +1,167 @@
+################################################################################
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################
+
+
+# This file defines the default environment for Flink's SQL Engine.
+# Defaults might be overwritten by a session specific environment.
+
+#==============================================================================
+# Engine server properties
+#==============================================================================
+server:
+  # The address that the engine binds itself.
+  bind-address: 127.0.0.1
+  # The address that should be used by clients to connect to the engine.
+  address: 127.0.0.1
+  # The port that the client connects to.
+  port: 8083
+  # The jvm args for SQL engine process,
+  # like -Xmx2018m -Xms1024m -XX:+UseConcMarkSweepGC -XX:+PrintGCDetails -XX:+PrintGCDateStamps ...
+  jvm_args: "-Xmx2018m -Xms1024m"
+
+
+#==============================================================================
+# Session properties
+#==============================================================================
+session:
+  # Session will be closed when it's not accessed for this duration, which can be disabled by setting to zero.
+  # the minimum unit is in milliseconds.
+  idle-timeout: 1d
+  # The check interval for session idle timeout, which can be disabled by setting to zero.
+  # the minimum unit is in milliseconds.
+  check-interval: 1h
+  # Max count of active sessions, which can be disabled by setting to zero.
+  max-count: 1000000
+
+
+# See the Table API & SQL documentation for details about supported properties.
+
+#==============================================================================
+# Tables
+#==============================================================================
+
+# Define tables here such as sources, sinks, views, or temporal tables.
+
+tables: [] # empty list
+# A typical table source definition looks like:
+# - name: ...
+#   type: source-table
+#   connector: ...
+#   format: ...
+#   schema: ...
+
+# A typical view definition looks like:
+# - name: ...
+#   type: view
+#   query: "SELECT ..."
+
+# A typical temporal table definition looks like:
+# - name: ...
+#   type: temporal-table
+#   history-table: ...
+#   time-attribute: ...
+#   primary-key: ...
+
+
+#==============================================================================
+# User-defined functions
+#==============================================================================
+
+# Define scalar, aggregate, or table functions here.
+
+functions: [] # empty list
+# A typical function definition looks like:
+# - name: ...
+#   from: class
+#   class: ...
+#   constructor: ...
+
+
+#==============================================================================
+# Catalogs
+#==============================================================================
+
+# Define catalogs here.
+
+catalogs: [] # empty list
+# A typical catalog definition looks like:
+#  - name: myhive
+#    type: hive
+#    hive-conf-dir: /opt/hive_conf/
+#    default-database: ...
+
+#==============================================================================
+# Modules
+#==============================================================================
+
+# Define modules here.
+
+#modules: # note the following modules will be of the order they are specified
+#  - name: core
+#    type: core
+
+#==============================================================================
+# Execution properties
+#==============================================================================
+
+# Properties that change the fundamental execution behavior of a table program.
+
+execution:
+  # parallelism of the program
+  parallelism: 1
+  # maximum parallelism
+  max-parallelism: 128
+  # current catalog ('default_catalog' by default)
+  current-catalog: default_catalog
+  # current database of the current catalog (default database of the catalog by default)
+  current-database: default_database
+
+#==============================================================================
+# Configuration options
+#==============================================================================
+
+# Configuration options for adjusting and tuning table programs.
+
+# A full list of options and their default values can be found
+# on the dedicated "Configuration" web page.
+
+# A configuration can look like:
+# configuration:
+#   table.exec.spill-compression.enabled: true
+#   table.exec.spill-compression.block-size: 128kb
+#   table.optimizer.join-reorder-enabled: true
+
+#==============================================================================
+# Deployment properties
+#==============================================================================
+
+# Properties that describe the cluster to which table programs are submitted to.
+
+deployment:
+  # general cluster communication timeout in ms
+  response-timeout: 5000
+  # (optional) address from cluster to engine
+  engine-address: ""
+  # (optional) port from cluster to engine
+  engine-port: 0
+
+#==============================================================================
+# Deployment properties
+#==============================================================================
+
+# Properties that describe the cluster to which table programs are submitted to.

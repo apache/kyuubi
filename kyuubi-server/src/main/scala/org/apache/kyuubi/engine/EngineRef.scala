@@ -32,8 +32,9 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.EngineType.{EngineType, SPARK_SQL}
+import org.apache.kyuubi.engine.EngineType.{EngineType, FLINK_SQL, SPARK_SQL}
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, ShareLevel}
+import org.apache.kyuubi.engine.flink.FlinkEngineProcessBuilder
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_REF_ID
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NAMESPACE
@@ -184,8 +185,17 @@ private[kyuubi] class EngineRef(
           SparkProcessBuilder.TAG_KEY,
           conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") + "KYUUBI")
         new SparkProcessBuilder(appUser, conf, extraEngineLog)
-      case _ => throw new UnsupportedOperationException(s"Unsupported engine type: ${engineType}")
+      case FLINK_SQL =>
+        conf.setIfMissing(FlinkEngineProcessBuilder.APP_KEY, defaultEngineName)
+        // tag is a seq type with comma-separated
+        conf.set(
+          FlinkEngineProcessBuilder.TAG_KEY,
+          conf.getOption(FlinkEngineProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") + "KYUUBI")
+        conf.set(HA_ZK_NAMESPACE, engineSpace)
+        conf.set(HA_ZK_ENGINE_REF_ID, engineRefId)
+        new FlinkEngineProcessBuilder(appUser, conf, extraEngineLog)
     }
+
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     try {
       info(s"Launching engine:\n$builder")
