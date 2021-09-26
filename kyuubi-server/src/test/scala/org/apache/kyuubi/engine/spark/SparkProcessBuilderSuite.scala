@@ -22,12 +22,13 @@ import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import java.time.Duration
 import java.util.concurrent.Executors
 
+import org.apache.spark.launcher.SparkAppHandle
 import org.scalatest.time.SpanSugar._
+
 import org.apache.kyuubi.{KerberizedTestHelper, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOG_TIMEOUT, ENGINE_SPARK_MAIN_RESOURCE}
 import org.apache.kyuubi.service.ServiceUtils
-import org.apache.spark.launcher.SparkAppHandle
 
 class SparkProcessBuilderSuite extends KerberizedTestHelper {
   private def conf = KyuubiConf().set("kyuubi.on", "off")

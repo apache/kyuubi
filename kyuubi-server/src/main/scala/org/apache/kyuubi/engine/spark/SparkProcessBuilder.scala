@@ -23,8 +23,8 @@ import java.nio.file.{Files, Path, Paths}
 
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.launcher.SparkLauncher
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.spark.launcher.SparkLauncher
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
