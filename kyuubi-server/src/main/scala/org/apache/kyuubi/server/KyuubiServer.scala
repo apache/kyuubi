@@ -26,7 +26,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.metrics.{MetricsConf, MetricsSystem}
-import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendService, KinitAuxiliaryService, Serverable}
+import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendService, Serverable}
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 
