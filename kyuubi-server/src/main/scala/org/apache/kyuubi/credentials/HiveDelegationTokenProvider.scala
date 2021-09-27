@@ -33,12 +33,14 @@ class HiveDelegationTokenProvider extends HadoopDelegationTokenProvider with Log
 
   private var client: Option[IMetaStoreClient] = None
   private var principal: String = _
+  private var tokenAlias: Text = _
 
   override def serviceName: String = "hive"
 
   override def initialize(hadoopConf: Configuration, kyuubiConf: KyuubiConf): Unit = {
     val conf = new HiveConf(hadoopConf, classOf[HiveConf])
     val metastoreUris = conf.getTrimmed("hive.metastore.uris", "")
+    tokenAlias = new Text(metastoreUris)
 
     if (SecurityUtil.getAuthenticationMethod(hadoopConf) != AuthenticationMethod.SIMPLE
       && metastoreUris.nonEmpty
@@ -67,6 +69,4 @@ class HiveDelegationTokenProvider extends HadoopDelegationTokenProvider with Log
   }
 
   override def close(): Unit = client.foreach(_.close())
-
-  private def tokenAlias: Text = new Text("hive.server2.delegation.token")
 }
