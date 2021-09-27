@@ -1515,6 +1515,8 @@
                         <filereports>TestSuite.txt</filereports>
                         <environmentVariables>
                             <KYUUBI_WORK_DIR_ROOT>${project.build.directory}/work</KYUUBI_WORK_DIR_ROOT>
+                            <SERVER_OPERATION_LOG_DIR_ROOT>>${project.build.directory}/server_operation_logs</SERVER_OPERATION_LOG_DIR_ROOT>
+                            <ENGINE_OPERATION_LOG_DIR_ROOT>>${project.build.directory}/engine_operation_logs</ENGINE_OPERATION_LOG_DIR_ROOT>
                         </environmentVariables>
                         <systemProperties>
                             <log4j.configuration>file:src/test/resources/log4j.properties</log4j.configuration>
