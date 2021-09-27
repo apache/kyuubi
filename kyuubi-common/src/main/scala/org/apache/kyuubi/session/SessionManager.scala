@@ -43,17 +43,20 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   @volatile private var shutdown = false
 
-  protected var _operationLogRoot: String = null
+  protected var _operationLogRoot: Option[String] = None
 
-  def operationLogRoot: String = _operationLogRoot
+  def operationLogRoot: Option[String] = _operationLogRoot
 
   private def initOperationLogRootDir(): Unit = {
-    val rootPath = Paths.get(_operationLogRoot)
     try {
-      Files.createDirectories(rootPath)
+      _operationLogRoot.foreach { logRoot =>
+        val rootPath = Paths.get(logRoot)
+        Files.createDirectories(rootPath)
+      }
     } catch {
       case e: IOException =>
-        error(s"Failed to initialize operation log root directory: $rootPath", e)
+        error(s"Failed to initialize operation log root directory: $_operationLogRoot", e)
+        _operationLogRoot = None
     }
   }
 

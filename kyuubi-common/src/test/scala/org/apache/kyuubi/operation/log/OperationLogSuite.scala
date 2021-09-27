@@ -43,14 +43,15 @@ class OperationLogSuite extends KyuubiFunSuite {
     val session = sessionManager.getSession(sHandle)
     val oHandle = OperationHandle(
       OperationType.EXECUTE_STATEMENT, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+    assert(sessionManager.operationLogRoot.isDefined)
+    val operationLogRoot = sessionManager.operationLogRoot.get
 
     OperationLog.createOperationLogRootDirectory(session)
-    assert(Files.exists(Paths.get(sessionManager.operationLogRoot, sHandle.identifier.toString)))
-    assert(Files.isDirectory(Paths.get(sessionManager.operationLogRoot,
-      sHandle.identifier.toString)))
+    assert(Files.exists(Paths.get(operationLogRoot, sHandle.identifier.toString)))
+    assert(Files.isDirectory(Paths.get(operationLogRoot, sHandle.identifier.toString)))
 
     val operationLog = OperationLog.createOperationLog(session, oHandle)
-    val logFile = Paths.get(sessionManager.operationLogRoot, sHandle.identifier.toString,
+    val logFile = Paths.get(operationLogRoot, sHandle.identifier.toString,
       oHandle.identifier.toString)
     assert(Files.exists(logFile))
 
@@ -125,10 +126,12 @@ class OperationLogSuite extends KyuubiFunSuite {
       "localhost",
       Map.empty)
     val session = sessionManager.getSession(sHandle)
+    assert(sessionManager.operationLogRoot.isDefined)
+    val operationLogRoot = sessionManager.operationLogRoot.get
 
-    val logRoot = Paths.get(sessionManager.operationLogRoot, sHandle.identifier.toString).toFile
+    val logRoot = Paths.get(operationLogRoot, sHandle.identifier.toString).toFile
     logRoot.deleteOnExit()
-    Files.createFile(Paths.get(sessionManager.operationLogRoot, sHandle.identifier.toString))
+    Files.createFile(Paths.get(operationLogRoot, sHandle.identifier.toString))
     assert(logRoot.exists())
     OperationLog.createOperationLogRootDirectory(session)
     assert(logRoot.isFile)

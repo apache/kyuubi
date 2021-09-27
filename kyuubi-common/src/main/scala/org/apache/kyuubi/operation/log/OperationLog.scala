@@ -47,14 +47,15 @@ object OperationLog extends Logging {
    * The operation log root directory, this directory will delete when JVM exit.
    */
   def createOperationLogRootDirectory(session: Session): Unit = {
-    val path =
-      Paths.get(session.sessionManager.operationLogRoot, session.handle.identifier.toString)
-    try {
-      Files.createDirectories(path)
-      path.toFile.deleteOnExit()
-    } catch {
-      case e: IOException =>
-        error(s"Failed to create operation log root directory: $path", e)
+    session.sessionManager.operationLogRoot.foreach { operationLogRoot =>
+      val path = Paths.get(operationLogRoot, session.handle.identifier.toString)
+      try {
+        Files.createDirectories(path)
+        path.toFile.deleteOnExit()
+      } catch {
+        case e: IOException =>
+          error(s"Failed to create operation log root directory: $path", e)
+      }
     }
   }
 
@@ -62,17 +63,18 @@ object OperationLog extends Logging {
    * Create the OperationLog for each operation.
    */
   def createOperationLog(session: Session, opHandle: OperationHandle): OperationLog = {
-    try {
-      val logPath =
-        Paths.get(session.sessionManager.operationLogRoot, session.handle.identifier.toString)
-      val logFile = Paths.get(logPath.toAbsolutePath.toString, opHandle.identifier.toString)
-      info(s"Creating operation log file $logFile")
-      new OperationLog(logFile)
-    } catch {
-      case e: IOException =>
-        error(s"Failed to create operation log for $opHandle in ${session.handle}", e)
-        null
-    }
+    session.sessionManager.operationLogRoot.map { operationLogRoot =>
+      try {
+        val logPath = Paths.get(operationLogRoot, session.handle.identifier.toString)
+        val logFile = Paths.get(logPath.toAbsolutePath.toString, opHandle.identifier.toString)
+        info(s"Creating operation log file $logFile")
+        new OperationLog(logFile)
+      } catch {
+        case e: IOException =>
+          error(s"Failed to create operation log for $opHandle in ${session.handle}", e)
+          null
+      }
+    }.getOrElse(null)
   }
 }
 

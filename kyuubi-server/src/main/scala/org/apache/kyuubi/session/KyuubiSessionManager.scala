@@ -37,7 +37,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   override def initialize(conf: KyuubiConf): Unit = {
     addService(credentialsManager)
-    _operationLogRoot = conf.get(SERVER_OPERATION_LOG_DIR_ROOT)
+    _operationLogRoot = Some(conf.get(SERVER_OPERATION_LOG_DIR_ROOT))
     super.initialize(conf)
   }
 

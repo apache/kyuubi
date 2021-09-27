@@ -43,7 +43,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   def this(spark: SparkSession) = this(classOf[SparkSQLSessionManager].getSimpleName, spark)
 
   override def initialize(conf: KyuubiConf): Unit = {
-    _operationLogRoot = conf.get(ENGINE_OPERATION_LOG_DIR_ROOT)
+    _operationLogRoot = Some(conf.get(ENGINE_OPERATION_LOG_DIR_ROOT))
     super.initialize(conf)
   }
 

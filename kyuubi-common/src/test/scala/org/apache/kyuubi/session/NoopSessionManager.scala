@@ -27,7 +27,7 @@ class NoopSessionManager extends SessionManager("noop") {
   override val operationManager: OperationManager = new NoopOperationManager()
 
   override def initialize(conf: KyuubiConf): Unit = {
-    _operationLogRoot = "target/operation_logs"
+    _operationLogRoot = Some("target/operation_logs")
     super.initialize(conf)
   }
 
