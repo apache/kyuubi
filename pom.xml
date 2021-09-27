@@ -1744,6 +1744,7 @@
                             <exclude>**/**/operation_logs/**/**</exclude>
                             <exclude>**/*.output.schema</exclude>
                             <exclude>**/apache-kyuubi-*-bin*/**</exclude>
+                            <exclude>**/benchmarks/**</exclude>
                         </excludes>
                     </configuration>
                 </plugin>
