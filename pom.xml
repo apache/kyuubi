@@ -1742,6 +1742,8 @@
                             <exclude>build/apache-maven-*/**</exclude>
                             <exclude>build/scala-*/**</exclude>
                             <exclude>**/**/operation_logs/**/**</exclude>
+                            <exclude>**/**/server_operation_logs/**/**</exclude>
+                            <exclude>**/**/engine_operation_logs/**/**</exclude>
                             <exclude>**/*.output.schema</exclude>
                             <exclude>**/apache-kyuubi-*-bin*/**</exclude>
                             <exclude>**/benchmarks/**</exclude>
