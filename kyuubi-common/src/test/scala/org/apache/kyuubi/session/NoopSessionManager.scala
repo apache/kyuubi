@@ -26,8 +26,12 @@ import org.apache.kyuubi.operation.{NoopOperationManager, OperationManager}
 class NoopSessionManager extends SessionManager("noop") {
   override val operationManager: OperationManager = new NoopOperationManager()
 
+  def setOperationLogRootDir(logRoot: String): Unit = {
+    _operationLogRoot = Some(logRoot)
+  }
+
   override def initialize(conf: KyuubiConf): Unit = {
-    _operationLogRoot = Some("target/operation_logs")
+    _operationLogRoot = _operationLogRoot.orElse(Some("target/operation_logs"))
     super.initialize(conf)
   }
 

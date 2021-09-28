@@ -153,4 +153,11 @@ class OperationLogSuite extends KyuubiFunSuite {
     val e = intercept[KyuubiSQLException](log1.read(-1))
     assert(e.getMessage.contains(s"${sHandle.identifier}/${oHandle.identifier}"))
   }
+
+  test("test fail to init operation log root dir") {
+    val sessionManager = new NoopSessionManager
+    sessionManager.setOperationLogRootDir("/no_permission_operation_logs")
+    sessionManager.initialize(KyuubiConf())
+    assert(sessionManager.operationLogRoot.isEmpty)
+  }
 }
