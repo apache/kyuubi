@@ -19,7 +19,6 @@ package org.apache.kyuubi.util
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, DataInputStream, DataOutputStream}
 import java.util.{Map => JMap}
-import javax.security.auth.Subject
 
 import scala.collection.JavaConverters._
 
@@ -37,12 +36,6 @@ object KyuubiHadoopUtils {
   private val subjectField =
     classOf[UserGroupInformation].getDeclaredField("subject")
   subjectField.setAccessible(true)
-
-  private val getCredentialsInternalMethod =
-    classOf[UserGroupInformation].getDeclaredMethod(
-      "getCredentialsInternal",
-      Array.empty[Class[_]]: _*)
-  getCredentialsInternalMethod.setAccessible(true)
 
   private val tokenMapField =
     classOf[Credentials].getDeclaredField("tokenMap")
@@ -74,19 +67,6 @@ object KyuubiHadoopUtils {
     val creds = new Credentials()
     creds.readTokenStorageStream(new DataInputStream(byteStream))
     creds
-  }
-
-  /**
-   * Get all tokens in [[UserGroupInformation#subject]] including
-   * [[org.apache.hadoop.security.token.Token.PrivateToken]] as
-   * [[UserGroupInformation#getCredentials]] returned Credentials do not contain
-   * [[org.apache.hadoop.security.token.Token.PrivateToken]].
-   */
-  def getCredentialsInternal(ugi: UserGroupInformation): Credentials = {
-    // Synchronize to avoid credentials being written while cloning credentials
-    subjectField.get(ugi).asInstanceOf[Subject] synchronized {
-      new Credentials(getCredentialsInternalMethod.invoke(ugi).asInstanceOf[Credentials])
-    }
   }
 
   /**
