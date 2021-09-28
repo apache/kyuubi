@@ -26,7 +26,7 @@ import org.apache.kyuubi.sql.zorder.ZorderBytesUtils
 /**
  * Benchmark to measure performance with zorder core.
  *
- * To run this benchmark, temporary change `ignore` to `test`, then run
+ * To run this benchmark, temporarily change `ignore` to `test`, then run
  * {{{
  *   ./build/mvn clean test \
  *   -pl dev/kyuubi-extension-spark-3-1 -am \
