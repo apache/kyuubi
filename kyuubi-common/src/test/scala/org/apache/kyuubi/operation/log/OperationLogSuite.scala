@@ -23,7 +23,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
+import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{OperationHandle, OperationType}
 import org.apache.kyuubi.session.NoopSessionManager
@@ -156,8 +156,15 @@ class OperationLogSuite extends KyuubiFunSuite {
 
   test("test fail to init operation log root dir") {
     val sessionManager = new NoopSessionManager
-    sessionManager.setOperationLogRootDir("/no_permission_operation_logs")
+    val tempDir = Utils.createTempDir().toFile
+    tempDir.setExecutable(false)
+
+    sessionManager.setOperationLogRootDir(tempDir.getAbsolutePath + "/operation_logs")
+    assert(sessionManager.operationLogRoot.isDefined)
     sessionManager.initialize(KyuubiConf())
     assert(sessionManager.operationLogRoot.isEmpty)
+
+    tempDir.setExecutable(true)
+    tempDir.delete()
   }
 }
