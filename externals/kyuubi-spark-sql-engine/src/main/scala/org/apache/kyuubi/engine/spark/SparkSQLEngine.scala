@@ -149,26 +149,23 @@ object SparkSQLEngine extends Logging {
     SignalRegister.registerLogger(logger)
     var spark: SparkSession = null
     try {
+      spark = createSpark()
       try {
-        spark = createSpark()
-        try {
-          startEngine(spark)
-        } catch {
-          case e: KyuubiException if currentEngine.isDefined =>
-            val engine = currentEngine.get
-            engine.stop()
-            val event = EngineEvent(engine).copy(diagnostic = e.getMessage)
-            EventLoggingService.onEvent(event)
-            error(event, e)
-        }
+        startEngine(spark)
+        // blocking main thread
+        countDownLatch.await()
       } catch {
-        case t: Throwable =>
-          error(s"Failed to instantiate SparkSession: ${t.getMessage}", t)
+        case e: KyuubiException if currentEngine.isDefined =>
+          val engine = currentEngine.get
+          engine.stop()
+          val event = EngineEvent(engine).copy(diagnostic = e.getMessage)
+          EventLoggingService.onEvent(event)
+          error(event, e)
       }
-      // blocking main thread
-      countDownLatch.await()
+    } catch {
+      case t: Throwable => error(s"Failed to instantiate SparkSession: ${t.getMessage}", t)
     } finally {
-      if (spark != null && !spark.sparkContext.isStopped) {
+      if (spark != null) {
         spark.stop()
       }
     }
