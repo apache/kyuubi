@@ -104,9 +104,10 @@ class SparkThriftBinaryFrontendService(
         warn(s"No matching Hive token found for engine metastore uris $metastoreUris")
       }
     } else if (metastoreUris.isEmpty) {
-      info(s"Ignore Hive token as engine metastore uris are empty")
+      info(s"Ignore Hive token as hive.metastore.uris are empty")
     } else {
-      info(s"Ignore Hive token as engine has not Hive token ever before")
+      // Either because Hive metastore is not secured or because engine is launched with keytab
+      info(s"Ignore Hive token as engine does not need it")
     }
   }
 

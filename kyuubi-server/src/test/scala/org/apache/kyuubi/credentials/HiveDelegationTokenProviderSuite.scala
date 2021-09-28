@@ -104,11 +104,14 @@ class HiveDelegationTokenProviderSuite extends KerberizedTestHelper {
       val credentials = new Credentials
       provider.obtainDelegationTokens(owner, credentials)
 
-      val token = credentials.getAllTokens.asScala
-        .filter(_.getKind == DelegationTokenIdentifier.HIVE_DELEGATION_KIND)
-        .head
-      assert(token != null)
+      val aliasAndToken =
+        credentials.getTokenMap.asScala
+          .filter(_._2.getKind == DelegationTokenIdentifier.HIVE_DELEGATION_KIND)
+          .head
+      assert(aliasAndToken._1 == new Text(hiveConf.getTrimmed("hive.metastore.uris")))
+      assert(aliasAndToken._2 != null)
 
+      val token = aliasAndToken._2
       val tokenIdent = token.decodeIdentifier().asInstanceOf[DelegationTokenIdentifier]
       assertResult(DelegationTokenIdentifier.HIVE_DELEGATION_KIND)(token.getKind)
       assertResult(new Text(owner))(tokenIdent.getOwner)
