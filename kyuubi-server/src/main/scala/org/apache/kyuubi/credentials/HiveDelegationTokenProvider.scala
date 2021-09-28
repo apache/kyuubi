@@ -40,6 +40,7 @@ class HiveDelegationTokenProvider extends HadoopDelegationTokenProvider with Log
   override def initialize(hadoopConf: Configuration, kyuubiConf: KyuubiConf): Unit = {
     val conf = new HiveConf(hadoopConf, classOf[HiveConf])
     val metastoreUris = conf.getTrimmed("hive.metastore.uris", "")
+    // SQL engine requires token alias to be `hive.metastore.uris`
     tokenAlias = new Text(metastoreUris)
 
     if (SecurityUtil.getAuthenticationMethod(hadoopConf) != AuthenticationMethod.SIMPLE
