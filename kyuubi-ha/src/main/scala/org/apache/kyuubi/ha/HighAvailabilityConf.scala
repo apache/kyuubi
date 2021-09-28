@@ -48,6 +48,13 @@ object HighAvailabilityConf {
       .booleanConf
       .createWithDefault(UserGroupInformation.isSecurityEnabled)
 
+  val HA_ZK_ACL_ENGINE_ENABLED: ConfigEntry[Boolean] =
+    buildConf("ha.zookeeper.acl.engine.enabled")
+      .doc("Set to true if the zookeeper ensemble is kerberized at engine side.")
+      .version("1.4.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val HA_ZK_CONN_MAX_RETRIES: ConfigEntry[Int] =
     buildConf("ha.zookeeper.connection.max.retries")
       .doc("Max retry times for connecting to the zookeeper ensemble")
