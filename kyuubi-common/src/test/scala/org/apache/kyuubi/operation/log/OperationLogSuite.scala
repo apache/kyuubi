@@ -24,6 +24,7 @@ import scala.collection.JavaConverters._
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{OperationHandle, OperationType}
 import org.apache.kyuubi.session.NoopSessionManager
 
@@ -34,6 +35,7 @@ class OperationLogSuite extends KyuubiFunSuite {
 
   test("create, delete, read and write to server operation log") {
     val sessionManager = new NoopSessionManager
+    sessionManager.initialize(KyuubiConf())
     val sHandle = sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
       "kyuubi",
@@ -79,6 +81,7 @@ class OperationLogSuite extends KyuubiFunSuite {
 
   test("log divert appender") {
     val sessionManager = new NoopSessionManager
+    sessionManager.initialize(KyuubiConf())
     val sHandle = sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
       "kyuubi",
@@ -119,6 +122,7 @@ class OperationLogSuite extends KyuubiFunSuite {
 
   test("exception when creating log files") {
     val sessionManager = new NoopSessionManager
+    sessionManager.initialize(KyuubiConf())
     val sHandle = sessionManager.openSession(
       TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
       "kyuubi",

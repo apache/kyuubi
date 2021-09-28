@@ -1515,8 +1515,6 @@
                         <filereports>TestSuite.txt</filereports>
                         <environmentVariables>
                             <KYUUBI_WORK_DIR_ROOT>${project.build.directory}/work</KYUUBI_WORK_DIR_ROOT>
-                            <SERVER_OPERATION_LOG_DIR_ROOT>>${project.build.directory}/server_operation_logs</SERVER_OPERATION_LOG_DIR_ROOT>
-                            <ENGINE_OPERATION_LOG_DIR_ROOT>>${project.build.directory}/engine_operation_logs</ENGINE_OPERATION_LOG_DIR_ROOT>
                         </environmentVariables>
                         <systemProperties>
                             <log4j.configuration>file:src/test/resources/log4j.properties</log4j.configuration>
@@ -1525,6 +1523,8 @@
                             <kyuubi.metrics.json.location>${project.build.directory}/metrics</kyuubi.metrics.json.location>
                             <kyuubi.frontend.bind.host>localhost</kyuubi.frontend.bind.host>
                             <sun.security.krb5.debug>false</sun.security.krb5.debug>
+                            <kyuubi.operation.log.dir.root>target/server_operation_logs</kyuubi.operation.log.dir.root>
+                            <kyuubi.engine.operation.log.dir.root>target/engine_operation_logs</kyuubi.engine.operation.log.dir.root>
                         </systemProperties>
                         <tagsToExclude>${maven.plugin.scalatest.exclude.tags}</tagsToExclude>
                         <tagsToInclude>${maven.plugin.scalatest.include.tags}</tagsToInclude>
