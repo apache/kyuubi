@@ -213,7 +213,6 @@ abstract class AbstractSession(
   }
 
   override def open(): Unit = {
-    OperationLog.createOperationLogRootDirectory(handle)
+    OperationLog.createOperationLogRootDirectory(this)
   }
-
 }

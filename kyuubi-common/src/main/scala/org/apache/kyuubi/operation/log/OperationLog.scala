@@ -24,17 +24,11 @@ import java.nio.file.{Files, Path, Paths}
 
 import org.apache.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn}
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.operation.OperationHandle
-import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.session.Session
 
 object OperationLog extends Logging {
-
-  def LOG_ROOT: String = if (Utils.isTesting) {
-    "target/operation_logs"
-  } else {
-    "operation_logs"
-  }
   private final val OPERATION_LOG: InheritableThreadLocal[OperationLog] = {
     new InheritableThreadLocal[OperationLog] {
       override def initialValue(): OperationLog = null
@@ -50,36 +44,37 @@ object OperationLog extends Logging {
   def removeCurrentOperationLog(): Unit = OPERATION_LOG.remove()
 
   /**
-   * The operation log root directory, here we choose $PWD/[[LOG_ROOT]]/$sessionId/ as the root per
-   * session, this directory will delete when JVM exit.
+   * The operation log root directory, this directory will delete when JVM exit.
    */
-  def createOperationLogRootDirectory(sessionHandle: SessionHandle): Unit = {
-    val path = Paths.get(LOG_ROOT, sessionHandle.identifier.toString)
-    try {
-      Files.createDirectories(path)
-      path.toFile.deleteOnExit()
-    } catch {
-      case e: IOException =>
-        error(s"Failed to create operation log root directory: $path", e)
+  def createOperationLogRootDirectory(session: Session): Unit = {
+    session.sessionManager.operationLogRoot.foreach { operationLogRoot =>
+      val path = Paths.get(operationLogRoot, session.handle.identifier.toString)
+      try {
+        Files.createDirectories(path)
+        path.toFile.deleteOnExit()
+      } catch {
+        case e: IOException =>
+          error(s"Failed to create operation log root directory: $path", e)
+      }
     }
   }
 
   /**
-   * Create the OperationLog for each operation, the log file will be located at
-   * $PWD/[[LOG_ROOT]]/$sessionId/$operationId
-   * @return
+   * Create the OperationLog for each operation.
    */
-  def createOperationLog(sessionHandle: SessionHandle, opHandle: OperationHandle): OperationLog = {
-    try {
-      val logPath = Paths.get(LOG_ROOT, sessionHandle.identifier.toString)
-      val logFile = Paths.get(logPath.toAbsolutePath.toString, opHandle.identifier.toString)
-      info(s"Creating operation log file $logFile")
-      new OperationLog(logFile)
-    } catch {
-      case e: IOException =>
-        error(s"Failed to create operation log for $opHandle in $sessionHandle", e)
-        null
-    }
+  def createOperationLog(session: Session, opHandle: OperationHandle): OperationLog = {
+    session.sessionManager.operationLogRoot.map { operationLogRoot =>
+      try {
+        val logPath = Paths.get(operationLogRoot, session.handle.identifier.toString)
+        val logFile = Paths.get(logPath.toAbsolutePath.toString, opHandle.identifier.toString)
+        info(s"Creating operation log file $logFile")
+        new OperationLog(logFile)
+      } catch {
+        case e: IOException =>
+          error(s"Failed to create operation log for $opHandle in ${session.handle}", e)
+          null
+      }
+    }.getOrElse(null)
   }
 }
 
