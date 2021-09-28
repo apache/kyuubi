@@ -22,7 +22,6 @@ import org.apache.spark.sql.benchmark.KyuubiBenchmarkBase
 
 import org.apache.kyuubi.sql.zorder.ZorderBytesUtils
 
-// scalastyle:off line.size.limit
 /**
  * Benchmark to measure performance with zorder core.
  *
@@ -34,9 +33,8 @@ import org.apache.kyuubi.sql.zorder.ZorderBytesUtils
  *   -Dtest=none -DwildcardSuites=org.apache.spark.sql.ZorderCoreBenchmark
  * }}}
  *
- * Don't forgot restore `test` to `ignore`, because we don't want to run it in CI.
+ * Don't forgot to restore `test` to `ignore`, because we don't want to run it in CI.
  */
-// scalastyle:on line.size.limit
 class ZorderCoreBenchmark extends KyuubiSparkSQLExtensionTest with KyuubiBenchmarkBase {
   private val numRows = 1 * 1000 * 1000
 
