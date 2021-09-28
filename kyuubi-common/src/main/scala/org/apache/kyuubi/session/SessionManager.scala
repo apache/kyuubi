@@ -55,7 +55,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       }
     } catch {
       case e: IOException =>
-        error(s"Failed to initialize operation log root directory: $_operationLogRoot", e)
+        error(s"Failed to initialize operation log root directory: ${_operationLogRoot}", e)
         _operationLogRoot = None
     }
   }
