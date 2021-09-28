@@ -108,4 +108,11 @@ object HighAvailabilityConf {
       .version("1.4.0")
       .stringConf
       .createOptional
+
+  val HA_ZK_PUBLIST_CONFIGS: ConfigEntry[Boolean] =
+    buildConf("ha.zookeeper.publish.configs")
+      .doc("Whether we should publish Kerberos configs to ZooKeeper.")
+      .version("1.4.0")
+      .booleanConf
+      .createWithDefault(UserGroupInformation.isSecurityEnabled)
 }
