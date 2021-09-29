@@ -154,8 +154,6 @@ Optimize Sql:
 
 ```sql
 
-set spark.sql.extensions=org.apache.kyuubi.sql.KyuubiSparkSQLExtension;
-
 set spark.sql.hive.convertMetastoreParquet=false;
 
 OPTIMIZE conn_zorder_only_ip ZORDER BY src_ip, dst_ip;
