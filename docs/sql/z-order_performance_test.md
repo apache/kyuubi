@@ -1,5 +1,5 @@
 <!--
- - Licensed to the Apache Software Foundation (ASF) under one or more
+ - x to the Apache Software Foundation (ASF) under one or more
  - contributor license agreements.  See the NOTICE file distributed with
  - this work for additional information regarding copyright ownership.
  - The ASF licenses this file to You under the Apache License, Version 2.0
@@ -23,7 +23,7 @@
 
 </div>
 
-# z-order_performance_test.md
+# z-order_performance_test
 
 pr for KYUUBI #939:Add Z-Order extensions to optimize table with zorder.Z-order is a technique that allows you to map multidimensional data to a single dimension. We did a performance test
 
@@ -75,19 +75,33 @@ Step4： do optimize with z-order only ip， sort column： src_ip, dst_ip and s
 
 by querying the tables before and after optimization, we find that
 
-10 billion data and 200 files
+**10 billion data and 200 files and Query resource:200 core 600G memory**
 
-| Table               | Files Number | Data Size  | Average File Size | Average query time（10 times） | Query resource       | Number of Scan rows | Skipping ratio |
-| ------------------- | ------------ | ---------- | ----------------- | ------------------------------ | -------------------- | ------------------- | -------------- |
-| conn_random_parquet | 200          | 10 billion | 1.2 G             | 27 554ms                       | 200 core 600G memory | 10 billion          | 100%           |
-| conn_zorder_only_ip | 200          | 10 billion | 890 M             | 2 459ms                        | 200 core 600G memory | 43170600            | 99.568%        |
-| conn_zorder         | 200          | 10 billion | 890 M             | 3 185ms                        | 200 core 600G memory | 54841302            | 99.451%        |
-| conn_random_parquet | 1000         | 10 billion | 234.8 M           | 27 031ms                       | 200 core 600G memory | 10 billion          | 100%           |
-| conn_zorder_only_ip | 1000         | 10 billion | 173.9 M           | 2 668ms                        | 200 core 600G memory | 43170600            | 99.568%        |
-| conn_zorder         | 1000         | 10 billion | 174.0 M           | 3 207ms                        | 200 core 600G memory | 54841302            | 99.451%        |
-| conn_random_parquet | 10,000       | 1billion   | 2.7 M             | 76 772ms                       | 10 core 40G memory   | 1billion            | 100%           |
-| conn_zorder_only_ip | 10,000       | 1billion   | 2.1 M             | 3 963ms                        | 10 core 40G memory   | 406,572             | 99.959%        |
-| conn_zorder         | 10,000       | 1billion   | 2.2 M             | 3 621ms                        | 10 core 40G memory   | 387,942             | 99.961%        |
+| Table               | Average File Size | Scan row count | Average query time | row count Skipping ratio |
+| ------------------- | ----------------- | -------------- | ------------------ | ------------------------ |
+| conn_random_parquet | 1.2 G             | 10,000,000,000 | 27.554 s           | 0.0%                     |
+| conn_zorder_only_ip | 890 M             | 43,170,600     | 2.459 s            | 99.568%                  |
+| conn_zorder         | 890 M             | 54,841,302     | 3.185 s            | 99.451%                  |
+
+
+
+**10 billion data and 2000 files and Query resource:200 core 600G memory**
+
+| Table               | Average File Size | Scan row count | Average query time | row count Skipping ratio |
+| ------------------- | ----------------- | -------------- | ------------------ | ------------------------ |
+| conn_random_parquet | 234.8 M           | 10,000,000,000 | 27.031 s           | 0.0%                     |
+| conn_zorder_only_ip | 173.9 M           | 43,170,600     | 2.668 s            | 99.568%                  |
+| conn_zorder         | 174.0 M           | 54,841,302     | 3.207 s            | 99.451%                  |
+
+
+
+**1 billion data and 10000 files and Query resource:10 core 40G memory**
+
+| Table               | Average File Size | Scan row count | Average query time | row count Skipping ratio |
+| ------------------- | ----------------- | -------------- | ------------------ | ------------------------ |
+| conn_random_parquet | 2.7 M             | 1,000,000,000  | 76.772 s           | 0.0%                     |
+| conn_zorder_only_ip | 2.1 M             | 406,572        | 3.963 s            | 99.959%                  |
+| conn_zorder         | 2.2 M             | 387,942        | 3.621s             | 99.961%                  |
 
 The complete code is as follows：
 
