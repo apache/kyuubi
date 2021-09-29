@@ -23,9 +23,9 @@
 
 </div>
 
-# z-order_performance_test
+# z-order benchmark
 
-pr for KYUUBI #939:Add Z-Order extensions to optimize table with zorder.Z-order is a technique that allows you to map multidimensional data to a single dimension. We did a performance test
+Z-order is a technique that allows you to map multidimensional data to a single dimension. We did a performance test
 
 for this test ,we used aliyun Databricks Delta test case
 https://help.aliyun.com/document_detail/168137.html?spm=a2c4g.11186623.6.563.10d758ccclYtVb
@@ -68,40 +68,17 @@ def randomConnRecord(r: Random) = ConnRecord(
 ```
 
 Step3： do optimize with z-order only ip， sort column： src_ip, dst_ip and shuffle partition just as file numbers .
-	execute  'OPTIMIZE conn_zorder_only_ip ZORDER BY src_ip, dst_ip;' by kyuubi.
+
+```
+OPTIMIZE conn_zorder_only_ip ZORDER BY src_ip, dst_ip;
+```
 
 Step4： do optimize with z-order only ip， sort column： src_ip, dst_ip and shuffle partition just as file numbers .
-	execute  'OPTIMIZE conn_zorder ZORDER BY src_ip, src_port, dst_ip, dst_port;' by kyuubi.
 
-by querying the tables before and after optimization, we find that
+```
+OPTIMIZE conn_zorder ZORDER BY src_ip, src_port, dst_ip, dst_port;
+```
 
-**10 billion data and 200 files and Query resource:200 core 600G memory**
-
-| Table               | Average File Size | Scan row count | Average query time | row count Skipping ratio |
-| ------------------- | ----------------- | -------------- | ------------------ | ------------------------ |
-| conn_random_parquet | 1.2 G             | 10,000,000,000 | 27.554 s           | 0.0%                     |
-| conn_zorder_only_ip | 890 M             | 43,170,600     | 2.459 s            | 99.568%                  |
-| conn_zorder         | 890 M             | 54,841,302     | 3.185 s            | 99.451%                  |
-
-
-
-**10 billion data and 2000 files and Query resource:200 core 600G memory**
-
-| Table               | Average File Size | Scan row count | Average query time | row count Skipping ratio |
-| ------------------- | ----------------- | -------------- | ------------------ | ------------------------ |
-| conn_random_parquet | 234.8 M           | 10,000,000,000 | 27.031 s           | 0.0%                     |
-| conn_zorder_only_ip | 173.9 M           | 43,170,600     | 2.668 s            | 99.568%                  |
-| conn_zorder         | 174.0 M           | 54,841,302     | 3.207 s            | 99.451%                  |
-
-
-
-**1 billion data and 10000 files and Query resource:10 core 40G memory**
-
-| Table               | Average File Size | Scan row count | Average query time | row count Skipping ratio |
-| ------------------- | ----------------- | -------------- | ------------------ | ------------------------ |
-| conn_random_parquet | 2.7 M             | 1,000,000,000  | 76.772 s           | 0.0%                     |
-| conn_zorder_only_ip | 2.1 M             | 406,572        | 3.963 s            | 99.959%                  |
-| conn_zorder         | 2.2 M             | 387,942        | 3.621s             | 99.961%                  |
 
 The complete code is as follows：
 
@@ -175,28 +152,61 @@ spark.stop()
 
 Optimize Sql:
 
-**add conf** 
-spark.sql.extensions=org.apache.kyuubi.sql.KyuubiSparkSQLExtension
-spark.sql.hive.convertMetastoreParquet=false
-
 ```sql
+
+set spark.sql.extensions=org.apache.kyuubi.sql.KyuubiSparkSQLExtension;
+
+set spark.sql.hive.convertMetastoreParquet=false;
+
 OPTIMIZE conn_zorder_only_ip ZORDER BY src_ip, dst_ip;
 
-OPTIMIZE zorder_test.conn_zorder ZORDER BY src_ip, src_port, dst_ip, dst_port
+OPTIMIZE zorder_test.conn_zorder ZORDER BY src_ip, src_port, dst_ip, dst_port;
 ```
 
 
 
-Test Sql : 
-
-**add conf** 
-spark.sql.hive.convertMetastoreParquet=true
+Query Sql : 
 
 ```sql
+
+set spark.sql.hive.convertMetastoreParquet=true;
+
 select count(*) from conn_random_parquet where src_ip like '157%' and dst_ip like '216.%';
 
 select count(*) from conn_zorder_only_ip where src_ip like '157%' and dst_ip like '216.%';
 
 select count(*) from conn_zorder where src_ip like '157%' and dst_ip like '216.%';
 ```
+
+
+# benchmark result
+by querying the tables before and after optimization, we find that
+
+**10 billion data and 200 files and Query resource:200 core 600G memory**
+
+| Table               | Average File Size | Scan row count | Average query time | row count Skipping ratio |
+| ------------------- | ----------------- | -------------- | ------------------ | ------------------------ |
+| conn_random_parquet | 1.2 G             | 10,000,000,000 | 27.554 s           | 0.0%                     |
+| conn_zorder_only_ip | 890 M             | 43,170,600     | 2.459 s            | 99.568%                  |
+| conn_zorder         | 890 M             | 54,841,302     | 3.185 s            | 99.451%                  |
+
+
+
+**10 billion data and 2000 files and Query resource:200 core 600G memory**
+
+| Table               | Average File Size | Scan row count | Average query time | row count Skipping ratio |
+| ------------------- | ----------------- | -------------- | ------------------ | ------------------------ |
+| conn_random_parquet | 234.8 M           | 10,000,000,000 | 27.031 s           | 0.0%                     |
+| conn_zorder_only_ip | 173.9 M           | 43,170,600     | 2.668 s            | 99.568%                  |
+| conn_zorder         | 174.0 M           | 54,841,302     | 3.207 s            | 99.451%                  |
+
+
+
+**1 billion data and 10000 files and Query resource:10 core 40G memory**
+
+| Table               | Average File Size | Scan row count | Average query time | row count Skipping ratio |
+| ------------------- | ----------------- | -------------- | ------------------ | ------------------------ |
+| conn_random_parquet | 2.7 M             | 1,000,000,000  | 76.772 s           | 0.0%                     |
+| conn_zorder_only_ip | 2.1 M             | 406,572        | 3.963 s            | 99.959%                  |
+| conn_zorder         | 2.2 M             | 387,942        | 3.621s             | 99.961%                  |
 
