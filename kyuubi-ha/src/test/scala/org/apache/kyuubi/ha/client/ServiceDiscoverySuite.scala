@@ -19,12 +19,14 @@ package org.apache.kyuubi.ha.client
 
 import java.io.{File, IOException}
 import java.net.InetAddress
+import java.util
 import javax.security.auth.login.Configuration
 
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.util.StringUtils
 import org.apache.zookeeper.ZooDefs
+import org.apache.zookeeper.data.ACL
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION}
@@ -98,17 +100,31 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
   }
 
   test("acl for zookeeper") {
-    val provider = new ZooKeeperACLProvider(conf)
-    val acl = provider.getDefaultAcl
-    assert(acl.size() === 1)
-    assert(acl === ZooDefs.Ids.OPEN_ACL_UNSAFE)
+    val expectedNoACL = new util.ArrayList[ACL](ZooDefs.Ids.OPEN_ACL_UNSAFE)
+    val expectedEnableACL = new util.ArrayList[ACL](ZooDefs.Ids.READ_ACL_UNSAFE)
+    expectedEnableACL.addAll(ZooDefs.Ids.CREATOR_ALL_ACL)
 
-    val conf1 = conf.clone.set(HA_ZK_ACL_ENABLED, true)
-    val acl1 = new ZooKeeperACLProvider(conf1).getDefaultAcl
-    assert(acl1.size() === 2)
-    val expected = ZooDefs.Ids.READ_ACL_UNSAFE
-    expected.addAll(ZooDefs.Ids.CREATOR_ALL_ACL)
-    assert(acl1 === expected)
+    def assertACL(expected: util.List[ACL], actual: util.List[ACL]): Unit = {
+      assert(actual.size() == expected.size())
+      assert(actual === expected)
+    }
+
+    val acl = new ZooKeeperACLProvider(conf).getDefaultAcl
+    assertACL(expectedNoACL, acl)
+
+    val serverConf = conf.clone.set(HA_ZK_ACL_ENABLED, true)
+    val serverACL = new ZooKeeperACLProvider(serverConf).getDefaultAcl
+    assertACL(expectedEnableACL, serverACL)
+
+    val engineConf = serverConf.clone.set(HA_ZK_ENGINE_REF_ID, "ref")
+    engineConf.set(HA_ZK_ACL_ENGINE_ENABLED, false)
+    val engineACL = new ZooKeeperACLProvider(engineConf).getDefaultAcl
+    assertACL(expectedNoACL, engineACL)
+
+    val enableEngineACLConf = serverConf.clone.set(HA_ZK_ENGINE_REF_ID, "ref")
+    enableEngineACLConf.set(HA_ZK_ACL_ENGINE_ENABLED, true)
+    val enableEngineACL = new ZooKeeperACLProvider(enableEngineACLConf).getDefaultAcl
+    assertACL(expectedEnableACL, enableEngineACL)
   }
 
   test("set up zookeeper auth") {

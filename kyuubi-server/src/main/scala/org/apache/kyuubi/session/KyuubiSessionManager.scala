@@ -23,7 +23,6 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.credentials.HadoopCredentialsManager
-import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_ACL_ENABLED, HA_ZK_ACL_ENGINE_ENABLED}
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.KyuubiOperationManager
@@ -49,10 +48,6 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
 
-    val sessionConf = this.getConf.getUserDefaults(user)
-    if (!sessionConf.get(HA_ZK_ACL_ENGINE_ENABLED)) {
-      sessionConf.set(HA_ZK_ACL_ENABLED, false)
-    }
     val sessionImpl = new KyuubiSessionImpl(
       protocol,
       username,
@@ -60,7 +55,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       ipAddress,
       conf,
       this,
-      sessionConf)
+      this.getConf.getUserDefaults(user))
     try {
       sessionImpl.open()
       val handle = sessionImpl.handle
