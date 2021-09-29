@@ -22,7 +22,6 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
-import org.apache.spark.launcher.{SparkAppHandle, SparkLauncher}
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
@@ -48,7 +47,11 @@ trait ProcBuilder {
 
   protected def env: Map[String, String] = conf.getEnvs
 
-  protected def launcher: SparkLauncher
+  protected def startApplication(): Unit
+
+  protected def getState: String
+
+  protected def stopApplication(): Unit
 
   protected val workingDir: Path
 
@@ -93,9 +96,8 @@ trait ProcBuilder {
     file
   }
 
-  final def start: SparkAppHandle = synchronized {
-
-    val sparkAppHandle: SparkAppHandle = launcher.startApplication()
+  final def start(): Unit = synchronized {
+    startApplication()
     val reader = Files.newBufferedReader(engineLog.toPath, StandardCharsets.UTF_8)
 
     val redirect: Runnable = { () =>
@@ -135,7 +137,6 @@ trait ProcBuilder {
     logCaptureThreadReleased = false
     logCaptureThread = PROC_BUILD_LOGGER.newThread(redirect)
     logCaptureThread.start()
-    sparkAppHandle
   }
 
   def close(): Unit = {

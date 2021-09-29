@@ -27,13 +27,13 @@ import com.google.common.annotations._
 import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex
 import org.apache.curator.utils.ZKPaths
-import org.apache.spark.launcher.SparkAppHandle
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, SERVER, ShareLevel}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
+import org.apache.kyuubi.engine.spark.SparkProcessBuilder.FAILED
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_ENGINE_REF_ID, HA_ZK_NAMESPACE}
 import org.apache.kyuubi.ha.client.ServiceDiscovery.{getEngineByRefId, getServerHost}
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
@@ -164,11 +164,11 @@ private[kyuubi] class EngineRef(
     val builder = new SparkProcessBuilder(appUser, conf)
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     try {
-      val handle: SparkAppHandle = builder.start
+      builder.start()
 
       val started = System.currentTimeMillis()
       while (engineRef.isEmpty) {
-        if (handle.getState == SparkAppHandle.State.FAILED) {
+        if (builder.getState == FAILED) {
           val error = builder.getError
           MetricsSystem.tracing { ms =>
             ms.incCount(MetricRegistry.name(ENGINE_FAIL, appUser))
@@ -178,7 +178,7 @@ private[kyuubi] class EngineRef(
         }
 
         if (started + timeout <= System.currentTimeMillis()) {
-          handle.stop()
+          builder.stopApplication()
           MetricsSystem.tracing(_.incCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
           throw KyuubiSQLException(
             s"Timeout($timeout ms) to launched Spark with $builder",

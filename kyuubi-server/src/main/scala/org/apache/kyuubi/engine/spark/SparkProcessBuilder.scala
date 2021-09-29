@@ -24,7 +24,7 @@ import java.nio.file.{Files, Path, Paths}
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.launcher.SparkLauncher
+import org.apache.spark.launcher.{SparkAppHandle, SparkLauncher}
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
@@ -144,7 +144,9 @@ class SparkProcessBuilder(
     }
   }
 
-  override protected val launcher: SparkLauncher = {
+  private var sparkHandle: Option[SparkAppHandle] = None
+
+  override def startApplication(): Unit = {
     val sparkLauncher = new SparkLauncher()
       .setMainClass(mainClass)
       .setAppResource(mainResource.get)
@@ -163,7 +165,17 @@ class SparkProcessBuilder(
     sparkLauncher.redirectError(engineLog)
     sparkLauncher.redirectOutput(engineLog)
 
-    sparkLauncher
+    sparkHandle = Option(sparkLauncher.startApplication())
+  }
+
+  override def getState: String = sparkHandle match {
+    case None => FAILED
+    case _ => sparkHandle.get.getState.toString
+  }
+
+  override def stopApplication(): Unit = sparkHandle match {
+    case None =>
+    case _ => sparkHandle.get.stop()
   }
 
   override protected def commands: Array[String] = {
@@ -215,6 +227,7 @@ class SparkProcessBuilder(
 object SparkProcessBuilder {
   final val APP_KEY = "spark.app.name"
   final val TAG_KEY = "spark.yarn.tags"
+  final val FAILED = "FAILED"
 
   private final val CONF = "--conf"
   private final val CLASS = "--class"
