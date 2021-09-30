@@ -31,19 +31,19 @@ import org.apache.kyuubi.operation.OperationState._
 
 class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
 
-  private val logRoot = "file://" + Utils.createTempDir().toString
+  private val engineLogRoot = "file://" + Utils.createTempDir().toString
   private val serverLogRoot = "file://" + Utils.createTempDir().toString
   private val currentDate = Utils.getDateFromTimestamp(System.currentTimeMillis())
 
   private val fileSystem: FileSystem = FileSystem.get(new Configuration())
-  fileSystem.delete(new Path(logRoot), true)
+  fileSystem.delete(new Path(engineLogRoot), true)
 
   override protected val conf: KyuubiConf = {
     KyuubiConf()
       .set(KyuubiConf.SERVER_EVENT_LOGGERS, Seq("JSON"))
       .set(KyuubiConf.SERVER_EVENT_JSON_LOG_PATH, serverLogRoot)
       .set(KyuubiConf.ENGINE_EVENT_LOGGERS, Seq("JSON"))
-      .set(KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH, logRoot)
+      .set(KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH, engineLogRoot)
   }
 
   override protected def jdbcUrl: String = getJdbcUrl
@@ -53,7 +53,7 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
     val serverStatementEventPath =
       Paths.get(serverLogRoot, "kyuubi_statement", s"day=$currentDate", s"server-$hostName.json")
     val engineStatementEventPath =
-      Paths.get(logRoot, "spark_statement", s"day=$currentDate", "*.json")
+      Paths.get(engineLogRoot, "spark_statement", s"day=$currentDate", "*.json")
     val sql = "select timestamp'2021-06-01'"
 
     withJdbcStatement() { statement =>
@@ -131,7 +131,7 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
     val serverSessionEventPath =
       Paths.get(serverLogRoot, "kyuubi_session", s"day=$currentDate")
     val engineSessionEventPath =
-      Paths.get(logRoot, "session", s"day=$currentDate")
+      Paths.get(engineLogRoot, "session", s"day=$currentDate")
     withSessionConf()(Map.empty)(Map.empty) {
       withJdbcStatement() { statement =>
         val res = statement.executeQuery(

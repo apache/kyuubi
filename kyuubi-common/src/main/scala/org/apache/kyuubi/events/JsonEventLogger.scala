@@ -113,10 +113,12 @@ class JsonEventLogger[T <: KyuubiEvent](logName: String,
   def createEventLogRootDir(conf: KyuubiConf, hadoopConf: Configuration): Unit = {
     val logRoot: URI = URI.create(conf.get(ENGINE_EVENT_JSON_LOG_PATH))
     val fs: FileSystem = FileSystem.get(logRoot, hadoopConf)
-    FileSystem.mkdirs(fs, new Path(logRoot), JSON_LOG_DIR_PERM)
-    val fileStatus = fs.getFileStatus(new Path(logRoot))
-    if (!fileStatus.isDirectory) {
-      throw new IllegalArgumentException(s"Log directory $logRoot is not a directory.")
+    val success: Boolean = FileSystem.mkdirs(fs, new Path(logRoot), JSON_LOG_DIR_PERM)
+    if (success == false) {
+      val fileStatus = fs.getFileStatus(new Path(logRoot))
+      if (!fileStatus.isDirectory) {
+        throw new IllegalArgumentException(s"Log directory $logRoot is not a directory.")
+      }
     }
   }
 }
