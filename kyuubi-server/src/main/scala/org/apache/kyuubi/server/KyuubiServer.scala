@@ -85,7 +85,7 @@ class KyuubiServer(name: String) extends Serverable(name) {
   override val backendService: AbstractBackendService = new KyuubiBackendService()
 
   override val frontendServices: Seq[AbstractFrontendService] = Seq(
-    new KyuubiThriftBinaryBinaryFrontendService(this))
+    new KyuubiThriftBinaryFrontendService(this))
 
   private val eventLoggingService: EventLoggingService = new EventLoggingService
 
