@@ -100,6 +100,10 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   private var _confRestrictList: Set[String] = _
   private var _confIgnoreList: Set[String] = _
+  private lazy val _confRestrictMatchList: Set[String] =
+    _confRestrictList.filter(_.endsWith(".*")).map(_.stripSuffix(".*"))
+  private lazy val _confIgnoreMatchList: Set[String] =
+    _confIgnoreList.filter(_.endsWith(".*")).map(_.stripSuffix(".*"))
 
   // strip prefix and validate whether if key is restricted, ignored or valid
   def validateKey(key: String, value: String): Option[(String, String)] = {
@@ -122,10 +126,12 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       key
     }
 
-    if (_confRestrictList.contains(normalizedKey)) {
+    if (_confRestrictMatchList.exists(normalizedKey.startsWith(_)) ||
+      _confRestrictList.contains(normalizedKey)) {
       throw KyuubiSQLException(s"$normalizedKey is a restrict key according to the server-side" +
         s" configuration, please remove it and retry if you want to proceed")
-    } else if (_confIgnoreList.contains(normalizedKey)) {
+    } else if (_confIgnoreMatchList.exists(normalizedKey.startsWith(_)) ||
+      _confIgnoreList.contains(normalizedKey)) {
       warn(s"$normalizedKey is a ignored key according to the server-side configuration")
       None
     } else {
