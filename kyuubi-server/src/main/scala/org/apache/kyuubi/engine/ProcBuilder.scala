@@ -57,6 +57,7 @@ trait ProcBuilder {
 
     val envs = pb.environment()
     envs.putAll(env.asJava)
+    pb.directory(workingDir.toFile)
     pb.redirectError(engineLog)
     pb.redirectOutput(engineLog)
     pb
