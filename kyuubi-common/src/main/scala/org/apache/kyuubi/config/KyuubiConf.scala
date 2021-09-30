@@ -842,7 +842,7 @@ object KyuubiConf {
         "<li>HDFS Path: start with 'hdfs:'</li></ul>")
       .version("1.3.0")
       .stringConf
-      .createWithDefault("file:/tmp/kyuubi/events")
+      .createWithDefault("file://tmp/kyuubi/events")
 
   val SERVER_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("backend.server.event.loggers")
