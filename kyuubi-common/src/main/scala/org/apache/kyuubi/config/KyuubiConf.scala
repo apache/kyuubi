@@ -828,6 +828,7 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
+  // TODO: #1181 Format does not conform to specifications
   val SERVER_EVENT_JSON_LOG_PATH: ConfigEntry[String] =
     buildConf("backend.server.event.json.log.path")
       .doc("The location of server events go for the builtin JSON logger")
@@ -835,6 +836,7 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("/tmp/kyuubi/events")
 
+  // TODO: #1181 Format does not conform to specifications
   val ENGINE_EVENT_JSON_LOG_PATH: ConfigEntry[String] =
     buildConf("engine.event.json.log.path")
       .doc("The location of all the engine events go for the builtin JSON logger.<ul>" +
@@ -842,7 +844,7 @@ object KyuubiConf {
         "<li>HDFS Path: start with 'hdfs:'</li></ul>")
       .version("1.3.0")
       .stringConf
-      .createWithDefault("file://tmp/kyuubi/events")
+      .createWithDefault("file:/tmp/kyuubi/events")
 
   val SERVER_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("backend.server.event.loggers")
