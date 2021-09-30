@@ -30,7 +30,7 @@ trait BasicJDBCTests extends JDBCTestUtils {
     }
   }
 
-  ignore("get schemas") {
+  test("get schemas") {
     val dbs = Seq("db1", "db2", "db33", "db44")
     val dbDflts = Seq("default", "global_temp")
 
