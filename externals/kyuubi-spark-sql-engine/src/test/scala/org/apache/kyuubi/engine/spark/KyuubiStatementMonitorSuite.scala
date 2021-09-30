@@ -20,8 +20,6 @@ package org.apache.kyuubi.engine.spark
 import java.util.concurrent.ConcurrentHashMap
 
 import org.apache.hive.service.rpc.thrift._
-import org.apache.hive.service.rpc.thrift.TCLIService.Iface
-import org.apache.hive.service.rpc.thrift.TOperationState._
 import org.apache.spark.scheduler.JobSucceeded
 import org.scalatest.PrivateMethodTester
 import org.scalatest.time.SpanSugar._
@@ -73,14 +71,6 @@ class KyuubiStatementMonitorSuite extends WithSparkSQLEngine with HiveJDBCTests
         waitForOperationToComplete(client, operationHandle)
       }
       assert(jobIdToJobInfoMap.size() === 1)
-    }
-  }
-
-  private def waitForOperationToComplete(client: Iface, op: TOperationHandle): Unit = {
-    val req = new TGetOperationStatusReq(op)
-    var state = client.GetOperationStatus(req).getOperationState
-    while (state == INITIALIZED_STATE || state == PENDING_STATE || state == RUNNING_STATE) {
-      state = client.GetOperationStatus(req).getOperationState
     }
   }
 }

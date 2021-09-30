@@ -687,6 +687,15 @@ object KyuubiConf {
       .checkValue(_ >= 1000, "must >= 1s if set")
       .createOptional
 
+  val OPERATION_INCREMENTAL_COLLECT: ConfigEntry[Boolean] =
+    buildConf("operation.incremental.collect")
+      .internal
+      .doc("When true, use incremental result collection from Spark executor side" +
+        " to Kyuubi server side.")
+      .version("1.4.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val SERVER_OPERATION_LOG_DIR_ROOT: ConfigEntry[String] =
     buildConf("operation.log.dir.root")
       .doc("Root directory for query operation log at server-side.")

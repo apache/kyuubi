@@ -20,7 +20,9 @@ package org.apache.kyuubi.operation
 import java.sql.{DriverManager, ResultSet, SQLException, Statement}
 import java.util.Locale
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TOpenSessionReq, TSessionHandle}
+import org.apache.hive.service.rpc.thrift._
+import org.apache.hive.service.rpc.thrift.TCLIService.Iface
+import org.apache.hive.service.rpc.thrift.TOperationState._
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
 
@@ -168,5 +170,13 @@ trait JDBCTestUtils extends KyuubiFunSuite {
     // Make sure there are no more elements
     assert(!rs.next())
     assert(dbNames.size === count, "All expected schemas should be visited")
+  }
+
+  def waitForOperationToComplete(client: Iface, op: TOperationHandle): Unit = {
+    val req = new TGetOperationStatusReq(op)
+    var state = client.GetOperationStatus(req).getOperationState
+    while (state == INITIALIZED_STATE || state == PENDING_STATE || state == RUNNING_STATE) {
+      state = client.GetOperationStatus(req).getOperationState
+    }
   }
 }

@@ -25,7 +25,7 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf.{OPERATION_PLAN_ONLY, OperationModes}
+import org.apache.kyuubi.config.KyuubiConf.{OPERATION_INCREMENTAL_COLLECT, OPERATION_PLAN_ONLY, OperationModes}
 import org.apache.kyuubi.config.KyuubiConf.OperationModes._
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
 import org.apache.kyuubi.operation.{Operation, OperationManager}
@@ -56,6 +56,7 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
   def getOpenSparkSessionCount: Int = sessionToSpark.size()
 
   private lazy val operationModeDefault = getConf.get(OPERATION_PLAN_ONLY)
+  private lazy val operationIncrementalCollectDefault = getConf.get(OPERATION_INCREMENTAL_COLLECT)
 
   override def newExecuteStatementOperation(
       session: Session,
@@ -66,9 +67,13 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
 
     val operationModeStr =
       spark.conf.get(OPERATION_PLAN_ONLY.key, operationModeDefault).toUpperCase(Locale.ROOT)
+    val incrementalCollect = spark.conf.getOption(OPERATION_INCREMENTAL_COLLECT.key)
+      .map(_.toBoolean).getOrElse(operationIncrementalCollectDefault)
     val operation = OperationModes.withName(operationModeStr) match {
-      case NONE => new ExecuteStatement(spark, session, statement, runAsync, queryTimeout)
-      case mode => new PlanOnlyStatement(spark, session, statement, mode)
+      case NONE =>
+        new ExecuteStatement(spark, session, statement, runAsync, queryTimeout, incrementalCollect)
+      case mode =>
+        new PlanOnlyStatement(spark, session, statement, mode)
     }
     addOperation(operation)
   }

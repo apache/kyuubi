@@ -30,8 +30,6 @@ import org.apache.hadoop.security.token.{Token, TokenIdentifier}
 import org.apache.hive.common.util.HiveVersionInfo
 import org.apache.hive.service.cli.HiveSQLException
 import org.apache.hive.service.rpc.thrift._
-import org.apache.hive.service.rpc.thrift.TCLIService.Iface
-import org.apache.hive.service.rpc.thrift.TOperationState._
 import org.apache.spark.kyuubi.SparkContextHelper
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
 import org.apache.spark.sql.types._
@@ -495,14 +493,6 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveJDBCTests {
     }
   }
 
-  private def waitForOperationToComplete(client: Iface, op: TOperationHandle): Unit = {
-    val req = new TGetOperationStatusReq(op)
-    var state = client.GetOperationStatus(req).getOperationState
-    while (state == INITIALIZED_STATE || state == PENDING_STATE || state == RUNNING_STATE) {
-      state = client.GetOperationStatus(req).getOperationState
-    }
-
-  }
   test("basic open | execute | close") {
     withThriftClient { client =>
       val operationManager = engine.backendService.sessionManager.

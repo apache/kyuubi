@@ -19,13 +19,16 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService, TimeUnit}
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.kyuubi.SQLOperationListener
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.spark.{ArrayFetchIterator, KyuubiSparkUtil}
+import org.apache.kyuubi.engine.spark.{ArrayFetchIterator, IterableFetchIterator, KyuubiSparkUtil}
 import org.apache.kyuubi.engine.spark.events.{EventLoggingService, SparkStatementEvent}
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.OperationState.OperationState
@@ -38,7 +41,8 @@ class ExecuteStatement(
     session: Session,
     protected override val statement: String,
     override val shouldRunAsync: Boolean,
-    queryTimeout: Long)
+    queryTimeout: Long,
+    incrementalCollect: Boolean)
   extends SparkOperation(spark, OperationType.EXECUTE_STATEMENT, session) with Logging {
 
   import org.apache.kyuubi.KyuubiSparkUtils._
@@ -88,11 +92,17 @@ class ExecuteStatement(
       // TODO: Make it configurable
       spark.sparkContext.addSparkListener(operationListener)
       result = spark.sql(statement)
-      // TODO( #921): COMPILED need consider eagerly executed commands
+      // TODO #921: COMPILED need consider eagerly executed commands
       statementEvent.queryExecution = result.queryExecution.toString()
       setState(OperationState.COMPILED)
       debug(result.queryExecution)
-      iter = new ArrayFetchIterator(result.collect())
+      iter = if (incrementalCollect) {
+        info("Using incremental collect mode to fetch result")
+        new IterableFetchIterator[Row](result.toLocalIterator().asScala.toIterable)
+      } else {
+        info("Using full collect mode to fetch result")
+        new ArrayFetchIterator(result.collect())
+      }
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
