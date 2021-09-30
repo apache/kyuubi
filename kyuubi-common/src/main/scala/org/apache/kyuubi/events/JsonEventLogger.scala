@@ -29,6 +29,7 @@ import org.apache.hadoop.fs.permission.FsPermission
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf}
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH
 import org.apache.kyuubi.events.JsonEventLogger._
 import org.apache.kyuubi.service.AbstractService
 
@@ -74,26 +75,9 @@ class JsonEventLogger[T <: KyuubiEvent](logName: String,
     })
   }
 
-  private def requireLogRootWritable(): Unit = {
-    // Create logRoot
-    // Here should notice, if the user has no permission, it will throw exception
-    try {
-      FileSystem.mkdirs(fs, new Path(logRoot), JSON_LOG_DIR_PERM)
-    } catch {
-      case e: IOException =>
-        warn(s"Create logRoot $logRoot failed", e)
-        throw e
-    }
-    val fileStatus = fs.getFileStatus(new Path(logRoot))
-    if (!fileStatus.isDirectory) {
-      throw new IllegalArgumentException(s"Log directory $logRoot is not a directory.")
-    }
-  }
-
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     logRoot = URI.create(conf.get(logPath))
     fs = FileSystem.get(logRoot, hadoopConf)
-    requireLogRootWritable()
     super.initialize(conf)
   }
 
@@ -106,6 +90,17 @@ class JsonEventLogger[T <: KyuubiEvent](logName: String,
       }
     }
     super.stop()
+  }
+
+  // This method is only called by kyuubiServer
+  def createEventLogRootDir(conf: KyuubiConf, hadoopConf: Configuration): Unit = {
+    val logRoot: URI = URI.create(conf.get(ENGINE_EVENT_JSON_LOG_PATH))
+    val fs: FileSystem = FileSystem.get(logRoot, hadoopConf)
+    FileSystem.mkdirs(fs, new Path(logRoot), JSON_LOG_DIR_PERM)
+    val fileStatus = fs.getFileStatus(new Path(logRoot))
+    if (!fileStatus.isDirectory) {
+      throw new IllegalArgumentException(s"Log directory $logRoot is not a directory.")
+    }
   }
 
   override def logEvent(kyuubiEvent: T): Unit = {
