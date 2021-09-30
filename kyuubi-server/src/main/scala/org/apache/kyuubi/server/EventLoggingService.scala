@@ -40,6 +40,7 @@ class EventLoggingService extends AbstractEventLoggingService[KyuubiServerEvent]
           val hostName = InetAddress.getLocalHost.getCanonicalHostName
           val jsonEventLogger = new JsonEventLogger[KyuubiServerEvent](s"server-$hostName",
             SERVER_EVENT_JSON_LOG_PATH, new Configuration())
+          // TODO: #1180 kyuubiServerEvent need create logRoot automatically
           jsonEventLogger.createEventLogRootDir(conf, KyuubiHadoopUtils.newHadoopConf(conf))
           addService(jsonEventLogger)
           addEventLogger(jsonEventLogger)
