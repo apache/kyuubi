@@ -28,25 +28,31 @@ trait WithKyuubiServer extends KyuubiFunSuite {
 
   protected val conf: KyuubiConf
 
+  protected val frontendProtocols: Seq[FrontendProtocols.Value] =
+    FrontendProtocols.THRIFT_BINARY :: Nil
+
   private var zkServer: EmbeddedZookeeper = _
-  private var server: KyuubiServer = _
+  protected var server: KyuubiServer = _
 
   override def beforeAll(): Unit = {
+    conf.set(FRONTEND_PROTOCOLS, frontendProtocols.map(_.toString))
+    conf.set(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    conf.set(FRONTEND_REST_BIND_PORT, 0)
+    conf.set(FRONTEND_MYSQL_BIND_PORT, 0)
+
     zkServer = new EmbeddedZookeeper()
     conf.set(ZookeeperConf.ZK_CLIENT_PORT, 0)
     val zkData = Utils.createTempDir()
     conf.set(ZookeeperConf.ZK_DATA_DIR, zkData.toString)
     zkServer.initialize(conf)
     zkServer.start()
-
-    conf.set("spark.ui.enabled", "false")
-    conf.setIfMissing("spark.sql.catalogImplementation", "in-memory")
-    conf.set(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
-    conf.setIfMissing(ENGINE_CHECK_INTERVAL, 3000L)
-    conf.setIfMissing(ENGINE_IDLE_TIMEOUT, 10000L)
     conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
     conf.set(HA_ZK_AUTH_TYPE, ZooKeeperAuthTypes.NONE.toString)
 
+    conf.set("spark.ui.enabled", "false")
+    conf.setIfMissing("spark.sql.catalogImplementation", "in-memory")
+    conf.setIfMissing(ENGINE_CHECK_INTERVAL, 3000L)
+    conf.setIfMissing(ENGINE_IDLE_TIMEOUT, 10000L)
     // TODO KYUUBI #745
     conf.setIfMissing(ENGINE_INIT_TIMEOUT, 300000L)
     server = KyuubiServer.startServer(conf)

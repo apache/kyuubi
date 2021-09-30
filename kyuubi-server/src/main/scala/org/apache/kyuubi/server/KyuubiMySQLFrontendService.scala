@@ -26,9 +26,11 @@ import io.netty.channel.{ChannelFuture, ChannelInitializer, ChannelOption}
 import io.netty.channel.socket.SocketChannel
 import io.netty.handler.logging.{LoggingHandler, LogLevel}
 
-import org.apache.kyuubi.{KyuubiException, Logging, Utils}
+import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.server.mysql._
+import org.apache.kyuubi.server.mysql.authentication.MySQLAuthHandler
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
 import org.apache.kyuubi.util.ExecutorPoolCaptureOom
 import org.apache.kyuubi.util.NettyUtils._
@@ -77,7 +79,11 @@ class KyuubiMySQLFrontendService(override val serverable: Serverable)
       .childHandler(new ChannelInitializer[SocketChannel] {
         override def initChannel(channel: SocketChannel): Unit = channel.pipeline
           .addLast(new LoggingHandler("org.apache.kyuubi.server.mysql.codec", LogLevel.TRACE))
-        // TODO implement authentication, codec, command handler
+          .addLast(new MySQLFrameDelimiter)
+          .addLast(new MySQLPacketEncoder)
+          .addLast(new MySQLAuthHandler)
+          .addLast(new MySQLPacketDecoder)
+          .addLast(new MySQLCommandHandler(serverable.backendService, execPool))
       })
     super.initialize(conf)
   }
