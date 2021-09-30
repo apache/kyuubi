@@ -21,6 +21,9 @@ import java.io.{File, IOException}
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
+import scala.collection.JavaConverters._
+import scala.util.matching.Regex
+
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
@@ -47,13 +50,17 @@ trait ProcBuilder {
 
   protected def env: Map[String, String] = conf.getEnvs
 
-  protected def startApplication(): Unit
-
-  protected def getState: String
-
-  protected def stopApplication(): Unit
-
   protected val workingDir: Path
+
+  final lazy val processBuilder: ProcessBuilder = {
+    val pb = new ProcessBuilder(commands: _*)
+
+    val envs = pb.environment()
+    envs.putAll(env.asJava)
+    pb.redirectError(engineLog)
+    pb.redirectOutput(engineLog)
+    pb
+  }
 
   @volatile private var error: Throwable = UNCAUGHT_ERROR
   @volatile private var lastRowOfLog: String = "unknown"
@@ -96,8 +103,9 @@ trait ProcBuilder {
     file
   }
 
-  final def start(): Unit = synchronized {
-    startApplication()
+  final def start: Process = synchronized {
+
+    val proc = processBuilder.start()
     val reader = Files.newBufferedReader(engineLog.toPath, StandardCharsets.UTF_8)
 
     val redirect: Runnable = { () =>
@@ -137,7 +145,25 @@ trait ProcBuilder {
     logCaptureThreadReleased = false
     logCaptureThread = PROC_BUILD_LOGGER.newThread(redirect)
     logCaptureThread.start()
+    proc
   }
+
+  val YARN_APP_NAME_REGEX: Regex = "application_\\d+_\\d+".r
+
+  def killApplication(line: String = lastRowOfLog): Int =
+    YARN_APP_NAME_REGEX.findFirstIn(line) match {
+      case Some(appId) =>
+        val pb = new ProcessBuilder("/bin/sh",
+          System.getProperty("user.dir") + "/bin/stop-application.sh", appId)
+
+        pb.environment()
+          .putAll(env.asJava)
+        pb.redirectError(engineLog)
+        pb.redirectOutput(engineLog)
+        val process = pb.start()
+        process.waitFor()
+      case None => 0
+    }
 
   def close(): Unit = {
     if (logCaptureThread != null) {

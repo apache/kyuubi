@@ -24,7 +24,6 @@ import java.nio.file.{Files, Path, Paths}
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.security.UserGroupInformation
-import org.apache.spark.launcher.{SparkAppHandle, SparkLauncher}
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
@@ -119,65 +118,6 @@ class SparkProcessBuilder(
     }
   }
 
-  def sparkHome: String = {
-    env.get("SPARK_HOME").orElse {
-      val cwd = getClass.getProtectionDomain.getCodeSource.getLocation.getPath
-        .split("kyuubi-server")
-      assert(cwd.length > 1)
-      Option(
-        Paths.get(cwd.head)
-          .resolve("externals")
-          .resolve("kyuubi-download")
-          .resolve("target")
-          .toFile
-          .listFiles(new FilenameFilter {
-            override def accept(dir: File, name: String): Boolean = {
-              dir.isDirectory && name.startsWith("spark-")
-            }
-          }))
-        .flatMap(_.headOption)
-        .map(_.getAbsolutePath)
-    }.getOrElse {
-      throw KyuubiSQLException("SPARK_HOME is not set! " +
-        "For more detail information on installing and configuring Spark, please visit " +
-        "https://kyuubi.apache.org/docs/stable/deployment/settings.html#environments")
-    }
-  }
-
-  private var sparkHandle: Option[SparkAppHandle] = None
-
-  override def startApplication(): Unit = {
-    val sparkLauncher = new SparkLauncher()
-      .setMainClass(mainClass)
-      .setAppResource(mainResource.get)
-      .setSparkHome(sparkHome)
-
-    conf.toSparkPrefixedConf.foreach { case (k, v) =>
-      sparkLauncher.setConf(k, v)
-    }
-
-    // if the keytab is specified, PROXY_USER is not supported
-    if (!useKeytab()) {
-      sparkLauncher.addSparkArg(PROXY_USER, proxyUser)
-    }
-
-    sparkLauncher.directory(workingDir.toFile)
-    sparkLauncher.redirectError(engineLog)
-    sparkLauncher.redirectOutput(engineLog)
-
-    sparkHandle = Option(sparkLauncher.startApplication())
-  }
-
-  override def getState: String = sparkHandle match {
-    case None => FAILED
-    case _ => sparkHandle.get.getState.toString
-  }
-
-  override def stopApplication(): Unit = sparkHandle match {
-    case None =>
-    case _ => sparkHandle.get.stop()
-  }
-
   override protected def commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
     buffer += executable
@@ -227,7 +167,6 @@ class SparkProcessBuilder(
 object SparkProcessBuilder {
   final val APP_KEY = "spark.app.name"
   final val TAG_KEY = "spark.yarn.tags"
-  final val FAILED = "FAILED"
 
   private final val CONF = "--conf"
   private final val CLASS = "--class"

@@ -20,13 +20,14 @@ package org.apache.kyuubi.engine.spark
 import java.io.File
 import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import java.time.Duration
-import java.util.concurrent.Executors
+import java.util.concurrent.{Executors, TimeUnit}
 
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{KerberizedTestHelper, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOG_TIMEOUT, ENGINE_SPARK_MAIN_RESOURCE}
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_LOG_TIMEOUT
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE
 import org.apache.kyuubi.service.ServiceUtils
 
 class SparkProcessBuilderSuite extends KerberizedTestHelper {
@@ -42,6 +43,10 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     val pb = new ProcessBuilder(commands.head, "--help")
     assert(pb.start().waitFor() === 0)
     assert(Files.exists(Paths.get(commands.last)))
+
+    val process = builder.start
+    assert(process.isAlive)
+    process.destroyForcibly()
   }
 
   test("capture error from spark process builder") {
@@ -124,6 +129,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
       assert(process.logCaptureThreadReleased)
       val subProcess = process.start
       assert(!process.logCaptureThreadReleased)
+      subProcess.waitFor(3, TimeUnit.SECONDS)
     } finally {
       process.close()
     }
@@ -156,6 +162,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
               }
               try {
                 val p = pb.start
+                p.waitFor()
               } finally {
                 pb.close()
               }
