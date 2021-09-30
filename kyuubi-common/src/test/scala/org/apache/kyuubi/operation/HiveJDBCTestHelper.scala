@@ -17,8 +17,7 @@
 
 package org.apache.kyuubi.operation
 
-import java.sql.{DriverManager, ResultSet, SQLException, Statement}
-import java.util.Locale
+import java.sql.ResultSet
 
 import org.apache.hive.service.rpc.thrift._
 import org.apache.hive.service.rpc.thrift.TCLIService.Iface
@@ -27,26 +26,26 @@ import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
-import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
-trait HiveJDBCTestHelper extends KyuubiFunSuite {
+trait HiveJDBCTestHelper extends JDBCTestHelper {
 
-  // Load KyuubiHiveDriver class before using it, otherwise will cause the first call
-  // `DriverManager.getConnection("jdbc:hive2://...")` failure.
-  // Don't know why, Apache Spark also does the same thing.
-  def hiveJdbcDriverClass: String = "org.apache.kyuubi.jdbc.KyuubiHiveDriver"
-  Class.forName(hiveJdbcDriverClass)
+  def jdbcDriverClass: String = "org.apache.kyuubi.jdbc.KyuubiHiveDriver"
 
-  protected def defaultSchema = "default"
   protected def matchAllPatterns = Seq("", "*", "%", null, ".*", "_*", "_%", ".%")
-  protected lazy val user: String = Utils.currentUser
+
+  protected override lazy val user: String = Utils.currentUser
+  protected override val password = "anonymous"
   private var _sessionConfigs: Map[String, String] = Map.empty
   private var _jdbcConfigs: Map[String, String] = Map.empty
   private var _jdbcVars: Map[String, String] = Map.empty
-  protected def sessionConfigs: Map[String, String] = _sessionConfigs
-  protected def jdbcConfigs: Map[String, String] = _jdbcConfigs
-  protected def jdbcVars: Map[String, String] = _jdbcVars
+
+  protected override def sessionConfigs: Map[String, String] = _sessionConfigs
+
+  protected override def jdbcConfigs: Map[String, String] = _jdbcConfigs
+
+  protected override def jdbcVars: Map[String, String] = _jdbcVars
 
   def withSessionConf[T](
       sessionConfigs: Map[String, String] = Map.empty)(
@@ -62,11 +61,7 @@ trait HiveJDBCTestHelper extends KyuubiFunSuite {
     }
   }
 
-  protected def jdbcUrl: String
-
-  protected def jdbcUrlWithConf: String = jdbcUrlWithConf(jdbcUrl)
-
-  protected def jdbcUrlWithConf(jdbcUrl: String): String = {
+  protected override def jdbcUrlWithConf(jdbcUrl: String): String = {
     val sessionConfStr = sessionConfigs.map(kv => kv._1 + "=" + kv._2).mkString(";")
     val jdbcConfStr = if (jdbcConfigs.isEmpty) {
       ""
@@ -81,63 +76,12 @@ trait HiveJDBCTestHelper extends KyuubiFunSuite {
     jdbcUrl + sessionConfStr + jdbcConfStr + jdbcVarsStr
   }
 
-  def assertJDBCConnectionFail(jdbcUrl: String = jdbcUrlWithConf): SQLException = {
-    intercept[SQLException](DriverManager.getConnection(jdbcUrl, user, ""))
-  }
-
-  def withMultipleConnectionJdbcStatement(
-      tableNames: String*)(fs: (Statement => Unit)*): Unit = {
-    val connections = fs.map { _ => DriverManager.getConnection(jdbcUrlWithConf, user, "") }
-    val statements = connections.map(_.createStatement())
-
-    try {
-      statements.zip(fs).foreach { case (s, f) => f(s) }
-    } finally {
-      tableNames.foreach { name =>
-        if (name.toUpperCase(Locale.ROOT).startsWith("VIEW")) {
-          statements.head.execute(s"DROP VIEW IF EXISTS $name")
-        } else {
-          statements.head.execute(s"DROP TABLE IF EXISTS $name")
-        }
-      }
-      info("Closing statements")
-      statements.foreach(_.close())
-      info("Closed statements")
-      info("Closing connections")
-      connections.foreach(_.close())
-      info("Closed connections")
-    }
-  }
-
-  def withDatabases(dbNames: String*)(fs: (Statement => Unit)*): Unit = {
-    val connections = fs.map { _ => DriverManager.getConnection(jdbcUrlWithConf, user, "") }
-    val statements = connections.map(_.createStatement())
-
-    try {
-      statements.zip(fs).foreach { case (s, f) => f(s) }
-    } finally {
-      dbNames.reverse.foreach { name =>
-        statements.head.execute(s"DROP DATABASE IF EXISTS $name")
-      }
-      info("Closing statements")
-      statements.foreach(_.close())
-      info("Closed statements")
-      info("Closing connections")
-      connections.foreach(_.close())
-      info("Closed connections")
-    }
-  }
-
-  def withJdbcStatement(tableNames: String*)(f: Statement => Unit): Unit = {
-    withMultipleConnectionJdbcStatement(tableNames: _*)(f)
-  }
-
   def withThriftClient(f: TCLIService.Iface => Unit): Unit = {
     val hostAndPort = jdbcUrl.stripPrefix("jdbc:hive2://").split("/;").head.split(":")
     val host = hostAndPort.head
     val port = hostAndPort(1).toInt
     val socket = new TSocket(host, port)
-    val transport = PlainSASLHelper.getPlainTransport(Utils.currentUser, "anonymous", socket)
+    val transport = PlainSASLHelper.getPlainTransport(Utils.currentUser, password, socket)
 
     val protocol = new TBinaryProtocol(transport)
     val client = new TCLIService.Client(protocol)
@@ -153,7 +97,7 @@ trait HiveJDBCTestHelper extends KyuubiFunSuite {
     withThriftClient { client =>
       val req = new TOpenSessionReq()
       req.setUsername(user)
-      req.setPassword("anonymous")
+      req.setPassword(password)
       val resp = client.OpenSession(req)
       val handle = resp.getSessionHandle
 
@@ -172,7 +116,7 @@ trait HiveJDBCTestHelper extends KyuubiFunSuite {
 
   def checkGetSchemas(rs: ResultSet, dbNames: Seq[String], catalogName: String = ""): Unit = {
     var count = 0
-    while(rs.next()) {
+    while (rs.next()) {
       count += 1
       assert(dbNames.contains(rs.getString("TABLE_SCHEM")))
       assert(rs.getString("TABLE_CATALOG") === catalogName)
