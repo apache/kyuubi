@@ -20,7 +20,7 @@ package org.apache.kyuubi.server
 import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, ThriftBinaryFrontendService}
 
-class KyuubiThriftBinaryBinaryFrontendService(
+class KyuubiThriftBinaryFrontendService(
     override val serverable: Serverable)
   extends ThriftBinaryFrontendService("KyuubiThriftBinaryFrontendService", serverable) {
 
