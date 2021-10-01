@@ -70,7 +70,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
     server.start()
 
     val znodeRoot = s"/$namespace"
-    val serviceDiscovery = new KyuubiServiceDiscovery(server)
+    val serviceDiscovery = new KyuubiServiceDiscovery(server.frontendServices.head)
     withZkClient(conf) { framework =>
       try {
         serviceDiscovery.initialize(conf)
@@ -80,7 +80,8 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
         assert(framework.checkExists().forPath(znodeRoot) !== null)
         val children = framework.getChildren.forPath(znodeRoot).asScala
         assert(children.head ===
-          s"serviceUri=${server.connectionUrl};version=$KYUUBI_VERSION;sequence=0000000000")
+          s"serviceUri=${server.frontendServices.head.connectionUrl};" +
+            s"version=$KYUUBI_VERSION;sequence=0000000000")
 
         children.foreach { child =>
           framework.delete().forPath(s"""$znodeRoot/$child""")
@@ -154,7 +155,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
       server.start()
 
       val znodeRoot = s"/$namespace"
-      val serviceDiscovery = new EngineServiceDiscovery(server)
+      val serviceDiscovery = new EngineServiceDiscovery(server.frontendServices.head)
       withZkClient(conf) { framework =>
         try {
           serviceDiscovery.initialize(conf)
@@ -164,7 +165,8 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
           assert(framework.checkExists().forPath(znodeRoot) !== null)
           val children = framework.getChildren.forPath(znodeRoot).asScala
           assert(children.head ===
-            s"serviceUri=${server.connectionUrl};version=$KYUUBI_VERSION;sequence=0000000000")
+            s"serviceUri=${server.frontendServices.head.connectionUrl};" +
+              s"version=$KYUUBI_VERSION;sequence=0000000000")
 
           children.foreach { child =>
             framework.delete().forPath(s"""$znodeRoot/$child""")
@@ -172,7 +174,8 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
           eventually(timeout(5.seconds), interval(1.second)) {
             assert(serviceDiscovery.getServiceState === ServiceState.STOPPED)
             assert(server.getServiceState === ServiceState.STOPPED)
-            val msg = s"This Kyuubi instance ${server.connectionUrl} is now de-registered"
+            val msg = s"This Kyuubi instance ${server.frontendServices.head.connectionUrl}" +
+              s" is now de-registered"
             assert(logAppender.loggingEvents.exists(_.getRenderedMessage.contains(msg)))
           }
         } finally {

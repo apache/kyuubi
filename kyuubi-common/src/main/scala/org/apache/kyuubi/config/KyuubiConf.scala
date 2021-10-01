@@ -678,6 +678,13 @@ object KyuubiConf {
       .checkValue(_ >= 1000, "must >= 1s if set")
       .createOptional
 
+  val SERVER_OPERATION_LOG_DIR_ROOT: ConfigEntry[String] =
+    buildConf("operation.log.dir.root")
+      .doc("Root directory for query operation log at server-side.")
+      .version("1.4.0")
+      .stringConf
+      .createWithDefault("server_operation_logs")
+
   @deprecated(s"using kyuubi.engine.share.level instead", "1.2.0")
   val LEGACY_ENGINE_SHARE_LEVEL: ConfigEntry[String] = buildConf("session.engine.share.level")
     .doc(s"(deprecated) - Using kyuubi.engine.share.level instead")
@@ -876,6 +883,21 @@ object KyuubiConf {
       .version("1.3.0")
       .booleanConf
       .createWithDefault(true)
+
+  val ENGINE_UI_SESSION_LIMIT: ConfigEntry[Int] =
+    buildConf("engine.ui.retainedSessions")
+      .doc("The number of SQL client sessions kept in the Kyuubi Query Engine web UI.")
+      .version("1.4.0")
+      .intConf
+      .checkValue(_ > 0, "retained sessions must be positive.")
+      .createWithDefault(200)
+
+  val ENGINE_OPERATION_LOG_DIR_ROOT: ConfigEntry[String] =
+    buildConf("engine.operation.log.dir.root")
+      .doc("Root directory for query operation log at engine-side.")
+      .version("1.4.0")
+      .stringConf
+      .createWithDefault("engine_operation_logs")
 
   val SESSION_NAME: OptionalConfigEntry[String] =
     buildConf("session.name")

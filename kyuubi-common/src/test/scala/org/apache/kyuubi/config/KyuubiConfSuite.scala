@@ -46,7 +46,7 @@ class KyuubiConfSuite extends KyuubiFunSuite {
   }
 
   test("set and unset conf") {
-    val conf = new KyuubiConf()
+    val conf = new KyuubiConf(false)
 
     val key = "kyuubi.conf.abc"
     conf.set(key, "opq")

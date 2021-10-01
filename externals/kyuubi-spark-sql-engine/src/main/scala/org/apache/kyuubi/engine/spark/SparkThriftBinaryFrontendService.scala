@@ -24,21 +24,17 @@ import org.apache.hive.service.rpc.thrift.{TRenewDelegationTokenReq, TRenewDeleg
 import org.apache.spark.kyuubi.SparkContextHelper
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.service.ThriftFrontendService
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_CONNECTION_URL_USE_HOSTNAME
+import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
+import org.apache.kyuubi.service.{Serverable, Service, ThriftBinaryFrontendService}
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
-class SparkThriftFrontendService private (
-    name: String,
-    be: SparkSQLBackendService,
-    oomHook: Runnable)
-  extends ThriftFrontendService(name, be, oomHook) {
-  import SparkThriftFrontendService._
+class SparkThriftBinaryFrontendService(
+    override val serverable: Serverable)
+  extends ThriftBinaryFrontendService("SparkThriftBinaryFrontendService", serverable) {
+  import SparkThriftBinaryFrontendService._
 
-  private val sc = be.sparkSession.sparkContext
-
-  def this(be: SparkSQLBackendService, oomHook: Runnable) = {
-    this(classOf[SparkThriftFrontendService].getSimpleName, be, oomHook)
-  }
+  private lazy val sc = be.asInstanceOf[SparkSQLBackendService].sparkSession.sparkContext
 
   override def RenewDelegationToken(req: TRenewDelegationTokenReq): TRenewDelegationTokenResp = {
     debug(req.toString)
@@ -59,7 +55,7 @@ class SparkThriftFrontendService private (
         SparkContextHelper.updateDelegationTokens(sc, updateCreds)
       }
 
-      resp.setStatus(ThriftFrontendService.OK_STATUS)
+      resp.setStatus(ThriftBinaryFrontendService.OK_STATUS)
     } catch {
       case e: Exception =>
         warn("Error renew delegation tokens: ", e)
@@ -108,9 +104,10 @@ class SparkThriftFrontendService private (
         warn(s"No matching Hive token found for engine metastore uris $metastoreUris")
       }
     } else if (metastoreUris.isEmpty) {
-      info(s"Ignore Hive token as engine metastore uris are empty")
+      info(s"Ignore Hive token as hive.metastore.uris are empty")
     } else {
-      info(s"Ignore Hive token as engine has not Hive token ever before")
+      // Either because Hive metastore is not secured or because engine is launched with keytab
+      info(s"Ignore Hive token as engine does not need it")
     }
   }
 
@@ -132,9 +129,27 @@ class SparkThriftFrontendService private (
       }
     }
   }
+
+  override lazy val discoveryService: Option[Service] = {
+    if (ServiceDiscovery.supportServiceDiscovery(conf)) {
+      Some(new EngineServiceDiscovery(this))
+    } else {
+      None
+    }
+  }
+
+  override def connectionUrl: String = {
+    checkInitialized()
+    if (conf.get(ENGINE_CONNECTION_URL_USE_HOSTNAME)) {
+      s"${serverAddr.getCanonicalHostName}:$portNum"
+    } else {
+      // engine use address if run on k8s with cluster mode
+      s"${serverAddr.getHostAddress}:$portNum"
+    }
+  }
 }
 
-object SparkThriftFrontendService {
+object SparkThriftBinaryFrontendService {
 
   val HIVE_DELEGATION_TOKEN = new Text("HIVE_DELEGATION_TOKEN")
 }

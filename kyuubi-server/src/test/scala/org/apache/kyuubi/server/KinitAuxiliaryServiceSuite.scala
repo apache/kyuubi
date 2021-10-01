@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.service
+package org.apache.kyuubi.server
 
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.KerberizedTestHelper
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.service.ServiceState
 
 class KinitAuxiliaryServiceSuite extends KerberizedTestHelper {
 

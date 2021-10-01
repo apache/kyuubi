@@ -42,7 +42,7 @@ class SingleSessionSuite extends WithSparkSQLEngine with JDBCTestUtils {
   }
 
   override protected def jdbcUrl: String =
-    s"jdbc:hive2://${engine.connectionUrl}/;#spark.ui.enabled=false"
+    s"jdbc:hive2://${engine.frontendServices.head.connectionUrl}/;#spark.ui.enabled=false"
 
   test("test single session") {
     withJdbcStatement() { statement =>
