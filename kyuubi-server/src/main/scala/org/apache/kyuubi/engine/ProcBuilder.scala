@@ -163,8 +163,8 @@ trait ProcBuilder {
         pb.redirectOutput(engineLog)
         val process = pb.start()
         process.waitFor() match {
-          case id if id != 0 => "Failed to kill Application, please kill it manually. "
-          case _ => "Killed Application successfully. "
+          case id if id != 0 => s"Failed to kill Application $appId, please kill it manually. "
+          case _ => s"Killed Application $appId successfully. "
         }
       case None => ""
     }
