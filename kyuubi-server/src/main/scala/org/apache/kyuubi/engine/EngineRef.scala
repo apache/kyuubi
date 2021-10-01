@@ -182,10 +182,7 @@ private[kyuubi] class EngineRef(
           }
         }
         if (started + timeout <= System.currentTimeMillis()) {
-          val killMessage = builder.killApplication() match {
-            case id if id != 0 => "And failed to kill Application, please kill it manually. "
-            case _ => "And killed Application successfully. "
-          }
+          val killMessage = builder.killApplication()
           process.destroyForcibly()
           MetricsSystem.tracing(_.incCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
           throw KyuubiSQLException(

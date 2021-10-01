@@ -151,7 +151,7 @@ trait ProcBuilder {
 
   val YARN_APP_NAME_REGEX: Regex = "application_\\d+_\\d+".r
 
-  def killApplication(line: String = lastRowOfLog): Int =
+  def killApplication(line: String = lastRowOfLog): String =
     YARN_APP_NAME_REGEX.findFirstIn(line) match {
       case Some(appId) =>
         val pb = new ProcessBuilder("/bin/sh",
@@ -162,8 +162,11 @@ trait ProcBuilder {
         pb.redirectError(engineLog)
         pb.redirectOutput(engineLog)
         val process = pb.start()
-        process.waitFor()
-      case None => 0
+        process.waitFor() match {
+          case id if id != 0 => "Failed to kill Application, please kill it manually. "
+          case _ => "Killed Application successfully. "
+        }
+      case None => ""
     }
 
   def close(): Unit = {

@@ -127,7 +127,7 @@ class SparkProcessBuilder(
       buffer += CONF
       buffer += s"$k=$v"
     }
-    // if the keytab is specified, PROXY_USER is not supported
+    // iff the keytab is specified, PROXY_USER is not supported
     if (!useKeytab()) {
       buffer += PROXY_USER
       buffer += proxyUser
