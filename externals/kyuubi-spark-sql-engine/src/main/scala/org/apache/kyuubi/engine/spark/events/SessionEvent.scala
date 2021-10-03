@@ -45,6 +45,14 @@ case class SessionEvent(
   override def schema: StructType = Encoders.product[SessionEvent].schema
   override lazy val partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
+
+  def totalTime: Long = {
+    if (endTime == -1L) {
+      System.currentTimeMillis - startTime
+    } else {
+      endTime - startTime
+    }
+  }
 }
 
 object SessionEvent {

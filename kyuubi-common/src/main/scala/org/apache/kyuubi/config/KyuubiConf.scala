@@ -877,7 +877,7 @@ object KyuubiConf {
       .toSequence()
       .checkValue(_.toSet.subsetOf(Set("SPARK", "JSON", "JDBC", "CUSTOM")),
         "Unsupported event loggers")
-      .createWithDefault(Nil)
+      .createWithDefault(Seq("SPARK"))
 
   val ENGINE_UI_STOP_ENABLED: ConfigEntry[Boolean] =
     buildConf("engine.ui.stop.enabled")
