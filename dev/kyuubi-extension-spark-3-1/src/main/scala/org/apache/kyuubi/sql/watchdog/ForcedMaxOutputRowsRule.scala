@@ -97,7 +97,7 @@ case class MarkAggregateOrderRule(session: SparkSession) extends Rule[LogicalPla
 
   private def markChildAggregate(a: Aggregate): Unit = {
     // mark child aggregate
-    a.aggregateExpressions.foreach(_.setTagValue(
+    a.aggregateExpressions.filter(_.resolved).foreach(_.setTagValue(
       ForcedMaxOutputRowsConstraint.CHILD_AGGREGATE,
       ForcedMaxOutputRowsConstraint.CHILD_AGGREGATE_FLAG)
     )
