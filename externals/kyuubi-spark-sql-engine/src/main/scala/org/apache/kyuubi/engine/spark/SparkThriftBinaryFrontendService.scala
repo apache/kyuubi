@@ -48,7 +48,7 @@ class SparkThriftBinaryFrontendService(
         KyuubiHadoopUtils.getTokenMap(newCreds).partition(_._2.getKind == HIVE_DELEGATION_TOKEN)
 
       val updateCreds = new Credentials()
-      val oldCreds = KyuubiHadoopUtils.getCredentialsInternal(UserGroupInformation.getCurrentUser)
+      val oldCreds = UserGroupInformation.getCurrentUser.getCredentials
       addHiveToken(hiveTokens, oldCreds, updateCreds)
       addOtherTokens(otherTokens, oldCreds, updateCreds)
       if (updateCreds.numberOfTokens() > 0) {
