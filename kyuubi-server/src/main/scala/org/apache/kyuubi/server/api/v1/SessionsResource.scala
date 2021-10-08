@@ -17,11 +17,10 @@
 
 package org.apache.kyuubi.server.api.v1
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import java.util.UUID
 import javax.ws.rs.{Consumes, DELETE, GET, Path, PathParam, POST, Produces}
 import javax.ws.rs.core.{MediaType, Response}
+
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.cli.HandleIdentifier
@@ -31,25 +30,21 @@ import org.apache.kyuubi.session.SessionHandle
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class SessionsResource extends ApiRequestContext {
 
-  private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
-
   @GET
   @Path("count")
-  def sessionCount(): String = {
-    mapper.writeValueAsString(SessionOpenCount(backendService.sessionManager.getOpenSessionCount))
+  def sessionCount(): SessionOpenCount = {
+    SessionOpenCount(backendService.sessionManager.getOpenSessionCount)
   }
 
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
-  def openSession(req : String): String = {
-    val request = mapper.readValue(req, classOf[SessionOpenRequest])
-    val sessionHandle = backendService.openSession(
+  def openSession(request: SessionOpenRequest): SessionHandle = {
+    backendService.openSession(
       TProtocolVersion.findByValue(request.protocolVersion),
       request.user,
       request.password,
       request.ipAddr,
       request.configs)
-    mapper.writeValueAsString(sessionHandle)
   }
 
   @DELETE

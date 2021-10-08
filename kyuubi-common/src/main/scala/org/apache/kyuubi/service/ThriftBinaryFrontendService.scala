@@ -37,15 +37,13 @@ import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{ExecutorPoolCaptureOom, KyuubiHadoopUtils, NamedThreadFactory}
 
-class ThriftFrontendService protected(name: String, be: BackendService, oomHook: Runnable)
-  extends AbstractFrontendService(name, be) with TCLIService.Iface with Runnable with Logging {
+abstract class ThriftBinaryFrontendService(
+    name: String,
+    serverable: Serverable)
+  extends AbstractFrontendService(name) with TCLIService.Iface with Runnable with Logging {
 
-  import ThriftFrontendService._
+  import ThriftBinaryFrontendService._
   import KyuubiConf._
-
-  def this(be: BackendService, oomHook: Runnable) = {
-    this(classOf[ThriftFrontendService].getSimpleName, be, oomHook)
-  }
 
   private var server: Option[TServer] = None
   private var serverThread: Thread = _
@@ -56,8 +54,9 @@ class ThriftFrontendService protected(name: String, be: BackendService, oomHook:
   private var authFactory: KyuubiAuthenticationFactory = _
   private var hadoopConf: Configuration = _
 
-  override def initialize(conf: KyuubiConf): Unit = synchronized {
+  override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
+
     try {
       hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
       val serverHost = conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST)
@@ -70,7 +69,7 @@ class ThriftFrontendService protected(name: String, be: BackendService, oomHook:
         name + "Handler-Pool",
         minThreads, maxThreads,
         keepAliveTime,
-        oomHook)
+        () => serverable.stop())
       authFactory = new KyuubiAuthenticationFactory(conf)
       val transFactory = authFactory.getTTransportFactory
       val tProcFactory = authFactory.getTProcessorFactory(this)
@@ -105,19 +104,6 @@ class ThriftFrontendService protected(name: String, be: BackendService, oomHook:
     super.initialize(conf)
   }
 
-  override def connectionUrl(server: Boolean = false): String = {
-    getServiceState match {
-      case s @ ServiceState.LATENT => throw new IllegalStateException(s"Illegal Service State: $s")
-      case _ =>
-        if (server || conf.get(ENGINE_CONNECTION_URL_USE_HOSTNAME)) {
-          s"${serverAddr.getCanonicalHostName}:$portNum"
-        } else {
-          // engine use address if run on k8s with cluster mode
-          s"${serverAddr.getHostAddress}:$portNum"
-        }
-    }
-  }
-
   override def start(): Unit = synchronized {
     super.start()
     if(!isStarted) {
@@ -128,7 +114,7 @@ class ThriftFrontendService protected(name: String, be: BackendService, oomHook:
   }
 
   override def run(): Unit = try {
-    info(s"Starting and exposing JDBC connection at: jdbc:hive2://${connectionUrl(true)}/")
+    info(s"Starting and exposing JDBC connection at: jdbc:hive2://${connectionUrl}/")
     server.foreach(_.serve())
   } catch {
     case _: InterruptedException => error(s"$getName is interrupted")
@@ -545,7 +531,7 @@ class ThriftFrontendService protected(name: String, be: BackendService, oomHook:
   }
 }
 
-object ThriftFrontendService {
+object ThriftBinaryFrontendService {
   final val OK_STATUS = new TStatus(TStatusCode.SUCCESS_STATUS)
 
   final val CURRENT_SERVER_CONTEXT = new ThreadLocal[FeServiceServerContext]()
