@@ -103,8 +103,7 @@ case class MarkAggregateOrderRule(session: SparkSession) extends Rule[LogicalPla
     )
   }
 
-  override def apply(plan: LogicalPlan): LogicalPlan = plan match {
-
+  private def findAndMarkChildAggregate(plan: LogicalPlan): LogicalPlan = plan match {
     /*
     * The case mainly process order not aggregate column but grouping column as below
     * SELECT c1, COUNT(*) as cnt
@@ -123,5 +122,11 @@ case class MarkAggregateOrderRule(session: SparkSession) extends Rule[LogicalPla
       }
     }
       plan
+  }
+
+  override def apply(plan: LogicalPlan): LogicalPlan = conf.getConf(
+    KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS) match {
+    case Some(_) => findAndMarkChildAggregate(plan)
+    case _ => plan
   }
 }
