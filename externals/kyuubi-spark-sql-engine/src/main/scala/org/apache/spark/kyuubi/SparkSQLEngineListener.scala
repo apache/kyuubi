@@ -30,9 +30,9 @@ import org.apache.kyuubi.KyuubiSparkUtils.KYUUBI_STATEMENT_ID_KEY
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.Utils.stringifyException
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.spark.events.{EngineEventsStore, SessionEvent}
 import org.apache.kyuubi.engine.spark.monitor.KyuubiStatementMonitor
 import org.apache.kyuubi.engine.spark.monitor.entity.KyuubiJobInfo
-import org.apache.kyuubi.ha.client.EngineServiceDiscovery
 import org.apache.kyuubi.service.{Serverable, ServiceState}
 
 /**
@@ -40,7 +40,9 @@ import org.apache.kyuubi.service.{Serverable, ServiceState}
  *
  * @param server the corresponding engine
  */
-class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logging {
+class SparkSQLEngineListener(
+    server: Serverable,
+    store: EngineEventsStore) extends SparkListener with Logging {
 
   // the conf of server is null before initialized, use lazy val here
   private lazy val deregisterExceptions: Seq[String] =
@@ -103,7 +105,8 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
          error(s"$din, current job failure number is [$curFailures]", e)
          if (curFailures >= jobMaxFailures) {
            error(s"Job failed $curFailures times; deregistering the engine")
-           server.discoveryService.asInstanceOf[EngineServiceDiscovery].stop()
+           val fe = server.frontendServices.head
+           fe.discoveryService.foreach(_.stop())
          }
        }
 
@@ -116,5 +119,16 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
     case e @ (_: SparkException | _: UndeclaredThrowableException | _: InvocationTargetException)
       if e.getCause != null => findCause(e.getCause)
     case e => e
+  }
+
+  override def onOtherEvent(event: SparkListenerEvent): Unit = {
+    event match {
+      case e: SessionEvent => updateSession(e)
+      case _ => // Ignore
+    }
+  }
+
+  private def updateSession(event: SessionEvent): Unit = {
+    store.saveSession(event)
   }
 }

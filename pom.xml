@@ -125,6 +125,19 @@
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <zookeeper.version>3.4.14</zookeeper.version>
 
+        <!-- only apply to kyuubi-hive-jdbc module -->
+        <hive.jdbc.version>2.3.7</hive.jdbc.version>
+        <hive.jdbc.commons-lang.version>2.6</hive.jdbc.commons-lang.version>
+        <hive.jdbc.commons-codec.version>1.15</hive.jdbc.commons-codec.version>
+        <hive.jdbc.curator.version>2.12.0</hive.jdbc.curator.version>
+        <hive.jdbc.guava.version>14.0.1</hive.jdbc.guava.version>
+        <hive.jdbc.httpcomponents-client.version>4.5.13</hive.jdbc.httpcomponents-client.version>
+        <hive.jdbc.httpcomponents-core.version>4.4.13</hive.jdbc.httpcomponents-core.version>
+        <hive.jdbc.storage-api.version>2.4.0</hive.jdbc.storage-api.version>
+        <hive.jdbc.thrift.version>0.9.3</hive.jdbc.thrift.version>
+        <hive.jdbc.fb303.version>0.9.3</hive.jdbc.fb303.version>
+        <hive.jdbc.zookeeper.version>3.4.14</hive.jdbc.zookeeper.version>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
 
@@ -977,6 +990,12 @@
             </dependency>
 
             <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>jul-to-slf4j</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-core</artifactId>
                 <version>${codahale.metrics.version}</version>
@@ -1331,6 +1350,11 @@
             <artifactId>scalatest_${scala.binary.version}</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jul-to-slf4j</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -1511,6 +1535,9 @@
                             <spark.driver.memory>2g</spark.driver.memory>
                             <kyuubi.metrics.json.location>${project.build.directory}/metrics</kyuubi.metrics.json.location>
                             <kyuubi.frontend.bind.host>localhost</kyuubi.frontend.bind.host>
+                            <sun.security.krb5.debug>false</sun.security.krb5.debug>
+                            <kyuubi.operation.log.dir.root>target/server_operation_logs</kyuubi.operation.log.dir.root>
+                            <kyuubi.engine.operation.log.dir.root>target/engine_operation_logs</kyuubi.engine.operation.log.dir.root>
                         </systemProperties>
                         <tagsToExclude>${maven.plugin.scalatest.exclude.tags}</tagsToExclude>
                         <tagsToInclude>${maven.plugin.scalatest.include.tags}</tagsToInclude>
@@ -1717,7 +1744,6 @@
                             <exclude>**/*.log</exclude>
                             <exclude>**/*.md</exclude>
                             <exclude>**/*.iml</exclude>
-                            <exclude>**/*.tmpl</exclude>
                             <exclude>**/target/**</exclude>
                             <exclude>**/out/**</exclude>
                             <exclude>**/spark-warehouse/**</exclude>
@@ -1731,8 +1757,11 @@
                             <exclude>build/apache-maven-*/**</exclude>
                             <exclude>build/scala-*/**</exclude>
                             <exclude>**/**/operation_logs/**/**</exclude>
+                            <exclude>**/**/server_operation_logs/**/**</exclude>
+                            <exclude>**/**/engine_operation_logs/**/**</exclude>
                             <exclude>**/*.output.schema</exclude>
                             <exclude>**/apache-kyuubi-*-bin*/**</exclude>
+                            <exclude>**/benchmarks/**</exclude>
                         </excludes>
                     </configuration>
                 </plugin>

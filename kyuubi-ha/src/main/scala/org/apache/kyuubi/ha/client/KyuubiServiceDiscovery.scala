@@ -17,20 +17,13 @@
 
 package org.apache.kyuubi.ha.client
 
-import org.apache.kyuubi.service.Serverable
+import org.apache.kyuubi.service.FrontendService
 
 /**
  * A service for service discovery used by kyuubi server side.
  * We add another zk watch so that we can stop server more genteelly.
  *
- * @param name the name of the service itself
- * @param server the instance uri a service that used to publish itself
+ * @param fe the frontend service to publish for service discovery
  */
-class KyuubiServiceDiscovery private(
-    name: String,
-    server: Serverable) extends ServiceDiscovery(name, server) {
-  def this(server: Serverable) =
-    this(classOf[KyuubiServiceDiscovery].getSimpleName, server)
-}
-
-
+class KyuubiServiceDiscovery(
+    fe: FrontendService) extends ServiceDiscovery("KyuubiServiceDiscovery", fe)

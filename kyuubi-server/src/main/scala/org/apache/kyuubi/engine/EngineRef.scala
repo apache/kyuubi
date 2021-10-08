@@ -182,10 +182,11 @@ private[kyuubi] class EngineRef(
           }
         }
         if (started + timeout <= System.currentTimeMillis()) {
+          val killMessage = builder.killApplication()
           process.destroyForcibly()
           MetricsSystem.tracing(_.incCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
           throw KyuubiSQLException(
-            s"Timeout($timeout ms) to launched Spark with $builder",
+            s"Timeout($timeout ms) to launched Spark with $builder. $killMessage",
             builder.getError)
         }
         engineRef = getEngineByRefId(zkClient, engineSpace, engineRefId)

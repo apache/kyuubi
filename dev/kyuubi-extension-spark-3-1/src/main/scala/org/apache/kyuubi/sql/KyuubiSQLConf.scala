@@ -68,14 +68,15 @@ object KyuubiSQLConf {
       .booleanConf
       .createWithDefault(false)
 
+  val SQL_CLASSIFICATION = "spark.sql.analyzer.classification"
   val SQL_CLASSIFICATION_ENABLED =
-    buildConf("kyuubi.spark.sql.classification.enabled")
+    buildConf("spark.sql.analyzer.classification.enabled")
       .doc("When true, allows Kyuubi engine to judge this SQL's classification " +
-        "and set it into sessionConf. " +
+        s"and set `$SQL_CLASSIFICATION` back into sessionConf. " +
         "Through this configuration item, Spark can optimizing configuration dynamic")
       .version("1.4.0")
       .booleanConf
-      .createWithDefault(true)
+      .createWithDefault(false)
 
   val INSERT_ZORDER_BEFORE_WRITING =
     buildConf("spark.sql.optimizer.insertZorderBeforeWriting.enabled")
@@ -91,6 +92,14 @@ object KyuubiSQLConf {
     buildConf("spark.sql.watchdog.maxHivePartitions")
       .doc("Add maxHivePartitions Strategy to avoid scan excessive " +
         "hive partitions on partitioned table, it's optional that works with defined")
+      .version("1.4.0")
+      .intConf
+      .createOptional
+
+  val WATCHDOG_FORCED_MAXOUTPUTROWS =
+    buildConf("spark.sql.watchdog.forcedMaxOutputRows")
+      .doc("Add ForcedMaxOutputRows rule to avoid huge output rows of non-limit query " +
+        "unexpectedly, it's optional that works with defined")
       .version("1.4.0")
       .intConf
       .createOptional

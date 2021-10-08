@@ -23,27 +23,38 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
+import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{OperationHandle, OperationType}
-import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.session.NoopSessionManager
 
 class OperationLogSuite extends KyuubiFunSuite {
 
   val msg1 = "This is just a dummy log message 1"
   val msg2 = "This is just a dummy log message 2"
 
-  test("create, delete, read and write to operation log") {
-    val sHandle = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+  test("create, delete, read and write to server operation log") {
+    val sessionManager = new NoopSessionManager
+    sessionManager.initialize(KyuubiConf())
+    val sHandle = sessionManager.openSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
+      "kyuubi",
+      "passwd",
+      "localhost",
+      Map.empty)
+    val session = sessionManager.getSession(sHandle)
     val oHandle = OperationHandle(
       OperationType.EXECUTE_STATEMENT, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+    assert(sessionManager.operationLogRoot.isDefined)
+    val operationLogRoot = sessionManager.operationLogRoot.get
 
-    OperationLog.createOperationLogRootDirectory(sHandle)
-    assert(Files.exists(Paths.get(OperationLog.LOG_ROOT, sHandle.identifier.toString)))
-    assert(Files.isDirectory(Paths.get(OperationLog.LOG_ROOT, sHandle.identifier.toString)))
+    OperationLog.createOperationLogRootDirectory(session)
+    assert(Files.exists(Paths.get(operationLogRoot, sHandle.identifier.toString)))
+    assert(Files.isDirectory(Paths.get(operationLogRoot, sHandle.identifier.toString)))
 
-    val operationLog = OperationLog.createOperationLog(sHandle, oHandle)
-    val logFile =
-      Paths.get(OperationLog.LOG_ROOT, sHandle.identifier.toString, oHandle.identifier.toString)
+    val operationLog = OperationLog.createOperationLog(session, oHandle)
+    val logFile = Paths.get(operationLogRoot, sHandle.identifier.toString,
+      oHandle.identifier.toString)
     assert(Files.exists(logFile))
 
     OperationLog.setCurrentOperationLog(operationLog)
@@ -69,12 +80,20 @@ class OperationLogSuite extends KyuubiFunSuite {
   }
 
   test("log divert appender") {
-    val sHandle = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+    val sessionManager = new NoopSessionManager
+    sessionManager.initialize(KyuubiConf())
+    val sHandle = sessionManager.openSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
+      "kyuubi",
+      "passwd",
+      "localhost",
+      Map.empty)
+    val session = sessionManager.getSession(sHandle)
     val oHandle = OperationHandle(
       OperationType.EXECUTE_STATEMENT, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
 
-    OperationLog.createOperationLogRootDirectory(sHandle)
-    val operationLog = OperationLog.createOperationLog(sHandle, oHandle)
+    OperationLog.createOperationLogRootDirectory(session)
+    val operationLog = OperationLog.createOperationLog(session, oHandle)
     OperationLog.setCurrentOperationLog(operationLog)
 
     LogDivertAppender.initialize()
@@ -102,25 +121,50 @@ class OperationLogSuite extends KyuubiFunSuite {
   }
 
   test("exception when creating log files") {
-    val sHandle = SessionHandle(TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
-    val logRoot = Paths.get(OperationLog.LOG_ROOT, sHandle.identifier.toString).toFile
+    val sessionManager = new NoopSessionManager
+    sessionManager.initialize(KyuubiConf())
+    val sHandle = sessionManager.openSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
+      "kyuubi",
+      "passwd",
+      "localhost",
+      Map.empty)
+    val session = sessionManager.getSession(sHandle)
+    assert(sessionManager.operationLogRoot.isDefined)
+    val operationLogRoot = sessionManager.operationLogRoot.get
+
+    val logRoot = Paths.get(operationLogRoot, sHandle.identifier.toString).toFile
     logRoot.deleteOnExit()
-    Files.createFile(Paths.get(OperationLog.LOG_ROOT, sHandle.identifier.toString))
+    Files.createFile(Paths.get(operationLogRoot, sHandle.identifier.toString))
     assert(logRoot.exists())
-    OperationLog.createOperationLogRootDirectory(sHandle)
+    OperationLog.createOperationLogRootDirectory(session)
     assert(logRoot.isFile)
     val oHandle = OperationHandle(
       OperationType.EXECUTE_STATEMENT, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
-    val log = OperationLog.createOperationLog(sHandle, oHandle)
+    val log = OperationLog.createOperationLog(session, oHandle)
     assert(log === null)
     logRoot.delete()
 
-    OperationLog.createOperationLogRootDirectory(sHandle)
-    val log1 = OperationLog.createOperationLog(sHandle, oHandle)
+    OperationLog.createOperationLogRootDirectory(session)
+    val log1 = OperationLog.createOperationLog(session, oHandle)
     log1.write("some msg here \n")
     log1.close()
     log1.write("some msg here again")
     val e = intercept[KyuubiSQLException](log1.read(-1))
     assert(e.getMessage.contains(s"${sHandle.identifier}/${oHandle.identifier}"))
+  }
+
+  test("test fail to init operation log root dir") {
+    val sessionManager = new NoopSessionManager
+    val tempDir = Utils.createTempDir().toFile
+    tempDir.setExecutable(false)
+
+    sessionManager.setOperationLogRootDir(tempDir.getAbsolutePath + "/operation_logs")
+    assert(sessionManager.operationLogRoot.isDefined)
+    sessionManager.initialize(KyuubiConf())
+    assert(sessionManager.operationLogRoot.isEmpty)
+
+    tempDir.setExecutable(true)
+    tempDir.delete()
   }
 }

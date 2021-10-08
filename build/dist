@@ -165,7 +165,7 @@ if [[ "$SPARK_PROVIDED" == "true" ]]; then
   MVN_DIST_OPT="$MVN_DIST_OPT -Pspark-provided"
 fi
 
-BUILD_COMMAND=("$MVN" -T 1C clean package $MVN_DIST_OPT $@)
+BUILD_COMMAND=("$MVN" clean package $MVN_DIST_OPT $@)
 
 echo -e "\nBuilding with..."
 echo -e "\$ ${BUILD_COMMAND[@]}\n"

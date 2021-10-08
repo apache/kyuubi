@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.jdbc;
+package org.apache.kyuubi.jdbc.hive;
 
 import java.lang.reflect.Field;
 import java.sql.DatabaseMetaData;
