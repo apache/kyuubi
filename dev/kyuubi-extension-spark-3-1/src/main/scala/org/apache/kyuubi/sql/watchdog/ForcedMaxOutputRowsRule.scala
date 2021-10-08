@@ -105,6 +105,13 @@ case class MarkAggregateOrderRule(session: SparkSession) extends Rule[LogicalPla
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
 
+    /*
+    * The case mainly process order not aggregate column but grouping column as below
+    * SELECT c1, COUNT(*) as cnt
+    * FROM t1
+    * GROUP BY c1
+    * ORDER BY c1
+    * */
     case a: Aggregate if a.aggregateExpressions
       .exists(x => x.resolved && x.name.equals("aggOrder")) => markChildAggregate(a)
       plan
