@@ -275,12 +275,15 @@ object ServiceDiscovery extends Logging {
     confsToPublish += ("hive.server2.transport.mode" -> "binary")
     // Transport specific confs
     confsToPublish += ("hive.server2.thrift.port" -> hostPort(1))
-    confsToPublish += ("hive.server2.thrift.sasl.qop" -> "auth")
+    confsToPublish += ("hive.server2.thrift.sasl.qop" -> conf.get(KyuubiConf.SASL_QOP))
     // Auth specific confs
-    confsToPublish += ("hive.server2.authentication" -> "KERBEROS")
-    confsToPublish += ("hive.server2.authentication.kerberos.principal" ->
-      conf.get(KyuubiConf.SERVER_PRINCIPAL).map(KyuubiHadoopUtils.getServerPrincipal).getOrElse(""))
-
+    val authenticationMethod = conf.get(KyuubiConf.AUTHENTICATION_METHOD)
+    confsToPublish += ("hive.server2.authentication" -> authenticationMethod)
+    if (authenticationMethod.equalsIgnoreCase("KERBEROS")) {
+      confsToPublish += ("hive.server2.authentication.kerberos.principal" ->
+        conf.get(KyuubiConf.SERVER_PRINCIPAL).map(KyuubiHadoopUtils.getServerPrincipal)
+          .getOrElse(""))
+    }
     confsToPublish.map { case (k, v) => k + "=" + v }.mkString(";")
   }
 }
