@@ -25,10 +25,10 @@ import org.apache.spark.unsafe.types.UTF8String
 import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
 object ZorderBytesUtils {
-  private val BYTE_8_MASK = 1 << 7
-  private val BYTE_16_MASK = 1 << 15
-  private val BYTE_32_MASK = 1 << 31
-  private val BYTE_64_MASK = 1L << 63
+  private final val BIT_8_MASK = 1 << 7
+  private final val BIT_16_MASK = 1 << 15
+  private final val BIT_32_MASK = 1 << 31
+  private final val BIT_64_MASK = 1L << 63
 
   def interleaveMultiByteArray(arrays: Array[Array[Byte]]): Array[Byte] = {
     var totalLength = 0
@@ -108,12 +108,12 @@ object ZorderBytesUtils {
   }
 
   def byteToByte(a: Int): Array[Byte] = {
-    val tmp = (a ^ BYTE_8_MASK).toByte
+    val tmp = (a ^ BIT_8_MASK).toByte
     Array(tmp)
   }
 
   def shortToByte(a: Short): Array[Byte] = {
-    val tmp = a ^ BYTE_16_MASK
+    val tmp = a ^ BIT_16_MASK
     Array(((tmp >> 8) & 0xff).toByte, (tmp & 0xff).toByte)
   }
 
@@ -121,14 +121,14 @@ object ZorderBytesUtils {
     val result = new Array[Byte](4)
     var i = 0
     if (a <= Short.MaxValue) {
-      val tmp = a ^ BYTE_16_MASK
+      val tmp = a ^ BIT_16_MASK
       while (i <= 1) {
         val offset = i * 8
         result(3 - i) = ((tmp >> offset) & 0xff).toByte
         i += 1
       }
     } else {
-      val tmp = a ^ BYTE_32_MASK
+      val tmp = a ^ BIT_32_MASK
       while (i <= 3) {
         val offset = i * 8
         result(3 - i) = ((tmp >> offset) & 0xff).toByte
@@ -142,21 +142,21 @@ object ZorderBytesUtils {
     val result = new Array[Byte](8)
     var i = 0
     if (a <= Short.MaxValue) {
-      val tmp = a ^ BYTE_16_MASK
+      val tmp = a ^ BIT_16_MASK
       while (i <= 1) {
         val offset = i * 8
         result(7 - i) = ((tmp >> offset) & 0xff).toByte
         i += 1
       }
     } else if (a <= Int.MaxValue) {
-      val tmp = a ^ BYTE_32_MASK
+      val tmp = a ^ BIT_32_MASK
       while (i <= 3) {
         val offset = i * 8
         result(7 - i) = ((tmp >> offset) & 0xff).toByte
         i += 1
       }
     } else {
-      val tmp = a ^ BYTE_64_MASK
+      val tmp = a ^ BIT_64_MASK
       while (i <= 7) {
         val offset = i * 8
         result(7 - i) = ((tmp >> offset) & 0xff).toByte
