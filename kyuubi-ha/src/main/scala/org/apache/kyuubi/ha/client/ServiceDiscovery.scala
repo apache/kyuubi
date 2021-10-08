@@ -262,6 +262,12 @@ object ServiceDiscovery extends Logging {
     serviceNode
   }
 
+  /**
+   * Refer to the implementation of HIVE-11581 to simplify user connection parameters.
+   * https://issues.apache.org/jira/browse/HIVE-11581
+   * HiveServer2 should store connection params in ZK
+   * when using dynamic service discovery for simpler client connection string.
+   */
   private def addConfsToPublish(conf: KyuubiConf, instance: String): String = {
     if (!instance.contains(":")) {
       return instance
