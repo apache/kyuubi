@@ -125,7 +125,8 @@ case class MarkAggregateOrderRule(session: SparkSession) extends Rule[LogicalPla
   }
 
   override def apply(plan: LogicalPlan): LogicalPlan = conf.getConf(
-    KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS) match {
+    KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS
+  ) match {
     case Some(_) => findAndMarkChildAggregate(plan)
     case _ => plan
   }
