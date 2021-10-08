@@ -154,17 +154,20 @@ trait ProcBuilder {
   def killApplication(line: String = lastRowOfLog): String =
     YARN_APP_NAME_REGEX.findFirstIn(line) match {
       case Some(appId) =>
-        val pb = new ProcessBuilder("/bin/sh",
-          System.getProperty("user.dir") + "/bin/stop-application.sh", appId)
-
-        pb.environment()
-          .putAll(env.asJava)
-        pb.redirectError(engineLog)
-        pb.redirectOutput(engineLog)
-        val process = pb.start()
-        process.waitFor() match {
-          case id if id != 0 => s"Failed to kill Application $appId, please kill it manually. "
-          case _ => s"Killed Application $appId successfully. "
+        env.get(KyuubiConf.KYUUBI_HOME) match {
+          case Some(kyuubiHome) =>
+            val pb = new ProcessBuilder("/bin/sh", s"$kyuubiHome/bin/stop-application.sh", appId)
+            pb.environment()
+              .putAll(env.asJava)
+            pb.redirectError(engineLog)
+            pb.redirectOutput(engineLog)
+            val process = pb.start()
+            process.waitFor() match {
+              case id if id != 0 => s"Failed to kill Application $appId, please kill it manually. "
+              case _ => s"Killed Application $appId successfully. "
+            }
+          case None =>
+            s"KYUUBI_HOME is not set! Failed to kill Application $appId, please kill it manually."
         }
       case None => ""
     }
