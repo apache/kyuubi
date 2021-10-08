@@ -51,7 +51,7 @@ object HighAvailabilityConf {
   val HA_ZK_ACL_ENGINE_ENABLED: ConfigEntry[Boolean] =
     buildConf("ha.zookeeper.acl.engine.enabled")
       .doc("Set to true if the zookeeper ensemble is kerberized at engine side.")
-      .version("1.4.0")
+      .version("1.3.1")
       .booleanConf
       .createWithDefault(false)
 
