@@ -37,7 +37,7 @@ import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.service.{AbstractService, FrontendService}
-import org.apache.kyuubi.util.ThreadUtils
+import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
 
 /**
  * A abstract service for service discovery
@@ -233,13 +233,18 @@ object ServiceDiscovery extends Logging {
     var serviceNode: PersistentNode = null
     val createMode = if (external) CreateMode.PERSISTENT_SEQUENTIAL
       else CreateMode.EPHEMERAL_SEQUENTIAL
+    val znodeData = if (conf.get(HA_ZK_PUBLIST_CONFIGS) && session.isEmpty) {
+      addConfsToPublish(conf, instance)
+    } else {
+      instance
+    }
     try {
       serviceNode = new PersistentNode(
         zkClient,
         createMode,
         false,
         pathPrefix,
-        instance.getBytes(StandardCharsets.UTF_8))
+        znodeData.getBytes(StandardCharsets.UTF_8))
       serviceNode.start()
       val znodeTimeout = conf.get(HA_ZK_NODE_TIMEOUT)
       if (!serviceNode.waitForInitialCreate(znodeTimeout, TimeUnit.MILLISECONDS)) {
@@ -255,6 +260,37 @@ object ServiceDiscovery extends Logging {
           s"Unable to create a znode for this server instance: $instance", e)
     }
     serviceNode
+  }
+
+  /**
+   * Refer to the implementation of HIVE-11581 to simplify user connection parameters.
+   * https://issues.apache.org/jira/browse/HIVE-11581
+   * HiveServer2 should store connection params in ZK
+   * when using dynamic service discovery for simpler client connection string.
+   */
+  private def addConfsToPublish(conf: KyuubiConf, instance: String): String = {
+    if (!instance.contains(":")) {
+      return instance
+    }
+    val hostPort = instance.split(":", 2)
+    val confsToPublish = collection.mutable.Map[String, String]()
+
+    // Hostname
+    confsToPublish += ("hive.server2.thrift.bind.host" -> hostPort(0))
+    // Transport mode
+    confsToPublish += ("hive.server2.transport.mode" -> "binary")
+    // Transport specific confs
+    confsToPublish += ("hive.server2.thrift.port" -> hostPort(1))
+    confsToPublish += ("hive.server2.thrift.sasl.qop" -> conf.get(KyuubiConf.SASL_QOP))
+    // Auth specific confs
+    val authenticationMethod = conf.get(KyuubiConf.AUTHENTICATION_METHOD)
+    confsToPublish += ("hive.server2.authentication" -> authenticationMethod)
+    if (authenticationMethod.equalsIgnoreCase("KERBEROS")) {
+      confsToPublish += ("hive.server2.authentication.kerberos.principal" ->
+        conf.get(KyuubiConf.SERVER_PRINCIPAL).map(KyuubiHadoopUtils.getServerPrincipal)
+          .getOrElse(""))
+    }
+    confsToPublish.map { case (k, v) => k + "=" + v }.mkString(";")
   }
 }
 
