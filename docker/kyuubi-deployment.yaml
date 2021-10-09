@@ -50,8 +50,9 @@ spec:
     spec:
       containers:
         - name: kyuubi-server
+          # TODO: replace this with the stable tag
           image: apache/kyuubi:master-snapshot
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           env:
             - name: KYUUBI_JAVA_OPTS
               value: -Dkyuubi.frontend.bind.host=0.0.0.0
