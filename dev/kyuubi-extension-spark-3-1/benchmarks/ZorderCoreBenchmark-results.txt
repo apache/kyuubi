@@ -2,10 +2,10 @@ Java HotSpot(TM) 64-Bit Server VM 1.8.0_271-b09 on Mac OS X 10.16
 Intel(R) Core(TM) i7-4770HQ CPU @ 2.20GHz
 1000000 rows zorder core benchmark:       Best Time(ms)   Avg Time(ms)   Stdev(ms)    Rate(M/s)   Per Row(ns)   Relative
 ------------------------------------------------------------------------------------------------------------------------
-2 int columns benchmark                            1782           1846          60          0.6        1781.8       1.0X
-3 int columns benchmark                            1570           1751         205          0.6        1570.2       1.1X
-4 int columns benchmark                            1867           1957          83          0.5        1867.2       1.0X
-2 long columns benchmark                           2442           2479          35          0.4        2441.7       0.7X
-3 long columns benchmark                           2891           3181         252          0.3        2891.5       0.6X
-4 long columns benchmark                           3475           3524          81          0.3        3474.6       0.5X
+2 int columns benchmark                            1620           1693          67          0.6        1619.9       1.0X
+3 int columns benchmark                            1610           1684          66          0.6        1609.5       1.0X
+4 int columns benchmark                            1904           1969          58          0.5        1903.7       0.9X
+2 long columns benchmark                           2387           2420          50          0.4        2386.6       0.7X
+3 long columns benchmark                           3029           3133         111          0.3        3028.7       0.5X
+4 long columns benchmark                           3789           3848          89          0.3        3789.0       0.4X
 

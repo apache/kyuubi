@@ -27,13 +27,11 @@ import org.apache.kyuubi.sql.zorder.ZorderBytesUtils
  *
  * To run this benchmark, temporarily change `ignore` to `test`, then run
  * {{{
- *   ./build/mvn clean test \
+ *   RUN_BENCHMARK=1 ./build/mvn clean test \
  *   -pl dev/kyuubi-extension-spark-3-1 -am \
  *   -Pspark-3.1,kyuubi-extension-spark-3-1 \
  *   -Dtest=none -DwildcardSuites=org.apache.spark.sql.ZorderCoreBenchmark
  * }}}
- *
- * Don't forgot to restore `test` to `ignore`, because we don't want to run it in CI.
  */
 class ZorderCoreBenchmark extends KyuubiSparkSQLExtensionTest with KyuubiBenchmarkBase {
   private val numRows = 1 * 1000 * 1000
@@ -55,36 +53,38 @@ class ZorderCoreBenchmark extends KyuubiSparkSQLExtensionTest with KyuubiBenchma
     }
   }
 
-  ignore("zorder core benchmark") {
-    withHeader {
-      val benchmark = new Benchmark(
-        s"$numRows rows zorder core benchmark", numRows, output = output)
-      benchmark.addCase("2 int columns benchmark", 3) { _ =>
-        randomIntByteArray(2).foreach(ZorderBytesUtils.interleaveMultiByteArray)
+  test("zorder core benchmark") {
+    if (sys.env.contains("RUN_BENCHMARK")) {
+      withHeader {
+        val benchmark = new Benchmark(
+          s"$numRows rows zorder core benchmark", numRows, output = output)
+        benchmark.addCase("2 int columns benchmark", 3) { _ =>
+          randomIntByteArray(2).foreach(ZorderBytesUtils.interleaveMultiByteArray)
+        }
+
+        benchmark.addCase("3 int columns benchmark", 3) { _ =>
+          randomIntByteArray(3).foreach(ZorderBytesUtils.interleaveMultiByteArray)
+        }
+
+        benchmark.addCase("4 int columns benchmark", 3) { _ =>
+          randomIntByteArray(4).foreach(ZorderBytesUtils.interleaveMultiByteArray)
+        }
+
+
+        benchmark.addCase("2 long columns benchmark", 3) { _ =>
+          randomLongByteArray(2).foreach(ZorderBytesUtils.interleaveMultiByteArray)
+        }
+
+        benchmark.addCase("3 long columns benchmark", 3) { _ =>
+          randomLongByteArray(3).foreach(ZorderBytesUtils.interleaveMultiByteArray)
+        }
+
+        benchmark.addCase("4 long columns benchmark", 3) { _ =>
+          randomLongByteArray(4).foreach(ZorderBytesUtils.interleaveMultiByteArray)
+        }
+
+        benchmark.run()
       }
-
-      benchmark.addCase("3 int columns benchmark", 3) { _ =>
-        randomIntByteArray(3).foreach(ZorderBytesUtils.interleaveMultiByteArray)
-      }
-
-      benchmark.addCase("4 int columns benchmark", 3) { _ =>
-        randomIntByteArray(4).foreach(ZorderBytesUtils.interleaveMultiByteArray)
-      }
-
-
-      benchmark.addCase("2 long columns benchmark", 3) { _ =>
-        randomLongByteArray(2).foreach(ZorderBytesUtils.interleaveMultiByteArray)
-      }
-
-      benchmark.addCase("3 long columns benchmark", 3) { _ =>
-        randomLongByteArray(3).foreach(ZorderBytesUtils.interleaveMultiByteArray)
-      }
-
-      benchmark.addCase("4 long columns benchmark", 3) { _ =>
-        randomLongByteArray(4).foreach(ZorderBytesUtils.interleaveMultiByteArray)
-      }
-
-      benchmark.run()
     }
   }
 }
