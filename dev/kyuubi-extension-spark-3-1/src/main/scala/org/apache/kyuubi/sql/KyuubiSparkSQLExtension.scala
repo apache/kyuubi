@@ -43,17 +43,18 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
     // should be applied before
     // RepartitionBeforeWrite and RepartitionBeforeWriteHive
     // because we can only apply one of them (i.e. Global Sort or Repartition)
+    extensions.injectResolutionRule(MarkAggregateOrderRule)
+
     extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingDatasource)
     extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingHive)
-
     extensions.injectPostHocResolutionRule(KyuubiSqlClassification)
     extensions.injectPostHocResolutionRule(RepartitionBeforeWrite)
     extensions.injectPostHocResolutionRule(RepartitionBeforeWriteHive)
     extensions.injectPostHocResolutionRule(FinalStageConfigIsolationCleanRule)
+    extensions.injectPostHocResolutionRule(ForcedMaxOutputRowsRule)
+
     extensions.injectQueryStagePrepRule(_ => InsertShuffleNodeBeforeJoin)
     extensions.injectQueryStagePrepRule(FinalStageConfigIsolation(_))
     extensions.injectPlannerStrategy(MaxHivePartitionStrategy)
-    extensions.injectPostHocResolutionRule(ForcedMaxOutputRowsRule)
-    extensions.injectResolutionRule(MarkAggregateOrderRule)
   }
 }

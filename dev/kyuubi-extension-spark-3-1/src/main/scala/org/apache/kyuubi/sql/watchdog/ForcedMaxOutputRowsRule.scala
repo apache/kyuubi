@@ -112,12 +112,11 @@ case class MarkAggregateOrderRule(session: SparkSession) extends Rule[LogicalPla
       .exists(x => x.resolved && x.name.equals("aggOrder")) => markChildAggregate(a)
       plan
 
-    case _ => plan.children.foreach { c =>
-      c.foreach {
+    case _ => plan.children.foreach(_.foreach {
         case agg: Aggregate => markChildAggregate(agg)
         case _ => Unit
       }
-    }
+    )
       plan
   }
 
