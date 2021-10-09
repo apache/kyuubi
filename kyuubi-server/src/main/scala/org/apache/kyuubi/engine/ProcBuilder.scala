@@ -122,7 +122,8 @@ trait ProcBuilder {
               line = reader.readLine()
               while (sb.length < maxErrorSize && line != null &&
                 (containsIgnoreCase(line, "Exception:") ||
-                  line.startsWith("\tat ") || line.startsWith("Caused by: "))) {
+                  line.startsWith("\tat ") ||
+                  line.startsWith("Caused by: "))) {
                 sb.append("\n" + line)
                 line = reader.readLine()
               }
