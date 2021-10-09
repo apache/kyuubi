@@ -8,7 +8,7 @@ on:
 jobs:
   push_to_registry:
     name: Push Docker image to Docker Hub
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     concurrency:
       # this group should be global unique
       group: push-docker-image

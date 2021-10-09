@@ -50,8 +50,7 @@ metadata:
 spec:
   containers:
     - name: kyuubi-server
-      # TODO: replace this with the official repo
-      image: yaooqinn/kyuubi:1.3.0
+      image: apache/kyuubi:master-snapshot
       imagePullPolicy: IfNotPresent
       env:
         - name: KYUUBI_JAVA_OPTS
