@@ -27,8 +27,8 @@ import org.apache.spark.sql.catalyst.trees.TreeNodeTag
 import org.apache.kyuubi.sql.KyuubiSQLConf
 
 object ForcedMaxOutputRowsConstraint {
-  val CHILD_AGGREGATE: TreeNodeTag[String] = TreeNodeTag[String]("childAgg")
-  val CHILD_AGGREGATE_FLAG: String = "childAgg"
+  val CHILD_AGGREGATE: TreeNodeTag[String] = TreeNodeTag[String]("__kyuubi_child_agg__")
+  val CHILD_AGGREGATE_FLAG: String = "__kyuubi_child_agg__"
 }
 
 /*
@@ -58,10 +58,8 @@ case class ForcedMaxOutputRowsRule(session: SparkSession) extends Rule[LogicalPl
 
   private def canInsertLimitInner(p: LogicalPlan): Boolean = p match {
 
-    case agg: Aggregate => agg match {
-      case Aggregate(_, Alias(_, "havingCondition")::Nil, _) => false
-      case agg: Aggregate => !isChildAggregate(agg)
-    }
+    case Aggregate(_, Alias(_, "havingCondition")::Nil, _) => false
+    case agg: Aggregate => !isChildAggregate(agg)
     case _: Distinct => true
     case _: Filter => true
     case _: Project => true
@@ -75,12 +73,11 @@ case class ForcedMaxOutputRowsRule(session: SparkSession) extends Rule[LogicalPl
   private def canInsertLimit(p: LogicalPlan, maxOutputRowsOpt: Option[Int]): Boolean = {
 
     maxOutputRowsOpt match {
-      case Some(forcedMaxOutputRows) => val supported = canInsertLimitInner(p)
-        supported && !p.maxRows.exists(_ <= forcedMaxOutputRows)
+      case Some(forcedMaxOutputRows) => canInsertLimitInner(p) &&
+        !p.maxRows.exists(_ <= forcedMaxOutputRows)
       case None => false
     }
   }
-
 
   override def apply(plan: LogicalPlan): LogicalPlan = {
     val maxOutputRowsOpt = conf.getConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS)
@@ -118,9 +115,8 @@ case class MarkAggregateOrderRule(session: SparkSession) extends Rule[LogicalPla
     case _ => plan.children.foreach { c =>
       c.foreach {
         case agg: Aggregate => markChildAggregate(agg)
-        case _ => Unit
+        case _ => Unit}
       }
-    }
       plan
   }
 
