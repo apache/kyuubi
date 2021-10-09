@@ -101,13 +101,13 @@ object ZorderBytesUtils {
 
   def booleanToByte(a: Boolean): Array[Byte] = {
     if (a) {
-      byteToByte(1)
+      byteToByte(1.toByte)
     } else {
-      byteToByte(0)
+      byteToByte(0.toByte)
     }
   }
 
-  def byteToByte(a: Int): Array[Byte] = {
+  def byteToByte(a: Byte): Array[Byte] = {
     val tmp = (a ^ BIT_8_MASK).toByte
     Array(tmp)
   }
