@@ -20,9 +20,10 @@ package org.apache.kyuubi.engine
 import java.util.UUID
 
 import org.apache.curator.utils.ZKPaths
+import org.apache.hadoop.security.UserGroupInformation
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
-
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf
@@ -34,7 +35,7 @@ class EngineRefSuite extends KyuubiFunSuite {
   import ShareLevel._
   private val zkServer = new EmbeddedZookeeper
   private val conf = KyuubiConf()
-  val user = Utils.currentUser
+  private val user = Utils.currentUser
 
   override def beforeAll(): Unit = {
     val zkData = Utils.createTempDir()
@@ -85,6 +86,32 @@ class EngineRefSuite extends KyuubiFunSuite {
         ZKPaths.makePath(s"kyuubi_$USER", user, "abc"))
       assert(appName2.defaultEngineName === s"kyuubi_${USER}_${user}_abc_$id")
     }
+  }
+
+  test("GROUP shared level engine name") {
+    val id = UUID.randomUUID().toString
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, GROUP.toString)
+    val engineRef = new EngineRef(conf, user, id)
+    val primaryGroupName = UserGroupInformation.createRemoteUser(user).getPrimaryGroupName
+    assert(engineRef.engineSpace === ZKPaths.makePath(s"kyuubi_GROUP", primaryGroupName))
+    assert(engineRef.defaultEngineName === s"kyuubi_GROUP_${primaryGroupName}_$id")
+
+    Seq(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN,
+      KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN).foreach { k =>
+      conf.unset(k)
+      conf.set(k.key, "abc")
+      val engineRef2 = new EngineRef(conf, user, id)
+      assert(engineRef2.engineSpace ===
+        ZKPaths.makePath(s"kyuubi_$GROUP", primaryGroupName, "abc"))
+      assert(engineRef2.defaultEngineName === s"kyuubi_${GROUP}_${primaryGroupName}_abc_$id")
+    }
+
+    val userName = "Iamauserwithoutgroup"
+    val newUGI = UserGroupInformation.createRemoteUser(userName)
+    assert(newUGI.getGroupNames.isEmpty)
+    val engineRef3 = new EngineRef(conf, userName, id)
+    assert(engineRef3.engineSpace === ZKPaths.makePath(s"kyuubi_GROUP", userName, "abc"))
+    assert(engineRef3.defaultEngineName === s"kyuubi_GROUP_${userName}_abc_$id")
   }
 
   test("SERVER shared level engine name") {

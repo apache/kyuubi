@@ -54,7 +54,6 @@ trait WithKyuubiServer extends KyuubiFunSuite {
   }
 
   override def afterAll(): Unit = {
-
     if (server != null) {
       server.stop()
       server = null

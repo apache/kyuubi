@@ -30,7 +30,7 @@ import org.apache.kyuubi.service.authentication.PlainSASLHelper
 trait JDBCTestUtils extends KyuubiFunSuite {
 
   protected val dftSchema = "default"
-  protected val user: String = Utils.currentUser
+  protected lazy val user: String = Utils.currentUser
   protected val patterns = Seq("", "*", "%", null, ".*", "_*", "_%", ".%")
   protected def jdbcUrl: String
   private var _sessionConfs: Map[String, String] = Map.empty
