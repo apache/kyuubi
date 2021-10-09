@@ -115,8 +115,9 @@ case class MarkAggregateOrderRule(session: SparkSession) extends Rule[LogicalPla
     case _ => plan.children.foreach { c =>
       c.foreach {
         case agg: Aggregate => markChildAggregate(agg)
-        case _ => Unit}
+        case _ => Unit
       }
+    }
       plan
   }
 
