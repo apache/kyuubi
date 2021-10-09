@@ -594,6 +594,13 @@ object KyuubiConf {
       .toSequence()
       .createWithDefault(Nil)
 
+  val SESSION_ENGINE_FAILURE_MAX_LINES: ConfigEntry[Int] =
+    buildConf("session.engine.failure.maxLines")
+      .doc("The max lines of engine submission failure log")
+      .version("1.4.0")
+      .intConf
+      .createWithDefault(10)
+
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("backend.server.exec.pool.size")
       .doc("Number of threads in the operation execution thread pool of Kyuubi server")
