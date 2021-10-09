@@ -120,7 +120,9 @@ trait ProcBuilder {
               error = KyuubiSQLException(sb.toString() + s"\n See more: $engineLog")
               line = reader.readLine()
               while (sb.length < maxErrorSize && line != null &&
-                (line.startsWith("\tat ") || line.startsWith("Caused by: "))) {
+                (containsIgnoreCase(line, "Exception:") ||
+                  line.startsWith("\tat ") ||
+                  line.startsWith("Caused by: "))) {
                 sb.append("\n" + line)
                 line = reader.readLine()
               }
