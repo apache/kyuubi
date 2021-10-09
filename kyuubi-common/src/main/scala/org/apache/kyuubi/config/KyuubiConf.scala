@@ -594,9 +594,9 @@ object KyuubiConf {
       .toSequence()
       .createWithDefault(Nil)
 
-  val SESSION_ENGINE_FAILURE_MAX_LINES: ConfigEntry[Int] =
-    buildConf("session.engine.failure.maxLines")
-      .doc("The max lines of engine submission failure log")
+  val SESSION_ENGINE_LOG_MAX_FAILURE_LINES: ConfigEntry[Int] =
+    buildConf("session.engine.log.maxFailureLines")
+      .doc("The max last lines of engine submission failure log")
       .version("1.4.0")
       .intConf
       .createWithDefault(10)
