@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine
 
 import java.io.{File, IOException}
+import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
@@ -159,8 +160,8 @@ trait ProcBuilder {
             val pb = new ProcessBuilder("/bin/sh", s"$kyuubiHome/bin/stop-application.sh", appId)
             pb.environment()
               .putAll(env.asJava)
-            pb.redirectError(engineLog)
-            pb.redirectOutput(engineLog)
+            pb.redirectError(Redirect.appendTo(engineLog))
+            pb.redirectOutput(Redirect.appendTo(engineLog))
             val process = pb.start()
             process.waitFor() match {
               case id if id != 0 => s"Failed to kill Application $appId, please kill it manually. "
