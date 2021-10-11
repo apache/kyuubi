@@ -731,6 +731,12 @@ object KyuubiConf {
       " connection</li>" +
       " <li>USER: engine will be shared by all sessions created by a unique username," +
       s" see also ${ENGINE_SHARE_LEVEL_SUBDOMAIN.key}</li>" +
+      " <li>GROUP: engine will be shared by all sessions created by all users belong to the same" +
+      " primary group name. The engine will be launched by the group name as the effective" +
+      " username, so here the group name is kind of special user who is able to visit the" +
+      " compute resources/data of a team. It follows the" +
+      " [Hadoop GroupsMapping](https://reurl.cc/xE61Y5) to map user to a primary group. If the" +
+      " primary group is not found, it fallback to the USER level." +
       " <li>SERVER: the App will be shared by Kyuubi servers</li></ul>")
     .version("1.2.0")
     .fallbackConf(LEGACY_ENGINE_SHARE_LEVEL)
