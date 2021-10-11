@@ -177,7 +177,7 @@ select count(*) from conn_zorder where src_ip like '157%' and dst_ip like '216.%
 ```
 
 
-# benchmark result
+## benchmark result
 by querying the tables before and after optimization, we find that
 
 **10 billion data and 200 files and Query resource:200 core 600G memory**
@@ -190,13 +190,13 @@ by querying the tables before and after optimization, we find that
 
 
 
-**10 billion data and 2000 files and Query resource:200 core 600G memory**
+**10 billion data and 1000 files and Query resource:200 core 600G memory**
 
 | Table               | Average File Size | Scan row count | Average query time | row count Skipping ratio |
 | ------------------- | ----------------- | -------------- | ------------------ | ------------------------ |
 | conn_random_parquet | 234.8 M           | 10,000,000,000 | 27.031 s           | 0.0%                     |
-| conn_zorder_only_ip | 173.9 M           | 43,170,600     | 2.668 s            | 99.568%                  |
-| conn_zorder         | 174.0 M           | 54,841,302     | 3.207 s            | 99.451%                  |
+| conn_zorder_only_ip | 173.9 M           | 53,499,068     | 3.120 s            | 99.465%                  |
+| conn_zorder         | 174.0 M           | 35,910,500     | 3.103 s            | 99.640%                  |
 
 
 
