@@ -20,12 +20,12 @@ package org.apache.kyuubi.ha.client
 import java.io.{File, IOException}
 import javax.security.auth.login.Configuration
 
-import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
+import org.apache.curator.framework.{AuthInfo, CuratorFramework, CuratorFrameworkFactory}
 import org.apache.curator.retry._
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager.JaasConfiguration
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
@@ -55,13 +55,21 @@ object ZooKeeperClientProvider extends Logging {
       case UNTIL_ELAPSED => new RetryUntilElapsed(maxSleepTime, baseSleepTime)
       case _ => new ExponentialBackoffRetry(baseSleepTime, maxRetries)
     }
-    CuratorFrameworkFactory.builder()
+    val builder = CuratorFrameworkFactory.builder()
       .connectString(connectionStr)
       .sessionTimeoutMs(sessionTimeout)
       .connectionTimeoutMs(connectionTimeout)
       .aclProvider(new ZooKeeperACLProvider(conf))
       .retryPolicy(retryPolicy)
-      .build()
+
+    conf.get(HA_ZK_AUTH) match {
+      case Some(anthString) =>
+        val authInfo = parseZkAuthString(anthString)
+        builder.authorization(authInfo.getScheme, authInfo.getAuth)
+      case _ =>
+    }
+
+    builder.build()
   }
 
   /**
@@ -89,7 +97,7 @@ object ZooKeeperClientProvider extends Logging {
    */
   @throws[Exception]
   def setUpZooKeeperAuth(conf: KyuubiConf): Unit = {
-    if (conf.get(HA_ZK_ACL_ENABLED)) {
+    if (conf.get(HA_ZK_AUTH_SASL_KERBEROS)) {
       val keyTabFile = conf.get(KyuubiConf.SERVER_KEYTAB)
       val maybePrincipal = conf.get(KyuubiConf.SERVER_PRINCIPAL)
       val kerberized = maybePrincipal.isDefined && keyTabFile.isDefined
@@ -104,5 +112,14 @@ object ZooKeeperClientProvider extends Logging {
         Configuration.setConfiguration(jaasConf)
       }
     }
+  }
+
+  private def parseZkAuthString(authString: String): AuthInfo = {
+    val authArr = authString.split(":", 2)
+    if (authArr.length != 2) {
+      throw new KyuubiException(s"Invalid auth : ${authString}," +
+        s" Needs to be of form scheme:authString.")
+    }
+    new AuthInfo(authArr(0), authArr(1).getBytes("UTF-8"))
   }
 }

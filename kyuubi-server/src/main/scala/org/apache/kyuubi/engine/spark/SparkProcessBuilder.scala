@@ -29,6 +29,7 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE
 import org.apache.kyuubi.engine.ProcBuilder
+import org.apache.kyuubi.ha.HighAvailabilityConf
 
 class SparkProcessBuilder(
     override val proxyUser: String,
@@ -123,11 +124,19 @@ class SparkProcessBuilder(
     buffer += executable
     buffer += CLASS
     buffer += mainClass
-    conf.toSparkPrefixedConf.foreach { case (k, v) =>
+
+    var sparkPrefixedConf = conf.toSparkPrefixedConf
+
+    // if enable sasl kerberos authentication for zookeeper, need to upload the server ketab file
+    if (conf.get(HighAvailabilityConf.HA_ZK_AUTH_SASL_KERBEROS)) {
+      sparkPrefixedConf = sparkPrefixedConf ++ serverKeytabFileConf(sparkPrefixedConf)
+    }
+
+    sparkPrefixedConf.foreach { case (k, v) =>
       buffer += CONF
       buffer += s"$k=$v"
     }
-    // iff the keytab is specified, PROXY_USER is not supported
+    // if the keytab is specified, PROXY_USER is not supported
     if (!useKeytab()) {
       buffer += PROXY_USER
       buffer += proxyUser
@@ -162,6 +171,31 @@ class SparkProcessBuilder(
       }
     }
   }
+
+  private def serverKeytabFileConf(sparkConf: Map[String, String]): Map[String, String] = {
+    val serverKeytab = conf.get(KyuubiConf.SERVER_KEYTAB)
+    if (serverKeytab.isDefined) {
+      val serverKeytabFileName = serverKeytabName
+      sparkConf.get(SPARK_FILES) match {
+        case Some(files) =>
+          Map(SPARK_FILES -> s"$files,${serverKeytab.get}"
+            , s"spark.${KyuubiConf.SERVER_KEYTAB.key}" -> s"${serverKeytabFileName.get}")
+        case _ =>
+          Map(SPARK_FILES -> serverKeytab.get
+            , s"spark.${KyuubiConf.SERVER_KEYTAB.key}" -> s"${serverKeytabFileName.get}")
+      }
+    } else {
+      Map()
+    }
+  }
+
+  private def serverKeytabName(): Option[String] = {
+    conf.get(KyuubiConf.SERVER_KEYTAB) match {
+      case Some(keytab) => Some(new File(keytab).getName)
+      case _ => None
+    }
+  }
+
 }
 
 object SparkProcessBuilder {
@@ -171,6 +205,7 @@ object SparkProcessBuilder {
   private final val CONF = "--conf"
   private final val CLASS = "--class"
   private final val PROXY_USER = "--proxy-user"
+  private final val SPARK_FILES = "spark.files"
   private final val PRINCIPAL = "spark.kerberos.principal"
   private final val KEYTAB = "spark.kerberos.keytab"
   // Get the appropriate spark-submit file

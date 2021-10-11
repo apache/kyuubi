@@ -55,6 +55,20 @@ object HighAvailabilityConf {
       .booleanConf
       .createWithDefault(false)
 
+  val HA_ZK_AUTH_SASL_KERBEROS: ConfigEntry[Boolean] =
+    buildConf("ha.zookeeper.auth.sasl.kerberos")
+      .doc("Set to true if the zookeeper ensemble is kerberized")
+      .version("1.4.0")
+      .booleanConf
+      .createWithDefault(UserGroupInformation.isSecurityEnabled)
+
+  val HA_ZK_AUTH: OptionalConfigEntry[String] =
+    buildConf("ha.zookeeper.auth")
+      .doc("The auth string is used for zookeeper connection authentication.")
+      .version("1.4.0")
+      .stringConf
+      .createOptional
+
   val HA_ZK_CONN_MAX_RETRIES: ConfigEntry[Int] =
     buildConf("ha.zookeeper.connection.max.retries")
       .doc("Max retry times for connecting to the zookeeper ensemble")
