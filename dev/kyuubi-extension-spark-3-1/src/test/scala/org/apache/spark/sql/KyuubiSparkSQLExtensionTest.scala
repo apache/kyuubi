@@ -42,7 +42,6 @@ trait KyuubiSparkSQLExtensionTest extends QueryTest
         .enableHiveSupport()
         .getOrCreate())
     }
-    setupData()
     super.beforeAll()
   }
 
@@ -52,7 +51,7 @@ trait KyuubiSparkSQLExtensionTest extends QueryTest
     _spark.foreach(_.stop)
   }
 
-  private def setupData(): Unit = {
+  protected def setupData(): Unit = {
     val self = spark
     import self.implicits._
     spark.sparkContext.parallelize(

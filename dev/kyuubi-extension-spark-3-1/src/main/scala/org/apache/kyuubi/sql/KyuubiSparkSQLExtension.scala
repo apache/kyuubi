@@ -38,13 +38,14 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
     extensions.injectParser{ case (_, parser) => new ZorderSparkSqlExtensionsParser(parser) }
     extensions.injectResolutionRule(ResolveZorder)
 
+    // a help rule for ForcedMaxOutputRowsRule
+    extensions.injectResolutionRule(MarkAggregateOrderRule)
+
     // Note that:
     // InsertZorderBeforeWritingDatasource and InsertZorderBeforeWritingHive
     // should be applied before
     // RepartitionBeforeWrite and RepartitionBeforeWriteHive
     // because we can only apply one of them (i.e. Global Sort or Repartition)
-    extensions.injectResolutionRule(MarkAggregateOrderRule)
-
     extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingDatasource)
     extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingHive)
     extensions.injectPostHocResolutionRule(KyuubiSqlClassification)

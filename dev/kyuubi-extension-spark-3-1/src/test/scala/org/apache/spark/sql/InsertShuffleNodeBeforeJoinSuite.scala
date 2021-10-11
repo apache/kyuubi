@@ -23,6 +23,11 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.kyuubi.sql.KyuubiSQLConf
 
 class InsertShuffleNodeBeforeJoinSuite extends KyuubiSparkSQLExtensionTest {
+  protected override def beforeAll(): Unit = {
+    super.beforeAll()
+    setupData()
+  }
+
   test("force shuffle before join") {
     def checkShuffleNodeNum(sqlString: String, num: Int): Unit = {
       var expectedResult: Seq[Row] = Seq.empty
