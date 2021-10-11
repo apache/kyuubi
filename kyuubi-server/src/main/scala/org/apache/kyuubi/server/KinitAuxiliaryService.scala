@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.service
+package org.apache.kyuubi.server
 
 import java.util.concurrent.TimeUnit
 
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
 
 class KinitAuxiliaryService() extends AbstractService("KinitAuxiliaryService") {

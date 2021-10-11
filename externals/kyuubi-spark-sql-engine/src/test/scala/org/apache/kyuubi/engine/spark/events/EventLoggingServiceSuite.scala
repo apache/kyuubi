@@ -34,7 +34,7 @@ import org.apache.kyuubi.operation.{JDBCTestUtils, OperationHandle}
 
 class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
-  private val logRoot = "file:" + Utils.createTempDir().toString
+  private val logRoot = "file://" + Utils.createTempDir().toString
   private val currentDate = Utils.getDateFromTimestamp(System.currentTimeMillis())
 
   override def withKyuubiConf: Map[String, String] = Map(
@@ -99,7 +99,7 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
   test("statementEvent: generate, dump and query") {
     val statementEventPath = Paths.get(
-      logRoot, "spark_statement", s"day=$currentDate", engine.engineId + ".json")
+      logRoot, "spark_statement", s"day=$currentDate", spark.sparkContext.applicationId + ".json")
     val sql = "select timestamp'2021-09-01';"
     withSessionHandle { (client, handle) =>
 

@@ -20,7 +20,7 @@ package org.apache.kyuubi.sql
 import org.apache.spark.sql.SparkSessionExtensions
 
 import org.apache.kyuubi.sql.sqlclassification.KyuubiSqlClassification
-import org.apache.kyuubi.sql.watchdog.{ForcedMaxOutputRowsRule, MaxHivePartitionStrategy}
+import org.apache.kyuubi.sql.watchdog.{ForcedMaxOutputRowsRule, MarkAggregateOrderRule, MaxHivePartitionStrategy}
 import org.apache.kyuubi.sql.zorder.{InsertZorderBeforeWritingDatasource, InsertZorderBeforeWritingHive}
 import org.apache.kyuubi.sql.zorder.ResolveZorder
 import org.apache.kyuubi.sql.zorder.ZorderSparkSqlExtensionsParser
@@ -43,16 +43,18 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
     // should be applied before
     // RepartitionBeforeWrite and RepartitionBeforeWriteHive
     // because we can only apply one of them (i.e. Global Sort or Repartition)
+    extensions.injectResolutionRule(MarkAggregateOrderRule)
+
     extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingDatasource)
     extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingHive)
-
     extensions.injectPostHocResolutionRule(KyuubiSqlClassification)
     extensions.injectPostHocResolutionRule(RepartitionBeforeWrite)
     extensions.injectPostHocResolutionRule(RepartitionBeforeWriteHive)
     extensions.injectPostHocResolutionRule(FinalStageConfigIsolationCleanRule)
+    extensions.injectPostHocResolutionRule(ForcedMaxOutputRowsRule)
+
     extensions.injectQueryStagePrepRule(_ => InsertShuffleNodeBeforeJoin)
     extensions.injectQueryStagePrepRule(FinalStageConfigIsolation(_))
     extensions.injectPlannerStrategy(MaxHivePartitionStrategy)
-    extensions.injectPostHocResolutionRule(ForcedMaxOutputRowsRule)
   }
 }

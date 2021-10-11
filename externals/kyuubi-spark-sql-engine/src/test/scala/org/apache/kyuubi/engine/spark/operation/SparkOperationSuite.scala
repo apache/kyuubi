@@ -806,8 +806,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveJDBCTests {
         creds2.addToken(new Text("HDFS2"), extraHDFSToken)
         sendCredentials(client, creds2)
         // SparkSQLEngine's tokens should be updated
-        var engineCredentials =
-          KyuubiHadoopUtils.getCredentialsInternal(UserGroupInformation.getCurrentUser)
+        var engineCredentials = UserGroupInformation.getCurrentUser.getCredentials
         assert(engineCredentials.getToken(hdfsTokenAlias) == creds2.getToken(hdfsTokenAlias))
         assert(
           engineCredentials.getToken(hiveTokenAlias) == creds2.getToken(new Text(metastoreUris)))
@@ -818,8 +817,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveJDBCTests {
         val creds3 = createCredentials(currentTime, hdfsTokenAlias.toString, metastoreUris)
         sendCredentials(client, creds3)
         // SparkSQLEngine's tokens should not be updated
-        engineCredentials =
-          KyuubiHadoopUtils.getCredentialsInternal(UserGroupInformation.getCurrentUser)
+        engineCredentials = UserGroupInformation.getCurrentUser.getCredentials
         assert(engineCredentials.getToken(hdfsTokenAlias) == creds2.getToken(hdfsTokenAlias))
         assert(
           engineCredentials.getToken(hiveTokenAlias) == creds2.getToken(new Text(metastoreUris)))
@@ -828,8 +826,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveJDBCTests {
         val creds4 = createCredentials(currentTime + 2, "HDFS2", "thrift://localhost:9085")
         sendCredentials(client, creds4)
         // No token is updated
-        engineCredentials =
-          KyuubiHadoopUtils.getCredentialsInternal(UserGroupInformation.getCurrentUser)
+        engineCredentials = UserGroupInformation.getCurrentUser.getCredentials
         assert(engineCredentials.getToken(hdfsTokenAlias) == creds2.getToken(hdfsTokenAlias))
         assert(
           engineCredentials.getToken(hiveTokenAlias) == creds2.getToken(new Text(metastoreUris)))
