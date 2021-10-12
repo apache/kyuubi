@@ -23,6 +23,10 @@ import org.apache.kyuubi.sql.KyuubiSQLConf
 import org.apache.kyuubi.sql.watchdog.MaxHivePartitionExceedException
 
 class WatchDogSuite extends KyuubiSparkSQLExtensionTest {
+  protected override def beforeAll(): Unit = {
+    super.beforeAll()
+    setupData()
+  }
 
   case class LimitAndExpected(limit: Int, expected: Int)
   val limitAndExpecteds = List(LimitAndExpected(1, 1), LimitAndExpected(11, 10))
