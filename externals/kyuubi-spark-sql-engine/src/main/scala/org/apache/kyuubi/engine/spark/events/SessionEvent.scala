@@ -46,7 +46,7 @@ case class SessionEvent(
   override lazy val partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
 
-  def totalTime: Long = {
+  def duration: Long = {
     if (endTime == -1L) {
       System.currentTimeMillis - startTime
     } else {

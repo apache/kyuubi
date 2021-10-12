@@ -322,7 +322,7 @@ private class SessionStatsTableDataSource(
       case "Session ID" => Ordering.by(_.sessionId)
       case "Start Time" => Ordering by (_.startTime)
       case "Finish Time" => Ordering.by(_.endTime)
-      case "Duration" => Ordering.by(_.totalTime)
+      case "Duration" => Ordering.by(_.duration)
       case "Total Statements" => Ordering.by(_.totalOperations)
       case unknownColumn => throw new IllegalArgumentException(s"Unknown column: $unknownColumn")
     }
