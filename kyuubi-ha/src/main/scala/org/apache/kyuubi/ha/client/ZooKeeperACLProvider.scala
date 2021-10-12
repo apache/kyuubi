@@ -33,20 +33,11 @@ class ZooKeeperACLProvider(conf: KyuubiConf) extends ACLProvider {
    */
   override lazy val getDefaultAcl: java.util.List[ACL] = {
     val nodeAcls = new java.util.ArrayList[ACL]
-
-    def addACL(): Unit = {
+    if (conf.get(HighAvailabilityConf.HA_ZK_ACL_ENABLED)) {
       // Read all to the world
       nodeAcls.addAll(ZooDefs.Ids.READ_ACL_UNSAFE)
       // Create/Delete/Write/Admin to the authenticated user
       nodeAcls.addAll(ZooDefs.Ids.CREATOR_ALL_ACL)
-    }
-
-    if (conf.get(HighAvailabilityConf.HA_ZK_ACL_ENABLED) &&
-      conf.get(HighAvailabilityConf.HA_ZK_ENGINE_REF_ID).isEmpty) {
-      addACL()
-    } else if (conf.get(HighAvailabilityConf.HA_ZK_ACL_ENGINE_ENABLED) &&
-      conf.get(HighAvailabilityConf.HA_ZK_ENGINE_REF_ID).nonEmpty) {
-      addACL()
     } else {
       // ACLs for znodes on a non-kerberized cluster
       // Create/Read/Delete/Write/Admin to the world
