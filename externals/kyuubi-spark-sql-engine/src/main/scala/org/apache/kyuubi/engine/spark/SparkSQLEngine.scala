@@ -38,13 +38,15 @@ import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.SignalRegister
 
-case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngine") {
+case class SparkSQLEngine(
+    spark: SparkSession,
+    store: EngineEventsStore) extends Serverable("SparkSQLEngine") {
 
   override val backendService = new SparkSQLBackendService(spark)
   override val frontendServices = Seq(new SparkThriftBinaryFrontendService(this))
 
   override def initialize(conf: KyuubiConf): Unit = {
-    val listener = new SparkSQLEngineListener(this, new EngineEventsStore(conf))
+    val listener = new SparkSQLEngineListener(this, store)
     spark.sparkContext.addSparkListener(listener)
     super.initialize(conf)
   }
@@ -109,7 +111,8 @@ object SparkSQLEngine extends Logging {
   }
 
   def startEngine(spark: SparkSession): Unit = {
-    currentEngine = Some(new SparkSQLEngine(spark))
+    val store = new EngineEventsStore(kyuubiConf)
+    currentEngine = Some(new SparkSQLEngine(spark, store))
     currentEngine.foreach { engine =>
       // start event logging ahead so that we can capture all statuses
       val eventLogging = new EventLoggingService(spark.sparkContext)
@@ -131,7 +134,7 @@ object SparkSQLEngine extends Logging {
       }
       try {
         engine.start()
-        EngineTab(engine)
+        EngineTab(engine, store)
         val event = EngineEvent(engine)
         info(event)
         EventLoggingService.onEvent(event)
