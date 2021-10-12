@@ -23,7 +23,7 @@
 
 </div>
 
-# z-order benchmark
+# Z-order Benchmark
 
 Z-order is a technique that allows you to map multidimensional data to a single dimension. We did a performance test
 
@@ -50,6 +50,8 @@ spark.sql(s"drop database if exists $dbName cascade")
 spark.sql(s"create database if not exists $dbName")
 spark.sql(s"use $dbName")
 spark.sql(s"create table $connRandomParquet (src_ip string, src_port int, dst_ip string, dst_port int) stored as parquet")
+spark.sql(s"create table $connOrderbyOnlyIp (src_ip string, src_port int, dst_ip string, dst_port int) stored as parquet")
+spark.sql(s"create table $connOrderby (src_ip string, src_port int, dst_ip string, dst_port int) stored as parquet")
 spark.sql(s"create table $connZorderOnlyIp (src_ip string, src_port int, dst_ip string, dst_port int) stored as parquet")
 spark.sql(s"create table $connZorder (src_ip string, src_port int, dst_ip string, dst_port int) stored as parquet")
 spark.sql(s"show tables").show(false)
@@ -67,15 +69,17 @@ def randomConnRecord(r: Random) = ConnRecord(
   dst_ip = randomIPv4(r), dst_port = randomPort(r))
 ```
 
-Step3： do optimize with z-order only ip， sort column： src_ip, dst_ip and shuffle partition just as file numbers .
+Step3： do optimize with z-order only ip and do optimize with order by only ip， sort column： src_ip, dst_ip and shuffle partition just as file numbers .
 
 ```
+INSERT overwrite table conn_order_only_ip select src_ip, src_port, dst_ip, dst_port from conn_random_parquet order by src_ip, dst_ip;
 OPTIMIZE conn_zorder_only_ip ZORDER BY src_ip, dst_ip;
 ```
 
-Step4： do optimize with z-order only ip， sort column： src_ip, dst_ip and shuffle partition just as file numbers .
+Step4： do optimize with z-order and do optimize with order by ， sort column： src_ip, src_port, dst_ip, dst_port and shuffle partition just as file numbers .
 
 ```
+INSERT overwrite table conn_order select src_ip, src_port, dst_ip, dst_port from conn_random_parquet order by src_ip, src_port, dst_ip, dst_port;
 OPTIMIZE conn_zorder ZORDER BY src_ip, src_port, dst_ip, dst_port;
 ```
 
@@ -111,6 +115,8 @@ spark.sql(s"drop database if exists $dbName cascade")
 spark.sql(s"create database if not exists $dbName")
 spark.sql(s"use $dbName")
 spark.sql(s"create table $connRandomParquet (src_ip string, src_port int, dst_ip string, dst_port int) stored as parquet")
+spark.sql(s"create table $connOrderbyOnlyIp (src_ip string, src_port int, dst_ip string, dst_port int) stored as parquet")
+spark.sql(s"create table $connOrderby (src_ip string, src_port int, dst_ip string, dst_port int) stored as parquet")
 spark.sql(s"create table $connZorderOnlyIp (src_ip string, src_port int, dst_ip string, dst_port int) stored as parquet")
 spark.sql(s"create table $connZorder (src_ip string, src_port int, dst_ip string, dst_port int) stored as parquet")
 spark.sql(s"show tables").show(false)
@@ -150,7 +156,7 @@ spark.stop()
 
 ```
 
-Optimize Sql:
+Zorder Optimize Sql:
 
 ```sql
 
@@ -161,7 +167,13 @@ OPTIMIZE conn_zorder_only_ip ZORDER BY src_ip, dst_ip;
 OPTIMIZE zorder_test.conn_zorder ZORDER BY src_ip, src_port, dst_ip, dst_port;
 ```
 
+Order by  Sql:
+```
+INSERT overwrite table conn_order_only_ip select src_ip, src_port, dst_ip, dst_port from conn_random_parquet order by src_ip, dst_ip;
 
+INSERT overwrite table conn_order select src_ip, src_port, dst_ip, dst_port from conn_random_parquet order by src_ip, src_port, dst_ip, dst_port;
+
+```
 
 Query Sql : 
 
@@ -178,6 +190,30 @@ select count(*) from conn_zorder where src_ip like '157%' and dst_ip like '216.%
 
 
 ## benchmark result
+
+We have done two performance tests: one is to compare the efficiency of  Z-order Optimize and Order by Sort, 
+and the other is to query based on the optimized Zorder by data and Random data
+
+### Efficiency of Z-order Optimize and Order-by Sort
+
+**10 billion data and 1000 files and Query resource:200 core 600G memory**
+
+zorder by or order by only ip
+
+| Table               | row count      | optimize  time     |
+| ------------------- | -------------- | ------------------ |
+| conn_order_only_ip | 10,000,000,000 | 1591.99 s           |
+| conn_zorder_only_ip  | 10,000,000,000 | 8371.405 s        |
+
+zorder by or order by all columns
+
+| Table               | row count      | optimize  time     |
+| ------------------- | -------------- | ------------------ |
+| conn_order         | 10,000,000,000 | 1515.298 s          |
+| conn_zorder          | 10,000,000,000 | 11057.194 s       |
+
+### Zorder by benchmark result
+
 by querying the tables before and after optimization, we find that
 
 **10 billion data and 200 files and Query resource:200 core 600G memory**
