@@ -353,14 +353,14 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
 //    // scalastyle:on
 
     val expected = Array(
-      0xAB, 0xAA, 0xAA, 0xBA, 0xAE, 0xAB, 0xAA, 0xEA, 0xBA, 0xAE,
+      0xFB, 0xEA, 0xAA, 0xBA, 0xAE, 0xAB, 0xAA, 0xEA, 0xBA, 0xAE,
       0xAB, 0xAA, 0xEA, 0xBA, 0xA6, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
       0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
       0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-      0xAA, 0xBA, 0xAA, 0xAA, 0xAA, 0xBA, 0xAA, 0xBA, 0xAA, 0xBA,
+      0xBA, 0xBB, 0xAA, 0xAA, 0xAA, 0xBA, 0xAA, 0xBA, 0xAA, 0xBA,
       0xAA, 0xBA, 0xAA, 0xBA, 0xAA, 0xBA, 0xAA, 0x9A, 0xAA, 0xAA,
       0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-      0xAA, 0xAA, 0xFE, 0xAF, 0xEA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
+      0xAA, 0xAA, 0xAA, 0xAA, 0xEA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
       0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
       0xAA, 0xAA, 0xBE, 0xAA, 0xAA, 0x8A, 0xBA, 0xAA, 0x2A, 0xEA,
       0xA8, 0xAA, 0xAA, 0xA2, 0xAA, 0xAA, 0x8A, 0xAA, 0xAA, 0x2F,
@@ -443,13 +443,17 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
 
   test("test special value of short int long type") {
     val df1 = spark.createDataFrame(Seq(
+      (-1, -1L),
+      (Int.MinValue, Int.MinValue.toLong),
       (1, 1L),
       (Int.MaxValue - 1, Int.MaxValue.toLong),
       (Int.MaxValue - 1, Int.MaxValue.toLong - 1),
       (Int.MaxValue, Int.MaxValue.toLong + 1),
       (Int.MaxValue, Int.MaxValue.toLong))).toDF("c1", "c2")
     val expected1 =
-      Row(1, 1L) ::
+      Row(Int.MinValue, Int.MinValue.toLong) ::
+        Row(-1, -1L) ::
+        Row(1, 1L) ::
         Row(Int.MaxValue - 1, Int.MaxValue.toLong - 1) ::
         Row(Int.MaxValue - 1, Int.MaxValue.toLong) ::
         Row(Int.MaxValue, Int.MaxValue.toLong) ::
@@ -457,13 +461,17 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
     checkSort(df1, expected1, Array(IntegerType, LongType))
 
     val df2 = spark.createDataFrame(Seq(
+      (-1, -1.toShort),
+      (Short.MinValue.toInt, Short.MinValue),
       (1, 1.toShort),
       (Short.MaxValue.toInt, (Short.MaxValue - 1).toShort),
       (Short.MaxValue.toInt + 1, (Short.MaxValue - 1).toShort),
       (Short.MaxValue.toInt, Short.MaxValue),
       (Short.MaxValue.toInt + 1, Short.MaxValue))).toDF("c1", "c2")
     val expected2 =
-      Row(1, 1.toShort) ::
+      Row(Short.MinValue.toInt, Short.MinValue) ::
+        Row(-1, -1.toShort) ::
+        Row(1, 1.toShort) ::
         Row(Short.MaxValue.toInt, Short.MaxValue - 1) ::
         Row(Short.MaxValue.toInt, Short.MaxValue) ::
         Row(Short.MaxValue.toInt + 1, Short.MaxValue - 1) ::
@@ -471,13 +479,17 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
     checkSort(df2, expected2, Array(IntegerType, ShortType))
 
     val df3 = spark.createDataFrame(Seq(
+      (-1L, -1.toShort),
+      (Short.MinValue.toLong, Short.MinValue),
       (1L, 1.toShort),
       (Short.MaxValue.toLong, (Short.MaxValue - 1).toShort),
       (Short.MaxValue.toLong + 1, (Short.MaxValue - 1).toShort),
       (Short.MaxValue.toLong, Short.MaxValue),
       (Short.MaxValue.toLong + 1, Short.MaxValue))).toDF("c1", "c2")
     val expected3 =
-      Row(1L, 1.toShort) ::
+      Row(Short.MinValue.toLong, Short.MinValue) ::
+        Row(-1L, -1.toShort) ::
+        Row(1L, 1.toShort) ::
         Row(Short.MaxValue.toLong, Short.MaxValue - 1) ::
         Row(Short.MaxValue.toLong, Short.MaxValue) ::
         Row(Short.MaxValue.toLong + 1, Short.MaxValue - 1) ::
