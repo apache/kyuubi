@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import java.sql.{DatabaseMetaData, ResultSet, SQLFeatureNotSupportedException}
+import java.sql.{DatabaseMetaData, ResultSet, SQLException, SQLFeatureNotSupportedException}
 
 import scala.collection.JavaConverters._
 import scala.util.Random
@@ -27,8 +27,6 @@ import org.apache.hadoop.hive.thrift.{DelegationTokenIdentifier => HiveTokenIden
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
-import org.apache.hive.common.util.HiveVersionInfo
-import org.apache.hive.service.cli.HiveSQLException
 import org.apache.hive.service.rpc.thrift._
 import org.apache.spark.kyuubi.SparkContextHelper
 import org.apache.spark.sql.catalyst.analysis.FunctionRegistry
@@ -406,8 +404,8 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveJDBCTests {
       assert(metaData.allTablesAreSelectable)
       assert(metaData.getDatabaseProductName === "Spark SQL")
       assert(metaData.getDatabaseProductVersion === KYUUBI_VERSION)
-      assert(metaData.getDriverName === "Hive JDBC")
-      assert(metaData.getDriverVersion === HiveVersionInfo.getVersion)
+      assert(metaData.getDriverName === "Kyuubi Project Hive JDBC Client")
+      assert(metaData.getDriverVersion === KYUUBI_VERSION)
       assert(metaData.getDatabaseMajorVersion === Utils.majorVersion(KYUUBI_VERSION))
       assert(metaData.getDatabaseMinorVersion === Utils.minorVersion(KYUUBI_VERSION))
       assert(metaData.getIdentifierQuoteString === " ",
@@ -454,9 +452,9 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveJDBCTests {
       assert(metaData.getDefaultTransactionIsolation === java.sql.Connection.TRANSACTION_NONE)
       assert(!metaData.supportsTransactions)
       assert(!metaData.getProcedureColumns("", "%", "%", "%").next())
-      intercept[HiveSQLException](metaData.getPrimaryKeys("", "default", ""))
+      intercept[SQLException](metaData.getPrimaryKeys("", "default", ""))
       assert(!metaData.getImportedKeys("", "default", "").next())
-      intercept[HiveSQLException] {
+      intercept[SQLException] {
         metaData.getCrossReference("", "default", "src", "", "default", "src2")
       }
       assert(!metaData.getIndexInfo("", "default", "src", true, true).next())

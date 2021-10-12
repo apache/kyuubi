@@ -32,6 +32,12 @@ import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
 trait JDBCTestUtils extends KyuubiFunSuite {
 
+  // Load KyuubiHiveDriver class before using it, otherwise will cause the first call
+  // `DriverManager.getConnection("jdbc:hive2://...")` failure.
+  // Don't know why, Apache Spark also does the same thing.
+  def hiveJdbcDriverClass: String = "org.apache.kyuubi.jdbc.KyuubiHiveDriver"
+  Class.forName(hiveJdbcDriverClass)
+
   protected val dftSchema = "default"
   protected lazy val user: String = Utils.currentUser
   protected val patterns = Seq("", "*", "%", null, ".*", "_*", "_%", ".%")
