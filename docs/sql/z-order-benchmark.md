@@ -156,7 +156,7 @@ spark.stop()
 
 ```
 
-Zorder Optimize Sql:
+Z-order Optimize statement:
 
 ```sql
 
@@ -167,7 +167,8 @@ OPTIMIZE conn_zorder_only_ip ZORDER BY src_ip, dst_ip;
 OPTIMIZE zorder_test.conn_zorder ZORDER BY src_ip, src_port, dst_ip, dst_port;
 ```
 
-Order by  Sql:
+ORDER BY statement:
+
 ```
 INSERT overwrite table conn_order_only_ip select src_ip, src_port, dst_ip, dst_port from conn_random_parquet order by src_ip, dst_ip;
 
@@ -175,7 +176,7 @@ INSERT overwrite table conn_order select src_ip, src_port, dst_ip, dst_port from
 
 ```
 
-Query Sql : 
+Query statement:
 
 ```sql
 
@@ -189,30 +190,30 @@ select count(*) from conn_zorder where src_ip like '157%' and dst_ip like '216.%
 ```
 
 
-## benchmark result
+## Benchmark result
 
 We have done two performance tests: one is to compare the efficiency of  Z-order Optimize and Order by Sort, 
-and the other is to query based on the optimized Zorder by data and Random data
+and the other is to query based on the optimized Z-order by data and Random data
 
 ### Efficiency of Z-order Optimize and Order-by Sort
 
 **10 billion data and 1000 files and Query resource:200 core 600G memory**
 
-zorder by or order by only ip
+z-order by or order by only ip
 
 | Table               | row count      | optimize  time     |
 | ------------------- | -------------- | ------------------ |
-| conn_order_only_ip | 10,000,000,000 | 1591.99 s           |
-| conn_zorder_only_ip  | 10,000,000,000 | 8371.405 s        |
+| conn_order_only_ip  | 10,000,000,000 | 1591.99 s          |
+| conn_zorder_only_ip | 10,000,000,000 | 8371.405 s         |
 
-zorder by or order by all columns
+z-order by or order by all columns
 
 | Table               | row count      | optimize  time     |
 | ------------------- | -------------- | ------------------ |
-| conn_order         | 10,000,000,000 | 1515.298 s          |
-| conn_zorder          | 10,000,000,000 | 11057.194 s       |
+| conn_order          | 10,000,000,000 | 1515.298 s         |
+| conn_zorder         | 10,000,000,000 | 11057.194 s        |
 
-### Zorder by benchmark result
+### Z-order by benchmark result
 
 by querying the tables before and after optimization, we find that
 
