@@ -61,11 +61,11 @@ class KyuubiIncrementCollectSuite extends WithKyuubiServer with JDBCTestUtils {
         }
       }
 
-      // queryAndCheckLog(querySQL, "Using incremental collect mode to fetch result.")
+      queryAndCheckLog(querySQL, "Execute in incremental collect mode")
       executeAndWait("SET kyuubi.operation.incremental.collect=false")
-      queryAndCheckLog(querySQL, "Using full collect mode to fetch result")
+      queryAndCheckLog(querySQL, "Execute in full collect mode")
       executeAndWait("SET kyuubi.operation.incremental.collect=true")
-      queryAndCheckLog(querySQL, "Using incremental collect mode to fetch result")
+      queryAndCheckLog(querySQL, "Execute in incremental collect mode")
     }
   }
 

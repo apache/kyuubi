@@ -25,6 +25,7 @@ import org.apache.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.hive.service.rpc.thrift.TOperationState._
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
@@ -175,8 +176,9 @@ trait JDBCTestUtils extends KyuubiFunSuite {
   def waitForOperationToComplete(client: Iface, op: TOperationHandle): Unit = {
     val req = new TGetOperationStatusReq(op)
     var state = client.GetOperationStatus(req).getOperationState
-    while (state == INITIALIZED_STATE || state == PENDING_STATE || state == RUNNING_STATE) {
+    eventually(timeout(90.seconds), interval(100.milliseconds)) {
       state = client.GetOperationStatus(req).getOperationState
+      assert(!Set(INITIALIZED_STATE, PENDING_STATE, RUNNING_STATE).contains(state))
     }
   }
 }

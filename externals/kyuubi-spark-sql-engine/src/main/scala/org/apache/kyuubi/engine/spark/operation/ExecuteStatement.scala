@@ -97,10 +97,10 @@ class ExecuteStatement(
       setState(OperationState.COMPILED)
       debug(result.queryExecution)
       iter = if (incrementalCollect) {
-        info("Using incremental collect mode to fetch result")
+        info("Execute in incremental collect mode")
         new IterableFetchIterator[Row](result.toLocalIterator().asScala.toIterable)
       } else {
-        info("Using full collect mode to fetch result")
+        info("Execute in full collect mode")
         new ArrayFetchIterator(result.collect())
       }
       setState(OperationState.FINISHED)
