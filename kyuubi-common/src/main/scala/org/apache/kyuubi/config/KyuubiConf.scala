@@ -866,7 +866,7 @@ object KyuubiConf {
     buildConf("engine.event.loggers")
       .doc("A comma separated list of engine history loggers, where engine/session/operation etc" +
         " events go. We use spark logger by default.<ul>" +
-        " <li>SPARK: the events will be written to the spark history events</li>" +
+        " <li>SPARK: the events will be written to the spark listener bus.</li>" +
         s" <li>JSON: the events will be written to the location of" +
         s" ${ENGINE_EVENT_JSON_LOG_PATH.key}</li>" +
         s" <li>JDBC: to be done</li>" +
