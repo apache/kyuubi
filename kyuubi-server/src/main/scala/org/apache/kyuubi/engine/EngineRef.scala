@@ -27,11 +27,12 @@ import com.google.common.annotations.VisibleForTesting
 import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex
 import org.apache.curator.utils.ZKPaths
+import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, SERVER, ShareLevel}
+import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, ShareLevel}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_REF_ID
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NAMESPACE
@@ -87,6 +88,16 @@ private[kyuubi] class EngineRef(
   // Launcher of the engine
   private[kyuubi] val appUser: String = shareLevel match {
     case SERVER => Utils.currentUser
+    case GROUP =>
+      val clientUGI = UserGroupInformation.createRemoteUser(user)
+      // Similar to `clientUGI.getPrimaryGroupName` (avoid IOE) to get the Primary GroupName of
+      // the client user mapping to
+      clientUGI.getGroupNames.headOption match {
+        case Some(primaryGroup) => primaryGroup
+        case None =>
+          warn(s"There is no primary group for $user, use the client user name as group directly")
+          user
+      }
     case _ => user
   }
 
@@ -109,7 +120,10 @@ private[kyuubi] class EngineRef(
    *   /`serverSpace_CONNECTION`/`user`/`engineRefId`
    * For `USER` share level:
    *   /`serverSpace_USER`/`user`[/`subdomain`]
-   *
+   * For `GROUP` share level:
+   *   /`serverSpace_GROUP`/`primary group name`[/`subdomain`]
+   * For `SERVER` share level:
+   *   /`serverSpace_SERVER`/`kyuubi server user`[/`subdomain`]
    */
   @VisibleForTesting
   private[kyuubi] lazy val engineSpace: String = shareLevel match {
