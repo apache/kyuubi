@@ -19,7 +19,7 @@ package org.apache.spark.sql
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Alias, Ascending, Expression, ExpressionEvalHelper, Literal, NullsLast, SortOrder}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Ascending, AttributeReference, Expression, ExpressionEvalHelper, Literal, NullsLast, SortOrder}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, OneRowRelation, Project, Sort}
 import org.apache.spark.sql.execution.command.CreateDataSourceTableAsSelectCommand
 import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand
@@ -29,7 +29,7 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
-import org.apache.kyuubi.sql.zorder.Zorder
+import org.apache.kyuubi.sql.zorder.{OptimizeZorderCommand, Zorder}
 
 trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper {
 
@@ -189,9 +189,14 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
     def checkSort(plan: LogicalPlan): Unit = {
       assert(plan.isInstanceOf[Sort] === resHasSort)
       if (plan.isInstanceOf[Sort]) {
-        val refs = plan.asInstanceOf[Sort].order.head
-          .child.asInstanceOf[Zorder].children.map(_.references.head)
         val colArr = cols.split(",")
+        val refs = if (colArr.length == 1) {
+          plan.asInstanceOf[Sort].order.head
+            .child.asInstanceOf[AttributeReference] :: Nil
+        } else {
+          plan.asInstanceOf[Sort].order.head
+            .child.asInstanceOf[Zorder].children.map(_.references.head)
+        }
         assert(refs.size === colArr.size)
         refs.zip(colArr).foreach { case (ref, col) =>
           assert(ref.name === col.trim)
@@ -483,6 +488,18 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
         Row(Short.MaxValue.toLong + 1, Short.MaxValue - 1) ::
         Row(Short.MaxValue.toLong + 1, Short.MaxValue) :: Nil
     checkSort(df3, expected3, Array(LongType, ShortType))
+  }
+
+  test("skip zorder if only requires one column") {
+    withTable("t") {
+      withSQLConf("spark.sql.hive.convertMetastoreParquet" -> "false") {
+        sql("CREATE TABLE t (c1 int, c2 string) stored as parquet")
+        val order1 = sql("OPTIMIZE t ZORDER BY c1").queryExecution.analyzed
+          .asInstanceOf[OptimizeZorderCommand].query.asInstanceOf[Sort].order.head.child
+        assert(!order1.isInstanceOf[Zorder])
+        assert(order1.isInstanceOf[AttributeReference])
+      }
+    }
   }
 }
 
