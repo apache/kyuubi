@@ -175,14 +175,11 @@ class SparkProcessBuilder(
   private def serverKeytabFileConf(sparkConf: Map[String, String]): Map[String, String] = {
     val serverKeytab = conf.get(KyuubiConf.SERVER_KEYTAB)
     if (serverKeytab.isDefined) {
-      val serverKeytabFileName = serverKeytabName
       sparkConf.get(SPARK_FILES) match {
         case Some(files) =>
-          Map(SPARK_FILES -> s"$files,${serverKeytab.get}"
-            , s"spark.${KyuubiConf.SERVER_KEYTAB.key}" -> s"${serverKeytabFileName.get}")
+          Map(SPARK_FILES -> s"$files,${serverKeytab.get}")
         case _ =>
-          Map(SPARK_FILES -> serverKeytab.get
-            , s"spark.${KyuubiConf.SERVER_KEYTAB.key}" -> s"${serverKeytabFileName.get}")
+          Map(SPARK_FILES -> serverKeytab.get)
       }
     } else {
       Map()

@@ -98,7 +98,7 @@ object ZooKeeperClientProvider extends Logging {
   @throws[Exception]
   def setUpZooKeeperAuth(conf: KyuubiConf): Unit = {
     if (conf.get(HA_ZK_AUTH_SASL_KERBEROS)) {
-      val keyTabFile = conf.get(KyuubiConf.SERVER_KEYTAB)
+      val keyTabFile = getKeyTabFile(conf)
       val maybePrincipal = conf.get(KyuubiConf.SERVER_PRINCIPAL)
       val kerberized = maybePrincipal.isDefined && keyTabFile.isDefined
       if (UserGroupInformation.isSecurityEnabled && kerberized) {
@@ -111,6 +111,26 @@ object ZooKeeperClientProvider extends Logging {
         val jaasConf = new JaasConfiguration("KyuubiZooKeeperClient", principal, keyTabFile.get)
         Configuration.setConfiguration(jaasConf)
       }
+    }
+  }
+
+  private def getKeyTabFile(conf: KyuubiConf): Option[String] = {
+    val serverKeytab = conf.get(KyuubiConf.SERVER_KEYTAB)
+    if (serverKeytab.isDefined) {
+      val serverKeytabPath = serverKeytab.get
+      val index = serverKeytabPath.lastIndexOf(File.pathSeparatorChar)
+      val relativeFileName = if (index > 0) {
+        serverKeytabPath.substring(index)
+      } else {
+        serverKeytabPath
+      }
+      if (new File(relativeFileName).exists()) {
+        Some(relativeFileName)
+      } else {
+        Some(serverKeytabPath)
+      }
+    } else {
+      None
     }
   }
 
