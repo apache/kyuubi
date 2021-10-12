@@ -185,7 +185,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
       val sessionTableHeadersAndTooltips: Seq[(String, Boolean, Option[String])] =
         Seq(
           ("User", true, None),
-          ("IP", true, None),
+          ("Client IP", true, None),
           ("Session ID", true, None),
           ("Start Time", true, None),
           ("Finish Time", true, None),
@@ -205,7 +205,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
         <td> <a href={sessionLink}> {session.sessionId} </a> </td>
         <td> {formatDate(session.startTime)} </td>
         <td> {if (session.endTime > 0) formatDate(session.endTime)} </td>
-        <td> {formatDurationVerbose(session.totalTime)} </td>
+        <td> {formatDurationVerbose(session.duration)} </td>
         <td> {session.totalOperations} </td>
       </tr>
     }
@@ -318,7 +318,7 @@ private class SessionStatsTableDataSource(
   private def ordering(sortColumn: String, desc: Boolean): Ordering[SessionEvent] = {
     val ordering: Ordering[SessionEvent] = sortColumn match {
       case "User" => Ordering.by(_.username)
-      case "IP" => Ordering.by(_.ip)
+      case "Client IP" => Ordering.by(_.ip)
       case "Session ID" => Ordering.by(_.sessionId)
       case "Start Time" => Ordering by (_.startTime)
       case "Finish Time" => Ordering.by(_.endTime)
