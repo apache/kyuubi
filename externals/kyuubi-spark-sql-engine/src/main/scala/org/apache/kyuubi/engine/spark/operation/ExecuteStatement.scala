@@ -62,7 +62,7 @@ class ExecuteStatement(
   private val operationListener: SQLOperationListener = new SQLOperationListener(this, spark)
 
   val statementEvent: SparkStatementEvent = SparkStatementEvent(
-    statementId, statement, spark.sparkContext.applicationId,
+    spark.sparkContext.sparkUser, statementId, statement, spark.sparkContext.applicationId,
     session.handle.identifier.toString, lastAccessTime, state.toString, lastAccessTime)
   EventLoggingService.onEvent(statementEvent)
 
@@ -178,6 +178,9 @@ class ExecuteStatement(
     super.setState(newState)
     statementEvent.state = newState.toString
     statementEvent.stateTime = lastAccessTime
+    if (newState == OperationState.ERROR || newState == OperationState.FINISHED) {
+      statementEvent.endTime = System.currentTimeMillis()
+    }
     EventLoggingService.onEvent(statementEvent)
   }
 
