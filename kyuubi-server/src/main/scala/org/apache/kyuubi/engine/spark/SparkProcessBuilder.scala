@@ -30,6 +30,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE
 import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf
+import org.apache.kyuubi.ha.client.ZooKeeperAuthTypes
 
 class SparkProcessBuilder(
     override val proxyUser: String,
@@ -128,8 +129,9 @@ class SparkProcessBuilder(
     var sparkPrefixedConf = conf.toSparkPrefixedConf
 
     // if enable sasl kerberos authentication for zookeeper, need to upload the server ketab file
-    if (conf.get(HighAvailabilityConf.HA_ZK_AUTH_SASL_KERBEROS)) {
-      sparkPrefixedConf = sparkPrefixedConf ++ serverKeytabFileConf(sparkPrefixedConf)
+    if (ZooKeeperAuthTypes.withName(conf.get(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE))
+      == ZooKeeperAuthTypes.KERBEROS) {
+      sparkPrefixedConf = sparkPrefixedConf ++ zkAuthKeytabFileConf(sparkPrefixedConf)
     }
 
     sparkPrefixedConf.foreach { case (k, v) =>
@@ -172,24 +174,17 @@ class SparkProcessBuilder(
     }
   }
 
-  private def serverKeytabFileConf(sparkConf: Map[String, String]): Map[String, String] = {
-    val serverKeytab = conf.get(KyuubiConf.SERVER_KEYTAB)
-    if (serverKeytab.isDefined) {
+  private def zkAuthKeytabFileConf(sparkConf: Map[String, String]): Map[String, String] = {
+    val zkAuthKeytab = conf.get(HighAvailabilityConf.HA_ZK_AUTH_KEYTAB)
+    if (zkAuthKeytab.isDefined) {
       sparkConf.get(SPARK_FILES) match {
         case Some(files) =>
-          Map(SPARK_FILES -> s"$files,${serverKeytab.get}")
+          Map(SPARK_FILES -> s"$files,${zkAuthKeytab.get}")
         case _ =>
-          Map(SPARK_FILES -> serverKeytab.get)
+          Map(SPARK_FILES -> zkAuthKeytab.get)
       }
     } else {
       Map()
-    }
-  }
-
-  private def serverKeytabName(): Option[String] = {
-    conf.get(KyuubiConf.SERVER_KEYTAB) match {
-      case Some(keytab) => Some(new File(keytab).getName)
-      case _ => None
     }
   }
 
