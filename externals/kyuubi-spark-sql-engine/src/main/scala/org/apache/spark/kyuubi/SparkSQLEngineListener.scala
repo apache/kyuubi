@@ -31,8 +31,6 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.Utils.stringifyException
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.events.{EngineEventsStore, SessionEvent}
-import org.apache.kyuubi.engine.spark.monitor.KyuubiStatementMonitor
-import org.apache.kyuubi.engine.spark.monitor.entity.KyuubiJobInfo
 import org.apache.kyuubi.service.{Serverable, ServiceState}
 
 /**
@@ -69,15 +67,11 @@ class SparkSQLEngineListener(
 
   override def onJobStart(jobStart: SparkListenerJobStart): Unit = {
     val statementId = jobStart.properties.getProperty(KYUUBI_STATEMENT_ID_KEY)
-    val kyuubiJobInfo = KyuubiJobInfo(
-      jobStart.jobId, statementId, jobStart.stageIds, jobStart.time)
-    KyuubiStatementMonitor.putJobInfoIntoMap(kyuubiJobInfo)
     debug(s"Add jobStartInfo. Query [$statementId]: Job ${jobStart.jobId} started with " +
       s"${jobStart.stageIds.length} stages")
   }
 
   override def onJobEnd(jobEnd: SparkListenerJobEnd): Unit = {
-    KyuubiStatementMonitor.insertJobEndTimeAndResult(jobEnd)
     info(s"Job end. Job ${jobEnd.jobId} state is ${jobEnd.jobResult.toString}")
     jobEnd.jobResult match {
      case JobFailed(e) if e != null =>
