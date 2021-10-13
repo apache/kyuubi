@@ -20,14 +20,23 @@ package org.apache.kyuubi.operation
 import java.sql.{DriverManager, ResultSet, SQLException, Statement}
 import java.util.Locale
 
-import org.apache.hive.service.rpc.thrift.{TCLIService, TCloseSessionReq, TOpenSessionReq, TSessionHandle}
+import org.apache.hive.service.rpc.thrift._
+import org.apache.hive.service.rpc.thrift.TCLIService.Iface
+import org.apache.hive.service.rpc.thrift.TOperationState._
 import org.apache.thrift.protocol.TBinaryProtocol
 import org.apache.thrift.transport.TSocket
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
 trait JDBCTestUtils extends KyuubiFunSuite {
+
+  // Load KyuubiHiveDriver class before using it, otherwise will cause the first call
+  // `DriverManager.getConnection("jdbc:hive2://...")` failure.
+  // Don't know why, Apache Spark also does the same thing.
+  def hiveJdbcDriverClass: String = "org.apache.kyuubi.jdbc.KyuubiHiveDriver"
+  Class.forName(hiveJdbcDriverClass)
 
   protected val dftSchema = "default"
   protected lazy val user: String = Utils.currentUser
@@ -168,5 +177,14 @@ trait JDBCTestUtils extends KyuubiFunSuite {
     // Make sure there are no more elements
     assert(!rs.next())
     assert(dbNames.size === count, "All expected schemas should be visited")
+  }
+
+  def waitForOperationToComplete(client: Iface, op: TOperationHandle): Unit = {
+    val req = new TGetOperationStatusReq(op)
+    var state = client.GetOperationStatus(req).getOperationState
+    eventually(timeout(90.seconds), interval(100.milliseconds)) {
+      state = client.GetOperationStatus(req).getOperationState
+      assert(!Set(INITIALIZED_STATE, PENDING_STATE, RUNNING_STATE).contains(state))
+    }
   }
 }

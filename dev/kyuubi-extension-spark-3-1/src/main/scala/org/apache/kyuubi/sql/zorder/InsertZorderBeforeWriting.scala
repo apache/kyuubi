@@ -135,8 +135,13 @@ trait InsertZorderHelper extends Rule[LogicalPlan] {
       plan
     } else {
       val bound = cols.map(attrs(_))
+      val orderExpr = if (bound.length == 1) {
+        bound.head
+      } else {
+        Zorder(bound)
+      }
       Sort(
-        SortOrder(Zorder(bound), Ascending, NullsLast, Seq.empty) :: Nil,
+        SortOrder(orderExpr, Ascending, NullsLast, Seq.empty) :: Nil,
         true,
         plan
       )

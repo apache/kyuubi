@@ -120,20 +120,11 @@ object ZorderBytesUtils {
   def intToByte(a: Int): Array[Byte] = {
     val result = new Array[Byte](4)
     var i = 0
-    if (a <= Short.MaxValue) {
-      val tmp = a ^ BIT_16_MASK
-      while (i <= 1) {
-        val offset = i * 8
-        result(3 - i) = ((tmp >> offset) & 0xff).toByte
-        i += 1
-      }
-    } else {
-      val tmp = a ^ BIT_32_MASK
-      while (i <= 3) {
-        val offset = i * 8
-        result(3 - i) = ((tmp >> offset) & 0xff).toByte
-        i += 1
-      }
+    val tmp = a ^ BIT_32_MASK
+    while (i <= 3) {
+      val offset = i * 8
+      result(3 - i) = ((tmp >> offset) & 0xff).toByte
+      i += 1
     }
     result
   }
@@ -141,27 +132,11 @@ object ZorderBytesUtils {
   def longToByte(a: Long): Array[Byte] = {
     val result = new Array[Byte](8)
     var i = 0
-    if (a <= Short.MaxValue) {
-      val tmp = a ^ BIT_16_MASK
-      while (i <= 1) {
-        val offset = i * 8
-        result(7 - i) = ((tmp >> offset) & 0xff).toByte
-        i += 1
-      }
-    } else if (a <= Int.MaxValue) {
-      val tmp = a ^ BIT_32_MASK
-      while (i <= 3) {
-        val offset = i * 8
-        result(7 - i) = ((tmp >> offset) & 0xff).toByte
-        i += 1
-      }
-    } else {
-      val tmp = a ^ BIT_64_MASK
-      while (i <= 7) {
-        val offset = i * 8
-        result(7 - i) = ((tmp >> offset) & 0xff).toByte
-        i += 1
-      }
+    val tmp = a ^ BIT_64_MASK
+    while (i <= 7) {
+      val offset = i * 8
+      result(7 - i) = ((tmp >> offset) & 0xff).toByte
+      i += 1
     }
     result
   }

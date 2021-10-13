@@ -138,9 +138,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-io-
       - name: Run TPC-DS Tests
-        run: |
-          ./build/mvn clean install -Pspark-3.1 -DskipTests -pl :kyuubi-spark-sql-engine_2.12,:kyuubi-common_2.12,:kyuubi-ha_2.12,:kyuubi-zookeeper_2.12,:kyuubi-spark-monitor_2.12
-          ./build/mvn test -Pspark-3.1 -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds -Dmaven.plugin.scalatest.exclude.tags=''
+        run: >-
+          ./build/mvn clean install -Dmaven.javadoc.skip=true -V
+          -pl kyuubi-server -am
+          -Pspark-3.1
+          -Dmaven.plugin.scalatest.exclude.tags=''
+          -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds
 
   minikube-it:
     name: Minikube Integration Test
@@ -176,7 +179,11 @@ jobs:
       - name: kyuubi pod check
         run: kubectl get pods
       - name: integration tests
-        run: ./build/mvn clean test -pl :kyuubi-common_2.12,:kubernetes-integration-tests_2.12 -Pkubernetes -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test
+        run: >-
+          ./build/mvn clean install -Dmaven.javadoc.skip=true -V
+          -pl kubernetes/integration-tests -am
+          -Pkubernetes
+          -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v2
