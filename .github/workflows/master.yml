@@ -46,7 +46,7 @@ jobs:
             profiles: '-Pkyuubi-extension-spark-3-1'
             codecov: 'true'
           - java: 8
-            spark: '3.1'
+            spark: '3.2'
             spark-hadoop: '3.2'
             profiles: '-Pkyuubi-extension-spark-3-2'
           - java: 11
