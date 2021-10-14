@@ -714,6 +714,11 @@ object KyuubiConf {
 
   private val validEngineSubDomain: Pattern = "^[a-zA-Z_-]{1,14}$".r.pattern
 
+  // [ZooKeeper Data Model]
+  // (http://zookeeper.apache.org/doc/r3.7.0/zookeeperProgrammers.html#ch_zkDataModel)
+  private val validEngineSubdomain: Pattern = ("(?!^[\\u002e]{1,2}$)" +
+    "(^[\\u0020-\\u002e\\u0030-\\u007e\\u00a0-\\ud7ff\\uf900-\\uffef]{1,}$)").r.pattern
+
   @deprecated(s"using kyuubi.engine.share.level.subdomain instead", "1.4.0")
   val ENGINE_SHARE_LEVEL_SUB_DOMAIN: OptionalConfigEntry[String] =
     buildConf("engine.share.level.sub.domain")
@@ -721,14 +726,15 @@ object KyuubiConf {
       .version("1.2.0")
       .stringConf
       .transform(_.toLowerCase(Locale.ROOT))
-      .checkValue(validEngineSubDomain.matcher(_).matches(),
-        "must be [1, 14] length alphabet string, e.g. 'abc', 'apache'")
+      .checkValue(validEngineSubdomain.matcher(_).matches(),
+        "must be valid zookeeper sub path."
+      )
       .createOptional
 
   val ENGINE_SHARE_LEVEL_SUBDOMAIN: ConfigEntry[Option[String]] =
     buildConf("engine.share.level.subdomain")
       .doc("Allow end-users to create a subdomain for the share level of an engine. A" +
-        " subdomain is a case-insensitive string values in `^[a-zA-Z_-]{1,14}$` form." +
+        " subdomain is a case-insensitive string values that must be a valid zookeeper sub path." +
         " For example, for `USER` share level, an end-user can share a certain engine within" +
         " a subdomain, not for all of its clients. End-users are free to create multiple" +
         " engines in the `USER` share level")
