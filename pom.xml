@@ -172,7 +172,6 @@
     </properties>
 
     <repositories>
-
         <repository>
             <id>gcs-maven-central-mirror</id>
             <name>GCS Maven Central mirror Asia Pacific</name>
@@ -194,17 +193,6 @@
             </releases>
             <snapshots>
                 <enabled>false</enabled>
-            </snapshots>
-        </repository>
-
-        <repository>
-            <id>Apache Snapshots Repository</id>
-            <url>https://repository.apache.org/snapshots/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
             </snapshots>
         </repository>
     </repositories>
@@ -232,35 +220,10 @@
                 <enabled>false</enabled>
             </snapshots>
         </pluginRepository>
-        <pluginRepository>
-            <id>apache</id>
-            <name>Apache Repository Snapshots</name>
-            <url>https://repository.apache.org/snapshots</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-                <checksumPolicy>warn</checksumPolicy>
-            </snapshots>
-        </pluginRepository>
-
-        <pluginRepository>
-            <id>sonatype-public-repository</id>
-            <url>https://oss.sonatype.org/content/groups/public</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </pluginRepository>
     </pluginRepositories>
 
     <dependencyManagement>
         <dependencies>
-
             <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
@@ -1776,6 +1739,18 @@
 
         <profile>
             <id>spark-master</id>
+            <repositories>
+                <repository>
+                    <id>Apache Snapshots Repository</id>
+                    <url>https://repository.apache.org/snapshots/</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
             <properties>
                 <spark.version>3.2.0-SNAPSHOT</spark.version>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
