@@ -17,8 +17,7 @@
 
 package org.apache.kyuubi.sql.zorder
 
-import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
 /**
  * A zorder statement that contains we parsed from SQL.
@@ -26,6 +25,5 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
  */
 case class OptimizeZorderStatement(
     tableIdentifier: Seq[String],
-    child: LogicalPlan) extends UnaryNode {
-  override def output: Seq[Attribute] = child.output
+    query: LogicalPlan) extends OptimizeZorderStatementBase {
 }

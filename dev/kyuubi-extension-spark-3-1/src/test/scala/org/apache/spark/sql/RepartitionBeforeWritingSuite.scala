@@ -24,7 +24,7 @@ import org.apache.spark.sql.hive.execution.OptimizedCreateHiveTableAsSelectComma
 
 import org.apache.kyuubi.sql.KyuubiSQLConf
 
-class RepartitionBeforeWriteSuite extends KyuubiSparkSQLExtensionTest {
+class RepartitionBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
   test("check repartition exists") {
     def check(df: DataFrame): Unit = {
       assert(

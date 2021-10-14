@@ -17,15 +17,16 @@
 
 package org.apache.spark.sql
 
+import org.apache.spark.SparkConf
 import org.apache.spark.benchmark.Benchmark
 import org.apache.spark.sql.benchmark.KyuubiBenchmarkBase
+import org.apache.spark.sql.internal.StaticSQLConf
 
 import org.apache.kyuubi.sql.zorder.ZorderBytesUtils
 
 /**
  * Benchmark to measure performance with zorder core.
  *
- * To run this benchmark, temporarily change `ignore` to `test`, then run
  * {{{
  *   RUN_BENCHMARK=1 ./build/mvn clean test \
  *   -pl dev/kyuubi-extension-spark-3-1 -am \
@@ -86,5 +87,9 @@ class ZorderCoreBenchmark extends KyuubiSparkSQLExtensionTest with KyuubiBenchma
         benchmark.run()
       }
     }
+  }
+
+  override def sparkConf(): SparkConf = {
+    super.sparkConf().remove(StaticSQLConf.SPARK_SESSION_EXTENSIONS.key)
   }
 }
