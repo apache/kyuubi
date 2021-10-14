@@ -404,7 +404,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveJDBCTests {
       assert(metaData.allTablesAreSelectable)
       assert(metaData.getDatabaseProductName === "Spark SQL")
       assert(metaData.getDatabaseProductVersion === KYUUBI_VERSION)
-      assert(metaData.getDriverName === "Kyuubi Project Hive JDBC Client")
+      assert(metaData.getDriverName === "Kyuubi Project Hive JDBC Shaded Client")
       assert(metaData.getDriverVersion === KYUUBI_VERSION)
       assert(metaData.getDatabaseMajorVersion === Utils.majorVersion(KYUUBI_VERSION))
       assert(metaData.getDatabaseMinorVersion === Utils.minorVersion(KYUUBI_VERSION))
