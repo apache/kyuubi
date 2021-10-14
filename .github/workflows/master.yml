@@ -88,7 +88,9 @@ jobs:
           -Pspark-${{ matrix.spark }} -Pspark-hadoop-${{ matrix.spark-hadoop }} ${{ matrix.profiles }}
       - name: Code coverage
         if: ${{ matrix.codecov == 'true' }}
-        run: bash <(curl -s https://codecov.io/bash)
+        uses: codecov/codecov-action@v2
+        with:
+          verbose: true
       - name: Detected Dependency List Change
         if: ${{ matrix.java == 8 }}
         run: build/dependency.sh
