@@ -116,6 +116,12 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
     val serverACL = new ZooKeeperACLProvider(serverConf).getDefaultAcl
     assertACL(expectedEnableACL, serverACL)
 
+    serverConf.set(HA_ZK_ACL_ENGINE_ENABLED, false)
+    assertACL(expectedEnableACL, new ZooKeeperACLProvider(serverConf)
+      .getAclForPath(serverConf.get(HA_ZK_NAMESPACE)))
+    assertACL(expectedNoACL, new ZooKeeperACLProvider(serverConf)
+      .getAclForPath(serverConf.get(HA_ZK_NAMESPACE) + "_USER"))
+
     val engineConf = serverConf.clone.set(HA_ZK_ENGINE_REF_ID, "ref")
     engineConf.set(HA_ZK_ACL_ENGINE_ENABLED, false)
     val engineACL = new ZooKeeperACLProvider(engineConf).getDefaultAcl

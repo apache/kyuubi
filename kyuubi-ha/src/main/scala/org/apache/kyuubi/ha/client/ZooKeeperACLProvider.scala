@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.ha.client
 
+import java.util
+
 import org.apache.curator.framework.api.ACLProvider
 import org.apache.zookeeper.ZooDefs
 import org.apache.zookeeper.data.ACL
@@ -27,33 +29,52 @@ import org.apache.kyuubi.ha.HighAvailabilityConf
 class ZooKeeperACLProvider(conf: KyuubiConf) extends ACLProvider {
 
   /**
+   * ACLs for znodes on a non-kerberized cluster
+   * Create/Read/Delete/Write/Admin to the world
+   */
+  private lazy val OPEN_ACL_UNSAFE = new util.ArrayList[ACL](ZooDefs.Ids.OPEN_ACL_UNSAFE)
+
+  /**
+   * Create/Delete/Write/Admin to the authenticated user
+   */
+  private lazy val AUTH_ACL: util.ArrayList[ACL] = {
+    // Read all to the world
+    val acls = new util.ArrayList[ACL](ZooDefs.Ids.READ_ACL_UNSAFE)
+    // Create/Delete/Write/Admin to the authenticated user
+    acls.addAll(ZooDefs.Ids.CREATOR_ALL_ACL)
+    acls
+  }
+
+  /**
    * Return the ACL list to use by default.
    *
    * @return default ACL list
    */
   override lazy val getDefaultAcl: java.util.List[ACL] = {
-    val nodeAcls = new java.util.ArrayList[ACL]
-
-    def addACL(): Unit = {
-      // Read all to the world
-      nodeAcls.addAll(ZooDefs.Ids.READ_ACL_UNSAFE)
-      // Create/Delete/Write/Admin to the authenticated user
-      nodeAcls.addAll(ZooDefs.Ids.CREATOR_ALL_ACL)
-    }
-
     if (conf.get(HighAvailabilityConf.HA_ZK_ACL_ENABLED) &&
       conf.get(HighAvailabilityConf.HA_ZK_ENGINE_REF_ID).isEmpty) {
-      addACL()
+      AUTH_ACL
     } else if (conf.get(HighAvailabilityConf.HA_ZK_ACL_ENGINE_ENABLED) &&
       conf.get(HighAvailabilityConf.HA_ZK_ENGINE_REF_ID).nonEmpty) {
-      addACL()
+      AUTH_ACL
     } else {
-      // ACLs for znodes on a non-kerberized cluster
-      // Create/Read/Delete/Write/Admin to the world
-      nodeAcls.addAll(ZooDefs.Ids.OPEN_ACL_UNSAFE)
+      OPEN_ACL_UNSAFE
     }
-    nodeAcls
   }
 
-  override def getAclForPath(path: String): java.util.List[ACL] = getDefaultAcl
+  override def getAclForPath(path: String): java.util.List[ACL] = {
+    /**
+     * The EngineRef of the server uses InterProcessSemaphoreMutex,
+     * which will create a znode with acl,
+     * causing the engine to be unable to write to the znode (KeeperErrorCode = NoAuth)
+     */
+    if (conf.get(HighAvailabilityConf.HA_ZK_ACL_ENABLED) &&
+      !conf.get(HighAvailabilityConf.HA_ZK_ACL_ENGINE_ENABLED) &&
+      conf.get(HighAvailabilityConf.HA_ZK_ENGINE_REF_ID).isEmpty &&
+      path != conf.get(HighAvailabilityConf.HA_ZK_NAMESPACE)) {
+      OPEN_ACL_UNSAFE
+    } else {
+      getDefaultAcl
+    }
+  }
 }
