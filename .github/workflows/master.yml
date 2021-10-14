@@ -89,7 +89,8 @@ jobs:
       - name: Code coverage
         if: ${{ matrix.codecov == 'true' }}
         uses: codecov/codecov-action@v2
-          verbose: true
+          with:
+            verbose: true
       - name: Detected Dependency List Change
         if: ${{ matrix.java == 8 }}
         run: build/dependency.sh
