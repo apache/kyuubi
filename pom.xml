@@ -1752,7 +1752,7 @@
                 </repository>
             </repositories>
             <properties>
-                <spark.version>3.2.0-SNAPSHOT</spark.version>
+                <spark.version>3.3.0-SNAPSHOT</spark.version>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
