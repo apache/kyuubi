@@ -136,7 +136,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>${maven.plugin.shade.version}</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
