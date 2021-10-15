@@ -62,7 +62,7 @@ class ExecuteStatement(
   private val operationListener: SQLOperationListener = new SQLOperationListener(this, spark)
 
   val statementEvent: SparkStatementEvent = SparkStatementEvent(
-    spark.sparkContext.sparkUser, statementId, statement, spark.sparkContext.applicationId,
+    session.user, statementId, statement, spark.sparkContext.applicationId,
     session.handle.identifier.toString, lastAccessTime, state.toString, lastAccessTime)
   EventLoggingService.onEvent(statementEvent)
 
