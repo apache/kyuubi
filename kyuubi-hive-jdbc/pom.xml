@@ -26,9 +26,6 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <!--
-       A scala-free module in runtime scope.
-       -->
     <artifactId>kyuubi-hive-jdbc</artifactId>
     <name>Kyuubi Project Hive JDBC Client</name>
     <packaging>jar</packaging>
