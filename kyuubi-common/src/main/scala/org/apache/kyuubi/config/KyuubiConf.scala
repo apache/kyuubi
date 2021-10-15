@@ -236,13 +236,13 @@ object KyuubiConf {
 
   val CREDENTIALS_RENEWAL_INTERVAL: ConfigEntry[Long] =
     buildConf("credentials.renewal.interval")
-      .doc("How often Kyuubi renews one user's DelegationTokens")
+      .doc("How often Kyuubi renews one user's delegation tokens")
       .version("1.4.0")
       .timeConf
       .createWithDefault(Duration.ofHours(1).toMillis)
 
   val CREDENTIALS_RENEWAL_RETRY_WAIT: ConfigEntry[Long] =
-    buildConf("credentials.renewal.retryWait")
+    buildConf("credentials.renewal.retry.wait")
       .doc("How long to wait before retrying to fetch new credentials after a failure.")
       .version("1.4.0")
       .timeConf
@@ -251,7 +251,7 @@ object KyuubiConf {
 
   val CREDENTIALS_HADOOP_FS_ENABLED: ConfigEntry[Boolean] =
     buildConf("credentials.hadoopfs.enabled")
-      .doc("Whether to renew HadoopFS DelegationToken")
+      .doc("Whether to renew Hadoop filesystem delegation tokens")
       .version("1.4.0")
       .booleanConf
       .createWithDefault(true)
@@ -267,7 +267,7 @@ object KyuubiConf {
 
   val CREDENTIALS_HIVE_ENABLED: ConfigEntry[Boolean] =
     buildConf("credentials.hive.enabled")
-      .doc("Whether to renew HiveMetaStore DelegationToken")
+      .doc("Whether to renew Hive metastore delegation token")
       .version("1.4.0")
       .booleanConf
       .createWithDefault(true)
@@ -594,6 +594,15 @@ object KyuubiConf {
       .toSequence()
       .createWithDefault(Nil)
 
+  val SESSION_ENGINE_STARTUP_MAX_LOG_LINES: ConfigEntry[Int] =
+    buildConf("session.engine.startup.maxLogLines")
+      .doc("The maximum number of engine log lines when errors occur during engine startup phase." +
+        " Note that this max lines is for client-side to help track engine startup issue.")
+      .version("1.4.0")
+      .intConf
+      .checkValue(_ > 0, "the maximum must be positive integer.")
+      .createWithDefault(10)
+
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("backend.server.exec.pool.size")
       .doc("Number of threads in the operation execution thread pool of Kyuubi server")
@@ -678,6 +687,22 @@ object KyuubiConf {
       .checkValue(_ >= 1000, "must >= 1s if set")
       .createOptional
 
+  val OPERATION_INCREMENTAL_COLLECT: ConfigEntry[Boolean] =
+    buildConf("operation.incremental.collect")
+      .internal
+      .doc("When true, the executor side result will be sequentially calculated and returned to" +
+        " the Spark driver side.")
+      .version("1.4.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val SERVER_OPERATION_LOG_DIR_ROOT: ConfigEntry[String] =
+    buildConf("operation.log.dir.root")
+      .doc("Root directory for query operation log at server-side.")
+      .version("1.4.0")
+      .stringConf
+      .createWithDefault("server_operation_logs")
+
   @deprecated(s"using kyuubi.engine.share.level instead", "1.2.0")
   val LEGACY_ENGINE_SHARE_LEVEL: ConfigEntry[String] = buildConf("session.engine.share.level")
     .doc(s"(deprecated) - Using kyuubi.engine.share.level instead")
@@ -724,6 +749,12 @@ object KyuubiConf {
       " connection</li>" +
       " <li>USER: engine will be shared by all sessions created by a unique username," +
       s" see also ${ENGINE_SHARE_LEVEL_SUBDOMAIN.key}</li>" +
+      " <li>GROUP: engine will be shared by all sessions created by all users belong to the same" +
+      " primary group name. The engine will be launched by the group name as the effective" +
+      " username, so here the group name is kind of special user who is able to visit the" +
+      " compute resources/data of a team. It follows the" +
+      " [Hadoop GroupsMapping](https://reurl.cc/xE61Y5) to map user to a primary group. If the" +
+      " primary group is not found, it fallback to the USER level." +
       " <li>SERVER: the App will be shared by Kyuubi servers</li></ul>")
     .version("1.2.0")
     .fallbackConf(LEGACY_ENGINE_SHARE_LEVEL)
@@ -821,6 +852,7 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
+  // TODO: #1181 Format does not conform to specifications
   val SERVER_EVENT_JSON_LOG_PATH: ConfigEntry[String] =
     buildConf("backend.server.event.json.log.path")
       .doc("The location of server events go for the builtin JSON logger")
@@ -828,6 +860,7 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("/tmp/kyuubi/events")
 
+  // TODO: #1181 Format does not conform to specifications
   val ENGINE_EVENT_JSON_LOG_PATH: ConfigEntry[String] =
     buildConf("engine.event.json.log.path")
       .doc("The location of all the engine events go for the builtin JSON logger.<ul>" +
@@ -856,8 +889,8 @@ object KyuubiConf {
   val ENGINE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("engine.event.loggers")
       .doc("A comma separated list of engine history loggers, where engine/session/operation etc" +
-        " events go.<ul>" +
-        " <li>SPARK: the events will be written to the spark history events</li>" +
+        " events go. We use spark logger by default.<ul>" +
+        " <li>SPARK: the events will be written to the spark listener bus.</li>" +
         s" <li>JSON: the events will be written to the location of" +
         s" ${ENGINE_EVENT_JSON_LOG_PATH.key}</li>" +
         s" <li>JDBC: to be done</li>" +
@@ -868,7 +901,7 @@ object KyuubiConf {
       .toSequence()
       .checkValue(_.toSet.subsetOf(Set("SPARK", "JSON", "JDBC", "CUSTOM")),
         "Unsupported event loggers")
-      .createWithDefault(Nil)
+      .createWithDefault(Seq("SPARK"))
 
   val ENGINE_UI_STOP_ENABLED: ConfigEntry[Boolean] =
     buildConf("engine.ui.stop.enabled")
@@ -876,6 +909,21 @@ object KyuubiConf {
       .version("1.3.0")
       .booleanConf
       .createWithDefault(true)
+
+  val ENGINE_UI_SESSION_LIMIT: ConfigEntry[Int] =
+    buildConf("engine.ui.retainedSessions")
+      .doc("The number of SQL client sessions kept in the Kyuubi Query Engine web UI.")
+      .version("1.4.0")
+      .intConf
+      .checkValue(_ > 0, "retained sessions must be positive.")
+      .createWithDefault(200)
+
+  val ENGINE_OPERATION_LOG_DIR_ROOT: ConfigEntry[String] =
+    buildConf("engine.operation.log.dir.root")
+      .doc("Root directory for query operation log at engine-side.")
+      .version("1.4.0")
+      .stringConf
+      .createWithDefault("engine_operation_logs")
 
   val SESSION_NAME: OptionalConfigEntry[String] =
     buildConf("session.name")
@@ -885,4 +933,19 @@ object KyuubiConf {
       .version("1.4.0")
       .stringConf
       .createOptional
+
+  object OperationModes extends Enumeration {
+    type OperationMode = Value
+    val PARSE, ANALYZE, OPTIMIZE, NONE = Value
+  }
+
+  val OPERATION_PLAN_ONLY: ConfigEntry[String] =
+    buildConf("operation.plan.only.mode")
+      .doc("Whether to perform the statement in a PARSE, ANALYZE, OPTIMIZE only way without " +
+        "executing the query. When it is NONE, the statement will be fully executed")
+      .version("1.4.0")
+      .stringConf
+      .transform(_.toUpperCase(Locale.ROOT))
+      .checkValues(OperationModes.values.map(_.toString))
+      .createWithDefault(OperationModes.NONE.toString)
 }

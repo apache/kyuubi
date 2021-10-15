@@ -18,14 +18,18 @@
 package org.apache.kyuubi.sql.zorder
 
 import java.lang.{Double => jDouble, Float => jFloat}
-import java.nio.charset.Charset
 
-import org.apache.spark.sql.types.Decimal
+import org.apache.spark.sql.types.{BooleanType, ByteType, DataType, DateType, Decimal, DecimalType, DoubleType, FloatType, IntegerType, LongType, ShortType, StringType, TimestampType}
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
 object ZorderBytesUtils {
+  private final val BIT_8_MASK = 1 << 7
+  private final val BIT_16_MASK = 1 << 15
+  private final val BIT_32_MASK = 1 << 31
+  private final val BIT_64_MASK = 1L << 63
+
   def interleaveMultiByteArray(arrays: Array[Array[Byte]]): Array[Byte] = {
     var totalLength = 0
     var maxLength = 0
@@ -86,6 +90,7 @@ object ZorderBytesUtils {
       case d: Double =>
         doubleToByte(d)
       case str: UTF8String =>
+        // truncate or padding str to 8 byte
         paddingTo8Byte(str.getBytes)
       case dec: Decimal =>
         longToByte(dec.toLong)
@@ -96,27 +101,27 @@ object ZorderBytesUtils {
 
   def booleanToByte(a: Boolean): Array[Byte] = {
     if (a) {
-      intToByte(1)
+      byteToByte(1.toByte)
     } else {
-      intToByte(0)
+      byteToByte(0.toByte)
     }
   }
 
-  def byteToByte(a: Int): Array[Byte] = {
-    val tmp = (a ^ (1 << 7)).toByte
+  def byteToByte(a: Byte): Array[Byte] = {
+    val tmp = (a ^ BIT_8_MASK).toByte
     Array(tmp)
   }
 
   def shortToByte(a: Short): Array[Byte] = {
-    val tmp = a ^ (1 << 15)
+    val tmp = a ^ BIT_16_MASK
     Array(((tmp >> 8) & 0xff).toByte, (tmp & 0xff).toByte)
   }
 
   def intToByte(a: Int): Array[Byte] = {
-    val tmp = a ^ (1 << 31)
     val result = new Array[Byte](4)
     var i = 0
-    while (i < 3) {
+    val tmp = a ^ BIT_32_MASK
+    while (i <= 3) {
       val offset = i * 8
       result(3 - i) = ((tmp >> offset) & 0xff).toByte
       i += 1
@@ -125,10 +130,10 @@ object ZorderBytesUtils {
   }
 
   def longToByte(a: Long): Array[Byte] = {
-    val tmp = a ^ (1 << 63)
     val result = new Array[Byte](8)
     var i = 0
-    while (i < 7) {
+    val tmp = a ^ BIT_64_MASK
+    while (i <= 7) {
       val offset = i * 8
       result(7 - i) = ((tmp >> offset) & 0xff).toByte
       i += 1
@@ -144,11 +149,6 @@ object ZorderBytesUtils {
   def doubleToByte(a: Double): Array[Byte] = {
     val dl = jDouble.doubleToRawLongBits(a)
     longToByte(dl)
-  }
-
-  def stringToByte(str: String): Array[Byte] = {
-    // truncate or padding str to 8 byte
-    paddingTo8Byte(str.getBytes(Charset.forName("utf-8")))
   }
 
   def paddingTo8Byte(a: Array[Byte]): Array[Byte] = {
@@ -174,5 +174,29 @@ object ZorderBytesUtils {
       pos += arr.length
     })
     result
+  }
+
+  def defaultValue(dataType: DataType): Array[Byte] = toByte {
+    dataType match {
+      case BooleanType =>
+        false
+      case ByteType =>
+        Byte.MaxValue
+      case ShortType =>
+        Short.MaxValue
+      case IntegerType | DateType =>
+        Int.MaxValue
+      case LongType | TimestampType | _: DecimalType =>
+        Long.MaxValue
+      case FloatType =>
+        Float.MaxValue
+      case DoubleType =>
+        Double.MaxValue
+      case StringType =>
+        // we pad string to 8 bytes so it's equal to long
+        UTF8String.fromBytes(longToByte(Long.MaxValue))
+      case other: Any =>
+        throw new KyuubiSQLExtensionException(s"Unsupported z-order type: ${other.catalogString}")
+    }
   }
 }

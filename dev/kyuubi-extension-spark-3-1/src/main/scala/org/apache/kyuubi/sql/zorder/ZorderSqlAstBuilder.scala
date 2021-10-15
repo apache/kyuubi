@@ -76,9 +76,14 @@ class ZorderSqlAstBuilder extends ZorderSqlExtensionsBaseVisitor[AnyRef] {
       .map(UnresolvedAttribute(_))
       .toSeq
 
+    val orderExpr = if (zorderCols.length == 1) {
+      zorderCols.head
+    } else {
+      Zorder(zorderCols)
+    }
     val query =
       Sort(
-        SortOrder(Zorder(zorderCols), Ascending, NullsLast, Seq.empty) :: Nil,
+        SortOrder(orderExpr, Ascending, NullsLast, Seq.empty) :: Nil,
         true,
         Project(Seq(UnresolvedStar(None)), tableWithFilter))
 

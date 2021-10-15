@@ -24,6 +24,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.hadoop.hdfs.HdfsConfiguration
 import org.apache.hadoop.security.{Credentials, SecurityUtil, UserGroupInformation}
 import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod
 
@@ -47,7 +48,7 @@ class HadoopFsDelegationTokenProvider extends HadoopDelegationTokenProvider with
     // The UserGroupInformation object used to create it is part of that key.
     // If cache is enabled, new FileSystem objects are created and cached at every method
     // invocation.
-    this.hadoopConf = disableFsCache(kyuubiConf, hadoopConf)
+    this.hadoopConf = disableFsCache(kyuubiConf, new HdfsConfiguration(hadoopConf))
     this.kyuubiConf = kyuubiConf
   }
 
