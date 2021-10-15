@@ -17,73 +17,7 @@
 
 package org.apache.kyuubi.sql.zorder
 
-import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.catalyst.expressions.codegen.{CodegenContext, ExprCode, FalseLiteral}
-import org.apache.spark.sql.catalyst.expressions.codegen.Block._
-import org.apache.spark.sql.types.{BinaryType, DataType}
 
-import org.apache.kyuubi.sql.KyuubiSQLExtensionException
-
-case class Zorder(children: Seq[Expression]) extends Expression {
-  override def foldable: Boolean = children.forall(_.foldable)
-  override def nullable: Boolean = false
-  override def dataType: DataType = BinaryType
-  override def prettyName: String = "zorder"
-
-  override def checkInputDataTypes(): TypeCheckResult = {
-    try {
-      defaultNullValues
-      TypeCheckResult.TypeCheckSuccess
-    } catch {
-      case e: KyuubiSQLExtensionException =>
-        TypeCheckResult.TypeCheckFailure(e.getMessage)
-    }
-  }
-
-  @transient
-  private lazy val defaultNullValues: Array[Array[Byte]] =
-    children.map(_.dataType)
-      .map(ZorderBytesUtils.defaultValue)
-      .toArray
-
-  override def eval(input: InternalRow): Any = {
-    val binaryArr = children.zipWithIndex.map {
-      case (child: Expression, index) =>
-        val v = child.eval(input)
-        if (v == null) {
-          defaultNullValues(index)
-        } else {
-          ZorderBytesUtils.toByte(v)
-        }
-    }
-    ZorderBytesUtils.interleaveMultiByteArray(binaryArr.toArray)
-  }
-
-  override protected def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
-    val evals = children.map(_.genCode(ctx))
-    val defaultValues = ctx.addReferenceObj("defaultValues", defaultNullValues)
-    val binaryArray = ctx.freshName("binaryArray")
-    val util = ZorderBytesUtils.getClass.getName.stripSuffix("$")
-    val inputs = evals.zipWithIndex.map {
-      case (eval, index) =>
-        s"""
-           |${eval.code}
-           |if (${eval.isNull}) {
-           |  $binaryArray[$index] = (byte[]) $defaultValues[$index];
-           |} else {
-           |  $binaryArray[$index] = $util.toByte(${eval.value});
-           |}
-           |""".stripMargin
-    }
-    ev.copy(code =
-      code"""
-         |byte[] ${ev.value} = null;
-         |byte[][] $binaryArray = new byte[${evals.length}][];
-         |${inputs.mkString("\n")}
-         |${ev.value} = $util.interleaveMultiByteArray($binaryArray);
-         |""".stripMargin,
-      isNull = FalseLiteral)
-  }
+case class Zorder(children: Seq[Expression]) extends ZorderBase {
 }

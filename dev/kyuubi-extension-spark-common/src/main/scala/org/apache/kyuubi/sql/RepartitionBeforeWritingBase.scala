@@ -17,19 +17,19 @@
 
 package org.apache.kyuubi.sql
 
-import java.util.Random
-
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.{Cast, Expression, Literal, Multiply, Rand}
+import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.CreateDataSourceTableAsSelectCommand
 import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand
 import org.apache.spark.sql.hive.execution.{CreateHiveTableAsSelectCommand, InsertIntoHiveTable, OptimizedCreateHiveTableAsSelectCommand}
 import org.apache.spark.sql.internal.StaticSQLConf
-import org.apache.spark.sql.types.IntegerType
 
-import org.apache.kyuubi.sql.RepartitionBeforeWriteHelper._
+trait RepartitionBuilder extends Rule[LogicalPlan] with RepartitionBeforeWriteHelper {
+  def buildRepartition(
+      dynamicPartitionColumns: Seq[Attribute],
+      query: LogicalPlan): LogicalPlan
+}
 
 /**
  * For datasource table, there two commands can write data to table
@@ -37,7 +37,8 @@ import org.apache.kyuubi.sql.RepartitionBeforeWriteHelper._
  * 2. CreateDataSourceTableAsSelectCommand
  * This rule add a repartition node between write and query
  */
-case class RepartitionBeforeWrite(session: SparkSession) extends Rule[LogicalPlan] {
+abstract class RepartitionBeforeWritingDatasourceBase extends RepartitionBuilder {
+
   override def apply(plan: LogicalPlan): LogicalPlan = {
     if (conf.getConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE)) {
       addRepartition(plan)
@@ -50,41 +51,13 @@ case class RepartitionBeforeWrite(session: SparkSession) extends Rule[LogicalPla
     case i @ InsertIntoHadoopFsRelationCommand(_, sp, _, pc, bucket, _, _, query, _, _, _, _)
       if query.resolved && bucket.isEmpty && canInsertRepartitionByExpression(query) =>
       val dynamicPartitionColumns = pc.filterNot(attr => sp.contains(attr.name))
-      if (dynamicPartitionColumns.isEmpty) {
-        i.copy(query =
-          RepartitionByExpression(
-            Seq.empty,
-            query,
-            conf.getConf(KyuubiSQLConf.INSERT_REPARTITION_NUM)))
-      } else {
-        val extended = dynamicPartitionColumns ++ dynamicPartitionExtraExpression(
-          conf.getConf(KyuubiSQLConf.DYNAMIC_PARTITION_INSERTION_REPARTITION_NUM))
-        i.copy(query =
-          RepartitionByExpression(
-            extended,
-            query,
-            conf.getConf(KyuubiSQLConf.INSERT_REPARTITION_NUM)))
-      }
+      i.copy(query = buildRepartition(dynamicPartitionColumns, query))
 
     case c @ CreateDataSourceTableAsSelectCommand(table, _, query, _)
       if query.resolved && table.bucketSpec.isEmpty && canInsertRepartitionByExpression(query) =>
       val dynamicPartitionColumns =
         query.output.filter(attr => table.partitionColumnNames.contains(attr.name))
-      if (dynamicPartitionColumns.isEmpty) {
-        c.copy(query =
-          RepartitionByExpression(
-            Seq.empty,
-            query,
-            conf.getConf(KyuubiSQLConf.INSERT_REPARTITION_NUM)))
-      } else {
-        val extended = dynamicPartitionColumns ++ dynamicPartitionExtraExpression(
-          conf.getConf(KyuubiSQLConf.DYNAMIC_PARTITION_INSERTION_REPARTITION_NUM))
-        c.copy(query =
-          RepartitionByExpression(
-            extended,
-            query,
-            conf.getConf(KyuubiSQLConf.INSERT_REPARTITION_NUM)))
-      }
+      c.copy(query = buildRepartition(dynamicPartitionColumns, query))
 
     case _ => plan
   }
@@ -96,7 +69,7 @@ case class RepartitionBeforeWrite(session: SparkSession) extends Rule[LogicalPla
  * 2. CreateHiveTableAsSelectCommand
  * This rule add a repartition node between write and query
  */
-case class RepartitionBeforeWriteHive(session: SparkSession) extends Rule[LogicalPlan] {
+abstract class RepartitionBeforeWritingHiveBase extends RepartitionBuilder {
   override def apply(plan: LogicalPlan): LogicalPlan = {
     if (conf.getConf(StaticSQLConf.CATALOG_IMPLEMENTATION) == "hive" &&
       conf.getConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE)) {
@@ -111,67 +84,25 @@ case class RepartitionBeforeWriteHive(session: SparkSession) extends Rule[Logica
       if query.resolved && table.bucketSpec.isEmpty && canInsertRepartitionByExpression(query) =>
       val dynamicPartitionColumns = partition.filter(_._2.isEmpty).keys
         .flatMap(name => query.output.find(_.name == name)).toSeq
-      if (dynamicPartitionColumns.isEmpty) {
-        i.copy(query =
-          RepartitionByExpression(
-            Seq.empty,
-            query,
-            conf.getConf(KyuubiSQLConf.INSERT_REPARTITION_NUM)))
-      } else {
-        val extended = dynamicPartitionColumns ++ dynamicPartitionExtraExpression(
-          conf.getConf(KyuubiSQLConf.DYNAMIC_PARTITION_INSERTION_REPARTITION_NUM))
-        i.copy(query =
-          RepartitionByExpression(
-            extended,
-            query,
-            conf.getConf(KyuubiSQLConf.INSERT_REPARTITION_NUM)))
-      }
+      i.copy(query = buildRepartition(dynamicPartitionColumns, query))
 
     case c @ CreateHiveTableAsSelectCommand(table, query, _, _)
       if query.resolved && table.bucketSpec.isEmpty && canInsertRepartitionByExpression(query) =>
       val dynamicPartitionColumns =
         query.output.filter(attr => table.partitionColumnNames.contains(attr.name))
-      if (dynamicPartitionColumns.isEmpty) {
-        c.copy(query =
-          RepartitionByExpression(
-            Seq.empty,
-            query,
-            conf.getConf(KyuubiSQLConf.INSERT_REPARTITION_NUM)))
-      } else {
-        val extended = dynamicPartitionColumns ++ dynamicPartitionExtraExpression(
-          conf.getConf(KyuubiSQLConf.DYNAMIC_PARTITION_INSERTION_REPARTITION_NUM))
-        c.copy(query =
-          RepartitionByExpression(
-            extended,
-            query,
-            conf.getConf(KyuubiSQLConf.INSERT_REPARTITION_NUM)))
-      }
+      c.copy(query = buildRepartition(dynamicPartitionColumns, query))
 
     case c @ OptimizedCreateHiveTableAsSelectCommand(table, query, _, _)
       if query.resolved && table.bucketSpec.isEmpty && canInsertRepartitionByExpression(query) =>
       val dynamicPartitionColumns =
         query.output.filter(attr => table.partitionColumnNames.contains(attr.name))
-      if (dynamicPartitionColumns.isEmpty) {
-        c.copy(query =
-          RepartitionByExpression(
-            Seq.empty,
-            query,
-            conf.getConf(KyuubiSQLConf.INSERT_REPARTITION_NUM)))
-      } else {
-        val extended = dynamicPartitionColumns ++ dynamicPartitionExtraExpression(
-          conf.getConf(KyuubiSQLConf.DYNAMIC_PARTITION_INSERTION_REPARTITION_NUM))
-        c.copy(query =
-          RepartitionByExpression(
-            extended,
-            query,
-            conf.getConf(KyuubiSQLConf.INSERT_REPARTITION_NUM)))
-      }
+      c.copy(query = buildRepartition(dynamicPartitionColumns, query))
 
     case _ => plan
   }
 }
 
-object RepartitionBeforeWriteHelper {
+trait RepartitionBeforeWriteHelper {
   def canInsertRepartitionByExpression(plan: LogicalPlan): Boolean = plan match {
     case Project(_, child) => canInsertRepartitionByExpression(child)
     case Limit(_, _) => false
@@ -179,15 +110,5 @@ object RepartitionBeforeWriteHelper {
     case _: RepartitionByExpression => false
     case _: Repartition => false
     case _ => true
-  }
-
-  def dynamicPartitionExtraExpression(partitionNumber: Int): Seq[Expression] = {
-    // Dynamic partition insertion will add repartition by partition column, but it could cause
-    // data skew (one partition value has large data). So we add extra partition column for the
-    // same dynamic partition to avoid skew.
-    Cast(Multiply(
-      new Rand(Literal(new Random().nextLong())),
-        Literal(partitionNumber.toDouble)
-      ), IntegerType) :: Nil
   }
 }

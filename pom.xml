@@ -1781,7 +1781,16 @@
         <profile>
             <id>kyuubi-extension-spark-3-1</id>
             <modules>
+                <module>dev/kyuubi-extension-spark-common</module>
                 <module>dev/kyuubi-extension-spark-3-1</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>kyuubi-extension-spark-3-2</id>
+            <modules>
+                <module>dev/kyuubi-extension-spark-common</module>
+                <module>dev/kyuubi-extension-spark-3-2</module>
             </modules>
         </profile>
 

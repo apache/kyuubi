@@ -91,7 +91,6 @@ object InsertShuffleNodeBeforeJoin extends Rule[SparkPlan] {
   }
 }
 
-
 /**
  * This rule split stage into two parts:
  *   1. previous stage

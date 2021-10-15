@@ -17,16 +17,16 @@
 
 package org.apache.kyuubi.sql.zorder
 
-import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, UnaryNode}
 
 /**
- * Resolve `OptimizeZorderStatement` to `OptimizeZorderCommand`
+ * A zorder statement that contains we parsed from SQL.
+ * We should convert this plan to certain command at Analyzer.
  */
-case class ResolveZorder(session: SparkSession) extends ResolveZorderBase {
-  override def buildOptimizeZorderCommand(
-      catalogTable: CatalogTable, query: LogicalPlan): OptimizeZorderCommandBase = {
-    OptimizeZorderCommand(catalogTable, query)
-  }
+abstract class OptimizeZorderStatementBase extends UnaryNode {
+  def tableIdentifier: Seq[String]
+  def query: LogicalPlan
+  override def child: LogicalPlan = query
+  override def output: Seq[Attribute] = child.output
 }

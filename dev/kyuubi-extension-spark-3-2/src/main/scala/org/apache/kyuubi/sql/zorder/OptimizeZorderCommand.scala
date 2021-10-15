@@ -17,16 +17,17 @@
 
 package org.apache.kyuubi.sql.zorder
 
-import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
 /**
- * Resolve `OptimizeZorderStatement` to `OptimizeZorderCommand`
+ * A runnable command for zorder, we delegate to real command to execute
  */
-case class ResolveZorder(session: SparkSession) extends ResolveZorderBase {
-  override def buildOptimizeZorderCommand(
-      catalogTable: CatalogTable, query: LogicalPlan): OptimizeZorderCommandBase = {
-    OptimizeZorderCommand(catalogTable, query)
+case class OptimizeZorderCommand(
+    catalogTable: CatalogTable,
+    query: LogicalPlan)
+  extends OptimizeZorderCommandBase {
+  override protected def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = {
+    copy(query = newChild)
   }
 }
