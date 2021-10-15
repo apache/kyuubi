@@ -102,12 +102,14 @@ trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
   }
 
   test("get columns type") {
-    val dataTypes = Seq("boolean", "int", "bigint",
-      "float", "double", "decimal(38,20)", "decimal(10,2)",
-      "string", "array<bigint>", "array<string>",
-      "date", "timestamp", "struct<`X`: bigint, `Y`: double>", "binary", "struct<`X`: string>")
+    val dataTypes = Seq("boolean", "int", "bigint", "float", "double", "decimal(38,20)",
+      "decimal(10,2)", "string", "array<bigint>", "array<string>", "date", "timestamp",
+      "struct<`X`: bigint, `Y`: double>", "binary", "struct<`X`: string>")
     val cols = dataTypes.zipWithIndex.map { case (dt, idx) => s"c$idx" -> dt }
     val (colNames, _) = cols.unzip
+
+    val reservedCols = Seq("_hoodie_commit_time", "_hoodie_commit_seqno", "_hoodie_record_key",
+      "_hoodie_partition_path", "_hoodie_file_name")
 
     val tableName = "hudi_get_col_operation"
     val ddl =
@@ -126,25 +128,29 @@ trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
         val rowSet = metaData.getColumns(catalog, dftSchema, tableName, columnPattern)
 
         import java.sql.Types._
-        val expectedJavaTypes = Seq(BOOLEAN, INTEGER, BIGINT, FLOAT, DOUBLE,
-          DECIMAL, DECIMAL, VARCHAR, ARRAY, ARRAY, DATE, TIMESTAMP, STRUCT, BINARY,
-          STRUCT)
+        val expectedJavaTypes = Seq(BOOLEAN, INTEGER, BIGINT, FLOAT, DOUBLE, DECIMAL, DECIMAL,
+          VARCHAR, ARRAY, ARRAY, DATE, TIMESTAMP, STRUCT, BINARY, STRUCT)
 
         var pos = 0
-
         while (rowSet.next()) {
-          if (!rowSet.getString(COLUMN_NAME).contains("_hoodie")) {
-            assert(rowSet.getString(TABLE_CAT) === catalog)
-            assert(rowSet.getString(TABLE_SCHEM) === dftSchema)
-            assert(rowSet.getString(TABLE_NAME) === tableName)
-            assert(rowSet.getString(COLUMN_NAME) === colNames(pos))
-            assert(rowSet.getInt(DATA_TYPE) === expectedJavaTypes(pos))
-            assert(rowSet.getString(TYPE_NAME) equalsIgnoreCase dataTypes(pos))
-            pos += 1
+          assert(rowSet.getString(TABLE_CAT) === catalog)
+          assert(rowSet.getString(TABLE_SCHEM) === dftSchema)
+          assert(rowSet.getString(TABLE_NAME) === tableName)
+          rowSet.getString(COLUMN_NAME) match {
+            case name if name.contains("_hoodie") =>
+              assert(name === reservedCols(pos))
+              assert(rowSet.getInt(DATA_TYPE) === VARCHAR)
+              assert(rowSet.getString(TYPE_NAME) equalsIgnoreCase "STRING")
+            case _ =>
+              val p = pos - reservedCols.size
+              assert(rowSet.getString(COLUMN_NAME) === colNames(p))
+              assert(rowSet.getInt(DATA_TYPE) === expectedJavaTypes(p))
+              assert(rowSet.getString(TYPE_NAME) equalsIgnoreCase dataTypes(p))
           }
+          pos += 1
         }
 
-        assert(pos === dataTypes.size, "all columns should have been verified")
+        assert(pos - reservedCols.size === dataTypes.size, "all columns should have been verified")
       }
 
       val rowSet = metaData.getColumns(catalog, "*", "not_exist", "not_exist")
