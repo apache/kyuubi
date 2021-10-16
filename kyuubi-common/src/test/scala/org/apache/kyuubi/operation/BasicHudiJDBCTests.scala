@@ -137,20 +137,18 @@ trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
           assert(rowSet.getString(TABLE_SCHEM) === dftSchema)
           assert(rowSet.getString(TABLE_NAME) === tableName)
           rowSet.getString(COLUMN_NAME) match {
-            case name if name.contains("_hoodie") =>
-              assert(name === reservedCols(pos))
+            case name if reservedCols.contains(name) =>
               assert(rowSet.getInt(DATA_TYPE) === VARCHAR)
               assert(rowSet.getString(TYPE_NAME) equalsIgnoreCase "STRING")
             case _ =>
-              val p = pos - reservedCols.size
-              assert(rowSet.getString(COLUMN_NAME) === colNames(p))
-              assert(rowSet.getInt(DATA_TYPE) === expectedJavaTypes(p))
-              assert(rowSet.getString(TYPE_NAME) equalsIgnoreCase dataTypes(p))
+              assert(rowSet.getString(COLUMN_NAME) === colNames(pos))
+              assert(rowSet.getInt(DATA_TYPE) === expectedJavaTypes(pos))
+              assert(rowSet.getString(TYPE_NAME) equalsIgnoreCase dataTypes(pos))
+              pos += 1
           }
-          pos += 1
         }
 
-        assert(pos - reservedCols.size === dataTypes.size, "all columns should have been verified")
+        assert(pos === dataTypes.size, "all columns should have been verified")
       }
 
       val rowSet = metaData.getColumns(catalog, "*", "not_exist", "not_exist")
