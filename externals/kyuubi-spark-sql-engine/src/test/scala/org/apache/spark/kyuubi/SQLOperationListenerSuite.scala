@@ -48,7 +48,7 @@ class SQLOperationListenerSuite extends WithSparkSQLEngine with JDBCTestUtils {
         assert(logs.exists(_.contains("started with 1 tasks")))
         assert(logs.exists(_.contains("started with 3 tasks")))
         assert(logs.exists(_.contains("Finished stage:")))
-        assert(logs.exists(_.contains("Job 0 succeeded")))
+        assert(logs.exists(_.contains(s"Job ${0 + initJobId} succeeded")))
       }
     }
   }
