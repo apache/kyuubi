@@ -9,3 +9,10 @@ Intel(R) Core(TM) i7-4770HQ CPU @ 2.20GHz
 3 long columns benchmark                           3029           3133         111          0.3        3028.7       0.5X
 4 long columns benchmark                           3789           3848          89          0.3        3789.0       0.4X
 
+Java HotSpot(TM) 64-Bit Server VM 1.8.0_271-b09 on Mac OS X 10.16
+Intel(R) Core(TM) i7-4770HQ CPU @ 2.20GHz
+10000000 iterations paddingTo8Byte benchmark:  Best Time(ms)   Avg Time(ms)   Stdev(ms)    Rate(M/s)   Per Row(ns)   Relative
+----------------------------------------------------------------------------------------------------------------------------
+2 length benchmark                                      167            170           3         59.9          16.7       1.0X
+16 length benchmark                                     162            164           3         61.7          16.2       1.0X
+
