@@ -152,28 +152,18 @@ object ZorderBytesUtils {
   }
 
   def paddingTo8Byte(a: Array[Byte]): Array[Byte] = {
-    if (a.length == 8) {
-      return a
+    val len = a.length
+    if (len == 8) {
+      a
+    } else if (len > 8) {
+      val result = new Array[Byte](8)
+      System.arraycopy(a, 0, result, 0, 8)
+      result
+    } else {
+      val result = new Array[Byte](8)
+      System.arraycopy(a, 0, result, 8 - len, len)
+      result
     }
-    if (a.length > 8) {
-      val result = new Array[Byte](8);
-      a.copyToArray(result)
-      return result
-    }
-    val paddingSize = 8 - a.length;
-    val emptyArray = Array.ofDim[Byte](paddingSize)
-    arrayConcat(emptyArray, a)
-  }
-
-  def arrayConcat(bytes: Array[Byte]*): Array[Byte] = {
-    val length = bytes.foldLeft(0)(_ + _.length)
-    val result = new Array[Byte](length)
-    var pos = 0
-    bytes.foreach(arr => {
-      arr.copyToArray(result, pos)
-      pos += arr.length
-    })
-    result
   }
 
   def defaultValue(dataType: DataType): Array[Byte] = toByte {

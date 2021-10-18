@@ -35,6 +35,7 @@ import org.apache.kyuubi.sql.zorder.ZorderBytesUtils
  * }}}
  */
 class ZorderCoreBenchmark extends KyuubiSparkSQLExtensionTest with KyuubiBenchmarkBase {
+  private val runBenchmark = sys.env.contains("RUN_BENCHMARK")
   private val numRows = 1 * 1000 * 1000
 
   private def randomIntByteArray(numColumns: Int): Seq[Array[Array[Byte]]] = {
@@ -54,38 +55,61 @@ class ZorderCoreBenchmark extends KyuubiSparkSQLExtensionTest with KyuubiBenchma
     }
   }
 
+  private def interleaveMultiByteArrayBenchmark(): Unit = {
+    val benchmark = new Benchmark(
+      s"$numRows rows zorder core benchmark", numRows, output = output)
+    benchmark.addCase("2 int columns benchmark", 3) { _ =>
+      randomIntByteArray(2).foreach(ZorderBytesUtils.interleaveMultiByteArray)
+    }
+
+    benchmark.addCase("3 int columns benchmark", 3) { _ =>
+      randomIntByteArray(3).foreach(ZorderBytesUtils.interleaveMultiByteArray)
+    }
+
+    benchmark.addCase("4 int columns benchmark", 3) { _ =>
+      randomIntByteArray(4).foreach(ZorderBytesUtils.interleaveMultiByteArray)
+    }
+
+
+    benchmark.addCase("2 long columns benchmark", 3) { _ =>
+      randomLongByteArray(2).foreach(ZorderBytesUtils.interleaveMultiByteArray)
+    }
+
+    benchmark.addCase("3 long columns benchmark", 3) { _ =>
+      randomLongByteArray(3).foreach(ZorderBytesUtils.interleaveMultiByteArray)
+    }
+
+    benchmark.addCase("4 long columns benchmark", 3) { _ =>
+      randomLongByteArray(4).foreach(ZorderBytesUtils.interleaveMultiByteArray)
+    }
+
+    benchmark.run()
+  }
+
+  private def paddingTo8ByteBenchmark() {
+    val iterations = 10 * 1000 * 1000
+
+    val b2 = Array('a'.toByte, 'b'.toByte)
+    val benchmark = new Benchmark(
+      s"$iterations iterations paddingTo8Byte benchmark", iterations, output = output)
+    benchmark.addCase("2 length benchmark", 3) { _ =>
+      (1 to iterations).foreach(_ => ZorderBytesUtils.paddingTo8Byte(b2))
+    }
+
+    val b16 = Array.tabulate(16) { i => i.toByte }
+    benchmark.addCase("16 length benchmark", 3) { _ =>
+      (1 to iterations).foreach(_ => ZorderBytesUtils.paddingTo8Byte(b16))
+    }
+
+    benchmark.run()
+  }
+
   test("zorder core benchmark") {
-    if (sys.env.contains("RUN_BENCHMARK")) {
-      withHeader {
-        val benchmark = new Benchmark(
-          s"$numRows rows zorder core benchmark", numRows, output = output)
-        benchmark.addCase("2 int columns benchmark", 3) { _ =>
-          randomIntByteArray(2).foreach(ZorderBytesUtils.interleaveMultiByteArray)
-        }
+    assume(runBenchmark)
 
-        benchmark.addCase("3 int columns benchmark", 3) { _ =>
-          randomIntByteArray(3).foreach(ZorderBytesUtils.interleaveMultiByteArray)
-        }
-
-        benchmark.addCase("4 int columns benchmark", 3) { _ =>
-          randomIntByteArray(4).foreach(ZorderBytesUtils.interleaveMultiByteArray)
-        }
-
-
-        benchmark.addCase("2 long columns benchmark", 3) { _ =>
-          randomLongByteArray(2).foreach(ZorderBytesUtils.interleaveMultiByteArray)
-        }
-
-        benchmark.addCase("3 long columns benchmark", 3) { _ =>
-          randomLongByteArray(3).foreach(ZorderBytesUtils.interleaveMultiByteArray)
-        }
-
-        benchmark.addCase("4 long columns benchmark", 3) { _ =>
-          randomLongByteArray(4).foreach(ZorderBytesUtils.interleaveMultiByteArray)
-        }
-
-        benchmark.run()
-      }
+    withHeader {
+      interleaveMultiByteArrayBenchmark()
+      paddingTo8ByteBenchmark()
     }
   }
 
