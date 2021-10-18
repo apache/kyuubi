@@ -785,8 +785,8 @@ object KyuubiConf {
   val ENGINE_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
     buildConf("engine.initialize.sql")
       .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +
-        "engine before queries. This configuration can not be used in JDBC url due to " +
-        "the limitation of Beeline/JDBC driver.")
+        "engine before queries. i.e. use `SHOW DATABASES` to eagerly active HiveClient. This " +
+        "configuration can not be used in JDBC url due to the limitation of Beeline/JDBC driver.")
       .version("1.2.0")
       .stringConf
       .toSequence(";")
@@ -800,7 +800,7 @@ object KyuubiConf {
       .version("1.3.0")
       .stringConf
       .toSequence(";")
-      .createWithDefaultString("SHOW DATABASES")
+      .createWithDefault(Nil)
 
   val ENGINE_DEREGISTER_EXCEPTION_CLASSES: ConfigEntry[Seq[String]] =
     buildConf("engine.deregister.exception.classes")
