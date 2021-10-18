@@ -291,4 +291,92 @@ class WatchDogSuite extends KyuubiSparkSQLExtensionTest {
       }
     }
   }
+
+  test("test watchdog: Select View Statement for forceMaxOutputRows") {
+    withSQLConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS.key -> "3") {
+      withTable("tmp_table", "tmp_union") {
+        withView("tmp_view", "tmp_view2") {
+          sql(s"create table tmp_table (a int, b int)")
+          sql(s"insert into tmp_table values (1,10),(2,20),(3,30),(4,40),(5,50)")
+          sql(s"create table tmp_union (a int, b int)")
+          sql(s"insert into tmp_union values (6,60),(7,70),(8,80),(9,90),(10,100)")
+          sql(s"create view tmp_view2 as select * from tmp_union")
+          assert(!sql(
+            s"""
+               |CREATE VIEW tmp_view
+               |as
+               |SELECT * FROM
+               |tmp_table
+               |""".stripMargin)
+            .queryExecution.analyzed.isInstanceOf[GlobalLimit])
+
+          assert(sql(
+            s"""
+               |SELECT * FROM
+               |tmp_view
+               |""".stripMargin)
+            .queryExecution.analyzed.maxRows.contains(3))
+
+          assert(sql(
+            s"""
+               |SELECT * FROM
+               |tmp_view
+               |limit 11
+               |""".stripMargin)
+            .queryExecution.analyzed.maxRows.contains(3))
+
+          assert(sql(
+            s"""
+               |SELECT * FROM
+               |(select * from tmp_view
+               |UNION
+               |select * from tmp_view2)
+               |ORDER BY a
+               |DESC
+               |""".stripMargin)
+            .collect().head.get(0).equals(10))
+        }
+      }
+    }
+  }
+
+  test("test watchdog: Insert Statement for forceMaxOutputRows") {
+
+    withSQLConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS.key -> "10") {
+      withTable("tmp_table", "tmp_insert") {
+        spark.sql(s"create table tmp_table (a int, b int)")
+        spark.sql(s"insert into tmp_table values (1,10),(2,20),(3,30),(4,40),(5,50)")
+        val multiInsertTableName1: String = "tmp_tbl1"
+        val multiInsertTableName2: String = "tmp_tbl2"
+        sql(s"drop table if exists $multiInsertTableName1")
+        sql(s"drop table if exists $multiInsertTableName2")
+        sql(s"create table $multiInsertTableName1 like tmp_table")
+        sql(s"create table $multiInsertTableName2 like tmp_table")
+        assert(!sql(
+          s"""
+             |FROM tmp_table
+             |insert into $multiInsertTableName1 select * limit 2
+             |insert into $multiInsertTableName2 select *
+             |""".stripMargin)
+          .queryExecution.analyzed.isInstanceOf[GlobalLimit])
+      }
+    }
+  }
+
+  test("test watchdog: Distribute by for forceMaxOutputRows") {
+
+    withSQLConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS.key -> "10") {
+      withTable("tmp_table") {
+        spark.sql(s"create table tmp_table (a int, b int)")
+        spark.sql(s"insert into tmp_table values (1,10),(2,20),(3,30),(4,40),(5,50)")
+        assert(sql(
+          s"""
+             |SELECT *
+             |FROM tmp_table
+             |DISTRIBUTE BY a
+             |""".stripMargin)
+          .queryExecution.analyzed.isInstanceOf[GlobalLimit])
+      }
+    }
+  }
 }

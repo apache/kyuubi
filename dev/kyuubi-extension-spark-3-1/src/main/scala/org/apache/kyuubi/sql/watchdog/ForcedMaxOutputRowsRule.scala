@@ -18,11 +18,13 @@
 package org.apache.kyuubi.sql.watchdog
 
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.analysis.AnalysisContext
 import org.apache.spark.sql.catalyst.dsl.expressions._
 import org.apache.spark.sql.catalyst.expressions.Alias
-import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Distinct, Filter, Limit, LogicalPlan, Project, Sort, Union}
+import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Distinct, Filter, Limit, LogicalPlan, Project, RepartitionByExpression, Sort, Union}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.trees.TreeNodeTag
+import org.apache.spark.sql.execution.command.DataWritingCommand
 
 import org.apache.kyuubi.sql.KyuubiSQLConf
 
@@ -56,16 +58,27 @@ case class ForcedMaxOutputRowsRule(session: SparkSession) extends Rule[LogicalPl
     .aggregateExpressions.exists(p => p.getTagValue(ForcedMaxOutputRowsConstraint.CHILD_AGGREGATE)
     .contains(ForcedMaxOutputRowsConstraint.CHILD_AGGREGATE_FLAG))
 
+  private def isView: Boolean = {
+    val nestedViewDepth = AnalysisContext.get.nestedViewDepth
+    nestedViewDepth > 0
+  }
+
   private def canInsertLimitInner(p: LogicalPlan): Boolean = p match {
 
     case Aggregate(_, Alias(_, "havingCondition")::Nil, _) => false
     case agg: Aggregate => !isChildAggregate(agg)
+    case _: RepartitionByExpression => true
     case _: Distinct => true
     case _: Filter => true
     case _: Project => true
     case Limit(_, _) => true
     case _: Sort => true
-    case _: Union => true
+    case Union(children, _, _) =>
+      if (children.exists(_.isInstanceOf[DataWritingCommand])) {
+        false
+      } else {
+        true
+      }
     case _ => false
 
   }
@@ -74,7 +87,8 @@ case class ForcedMaxOutputRowsRule(session: SparkSession) extends Rule[LogicalPl
 
     maxOutputRowsOpt match {
       case Some(forcedMaxOutputRows) => canInsertLimitInner(p) &&
-        !p.maxRows.exists(_ <= forcedMaxOutputRows)
+        !p.maxRows.exists(_ <= forcedMaxOutputRows) &&
+        !isView
       case None => false
     }
   }
