@@ -88,7 +88,7 @@
         <scala.binary.version>2.12</scala.binary.version>
 
         <antlr4.version>4.8</antlr4.version>
-        <bouncycastle.version>1.60</bouncycastle.version>
+        <bouncycastle.version>1.67</bouncycastle.version>
         <codahale.metrics.version>4.1.1</codahale.metrics.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-collections.version>3.2.2</commons-collections.version>
