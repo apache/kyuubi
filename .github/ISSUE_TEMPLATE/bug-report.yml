@@ -59,14 +59,24 @@ body:
     validations:
       required: true
 
+  - type: input
+    id: versions
+    attributes:
+      label: Affects Version(s)
+      description: Which versions of Kyuubi are affected by this bug?
+      placeholder: >
+        e.g. master/1.3.0/1.2.0/...
+    validations:
+      required: true
+
   - type: textarea
     id: s-logs
     attributes:
       label: Kyuubi Server Log Output
-      description: What do you see when you check the log of kyuubi server instance?
+      description: What do you see when you check the log of Kyuubi server instance?
       placeholder: >
         Tips: check the server log under the KYUUBI_HOME/logs/ folder. It is extremely helpful if you copy and paste
-        the fragment of logs showing the exact error messages of kyuubi server.
+        the fragment of logs showing the exact error messages of Kyuubi server.
       render: logtalk
     validations:
       required: false
@@ -75,10 +85,10 @@ body:
     id: e-logs
     attributes:
       label: Kyuubi Engine Log Output
-      description: What do you see when you check the log of kyuubi engine instance?
+      description: What do you see when you check the log of Kyuubi engine instance?
       placeholder: >
         Tips: check the engine log under the KYUUBI_HOME/work/[username]/ folder. It is extremely helpful if you copy and paste
-        the fragment of logs showing the exact error messages of kyuubi engines.
+        the fragment of logs showing the exact error messages of Kyuubi engines.
       render: logtalk
     validations:
       required: false

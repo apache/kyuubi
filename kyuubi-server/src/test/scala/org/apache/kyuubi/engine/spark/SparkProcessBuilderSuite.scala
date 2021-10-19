@@ -225,6 +225,26 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     val b2 = new SparkProcessBuilder("test", conf)
     assert(b2.mainResource.getOrElse("") != jarPath.toString)
   }
+
+  test("kill application") {
+    val pb1 = new FakeSparkProcessBuilder(conf) {
+      override protected def env: Map[String, String] = Map()
+    }
+    val exit1 = pb1.killApplication("21/09/30 17:12:47 INFO yarn.Client: " +
+      "Application report for application_1593587619692_20149 (state: ACCEPTED)")
+    assert(exit1.contains("KYUUBI_HOME is not set!"))
+
+    val pb2 = new FakeSparkProcessBuilder(conf) {
+      override protected def env: Map[String, String] = Map("KYUUBI_HOME" -> "")
+    }
+    val exit2 = pb2.killApplication("21/09/30 17:12:47 INFO yarn.Client: " +
+      "Application report for application_1593587619692_20149 (state: ACCEPTED)")
+    assert(exit2.contains("application_1593587619692_20149")
+      && !exit2.contains("KYUUBI_HOME is not set!"))
+
+    val exit3 = pb2.killApplication("unknow")
+    assert(exit3.equals(""))
+  }
 }
 
 class FakeSparkProcessBuilder(config: KyuubiConf)

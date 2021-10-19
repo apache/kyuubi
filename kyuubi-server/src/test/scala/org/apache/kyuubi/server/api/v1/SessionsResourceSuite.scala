@@ -18,52 +18,37 @@
 package org.apache.kyuubi.server.api.v1
 
 import javax.ws.rs.client.Entity
-import javax.ws.rs.core.{Application, MediaType}
+import javax.ws.rs.core.MediaType
 
-import org.glassfish.jersey.server.ResourceConfig
-import org.glassfish.jersey.test.{JerseyTest, TestProperties}
-import org.glassfish.jersey.test.jetty.JettyTestContainerFactory
-import org.glassfish.jersey.test.spi.TestContainerFactory
 import org.junit.Test
 
+import org.apache.kyuubi.server.RestApiBaseSuite
 import org.apache.kyuubi.server.RestFrontendServiceSuite
-import org.apache.kyuubi.server.RestFrontendServiceSuite.{OBJECT_MAPPER, TEST_SERVER_PORT}
 import org.apache.kyuubi.session.SessionHandle
 
-class SessionsResourceSuite extends JerseyTest {
-
-  override def configure: Application = {
-    forceSet(TestProperties.CONTAINER_PORT, TEST_SERVER_PORT.toString)
-    new ResourceConfig(getClass)
-  }
-
-  override def getTestContainerFactory: TestContainerFactory = new JettyTestContainerFactory
+class SessionsResourceSuite extends RestApiBaseSuite {
 
   @Test
   def testOpenAndCountSession: Unit = {
     val requestObj = SessionOpenRequest(
       1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
 
-    val requestObjStr = OBJECT_MAPPER.writeValueAsString(requestObj)
-
     RestFrontendServiceSuite.withKyuubiRestServer {
       (_, _, _) =>
         var response = target(s"api/v1/sessions")
           .request(MediaType.APPLICATION_JSON_TYPE)
-          .post(Entity.entity(requestObjStr, MediaType.APPLICATION_JSON_TYPE))
+          .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
 
         assert(200 == response.getStatus)
 
-        val sessionHandle = OBJECT_MAPPER.readValue(
-          response.readEntity(classOf[String]), classOf[SessionHandle])
+        val sessionHandle = response.readEntity(classOf[SessionHandle])
 
         assert(sessionHandle.protocol.getValue == 1)
         assert(sessionHandle.identifier != null)
 
         // verify the open session count
         response = target("api/v1/sessions/count").request().get()
-        val openedSessionCount = OBJECT_MAPPER.readValue(
-          response.readEntity(classOf[String]), classOf[SessionOpenCount])
+        val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
         assert(openedSessionCount.openSessionCount == 1)
     }
   }
@@ -73,18 +58,15 @@ class SessionsResourceSuite extends JerseyTest {
     val requestObj = SessionOpenRequest(
       1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
 
-    val requestObjStr = OBJECT_MAPPER.writeValueAsString(requestObj)
-
     RestFrontendServiceSuite.withKyuubiRestServer {
       (_, _, _) =>
         var response = target(s"api/v1/sessions")
           .request(MediaType.APPLICATION_JSON_TYPE)
-          .post(Entity.entity(requestObjStr, MediaType.APPLICATION_JSON_TYPE))
+          .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
 
         assert(200 == response.getStatus)
 
-        val sessionHandle = OBJECT_MAPPER.readValue(
-          response.readEntity(classOf[String]), classOf[SessionHandle])
+        val sessionHandle = response.readEntity(classOf[SessionHandle])
 
         assert(sessionHandle.protocol.getValue == 1)
         assert(sessionHandle.identifier != null)
@@ -97,8 +79,7 @@ class SessionsResourceSuite extends JerseyTest {
 
         // verify the open session count again
         response = target("api/v1/sessions/count").request().get()
-        val openedSessionCount = OBJECT_MAPPER.readValue(
-          response.readEntity(classOf[String]), classOf[SessionOpenCount])
+        val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
         assert(openedSessionCount.openSessionCount == 0)
     }
   }

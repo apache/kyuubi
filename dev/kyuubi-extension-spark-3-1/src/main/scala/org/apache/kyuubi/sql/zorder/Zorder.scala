@@ -17,64 +17,7 @@
 
 package org.apache.kyuubi.sql.zorder
 
-import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{BoundReference, Expression}
-import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
-import org.apache.spark.sql.types.{BinaryType, BooleanType, ByteType, DataType, DateType, DecimalType, DoubleType, FloatType, IntegerType, LongType, ShortType, StringType, TimestampType}
-import org.apache.spark.unsafe.types.UTF8String
+import org.apache.spark.sql.catalyst.expressions.Expression
 
-import org.apache.kyuubi.sql.KyuubiSQLExtensionException
-
-case class Zorder(children: Seq[Expression]) extends Expression with CodegenFallback {
-  private lazy val defaultNullValues = {
-    children.map {
-      case bf: BoundReference =>
-        bf.dataType match {
-          case BooleanType =>
-            false
-          case ByteType =>
-            Byte.MaxValue
-          case ShortType =>
-            Short.MaxValue
-          case IntegerType =>
-            Int.MaxValue
-          case LongType =>
-            Long.MaxValue
-          case FloatType =>
-            Float.MaxValue
-          case DoubleType =>
-            Double.MaxValue
-          case StringType =>
-            UTF8String.fromBytes(new Array[Byte](0))
-          case TimestampType =>
-            Long.MaxValue
-          case DateType =>
-            Int.MaxValue
-          case d: DecimalType =>
-            Long.MaxValue
-          case other: Any =>
-            throw new KyuubiSQLExtensionException("Unsupported z-order type: " + other.getClass)
-        }
-      case other: Any =>
-        throw new KyuubiSQLExtensionException("Unknown z-order column: " + other)
-    }
-  }
-
-  override def nullable: Boolean = false
-
-  override def eval(input: InternalRow): Any = {
-    val evaluated = children.zipWithIndex.map { case (child: Expression, index) =>
-      val v = child.eval(input)
-      if (v == null) {
-        defaultNullValues(index)
-      } else {
-        v
-      }
-    }
-
-    val binaryArr = evaluated.map(ZorderBytesUtils.toByte).toArray
-    ZorderBytesUtils.interleaveMultiByteArray(binaryArr)
-  }
-
-  override def dataType: DataType = BinaryType
+case class Zorder(children: Seq[Expression]) extends ZorderBase {
 }
