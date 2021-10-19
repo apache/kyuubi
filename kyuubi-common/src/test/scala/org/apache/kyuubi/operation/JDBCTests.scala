@@ -27,6 +27,9 @@ import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsRe
 import org.apache.kyuubi.KYUUBI_VERSION
 
 trait JDBCTests extends BasicJDBCTests {
+
+  protected lazy val SPARK_ENGINE_MAJOR_MINOR_VERSION: (Int, Int) = sparkEngineMajorMinorVersion
+
   test("execute statement - select null") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT NULL AS col")
@@ -172,6 +175,8 @@ trait JDBCTests extends BasicJDBCTests {
   }
 
   test("execute statement - select interval") {
+    // FIXME: [KYUUBI #1250]
+    assume(SPARK_ENGINE_MAJOR_MINOR_VERSION !== ((3, 2)))
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT interval '1' day AS col")
       assert(resultSet.next())
