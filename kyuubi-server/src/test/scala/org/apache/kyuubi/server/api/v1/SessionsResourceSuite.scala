@@ -22,8 +22,7 @@ import javax.ws.rs.core.MediaType
 
 import org.junit.Test
 
-import org.apache.kyuubi.server.RestApiBaseSuite
-import org.apache.kyuubi.server.RestFrontendServiceSuite
+import org.apache.kyuubi.server.{RestApiBaseSuite, RestFrontendService, RestFrontendServiceSuite}
 import org.apache.kyuubi.session.SessionHandle
 
 class SessionsResourceSuite extends RestApiBaseSuite {
@@ -81,6 +80,49 @@ class SessionsResourceSuite extends RestApiBaseSuite {
         response = target("api/v1/sessions/count").request().get()
         val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
         assert(openedSessionCount.openSessionCount == 0)
+    }
+  }
+
+  @Test
+  def testGetExecPoolSize: Unit = {
+    RestFrontendServiceSuite.withKyuubiRestServer {
+      (restFrontendService: RestFrontendService, _, _) =>
+
+        val sessionManager = restFrontendService.serverable.backendService.sessionManager
+        sessionManager.submitBackgroundOperation(() => {
+        })
+        // verify the exec pool size count
+        var response = target("api/v1/sessions/execpoolsize").request().get()
+        val execPoolSize1 = response.readEntity(classOf[ExecPoolSize])
+        assert(execPoolSize1.execPoolSize == 1)
+
+        // verify the exec pool size again after shutdown thread
+        restFrontendService.serverable.backendService.sessionManager.stop()
+        response = target("api/v1/sessions/execpoolsize").request().get()
+        val execPoolSize2 = response.readEntity(classOf[ExecPoolSize])
+        assert(execPoolSize2.execPoolSize == 0)
+    }
+  }
+
+  @Test
+  def testGetExecPoolActiveCount: Unit = {
+    RestFrontendServiceSuite.withKyuubiRestServer {
+      (restFrontendService, _, _) =>
+        val sessionManager = restFrontendService.serverable.backendService.sessionManager
+        sessionManager.submitBackgroundOperation(() => {
+          Thread.sleep(3000)
+        })
+
+        // verify the exec pool active count
+        var response = target("api/v1/sessions/execpoolactivecount").request().get()
+        val execPoolActiveCount1 = response.readEntity(classOf[ExecPoolActiveCount])
+        assert(execPoolActiveCount1.execPoolActiveCount == 1)
+
+        // verify the exec pool active count again after thread finish
+        Thread.sleep(3000)
+        response = target("api/v1/sessions/execpoolactivecount").request().get()
+        val execPoolActiveCount2 = response.readEntity(classOf[ExecPoolActiveCount])
+        assert(execPoolActiveCount2.execPoolActiveCount == 0)
     }
   }
 
