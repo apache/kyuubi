@@ -245,6 +245,20 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     val exit3 = pb2.killApplication("unknow")
     assert(exit3.equals(""))
   }
+
+  test("add spark prefix for conf") {
+    val conf = KyuubiConf(false)
+    conf.set("kyuubi.kent", "yao")
+    conf.set("spark.vino", "yang")
+    conf.set("kent", "yao")
+    conf.set("hadoop.kent", "yao")
+    val builder = new SparkProcessBuilder("", conf)
+    val commands = builder.toString.split(' ')
+    assert(commands.contains("spark.kyuubi.kent=yao"))
+    assert(commands.contains("spark.vino=yang"))
+    assert(commands.contains("spark.kent=yao"))
+    assert(commands.contains("spark.hadoop.hadoop.kent=yao"))
+  }
 }
 
 class FakeSparkProcessBuilder(config: KyuubiConf)

@@ -123,10 +123,24 @@ class SparkProcessBuilder(
     buffer += executable
     buffer += CLASS
     buffer += mainClass
-    conf.toSparkPrefixedConf.foreach { case (k, v) =>
+    /**
+     * Converts kyuubi configs to configs that Spark could identify.
+     * - If the key is start with `spark.`, keep it AS IS as it is a Spark Conf
+     * - If the key is start with `hadoop.`, it will be prefixed with `spark.hadoop.`
+     * - Otherwise, the key will be added a `spark.` prefix
+     */
+    conf.getAll.foreach { case (k, v) =>
+      val newKey = if (k.startsWith("spark.")) {
+        k
+      } else if (k.startsWith("hadoop.")) {
+        "spark.hadoop." + k
+      } else {
+        "spark." + k
+      }
       buffer += CONF
-      buffer += s"$k=$v"
+      buffer += s"$newKey=$v"
     }
+
     // iff the keytab is specified, PROXY_USER is not supported
     if (!useKeytab()) {
       buffer += PROXY_USER
