@@ -19,7 +19,6 @@ package org.apache.kyuubi.sql.zorder
 
 import java.time.LocalDate
 import java.util.Locale
-import javax.xml.bind.DatatypeConverter
 
 import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
@@ -27,6 +26,7 @@ import scala.util.control.NonFatal
 
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.{ParseTree, TerminalNode}
+import org.apache.commons.codec.binary.Hex
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRelation, UnresolvedStar}
 import org.apache.spark.sql.catalyst.expressions.{And, Ascending, EqualNullSafe, EqualTo, Expression, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual, Literal, Not, NullsLast, Or, SortOrder}
@@ -229,7 +229,7 @@ abstract class ZorderSqlAstBuilderBase extends ZorderSqlExtensionsBaseVisitor[An
         case "X" =>
           val padding = if (value.length % 2 != 0) "0" else ""
 
-          Literal(DatatypeConverter.parseHexBinary(padding + value))
+          Literal(Hex.decodeHex(padding + value))
         case other =>
           throw new ParseException(s"Literals of type '$other' are currently not" +
             " supported.", ctx)
