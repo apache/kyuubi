@@ -123,9 +123,14 @@ class SparkProcessBuilder(
     buffer += executable
     buffer += CLASS
     buffer += mainClass
-    // add `spark.` prefix for all the config keys.
+    /**
+     * Converts kyuubi configs to configs that Spark could identify.
+     * - If the key is start with `spark.`, keep it AS IS as it is a Spark Conf
+     * - If the key is start with `hadoop.`, it will be prefixed with `spark.hadoop.`
+     * - Otherwise, the key will be added a `spark.` prefix
+     */
     conf.getAll.foreach { case (k, v) =>
-      var newKey = if (k.startsWith("spark.")) {
+      val newKey = if (k.startsWith("spark.")) {
         k
       } else if (k.startsWith("hadoop.")) {
         "spark.hadoop." + k
