@@ -1835,10 +1835,16 @@
         </profile>
 
         <profile>
+            <id>spark-block-cleaner</id>
+            <modules>
+                <module>tools/spark-block-cleaner</module>
+            </modules>
+        </profile>
+
+        <profile>
             <id>kubernetes</id>
             <modules>
                 <module>kubernetes/integration-tests</module>
-                <module>tools/spark-block-cleaner</module>
             </modules>
         </profile>
 

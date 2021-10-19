@@ -36,4 +36,4 @@ jobs:
         ASF_PASSWORD: ${{ secrets.NEXUS_PW }}
       run: |
         rm -rf ~/.m2/repository/org/apache/kyuubi
-        ./build/mvn clean deploy -DskipTests -Pkyuubi-extension-spark-3-1,spark-provided -s ./build/release/asf-settings.xml
+        ./build/mvn clean deploy -DskipTests -Pspark-3.1,spark-provided -s ./build/release/asf-settings.xml

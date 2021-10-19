@@ -159,7 +159,7 @@ export RELEASE_RC_NO=<RC number, e.g. 0>
 ```shell
 build/mvn versions:set -DgenerateBackupPoms=false \
   -DnewVersion="${RELEASE_VERSION}" \
-  -Pkubernetes,kyuubi-extension-spark-3-1,spark-block-cleaner,tpcds
+  -Pspark-3.1,spark-block-cleaner
 
 git commit -am "[RELEASE] Bump ${RELEASE_VERSION}"
 ```
