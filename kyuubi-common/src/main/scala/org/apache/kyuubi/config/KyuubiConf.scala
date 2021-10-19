@@ -154,26 +154,6 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     serverOnlyConfEntries.foreach(cloned.unset)
     cloned
   }
-
-  /**
-   * This method is used to convert kyuubi configs to configs that Spark could identify.
-   * - If the key is start with `spark.`, keep it AS IS as it is a Spark Conf
-   * - If the key is start with `hadoop.`, it will be prefixed with `spark.hadoop.`
-   * - Otherwise, the key will be added a `spark.` prefix
-   * @return a map with spark specified configs
-   */
-  def toSparkPrefixedConf: Map[String, String] = {
-    settings.entrySet().asScala.map { e =>
-      val key = e.getKey
-      if (key.startsWith("spark.")) {
-        key -> e.getValue
-      } else if (key.startsWith("hadoop.")) {
-        "spark.hadoop." + key -> e.getValue
-      } else {
-        "spark." + key -> e.getValue
-      }
-    }.toMap
-  }
 }
 
 /**

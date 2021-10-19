@@ -23,6 +23,7 @@ import java.nio.file.{Files, Path, Paths}
 
 import scala.collection.mutable.ArrayBuffer
 
+import com.google.common.annotations.VisibleForTesting
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
@@ -123,7 +124,7 @@ class SparkProcessBuilder(
     buffer += executable
     buffer += CLASS
     buffer += mainClass
-    conf.toSparkPrefixedConf.foreach { case (k, v) =>
+    getSparkPrefixedConf.foreach { case (k, v) =>
       buffer += CONF
       buffer += s"$k=$v"
     }
@@ -159,6 +160,27 @@ class SparkProcessBuilder(
         case e: IOException =>
           error(s"Failed to login for ${principal.get}", e)
           false
+      }
+    }
+  }
+
+  /**
+   * This method is used to convert kyuubi configs to configs that Spark could identify.
+   * - If the key is start with `spark.`, keep it AS IS as it is a Spark Conf
+   * - If the key is start with `hadoop.`, it will be prefixed with `spark.hadoop.`
+   * - Otherwise, the key will be added a `spark.` prefix
+   * @return a map with spark specified configs
+   */
+  @VisibleForTesting
+  def getSparkPrefixedConf: Map[String, String] = {
+    conf.getAll.map { e =>
+      val key = e._1
+      if (key.startsWith("spark.")) {
+        key -> e._2
+      } else if (key.startsWith("hadoop.")) {
+        "spark.hadoop." + key -> e._2
+      } else {
+        "spark." + key -> e._2
       }
     }
   }
