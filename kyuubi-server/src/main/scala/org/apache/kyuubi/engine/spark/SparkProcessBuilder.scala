@@ -125,13 +125,12 @@ class SparkProcessBuilder(
     buffer += mainClass
     // add `spark.` prefix for all the config keys.
     conf.getAll.foreach { case (k, v) =>
-      var newKey = ""
-      if (k.startsWith("spark.")) {
-        newKey = k
+      var newKey = if (k.startsWith("spark.")) {
+        k
       } else if (k.startsWith("hadoop.")) {
-        newKey = "spark.hadoop." + k
+        "spark.hadoop." + k
       } else {
-        newKey = "spark." + k
+        "spark." + k
       }
       buffer += CONF
       buffer += s"$newKey=$v"
