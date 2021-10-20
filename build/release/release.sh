@@ -96,6 +96,12 @@ upload_svn_staging() {
 upload_nexus_staging() {
   ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,spark-provided \
     -s "${KYUUBI_DIR}/build/release/asf-settings.xml"
+  ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,spark-3.1 \
+    -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
+    -pl dev/kyuubi-extension-spark-3-1 -am
+  ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,spark-3.2 \
+    -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
+    -pl dev/kyuubi-extension-spark-3-2 -am
 }
 
 finalize_svn() {
