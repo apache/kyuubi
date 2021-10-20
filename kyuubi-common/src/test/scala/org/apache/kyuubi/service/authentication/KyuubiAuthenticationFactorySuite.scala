@@ -44,7 +44,7 @@ class KyuubiAuthenticationFactorySuite extends KyuubiFunSuite {
   }
 
   test("AuthType NONE") {
-    val kyuubiConf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_SASL_PLAIN_AUTH_TYPE, "NONE")
+    val kyuubiConf = KyuubiConf()
     val auth = new KyuubiAuthenticationFactory(kyuubiConf)
     auth.getTTransportFactory
     assert(Security.getProviders.exists(_.isInstanceOf[SaslPlainProvider]))

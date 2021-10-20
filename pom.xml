@@ -1428,6 +1428,7 @@
                             <sun.security.krb5.debug>false</sun.security.krb5.debug>
                             <kyuubi.operation.log.dir.root>target/server_operation_logs</kyuubi.operation.log.dir.root>
                             <kyuubi.engine.operation.log.dir.root>target/engine_operation_logs</kyuubi.engine.operation.log.dir.root>
+                            <kyuubi.authentication.sasl.plain.auth.type>NONE</kyuubi.authentication.sasl.plain.auth.type>
                         </systemProperties>
                         <tagsToExclude>${maven.plugin.scalatest.exclude.tags}</tagsToExclude>
                         <tagsToInclude>${maven.plugin.scalatest.include.tags}</tagsToInclude>
