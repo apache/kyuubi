@@ -22,7 +22,6 @@ import java.util.Properties
 import org.apache.kyuubi.IcebergSuiteMixin
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.jdbc.hive.{KyuubiConnection, KyuubiDatabaseMetaData}
 import org.apache.kyuubi.tags.IcebergTest
 
 @IcebergTest
@@ -42,9 +41,9 @@ class KyuubiHiveDriverSuite extends WithSparkSQLEngine with IcebergSuiteMixin {
   test("get tables with kyuubi driver") {
     val driver = new KyuubiHiveDriver()
     val connection = driver.connect(getJdbcUrl, new Properties())
-    assert(connection.isInstanceOf[KyuubiConnection])
+    assert(connection.getClass.getName === "org.apache.kyuubi.jdbc.hive.KyuubiConnection")
     val metaData = connection.getMetaData
-    assert(metaData.isInstanceOf[KyuubiDatabaseMetaData])
+    assert(metaData.getClass.getName === "org.apache.kyuubi.jdbc.hive.KyuubiDatabaseMetaData")
     val statement = connection.createStatement()
     val table1 = s"${SparkCatalogShim.SESSION_CATALOG}.default.kyuubi_hive_jdbc"
     val table2 = s"$catalog.default.hdp_cat_tbl"
@@ -74,9 +73,9 @@ class KyuubiHiveDriverSuite extends WithSparkSQLEngine with IcebergSuiteMixin {
   test("deprecated KyuubiDriver also works") {
     val driver = new KyuubiDriver()
     val connection = driver.connect(getJdbcUrl, new Properties())
-    assert(connection.isInstanceOf[KyuubiConnection])
+    assert(connection.getClass.getName === "org.apache.kyuubi.jdbc.hive.KyuubiConnection")
     val metaData = connection.getMetaData
-    assert(metaData.isInstanceOf[KyuubiDatabaseMetaData])
+    assert(metaData.getClass.getName === "org.apache.kyuubi.jdbc.hive.KyuubiDatabaseMetaData")
     val statement = connection.createStatement()
     try {
       val resultSet = statement.executeQuery(s"SELECT 1")

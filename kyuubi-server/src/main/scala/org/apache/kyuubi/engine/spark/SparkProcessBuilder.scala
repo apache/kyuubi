@@ -126,19 +126,33 @@ class SparkProcessBuilder(
     buffer += CLASS
     buffer += mainClass
 
-    var sparkPrefixedConf = conf.toSparkPrefixedConf
+    var allConf = conf.getAll
 
     // if enable sasl kerberos authentication for zookeeper, need to upload the server ketab file
     if (ZooKeeperAuthTypes.withName(conf.get(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE))
       == ZooKeeperAuthTypes.KERBEROS) {
-      sparkPrefixedConf = sparkPrefixedConf ++ zkAuthKeytabFileConf(sparkPrefixedConf)
+      allConf = allConf ++ zkAuthKeytabFileConf(allConf)
     }
 
-    sparkPrefixedConf.foreach { case (k, v) =>
+    /**
+     * Converts kyuubi configs to configs that Spark could identify.
+     * - If the key is start with `spark.`, keep it AS IS as it is a Spark Conf
+     * - If the key is start with `hadoop.`, it will be prefixed with `spark.hadoop.`
+     * - Otherwise, the key will be added a `spark.` prefix
+     */
+    allConf.foreach { case (k, v) =>
+      val newKey = if (k.startsWith("spark.")) {
+        k
+      } else if (k.startsWith("hadoop.")) {
+        "spark.hadoop." + k
+      } else {
+        "spark." + k
+      }
       buffer += CONF
-      buffer += s"$k=$v"
+      buffer += s"$newKey=$v"
     }
-    // if the keytab is specified, PROXY_USER is not supported
+
+    // iff the keytab is specified, PROXY_USER is not supported
     if (!useKeytab()) {
       buffer += PROXY_USER
       buffer += proxyUser

@@ -228,6 +228,40 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     assert(b2.mainResource.getOrElse("") != jarPath.toString)
   }
 
+  test("kill application") {
+    val pb1 = new FakeSparkProcessBuilder(conf) {
+      override protected def env: Map[String, String] = Map()
+    }
+    val exit1 = pb1.killApplication("21/09/30 17:12:47 INFO yarn.Client: " +
+      "Application report for application_1593587619692_20149 (state: ACCEPTED)")
+    assert(exit1.contains("KYUUBI_HOME is not set!"))
+
+    val pb2 = new FakeSparkProcessBuilder(conf) {
+      override protected def env: Map[String, String] = Map("KYUUBI_HOME" -> "")
+    }
+    val exit2 = pb2.killApplication("21/09/30 17:12:47 INFO yarn.Client: " +
+      "Application report for application_1593587619692_20149 (state: ACCEPTED)")
+    assert(exit2.contains("application_1593587619692_20149")
+      && !exit2.contains("KYUUBI_HOME is not set!"))
+
+    val exit3 = pb2.killApplication("unknow")
+    assert(exit3.equals(""))
+  }
+
+  test("add spark prefix for conf") {
+    val conf = KyuubiConf(false)
+    conf.set("kyuubi.kent", "yao")
+    conf.set("spark.vino", "yang")
+    conf.set("kent", "yao")
+    conf.set("hadoop.kent", "yao")
+    val builder = new SparkProcessBuilder("", conf)
+    val commands = builder.toString.split(' ')
+    assert(commands.contains("spark.kyuubi.kent=yao"))
+    assert(commands.contains("spark.vino=yang"))
+    assert(commands.contains("spark.kent=yao"))
+    assert(commands.contains("spark.hadoop.hadoop.kent=yao"))
+  }
+
   test("zookeeper kerberos authentication") {
     val conf = KyuubiConf()
     conf.set(HighAvailabilityConf.HA_ZK_AUTH_TYPE.key, ZooKeeperAuthTypes.KERBEROS.toString)

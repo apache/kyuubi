@@ -20,10 +20,8 @@ package org.apache.kyuubi.sql
 import org.apache.spark.sql.SparkSessionExtensions
 
 import org.apache.kyuubi.sql.sqlclassification.KyuubiSqlClassification
-import org.apache.kyuubi.sql.watchdog.{ForcedMaxOutputRowsRule, MaxHivePartitionStrategy}
-import org.apache.kyuubi.sql.zorder.{InsertZorderBeforeWritingDatasource, InsertZorderBeforeWritingHive}
-import org.apache.kyuubi.sql.zorder.ResolveZorder
-import org.apache.kyuubi.sql.zorder.ZorderSparkSqlExtensionsParser
+import org.apache.kyuubi.sql.watchdog.{ForcedMaxOutputRowsRule, MarkAggregateOrderRule, MaxHivePartitionStrategy}
+import org.apache.kyuubi.sql.zorder.{InsertZorderBeforeWritingDatasource, InsertZorderBeforeWritingHive, ResolveZorder, ZorderSparkSqlExtensionsParser}
 
 // scalastyle:off line.size.limit
 /**
@@ -38,6 +36,9 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
     extensions.injectParser{ case (_, parser) => new ZorderSparkSqlExtensionsParser(parser) }
     extensions.injectResolutionRule(ResolveZorder)
 
+    // a help rule for ForcedMaxOutputRowsRule
+    extensions.injectResolutionRule(MarkAggregateOrderRule)
+
     // Note that:
     // InsertZorderBeforeWritingDatasource and InsertZorderBeforeWritingHive
     // should be applied before
@@ -45,14 +46,14 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
     // because we can only apply one of them (i.e. Global Sort or Repartition)
     extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingDatasource)
     extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingHive)
-
     extensions.injectPostHocResolutionRule(KyuubiSqlClassification)
-    extensions.injectPostHocResolutionRule(RepartitionBeforeWrite)
-    extensions.injectPostHocResolutionRule(RepartitionBeforeWriteHive)
+    extensions.injectPostHocResolutionRule(RepartitionBeforeWritingDatasource)
+    extensions.injectPostHocResolutionRule(RepartitionBeforeWritingHive)
     extensions.injectPostHocResolutionRule(FinalStageConfigIsolationCleanRule)
+    extensions.injectPostHocResolutionRule(ForcedMaxOutputRowsRule)
+
     extensions.injectQueryStagePrepRule(_ => InsertShuffleNodeBeforeJoin)
     extensions.injectQueryStagePrepRule(FinalStageConfigIsolation(_))
     extensions.injectPlannerStrategy(MaxHivePartitionStrategy)
-    extensions.injectPostHocResolutionRule(ForcedMaxOutputRowsRule)
   }
 }

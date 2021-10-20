@@ -67,13 +67,13 @@
     <modules>
         <module>dev/kyuubi-codecov</module>
         <module>externals/kyuubi-download</module>
-        <module>externals/kyuubi-spark-monitor</module>
         <module>externals/kyuubi-spark-sql-engine</module>
         <module>kyuubi-assembly</module>
         <module>kyuubi-common</module>
         <module>kyuubi-ctl</module>
         <module>kyuubi-ha</module>
         <module>kyuubi-hive-jdbc</module>
+        <module>kyuubi-hive-jdbc-shaded</module>
         <module>kyuubi-metrics</module>
         <module>kyuubi-server</module>
         <module>kyuubi-zookeeper</module>
@@ -88,6 +88,7 @@
         <scala.binary.version>2.12</scala.binary.version>
 
         <antlr4.version>4.8</antlr4.version>
+        <bouncycastle.version>1.67</bouncycastle.version>
         <codahale.metrics.version>4.1.1</codahale.metrics.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-collections.version>3.2.2</commons-collections.version>
@@ -98,9 +99,8 @@
         <delta.version>1.0.0</delta.version>
         <google.jsr305.version>3.0.2</google.jsr305.version>
         <guava.version>30.1-jre</guava.version>
-        <hadoop.version>3.2.2</hadoop.version>
+        <hadoop.version>3.3.1</hadoop.version>
         <hadoop.binary.version>3.2</hadoop.binary.version>
-        <hbase.version>1.2.3</hbase.version>
         <hive.version>2.3.7</hive.version>
         <hudi.version>0.9.0</hudi.version>
         <iceberg.name>iceberg-spark3-runtime</iceberg.name>
@@ -174,7 +174,6 @@
     </properties>
 
     <repositories>
-
         <repository>
             <id>gcs-maven-central-mirror</id>
             <name>GCS Maven Central mirror Asia Pacific</name>
@@ -196,17 +195,6 @@
             </releases>
             <snapshots>
                 <enabled>false</enabled>
-            </snapshots>
-        </repository>
-
-        <repository>
-            <id>Apache Snapshots Repository</id>
-            <url>https://repository.apache.org/snapshots/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
             </snapshots>
         </repository>
     </repositories>
@@ -234,35 +222,10 @@
                 <enabled>false</enabled>
             </snapshots>
         </pluginRepository>
-        <pluginRepository>
-            <id>apache</id>
-            <name>Apache Repository Snapshots</name>
-            <url>https://repository.apache.org/snapshots</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>daily</updatePolicy>
-                <checksumPolicy>warn</checksumPolicy>
-            </snapshots>
-        </pluginRepository>
-
-        <pluginRepository>
-            <id>sonatype-public-repository</id>
-            <url>https://oss.sonatype.org/content/groups/public</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </pluginRepository>
     </pluginRepositories>
 
     <dependencyManagement>
         <dependencies>
-
             <dependency>
                 <groupId>org.scala-lang</groupId>
                 <artifactId>scala-library</artifactId>
@@ -520,74 +483,6 @@
 
             <dependency>
                 <groupId>org.apache.hive</groupId>
-                <artifactId>hive-jdbc</artifactId>
-                <version>${hive.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.apache.hive</groupId>
-                        <artifactId>hive-common</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hive</groupId>
-                        <artifactId>hive-metastore</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hive</groupId>
-                        <artifactId>hive-serde</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hive</groupId>
-                        <artifactId>hive-service</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hive</groupId>
-                        <artifactId>hive-service-rpc</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.hive</groupId>
-                        <artifactId>hive-shims</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.curator</groupId>
-                        <artifactId>curator-framework</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.thrift</groupId>
-                        <artifactId>libthrift</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.thrift</groupId>
-                        <artifactId>libfb303</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.apache.zookeeper</groupId>
-                        <artifactId>zookeeper</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-api</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>commons-logging</groupId>
-                        <artifactId>commons-logging</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.codehaus.groovy</groupId>
-                        <artifactId>groovy-all</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.hive</groupId>
                 <artifactId>hive-serde</artifactId>
                 <version>${hive.version}</version>
                 <exclusions>
@@ -666,18 +561,6 @@
                     <exclusion>
                         <groupId>net.sf.opencsv</groupId>
                         <artifactId>opencsv</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.hive</groupId>
-                <artifactId>hive-service</artifactId>
-                <version>${hive.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -1261,6 +1144,19 @@
                 </exclusions>
             </dependency>
 
+            <!-- Used by Yarn Mini Cluster 3.3 -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk15on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk15on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+
             <!--
               Required for JDK 11. Previous as a transitive dependency of hadoop-client,
               since SPARK-33212(will be included in Apache Spark 3.2), Apache Spark moved
@@ -1350,11 +1246,6 @@
             <artifactId>scalatest_${scala.binary.version}</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>jul-to-slf4j</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -1396,6 +1287,7 @@
                                 <pattern>${maven.build.timestamp.format}</pattern>
                                 <timeSource>current</timeSource>
                                 <timeZone>Asia/Shanghai</timeZone>
+                                <locale>en_US</locale>
                             </configuration>
                         </execution>
                         <execution>
@@ -1409,6 +1301,7 @@
                                 <pattern>${maven.build.timestamp.format}</pattern>
                                 <timeSource>build</timeSource>
                                 <timeZone>Asia/Shanghai</timeZone>
+                                <locale>en_US</locale>
                             </configuration>
                         </execution>
                         <execution>
@@ -1431,9 +1324,6 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${maven.plugin.compiler.version}</version>
                     <configuration>
-                        <source>${java.version}</source>
-                        <target>${java.version}</target>
-                        <encoding>UTF-8</encoding>
                         <maxmem>1024m</maxmem>
                         <fork>true</fork>
                         <compilerArgs>
@@ -1888,9 +1778,29 @@
         </profile>
 
         <profile>
-            <id>spark-master</id>
+            <id>spark-3.2</id>
             <properties>
-                <spark.version>3.2.0-SNAPSHOT</spark.version>
+                <spark.version>3.2.0</spark.version>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+            </properties>
+        </profile>
+
+        <profile>
+            <id>spark-master</id>
+            <repositories>
+                <repository>
+                    <id>Apache Snapshots Repository</id>
+                    <url>https://repository.apache.org/snapshots/</url>
+                    <releases>
+                        <enabled>true</enabled>
+                    </releases>
+                    <snapshots>
+                        <enabled>true</enabled>
+                    </snapshots>
+                </repository>
+            </repositories>
+            <properties>
+                <spark.version>3.3.0-SNAPSHOT</spark.version>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
@@ -1919,7 +1829,16 @@
         <profile>
             <id>kyuubi-extension-spark-3-1</id>
             <modules>
+                <module>dev/kyuubi-extension-spark-common</module>
                 <module>dev/kyuubi-extension-spark-3-1</module>
+            </modules>
+        </profile>
+
+        <profile>
+            <id>kyuubi-extension-spark-3-2</id>
+            <modules>
+                <module>dev/kyuubi-extension-spark-common</module>
+                <module>dev/kyuubi-extension-spark-3-2</module>
             </modules>
         </profile>
 

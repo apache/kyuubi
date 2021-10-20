@@ -86,16 +86,6 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     assert(cloned.getOption(key).get === "xyz")
   }
 
-  test("to spark prefixed conf") {
-    val conf = KyuubiConf(false)
-    assert(conf.toSparkPrefixedConf.isEmpty)
-    assert(conf.set("kyuubi.kent", "yao").toSparkPrefixedConf("spark.kyuubi.kent") === "yao")
-    assert(conf.set("spark.kent", "yao").toSparkPrefixedConf("spark.kent") === "yao")
-    assert(conf.set("kent", "yao").toSparkPrefixedConf("spark.kent") === "yao")
-    assert(conf.set("hadoop.kent", "yao").toSparkPrefixedConf("spark.hadoop.hadoop.kent") === "yao")
-  }
-
-
   test("get user specific defaults") {
     val conf = KyuubiConf().loadFileDefaults()
 
@@ -149,5 +139,28 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     kyuubiConf.set(OPERATION_QUERY_TIMEOUT.key, "0")
     val e1 = intercept[IllegalArgumentException](kyuubiConf.get(OPERATION_QUERY_TIMEOUT))
     assert(e1.getMessage.contains("must >= 1s if set"))
+  }
+
+  test("kyuubi conf engine.share.level.subdomain valid path test") {
+    val kyuubiConf = KyuubiConf()
+    kyuubiConf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "")
+    assertThrows[IllegalArgumentException](kyuubiConf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN))
+    kyuubiConf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, ".")
+    assertThrows[IllegalArgumentException](kyuubiConf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN))
+    kyuubiConf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "..")
+    assertThrows[IllegalArgumentException](kyuubiConf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN))
+    kyuubiConf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "/")
+    assertThrows[IllegalArgumentException](kyuubiConf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN))
+    kyuubiConf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "/tmp/")
+    assertThrows[IllegalArgumentException](kyuubiConf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN))
+    kyuubiConf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "tmp/")
+    assertThrows[IllegalArgumentException](kyuubiConf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN))
+    kyuubiConf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "/tmp")
+    assertThrows[IllegalArgumentException](kyuubiConf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN))
+    kyuubiConf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc/efg")
+    assertThrows[IllegalArgumentException](kyuubiConf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN))
+    val path = "kyuubi!@#$%^&*()_+-=[]{};:,.<>?"
+    kyuubiConf.set(ENGINE_SHARE_LEVEL_SUBDOMAIN.key, path)
+    assert(kyuubiConf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN).get == path)
   }
 }

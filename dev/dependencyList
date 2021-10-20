@@ -24,8 +24,8 @@ curator-framework/2.12.0//curator-framework-2.12.0.jar
 curator-recipes/2.12.0//curator-recipes-2.12.0.jar
 failureaccess/1.0.1//failureaccess-1.0.1.jar
 guava/30.1-jre//guava-30.1-jre.jar
-hadoop-client-api/3.2.2//hadoop-client-api-3.2.2.jar
-hadoop-client-runtime/3.2.2//hadoop-client-runtime-3.2.2.jar
+hadoop-client-api/3.3.1//hadoop-client-api-3.3.1.jar
+hadoop-client-runtime/3.3.1//hadoop-client-runtime-3.3.1.jar
 hive-common/2.3.7//hive-common-2.3.7.jar
 hive-metastore/2.3.7//hive-metastore-2.3.7.jar
 hive-serde/2.3.7//hive-serde-2.3.7.jar

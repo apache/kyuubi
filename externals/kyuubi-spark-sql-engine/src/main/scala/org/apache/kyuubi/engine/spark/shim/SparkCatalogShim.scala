@@ -21,7 +21,8 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.types.StructField
 
-import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.Logging
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.sparkMajorMinorVersion
 import org.apache.kyuubi.schema.SchemaHelper
 
 /**
@@ -154,12 +155,11 @@ trait SparkCatalogShim extends Logging {
 
 object SparkCatalogShim {
   def apply(): SparkCatalogShim = {
-    val runtimeSparkVer = org.apache.spark.SPARK_VERSION
-    val (major, minor) = Utils.majorMinorVersion(runtimeSparkVer)
-    (major, minor) match {
+    sparkMajorMinorVersion match {
       case (3, _) => new CatalogShim_v3_0
       case (2, _) => new CatalogShim_v2_4
-      case _ => throw new IllegalArgumentException(s"Not Support spark version $runtimeSparkVer")
+      case _ =>
+        throw new IllegalArgumentException(s"Not Support spark version $sparkMajorMinorVersion")
     }
   }
 

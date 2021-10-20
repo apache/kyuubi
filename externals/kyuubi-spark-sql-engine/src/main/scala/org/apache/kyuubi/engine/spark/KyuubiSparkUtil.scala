@@ -22,6 +22,8 @@ import java.time.{Instant, LocalDateTime, ZoneId}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 
+import org.apache.kyuubi.Utils
+
 object KyuubiSparkUtil {
 
   def globalSparkContext: SparkContext = SparkSession.active.sparkContext
@@ -37,7 +39,7 @@ object KyuubiSparkUtil {
     // scalastyle:off line.size.limit
     s"""
        |           Spark application name: ${sc.appName}
-       |                 application ID: ${engineId}
+       |                 application ID: $engineId
        |                 application web UI: $webUrl
        |                 master: ${sc.master}
        |                 deploy mode: ${sc.deployMode}
@@ -58,5 +60,10 @@ object KyuubiSparkUtil {
     } catch {
       case _: ClassNotFoundException | _: NoClassDefFoundError => false
     }
+  }
+
+  lazy val sparkMajorMinorVersion: (Int, Int) = {
+    val runtimeSparkVer = org.apache.spark.SPARK_VERSION
+    Utils.majorMinorVersion(runtimeSparkVer)
   }
 }

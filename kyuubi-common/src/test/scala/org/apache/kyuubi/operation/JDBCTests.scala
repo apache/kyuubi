@@ -27,6 +27,9 @@ import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsRe
 import org.apache.kyuubi.KYUUBI_VERSION
 
 trait JDBCTests extends BasicJDBCTests {
+
+  protected lazy val SPARK_ENGINE_MAJOR_MINOR_VERSION: (Int, Int) = sparkEngineMajorMinorVersion
+
   test("execute statement - select null") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT NULL AS col")
@@ -172,6 +175,8 @@ trait JDBCTests extends BasicJDBCTests {
   }
 
   test("execute statement - select interval") {
+    // FIXME: [KYUUBI #1250]
+    assume(SPARK_ENGINE_MAJOR_MINOR_VERSION !== ((3, 2)))
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT interval '1' day AS col")
       assert(resultSet.next())
@@ -353,9 +358,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  // TODO: https://github.com/apache/incubator-kyuubi/issues/937
-  // Kyuubi docker image has not updated to lastest version
-  ignore("kyuubi defined function - kyuubi_version") {
+  test("kyuubi defined function - kyuubi_version") {
     withJdbcStatement() { statement =>
       val rs = statement.executeQuery("SELECT kyuubi_version()")
       assert(rs.next())
@@ -363,7 +366,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  ignore("kyuubi defined function - engine_name") {
+  test("kyuubi defined function - engine_name") {
     withJdbcStatement() { statement =>
       val rs = statement.executeQuery("SELECT engine_name()")
       assert(rs.next())
@@ -371,12 +374,16 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  // dockerfile use kyuubi as user which is not same with non-k8s env.
-  ignore("kyuubi defined function - system_user") {
+  test("kyuubi defined function - system_user") {
     withJdbcStatement() { statement =>
       val rs = statement.executeQuery("SELECT system_user()")
       assert(rs.next())
-      assert(rs.getString(1) == System.getProperty("user.name"))
+      val user = rs.getString(1)
+      // skip minikube test since dockerfile use kyuubi as user which is not same with non-k8s env.
+      if (user == "kyuubi") {
+      } else {
+        assert(user == System.getProperty("user.name"))
+      }
     }
   }
 
