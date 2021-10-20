@@ -45,7 +45,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with JDBCTe
 
   test("KYUUBI #1263: Kyuubi auxiliary UDF failed on Spark Yarn mode") {
     withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery("""SELECT kyuubi_version()""")
+      val resultSet = statement.executeQuery("""SELECT kyuubi_version() as id""")
       assert(resultSet.next())
       assert(resultSet.getString("id") === org.apache.kyuubi.KYUUBI_VERSION)
     }
