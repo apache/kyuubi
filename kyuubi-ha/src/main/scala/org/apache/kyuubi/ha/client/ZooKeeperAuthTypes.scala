@@ -17,18 +17,10 @@
 
 package org.apache.kyuubi.ha.client
 
-import org.apache.hadoop.security.UserGroupInformation
-
 object ZooKeeperAuthTypes extends Enumeration {
 
   type ZooKeeperAuthType = Value
 
   val NONE, KERBEROS, DIGEST = Value
-
-  def getDefault(): ZooKeeperAuthType = if (UserGroupInformation.isSecurityEnabled) {
-    KERBEROS
-  } else {
-    NONE
-  }
 
 }

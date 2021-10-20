@@ -56,7 +56,7 @@ object HighAvailabilityConf {
       .version("1.4.0")
       .stringConf
       .checkValues(ZooKeeperAuthTypes.values.map(_.toString))
-      .createWithDefault(ZooKeeperAuthTypes.getDefault().toString)
+      .createWithDefault(ZooKeeperAuthTypes.NONE.toString)
 
   val HA_ZK_ENGINE_AUTH_TYPE: ConfigEntry[String] =
     buildConf("ha.zookeeper.engine.auth.type")
