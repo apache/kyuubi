@@ -32,14 +32,16 @@ import org.apache.thrift.transport.{TTransportException, TTransportFactory}
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.service.authentication.AuthTypes._
+import org.apache.kyuubi.service.authentication.PlainAuthTypes._
 
 class KyuubiAuthenticationFactory(conf: KyuubiConf) {
+  private val saslEnabled: Boolean = conf.get(AUTHENTICATION_SASL_ENABLED)
+  private val kerberosEnabled: Boolean = conf.get(AUTHENTICATION_SASL_KERBEROS_ENABLED)
+  private val plainAuthType: Option[PlainAuthType] =
+    conf.get(AUTHENTICATION_SASL_PLAIN_AUTH_TYPE).map(PlainAuthTypes.withName)
 
-  private val authType: AuthType = AuthTypes.withName(conf.get(AUTHENTICATION_METHOD))
-
-  private val saslServer: Option[HadoopThriftAuthBridgeServer] = authType match {
-    case KERBEROS =>
+  private val hadoopAuthServer: Option[HadoopThriftAuthBridgeServer] = {
+    if (saslEnabled && kerberosEnabled) {
       val secretMgr = KyuubiDelegationTokenManager(conf)
       try {
         secretMgr.startThreads()
@@ -47,7 +49,9 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf) {
         case e: IOException => throw new TTransportException("Failed to start token manager", e)
       }
       Some(new HadoopThriftAuthBridgeServer(secretMgr))
-    case _ => None
+    } else {
+      None
+    }
   }
 
   private def getSaslProperties: java.util.Map[String, String] = {
@@ -59,34 +63,40 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf) {
   }
 
   def getTTransportFactory: TTransportFactory = {
-    saslServer match {
-      case Some(server) =>
-        val serverTransportFactory = try {
-          server.createSaslServerTransportFactory(getSaslProperties)
-        } catch {
-          case e: TTransportException => throw new LoginException(e.getMessage)
-        }
+    if (!saslEnabled || (!kerberosEnabled && plainAuthType.isEmpty)) {
+      new TTransportFactory()
+    } else {
+      val kerberosTransportFactory = hadoopAuthServer match {
+        case Some(server) =>
+          val transportFactory = try {
+            server.createSaslServerTransportFactory(getSaslProperties)
+          } catch {
+            case e: TTransportException => throw new LoginException(e.getMessage)
+          }
+          Some(transportFactory)
 
-        server.wrapTransportFactory(serverTransportFactory)
-
-      case _ => authType match {
-        case NOSASL => new TTransportFactory
-        case _ => PlainSASLHelper.getTransportFactory(authType.toString, conf)
+        case _ => None
       }
+
+      val transportFactory = plainAuthType.map { authType =>
+        PlainSASLHelper.getTransportFactory(authType.toString, conf, kerberosTransportFactory)
+      }.orElse(kerberosTransportFactory).orNull
+
+      hadoopAuthServer.map(_.wrapTransportFactory(transportFactory)).getOrElse(transportFactory)
     }
   }
 
-  def getTProcessorFactory(fe: Iface): TProcessorFactory = saslServer match {
+  def getTProcessorFactory(fe: Iface): TProcessorFactory = hadoopAuthServer match {
     case Some(server) => FEServiceProcessorFactory(server, fe)
     case _ => PlainSASLHelper.getProcessFactory(fe)
   }
 
   def getRemoteUser: Option[String] = {
-    saslServer.map(_.getRemoteUser).orElse(Option(TSetIpAddressProcessor.getUserName))
+    hadoopAuthServer.map(_.getRemoteUser).orElse(Option(TSetIpAddressProcessor.getUserName))
   }
 
   def getIpAddress: Option[String] = {
-    saslServer.map(_.getRemoteAddress).map(_.getHostAddress)
+    hadoopAuthServer.map(_.getRemoteAddress).map(_.getHostAddress)
       .orElse(Option(TSetIpAddressProcessor.getUserIpAddress))
   }
 }

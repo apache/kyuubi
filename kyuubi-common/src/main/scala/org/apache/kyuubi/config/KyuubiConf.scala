@@ -26,7 +26,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.engine.ShareLevel
-import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
+import org.apache.kyuubi.service.authentication.{PlainAuthTypes, SaslQOP}
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   import KyuubiConf._
@@ -136,7 +136,9 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     FRONTEND_THRIFT_BINARY_BIND_PORT,
     FRONTEND_REST_BIND_HOST,
     FRONTEND_REST_BIND_PORT,
-    AUTHENTICATION_METHOD,
+    AUTHENTICATION_SASL_ENABLED,
+    AUTHENTICATION_SASL_KERBEROS_ENABLED,
+    AUTHENTICATION_SASL_PLAIN_AUTH_TYPE,
     SERVER_KEYTAB,
     SERVER_PRINCIPAL,
     KINIT_INTERVAL)
@@ -372,18 +374,30 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH)
 
-  val AUTHENTICATION_METHOD: ConfigEntry[String] = buildConf("authentication")
-    .doc("Client authentication types.<ul>" +
-      " <li>NOSASL: raw transport.</li>" +
-      " <li>NONE: no authentication check.</li>" +
-      " <li>KERBEROS: Kerberos/GSSAPI authentication.</li>" +
-      " <li>CUSTOM: User-defined authentication.</li>" +
-      " <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul>")
-    .version("1.0.0")
-    .stringConf
-    .transform(_.toUpperCase(Locale.ROOT))
-    .checkValues(AuthTypes.values.map(_.toString))
-    .createWithDefault(AuthTypes.NONE.toString)
+  val AUTHENTICATION_SASL_ENABLED: ConfigEntry[Boolean] = buildConf("authentication.sasl.enabled")
+    .doc("Whether enable SASL(GSSAPI or PLAIN) mechanism for authentication")
+    .version("1.4.0")
+    .booleanConf
+    .createWithDefault(true)
+
+  val AUTHENTICATION_SASL_KERBEROS_ENABLED: ConfigEntry[Boolean] =
+    buildConf("authentication.sasl.kerberos.enabled")
+    .doc("Whether enable KERBEROS: Kerberos/GSSAPI authentication")
+    .version("1.4.0")
+    .booleanConf
+    .createWithDefault(false)
+
+  val AUTHENTICATION_SASL_PLAIN_AUTH_TYPE: OptionalConfigEntry[String] =
+    buildConf("authentication.sasl.plain.auth.type")
+      .doc("Client authentication types for PLAIN mechanism.<ul>" +
+        " <li>NONE: no authentication check.</li>" +
+        " <li>CUSTOM: User-defined authentication.</li>" +
+        " <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul>")
+      .version("1.4.0")
+      .stringConf
+      .transform(_.toUpperCase(Locale.ROOT))
+      .checkValues(PlainAuthTypes.values.map(_.toString))
+      .createOptional
 
   val AUTHENTICATION_CUSTOM_CLASS: OptionalConfigEntry[String] =
     buildConf("authentication.custom.class")

@@ -39,6 +39,7 @@ class ThriftFrontendServiceSuite extends KyuubiFunSuite {
   protected val conf = KyuubiConf()
     .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     .set("kyuubi.test.server.should.fail", "false")
+    .set(KyuubiConf.AUTHENTICATION_SASL_PLAIN_AUTH_TYPE, "NONE")
 
   val user: String = System.getProperty("user.name")
   val sessionConf: util.Map[String, String] = new util.HashMap()

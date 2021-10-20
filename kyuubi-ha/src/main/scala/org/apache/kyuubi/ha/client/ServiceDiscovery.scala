@@ -283,9 +283,15 @@ object ServiceDiscovery extends Logging {
     confsToPublish += ("hive.server2.thrift.port" -> hostPort(1))
     confsToPublish += ("hive.server2.thrift.sasl.qop" -> conf.get(KyuubiConf.SASL_QOP))
     // Auth specific confs
-    val authenticationMethod = conf.get(KyuubiConf.AUTHENTICATION_METHOD)
-    confsToPublish += ("hive.server2.authentication" -> authenticationMethod)
-    if (authenticationMethod.equalsIgnoreCase("KERBEROS")) {
+    confsToPublish += ("hive.server2.authentication.sasl.enabled" ->
+      conf.get(KyuubiConf.AUTHENTICATION_SASL_ENABLED).toString)
+    confsToPublish += ("hive.server2.authentication.sasl.kerberos.enabled" ->
+      conf.get(KyuubiConf.AUTHENTICATION_SASL_KERBEROS_ENABLED).toString)
+    conf.get(KyuubiConf.AUTHENTICATION_SASL_PLAIN_AUTH_TYPE).foreach { plainAuthType =>
+      confsToPublish += ("hive.server2.authentication.sasl.plain.auth.type" -> plainAuthType)
+    }
+    if (conf.get(KyuubiConf.AUTHENTICATION_SASL_ENABLED) &&
+      conf.get(KyuubiConf.AUTHENTICATION_SASL_KERBEROS_ENABLED)) {
       confsToPublish += ("hive.server2.authentication.kerberos.principal" ->
         conf.get(KyuubiConf.SERVER_PRINCIPAL).map(KyuubiHadoopUtils.getServerPrincipal)
           .getOrElse(""))

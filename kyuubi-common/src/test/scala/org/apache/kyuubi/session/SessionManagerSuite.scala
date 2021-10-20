@@ -37,6 +37,7 @@ class SessionManagerSuite extends ThriftFrontendServiceSuite with Eventually {
     .set(KyuubiConf.OPERATION_IDLE_TIMEOUT, Duration.ofSeconds(20).toMillis)
     .set(KyuubiConf.SESSION_CONF_RESTRICT_LIST, Seq("spark.*"))
     .set(KyuubiConf.SESSION_CONF_IGNORE_LIST, Seq("session.engine.*"))
+    .set(KyuubiConf.AUTHENTICATION_SASL_PLAIN_AUTH_TYPE, "NONE")
 
   test("close expired operations") {
     withSessionHandle{ (client, handle) =>
