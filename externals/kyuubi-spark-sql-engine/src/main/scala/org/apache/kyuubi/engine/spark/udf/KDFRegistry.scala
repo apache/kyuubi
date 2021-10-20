@@ -19,6 +19,7 @@ package org.apache.kyuubi.engine.spark.udf
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.spark.SparkEnv
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions.udf
@@ -27,9 +28,10 @@ import org.apache.kyuubi.KYUUBI_VERSION
 
 object KDFRegistry {
 
+  @transient
   val registeredFunctions = new ArrayBuffer[KyuubiDefinedFunction]()
 
-  val appName = SparkSession.active.sparkContext.appName
+  val appName = SparkEnv.get.conf.get("spark.app.name")
 
   val kyuubi_version: KyuubiDefinedFunction = create(
     "kyuubi_version",
