@@ -19,9 +19,7 @@ package org.apache.kyuubi.server.api.v1
 
 case class SessionOpenCount(openSessionCount: Int)
 
-case class ExecPoolSize(execPoolSize: Int)
-
-case class ExecPoolActiveCount(execPoolActiveCount: Int)
+case class ExecPoolStatistic(execPoolSize: Int, execPoolActiveCount: Int)
 
 case class SessionOpenRequest(
   protocolVersion: Int,

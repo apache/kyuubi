@@ -37,15 +37,10 @@ private[v1] class SessionsResource extends ApiRequestContext {
   }
 
   @GET
-  @Path("execpoolsize")
-  def execPoolSize(): ExecPoolSize = {
-    ExecPoolSize(backendService.sessionManager.getExecPoolSize)
-  }
-
-  @GET
-  @Path("execpoolactivecount")
-  def activeCount(): ExecPoolActiveCount = {
-    ExecPoolActiveCount(backendService.sessionManager.getActiveCount)
+  @Path("execpool/statistic")
+  def execPoolStatistic(): ExecPoolStatistic = {
+    ExecPoolStatistic(backendService.sessionManager.getExecPoolSize,
+      backendService.sessionManager.getActiveCount)
   }
 
   @POST

@@ -84,45 +84,30 @@ class SessionsResourceSuite extends RestApiBaseSuite {
   }
 
   @Test
-  def testGetExecPoolSize: Unit = {
+  def testExecPoolStatistic: Unit = {
     RestFrontendServiceSuite.withKyuubiRestServer {
       (restFrontendService: RestFrontendService, _, _) =>
 
-        val sessionManager = restFrontendService.serverable.backendService.sessionManager
-        sessionManager.submitBackgroundOperation(() => {
-        })
-        // verify the exec pool size count
-        var response = target("api/v1/sessions/execpoolsize").request().get()
-        val execPoolSize1 = response.readEntity(classOf[ExecPoolSize])
-        assert(execPoolSize1.execPoolSize == 1)
-
-        // verify the exec pool size again after shutdown thread
-        restFrontendService.serverable.backendService.sessionManager.stop()
-        response = target("api/v1/sessions/execpoolsize").request().get()
-        val execPoolSize2 = response.readEntity(classOf[ExecPoolSize])
-        assert(execPoolSize2.execPoolSize == 0)
-    }
-  }
-
-  @Test
-  def testGetExecPoolActiveCount: Unit = {
-    RestFrontendServiceSuite.withKyuubiRestServer {
-      (restFrontendService, _, _) =>
-        val sessionManager = restFrontendService.serverable.backendService.sessionManager
+        val sessionManager = restFrontendService.be.sessionManager
         sessionManager.submitBackgroundOperation(() => {
           Thread.sleep(3000)
         })
 
-        // verify the exec pool active count
-        var response = target("api/v1/sessions/execpoolactivecount").request().get()
-        val execPoolActiveCount1 = response.readEntity(classOf[ExecPoolActiveCount])
-        assert(execPoolActiveCount1.execPoolActiveCount == 1)
+        // verify the exec pool statistic
+        var response = target("api/v1/sessions/execpool/statistic").request().get()
+        val execPoolStatistic1 = response.readEntity(classOf[ExecPoolStatistic])
+        assert(execPoolStatistic1.execPoolSize == 1 && execPoolStatistic1.execPoolActiveCount == 1)
 
-        // verify the exec pool active count again after thread finish
         Thread.sleep(3000)
-        response = target("api/v1/sessions/execpoolactivecount").request().get()
-        val execPoolActiveCount2 = response.readEntity(classOf[ExecPoolActiveCount])
-        assert(execPoolActiveCount2.execPoolActiveCount == 0)
+        response = target("api/v1/sessions/execpool/statistic").request().get()
+        val execPoolStatistic2 = response.readEntity(classOf[ExecPoolStatistic])
+        assert(execPoolStatistic2.execPoolSize == 1 && execPoolStatistic2.execPoolActiveCount == 0)
+
+        restFrontendService.be.sessionManager.stop()
+        response = target("api/v1/sessions/execpool/statistic").request().get()
+        val execPoolStatistic3 = response.readEntity(classOf[ExecPoolStatistic])
+        assert(execPoolStatistic3.execPoolSize == 0 && execPoolStatistic3.execPoolActiveCount == 0)
+
     }
   }
 
