@@ -36,6 +36,13 @@ private[v1] class SessionsResource extends ApiRequestContext {
     SessionOpenCount(backendService.sessionManager.getOpenSessionCount)
   }
 
+  @GET
+  @Path("execpool/statistic")
+  def execPoolStatistic(): ExecPoolStatistic = {
+    ExecPoolStatistic(backendService.sessionManager.getExecPoolSize,
+      backendService.sessionManager.getActiveCount)
+  }
+
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def openSession(request: SessionOpenRequest): SessionHandle = {
