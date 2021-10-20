@@ -415,3 +415,14 @@ abstract class ZorderSqlAstBuilderBase extends ZorderSqlExtensionsBaseVisitor[An
     }
   }
 }
+
+class ZorderSqlAstBuilder extends ZorderSqlAstBuilderBase {
+  override def buildZorder(child: Seq[Expression]): ZorderBase = {
+    Zorder(child)
+  }
+
+  override def buildOptimizeZorderStatement(
+      tableIdentifier: Seq[String], query: LogicalPlan): OptimizeZorderStatementBase = {
+    OptimizeZorderStatement(tableIdentifier, query)
+  }
+}

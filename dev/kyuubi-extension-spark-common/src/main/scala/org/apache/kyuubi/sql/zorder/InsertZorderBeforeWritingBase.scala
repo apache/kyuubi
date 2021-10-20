@@ -19,6 +19,7 @@ package org.apache.kyuubi.sql.zorder
 
 import java.util.Locale
 
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Ascending, Expression, NullsLast, SortOrder}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project, Repartition, RepartitionByExpression, Sort}
@@ -160,4 +161,22 @@ trait InsertZorderHelper extends Rule[LogicalPlan] with ZorderBuilder {
       plan
     }
   }
+}
+
+/**
+ * TODO: shall we forbid zorder if it's dynamic partition inserts ?
+ * Insert zorder before writing datasource if the target table properties has zorder properties
+ */
+case class InsertZorderBeforeWritingDatasource(session: SparkSession)
+  extends InsertZorderBeforeWritingDatasourceBase {
+  override def buildZorder(children: Seq[Expression]): ZorderBase = Zorder(children)
+}
+
+/**
+ * TODO: shall we forbid zorder if it's dynamic partition inserts ?
+ * Insert zorder before writing hive if the target table properties has zorder properties
+ */
+case class InsertZorderBeforeWritingHive(session: SparkSession)
+  extends InsertZorderBeforeWritingHiveBase {
+  override def buildZorder(children: Seq[Expression]): ZorderBase = Zorder(children)
 }

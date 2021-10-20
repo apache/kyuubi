@@ -104,6 +104,12 @@ abstract class ZorderSparkSqlExtensionsParserBase extends ParserInterface {
   }
 }
 
+class ZorderSparkSqlExtensionsParser(
+    override val delegate: ParserInterface)
+  extends ZorderSparkSqlExtensionsParserBase {
+  def astBuilder: ZorderSqlAstBuilderBase = new ZorderSqlAstBuilder
+}
+
 /* Copied from Apache Spark's to avoid dependency on Spark Internals */
 class UpperCaseCharStream(wrapped: CodePointCharStream) extends CharStream {
   override def consume(): Unit = wrapped.consume

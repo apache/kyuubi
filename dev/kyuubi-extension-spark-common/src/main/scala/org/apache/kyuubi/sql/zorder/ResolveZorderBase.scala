@@ -65,3 +65,13 @@ abstract class ResolveZorderBase extends Rule[LogicalPlan] {
     case _ => plan
   }
 }
+
+/**
+ * Resolve `OptimizeZorderStatement` to `OptimizeZorderCommand`
+ */
+case class ResolveZorder(session: SparkSession) extends ResolveZorderBase {
+  override def buildOptimizeZorderCommand(
+      catalogTable: CatalogTable, query: LogicalPlan): OptimizeZorderCommandBase = {
+    OptimizeZorderCommand(catalogTable, query)
+  }
+}

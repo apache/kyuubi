@@ -25,13 +25,18 @@ import org.apache.spark.sql.execution.command.CreateDataSourceTableAsSelectComma
 import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationCommand
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.hive.execution.{CreateHiveTableAsSelectCommand, InsertIntoHiveTable, OptimizedCreateHiveTableAsSelectCommand}
-import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
 import org.apache.kyuubi.sql.zorder.{OptimizeZorderCommandBase, Zorder}
 
 trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper {
+  override def sparkConf(): SparkConf = {
+    super.sparkConf()
+      .set(StaticSQLConf.SPARK_SESSION_EXTENSIONS.key,
+        "org.apache.kyuubi.sql.KyuubiSparkSQLCommonExtension")
+  }
 
   test("optimize unpartitioned table") {
     withSQLConf(SQLConf.SHUFFLE_PARTITIONS.key -> "1") {
@@ -309,7 +314,9 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
         val plan = Project(Seq(Alias(zorder, "c")()), OneRowRelation())
         spark.sessionState.analyzer.checkAnalysis(plan)
       }.getMessage
-      assert(msg.contains("Unsupported z-order type: void"))
+      // before Spark 3.2.0 the null type catalog string is null, after Spark 3.2.0 it's void
+      assert(msg.contains("Unsupported z-order type:") &&
+        (msg.contains("null") || msg.contains("void")))
     }
 
     checkZorderPlan(Zorder(Seq(Literal(null, NullType))))
