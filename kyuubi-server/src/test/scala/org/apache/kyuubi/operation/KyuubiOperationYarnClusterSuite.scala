@@ -42,4 +42,12 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with JDBCTe
       assert(resultSet.getString("id").startsWith("application_"))
     }
   }
+
+  test("KYUUBI #1263: Kyuubi auxiliary UDF failed on Spark Yarn mode") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("""SELECT kyuubi_version()""")
+      assert(resultSet.next())
+      assert(resultSet.getString("id") === org.apache.kyuubi.KYUUBI_VERSION)
+    }
+  }
 }
