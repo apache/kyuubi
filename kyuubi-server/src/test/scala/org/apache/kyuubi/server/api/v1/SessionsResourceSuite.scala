@@ -89,7 +89,7 @@ class SessionsResourceSuite extends RestApiBaseSuite {
       (restFrontendService: RestFrontendService, _, _) =>
 
         val sessionManager = restFrontendService.be.sessionManager
-        sessionManager.submitBackgroundOperation(() => {
+        val future = sessionManager.submitBackgroundOperation(() => {
           Thread.sleep(3000)
         })
 
@@ -98,12 +98,12 @@ class SessionsResourceSuite extends RestApiBaseSuite {
         val execPoolStatistic1 = response.readEntity(classOf[ExecPoolStatistic])
         assert(execPoolStatistic1.execPoolSize == 1 && execPoolStatistic1.execPoolActiveCount == 1)
 
-        Thread.sleep(3000)
+        future.cancel(true)
         response = target("api/v1/sessions/execpool/statistic").request().get()
         val execPoolStatistic2 = response.readEntity(classOf[ExecPoolStatistic])
         assert(execPoolStatistic2.execPoolSize == 1 && execPoolStatistic2.execPoolActiveCount == 0)
 
-        restFrontendService.be.sessionManager.stop()
+        sessionManager.stop()
         response = target("api/v1/sessions/execpool/statistic").request().get()
         val execPoolStatistic3 = response.readEntity(classOf[ExecPoolStatistic])
         assert(execPoolStatistic3.execPoolSize == 0 && execPoolStatistic3.execPoolActiveCount == 0)
