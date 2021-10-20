@@ -73,16 +73,18 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf) {
           } catch {
             case e: TTransportException => throw new LoginException(e.getMessage)
           }
+          server.wrapTransportFactory(transportFactory)
           Some(transportFactory)
 
         case _ => None
       }
 
       val transportFactory = plainAuthType.map { authType =>
-        PlainSASLHelper.getTransportFactory(authType.toString, conf, kerberosTransportFactory)
+        PlainSASLHelper.getTransportFactory(authType.toString, conf)
       }.orElse(kerberosTransportFactory).orNull
 
-      hadoopAuthServer.map(_.wrapTransportFactory(transportFactory)).getOrElse(transportFactory)
+      // hadoopAuthServer.map(_.wrapTransportFactory(transportFactory)).getOrElse(transportFactory)
+      transportFactory
     }
   }
 
