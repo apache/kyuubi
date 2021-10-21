@@ -30,12 +30,12 @@ import org.apache.kyuubi.{KyuubiFunSuite, TestUtils}
  *
  * To run the entire test suite:
  * {{{
- *   build/mvn test -DwildcardSuites=org.apache.kyuubi.engine.spark.udf.KyuubiDefinedFunctionSuite -pl '!externals/kyuubi-download'
+ *   build/mvn clean install -Pspark-provided -DwildcardSuites=org.apache.kyuubi.engine.spark.udf.KyuubiDefinedFunctionSuite
  * }}}
  *
  * To re-generate golden files for entire suite, run:
  * {{{
- *   KYUUBI_UPDATE=1 build/mvn test -DwildcardSuites=org.apache.kyuubi.engine.spark.udf.KyuubiDefinedFunctionSuite -pl '!externals/kyuubi-download'
+ *   KYUUBI_UPDATE=1 build/mvn clean install -Pspark-provided -DwildcardSuites=org.apache.kyuubi.engine.spark.udf.KyuubiDefinedFunctionSuite
  * }}}
  */
 // scalastyle:on line.size.limit
