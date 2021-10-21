@@ -21,6 +21,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_ACL_ENABLED, HA_ZK_QUORUM}
 import org.apache.kyuubi.server.KyuubiServer
+import org.apache.kyuubi.service.authentication.AuthTypes
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
 trait WithKyuubiServer extends KyuubiFunSuite {
@@ -45,6 +46,7 @@ trait WithKyuubiServer extends KyuubiFunSuite {
     conf.setIfMissing(ENGINE_IDLE_TIMEOUT, 10000L)
     conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
     conf.set(HA_ZK_ACL_ENABLED, false)
+    conf.set(AUTHENTICATION_METHOD, AuthTypes.NOSASL.toString)
 
     // TODO KYUUBI #745
     conf.setIfMissing(ENGINE_INIT_TIMEOUT, 300000L)
