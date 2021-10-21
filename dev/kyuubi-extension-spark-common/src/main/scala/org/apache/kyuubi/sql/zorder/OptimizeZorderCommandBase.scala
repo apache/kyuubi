@@ -19,6 +19,7 @@ package org.apache.kyuubi.sql.zorder
 
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.command.DataWritingCommand
 import org.apache.spark.sql.hive.execution.InsertIntoHiveTable
@@ -62,5 +63,17 @@ abstract class OptimizeZorderCommandBase extends DataWritingCommand {
     command.run(session, child)
     DataWritingCommand.propogateMetrics(session.sparkContext, command, metrics)
     Seq.empty
+  }
+}
+
+/**
+ * A runnable command for zorder, we delegate to real command to execute
+ */
+case class OptimizeZorderCommand(
+    catalogTable: CatalogTable,
+    query: LogicalPlan)
+  extends OptimizeZorderCommandBase {
+  protected def withNewChildInternal(newChild: LogicalPlan): LogicalPlan = {
+    copy(query = newChild)
   }
 }

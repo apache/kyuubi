@@ -19,8 +19,6 @@ package org.apache.kyuubi.sql
 
 import org.apache.spark.sql.SparkSessionExtensions
 
-import org.apache.kyuubi.sql.zorder.{InsertZorderBeforeWritingDatasource, InsertZorderBeforeWritingHive, ResolveZorder, ZorderSparkSqlExtensionsParser}
-
 // scalastyle:off line.size.limit
 /**
  * Depend on Spark SQL Extension framework, we can use this extension follow steps
@@ -30,22 +28,9 @@ import org.apache.kyuubi.sql.zorder.{InsertZorderBeforeWritingDatasource, Insert
 // scalastyle:on line.size.limit
 class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
   override def apply(extensions: SparkSessionExtensions): Unit = {
-    // inject zorder parser and related rules
-    extensions.injectParser{ case (_, parser) => new ZorderSparkSqlExtensionsParser(parser) }
-    extensions.injectResolutionRule(ResolveZorder)
+    KyuubiSparkSQLCommonExtension.injectCommonExtensions(extensions)
 
-    // Note that:
-    // InsertZorderBeforeWritingDatasource and InsertZorderBeforeWritingHive
-    // should be applied before
-    // RebalanceBeforeWritingDatasource and RebalanceBeforeWritingHive
-    // because we can only apply one of them (i.e. Global Sort or Rebalance)
-    extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingDatasource)
-    extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingHive)
     extensions.injectPostHocResolutionRule(RebalanceBeforeWritingDatasource)
     extensions.injectPostHocResolutionRule(RebalanceBeforeWritingHive)
-    extensions.injectPostHocResolutionRule(FinalStageConfigIsolationCleanRule)
-
-    extensions.injectQueryStagePrepRule(_ => InsertShuffleNodeBeforeJoin)
-    extensions.injectQueryStagePrepRule(FinalStageConfigIsolation(_))
   }
 }

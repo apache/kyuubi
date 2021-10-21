@@ -87,3 +87,8 @@ abstract class ZorderBase extends Expression {
       isNull = FalseLiteral)
   }
 }
+
+case class Zorder(children: Seq[Expression]) extends ZorderBase {
+  protected def withNewChildrenInternal(newChildren: IndexedSeq[Expression]): Expression =
+    copy(children = newChildren)
+}

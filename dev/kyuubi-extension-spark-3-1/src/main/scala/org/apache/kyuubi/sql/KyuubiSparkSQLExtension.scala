@@ -21,7 +21,6 @@ import org.apache.spark.sql.SparkSessionExtensions
 
 import org.apache.kyuubi.sql.sqlclassification.KyuubiSqlClassification
 import org.apache.kyuubi.sql.watchdog.{ForcedMaxOutputRowsRule, MarkAggregateOrderRule, MaxHivePartitionStrategy}
-import org.apache.kyuubi.sql.zorder.{InsertZorderBeforeWritingDatasource, InsertZorderBeforeWritingHive, ResolveZorder, ZorderSparkSqlExtensionsParser}
 
 // scalastyle:off line.size.limit
 /**
@@ -32,28 +31,15 @@ import org.apache.kyuubi.sql.zorder.{InsertZorderBeforeWritingDatasource, Insert
 // scalastyle:on line.size.limit
 class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
   override def apply(extensions: SparkSessionExtensions): Unit = {
-    // inject zorder parser and related rules
-    extensions.injectParser{ case (_, parser) => new ZorderSparkSqlExtensionsParser(parser) }
-    extensions.injectResolutionRule(ResolveZorder)
-
+    KyuubiSparkSQLCommonExtension.injectCommonExtensions(extensions)
     // a help rule for ForcedMaxOutputRowsRule
     extensions.injectResolutionRule(MarkAggregateOrderRule)
 
-    // Note that:
-    // InsertZorderBeforeWritingDatasource and InsertZorderBeforeWritingHive
-    // should be applied before
-    // RepartitionBeforeWrite and RepartitionBeforeWriteHive
-    // because we can only apply one of them (i.e. Global Sort or Repartition)
-    extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingDatasource)
-    extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingHive)
     extensions.injectPostHocResolutionRule(KyuubiSqlClassification)
     extensions.injectPostHocResolutionRule(RepartitionBeforeWritingDatasource)
     extensions.injectPostHocResolutionRule(RepartitionBeforeWritingHive)
-    extensions.injectPostHocResolutionRule(FinalStageConfigIsolationCleanRule)
     extensions.injectPostHocResolutionRule(ForcedMaxOutputRowsRule)
 
-    extensions.injectQueryStagePrepRule(_ => InsertShuffleNodeBeforeJoin)
-    extensions.injectQueryStagePrepRule(FinalStageConfigIsolation(_))
     extensions.injectPlannerStrategy(MaxHivePartitionStrategy)
   }
 }
