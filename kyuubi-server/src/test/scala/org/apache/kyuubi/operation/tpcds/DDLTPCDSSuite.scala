@@ -31,7 +31,6 @@ class DDLTPCDSSuite extends WithKyuubiServer
 
   override protected val conf: KyuubiConf = {
     val kyuubiConf = KyuubiConf().set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 20000L)
-      .set(KyuubiConf.AUTHENTICATION_SASL_PLAIN_AUTH_TYPE.key, "NONE")
      extraConfigs.foreach { case (k, v) => kyuubiConf.set(k, v) }
     kyuubiConf
   }
