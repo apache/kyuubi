@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi
 
-import org.apache.kyuubi.config.KyuubiConf
-
 import scala.collection.mutable.ArrayBuffer
 
 // scalastyle:off
@@ -45,7 +43,6 @@ trait KyuubiFunSuite extends AnyFunSuite
   // scalastyle:on
   override def beforeAll(): Unit = {
     System.setProperty(IS_TESTING.key, "true")
-    System.setProperty(KyuubiConf.AUTHENTICATION_SASL_PLAIN_AUTH_TYPE.key, "NONE")
     doThreadPreAudit()
     super.beforeAll()
   }
