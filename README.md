@@ -96,19 +96,15 @@ The figure below shows our vision for the Kyuubi Ecosystem. Some of them have be
 Since Kyuubi 1.0.0, the Kyuubi online documentation is hosted by [https://readthedocs.org/](https://readthedocs.org/).
 You can find the specific version of Kyuubi documentation as listed below.
 
-- [master/latest](https://kyuubi.readthedocs.io/en/latest/)
-- [stable](https://kyuubi.readthedocs.io/en/stable/)
-- [v1.1.0](https://kyuubi.readthedocs.io/en/v1.1.0/)
-- [v1.0.3](https://kyuubi.readthedocs.io/en/v1.0.3/)
-- [v1.0.2](https://kyuubi.readthedocs.io/en/v1.0.2/)
-- [v1.0.1](https://kyuubi.readthedocs.io/en/v1.0.1/)
-- [v1.0.0](https://kyuubi.readthedocs.io/en/v1.0.0/)
+- [master/latest](https://kyuubi.apache.org/docs/latest/)
+- [1.3.0-incubating](https://kyuubi.apache.org/docs/r1.3.0-incubating/)
+- [stable](https://kyuubi.apache.org/docs/stable/)
 
-For 0.8 and earlier versions, please check the [Github Pages](https://apache.github.io/incubator-kyuubi/) directly.
+For 1.2 and earlier versions, please check the [Github Pages](https://apache.github.io/incubator-kyuubi/) directly.
 
 ## Quick Start
 
-Ready? [Getting Started](https://kyuubi.readthedocs.io/en/latest/quick_start/quick_start.html) with Kyuubi.
+Ready? [Getting Started](https://kyuubi.apache.org/docs/latest/quick_start/quick_start.html) with Kyuubi.
 
 ## Contributing
 
@@ -124,7 +120,7 @@ All bits of help are welcome. You can make various types of contributions to Kyu
 - Promote to others
 - Click the star button if you like this project
 
-Before you start, we recommend that you check the [Contribution Guidelines](https://kyuubi.readthedocs.io/en/latest/community/contributions.html) first.
+Before you start, we recommend that you check the [Contribution Guidelines](https://kyuubi.apache.org/docs/latest/community/contributions.html) first.
 
 ## Aside
 
