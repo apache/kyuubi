@@ -54,14 +54,14 @@ class KyuubiAuthenticationFactorySuite extends KyuubiFunSuite {
   }
 
   test("AuthType Other") {
-    val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_SASL_PLAIN_AUTH_TYPE, "INVALID")
+    val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("INVALID"))
     val e = intercept[IllegalArgumentException](new KyuubiAuthenticationFactory(conf))
-    assert(e.getMessage === "The value of kyuubi.authentication.sasl.plain.auth.type should be" +
-      " one of CUSTOM, LDAP, NONE, but was INVALID")
+    assert(e.getMessage === "the authentication type should be one or more of" +
+      " NOSASL,NONE,LDAP,KERBEROS,CUSTOM")
   }
 
   test("AuthType LDAP") {
-    val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_SASL_PLAIN_AUTH_TYPE, "LDAP")
+    val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("LDAP"))
     val authFactory = new KyuubiAuthenticationFactory(conf)
     authFactory.getTTransportFactory
     assert(Security.getProviders.exists(_.isInstanceOf[SaslPlainProvider]))
@@ -69,7 +69,7 @@ class KyuubiAuthenticationFactorySuite extends KyuubiFunSuite {
 
 
   test("AuthType KERBEROS w/o keytab/principal") {
-    val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_SASL_KERBEROS_ENABLED, true)
+    val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("KERBEROS"))
 
     val factory = new KyuubiAuthenticationFactory(conf)
     val e = intercept[LoginException](factory.getTTransportFactory)

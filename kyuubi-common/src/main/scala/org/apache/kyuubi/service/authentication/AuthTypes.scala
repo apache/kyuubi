@@ -17,8 +17,8 @@
 
 package org.apache.kyuubi.service.authentication
 
-object PlainAuthTypes extends Enumeration {
-  type PlainAuthType = Value
+object AuthTypes extends Enumeration {
+  type AuthType = Value
 
-  val NONE, LDAP, CUSTOM = Value
+  val NOSASL, NONE, LDAP, KERBEROS, CUSTOM = Value
 }

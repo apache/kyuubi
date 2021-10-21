@@ -45,7 +45,6 @@ trait WithKyuubiServer extends KyuubiFunSuite {
     conf.setIfMissing(ENGINE_IDLE_TIMEOUT, 10000L)
     conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
     conf.set(HA_ZK_ACL_ENABLED, false)
-    conf.set(KyuubiConf.AUTHENTICATION_SASL_PLAIN_AUTH_TYPE, "NONE")
 
     // TODO KYUUBI #745
     conf.setIfMissing(ENGINE_INIT_TIMEOUT, 300000L)

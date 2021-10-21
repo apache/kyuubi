@@ -27,21 +27,22 @@ import org.apache.hadoop.security.authentication.util.KerberosName
 import org.apache.hadoop.security.authorize.ProxyUsers
 import org.apache.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.thrift.TProcessorFactory
-import org.apache.thrift.transport.{TTransportException, TTransportFactory}
+import org.apache.thrift.transport.{TSaslServerTransport, TTransportException, TTransportFactory}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.service.authentication.PlainAuthTypes._
+import org.apache.kyuubi.service.authentication.AuthTypes._
 
 class KyuubiAuthenticationFactory(conf: KyuubiConf) {
-  private val saslEnabled: Boolean = conf.get(AUTHENTICATION_SASL_ENABLED)
-  private val kerberosEnabled: Boolean = conf.get(AUTHENTICATION_SASL_KERBEROS_ENABLED)
-  private val plainAuthType: Option[PlainAuthType] =
-    conf.get(AUTHENTICATION_SASL_PLAIN_AUTH_TYPE).map(PlainAuthTypes.withName)
+
+  private val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName).toSet match {
+    case s if s == Set(NOSASL) => s
+    case s => s.filterNot(_.equals(NOSASL))
+  }
 
   private val hadoopAuthServer: Option[HadoopThriftAuthBridgeServer] = {
-    if (saslEnabled && kerberosEnabled) {
+    if (authTypes.contains(KERBEROS)) {
       val secretMgr = KyuubiDelegationTokenManager(conf)
       try {
         secretMgr.startThreads()
@@ -63,26 +64,32 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf) {
   }
 
   def getTTransportFactory: TTransportFactory = {
-    if (!saslEnabled || (!kerberosEnabled && plainAuthType.isEmpty)) {
+    if (authTypes == Set(NOSASL)) {
       new TTransportFactory()
     } else {
-      val kerberosTransportFactory = hadoopAuthServer match {
+      var transportFactory: TSaslServerTransport.Factory = null
+
+      hadoopAuthServer match {
         case Some(server) =>
-          val transportFactory = try {
+          transportFactory = try {
             server.createSaslServerTransportFactory(getSaslProperties)
           } catch {
             case e: TTransportException => throw new LoginException(e.getMessage)
           }
-          Some(transportFactory)
 
-        case _ => None
+        case _ =>
       }
 
-      val transportFactory = plainAuthType.map { authType =>
-        PlainSASLHelper.getTransportFactory(authType.toString, conf, kerberosTransportFactory)
-      }.orElse(kerberosTransportFactory).orNull
+      authTypes.filterNot(at => at.equals(KERBEROS)).foreach { plainAuthType =>
+        transportFactory = PlainSASLHelper.getTransportFactory(plainAuthType.toString, conf,
+          Option(transportFactory)).asInstanceOf[TSaslServerTransport.Factory]
+      }
 
-      hadoopAuthServer.map(_.wrapTransportFactory(transportFactory)).getOrElse(transportFactory)
+      hadoopAuthServer match {
+        case Some(server) => server.wrapTransportFactory(transportFactory)
+
+        case _ => transportFactory
+      }
     }
   }
 
