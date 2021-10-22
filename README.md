@@ -99,7 +99,7 @@ You can find the specific version of Kyuubi documentation as listed below.
 - [1.3.0-incubating](https://kyuubi.apache.org/docs/r1.3.0-incubating/)
 - [stable](https://kyuubi.apache.org/docs/stable/)
 
-For 1.2 and earlier versions, please check the [Github Pages](https://apache.github.io/incubator-kyuubi/) directly.
+For 1.2 and earlier versions, please check the [Github Pages](https://kyuubi.readthedocs.io/en/v1.2.0/) directly.
 
 ## Quick Start
 
