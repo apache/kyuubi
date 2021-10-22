@@ -114,8 +114,6 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 # kyuubi.frontend.bind.host       localhost
 # kyuubi.frontend.bind.port       10009
 #
-
-# Details in https://kyuubi.readthedocs.io/en/latest/deployment/settings.html
 ```
 
 ### Authentication

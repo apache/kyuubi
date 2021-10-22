@@ -24,7 +24,7 @@
 [![codecov](https://codecov.io/gh/apache/incubator-kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/incubator-kyuubi)
 [![Travis](https://api.travis-ci.com/apache/incubator-kyuubi.svg?branch=master)](https://travis-ci.com/apache/incubator-kyuubi)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/apache/incubator-kyuubi/Kyuubi/master?style=plastic)
-[![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.apache.org/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.apache.org/docs/latest/)
 
 ## What is Kyuubi?
 
@@ -93,10 +93,9 @@ The figure below shows our vision for the Kyuubi Ecosystem. Some of them have be
 
 ## Online Documentation
 
-Since Kyuubi 1.0.0, the Kyuubi online documentation is hosted by [https://readthedocs.org/](https://readthedocs.org/).
+Since Kyuubi 1.3.0-incubating, the Kyuubi online documentation is hosted by [https://kyuubi.apache.org/](https://kyuubi.apache.org/docs/latest/).
 You can find the specific version of Kyuubi documentation as listed below.
 
-- [master/latest](https://kyuubi.apache.org/docs/latest/)
 - [1.3.0-incubating](https://kyuubi.apache.org/docs/r1.3.0-incubating/)
 - [stable](https://kyuubi.apache.org/docs/stable/)
 
@@ -111,7 +110,7 @@ Ready? [Getting Started](https://kyuubi.apache.org/docs/latest/quick_start/quick
 All bits of help are welcome. You can make various types of contributions to Kyuubi, including the following but not limited to,
 
 - Help new users in chat channel or share your success stories with us - [![Gitter](https://badges.gitter.im/kyuubi-on-spark/Lobby.svg)](https://gitter.im/kyuubi-on-spark/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
-- Improve Documentation - [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.readthedocs.io/en/latest/?badge=latest)
+- Improve Documentation - [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.apache.org/docs/latest/)
 - Test releases - [![GitHub release](https://img.shields.io/github/release/apache/incubator-kyuubi.svg)](https://github.com/apache/incubator-kyuubi//releases)
 - Improve test coverage - [![codecov](https://codecov.io/gh/apache/incubator-kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/incubator-kyuubi)
 - Report bugs and better help developers to reproduce
