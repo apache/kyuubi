@@ -31,6 +31,14 @@ import org.apache.kyuubi.session.SessionHandle
 private[v1] class SessionsResource extends ApiRequestContext {
 
   @GET
+  def sessionInfoList(): SessionInfoList = {
+    SessionInfoList(backendService.sessionManager.getSessionList()
+      .map(session => SessionInfo(session.user, session.ipAddress, session.createTime,
+        session.lastAccessTime, session.lastIdleTime, session.getNoOperationTime))
+    )
+  }
+
+  @GET
   @Path("count")
   def sessionCount(): SessionOpenCount = {
     SessionOpenCount(backendService.sessionManager.getOpenSessionCount)

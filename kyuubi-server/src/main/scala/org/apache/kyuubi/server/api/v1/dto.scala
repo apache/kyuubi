@@ -21,6 +21,17 @@ case class SessionOpenCount(openSessionCount: Int)
 
 case class ExecPoolStatistic(execPoolSize: Int, execPoolActiveCount: Int)
 
+case class SessionInfoList(sessionList: List[SessionInfo])
+
+case class SessionInfo(
+  user: String,
+  ipAddr: String,
+  createTime: Long,
+  lastAccessTime: Long,
+  lastIdleTime: Long,
+  noOperationTime: Long
+)
+
 case class SessionOpenRequest(
   protocolVersion: Int,
   user: String,
