@@ -54,7 +54,7 @@ Thanks for sending a pull request!
 
 Here are some tips for you:
   1. If this is your first time, please read our contributor guidelines:
-     https://kyuubi.readthedocs.io/en/latest/community/contributions.html
+     https://kyuubi.apache.org/docs/latest/community/contributions.html
 -->
 
 ### _Which issue are you going to fix?_
@@ -79,6 +79,6 @@ Please clarify why the changes are needed. For instance,
 
 - [ ] Add screenshots for manual tests if appropriate
 
-- [ ] [Run test](https://kyuubi.readthedocs.io/en/latest/develop_tools/testing.html#running-tests) locally before make a pull request
+- [ ] [Run test](https://kyuubi.apache.org/docs/latest/develop_tools/testing.html#running-tests) locally before make a pull request
 
 ```
