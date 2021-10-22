@@ -129,8 +129,7 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
       getOperationLog.foreach(_.close())
     } catch {
       case e: IOException =>
-        error(e.getMessage, e)
-    }
+        error(e.getMessage, e)    }
   }
 
   override def getResultSetSchema: TTableSchema = SchemaHelper.toTTableSchema(resultSchema)

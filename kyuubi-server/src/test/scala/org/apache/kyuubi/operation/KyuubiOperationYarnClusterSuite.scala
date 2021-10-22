@@ -50,4 +50,12 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with JDBCTe
       assert(resultSet.getString("id") === org.apache.kyuubi.KYUUBI_VERSION)
     }
   }
+
+  test("session_user shall work on yarn") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("SELECT SESSION_USER() as su")
+      assert(resultSet.next())
+      assert(resultSet.getString("su") === user)
+    }
+  }
 }

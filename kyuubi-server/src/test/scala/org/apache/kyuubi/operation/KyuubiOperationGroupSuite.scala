@@ -58,4 +58,16 @@ class KyuubiOperationGroupSuite extends WithKyuubiServer with JDBCTests {
     assert(r1 === r2)
     assert(r1.startsWith(s"kyuubi_GROUP_testGG"))
   }
+
+
+  test("kyuubi defined function - system_user/session_user") {
+    withSessionConf(Map("hive.server2.proxy.user" -> "user1"))(Map.empty)(Map.empty) {
+      withJdbcStatement() { statement =>
+        val res = statement.executeQuery("select system_user() as c1, session_user() as c2")
+        assert(res.next())
+        assert(res.getString("c1") === "testGG")
+        assert(res.getString("c2") === "user1")
+      }
+    }
+  }
 }
