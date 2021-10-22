@@ -29,6 +29,8 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE
 import org.apache.kyuubi.engine.ProcBuilder
+import org.apache.kyuubi.ha.HighAvailabilityConf
+import org.apache.kyuubi.ha.client.ZooKeeperAuthTypes
 
 class SparkProcessBuilder(
     override val proxyUser: String,
@@ -123,13 +125,22 @@ class SparkProcessBuilder(
     buffer += executable
     buffer += CLASS
     buffer += mainClass
+
+    var allConf = conf.getAll
+
+    // if enable sasl kerberos authentication for zookeeper, need to upload the server ketab file
+    if (ZooKeeperAuthTypes.withName(conf.get(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE))
+      == ZooKeeperAuthTypes.KERBEROS) {
+      allConf = allConf ++ zkAuthKeytabFileConf(allConf)
+    }
+
     /**
      * Converts kyuubi configs to configs that Spark could identify.
      * - If the key is start with `spark.`, keep it AS IS as it is a Spark Conf
      * - If the key is start with `hadoop.`, it will be prefixed with `spark.hadoop.`
      * - Otherwise, the key will be added a `spark.` prefix
      */
-    conf.getAll.foreach { case (k, v) =>
+    allConf.foreach { case (k, v) =>
       val newKey = if (k.startsWith("spark.")) {
         k
       } else if (k.startsWith("hadoop.")) {
@@ -176,6 +187,21 @@ class SparkProcessBuilder(
       }
     }
   }
+
+  private def zkAuthKeytabFileConf(sparkConf: Map[String, String]): Map[String, String] = {
+    val zkAuthKeytab = conf.get(HighAvailabilityConf.HA_ZK_AUTH_KEYTAB)
+    if (zkAuthKeytab.isDefined) {
+      sparkConf.get(SPARK_FILES) match {
+        case Some(files) =>
+          Map(SPARK_FILES -> s"$files,${zkAuthKeytab.get}")
+        case _ =>
+          Map(SPARK_FILES -> zkAuthKeytab.get)
+      }
+    } else {
+      Map()
+    }
+  }
+
 }
 
 object SparkProcessBuilder {
@@ -185,6 +211,7 @@ object SparkProcessBuilder {
   private final val CONF = "--conf"
   private final val CLASS = "--class"
   private final val PROXY_USER = "--proxy-user"
+  private final val SPARK_FILES = "spark.files"
   private final val PRINCIPAL = "spark.kerberos.principal"
   private final val KEYTAB = "spark.kerberos.keytab"
   // Get the appropriate spark-submit file

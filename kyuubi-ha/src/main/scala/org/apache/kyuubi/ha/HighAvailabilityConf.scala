@@ -22,7 +22,7 @@ import java.time.Duration
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
-import org.apache.kyuubi.ha.client.RetryPolicies
+import org.apache.kyuubi.ha.client.{RetryPolicies, ZooKeeperAuthTypes}
 
 object HighAvailabilityConf {
 
@@ -41,6 +41,7 @@ object HighAvailabilityConf {
     .stringConf
     .createWithDefault("kyuubi")
 
+  @deprecated(s"using ${HA_ZK_AUTH_TYPE.key} and ${HA_ZK_ENGINE_AUTH_TYPE.key} instead", "1.4.0")
   val HA_ZK_ACL_ENABLED: ConfigEntry[Boolean] =
     buildConf("ha.zookeeper.acl.enabled")
       .doc("Set to true if the zookeeper ensemble is kerberized")
@@ -48,12 +49,37 @@ object HighAvailabilityConf {
       .booleanConf
       .createWithDefault(UserGroupInformation.isSecurityEnabled)
 
-  val HA_ZK_ACL_ENGINE_ENABLED: ConfigEntry[Boolean] =
-    buildConf("ha.zookeeper.acl.engine.enabled")
-      .doc("Set to true if the zookeeper ensemble is kerberized at engine side.")
+  val HA_ZK_AUTH_TYPE: ConfigEntry[String] =
+    buildConf("ha.zookeeper.auth.type")
+      .doc("The type of zookeeper authentication, all candidates are " +
+        s"${ZooKeeperAuthTypes.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
       .version("1.4.0")
-      .booleanConf
-      .createWithDefault(false)
+      .stringConf
+      .checkValues(ZooKeeperAuthTypes.values.map(_.toString))
+      .createWithDefault(ZooKeeperAuthTypes.NONE.toString)
+
+  val HA_ZK_ENGINE_AUTH_TYPE: ConfigEntry[String] =
+    buildConf("ha.zookeeper.engine.auth.type")
+      .doc("The type of zookeeper authentication for engine, all candidates are " +
+        s"${ZooKeeperAuthTypes.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
+      .version("1.4.0")
+      .fallbackConf(HA_ZK_AUTH_TYPE)
+
+  val HA_ZK_AUTH_PRINCIPAL: ConfigEntry[Option[String]] = buildConf("ha.zookeeper.auth.principal")
+    .doc("Name of the Kerberos principal is used for zookeeper authentication.")
+    .version("1.4.0")
+    .fallbackConf(KyuubiConf.SERVER_PRINCIPAL)
+
+  val HA_ZK_AUTH_KEYTAB: ConfigEntry[Option[String]] = buildConf("ha.zookeeper.auth.keytab")
+    .doc("Location of Kyuubi server's keytab is used for zookeeper authentication.")
+    .version("1.4.0")
+    .fallbackConf(KyuubiConf.SERVER_KEYTAB)
+
+  val HA_ZK_AUTH_DIGEST: OptionalConfigEntry[String] = buildConf("ha.zookeeper.auth.digest")
+    .doc("The digest auth string is used for zookeeper authentication, like: username:password.")
+    .version("1.4.0")
+    .stringConf
+    .createOptional
 
   val HA_ZK_CONN_MAX_RETRIES: ConfigEntry[Int] =
     buildConf("ha.zookeeper.connection.max.retries")

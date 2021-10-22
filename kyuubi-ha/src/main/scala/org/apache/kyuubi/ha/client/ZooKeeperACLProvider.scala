@@ -41,11 +41,9 @@ class ZooKeeperACLProvider(conf: KyuubiConf) extends ACLProvider {
       nodeAcls.addAll(ZooDefs.Ids.CREATOR_ALL_ACL)
     }
 
-    if (conf.get(HighAvailabilityConf.HA_ZK_ACL_ENABLED) &&
-      conf.get(HighAvailabilityConf.HA_ZK_ENGINE_REF_ID).isEmpty) {
+    if (conf.get(HighAvailabilityConf.HA_ZK_ENGINE_REF_ID).isEmpty && enabledServerAcls()) {
       addACL()
-    } else if (conf.get(HighAvailabilityConf.HA_ZK_ACL_ENGINE_ENABLED) &&
-      conf.get(HighAvailabilityConf.HA_ZK_ENGINE_REF_ID).nonEmpty) {
+    } else if (conf.get(HighAvailabilityConf.HA_ZK_ENGINE_REF_ID).nonEmpty && enabledEngineAcls()) {
       addACL()
     } else {
       // ACLs for znodes on a non-kerberized cluster
@@ -53,6 +51,18 @@ class ZooKeeperACLProvider(conf: KyuubiConf) extends ACLProvider {
       nodeAcls.addAll(ZooDefs.Ids.OPEN_ACL_UNSAFE)
     }
     nodeAcls
+  }
+
+  private def enabledServerAcls(): Boolean = ZooKeeperAuthTypes
+    .withName(conf.get(HighAvailabilityConf.HA_ZK_AUTH_TYPE)) match {
+      case ZooKeeperAuthTypes.NONE => false
+      case _ => true
+    }
+
+  private def enabledEngineAcls(): Boolean = ZooKeeperAuthTypes
+    .withName(conf.get(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE)) match {
+    case ZooKeeperAuthTypes.NONE => false
+    case _ => true
   }
 
   override def getAclForPath(path: String): java.util.List[ACL] = getDefaultAcl

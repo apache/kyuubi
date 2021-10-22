@@ -137,8 +137,6 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     FRONTEND_REST_BIND_HOST,
     FRONTEND_REST_BIND_PORT,
     AUTHENTICATION_METHOD,
-    SERVER_KEYTAB,
-    SERVER_PRINCIPAL,
     KINIT_INTERVAL)
 
   def getUserDefaults(user: String): KyuubiConf = {
