@@ -101,7 +101,7 @@
         <guava.version>30.1-jre</guava.version>
         <hadoop.version>3.3.1</hadoop.version>
         <hadoop.binary.version>3.2</hadoop.binary.version>
-        <hive.version>2.3.7</hive.version>
+        <hive.version>2.3.9</hive.version>
         <hudi.version>0.9.0</hudi.version>
         <iceberg.name>iceberg-spark3-runtime</iceberg.name>
         <iceberg.version>0.12.0</iceberg.version>
@@ -126,7 +126,7 @@
         <zookeeper.version>3.4.14</zookeeper.version>
 
         <!-- only apply to kyuubi-hive-jdbc module -->
-        <hive.jdbc.version>2.3.7</hive.jdbc.version>
+        <hive.jdbc.version>2.3.9</hive.jdbc.version>
         <hive.jdbc.commons-lang.version>2.6</hive.jdbc.commons-lang.version>
         <hive.jdbc.commons-codec.version>1.15</hive.jdbc.commons-codec.version>
         <hive.jdbc.curator.version>2.12.0</hive.jdbc.curator.version>
@@ -418,7 +418,7 @@
             <!--
               because of THRIFT-4805, we don't upgrade to libthrift:0.12.0,
               because of THRIFT-5274, we don't upgrade to libthrift:0.13.0,
-              so just keep hive-service-rpc:2.3.7 transitive dependency libthrift:0.9.3
+              so just keep hive-service-rpc:2.3.9 transitive dependency libthrift:0.9.3
             -->
             <dependency>
                 <groupId>org.apache.hive</groupId>
