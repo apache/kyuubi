@@ -34,6 +34,7 @@ import org.apache.hadoop.hive.metastore.{HiveMetaException, HiveMetaStore}
 import org.apache.hadoop.hive.thrift.{DelegationTokenIdentifier, HadoopThriftAuthBridge, HadoopThriftAuthBridge23}
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
+import org.apache.hadoop.security.authorize.ProxyUsers
 import org.apache.thrift.TProcessor
 import org.apache.thrift.protocol.TProtocol
 import org.scalatest.concurrent.Eventually._
@@ -82,6 +83,7 @@ class HiveDelegationTokenProviderSuite extends KerberizedTestHelper {
       hiveConf.setVar(METASTORE_USE_THRIFT_SASL, "true")
       hiveConf.setVar(METASTORE_KERBEROS_PRINCIPAL, testPrincipal)
       hiveConf.setVar(METASTORE_KERBEROS_KEYTAB_FILE, testKeytab)
+      ProxyUsers.refreshSuperUserGroupsConfiguration(hiveConf)
       val metaServer = new LocalMetaServer(hiveConf, classloader)
       metaServer.start()
     }
@@ -104,11 +106,14 @@ class HiveDelegationTokenProviderSuite extends KerberizedTestHelper {
       val credentials = new Credentials
       provider.obtainDelegationTokens(owner, credentials)
 
-      val token = credentials.getAllTokens.asScala
-        .filter(_.getKind == DelegationTokenIdentifier.HIVE_DELEGATION_KIND)
-        .head
-      assert(token != null)
+      val aliasAndToken =
+        credentials.getTokenMap.asScala
+          .filter(_._2.getKind == DelegationTokenIdentifier.HIVE_DELEGATION_KIND)
+          .head
+      assert(aliasAndToken._1 == new Text(hiveConf.getTrimmed("hive.metastore.uris")))
+      assert(aliasAndToken._2 != null)
 
+      val token = aliasAndToken._2
       val tokenIdent = token.decodeIdentifier().asInstanceOf[DelegationTokenIdentifier]
       assertResult(DelegationTokenIdentifier.HIVE_DELEGATION_KIND)(token.getKind)
       assertResult(new Text(owner))(tokenIdent.getOwner)

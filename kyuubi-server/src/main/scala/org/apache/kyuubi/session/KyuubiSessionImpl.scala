@@ -53,7 +53,8 @@ class KyuubiSessionImpl(
     case (key, value) => sessionConf.set(key, value)
   }
 
-  private val engine: EngineRef = new EngineRef(sessionConf, user)
+  val engine: EngineRef = new EngineRef(sessionConf, user)
+
   private val sessionEvent = KyuubiSessionEvent(this)
   EventLoggingService.onEvent(sessionEvent)
 

@@ -29,7 +29,7 @@ case class KyuubiSqlClassification(session: SparkSession) extends Rule[LogicalPl
     if (conf.getConf(SQL_CLASSIFICATION_ENABLED) && plan.resolved) {
       val simpleName = plan.getClass.getSimpleName
       val sqlClassification = KyuubiGetSqlClassification.getSqlClassification(simpleName)
-      session.conf.set("kyuubi.spark.sql.classification", sqlClassification)
+      session.conf.set(SQL_CLASSIFICATION, sqlClassification)
     }
     plan
   }

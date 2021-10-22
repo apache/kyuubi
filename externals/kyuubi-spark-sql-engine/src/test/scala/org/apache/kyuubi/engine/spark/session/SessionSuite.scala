@@ -40,8 +40,8 @@ class SessionSuite extends WithSparkSQLEngine with JDBCTestUtils {
     stopSparkEngine()
   }
 
-  override protected def jdbcUrl: String = s"jdbc:hive2://${engine.connectionUrl}/;#" +
-    s"spark.ui.enabled=false"
+  override protected def jdbcUrl: String =
+    s"jdbc:hive2://${engine.frontendServices.head.connectionUrl}/;#spark.ui.enabled=false"
 
   test("release session if shared level is CONNECTION") {
     assert(engine.getServiceState == STARTED)

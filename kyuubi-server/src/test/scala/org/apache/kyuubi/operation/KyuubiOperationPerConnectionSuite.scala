@@ -63,7 +63,6 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with JDBCTestUt
       }
       val verboseMessage = Utils.stringifyException(exception)
       assert(verboseMessage.contains("Failed to detect the root cause"))
-      assert(verboseMessage.contains("The last line log"))
     }
   }
 }

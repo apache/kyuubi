@@ -18,11 +18,14 @@
 package org.apache.kyuubi.engine
 
 import java.io.{File, IOException}
+import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path}
 
 import scala.collection.JavaConverters._
+import scala.util.matching.Regex
 
+import com.google.common.collect.EvictingQueue
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
@@ -63,7 +66,9 @@ trait ProcBuilder {
   }
 
   @volatile private var error: Throwable = UNCAUGHT_ERROR
-  @volatile private var lastRowOfLog: String = "unknown"
+
+  private val engineLogMaxLines = conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_MAX_LOG_LINES)
+  private val lastRowsOfLog: EvictingQueue[String] = EvictingQueue.create(engineLogMaxLines)
   // Visible for test
   @volatile private[kyuubi] var logCaptureThreadReleased: Boolean = true
   private var logCaptureThread: Thread = _
@@ -120,14 +125,16 @@ trait ProcBuilder {
               error = KyuubiSQLException(sb.toString() + s"\n See more: $engineLog")
               line = reader.readLine()
               while (sb.length < maxErrorSize && line != null &&
-                (line.startsWith("\tat ") || line.startsWith("Caused by: "))) {
+                (containsIgnoreCase(line, "Exception:") ||
+                  line.startsWith("\tat ") ||
+                  line.startsWith("Caused by: "))) {
                 sb.append("\n" + line)
                 line = reader.readLine()
               }
 
               error = KyuubiSQLException(sb.toString() + s"\n See more: $engineLog")
             } else if (line != null) {
-              lastRowOfLog = line
+              lastRowsOfLog.add(line)
             }
           } else {
             Thread.sleep(300)
@@ -148,6 +155,29 @@ trait ProcBuilder {
     proc
   }
 
+  val YARN_APP_NAME_REGEX: Regex = "application_\\d+_\\d+".r
+
+  def killApplication(line: String = lastRowsOfLog.toArray.mkString("\n")): String =
+    YARN_APP_NAME_REGEX.findFirstIn(line) match {
+      case Some(appId) =>
+        env.get(KyuubiConf.KYUUBI_HOME) match {
+          case Some(kyuubiHome) =>
+            val pb = new ProcessBuilder("/bin/sh", s"$kyuubiHome/bin/stop-application.sh", appId)
+            pb.environment()
+              .putAll(env.asJava)
+            pb.redirectError(Redirect.appendTo(engineLog))
+            pb.redirectOutput(Redirect.appendTo(engineLog))
+            val process = pb.start()
+            process.waitFor() match {
+              case id if id != 0 => s"Failed to kill Application $appId, please kill it manually. "
+              case _ => s"Killed Application $appId successfully. "
+            }
+          case None =>
+            s"KYUUBI_HOME is not set! Failed to kill Application $appId, please kill it manually."
+        }
+      case None => ""
+    }
+
   def close(): Unit = {
     if (logCaptureThread != null) {
       logCaptureThread.interrupt()
@@ -161,7 +191,8 @@ trait ProcBuilder {
     error match {
       case UNCAUGHT_ERROR =>
         KyuubiSQLException(s"Failed to detect the root cause, please check $engineLog at server " +
-          s"side if necessary. The last line log is: $lastRowOfLog")
+          s"side if necessary. The last $engineLogMaxLines line(s) of log is: " +
+          s"${lastRowsOfLog.toArray.mkString("\n")}")
       case other => other
     }
   }
