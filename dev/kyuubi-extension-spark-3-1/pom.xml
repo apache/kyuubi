@@ -155,13 +155,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>kyuubi-extension-spark-3-1</id>
-            <properties>
-                <spark.version>3.1.2</spark.version>
-            </properties>
-        </profile>
-    </profiles>
 </project>

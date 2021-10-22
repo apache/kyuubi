@@ -1775,6 +1775,10 @@
                 <delta.version>1.0.0</delta.version>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
+            <modules>
+                <module>dev/kyuubi-extension-spark-common</module>
+                <module>dev/kyuubi-extension-spark-3-1</module>
+            </modules>
         </profile>
 
         <profile>
@@ -1783,6 +1787,10 @@
                 <spark.version>3.2.0</spark.version>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
+            <modules>
+                <module>dev/kyuubi-extension-spark-common</module>
+                <module>dev/kyuubi-extension-spark-3-2</module>
+            </modules>
         </profile>
 
         <profile>
@@ -1824,22 +1832,6 @@
             <properties>
                 <spark.archive.download.skip>true</spark.archive.download.skip>
             </properties>
-        </profile>
-
-        <profile>
-            <id>kyuubi-extension-spark-3-1</id>
-            <modules>
-                <module>dev/kyuubi-extension-spark-common</module>
-                <module>dev/kyuubi-extension-spark-3-1</module>
-            </modules>
-        </profile>
-
-        <profile>
-            <id>kyuubi-extension-spark-3-2</id>
-            <modules>
-                <module>dev/kyuubi-extension-spark-common</module>
-                <module>dev/kyuubi-extension-spark-3-2</module>
-            </modules>
         </profile>
 
         <profile>
