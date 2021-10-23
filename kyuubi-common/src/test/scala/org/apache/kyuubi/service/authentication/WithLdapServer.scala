@@ -25,7 +25,7 @@ trait WithLdapServer extends KyuubiFunSuite {
   protected var ldapServer: InMemoryDirectoryServer = _
   protected val ldapBaseDn = "ou=users"
   protected val ldapUser = Utils.currentUser
-  protected val ldapUserPasswd = "password"
+  protected val ldapUserPasswd = "ldapPassword"
 
   protected def ldapUrl = s"ldap://localhost:${ldapServer.getListenPort}"
 
