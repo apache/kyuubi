@@ -48,7 +48,7 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
   kdcConf.remove(MiniKdc.DEBUG)
 
   private var kdc: MiniKdc = _
-  private var krb5ConfPath: String = _
+  protected var krb5ConfPath: String = _
 
   private val keytabFile = new File(baseDir, "kyuubi-test.keytab")
   protected val testKeytab: String = keytabFile.getAbsolutePath

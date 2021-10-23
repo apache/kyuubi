@@ -19,6 +19,9 @@ package org.apache.kyuubi.operation
 
 import java.sql.{DriverManager, SQLException}
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.security.UserGroupInformation
+
 import org.apache.kyuubi.{KerberizedTestHelper, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.UserDefineAuthenticationProviderImpl
@@ -29,8 +32,27 @@ class KyuubiOperationMultipleAuthTypeSuite extends
 
   override protected def jdbcUrl: String = getJdbcUrl
   private def kerberosJdbcUrl: String = jdbcUrl + s"principal=${testPrincipal}"
+  private val currentUser = UserGroupInformation.getCurrentUser
+
+  override def beforeAll(): Unit = {
+    super.beforeAll()
+  }
+
+  override def afterAll(): Unit = {
+    System.clearProperty("java.security.krb5.conf")
+    UserGroupInformation.setLoginUser(currentUser)
+    UserGroupInformation.setConfiguration(new Configuration())
+    assert(!UserGroupInformation.isSecurityEnabled)
+  }
 
   override protected lazy val conf: KyuubiConf = {
+    val config = new Configuration()
+    val authType = "hadoop.security.authentication"
+    config.set(authType, "KERBEROS")
+    System.setProperty("java.security.krb5.conf", krb5ConfPath)
+    UserGroupInformation.setConfiguration(config)
+    assert(UserGroupInformation.isSecurityEnabled)
+
     KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("KERBEROS", "CUSTOM", "LDAP"))
       .set(KyuubiConf.SERVER_KEYTAB, testKeytab)
       .set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)
