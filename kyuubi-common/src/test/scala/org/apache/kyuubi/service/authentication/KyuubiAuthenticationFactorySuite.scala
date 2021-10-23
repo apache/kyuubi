@@ -25,7 +25,6 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.PlainSASLServer.SaslPlainProvider
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
-
 class KyuubiAuthenticationFactorySuite extends KyuubiFunSuite {
   import KyuubiAuthenticationFactory._
 

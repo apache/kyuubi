@@ -31,7 +31,7 @@ class KyuubiOperationMultipleAuthTypeSuite extends
   private def kerberosJdbcUrl: String = jdbcUrl + s"principal=${testPrincipal}"
 
   override protected lazy val conf: KyuubiConf = {
-    KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("KERBEROS", "CUSTOM"))
+    KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("KERBEROS", "CUSTOM", "LDAP"))
       .set(KyuubiConf.SERVER_KEYTAB, testKeytab)
       .set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)
       .set(KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
