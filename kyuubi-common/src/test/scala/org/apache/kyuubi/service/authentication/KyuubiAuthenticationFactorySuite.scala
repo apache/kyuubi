@@ -25,6 +25,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.PlainSASLServer.SaslPlainProvider
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
+
 class KyuubiAuthenticationFactorySuite extends KyuubiFunSuite {
   import KyuubiAuthenticationFactory._
 
@@ -74,15 +75,5 @@ class KyuubiAuthenticationFactorySuite extends KyuubiFunSuite {
     val factory = new KyuubiAuthenticationFactory(conf)
     val e = intercept[LoginException](factory.getTTransportFactory)
     assert(e.getMessage startsWith "Kerberos principal should have 3 parts")
-  }
-
-  test("Support multiple kinds of authentication type") {
-    val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("NONE", "CUSTOM"))
-      .set(KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
-        classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
-
-    val authFactory = new KyuubiAuthenticationFactory(conf)
-    authFactory.getTTransportFactory
-    assert(Security.getProviders.exists(_.isInstanceOf[SaslPlainProvider]))
   }
 }

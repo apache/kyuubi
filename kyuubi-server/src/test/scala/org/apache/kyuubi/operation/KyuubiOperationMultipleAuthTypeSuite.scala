@@ -17,47 +17,59 @@
 
 package org.apache.kyuubi.operation
 
-import java.sql.SQLException
+import java.sql.{DriverManager, SQLException}
 
-import org.apache.kyuubi.WithKyuubiServer
+import org.apache.kyuubi.{KerberizedTestHelper, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.service.authentication.{UserDefineAuthenticationProviderImpl, WithLdapServer}
+import org.apache.kyuubi.service.authentication.UserDefineAuthenticationProviderImpl
 
 class KyuubiOperationMultipleAuthTypeSuite extends
-  WithKyuubiServer with WithLdapServer with JDBCTestUtils {
-  override protected val ldapUserPasswd: String = "ldapPassword"
+  WithKyuubiServer with KerberizedTestHelper with JDBCTestUtils {
   private val customPasswd: String = "password"
 
   override protected def jdbcUrl: String = getJdbcUrl
+  private def kerberosJdbcUrl: String = jdbcUrl + s"principal=${testPrincipal}"
 
   override protected lazy val conf: KyuubiConf = {
-    KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("LDAP", "CUSTOM"))
-      .set(KyuubiConf.AUTHENTICATION_LDAP_URL, ldapUrl)
-      .set(KyuubiConf.AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
+    KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("KERBEROS", "CUSTOM"))
+      .set(KyuubiConf.SERVER_KEYTAB, testKeytab)
+      .set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)
       .set(KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
         classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
   }
 
-  test("test with LDAP authentication") {
-    withMultipleConnectionJdbcStatementWithPasswd(ldapUserPasswd)() { statement =>
+  test("test with KERBEROS authentication") {
+    val conn = DriverManager.getConnection(jdbcUrlWithConf(kerberosJdbcUrl), user, "")
+    try {
+      val statement = conn.createStatement()
       val resultSet = statement.executeQuery("select engine_name()")
       assert(resultSet.next())
       assert(resultSet.getString(1).nonEmpty)
+    } finally {
+      conn.close()
     }
   }
 
   test("test with CUSTOM authentication") {
-    withMultipleConnectionJdbcStatementWithPasswd(customPasswd)() { statement =>
+    val conn = DriverManager.getConnection(jdbcUrlWithConf, user, customPasswd)
+    try {
+      val statement = conn.createStatement()
       val resultSet = statement.executeQuery("select engine_name()")
       assert(resultSet.next())
       assert(resultSet.getString(1).nonEmpty)
+    } finally {
+      conn.close()
     }
   }
 
   test("test with invalid password") {
     intercept[SQLException] {
-      withMultipleConnectionJdbcStatementWithPasswd("falsePasswd")() { statement =>
+      val conn = DriverManager.getConnection(jdbcUrlWithConf, user, "invalidPassword")
+      try {
+        val statement = conn.createStatement()
         statement.executeQuery("select engine_name()")
+      } finally {
+        conn.close()
       }
     }
   }

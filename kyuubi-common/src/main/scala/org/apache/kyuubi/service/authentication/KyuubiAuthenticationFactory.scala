@@ -29,20 +29,21 @@ import org.apache.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.thrift.TProcessorFactory
 import org.apache.thrift.transport.{TSaslServerTransport, TTransportException, TTransportFactory}
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.authentication.AuthTypes._
 
-class KyuubiAuthenticationFactory(conf: KyuubiConf) {
+class KyuubiAuthenticationFactory(conf: KyuubiConf) extends Logging {
 
-  private val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName).toSet match {
-    case s if s == Set(NOSASL) => s
-    case s => s.filterNot(_.equals(NOSASL))
-  }
+  private val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
+  private val noSasl = authTypes == Seq(NOSASL)
+  private val kerberosEnabled = authTypes.contains(KERBEROS)
+  private val plainAuthTypeOpt = authTypes.filterNot(_.equals(KERBEROS))
+    .filterNot(_.equals(NOSASL)).headOption
 
   private val hadoopAuthServer: Option[HadoopThriftAuthBridgeServer] = {
-    if (authTypes.contains(KERBEROS)) {
+    if (kerberosEnabled) {
       val secretMgr = KyuubiDelegationTokenManager(conf)
       try {
         secretMgr.startThreads()
@@ -64,7 +65,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf) {
   }
 
   def getTTransportFactory: TTransportFactory = {
-    if (authTypes == Set(NOSASL)) {
+    if (noSasl) {
       new TTransportFactory()
     } else {
       var transportFactory: TSaslServerTransport.Factory = null
@@ -80,14 +81,16 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf) {
         case _ =>
       }
 
-      authTypes.filterNot(at => at.equals(KERBEROS)).foreach { plainAuthType =>
-        transportFactory = PlainSASLHelper.getTransportFactory(plainAuthType.toString, conf,
-          Option(transportFactory)).asInstanceOf[TSaslServerTransport.Factory]
+      plainAuthTypeOpt match {
+        case Some(plainAuthType) =>
+          transportFactory = PlainSASLHelper.getTransportFactory(plainAuthType.toString, conf,
+            Option(transportFactory)).asInstanceOf[TSaslServerTransport.Factory]
+
+        case _ =>
       }
 
       hadoopAuthServer match {
         case Some(server) => server.wrapTransportFactory(transportFactory)
-
         case _ => transportFactory
       }
     }
