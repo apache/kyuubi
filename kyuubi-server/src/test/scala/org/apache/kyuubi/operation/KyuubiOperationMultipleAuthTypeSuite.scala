@@ -17,13 +17,15 @@
 
 package org.apache.kyuubi.operation
 
+import java.sql.SQLException
+
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.{UserDefineAuthenticationProviderImpl, WithLdapServer}
 
 class KyuubiOperationMultipleAuthTypeSuite extends
   WithKyuubiServer with WithLdapServer with JDBCTestUtils {
-  override protected val ldapPasswd: String = "ldapPassword"
+  override protected val ldapUserPasswd: String = "ldapPassword"
   private val customPasswd: String = "password"
 
   override protected def jdbcUrl: String = getJdbcUrl
@@ -37,7 +39,7 @@ class KyuubiOperationMultipleAuthTypeSuite extends
   }
 
   test("test with LDAP authentication") {
-    withMultipleConnectionJdbcStatementWithPasswd(ldapPasswd)() { statement =>
+    withMultipleConnectionJdbcStatementWithPasswd(ldapUserPasswd)() { statement =>
       val resultSet = statement.executeQuery("select engine_name()")
       assert(resultSet.next())
       assert(resultSet.getString(1).nonEmpty)
@@ -49,6 +51,14 @@ class KyuubiOperationMultipleAuthTypeSuite extends
       val resultSet = statement.executeQuery("select engine_name()")
       assert(resultSet.next())
       assert(resultSet.getString(1).nonEmpty)
+    }
+  }
+
+  test("test with invalid password") {
+    intercept[SQLException] {
+      withMultipleConnectionJdbcStatementWithPasswd("falsePasswd")() { statement =>
+        statement.executeQuery("select engine_name()")
+      }
     }
   }
 }
