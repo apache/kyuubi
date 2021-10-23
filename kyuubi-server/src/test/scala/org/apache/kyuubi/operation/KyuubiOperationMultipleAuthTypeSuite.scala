@@ -24,10 +24,10 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.{KerberizedTestHelper, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.service.authentication.UserDefineAuthenticationProviderImpl
+import org.apache.kyuubi.service.authentication.{UserDefineAuthenticationProviderImpl, WithLdapServer}
 
 class KyuubiOperationMultipleAuthTypeSuite extends
-  WithKyuubiServer with KerberizedTestHelper with JDBCTestUtils {
+  WithKyuubiServer with KerberizedTestHelper with WithLdapServer with JDBCTestUtils {
   private val customPasswd: String = "password"
 
   override protected def jdbcUrl: String = getJdbcUrl
@@ -59,6 +59,8 @@ class KyuubiOperationMultipleAuthTypeSuite extends
       .set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)
       .set(KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
         classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
+      .set(KyuubiConf.AUTHENTICATION_LDAP_URL, ldapUrl)
+      .set(KyuubiConf.AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
   }
 
   test("test with KERBEROS authentication") {
@@ -82,6 +84,18 @@ class KyuubiOperationMultipleAuthTypeSuite extends
       assert(resultSet.getString(1).nonEmpty)
     } finally {
       conn.close()
+    }
+  }
+
+  test("only the first plain auth type is valid") {
+    intercept[SQLException] {
+      val conn = DriverManager.getConnection(jdbcUrlWithConf, user, ldapUserPasswd)
+      try {
+        val statement = conn.createStatement()
+        statement.executeQuery("select engine_name()")
+      } finally {
+        conn.close()
+      }
     }
   }
 
