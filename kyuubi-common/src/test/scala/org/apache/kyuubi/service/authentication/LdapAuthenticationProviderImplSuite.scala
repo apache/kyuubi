@@ -57,8 +57,7 @@ class LdapAuthenticationProviderImplSuite extends WithLdapServer {
     assert(e3.getMessage.contains(user))
     assert(e3.getCause.isInstanceOf[javax.naming.AuthenticationException])
 
-    val dn = "ou=users"
-    conf.set(AUTHENTICATION_LDAP_BASEDN, dn)
+    conf.set(AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
     val providerImpl2 = new LdapAuthenticationProviderImpl(conf)
     providerImpl2.authenticate("kentyao", "kentyao")
 
