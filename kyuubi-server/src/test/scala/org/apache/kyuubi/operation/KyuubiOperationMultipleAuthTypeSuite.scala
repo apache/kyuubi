@@ -43,6 +43,7 @@ class KyuubiOperationMultipleAuthTypeSuite extends
     UserGroupInformation.setLoginUser(currentUser)
     UserGroupInformation.setConfiguration(new Configuration())
     assert(!UserGroupInformation.isSecurityEnabled)
+    super.afterAll()
   }
 
   override protected lazy val conf: KyuubiConf = {
