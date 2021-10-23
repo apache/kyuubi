@@ -18,6 +18,7 @@
 package org.apache.kyuubi.service.authentication
 
 import javax.security.sasl.AuthenticationException
+
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.AuthenticationProviderFactory.getAuthenticationProvider
