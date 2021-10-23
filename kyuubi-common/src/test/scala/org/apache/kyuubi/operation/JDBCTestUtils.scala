@@ -82,9 +82,9 @@ trait JDBCTestUtils extends KyuubiFunSuite {
     intercept[SQLException](DriverManager.getConnection(jdbcUrl, user, ""))
   }
 
-  def withMultipleConnectionJdbcStatement(
-      tableNames: String*)(fs: (Statement => Unit)*): Unit = {
-    val connections = fs.map { _ => DriverManager.getConnection(jdbcUrlWithConf, user, "") }
+  def withMultipleConnectionJdbcStatementWithPasswd(
+      passwd: String)(tableNames: String*)(fs: (Statement => Unit)*): Unit = {
+    val connections = fs.map { _ => DriverManager.getConnection(jdbcUrlWithConf, user, passwd) }
     val statements = connections.map(_.createStatement())
 
     try {
@@ -104,6 +104,10 @@ trait JDBCTestUtils extends KyuubiFunSuite {
       connections.foreach(_.close())
       info("Closed connections")
     }
+  }
+
+  def withMultipleConnectionJdbcStatement(tableNames: String*)(fs: (Statement => Unit)*): Unit = {
+    withMultipleConnectionJdbcStatementWithPasswd("")( tableNames: _*)(fs: _*)
   }
 
   def withDatabases(dbNames: String*)(fs: (Statement => Unit)*): Unit = {
