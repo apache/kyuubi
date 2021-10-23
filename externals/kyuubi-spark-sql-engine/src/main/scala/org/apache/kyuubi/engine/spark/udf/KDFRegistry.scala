@@ -32,6 +32,7 @@ object KDFRegistry {
   val registeredFunctions = new ArrayBuffer[KyuubiDefinedFunction]()
 
   val appName = SparkEnv.get.conf.get("spark.app.name")
+  val appId = SparkEnv.get.conf.get("spark.app.id")
 
   val kyuubi_version: KyuubiDefinedFunction = create(
     "kyuubi_version",
@@ -46,6 +47,14 @@ object KDFRegistry {
     "Return the spark application name for the associated query engine",
     "string",
     "1.3.0"
+  )
+
+  val engine_id: KyuubiDefinedFunction = create(
+    "engine_id",
+    udf(() => appId).asNonNullable(),
+    "Return the spark application id for the associated query engine",
+    "string",
+    "1.4.0"
   )
 
   val system_user: KyuubiDefinedFunction = create(
