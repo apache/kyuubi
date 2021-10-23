@@ -75,4 +75,14 @@ class KyuubiAuthenticationFactorySuite extends KyuubiFunSuite {
     val e = intercept[LoginException](factory.getTTransportFactory)
     assert(e.getMessage startsWith "Kerberos principal should have 3 parts")
   }
+
+  test("Support multiple kinds of authentication type") {
+    val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("NONE", "CUSTOM"))
+      .set(KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
+        classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
+
+    val authFactory = new KyuubiAuthenticationFactory(conf)
+    authFactory.getTTransportFactory
+    assert(Security.getProviders.exists(_.isInstanceOf[SaslPlainProvider]))
+  }
 }
