@@ -18,8 +18,7 @@
 package org.apache.kyuubi.service.authentication
 
 import javax.security.sasl.AuthenticationException
-
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.AuthenticationProviderFactory.getAuthenticationProvider
 
@@ -38,6 +37,6 @@ class CustomAuthenticationProviderImplSuite extends KyuubiFunSuite {
     val e2 = intercept[AuthenticationException](p1.authenticate("test", "test"))
     assert(e2.getMessage.contains("Username or password is not valid!"))
 
-    p1.authenticate("user", "password")
+    p1.authenticate(Utils.currentUser, "password")
   }
 }

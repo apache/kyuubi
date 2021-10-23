@@ -19,13 +19,13 @@ package org.apache.kyuubi.service.authentication
 
 import javax.security.sasl.AuthenticationException
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{Logging, Utils}
 
 class UserDefineAuthenticationProviderImpl()
   extends PasswdAuthenticationProvider with Logging {
 
   override def authenticate(user: String, password: String): Unit = {
-    if (user == "user" && password == "password") {
+    if (user == Utils.currentUser && password == "password") {
       info(s"Success log in of user: $user")
     } else {
       throw new AuthenticationException("Username or password is not valid!")

@@ -24,8 +24,8 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 
 class LdapAuthenticationProviderImplSuite extends WithLdapServer {
-  override protected val user: String = "kentyao"
-  override protected val password: String = "kentyao"
+  override protected val ldapUser: String = "kentyao"
+  override protected val ldapPasswd: String = "kentyao"
 
   private val conf = new KyuubiConf()
 
