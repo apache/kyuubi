@@ -75,4 +75,16 @@ class KyuubiAuthenticationFactorySuite extends KyuubiFunSuite {
     val e = intercept[LoginException](factory.getTTransportFactory)
     assert(e.getMessage startsWith "Kerberos principal should have 3 parts")
   }
+
+  test("AuthType is NOSASL if only NOSASL is specified") {
+    val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("NOSASL"))
+    var factory = new KyuubiAuthenticationFactory(conf)
+    factory.getTTransportFactory
+    assert(!Security.getProviders.exists(_.isInstanceOf[SaslPlainProvider]))
+
+    conf.set(KyuubiConf.AUTHENTICATION_METHOD, Seq("NOSASL", "NONE"))
+    factory = new KyuubiAuthenticationFactory(conf)
+    factory.getTTransportFactory
+    assert(Security.getProviders.exists(_.isInstanceOf[SaslPlainProvider]))
+  }
 }
