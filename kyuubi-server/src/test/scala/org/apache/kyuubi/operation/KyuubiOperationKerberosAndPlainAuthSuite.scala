@@ -26,8 +26,9 @@ import org.apache.kyuubi.{KerberizedTestHelper, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.{UserDefineAuthenticationProviderImpl, WithLdapServer}
 
-class KyuubiOperationMultipleAuthTypeSuite extends
+class KyuubiOperationKerberosAndPlainAuthSuite extends
   WithKyuubiServer with KerberizedTestHelper with WithLdapServer with JDBCTestUtils {
+  private val customUser: String = "user"
   private val customPasswd: String = "password"
 
   override protected def jdbcUrl: String = getJdbcUrl
@@ -54,13 +55,13 @@ class KyuubiOperationMultipleAuthTypeSuite extends
     UserGroupInformation.setConfiguration(config)
     assert(UserGroupInformation.isSecurityEnabled)
 
-    KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("KERBEROS", "CUSTOM", "LDAP"))
+    KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("KERBEROS", "LDAP", "CUSTOM"))
       .set(KyuubiConf.SERVER_KEYTAB, testKeytab)
       .set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)
-      .set(KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
-        classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
       .set(KyuubiConf.AUTHENTICATION_LDAP_URL, ldapUrl)
       .set(KyuubiConf.AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
+      .set(KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
+        classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
   }
 
   test("test with KERBEROS authentication") {
@@ -75,8 +76,8 @@ class KyuubiOperationMultipleAuthTypeSuite extends
     }
   }
 
-  test("test with CUSTOM authentication") {
-    val conn = DriverManager.getConnection(jdbcUrlWithConf, user, customPasswd)
+  test("test with LDAP authentication") {
+    val conn = DriverManager.getConnection(jdbcUrlWithConf, ldapUser, ldapUserPasswd)
     try {
       val statement = conn.createStatement()
       val resultSet = statement.executeQuery("select engine_name()")
@@ -87,9 +88,9 @@ class KyuubiOperationMultipleAuthTypeSuite extends
     }
   }
 
-  test("only the first plain auth type is valid") {
+  test("only the first specified plain auth type is valid") {
     intercept[SQLException] {
-      val conn = DriverManager.getConnection(jdbcUrlWithConf, user, ldapUserPasswd)
+      val conn = DriverManager.getConnection(jdbcUrlWithConf, customUser, customPasswd)
       try {
         val statement = conn.createStatement()
         statement.executeQuery("select engine_name()")

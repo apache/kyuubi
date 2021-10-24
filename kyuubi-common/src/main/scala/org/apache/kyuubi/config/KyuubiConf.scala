@@ -382,7 +382,8 @@ object KyuubiConf {
       " Note that: For KERBEROS, it is SASL/GSSAPI mechanism," +
       " and for NONE, CUSTOM and LDAP, they are all SASL/PLAIN mechanism." +
       " If only NOSASL is specified, the authentication will be NOSASL." +
-      " For SASL authentication, KERBEROS and one PLAIN auth type are supported at the same time.")
+      " For SASL authentication, KERBEROS and PLAIN auth type are supported at the same time," +
+      " and only the first specified PLAIN auth type is valid.")
     .version("1.0.0")
     .stringConf
     .toSequence()
