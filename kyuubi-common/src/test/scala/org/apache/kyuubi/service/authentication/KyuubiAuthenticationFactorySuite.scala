@@ -20,6 +20,8 @@ package org.apache.kyuubi.service.authentication
 import java.security.Security
 import javax.security.auth.login.LoginException
 
+import org.apache.thrift.transport.TSaslServerTransport
+
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.PlainSASLServer.SaslPlainProvider
@@ -79,12 +81,10 @@ class KyuubiAuthenticationFactorySuite extends KyuubiFunSuite {
   test("AuthType is NOSASL if only NOSASL is specified") {
     val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("NOSASL"))
     var factory = new KyuubiAuthenticationFactory(conf)
-    factory.getTTransportFactory
-    assert(!Security.getProviders.exists(_.isInstanceOf[SaslPlainProvider]))
+    !factory.getTTransportFactory.isInstanceOf[TSaslServerTransport.Factory]
 
     conf.set(KyuubiConf.AUTHENTICATION_METHOD, Seq("NOSASL", "NONE"))
     factory = new KyuubiAuthenticationFactory(conf)
-    factory.getTTransportFactory
-    assert(Security.getProviders.exists(_.isInstanceOf[SaslPlainProvider]))
+    factory.getTTransportFactory.isInstanceOf[TSaslServerTransport.Factory]
   }
 }
