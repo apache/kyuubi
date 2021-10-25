@@ -26,6 +26,7 @@ import scala.collection.JavaConverters.mapAsScalaMapConverter
 import scala.xml.{Node, Unparsed}
 
 import org.apache.commons.text.StringEscapeUtils
+import org.apache.spark.kyuubi.ui.TableSourceUtil._
 import org.apache.spark.ui.{PagedDataSource, PagedTable, UIUtils, WebUIPage}
 import org.apache.spark.ui.UIUtils._
 
@@ -141,107 +142,6 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
           {table.getOrElse("No statistics have been generated yet.")}
         </div>
     content
-  }
-
-  private class StatementStatsPagedTable(
-      request: HttpServletRequest,
-      parent: EngineTab,
-      data: Seq[SparkStatementEvent],
-      subPath: String,
-      basePath: String,
-      sqlStatsTableTag: String) extends PagedTable[SparkStatementEvent] {
-
-    private val (sortColumn, desc, pageSize) =
-      getRequestTableParameters(request, sqlStatsTableTag, "Create Time")
-
-    private val encodedSortColumn = URLEncoder.encode(sortColumn, UTF_8.name())
-
-    private val parameterPath =
-      s"$basePath/$subPath/?${getRequestParameterOtherTable(request, sqlStatsTableTag)}"
-
-    override val dataSource = new StatementStatsTableDataSource(data, pageSize, sortColumn, desc)
-
-    override def tableId: String = sqlStatsTableTag
-
-    override def tableCssClass: String =
-      "table table-bordered table-sm table-striped table-head-clickable table-cell-width-limited"
-
-    override def pageLink(page: Int): String = {
-      parameterPath +
-        s"&$pageNumberFormField=$page" +
-        s"&$sqlStatsTableTag.sort=$encodedSortColumn" +
-        s"&$sqlStatsTableTag.desc=$desc" +
-        s"&$pageSizeFormField=$pageSize" +
-        s"#$sqlStatsTableTag"
-    }
-
-    override def pageSizeFormField: String = s"$sqlStatsTableTag.pageSize"
-
-    override def pageNumberFormField: String = s"$sqlStatsTableTag.page"
-
-    override def goButtonFormPath: String =
-      s"$parameterPath&$sqlStatsTableTag.sort=$encodedSortColumn" +
-        s"&$sqlStatsTableTag.desc=$desc#$sqlStatsTableTag"
-
-    override def headers: Seq[Node] = {
-      val sqlTableHeadersAndTooltips: Seq[(String, Boolean, Option[String])] =
-        Seq(
-          ("User", true, None),
-          ("Statement ID", true, None),
-          ("Create Time", true, None),
-          ("Finish Time", true, None),
-          ("Duration", true, None),
-          ("Statement", true, None),
-          ("State", true, None),
-          ("Query Execution", true, None))
-
-      headerStatRow(sqlTableHeadersAndTooltips, desc, pageSize, sortColumn, parameterPath,
-        sqlStatsTableTag, sqlStatsTableTag)
-    }
-
-    override def row(sparkStatementEvent: SparkStatementEvent): Seq[Node] = {
-      <tr>
-        <td>
-          {sparkStatementEvent.username}
-        </td>
-        <td>
-          {sparkStatementEvent.statementId}
-        </td>
-        <td >
-          {formatDate(sparkStatementEvent.createTime)}
-        </td>
-        <td>
-          {if (sparkStatementEvent.endTime > 0) formatDate(sparkStatementEvent.endTime)}
-        </td>
-        <td >
-          {formatDurationVerbose(sparkStatementEvent.duration)}
-        </td>
-        <td>
-          <span class="description-input">
-            {sparkStatementEvent.statement}
-          </span>
-        </td>
-        <td>
-          {sparkStatementEvent.state}
-        </td>
-        {errorMessageCell(sparkStatementEvent.queryExecution)}
-      </tr>
-    }
-
-    private def errorMessageCell(errorMessage: String): Seq[Node] = {
-      val isMultiline = errorMessage.indexOf('\n') >= 0
-      val errorSummary = StringEscapeUtils.escapeHtml4(
-        if (isMultiline) {
-          errorMessage.substring(0, errorMessage.indexOf('\n'))
-        } else {
-          errorMessage
-        })
-      val details = detailsUINode(isMultiline, errorMessage)
-      <td>
-        {errorSummary}{details}
-      </td>
-    }
-
   }
 
   /** Generate stats of sessions for the engine */
@@ -362,92 +262,107 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
     }
   }
 
-  /**
-   * Returns parameter of this table.
-   */
-  def getRequestTableParameters(
-      request: HttpServletRequest,
-      tableTag: String,
-      defaultSortColumn: String): (String, Boolean, Int) = {
-    val parameterSortColumn = request.getParameter(s"$tableTag.sort")
-    val parameterSortDesc = request.getParameter(s"$tableTag.desc")
-    val parameterPageSize = request.getParameter(s"$tableTag.pageSize")
-    val sortColumn = Option(parameterSortColumn).map { sortColumn =>
-      UIUtils.decodeURLParameter(sortColumn)
-    }.getOrElse(defaultSortColumn)
-    val desc = Option(parameterSortDesc).map(_.toBoolean).getOrElse(
-      sortColumn == defaultSortColumn
-    )
-    val pageSize = Option(parameterPageSize).map(_.toInt).getOrElse(100)
+}
 
-    (sortColumn, desc, pageSize)
+private class StatementStatsPagedTable(
+    request: HttpServletRequest,
+    parent: EngineTab,
+    data: Seq[SparkStatementEvent],
+    subPath: String,
+    basePath: String,
+    sqlStatsTableTag: String) extends PagedTable[SparkStatementEvent] {
+
+  private val (sortColumn, desc, pageSize) =
+    getRequestTableParameters(request, sqlStatsTableTag, "Create Time")
+
+  private val encodedSortColumn = URLEncoder.encode(sortColumn, UTF_8.name())
+
+  private val parameterPath =
+    s"$basePath/$subPath/?${getRequestParameterOtherTable(request, sqlStatsTableTag)}"
+
+  override val dataSource = new StatementStatsTableDataSource(data, pageSize, sortColumn, desc)
+
+  override def tableId: String = sqlStatsTableTag
+
+  override def tableCssClass: String =
+    "table table-bordered table-sm table-striped table-head-clickable table-cell-width-limited"
+
+  override def pageLink(page: Int): String = {
+    parameterPath +
+      s"&$pageNumberFormField=$page" +
+      s"&$sqlStatsTableTag.sort=$encodedSortColumn" +
+      s"&$sqlStatsTableTag.desc=$desc" +
+      s"&$pageSizeFormField=$pageSize" +
+      s"#$sqlStatsTableTag"
   }
 
-  /**
-   * Returns parameters of other tables in the page.
-   */
-  def getRequestParameterOtherTable(request: HttpServletRequest, tableTag: String): String = {
-    request.getParameterMap.asScala
-      .filterNot(_._1.startsWith(tableTag))
-      .map(parameter => parameter._1 + "=" + parameter._2(0))
-      .mkString("&")
+  override def pageSizeFormField: String = s"$sqlStatsTableTag.pageSize"
+
+  override def pageNumberFormField: String = s"$sqlStatsTableTag.page"
+
+  override def goButtonFormPath: String =
+    s"$parameterPath&$sqlStatsTableTag.sort=$encodedSortColumn" +
+      s"&$sqlStatsTableTag.desc=$desc#$sqlStatsTableTag"
+
+  override def headers: Seq[Node] = {
+    val sqlTableHeadersAndTooltips: Seq[(String, Boolean, Option[String])] =
+      Seq(
+        ("User", true, None),
+        ("Statement ID", true, None),
+        ("Create Time", true, None),
+        ("Finish Time", true, None),
+        ("Duration", true, None),
+        ("Statement", true, None),
+        ("State", true, None),
+        ("Query Execution", true, None))
+
+    headerStatRow(sqlTableHeadersAndTooltips, desc, pageSize, sortColumn, parameterPath,
+      sqlStatsTableTag, sqlStatsTableTag)
   }
 
-  def headerStatRow(
-      headerInfo: Seq[(String, Boolean, Option[String])],
-      desc: Boolean,
-      pageSize: Int,
-      sortColumn: String,
-      parameterPath: String,
-      tableTag: String,
-      headerId: String): Seq[Node] = {
-    val row: Seq[Node] = {
-      headerInfo.map { case (header, sortable, tooltip) =>
-        if (header == sortColumn) {
-          val headerLink = Unparsed(
-            parameterPath +
-              s"&$tableTag.sort=${URLEncoder.encode(header, UTF_8.name())}" +
-              s"&$tableTag.desc=${!desc}" +
-              s"&$tableTag.pageSize=$pageSize" +
-              s"#$headerId")
-          val arrow = if (desc) "&#x25BE;" else "&#x25B4;" // UP or DOWN
-
-          <th>
-            <a href={headerLink}>
-              <span data-toggle="tooltip" data-placement="top" title={tooltip.getOrElse("")}>
-                {header}&nbsp;{Unparsed(arrow)}
-              </span>
-            </a>
-          </th>
-        } else {
-          if (sortable) {
-            val headerLink = Unparsed(
-              parameterPath +
-                s"&$tableTag.sort=${URLEncoder.encode(header, UTF_8.name())}" +
-                s"&$tableTag.pageSize=$pageSize" +
-                s"#$headerId")
-
-            <th>
-              <a href={headerLink}>
-                <span data-toggle="tooltip" data-placement="top" title={tooltip.getOrElse("")}>
-                  {header}
-                </span>
-              </a>
-            </th>
-          } else {
-            <th>
-              <span data-toggle="tooltip" data-placement="top" title={tooltip.getOrElse("")}>
-                {header}
-              </span>
-            </th>
-          }
-        }
-      }
-    }
-    <thead>
-      <tr>{row}</tr>
-    </thead>
+  override def row(sparkStatementEvent: SparkStatementEvent): Seq[Node] = {
+    <tr>
+      <td>
+        {sparkStatementEvent.username}
+      </td>
+      <td>
+        {sparkStatementEvent.statementId}
+      </td>
+      <td >
+        {formatDate(sparkStatementEvent.createTime)}
+      </td>
+      <td>
+        {if (sparkStatementEvent.endTime > 0) formatDate(sparkStatementEvent.endTime)}
+      </td>
+      <td >
+        {formatDurationVerbose(sparkStatementEvent.duration)}
+      </td>
+      <td>
+        <span class="description-input">
+          {sparkStatementEvent.statement}
+        </span>
+      </td>
+      <td>
+        {sparkStatementEvent.state}
+      </td>
+      {errorMessageCell(sparkStatementEvent.queryExecution)}
+    </tr>
   }
+
+  private def errorMessageCell(errorMessage: String): Seq[Node] = {
+    val isMultiline = errorMessage.indexOf('\n') >= 0
+    val errorSummary = StringEscapeUtils.escapeHtml4(
+      if (isMultiline) {
+        errorMessage.substring(0, errorMessage.indexOf('\n'))
+      } else {
+        errorMessage
+      })
+    val details = detailsUINode(isMultiline, errorMessage)
+    <td>
+      {errorSummary}{details}
+    </td>
+  }
+
 }
 
 private class SessionStatsTableDataSource(
@@ -518,5 +433,95 @@ private class StatementStatsTableDataSource(
     } else {
       ordering
     }
+  }
+}
+
+private object TableSourceUtil {
+
+  /**
+   * Returns parameter of this table.
+   */
+  def getRequestTableParameters(
+     request: HttpServletRequest,
+     tableTag: String,
+     defaultSortColumn: String): (String, Boolean, Int) = {
+    val parameterSortColumn = request.getParameter(s"$tableTag.sort")
+    val parameterSortDesc = request.getParameter(s"$tableTag.desc")
+    val parameterPageSize = request.getParameter(s"$tableTag.pageSize")
+    val sortColumn = Option(parameterSortColumn).map { sortColumn =>
+      UIUtils.decodeURLParameter(sortColumn)
+    }.getOrElse(defaultSortColumn)
+    val desc = Option(parameterSortDesc).map(_.toBoolean).getOrElse(
+      sortColumn == defaultSortColumn
+    )
+    val pageSize = Option(parameterPageSize).map(_.toInt).getOrElse(100)
+
+    (sortColumn, desc, pageSize)
+  }
+
+  /**
+   * Returns parameters of other tables in the page.
+   */
+  def getRequestParameterOtherTable(request: HttpServletRequest, tableTag: String): String = {
+    request.getParameterMap.asScala
+      .filterNot(_._1.startsWith(tableTag))
+      .map(parameter => parameter._1 + "=" + parameter._2(0))
+      .mkString("&")
+  }
+
+  def headerStatRow(
+     headerInfo: Seq[(String, Boolean, Option[String])],
+     desc: Boolean,
+     pageSize: Int,
+     sortColumn: String,
+     parameterPath: String,
+     tableTag: String,
+     headerId: String): Seq[Node] = {
+    val row: Seq[Node] = {
+      headerInfo.map { case (header, sortable, tooltip) =>
+        if (header == sortColumn) {
+          val headerLink = Unparsed(
+            parameterPath +
+              s"&$tableTag.sort=${URLEncoder.encode(header, UTF_8.name())}" +
+              s"&$tableTag.desc=${!desc}" +
+              s"&$tableTag.pageSize=$pageSize" +
+              s"#$headerId")
+          val arrow = if (desc) "&#x25BE;" else "&#x25B4;" // UP or DOWN
+
+          <th>
+            <a href={headerLink}>
+              <span data-toggle="tooltip" data-placement="top" title={tooltip.getOrElse("")}>
+                {header}&nbsp;{Unparsed(arrow)}
+              </span>
+            </a>
+          </th>
+        } else {
+          if (sortable) {
+            val headerLink = Unparsed(
+              parameterPath +
+                s"&$tableTag.sort=${URLEncoder.encode(header, UTF_8.name())}" +
+                s"&$tableTag.pageSize=$pageSize" +
+                s"#$headerId")
+
+            <th>
+              <a href={headerLink}>
+                <span data-toggle="tooltip" data-placement="top" title={tooltip.getOrElse("")}>
+                  {header}
+                </span>
+              </a>
+            </th>
+          } else {
+            <th>
+              <span data-toggle="tooltip" data-placement="top" title={tooltip.getOrElse("")}>
+                {header}
+              </span>
+            </th>
+          }
+        }
+      }
+    }
+    <thead>
+      <tr>{row}</tr>
+    </thead>
   }
 }
