@@ -24,9 +24,12 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions.udf
 
-import org.apache.kyuubi.KYUUBI_VERSION
+import org.apache.kyuubi.{KYUUBI_VERSION, Logging}
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.ShareLevel
+import org.apache.kyuubi.engine.spark.SparkSQLEngine
 
-object KDFRegistry {
+object KDFRegistry extends Logging {
 
   @transient
   val registeredFunctions = new ArrayBuffer[KyuubiDefinedFunction]()
@@ -64,6 +67,13 @@ object KDFRegistry {
     "string",
     "1.3.0")
 
+  val stop_engine: KyuubiDefinedFunction = create(
+    "stop_engine",
+    udf(() => stopEngine).asNonNullable(),
+    "Stop the backend engine, it is only allowed for USER share level",
+    "string",
+    "1.4.0")
+
   def create(
     name: String,
     udf: UserDefinedFunction,
@@ -78,6 +88,18 @@ object KDFRegistry {
   def registerAll(spark: SparkSession): Unit = {
     for (func <- registeredFunctions) {
       spark.udf.register(func.name, func.udf)
+    }
+  }
+
+  private def stopEngine: Unit = {
+    SparkSQLEngine.currentEngine.foreach { engine =>
+      val shareLevel = engine.getConf.get(KyuubiConf.ENGINE_SHARE_LEVEL)
+      if (shareLevel == ShareLevel.USER) {
+        info("Allow to stop engine due to shared level is USER.")
+        engine.stop()
+      } else {
+        error("stop_engine is only allowed for USER share level")
+      }
     }
   }
 }
