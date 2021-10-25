@@ -100,5 +100,41 @@ class EngineTabSuite extends WithSparkSQLEngine with JDBCTestUtils {
     }
   }
 
+  test("statement stats for engine tab") {
+    assert(spark.sparkContext.ui.nonEmpty)
+    val client = HttpClients.createDefault()
+    val req = new HttpGet(spark.sparkContext.uiWebUrl.get + "/kyuubi/")
+    val response = client.execute(req)
+    assert(response.getStatusLine.getStatusCode === 200)
+    val resp = EntityUtils.toString(response.getEntity)
+    assert(resp.contains("0 session(s) are online,"))
+    withJdbcStatement() { statement =>
+      statement.execute(
+        """
+          |SELECT
+          |  l.id % 100 k,
+          |  sum(l.id) sum,
+          |  count(l.id) cnt,
+          |  avg(l.id) avg,
+          |  min(l.id) min,
+          |  max(l.id) max
+          |from range(0, 100000L, 1, 100) l
+          |  left join range(0, 100000L, 2, 100) r ON l.id = r.id
+          |GROUP BY 1""".stripMargin)
+      val response = client.execute(req)
+      assert(response.getStatusLine.getStatusCode === 200)
+      val resp = EntityUtils.toString(response.getEntity)
+
+      // check session section
+      assert(resp.contains("SQL Statistics"))
+
+      // check sql stats table id
+      assert(resp.contains("sqlstat"))
+
+      // check sql stats table title
+      assert(resp.contains("Query Execution"))
+    }
+  }
+
   override protected def jdbcUrl: String = getJdbcUrl
 }

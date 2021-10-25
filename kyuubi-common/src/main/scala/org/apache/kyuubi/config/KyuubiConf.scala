@@ -902,6 +902,14 @@ object KyuubiConf {
       .checkValue(_ > 0, "retained sessions must be positive.")
       .createWithDefault(200)
 
+  val ENGINE_UI_STATEMENT_LIMIT: ConfigEntry[Int] =
+    buildConf("engine.ui.retainedStatements")
+      .doc("The number of statements kept in the Kyuubi Query Engine web UI.")
+      .version("1.4.0")
+      .intConf
+      .checkValue(_ > 0, "retained statements must be positive.")
+      .createWithDefault(200)
+
   val ENGINE_OPERATION_LOG_DIR_ROOT: ConfigEntry[String] =
     buildConf("engine.operation.log.dir.root")
       .doc("Root directory for query operation log at engine-side.")

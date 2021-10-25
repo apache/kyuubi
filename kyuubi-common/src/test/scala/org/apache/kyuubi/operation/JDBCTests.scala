@@ -374,6 +374,14 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
+  test("kyuubi defined function - engine_id") {
+    withJdbcStatement() { statement =>
+      val rs = statement.executeQuery("SELECT engine_id()")
+      assert(rs.next())
+      assert(StringUtils.isNotBlank(rs.getString(1)))
+    }
+  }
+
   test("KYUUBI #1059: Plan only operations") {
     val ddl = "create table t(a int) using parquet"
     val dql = "select * from t"

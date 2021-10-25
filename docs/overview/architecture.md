@@ -80,9 +80,9 @@ Next, let us share some of the key design concepts of Kyuubi.
 
 ## Unified Interface
 
-Kyuubi implements the [Hive Service RPC](https://mvnrepository.com/artifact/org.apache.hive/hive-service-rpc/2.3.7) module,
+Kyuubi implements the [Hive Service RPC](https://mvnrepository.com/artifact/org.apache.hive/hive-service-rpc/2.3.9) module,
 which provides the same way of accessing data as HiveServer2 and Spark Thrift Server.
-On the client side，you can build fantastic business reports, BI applications, or even ETL jobs only via the [Hive JDBC](https://mvnrepository.com/artifact/org.apache.hive/hive-jdbc/2.3.7) module.
+On the client side，you can build fantastic business reports, BI applications, or even ETL jobs only via the [Hive JDBC](https://mvnrepository.com/artifact/org.apache.hive/hive-jdbc/2.3.9) module.
 
 You only need to be familiar with Structured Query Language (SQL) and Java Database Connectivity (JDBC) to handle massive data.
 It helps you focus on the design and implementation of your business system.

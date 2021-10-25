@@ -135,13 +135,11 @@
             </plugin>
 
             <plugin>
-                <groupId>net.alchim31.maven</groupId>
-                <artifactId>scala-maven-plugin</artifactId>
-            </plugin>
-
-            <plugin>
-                <groupId>org.scalatest</groupId>
-                <artifactId>scalatest-maven-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
             </plugin>
 
             <plugin>
@@ -159,24 +157,12 @@
             </plugin>
 
             <plugin>
-                <groupId>org.scalastyle</groupId>
-                <artifactId>scalastyle-maven-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>kyuubi-extension-spark-3-1</id>
-            <properties>
-                <spark.version>3.1.2</spark.version>
-            </properties>
-        </profile>
-        <profile>
-            <id>kyuubi-extension-spark-3-2</id>
-            <properties>
-                <spark.version>3.2.0</spark.version>
-            </properties>
-        </profile>
-    </profiles>
 </project>
