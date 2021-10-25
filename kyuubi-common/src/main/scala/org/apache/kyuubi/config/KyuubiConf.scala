@@ -370,18 +370,25 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH)
 
-  val AUTHENTICATION_METHOD: ConfigEntry[String] = buildConf("authentication")
-    .doc("Client authentication types.<ul>" +
+  val AUTHENTICATION_METHOD: ConfigEntry[Seq[String]] = buildConf("authentication")
+    .doc("A comma separated list of client authentication types.<ul>" +
       " <li>NOSASL: raw transport.</li>" +
       " <li>NONE: no authentication check.</li>" +
       " <li>KERBEROS: Kerberos/GSSAPI authentication.</li>" +
       " <li>CUSTOM: User-defined authentication.</li>" +
-      " <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul>")
+      " <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul>" +
+      " Note that: For KERBEROS, it is SASL/GSSAPI mechanism," +
+      " and for NONE, CUSTOM and LDAP, they are all SASL/PLAIN mechanism." +
+      " If only NOSASL is specified, the authentication will be NOSASL." +
+      " For SASL authentication, KERBEROS and PLAIN auth type are supported at the same time," +
+      " and only the first specified PLAIN auth type is valid.")
     .version("1.0.0")
     .stringConf
-    .transform(_.toUpperCase(Locale.ROOT))
-    .checkValues(AuthTypes.values.map(_.toString))
-    .createWithDefault(AuthTypes.NONE.toString)
+    .toSequence()
+    .transform(_.map(_.toUpperCase(Locale.ROOT)))
+    .checkValue(_.forall(AuthTypes.values.map(_.toString).contains),
+      s"the authentication type should be one or more of ${AuthTypes.values.mkString(",")}")
+    .createWithDefault(Seq(AuthTypes.NONE.toString))
 
   val AUTHENTICATION_CUSTOM_CLASS: OptionalConfigEntry[String] =
     buildConf("authentication.custom.class")
