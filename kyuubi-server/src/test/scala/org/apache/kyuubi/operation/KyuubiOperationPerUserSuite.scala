@@ -30,6 +30,15 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
     KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "user")
   }
 
+  test("kyuubi defined function - system_user/session_user") {
+    withJdbcStatement() { statement =>
+      val rs = statement.executeQuery("SELECT system_user(), session_user()")
+      assert(rs.next())
+      assert(rs.getString(1) === Utils.currentUser)
+      assert(rs.getString(2) === Utils.currentUser)
+    }
+  }
+
   test("ensure two connections in user mode share the same engine") {
     var r1: String = null
     var r2: String = null
@@ -85,15 +94,6 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
       }
 
       assert(r1 === r2)
-    }
-  }
-
-  test("kyuubi defined function - system_user/session_user") {
-    withJdbcStatement() { statement =>
-      val rs = statement.executeQuery("SELECT system_user(), session_user()")
-      assert(rs.next())
-      assert(rs.getString(1) === Utils.currentUser)
-      assert(rs.getString(2) === Utils.currentUser)
     }
   }
 }
