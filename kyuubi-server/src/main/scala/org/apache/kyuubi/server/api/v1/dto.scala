@@ -23,17 +23,24 @@ case class SessionOpenCount(openSessionCount: Int)
 
 case class ExecPoolStatistic(execPoolSize: Int, execPoolActiveCount: Int)
 
-case class SessionInfoList(sessionList: List[SessionInfo])
+case class SessionList(sessionList: List[SessionOverview])
 
-case class SessionInfo(
+case class SessionOverview(
+  user: String,
+  ipAddr: String,
+  createTime: Long,
+  sessionHandle: SessionHandle
+)
+
+case class SessionDetails(
   user: String,
   ipAddr: String,
   createTime: Long,
   sessionHandle: SessionHandle,
-  lastAccessTime: Long = 0L,
-  lastIdleTime: Long = 0L,
-  noOperationTime: Long = 0L,
-  configs: Map[String, String] = Map()
+  lastAccessTime: Long,
+  lastIdleTime: Long,
+  noOperationTime: Long,
+  configs: Map[String, String]
 )
 
 case class SessionOpenRequest(

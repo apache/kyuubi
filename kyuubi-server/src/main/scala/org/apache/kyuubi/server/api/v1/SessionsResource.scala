@@ -33,18 +33,18 @@ import org.apache.kyuubi.session.SessionHandle
 private[v1] class SessionsResource extends ApiRequestContext {
 
   @GET
-  def sessionInfoList(): SessionInfoList = {
-    SessionInfoList(
+  def sessionInfoList(): SessionList = {
+    SessionList(
       backendService.sessionManager.getSessionList().asScala.map {
         case (handle, session) =>
-          SessionInfo(session.user, session.ipAddress, session.createTime, handle)
+          SessionOverview(session.user, session.ipAddress, session.createTime, handle)
       }.toList
     )
   }
 
   @GET
   @Path("{sessionHandle}")
-  def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): SessionInfo = {
+  def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): SessionDetails = {
     val splitSessionHandle = sessionHandleStr.split("\\|")
     val handleIdentifier = new HandleIdentifier(
       UUID.fromString(splitSessionHandle(0)), UUID.fromString(splitSessionHandle(1)))
@@ -53,7 +53,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
 
     val session = backendService.sessionManager.getSession(sessionHandle)
 
-    SessionInfo(session.user, session.ipAddress, session.createTime, sessionHandle,
+    SessionDetails(session.user, session.ipAddress, session.createTime, sessionHandle,
       session.lastAccessTime, session.lastIdleTime, session.getNoOperationTime, session.conf)
   }
 
