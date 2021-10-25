@@ -125,7 +125,7 @@ class SessionsResourceSuite extends RestApiBaseSuite {
         // get session info list
         var response2 = target("api/v1/sessions").request().get()
         assert(200 == response2.getStatus)
-        val sessions1 = response2.readEntity(classOf[SessionInfoList])
+        val sessions1 = response2.readEntity(classOf[SessionList])
         assert(sessions1.sessionList.nonEmpty)
 
         // close a opened session
@@ -138,7 +138,7 @@ class SessionsResourceSuite extends RestApiBaseSuite {
         // get session info list again
         response2 = target("api/v1/sessions").request().get()
         assert(200 == response2.getStatus)
-        val sessions2 = response2.readEntity(classOf[SessionInfoList])
+        val sessions2 = response2.readEntity(classOf[SessionList])
         assert(sessions2.sessionList.isEmpty)
     }
   }
