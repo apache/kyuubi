@@ -43,12 +43,12 @@ class KerberosTicketRefreshService() extends AbstractService("KerberosTicketRefr
       keytabLoginMaxAttempts = conf.get(KyuubiConf.KINIT_MAX_ATTEMPTS)
 
       require(keytab.nonEmpty && principal.nonEmpty, "principal or keytab is missing")
-      UserGroupInformation.loginUserFromKeytab(principal.get, keytab.get)
 
       tgtRenewalTask = new Runnable {
         override def run(): Unit = {
           try {
-            UserGroupInformation.getCurrentUser.reloginFromKeytab()
+            UserGroupInformation.loginUserFromKeytab(principal.get, keytab.get)
+            executor.schedule(this, refreshInterval, TimeUnit.MILLISECONDS)
           } catch {
             case e: Exception =>
               if (keytabLoginAttempts >= keytabLoginMaxAttempts) {
@@ -58,6 +58,7 @@ class KerberosTicketRefreshService() extends AbstractService("KerberosTicketRefr
               keytabLoginAttempts += 1
               error(s"Failed to login from  $keytab with principal[$principal] for" +
                 s" ($keytabLoginAttempts/$keytabLoginMaxAttempts) times", e)
+              executor.submit(this)
           }
         }
       }
@@ -69,7 +70,7 @@ class KerberosTicketRefreshService() extends AbstractService("KerberosTicketRefr
   override def start(): Unit = {
     super.start()
     if (UserGroupInformation.isSecurityEnabled) {
-      executor.scheduleAtFixedRate(tgtRenewalTask, 0, refreshInterval, TimeUnit.MILLISECONDS)
+      executor.submit(tgtRenewalTask)
     }
   }
 
