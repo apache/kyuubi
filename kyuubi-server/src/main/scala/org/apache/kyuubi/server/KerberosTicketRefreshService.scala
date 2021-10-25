@@ -43,11 +43,12 @@ class KerberosTicketRefreshService() extends AbstractService("KerberosTicketRefr
       keytabLoginMaxAttempts = conf.get(KyuubiConf.KINIT_MAX_ATTEMPTS)
 
       require(keytab.nonEmpty && principal.nonEmpty, "principal or keytab is missing")
+      UserGroupInformation.loginUserFromKeytab(principal.get, keytab.get)
 
       tgtRenewalTask = new Runnable {
         override def run(): Unit = {
           try {
-            UserGroupInformation.loginUserFromKeytab(principal.get, keytab.get)
+            UserGroupInformation.getCurrentUser.reloginFromKeytab()
             executor.schedule(this, refreshInterval, TimeUnit.MILLISECONDS)
           } catch {
             case e: Exception =>
