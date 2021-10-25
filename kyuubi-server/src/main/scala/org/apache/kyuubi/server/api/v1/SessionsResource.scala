@@ -21,6 +21,8 @@ import java.util.UUID
 import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
+import scala.collection.JavaConverters._
+
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.cli.HandleIdentifier
@@ -32,8 +34,11 @@ private[v1] class SessionsResource extends ApiRequestContext {
 
   @GET
   def sessionInfoList(): SessionInfoList = {
-    SessionInfoList(backendService.sessionManager.getSessionList()
-      .map(session => SessionInfo(session.user, session.ipAddress, session.createTime))
+    SessionInfoList(
+      backendService.sessionManager.getSessionList().asScala.map {
+        case (handle, session) =>
+          SessionInfo(session.user, session.ipAddress, session.createTime, handle)
+      }.toList
     )
   }
 
@@ -48,7 +53,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
 
     val session = backendService.sessionManager.getSession(sessionHandle)
 
-    SessionInfo(session.user, session.ipAddress, session.createTime,
+    SessionInfo(session.user, session.ipAddress, session.createTime, sessionHandle,
       session.lastAccessTime, session.lastIdleTime, session.getNoOperationTime, session.conf)
   }
 

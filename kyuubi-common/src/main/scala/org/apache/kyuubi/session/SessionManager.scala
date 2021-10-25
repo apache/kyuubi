@@ -107,8 +107,8 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   def getOpenSessionCount: Int = handleToSession.size()
 
-  def getSessionList(): List[Session] = {
-    handleToSession.values().asScala.toList
+  def getSessionList(): ConcurrentHashMap[SessionHandle, Session] = {
+    handleToSession
   }
 
   def getExecPoolSize: Int = {

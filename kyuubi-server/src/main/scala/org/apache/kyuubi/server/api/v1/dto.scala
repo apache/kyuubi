@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.server.api.v1
 
+import org.apache.kyuubi.session.SessionHandle
+
 case class SessionOpenCount(openSessionCount: Int)
 
 case class ExecPoolStatistic(execPoolSize: Int, execPoolActiveCount: Int)
@@ -27,6 +29,7 @@ case class SessionInfo(
   user: String,
   ipAddr: String,
   createTime: Long,
+  sessionHandle: SessionHandle,
   lastAccessTime: Long = 0L,
   lastIdleTime: Long = 0L,
   noOperationTime: Long = 0L,
