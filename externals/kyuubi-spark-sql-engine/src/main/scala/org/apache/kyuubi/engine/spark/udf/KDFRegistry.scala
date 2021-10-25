@@ -31,8 +31,8 @@ object KDFRegistry {
   @transient
   val registeredFunctions = new ArrayBuffer[KyuubiDefinedFunction]()
 
-  val appName = SparkEnv.get.conf.get("spark.app.name")
-  val appId = SparkEnv.get.conf.get("spark.app.id")
+  lazy val appName = SparkEnv.get.conf.get("spark.app.name")
+  lazy val appId = SparkEnv.get.conf.get("spark.app.id")
 
   val kyuubi_version: KyuubiDefinedFunction = create(
     "kyuubi_version",
