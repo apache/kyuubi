@@ -40,7 +40,7 @@ trait JDBCTestHelper extends KyuubiFunSuite {
 
   protected def defaultSchema = "default"
   protected def matchAllPatterns = Seq("", "*", "%", null, ".*", "_*", "_%", ".%")
-  protected def user: String = Utils.currentUser
+  protected lazy val user: String = Utils.currentUser
   private var _sessionConfs: Map[String, String] = Map.empty
   private var _sparkHiveConfs: Map[String, String] = Map.empty
   private var _sparkHiveVars: Map[String, String] = Map.empty
