@@ -32,7 +32,7 @@ case class SessionOverview(
   sessionHandle: SessionHandle
 )
 
-case class SessionDetails(
+case class SessionDetail(
   user: String,
   ipAddr: String,
   createTime: Long,
