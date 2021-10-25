@@ -94,10 +94,9 @@ object KDFRegistry extends Logging {
   private def stopEngine: String = {
     SparkSQLEngine.currentEngine.map { engine =>
       if (engine.getConf.get(KyuubiConf.ENGINE_SHARE_LEVEL) == ShareLevel.USER) {
-        val msg = "Allow to stop engine due to shared level is USER"
-        info(msg)
+        info("Starting to stop engine because KDF `stop_engine` is called")
         engine.stop()
-        msg
+        "stop_engine is allowed for USER shared level"
       } else {
         "stop_engine is only allowed for USER share level"
       }
