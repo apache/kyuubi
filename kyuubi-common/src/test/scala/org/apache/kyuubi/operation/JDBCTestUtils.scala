@@ -63,7 +63,7 @@ trait JDBCTestUtils extends KyuubiFunSuite {
     }
   }
 
-  protected def jdbcUrlWithConf(): String = jdbcUrlWithConf(jdbcUrl)
+  protected def jdbcUrlWithConf: String = jdbcUrlWithConf(jdbcUrl)
 
   protected def jdbcUrlWithConf(jdbcUrl: String): String = {
     val sessionConfStr = sessionConfigs.map(kv => kv._1 + "=" + kv._2).mkString(";")
