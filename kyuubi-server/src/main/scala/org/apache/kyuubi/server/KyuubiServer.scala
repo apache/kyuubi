@@ -90,7 +90,7 @@ class KyuubiServer(name: String) extends Serverable(name) {
   private val eventLoggingService: EventLoggingService = new EventLoggingService
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
-    val kinit = new KinitAuxiliaryService()
+    val kinit = new KerberosTicketRefreshService()
     addService(kinit)
     addService(eventLoggingService)
 

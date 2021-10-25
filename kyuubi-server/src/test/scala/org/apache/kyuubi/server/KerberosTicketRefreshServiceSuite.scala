@@ -23,10 +23,10 @@ import org.apache.kyuubi.KerberizedTestHelper
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.ServiceState
 
-class KinitAuxiliaryServiceSuite extends KerberizedTestHelper {
+class KerberosTicketRefreshServiceSuite extends KerberizedTestHelper {
 
-  test("non secured kinit service") {
-    val service = new KinitAuxiliaryService()
+  test("non secured kerberos ticket refresh service") {
+    val service = new KerberosTicketRefreshService()
     assert(service.getServiceState === ServiceState.LATENT)
     service.initialize(KyuubiConf())
     assert(service.getServiceState === ServiceState.INITIALIZED)
@@ -36,9 +36,9 @@ class KinitAuxiliaryServiceSuite extends KerberizedTestHelper {
     assert(service.getServiceState === ServiceState.STOPPED)
   }
 
-  test("secured kinit service") {
+  test("secured kerberos ticket refresh service") {
     tryWithSecurityEnabled {
-      val service = new KinitAuxiliaryService()
+      val service = new KerberosTicketRefreshService()
       val conf = KyuubiConf()
       val e = intercept[IllegalArgumentException](service.initialize(conf))
       assert(e.getMessage === "requirement failed: principal or keytab is missing")

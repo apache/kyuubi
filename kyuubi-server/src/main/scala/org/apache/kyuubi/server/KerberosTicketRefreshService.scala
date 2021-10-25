@@ -25,41 +25,39 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
 
-class KinitAuxiliaryService() extends AbstractService("KinitAuxiliaryService") {
+class KerberosTicketRefreshService() extends AbstractService("KerberosTicketRefreshService") {
 
   private val executor = ThreadUtils.newDaemonSingleThreadScheduledExecutor(getName)
 
-  private var kinitInterval: Long = _
-  private var kinitMaxAttempts: Int = _
-  @volatile private var kinitAttempts: Int = _
-
-  private var kinitTask: Runnable = _
+  private var refreshInterval: Long = _
+  private var keytabLoginMaxAttempts: Int = _
+  @volatile private var keytabLoginAttempts: Int = _
+  private var tgtRenewalTask: Runnable = _
 
   override def initialize(conf: KyuubiConf): Unit = {
     if (UserGroupInformation.isSecurityEnabled) {
       val keytab = conf.get(KyuubiConf.SERVER_KEYTAB)
       val principal = conf.get(KyuubiConf.SERVER_PRINCIPAL)
         .map(KyuubiHadoopUtils.getServerPrincipal)
-      kinitInterval = conf.get(KyuubiConf.KINIT_INTERVAL)
-      kinitMaxAttempts = conf.get(KyuubiConf.KINIT_MAX_ATTEMPTS)
+      refreshInterval = conf.get(KyuubiConf.KINIT_INTERVAL)
+      keytabLoginMaxAttempts = conf.get(KyuubiConf.KINIT_MAX_ATTEMPTS)
 
       require(keytab.nonEmpty && principal.nonEmpty, "principal or keytab is missing")
       UserGroupInformation.loginUserFromKeytab(principal.get, keytab.get)
-      val commands = Seq("kinit", "-kt", keytab.get, principal.get)
-      val kinitProc = new ProcessBuilder(commands: _*).inheritIO()
-      kinitTask = new Runnable {
+
+      tgtRenewalTask = new Runnable {
         override def run(): Unit = {
-          val process = kinitProc.start()
-          if (process.waitFor() == 0) {
-            info(s"Successfully ${commands.mkString(" ")}")
-            executor.schedule(this, kinitInterval, TimeUnit.MILLISECONDS)
-          } else {
-            if (kinitAttempts >= kinitMaxAttempts) {
-              error(s"Failed to kinit with $kinitAttempts attempts, will exit...")
-              System.exit(-1)
-            }
-            kinitAttempts += 1
-            executor.submit(this)
+          try {
+            UserGroupInformation.getCurrentUser.reloginFromKeytab()
+          } catch {
+            case e: Exception =>
+              if (keytabLoginAttempts >= keytabLoginMaxAttempts) {
+                error(s"Failed to refresh ticket with $keytabLoginAttempts attempts, will exit...")
+                System.exit(-1)
+              }
+              keytabLoginAttempts += 1
+              error(s"Failed to login from  $keytab with principal[$principal] for" +
+                s" ($keytabLoginAttempts/$keytabLoginMaxAttempts) times", e)
           }
         }
       }
@@ -71,7 +69,7 @@ class KinitAuxiliaryService() extends AbstractService("KinitAuxiliaryService") {
   override def start(): Unit = {
     super.start()
     if (UserGroupInformation.isSecurityEnabled) {
-      executor.submit(kinitTask)
+      executor.scheduleAtFixedRate(tgtRenewalTask, 0, refreshInterval, TimeUnit.MILLISECONDS)
     }
   }
 
