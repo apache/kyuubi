@@ -95,6 +95,8 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
         if (s.contains("libdefaults")) {
           rewritten = true
           s + addedConfig
+        } else if (s.contains(hostName)) {
+          s + "\n" + s.replace(hostName, s"tcp/$hostName")
         } else {
           s
         }).filter(!_.trim.startsWith("#")).mkString(System.lineSeparator())
