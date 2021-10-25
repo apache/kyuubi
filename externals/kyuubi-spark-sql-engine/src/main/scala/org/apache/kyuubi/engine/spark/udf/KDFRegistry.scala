@@ -91,14 +91,16 @@ object KDFRegistry extends Logging {
     }
   }
 
-  private def stopEngine: Unit = {
-    SparkSQLEngine.currentEngine.foreach { engine =>
+  private def stopEngine: String = {
+    SparkSQLEngine.currentEngine.map { engine =>
       if (engine.getConf.get(KyuubiConf.ENGINE_SHARE_LEVEL) == ShareLevel.USER) {
-        info("Allow to stop engine due to shared level is USER")
+        val msg = "Allow to stop engine due to shared level is USER"
+        info(msg)
         engine.stop()
+        msg
       } else {
-        error("stop_engine is only allowed for USER share level")
+        "stop_engine is only allowed for USER share level"
       }
-    }
+    }.getOrElse("")
   }
 }

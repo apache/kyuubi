@@ -65,4 +65,11 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with JDBCTestUt
       assert(verboseMessage.contains("Failed to detect the root cause"))
     }
   }
+
+  test("test kyuubi defined function - stop_engine with non-USER share level") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("SELECT stop_engine()")
+      assert(resultSet.next())
+    }
+  }
 }
