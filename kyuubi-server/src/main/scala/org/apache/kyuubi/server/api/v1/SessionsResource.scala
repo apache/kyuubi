@@ -18,7 +18,6 @@
 package org.apache.kyuubi.server.api.v1
 
 import java.util.UUID
-
 import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
@@ -40,7 +39,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
 
   @GET
   @Path("{sessionHandle}")
-  def sessionInfoList(@PathParam("sessionHandle") sessionHandleStr: String): SessionInfo = {
+  def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): SessionInfo = {
     val splitSessionHandle = sessionHandleStr.split("\\|")
     val handleIdentifier = new HandleIdentifier(
       UUID.fromString(splitSessionHandle(0)), UUID.fromString(splitSessionHandle(1)))
