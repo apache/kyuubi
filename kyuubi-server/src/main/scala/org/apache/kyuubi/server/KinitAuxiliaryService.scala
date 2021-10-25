@@ -52,6 +52,7 @@ class KinitAuxiliaryService() extends AbstractService("KinitAuxiliaryService") {
           val process = kinitProc.start()
           if (process.waitFor() == 0) {
             info(s"Successfully ${commands.mkString(" ")}")
+            kinitAttempts = 0
             executor.schedule(this, kinitInterval, TimeUnit.MILLISECONDS)
           } else {
             if (kinitAttempts >= kinitMaxAttempts) {
