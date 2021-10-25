@@ -72,6 +72,12 @@
             <artifactId>hive-shims-common</artifactId>
             <version>${hive.jdbc.version}</version>
             <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -79,6 +85,12 @@
             <artifactId>hive-shims-0.23</artifactId>
             <version>${hive.jdbc.version}</version>
             <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
