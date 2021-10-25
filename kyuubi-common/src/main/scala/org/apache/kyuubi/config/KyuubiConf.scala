@@ -518,7 +518,7 @@ object KyuubiConf {
     .doc("Timeout for starting the background engine, e.g. SparkSQLEngine.")
     .version("1.0.0")
     .timeConf
-    .createWithDefault(Duration.ofSeconds(60).toMillis)
+    .createWithDefault(Duration.ofSeconds(180).toMillis)
 
   val SESSION_CHECK_INTERVAL: ConfigEntry[Long] = buildConf("session.check.interval")
     .doc("The check interval for session timeout.")
