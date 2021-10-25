@@ -27,9 +27,10 @@ case class SessionInfo(
   user: String,
   ipAddr: String,
   createTime: Long,
-  lastAccessTime: Long,
-  lastIdleTime: Long,
-  noOperationTime: Long
+  lastAccessTime: Long = 0L,
+  lastIdleTime: Long = 0L,
+  noOperationTime: Long = 0L,
+  configs: Map[String, String] = Map()
 )
 
 case class SessionOpenRequest(

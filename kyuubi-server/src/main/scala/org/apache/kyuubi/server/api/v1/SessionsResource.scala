@@ -18,7 +18,8 @@
 package org.apache.kyuubi.server.api.v1
 
 import java.util.UUID
-import javax.ws.rs.{Consumes, DELETE, GET, Path, PathParam, POST, Produces}
+
+import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
@@ -33,9 +34,23 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @GET
   def sessionInfoList(): SessionInfoList = {
     SessionInfoList(backendService.sessionManager.getSessionList()
-      .map(session => SessionInfo(session.user, session.ipAddress, session.createTime,
-        session.lastAccessTime, session.lastIdleTime, session.getNoOperationTime))
+      .map(session => SessionInfo(session.user, session.ipAddress, session.createTime))
     )
+  }
+
+  @GET
+  @Path("{sessionHandle}")
+  def sessionInfoList(@PathParam("sessionHandle") sessionHandleStr: String): SessionInfo = {
+    val splitSessionHandle = sessionHandleStr.split("\\|")
+    val handleIdentifier = new HandleIdentifier(
+      UUID.fromString(splitSessionHandle(0)), UUID.fromString(splitSessionHandle(1)))
+    val protocolVersion = TProtocolVersion.findByValue(splitSessionHandle(2).toInt)
+    val sessionHandle = new SessionHandle(handleIdentifier, protocolVersion)
+
+    val session = backendService.sessionManager.getSession(sessionHandle)
+
+    SessionInfo(session.user, session.ipAddress, session.createTime,
+      session.lastAccessTime, session.lastIdleTime, session.getNoOperationTime, session.conf)
   }
 
   @GET
