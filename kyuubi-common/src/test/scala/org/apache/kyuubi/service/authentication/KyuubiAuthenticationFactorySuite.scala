@@ -20,11 +20,12 @@ package org.apache.kyuubi.service.authentication
 import java.security.Security
 import javax.security.auth.login.LoginException
 
+import org.apache.thrift.transport.TSaslServerTransport
+
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.PlainSASLServer.SaslPlainProvider
 import org.apache.kyuubi.util.KyuubiHadoopUtils
-
 
 class KyuubiAuthenticationFactorySuite extends KyuubiFunSuite {
   import KyuubiAuthenticationFactory._
@@ -55,14 +56,14 @@ class KyuubiAuthenticationFactorySuite extends KyuubiFunSuite {
   }
 
   test("AuthType Other") {
-    val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, "INVALID")
+    val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("INVALID"))
     val e = intercept[IllegalArgumentException](new KyuubiAuthenticationFactory(conf))
-    assert(e.getMessage === "The value of kyuubi.authentication should be one of" +
-      " CUSTOM, KERBEROS, LDAP, NONE, NOSASL, but was INVALID")
+    assert(e.getMessage === "the authentication type should be one or more of" +
+      " NOSASL,NONE,LDAP,KERBEROS,CUSTOM")
   }
 
   test("AuthType LDAP") {
-    val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, "LDAP")
+    val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("LDAP"))
     val authFactory = new KyuubiAuthenticationFactory(conf)
     authFactory.getTTransportFactory
     assert(Security.getProviders.exists(_.isInstanceOf[SaslPlainProvider]))
@@ -70,10 +71,20 @@ class KyuubiAuthenticationFactorySuite extends KyuubiFunSuite {
 
 
   test("AuthType KERBEROS w/o keytab/principal") {
-    val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, "KERBEROS")
+    val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("KERBEROS"))
 
     val factory = new KyuubiAuthenticationFactory(conf)
     val e = intercept[LoginException](factory.getTTransportFactory)
     assert(e.getMessage startsWith "Kerberos principal should have 3 parts")
+  }
+
+  test("AuthType is NOSASL if only NOSASL is specified") {
+    val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("NOSASL"))
+    var factory = new KyuubiAuthenticationFactory(conf)
+    !factory.getTTransportFactory.isInstanceOf[TSaslServerTransport.Factory]
+
+    conf.set(KyuubiConf.AUTHENTICATION_METHOD, Seq("NOSASL", "NONE"))
+    factory = new KyuubiAuthenticationFactory(conf)
+    factory.getTTransportFactory.isInstanceOf[TSaslServerTransport.Factory]
   }
 }

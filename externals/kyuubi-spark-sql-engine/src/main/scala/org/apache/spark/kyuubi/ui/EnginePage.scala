@@ -25,11 +25,13 @@ import javax.servlet.http.HttpServletRequest
 import scala.collection.JavaConverters.mapAsScalaMapConverter
 import scala.xml.{Node, Unparsed}
 
+import org.apache.commons.text.StringEscapeUtils
 import org.apache.spark.ui.{PagedDataSource, PagedTable, UIUtils, WebUIPage}
 import org.apache.spark.ui.UIUtils._
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.spark.events.SessionEvent
+import org.apache.kyuubi.engine.spark.events.SparkStatementEvent
 
 case class EnginePage(parent: EngineTab) extends WebUIPage("") {
   private val store = parent.store
@@ -45,7 +47,8 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
         running {parent.engine.backendService.sessionManager.operationManager.getOperationCount}
         operations
       </h4> ++
-      generateSessionStatsTable(request)
+      generateSessionStatsTable(request) ++
+      generateStatementStatsTable(request)
     UIUtils.headerSparkPage(request, parent.name, content, parent)
   }
 
@@ -91,6 +94,154 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
     } else {
       Seq.empty
     }
+  }
+
+  /** Generate stats of statements for the engine */
+  private def generateStatementStatsTable(request: HttpServletRequest): Seq[Node] = {
+
+    val numStatement = store.getStatementList.size
+
+    val table = if (numStatement > 0) {
+
+      val sqlTableTag = "sqlstat"
+
+      val sqlTablePage =
+        Option(request.getParameter(s"$sqlTableTag.page")).map(_.toInt).getOrElse(1)
+
+      try {
+        Some(new StatementStatsPagedTable(
+          request,
+          parent,
+          store.getStatementList,
+          "kyuubi",
+          UIUtils.prependBaseUri(request, parent.basePath),
+          sqlTableTag).table(sqlTablePage))
+      } catch {
+        case e@(_: IllegalArgumentException | _: IndexOutOfBoundsException) =>
+          Some(<div class="alert alert-error">
+            <p>Error while rendering job table:</p>
+            <pre>
+              {Utils.stringifyException(e)}
+            </pre>
+          </div>)
+      }
+    } else {
+      None
+    }
+    val content =
+      <span id="sqlstat" class="collapse-aggregated-sqlstat collapse-table"
+            onClick="collapseTable('collapse-aggregated-sqlstat',
+                'aggregated-sqlstat')">
+        <h4>
+          <span class="collapse-table-arrow arrow-open"></span>
+          <a>SQL Statistics ({numStatement})</a>
+        </h4>
+      </span> ++
+        <div class="aggregated-sqlstat collapsible-table">
+          {table.getOrElse("No statistics have been generated yet.")}
+        </div>
+    content
+  }
+
+  private class StatementStatsPagedTable(
+      request: HttpServletRequest,
+      parent: EngineTab,
+      data: Seq[SparkStatementEvent],
+      subPath: String,
+      basePath: String,
+      sqlStatsTableTag: String) extends PagedTable[SparkStatementEvent] {
+
+    private val (sortColumn, desc, pageSize) =
+      getRequestTableParameters(request, sqlStatsTableTag, "Create Time")
+
+    private val encodedSortColumn = URLEncoder.encode(sortColumn, UTF_8.name())
+
+    private val parameterPath =
+      s"$basePath/$subPath/?${getRequestParameterOtherTable(request, sqlStatsTableTag)}"
+
+    override val dataSource = new StatementStatsTableDataSource(data, pageSize, sortColumn, desc)
+
+    override def tableId: String = sqlStatsTableTag
+
+    override def tableCssClass: String =
+      "table table-bordered table-sm table-striped table-head-clickable table-cell-width-limited"
+
+    override def pageLink(page: Int): String = {
+      parameterPath +
+        s"&$pageNumberFormField=$page" +
+        s"&$sqlStatsTableTag.sort=$encodedSortColumn" +
+        s"&$sqlStatsTableTag.desc=$desc" +
+        s"&$pageSizeFormField=$pageSize" +
+        s"#$sqlStatsTableTag"
+    }
+
+    override def pageSizeFormField: String = s"$sqlStatsTableTag.pageSize"
+
+    override def pageNumberFormField: String = s"$sqlStatsTableTag.page"
+
+    override def goButtonFormPath: String =
+      s"$parameterPath&$sqlStatsTableTag.sort=$encodedSortColumn" +
+        s"&$sqlStatsTableTag.desc=$desc#$sqlStatsTableTag"
+
+    override def headers: Seq[Node] = {
+      val sqlTableHeadersAndTooltips: Seq[(String, Boolean, Option[String])] =
+        Seq(
+          ("User", true, None),
+          ("Statement ID", true, None),
+          ("Create Time", true, None),
+          ("Finish Time", true, None),
+          ("Duration", true, None),
+          ("Statement", true, None),
+          ("State", true, None),
+          ("Query Execution", true, None))
+
+      headerStatRow(sqlTableHeadersAndTooltips, desc, pageSize, sortColumn, parameterPath,
+        sqlStatsTableTag, sqlStatsTableTag)
+    }
+
+    override def row(sparkStatementEvent: SparkStatementEvent): Seq[Node] = {
+      <tr>
+        <td>
+          {sparkStatementEvent.username}
+        </td>
+        <td>
+          {sparkStatementEvent.statementId}
+        </td>
+        <td >
+          {formatDate(sparkStatementEvent.createTime)}
+        </td>
+        <td>
+          {if (sparkStatementEvent.endTime > 0) formatDate(sparkStatementEvent.endTime)}
+        </td>
+        <td >
+          {formatDurationVerbose(sparkStatementEvent.duration)}
+        </td>
+        <td>
+          <span class="description-input">
+            {sparkStatementEvent.statement}
+          </span>
+        </td>
+        <td>
+          {sparkStatementEvent.state}
+        </td>
+        {errorMessageCell(sparkStatementEvent.queryExecution)}
+      </tr>
+    }
+
+    private def errorMessageCell(errorMessage: String): Seq[Node] = {
+      val isMultiline = errorMessage.indexOf('\n') >= 0
+      val errorSummary = StringEscapeUtils.escapeHtml4(
+        if (isMultiline) {
+          errorMessage.substring(0, errorMessage.indexOf('\n'))
+        } else {
+          errorMessage
+        })
+      val details = detailsUINode(isMultiline, errorMessage)
+      <td>
+        {errorSummary}{details}
+      </td>
+    }
+
   }
 
   /** Generate stats of sessions for the engine */
@@ -324,6 +475,42 @@ private class SessionStatsTableDataSource(
       case "Finish Time" => Ordering.by(_.endTime)
       case "Duration" => Ordering.by(_.duration)
       case "Total Statements" => Ordering.by(_.totalOperations)
+      case unknownColumn => throw new IllegalArgumentException(s"Unknown column: $unknownColumn")
+    }
+    if (desc) {
+      ordering.reverse
+    } else {
+      ordering
+    }
+  }
+}
+
+private class StatementStatsTableDataSource(
+    info: Seq[SparkStatementEvent],
+    pageSize: Int,
+    sortColumn: String,
+    desc: Boolean) extends PagedDataSource[SparkStatementEvent](pageSize) {
+
+  // Sorting SessionEvent data
+  private val data = info.sorted(ordering(sortColumn, desc))
+
+  override def dataSize: Int = data.size
+
+  override def sliceData(from: Int, to: Int): Seq[SparkStatementEvent] = data.slice(from, to)
+
+  /**
+   * Return Ordering according to sortColumn and desc.
+   */
+  private def ordering(sortColumn: String, desc: Boolean): Ordering[SparkStatementEvent] = {
+    val ordering: Ordering[SparkStatementEvent] = sortColumn match {
+      case "User" => Ordering.by(_.username)
+      case "Statement ID" => Ordering.by(_.statementId)
+      case "Create Time" => Ordering by (_.createTime)
+      case "Finish Time" => Ordering.by(_.endTime)
+      case "Duration" => Ordering.by(_.duration)
+      case "Statement" => Ordering.by(_.statement)
+      case "State" => Ordering.by(_.state)
+      case "Query Execution" => Ordering.by(_.queryExecution)
       case unknownColumn => throw new IllegalArgumentException(s"Unknown column: $unknownColumn")
     }
     if (desc) {

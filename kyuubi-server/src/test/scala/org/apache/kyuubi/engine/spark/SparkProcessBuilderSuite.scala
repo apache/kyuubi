@@ -28,6 +28,8 @@ import org.apache.kyuubi.{KerberizedTestHelper, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_LOG_TIMEOUT
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE
+import org.apache.kyuubi.ha.HighAvailabilityConf
+import org.apache.kyuubi.ha.client.ZooKeeperAuthTypes
 import org.apache.kyuubi.service.ServiceUtils
 
 class SparkProcessBuilderSuite extends KerberizedTestHelper {
@@ -258,6 +260,17 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     assert(commands.contains("spark.vino=yang"))
     assert(commands.contains("spark.kent=yao"))
     assert(commands.contains("spark.hadoop.hadoop.kent=yao"))
+  }
+
+  test("zookeeper kerberos authentication") {
+    val conf = KyuubiConf()
+    conf.set(HighAvailabilityConf.HA_ZK_AUTH_TYPE.key, ZooKeeperAuthTypes.KERBEROS.toString)
+    conf.set(HighAvailabilityConf.HA_ZK_AUTH_KEYTAB.key, testKeytab)
+    conf.set(HighAvailabilityConf.HA_ZK_AUTH_PRINCIPAL.key, testPrincipal)
+
+    val b1 = new SparkProcessBuilder("test", conf)
+    assert(b1.toString.contains(s"--conf spark.files=$testKeytab"))
+
   }
 }
 

@@ -30,7 +30,7 @@ import org.apache.kyuubi.KyuubiSparkUtils.KYUUBI_STATEMENT_ID_KEY
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.Utils.stringifyException
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.spark.events.{EngineEventsStore, SessionEvent}
+import org.apache.kyuubi.engine.spark.events.{EngineEventsStore, SessionEvent, SparkStatementEvent}
 import org.apache.kyuubi.service.{Serverable, ServiceState}
 
 /**
@@ -117,12 +117,17 @@ class SparkSQLEngineListener(
 
   override def onOtherEvent(event: SparkListenerEvent): Unit = {
     event match {
-      case e: SessionEvent => updateSession(e)
+      case e: SessionEvent => updateSessionStore(e)
+      case e: SparkStatementEvent => updateStatementStore(e)
       case _ => // Ignore
     }
   }
 
-  private def updateSession(event: SessionEvent): Unit = {
+  private def updateSessionStore(event: SessionEvent): Unit = {
     store.saveSession(event)
+  }
+
+  private def updateStatementStore(event: SparkStatementEvent): Unit = {
+    store.saveStatement(event)
   }
 }

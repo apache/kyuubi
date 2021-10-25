@@ -374,6 +374,14 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
+  test("kyuubi defined function - engine_id") {
+    withJdbcStatement() { statement =>
+      val rs = statement.executeQuery("SELECT engine_id()")
+      assert(rs.next())
+      assert(StringUtils.isNotBlank(rs.getString(1)))
+    }
+  }
+
   test("kyuubi defined function - system_user") {
     withJdbcStatement() { statement =>
       val rs = statement.executeQuery("SELECT system_user()")

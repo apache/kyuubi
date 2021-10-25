@@ -21,7 +21,7 @@ import org.apache.kyuubi.WithKyuubiServerOnYarn
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_INIT_TIMEOUT
 
-class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with JDBCTestUtils {
+class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with JDBCTests {
 
   override protected def jdbcUrl: String = getJdbcUrl
 
@@ -40,14 +40,6 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with JDBCTe
       val resultSet = statement.executeQuery("""SELECT "${spark.app.id}" as id""")
       assert(resultSet.next())
       assert(resultSet.getString("id").startsWith("application_"))
-    }
-  }
-
-  test("KYUUBI #1263: Kyuubi auxiliary UDF failed on Spark Yarn mode") {
-    withJdbcStatement() { statement =>
-      val resultSet = statement.executeQuery("""SELECT kyuubi_version() as id""")
-      assert(resultSet.next())
-      assert(resultSet.getString("id") === org.apache.kyuubi.KYUUBI_VERSION)
     }
   }
 }

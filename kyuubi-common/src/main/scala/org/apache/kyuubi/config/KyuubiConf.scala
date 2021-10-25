@@ -137,8 +137,6 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     FRONTEND_REST_BIND_HOST,
     FRONTEND_REST_BIND_PORT,
     AUTHENTICATION_METHOD,
-    SERVER_KEYTAB,
-    SERVER_PRINCIPAL,
     KINIT_INTERVAL)
 
   def getUserDefaults(user: String): KyuubiConf = {
@@ -372,18 +370,25 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH)
 
-  val AUTHENTICATION_METHOD: ConfigEntry[String] = buildConf("authentication")
-    .doc("Client authentication types.<ul>" +
+  val AUTHENTICATION_METHOD: ConfigEntry[Seq[String]] = buildConf("authentication")
+    .doc("A comma separated list of client authentication types.<ul>" +
       " <li>NOSASL: raw transport.</li>" +
       " <li>NONE: no authentication check.</li>" +
       " <li>KERBEROS: Kerberos/GSSAPI authentication.</li>" +
       " <li>CUSTOM: User-defined authentication.</li>" +
-      " <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul>")
+      " <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul>" +
+      " Note that: For KERBEROS, it is SASL/GSSAPI mechanism," +
+      " and for NONE, CUSTOM and LDAP, they are all SASL/PLAIN mechanism." +
+      " If only NOSASL is specified, the authentication will be NOSASL." +
+      " For SASL authentication, KERBEROS and PLAIN auth type are supported at the same time," +
+      " and only the first specified PLAIN auth type is valid.")
     .version("1.0.0")
     .stringConf
-    .transform(_.toUpperCase(Locale.ROOT))
-    .checkValues(AuthTypes.values.map(_.toString))
-    .createWithDefault(AuthTypes.NONE.toString)
+    .toSequence()
+    .transform(_.map(_.toUpperCase(Locale.ROOT)))
+    .checkValue(_.forall(AuthTypes.values.map(_.toString).contains),
+      s"the authentication type should be one or more of ${AuthTypes.values.mkString(",")}")
+    .createWithDefault(Seq(AuthTypes.NONE.toString))
 
   val AUTHENTICATION_CUSTOM_CLASS: OptionalConfigEntry[String] =
     buildConf("authentication.custom.class")
@@ -902,6 +907,14 @@ object KyuubiConf {
       .version("1.4.0")
       .intConf
       .checkValue(_ > 0, "retained sessions must be positive.")
+      .createWithDefault(200)
+
+  val ENGINE_UI_STATEMENT_LIMIT: ConfigEntry[Int] =
+    buildConf("engine.ui.retainedStatements")
+      .doc("The number of statements kept in the Kyuubi Query Engine web UI.")
+      .version("1.4.0")
+      .intConf
+      .checkValue(_ > 0, "retained statements must be positive.")
       .createWithDefault(200)
 
   val ENGINE_OPERATION_LOG_DIR_ROOT: ConfigEntry[String] =

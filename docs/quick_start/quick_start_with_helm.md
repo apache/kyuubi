@@ -58,7 +58,7 @@ Get kyuubi expose URL by running these commands:
 ```
 
 #### Using hive beeline  
-[Using Hive Beeline](https://kyuubi.readthedocs.io/en/latest/quick_start/quick_start.html#using-hive-beeline) to opening a connection.
+[Using Hive Beeline](https://kyuubi.apache.org/docs/latest/quick_start/quick_start.html#using-hive-beeline) to opening a connection.
 
 #### Remove kyuubi
 ```bash
