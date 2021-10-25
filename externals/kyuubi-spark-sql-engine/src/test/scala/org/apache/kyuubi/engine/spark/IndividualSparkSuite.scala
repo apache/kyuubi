@@ -28,7 +28,7 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.JDBCTestUtils
+import org.apache.kyuubi.operation.JDBCTestHelper
 
 class SparkEngineSuites extends KyuubiFunSuite {
 
@@ -99,4 +99,4 @@ class SparkEngineSuites extends KyuubiFunSuite {
   }
 }
 
-trait WithSparkSuite extends WithSparkSQLEngine with JDBCTestUtils
+trait WithSparkSuite extends WithSparkSQLEngine with JDBCTestHelper

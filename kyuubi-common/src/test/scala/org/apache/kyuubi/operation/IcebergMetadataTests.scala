@@ -20,7 +20,7 @@ package org.apache.kyuubi.operation
 import org.apache.kyuubi.IcebergSuiteMixin
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
-trait BasicIcebergJDBCTests extends JDBCTestUtils with IcebergSuiteMixin {
+trait IcebergMetadataTests extends JDBCTestHelper with IcebergSuiteMixin {
 
   test("get catalogs") {
     withJdbcStatement() { statement =>
@@ -43,12 +43,12 @@ trait BasicIcebergJDBCTests extends JDBCTestUtils with IcebergSuiteMixin {
 
 
       // The session catalog
-      patterns foreach { pattern =>
+      matchAllPatterns foreach { pattern =>
         checkGetSchemas(metaData.getSchemas("spark_catalog", pattern), dbDflts, "spark_catalog")
       }
 
       Seq(null, catalog).foreach { cg =>
-        patterns foreach { pattern =>
+        matchAllPatterns foreach { pattern =>
           checkGetSchemas(
             metaData.getSchemas(cg, pattern), dbs ++ Seq("global_temp"), catalog)
         }
@@ -82,7 +82,7 @@ trait BasicIcebergJDBCTests extends JDBCTestUtils with IcebergSuiteMixin {
       val metaData = statement.getConnection.getMetaData
 
       Seq(null, catalog).foreach { cg =>
-        patterns foreach { pattern =>
+        matchAllPatterns foreach { pattern =>
           checkGetSchemas(metaData.getSchemas(cg, pattern),
             dbs ++ Seq("global_temp", "a", "db1", "db1.db2"), catalog)
         }
@@ -143,7 +143,7 @@ trait BasicIcebergJDBCTests extends JDBCTestUtils with IcebergSuiteMixin {
 
     val ddl =
       s"""
-         |CREATE TABLE IF NOT EXISTS $catalog.$dftSchema.$tableName (
+         |CREATE TABLE IF NOT EXISTS $catalog.$defaultSchema.$tableName (
          |  ${cols.map { case (cn, dt) => cn + " " + dt }.mkString(",\n")}
          |)
          |USING iceberg""".stripMargin
@@ -155,7 +155,7 @@ trait BasicIcebergJDBCTests extends JDBCTestUtils with IcebergSuiteMixin {
       val metaData = statement.getConnection.getMetaData
 
       Seq("%", null, ".*", "c.*") foreach { columnPattern =>
-        val rowSet = metaData.getColumns(catalog, dftSchema, tableName, columnPattern)
+        val rowSet = metaData.getColumns(catalog, defaultSchema, tableName, columnPattern)
 
         import java.sql.Types._
         val expectedJavaTypes = Seq(BOOLEAN, INTEGER, BIGINT, FLOAT, DOUBLE,
@@ -166,7 +166,7 @@ trait BasicIcebergJDBCTests extends JDBCTestUtils with IcebergSuiteMixin {
 
         while (rowSet.next()) {
           assert(rowSet.getString(TABLE_CAT) === catalog)
-          assert(rowSet.getString(TABLE_SCHEM) === dftSchema)
+          assert(rowSet.getString(TABLE_SCHEM) === defaultSchema)
           assert(rowSet.getString(TABLE_NAME) === tableName)
           assert(rowSet.getString(COLUMN_NAME) === colNames(pos))
           assert(rowSet.getInt(DATA_TYPE) === expectedJavaTypes(pos))

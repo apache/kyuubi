@@ -21,7 +21,7 @@ import org.apache.kyuubi.HudiSuiteMixin
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 
-trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
+trait HudiMetadataTests extends JDBCTestHelper with HudiSuiteMixin {
 
   test("get catalogs") {
     withJdbcStatement() { statement =>
@@ -114,7 +114,7 @@ trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
     val tableName = "hudi_get_col_operation"
     val ddl =
       s"""
-         |CREATE TABLE IF NOT EXISTS $catalog.$dftSchema.$tableName (
+         |CREATE TABLE IF NOT EXISTS $catalog.$defaultSchema.$tableName (
          |  ${cols.map { case (cn, dt) => cn + " " + dt }.mkString(",\n")}
          |)
          |USING hudi""".stripMargin
@@ -125,7 +125,7 @@ trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
       val metaData = statement.getConnection.getMetaData
 
       Seq("%", null, ".*", "c.*") foreach { columnPattern =>
-        val rowSet = metaData.getColumns(catalog, dftSchema, tableName, columnPattern)
+        val rowSet = metaData.getColumns(catalog, defaultSchema, tableName, columnPattern)
 
         import java.sql.Types._
         val expectedJavaTypes = Seq(BOOLEAN, INTEGER, BIGINT, FLOAT, DOUBLE, DECIMAL, DECIMAL,
@@ -134,7 +134,7 @@ trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
         var pos = 0
         while (rowSet.next()) {
           assert(rowSet.getString(TABLE_CAT) === catalog)
-          assert(rowSet.getString(TABLE_SCHEM) === dftSchema)
+          assert(rowSet.getString(TABLE_SCHEM) === defaultSchema)
           assert(rowSet.getString(TABLE_NAME) === tableName)
           rowSet.getString(COLUMN_NAME) match {
             case name if reservedCols.contains(name) =>

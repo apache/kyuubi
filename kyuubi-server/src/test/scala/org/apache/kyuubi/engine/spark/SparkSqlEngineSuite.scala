@@ -20,9 +20,9 @@ package org.apache.kyuubi.engine.spark
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.operation.JDBCTestUtils
+import org.apache.kyuubi.operation.JDBCTestHelper
 
-class SparkSqlEngineSuite extends WithKyuubiServer with JDBCTestUtils {
+class SparkSqlEngineSuite extends WithKyuubiServer with JDBCTestHelper {
   override protected val conf: KyuubiConf = {
     KyuubiConf()
       .set(SESSION_CONF_IGNORE_LIST.key, "kyuubi.abc.xyz,spark.sql.abc.xyz,spark.sql.abc.var")

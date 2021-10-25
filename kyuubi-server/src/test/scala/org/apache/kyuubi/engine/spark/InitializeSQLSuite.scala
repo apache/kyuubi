@@ -20,9 +20,9 @@ package org.apache.kyuubi.engine.spark
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_INITIALIZE_SQL, ENGINE_SESSION_INITIALIZE_SQL}
-import org.apache.kyuubi.operation.JDBCTestUtils
+import org.apache.kyuubi.operation.JDBCTestHelper
 
-class InitializeSQLSuite extends WithKyuubiServer with JDBCTestUtils {
+class InitializeSQLSuite extends WithKyuubiServer with JDBCTestHelper {
   override protected val conf: KyuubiConf = {
     KyuubiConf()
       .set(ENGINE_INITIALIZE_SQL.key,

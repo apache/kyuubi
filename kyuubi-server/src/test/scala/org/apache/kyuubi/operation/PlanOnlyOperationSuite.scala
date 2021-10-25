@@ -20,7 +20,7 @@ package org.apache.kyuubi.operation
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 
-class PlanOnlyOperationSuite extends WithKyuubiServer with JDBCTestUtils {
+class PlanOnlyOperationSuite extends WithKyuubiServer with JDBCTestHelper {
 
   override protected val conf: KyuubiConf = {
     KyuubiConf()

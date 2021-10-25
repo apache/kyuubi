@@ -30,7 +30,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
-trait JDBCTestUtils extends KyuubiFunSuite {
+trait JDBCTestHelper extends KyuubiFunSuite {
 
   // Load KyuubiHiveDriver class before using it, otherwise will cause the first call
   // `DriverManager.getConnection("jdbc:hive2://...")` failure.
@@ -38,10 +38,9 @@ trait JDBCTestUtils extends KyuubiFunSuite {
   def hiveJdbcDriverClass: String = "org.apache.kyuubi.jdbc.KyuubiHiveDriver"
   Class.forName(hiveJdbcDriverClass)
 
-  protected val dftSchema = "default"
-  protected lazy val user: String = Utils.currentUser
-  protected val patterns = Seq("", "*", "%", null, ".*", "_*", "_%", ".%")
-  protected def jdbcUrl: String
+  protected def defaultSchema = "default"
+  protected def matchAllPatterns = Seq("", "*", "%", null, ".*", "_*", "_%", ".%")
+  protected def user: String = Utils.currentUser
   private var _sessionConfs: Map[String, String] = Map.empty
   private var _sparkHiveConfs: Map[String, String] = Map.empty
   private var _sparkHiveVars: Map[String, String] = Map.empty
@@ -62,6 +61,8 @@ trait JDBCTestUtils extends KyuubiFunSuite {
       _sessionConfs = Map.empty
     }
   }
+
+  protected def jdbcUrl: String
 
   protected def jdbcUrlWithConf: String = jdbcUrlWithConf(jdbcUrl)
 

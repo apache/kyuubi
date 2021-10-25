@@ -23,9 +23,9 @@ import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchOrientati
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.operation.JDBCTestUtils
+import org.apache.kyuubi.operation.JDBCTestHelper
 
-class SQLOperationListenerSuite extends WithSparkSQLEngine with JDBCTestUtils {
+class SQLOperationListenerSuite extends WithSparkSQLEngine with JDBCTestHelper {
 
   override def withKyuubiConf: Map[String, String] = Map.empty
 

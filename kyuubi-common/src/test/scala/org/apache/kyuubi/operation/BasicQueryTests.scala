@@ -26,7 +26,7 @@ import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsRe
 
 import org.apache.kyuubi.KYUUBI_VERSION
 
-trait JDBCTests extends BasicJDBCTests {
+trait BasicQueryTests extends SparkMetadataTests {
 
   protected lazy val SPARK_ENGINE_MAJOR_MINOR_VERSION: (Int, Int) = sparkEngineMajorMinorVersion
 

@@ -19,7 +19,8 @@ package org.apache.kyuubi.operation
 
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
-trait BasicJDBCTests extends JDBCTestUtils {
+// For both `in-memory` and `hive` external catalog
+trait SparkMetadataTests extends JDBCTestHelper {
   test("get catalogs") {
     withJdbcStatement() { statement =>
       val metaData = statement.getConnection.getMetaData

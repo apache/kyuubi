@@ -27,7 +27,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.{UserDefineAuthenticationProviderImpl, WithLdapServer}
 
 class KyuubiOperationKerberosAndPlainAuthSuite extends
-  WithKyuubiServer with KerberizedTestHelper with WithLdapServer with JDBCTestUtils {
+  WithKyuubiServer with KerberizedTestHelper with WithLdapServer with JDBCTestHelper {
   private val customUser: String = "user"
   private val customPasswd: String = "password"
 

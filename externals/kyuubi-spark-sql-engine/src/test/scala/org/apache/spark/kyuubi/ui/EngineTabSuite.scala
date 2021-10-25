@@ -23,9 +23,9 @@ import org.apache.http.util.EntityUtils
 import org.apache.spark.SparkContext
 
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.operation.JDBCTestUtils
+import org.apache.kyuubi.operation.JDBCTestHelper
 
-class EngineTabSuite extends WithSparkSQLEngine with JDBCTestUtils {
+class EngineTabSuite extends WithSparkSQLEngine with JDBCTestHelper {
   override def withKyuubiConf: Map[String, String] = Map(
     "spark.ui.enabled" -> "true",
     "spark.ui.port" -> "0")

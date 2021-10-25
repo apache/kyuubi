@@ -20,7 +20,8 @@ package org.apache.kyuubi.operation
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
-trait HiveJDBCTests extends BasicJDBCTests {
+// For `hive` external catalog only
+trait HiveMetadataTests extends SparkMetadataTests {
 
   test("get tables - hive catalog") {
     val table_test = "table_1_test"

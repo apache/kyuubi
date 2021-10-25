@@ -23,7 +23,7 @@ import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
-class KyuubiOperationGroupSuite extends WithKyuubiServer with JDBCTests {
+class KyuubiOperationGroupSuite extends WithKyuubiServer with BasicQueryTests {
 
   override protected def jdbcUrl: String = getJdbcUrl
 
