@@ -158,7 +158,7 @@ class SessionsResourceSuite extends RestApiBaseSuite {
         val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
           s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
 
-        // get session Detail
+        // get session detail
         response = target(s"api/v1/sessions/$serializedSessionHandle").request().get()
         assert(200 == response.getStatus)
         var sessions = response.readEntity(classOf[SessionDetail])
@@ -168,9 +168,9 @@ class SessionsResourceSuite extends RestApiBaseSuite {
         response = target(s"api/v1/sessions/$serializedSessionHandle").request().delete()
         assert(200 == response.getStatus)
 
-        // get session Detail again
+        // get session detail again
         response = target(s"api/v1/sessions/$serializedSessionHandle").request().get()
-        assert(500 == response.getStatus)
+        assert(200 != response.getStatus)
     }
   }
 }
