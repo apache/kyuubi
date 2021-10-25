@@ -17,8 +17,7 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.security.{Groups, UserGroupInformation}
+import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
@@ -29,19 +28,13 @@ class KyuubiOperationPerGroupSuite extends WithKyuubiServer with BasicQueryTests
   override protected def jdbcUrl: String = getJdbcUrl
 
   override protected val conf: KyuubiConf = {
+    UserGroupInformation.reset()
     val c = KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "group")
       .set("hadoop.user.group.static.mapping.overrides",
         s"user1=testGG,group_tt;user2=testGG")
     UserGroupInformation.setConfiguration(KyuubiHadoopUtils.newHadoopConf(c))
-    Groups.getUserToGroupsMappingService.refresh()
     c.set(s"hadoop.proxyuser.$user.groups", "*")
       .set(s"hadoop.proxyuser.$user.hosts", "*")
-  }
-
-  override def afterAll(): Unit = {
-    UserGroupInformation.setConfiguration(new Configuration())
-    assert(!UserGroupInformation.isSecurityEnabled)
-    super.afterAll()
   }
 
   test("ensure two connections in group mode share the same engine started by primary group") {
