@@ -217,7 +217,10 @@ After some time this will be sync’d to [Maven Central](https://search.maven.or
 
 ### Update Website
 
-TODO
+Fork [Apache Kyuubi website](https://github.com/apache/incubator-kyuubi-website)
+
+1. Add a new markdown file in `src/news/`
+2. Add a new markdown file in `src/release/`
 
 ### Create an Announcement
 
