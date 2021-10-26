@@ -68,9 +68,8 @@ object KDFRegistry {
   val session_user: KyuubiDefinedFunction = create(
     "session_user",
     udf { () =>
-      Option(TaskContext.get()).map(_.getLocalProperty(KYUUBI_SESSION_USER_KEY)).orElse {
-        SparkSession.getActiveSession.map(_.sparkContext.getLocalProperty(KYUUBI_SESSION_USER_KEY))
-      }.getOrElse(throw new RuntimeException("Unable to get session_user"))
+      Option(TaskContext.get()).map(_.getLocalProperty(KYUUBI_SESSION_USER_KEY))
+        .getOrElse(throw new RuntimeException("Unable to get session_user"))
     },
     "Return the session username for the associated query engine",
     "string",
