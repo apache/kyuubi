@@ -19,7 +19,8 @@ package org.apache.kyuubi
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_ACL_ENABLED, HA_ZK_QUORUM}
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_AUTH_TYPE, HA_ZK_QUORUM}
+import org.apache.kyuubi.ha.client.ZooKeeperAuthTypes
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
@@ -44,7 +45,7 @@ trait WithKyuubiServer extends KyuubiFunSuite {
     conf.setIfMissing(ENGINE_CHECK_INTERVAL, 3000L)
     conf.setIfMissing(ENGINE_IDLE_TIMEOUT, 10000L)
     conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
-    conf.set(HA_ZK_ACL_ENABLED, false)
+    conf.set(HA_ZK_AUTH_TYPE, ZooKeeperAuthTypes.NONE.toString)
 
     // TODO KYUUBI #745
     conf.setIfMissing(ENGINE_INIT_TIMEOUT, 300000L)
@@ -67,5 +68,5 @@ trait WithKyuubiServer extends KyuubiFunSuite {
     super.afterAll()
   }
 
-  protected def getJdbcUrl: String = s"jdbc:hive2://${server.connectionUrl}/;"
+  protected def getJdbcUrl: String = s"jdbc:hive2://${server.frontendServices.head.connectionUrl}/;"
 }

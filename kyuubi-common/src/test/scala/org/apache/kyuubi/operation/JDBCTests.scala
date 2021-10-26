@@ -27,6 +27,9 @@ import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsRe
 import org.apache.kyuubi.KYUUBI_VERSION
 
 trait JDBCTests extends BasicJDBCTests {
+
+  protected lazy val SPARK_ENGINE_MAJOR_MINOR_VERSION: (Int, Int) = sparkEngineMajorMinorVersion
+
   test("execute statement - select null") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT NULL AS col")
@@ -172,6 +175,8 @@ trait JDBCTests extends BasicJDBCTests {
   }
 
   test("execute statement - select interval") {
+    // FIXME: [KYUUBI #1250]
+    assume(SPARK_ENGINE_MAJOR_MINOR_VERSION !== ((3, 2)))
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT interval '1' day AS col")
       assert(resultSet.next())
@@ -353,9 +358,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  // TODO: https://github.com/apache/incubator-kyuubi/issues/937
-  // Kyuubi docker image has not updated to lastest version
-  ignore("kyuubi defined function - kyuubi_version") {
+  test("kyuubi defined function - kyuubi_version") {
     withJdbcStatement() { statement =>
       val rs = statement.executeQuery("SELECT kyuubi_version()")
       assert(rs.next())
@@ -363,7 +366,7 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  ignore("kyuubi defined function - engine_name") {
+  test("kyuubi defined function - engine_name") {
     withJdbcStatement() { statement =>
       val rs = statement.executeQuery("SELECT engine_name()")
       assert(rs.next())
@@ -371,12 +374,42 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  // dockerfile use kyuubi as user which is not same with non-k8s env.
-  ignore("kyuubi defined function - system_user") {
+  test("kyuubi defined function - engine_id") {
     withJdbcStatement() { statement =>
-      val rs = statement.executeQuery("SELECT system_user()")
+      val rs = statement.executeQuery("SELECT engine_id()")
       assert(rs.next())
-      assert(rs.getString(1) == System.getProperty("user.name"))
+      assert(StringUtils.isNotBlank(rs.getString(1)))
+    }
+  }
+
+  test("KYUUBI #1059: Plan only operations") {
+    val ddl = "create table t(a int) using parquet"
+    val dql = "select * from t"
+    val setkey = "SET kyuubi.operation.plan.only.mode"
+    withJdbcStatement("t") { statement =>
+      try {
+        statement.execute("SET kyuubi.operation.plan.only.mode=optimize")
+        val set = statement.executeQuery(ddl)
+        assert(set.next())
+        assert(set.getString("plan") startsWith "Create")
+        val set0 = statement.executeQuery(setkey)
+        assert(set0.next())
+        assert(set0.getString(2) === "optimize")
+        val e1 = intercept[SQLException](statement.executeQuery(dql))
+        assert(e1.getMessage.contains("Table or view not found"))
+        statement.execute("SET kyuubi.operation.plan.only.mode=analyze")
+        val e2 = intercept[SQLException](statement.executeQuery(dql))
+        assert(e2.getMessage.contains("Table or view not found"))
+        statement.execute("SET kyuubi.operation.plan.only.mode=parse")
+        val set1 = statement.executeQuery(dql)
+        assert(set1.next())
+        assert(set1.getString("plan") contains "Unresolved")
+      } finally {
+        statement.executeQuery("SET kyuubi.operation.plan.only.mode=none")
+        statement.executeQuery(ddl)
+        val res = statement.executeQuery(dql)
+        assert(!res.next(), "table t exists in none mode")
+      }
     }
   }
 }

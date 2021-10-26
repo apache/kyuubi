@@ -85,6 +85,10 @@ export ASF_USERNAME=<your apache username>
 export ASF_PASSWORD=<your apache password>
 ```
 
+#### Java Home
+An available environment variable `JAVA_HOME`, you can do `echo $JAVA_HOME` to check it.
+Note that, the Java version should be 8.
+
 #### Subversion
 
 Besides on `git`, `svn` is also required for Apache release, please refer to
@@ -113,6 +117,11 @@ Here, the key ID is the 8-digit hex string in the pub line: `29BCC75D`.
 To export the PGP public key, using:
 ```shell
 gpg --armor --export 29BCC75D
+```
+
+If you have more than one gpg key, you can specify the default key as following:
+```
+echo 'default-key <key-fpr>' > ~/.gnupg/gpg.conf
 ```
 
 The last step is to update the KEYS file with your code signing key 
@@ -150,7 +159,7 @@ export RELEASE_RC_NO=<RC number, e.g. 0>
 ```shell
 build/mvn versions:set -DgenerateBackupPoms=false \
   -DnewVersion="${RELEASE_VERSION}" \
-  -Pkubernetes,kyuubi-extension-spark-3-1,spark-block-cleaner,tpcds
+  -Pspark-3.1,spark-block-cleaner
 
 git commit -am "[RELEASE] Bump ${RELEASE_VERSION}"
 ```
@@ -208,10 +217,14 @@ After some time this will be sync’d to [Maven Central](https://search.maven.or
 
 ### Update Website
 
-TODO
+Fork and clone [Apache Kyuubi website](https://github.com/apache/incubator-kyuubi-website)
+
+1. Add a new markdown file in `src/news/`
+2. Add a new markdown file in `src/release/`
 
 ### Create an Announcement
 
 Once everything is working create an announcement on the website and then send an e-mail to the mailing list.
+The mailing list includes: `announce@apache.org`, `dev@kyuubi.apache.org`, `user@spark.apache.org`.
 
 Enjoy an adult beverage of your choice, and congratulations on making a Kyuubi release.

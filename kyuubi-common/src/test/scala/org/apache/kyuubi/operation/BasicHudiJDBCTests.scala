@@ -100,4 +100,59 @@ trait BasicHudiJDBCTests extends JDBCTestUtils with HudiSuiteMixin {
       assert(!rs3.next())
     }
   }
+
+  test("get columns type") {
+    val dataTypes = Seq("boolean", "int", "bigint", "float", "double", "decimal(38,20)",
+      "decimal(10,2)", "string", "array<bigint>", "array<string>", "date", "timestamp",
+      "struct<`X`: bigint, `Y`: double>", "binary", "struct<`X`: string>")
+    val cols = dataTypes.zipWithIndex.map { case (dt, idx) => s"c$idx" -> dt }
+    val (colNames, _) = cols.unzip
+
+    val reservedCols = Seq("_hoodie_commit_time", "_hoodie_commit_seqno", "_hoodie_record_key",
+      "_hoodie_partition_path", "_hoodie_file_name")
+
+    val tableName = "hudi_get_col_operation"
+    val ddl =
+      s"""
+         |CREATE TABLE IF NOT EXISTS $catalog.$dftSchema.$tableName (
+         |  ${cols.map { case (cn, dt) => cn + " " + dt }.mkString(",\n")}
+         |)
+         |USING hudi""".stripMargin
+
+    withJdbcStatement(tableName) { statement =>
+      statement.execute(ddl)
+
+      val metaData = statement.getConnection.getMetaData
+
+      Seq("%", null, ".*", "c.*") foreach { columnPattern =>
+        val rowSet = metaData.getColumns(catalog, dftSchema, tableName, columnPattern)
+
+        import java.sql.Types._
+        val expectedJavaTypes = Seq(BOOLEAN, INTEGER, BIGINT, FLOAT, DOUBLE, DECIMAL, DECIMAL,
+          VARCHAR, ARRAY, ARRAY, DATE, TIMESTAMP, STRUCT, BINARY, STRUCT)
+
+        var pos = 0
+        while (rowSet.next()) {
+          assert(rowSet.getString(TABLE_CAT) === catalog)
+          assert(rowSet.getString(TABLE_SCHEM) === dftSchema)
+          assert(rowSet.getString(TABLE_NAME) === tableName)
+          rowSet.getString(COLUMN_NAME) match {
+            case name if reservedCols.contains(name) =>
+              assert(rowSet.getInt(DATA_TYPE) === VARCHAR)
+              assert(rowSet.getString(TYPE_NAME) equalsIgnoreCase "STRING")
+            case _ =>
+              assert(rowSet.getString(COLUMN_NAME) === colNames(pos))
+              assert(rowSet.getInt(DATA_TYPE) === expectedJavaTypes(pos))
+              assert(rowSet.getString(TYPE_NAME) equalsIgnoreCase dataTypes(pos))
+              pos += 1
+          }
+        }
+
+        assert(pos === dataTypes.size, "all columns should have been verified")
+      }
+
+      val rowSet = metaData.getColumns(catalog, "*", "not_exist", "not_exist")
+      assert(!rowSet.next())
+    }
+  }
 }

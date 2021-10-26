@@ -19,13 +19,16 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService, TimeUnit}
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.kyuubi.SQLOperationListener
-import org.apache.spark.sql.{DataFrame, SparkSession}
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.spark.{ArrayFetchIterator, KyuubiSparkUtil}
+import org.apache.kyuubi.engine.spark.{ArrayFetchIterator, IterableFetchIterator, KyuubiSparkUtil}
 import org.apache.kyuubi.engine.spark.events.{EventLoggingService, SparkStatementEvent}
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.OperationState.OperationState
@@ -38,7 +41,8 @@ class ExecuteStatement(
     session: Session,
     protected override val statement: String,
     override val shouldRunAsync: Boolean,
-    queryTimeout: Long)
+    queryTimeout: Long,
+    incrementalCollect: Boolean)
   extends SparkOperation(spark, OperationType.EXECUTE_STATEMENT, session) with Logging {
 
   import org.apache.kyuubi.KyuubiSparkUtils._
@@ -52,15 +56,13 @@ class ExecuteStatement(
 
   private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
 
-  private val operationLog: OperationLog =
-    OperationLog.createOperationLog(session.handle, getHandle)
+  private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
-  private var result: DataFrame = _
 
   private val operationListener: SQLOperationListener = new SQLOperationListener(this, spark)
 
   val statementEvent: SparkStatementEvent = SparkStatementEvent(
-    statementId, statement, spark.sparkContext.applicationId,
+    session.user, statementId, statement, spark.sparkContext.applicationId,
     session.handle.identifier.toString, lastAccessTime, state.toString, lastAccessTime)
   EventLoggingService.onEvent(statementEvent)
 
@@ -90,11 +92,17 @@ class ExecuteStatement(
       // TODO: Make it configurable
       spark.sparkContext.addSparkListener(operationListener)
       result = spark.sql(statement)
-      // TODO( #921): COMPILED need consider eagerly executed commands
+      // TODO #921: COMPILED need consider eagerly executed commands
       statementEvent.queryExecution = result.queryExecution.toString()
       setState(OperationState.COMPILED)
       debug(result.queryExecution)
-      iter = new ArrayFetchIterator(result.collect())
+      iter = if (incrementalCollect) {
+        info("Execute in incremental collect mode")
+        new IterableFetchIterator[Row](result.toLocalIterator().asScala.toIterable)
+      } else {
+        info("Execute in full collect mode")
+        new ArrayFetchIterator(result.collect())
+      }
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
@@ -133,6 +141,7 @@ class ExecuteStatement(
   private def withLocalProperties[T](f: => T): T = {
     try {
       spark.sparkContext.setJobGroup(statementId, statement, forceCancel)
+      spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
       spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
       schedulerPool match {
         case Some(pool) =>
@@ -143,6 +152,7 @@ class ExecuteStatement(
       f
     } finally {
       spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, null)
+      spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, null)
       spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, null)
       spark.sparkContext.clearJobGroup()
     }
@@ -170,6 +180,9 @@ class ExecuteStatement(
     super.setState(newState)
     statementEvent.state = newState.toString
     statementEvent.stateTime = lastAccessTime
+    if (newState == OperationState.ERROR || newState == OperationState.FINISHED) {
+      statementEvent.endTime = System.currentTimeMillis()
+    }
     EventLoggingService.onEvent(statementEvent)
   }
 

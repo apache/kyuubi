@@ -34,6 +34,7 @@ import org.apache.kyuubi.Utils
  * @param exception: caught exception if have
  */
 case class SparkStatementEvent(
+    username: String,
     statementId: String,
     statement: String,
     appId: String,
@@ -41,10 +42,19 @@ case class SparkStatementEvent(
     createTime: Long,
     var state: String,
     var stateTime: Long,
+    var endTime: Long = -1L,
     var queryExecution: String = "",
     var exception: String = "") extends KyuubiSparkEvent {
 
   override def schema: StructType = Encoders.product[SparkStatementEvent].schema
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(createTime)) :: Nil
+
+  def duration: Long = {
+    if (endTime == -1L) {
+      System.currentTimeMillis - createTime
+    } else {
+      endTime - createTime
+    }
+  }
 }
