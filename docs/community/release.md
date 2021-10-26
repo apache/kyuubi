@@ -217,10 +217,14 @@ After some time this will be sync’d to [Maven Central](https://search.maven.or
 
 ### Update Website
 
-TODO
+Fork and clone [Apache Kyuubi website](https://github.com/apache/incubator-kyuubi-website)
+
+1. Add a new markdown file in `src/news/`
+2. Add a new markdown file in `src/release/`
 
 ### Create an Announcement
 
 Once everything is working create an announcement on the website and then send an e-mail to the mailing list.
+The mailing list includes: `announce@apache.org`, `dev@kyuubi.apache.org`, `user@spark.apache.org`.
 
 Enjoy an adult beverage of your choice, and congratulations on making a Kyuubi release.
