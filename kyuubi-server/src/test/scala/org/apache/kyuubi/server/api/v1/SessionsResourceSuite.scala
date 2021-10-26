@@ -19,7 +19,9 @@ package org.apache.kyuubi.server.api.v1
 
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{MediaType, Response}
+
 import org.junit.Test
+
 import org.apache.kyuubi.server.{RestApiBaseSuite, RestFrontendService, RestFrontendServiceSuite}
 import org.apache.kyuubi.session.SessionHandle
 
