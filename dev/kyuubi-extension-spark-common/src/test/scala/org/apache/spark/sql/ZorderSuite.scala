@@ -26,16 +26,15 @@ import org.apache.spark.sql.execution.datasources.InsertIntoHadoopFsRelationComm
 import org.apache.spark.sql.functions._
 import org.apache.spark.sql.hive.execution.{CreateHiveTableAsSelectCommand, InsertIntoHiveTable, OptimizedCreateHiveTableAsSelectCommand}
 import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
+import org.apache.spark.sql.kyuubi.{KyuubiSparkSQLCommonExtension, KyuubiSQLConf, KyuubiSQLExtensionException}
+import org.apache.spark.sql.kyuubi.zorder.{OptimizeZorderCommandBase, Zorder}
 import org.apache.spark.sql.types._
-
-import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
-import org.apache.kyuubi.sql.zorder.{OptimizeZorderCommandBase, Zorder}
 
 trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper {
   override def sparkConf(): SparkConf = {
     super.sparkConf()
       .set(StaticSQLConf.SPARK_SESSION_EXTENSIONS.key,
-        "org.apache.kyuubi.sql.KyuubiSparkSQLCommonExtension")
+        classOf[KyuubiSparkSQLCommonExtension].getCanonicalName)
   }
 
   test("optimize unpartitioned table") {

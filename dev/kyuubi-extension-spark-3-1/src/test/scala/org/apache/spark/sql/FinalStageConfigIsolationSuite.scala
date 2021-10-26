@@ -19,8 +19,8 @@ package org.apache.spark.sql
 
 import org.apache.spark.sql.execution.adaptive.{CustomShuffleReaderExec, QueryStageExec}
 import org.apache.spark.sql.internal.SQLConf
-
-import org.apache.kyuubi.sql.{FinalStageConfigIsolation, KyuubiSQLConf}
+import org.apache.kyuubi.sql.FinalStageConfigIsolation
+import org.apache.spark.sql.kyuubi.{FinalStageConfigIsolation, KyuubiSQLConf}
 
 class FinalStageConfigIsolationSuite extends KyuubiSparkSQLExtensionTest {
   protected override def beforeAll(): Unit = {
