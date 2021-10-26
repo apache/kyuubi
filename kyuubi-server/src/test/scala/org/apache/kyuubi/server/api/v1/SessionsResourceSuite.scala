@@ -18,10 +18,8 @@
 package org.apache.kyuubi.server.api.v1
 
 import javax.ws.rs.client.Entity
-import javax.ws.rs.core.MediaType
-
+import javax.ws.rs.core.{MediaType, Response}
 import org.junit.Test
-
 import org.apache.kyuubi.server.{RestApiBaseSuite, RestFrontendService, RestFrontendServiceSuite}
 import org.apache.kyuubi.session.SessionHandle
 
@@ -150,7 +148,7 @@ class SessionsResourceSuite extends RestApiBaseSuite {
 
     RestFrontendServiceSuite.withKyuubiRestServer {
       (_, _, _) =>
-        var response = target(s"api/v1/sessions")
+        var response: Response = target(s"api/v1/sessions")
           .request(MediaType.APPLICATION_JSON_TYPE)
           .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
 
@@ -170,7 +168,8 @@ class SessionsResourceSuite extends RestApiBaseSuite {
 
         // get session detail again
         response = target(s"api/v1/sessions/$serializedSessionHandle").request().get()
-        assert(200 != response.getStatus)
+        assert(404 == response.getStatus)
+
     }
   }
 }

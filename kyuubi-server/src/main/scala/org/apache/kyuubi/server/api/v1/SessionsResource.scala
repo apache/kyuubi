@@ -50,10 +50,15 @@ private[v1] class SessionsResource extends ApiRequestContext {
       UUID.fromString(splitSessionHandle(0)), UUID.fromString(splitSessionHandle(1)))
     val protocolVersion = TProtocolVersion.findByValue(splitSessionHandle(2).toInt)
     val sessionHandle = new SessionHandle(handleIdentifier, protocolVersion)
-    val session = backendService.sessionManager.getSession(sessionHandle)
 
-    SessionDetail(session.user, session.ipAddress, session.createTime, sessionHandle,
-      session.lastAccessTime, session.lastIdleTime, session.getNoOperationTime, session.conf)
+    try {
+      val session = backendService.sessionManager.getSession(sessionHandle)
+      SessionDetail(session.user, session.ipAddress, session.createTime, sessionHandle,
+        session.lastAccessTime, session.lastIdleTime, session.getNoOperationTime, session.conf)
+    } catch {
+      case _: Throwable =>
+        throw new NotFoundException()
+    }
   }
 
   @GET
