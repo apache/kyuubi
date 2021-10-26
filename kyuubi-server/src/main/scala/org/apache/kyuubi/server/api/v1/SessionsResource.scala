@@ -18,8 +18,10 @@
 package org.apache.kyuubi.server.api.v1
 
 import java.util.UUID
-import javax.ws.rs.{Consumes, DELETE, GET, Path, PathParam, POST, Produces}
+import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
+
+import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
@@ -29,6 +31,35 @@ import org.apache.kyuubi.session.SessionHandle
 
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class SessionsResource extends ApiRequestContext {
+
+  @GET
+  def sessionInfoList(): SessionList = {
+    SessionList(
+      backendService.sessionManager.getSessionList().asScala.map {
+        case (handle, session) =>
+          SessionOverview(session.user, session.ipAddress, session.createTime, handle)
+      }.toList
+    )
+  }
+
+  @GET
+  @Path("{sessionHandle}")
+  def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): SessionDetail = {
+    val splitSessionHandle = sessionHandleStr.split("\\|")
+    val handleIdentifier = new HandleIdentifier(
+      UUID.fromString(splitSessionHandle(0)), UUID.fromString(splitSessionHandle(1)))
+    val protocolVersion = TProtocolVersion.findByValue(splitSessionHandle(2).toInt)
+    val sessionHandle = new SessionHandle(handleIdentifier, protocolVersion)
+
+    try {
+      val session = backendService.sessionManager.getSession(sessionHandle)
+      SessionDetail(session.user, session.ipAddress, session.createTime, sessionHandle,
+        session.lastAccessTime, session.lastIdleTime, session.getNoOperationTime, session.conf)
+    } catch {
+      case _: Throwable =>
+        throw new NotFoundException()
+    }
+  }
 
   @GET
   @Path("count")

@@ -18,7 +18,7 @@
 package org.apache.kyuubi.server.api.v1
 
 import javax.ws.rs.client.Entity
-import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.{MediaType, Response}
 
 import org.junit.Test
 
@@ -111,4 +111,67 @@ class SessionsResourceSuite extends RestApiBaseSuite {
     }
   }
 
+  @Test
+  def testGetSessionList: Unit = {
+    val requestObj = SessionOpenRequest(
+      1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
+
+    RestFrontendServiceSuite.withKyuubiRestServer {
+      (_, _, _) =>
+        var response = target(s"api/v1/sessions")
+          .request(MediaType.APPLICATION_JSON_TYPE)
+          .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+
+        // get session list
+        var response2 = target("api/v1/sessions").request().get()
+        assert(200 == response2.getStatus)
+        val sessions1 = response2.readEntity(classOf[SessionList])
+        assert(sessions1.sessionList.nonEmpty)
+
+        // close a opened session
+        val sessionHandle = response.readEntity(classOf[SessionHandle])
+        val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
+          s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
+        response = target(s"api/v1/sessions/$serializedSessionHandle").request().delete()
+        assert(200 == response.getStatus)
+
+        // get session list again
+        response2 = target("api/v1/sessions").request().get()
+        assert(200 == response2.getStatus)
+        val sessions2 = response2.readEntity(classOf[SessionList])
+        assert(sessions2.sessionList.isEmpty)
+    }
+  }
+
+  @Test
+  def testGetSessionDetail: Unit = {
+    val requestObj = SessionOpenRequest(
+      1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
+
+    RestFrontendServiceSuite.withKyuubiRestServer {
+      (_, _, _) =>
+        var response: Response = target(s"api/v1/sessions")
+          .request(MediaType.APPLICATION_JSON_TYPE)
+          .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+
+        val sessionHandle = response.readEntity(classOf[SessionHandle])
+        val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
+          s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
+
+        // get session detail
+        response = target(s"api/v1/sessions/$serializedSessionHandle").request().get()
+        assert(200 == response.getStatus)
+        var sessions = response.readEntity(classOf[SessionDetail])
+        assert(sessions.configs.nonEmpty)
+
+        // close a opened session
+        response = target(s"api/v1/sessions/$serializedSessionHandle").request().delete()
+        assert(200 == response.getStatus)
+
+        // get session detail again
+        response = target(s"api/v1/sessions/$serializedSessionHandle").request().get()
+        assert(404 == response.getStatus)
+
+    }
+  }
 }
