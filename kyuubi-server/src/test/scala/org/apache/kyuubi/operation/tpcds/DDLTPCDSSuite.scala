@@ -19,13 +19,13 @@ package org.apache.kyuubi.operation.tpcds
 
 import org.apache.kyuubi.{DeltaSuiteMixin, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.JDBCTestHelper
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.tags.{DeltaTest, ExtendedSQLTest}
 
 @DeltaTest
 @ExtendedSQLTest
 class DDLTPCDSSuite extends WithKyuubiServer
-  with JDBCTestHelper
+  with HiveJDBCTestHelper
   with TPCDSHelper
   with DeltaSuiteMixin {
 

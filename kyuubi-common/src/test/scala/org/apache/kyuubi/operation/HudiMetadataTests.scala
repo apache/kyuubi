@@ -21,7 +21,7 @@ import org.apache.kyuubi.HudiSuiteMixin
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 
-trait HudiMetadataTests extends JDBCTestHelper with HudiSuiteMixin {
+trait HudiMetadataTests extends HiveJDBCTestHelper with HudiSuiteMixin {
 
   test("get catalogs") {
     withJdbcStatement() { statement =>

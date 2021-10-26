@@ -23,7 +23,7 @@ import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT
 
-class KyuubiOperationManagerSuite extends WithKyuubiServer with JDBCTestHelper {
+class KyuubiOperationManagerSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   override protected val conf: KyuubiConf = {
     KyuubiConf().set(OPERATION_QUERY_TIMEOUT.key, "PT1S")
   }

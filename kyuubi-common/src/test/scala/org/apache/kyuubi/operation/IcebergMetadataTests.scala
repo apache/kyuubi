@@ -20,7 +20,7 @@ package org.apache.kyuubi.operation
 import org.apache.kyuubi.IcebergSuiteMixin
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
-trait IcebergMetadataTests extends JDBCTestHelper with IcebergSuiteMixin {
+trait IcebergMetadataTests extends HiveJDBCTestHelper with IcebergSuiteMixin {
 
   test("get catalogs") {
     withJdbcStatement() { statement =>

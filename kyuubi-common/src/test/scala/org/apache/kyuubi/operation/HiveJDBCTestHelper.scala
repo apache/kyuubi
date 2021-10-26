@@ -30,7 +30,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
-trait JDBCTestHelper extends KyuubiFunSuite {
+trait HiveJDBCTestHelper extends KyuubiFunSuite {
 
   // Load KyuubiHiveDriver class before using it, otherwise will cause the first call
   // `DriverManager.getConnection("jdbc:hive2://...")` failure.
@@ -41,24 +41,24 @@ trait JDBCTestHelper extends KyuubiFunSuite {
   protected def defaultSchema = "default"
   protected def matchAllPatterns = Seq("", "*", "%", null, ".*", "_*", "_%", ".%")
   protected lazy val user: String = Utils.currentUser
-  private var _sessionConfs: Map[String, String] = Map.empty
-  private var _sparkHiveConfs: Map[String, String] = Map.empty
-  private var _sparkHiveVars: Map[String, String] = Map.empty
-  protected def sessionConfigs: Map[String, String] = _sessionConfs
-  protected def sparkHiveConfigs: Map[String, String] = _sparkHiveConfs
-  protected def sparkHiveVars: Map[String, String] = _sparkHiveVars
+  private var _sessionConfigs: Map[String, String] = Map.empty
+  private var _jdbcConfigs: Map[String, String] = Map.empty
+  private var _jdbcVars: Map[String, String] = Map.empty
+  protected def sessionConfigs: Map[String, String] = _sessionConfigs
+  protected def jdbcConfigs: Map[String, String] = _jdbcConfigs
+  protected def jdbcVars: Map[String, String] = _jdbcVars
 
   def withSessionConf[T](
-      sessionConfs: Map[String, String] = Map.empty)(
-      sparkHiveConfs: Map[String, String])(
-      sparkHiveVars: Map[String, String])(f: => T): T = {
-    this._sessionConfs = sessionConfs
-    this._sparkHiveConfs = sparkHiveConfs
-    this._sparkHiveVars = sparkHiveVars
+      sessionConfigs: Map[String, String] = Map.empty)(
+      jdbcConfigs: Map[String, String])(
+      jdbcVars: Map[String, String])(f: => T): T = {
+    this._sessionConfigs = sessionConfigs
+    this._jdbcConfigs = jdbcConfigs
+    this._jdbcVars = jdbcVars
     try f finally {
-      _sparkHiveVars = Map.empty
-      _sparkHiveConfs = Map.empty
-      _sessionConfs = Map.empty
+      _jdbcVars = Map.empty
+      _jdbcConfigs = Map.empty
+      _sessionConfigs = Map.empty
     }
   }
 
@@ -68,17 +68,17 @@ trait JDBCTestHelper extends KyuubiFunSuite {
 
   protected def jdbcUrlWithConf(jdbcUrl: String): String = {
     val sessionConfStr = sessionConfigs.map(kv => kv._1 + "=" + kv._2).mkString(";")
-    val sparkHiveConfStr = if (sparkHiveConfigs.isEmpty) {
+    val jdbcConfStr = if (jdbcConfigs.isEmpty) {
       ""
     } else {
-      "?" + sparkHiveConfigs.map(kv => kv._1 + "=" + kv._2).mkString(";")
+      "?" + jdbcConfigs.map(kv => kv._1 + "=" + kv._2).mkString(";")
     }
-    val sparkHiveVarsStr = if (sparkHiveVars.isEmpty) {
+    val jdbcVarsStr = if (jdbcVars.isEmpty) {
       ""
     } else {
-      "#" + sparkHiveVars.map(kv => kv._1 + "=" + kv._2).mkString(";")
+      "#" + jdbcVars.map(kv => kv._1 + "=" + kv._2).mkString(";")
     }
-    jdbcUrl + sessionConfStr + sparkHiveConfStr + sparkHiveVarsStr
+    jdbcUrl + sessionConfStr + jdbcConfStr + jdbcVarsStr
   }
 
   def assertJDBCConnectionFail(jdbcUrl: String = jdbcUrlWithConf): SQLException = {

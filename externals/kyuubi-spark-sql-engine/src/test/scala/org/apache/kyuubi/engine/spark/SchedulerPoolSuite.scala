@@ -23,9 +23,9 @@ import org.apache.spark.scheduler.{SparkListener, SparkListenerJobEnd, SparkList
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
-import org.apache.kyuubi.operation.JDBCTestHelper
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
-class SchedulerPoolSuite extends WithSparkSQLEngine with JDBCTestHelper {
+class SchedulerPoolSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
   override protected def jdbcUrl: String = getJdbcUrl
   override def withKyuubiConf: Map[String, String] = {
     val poolFile =

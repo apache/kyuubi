@@ -20,7 +20,7 @@ package org.apache.kyuubi.operation
 import org.apache.kyuubi.DeltaSuiteMixin
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
-trait DeltaMetadataTests extends JDBCTestHelper with DeltaSuiteMixin {
+trait DeltaMetadataTests extends HiveJDBCTestHelper with DeltaSuiteMixin {
 
   test("get catalogs") {
     withJdbcStatement() { statement =>
