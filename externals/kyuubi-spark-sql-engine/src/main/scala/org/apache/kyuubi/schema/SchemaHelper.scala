@@ -40,10 +40,12 @@ object SchemaHelper {
     case DateType => TTypeId.DATE_TYPE
     case TimestampType => TTypeId.TIMESTAMP_TYPE
     case BinaryType => TTypeId.BINARY_TYPE
-    case CalendarIntervalType => TTypeId.STRING_TYPE
     case _: ArrayType => TTypeId.ARRAY_TYPE
     case _: MapType => TTypeId.MAP_TYPE
     case _: StructType => TTypeId.STRUCT_TYPE
+    case CalendarIntervalType => TTypeId.STRING_TYPE
+    // DayTimeIntervalType & YearMonthIntervalType, added on Spark 3.2
+    case _ if typ.typeName startsWith "interval " => TTypeId.STRING_TYPE
     // TODO: it is private now, case udt: UserDefinedType => TTypeId.USER_DEFINED_TYPE
     case other =>
       throw new IllegalArgumentException(s"Unrecognized type name: ${other.catalogString}")

@@ -947,4 +947,19 @@ object KyuubiConf {
       .transform(_.toUpperCase(Locale.ROOT))
       .checkValues(OperationModes.values.map(_.toString))
       .createWithDefault(OperationModes.NONE.toString)
+
+  object IntervalStyles extends Enumeration {
+    type IntervalStyle = Value
+    val ANSI, HIVE = Value
+  }
+
+  val OPERATION_INTERVAL_STYLE: ConfigEntry[String] =
+    buildConf("operation.intervalStyle")
+      .doc("The style of textual representation of interval values in result set, " +
+        "support ANSI, HIVE")
+      .version("1.4.0")
+      .stringConf
+      .transform(_.toUpperCase(Locale.ROOT))
+      .checkValues(IntervalStyles.values.map(_.toString))
+      .createWithDefault(IntervalStyles.HIVE.toString)
 }

@@ -176,7 +176,7 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
 
   test("execute statement - select interval") {
     // FIXME: [KYUUBI #1250]
-    assume(SPARK_ENGINE_MAJOR_MINOR_VERSION !== ((3, 2)))
+    // assume(SPARK_ENGINE_MAJOR_MINOR_VERSION !== ((3, 2)))
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("SELECT interval '1' day AS col")
       assert(resultSet.next())
