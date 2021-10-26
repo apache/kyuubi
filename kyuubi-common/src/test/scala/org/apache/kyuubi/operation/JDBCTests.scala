@@ -382,19 +382,6 @@ trait JDBCTests extends BasicJDBCTests {
     }
   }
 
-  test("kyuubi defined function - system_user") {
-    withJdbcStatement() { statement =>
-      val rs = statement.executeQuery("SELECT system_user()")
-      assert(rs.next())
-      val user = rs.getString(1)
-      // skip minikube test since dockerfile use kyuubi as user which is not same with non-k8s env.
-      if (user == "kyuubi") {
-      } else {
-        assert(user == System.getProperty("user.name"))
-      }
-    }
-  }
-
   test("KYUUBI #1059: Plan only operations") {
     val ddl = "create table t(a int) using parquet"
     val dql = "select * from t"
