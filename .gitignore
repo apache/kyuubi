@@ -39,6 +39,7 @@
 .idea_modules/
 .project
 .pydevproject
+.python-version
 .scala_dependencies
 .settings
 build/apache-maven*
