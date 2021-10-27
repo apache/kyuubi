@@ -83,7 +83,7 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
     }
   }
 
-  test("ensure two connections share the same engine when specifying subDomain.") {
+  test("ensure two connections share the same engine when specifying subdomain.") {
     withSessionConf()(
       Map(
         KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key -> "abc"
@@ -113,5 +113,29 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
 
       assert(r1 === r2)
     }
+  }
+
+  test("ensure mix use subdomain") {
+    var r1: String = null
+    var r2: String = null
+    withSessionConf()(Map.empty)(Map.empty) {
+      withJdbcStatement() { statement =>
+        val res = statement.executeQuery("set spark.app.name")
+        assert(res.next())
+        r1 = res.getString("value")
+      }
+    }
+    assert(r1 contains "default")
+
+    withSessionConf()(Map(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key -> "abc"))(Map.empty) {
+      withJdbcStatement() { statement =>
+        val res = statement.executeQuery("set spark.app.name")
+        assert(res.next())
+        r2 = res.getString("value")
+      }
+    }
+    assert(r2 contains "abc")
+
+    assert(r1 !== r2)
   }
 }

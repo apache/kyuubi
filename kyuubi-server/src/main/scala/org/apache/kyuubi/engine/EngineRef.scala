@@ -68,25 +68,21 @@ private[kyuubi] class EngineRef(
   // Server-side engine pool size threshold
   private val poolThreshold: Int = conf.get(ENGINE_POOL_SIZE_THRESHOLD)
 
+  private val clientPoolSize: Int = conf.get(ENGINE_POOL_SIZE)
+
   @VisibleForTesting
-  private[kyuubi] val subdomain: Option[String] = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN).orElse {
-    val clientPoolSize: Int = conf.get(ENGINE_POOL_SIZE)
-
-    if (clientPoolSize > 0) {
-      val poolSize = if (clientPoolSize <= poolThreshold) {
-        clientPoolSize
-      } else {
-        warn(s"Request engine pool size($clientPoolSize) exceeds, fallback to system threshold " +
-          s"$poolThreshold")
-        poolThreshold
+  private[kyuubi] val subdomain: String = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN) match {
+    case Some(_subdomain) => _subdomain
+    case None if clientPoolSize > 0 =>
+      val poolSize = math.min(clientPoolSize, poolThreshold)
+      if (poolSize < clientPoolSize) {
+        warn(s"Request engine pool size($clientPoolSize) exceeds, fallback to " +
+          s"system threshold $poolThreshold")
       }
-
       // TODO: Currently, we use random policy, and later we can add a sequential policy,
       //  such as AtomicInteger % poolSize.
-      Some("engine-pool-" + Random.nextInt(poolSize))
-    } else {
-      None
-    }
+      "engine-pool-" + Random.nextInt(poolSize)
+    case _ => "default" // [KYUUBI #1293]
   }
 
   // Launcher of the engine
@@ -113,10 +109,7 @@ private[kyuubi] class EngineRef(
     val commonNamePrefix = s"kyuubi_${shareLevel}_${engineType}_${appUser}"
     shareLevel match {
       case CONNECTION => s"${commonNamePrefix}_$engineRefId"
-      case _ => subdomain match {
-        case Some(domain) => s"${commonNamePrefix}_${domain}_$engineRefId"
-        case _ => s"${commonNamePrefix}_$engineRefId"
-      }
+      case _ => s"${commonNamePrefix}_${subdomain}_$engineRefId"
     }
   }
 
@@ -137,10 +130,7 @@ private[kyuubi] class EngineRef(
     val commonParent = s"${serverSpace}_${shareLevel}_$engineType"
     shareLevel match {
       case CONNECTION => ZKPaths.makePath(commonParent, appUser, engineRefId)
-      case _ => subdomain match {
-        case Some(domain) => ZKPaths.makePath(commonParent, appUser, domain)
-        case None => ZKPaths.makePath(commonParent, appUser)
-      }
+      case _ => ZKPaths.makePath(commonParent, appUser, subdomain)
     }
   }
 
@@ -152,7 +142,7 @@ private[kyuubi] class EngineRef(
     case CONNECTION => f
     case _ =>
       val lockPath =
-        ZKPaths.makePath(s"${serverSpace}_$shareLevel", "lock", appUser, subdomain.orNull)
+        ZKPaths.makePath(s"${serverSpace}_$shareLevel", "lock", appUser, subdomain)
       var lock: InterProcessSemaphoreMutex = null
       try {
         try {
