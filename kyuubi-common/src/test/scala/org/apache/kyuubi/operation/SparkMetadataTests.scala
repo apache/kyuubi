@@ -17,11 +17,10 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.kyuubi.DeltaSuiteMixin
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
-trait BasicDeltaJDBCTests extends JDBCTestUtils with DeltaSuiteMixin {
-
+// For both `in-memory` and `hive` external catalog
+trait SparkMetadataTests extends HiveJDBCTestHelper {
   test("get catalogs") {
     withJdbcStatement() { statement =>
       val metaData = statement.getConnection.getMetaData
@@ -55,36 +54,79 @@ trait BasicDeltaJDBCTests extends JDBCTestUtils with DeltaSuiteMixin {
 
       checkGetSchemas(metaData.getSchemas(catalog, "db1"), Seq("db1"), catalog)
       checkGetSchemas(metaData.getSchemas(catalog, "db_not_exist"), Seq.empty, catalog)
+
+      checkGetSchemas(metaData.getSchemas(catalog, "global\\_temp"), Seq("global_temp"), catalog)
     }
   }
 
   test("get tables") {
-    val table = "table_1_test"
-    val schema = "default"
-    val tableType = "TABLE"
-    withJdbcStatement(table) { statement =>
+    val table_test = "table_1_test"
+    val view_test = "view_1_test"
+    val view_global_test = "view_2_test"
+    val tables = Seq(table_test, view_test, view_global_test)
+    val schemas = Seq("default", "default", "global_temp")
+    val tableTypes = Seq("TABLE", "VIEW", "VIEW")
+    withJdbcStatement(view_test, view_global_test, table_test, view_test) { statement =>
       statement.execute(
-        s"CREATE TABLE IF NOT EXISTS $table(key int) USING $format COMMENT '$table'")
+        s"CREATE TABLE IF NOT EXISTS $table_test(key int) USING parquet COMMENT '$table_test'")
+      statement.execute(s"CREATE VIEW IF NOT EXISTS $view_test COMMENT '$view_test'" +
+        s" AS SELECT * FROM $table_test")
+      statement.execute(s"CREATE GLOBAL TEMP VIEW $view_global_test" +
+        s" COMMENT '$view_global_test' AS SELECT * FROM $table_test")
 
       val metaData = statement.getConnection.getMetaData
       val rs1 = metaData.getTables(null, null, null, null)
+      var i = 0
+      while(rs1.next()) {
+        val catalogName = rs1.getString(TABLE_CAT)
+        assert(catalogName === "spark_catalog" || catalogName === null)
+        assert(rs1.getString(TABLE_SCHEM) === schemas(i))
+        assert(rs1.getString(TABLE_NAME) == tables(i))
+        assert(rs1.getString(TABLE_TYPE) == tableTypes(i))
+        assert(rs1.getString(REMARKS) === tables(i).replace(view_global_test, ""))
+        i += 1
+      }
+      assert(i === 3)
 
-      assert(rs1.next())
-      val catalogName = rs1.getString(TABLE_CAT)
-      assert(catalogName === "spark_catalog" || catalogName === null)
-      assert(rs1.getString(TABLE_SCHEM) === schema)
-      assert(rs1.getString(TABLE_NAME) == table)
-      assert(rs1.getString(TABLE_TYPE) == tableType)
-      assert(rs1.getString(REMARKS) === table)
-      assert(!rs1.next())
+      val rs2 = metaData.getTables(null, null, null, Array("VIEW"))
+      i = 1
+      while(rs2.next()) {
+        assert(rs2.getString(TABLE_NAME) == tables(i))
+        i += 1
+      }
+      assert(i === 3)
 
-      val rs2 = metaData.getTables(null, null, "table%", Array("TABLE"))
-      assert(rs2.next())
-      assert(rs2.getString(TABLE_NAME) == table)
-      assert(!rs2.next())
+      val rs3 = metaData.getTables(null, "*", "*", Array("VIEW"))
+      i = 1
+      while(rs3.next()) {
+        assert(rs3.getString(TABLE_NAME) == tables(i))
+        i += 1
+      }
+      assert(i === 3)
 
-      val rs3 = metaData.getTables(null, "default", "*", Array("VIEW"))
-      assert(!rs3.next())
+      val rs4 = metaData.getTables(null, null, "table%", Array("VIEW"))
+      assert(!rs4.next())
+
+      val rs5 = metaData.getTables(null, "*", "table%", Array("VIEW"))
+      assert(!rs5.next())
+
+      val rs6 = metaData.getTables(null, null, "table%", Array("TABLE"))
+      i = 0
+      while(rs6.next()) {
+        assert(rs6.getString(TABLE_NAME) == tables(i))
+        i += 1
+      }
+      assert(i === 1)
+
+      val rs7 = metaData.getTables(null, "default", "%", Array("VIEW"))
+      i = 1
+      while(rs7.next()) {
+        assert(rs7.getString(TABLE_NAME) == view_test)
+      }
+
+      statement.execute(s"DROP TABLE IF EXISTS ${schemas(0)}.$table_test")
+      statement.execute(s"DROP VIEW IF EXISTS ${schemas(1)}.$view_test")
+      statement.execute(s"DROP VIEW IF EXISTS ${schemas(2)}.$view_global_test")
     }
   }
 

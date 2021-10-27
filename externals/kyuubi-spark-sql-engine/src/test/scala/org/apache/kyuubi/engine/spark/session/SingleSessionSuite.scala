@@ -19,9 +19,9 @@ package org.apache.kyuubi.engine.spark.session
 
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.operation.JDBCTestUtils
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
-class SingleSessionSuite extends WithSparkSQLEngine with JDBCTestUtils {
+class SingleSessionSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 
   override def withKyuubiConf: Map[String, String] = {
     Map(ENGINE_SHARE_LEVEL.key -> "SERVER",

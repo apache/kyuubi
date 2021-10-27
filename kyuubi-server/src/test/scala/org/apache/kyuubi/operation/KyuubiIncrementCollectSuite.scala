@@ -26,7 +26,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 
-class KyuubiIncrementCollectSuite extends WithKyuubiServer with JDBCTestUtils {
+class KyuubiIncrementCollectSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
   override protected val conf: KyuubiConf = KyuubiConf()
     .set(KyuubiConf.OPERATION_INCREMENTAL_COLLECT, true)

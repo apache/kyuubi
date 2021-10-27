@@ -19,11 +19,11 @@ package org.apache.kyuubi.operation.datalake
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.BasicDeltaJDBCTests
+import org.apache.kyuubi.operation.DeltaMetadataTests
 import org.apache.kyuubi.tags.DeltaTest
 
 @DeltaTest
-class DeltaOperationSuite extends WithKyuubiServer with BasicDeltaJDBCTests {
+class DeltaOperationSuite extends WithKyuubiServer with DeltaMetadataTests {
   override protected val conf: KyuubiConf = {
     val kyuubiConf = KyuubiConf().set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 20000L)
     extraConfigs.foreach { case (k, v) => kyuubiConf.set(k, v) }

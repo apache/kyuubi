@@ -35,11 +35,11 @@ import org.apache.spark.sql.types._
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.operation.HiveJDBCTests
+import org.apache.kyuubi.operation.{HiveMetadataTests, SparkQueryTests}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
-class SparkOperationSuite extends WithSparkSQLEngine with HiveJDBCTests {
+class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with SparkQueryTests {
 
   override protected def jdbcUrl: String = getJdbcUrl
   override def withKyuubiConf: Map[String, String] = Map.empty
@@ -81,7 +81,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveJDBCTests {
 
     val ddl =
       s"""
-         |CREATE TABLE IF NOT EXISTS $dftSchema.$tableName (
+         |CREATE TABLE IF NOT EXISTS $defaultSchema.$tableName (
          |  ${schema.toDDL}
          |)
          |USING parquet""".stripMargin
@@ -92,7 +92,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveJDBCTests {
       val metaData = statement.getConnection.getMetaData
 
       Seq("%", null, ".*", "c.*") foreach { columnPattern =>
-        val rowSet = metaData.getColumns("", dftSchema, tableName, columnPattern)
+        val rowSet = metaData.getColumns("", defaultSchema, tableName, columnPattern)
 
         import java.sql.Types._
         val expectedJavaTypes = Seq(BOOLEAN, TINYINT, SMALLINT, INTEGER, BIGINT, FLOAT, DOUBLE,
@@ -103,7 +103,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveJDBCTests {
 
         while (rowSet.next()) {
           assert(rowSet.getString(TABLE_CAT) === SparkCatalogShim.SESSION_CATALOG)
-          assert(rowSet.getString(TABLE_SCHEM) === dftSchema)
+          assert(rowSet.getString(TABLE_SCHEM) === defaultSchema)
           assert(rowSet.getString(TABLE_NAME) === tableName)
           assert(rowSet.getString(COLUMN_NAME) === schema(pos).name)
           assert(rowSet.getInt(DATA_TYPE) === expectedJavaTypes(pos))
@@ -209,7 +209,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveJDBCTests {
       val apis = Seq(metaData.getFunctions _, metaData.getProcedures _)
       Seq("to_timestamp", "date_part", "lpad", "date_format", "cos", "sin").foreach { func =>
         apis.foreach { apiFunc =>
-          val resultSet = apiFunc("", dftSchema, func)
+          val resultSet = apiFunc("", defaultSchema, func)
           while (resultSet.next()) {
             val exprInfo = FunctionRegistry.expressions(func)._1
             assert(resultSet.getString(FUNCTION_CAT).isEmpty)

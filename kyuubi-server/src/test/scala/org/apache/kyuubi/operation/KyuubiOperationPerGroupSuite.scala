@@ -21,19 +21,26 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.util.KyuubiHadoopUtils
 
-class KyuubiOperationGroupSuite extends WithKyuubiServer with JDBCTests {
+class KyuubiOperationPerGroupSuite extends WithKyuubiServer with SparkQueryTests {
 
   override protected def jdbcUrl: String = getJdbcUrl
 
-  override protected val conf: KyuubiConf = {
-    val c = KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "group")
-      .set("hadoop.user.group.static.mapping.overrides",
-        s"user1=testGG,group_tt;user2=testGG")
-    UserGroupInformation.setConfiguration(KyuubiHadoopUtils.newHadoopConf(c))
-    c.set(s"hadoop.proxyuser.$user.groups", "*")
-      .set(s"hadoop.proxyuser.$user.hosts", "*")
+  override protected lazy val conf: KyuubiConf = KyuubiConf()
+    .set(KyuubiConf.ENGINE_SHARE_LEVEL, "group")
+    .set("hadoop.user.group.static.mapping.overrides", s"user1=testGG,group_tt;user2=testGG")
+    .set(s"hadoop.proxyuser.$user.groups", "*")
+    .set(s"hadoop.proxyuser.$user.hosts", "*")
+
+  override def beforeAll(): Unit = {
+    UserGroupInformation.createUserForTesting("user1", Array("testGG", "group_tt"))
+    UserGroupInformation.createUserForTesting("user2", Array("testGG"))
+    super.beforeAll()
+  }
+
+  override def afterAll(): Unit = {
+    UserGroupInformation.reset()
+    super.afterAll()
   }
 
   test("ensure two connections in group mode share the same engine started by primary group") {

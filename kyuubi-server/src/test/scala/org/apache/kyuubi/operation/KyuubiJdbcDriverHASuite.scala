@@ -21,7 +21,7 @@ import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf
 
-class KyuubiJdbcDriverHASuite extends WithKyuubiServer with BasicJDBCTests {
+class KyuubiJdbcDriverHASuite extends WithKyuubiServer with SparkMetadataTests {
 
   override protected val conf: KyuubiConf = KyuubiConf()
 

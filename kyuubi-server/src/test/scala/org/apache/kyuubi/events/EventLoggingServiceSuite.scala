@@ -26,10 +26,10 @@ import org.apache.hadoop.fs.{FileSystem, Path}
 
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.JDBCTestUtils
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.OperationState._
 
-class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
+class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
   private val engineLogRoot = "file://" + Utils.createTempDir().toString
   private val serverLogRoot = "file://" + Utils.createTempDir().toString

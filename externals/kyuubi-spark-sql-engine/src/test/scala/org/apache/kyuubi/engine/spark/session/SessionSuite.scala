@@ -22,10 +22,10 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.operation.JDBCTestUtils
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.service.ServiceState._
 
-class SessionSuite extends WithSparkSQLEngine with JDBCTestUtils {
+class SessionSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
   override def withKyuubiConf: Map[String, String] = {
    Map(ENGINE_SHARE_LEVEL.key -> "CONNECTION")
   }
