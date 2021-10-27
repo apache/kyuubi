@@ -35,9 +35,7 @@ import org.apache.kyuubi.server.api.KyuubiScalaObjectMapper
 import org.apache.kyuubi.service.NoopServer
 import org.apache.kyuubi.service.ServiceState._
 
-class RestFrontendServiceSuite extends KyuubiFunSuite{
-  protected val restApiBase = new RestApiBaseSuite
-  restApiBase.setUp()
+class RestFrontendServiceSuite extends KyuubiFunSuite {
 
   test("kyuubi rest frontend service basic") {
     val server = new RestFrontendServiceSuite.RestNoopServer()
@@ -71,7 +69,7 @@ class RestFrontendServiceSuite extends KyuubiFunSuite{
 
   test("kyuubi rest frontend service http basic") {
     RestFrontendServiceSuite.withKyuubiRestServer {
-      (_, host, port) =>
+      (_, host, port, _) =>
         eventually(timeout(10.seconds), interval(50.milliseconds)) {
           val html = Source.fromURL(s"http://$host:$port/api/v1/ping").mkString
           assert(html.toLowerCase(Locale.ROOT).equals("pong"))
@@ -82,13 +80,16 @@ class RestFrontendServiceSuite extends KyuubiFunSuite{
 
 object RestFrontendServiceSuite {
 
+
   class RestNoopServer extends NoopServer {
     override val frontendServices = Seq(new RestFrontendService(this))
   }
 
   val TEST_SERVER_PORT = KyuubiConf().get(KyuubiConf.FRONTEND_REST_BIND_PORT)
 
-  def withKyuubiRestServer(f: (RestFrontendService, String, Int) => Unit): Unit = {
+  def withKyuubiRestServer(f: (
+    RestFrontendService, String, Int, RestApiBaseSuite) => Unit): Unit = {
+
     val server = new RestNoopServer()
     server.stop()
     val conf = KyuubiConf()
@@ -97,11 +98,15 @@ object RestFrontendServiceSuite {
     server.initialize(conf)
     server.start()
 
+    val restApiBaseSuite = new RestApiBaseSuite
+    restApiBaseSuite.setUp()
+
     try {
       f(server.frontendServices.head, conf.get(KyuubiConf.FRONTEND_REST_BIND_HOST).get,
-        TEST_SERVER_PORT)
+        TEST_SERVER_PORT, restApiBaseSuite)
     } finally {
       server.stop()
+      restApiBaseSuite.tearDown()
     }
   }
 
@@ -120,27 +125,26 @@ class RestApiBaseSuite extends JerseyTest {
   }
 
   override def getTestContainerFactory: TestContainerFactory = new JettyTestContainerFactory
-
 }
 
-class RestErrorAndExceptionSuite extends RestFrontendServiceSuite{
+class RestErrorAndExceptionSuite extends KyuubiFunSuite {
 
   test("test error and exception response") {
     withKyuubiRestServer {
-      (_, _, _) =>
+      (_, _, _, restApiBaseSuite) =>
         // send a not exists request
 
-        var response = restApiBase.target("api/v1/pong").request().get()
+        var response = restApiBaseSuite.target("api/v1/pong").request().get()
         assert(404 == response.getStatus)
         assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("not found"))
 
         // send a exists request but wrong http method
-        response = restApiBase.target("api/v1/ping").request().post(null)
+        response = restApiBaseSuite.target("api/v1/ping").request().post(null)
         assert(405 == response.getStatus)
         assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("method not allowed"))
 
         // send a request but throws a exception on the server side
-        response = restApiBase.target("api/v1/exception").request().get()
+        response = restApiBaseSuite.target("api/v1/exception").request().get()
         assert(500 == response.getStatus)
         assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("server error"))
     }
