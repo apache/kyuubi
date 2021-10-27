@@ -18,11 +18,12 @@
 package org.apache.kyuubi.server
 
 import java.util.Locale
+import javax.ws.rs.client.Client
 import javax.ws.rs.core.Application
 
-import org.glassfish.jersey.client.ClientConfig
+import org.glassfish.jersey.client._
 import org.glassfish.jersey.server.ResourceConfig
-import org.glassfish.jersey.test.{JerseyTest, TestProperties}
+import org.glassfish.jersey.test.JerseyTest
 import org.glassfish.jersey.test.jetty.JettyTestContainerFactory
 import org.glassfish.jersey.test.spi.TestContainerFactory
 import org.scalatest.time.SpanSugar._
@@ -30,7 +31,7 @@ import scala.io.Source
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.RestFrontendServiceSuite.{withKyuubiRestServer, TEST_SERVER_PORT}
+import org.apache.kyuubi.server.RestFrontendServiceSuite.withKyuubiRestServer
 import org.apache.kyuubi.server.api.KyuubiScalaObjectMapper
 import org.apache.kyuubi.service.NoopServer
 import org.apache.kyuubi.service.ServiceState._
@@ -88,7 +89,7 @@ object RestFrontendServiceSuite {
   val TEST_SERVER_PORT = KyuubiConf().get(KyuubiConf.FRONTEND_REST_BIND_PORT)
 
   def withKyuubiRestServer(f: (
-    RestFrontendService, String, Int, RestApiBaseSuite) => Unit): Unit = {
+    RestFrontendService, String, Int, Client) => Unit): Unit = {
 
     val server = new RestNoopServer()
     server.stop()
@@ -100,13 +101,15 @@ object RestFrontendServiceSuite {
 
     val restApiBaseSuite = new RestApiBaseSuite
     restApiBaseSuite.setUp()
+    val client: Client = restApiBaseSuite.client()
 
     try {
       f(server.frontendServices.head, conf.get(KyuubiConf.FRONTEND_REST_BIND_HOST).get,
-        TEST_SERVER_PORT, restApiBaseSuite)
+        TEST_SERVER_PORT, client)
     } finally {
-      server.stop()
+      client.close()
       restApiBaseSuite.tearDown()
+      server.stop()
     }
   }
 
@@ -115,7 +118,6 @@ object RestFrontendServiceSuite {
 class RestApiBaseSuite extends JerseyTest {
 
   override def configure: Application = {
-    forceSet(TestProperties.CONTAINER_PORT, TEST_SERVER_PORT.toString)
     new ResourceConfig(getClass)
   }
 
@@ -131,20 +133,22 @@ class RestErrorAndExceptionSuite extends KyuubiFunSuite {
 
   test("test error and exception response") {
     withKyuubiRestServer {
-      (_, _, _, restApiBaseSuite) =>
+      (_, host, port, client) =>
+
+        var response = client.target(s"http://$host:$port/api/v1/pong").request().get()
         // send a not exists request
 
-        var response = restApiBaseSuite.target("api/v1/pong").request().get()
+//        var response = t.target("api/v1/pong").request().get()
         assert(404 == response.getStatus)
         assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("not found"))
 
         // send a exists request but wrong http method
-        response = restApiBaseSuite.target("api/v1/ping").request().post(null)
+        response = client.target(s"http://$host:$port/api/v1/ping").request().post(null)
         assert(405 == response.getStatus)
         assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("method not allowed"))
 
         // send a request but throws a exception on the server side
-        response = restApiBaseSuite.target("api/v1/exception").request().get()
+        response = client.target(s"http://$host:$port/api/v1/exception").request().get()
         assert(500 == response.getStatus)
         assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("server error"))
     }
