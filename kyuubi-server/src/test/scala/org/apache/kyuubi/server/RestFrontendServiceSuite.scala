@@ -81,7 +81,6 @@ class RestFrontendServiceSuite extends KyuubiFunSuite {
 
 object RestFrontendServiceSuite {
 
-
   class RestNoopServer extends NoopServer {
     override val frontendServices = Seq(new RestFrontendService(this))
   }
@@ -135,10 +134,8 @@ class RestErrorAndExceptionSuite extends KyuubiFunSuite {
     withKyuubiRestServer {
       (_, host, port, client) =>
 
-        var response = client.target(s"http://$host:$port/api/v1/pong").request().get()
         // send a not exists request
-
-//        var response = t.target("api/v1/pong").request().get()
+        var response = client.target("api/v1/pong").request().get()
         assert(404 == response.getStatus)
         assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("not found"))
 
