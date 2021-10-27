@@ -36,6 +36,8 @@ import org.apache.kyuubi.service.NoopServer
 import org.apache.kyuubi.service.ServiceState._
 
 class RestFrontendServiceSuite extends KyuubiFunSuite{
+  protected val restApiBase = new RestApiBaseSuite
+  restApiBase.setUp()
 
   test("kyuubi rest frontend service basic") {
     val server = new RestFrontendServiceSuite.RestNoopServer()
@@ -121,14 +123,12 @@ class RestApiBaseSuite extends JerseyTest {
 
 }
 
-class RestErrorAndExceptionSuite extends KyuubiFunSuite{
+class RestErrorAndExceptionSuite extends RestFrontendServiceSuite{
 
   test("test error and exception response") {
     withKyuubiRestServer {
       (_, _, _) =>
         // send a not exists request
-        val restApiBase = new RestApiBaseSuite
-        restApiBase.setUp()
 
         var response = restApiBase.target("api/v1/pong").request().get()
         assert(404 == response.getStatus)

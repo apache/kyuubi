@@ -20,13 +20,10 @@ package org.apache.kyuubi.server.api.v1
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{MediaType, Response}
 
-import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.server.{RestApiBaseSuite, RestFrontendService, RestFrontendServiceSuite}
+import org.apache.kyuubi.server.{RestFrontendService, RestFrontendServiceSuite}
 import org.apache.kyuubi.session.SessionHandle
 
-class SessionsResourceSuite extends KyuubiFunSuite {
-  protected val restApiBase = new RestApiBaseSuite
-  restApiBase.setUp()
+class SessionsResourceSuite extends RestFrontendServiceSuite {
 
   test("test open and count session") {
     val requestObj = SessionOpenRequest(
