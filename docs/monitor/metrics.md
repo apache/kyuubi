@@ -15,7 +15,7 @@
  - limitations under the License.
  -->
 
-# Kyuubi Server Metrics
+# Monitoring Kyuubi - Server Metrics
 
 Kyuubi has a configurable metrics system based on the [Dropwizard Metrics Library](https://metrics.dropwizard.io/).
 This allows users to report Kyuubi metrics to a variety of `kyuubi.metrics.reporters`. 
