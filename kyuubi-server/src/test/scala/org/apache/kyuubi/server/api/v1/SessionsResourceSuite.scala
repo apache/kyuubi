@@ -91,7 +91,8 @@ class SessionsResourceSuite extends KyuubiFunSuite {
         })
 
         // verify the exec pool statistic
-        var response = client.target(s"http://$host:$port/api/v1/sessions/execpool/statistic").request().get()
+        var response = client.target(s"http://$host:$port/api/v1/sessions/execpool/statistic")
+          .request().get()
         val execPoolStatistic1 = response.readEntity(classOf[ExecPoolStatistic])
         assert(execPoolStatistic1.execPoolSize == 1 && execPoolStatistic1.execPoolActiveCount == 1)
 
