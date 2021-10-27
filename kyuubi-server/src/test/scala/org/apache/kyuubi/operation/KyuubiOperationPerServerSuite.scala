@@ -20,7 +20,7 @@ package org.apache.kyuubi.operation
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 
-class KyuubiOperationPerServerSuite extends WithKyuubiServer with BasicQueryTests {
+class KyuubiOperationPerServerSuite extends WithKyuubiServer with SparkQueryTests {
 
   override protected def jdbcUrl: String = getJdbcUrl
 

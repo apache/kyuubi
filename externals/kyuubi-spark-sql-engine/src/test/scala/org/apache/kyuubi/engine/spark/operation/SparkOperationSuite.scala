@@ -35,11 +35,11 @@ import org.apache.spark.sql.types._
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.operation.{BasicQueryTests, HiveMetadataTests}
+import org.apache.kyuubi.operation.{SparkQueryTests, HiveMetadataTests}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
-class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with BasicQueryTests {
+class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with SparkQueryTests {
 
   override protected def jdbcUrl: String = getJdbcUrl
   override def withKyuubiConf: Map[String, String] = Map.empty

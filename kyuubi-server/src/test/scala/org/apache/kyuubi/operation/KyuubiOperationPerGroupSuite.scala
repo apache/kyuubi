@@ -22,7 +22,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 
-class KyuubiOperationPerGroupSuite extends WithKyuubiServer with BasicQueryTests {
+class KyuubiOperationPerGroupSuite extends WithKyuubiServer with SparkQueryTests {
 
   override protected def jdbcUrl: String = getJdbcUrl
 
