@@ -20,21 +20,21 @@ package org.apache.kyuubi.server.api.v1
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{MediaType, Response}
 
-import org.junit.Test
-
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.server.{RestApiBaseSuite, RestFrontendService, RestFrontendServiceSuite}
 import org.apache.kyuubi.session.SessionHandle
 
-class SessionsResourceSuite extends RestApiBaseSuite {
+class SessionsResourceSuite extends KyuubiFunSuite {
+  protected val restApiBase = new RestApiBaseSuite
+  restApiBase.setUp()
 
-  @Test
-  def testOpenAndCountSession: Unit = {
+  test("test open and count session") {
     val requestObj = SessionOpenRequest(
       1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
 
     RestFrontendServiceSuite.withKyuubiRestServer {
       (_, _, _) =>
-        var response = target(s"api/v1/sessions")
+        var response = restApiBase.target(s"api/v1/sessions")
           .request(MediaType.APPLICATION_JSON_TYPE)
           .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
 
@@ -46,20 +46,19 @@ class SessionsResourceSuite extends RestApiBaseSuite {
         assert(sessionHandle.identifier != null)
 
         // verify the open session count
-        response = target("api/v1/sessions/count").request().get()
+        response = restApiBase.target("api/v1/sessions/count").request().get()
         val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
         assert(openedSessionCount.openSessionCount == 1)
     }
   }
 
-  @Test
-  def testCloseAndCountSession: Unit = {
+  test("test close and count session") {
     val requestObj = SessionOpenRequest(
       1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
 
     RestFrontendServiceSuite.withKyuubiRestServer {
       (_, _, _) =>
-        var response = target(s"api/v1/sessions")
+        var response = restApiBase.target(s"api/v1/sessions")
           .request(MediaType.APPLICATION_JSON_TYPE)
           .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
 
@@ -73,18 +72,18 @@ class SessionsResourceSuite extends RestApiBaseSuite {
         // close a opened session
         val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
           s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
-        response = target(s"api/v1/sessions/$serializedSessionHandle").request().delete()
+        response = restApiBase.target(s"api/v1/sessions/$serializedSessionHandle")
+          .request().delete()
         assert(200 == response.getStatus)
 
         // verify the open session count again
-        response = target("api/v1/sessions/count").request().get()
+        response = restApiBase.target("api/v1/sessions/count").request().get()
         val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
         assert(openedSessionCount.openSessionCount == 0)
     }
   }
 
-  @Test
-  def testExecPoolStatistic: Unit = {
+  test("test execPoolStatistic") {
     RestFrontendServiceSuite.withKyuubiRestServer {
       (restFrontendService: RestFrontendService, _, _) =>
 
@@ -94,36 +93,35 @@ class SessionsResourceSuite extends RestApiBaseSuite {
         })
 
         // verify the exec pool statistic
-        var response = target("api/v1/sessions/execpool/statistic").request().get()
+        var response = restApiBase.target("api/v1/sessions/execpool/statistic").request().get()
         val execPoolStatistic1 = response.readEntity(classOf[ExecPoolStatistic])
         assert(execPoolStatistic1.execPoolSize == 1 && execPoolStatistic1.execPoolActiveCount == 1)
 
         future.cancel(true)
-        response = target("api/v1/sessions/execpool/statistic").request().get()
+        response = restApiBase.target("api/v1/sessions/execpool/statistic").request().get()
         val execPoolStatistic2 = response.readEntity(classOf[ExecPoolStatistic])
         assert(execPoolStatistic2.execPoolSize == 1 && execPoolStatistic2.execPoolActiveCount == 0)
 
         sessionManager.stop()
-        response = target("api/v1/sessions/execpool/statistic").request().get()
+        response = restApiBase.target("api/v1/sessions/execpool/statistic").request().get()
         val execPoolStatistic3 = response.readEntity(classOf[ExecPoolStatistic])
         assert(execPoolStatistic3.execPoolSize == 0 && execPoolStatistic3.execPoolActiveCount == 0)
 
     }
   }
 
-  @Test
-  def testGetSessionList: Unit = {
+  test("test getSessionList") {
     val requestObj = SessionOpenRequest(
       1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
 
     RestFrontendServiceSuite.withKyuubiRestServer {
       (_, _, _) =>
-        var response = target(s"api/v1/sessions")
+        var response = restApiBase.target(s"api/v1/sessions")
           .request(MediaType.APPLICATION_JSON_TYPE)
           .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
 
         // get session list
-        var response2 = target("api/v1/sessions").request().get()
+        var response2 = restApiBase.target("api/v1/sessions").request().get()
         assert(200 == response2.getStatus)
         val sessions1 = response2.readEntity(classOf[SessionList])
         assert(sessions1.sessionList.nonEmpty)
@@ -132,25 +130,25 @@ class SessionsResourceSuite extends RestApiBaseSuite {
         val sessionHandle = response.readEntity(classOf[SessionHandle])
         val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
           s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
-        response = target(s"api/v1/sessions/$serializedSessionHandle").request().delete()
+        response = restApiBase.target(s"api/v1/sessions/$serializedSessionHandle")
+          .request().delete()
         assert(200 == response.getStatus)
 
         // get session list again
-        response2 = target("api/v1/sessions").request().get()
+        response2 = restApiBase.target("api/v1/sessions").request().get()
         assert(200 == response2.getStatus)
         val sessions2 = response2.readEntity(classOf[SessionList])
         assert(sessions2.sessionList.isEmpty)
     }
   }
 
-  @Test
-  def testGetSessionDetail: Unit = {
+  test("test getSessionDetail") {
     val requestObj = SessionOpenRequest(
       1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
 
     RestFrontendServiceSuite.withKyuubiRestServer {
       (_, _, _) =>
-        var response: Response = target(s"api/v1/sessions")
+        var response: Response = restApiBase.target(s"api/v1/sessions")
           .request(MediaType.APPLICATION_JSON_TYPE)
           .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
 
@@ -159,19 +157,19 @@ class SessionsResourceSuite extends RestApiBaseSuite {
           s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
 
         // get session detail
-        response = target(s"api/v1/sessions/$serializedSessionHandle").request().get()
+        response = restApiBase.target(s"api/v1/sessions/$serializedSessionHandle").request().get()
         assert(200 == response.getStatus)
         var sessions = response.readEntity(classOf[SessionDetail])
         assert(sessions.configs.nonEmpty)
 
         // close a opened session
-        response = target(s"api/v1/sessions/$serializedSessionHandle").request().delete()
+        response = restApiBase.target(s"api/v1/sessions/$serializedSessionHandle")
+          .request().delete()
         assert(200 == response.getStatus)
 
         // get session detail again
-        response = target(s"api/v1/sessions/$serializedSessionHandle").request().get()
+        response = restApiBase.target(s"api/v1/sessions/$serializedSessionHandle").request().get()
         assert(404 == response.getStatus)
-
     }
   }
 }

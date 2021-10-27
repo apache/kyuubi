@@ -25,7 +25,6 @@ import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.test.{JerseyTest, TestProperties}
 import org.glassfish.jersey.test.jetty.JettyTestContainerFactory
 import org.glassfish.jersey.test.spi.TestContainerFactory
-import org.junit.Test
 import org.scalatest.time.SpanSugar._
 import scala.io.Source
 
@@ -122,24 +121,26 @@ class RestApiBaseSuite extends JerseyTest {
 
 }
 
-class RestErrorAndExceptionSuite extends RestApiBaseSuite {
+class RestErrorAndExceptionSuite extends KyuubiFunSuite{
 
-  @Test
-  def testErrorAndExceptionResponse: Unit = {
+  test("test error and exception response") {
     withKyuubiRestServer {
       (_, _, _) =>
         // send a not exists request
-        var response = target("api/v1/pong").request().get()
+        val restApiBase = new RestApiBaseSuite
+        restApiBase.setUp()
+
+        var response = restApiBase.target("api/v1/pong").request().get()
         assert(404 == response.getStatus)
         assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("not found"))
 
         // send a exists request but wrong http method
-        response = target("api/v1/ping").request().post(null)
+        response = restApiBase.target("api/v1/ping").request().post(null)
         assert(405 == response.getStatus)
         assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("method not allowed"))
 
         // send a request but throws a exception on the server side
-        response = target("api/v1/exception").request().get()
+        response = restApiBase.target("api/v1/exception").request().get()
         assert(500 == response.getStatus)
         assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("server error"))
     }
