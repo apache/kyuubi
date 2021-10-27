@@ -54,7 +54,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
   // Share level of the engine
   private val shareLevel: ShareLevel = ShareLevel.withName(conf.get(ENGINE_SHARE_LEVEL))
 
-  private val subDomain: Option[String] = conf.get(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
+  private val subDomain: String = conf.get(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
 
   // Launcher of the engine
   private val appUser: String = shareLevel match {
@@ -68,10 +68,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
   @VisibleForTesting
   private[kyuubi] val defaultEngineName: String = shareLevel match {
     case CONNECTION => s"kyuubi_${shareLevel}_${appUser}_$sessionId"
-    case _ => subDomain match {
-      case Some(domain) => s"kyuubi_${shareLevel}_${appUser}_${domain}_$sessionId"
-      case _ => s"kyuubi_${shareLevel}_${appUser}_$sessionId"
-    }
+    case _ => s"kyuubi_${shareLevel}_${appUser}_${subDomain}_$sessionId"
   }
 
   /**
@@ -86,10 +83,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
   @VisibleForTesting
   private[kyuubi] lazy val engineSpace: String = shareLevel match {
     case CONNECTION => ZKPaths.makePath(s"${serverSpace}_$shareLevel", appUser, sessionId)
-    case _ => subDomain match {
-      case Some(domain) => ZKPaths.makePath(s"${serverSpace}_$shareLevel", appUser, domain)
-      case None => ZKPaths.makePath(s"${serverSpace}_$shareLevel", appUser)
-    }
+    case _ => ZKPaths.makePath(s"${serverSpace}_$shareLevel", appUser, subDomain)
   }
 
   /**
@@ -100,7 +94,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
     case CONNECTION => f
     case _ =>
       val lockPath =
-        ZKPaths.makePath(s"${serverSpace}_$shareLevel", "lock", appUser, subDomain.orNull)
+        ZKPaths.makePath(s"${serverSpace}_$shareLevel", "lock", appUser, subDomain)
       var lock: InterProcessSemaphoreMutex = null
       try {
         try {

@@ -574,7 +574,7 @@ object KyuubiConf {
 
   private val validEngineSubDomain: Pattern = "^[a-zA-Z_]{1,10}$".r.pattern
 
-  val ENGINE_SHARE_LEVEL_SUB_DOMAIN: OptionalConfigEntry[String] =
+  val ENGINE_SHARE_LEVEL_SUB_DOMAIN: ConfigEntry[String] =
     buildConf("engine.share.level.sub.domain")
       .doc("Allow end-users to create a sub-domain for the share level of an engine. A" +
         " sub-domain is a case-insensitive string values in `^[a-zA-Z_]{1,10}$` form." +
@@ -586,7 +586,7 @@ object KyuubiConf {
       .transform(_.toLowerCase(Locale.ROOT))
       .checkValue(validEngineSubDomain.matcher(_).matches(),
         "must be [1, 10] length alphabet string, e.g. 'abc', 'apache'")
-      .createOptional
+      .createWithDefaultString("default")
 
   val ENGINE_CONNECTION_URL_USE_HOSTNAME: ConfigEntry[Boolean] =
     buildConf("engine.connection.url.use.hostname")
