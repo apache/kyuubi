@@ -18,10 +18,10 @@
 package org.apache.kyuubi.kubernetes.test
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.operation.BasicQueryTests
+import org.apache.kyuubi.operation.SparkQueryTests
 
 // TODO: [KYUUBI-863] Support test Spark engine using k8s master with minikube
-class KubernetesJDBCTestsSuite extends BasicQueryTests with Logging {
+class KubernetesJDBCTestsSuite extends SparkQueryTests with Logging {
   private lazy val _jdbcUrl: String = {
     val kubernetesclient = MiniKube.getKubernetesClient
     val kyuubiServers =
