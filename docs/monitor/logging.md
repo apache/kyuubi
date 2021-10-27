@@ -23,7 +23,7 @@
 
 # Monitoring Kyuubi - Logging System
 
-Kyuubi uses [Apache Log4j](https://logging.apache.org/log4j/2.x/) for logging.
+Kyuubi uses [Apache Log4j](https://logging.apache.org/) for logging.
 
 In general, there are mainly three components in the Kyuubi architecture that will produce component-oriented logs to help you trace breadcrumbs for SQL workloads against Kyuubi.
 
@@ -137,7 +137,7 @@ In general, when an exception occurs, we are able to find more information and c
 
 #### Configuring Engine Logging
 
-Please refer to Apache Spark online documentation https://spark.apache.org/docs/latest/configuration.html#configuring-logging for instructions.
+Please refer to Apache Spark online documentation -[Configuring Logging](https://spark.apache.org/docs/latest/configuration.html#configuring-logging) for instructions.
 
 #### Where to Find the Engine Log
 
