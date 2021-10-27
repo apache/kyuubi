@@ -135,7 +135,7 @@ class RestErrorAndExceptionSuite extends KyuubiFunSuite {
       (_, host, port, client) =>
 
         // send a not exists request
-        var response = client.target("api/v1/pong").request().get()
+        var response = client.target(s"http://$host:$port/api/v1/pong").request().get()
         assert(404 == response.getStatus)
         assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("not found"))
 
