@@ -70,8 +70,7 @@ class SessionsResourceSuite extends KyuubiFunSuite {
         // close a opened session
         val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
           s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
-        response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle")
-          .request().delete()
+        response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().delete()
         assert(200 == response.getStatus)
 
         // verify the open session count again
@@ -91,20 +90,17 @@ class SessionsResourceSuite extends KyuubiFunSuite {
         })
 
         // verify the exec pool statistic
-        var response = webTarget.path("api/v1/sessions/execpool/statistic")
-          .request().get()
+        var response = webTarget.path("api/v1/sessions/execpool/statistic").request().get()
         val execPoolStatistic1 = response.readEntity(classOf[ExecPoolStatistic])
         assert(execPoolStatistic1.execPoolSize == 1 && execPoolStatistic1.execPoolActiveCount == 1)
 
         future.cancel(true)
-        response = webTarget.path("api/v1/sessions/execpool/statistic")
-          .request().get()
+        response = webTarget.path("api/v1/sessions/execpool/statistic").request().get()
         val execPoolStatistic2 = response.readEntity(classOf[ExecPoolStatistic])
         assert(execPoolStatistic2.execPoolSize == 1 && execPoolStatistic2.execPoolActiveCount == 0)
 
         sessionManager.stop()
-        response = webTarget.path("api/v1/sessions/execpool/statistic")
-          .request().get()
+        response = webTarget.path("api/v1/sessions/execpool/statistic").request().get()
         val execPoolStatistic3 = response.readEntity(classOf[ExecPoolStatistic])
         assert(execPoolStatistic3.execPoolSize == 0 && execPoolStatistic3.execPoolActiveCount == 0)
 
@@ -131,8 +127,7 @@ class SessionsResourceSuite extends KyuubiFunSuite {
         val sessionHandle = response.readEntity(classOf[SessionHandle])
         val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
           s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
-        response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle")
-          .request().delete()
+        response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().delete()
         assert(200 == response.getStatus)
 
         // get session list again
@@ -158,20 +153,17 @@ class SessionsResourceSuite extends KyuubiFunSuite {
           s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
 
         // get session detail
-        response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle")
-          .request().get()
+        response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().get()
         assert(200 == response.getStatus)
         var sessions = response.readEntity(classOf[SessionDetail])
         assert(sessions.configs.nonEmpty)
 
         // close a opened session
-        response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle")
-          .request().delete()
+        response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().delete()
         assert(200 == response.getStatus)
 
         // get session detail again
-        response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle")
-          .request().get()
+        response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().get()
         assert(404 == response.getStatus)
     }
   }
