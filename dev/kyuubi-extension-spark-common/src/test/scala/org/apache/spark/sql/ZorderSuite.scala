@@ -377,7 +377,7 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
       0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
       0xAA, 0xAA, 0xBE, 0xAA, 0xAA, 0x8A, 0xBA, 0xAA, 0x2A, 0xEA,
       0xA8, 0xAA, 0xAA, 0xA2, 0xAA, 0xAA, 0x8A, 0xAA, 0xAA, 0x2F,
-      0xEB, 0xFC)
+      0xEB, 0xFE)
       .map(_.toByte)
     checkEvaluation(zorder, expected, InternalRow.fromSeq(children))
   }
@@ -395,6 +395,22 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
       val result = Dataset.ofRows(spark, zorderSort)
       checkAnswer(result, expected)
     }
+  }
+
+  test("sort with zorder -- boolean column") {
+    val schema = StructType(StructField("c1", BooleanType) :: StructField("c2", BooleanType) :: Nil)
+    val nonNullDF = spark.createDataFrame(spark.sparkContext.parallelize(
+      Seq(Row(false, false), Row(false, true), Row(true, false), Row(true, true))
+    ), schema)
+    val expected =
+      Row(false, false) :: Row(true, false) :: Row(false, true) :: Row(true, true) :: Nil
+    checkSort(nonNullDF, expected, Array(BooleanType, BooleanType))
+    val df = spark.createDataFrame(spark.sparkContext.parallelize(
+      Seq(Row(false, false), Row(false, null), Row(null, false), Row(null, null))
+    ), schema)
+    val expected2 =
+      Row(false, false) :: Row(null, false) :: Row(false, null) :: Row(null, null) :: Nil
+    checkSort(df, expected2, Array(BooleanType, BooleanType))
   }
 
   test("sort with zorder -- int column") {

@@ -169,7 +169,7 @@ object ZorderBytesUtils {
   def defaultValue(dataType: DataType): Array[Byte] = toByte {
     dataType match {
       case BooleanType =>
-        false
+        true
       case ByteType =>
         Byte.MaxValue
       case ShortType =>
