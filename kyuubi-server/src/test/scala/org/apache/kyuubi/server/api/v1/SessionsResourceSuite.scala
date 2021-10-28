@@ -94,7 +94,8 @@ class SessionsResourceSuite extends KyuubiFunSuite {
         val execPoolStatistic1 = response.readEntity(classOf[ExecPoolStatistic])
         assert(execPoolStatistic1.execPoolSize == 1 && execPoolStatistic1.execPoolActiveCount == 1)
 
-        future.cancel(true)
+        // if failed to cancel, need to wait the thread finish.
+        if (!future.cancel(true)) Thread.sleep(3000)
         response = webTarget.path("api/v1/sessions/execpool/statistic").request().get()
         val execPoolStatistic2 = response.readEntity(classOf[ExecPoolStatistic])
         assert(execPoolStatistic2.execPoolSize == 1 && execPoolStatistic2.execPoolActiveCount == 0)
