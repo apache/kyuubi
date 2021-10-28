@@ -18,25 +18,25 @@
 package org.apache.kyuubi.server
 
 import java.util.Locale
-import javax.ws.rs.core.Application
+import javax.ws.rs.client.WebTarget
+import javax.ws.rs.core.{Application, UriBuilder}
 
-import org.glassfish.jersey.client.ClientConfig
+import org.glassfish.jersey.client._
 import org.glassfish.jersey.server.ResourceConfig
-import org.glassfish.jersey.test.{JerseyTest, TestProperties}
+import org.glassfish.jersey.test.JerseyTest
 import org.glassfish.jersey.test.jetty.JettyTestContainerFactory
 import org.glassfish.jersey.test.spi.TestContainerFactory
-import org.junit.Test
 import org.scalatest.time.SpanSugar._
 import scala.io.Source
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.RestFrontendServiceSuite.{withKyuubiRestServer, TEST_SERVER_PORT}
+import org.apache.kyuubi.server.RestFrontendServiceSuite.withKyuubiRestServer
 import org.apache.kyuubi.server.api.KyuubiScalaObjectMapper
 import org.apache.kyuubi.service.NoopServer
 import org.apache.kyuubi.service.ServiceState._
 
-class RestFrontendServiceSuite extends KyuubiFunSuite{
+class RestFrontendServiceSuite extends KyuubiFunSuite {
 
   test("kyuubi rest frontend service basic") {
     val server = new RestFrontendServiceSuite.RestNoopServer()
@@ -70,7 +70,7 @@ class RestFrontendServiceSuite extends KyuubiFunSuite{
 
   test("kyuubi rest frontend service http basic") {
     RestFrontendServiceSuite.withKyuubiRestServer {
-      (_, host, port) =>
+      (_, host, port, _) =>
         eventually(timeout(10.seconds), interval(50.milliseconds)) {
           val html = Source.fromURL(s"http://$host:$port/api/v1/ping").mkString
           assert(html.toLowerCase(Locale.ROOT).equals("pong"))
@@ -86,20 +86,30 @@ object RestFrontendServiceSuite {
   }
 
   val TEST_SERVER_PORT = KyuubiConf().get(KyuubiConf.FRONTEND_REST_BIND_PORT)
+  val TEST_SERVER_HOST = "localhost"
 
-  def withKyuubiRestServer(f: (RestFrontendService, String, Int) => Unit): Unit = {
+  def withKyuubiRestServer(f: (
+    RestFrontendService, String, Int, WebTarget) => Unit): Unit = {
+
     val server = new RestNoopServer()
     server.stop()
     val conf = KyuubiConf()
-    conf.set(KyuubiConf.FRONTEND_REST_BIND_HOST, "localhost")
+    conf.set(KyuubiConf.FRONTEND_REST_BIND_HOST, TEST_SERVER_HOST)
 
     server.initialize(conf)
     server.start()
 
+    val restApiBaseSuite = new RestApiBaseSuite
+    restApiBaseSuite.setUp()
+    val baseUri = UriBuilder.fromUri(s"http://$TEST_SERVER_HOST/")
+      .port(TEST_SERVER_PORT).build(new Array[AnyRef](0))
+    val webTarget = restApiBaseSuite.client.target(baseUri)
+
     try {
       f(server.frontendServices.head, conf.get(KyuubiConf.FRONTEND_REST_BIND_HOST).get,
-        TEST_SERVER_PORT)
+        TEST_SERVER_PORT, webTarget)
     } finally {
+      restApiBaseSuite.tearDown()
       server.stop()
     }
   }
@@ -109,7 +119,6 @@ object RestFrontendServiceSuite {
 class RestApiBaseSuite extends JerseyTest {
 
   override def configure: Application = {
-    forceSet(TestProperties.CONTAINER_PORT, TEST_SERVER_PORT.toString)
     new ResourceConfig(getClass)
   }
 
@@ -122,24 +131,24 @@ class RestApiBaseSuite extends JerseyTest {
 
 }
 
-class RestErrorAndExceptionSuite extends RestApiBaseSuite {
+class RestErrorAndExceptionSuite extends KyuubiFunSuite {
 
-  @Test
-  def testErrorAndExceptionResponse: Unit = {
+  test("test error and exception response") {
     withKyuubiRestServer {
-      (_, _, _) =>
+      (_, _, _, webTarget) =>
+
         // send a not exists request
-        var response = target("api/v1/pong").request().get()
+        var response = webTarget.path("api/v1/pong").request().get()
         assert(404 == response.getStatus)
         assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("not found"))
 
         // send a exists request but wrong http method
-        response = target("api/v1/ping").request().post(null)
+        response = webTarget.path("api/v1/ping").request().post(null)
         assert(405 == response.getStatus)
         assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("method not allowed"))
 
         // send a request but throws a exception on the server side
-        response = target("api/v1/exception").request().get()
+        response = webTarget.path("api/v1/exception").request().get()
         assert(500 == response.getStatus)
         assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("server error"))
     }
