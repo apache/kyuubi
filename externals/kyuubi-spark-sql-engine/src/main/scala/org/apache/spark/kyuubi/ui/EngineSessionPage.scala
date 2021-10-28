@@ -30,7 +30,7 @@ import org.apache.spark.util.Utils
 /** Page for Spark Web UI that shows statistics of jobs running in the engine server */
 case class EngineSessionPage(parent: EngineTab)
   extends WebUIPage("session") with Logging {
-  val store = parent.store
+  val store = parent.engine.store
 
   /** Render the page */
   def render(request: HttpServletRequest): Seq[Node] = {

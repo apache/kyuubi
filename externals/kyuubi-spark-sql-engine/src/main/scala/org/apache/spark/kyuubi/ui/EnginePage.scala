@@ -35,7 +35,7 @@ import org.apache.kyuubi.engine.spark.events.SessionEvent
 import org.apache.kyuubi.engine.spark.events.SparkStatementEvent
 
 case class EnginePage(parent: EngineTab) extends WebUIPage("") {
-  private val store = parent.store
+  private val store = parent.engine.store
 
   override def render(request: HttpServletRequest): Seq[Node] = {
     val content =

@@ -134,7 +134,7 @@ object SparkSQLEngine extends Logging {
       }
       try {
         engine.start()
-        EngineTab(engine, store)
+        EngineTab(engine)
         val event = EngineEvent(engine)
         info(event)
         EventLoggingService.onEvent(event)
