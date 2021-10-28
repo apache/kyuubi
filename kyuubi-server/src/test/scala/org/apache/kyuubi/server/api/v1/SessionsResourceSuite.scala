@@ -31,8 +31,8 @@ class SessionsResourceSuite extends KyuubiFunSuite {
       1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
 
     RestFrontendServiceSuite.withKyuubiRestServer {
-      (_, host, port, client) =>
-        var response = client.target(s"http://$host:$port/api/v1/sessions")
+      (_, _, _, webTarget) =>
+        var response = webTarget.path("api/v1/sessions")
           .request(MediaType.APPLICATION_JSON_TYPE)
           .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
 
@@ -44,7 +44,7 @@ class SessionsResourceSuite extends KyuubiFunSuite {
         assert(sessionHandle.identifier != null)
 
         // verify the open session count
-        response = client.target(s"http://$host:$port/api/v1/sessions/count").request().get()
+        response = webTarget.path("api/v1/sessions/count").request().get()
         val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
         assert(openedSessionCount.openSessionCount == 1)
     }
@@ -55,8 +55,8 @@ class SessionsResourceSuite extends KyuubiFunSuite {
       1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
 
     RestFrontendServiceSuite.withKyuubiRestServer {
-      (_, host, port, client) =>
-        var response = client.target(s"http://$host:$port/api/v1/sessions")
+      (_, _, _, webTarget) =>
+        var response = webTarget.path("api/v1/sessions")
           .request(MediaType.APPLICATION_JSON_TYPE)
           .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
 
@@ -70,12 +70,12 @@ class SessionsResourceSuite extends KyuubiFunSuite {
         // close a opened session
         val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
           s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
-        response = client.target(s"http://$host:$port/api/v1/sessions/$serializedSessionHandle")
+        response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle")
           .request().delete()
         assert(200 == response.getStatus)
 
         // verify the open session count again
-        response = client.target(s"http://$host:$port/api/v1/sessions/count").request().get()
+        response = webTarget.path("api/v1/sessions/count").request().get()
         val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
         assert(openedSessionCount.openSessionCount == 0)
     }
@@ -83,7 +83,7 @@ class SessionsResourceSuite extends KyuubiFunSuite {
 
   test("test execPoolStatistic") {
     RestFrontendServiceSuite.withKyuubiRestServer {
-      (restFrontendService: RestFrontendService, host, port, client) =>
+      (restFrontendService: RestFrontendService, _, _, webTarget) =>
 
         val sessionManager = restFrontendService.be.sessionManager
         val future = sessionManager.submitBackgroundOperation(() => {
@@ -91,19 +91,19 @@ class SessionsResourceSuite extends KyuubiFunSuite {
         })
 
         // verify the exec pool statistic
-        var response = client.target(s"http://$host:$port/api/v1/sessions/execpool/statistic")
+        var response = webTarget.path("api/v1/sessions/execpool/statistic")
           .request().get()
         val execPoolStatistic1 = response.readEntity(classOf[ExecPoolStatistic])
         assert(execPoolStatistic1.execPoolSize == 1 && execPoolStatistic1.execPoolActiveCount == 1)
 
         future.cancel(true)
-        response = client.target(s"http://$host:$port/api/v1/sessions/execpool/statistic")
+        response = webTarget.path("api/v1/sessions/execpool/statistic")
           .request().get()
         val execPoolStatistic2 = response.readEntity(classOf[ExecPoolStatistic])
         assert(execPoolStatistic2.execPoolSize == 1 && execPoolStatistic2.execPoolActiveCount == 0)
 
         sessionManager.stop()
-        response = client.target(s"http://$host:$port/api/v1/sessions/execpool/statistic")
+        response = webTarget.path("api/v1/sessions/execpool/statistic")
           .request().get()
         val execPoolStatistic3 = response.readEntity(classOf[ExecPoolStatistic])
         assert(execPoolStatistic3.execPoolSize == 0 && execPoolStatistic3.execPoolActiveCount == 0)
@@ -116,13 +116,13 @@ class SessionsResourceSuite extends KyuubiFunSuite {
       1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
 
     RestFrontendServiceSuite.withKyuubiRestServer {
-      (_, host, port, client) =>
-        var response = client.target(s"http://$host:$port/api/v1/sessions")
+      (_, _, _, webTarget) =>
+        var response = webTarget.path("api/v1/sessions")
           .request(MediaType.APPLICATION_JSON_TYPE)
           .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
 
         // get session list
-        var response2 = client.target(s"http://$host:$port/api/v1/sessions").request().get()
+        var response2 = webTarget.path("api/v1/sessions").request().get()
         assert(200 == response2.getStatus)
         val sessions1 = response2.readEntity(classOf[SessionList])
         assert(sessions1.sessionList.nonEmpty)
@@ -131,12 +131,12 @@ class SessionsResourceSuite extends KyuubiFunSuite {
         val sessionHandle = response.readEntity(classOf[SessionHandle])
         val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
           s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
-        response = client.target(s"http://$host:$port/api/v1/sessions/$serializedSessionHandle")
+        response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle")
           .request().delete()
         assert(200 == response.getStatus)
 
         // get session list again
-        response2 = client.target(s"http://$host:$port/api/v1/sessions").request().get()
+        response2 = webTarget.path("api/v1/sessions").request().get()
         assert(200 == response2.getStatus)
         val sessions2 = response2.readEntity(classOf[SessionList])
         assert(sessions2.sessionList.isEmpty)
@@ -148,8 +148,8 @@ class SessionsResourceSuite extends KyuubiFunSuite {
       1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
 
     RestFrontendServiceSuite.withKyuubiRestServer {
-      (_, host, port, client) =>
-        var response: Response = client.target(s"http://$host:$port/api/v1/sessions")
+      (_, _, _, webTarget) =>
+        var response: Response = webTarget.path("api/v1/sessions")
           .request(MediaType.APPLICATION_JSON_TYPE)
           .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
 
@@ -158,19 +158,19 @@ class SessionsResourceSuite extends KyuubiFunSuite {
           s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
 
         // get session detail
-        response = client.target(s"http://$host:$port/api/v1/sessions/$serializedSessionHandle")
+        response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle")
           .request().get()
         assert(200 == response.getStatus)
         var sessions = response.readEntity(classOf[SessionDetail])
         assert(sessions.configs.nonEmpty)
 
         // close a opened session
-        response = client.target(s"http://$host:$port/api/v1/sessions/$serializedSessionHandle")
+        response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle")
           .request().delete()
         assert(200 == response.getStatus)
 
         // get session detail again
-        response = client.target(s"http://$host:$port/api/v1/sessions/$serializedSessionHandle")
+        response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle")
           .request().get()
         assert(404 == response.getStatus)
     }
