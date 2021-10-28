@@ -221,8 +221,8 @@ Fork and clone [Apache Kyuubi website](https://github.com/apache/incubator-kyuub
 
 1. Add a new markdown file in `src/news/`
 2. Add a new markdown file in `src/release/`
-3. Follow [Build Document](../develop_tools/build_document.md) to build docs, and copy folder `docs/_build/html` to
-   `content/docs/r{RELEASE_VERSION}`
+3. Follow [Build Document](../develop_tools/build_document.md) to build documents, then copy `apache/incubator-kyuubi`'s
+   folder `docs/_build/html` to `apache/incubator-kyuubi-website`'s folder `content/docs/r{RELEASE_VERSION}`
 
 ### Create an Announcement
 
