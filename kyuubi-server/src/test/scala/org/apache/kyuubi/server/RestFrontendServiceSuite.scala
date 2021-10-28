@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.server
 
-import java.net.URI
 import java.util.Locale
 import javax.ws.rs.client.WebTarget
 import javax.ws.rs.core.{Application, UriBuilder}
@@ -32,7 +31,7 @@ import scala.io.Source
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.RestFrontendServiceSuite.{withKyuubiRestServer, TEST_SERVER_PORT}
+import org.apache.kyuubi.server.RestFrontendServiceSuite.withKyuubiRestServer
 import org.apache.kyuubi.server.api.KyuubiScalaObjectMapper
 import org.apache.kyuubi.service.NoopServer
 import org.apache.kyuubi.service.ServiceState._
@@ -87,6 +86,7 @@ object RestFrontendServiceSuite {
   }
 
   val TEST_SERVER_PORT = KyuubiConf().get(KyuubiConf.FRONTEND_REST_BIND_PORT)
+  val TEST_SERVER_HOST = "localhost"
 
   def withKyuubiRestServer(f: (
     RestFrontendService, String, Int, WebTarget) => Unit): Unit = {
@@ -94,14 +94,16 @@ object RestFrontendServiceSuite {
     val server = new RestNoopServer()
     server.stop()
     val conf = KyuubiConf()
-    conf.set(KyuubiConf.FRONTEND_REST_BIND_HOST, "localhost")
+    conf.set(KyuubiConf.FRONTEND_REST_BIND_HOST, TEST_SERVER_HOST)
 
     server.initialize(conf)
     server.start()
 
     val restApiBaseSuite = new RestApiBaseSuite
     restApiBaseSuite.setUp()
-    val webTarget = restApiBaseSuite.client.target(restApiBaseSuite.getBaseUri())
+    val baseUri = UriBuilder.fromUri(s"http://$TEST_SERVER_HOST/")
+      .port(TEST_SERVER_PORT).build(new Array[AnyRef](0))
+    val webTarget = restApiBaseSuite.client.target(baseUri)
 
     try {
       f(server.frontendServices.head, conf.get(KyuubiConf.FRONTEND_REST_BIND_HOST).get,
@@ -123,11 +125,6 @@ class RestApiBaseSuite extends JerseyTest {
   override def configureClient(config: ClientConfig): Unit = {
     super.configureClient(config)
     config.register(classOf[KyuubiScalaObjectMapper])
-  }
-
-  override def getBaseUri: URI = {
-    UriBuilder.fromUri("http://localhost/")
-      .port(TEST_SERVER_PORT).build(new Array[AnyRef](0))
   }
 
   override def getTestContainerFactory: TestContainerFactory = new JettyTestContainerFactory
