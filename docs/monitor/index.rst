@@ -26,6 +26,6 @@ In this section, you will learn how to monitor Kyuubi with logging, metrics etc.
     :numbered: 3
     :glob:
 
-    metrics
     logging
+    metrics
     trouble_shooting

@@ -165,7 +165,7 @@ if [[ "$SPARK_PROVIDED" == "true" ]]; then
   MVN_DIST_OPT="$MVN_DIST_OPT -Pspark-provided"
 fi
 
-BUILD_COMMAND=("$MVN" -T 1C clean package $MVN_DIST_OPT $@)
+BUILD_COMMAND=("$MVN" clean package $MVN_DIST_OPT $@)
 
 echo -e "\nBuilding with..."
 echo -e "\$ ${BUILD_COMMAND[@]}\n"
@@ -201,7 +201,7 @@ if [[ -f "$KYUUBI_HOME/tools/spark-block-cleaner/target/spark-block-cleaner_${SC
 fi
 
 # Copy Kyuubi extension
-SPARK_EXTENSION_VERSIONS=('3-1')
+SPARK_EXTENSION_VERSIONS=('3-1' '3-2')
 for SPARK_EXTENSION_VERSION in ${SPARK_EXTENSION_VERSIONS[@]}; do
   if [[ -f $"$KYUUBI_HOME/dev/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-${SPARK_EXTENSION_VERSION}_${SCALA_VERSION}-${VERSION}.jar" ]]; then
     mkdir -p "$DISTDIR/extension"

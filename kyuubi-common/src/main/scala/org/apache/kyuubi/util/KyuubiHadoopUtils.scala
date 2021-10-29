@@ -18,14 +18,28 @@
 package org.apache.kyuubi.util
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, DataInputStream, DataOutputStream}
+import java.util.{Map => JMap}
+
+import scala.collection.JavaConverters._
 
 import org.apache.commons.codec.binary.Base64
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.security.{Credentials, SecurityUtil}
+import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier
+import org.apache.hadoop.io.Text
+import org.apache.hadoop.security.{Credentials, SecurityUtil, UserGroupInformation}
+import org.apache.hadoop.security.token.{Token, TokenIdentifier}
 
 import org.apache.kyuubi.config.KyuubiConf
 
 object KyuubiHadoopUtils {
+
+  private val subjectField =
+    classOf[UserGroupInformation].getDeclaredField("subject")
+  subjectField.setAccessible(true)
+
+  private val tokenMapField =
+    classOf[Credentials].getDeclaredField("tokenMap")
+  tokenMapField.setAccessible(true)
 
   def newHadoopConf(conf: KyuubiConf): Configuration = {
     val hadoopConf = new Configuration()
@@ -55,4 +69,24 @@ object KyuubiHadoopUtils {
     creds
   }
 
+  /**
+   * Get [[Credentials#tokenMap]] by reflection as [[Credentials#getTokenMap]] is not present before
+   * Hadoop 3.2.1.
+   */
+  def getTokenMap(credentials: Credentials): Map[Text, Token[_ <: TokenIdentifier]] = {
+    tokenMapField.get(credentials)
+      .asInstanceOf[JMap[Text, Token[_ <: TokenIdentifier]]]
+      .asScala
+      .toMap
+  }
+
+  def getTokenIssueDate(token: Token[_ <: TokenIdentifier]): Long = {
+    // It is safe to deserialize any token identifier to hdfs `DelegationTokenIdentifier`
+    // as all token identifiers have the same binary format.
+    val tokenIdentifier = new DelegationTokenIdentifier
+    val buf = new ByteArrayInputStream(token.getIdentifier)
+    val in = new DataInputStream(buf)
+    tokenIdentifier.readFields(in)
+    tokenIdentifier.getIssueDate
+  }
 }

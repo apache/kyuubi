@@ -18,18 +18,25 @@
 package org.apache.kyuubi.server
 
 import java.util.Locale
+import javax.ws.rs.client.WebTarget
+import javax.ws.rs.core.{Application, UriBuilder}
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
+import org.glassfish.jersey.client._
+import org.glassfish.jersey.server.ResourceConfig
+import org.glassfish.jersey.test.JerseyTest
+import org.glassfish.jersey.test.jetty.JettyTestContainerFactory
+import org.glassfish.jersey.test.spi.TestContainerFactory
 import org.scalatest.time.SpanSugar._
 import scala.io.Source
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.server.RestFrontendServiceSuite.withKyuubiRestServer
+import org.apache.kyuubi.server.api.KyuubiScalaObjectMapper
 import org.apache.kyuubi.service.NoopServer
 import org.apache.kyuubi.service.ServiceState._
 
-class RestFrontendServiceSuite extends KyuubiFunSuite{
+class RestFrontendServiceSuite extends KyuubiFunSuite {
 
   test("kyuubi rest frontend service basic") {
     val server = new RestFrontendServiceSuite.RestNoopServer()
@@ -37,15 +44,15 @@ class RestFrontendServiceSuite extends KyuubiFunSuite{
     val conf = KyuubiConf()
     assert(server.getServices.isEmpty)
     assert(server.getServiceState === LATENT)
-    val e = intercept[IllegalStateException](server.connectionUrl)
-    assert(e.getMessage === "Illegal Service State: LATENT")
+    val e = intercept[IllegalStateException](server.frontendServices.head.connectionUrl)
+    assert(e.getMessage startsWith "Illegal Service State: LATENT")
     assert(server.getConf === null)
 
     server.initialize(conf)
     assert(server.getServiceState === INITIALIZED)
-    val frontendService = server.getServices(0).asInstanceOf[RestFrontendService]
+    val frontendService = server.frontendServices.head
     assert(frontendService.getServiceState == INITIALIZED)
-    assert(server.connectionUrl.split(":").length === 2)
+    assert(server.frontendServices.head.connectionUrl.split(":").length === 2)
     assert(server.getConf === conf)
     assert(server.getStartTime === 0)
     server.stop()
@@ -54,7 +61,6 @@ class RestFrontendServiceSuite extends KyuubiFunSuite{
     assert(server.getServiceState === STARTED)
     assert(frontendService.getServiceState == STARTED)
     assert(server.getStartTime !== 0)
-    logger.info(frontendService.connectionUrl(false))
 
     server.stop()
     assert(server.getServiceState === STOPPED)
@@ -64,7 +70,7 @@ class RestFrontendServiceSuite extends KyuubiFunSuite{
 
   test("kyuubi rest frontend service http basic") {
     RestFrontendServiceSuite.withKyuubiRestServer {
-      (_, host, port) =>
+      (_, host, port, _) =>
         eventually(timeout(10.seconds), interval(50.milliseconds)) {
           val html = Source.fromURL(s"http://$host:$port/api/v1/ping").mkString
           assert(html.toLowerCase(Locale.ROOT).equals("pong"))
@@ -76,29 +82,75 @@ class RestFrontendServiceSuite extends KyuubiFunSuite{
 object RestFrontendServiceSuite {
 
   class RestNoopServer extends NoopServer {
-    override val frontendService = new RestFrontendService(backendService)
+    override val frontendServices = Seq(new RestFrontendService(this))
   }
 
-  val OBJECT_MAPPER = new ObjectMapper().registerModule(DefaultScalaModule)
   val TEST_SERVER_PORT = KyuubiConf().get(KyuubiConf.FRONTEND_REST_BIND_PORT)
+  val TEST_SERVER_HOST = "localhost"
 
-  def withKyuubiRestServer(f: (RestFrontendService, String, Int) => Unit): Unit = {
+  def withKyuubiRestServer(f: (
+    RestFrontendService, String, Int, WebTarget) => Unit): Unit = {
+
     val server = new RestNoopServer()
     server.stop()
     val conf = KyuubiConf()
-    conf.set(KyuubiConf.FRONTEND_REST_BIND_HOST, "localhost")
+    conf.set(KyuubiConf.FRONTEND_REST_BIND_HOST, TEST_SERVER_HOST)
 
     server.initialize(conf)
     server.start()
 
-    val frontendService = server.getServices(0).asInstanceOf[RestFrontendService]
+    val restApiBaseSuite = new RestApiBaseSuite
+    restApiBaseSuite.setUp()
+    val baseUri = UriBuilder.fromUri(s"http://$TEST_SERVER_HOST/")
+      .port(TEST_SERVER_PORT).build(new Array[AnyRef](0))
+    val webTarget = restApiBaseSuite.client.target(baseUri)
 
     try {
-      f(frontendService, conf.get(KyuubiConf.FRONTEND_REST_BIND_HOST).get,
-        TEST_SERVER_PORT)
+      f(server.frontendServices.head, conf.get(KyuubiConf.FRONTEND_REST_BIND_HOST).get,
+        TEST_SERVER_PORT, webTarget)
     } finally {
+      restApiBaseSuite.tearDown()
       server.stop()
     }
   }
 
+}
+
+class RestApiBaseSuite extends JerseyTest {
+
+  override def configure: Application = {
+    new ResourceConfig(getClass)
+  }
+
+  override def configureClient(config: ClientConfig): Unit = {
+    super.configureClient(config)
+    config.register(classOf[KyuubiScalaObjectMapper])
+  }
+
+  override def getTestContainerFactory: TestContainerFactory = new JettyTestContainerFactory
+
+}
+
+class RestErrorAndExceptionSuite extends KyuubiFunSuite {
+
+  test("test error and exception response") {
+    withKyuubiRestServer {
+      (_, _, _, webTarget) =>
+
+        // send a not exists request
+        var response = webTarget.path("api/v1/pong").request().get()
+        assert(404 == response.getStatus)
+        assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("not found"))
+
+        // send a exists request but wrong http method
+        response = webTarget.path("api/v1/ping").request().post(null)
+        assert(405 == response.getStatus)
+        assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("method not allowed"))
+
+        // send a request but throws a exception on the server side
+        response = webTarget.path("api/v1/exception").request().get()
+        assert(500 == response.getStatus)
+        assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("server error"))
+    }
+  }
 }

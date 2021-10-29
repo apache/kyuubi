@@ -29,7 +29,7 @@ import org.apache.kyuubi.config.KyuubiConf
 /**
  * UT with Connection level engine shared cost much time, only run basic jdbc tests.
  */
-class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with JDBCTestUtils {
+class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
   override protected def jdbcUrl: String = getJdbcUrl
 
@@ -63,7 +63,6 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with JDBCTestUt
       }
       val verboseMessage = Utils.stringifyException(exception)
       assert(verboseMessage.contains("Failed to detect the root cause"))
-      assert(verboseMessage.contains("The last line log"))
     }
   }
 }

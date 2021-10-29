@@ -22,7 +22,7 @@ import org.scalatest.time.SpanSugar._
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 
-class KyuubiOperationEnginePoolSuite extends WithKyuubiServer with JDBCTestUtils {
+class KyuubiOperationEnginePoolSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
   override protected def jdbcUrl: String = getJdbcUrl
 

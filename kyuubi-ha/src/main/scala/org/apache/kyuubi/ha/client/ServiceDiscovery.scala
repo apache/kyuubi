@@ -36,18 +36,18 @@ import org.apache.zookeeper.KeeperException.NodeExistsException
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.service.{AbstractService, Serverable}
-import org.apache.kyuubi.util.ThreadUtils
+import org.apache.kyuubi.service.{AbstractService, FrontendService}
+import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
 
 /**
  * A abstract service for service discovery
  *
  * @param name   the name of the service itself
- * @param server the instance uri a service that used to publish itself
+ * @param fe the frontend service to publish for service discovery
  */
 abstract class ServiceDiscovery (
     name: String,
-    server: Serverable) extends AbstractService(name) {
+    fe: FrontendService) extends AbstractService(name) {
 
   import ServiceDiscovery._
   import ZooKeeperClientProvider._
@@ -97,14 +97,14 @@ abstract class ServiceDiscovery (
   }
 
   override def start(): Unit = {
-    val instance = server.connectionUrl
+    val instance = fe.connectionUrl
     _serviceNode = createServiceNode(conf, zkClient, namespace, instance)
     // Set a watch on the serviceNode
     val watcher = new DeRegisterWatcher
     if (zkClient.checkExists.usingWatcher(watcher).forPath(serviceNode.getActualPath) == null) {
       // No node exists, throw exception
       throw new KyuubiException(s"Unable to create znode for this Kyuubi " +
-        s"instance[${server.connectionUrl}] on ZooKeeper.")
+        s"instance[${fe.connectionUrl}] on ZooKeeper.")
     }
     super.start()
   }
@@ -132,17 +132,16 @@ abstract class ServiceDiscovery (
   // stop the server genteelly
   def stopGracefully(): Unit = {
     stop()
-    while (server.backendService != null &&
-      server.backendService.sessionManager.getOpenSessionCount > 0) {
+    while (fe.be != null && fe.be.sessionManager.getOpenSessionCount > 0) {
       Thread.sleep(1000 * 60)
     }
-    server.stop()
+    fe.serverable.stop()
   }
 
   class DeRegisterWatcher extends Watcher {
     override def process(event: WatchedEvent): Unit = {
       if (event.getType == Watcher.Event.EventType.NodeDeleted) {
-        warn(s"This Kyuubi instance ${server.connectionUrl} is now de-registered from" +
+        warn(s"This Kyuubi instance ${fe.connectionUrl} is now de-registered from" +
           s" ZooKeeper. The server will be shut down after the last client session completes.")
         stopGracefully()
       }
@@ -234,13 +233,18 @@ object ServiceDiscovery extends Logging {
     var serviceNode: PersistentNode = null
     val createMode = if (external) CreateMode.PERSISTENT_SEQUENTIAL
       else CreateMode.EPHEMERAL_SEQUENTIAL
+    val znodeData = if (conf.get(HA_ZK_PUBLIST_CONFIGS) && session.isEmpty) {
+      addConfsToPublish(conf, instance)
+    } else {
+      instance
+    }
     try {
       serviceNode = new PersistentNode(
         zkClient,
         createMode,
         false,
         pathPrefix,
-        instance.getBytes(StandardCharsets.UTF_8))
+        znodeData.getBytes(StandardCharsets.UTF_8))
       serviceNode.start()
       val znodeTimeout = conf.get(HA_ZK_NODE_TIMEOUT)
       if (!serviceNode.waitForInitialCreate(znodeTimeout, TimeUnit.MILLISECONDS)) {
@@ -256,6 +260,37 @@ object ServiceDiscovery extends Logging {
           s"Unable to create a znode for this server instance: $instance", e)
     }
     serviceNode
+  }
+
+  /**
+   * Refer to the implementation of HIVE-11581 to simplify user connection parameters.
+   * https://issues.apache.org/jira/browse/HIVE-11581
+   * HiveServer2 should store connection params in ZK
+   * when using dynamic service discovery for simpler client connection string.
+   */
+  private def addConfsToPublish(conf: KyuubiConf, instance: String): String = {
+    if (!instance.contains(":")) {
+      return instance
+    }
+    val hostPort = instance.split(":", 2)
+    val confsToPublish = collection.mutable.Map[String, String]()
+
+    // Hostname
+    confsToPublish += ("hive.server2.thrift.bind.host" -> hostPort(0))
+    // Transport mode
+    confsToPublish += ("hive.server2.transport.mode" -> "binary")
+    // Transport specific confs
+    confsToPublish += ("hive.server2.thrift.port" -> hostPort(1))
+    confsToPublish += ("hive.server2.thrift.sasl.qop" -> conf.get(KyuubiConf.SASL_QOP))
+    // Auth specific confs
+    val authenticationMethod = conf.get(KyuubiConf.AUTHENTICATION_METHOD).mkString(",")
+    confsToPublish += ("hive.server2.authentication" -> authenticationMethod)
+    if (authenticationMethod.equalsIgnoreCase("KERBEROS")) {
+      confsToPublish += ("hive.server2.authentication.kerberos.principal" ->
+        conf.get(KyuubiConf.SERVER_PRINCIPAL).map(KyuubiHadoopUtils.getServerPrincipal)
+          .getOrElse(""))
+    }
+    confsToPublish.map { case (k, v) => k + "=" + v }.mkString(";")
   }
 }
 

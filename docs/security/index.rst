@@ -25,5 +25,6 @@ Kyuubi Security Overview
 
     Authentication <authentication>
     kinit
+    hadoop_credentials_manager
     authorization
 

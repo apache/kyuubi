@@ -42,13 +42,15 @@ abstract class SparkSQLEngineDeregisterSuite extends WithDiscoverySparkSQLEngine
   test("deregister when meeting specified exception") {
     spark.sql("CREATE TABLE t AS SELECT * FROM VALUES(CAST(2147483648 as DOUBLE))")
     val query = "SELECT CAST(col1 AS Integer) from t"
-    assert(engine.discoveryService.getServiceState === ServiceState.STARTED)
+    assert(engine.frontendServices.head.discoveryService.get.getServiceState ===
+      ServiceState.STARTED)
     (0 until maxJobFailures).foreach { _ =>
       val e = intercept[SparkException](spark.sql(query).collect())
       assert(e.getCause.isInstanceOf[ArithmeticException])
     }
     eventually(timeout(5.seconds), interval(1.second)) {
-      assert(engine.discoveryService.getServiceState === ServiceState.STOPPED)
+      assert(engine.frontendServices.head.discoveryService.get.getServiceState ===
+        ServiceState.STOPPED)
     }
   }
 }
@@ -85,7 +87,8 @@ class SparkSQLEngineDeregisterExceptionTTLSuite extends WithDiscoverySparkSQLEng
   test("deregister exception ttl test") {
     spark.sql("CREATE TABLE t AS SELECT * FROM VALUES(CAST(2147483648 as DOUBLE))")
     val query = "SELECT CAST(col1 AS Integer) from t"
-    assert(engine.discoveryService.getServiceState === ServiceState.STARTED)
+    assert(engine.frontendServices.head.discoveryService.get.getServiceState ===
+      ServiceState.STARTED)
 
     intercept[SparkException](spark.sql(query).collect())
     Thread.sleep(deregisterExceptionTTL + 1000)
@@ -95,7 +98,8 @@ class SparkSQLEngineDeregisterExceptionTTLSuite extends WithDiscoverySparkSQLEng
       assert(e.getCause.isInstanceOf[ArithmeticException])
     }
     eventually(timeout(5.seconds), interval(1.second)) {
-      assert(engine.discoveryService.getServiceState === ServiceState.STOPPED)
+      assert(engine.frontendServices.head.discoveryService.get.getServiceState ===
+        ServiceState.STOPPED)
     }
   }
 }
