@@ -92,6 +92,8 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
           val ke = KyuubiSQLException(s"Timeout operating $opType: $errMsg")
           setOperationException(ke)
           throw ke
+        } else if (isTerminalState(state)) {
+          warn(s"Ignore exception in terminal state with $statementId: $errMsg")
         } else {
           setState(OperationState.ERROR)
           error(s"Error operating $opType: $errMsg", e)
