@@ -18,9 +18,11 @@
 package org.apache.kyuubi.service
 
 class NoopThriftBinaryFrontendService(override val serverable: Serverable)
-  extends ThriftBinaryFrontendService("NoopThriftBinaryFrontendService", serverable) {
+  extends ThriftBinaryFrontendService("NoopThriftBinaryFrontendService") {
 
   override val discoveryService: Option[Service] = None
 
   override def connectionUrl: String = serverAddr.getCanonicalHostName + ":" + portNum
+
+  override protected def oomHook: Runnable = () => serverable.stop()
 }

@@ -24,13 +24,14 @@ import scala.collection.JavaConverters._
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.protocol.TProtocol
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.ThriftUtils
 
-class KyuubiSyncThriftClient(protocol: TProtocol) extends TCLIService.Client(protocol) {
+class KyuubiSyncThriftClient(protocol: TProtocol)
+  extends TCLIService.Client(protocol) with Logging {
 
   @volatile private var _remoteSessionHandle: TSessionHandle = _
 
@@ -170,13 +171,21 @@ class KyuubiSyncThriftClient(protocol: TProtocol) extends TCLIService.Client(pro
   def cancelOperation(operationHandle: TOperationHandle): Unit = {
     val req = new TCancelOperationReq(operationHandle)
     val resp = withLockAcquired(CancelOperation(req))
-    ThriftUtils.verifyTStatus(resp.getStatus)
+    if (resp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS) {
+      info(s"$req succeed on engine side")
+    } else {
+      warn(s"$req failed on engine side", KyuubiSQLException(resp.getStatus))
+    }
   }
 
   def closeOperation(operationHandle: TOperationHandle): Unit = {
     val req = new TCloseOperationReq(operationHandle)
     val resp = withLockAcquired(CloseOperation(req))
-    ThriftUtils.verifyTStatus(resp.getStatus)
+    if (resp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS) {
+      info(s"$req succeed on engine side")
+    } else {
+      warn(s"$req failed on engine side", KyuubiSQLException(resp.getStatus))
+    }
   }
 
   def getResultSetMetadata(operationHandle: TOperationHandle): TTableSchema = {
@@ -210,7 +219,7 @@ class KyuubiSyncThriftClient(protocol: TProtocol) extends TCLIService.Client(pro
     val req = new TRenewDelegationTokenReq()
     req.setSessionHandle(_remoteSessionHandle)
     req.setDelegationToken(encodedCredentials)
-    val resp = RenewDelegationToken(req)
+    val resp = withLockAcquired(RenewDelegationToken(req))
     ThriftUtils.verifyTStatus(resp.getStatus)
   }
 }

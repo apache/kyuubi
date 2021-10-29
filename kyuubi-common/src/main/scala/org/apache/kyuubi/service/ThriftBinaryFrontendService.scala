@@ -29,21 +29,18 @@ import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
 import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TThreadPoolServer}
 import org.apache.thrift.transport.{TServerSocket, TTransport}
 
-import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Logging}
-import org.apache.kyuubi.Utils
+import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{ExecutorPoolCaptureOom, KyuubiHadoopUtils, NamedThreadFactory}
 
-abstract class ThriftBinaryFrontendService(
-    name: String,
-    serverable: Serverable)
+abstract class ThriftBinaryFrontendService(name: String)
   extends AbstractFrontendService(name) with TCLIService.Iface with Runnable with Logging {
 
-  import ThriftBinaryFrontendService._
   import KyuubiConf._
+  import ThriftBinaryFrontendService._
 
   private var server: Option[TServer] = None
   private var serverThread: Thread = _
@@ -53,6 +50,8 @@ abstract class ThriftBinaryFrontendService(
 
   private var authFactory: KyuubiAuthenticationFactory = _
   private var hadoopConf: Configuration = _
+
+  protected def oomHook: Runnable
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
@@ -69,7 +68,7 @@ abstract class ThriftBinaryFrontendService(
         name + "Handler-Pool",
         minThreads, maxThreads,
         keepAliveTime,
-        () => serverable.stop())
+        oomHook)
       authFactory = new KyuubiAuthenticationFactory(conf)
       val transFactory = authFactory.getTTransportFactory
       val tProcFactory = authFactory.getTProcessorFactory(this)

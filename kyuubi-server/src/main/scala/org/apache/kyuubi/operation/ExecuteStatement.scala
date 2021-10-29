@@ -21,9 +21,11 @@ import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift.{TFetchOrientation, TFetchResultsReq, TGetOperationStatusReq}
 import org.apache.hive.service.rpc.thrift.TOperationState._
+import org.apache.thrift.TException
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.KyuubiStatementEvent
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -48,6 +50,10 @@ class ExecuteStatement(
     OperationLog.createOperationLog(session, getHandle)
   } else {
     null
+  }
+
+  private val maxStatusPollOnFailure = {
+    session.sessionManager.getConf.get(KyuubiConf.OPERATION_STATUS_POLLING_MAX_ATTEMPTS)
   }
 
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)
@@ -85,8 +91,8 @@ class ExecuteStatement(
     setState(OperationState.RUNNING)
     var statusResp = client.GetOperationStatus(statusReq)
     var isComplete = false
+    var currentAttempts = 0
     while (!isComplete) {
-      fetchQueryLog()
       verifyTStatus(statusResp.getStatus)
       val remoteState = statusResp.getOperationState
       info(s"Query[$statementId] in ${remoteState.name()}")
@@ -94,7 +100,19 @@ class ExecuteStatement(
       remoteState match {
         case INITIALIZED_STATE | PENDING_STATE | RUNNING_STATE =>
           isComplete = false
-          statusResp = client.GetOperationStatus(statusReq)
+          try {
+            statusResp = client.GetOperationStatus(statusReq)
+            currentAttempts = 0 // reset attempts whenever get touch with engine again
+          } catch {
+            case e: TException if currentAttempts >= maxStatusPollOnFailure =>
+              error(s"Failed to get ${session.user}'s query[$getHandle] status after" +
+                s" $maxStatusPollOnFailure times, aborting", e)
+              throw e
+            case e: TException =>
+              currentAttempts += 1
+              warn(s"Failed to get ${session.user}'s query[$getHandle] status" +
+                s" ($currentAttempts / $maxStatusPollOnFailure)", e)
+          }
 
         case FINISHED_STATE =>
           setState(OperationState.FINISHED)
@@ -109,15 +127,12 @@ class ExecuteStatement(
           setState(OperationState.TIMEOUT)
 
         case ERROR_STATE =>
-          setState(OperationState.ERROR)
-          val ke = KyuubiSQLException(statusResp.getErrorMessage)
-          setOperationException(ke)
+          throw KyuubiSQLException(statusResp.getErrorMessage)
 
         case UKNOWN_STATE =>
-          setState(OperationState.ERROR)
-          val ke = KyuubiSQLException(s"UNKNOWN STATE for $statement")
-          setOperationException(ke)
+          throw KyuubiSQLException(s"UNKNOWN STATE for $statement")
       }
+      fetchQueryLog()
       sendCredentialsIfNeeded()
     }
     // see if anymore log could be fetched

@@ -31,7 +31,7 @@ import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class SparkThriftBinaryFrontendService(
     override val serverable: Serverable)
-  extends ThriftBinaryFrontendService("SparkThriftBinaryFrontendService", serverable) {
+  extends ThriftBinaryFrontendService("SparkThriftBinaryFrontendService") {
   import SparkThriftBinaryFrontendService._
 
   private lazy val sc = be.asInstanceOf[SparkSQLBackendService].sparkSession.sparkContext
@@ -146,6 +146,10 @@ class SparkThriftBinaryFrontendService(
       // engine use address if run on k8s with cluster mode
       s"${serverAddr.getHostAddress}:$portNum"
     }
+  }
+
+  override protected def oomHook: Runnable = {
+    () => discoveryService.foreach(_.stop())
   }
 }
 
