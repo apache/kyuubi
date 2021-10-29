@@ -162,10 +162,10 @@ class KyuubiSyncThriftClient(protocol: TProtocol)
     resp.getOperationHandle
   }
 
-  override def GetOperationStatus(req: TGetOperationStatusReq): TGetOperationStatusResp = {
-    withLockAcquired {
-      super.GetOperationStatus(req)
-    }
+  def getOperationStatus(operationHandle: TOperationHandle): TGetOperationStatusResp = {
+    val req = new TGetOperationStatusReq(operationHandle)
+    val resp = withLockAcquired(GetOperationStatus(req))
+    resp
   }
 
   def cancelOperation(operationHandle: TOperationHandle): Unit = {
@@ -219,7 +219,15 @@ class KyuubiSyncThriftClient(protocol: TProtocol)
     val req = new TRenewDelegationTokenReq()
     req.setSessionHandle(_remoteSessionHandle)
     req.setDelegationToken(encodedCredentials)
-    val resp = withLockAcquired(RenewDelegationToken(req))
-    ThriftUtils.verifyTStatus(resp.getStatus)
+    try {
+      val resp = withLockAcquired(RenewDelegationToken(req))
+      if (resp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS) {
+        debug(s"$req succeed on engine side")
+      } else {
+        warn(s"$req failed on engine side", KyuubiSQLException(resp.getStatus))
+      }
+    } catch {
+      case e: Exception => warn(s"$req failed on engine side", e)
+    }
   }
 }
