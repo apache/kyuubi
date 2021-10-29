@@ -20,6 +20,8 @@ package org.apache.kyuubi.server.api.v1
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{MediaType, Response}
 
+import scala.concurrent.duration._
+
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.server.{RestFrontendService, RestFrontendServiceSuite}
 import org.apache.kyuubi.session.SessionHandle
@@ -86,7 +88,7 @@ class SessionsResourceSuite extends KyuubiFunSuite {
 
         val sessionManager = restFrontendService.be.sessionManager
         val future = sessionManager.submitBackgroundOperation(() => {
-          Thread.sleep(3000)
+          Thread.sleep(2000)
         })
 
         // verify the exec pool statistic
@@ -94,11 +96,12 @@ class SessionsResourceSuite extends KyuubiFunSuite {
         val execPoolStatistic1 = response.readEntity(classOf[ExecPoolStatistic])
         assert(execPoolStatistic1.execPoolSize == 1 && execPoolStatistic1.execPoolActiveCount == 1)
 
-        // if failed to cancel, need to wait the thread finish.
-        if (!future.cancel(true)) Thread.sleep(3000)
-        response = webTarget.path("api/v1/sessions/execpool/statistic").request().get()
-        val execPoolStatistic2 = response.readEntity(classOf[ExecPoolStatistic])
-        assert(execPoolStatistic2.execPoolSize == 1 && execPoolStatistic2.execPoolActiveCount == 0)
+        future.cancel(true)
+        eventually(timeout(3.seconds), interval(500.milliseconds)) {
+          response = webTarget.path("api/v1/sessions/execpool/statistic").request().get()
+          val statistic = response.readEntity(classOf[ExecPoolStatistic])
+          assert(statistic.execPoolSize == 1 && statistic.execPoolActiveCount == 0)
+        }
 
         sessionManager.stop()
         response = webTarget.path("api/v1/sessions/execpool/statistic").request().get()
