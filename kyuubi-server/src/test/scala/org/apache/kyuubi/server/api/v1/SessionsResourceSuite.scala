@@ -88,7 +88,7 @@ class SessionsResourceSuite extends KyuubiFunSuite {
 
         val sessionManager = restFrontendService.be.sessionManager
         val future = sessionManager.submitBackgroundOperation(() => {
-          Thread.sleep(2000)
+          Thread.sleep(1000)
         })
 
         // verify the exec pool statistic
@@ -97,7 +97,7 @@ class SessionsResourceSuite extends KyuubiFunSuite {
         assert(execPoolStatistic1.execPoolSize == 1 && execPoolStatistic1.execPoolActiveCount == 1)
 
         future.cancel(true)
-        eventually(timeout(3.seconds), interval(500.milliseconds)) {
+        eventually(timeout(3.seconds), interval(200.milliseconds)) {
           response = webTarget.path("api/v1/sessions/execpool/statistic").request().get()
           val statistic = response.readEntity(classOf[ExecPoolStatistic])
           assert(statistic.execPoolSize == 1 && statistic.execPoolActiveCount == 0)
