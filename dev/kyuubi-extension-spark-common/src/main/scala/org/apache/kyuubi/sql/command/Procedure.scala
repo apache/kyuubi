@@ -42,11 +42,11 @@ case object StopEngineProcedure extends Procedure {
 case object ShowKyuubiProcedures extends Procedure {
   override val parameters: Seq[ProcedureParameter] = Seq.empty[ProcedureParameter]
 
-  override val outputType: StructType = kdpStructType
+  override val outputType: StructType = kdpOutputStructType
 
   override def exec(args: InternalRow): Seq[Row] = {
     listProcedures().map { kdp =>
-      Row.fromSeq(kdpDescription(kdp))
+      Row.fromSeq(kdpOutput(kdp))
     }
   }
 }
@@ -55,17 +55,17 @@ case object ShowKyuubiProcedures extends Procedure {
     override val parameters: Seq[ProcedureParameter] =
       Seq(ProcedureParameter.required("name", BooleanType))
 
-    override val outputType: StructType = kdpStructType
+    override val outputType: StructType = kdpOutputStructType
 
     override def exec(args: InternalRow): Seq[Row] = {
       val procedureName = args.getString(0)
 
       lookUpProcedure(procedureName).map { kdp =>
-        Row.fromSeq(kdpDescription(kdp))
+        Row.fromSeq(kdpOutput(kdp))
       }.toSeq
 
       lookUpProcedure(procedureName) match {
-        case Some(kdp) => Seq(Row(kdpDescription(kdp)))
+        case Some(kdp) => Seq(Row(kdpOutput(kdp)))
 
         case _ =>
           throwAnalysisException(

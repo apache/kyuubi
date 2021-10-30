@@ -64,14 +64,14 @@ object KDPRegistry {
   }
 
   @transient
-  lazy val kdpStructType = StructType(Array(
+  lazy val kdpOutputStructType = StructType(Array(
     StructField("name", StringType, false),
     StructField("alternative names", StringType, false),
     StructField("parameters", StringType, false),
     StructField("description", StringType, false),
     StructField("since", StringType, false)))
 
-  def kdpDescription(kdp: KyuubiDefinedProcedure): Seq[String] = {
+  def kdpOutput(kdp: KyuubiDefinedProcedure): Seq[String] = {
     Seq(kdp.name,
       kdp.alternativeNames.mkString(","),
       kdp.parameters.mkString("[", ",\n", "]"),
