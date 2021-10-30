@@ -18,8 +18,11 @@
 package org.apache.kyuubi.sql.command
 
 import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.KyuubiSparkSqlUtil._
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.types.{BooleanType, StringType, StructField, StructType}
+import org.apache.spark.sql.types.{BooleanType, StructType}
+
+import org.apache.kyuubi.sql.command.KDPRegistry._
 
 trait Procedure {
   val parameters: Seq[ProcedureParameter]
@@ -39,15 +42,11 @@ case object StopEngineProcedure extends Procedure {
 case object ShowKyuubiProcedures extends Procedure {
   override val parameters: Seq[ProcedureParameter] = Seq.empty[ProcedureParameter]
 
-  override val outputType: StructType = StructType(Array(
-    StructField("name", StringType, false),
-    StructField("parameters", StringType, false),
-    StructField("description", StringType, false),
-    StructField("since", StringType, false)))
+  override val outputType: StructType = kdpStructType
 
   override def exec(args: InternalRow): Seq[Row] = {
-    KDPRegistry.listProcedures().map { kdp =>
-      Row(kdp.name, kdp.parameters.mkString("[", ",", "]"), kdp.description, kdp.since)
+    listProcedures().map { kdp =>
+      Row.fromSeq(kdpDescription(kdp))
     }
   }
 }
@@ -56,16 +55,22 @@ case object ShowKyuubiProcedures extends Procedure {
     override val parameters: Seq[ProcedureParameter] =
       Seq(ProcedureParameter.required("name", BooleanType))
 
-    override val outputType: StructType = StructType(Array(
-      StructField("name", StringType, false),
-      StructField("parameters", StringType, false),
-      StructField("description", StringType, false),
-      StructField("since", StringType, false)))
+    override val outputType: StructType = kdpStructType
 
     override def exec(args: InternalRow): Seq[Row] = {
       val procedureName = args.getString(0)
-      KDPRegistry.lookUpProcedure(procedureName).map { kdp =>
-        Row(kdp.name, kdp.parameters.mkString("[", ",", "]"), kdp.description, kdp.since)
+
+      lookUpProcedure(procedureName).map { kdp =>
+        Row.fromSeq(kdpDescription(kdp))
       }.toSeq
+
+      lookUpProcedure(procedureName) match {
+        case Some(kdp) => Seq(Row(kdpDescription(kdp)))
+
+        case _ =>
+          throwAnalysisException(
+            s"no Kyuubi defined procedure found with name[$procedureName]")
+          Seq.empty[Row]
+      }
     }
 }

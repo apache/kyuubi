@@ -32,7 +32,8 @@ case class KyuubiDefinedProcedure(
     name: String,
     procedure: Procedure,
     description: String,
-    since: String) {
+    since: String,
+    alternativeNames: Seq[String] = Seq.empty[String]) {
   def outputType: StructType = procedure.outputType
   def parameters: Seq[ProcedureParameter] = procedure.parameters
   def exec(args: InternalRow): Seq[Row] = procedure.exec(args)

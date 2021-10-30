@@ -19,6 +19,8 @@ package org.apache.kyuubi.sql.command
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.spark.sql.types.{StringType, StructField, StructType}
+
 object KDPRegistry {
   @transient
   var registeredProcedures = new ArrayBuffer[KyuubiDefinedProcedure]()
@@ -33,22 +35,22 @@ object KDPRegistry {
     "show_procedures",
     ShowKyuubiProcedures,
     "show all the kyuubi defined procedures",
-    "1.4.0"
-  )
+    "1.4.0")
 
   val desc_procedure: KyuubiDefinedProcedure = create(
     "desc_procedure",
     DescribeKyuubiProcedure,
     "describe a kyuubi defined procedures with name",
-    "1.4.0"
-  )
+    "1.4.0",
+    Seq("desc_proc"))
 
   def create(
     name: String,
     procedure: Procedure,
     description: String,
-    since: String): KyuubiDefinedProcedure = {
-    val kdp = KyuubiDefinedProcedure(name, procedure, description, since)
+    since: String,
+    alternativeNames: Seq[String] = Seq.empty[String]): KyuubiDefinedProcedure = {
+    val kdp = KyuubiDefinedProcedure(name, procedure, description, since, alternativeNames)
     registeredProcedures += kdp
     kdp
   }
@@ -56,6 +58,24 @@ object KDPRegistry {
   def listProcedures(): Seq[KyuubiDefinedProcedure] = registeredProcedures
 
   def lookUpProcedure(name: String): Option[KyuubiDefinedProcedure] = {
-    registeredProcedures.find(_.name.equalsIgnoreCase(name))
+    registeredProcedures.find { kdp =>
+      kdp.name.equalsIgnoreCase(name) || kdp.alternativeNames.exists(_.equalsIgnoreCase(name))
+    }
+  }
+
+  @transient
+  lazy val kdpStructType = StructType(Array(
+    StructField("name", StringType, false),
+    StructField("alternative names", StringType, false),
+    StructField("parameters", StringType, false),
+    StructField("description", StringType, false),
+    StructField("since", StringType, false)))
+
+  def kdpDescription(kdp: KyuubiDefinedProcedure): Seq[String] = {
+    Seq(kdp.name,
+      kdp.alternativeNames.mkString(","),
+      kdp.parameters.mkString("[", ",\n", "]"),
+      kdp.description,
+      kdp.since)
   }
 }
