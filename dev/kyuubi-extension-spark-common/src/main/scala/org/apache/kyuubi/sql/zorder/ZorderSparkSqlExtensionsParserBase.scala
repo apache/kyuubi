@@ -20,6 +20,7 @@ package org.apache.kyuubi.sql.zorder
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.PredictionMode
 import org.antlr.v4.runtime.misc.ParseCancellationException
+
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.catalyst.expressions.Expression
@@ -27,6 +28,8 @@ import org.apache.spark.sql.catalyst.parser.{ParseErrorListener, ParseException,
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.trees.Origin
 import org.apache.spark.sql.types.{DataType, StructType}
+
+import org.apache.kyuubi.sql.UpperCaseCharStream
 
 abstract class ZorderSparkSqlExtensionsParserBase extends ParserInterface {
   def delegate: ParserInterface

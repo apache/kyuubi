@@ -18,14 +18,16 @@
 package org.apache.kyuubi.sql.command
 
 import scala.collection.JavaConverters._
+
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.tree.{ParseTree, TerminalNode}
-import org.apache.kyuubi.sql.command.KyuubiCommandsParser.{ConstantContext, ExecContext, ExpressionContext, NamedArgumentContext, PositionalArgumentContext, SingleStatementContext}
+
 import org.apache.spark.sql.catalyst.expressions.{Expression, Literal}
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.parser.ParserUtils.withOrigin
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import KyuubiCommandsParser.{ConstantContext, ExecContext, ExpressionContext, NamedArgumentContext, PositionalArgumentContext, SingleStatementContext}
+
+import org.apache.kyuubi.sql.command.KyuubiCommandsParser._
 
 class KyuubiCommandsSqlAstBuilder(delegate: ParserInterface)
   extends KyuubiCommandsBaseVisitor[AnyRef] {
