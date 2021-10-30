@@ -38,9 +38,15 @@ class KyuubiCommandsSuite extends KyuubiSparkSQLExtensionTest with ExpressionEva
     assert(!procedures.isEmpty)
   }
 
+  test("test invalid procedure parameter") {
+    intercept[AnalysisException](sql("EXEC desc_procedure(invalid => 'non_exist_procedure')"))
+  }
+
   test("kyuubi defined procedure - desc_procedure") {
     assert(!sql("EXEC desc_procedure('stop_engine')").isEmpty)
     assert(!sql("EXEC desc_procedure(name => 'stop_engine')").isEmpty)
+    assert(sql("EXEC desc_procedure('non_exist_procedure')").isEmpty)
+    assert(sql("EXEC desc_procedure(name => 'non_exist_procedure')").isEmpty)
   }
 
   test("kyuubi defined procedure - stop_engine") {
