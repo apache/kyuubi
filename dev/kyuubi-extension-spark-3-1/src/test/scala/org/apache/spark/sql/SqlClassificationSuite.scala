@@ -18,8 +18,9 @@
 package org.apache.spark.sql
 
 import scala.collection.mutable.Set
-import org.apache.spark.sql.kyuubi.KyuubiSQLConf._
-import org.apache.spark.sql.kyuubi.KyuubiSQLConf
+
+import org.apache.kyuubi.sql.KyuubiSQLConf
+import org.apache.kyuubi.sql.KyuubiSQLConf._
 
 class SqlClassificationSuite extends KyuubiSparkSQLExtensionTest {
   test("Sql classification for ddl") {

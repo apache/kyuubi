@@ -21,7 +21,8 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, Cast, Multiply}
 import org.apache.spark.sql.catalyst.plans.logical.RepartitionByExpression
 import org.apache.spark.sql.hive.HiveUtils
 import org.apache.spark.sql.hive.execution.OptimizedCreateHiveTableAsSelectCommand
-import org.apache.spark.sql.kyuubi.KyuubiSQLConf
+
+import org.apache.kyuubi.sql.KyuubiSQLConf
 
 class RepartitionBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
   test("check repartition exists") {

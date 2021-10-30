@@ -20,10 +20,11 @@ import org.apache.hadoop.hive.conf.HiveConf.ConfVars
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.execution.adaptive.AdaptiveSparkPlanHelper
 import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
-import org.apache.spark.sql.kyuubi.KyuubiSQLConf
 import org.apache.spark.sql.test.SQLTestData.TestData
 import org.apache.spark.sql.test.SQLTestUtils
 import org.apache.spark.util.Utils
+
+import org.apache.kyuubi.sql.KyuubiSQLConf
 
 trait KyuubiSparkSQLExtensionTest extends QueryTest
     with SQLTestUtils
