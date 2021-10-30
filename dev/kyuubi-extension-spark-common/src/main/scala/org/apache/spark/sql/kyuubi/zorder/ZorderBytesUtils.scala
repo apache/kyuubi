@@ -17,10 +17,10 @@
 
 package org.apache.spark.sql.kyuubi.zorder
 
-import org.apache.spark.sql.kyuubi.KyuubiSQLExtensionException
-
 import java.lang.{Double => jDouble, Float => jFloat}
-import org.apache.spark.sql.types.{BooleanType, ByteType, DataType, DateType, Decimal, DecimalType, DoubleType, FloatType, IntegerType, LongType, ShortType, StringType, TimestampType}
+
+import org.apache.spark.sql.kyuubi.KyuubiSQLExtensionException
+import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
 object ZorderBytesUtils {

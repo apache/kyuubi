@@ -29,7 +29,7 @@ import org.antlr.v4.runtime.tree.{ParseTree, TerminalNode}
 import org.apache.commons.codec.binary.Hex
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAttribute, UnresolvedRelation, UnresolvedStar}
-import org.apache.spark.sql.catalyst.expressions.{And, Ascending, EqualNullSafe, EqualTo, Expression, GreaterThan, GreaterThanOrEqual, LessThan, LessThanOrEqual, Literal, Not, NullsLast, Or, SortOrder}
+import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.catalyst.parser.ParserUtils.{string, stringWithoutUnescape, withOrigin}
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, Project, Sort}
@@ -37,10 +37,9 @@ import org.apache.spark.sql.catalyst.util.DateTimeUtils.{getZoneId, localDateToD
 import org.apache.spark.sql.catalyst.util.IntervalUtils
 import org.apache.spark.sql.hive.HiveAnalysis.conf
 import org.apache.spark.sql.internal.SQLConf
+import org.apache.spark.sql.kyuubi.zorder.ZorderSqlExtensionsParser._
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
-
-import ZorderSqlExtensionsParser.{BigDecimalLiteralContext, BigIntLiteralContext, BooleanLiteralContext, DecimalLiteralContext, DoubleLiteralContext, IntegerLiteralContext, LogicalBinaryContext, MultipartIdentifierContext, NullLiteralContext, NumberContext, OptimizeZorderContext, PassThroughContext, QueryContext, SingleStatementContext, SmallIntLiteralContext, StringLiteralContext, TinyIntLiteralContext, TypeConstructorContext, ZorderClauseContext}
 
 abstract class ZorderSqlAstBuilderBase extends ZorderSqlExtensionsBaseVisitor[AnyRef] {
   def buildZorder(child: Seq[Expression]): ZorderBase

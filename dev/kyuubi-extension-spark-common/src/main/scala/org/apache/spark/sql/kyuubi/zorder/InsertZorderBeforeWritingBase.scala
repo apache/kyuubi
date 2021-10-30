@@ -18,6 +18,7 @@
 package org.apache.spark.sql.kyuubi.zorder
 
 import java.util.Locale
+
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.expressions.{Ascending, Expression, NullsLast, SortOrder}
