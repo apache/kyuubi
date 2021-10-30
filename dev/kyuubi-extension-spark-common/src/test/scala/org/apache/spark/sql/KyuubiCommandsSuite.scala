@@ -46,6 +46,10 @@ class KyuubiCommandsSuite extends KyuubiSparkSQLExtensionTest with Eventually{
     intercept[AnalysisException](sql("EXEC desc_procedure('non_exist_procedure')"))
   }
 
+  test("test kyuubi defined procedure alternative names") {
+    assert(!sql("EXEC desc_proc('stop_engine')").isEmpty)
+  }
+
   test("kyuubi defined procedure - stop_engine") {
     sql("EXEC stop_engine()")
     eventually (timeout(Span(10, Seconds)), interval(Span(1, Seconds))) {
