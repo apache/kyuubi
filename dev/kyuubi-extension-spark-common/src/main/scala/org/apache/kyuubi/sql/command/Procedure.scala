@@ -51,26 +51,26 @@ case object ShowKyuubiProcedures extends Procedure {
   }
 }
 
-  case object DescribeKyuubiProcedure extends Procedure {
-    override val parameters: Seq[ProcedureParameter] =
-      Seq(ProcedureParameter.required("name", BooleanType))
+case object DescribeKyuubiProcedure extends Procedure {
+  override val parameters: Seq[ProcedureParameter] =
+    Seq(ProcedureParameter.required("name", BooleanType))
 
-    override val outputType: StructType = kdpOutputStructType
+  override val outputType: StructType = kdpOutputStructType
 
-    override def exec(args: InternalRow): Seq[Row] = {
-      val procedureName = args.getString(0)
+  override def exec(args: InternalRow): Seq[Row] = {
+    val procedureName = args.getString(0)
 
-      lookUpProcedure(procedureName).map { kdp =>
-        Row.fromSeq(kdpOutput(kdp))
-      }.toSeq
+    lookUpProcedure(procedureName).map { kdp =>
+      Row.fromSeq(kdpOutput(kdp))
+    }.toSeq
 
-      lookUpProcedure(procedureName) match {
-        case Some(kdp) => Seq(Row.fromSeq(kdpOutput(kdp)))
+    lookUpProcedure(procedureName) match {
+      case Some(kdp) => Seq(Row.fromSeq(kdpOutput(kdp)))
 
-        case _ =>
-          throwAnalysisException(
-            s"no Kyuubi defined procedure found with name[$procedureName]")
-          Seq.empty[Row]
-      }
+      case _ =>
+        throwAnalysisException(
+          s"no Kyuubi defined procedure found with name[$procedureName]")
+        Seq.empty[Row]
     }
+  }
 }

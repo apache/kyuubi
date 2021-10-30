@@ -34,7 +34,14 @@ case class ExecCommand(procedure: KyuubiDefinedProcedure, args: Seq[Expression])
   }
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
-    procedure.exec(buildInternalRow(args))
+    try {
+      logInfo(s"Starting to exec Kyuubi defined procedure[${procedure.name}]")
+      procedure.exec(buildInternalRow(args))
+    } catch {
+      case e: Exception =>
+        logError(s"Failed when executing Kyuubi defined procedure[${procedure.name}]", e)
+        throw e
+    }
   }
 
   private def buildInternalRow(exprs: Seq[Expression]): InternalRow = {
