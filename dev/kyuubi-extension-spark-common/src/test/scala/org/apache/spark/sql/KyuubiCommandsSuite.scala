@@ -17,12 +17,13 @@
 
 package org.apache.spark.sql
 
-import org.apache.kyuubi.sql.KyuubiSparkSQLCommonExtension
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.catalyst.expressions.ExpressionEvalHelper
 import org.apache.spark.sql.internal.StaticSQLConf
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Seconds, Span}
+
+import org.apache.kyuubi.sql.KyuubiSparkSQLCommonExtension
 
 class KyuubiCommandsSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper
   with Eventually{

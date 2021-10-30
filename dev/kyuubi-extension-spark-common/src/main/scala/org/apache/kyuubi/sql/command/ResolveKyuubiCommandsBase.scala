@@ -21,7 +21,7 @@ import java.util.Locale
 
 import scala.collection.Seq
 
-import org.apache.spark.sql.{AnalysisException, KyuubiSparkSqlUtil, SparkSession}
+import org.apache.spark.sql.{KyuubiSparkSqlUtil, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.{Expression, Literal}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
