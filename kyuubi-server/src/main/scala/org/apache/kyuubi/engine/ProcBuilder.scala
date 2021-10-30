@@ -191,7 +191,7 @@ trait ProcBuilder {
     error match {
       case UNCAUGHT_ERROR =>
         KyuubiSQLException(s"Failed to detect the root cause, please check $engineLog at server " +
-          s"side if necessary. The last $engineLogMaxLines line(s) of log is: " +
+          s"side if necessary. The last $engineLogMaxLines line(s) of log are:\n" +
           s"${lastRowsOfLog.toArray.mkString("\n")}")
       case other => other
     }
