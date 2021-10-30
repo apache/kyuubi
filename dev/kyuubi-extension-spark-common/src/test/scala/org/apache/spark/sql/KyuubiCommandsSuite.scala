@@ -18,15 +18,13 @@
 package org.apache.spark.sql
 
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.catalyst.expressions.ExpressionEvalHelper
 import org.apache.spark.sql.internal.StaticSQLConf
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Seconds, Span}
 
 import org.apache.kyuubi.sql.KyuubiSparkSQLCommonExtension
 
-class KyuubiCommandsSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper
-  with Eventually{
+class KyuubiCommandsSuite extends KyuubiSparkSQLExtensionTest with Eventually{
   override def sparkConf(): SparkConf = {
     super.sparkConf()
       .set(StaticSQLConf.SPARK_SESSION_EXTENSIONS.key,
@@ -45,8 +43,7 @@ class KyuubiCommandsSuite extends KyuubiSparkSQLExtensionTest with ExpressionEva
   test("kyuubi defined procedure - desc_procedure") {
     assert(!sql("EXEC desc_procedure('stop_engine')").isEmpty)
     assert(!sql("EXEC desc_procedure(name => 'stop_engine')").isEmpty)
-    assert(sql("EXEC desc_procedure('non_exist_procedure')").isEmpty)
-    assert(sql("EXEC desc_procedure(name => 'non_exist_procedure')").isEmpty)
+    intercept[AnalysisException](sql("EXEC desc_procedure('non_exist_procedure')"))
   }
 
   test("kyuubi defined procedure - stop_engine") {

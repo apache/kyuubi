@@ -20,10 +20,13 @@ package org.apache.kyuubi.sql.command
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Expression, GenericInternalRow}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.RunnableCommand
 
 case class ExecCommand(procedure: KyuubiDefinedProcedure, args: Seq[Expression])
   extends RunnableCommand {
+  protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan = this
+
   override def output: Seq[Attribute] = {
     procedure.outputType.fields.map { field =>
       AttributeReference(field.name, field.dataType, field.nullable)()

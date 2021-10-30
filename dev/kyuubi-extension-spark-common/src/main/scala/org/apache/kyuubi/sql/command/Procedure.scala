@@ -65,7 +65,7 @@ case object ShowKyuubiProcedures extends Procedure {
       }.toSeq
 
       lookUpProcedure(procedureName) match {
-        case Some(kdp) => Seq(Row(kdpOutput(kdp)))
+        case Some(kdp) => Seq(Row.fromSeq(kdpOutput(kdp)))
 
         case _ =>
           throwAnalysisException(

@@ -18,9 +18,13 @@
 package org.apache.kyuubi.sql.command
 
 import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.catalyst.plans.logical.ParsedStatement
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, ParsedStatement}
 
-case class ExecStatement(name: String, args: Seq[ExecArgument]) extends ParsedStatement
+case class ExecStatement(name: String, args: Seq[ExecArgument]) extends ParsedStatement {
+  override def children: Seq[LogicalPlan] = Seq.empty[LogicalPlan]
+
+  protected def withNewChildrenInternal(newChildren: IndexedSeq[LogicalPlan]): LogicalPlan = this
+}
 
 /**
  * An argument in a EXEC statement.
