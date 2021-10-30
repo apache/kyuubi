@@ -34,10 +34,6 @@ object KyuubiSparkSQLCommonExtension {
     extensions.injectParser{ case (_, parser) => new ZorderSparkSqlExtensionsParser(parser) }
     extensions.injectResolutionRule(ResolveZorder)
 
-    // inject kyuubi commands parser
-    extensions.injectParser{ case (_, parser) => new KyuubiCommandsSparkSqlExtensionsParser(parser)}
-    extensions.injectResolutionRule(ResolveKyuubiProcedures)
-
     // Note that:
     // InsertZorderBeforeWritingDatasource and InsertZorderBeforeWritingHive
     // should be applied before
@@ -46,6 +42,10 @@ object KyuubiSparkSQLCommonExtension {
     extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingDatasource)
     extensions.injectPostHocResolutionRule(InsertZorderBeforeWritingHive)
     extensions.injectPostHocResolutionRule(FinalStageConfigIsolationCleanRule)
+
+    // inject kyuubi commands parser and related rule
+    extensions.injectParser{ case (_, parser) => new KyuubiCommandsSparkSqlExtensionsParser(parser)}
+    extensions.injectResolutionRule(ResolveKyuubiProcedures)
 
     extensions.injectQueryStagePrepRule(_ => InsertShuffleNodeBeforeJoin)
     extensions.injectQueryStagePrepRule(FinalStageConfigIsolation(_))

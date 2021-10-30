@@ -33,7 +33,7 @@ case class ResolveKyuubiProcedures(spark: SparkSession) extends Rule[LogicalPlan
     case ExecStatement(procedureName, args) =>
       val procedureOpt = KDPRegistry.lookUpProcedure(procedureName)
       if (procedureOpt.isEmpty) {
-        newAnalysisException(s"There is no procedure named[$procedureName]")
+        throwAnalysisException(s"There is no procedure named[$procedureName]")
       }
       val params = procedureOpt.get.parameters
       val normalizedParams = normalizeParams(params)
@@ -50,14 +50,14 @@ case class ResolveKyuubiProcedures(spark: SparkSession) extends Rule[LogicalPlan
     }
 
     if (duplicateParamNames.nonEmpty) {
-      newAnalysisException(s"Duplicate parameter names:" +
+      throwAnalysisException(s"Duplicate parameter names:" +
         s" ${duplicateParamNames.mkString("[", ",", "]")}")
     }
 
     // optional params should be at the end
     params.sliding(2).foreach {
       case Seq(previousParam, currentParam) if !previousParam.required && currentParam.required =>
-        newAnalysisException(
+        throwAnalysisException(
           s"Optional parameters must be after required ones but" +
             s" $currentParam is after $previousParam")
       case _ =>
@@ -80,7 +80,7 @@ case class ResolveKyuubiProcedures(spark: SparkSession) extends Rule[LogicalPlan
     }
 
     if (missingParamNames.nonEmpty) {
-      newAnalysisException(s"Missing required parameters:" +
+      throwAnalysisException(s"Missing required parameters:" +
         s" ${missingParamNames.mkString("[", ",", "]")}")
     }
 
@@ -111,7 +111,7 @@ case class ResolveKyuubiProcedures(spark: SparkSession) extends Rule[LogicalPlan
     val containsPositionalArg = args.exists(_.isInstanceOf[PositionalArgument])
 
     if (containsNamedArg && containsPositionalArg) {
-      newAnalysisException("Named and positional arguments cannot be mixed")
+      throwAnalysisException("Named and positional arguments cannot be mixed")
     }
 
     if (containsNamedArg) {
@@ -133,7 +133,7 @@ case class ResolveKyuubiProcedures(spark: SparkSession) extends Rule[LogicalPlan
     }
 
     if (validationErrors.nonEmpty) {
-      newAnalysisException(s"Could not build name to arg map:${validationErrors.mkString(", ")}")
+      throwAnalysisException(s"Could not build name to arg map:${validationErrors.mkString(", ")}")
     }
 
     namedArgs.map(arg => arg.name -> arg).toMap
@@ -144,7 +144,7 @@ case class ResolveKyuubiProcedures(spark: SparkSession) extends Rule[LogicalPlan
       params: Seq[ProcedureParameter]): Map[String, ExecArgument] = {
 
     if (args.size > params.size) {
-      newAnalysisException("Too many arguments for procedure")
+      throwAnalysisException("Too many arguments for procedure")
     }
 
     args.zipWithIndex.map { case (arg, position) =>

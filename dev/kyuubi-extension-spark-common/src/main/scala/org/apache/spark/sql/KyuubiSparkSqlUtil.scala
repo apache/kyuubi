@@ -18,5 +18,5 @@
 package org.apache.spark.sql
 
 object KyuubiSparkSqlUtil {
-  def newAnalysisException(msg: String): AnalysisException = new AnalysisException(msg)
+  def throwAnalysisException(msg: String): AnalysisException = new AnalysisException(msg)
 }
