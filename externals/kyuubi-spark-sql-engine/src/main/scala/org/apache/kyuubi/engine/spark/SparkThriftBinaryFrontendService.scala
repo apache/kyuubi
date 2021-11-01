@@ -152,7 +152,7 @@ class SparkThriftBinaryFrontendService(
   // Then the current engine will not be connected by new client anymore but keep the existing ones
   // alive. In this case we can reduce the engine's overhead and make it possible recover from that.
   // We shall not tear down the whole engine by serverable.stop to make the engine unreachable for
-  // the exising clients which are still get statuses and report the end-users.
+  // the existing clients which are still getting statuses and reporting to the end-users.
   override protected def oomHook: Runnable = {
     () => discoveryService.foreach(_.stop())
   }
