@@ -171,4 +171,26 @@ class SessionsResourceSuite extends KyuubiFunSuite {
         assert(404 == response.getStatus)
     }
   }
+
+  test("test get infoType") {
+    val requestObj = SessionOpenRequest(
+      1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
+
+    RestFrontendServiceSuite.withKyuubiRestServer {
+      (_, _, _, webTarget) =>
+        var response: Response = webTarget.path("api/v1/sessions")
+          .request(MediaType.APPLICATION_JSON_TYPE)
+          .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+
+        val sessionHandle = response.readEntity(classOf[SessionHandle])
+        val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
+          s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
+
+        response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/info/13")
+          .request().get()
+        assert(200 == response.getStatus)
+        val sessions = response.readEntity(classOf[InfoValue])
+        assert(sessions.infoType.equals("CLI_SERVER_NAME") && sessions.infoValue.equals("Kyuubi"))
+    }
+  }
 }

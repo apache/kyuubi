@@ -32,6 +32,11 @@ case class SessionOverview(
   sessionHandle: SessionHandle
 )
 
+case class InfoValue(
+  infoType: String,
+  infoValue: String
+)
+
 case class SessionDetail(
   user: String,
   ipAddr: String,

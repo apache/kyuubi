@@ -23,7 +23,7 @@ import javax.ws.rs.core.{MediaType, Response}
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 
 import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.server.api.ApiRequestContext
@@ -45,11 +45,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @GET
   @Path("{sessionHandle}")
   def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): SessionDetail = {
-    val splitSessionHandle = sessionHandleStr.split("\\|")
-    val handleIdentifier = new HandleIdentifier(
-      UUID.fromString(splitSessionHandle(0)), UUID.fromString(splitSessionHandle(1)))
-    val protocolVersion = TProtocolVersion.findByValue(splitSessionHandle(2).toInt)
-    val sessionHandle = new SessionHandle(handleIdentifier, protocolVersion)
+    val sessionHandle = getSessionHandle(sessionHandleStr)
 
     try {
       val session = backendService.sessionManager.getSession(sessionHandle)
@@ -59,6 +55,16 @@ private[v1] class SessionsResource extends ApiRequestContext {
       case _: Throwable =>
         throw new NotFoundException()
     }
+  }
+
+  @GET
+  @Path("{sessionHandle}/info/{infotype}")
+  def getInfo(@PathParam("sessionHandle") sessionHandleStr: String,
+              @PathParam("infotype") infoType: Int): InfoValue = {
+    val sessionHandle = getSessionHandle(sessionHandleStr)
+    val info = TGetInfoType.findByValue(infoType.toInt)
+    val infoValue = backendService.getInfo(sessionHandle, info)
+    InfoValue(info.toString, infoValue.getStringValue)
   }
 
   @GET
@@ -88,12 +94,16 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @DELETE
   @Path("{sessionHandle}")
   def closeSession(@PathParam("sessionHandle") sessionHandleStr: String): Response = {
+    val sessionHandle = getSessionHandle(sessionHandleStr)
+    backendService.closeSession(sessionHandle)
+    Response.ok().build()
+  }
+
+  def getSessionHandle(sessionHandleStr: String): SessionHandle = {
     val splitSessionHandle = sessionHandleStr.split("\\|")
     val handleIdentifier = new HandleIdentifier(
       UUID.fromString(splitSessionHandle(0)), UUID.fromString(splitSessionHandle(1)))
     val protocolVersion = TProtocolVersion.findByValue(splitSessionHandle(2).toInt)
-    val sessionHandle = new SessionHandle(handleIdentifier, protocolVersion)
-    backendService.closeSession(sessionHandle)
-    Response.ok().build()
+    new SessionHandle(handleIdentifier, protocolVersion)
   }
 }
