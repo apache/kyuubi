@@ -99,7 +99,7 @@ class ExecuteStatement(
           currentAttempts += 1
           warn(s"Failed to get ${session.user}'s query[$getHandle] status" +
             s" ($currentAttempts / $maxStatusPollOnFailure)", e)
-          Thread.sleep(500)
+          Thread.sleep(100)
       }
     }
 
@@ -108,6 +108,7 @@ class ExecuteStatement(
 
     var isComplete = false
     while (!isComplete) {
+      fetchQueryLog()
       verifyTStatus(statusResp.getStatus)
       val remoteState = statusResp.getOperationState
       info(s"Query[$statementId] in ${remoteState.name()}")
@@ -135,7 +136,6 @@ class ExecuteStatement(
         case UKNOWN_STATE =>
           throw KyuubiSQLException(s"UNKNOWN STATE for $statement")
       }
-      fetchQueryLog()
       sendCredentialsIfNeeded()
     }
     // see if anymore log could be fetched
