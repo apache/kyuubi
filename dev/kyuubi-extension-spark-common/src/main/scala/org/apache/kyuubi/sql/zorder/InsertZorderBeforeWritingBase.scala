@@ -146,7 +146,7 @@ trait InsertZorderHelper extends Rule[LogicalPlan] with ZorderBuilder {
       }
       Sort(
         SortOrder(orderExpr, Ascending, NullsLast, Seq.empty) :: Nil,
-        true,
+        conf.getConf(KyuubiSQLConf.ZORDER_GLOBAL_SORT_ENABLED),
         plan
       )
     }

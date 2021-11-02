@@ -40,6 +40,7 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
+import org.apache.kyuubi.sql.KyuubiSQLConf
 import org.apache.kyuubi.sql.zorder.ZorderSqlExtensionsParser.{BigDecimalLiteralContext, BigIntLiteralContext, BooleanLiteralContext, DecimalLiteralContext, DoubleLiteralContext, IntegerLiteralContext, LogicalBinaryContext, MultipartIdentifierContext, NullLiteralContext, NumberContext, OptimizeZorderContext, PassThroughContext, QueryContext, SingleStatementContext, SmallIntLiteralContext, StringLiteralContext, TinyIntLiteralContext, TypeConstructorContext, ZorderClauseContext}
 
 abstract class ZorderSqlAstBuilderBase extends ZorderSqlExtensionsBaseVisitor[AnyRef] {
@@ -89,7 +90,7 @@ abstract class ZorderSqlAstBuilderBase extends ZorderSqlExtensionsBaseVisitor[An
     val query =
       Sort(
         SortOrder(orderExpr, Ascending, NullsLast, Seq.empty) :: Nil,
-        true,
+        conf.getConf(KyuubiSQLConf.ZORDER_GLOBAL_SORT_ENABLED),
         Project(Seq(UnresolvedStar(None)), tableWithFilter))
 
     buildOptimizeZorderStatement(tableIdent, query)

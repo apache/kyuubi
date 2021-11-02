@@ -88,6 +88,15 @@ object KyuubiSQLConf {
       .booleanConf
       .createWithDefault(true)
 
+  val ZORDER_GLOBAL_SORT_ENABLED =
+    buildConf("spark.sql.optimizer.zorderGlobalSort.enabled")
+      .doc("When true, we do a global sort using zorder. Note that, it can cause data skew " +
+        "issue if the zorder columns have less cardinality. When false, we only do local sort " +
+        "using zorder.")
+      .version("1.4.0")
+      .booleanConf
+      .createWithDefault(true)
+
   val WATCHDOG_MAX_HIVEPARTITION =
     buildConf("spark.sql.watchdog.maxHivePartitions")
       .doc("Add maxHivePartitions Strategy to avoid scan excessive " +
