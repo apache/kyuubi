@@ -26,6 +26,7 @@ import org.apache.thrift.TException
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.events.KyuubiAuditEvent
 import org.apache.kyuubi.events.KyuubiStatementEvent
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -187,6 +188,12 @@ class ExecuteStatement(
     statementEvent.state = newState.toString
     statementEvent.stateTime = lastAccessTime
     EventLoggingService.onEvent(statementEvent)
+  }
+
+  override def logAuditEvent(state: OperationState, elapsed: Double): Unit = {
+    val auditEvent = KyuubiAuditEvent(
+      statementEvent.copy(state = state.toString, stateTime = completedTime), elapsed)
+    EventLoggingService.onAuditEvent(auditEvent)
   }
 
   override def setOperationException(opEx: KyuubiSQLException): Unit = {

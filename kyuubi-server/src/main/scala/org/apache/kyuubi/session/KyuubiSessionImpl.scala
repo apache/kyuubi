@@ -28,6 +28,7 @@ import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.EngineRef
+import org.apache.kyuubi.events.KyuubiAuditEvent
 import org.apache.kyuubi.events.KyuubiSessionEvent
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider._
 import org.apache.kyuubi.metrics.MetricsConstants._
@@ -54,6 +55,10 @@ class KyuubiSessionImpl(
   }
 
   val engine: EngineRef = new EngineRef(sessionConf, user)
+
+  private lazy val auditLogEnable: Boolean = {
+    sessionConf.get(AUDIT_LOG_ENABLE)
+  }
 
   private val sessionEvent = KyuubiSessionEvent(this)
   EventLoggingService.onEvent(sessionEvent)
@@ -96,6 +101,7 @@ class KyuubiSessionImpl(
     sessionEvent.sessionId = handle.identifier.toString
     sessionEvent.clientVersion = handle.protocol.getValue
     EventLoggingService.onEvent(sessionEvent)
+    auditEvent(sessionEvent, SessionState.OPEN.toString)
   }
 
   override protected def runOperation(operation: Operation): OperationHandle = {
@@ -117,10 +123,29 @@ class KyuubiSessionImpl(
     } finally {
       sessionEvent.endTime = System.currentTimeMillis()
       EventLoggingService.onEvent(sessionEvent)
+      auditEvent(sessionEvent, SessionState.CLOSE.toString)
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))
       if (transport != null && transport.isOpen) {
         transport.close()
       }
     }
+  }
+
+  private def auditEvent(event: KyuubiSessionEvent, state: String): Unit = {
+    if (auditLogEnable) {
+      val elapsedTime = if (state == SessionState.CLOSE.toString) {
+        (event.endTime - event.openedTime) / 1000.0
+      } else {
+        -1
+      }
+      val auditEvent = KyuubiAuditEvent(event, state, elapsedTime)
+      EventLoggingService.onAuditEvent(auditEvent)
+    }
+  }
+
+  object SessionState extends Enumeration {
+    type SessionState = Value
+
+    val OPEN, CLOSE = Value
   }
 }

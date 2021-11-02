@@ -118,6 +118,14 @@ You can configure the Kyuubi properties in `$KYUUBI_HOME/conf/kyuubi-defaults.co
 # Details in https://kyuubi.apache.org/docs/latest/deployment/settings.html
 ```
 
+### Audit
+
+Key | Default | Meaning | Type | Since
+--- | --- | --- | --- | ---
+kyuubi\.audit\.event<br>\.json\.log\.path|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>/tmp/kyuubi/events</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>The location of server audit events go for the builtin JSON logger. The log files will be stored in the subdir kyuubi_audit.</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.4.0</div>
+kyuubi\.audit\.log<br>\.enable|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>false</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>When true, store sql statement for audit.</div>|<div style='width: 30pt'>boolean</div>|<div style='width: 20pt'>1.4.0</div>
+
+
 ### Authentication
 
 Key | Default | Meaning | Type | Since

@@ -22,6 +22,7 @@ import java.util.concurrent.Future
 import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet, TTableSchema}
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.config.KyuubiConf.AUDIT_LOG_ENABLE
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_IDLE_TIMEOUT
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
@@ -38,6 +39,10 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
   }
 
   protected final val statementId = handle.identifier.toString
+
+  private final val auditLogEnable: Boolean = {
+    session.sessionManager.getConf.get(AUDIT_LOG_ENABLE)
+  }
 
   override def getOperationLog: Option[OperationLog] = None
 
@@ -75,13 +80,22 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
       case RUNNING => startTime = System.currentTimeMillis()
       case ERROR | FINISHED | CANCELED | TIMEOUT =>
         completedTime = System.currentTimeMillis()
-        timeCost = s", time taken: ${(completedTime - startTime) / 1000.0} seconds"
+        val elapsed = (completedTime - startTime) / 1000.0
+        timeCost = s", time taken: $elapsed seconds"
+        // audit sql statement when new state is terminal state
+        if (auditLogEnable) {
+          logAuditEvent(newState, elapsed)
+        }
       case _ =>
     }
     info(s"Processing ${session.user}'s query[$statementId]: ${state.name} -> ${newState.name}," +
       s" statement: $statement$timeCost")
     state = newState
     lastAccessTime = System.currentTimeMillis()
+  }
+
+  protected def logAuditEvent(state: OperationState, elapsed: Double): Unit = {
+    // default do nothing
   }
 
   protected def isClosedOrCanceled: Boolean = {

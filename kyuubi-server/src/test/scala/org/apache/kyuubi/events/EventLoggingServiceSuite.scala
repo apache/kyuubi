@@ -24,7 +24,8 @@ import java.util.UUID
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 
-import org.apache.kyuubi.{Utils, WithKyuubiServer}
+import org.apache.kyuubi.Utils
+import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.OperationState._
@@ -44,6 +45,8 @@ class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper 
       .set(KyuubiConf.SERVER_EVENT_JSON_LOG_PATH, serverLogRoot)
       .set(KyuubiConf.ENGINE_EVENT_LOGGERS, Seq("JSON"))
       .set(KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH, engineLogRoot)
+      .set(KyuubiConf.AUDIT_LOG_ENABLE, true)
+      .set(KyuubiConf.SERVER_AUDIT_EVENT_JSON_LOG_PATH, serverLogRoot)
   }
 
   override protected def jdbcUrl: String = getJdbcUrl
@@ -145,6 +148,39 @@ class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper 
           s"SELECT * FROM `json`.`$engineSessionEventPath` " +
             s"where sessionId = '$serverSessionId' limit 1")
         assert(res2.next())
+      }
+    }
+  }
+
+
+  test("test audit events") {
+    val hostName = InetAddress.getLocalHost.getCanonicalHostName
+    val serverStatementEventPath =
+      Paths.get(serverLogRoot, "kyuubi_audit", s"day=$currentDate", s"server-$hostName.json")
+    val sql = "SELECT 2"
+
+    withJdbcStatement() { statement =>
+      val serverTable = serverStatementEventPath.getParent
+
+      var sessionId: String = ""
+      // get latest session
+      val sessionSet = statement.executeQuery(s"SELECT * FROM `json`.`${serverTable}`" +
+        "where operationType = 'SESSION' order by createTime desc")
+      sessionSet.next()
+      assert(sessionSet.getString("user") == Utils.currentUser)
+      assert(Array("OPEN").contains(sessionSet.getString("state")))
+      sessionId = sessionSet.getString("operationId")
+
+      statement.execute(sql)
+
+      val resultSet = statement.executeQuery(s"SELECT * FROM `json`.`${serverTable}`" +
+        "where operate = \"" + sql + "\"")
+      while (resultSet.next()) {
+        assert(resultSet.getString("operationType") == "STATEMENT")
+        assert(resultSet.getString("user") == Utils.currentUser)
+        assert(resultSet.getString("operate") == sql)
+        assert(resultSet.getString("state") == FINISHED.toString)
+        assert(resultSet.getString("operationId").startsWith(sessionId))
       }
     }
   }

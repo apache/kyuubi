@@ -250,6 +250,13 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
+  val AUDIT_LOG_ENABLE: ConfigEntry[Boolean] =
+    buildConf("audit.log.enable")
+      .doc("When true, store sql statement for audit.")
+      .version("1.4.0")
+      .booleanConf
+      .createWithDefault(false)
+
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                              Frontend Service Configuration                                 //
   /////////////////////////////////////////////////////////////////////////////////////////////////
@@ -855,6 +862,14 @@ object KyuubiConf {
   val SERVER_EVENT_JSON_LOG_PATH: ConfigEntry[String] =
     buildConf("backend.server.event.json.log.path")
       .doc("The location of server events go for the builtin JSON logger")
+      .version("1.4.0")
+      .stringConf
+      .createWithDefault("/tmp/kyuubi/events")
+
+  val SERVER_AUDIT_EVENT_JSON_LOG_PATH: ConfigEntry[String] =
+    buildConf("audit.event.json.log.path")
+      .doc("The location of server audit events go for the builtin JSON logger. " +
+        "The log files will be stored in the subdir kyuubi_audit.")
       .version("1.4.0")
       .stringConf
       .createWithDefault("/tmp/kyuubi/events")

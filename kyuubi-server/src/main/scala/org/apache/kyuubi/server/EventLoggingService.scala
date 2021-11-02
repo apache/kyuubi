@@ -19,12 +19,18 @@ package org.apache.kyuubi.server
 
 import java.net.InetAddress
 
+import scala.collection.mutable.ArrayBuffer
+
 import org.apache.hadoop.conf.Configuration
 
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.AUDIT_LOG_ENABLE
+import org.apache.kyuubi.config.KyuubiConf.SERVER_AUDIT_EVENT_JSON_LOG_PATH
 import org.apache.kyuubi.config.KyuubiConf.SERVER_EVENT_JSON_LOG_PATH
 import org.apache.kyuubi.config.KyuubiConf.SERVER_EVENT_LOGGERS
-import org.apache.kyuubi.events.{AbstractEventLoggingService, EventLoggerType}
+import org.apache.kyuubi.events.AbstractEventLoggingService
+import org.apache.kyuubi.events.EventLogger
+import org.apache.kyuubi.events.EventLoggerType
 import org.apache.kyuubi.events.JsonEventLogger
 import org.apache.kyuubi.events.KyuubiServerEvent
 import org.apache.kyuubi.server.EventLoggingService._service
@@ -32,12 +38,20 @@ import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class EventLoggingService extends AbstractEventLoggingService[KyuubiServerEvent] {
 
+  private lazy val auditLoggers = new ArrayBuffer[EventLogger[KyuubiServerEvent]]()
+
+  private lazy val hostName = InetAddress.getLocalHost.getCanonicalHostName
+
+  def onAuditEvent(event: KyuubiServerEvent): Unit = {
+    auditLoggers.foreach(_.logEvent(event))
+  }
+
   override def initialize(conf: KyuubiConf): Unit = {
+    // load server event logger
     conf.get(SERVER_EVENT_LOGGERS)
       .map(EventLoggerType.withName)
       .foreach{
         case EventLoggerType.JSON =>
-          val hostName = InetAddress.getLocalHost.getCanonicalHostName
           val jsonEventLogger = new JsonEventLogger[KyuubiServerEvent](s"server-$hostName",
             SERVER_EVENT_JSON_LOG_PATH, new Configuration())
           // TODO: #1180 kyuubiServerEvent need create logRoot automatically
@@ -48,7 +62,21 @@ class EventLoggingService extends AbstractEventLoggingService[KyuubiServerEvent]
           // TODO: Add more implementations
           throw new IllegalArgumentException(s"Unrecognized event logger: $logger")
       }
+
+    // load audit logger
+    if (conf.get(AUDIT_LOG_ENABLE)) {
+      val jsonAuditLogger = new JsonEventLogger[KyuubiServerEvent](s"server-$hostName",
+        SERVER_AUDIT_EVENT_JSON_LOG_PATH, new Configuration())
+      jsonAuditLogger.createEventLogRootDir(conf, KyuubiHadoopUtils.newHadoopConf(conf))
+      addService(jsonAuditLogger)
+      addAuditEventLogger(jsonAuditLogger)
+    }
+
     super.initialize(conf)
+  }
+
+  private def addAuditEventLogger(logger: EventLogger[KyuubiServerEvent]): Unit = {
+    auditLoggers += logger
   }
 
   override def start(): Unit = {
@@ -69,5 +97,9 @@ object EventLoggingService {
 
   def onEvent(event: KyuubiServerEvent): Unit = {
     _service.foreach(_.onEvent(event))
+  }
+
+  def onAuditEvent(event: KyuubiServerEvent): Unit = {
+    _service.foreach(_.onAuditEvent(event))
   }
 }
