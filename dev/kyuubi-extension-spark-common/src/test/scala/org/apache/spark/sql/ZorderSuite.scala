@@ -539,22 +539,24 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
   }
 
   test("Add config to control if zorder using global sort") {
-    withSQLConf(KyuubiSQLConf.ZORDER_GLOBAL_SORT_ENABLED.key -> "false") {
-      sql(
-        """
-          |CREATE TABLE t (c1 int, c2 string) TBLPROPERTIES (
-          |'kyuubi.zorder.enabled'= 'true',
-          |'kyuubi.zorder.cols'= 'c1,c2')
-          |""".stripMargin)
-      val p1 = sql("OPTIMIZE t ZORDER BY c1, c2").queryExecution.analyzed
-      assert(p1.collect {
-        case shuffle: Sort if !shuffle.global => shuffle
-      }.size == 1)
+    withTable("t") {
+      withSQLConf(KyuubiSQLConf.ZORDER_GLOBAL_SORT_ENABLED.key -> "false") {
+        sql(
+          """
+            |CREATE TABLE t (c1 int, c2 string) TBLPROPERTIES (
+            |'kyuubi.zorder.enabled'= 'true',
+            |'kyuubi.zorder.cols'= 'c1,c2')
+            |""".stripMargin)
+        val p1 = sql("OPTIMIZE t ZORDER BY c1, c2").queryExecution.analyzed
+        assert(p1.collect {
+          case shuffle: Sort if !shuffle.global => shuffle
+        }.size == 1)
 
-      val p2 = sql("INSERT INTO TABLE t SELECT * FROM VALUES(1,'a')").queryExecution.analyzed
-      assert(p2.collect {
-        case shuffle: Sort if !shuffle.global => shuffle
-      }.size == 1)
+        val p2 = sql("INSERT INTO TABLE t SELECT * FROM VALUES(1,'a')").queryExecution.analyzed
+        assert(p2.collect {
+          case shuffle: Sort if !shuffle.global => shuffle
+        }.size == 1)
+      }
     }
   }
 }
