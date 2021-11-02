@@ -35,8 +35,6 @@ When we specify the ZooKeeper address via `kyuubi.ha.zookeeper.quorum`, load bal
 
 ## Configuring High Availability
 
-This section describes how to configure high availability. These configurations in the following table can be treat like normal Spark properties by setting them in `spark-defaults.conf` file or via `--conf` parameter in server starting scripts.
-
 Key | Default | Meaning | Since
 --- | --- | --- | ---
 kyuubi\.ha\.zookeeper<br>\.acl\.enabled|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>false</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Set to true if the zookeeper ensemble is kerberized</div>|<div style='width: 20pt'>1.0.0</div>
