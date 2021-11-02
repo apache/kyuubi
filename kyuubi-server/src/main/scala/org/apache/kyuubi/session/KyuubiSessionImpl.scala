@@ -56,12 +56,14 @@ class KyuubiSessionImpl(
   override def open(): Unit = {
     MetricsSystem.tracing { ms =>
       ms.incCount(CONN_TOTAL)
-      ms.incCount(MetricRegistry.name(CONN_OPEN, user))
     }
     super.open()
     withZkClient(sessionConf) { zkClient =>
       val (host, port) = engine.getOrCreate(zkClient)
       openSession(host, port)
+      MetricsSystem.tracing { ms =>
+        ms.incCount(MetricRegistry.name(CONN_OPEN, user))
+      }
     }
   }
 
