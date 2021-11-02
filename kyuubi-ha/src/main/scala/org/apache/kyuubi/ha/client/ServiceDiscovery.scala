@@ -156,8 +156,12 @@ object ServiceDiscovery extends Logging {
     ThreadUtils.newDaemonSingleThreadScheduledExecutor("zk-connection-checker")
 
   def supportServiceDiscovery(conf: KyuubiConf): Boolean = {
+    val enabled = conf.get(HA_ENABLED)
     val zkEnsemble = conf.get(HA_ZK_QUORUM)
-    zkEnsemble != null && zkEnsemble.nonEmpty
+    if (enabled && (zkEnsemble == null || zkEnsemble.isEmpty)) {
+      throw new KyuubiException(s"${HA_ZK_QUORUM.key} is required when ${HA_ENABLED.key} = true")
+    }
+    enabled
   }
 
   def getServerHost(zkClient: CuratorFramework, namespace: String): Option[(String, Int)] = {
