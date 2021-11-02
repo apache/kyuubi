@@ -22,9 +22,10 @@ import java.io.IOException
 import com.codahale.metrics.MetricRegistry
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift._
+import org.apache.thrift.TException
 import org.apache.thrift.transport.TTransportException
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.metrics.MetricsConstants.STATEMENT_FAIL
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -64,8 +65,8 @@ abstract class KyuubiOperation(
               // https://issues.apache.org/jira/browse/THRIFT-4858
               KyuubiSQLException(
                 s"Error $action $opType: Socket for ${session.handle} is closed", e)
-            case _ =>
-              KyuubiSQLException(s"Error $action $opType: ${e.getMessage}", e)
+            case e =>
+              KyuubiSQLException(s"Error $action $opType: ${Utils.stringifyException(e)}", e)
           }
           setOperationException(ke)
           throw ke
@@ -86,27 +87,37 @@ abstract class KyuubiOperation(
     }
   }
 
-  override def cancel(): Unit = {
-    if (_remoteOpHandle != null && !isClosedOrCanceled) {
-      try {
-        client.cancelOperation(_remoteOpHandle)
-        setState(OperationState.CANCELED)
-      } catch onError("cancelling")
+  override def cancel(): Unit = state.synchronized {
+    if (!isClosedOrCanceled) {
+      setState(OperationState.CANCELED)
+      if (_remoteOpHandle != null) {
+        try {
+          client.cancelOperation(_remoteOpHandle)
+        } catch {
+          case e @ (_: TException | _: KyuubiSQLException) =>
+            warn(s"Error cancelling ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
+        }
+      }
     }
   }
 
-  override def close(): Unit = {
-    if (_remoteOpHandle != null && !isClosedOrCanceled) {
-      try {
-        getOperationLog.foreach(_.close())
-      } catch {
-        case e: IOException =>
-          error(e.getMessage, e)
+  override def close(): Unit = state.synchronized {
+    if (!isClosedOrCanceled) {
+      setState(OperationState.CLOSED)
+      if (_remoteOpHandle != null) {
+        try {
+          getOperationLog.foreach(_.close())
+        } catch {
+          case e: IOException => error(e.getMessage, e)
+        }
+
+        try {
+          client.closeOperation(_remoteOpHandle)
+        } catch {
+          case e @(_: TException | _: KyuubiSQLException) =>
+            warn(s"Error closing ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
+        }
       }
-      try {
-        client.closeOperation(_remoteOpHandle)
-        setState(OperationState.CLOSED)
-      } catch onError("closing")
     }
   }
 

@@ -93,6 +93,7 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
           setOperationException(ke)
           throw ke
         } else if (isTerminalState(state)) {
+          setOperationException(KyuubiSQLException(errMsg))
           warn(s"Ignore exception in terminal state with $statementId: $errMsg")
         } else {
           setState(OperationState.ERROR)

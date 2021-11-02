@@ -651,6 +651,14 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
+  val OPERATION_STATUS_POLLING_MAX_ATTEMPTS: ConfigEntry[Int] =
+    buildConf("operation.status.polling.max.attempts")
+      .doc("Max attempts for long polling asynchronous running sql query's status on raw" +
+        " transport failures, e.g. TTransportException")
+      .version("1.4.0")
+      .intConf
+      .createWithDefault(5)
+
   val OPERATION_FORCE_CANCEL: ConfigEntry[Boolean] =
     buildConf("operation.interrupt.on.cancel")
       .doc("When true, all running tasks will be interrupted if one cancels a query. " +

@@ -19,14 +19,17 @@ package org.apache.kyuubi.operation
 
 import scala.collection.JavaConverters._
 
-import org.apache.hive.service.rpc.thrift.{TFetchOrientation, TFetchResultsReq, TGetOperationStatusReq}
+import org.apache.hive.service.rpc.thrift.TGetOperationStatusResp
 import org.apache.hive.service.rpc.thrift.TOperationState._
+import org.apache.thrift.TException
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.KyuubiStatementEvent
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
+import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.server.EventLoggingService
@@ -50,14 +53,11 @@ class ExecuteStatement(
     null
   }
 
-  override def getOperationLog: Option[OperationLog] = Option(_operationLog)
-
-  private lazy val statusReq = new TGetOperationStatusReq(_remoteOpHandle)
-  private lazy val fetchLogReq = {
-    val req = new TFetchResultsReq(_remoteOpHandle, TFetchOrientation.FETCH_NEXT, 1000)
-    req.setFetchType(1.toShort)
-    req
+  private val maxStatusPollOnFailure = {
+    session.sessionManager.getConf.get(KyuubiConf.OPERATION_STATUS_POLLING_MAX_ATTEMPTS)
   }
+
+  override def getOperationLog: Option[OperationLog] = Option(_operationLog)
 
   EventLoggingService.onEvent(statementEvent)
 
@@ -83,7 +83,29 @@ class ExecuteStatement(
 
   private def waitStatementComplete(): Unit = try {
     setState(OperationState.RUNNING)
-    var statusResp = client.GetOperationStatus(statusReq)
+    var statusResp: TGetOperationStatusResp = null
+    var currentAttempts = 0
+
+    def getOperationStatusWithRetry: Unit = {
+      try {
+        statusResp = client.getOperationStatus(_remoteOpHandle)
+        currentAttempts = 0 // reset attempts whenever get touch with engine again
+      } catch {
+        case e: TException if currentAttempts >= maxStatusPollOnFailure =>
+          error(s"Failed to get ${session.user}'s query[$getHandle] status after" +
+            s" $maxStatusPollOnFailure times, aborting", e)
+          throw e
+        case e: TException =>
+          currentAttempts += 1
+          warn(s"Failed to get ${session.user}'s query[$getHandle] status" +
+            s" ($currentAttempts / $maxStatusPollOnFailure)", e)
+          Thread.sleep(100)
+      }
+    }
+
+    // initialize operation status
+    while (statusResp == null) { getOperationStatusWithRetry }
+
     var isComplete = false
     while (!isComplete) {
       fetchQueryLog()
@@ -94,7 +116,7 @@ class ExecuteStatement(
       remoteState match {
         case INITIALIZED_STATE | PENDING_STATE | RUNNING_STATE =>
           isComplete = false
-          statusResp = client.GetOperationStatus(statusReq)
+          getOperationStatusWithRetry
 
         case FINISHED_STATE =>
           setState(OperationState.FINISHED)
@@ -109,14 +131,10 @@ class ExecuteStatement(
           setState(OperationState.TIMEOUT)
 
         case ERROR_STATE =>
-          setState(OperationState.ERROR)
-          val ke = KyuubiSQLException(statusResp.getErrorMessage)
-          setOperationException(ke)
+          throw KyuubiSQLException(statusResp.getErrorMessage)
 
         case UKNOWN_STATE =>
-          setState(OperationState.ERROR)
-          val ke = KyuubiSQLException(s"UNKNOWN STATE for $statement")
-          setOperationException(ke)
+          throw KyuubiSQLException(s"UNKNOWN STATE for $statement")
       }
       sendCredentialsIfNeeded()
     }
@@ -136,9 +154,8 @@ class ExecuteStatement(
   private def fetchQueryLog(): Unit = {
     getOperationLog.foreach { logger =>
       try {
-        val resp = client.FetchResults(fetchLogReq)
-        verifyTStatus(resp.getStatus)
-        val logs = resp.getResults.getColumns.get(0).getStringVal.getValues.asScala
+        val ret = client.fetchResults(_remoteOpHandle, FETCH_NEXT, 1000, fetchLog = true)
+        val logs = ret.getColumns.get(0).getStringVal.getValues.asScala
         logs.foreach(log => logger.write(log + "\n"))
       } catch {
         case _: Exception => // do nothing

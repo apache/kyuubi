@@ -31,7 +31,7 @@ import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class SparkThriftBinaryFrontendService(
     override val serverable: Serverable)
-  extends ThriftBinaryFrontendService("SparkThriftBinaryFrontendService", serverable) {
+  extends ThriftBinaryFrontendService("SparkThriftBinaryFrontendService") {
   import SparkThriftBinaryFrontendService._
 
   private lazy val sc = be.asInstanceOf[SparkSQLBackendService].sparkSession.sparkContext
@@ -146,6 +146,15 @@ class SparkThriftBinaryFrontendService(
       // engine use address if run on k8s with cluster mode
       s"${serverAddr.getHostAddress}:$portNum"
     }
+  }
+
+  // When a OOM occurs, here we de-register the engine by stop its discoveryService.
+  // Then the current engine will not be connected by new client anymore but keep the existing ones
+  // alive. In this case we can reduce the engine's overhead and make it possible recover from that.
+  // We shall not tear down the whole engine by serverable.stop to make the engine unreachable for
+  // the existing clients which are still getting statuses and reporting to the end-users.
+  override protected def oomHook: Runnable = {
+    () => discoveryService.foreach(_.stop())
   }
 }
 

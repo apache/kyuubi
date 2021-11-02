@@ -22,7 +22,7 @@ import org.apache.kyuubi.service.{Serverable, Service, ThriftBinaryFrontendServi
 
 class KyuubiThriftBinaryFrontendService(
     override val serverable: Serverable)
-  extends ThriftBinaryFrontendService("KyuubiThriftBinaryFrontendService", serverable) {
+  extends ThriftBinaryFrontendService("KyuubiThriftBinaryFrontendService") {
 
   override lazy val discoveryService: Option[Service] = {
     if (ServiceDiscovery.supportServiceDiscovery(conf)) {
@@ -35,5 +35,9 @@ class KyuubiThriftBinaryFrontendService(
   override def connectionUrl: String = {
     checkInitialized()
     s"${serverAddr.getCanonicalHostName}:$portNum"
+  }
+
+  override protected def oomHook: Runnable = {
+    () => serverable.stop()
   }
 }
