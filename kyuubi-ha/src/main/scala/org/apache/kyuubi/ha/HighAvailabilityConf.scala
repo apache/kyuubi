@@ -34,15 +34,6 @@ object HighAvailabilityConf {
     .stringConf
     .createWithDefault("")
 
-  val HA_ENABLED: ConfigEntry[Boolean] = buildConf("ha.enabled")
-    .doc("Whether kyuubi server supports dynamic service discovery for its clients. To support" +
-      " this, each instance of kyuubi server currently uses ZooKeeper to register itself, when" +
-      " it is brought up. JDBC/ODBC clients should use the ZooKeeper ensemble:" +
-      s" ${HA_ZK_QUORUM.key} in their connection string.")
-    .version("1.4.0")
-    .booleanConf
-    .createWithDefault(true)
-
   val HA_ZK_NAMESPACE: ConfigEntry[String] = buildConf("ha.zookeeper.namespace")
     .doc("The root directory for the service to deploy its instance uri. Additionally, it will" +
       " creates a -[username] suffixed root directory for each application")
