@@ -41,7 +41,7 @@ object HighAvailabilityConf {
       s" ${HA_ZK_QUORUM.key} in their connection string.")
     .version("1.4.0")
     .booleanConf
-    .createWithDefault(true)
+    .createWithDefault(false)
 
   val HA_ZK_NAMESPACE: ConfigEntry[String] = buildConf("ha.zookeeper.namespace")
     .doc("The root directory for the service to deploy its instance uri. Additionally, it will" +
