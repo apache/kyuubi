@@ -60,11 +60,11 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @GET
   @Path("{sessionHandle}/info/{infotype}")
   def getInfo(@PathParam("sessionHandle") sessionHandleStr: String,
-              @PathParam("infotype") infoType: Int): InfoValue = {
+              @PathParam("infotype") infoType: Int): InfoDetail = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
     val info = TGetInfoType.findByValue(infoType.toInt)
     val infoValue = backendService.getInfo(sessionHandle, info)
-    InfoValue(info.toString, infoValue.getStringValue)
+    InfoDetail(info.toString, infoValue.getStringValue)
   }
 
   @GET

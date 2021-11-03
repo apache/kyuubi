@@ -189,7 +189,7 @@ class SessionsResourceSuite extends KyuubiFunSuite {
         response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/info/13")
           .request().get()
         assert(200 == response.getStatus)
-        val sessions = response.readEntity(classOf[InfoValue])
+        val sessions = response.readEntity(classOf[InfoDetail])
         assert(sessions.infoType.equals("CLI_SERVER_NAME") && sessions.infoValue.equals("Kyuubi"))
     }
   }

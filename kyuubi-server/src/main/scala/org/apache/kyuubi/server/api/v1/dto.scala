@@ -32,7 +32,7 @@ case class SessionOverview(
   sessionHandle: SessionHandle
 )
 
-case class InfoValue(
+case class InfoDetail(
   infoType: String,
   infoValue: String
 )
