@@ -37,7 +37,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
     KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "connection")
   }
 
-  test("KYUUBI #647 - engine crash") {
+  test("KYUUBI #647 - async query causes engine crash") {
     withSessionHandle { (client, handle) =>
       val executeStmtReq = new TExecuteStatementReq()
       executeStmtReq.setStatement("select java_method('java.lang.System', 'exit', 1)")
@@ -63,6 +63,38 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       }
       val verboseMessage = Utils.stringifyException(exception)
       assert(verboseMessage.contains("Failed to detect the root cause"))
+    }
+  }
+
+  test("client sync query cost time longer than engine.request.timeout") {
+    withSessionConf(Map(
+      KyuubiConf.ENGINE_REQUEST_TIMEOUT.key -> "PT5S"
+    ))(Map.empty)(Map.empty) {
+      withSessionHandle { (client, handle) =>
+        val executeStmtReq = new TExecuteStatementReq()
+        executeStmtReq.setStatement("select java_method('java.lang.Thread', 'sleep', 6000L)")
+        executeStmtReq.setSessionHandle(handle)
+        executeStmtReq.setRunAsync(false)
+        val executeStmtResp = client.ExecuteStatement(executeStmtReq)
+        val getOpStatusReq = new TGetOperationStatusReq(executeStmtResp.getOperationHandle)
+        val getOpStatusResp = client.GetOperationStatus(getOpStatusReq)
+        assert(getOpStatusResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        assert(getOpStatusResp.getOperationState === TOperationState.FINISHED_STATE)
+      }
+    }
+  }
+
+  test("sync query causes engine crash") {
+    withSessionHandle { (client, handle) =>
+      val executeStmtReq = new TExecuteStatementReq()
+      executeStmtReq.setStatement("select java_method('java.lang.System', 'exit', 1)")
+      executeStmtReq.setSessionHandle(handle)
+      executeStmtReq.setRunAsync(false)
+      val executeStmtResp = client.ExecuteStatement(executeStmtReq)
+      assert(executeStmtResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+      assert(executeStmtResp.getOperationHandle === null)
+      assert(executeStmtResp.getStatus.getErrorMessage contains
+        "Caused by: java.net.SocketException: Broken pipe (Write failed)")
     }
   }
 }
