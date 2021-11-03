@@ -92,19 +92,19 @@ class SessionsResourceSuite extends KyuubiFunSuite {
         })
 
         // verify the exec pool statistic
-        var response = webTarget.path("api/v1/sessions/execpool/statistic").request().get()
+        var response = webTarget.path("api/v1/sessions/execPool/statistic").request().get()
         val execPoolStatistic1 = response.readEntity(classOf[ExecPoolStatistic])
         assert(execPoolStatistic1.execPoolSize == 1 && execPoolStatistic1.execPoolActiveCount == 1)
 
         future.cancel(true)
         eventually(timeout(3.seconds), interval(200.milliseconds)) {
-          response = webTarget.path("api/v1/sessions/execpool/statistic").request().get()
+          response = webTarget.path("api/v1/sessions/execPool/statistic").request().get()
           val statistic = response.readEntity(classOf[ExecPoolStatistic])
           assert(statistic.execPoolSize == 1 && statistic.execPoolActiveCount == 0)
         }
 
         sessionManager.stop()
-        response = webTarget.path("api/v1/sessions/execpool/statistic").request().get()
+        response = webTarget.path("api/v1/sessions/execPool/statistic").request().get()
         val execPoolStatistic3 = response.readEntity(classOf[ExecPoolStatistic])
         assert(execPoolStatistic3.execPoolSize == 0 && execPoolStatistic3.execPoolActiveCount == 0)
 

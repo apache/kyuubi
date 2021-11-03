@@ -58,9 +58,9 @@ private[v1] class SessionsResource extends ApiRequestContext {
   }
 
   @GET
-  @Path("{sessionHandle}/info/{infotype}")
+  @Path("{sessionHandle}/info/{infoType}")
   def getInfo(@PathParam("sessionHandle") sessionHandleStr: String,
-              @PathParam("infotype") infoType: Int): InfoDetail = {
+              @PathParam("infoType") infoType: Int): InfoDetail = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
     val info = TGetInfoType.findByValue(infoType.toInt)
     val infoValue = backendService.getInfo(sessionHandle, info)
@@ -74,7 +74,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   }
 
   @GET
-  @Path("execpool/statistic")
+  @Path("execPool/statistic")
   def execPoolStatistic(): ExecPoolStatistic = {
     ExecPoolStatistic(backendService.sessionManager.getExecPoolSize,
       backendService.sessionManager.getActiveCount)
