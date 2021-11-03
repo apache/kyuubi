@@ -63,7 +63,7 @@ class KyuubiOperationPerGroupSuite extends WithKyuubiServer with SparkQueryTests
     }
     assert(r1 != null && r2 != null)
     assert(r1 === r2)
-    assert(r1.startsWith(s"kyuubi_GROUP_testGG"))
+    assert(r1.startsWith(s"kyuubi_GROUP_${conf.get(KyuubiConf.ENGINE_TYPE)}_testGG"))
   }
 
 

@@ -760,7 +760,7 @@ object KyuubiConf {
 
   val ENGINE_TYPE: ConfigEntry[String] = buildConf("engine.type")
     .doc("Specify the detailed engine that supported by the Kyuubi. The engine type bindings to" +
-      " SESSION scope. Currently, available configs are: <ul>" +
+      " SESSION scope. This configuration is experimental. Currently, available configs are: <ul>" +
       " <li>SPARK_SQL: specify this engine type will launch a Spark engine which can provide" +
       " all the capacity of the Apache Spark. Note, it's a default engine type.</li>" +
       " <li>FLINK_SQL: specify this engine type will launch a Flink engine which can provide" +
