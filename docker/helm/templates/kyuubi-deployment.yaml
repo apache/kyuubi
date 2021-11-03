@@ -46,6 +46,8 @@ spec:
             - name: frontend-port
               containerPort: {{ .Values.server.bind.port }}
               protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
             - name: kyuubi-defaults
               mountPath: {{ .Values.server.conf.mountPath }}
