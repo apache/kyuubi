@@ -509,10 +509,16 @@ object KyuubiConf {
       .createOptional
 
   val ENGINE_LOGIN_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.login.timeout")
-    .doc("The timeout(ms) of creating the connection to remote sql query engine")
+    .doc("The timeout of creating the connection to remote sql query engine")
     .version("1.0.0")
     .timeConf
     .createWithDefault(Duration.ofSeconds(15).toMillis)
+
+  val ENGINE_REQUEST_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.request.timeout")
+    .doc("The timeout of awaiting response after sending request to remote sql query engine")
+    .version("1.4.0")
+    .timeConf
+    .createWithDefault(Duration.ofSeconds(60).toMillis)
 
   val ENGINE_INIT_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.initialize.timeout")
     .doc("Timeout for starting the background engine, e.g. SparkSQLEngine.")
