@@ -22,9 +22,11 @@ import javax.ws.rs._
 import javax.ws.rs.core.{MediaType, Response}
 
 import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
 
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 
+import org.apache.kyuubi.Utils.error
 import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.session.SessionHandle
@@ -52,8 +54,9 @@ private[v1] class SessionsResource extends ApiRequestContext {
       SessionDetail(session.user, session.ipAddress, session.createTime, sessionHandle,
         session.lastAccessTime, session.lastIdleTime, session.getNoOperationTime, session.conf)
     } catch {
-      case _: Throwable =>
-        throw new NotFoundException()
+      case NonFatal(e) =>
+        error(s"Invalid $sessionHandle", e)
+        throw new NotFoundException(s"Invalid $sessionHandle")
     }
   }
 
@@ -62,14 +65,15 @@ private[v1] class SessionsResource extends ApiRequestContext {
   def getInfo(@PathParam("sessionHandle") sessionHandleStr: String,
               @PathParam("infoType") infoType: Int): InfoDetail = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
-    val info = TGetInfoType.findByValue(infoType.toInt)
+    val info = TGetInfoType.findByValue(infoType)
 
     try {
       val infoValue = backendService.getInfo(sessionHandle, info)
       InfoDetail(info.toString, infoValue.getStringValue)
     } catch {
-      case _: Throwable =>
-        throw new NotFoundException()
+      case NonFatal(e) =>
+        error(s"Unrecognized GetInfoType value: $infoType", e)
+        throw new NotFoundException(s"Unrecognized GetInfoType value: $infoType")
     }
   }
 
@@ -106,10 +110,21 @@ private[v1] class SessionsResource extends ApiRequestContext {
   }
 
   def getSessionHandle(sessionHandleStr: String): SessionHandle = {
-    val splitSessionHandle = sessionHandleStr.split("\\|")
-    val handleIdentifier = new HandleIdentifier(
-      UUID.fromString(splitSessionHandle(0)), UUID.fromString(splitSessionHandle(1)))
-    val protocolVersion = TProtocolVersion.findByValue(splitSessionHandle(2).toInt)
-    new SessionHandle(handleIdentifier, protocolVersion)
+    try {
+      val splitSessionHandle = sessionHandleStr.split("\\|")
+      val handleIdentifier = new HandleIdentifier(
+        UUID.fromString(splitSessionHandle(0)), UUID.fromString(splitSessionHandle(1)))
+      val protocolVersion = TProtocolVersion.findByValue(splitSessionHandle(2).toInt)
+      val sessionHandle = new SessionHandle(handleIdentifier, protocolVersion)
+
+      // if the sessionHandle is invalid, KyuubiSQLException will be thrown here.
+      backendService.sessionManager.getSession(sessionHandle)
+      sessionHandle
+    } catch {
+      case NonFatal(e) =>
+        error(s"Error getting sessionHandle by $sessionHandleStr.", e)
+        throw new NotFoundException(s"Error getting sessionHandle by $sessionHandleStr.")
+    }
+
   }
 }

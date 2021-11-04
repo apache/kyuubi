@@ -189,10 +189,20 @@ class SessionsResourceSuite extends KyuubiFunSuite {
         response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/info/13")
           .request().get()
         assert(200 == response.getStatus)
-        var sessions = response.readEntity(classOf[InfoDetail])
+        val sessions = response.readEntity(classOf[InfoDetail])
         assert(sessions.infoType.equals("CLI_SERVER_NAME") && sessions.infoValue.equals("Kyuubi"))
+        // Invalid sessionHandleStr
+        val errorSessionHandle = "b88d6b56-d200-4bb6-bf0a-5da0ea572e11|0c4aad4e-ccf7-4abd-9305-943d4bfd2d9a|0"
+        response = webTarget.path(s"api/v1/sessions/$errorSessionHandle/info/13").request().get()
+        assert(404 == response.getStatus)
+        response = webTarget.path(s"api/v1/sessions/0/info/13").request().get()
+        assert(404 == response.getStatus)
 
+        // Invalid infoType
         response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/info/0")
+          .request().get()
+        assert(404 == response.getStatus)
+        response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/info/str")
           .request().get()
         assert(404 == response.getStatus)
     }
