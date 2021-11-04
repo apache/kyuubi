@@ -23,25 +23,25 @@
 
 # Z-order Benchmark
 
-Z-order is a technique that allows you to map multidimensional data to a single dimension. We did a performance test
+Z-order is a technique that allows you to map multidimensional data to a single dimension. We did a performance test.
 
-for this test ,we used aliyun Databricks Delta test case
-https://help.aliyun.com/document_detail/168137.html?spm=a2c4g.11186623.6.563.10d758ccclYtVb
+For this test ,we used aliyun Databricks Delta test case
+https://help.aliyun.com/document_detail/168137.html?spm=a2c4g.11186623.6.563.10d758ccclYtVb.
 
 Prepare data for the three scenarios:
 
-1. 10 billion data and 2 hundred files（parquet files）: for big file(1G)
-2. 10 billion data and 1 thousand files（parquet files）: for medium file(200m)
-3. one billion data and 10 hundred files（parquet files）: for smaller file(200k)
+1. 10 billion data and 2 hundred files (parquet files): for big file(1G)
+2. 10 billion data and 1 thousand files (parquet files): for medium file(200m)
+3. 1 billion data and 10 thousand files (parquet files): for smaller file(200k)
 
-test env：
+Test env:
 spark-3.1.2
 hadoop-2.7.2
-kyubbi-1.4.0
+kyuubi-1.4.0
 
-test step：
+Test step:
 
-Step1: create hive tables
+Step1: create hive tables.
 
 ```scala
 spark.sql(s"drop database if exists $dbName cascade")
@@ -55,8 +55,8 @@ spark.sql(s"create table $connZorder (src_ip string, src_port int, dst_ip string
 spark.sql(s"show tables").show(false)
 ```
 
-Step2： prepare data for parquet table with three scenarios
-we use the following code
+Step2: prepare data for parquet table with three scenarios,
+we use the following code.
 
 ```scala
 def randomIPv4(r: Random) = Seq.fill(4)(r.nextInt(256)).mkString(".")
@@ -67,14 +67,14 @@ def randomConnRecord(r: Random) = ConnRecord(
   dst_ip = randomIPv4(r), dst_port = randomPort(r))
 ```
 
-Step3： do optimize with z-order only ip and do optimize with order by only ip， sort column： src_ip, dst_ip and shuffle partition just as file numbers .
+Step3: do optimize with z-order only ip and do optimize with order by only ip, sort column: src_ip, dst_ip and shuffle partition just as file numbers.
 
 ```
 INSERT overwrite table conn_order_only_ip select src_ip, src_port, dst_ip, dst_port from conn_random_parquet order by src_ip, dst_ip;
 OPTIMIZE conn_zorder_only_ip ZORDER BY src_ip, dst_ip;
 ```
 
-Step4： do optimize with z-order and do optimize with order by ， sort column： src_ip, src_port, dst_ip, dst_port and shuffle partition just as file numbers .
+Step4: do optimize with z-order and do optimize with order by, sort column: src_ip, src_port, dst_ip, dst_port and shuffle partition just as file numbers.
 
 ```
 INSERT overwrite table conn_order select src_ip, src_port, dst_ip, dst_port from conn_random_parquet order by src_ip, src_port, dst_ip, dst_port;
@@ -82,7 +82,7 @@ OPTIMIZE conn_zorder ZORDER BY src_ip, src_port, dst_ip, dst_port;
 ```
 
 
-The complete code is as follows：
+The complete code is as follows:
 
 ```shell
 ./spark-shell
@@ -191,20 +191,20 @@ select count(*) from conn_zorder where src_ip like '157%' and dst_ip like '216.%
 ## Benchmark result
 
 We have done two performance tests: one is to compare the efficiency of  Z-order Optimize and Order by Sort, 
-and the other is to query based on the optimized Z-order by data and Random data
+and the other is to query based on the optimized Z-order by data and Random data.
 
 ### Efficiency of Z-order Optimize and Order-by Sort
 
-**10 billion data and 1000 files and Query resource:200 core 600G memory**
+**10 billion data and 1000 files and Query resource: 200 core 600G memory**
 
-z-order by or order by only ip
+Z-order by or order by only ip:
 
 | Table               | row count      | optimize  time     |
 | ------------------- | -------------- | ------------------ |
 | conn_order_only_ip  | 10,000,000,000 | 1591.99 s          |
 | conn_zorder_only_ip | 10,000,000,000 | 8371.405 s         |
 
-z-order by or order by all columns
+Z-order by or order by all columns:
 
 | Table               | row count      | optimize  time     |
 | ------------------- | -------------- | ------------------ |
@@ -213,9 +213,9 @@ z-order by or order by all columns
 
 ### Z-order by benchmark result
 
-by querying the tables before and after optimization, we find that
+By querying the tables before and after optimization, we find that:
 
-**10 billion data and 200 files and Query resource:200 core 600G memory**
+**10 billion data and 200 files and Query resource: 200 core 600G memory**
 
 | Table               | Average File Size | Scan row count | Average query time | row count Skipping ratio |
 | ------------------- | ----------------- | -------------- | ------------------ | ------------------------ |
@@ -225,7 +225,7 @@ by querying the tables before and after optimization, we find that
 
 
 
-**10 billion data and 1000 files and Query resource:200 core 600G memory**
+**10 billion data and 1000 files and Query resource: 200 core 600G memory**
 
 | Table               | Average File Size | Scan row count | Average query time | row count Skipping ratio |
 | ------------------- | ----------------- | -------------- | ------------------ | ------------------------ |
@@ -235,7 +235,7 @@ by querying the tables before and after optimization, we find that
 
 
 
-**1 billion data and 10000 files and Query resource:10 core 40G memory**
+**1 billion data and 10000 files and Query resource: 10 core 40G memory**
 
 | Table               | Average File Size | Scan row count | Average query time | row count Skipping ratio |
 | ------------------- | ----------------- | -------------- | ------------------ | ------------------------ |

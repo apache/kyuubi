@@ -45,7 +45,7 @@ Java | Java<br>Runtime<br>Environment | Required | Java 8/11 | Kyuubi is pre-bui
 Spark | Distributed<br>SQL<br>Engine | Required | 3.0.0 and above | By default Kyuubi binary release is delivered without<br> a Spark tarball.
 HDFS | Distributed<br>File<br>System |  Optional | referenced<br>by<br>Spark | Hadoop Distributed File System is a <br>part of Hadoop framework, used to<br> store and process the datasets.<br> You can interact with any<br> Spark-compatible versions of HDFS.
 Hive | Metastore | Optional | referenced<br>by<br>Spark | Hive Metastore for Spark SQL to connect
-Zookeeper | Service<br>Discovery | Optional | Any<br>zookeeper<br>ensemble<br>compatible<br>with<br>curator(2.12.0) | By default, Kyuubi provides a<br> embeded Zookeeper server inside for<br> non-production use.
+Zookeeper | Service<br>Discovery | Optional | Any<br>zookeeper<br>ensemble<br>compatible<br>with<br>curator(2.12.0) | By default, Kyuubi provides a<br> embedded Zookeeper server inside for<br> non-production use.
 
 Additionally, if you want to work with other Spark compatible systems or plugins, you only need to take care of them as using them with regular Spark applications.
 For example, you can run Spark SQL engines created by the Kyuubi on any cluster manager, including YARN, Kubernetes, Mesos, e.t.c...
@@ -93,14 +93,14 @@ From top to bottom are:
 - DISCLAIMER: the disclaimer made by Apache Kyuubi Community as a project still in ASF Incubator.
 - LICENSE: the [APACHE LICENSE, VERSION 2.0](https://www.apache.org/licenses/LICENSE-2.0) we claim to obey.
 - RELEASE: the build information of this package.
-- NOTICE: the natice made by Apache Kyuubi Community about its project and dependencies.
+- NOTICE: the notice made by Apache Kyuubi Community about its project and dependencies.
 - bin: the entry of the Kyuubi server with `kyuubi` as the startup script.
 - conf: all the defaults used by Kyuubi Server itself or creating a session with Spark applications.
 - externals
   - engines: contains all kinds of SQL engines that we support, e.g. Apache Spark, Apache Flink(coming soon).
-- licenses: a bunch of licenses included
+- licenses: a bunch of licenses included.
 - jars: packages needed by the Kyuubi server.
-- logs: Where the logs of the Kyuubi server locates.
+- logs: where the logs of the Kyuubi server locates.
 - pid: stores the PID file of the Kyuubi server instance.
 - work: the root of the working directories of all the forked sub-processes, a.k.a. SQL engines.
 
@@ -110,7 +110,7 @@ As mentioned above, for a quick start deployment, then only you need to be sure 
 
 ### Setup JAVA
 
-You can either set it system-widely,  e.g. in the `.bashrc` file.
+You can either set it system-widely, e.g. in the `.bashrc` file.
 
 ```bash
 java -version
@@ -123,7 +123,7 @@ Or, `export JAVA_HOME=/path/to/java` in the local os session.
 
 ```bash
 export JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk-11.0.5.jdk/Contents/Home
- java -version
+java -version
 java version "11.0.5" 2019-10-15 LTS
 Java(TM) SE Runtime Environment 18.9 (build 11.0.5+10-LTS)
 Java HotSpot(TM) 64-Bit Server VM 18.9 (build 11.0.5+10-LTS, mixed mode)
@@ -214,7 +214,7 @@ In this case, the session will create for the user named 'anonymous'.
 
 Kyuubi will create a Spark SQL engine application using `kyuubi-spark-sql-engine_2.12-<version>.jar`.
 It will cost awhile for the application to be ready before fully establishing the session.
-Otherwise, an existing application will be resued, and the time cost here is negligible.
+Otherwise, an existing application will be reused, and the time cost here is negligible.
 
 Similarly, you can create a session for another user(or principal, subject, and maybe something else you defined), e.g. named `kentyao`,
 
@@ -317,7 +317,7 @@ Closing: 0: jdbc:hive2://localhost:10009/
 Stop Kyuubi by running the following in the `$KYUUBI_HOME` directory:
 
 ```bash
-bin/kyuubi.sh stop
+bin/kyuubi stop
 ```
 
 And then, you will see the KyuubiServer waving goodbye to you.
