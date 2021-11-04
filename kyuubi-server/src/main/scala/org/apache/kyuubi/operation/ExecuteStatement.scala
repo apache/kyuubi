@@ -77,7 +77,10 @@ class ExecuteStatement(
         ms.incCount(STATEMENT_OPEN)
         ms.incCount(STATEMENT_TOTAL)
       }
-      _remoteOpHandle = client.executeStatement(statement, shouldRunAsync, queryTimeout)
+      // We need to avoid executing query in sync mode, because there is no heartbeat mechanism
+      // in thrift protocol, in sync mode, we cannot distinguish between long-run query and
+      // engine crash without response before socket read timeout.
+      _remoteOpHandle = client.executeStatement(statement, true, queryTimeout)
     } catch onError()
   }
 
@@ -86,7 +89,7 @@ class ExecuteStatement(
     var statusResp: TGetOperationStatusResp = null
     var currentAttempts = 0
 
-    def getOperationStatusWithRetry: Unit = {
+    def fetchOperationStatusWithRetry(): Unit = {
       try {
         statusResp = client.getOperationStatus(_remoteOpHandle)
         currentAttempts = 0 // reset attempts whenever get touch with engine again
@@ -104,7 +107,7 @@ class ExecuteStatement(
     }
 
     // initialize operation status
-    while (statusResp == null) { getOperationStatusWithRetry }
+    while (statusResp == null) { fetchOperationStatusWithRetry() }
 
     var isComplete = false
     while (!isComplete) {
@@ -116,7 +119,7 @@ class ExecuteStatement(
       remoteState match {
         case INITIALIZED_STATE | PENDING_STATE | RUNNING_STATE =>
           isComplete = false
-          getOperationStatusWithRetry
+          fetchOperationStatusWithRetry()
 
         case FINISHED_STATE =>
           setState(OperationState.FINISHED)
@@ -164,22 +167,15 @@ class ExecuteStatement(
   }
 
   override protected def runInternal(): Unit = {
-    if (shouldRunAsync) {
-      executeStatement()
-      val sessionManager = session.sessionManager
-      val asyncOperation = new Runnable {
-        override def run(): Unit = waitStatementComplete()
-      }
-      try {
-        val backgroundOperation =
-          sessionManager.submitBackgroundOperation(asyncOperation)
-        setBackgroundHandle(backgroundOperation)
-      } catch onError("submitting query in background, query rejected")
-    } else {
-      setState(OperationState.RUNNING)
-      executeStatement()
-      setState(OperationState.FINISHED)
-    }
+    executeStatement()
+    val sessionManager = session.sessionManager
+    val asyncOperation: Runnable = () => waitStatementComplete()
+    try {
+      val opHandle = sessionManager.submitBackgroundOperation(asyncOperation)
+      setBackgroundHandle(opHandle)
+    } catch onError("submitting query in background, query rejected")
+
+    if (!shouldRunAsync) getBackgroundHandle.get()
   }
 
   override def setState(newState: OperationState): Unit = {
