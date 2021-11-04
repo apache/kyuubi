@@ -25,7 +25,7 @@ import java.util.regex.Pattern
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{Logging, Utils}
-import org.apache.kyuubi.engine.ShareLevel
+import org.apache.kyuubi.engine.{EngineType, ShareLevel}
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
@@ -757,6 +757,21 @@ object KyuubiConf {
       " <li>SERVER: the App will be shared by Kyuubi servers</li></ul>")
     .version("1.2.0")
     .fallbackConf(LEGACY_ENGINE_SHARE_LEVEL)
+
+  val ENGINE_TYPE: ConfigEntry[String] = buildConf("engine.type")
+    .doc("Specify the detailed engine that supported by the Kyuubi. The engine type bindings to" +
+      " SESSION scope. This configuration is experimental. Currently, available configs are: <ul>" +
+      " <li>SPARK_SQL: specify this engine type will launch a Spark engine which can provide" +
+      " all the capacity of the Apache Spark. Note, it's a default engine type.</li>" +
+      " <li>FLINK_SQL: specify this engine type will launch a Flink engine which can provide" +
+      " all the capacity of the Apache Flink.</li>" +
+      "</ul>")
+    .version("1.4.0")
+    .stringConf
+    .transform(_.toUpperCase(Locale.ROOT))
+    .checkValues(EngineType.values.map(_.toString))
+    .createWithDefault(EngineType.SPARK_SQL.toString)
+
 
   val ENGINE_POOL_SIZE_THRESHOLD: ConfigEntry[Int] = buildConf("engine.pool.size.threshold")
     .doc("This parameter is introduced as a server-side parameter, " +

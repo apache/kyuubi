@@ -32,6 +32,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.engine.EngineType.EngineType
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, ShareLevel}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_REF_ID
@@ -60,6 +61,8 @@ private[kyuubi] class EngineRef(
 
   // Share level of the engine
   private val shareLevel: ShareLevel = ShareLevel.withName(conf.get(ENGINE_SHARE_LEVEL))
+
+  private val engineType: EngineType = EngineType.withName(conf.get(ENGINE_TYPE))
 
   // Server-side engine pool size threshold
   private val poolThreshold: Int = conf.get(ENGINE_POOL_SIZE_THRESHOLD)
@@ -105,11 +108,14 @@ private[kyuubi] class EngineRef(
    * The default engine name, used as default `spark.app.name` if not set
    */
   @VisibleForTesting
-  private[kyuubi] val defaultEngineName: String = shareLevel match {
-    case CONNECTION => s"kyuubi_${shareLevel}_${appUser}_$engineRefId"
-    case _ => subdomain match {
-      case Some(domain) => s"kyuubi_${shareLevel}_${appUser}_${domain}_$engineRefId"
-      case _ => s"kyuubi_${shareLevel}_${appUser}_$engineRefId"
+  private[kyuubi] val defaultEngineName: String = {
+    val commonNamePrefix = s"kyuubi_${shareLevel}_${engineType}_${appUser}"
+    shareLevel match {
+      case CONNECTION => s"${commonNamePrefix}_$engineRefId"
+      case _ => subdomain match {
+        case Some(domain) => s"${commonNamePrefix}_${domain}_$engineRefId"
+        case _ => s"${commonNamePrefix}_$engineRefId"
+      }
     }
   }
 
@@ -117,20 +123,23 @@ private[kyuubi] class EngineRef(
    * The EngineSpace used to expose itself to the KyuubiServers in `serverSpace`
    *
    * For `CONNECTION` share level:
-   *   /`serverSpace_CONNECTION`/`user`/`engineRefId`
+   *   /`serverSpace_CONNECTION_engineType`/`user`/`engineRefId`
    * For `USER` share level:
-   *   /`serverSpace_USER`/`user`[/`subdomain`]
+   *   /`serverSpace_USER_engineType`/`user`[/`subdomain`]
    * For `GROUP` share level:
-   *   /`serverSpace_GROUP`/`primary group name`[/`subdomain`]
+   *   /`serverSpace_GROUP_engineType`/`primary group name`[/`subdomain`]
    * For `SERVER` share level:
-   *   /`serverSpace_SERVER`/`kyuubi server user`[/`subdomain`]
+   *   /`serverSpace_SERVER_engineType`/`kyuubi server user`[/`subdomain`]
    */
   @VisibleForTesting
-  private[kyuubi] lazy val engineSpace: String = shareLevel match {
-    case CONNECTION => ZKPaths.makePath(s"${serverSpace}_$shareLevel", appUser, engineRefId)
-    case _ => subdomain match {
-      case Some(domain) => ZKPaths.makePath(s"${serverSpace}_$shareLevel", appUser, domain)
-      case None => ZKPaths.makePath(s"${serverSpace}_$shareLevel", appUser)
+  private[kyuubi] lazy val engineSpace: String = {
+    val commonParent = s"${serverSpace}_${shareLevel}_$engineType"
+    shareLevel match {
+      case CONNECTION => ZKPaths.makePath(commonParent, appUser, engineRefId)
+      case _ => subdomain match {
+        case Some(domain) => ZKPaths.makePath(commonParent, appUser, domain)
+        case None => ZKPaths.makePath(commonParent, appUser)
+      }
     }
   }
 
