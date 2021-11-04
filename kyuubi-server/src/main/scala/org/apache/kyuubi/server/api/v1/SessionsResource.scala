@@ -63,8 +63,14 @@ private[v1] class SessionsResource extends ApiRequestContext {
               @PathParam("infoType") infoType: Int): InfoDetail = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
     val info = TGetInfoType.findByValue(infoType.toInt)
-    val infoValue = backendService.getInfo(sessionHandle, info)
-    InfoDetail(info.toString, infoValue.getStringValue)
+
+    try {
+      val infoValue = backendService.getInfo(sessionHandle, info)
+      InfoDetail(info.toString, infoValue.getStringValue)
+    } catch {
+      case _: Throwable =>
+        throw new NotFoundException()
+    }
   }
 
   @GET
