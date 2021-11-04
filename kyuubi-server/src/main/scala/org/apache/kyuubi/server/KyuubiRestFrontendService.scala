@@ -33,7 +33,7 @@ import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
  * A frontend service based on RESTful api via HTTP protocol.
  * Note: Currently, it only be used in the Kyuubi Server side.
  */
-private[server] class RestFrontendService(override val serverable: Serverable)
+class KyuubiRestFrontendService(override val serverable: Serverable)
   extends AbstractFrontendService("RestFrontendService") with Logging {
 
   var serverAddr: InetAddress = _

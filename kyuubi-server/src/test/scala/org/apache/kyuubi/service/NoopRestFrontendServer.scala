@@ -17,17 +17,9 @@
 
 package org.apache.kyuubi.service
 
-import org.apache.kyuubi.KyuubiException
-import org.apache.kyuubi.session.{NoopSessionManager, SessionManager}
+import org.apache.kyuubi.server.KyuubiRestFrontendService
 
-class NoopBackendService extends AbstractBackendService("noop") {
+class NoopRestFrontendServer extends AbstractNoopServer("NoopRestFrontendServer") {
 
-  override val sessionManager: SessionManager = new NoopSessionManager()
-
-  override def start(): Unit = {
-    if (conf.getOption("kyuubi.test.backend.should.fail").exists(_.toBoolean)) {
-      throw new KyuubiException("should fail backend")
-    }
-    super.start()
-  }
+  override val frontendServices = Seq(new KyuubiRestFrontendService(this))
 }
