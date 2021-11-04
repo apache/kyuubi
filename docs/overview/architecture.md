@@ -122,14 +122,15 @@ With these features, Kyuubi provides a two-level elastic resource management arc
 For example,
 
 ```shell
-./beeline -u 'jdbc:hive2://kyuubi.org:10009/;\
-  hive.server2.proxy.user=tom#\
-  spark.yarn.queue=thequeue;\
-  spark.dynamicAllocation.enabled=true;\
-  spark.dynamicAllocation.maxExecutors=500;\
-  spark.shuffle.service.enabled=true;\
-  spark.executor.cores=3;\
+./beeline - u 'jdbc:hive2://kyuubi.org:10009/; \
+  hive.server2.proxy.user=tom# \
+  spark.yarn.queue=thequeue; \
+  spark.dynamicAllocation.enabled=true \
+  spark.dynamicAllocation.maxExecutors=500 \
+  spark.shuffle.service.enabled=true \
+  spark.executor.cores=3; \
   spark.executor.memory=10g'
+
 ```
 
 If the user named `tom` opens a connection like above, Kyuubi will try to create a Spark SQL engine application with [3, 500] executors (3 cores, 10g mem each) in the queue named `thequeue` in the Yarn cluster.
