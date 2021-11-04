@@ -165,7 +165,7 @@ object KubernetesSparkBlockCleaner extends Logging {
     } catch {
       case e: RuntimeException =>
         error(s"An error occurs when querying the disk $dir capacity, " +
-          s"return true to make sure there are no problems: ${e.getMessage}")
+          s"return true to make sure the disk space will not overruns: ${e.getMessage}")
         true
     }
   }
