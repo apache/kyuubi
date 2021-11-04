@@ -43,46 +43,46 @@ abstract class ZorderBase extends Expression {
   }
 
   @transient
-  private lazy val defaultNullValues: Array[Array[Byte]] =
+  private lazy val defaultNullValues: Array[Any] =
     children.map(_.dataType)
       .map(ZorderBytesUtils.defaultValue)
       .toArray
 
   override def eval(input: InternalRow): Any = {
-    val binaryArr = children.zipWithIndex.map {
+    val childrenValues = children.zipWithIndex.map {
       case (child: Expression, index) =>
         val v = child.eval(input)
         if (v == null) {
           defaultNullValues(index)
         } else {
-          ZorderBytesUtils.toByte(v)
+          v
         }
     }
-    ZorderBytesUtils.interleaveMultiByteArray(binaryArr.toArray)
+    ZorderBytesUtils.interleaveBits(childrenValues.toArray)
   }
 
   override protected def doGenCode(ctx: CodegenContext, ev: ExprCode): ExprCode = {
     val evals = children.map(_.genCode(ctx))
     val defaultValues = ctx.addReferenceObj("defaultValues", defaultNullValues)
-    val binaryArray = ctx.freshName("binaryArray")
+    val values = ctx.freshName("values")
     val util = ZorderBytesUtils.getClass.getName.stripSuffix("$")
     val inputs = evals.zipWithIndex.map {
       case (eval, index) =>
         s"""
            |${eval.code}
            |if (${eval.isNull}) {
-           |  $binaryArray[$index] = (byte[]) $defaultValues[$index];
+           |  $values[$index] = $defaultValues[$index];
            |} else {
-           |  $binaryArray[$index] = $util.toByte(${eval.value});
+           |  $values[$index] = ${eval.value};
            |}
            |""".stripMargin
     }
     ev.copy(code =
       code"""
          |byte[] ${ev.value} = null;
-         |byte[][] $binaryArray = new byte[${evals.length}][];
+         |Object[] $values = new Object[${evals.length}];
          |${inputs.mkString("\n")}
-         |${ev.value} = $util.interleaveMultiByteArray($binaryArray);
+         |${ev.value} = $util.interleaveBits($values);
          |""".stripMargin,
       isNull = FalseLiteral)
   }

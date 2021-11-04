@@ -30,27 +30,284 @@ object ZorderBytesUtils {
   private final val BIT_32_MASK = 1 << 31
   private final val BIT_64_MASK = 1L << 63
 
-  def interleaveMultiByteArray(arrays: Array[Array[Byte]]): Array[Byte] = {
+  def interleaveBits(inputs: Array[Any]): Array[Byte] = {
+    if (inputs.length > 8) {
+      // it's the default approach, use O(64 * n), n is the length of inputs
+      interleaveBitsDefault(inputs.map(toByteArray))
+    } else {
+      // it's a more fast approach, use O(8 * 8)
+      // can see http://graphics.stanford.edu/~seander/bithacks.html#InterleaveTableObvious
+      inputs.length match {
+        case 1 => longToByte(toLong(inputs(0)))
+        case 2 => interleave2Longs(toLong(inputs(0)), toLong(inputs(1)))
+        case 3 => interleave3Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)))
+        case 4 => interleave4Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)),
+          toLong(inputs(3)))
+        case 5 => interleave5Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)),
+          toLong(inputs(3)), toLong(inputs(4)))
+        case 6 => interleave6Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)),
+          toLong(inputs(3)), toLong(inputs(4)), toLong(inputs(5)))
+        case 7 => interleave7Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)),
+          toLong(inputs(3)), toLong(inputs(4)), toLong(inputs(5)), toLong(inputs(6)))
+        case 8 => interleave8Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)),
+          toLong(inputs(3)), toLong(inputs(4)), toLong(inputs(5)), toLong(inputs(6)),
+          toLong(inputs(7)))
+      }
+    }
+  }
+
+  private def interleave2Longs(l1: Long, l2: Long): Array[Byte] = {
+    // output 16 bits
+    val result = new Array[Byte](16)
+    (0 until 8).foreach { i =>
+      val tmp1 = ((l1 >> (i * 8)) & 0xff).toShort
+      val tmp2 = ((l2 >> (i * 8)) & 0xff).toShort
+
+      var z = 0
+      for (i <- 0 until 8) {
+        val x_masked_i = tmp1 & (1 << i)
+        val y_masked_i = tmp2 & (1 << i)
+        z |= (x_masked_i << i)
+        z |= (y_masked_i << (i + 1))
+      }
+      result((7 - i) * 2 + 1) = (z & 0xff).toByte
+      result((7 - i) * 2) = ((z >> 8) & 0xff).toByte
+    }
+    result
+  }
+
+  private def interleave3Longs(l1: Long, l2: Long, l3: Long): Array[Byte] = {
+    // output 24 bits
+    val result = new Array[Byte](24)
+    (0 until 8).foreach { i =>
+      val tmp1 = ((l1 >> (i * 8)) & 0xff).toInt
+      val tmp2 = ((l2 >> (i * 8)) & 0xff).toInt
+      val tmp3 = ((l3 >> (i * 8)) & 0xff).toInt
+
+      var z = 0
+      for (i <- 0 until 8) {
+        val r1_mask = tmp1 & (1 << i)
+        val r2_mask = tmp2 & (1 << i)
+        val r3_mask = tmp3 & (1 << i)
+        z |= (r1_mask << (2 * i)) | (r2_mask << (2 * i + 1)) | (r3_mask << (2 * i + 2))
+      }
+      result((7 - i) * 3 + 2) = (z & 0xff).toByte
+      result((7 - i) * 3 + 1) = ((z >> 8) & 0xff).toByte
+      result((7 - i) * 3) = ((z >> 16) & 0xff).toByte
+    }
+    result
+  }
+
+  private def interleave4Longs(l1: Long, l2: Long, l3: Long, l4: Long): Array[Byte] = {
+    // output 32 bits
+    val result = new Array[Byte](32)
+    (0 until 8).foreach { i =>
+      val tmp1 = ((l1 >> (i * 8)) & 0xff).toInt
+      val tmp2 = ((l2 >> (i * 8)) & 0xff).toInt
+      val tmp3 = ((l3 >> (i * 8)) & 0xff).toInt
+      val tmp4 = ((l4 >> (i * 8)) & 0xff).toInt
+
+      var z = 0
+      for (i <- 0 until 8) {
+        val r1_mask = tmp1 & (1 << i)
+        val r2_mask = tmp2 & (1 << i)
+        val r3_mask = tmp3 & (1 << i)
+        val r4_mask = tmp4 & (1 << i)
+        z |= (r1_mask << (3 * i)) | (r2_mask << (3 * i + 1)) | (r3_mask << (3 * i + 2)) |
+          (r4_mask << (3 * i + 3))
+      }
+      result((7 - i) * 4 + 3) = (z & 0xff).toByte
+      result((7 - i) * 4 + 2) = ((z >> 8) & 0xff).toByte
+      result((7 - i) * 4 + 1) = ((z >> 16) & 0xff).toByte
+      result((7 - i) * 4) = ((z >> 24) & 0xff).toByte
+    }
+    result
+  }
+
+  private def interleave5Longs(
+      l1: Long,
+      l2: Long,
+      l3: Long,
+      l4: Long,
+      l5: Long): Array[Byte] = {
+    // output 40 bits
+    val result = new Array[Byte](40)
+    (0 until 8).foreach { i =>
+      val tmp1 = ((l1 >> (i * 8)) & 0xff).toLong
+      val tmp2 = ((l2 >> (i * 8)) & 0xff).toLong
+      val tmp3 = ((l3 >> (i * 8)) & 0xff).toLong
+      val tmp4 = ((l4 >> (i * 8)) & 0xff).toLong
+      val tmp5 = ((l5 >> (i * 8)) & 0xff).toLong
+
+      var z = 0L
+      for (i <- 0 until 8) {
+        val r1_mask = tmp1 & (1 << i)
+        val r2_mask = tmp2 & (1 << i)
+        val r3_mask = tmp3 & (1 << i)
+        val r4_mask = tmp4 & (1 << i)
+        val r5_mask = tmp5 & (1 << i)
+        z |= (r1_mask << (4 * i)) | (r2_mask << (4 * i + 1)) | (r3_mask << (4 * i + 2)) |
+          (r4_mask << (4 * i + 3)) | (r5_mask << (4 * i + 4))
+      }
+      result((7 - i) * 5 + 4) = (z & 0xff).toByte
+      result((7 - i) * 5 + 3) = ((z >> 8) & 0xff).toByte
+      result((7 - i) * 5 + 2) = ((z >> 16) & 0xff).toByte
+      result((7 - i) * 5 + 1) = ((z >> 24) & 0xff).toByte
+      result((7 - i) * 5) = ((z >> 32) & 0xff).toByte
+    }
+    result
+  }
+
+  private def interleave6Longs(
+      l1: Long,
+      l2: Long,
+      l3: Long,
+      l4: Long,
+      l5: Long,
+      l6: Long): Array[Byte] = {
+    // output 48 bits
+    val result = new Array[Byte](48)
+    (0 until 8).foreach { i =>
+      val tmp1 = ((l1 >> (i * 8)) & 0xff).toLong
+      val tmp2 = ((l2 >> (i * 8)) & 0xff).toLong
+      val tmp3 = ((l3 >> (i * 8)) & 0xff).toLong
+      val tmp4 = ((l4 >> (i * 8)) & 0xff).toLong
+      val tmp5 = ((l5 >> (i * 8)) & 0xff).toLong
+      val tmp6 = ((l6 >> (i * 8)) & 0xff).toLong
+
+      var z = 0L
+      for (i <- 0 until 8) {
+        val r1_mask = tmp1 & (1 << i)
+        val r2_mask = tmp2 & (1 << i)
+        val r3_mask = tmp3 & (1 << i)
+        val r4_mask = tmp4 & (1 << i)
+        val r5_mask = tmp5 & (1 << i)
+        val r6_mask = tmp6 & (1 << i)
+        z |= (r1_mask << (5 * i)) | (r2_mask << (5 * i + 1)) | (r3_mask << (5 * i + 2)) |
+          (r4_mask << (5 * i + 3)) | (r5_mask << (5 * i + 4)) | (r6_mask << (5 * i + 5))
+      }
+      result((7 - i) * 6 + 5) = (z & 0xff).toByte
+      result((7 - i) * 6 + 4) = ((z >> 8) & 0xff).toByte
+      result((7 - i) * 6 + 3) = ((z >> 16) & 0xff).toByte
+      result((7 - i) * 6 + 2) = ((z >> 24) & 0xff).toByte
+      result((7 - i) * 6 + 1) = ((z >> 32) & 0xff).toByte
+      result((7 - i) * 6) = ((z >> 40) & 0xff).toByte
+    }
+    result
+  }
+
+  private def interleave7Longs(
+      l1: Long,
+      l2: Long,
+      l3: Long,
+      l4: Long,
+      l5: Long,
+      l6: Long,
+      l7: Long): Array[Byte] = {
+    // output 56 bits
+    val result = new Array[Byte](56)
+    (0 until 8).foreach { i =>
+      val tmp1 = ((l1 >> (i * 8)) & 0xff).toLong
+      val tmp2 = ((l2 >> (i * 8)) & 0xff).toLong
+      val tmp3 = ((l3 >> (i * 8)) & 0xff).toLong
+      val tmp4 = ((l4 >> (i * 8)) & 0xff).toLong
+      val tmp5 = ((l5 >> (i * 8)) & 0xff).toLong
+      val tmp6 = ((l6 >> (i * 8)) & 0xff).toLong
+      val tmp7 = ((l7 >> (i * 8)) & 0xff).toLong
+
+      var z = 0L
+      for (i <- 0 until 8) {
+        val r1_mask = tmp1 & (1 << i)
+        val r2_mask = tmp2 & (1 << i)
+        val r3_mask = tmp3 & (1 << i)
+        val r4_mask = tmp4 & (1 << i)
+        val r5_mask = tmp5 & (1 << i)
+        val r6_mask = tmp6 & (1 << i)
+        val r7_mask = tmp7 & (1 << i)
+        z |= (r1_mask << (6 * i)) | (r2_mask << (6 * i + 1)) | (r3_mask << (6 * i + 2)) |
+          (r4_mask << (6 * i + 3)) | (r5_mask << (6 * i + 4)) | (r6_mask << (6 * i + 5)) |
+          (r7_mask << (6 * i + 6))
+      }
+      result((7 - i) * 7 + 6) = (z & 0xff).toByte
+      result((7 - i) * 7 + 5) = ((z >> 8) & 0xff).toByte
+      result((7 - i) * 7 + 4) = ((z >> 16) & 0xff).toByte
+      result((7 - i) * 7 + 3) = ((z >> 24) & 0xff).toByte
+      result((7 - i) * 7 + 2) = ((z >> 32) & 0xff).toByte
+      result((7 - i) * 7 + 1) = ((z >> 40) & 0xff).toByte
+      result((7 - i) * 7) = ((z >> 48) & 0xff).toByte
+    }
+    result
+  }
+
+  private def interleave8Longs(
+      l1: Long,
+      l2: Long,
+      l3: Long,
+      l4: Long,
+      l5: Long,
+      l6: Long,
+      l7: Long,
+      l8: Long): Array[Byte] = {
+    // output 64 bits
+    val result = new Array[Byte](64)
+    (0 until 8).foreach { i =>
+      val tmp1 = ((l1 >> (i * 8)) & 0xff).toLong
+      val tmp2 = ((l2 >> (i * 8)) & 0xff).toLong
+      val tmp3 = ((l3 >> (i * 8)) & 0xff).toLong
+      val tmp4 = ((l4 >> (i * 8)) & 0xff).toLong
+      val tmp5 = ((l5 >> (i * 8)) & 0xff).toLong
+      val tmp6 = ((l6 >> (i * 8)) & 0xff).toLong
+      val tmp7 = ((l7 >> (i * 8)) & 0xff).toLong
+      val tmp8 = ((l8 >> (i * 8)) & 0xff).toLong
+
+      var z = 0L
+      for (i <- 0 until 8) {
+        val r1_mask = tmp1 & (1 << i)
+        val r2_mask = tmp2 & (1 << i)
+        val r3_mask = tmp3 & (1 << i)
+        val r4_mask = tmp4 & (1 << i)
+        val r5_mask = tmp5 & (1 << i)
+        val r6_mask = tmp6 & (1 << i)
+        val r7_mask = tmp7 & (1 << i)
+        val r8_mask = tmp8 & (1 << i)
+        z |= (r1_mask << (7 * i)) | (r2_mask << (7 * i + 1)) | (r3_mask << (7 * i + 2)) |
+          (r4_mask << (7 * i + 3)) | (r5_mask << (7 * i + 4)) | (r6_mask << (7 * i + 5)) |
+          (r7_mask << (7 * i + 6)) | (r8_mask << (7 * i + 7))
+      }
+      result((7 - i) * 8 + 7) = (z & 0xff).toByte
+      result((7 - i) * 8 + 6) = ((z >> 8) & 0xff).toByte
+      result((7 - i) * 8 + 5) = ((z >> 16) & 0xff).toByte
+      result((7 - i) * 8 + 4) = ((z >> 24) & 0xff).toByte
+      result((7 - i) * 8 + 3) = ((z >> 32) & 0xff).toByte
+      result((7 - i) * 8 + 2) = ((z >> 40) & 0xff).toByte
+      result((7 - i) * 8 + 1) = ((z >> 48) & 0xff).toByte
+      result((7 - i) * 8) = ((z >> 56) & 0xff).toByte
+    }
+    result
+  }
+
+  def interleaveBitsDefault(arrays: Array[Array[Byte]]): Array[Byte] = {
     var totalLength = 0
     var maxLength = 0
-    arrays.foreach(array => {
+    arrays.foreach { array =>
       totalLength += array.length
       maxLength = maxLength.max(array.length * 8)
-    })
+    }
     val result = new Array[Byte](totalLength)
     var resultBit = 0
 
     var bit = 0
     while (bit < maxLength) {
-      val bytePos = Math.floor(bit / 8).toInt
+      val bytePos = bit / 8
       val bitPos = bit % 8
 
       for (arr <- arrays) {
-        if (bytePos < arr.length) {
-          val resultBytePos = totalLength - 1 - Math.floor(resultBit / 8).toInt
+        val len = arr.length
+        if (bytePos < len) {
+          val resultBytePos = totalLength - 1 - resultBit / 8
           val resultBitPos = resultBit % 8
           result(resultBytePos) = updatePos(result(resultBytePos), resultBitPos,
-            arr(arr.length - 1 - bytePos), bitPos)
+            arr(len - 1 - bytePos), bitPos)
           resultBit += 1
         }
       }
@@ -73,7 +330,23 @@ object ZorderBytesUtils {
     (a ^ (1 << apos)).toByte
   }
 
-  def toByte(a: Any): Array[Byte] = {
+  def toLong(a: Any): Long = {
+    a match {
+      case b: Boolean => (if (b) 1 else 0).toLong ^ BIT_64_MASK
+      case b: Byte => b.toLong ^ BIT_64_MASK
+      case s: Short => s.toLong ^ BIT_64_MASK
+      case i: Int => i.toLong ^ BIT_64_MASK
+      case l: Long => l ^ BIT_64_MASK
+      case f: Float => f.toLong ^ BIT_64_MASK
+      case d: Double => d.toLong ^ BIT_64_MASK
+      case str: UTF8String => str.getPrefix
+      case dec: Decimal => dec.toLong ^ BIT_64_MASK
+      case other: Any =>
+        throw new KyuubiSQLExtensionException("Unsupported z-order type: " + other.getClass)
+    }
+  }
+
+  def toByteArray(a: Any): Array[Byte] = {
     a match {
       case bo: Boolean =>
         booleanToByte(bo)
@@ -166,7 +439,11 @@ object ZorderBytesUtils {
     }
   }
 
-  def defaultValue(dataType: DataType): Array[Byte] = toByte {
+  def defaultByteArrayValue(dataType: DataType): Array[Byte] = toByteArray {
+    defaultValue(dataType)
+  }
+
+  def defaultValue(dataType: DataType): Any = {
     dataType match {
       case BooleanType =>
         true
