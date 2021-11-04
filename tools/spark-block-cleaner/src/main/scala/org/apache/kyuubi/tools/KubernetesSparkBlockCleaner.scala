@@ -154,13 +154,20 @@ object KubernetesSparkBlockCleaner extends Logging {
   import scala.sys.process._
 
   private def needToDeepClean(dir: String): Boolean = {
-    val used = (s"df $dir" #| s"grep $dir").!!
-      .split(" ").filter(_.endsWith("%")) {
-      0
-    }.replace("%", "")
-    info(s"$dir now used $used% space")
+    try {
+      val used = (s"df $dir" #| s"grep $dir").!!
+        .split(" ").filter(_.endsWith("%")) {
+        0
+      }.replace("%", "")
+      info(s"$dir now used $used% space")
 
-    used.toInt > (100 - freeSpaceThreshold)
+      used.toInt > (100 - freeSpaceThreshold)
+    } catch {
+      case e: RuntimeException =>
+        error(s"An error occurs when querying the disk $dir capacity, " +
+          s"return true to make sure there are no problems: ${e.getMessage}")
+        true
+    }
   }
 
   private def doCleanJob(dir: String): Unit = {
