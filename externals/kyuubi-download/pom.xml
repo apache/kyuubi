@@ -58,6 +58,31 @@
                 </executions>
             </plugin>
 
+            <!-- Download flink archive -->
+            <plugin>
+                <groupId>com.googlecode.maven-download-plugin</groupId>
+                <artifactId>download-maven-plugin</artifactId>
+                <configuration>
+                    <skip>${flink.archive.download.skip}</skip>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>download-flink-release</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>${flink.archive.mirror}/${flink.archive.name}</url>
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                            <readTimeOut>60000</readTimeOut>
+                            <retries>3</retries>
+                            <unpack>true</unpack>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
