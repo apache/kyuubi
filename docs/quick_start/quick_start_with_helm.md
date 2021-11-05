@@ -42,7 +42,7 @@ cretate ns kyuubi
 ```bash
 helm install kyuubi-helm ${KYUUBI_HOME}/docker/helm -n ${namespace_name}
 ```
-It will print variables and the way to get kyuubi expose ip and port
+It will print variables and the way to get kyuubi expose ip and port.
 ```bash
 NAME: kyuubi-helm
 LAST DEPLOYED: Wed Oct 20 15:22:47 2021
@@ -67,7 +67,7 @@ helm uninstall kyuubi-helm -n ${namespace_name}
 
 #### Edit server config
 
-Modify `values.yaml` under `${KYUUBI_HOME}/docker/helm`
+Modify `values.yaml` under `${KYUUBI_HOME}/docker/helm`:
 ```yaml
 # Kyuubi server numbers
 replicaCount: 2
@@ -105,7 +105,7 @@ NAME                             READY   STATUS    RESTARTS   AGE
 kyuubi-server-585d8944c5-m7j5s   1/1     Running   0          30m
 kyuubi-server-32sdsa1245-2d2sj   1/1     Running   0          30m
 ```
-then, use pod name to get logs
+then, use pod name to get logs:
 ```bash
 kubectl -n ${namespace_name} logs kyuubi-server-585d8944c5-m7j5s
 ```

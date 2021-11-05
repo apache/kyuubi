@@ -24,7 +24,7 @@
 # Auxiliary SQL extension for Spark SQL
 
 Kyuubi provides SQL extension out of box. Due to the version compatibility with Apache Spark, currently we only support Apache Spark branch-3.1 (i.e 3.1.1 and 3.1.2).
-And don't worry, Kyuubi will support the new Apache Spark version in future. Thanks to the adaptive query execution framework (AQE), Kyuubi can do these optimization.
+And don't worry, Kyuubi will support the new Apache Spark version in the future. Thanks to the adaptive query execution framework (AQE), Kyuubi can do these optimizations.
 
 ## What feature does Kyuubi SQL extension provide
 - merging small files automatically

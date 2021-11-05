@@ -40,7 +40,7 @@ You should first download the missing driver files. Just click on the link below
 ### Generic JDBC Connection Settings
 After install drivers, you should configure the right host and port which you can find in kyuubi server log. By default, we use `localhost` and `10009` to configure.
 
-Of curse, you can fill other configs.
+Of course, you can fill other configs.
 
 After generic configs, you can use test connection to test.
 
