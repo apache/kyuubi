@@ -31,28 +31,27 @@ object ZorderBytesUtils {
   private final val BIT_64_MASK = 1L << 63
 
   def interleaveBits(inputs: Array[Any]): Array[Byte] = {
-    if (inputs.length > 8) {
-      // it's the default approach, use O(64 * n), n is the length of inputs
-      interleaveBitsDefault(inputs.map(toByteArray))
-    } else {
+    inputs.length match {
       // it's a more fast approach, use O(8 * 8)
       // can see http://graphics.stanford.edu/~seander/bithacks.html#InterleaveTableObvious
-      inputs.length match {
-        case 1 => longToByte(toLong(inputs(0)))
-        case 2 => interleave2Longs(toLong(inputs(0)), toLong(inputs(1)))
-        case 3 => interleave3Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)))
-        case 4 => interleave4Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)),
-          toLong(inputs(3)))
-        case 5 => interleave5Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)),
-          toLong(inputs(3)), toLong(inputs(4)))
-        case 6 => interleave6Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)),
-          toLong(inputs(3)), toLong(inputs(4)), toLong(inputs(5)))
-        case 7 => interleave7Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)),
-          toLong(inputs(3)), toLong(inputs(4)), toLong(inputs(5)), toLong(inputs(6)))
-        case 8 => interleave8Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)),
-          toLong(inputs(3)), toLong(inputs(4)), toLong(inputs(5)), toLong(inputs(6)),
-          toLong(inputs(7)))
-      }
+      case 1 => longToByte(toLong(inputs(0)))
+      case 2 => interleave2Longs(toLong(inputs(0)), toLong(inputs(1)))
+      case 3 => interleave3Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)))
+      case 4 => interleave4Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)),
+        toLong(inputs(3)))
+      case 5 => interleave5Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)),
+        toLong(inputs(3)), toLong(inputs(4)))
+      case 6 => interleave6Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)),
+        toLong(inputs(3)), toLong(inputs(4)), toLong(inputs(5)))
+      case 7 => interleave7Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)),
+        toLong(inputs(3)), toLong(inputs(4)), toLong(inputs(5)), toLong(inputs(6)))
+      case 8 => interleave8Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)),
+        toLong(inputs(3)), toLong(inputs(4)), toLong(inputs(5)), toLong(inputs(6)),
+        toLong(inputs(7)))
+
+      case _ =>
+        // it's the default approach, use O(64 * n), n is the length of inputs
+        interleaveBitsDefault(inputs.map(toByteArray))
     }
   }
 
