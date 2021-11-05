@@ -29,7 +29,7 @@ import org.apache.spark.sql.internal.{SQLConf, StaticSQLConf}
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.sql.{KyuubiSQLConf, KyuubiSQLExtensionException}
-import org.apache.kyuubi.sql.zorder.{OptimizeZorderCommandBase, Zorder}
+import org.apache.kyuubi.sql.zorder.{OptimizeZorderCommandBase, Zorder, ZorderBytesUtils}
 
 trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper {
   override def sparkConf(): SparkConf = {
@@ -558,6 +558,18 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
         }.size == 1)
       }
     }
+  }
+
+  test("fast approach test") {
+    Seq[Seq[Any]](Seq(1L, 2L), Seq(1L, 2L, 3L), Seq(1L, 2L, 3L, 4L), Seq(1L, 2L, 3L, 4L, 5L),
+      Seq(1L, 2L, 3L, 4L, 5L, 6L), Seq(1L, 2L, 3L, 4L, 5L, 6L, 7L),
+      Seq(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L))
+      .foreach { inputs =>
+        assert(java.util.Arrays.equals(
+          ZorderBytesUtils.interleaveBits(inputs.toArray),
+          ZorderBytesUtils.interleaveBitsDefault(inputs.map(ZorderBytesUtils.toByteArray).toArray))
+        )
+      }
   }
 }
 
