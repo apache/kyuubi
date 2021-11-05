@@ -163,7 +163,7 @@ object KubernetesSparkBlockCleaner extends Logging {
 
       used.toInt > (100 - freeSpaceThreshold)
     } catch {
-      case e: RuntimeException =>
+      case NonFatal(e) =>
         error(s"An error occurs when querying the disk $dir capacity, " +
           s"return true to make sure the disk space will not overruns: ${e.getMessage}")
         true
