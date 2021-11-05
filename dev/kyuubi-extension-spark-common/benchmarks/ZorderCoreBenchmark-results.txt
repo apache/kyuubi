@@ -2,17 +2,17 @@ Java HotSpot(TM) 64-Bit Server VM 1.8.0_271-b09 on Mac OS X 10.16
 Intel(R) Core(TM) i7-4770HQ CPU @ 2.20GHz
 1000000 rows zorder core benchmark:       Best Time(ms)   Avg Time(ms)   Stdev(ms)    Rate(M/s)   Per Row(ns)   Relative
 ------------------------------------------------------------------------------------------------------------------------
-2 int columns benchmark                             250            363         109          4.0         250.3       1.0X
-3 int columns benchmark                             309            314           4          3.2         309.2       0.8X
-4 int columns benchmark                             508            521          21          2.0         507.6       0.5X
-2 long columns benchmark                            222            292         108          4.5         222.1       1.1X
-3 long columns benchmark                            314            323           8          3.2         313.9       0.8X
-4 long columns benchmark                            326            332           9          3.1         326.3       0.8X
+2 int columns benchmark                             191            201          12          5.2         191.1       1.0X
+3 int columns benchmark                             262            304          72          3.8         261.5       0.7X
+4 int columns benchmark                             302            310           9          3.3         302.1       0.6X
+2 long columns benchmark                            185            188           3          5.4         185.4       1.0X
+3 long columns benchmark                            241            243           3          4.2         240.6       0.8X
+4 long columns benchmark                            291            335          69          3.4         290.6       0.7X
 
 Java HotSpot(TM) 64-Bit Server VM 1.8.0_271-b09 on Mac OS X 10.16
 Intel(R) Core(TM) i7-4770HQ CPU @ 2.20GHz
 10000000 iterations paddingTo8Byte benchmark:  Best Time(ms)   Avg Time(ms)   Stdev(ms)    Rate(M/s)   Per Row(ns)   Relative
 ----------------------------------------------------------------------------------------------------------------------------
-2 length benchmark                                      174            177           3         57.5          17.4       1.0X
-16 length benchmark                                     169            172           5         59.2          16.9       1.0X
+2 length benchmark                                      163            168           5         61.2          16.3       1.0X
+16 length benchmark                                     154            155           2         65.1          15.4       1.1X
 

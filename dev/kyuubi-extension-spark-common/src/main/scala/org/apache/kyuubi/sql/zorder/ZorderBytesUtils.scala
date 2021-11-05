@@ -364,8 +364,8 @@ object ZorderBytesUtils {
       case s: Short => s.toLong ^ BIT_64_MASK
       case i: Int => i.toLong ^ BIT_64_MASK
       case l: Long => l ^ BIT_64_MASK
-      case f: Float => f.toLong ^ BIT_64_MASK
-      case d: Double => d.toLong ^ BIT_64_MASK
+      case f: Float => java.lang.Float.floatToRawIntBits(f).toLong ^ BIT_64_MASK
+      case d: Double => java.lang.Double.doubleToRawLongBits(d) ^ BIT_64_MASK
       case str: UTF8String => str.getPrefix
       case dec: Decimal => dec.toLong ^ BIT_64_MASK
       case other: Any =>

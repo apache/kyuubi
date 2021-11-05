@@ -43,7 +43,7 @@ abstract class ZorderBase extends Expression {
   }
 
   @transient
-  private lazy val defaultNullValues: Array[Any] =
+  private[this] lazy val defaultNullValues: Array[Any] =
     children.map(_.dataType)
       .map(ZorderBytesUtils.defaultValue)
       .toArray
