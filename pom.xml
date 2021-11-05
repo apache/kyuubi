@@ -97,6 +97,10 @@
         <commons-lang3.version>3.10</commons-lang3.version>
         <curator.version>2.12.0</curator.version>
         <delta.version>1.0.0</delta.version>
+        <flink.version>1.12.5</flink.version>
+        <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
+        <flink.archive.mirror>https://archive.apache.org/dist/flink/flink-${flink.version}</flink.archive.mirror>
+        <flink.archive.download.skip>false</flink.archive.download.skip>
         <google.jsr305.version>3.0.2</google.jsr305.version>
         <guava.version>30.1-jre</guava.version>
         <hadoop.version>3.3.1</hadoop.version>
@@ -123,10 +127,6 @@
         <spark.archive.name>spark-${spark.version}-bin-hadoop${hadoop.binary.version}.tgz</spark.archive.name>
         <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
-        <flink.version>1.12.5</flink.version>
-        <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
-        <flink.archive.mirror>https://archive.apache.org/dist/flink/flink-${flink.version}</flink.archive.mirror>
-        <flink.archive.download.skip>false</flink.archive.download.skip>
         <zookeeper.version>3.4.14</zookeeper.version>
 
         <!-- only apply to kyuubi-hive-jdbc module -->
@@ -1372,15 +1372,9 @@
 
     <profiles>
         <profile>
-            <id>spark-mirror-cn</id>
+            <id>mirror-cn</id>
             <properties>
                 <spark.archive.mirror>https://mirrors.bfsu.edu.cn/apache/spark/spark-${spark.version}</spark.archive.mirror>
-            </properties>
-        </profile>
-
-        <profile>
-            <id>flink-mirror-cn</id>
-            <properties>
                 <flink.archive.mirror>https://mirrors.bfsu.edu.cn/apache/flink/flink-${flink.version}</flink.archive.mirror>
             </properties>
         </profile>
