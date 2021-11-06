@@ -32,7 +32,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.EngineType.EngineType
+import org.apache.kyuubi.engine.EngineType.{EngineType, SPARK_SQL}
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, ShareLevel}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_REF_ID
@@ -179,13 +179,17 @@ private[kyuubi] class EngineRef(
     var engineRef = getServerHost(zkClient, engineSpace)
     if (engineRef.nonEmpty) return engineRef.get
 
-    conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
-    // tag is a seq type with comma-separated
-    conf.set(SparkProcessBuilder.TAG_KEY,
-      conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") + "KYUUBI")
     conf.set(HA_ZK_NAMESPACE, engineSpace)
     conf.set(HA_ZK_ENGINE_REF_ID, engineRefId)
-    val builder = new SparkProcessBuilder(appUser, conf)
+    val builder = engineType match {
+      case SPARK_SQL =>
+        conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
+        // tag is a seq type with comma-separated
+        conf.set(SparkProcessBuilder.TAG_KEY,
+          conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") + "KYUUBI")
+        new SparkProcessBuilder(appUser, conf)
+      case _ => throw new UnsupportedOperationException(s"Unsupported engine type: ${engineType}")
+    }
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     try {
       info(s"Launching engine:\n$builder")
@@ -209,7 +213,7 @@ private[kyuubi] class EngineRef(
           process.destroyForcibly()
           MetricsSystem.tracing(_.incCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
           throw KyuubiSQLException(
-            s"Timeout($timeout ms) to launched Spark with $builder. $killMessage",
+            s"Timeout($timeout ms) to launched $engineType engine with $builder. $killMessage",
             builder.getError)
         }
         engineRef = getEngineByRefId(zkClient, engineSpace, engineRefId)
