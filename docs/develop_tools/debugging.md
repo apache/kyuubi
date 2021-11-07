@@ -24,7 +24,7 @@
 # Debugging Kyuubi
 
 You can use the [Java Debug Wire Protocol](https://docs.oracle.com/javase/8/docs/technotes/guides/jpda/conninv.html#Plugin) to debug Kyuubi
-with your favorite IDE tool, e.g. Intellij IDEA.
+with your favorite IDE tool, e.g. IntelliJ IDEA.
 
 ## Debugging Server
 

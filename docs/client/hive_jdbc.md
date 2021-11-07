@@ -55,7 +55,7 @@ implementation group: 'org.apache.hive', name: 'hive-jdbc', version: '2.3.8'
 ```
 
 For BI tools, please refer to [Quick Start](../quick_start/index.html) to check the guide for the BI tool used.
-If you find there is no specific document for the BI tool that you are using, don't worry, the configuration part for all BI tools are basically same.
+If you find there is no specific document for the BI tool that you are using, don't worry, the configuration part for all BI tools are basically the same.
 Also, we will appreciate if you can help us to improve the document.
 
 

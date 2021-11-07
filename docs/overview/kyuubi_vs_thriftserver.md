@@ -182,7 +182,7 @@ The HiveServer2 is also introduced here for a more comprehensive comparison.
 |**Multi<br/>tenancy** | Yes | No | Yes|
 |**Permission<br/>Control** | SQL Standard,<br/>Fine-Grained | No | SQL Standard,<br/>Fine-Grained |
 |**Performance** | Fair | Good | Good |
-|**Client<br/>Concurrency** | High | Low | High
+|**Client<br/>Concurrency** | High | Low | High |
 |**Queuing** | for queries | None | for Engines|
 |**Resource<br/>Setting** | for queries | for pools | for Engines|
 |**Compute<br/>Resource<br/>Management** | YARN |pools| YARN, Kubernetes, etc. |
