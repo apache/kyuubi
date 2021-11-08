@@ -27,18 +27,14 @@ import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT}
 import org.apache.kyuubi.server.api.ApiUtils
-import org.apache.kyuubi.service.{AbstractFrontendService, BackendService, ServiceState}
+import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
 
 /**
  * A frontend service based on RESTful api via HTTP protocol.
  * Note: Currently, it only be used in the Kyuubi Server side.
  */
-private[server] class RestFrontendService private(name: String, be: BackendService)
-  extends AbstractFrontendService(name, be) with Logging {
-
-  def this(be: BackendService) = {
-    this(classOf[RestFrontendService].getSimpleName, be)
-  }
+private[server] class RestFrontendService(override val serverable: Serverable)
+  extends AbstractFrontendService("RestFrontendService") with Logging {
 
   var serverAddr: InetAddress = _
   var portNum: Int = _
@@ -60,12 +56,12 @@ private[server] class RestFrontendService private(name: String, be: BackendServi
     errorHandler.setServer(jettyServer)
     jettyServer.addBean(errorHandler)
 
-    jettyServer.setHandler(ApiUtils.getServletHandler(be))
+    jettyServer.setHandler(ApiUtils.getServletHandler(serverable.backendService))
 
     connector = new ServerConnector(
       jettyServer,
       null,
-      new ScheduledExecutorScheduler(s"${this.name}-JettyScheduler", true),
+      new ScheduledExecutorScheduler(s"$getName-JettyScheduler", true),
       null,
       -1,
       -1,
@@ -78,12 +74,9 @@ private[server] class RestFrontendService private(name: String, be: BackendServi
     super.initialize(conf)
   }
 
-  override def connectionUrl(server: Boolean = false): String = {
-    getServiceState match {
-      case s @ ServiceState.LATENT => throw new IllegalStateException(s"Illegal Service State: $s")
-      case _ =>
-        s"${serverAddr.getCanonicalHostName}:$portNum"
-    }
+  override def connectionUrl: String = {
+    checkInitialized()
+    s"${serverAddr.getCanonicalHostName}:$portNum"
   }
 
   override def start(): Unit = {
@@ -134,4 +127,5 @@ private[server] class RestFrontendService private(name: String, be: BackendServi
     }
   }
 
+  override val discoveryService: Option[Service] = None
 }

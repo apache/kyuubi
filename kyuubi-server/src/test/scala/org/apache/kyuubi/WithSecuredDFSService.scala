@@ -25,7 +25,7 @@ import org.apache.kyuubi.server.MiniDFSService
 
 trait WithSecuredDFSService extends KerberizedTestHelper {
 
-  private val miniDFSService = new MiniDFSService(newSecuredConf())
+  private var miniDFSService: MiniDFSService = _
 
   private def newSecuredConf(): Configuration = {
     val hdfsConf = new Configuration()
@@ -45,12 +45,13 @@ trait WithSecuredDFSService extends KerberizedTestHelper {
   }
 
   override def beforeAll(): Unit = {
+    super.beforeAll()
     tryWithSecurityEnabled {
       UserGroupInformation.loginUserFromKeytab(testPrincipal, testKeytab)
+      miniDFSService = new MiniDFSService(newSecuredConf())
       miniDFSService.initialize(new KyuubiConf(false))
       miniDFSService.start()
     }
-    super.beforeAll()
   }
 
   override def afterAll(): Unit = {

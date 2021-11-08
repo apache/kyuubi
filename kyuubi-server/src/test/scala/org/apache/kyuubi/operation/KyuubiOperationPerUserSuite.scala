@@ -19,15 +19,24 @@ package org.apache.kyuubi.operation
 
 import org.scalatest.time.SpanSugar._
 
-import org.apache.kyuubi.WithKyuubiServer
+import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 
-class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
+class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests {
 
   override protected def jdbcUrl: String = getJdbcUrl
 
   override protected val conf: KyuubiConf = {
     KyuubiConf().set(KyuubiConf.ENGINE_SHARE_LEVEL, "user")
+  }
+
+  test("kyuubi defined function - system_user/session_user") {
+    withJdbcStatement() { statement =>
+      val rs = statement.executeQuery("SELECT system_user(), session_user()")
+      assert(rs.next())
+      assert(rs.getString(1) === Utils.currentUser)
+      assert(rs.getString(2) === Utils.currentUser)
+    }
   }
 
   test("ensure two connections in user mode share the same engine") {
@@ -87,5 +96,4 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with JDBCTests {
       assert(r1 === r2)
     }
   }
-
 }

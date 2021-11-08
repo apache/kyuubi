@@ -38,6 +38,7 @@ case class EngineTab(engine: SparkSQLEngine)
 
   engine.spark.sparkContext.ui.foreach { ui =>
     this.attachPage(EnginePage(this))
+    this.attachPage(EngineSessionPage(this))
     ui.attachTab(this)
     Utils.addShutdownHook(() => ui.detachTab(this))
   }

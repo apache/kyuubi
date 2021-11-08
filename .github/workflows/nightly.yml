@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         profiles:
-          - '-Pspark-master -pl :kyuubi-spark-sql-engine_2.12,:kyuubi-common_2.12,:kyuubi-ha_2.12,:kyuubi-zookeeper_2.12,:kyuubi-spark-monitor_2.12'
+          - '-Pspark-master -pl externals/kyuubi-spark-sql-engine -am'
     env:
       SPARK_LOCAL_IP: localhost
     steps:

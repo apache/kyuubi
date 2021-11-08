@@ -25,7 +25,7 @@ import java.util.regex.Pattern
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{Logging, Utils}
-import org.apache.kyuubi.engine.ShareLevel
+import org.apache.kyuubi.engine.{EngineType, ShareLevel}
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
@@ -137,8 +137,6 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     FRONTEND_REST_BIND_HOST,
     FRONTEND_REST_BIND_PORT,
     AUTHENTICATION_METHOD,
-    SERVER_KEYTAB,
-    SERVER_PRINCIPAL,
     KINIT_INTERVAL)
 
   def getUserDefaults(user: String): KyuubiConf = {
@@ -153,26 +151,6 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     }
     serverOnlyConfEntries.foreach(cloned.unset)
     cloned
-  }
-
-  /**
-   * This method is used to convert kyuubi configs to configs that Spark could identify.
-   * - If the key is start with `spark.`, keep it AS IS as it is a Spark Conf
-   * - If the key is start with `hadoop.`, it will be prefixed with `spark.hadoop.`
-   * - Otherwise, the key will be added a `spark.` prefix
-   * @return a map with spark specified configs
-   */
-  def toSparkPrefixedConf: Map[String, String] = {
-    settings.entrySet().asScala.map { e =>
-      val key = e.getKey
-      if (key.startsWith("spark.")) {
-        key -> e.getValue
-      } else if (key.startsWith("hadoop.")) {
-        "spark.hadoop." + key -> e.getValue
-      } else {
-        "spark." + key -> e.getValue
-      }
-    }.toMap
   }
 }
 
@@ -236,13 +214,13 @@ object KyuubiConf {
 
   val CREDENTIALS_RENEWAL_INTERVAL: ConfigEntry[Long] =
     buildConf("credentials.renewal.interval")
-      .doc("How often Kyuubi renews one user's DelegationTokens")
+      .doc("How often Kyuubi renews one user's delegation tokens")
       .version("1.4.0")
       .timeConf
       .createWithDefault(Duration.ofHours(1).toMillis)
 
   val CREDENTIALS_RENEWAL_RETRY_WAIT: ConfigEntry[Long] =
-    buildConf("credentials.renewal.retryWait")
+    buildConf("credentials.renewal.retry.wait")
       .doc("How long to wait before retrying to fetch new credentials after a failure.")
       .version("1.4.0")
       .timeConf
@@ -251,7 +229,7 @@ object KyuubiConf {
 
   val CREDENTIALS_HADOOP_FS_ENABLED: ConfigEntry[Boolean] =
     buildConf("credentials.hadoopfs.enabled")
-      .doc("Whether to renew HadoopFS DelegationToken")
+      .doc("Whether to renew Hadoop filesystem delegation tokens")
       .version("1.4.0")
       .booleanConf
       .createWithDefault(true)
@@ -267,7 +245,7 @@ object KyuubiConf {
 
   val CREDENTIALS_HIVE_ENABLED: ConfigEntry[Boolean] =
     buildConf("credentials.hive.enabled")
-      .doc("Whether to renew HiveMetaStore DelegationToken")
+      .doc("Whether to renew Hive metastore delegation token")
       .version("1.4.0")
       .booleanConf
       .createWithDefault(true)
@@ -392,18 +370,25 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_LOGIN_BACKOFF_SLOT_LENGTH)
 
-  val AUTHENTICATION_METHOD: ConfigEntry[String] = buildConf("authentication")
-    .doc("Client authentication types.<ul>" +
+  val AUTHENTICATION_METHOD: ConfigEntry[Seq[String]] = buildConf("authentication")
+    .doc("A comma separated list of client authentication types.<ul>" +
       " <li>NOSASL: raw transport.</li>" +
       " <li>NONE: no authentication check.</li>" +
       " <li>KERBEROS: Kerberos/GSSAPI authentication.</li>" +
       " <li>CUSTOM: User-defined authentication.</li>" +
-      " <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul>")
+      " <li>LDAP: Lightweight Directory Access Protocol authentication.</li></ul>" +
+      " Note that: For KERBEROS, it is SASL/GSSAPI mechanism," +
+      " and for NONE, CUSTOM and LDAP, they are all SASL/PLAIN mechanism." +
+      " If only NOSASL is specified, the authentication will be NOSASL." +
+      " For SASL authentication, KERBEROS and PLAIN auth type are supported at the same time," +
+      " and only the first specified PLAIN auth type is valid.")
     .version("1.0.0")
     .stringConf
-    .transform(_.toUpperCase(Locale.ROOT))
-    .checkValues(AuthTypes.values.map(_.toString))
-    .createWithDefault(AuthTypes.NONE.toString)
+    .toSequence()
+    .transform(_.map(_.toUpperCase(Locale.ROOT)))
+    .checkValue(_.forall(AuthTypes.values.map(_.toString).contains),
+      s"the authentication type should be one or more of ${AuthTypes.values.mkString(",")}")
+    .createWithDefault(Seq(AuthTypes.NONE.toString))
 
   val AUTHENTICATION_CUSTOM_CLASS: OptionalConfigEntry[String] =
     buildConf("authentication.custom.class")
@@ -524,16 +509,22 @@ object KyuubiConf {
       .createOptional
 
   val ENGINE_LOGIN_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.login.timeout")
-    .doc("The timeout(ms) of creating the connection to remote sql query engine")
+    .doc("The timeout of creating the connection to remote sql query engine")
     .version("1.0.0")
     .timeConf
     .createWithDefault(Duration.ofSeconds(15).toMillis)
+
+  val ENGINE_REQUEST_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.request.timeout")
+    .doc("The timeout of awaiting response after sending request to remote sql query engine")
+    .version("1.4.0")
+    .timeConf
+    .createWithDefault(Duration.ofSeconds(60).toMillis)
 
   val ENGINE_INIT_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.initialize.timeout")
     .doc("Timeout for starting the background engine, e.g. SparkSQLEngine.")
     .version("1.0.0")
     .timeConf
-    .createWithDefault(Duration.ofSeconds(60).toMillis)
+    .createWithDefault(Duration.ofSeconds(180).toMillis)
 
   val SESSION_CHECK_INTERVAL: ConfigEntry[Long] = buildConf("session.check.interval")
     .doc("The check interval for session timeout.")
@@ -593,6 +584,15 @@ object KyuubiConf {
       .stringConf
       .toSequence()
       .createWithDefault(Nil)
+
+  val SESSION_ENGINE_STARTUP_MAX_LOG_LINES: ConfigEntry[Int] =
+    buildConf("session.engine.startup.maxLogLines")
+      .doc("The maximum number of engine log lines when errors occur during engine startup phase." +
+        " Note that this max lines is for client-side to help track engine startup issue.")
+      .version("1.4.0")
+      .intConf
+      .checkValue(_ > 0, "the maximum must be positive integer.")
+      .createWithDefault(10)
 
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("backend.server.exec.pool.size")
@@ -657,6 +657,14 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofSeconds(5).toMillis)
 
+  val OPERATION_STATUS_POLLING_MAX_ATTEMPTS: ConfigEntry[Int] =
+    buildConf("operation.status.polling.max.attempts")
+      .doc("Max attempts for long polling asynchronous running sql query's status on raw" +
+        " transport failures, e.g. TTransportException")
+      .version("1.4.0")
+      .intConf
+      .createWithDefault(5)
+
   val OPERATION_FORCE_CANCEL: ConfigEntry[Boolean] =
     buildConf("operation.interrupt.on.cancel")
       .doc("When true, all running tasks will be interrupted if one cancels a query. " +
@@ -678,6 +686,22 @@ object KyuubiConf {
       .checkValue(_ >= 1000, "must >= 1s if set")
       .createOptional
 
+  val OPERATION_INCREMENTAL_COLLECT: ConfigEntry[Boolean] =
+    buildConf("operation.incremental.collect")
+      .internal
+      .doc("When true, the executor side result will be sequentially calculated and returned to" +
+        " the Spark driver side.")
+      .version("1.4.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val SERVER_OPERATION_LOG_DIR_ROOT: ConfigEntry[String] =
+    buildConf("operation.log.dir.root")
+      .doc("Root directory for query operation log at server-side.")
+      .version("1.4.0")
+      .stringConf
+      .createWithDefault("server_operation_logs")
+
   @deprecated(s"using kyuubi.engine.share.level instead", "1.2.0")
   val LEGACY_ENGINE_SHARE_LEVEL: ConfigEntry[String] = buildConf("session.engine.share.level")
     .doc(s"(deprecated) - Using kyuubi.engine.share.level instead")
@@ -689,6 +713,11 @@ object KyuubiConf {
 
   private val validEngineSubDomain: Pattern = "^[a-zA-Z_-]{1,14}$".r.pattern
 
+  // [ZooKeeper Data Model]
+  // (http://zookeeper.apache.org/doc/r3.7.0/zookeeperProgrammers.html#ch_zkDataModel)
+  private val validEngineSubdomain: Pattern = ("(?!^[\\u002e]{1,2}$)" +
+    "(^[\\u0020-\\u002e\\u0030-\\u007e\\u00a0-\\ud7ff\\uf900-\\uffef]{1,}$)").r.pattern
+
   @deprecated(s"using kyuubi.engine.share.level.subdomain instead", "1.4.0")
   val ENGINE_SHARE_LEVEL_SUB_DOMAIN: OptionalConfigEntry[String] =
     buildConf("engine.share.level.sub.domain")
@@ -696,14 +725,15 @@ object KyuubiConf {
       .version("1.2.0")
       .stringConf
       .transform(_.toLowerCase(Locale.ROOT))
-      .checkValue(validEngineSubDomain.matcher(_).matches(),
-        "must be [1, 14] length alphabet string, e.g. 'abc', 'apache'")
+      .checkValue(validEngineSubdomain.matcher(_).matches(),
+        "must be valid zookeeper sub path."
+      )
       .createOptional
 
   val ENGINE_SHARE_LEVEL_SUBDOMAIN: ConfigEntry[Option[String]] =
     buildConf("engine.share.level.subdomain")
       .doc("Allow end-users to create a subdomain for the share level of an engine. A" +
-        " subdomain is a case-insensitive string values in `^[a-zA-Z_-]{1,14}$` form." +
+        " subdomain is a case-insensitive string values that must be a valid zookeeper sub path." +
         " For example, for `USER` share level, an end-user can share a certain engine within" +
         " a subdomain, not for all of its clients. End-users are free to create multiple" +
         " engines in the `USER` share level")
@@ -724,9 +754,30 @@ object KyuubiConf {
       " connection</li>" +
       " <li>USER: engine will be shared by all sessions created by a unique username," +
       s" see also ${ENGINE_SHARE_LEVEL_SUBDOMAIN.key}</li>" +
+      " <li>GROUP: engine will be shared by all sessions created by all users belong to the same" +
+      " primary group name. The engine will be launched by the group name as the effective" +
+      " username, so here the group name is kind of special user who is able to visit the" +
+      " compute resources/data of a team. It follows the" +
+      " [Hadoop GroupsMapping](https://reurl.cc/xE61Y5) to map user to a primary group. If the" +
+      " primary group is not found, it fallback to the USER level." +
       " <li>SERVER: the App will be shared by Kyuubi servers</li></ul>")
     .version("1.2.0")
     .fallbackConf(LEGACY_ENGINE_SHARE_LEVEL)
+
+  val ENGINE_TYPE: ConfigEntry[String] = buildConf("engine.type")
+    .doc("Specify the detailed engine that supported by the Kyuubi. The engine type bindings to" +
+      " SESSION scope. This configuration is experimental. Currently, available configs are: <ul>" +
+      " <li>SPARK_SQL: specify this engine type will launch a Spark engine which can provide" +
+      " all the capacity of the Apache Spark. Note, it's a default engine type.</li>" +
+      " <li>FLINK_SQL: specify this engine type will launch a Flink engine which can provide" +
+      " all the capacity of the Apache Flink.</li>" +
+      "</ul>")
+    .version("1.4.0")
+    .stringConf
+    .transform(_.toUpperCase(Locale.ROOT))
+    .checkValues(EngineType.values.map(_.toString))
+    .createWithDefault(EngineType.SPARK_SQL.toString)
+
 
   val ENGINE_POOL_SIZE_THRESHOLD: ConfigEntry[Int] = buildConf("engine.pool.size.threshold")
     .doc("This parameter is introduced as a server-side parameter, " +
@@ -748,8 +799,8 @@ object KyuubiConf {
   val ENGINE_INITIALIZE_SQL: ConfigEntry[Seq[String]] =
     buildConf("engine.initialize.sql")
       .doc("SemiColon-separated list of SQL statements to be initialized in the newly created " +
-        "engine before queries. This configuration can not be used in JDBC url due to " +
-        "the limitation of Beeline/JDBC driver.")
+        "engine before queries. i.e. use `SHOW DATABASES` to eagerly active HiveClient. This " +
+        "configuration can not be used in JDBC url due to the limitation of Beeline/JDBC driver.")
       .version("1.2.0")
       .stringConf
       .toSequence(";")
@@ -763,7 +814,7 @@ object KyuubiConf {
       .version("1.3.0")
       .stringConf
       .toSequence(";")
-      .createWithDefaultString("SHOW DATABASES")
+      .createWithDefault(Nil)
 
   val ENGINE_DEREGISTER_EXCEPTION_CLASSES: ConfigEntry[Seq[String]] =
     buildConf("engine.deregister.exception.classes")
@@ -821,6 +872,7 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
+  // TODO: #1181 Format does not conform to specifications
   val SERVER_EVENT_JSON_LOG_PATH: ConfigEntry[String] =
     buildConf("backend.server.event.json.log.path")
       .doc("The location of server events go for the builtin JSON logger")
@@ -828,6 +880,7 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("/tmp/kyuubi/events")
 
+  // TODO: #1181 Format does not conform to specifications
   val ENGINE_EVENT_JSON_LOG_PATH: ConfigEntry[String] =
     buildConf("engine.event.json.log.path")
       .doc("The location of all the engine events go for the builtin JSON logger.<ul>" +
@@ -856,8 +909,8 @@ object KyuubiConf {
   val ENGINE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
     buildConf("engine.event.loggers")
       .doc("A comma separated list of engine history loggers, where engine/session/operation etc" +
-        " events go.<ul>" +
-        " <li>SPARK: the events will be written to the spark history events</li>" +
+        " events go. We use spark logger by default.<ul>" +
+        " <li>SPARK: the events will be written to the spark listener bus.</li>" +
         s" <li>JSON: the events will be written to the location of" +
         s" ${ENGINE_EVENT_JSON_LOG_PATH.key}</li>" +
         s" <li>JDBC: to be done</li>" +
@@ -868,7 +921,7 @@ object KyuubiConf {
       .toSequence()
       .checkValue(_.toSet.subsetOf(Set("SPARK", "JSON", "JDBC", "CUSTOM")),
         "Unsupported event loggers")
-      .createWithDefault(Nil)
+      .createWithDefault(Seq("SPARK"))
 
   val ENGINE_UI_STOP_ENABLED: ConfigEntry[Boolean] =
     buildConf("engine.ui.stop.enabled")
@@ -876,6 +929,29 @@ object KyuubiConf {
       .version("1.3.0")
       .booleanConf
       .createWithDefault(true)
+
+  val ENGINE_UI_SESSION_LIMIT: ConfigEntry[Int] =
+    buildConf("engine.ui.retainedSessions")
+      .doc("The number of SQL client sessions kept in the Kyuubi Query Engine web UI.")
+      .version("1.4.0")
+      .intConf
+      .checkValue(_ > 0, "retained sessions must be positive.")
+      .createWithDefault(200)
+
+  val ENGINE_UI_STATEMENT_LIMIT: ConfigEntry[Int] =
+    buildConf("engine.ui.retainedStatements")
+      .doc("The number of statements kept in the Kyuubi Query Engine web UI.")
+      .version("1.4.0")
+      .intConf
+      .checkValue(_ > 0, "retained statements must be positive.")
+      .createWithDefault(200)
+
+  val ENGINE_OPERATION_LOG_DIR_ROOT: ConfigEntry[String] =
+    buildConf("engine.operation.log.dir.root")
+      .doc("Root directory for query operation log at engine-side.")
+      .version("1.4.0")
+      .stringConf
+      .createWithDefault("engine_operation_logs")
 
   val SESSION_NAME: OptionalConfigEntry[String] =
     buildConf("session.name")
@@ -885,4 +961,19 @@ object KyuubiConf {
       .version("1.4.0")
       .stringConf
       .createOptional
+
+  object OperationModes extends Enumeration {
+    type OperationMode = Value
+    val PARSE, ANALYZE, OPTIMIZE, NONE = Value
+  }
+
+  val OPERATION_PLAN_ONLY: ConfigEntry[String] =
+    buildConf("operation.plan.only.mode")
+      .doc("Whether to perform the statement in a PARSE, ANALYZE, OPTIMIZE only way without " +
+        "executing the query. When it is NONE, the statement will be fully executed")
+      .version("1.4.0")
+      .stringConf
+      .transform(_.toUpperCase(Locale.ROOT))
+      .checkValues(OperationModes.values.map(_.toString))
+      .createWithDefault(OperationModes.NONE.toString)
 }

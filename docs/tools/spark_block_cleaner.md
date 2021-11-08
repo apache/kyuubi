@@ -56,16 +56,16 @@ Before you start using Spark Block Cleaner, you should build its docker images.
 
 In the `KYUUBI_HOME` directory, you can use the following cmd to build docker image.
 ```shell
-    docker build ./tools/spark-block-cleaner/kubernetes/docker
+docker build ./tools/spark-block-cleaner/kubernetes/docker
 ```
 
 ### Modify spark-block-cleaner.yml
 
 You need to modify the `${KYUUBI_HOME}/tools/spark-block-cleaner/kubernetes/spark-block-cleaner.yml` to fit your current environment.
 
-In Kyuubi tools, we recommend using `DaemonSet` to start , and we offer default yaml file in daemonSet way.
+In Kyuubi tools, we recommend using `DaemonSet` to start, and we offer default yaml file in daemonSet way.
 
-Base file structure : 
+Base file structure: 
 ```yaml
 apiVersion
 kind
@@ -128,7 +128,7 @@ After you finishing modifying the above, you can use the following command `kube
 Name | Default | unit | Meaning
 --- | --- | --- | ---
 CACHE_DIRS | /data/data1,/data/data2|  | The target dirs in container path which will clean block files.
-FILE_EXPIRED_TIME | 604800 | seconds | Cleaner will clean the block files which current time - last modified time  more than the fileExpiredTime.
-DEEP_CLEAN_FILE_EXPIRED_TIME | 432000 | seconds | Deep clean will clean the block files which current time - last modified time  more than the deepCleanFileExpiredTime.
+FILE_EXPIRED_TIME | 604800 | seconds | Cleaner will clean the block files which current time - last modified time more than the fileExpiredTime.
+DEEP_CLEAN_FILE_EXPIRED_TIME | 432000 | seconds | Deep clean will clean the block files which current time - last modified time more than the deepCleanFileExpiredTime.
 FREE_SPACE_THRESHOLD | 60 | % | After first clean, if free Space low than threshold trigger deep clean.
 SCHEDULE_INTERVAL | 3600 | seconds | Cleaner sleep between cleaning.

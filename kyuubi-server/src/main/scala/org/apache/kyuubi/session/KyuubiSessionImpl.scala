@@ -53,7 +53,8 @@ class KyuubiSessionImpl(
     case (key, value) => sessionConf.set(key, value)
   }
 
-  private val engine: EngineRef = new EngineRef(sessionConf, user)
+  val engine: EngineRef = new EngineRef(sessionConf, user)
+
   private val sessionEvent = KyuubiSessionEvent(this)
   EventLoggingService.onEvent(sessionEvent)
 
@@ -79,8 +80,9 @@ class KyuubiSessionImpl(
   private def openSession(host: String, port: Int): Unit = {
     val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
     val loginTimeout = sessionConf.get(ENGINE_LOGIN_TIMEOUT).toInt
+    val requestTimeout = sessionConf.get(ENGINE_REQUEST_TIMEOUT).toInt
     transport = PlainSASLHelper.getPlainTransport(
-      user, passwd, new TSocket(host, port, loginTimeout))
+      user, passwd, new TSocket(host, port, requestTimeout, loginTimeout))
     if (!transport.isOpen) {
       transport.open()
       logSessionInfo(s"Connected to engine [$host:$port]")

@@ -34,7 +34,7 @@ In this section, you will learn how to configure Kyuubi to interact with Hive Me
   - [Hive Metastore Administration](https://cwiki.apache.org/confluence/display/Hive/AdminManual+Metastore+Administration)
   - [Configuring the Hive Metastore for CDH](https://docs.cloudera.com/documentation/enterprise/latest/topics/cdh_ig_hive_metastore_configure.html)
 - A Spark binary distribution built with `-Phive` support
-  - Use the built in one in the Kyuubi distribution
+  - Use the built-in one in the Kyuubi distribution
   - Download from [Spark official website](https://spark.apache.org/downloads.html)
   - Build from Spark source, [Building With Hive and JDBC Support](http://spark.apache.org/docs/latest/building-spark.html#building-with-hive-and-jdbc-support)
 - A copy of Hive client configuration
@@ -99,7 +99,7 @@ Using this mode for experimental purposes only.
 
 In a real production environment, we always have a communal standalone metadata store,
 to manage the metadata of persistent relational entities, e.g. databases, tables, columns, partitions, for fast access.
-usually, Hive metastore as the defacto.
+Usually, Hive metastore as the de facto.
 
 ## Related Configurations
 
@@ -134,7 +134,7 @@ Kyuubi will take these configurations as system wide defaults for all applicatio
 
 ### Via hive-site.xml
 
-Place your copy of `hive-site.xml` into `$$SPARK_HOME/conf`,
+Place your copy of `hive-site.xml` into `$SPARK_HOME/conf`,
 every single Spark application will automatically load this config file to its classpath.
 
 This version of configuration has lower priority than those in `$KYUUBI_HOME/conf/kyuubi-defaults.conf`.
@@ -147,7 +147,7 @@ We can pass _**Hive primitives**_ or **_Spark derivatives_** directly in the JDB
 jdbc:hive2://localhost:10009/;#hive.metastore.uris=thrift://localhost:9083
 ```
 
-This will override the defaults in `$$SPARK_HOME/conf/hive-site.xml` and `$KYUUBI_HOME/conf/kyuubi-defaults.conf` for each _**user account**_
+This will override the defaults in `$SPARK_HOME/conf/hive-site.xml` and `$KYUUBI_HOME/conf/kyuubi-defaults.conf` for each _**user account**_.
 
 With this feature, end users are possible to visit different Hive metastore server instance.
 Similarly, this works for other services like HDFS, YARN too.
@@ -177,7 +177,7 @@ Most Hive configurations are final and unmodifiable in Spark at runtime, so keep
 If backward compatibility is guaranteed by Hive versioning,
 we can always use a lower version Hive metastore client to communicate with the higher version Hive metastore server.
 
-For example, Spark 3.0 was released with a builtin Hive client (2.3.7), so, ideally, the version of server should &gt;= 2.3.x.
+For example, Spark 3.0 was released with a built-in Hive client (2.3.7), so, ideally, the version of server should &gt;= 2.3.x.
 
 If you do have a legacy Hive metastore server that cannot be easily upgraded, and you may face the issue by default like this,
 
@@ -204,7 +204,7 @@ Caused by: org.apache.thrift.TApplicationException: Invalid method name: 'get_ta
 	... 93 more
 ```
 
-To prevent this problem, we can use Spark's [Interacting with Different Versions of Hive Metastore](http://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html#interacting-with-different-versions-of-hive-metastore)
+To prevent this problem, we can use Spark's [Interacting with Different Versions of Hive Metastore](http://spark.apache.org/docs/latest/sql-data-sources-hive-tables.html#interacting-with-different-versions-of-hive-metastore).
 
 ## Further Readings
 

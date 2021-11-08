@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine
 import java.util.UUID
 
 import org.apache.curator.utils.ZKPaths
+import org.apache.hadoop.security.UserGroupInformation
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
@@ -32,9 +33,10 @@ import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
 class EngineRefSuite extends KyuubiFunSuite {
   import ShareLevel._
+  import EngineType._
   private val zkServer = new EmbeddedZookeeper
   private val conf = KyuubiConf()
-  val user = Utils.currentUser
+  private val user = Utils.currentUser
 
   override def beforeAll(): Unit = {
     val zkData = Utils.createTempDir()
@@ -59,22 +61,24 @@ class EngineRefSuite extends KyuubiFunSuite {
 
   test("CONNECTION shared level engine name") {
     val id = UUID.randomUUID().toString
+    val engineType = conf.get(KyuubiConf.ENGINE_TYPE)
     Seq(None, Some("suffix")).foreach { domain =>
       conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, CONNECTION.toString)
       domain.foreach(conf.set(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key, _))
       val engine = new EngineRef(conf, user, id)
       assert(engine.engineSpace ===
-        ZKPaths.makePath(s"kyuubi_$CONNECTION", user, id))
-      assert(engine.defaultEngineName === s"kyuubi_${CONNECTION}_${user}_$id")
+        ZKPaths.makePath(s"kyuubi_${CONNECTION}_${engineType}", user, id))
+      assert(engine.defaultEngineName === s"kyuubi_${CONNECTION}_${engineType}_${user}_$id")
     }
   }
 
   test("USER shared level engine name") {
     val id = UUID.randomUUID().toString
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, FLINK_SQL.toString)
     val appName = new EngineRef(conf, user, id)
-    assert(appName.engineSpace === ZKPaths.makePath(s"kyuubi_$USER", user))
-    assert(appName.defaultEngineName === s"kyuubi_${USER}_${user}_$id")
+    assert(appName.engineSpace === ZKPaths.makePath(s"kyuubi_${USER}_$FLINK_SQL", user))
+    assert(appName.defaultEngineName === s"kyuubi_${USER}_${FLINK_SQL}_${user}_$id")
 
     Seq(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN,
       KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN).foreach { k =>
@@ -82,24 +86,53 @@ class EngineRefSuite extends KyuubiFunSuite {
       conf.set(k.key, "abc")
       val appName2 = new EngineRef(conf, user, id)
       assert(appName2.engineSpace ===
-        ZKPaths.makePath(s"kyuubi_$USER", user, "abc"))
-      assert(appName2.defaultEngineName === s"kyuubi_${USER}_${user}_abc_$id")
+        ZKPaths.makePath(s"kyuubi_${USER}_${FLINK_SQL}", user, "abc"))
+      assert(appName2.defaultEngineName === s"kyuubi_${USER}_${FLINK_SQL}_${user}_abc_$id")
     }
+  }
+
+  test("GROUP shared level engine name") {
+    val id = UUID.randomUUID().toString
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, GROUP.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
+    val engineRef = new EngineRef(conf, user, id)
+    val primaryGroupName = UserGroupInformation.createRemoteUser(user).getPrimaryGroupName
+    assert(engineRef.engineSpace === ZKPaths.makePath(s"kyuubi_GROUP_SPARK_SQL", primaryGroupName))
+    assert(engineRef.defaultEngineName === s"kyuubi_GROUP_SPARK_SQL_${primaryGroupName}_$id")
+
+    Seq(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN,
+      KyuubiConf.ENGINE_SHARE_LEVEL_SUB_DOMAIN).foreach { k =>
+      conf.unset(k)
+      conf.set(k.key, "abc")
+      val engineRef2 = new EngineRef(conf, user, id)
+      assert(engineRef2.engineSpace ===
+        ZKPaths.makePath(s"kyuubi_${GROUP}_${SPARK_SQL}", primaryGroupName, "abc"))
+      assert(engineRef2.defaultEngineName ===
+        s"kyuubi_${GROUP}_${SPARK_SQL}_${primaryGroupName}_abc_$id")
+    }
+
+    val userName = "Iamauserwithoutgroup"
+    val newUGI = UserGroupInformation.createRemoteUser(userName)
+    assert(newUGI.getGroupNames.isEmpty)
+    val engineRef3 = new EngineRef(conf, userName, id)
+    assert(engineRef3.engineSpace === ZKPaths.makePath(s"kyuubi_GROUP_SPARK_SQL", userName, "abc"))
+    assert(engineRef3.defaultEngineName === s"kyuubi_GROUP_SPARK_SQL_${userName}_abc_$id")
   }
 
   test("SERVER shared level engine name") {
     val id = UUID.randomUUID().toString
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, SERVER.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, FLINK_SQL.toString)
     val appName = new EngineRef(conf, user, id)
     assert(appName.engineSpace ===
-      ZKPaths.makePath(s"kyuubi_$SERVER", user))
-    assert(appName.defaultEngineName ===  s"kyuubi_${SERVER}_${user}_$id")
+      ZKPaths.makePath(s"kyuubi_${SERVER}_${FLINK_SQL}", user))
+    assert(appName.defaultEngineName ===  s"kyuubi_${SERVER}_${FLINK_SQL}_${user}_$id")
 
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key, "abc")
     val appName2 = new EngineRef(conf, user, id)
     assert(appName2.engineSpace ===
-      ZKPaths.makePath(s"kyuubi_$SERVER", user, "abc"))
-    assert(appName2.defaultEngineName ===  s"kyuubi_${SERVER}_${user}_abc_$id")
+      ZKPaths.makePath(s"kyuubi_${SERVER}_${FLINK_SQL}", user, "abc"))
+    assert(appName2.defaultEngineName ===  s"kyuubi_${SERVER}_${FLINK_SQL}_${user}_abc_$id")
   }
 
   test("check the engine space of engine pool") {
@@ -133,6 +166,7 @@ class EngineRefSuite extends KyuubiFunSuite {
   test("start and get engine address with lock") {
     val id = UUID.randomUUID().toString
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
     conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.set(HighAvailabilityConf.HA_ZK_NAMESPACE, "engine_test")
     conf.set(HighAvailabilityConf.HA_ZK_QUORUM, zkServer.getConnectString)

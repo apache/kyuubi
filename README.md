@@ -20,11 +20,11 @@
 [![License](https://img.shields.io/badge/license-Apache%202-4EB1BA.svg)](https://www.apache.org/licenses/LICENSE-2.0.html)
 [![](https://tokei.rs/b1/github.com/apache/incubator-kyuubi)](https://github.com/apache/incubator-kyuubi)
 ![GitHub top language](https://img.shields.io/github/languages/top/apache/incubator-kyuubi)
-[![GitHub release](https://img.shields.io/github/v/release/apache/incubator-kyuubi.svg)](https://github.com/apache/incubator-kyuubi/releases)
+[![Latest tag](https://img.shields.io/github/v/tag/apache/incubator-kyuubi?label=tag)](https://github.com/apache/incubator-kyuubi/tags)
 [![codecov](https://codecov.io/gh/apache/incubator-kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/incubator-kyuubi)
 [![Travis](https://api.travis-ci.com/apache/incubator-kyuubi.svg?branch=master)](https://travis-ci.com/apache/incubator-kyuubi)
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/apache/incubator-kyuubi/Kyuubi/master?style=plastic)
-[![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.apache.org/?badge=latest)
+[![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.apache.org/docs/latest/)
 
 ## What is Kyuubi?
 
@@ -93,30 +93,25 @@ The figure below shows our vision for the Kyuubi Ecosystem. Some of them have be
 
 ## Online Documentation
 
-Since Kyuubi 1.0.0, the Kyuubi online documentation is hosted by [https://readthedocs.org/](https://readthedocs.org/).
+Since Kyuubi 1.3.0-incubating, the Kyuubi online documentation is hosted by [https://kyuubi.apache.org/](https://kyuubi.apache.org/docs/latest/).
 You can find the specific version of Kyuubi documentation as listed below.
 
-- [master/latest](https://kyuubi.readthedocs.io/en/latest/)
-- [stable](https://kyuubi.readthedocs.io/en/stable/)
-- [v1.1.0](https://kyuubi.readthedocs.io/en/v1.1.0/)
-- [v1.0.3](https://kyuubi.readthedocs.io/en/v1.0.3/)
-- [v1.0.2](https://kyuubi.readthedocs.io/en/v1.0.2/)
-- [v1.0.1](https://kyuubi.readthedocs.io/en/v1.0.1/)
-- [v1.0.0](https://kyuubi.readthedocs.io/en/v1.0.0/)
+- [1.3.0-incubating](https://kyuubi.apache.org/docs/r1.3.0-incubating/)
+- [stable](https://kyuubi.apache.org/docs/stable/)
 
-For 0.8 and earlier versions, please check the [Github Pages](https://apache.github.io/incubator-kyuubi/) directly.
+For 1.2 and earlier versions, please check the [Github Pages](https://kyuubi.readthedocs.io/en/v1.2.0/) directly.
 
 ## Quick Start
 
-Ready? [Getting Started](https://kyuubi.readthedocs.io/en/latest/quick_start/quick_start.html) with Kyuubi.
+Ready? [Getting Started](https://kyuubi.apache.org/docs/latest/quick_start/quick_start.html) with Kyuubi.
 
 ## Contributing
 
 All bits of help are welcome. You can make various types of contributions to Kyuubi, including the following but not limited to,
 
 - Help new users in chat channel or share your success stories with us - [![Gitter](https://badges.gitter.im/kyuubi-on-spark/Lobby.svg)](https://gitter.im/kyuubi-on-spark/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
-- Improve Documentation - [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.readthedocs.io/en/latest/?badge=latest)
-- Test releases - [![GitHub release](https://img.shields.io/github/release/apache/incubator-kyuubi.svg)](https://github.com/apache/incubator-kyuubi//releases)
+- Improve Documentation - [![Documentation Status](https://readthedocs.org/projects/kyuubi/badge/?version=latest)](https://kyuubi.apache.org/docs/latest/)
+- Test releases - [![Latest tag](https://img.shields.io/github/v/tag/apache/incubator-kyuubi?label=tag)](https://github.com/apache/incubator-kyuubi/tags)
 - Improve test coverage - [![codecov](https://codecov.io/gh/apache/incubator-kyuubi/branch/master/graph/badge.svg)](https://codecov.io/gh/apache/incubator-kyuubi)
 - Report bugs and better help developers to reproduce
 - Review changes
@@ -124,7 +119,7 @@ All bits of help are welcome. You can make various types of contributions to Kyu
 - Promote to others
 - Click the star button if you like this project
 
-Before you start, we recommend that you check the [Contribution Guidelines](https://kyuubi.readthedocs.io/en/latest/community/contributions.html) first.
+Before you start, we recommend that you check the [Contribution Guidelines](https://kyuubi.apache.org/docs/latest/community/contributions.html) first.
 
 ## Aside
 

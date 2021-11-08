@@ -42,31 +42,41 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
   kdcConf.setProperty(MiniKdc.ORG_DOMAIN, "COM")
   kdcConf.setProperty(MiniKdc.KDC_BIND_ADDRESS, hostName)
   kdcConf.setProperty(MiniKdc.KDC_PORT, "0")
-  kdcConf.setProperty(MiniKdc.DEBUG, "true")
+  // MiniKdc.DEBUG in kdcConf is set to false by default and will override JVM system property.
+  // Remove it so we can turn on/off kerberos debug message by setting system property
+  // `sun.security.krb5.debug`.
+  kdcConf.remove(MiniKdc.DEBUG)
 
   private var kdc: MiniKdc = _
-  private var krb5ConfPath: String = _
-
-  eventually(timeout(60.seconds), interval(1.second)) {
-    try {
-      kdc = new MiniKdc(kdcConf, baseDir)
-      kdc.start()
-      krb5ConfPath = kdc.getKrb5conf.getAbsolutePath
-    } catch {
-      case NonFatal(e) =>
-        if (kdc != null) {
-          kdc.stop()
-          kdc = null
-        }
-        throw e
-    }
-  }
+  protected var krb5ConfPath: String = _
 
   private val keytabFile = new File(baseDir, "kyuubi-test.keytab")
   protected val testKeytab: String = keytabFile.getAbsolutePath
-  protected var testPrincipal = s"client/$hostName"
-  kdc.createPrincipal(keytabFile, testPrincipal)
+  protected var testPrincipal: String = _
 
+  override def beforeAll(): Unit = {
+    eventually(timeout(60.seconds), interval(1.second)) {
+      try {
+        kdc = new MiniKdc(kdcConf, baseDir)
+        kdc.start()
+        krb5ConfPath = kdc.getKrb5conf.getAbsolutePath
+      } catch {
+        case NonFatal(e) =>
+          if (kdc != null) {
+            kdc.stop()
+            kdc = null
+          }
+          throw e
+      }
+    }
+    val tempTestPrincipal = s"client/$hostName"
+    kdc.createPrincipal(keytabFile, tempTestPrincipal)
+    rewriteKrb5Conf()
+    testPrincipal = tempTestPrincipal + "@" + kdc.getRealm
+    info(s"KerberizedTest Principal: $testPrincipal")
+    info(s"KerberizedTest Keytab: $testKeytab")
+    super.beforeAll()
+  }
 
   /**
    * Forked from Apache Spark
@@ -85,6 +95,8 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
         if (s.contains("libdefaults")) {
           rewritten = true
           s + addedConfig
+        } else if (s.contains(hostName)) {
+          s + "\n" + s.replace(hostName, s"tcp/$hostName")
         } else {
           s
         }).filter(!_.trim.startsWith("#")).mkString(System.lineSeparator())
@@ -109,13 +121,6 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
   private def addedKrb5Config(key: String, value: String): String = {
     System.lineSeparator() + s"    $key=$value"
   }
-
-  rewriteKrb5Conf()
-
-  testPrincipal = testPrincipal + "@" + kdc.getRealm
-
-  info(s"KerberizedTest Principal: $testPrincipal")
-  info(s"KerberizedTest Keytab: $testKeytab")
 
   override def afterAll(): Unit = {
     kdc.stop()

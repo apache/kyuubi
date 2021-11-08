@@ -1,0 +1,56 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Default values for kyuubi.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Kyuubi server numbers
+replicaCount: 2
+
+image:
+  repository: apache/kyuubi
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "master-snapshot"
+
+server:
+  bind:
+    host: 0.0.0.0
+    port: 10009
+  conf:
+    mountPath: /opt/kyuubi/conf
+
+service:
+  type: NodePort
+  # The default port limit of kubernetes is 30000-32767
+  # to change:
+  #   vim kube-apiserver.yaml (usually under path: /etc/kubernetes/manifests/)
+  #   add or change line 'service-node-port-range=1-32767' under kube-apiserver
+  port: 30009
+
+resources: {}
+  # Used to specify resource, default unlimited.
+  # If you do want to specify resources:
+  #   1. remove the curly braces after 'resources:'
+  #   2. uncomment the following lines
+  # limits:
+  #   cpu: 4
+  #   memory: 10Gi
+  # requests:
+  #   cpu: 2
+  #   memory: 4Gi

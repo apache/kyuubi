@@ -21,22 +21,29 @@ import java.net.InetAddress
 import java.nio.file.Paths
 import java.util.UUID
 
+import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.{FileSystem, Path}
+
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.JDBCTestUtils
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.OperationState._
 
-class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
+class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
-  private val logRoot = "file:" + Utils.createTempDir().toString
+  private val engineLogRoot = "file://" + Utils.createTempDir().toString
+  private val serverLogRoot = "file://" + Utils.createTempDir().toString
   private val currentDate = Utils.getDateFromTimestamp(System.currentTimeMillis())
+
+  private val fileSystem: FileSystem = FileSystem.get(new Configuration())
+  fileSystem.delete(new Path(engineLogRoot), true)
 
   override protected val conf: KyuubiConf = {
     KyuubiConf()
       .set(KyuubiConf.SERVER_EVENT_LOGGERS, Seq("JSON"))
-      .set(KyuubiConf.SERVER_EVENT_JSON_LOG_PATH, logRoot)
+      .set(KyuubiConf.SERVER_EVENT_JSON_LOG_PATH, serverLogRoot)
       .set(KyuubiConf.ENGINE_EVENT_LOGGERS, Seq("JSON"))
-      .set(KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH, logRoot)
+      .set(KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH, engineLogRoot)
   }
 
   override protected def jdbcUrl: String = getJdbcUrl
@@ -44,9 +51,9 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
   test("statementEvent: generate, dump and query") {
     val hostName = InetAddress.getLocalHost.getCanonicalHostName
     val serverStatementEventPath =
-      Paths.get(logRoot, "kyuubi_statement", s"day=$currentDate", s"server-$hostName.json")
+      Paths.get(serverLogRoot, "kyuubi_statement", s"day=$currentDate", s"server-$hostName.json")
     val engineStatementEventPath =
-      Paths.get(logRoot, "spark_statement", s"day=$currentDate", "*.json")
+      Paths.get(engineLogRoot, "spark_statement", s"day=$currentDate", "*.json")
     val sql = "select timestamp'2021-06-01'"
 
     withJdbcStatement() { statement =>
@@ -88,12 +95,13 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
       }
     }
 
-    val eventPath =
-      Paths.get(logRoot, "kyuubi_session", s"day=$currentDate")
+    val serverSessionEventPath =
+      Paths.get(serverLogRoot, "kyuubi_session", s"day=$currentDate")
     withSessionConf()(Map.empty)(Map("spark.sql.shuffle.partitions" -> "2")) {
       withJdbcStatement() { statement =>
         val res = statement.executeQuery(
-          s"SELECT * FROM `json`.`$eventPath` where sessionName = 'test1' order by totalOperations")
+          s"SELECT * FROM `json`.`$serverSessionEventPath` " +
+            s"where sessionName = 'test1' order by totalOperations")
         assert(res.next())
         assert(res.getString("user") == Utils.currentUser)
         assert(res.getString("sessionName") == "test1")
@@ -121,9 +129,9 @@ class EventLoggingServiceSuite extends WithKyuubiServer with JDBCTestUtils {
     }
 
     val serverSessionEventPath =
-      Paths.get(logRoot, "kyuubi_session", s"day=$currentDate")
+      Paths.get(serverLogRoot, "kyuubi_session", s"day=$currentDate")
     val engineSessionEventPath =
-      Paths.get(logRoot, "session", s"day=$currentDate")
+      Paths.get(engineLogRoot, "session", s"day=$currentDate")
     withSessionConf()(Map.empty)(Map.empty) {
       withJdbcStatement() { statement =>
         val res = statement.executeQuery(
