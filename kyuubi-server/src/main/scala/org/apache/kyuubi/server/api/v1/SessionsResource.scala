@@ -115,19 +115,18 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def operations(@PathParam("sessionHandle") sessionHandleStr: String,
     request: OperationRequest): OperationHandle = {
-    val operationType = try {
-      OperationType.withName(request.operation)
+    val (operationType, addition) = try {
+      (OperationType.withName(request.operation), request.addition)
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(s"Unsupported Operation type: ${request.operation}")
     }
-
-    val addition = request.addition
+    
     val sessionHandle = getSessionHandle(sessionHandleStr)
     try {
       val manager = backendService.sessionManager
       manager.operationManager.getOperationHandle(
-        manager.getSession(sessionHandle), operationType, request.addition)
+        manager.getSession(sessionHandle), operationType, addition)
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(s"Error getting OperationHandle, addition: $addition.")
