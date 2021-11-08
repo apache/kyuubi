@@ -42,7 +42,7 @@ The release process consists of several steps:
 
 1. Decide to release
 2. Prepare for the release
-3. Cut branch iff for __major__ release
+3. Cut branch off for __major__ release
 4. Build a release candidate
 5. Vote on the release candidate
 6. If necessary, fix any issues and go back to step 3.
@@ -78,7 +78,7 @@ signing the release and access to various release repositories.
 #### ASF authentication
 
 The environments `ASF_USERNAME` and `ASF_PASSWORD` have been used in several places and several times in the release
-process, you can either one-time set up them in `~/.bashrc` or `~/.zshrc`, or export them in terminal everytime.
+process, you can either one-time set up them in `~/.bashrc` or `~/.zshrc`, or export them in terminal every time.
 
 ```shell
 export ASF_USERNAME=<your apache username>
@@ -119,7 +119,7 @@ To export the PGP public key, using:
 gpg --armor --export 29BCC75D
 ```
 
-If you have more than one gpg key, you can specify the default key as following:
+If you have more than one gpg key, you can specify the default key as the following:
 ```
 echo 'default-key <key-fpr>' > ~/.gnupg/gpg.conf
 ```
@@ -226,7 +226,7 @@ Fork and clone [Apache Kyuubi website](https://github.com/apache/incubator-kyuub
 
 ### Create an Announcement
 
-Once everything is working create an announcement on the website and then send an e-mail to the mailing list.
+Once everything is working, create an announcement on the website and then send an e-mail to the mailing list.
 The mailing list includes: `announce@apache.org`, `dev@kyuubi.apache.org`, `user@spark.apache.org`.
 
 Enjoy an adult beverage of your choice, and congratulations on making a Kyuubi release.

@@ -163,7 +163,7 @@ Let us try to break it down from top to bottom based on the above diagram.
 4. For connections from different users, the step 2 and 3 will be repeated.
    This is because in the service discovery layer,
    the namespaces used to store the address of the engine instances are isolated based on the user(by default),
-   and different users cannot access other' s instances across the namespace.
+   and different users cannot access other's instances across the namespace.
 
 ## Authentication & Authorization
 

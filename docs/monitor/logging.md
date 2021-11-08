@@ -153,7 +153,7 @@ Operation log will show how SQL queries are executed, such as query planning, ex
 
 Operation logs can reveal directly to end-users how their queries are being executed on the server/engine-side, including some process-oriented information, and why their queries are slow or in error.
 
-For example, when you, as a end-user, use `beeline` to connect a Kyuubi server and execute query like below.
+For example, when you, as an end-user, use `beeline` to connect a Kyuubi server and execute query like below.
 
 ```shell
 bin/beeline -u 'jdbc:hive2://10.242.189.214:2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=kyuubi' -n kent -e 'select * from src;'
