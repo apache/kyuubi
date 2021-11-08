@@ -23,6 +23,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
+import org.apache.kyuubi.operation.OperationType._
 import org.apache.kyuubi.operation.log.LogDivertAppender
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.session.Session
@@ -124,6 +125,54 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
     operationLog.map(_.read(maxRows)).getOrElse{
       throw KyuubiSQLException(s"$opHandle failed to generate operation log")
     }
+  }
+
+  @throws[KyuubiSQLException]
+  def getOperationHandle(
+      session: Session,
+      operationType: OperationType,
+      addition: Map[String, Any] ): OperationHandle = {
+
+      val operationHandle = operationType match {
+        case EXECUTE_STATEMENT =>
+          newExecuteStatementOperation(
+            session,
+            addition("statement").asInstanceOf[String],
+            addition("runAsync").asInstanceOf[Boolean],
+            addition("queryTimeout").asInstanceOf[Int])
+        case GET_TYPE_INFO => newGetTypeInfoOperation(session)
+        case GET_CATALOGS => newGetCatalogsOperation(session)
+        case GET_SCHEMAS =>
+          newGetSchemasOperation(
+            session,
+            addition.get("catalog").asInstanceOf[String],
+            addition.get("schema").asInstanceOf[String])
+        case GET_TABLES =>
+          newGetTablesOperation(
+            session,
+            addition.get("catalogName").asInstanceOf[String],
+            addition.get("schemaName").asInstanceOf[String],
+            addition.get("tableName").asInstanceOf[String],
+            addition.get("tableTypes").asInstanceOf[java.util.List[String]]
+          )
+        case GET_TABLE_TYPES => newGetTableTypesOperation(session)
+        case GET_COLUMNS =>
+          newGetColumnsOperation(
+            session,
+            addition.get("catalogName").asInstanceOf[String],
+            addition.get("schemaName").asInstanceOf[String],
+            addition.get("tableName").asInstanceOf[String],
+            addition.get("columnName").asInstanceOf[String]
+          )
+        case GET_FUNCTIONS =>
+          newGetFunctionsOperation(
+            session,
+            addition.get("catalogName").asInstanceOf[String],
+            addition.get("schemaName").asInstanceOf[String],
+            addition.get("functionName").asInstanceOf[String]
+          )
+      }
+      operationHandle.getHandle
   }
 
   final def removeExpiredOperations(handles: Seq[OperationHandle]): Seq[Operation] = synchronized {

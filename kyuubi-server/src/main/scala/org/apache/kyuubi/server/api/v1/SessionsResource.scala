@@ -28,6 +28,7 @@ import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 
 import org.apache.kyuubi.Utils.error
 import org.apache.kyuubi.cli.HandleIdentifier
+import org.apache.kyuubi.operation.{OperationHandle, OperationType}
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.session.SessionHandle
 
@@ -107,6 +108,30 @@ private[v1] class SessionsResource extends ApiRequestContext {
     val sessionHandle = getSessionHandle(sessionHandleStr)
     backendService.closeSession(sessionHandle)
     Response.ok().build()
+  }
+
+  @POST
+  @Path("{sessionHandle}/operations")
+  @Consumes(Array(MediaType.APPLICATION_JSON))
+  def operations(@PathParam("sessionHandle") sessionHandleStr: String,
+    request: OperationRequest): OperationHandle = {
+    val operationType = try {
+      OperationType.withName(request.operation)
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Unsupported Operation type: ${request.operation}")
+    }
+
+    val addition = request.addition
+    val sessionHandle = getSessionHandle(sessionHandleStr)
+    try {
+      val manager = backendService.sessionManager
+      manager.operationManager.getOperationHandle(
+        manager.getSession(sessionHandle), operationType, request.addition)
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Error getting OperationHandle, addition: $addition.")
+    }
   }
 
   def getSessionHandle(sessionHandleStr: String): SessionHandle = {
