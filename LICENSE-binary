@@ -246,6 +246,7 @@ io.dropwizard.metrics:metrics-core
 io.dropwizard.metrics:metrics-jmx
 io.dropwizard.metrics:metrics-json
 io.dropwizard.metrics:metrics-jvm
+io.netty:netty-all
 io.prometheus:simpleclient
 io.prometheus:simpleclient_common
 io.prometheus:simpleclient_dropwizard
