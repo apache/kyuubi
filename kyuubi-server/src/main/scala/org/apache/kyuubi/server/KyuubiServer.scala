@@ -23,6 +23,8 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_PROTOCOLS, FrontendProtocols}
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols._
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.{ServiceDiscovery, ZooKeeperAuthTypes}
 import org.apache.kyuubi.metrics.{MetricsConf, MetricsSystem}
@@ -84,8 +86,15 @@ class KyuubiServer(name: String) extends Serverable(name) {
 
   override val backendService: AbstractBackendService = new KyuubiBackendService()
 
-  override val frontendServices: Seq[AbstractFrontendService] = Seq(
-    new KyuubiThriftBinaryFrontendService(this))
+  override lazy val frontendServices: Seq[AbstractFrontendService] =
+    conf.get(FRONTEND_PROTOCOLS).map(FrontendProtocols.withName).map {
+      case THRIFT_BINARY => new KyuubiThriftBinaryFrontendService(this)
+      case REST =>
+        warn("REST frontend protocol is experimental, API may change in the future.")
+        new RestFrontendService(this)
+      case other =>
+        throw new UnsupportedOperationException(s"Frontend protocol $other is not supported yet.")
+    }
 
   private val eventLoggingService: EventLoggingService = new EventLoggingService
 

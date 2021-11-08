@@ -29,9 +29,9 @@ class KyuubiServerSuite extends KyuubiFunSuite {
     val conf = KyuubiConf().set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     assert(server.getServices.isEmpty)
     assert(server.getServiceState === LATENT)
-    val e = intercept[IllegalStateException](server.frontendServices.head.connectionUrl)
-    assert(e.getMessage startsWith "Illegal Service State: LATENT")
     assert(server.getConf === null)
+    // server.frontendServices should access after initializing
+    assertThrows[NullPointerException](server.frontendServices)
 
     server.initialize(conf)
     assert(server.getServiceState === INITIALIZED)
