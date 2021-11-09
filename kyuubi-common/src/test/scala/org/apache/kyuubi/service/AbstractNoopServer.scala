@@ -19,12 +19,11 @@ package org.apache.kyuubi.service
 
 import org.apache.kyuubi.KyuubiException
 
-class NoopServer extends Serverable("noop") {
+abstract class AbstractNoopServer(name: String) extends Serverable(name) {
+
   override val backendService = new NoopBackendService
 
-  override val frontendServices: Seq[AbstractFrontendService] = {
-    Seq(new NoopThriftBinaryFrontendService(this))
-  }
+  override val frontendServices: Seq[AbstractFrontendService]
 
   override def start(): Unit = {
     super.start()
