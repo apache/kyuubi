@@ -35,7 +35,7 @@ import org.apache.kyuubi.session.SessionHandle
 
 class ThriftFrontendServiceSuite extends KyuubiFunSuite {
 
-  protected val server = new NoopServer()
+  protected val server = new NoopThriftBinaryFrontendServer()
   protected val conf = KyuubiConf()
     .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     .set("kyuubi.test.server.should.fail", "false")

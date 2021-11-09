@@ -59,5 +59,5 @@ trait WithSecuredDFSService extends KerberizedTestHelper {
     super.afterAll()
   }
 
-  def getHadoopConf(): Configuration = miniDFSService.getHadoopConf
+  def getHadoopConf: Configuration = miniDFSService.getHadoopConf
 }

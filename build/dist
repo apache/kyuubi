@@ -196,7 +196,7 @@ cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engin
 if [[ -f "$KYUUBI_HOME/tools/spark-block-cleaner/target/spark-block-cleaner_${SCALA_VERSION}-${VERSION}.jar" ]]; then
   mkdir -p "$DISTDIR/tools/spark-block-cleaner/kubernetes"
   mkdir -p "$DISTDIR/tools/spark-block-cleaner/jars"
-  cp -r "$KYUUBI_HOME/tools/spark-block-cleaner/kubernetes/" "$DISTDIR/tools/spark-block-cleaner/"
+  cp -r "$KYUUBI_HOME/tools/spark-block-cleaner/kubernetes/" "$DISTDIR/tools/spark-block-cleaner/kubernetes/"
   cp "$KYUUBI_HOME/tools/spark-block-cleaner/target/spark-block-cleaner_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/tools/spark-block-cleaner/jars/"
 fi
 

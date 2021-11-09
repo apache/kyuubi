@@ -108,7 +108,7 @@
         <hive.version>2.3.9</hive.version>
         <hudi.version>0.9.0</hudi.version>
         <iceberg.name>iceberg-spark3-runtime</iceberg.name>
-        <iceberg.version>0.12.0</iceberg.version>
+        <iceberg.version>0.12.1</iceberg.version>
         <jackson.version>2.11.4</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jaxb.version>2.2.11</jaxb.version>

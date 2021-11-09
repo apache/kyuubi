@@ -32,7 +32,7 @@ import org.scalatest.time.SpanSugar._
 import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.service.{NoopServer, Serverable, ServiceState}
+import org.apache.kyuubi.service.{NoopThriftBinaryFrontendServer, Serverable, ServiceState}
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
 class ServiceDiscoverySuite extends KerberizedTestHelper {
@@ -66,7 +66,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
       .set(HA_ZK_NAMESPACE, namespace)
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
-    val server: Serverable = new NoopServer()
+    val server: Serverable = new NoopThriftBinaryFrontendServer()
     server.initialize(conf)
     server.start()
 
@@ -165,7 +165,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
         .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
         .set(HA_ZK_AUTH_TYPE, ZooKeeperAuthTypes.NONE.toString)
 
-      val server: Serverable = new NoopServer()
+      val server: Serverable = new NoopThriftBinaryFrontendServer()
       server.initialize(conf)
       server.start()
 
