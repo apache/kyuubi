@@ -21,7 +21,6 @@ import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.session.{NoopSessionManager, SessionManager}
 
 class NoopBackendService extends AbstractBackendService("noop") {
-
   override val sessionManager: SessionManager = new NoopSessionManager()
 
   override def start(): Unit = {
