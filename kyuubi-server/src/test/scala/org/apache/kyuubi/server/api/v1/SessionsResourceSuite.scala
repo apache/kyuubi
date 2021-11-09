@@ -224,29 +224,23 @@ class SessionsResourceSuite extends KyuubiFunSuite {
         val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
           s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
 
-        val operationRequest = OperationRequest("EXECUTE_STATEMENT",
-          Map("statement" -> "show databases", "runAsync" -> true, "queryTimeout" -> 3000)
-        )
+        val request = OperationRequest("EXECUTE_STATEMENT", List("show databases", true, 3000))
         response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/operations")
-          .request().post(Entity.entity(operationRequest, MediaType.APPLICATION_JSON_TYPE))
+          .request().post(Entity.entity(request, MediaType.APPLICATION_JSON_TYPE))
         assert(200 == response.getStatus)
         val operationHandle = response.readEntity(classOf[OperationHandle])
         assert(operationHandle.typ == OperationType.EXECUTE_STATEMENT)
 
         // Invalid operationType
-        val operationRequest1 = OperationRequest("ERROR_TYPE",
-          Map("statement" -> "show databases", "runAsync" -> true, "queryTimeout" -> 3000)
-        )
+        val request1 = OperationRequest("ERROR_TYPE", List("show databases", true, 3000))
         response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/operations")
-          .request().post(Entity.entity(operationRequest1, MediaType.APPLICATION_JSON_TYPE))
+          .request().post(Entity.entity(request1, MediaType.APPLICATION_JSON_TYPE))
         assert(404 == response.getStatus)
 
         // Invalid addition
-        val operationRequest2 = OperationRequest("EXECUTE_STATEMENT",
-          Map("errorStatement" -> "show databases", "runAsync" -> true, "queryTimeout" -> 3000)
-        )
+        val request2 = OperationRequest("EXECUTE_STATEMENT", List("show databases", "error", 3000))
         response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/operations")
-          .request().post(Entity.entity(operationRequest2, MediaType.APPLICATION_JSON_TYPE))
+          .request().post(Entity.entity(request2, MediaType.APPLICATION_JSON_TYPE))
         assert(404 == response.getStatus)
     }
   }

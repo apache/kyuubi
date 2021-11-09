@@ -58,5 +58,5 @@ case class SessionOpenRequest(
 
 case class OperationRequest(
   operation: String,
-  addition: Map[String, Any]
+  addition: List[Any]
 )

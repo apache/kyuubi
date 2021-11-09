@@ -121,7 +121,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
       case NonFatal(_) =>
         throw new NotFoundException(s"Unsupported Operation type: ${request.operation}")
     }
-    
+
     val sessionHandle = getSessionHandle(sessionHandleStr)
     try {
       val manager = backendService.sessionManager
@@ -129,7 +129,8 @@ private[v1] class SessionsResource extends ApiRequestContext {
         manager.getSession(sessionHandle), operationType, addition)
     } catch {
       case NonFatal(_) =>
-        throw new NotFoundException(s"Error getting OperationHandle, addition: $addition.")
+        throw new NotFoundException(s"Error getting OperationHandle, " +
+          s"addition: ${request.addition.mkString(",")}.")
     }
   }
 

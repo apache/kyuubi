@@ -131,48 +131,51 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
   def getOperationHandle(
       session: Session,
       operationType: OperationType,
-      addition: Map[String, Any] ): OperationHandle = {
+      addition: List[Any]): OperationHandle = {
 
-      val operationHandle = operationType match {
-        case EXECUTE_STATEMENT =>
-          newExecuteStatementOperation(
-            session,
-            addition("statement").asInstanceOf[String],
-            addition("runAsync").asInstanceOf[Boolean],
-            addition("queryTimeout").asInstanceOf[Int])
-        case GET_TYPE_INFO => newGetTypeInfoOperation(session)
-        case GET_CATALOGS => newGetCatalogsOperation(session)
-        case GET_SCHEMAS =>
-          newGetSchemasOperation(
-            session,
-            addition.get("catalog").asInstanceOf[String],
-            addition.get("schema").asInstanceOf[String])
-        case GET_TABLES =>
-          newGetTablesOperation(
-            session,
-            addition.get("catalogName").asInstanceOf[String],
-            addition.get("schemaName").asInstanceOf[String],
-            addition.get("tableName").asInstanceOf[String],
-            addition.get("tableTypes").asInstanceOf[java.util.List[String]]
-          )
-        case GET_TABLE_TYPES => newGetTableTypesOperation(session)
-        case GET_COLUMNS =>
-          newGetColumnsOperation(
-            session,
-            addition.get("catalogName").asInstanceOf[String],
-            addition.get("schemaName").asInstanceOf[String],
-            addition.get("tableName").asInstanceOf[String],
-            addition.get("columnName").asInstanceOf[String]
-          )
-        case GET_FUNCTIONS =>
-          newGetFunctionsOperation(
-            session,
-            addition.get("catalogName").asInstanceOf[String],
-            addition.get("schemaName").asInstanceOf[String],
-            addition.get("functionName").asInstanceOf[String]
-          )
-      }
-      operationHandle.getHandle
+    val operationHandle = operationType match {
+      case EXECUTE_STATEMENT =>
+        newExecuteStatementOperation(
+          session,
+          addition.head.asInstanceOf[String],
+          addition(1).asInstanceOf[Boolean],
+          addition(2).asInstanceOf[Int])
+      case GET_TYPE_INFO =>
+        newGetTypeInfoOperation(session)
+      case GET_CATALOGS =>
+        newGetCatalogsOperation(session)
+      case GET_SCHEMAS =>
+        newGetSchemasOperation(
+          session,
+          addition.head.asInstanceOf[String],
+          addition(1).asInstanceOf[String])
+      case GET_TABLES =>
+        newGetTablesOperation(
+          session,
+          addition.head.asInstanceOf[String],
+          addition(1).asInstanceOf[String],
+          addition(2).asInstanceOf[String],
+          addition(3).asInstanceOf[java.util.List[String]]
+        )
+      case GET_TABLE_TYPES =>
+        newGetTableTypesOperation(session)
+      case GET_COLUMNS =>
+        newGetColumnsOperation(
+          session,
+          addition.head.asInstanceOf[String],
+          addition(1).asInstanceOf[String],
+          addition(2).asInstanceOf[String],
+          addition(3).asInstanceOf[String]
+        )
+      case GET_FUNCTIONS =>
+        newGetFunctionsOperation(
+          session,
+          addition.head.asInstanceOf[String],
+          addition(1).asInstanceOf[String],
+          addition(2).asInstanceOf[String]
+        )
+    }
+    operationHandle.getHandle
   }
 
   final def removeExpiredOperations(handles: Seq[OperationHandle]): Seq[Operation] = synchronized {
