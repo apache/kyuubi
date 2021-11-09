@@ -197,19 +197,6 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
-
-        <!-- Remove after voting -->
-        <repository>
-            <id>iceberg-staging</id>
-            <name>Iceberg Staging</name>
-            <url>https://repository.apache.org/content/repositories/orgapacheiceberg-1019/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
     </repositories>
 
     <pluginRepositories>
