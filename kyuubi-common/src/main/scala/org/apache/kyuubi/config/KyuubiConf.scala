@@ -254,6 +254,26 @@ object KyuubiConf {
   //                              Frontend Service Configuration                                 //
   /////////////////////////////////////////////////////////////////////////////////////////////////
 
+  object FrontendProtocols extends Enumeration {
+    type FrontendProtocol = Value
+    val THRIFT_BINARY, REST = Value
+  }
+
+  val FRONTEND_PROTOCOLS: ConfigEntry[Seq[String]] =
+    buildConf("frontend.protocols")
+      .doc("A comma separated list for all frontend protocols " +
+        "<ul>" +
+        " <li>THRIFT_BINARY - HiveServer2 compatible thrift binary protocol.</li>" +
+        " <li>REST - Kyuubi defined REST API(experimental).</li> " +
+        "</ul>")
+      .version("1.4.0")
+      .stringConf
+      .toSequence()
+      .transform(_.map(_.toUpperCase(Locale.ROOT)))
+      .checkValue(_.forall(FrontendProtocols.values.map(_.toString).contains),
+        s"the frontend protocol should be one or more of ${FrontendProtocols.values.mkString(",")}")
+      .createWithDefault(Seq(FrontendProtocols.THRIFT_BINARY.toString))
+
   @deprecated(s"using ${FRONTEND_THRIFT_BINARY_BIND_HOST.key} instead", "1.4.0")
   val FRONTEND_BIND_HOST: OptionalConfigEntry[String] = buildConf("frontend.bind.host")
     .doc("(deprecated) Hostname or IP of the machine on which to run the thrift frontend service " +
