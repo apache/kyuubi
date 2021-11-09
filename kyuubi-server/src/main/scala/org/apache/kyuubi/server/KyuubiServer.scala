@@ -91,7 +91,7 @@ class KyuubiServer(name: String) extends Serverable(name) {
       case THRIFT_BINARY => new KyuubiThriftBinaryFrontendService(this)
       case REST =>
         warn("REST frontend protocol is experimental, API may change in the future.")
-        new RestFrontendService(this)
+        new KyuubiRestFrontendService(this)
       case other =>
         throw new UnsupportedOperationException(s"Frontend protocol $other is not supported yet.")
     }
