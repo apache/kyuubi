@@ -23,6 +23,7 @@ import javax.ws.rs.core.{MediaType, Response}
 import scala.concurrent.duration._
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
+import org.apache.kyuubi.operation.{OperationHandle, OperationType}
 import org.apache.kyuubi.session.SessionHandle
 
 class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
@@ -194,6 +195,40 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(404 == response.getStatus)
       response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/info/str")
         .request().get()
+      assert(404 == response.getStatus)
+    }
+  }
+
+  test("test get operations") {
+    val requestObj = SessionOpenRequest(
+      1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
+
+    withKyuubiRestServer { (_, _, _, webTarget) =>
+      var response: Response = webTarget.path("api/v1/sessions")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+
+      val sessionHandle = response.readEntity(classOf[SessionHandle])
+      val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
+        s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
+
+      val request = OperationRequest("EXECUTE_STATEMENT", List("show databases", true, 3000))
+      response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/operations")
+        .request().post(Entity.entity(request, MediaType.APPLICATION_JSON_TYPE))
+      assert(200 == response.getStatus)
+      val operationHandle = response.readEntity(classOf[OperationHandle])
+      assert(operationHandle.typ == OperationType.EXECUTE_STATEMENT)
+
+      // Invalid operationType
+      val request1 = OperationRequest("ERROR_TYPE", List("show databases", true, 3000))
+      response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/operations")
+        .request().post(Entity.entity(request1, MediaType.APPLICATION_JSON_TYPE))
+      assert(404 == response.getStatus)
+
+      // Invalid addition
+      val request2 = OperationRequest("EXECUTE_STATEMENT", List("show databases", "error", 3000))
+      response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/operations")
+        .request().post(Entity.entity(request2, MediaType.APPLICATION_JSON_TYPE))
       assert(404 == response.getStatus)
     }
   }

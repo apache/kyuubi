@@ -29,6 +29,7 @@ import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 import org.apache.kyuubi.Utils.error
 import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.operation.{OperationHandle, OperationType}
+import org.apache.kyuubi.operation.OperationType._
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.session.SessionHandle
 
@@ -124,9 +125,48 @@ private[v1] class SessionsResource extends ApiRequestContext {
 
     val sessionHandle = getSessionHandle(sessionHandleStr)
     try {
-      val manager = backendService.sessionManager
-      manager.operationManager.getOperationHandle(
-        manager.getSession(sessionHandle), operationType, addition)
+      operationType match {
+        case EXECUTE_STATEMENT =>
+          backendService.executeStatement(
+            sessionHandle,
+            addition.head.asInstanceOf[String],
+            addition(1).asInstanceOf[Boolean],
+            addition(2).asInstanceOf[Int])
+        case GET_TYPE_INFO =>
+          backendService.getTypeInfo(sessionHandle)
+        case GET_CATALOGS =>
+          backendService.getCatalogs(sessionHandle)
+        case GET_SCHEMAS =>
+          backendService.getSchemas(
+            sessionHandle,
+            addition.head.asInstanceOf[String],
+            addition(1).asInstanceOf[String])
+        case GET_TABLES =>
+          backendService.getTables(
+            sessionHandle,
+            addition.head.asInstanceOf[String],
+            addition(1).asInstanceOf[String],
+            addition(2).asInstanceOf[String],
+            addition(3).asInstanceOf[java.util.List[String]]
+          )
+        case GET_TABLE_TYPES =>
+          backendService.getTableTypes(sessionHandle)
+        case GET_COLUMNS =>
+          backendService.getColumns(
+            sessionHandle,
+            addition.head.asInstanceOf[String],
+            addition(1).asInstanceOf[String],
+            addition(2).asInstanceOf[String],
+            addition(3).asInstanceOf[String]
+          )
+        case GET_FUNCTIONS =>
+          backendService.getFunctions(
+            sessionHandle,
+            addition.head.asInstanceOf[String],
+            addition(1).asInstanceOf[String],
+            addition(2).asInstanceOf[String]
+          )
+      }
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(s"Error getting OperationHandle, " +

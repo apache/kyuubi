@@ -23,7 +23,6 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
-import org.apache.kyuubi.operation.OperationType._
 import org.apache.kyuubi.operation.log.LogDivertAppender
 import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.session.Session
@@ -125,57 +124,6 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
     operationLog.map(_.read(maxRows)).getOrElse{
       throw KyuubiSQLException(s"$opHandle failed to generate operation log")
     }
-  }
-
-  @throws[KyuubiSQLException]
-  def getOperationHandle(
-      session: Session,
-      operationType: OperationType,
-      addition: List[Any]): OperationHandle = {
-
-    val operationHandle = operationType match {
-      case EXECUTE_STATEMENT =>
-        newExecuteStatementOperation(
-          session,
-          addition.head.asInstanceOf[String],
-          addition(1).asInstanceOf[Boolean],
-          addition(2).asInstanceOf[Int])
-      case GET_TYPE_INFO =>
-        newGetTypeInfoOperation(session)
-      case GET_CATALOGS =>
-        newGetCatalogsOperation(session)
-      case GET_SCHEMAS =>
-        newGetSchemasOperation(
-          session,
-          addition.head.asInstanceOf[String],
-          addition(1).asInstanceOf[String])
-      case GET_TABLES =>
-        newGetTablesOperation(
-          session,
-          addition.head.asInstanceOf[String],
-          addition(1).asInstanceOf[String],
-          addition(2).asInstanceOf[String],
-          addition(3).asInstanceOf[java.util.List[String]]
-        )
-      case GET_TABLE_TYPES =>
-        newGetTableTypesOperation(session)
-      case GET_COLUMNS =>
-        newGetColumnsOperation(
-          session,
-          addition.head.asInstanceOf[String],
-          addition(1).asInstanceOf[String],
-          addition(2).asInstanceOf[String],
-          addition(3).asInstanceOf[String]
-        )
-      case GET_FUNCTIONS =>
-        newGetFunctionsOperation(
-          session,
-          addition.head.asInstanceOf[String],
-          addition(1).asInstanceOf[String],
-          addition(2).asInstanceOf[String]
-        )
-    }
-    operationHandle.getHandle
   }
 
   final def removeExpiredOperations(handles: Seq[OperationHandle]): Seq[Operation] = synchronized {
