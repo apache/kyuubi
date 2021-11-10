@@ -57,7 +57,6 @@ abstract class KyuubiOperation(
           MetricsSystem.tracing {
             _.incCount(MetricRegistry.name(STATEMENT_FAIL, errorType))
           }
-          setState(OperationState.ERROR)
           val ke = e match {
             case kse: KyuubiSQLException => kse
             case te: TTransportException if te.getType == TTransportException.END_OF_FILE &&
@@ -69,6 +68,7 @@ abstract class KyuubiOperation(
               KyuubiSQLException(s"Error $action $opType: ${Utils.stringifyException(e)}", e)
           }
           setOperationException(ke)
+          setState(OperationState.ERROR)
           throw ke
         }
       }

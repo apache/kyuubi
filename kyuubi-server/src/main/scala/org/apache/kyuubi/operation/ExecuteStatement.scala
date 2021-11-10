@@ -41,11 +41,8 @@ class ExecuteStatement(
     override val statement: String,
     override val shouldRunAsync: Boolean,
     queryTimeout: Long)
-  extends KyuubiOperation(
-    OperationType.EXECUTE_STATEMENT, session, client) {
-
-  val statementEvent: KyuubiStatementEvent =
-    KyuubiStatementEvent(this, statementId, state, lastAccessTime)
+  extends KyuubiOperation(OperationType.EXECUTE_STATEMENT, session, client) {
+  EventLoggingService.onEvent(KyuubiStatementEvent(this))
 
   private final val _operationLog: OperationLog = if (shouldRunAsync) {
     OperationLog.createOperationLog(session, getHandle)
@@ -58,8 +55,6 @@ class ExecuteStatement(
   }
 
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)
-
-  EventLoggingService.onEvent(statementEvent)
 
   override def beforeRun(): Unit = {
     OperationLog.setCurrentOperationLog(_operationLog)
@@ -180,15 +175,7 @@ class ExecuteStatement(
 
   override def setState(newState: OperationState): Unit = {
     super.setState(newState)
-    statementEvent.state = newState.toString
-    statementEvent.stateTime = lastAccessTime
-    EventLoggingService.onEvent(statementEvent)
-  }
-
-  override def setOperationException(opEx: KyuubiSQLException): Unit = {
-    super.setOperationException(opEx)
-    statementEvent.exception = opEx.toString
-    EventLoggingService.onEvent(statementEvent)
+    EventLoggingService.onEvent(KyuubiStatementEvent(this))
   }
 
   override def close(): Unit = {
