@@ -18,7 +18,7 @@
 package org.apache.kyuubi.events
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.operation.ExecuteStatement
+import org.apache.kyuubi.operation.{ExecuteStatement, OperationHandle}
 
 /**
  * A [[KyuubiStatementEvent]] used to tracker the lifecycle of a statement at server side.
@@ -29,6 +29,7 @@ import org.apache.kyuubi.operation.ExecuteStatement
  * </ul>
  *
  * @param statementId the unique identifier of a single statement
+ * @param remoteId the unique identifier of a single statement at engine side
  * @param statement the sql that you execute
  * @param shouldRunAsync the flag indicating whether the query runs synchronously or not
  * @param state the current operation state
@@ -42,6 +43,7 @@ import org.apache.kyuubi.operation.ExecuteStatement
  */
 case class KyuubiStatementEvent private (
     statementId: String,
+    remoteId: String,
     statement: String,
     shouldRunAsync: Boolean,
     state: String,
@@ -69,6 +71,7 @@ object KyuubiStatementEvent {
     val status = statement.getStatus
     new KyuubiStatementEvent(
       statement.getHandle.identifier.toString,
+      Option(statement.remoteOpHandle()).map(OperationHandle(_).identifier.toString).orNull,
       statement.statement,
       statement.shouldRunAsync,
       status.state.name(),
