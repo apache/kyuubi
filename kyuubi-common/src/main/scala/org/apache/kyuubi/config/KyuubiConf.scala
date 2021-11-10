@@ -136,6 +136,8 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     FRONTEND_THRIFT_BINARY_BIND_PORT,
     FRONTEND_REST_BIND_HOST,
     FRONTEND_REST_BIND_PORT,
+    FRONTEND_MYSQL_BIND_HOST,
+    FRONTEND_MYSQL_BIND_PORT,
     AUTHENTICATION_METHOD,
     KINIT_INTERVAL)
 
@@ -498,6 +500,67 @@ object KyuubiConf {
     .intConf
     .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
     .createWithDefault(10099)
+
+  val FRONTEND_MYSQL_BIND_HOST: OptionalConfigEntry[String] = buildConf("frontend.mysql.bind.host")
+    .doc("Hostname or IP of the machine on which to run the MySQL frontend service.")
+    .version("1.4.0")
+    .stringConf
+    .createOptional
+
+  val FRONTEND_MYSQL_BIND_PORT: ConfigEntry[Int] = buildConf("frontend.mysql.bind.port")
+    .doc("Port of the machine on which to run the MySQL frontend service.")
+    .version("1.4.0")
+    .intConf
+    .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
+    .createWithDefault(3309)
+
+  val FRONTEND_MYSQL_NETTY_BOSS_THREADS: ConfigEntry[Int] =
+    buildConf("frontend.mysql.netty.boss.threads")
+      .doc("Thread number in the netty boss event loop of MySQL frontend service")
+      .version("1.4.0")
+      .intConf
+      .checkValue(n => n > 0 && n <= 64,
+        "Invalid thread number, must in (0, 64]")
+      .createWithDefault(1)
+
+  val FRONTEND_MYSQL_NETTY_WORKER_THREADS: ConfigEntry[Int] =
+    buildConf("frontend.mysql.netty.worker.threads")
+      .doc("Number of thread in the netty worker event loop of MySQL frontend service")
+      .version("1.4.0")
+      .intConf
+      .checkValue(n => n > 0 && n <= 64,
+        "Invalid thread number, must in (0, 64]")
+      .createWithDefault(4)
+
+  val FRONTEND_MYSQL_EXEC_POOL_SIZE: ConfigEntry[Int] =
+    buildConf("frontend.mysql.exec.pool.size")
+      .doc("Number of threads in the command execution thread pool in MySQL frontend service")
+      .version("1.4.0")
+      .intConf
+      .createWithDefault(100)
+
+  val FRONTEND_MYSQL_EXEC_WAIT_QUEUE_SIZE: ConfigEntry[Int] =
+    buildConf("frontend.mysql.exec.pool.wait.queue.size")
+      .doc("Size of the wait queue for the command execution thread pool in MySQL frontend service")
+      .version("1.4.0")
+      .intConf
+      .createWithDefault(100)
+
+  val FRONTEND_MYSQL_EXEC_KEEPALIVE_TIME: ConfigEntry[Long] =
+    buildConf("frontend.mysql.exec.pool.keepalive.time")
+      .doc("Time(ms) that an idle async thread of the command execution thread pool will wait" +
+        " for a new task to arrive before terminating in MySQL frontend service")
+      .version("1.4.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(60).toMillis)
+
+  val FRONTEND_MYSQL_EXEC_POOL_SHUTDOWN_TIMEOUT: ConfigEntry[Long] =
+    buildConf("frontend.mysql.exec.pool.shutdown.timeout")
+      .doc("Timeout(ms) for the command execution thread pool to terminate in MySQL" +
+        " frontend service")
+      .version("1.4.0")
+      .timeConf
+      .createWithDefault(Duration.ofSeconds(10).toMillis)
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //
