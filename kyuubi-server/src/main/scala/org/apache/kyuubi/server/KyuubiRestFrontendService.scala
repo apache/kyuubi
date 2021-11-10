@@ -36,10 +36,10 @@ import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
 class KyuubiRestFrontendService(override val serverable: Serverable)
   extends AbstractFrontendService("RestFrontendService") with Logging {
 
-  var serverAddr: InetAddress = _
-  var portNum: Int = _
-  var jettyServer: Server = _
-  var connector: ServerConnector = _
+  private var serverAddr: InetAddress = _
+  private var portNum: Int = _
+  private var jettyServer: Server = _
+  private var connector: ServerConnector = _
 
   @volatile protected var isStarted = false
 
@@ -84,13 +84,13 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       try {
         connector.start()
         jettyServer.start()
+        isStarted = true
         info(s"Rest frontend service jetty server has started at ${jettyServer.getURI}.")
       } catch {
         case rethrow: Exception =>
           stopHttpServer()
           throw new KyuubiException("Cannot start rest frontend service jetty server", rethrow)
       }
-      isStarted = true
     }
 
     super.start()

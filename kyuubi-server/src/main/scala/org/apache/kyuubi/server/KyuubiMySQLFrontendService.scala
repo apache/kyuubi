@@ -42,9 +42,8 @@ class KyuubiMySQLFrontendService(override val serverable: Serverable)
 
   private var execPool: ThreadPoolExecutor = _
 
-  var serverAddr: InetAddress = _
-  var port: Int = _
-
+  private var serverAddr: InetAddress = _
+  private var port: Int = _
   private var bootstrap: ServerBootstrap = _
   private var bindFuture: ChannelFuture = _
 
@@ -93,12 +92,12 @@ class KyuubiMySQLFrontendService(override val serverable: Serverable)
         bindFuture = bootstrap.bind(serverAddr, port)
         bindFuture.syncUninterruptibly
         port = bindFuture.channel.localAddress.asInstanceOf[InetSocketAddress].getPort
+        isStarted = true
         info(s"MySQL frontend service has started at $connectionUrl.")
       } catch {
         case rethrow: Exception =>
           throw new KyuubiException("Cannot start MySQL frontend service Netty server", rethrow)
       }
-      isStarted = true
     }
     super.start()
   }
