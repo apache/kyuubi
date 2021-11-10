@@ -57,7 +57,7 @@ trait RestFrontendTestHelper {
     val server = new NoopRestFrontendServer()
     server.stop()
     val conf = KyuubiConf()
-    conf.set(KyuubiConf.FRONTEND_REST_BIND_HOST, restFrontendHost)
+    conf.set(KyuubiConf.FRONTEND_REST_BIND_HOST, Some(restFrontendHost))
 
     server.initialize(conf)
     server.start()

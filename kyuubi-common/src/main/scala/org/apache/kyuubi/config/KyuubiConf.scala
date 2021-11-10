@@ -27,6 +27,7 @@ import scala.collection.JavaConverters._
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.engine.{EngineType, ShareLevel}
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
+import org.apache.kyuubi.util.NettyUtils.MAX_NETTY_THREADS
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   import KyuubiConf._
@@ -302,9 +303,9 @@ object KyuubiConf {
 
   val FRONTEND_THRIFT_BINARY_BIND_PORT: ConfigEntry[Int] =
     buildConf("frontend.thrift.binary.bind.port")
-    .doc("Port of the machine on which to run the thrift frontend service via binary protocol.")
-    .version("1.4.0")
-    .fallbackConf(FRONTEND_BIND_PORT)
+      .doc("Port of the machine on which to run the thrift frontend service via binary protocol.")
+      .version("1.4.0")
+      .fallbackConf(FRONTEND_BIND_PORT)
 
   @deprecated(s"using ${FRONTEND_THRIFT_MIN_WORKER_THREADS.key} instead", "1.4.0")
   val FRONTEND_MIN_WORKER_THREADS: ConfigEntry[Int] = buildConf("frontend.min.worker.threads")
@@ -350,7 +351,7 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_WORKER_KEEPALIVE_TIME)
 
-  @deprecated(s"using ${FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME.key} instead", "1.4.0")
+  @deprecated(s"using ${FRONTEND_THRIFT_MAX_MESSAGE_SIZE.key} instead", "1.4.0")
   val FRONTEND_MAX_MESSAGE_SIZE: ConfigEntry[Int] =
     buildConf("frontend.max.message.size")
       .doc("(deprecated) Maximum message size in bytes a Kyuubi server will accept.")
@@ -488,11 +489,11 @@ object KyuubiConf {
     .transform(_.toLowerCase(Locale.ROOT))
     .createWithDefault(SaslQOP.AUTH.toString)
 
-  val FRONTEND_REST_BIND_HOST: OptionalConfigEntry[String] = buildConf("frontend.rest.bind.host")
-    .doc("Hostname or IP of the machine on which to run the REST frontend service.")
-    .version("1.4.0")
-    .stringConf
-    .createOptional
+  val FRONTEND_REST_BIND_HOST: ConfigEntry[Option[String]] =
+    buildConf("frontend.rest.bind.host")
+      .doc("Hostname or IP of the machine on which to run the REST frontend service.")
+      .version("1.4.0")
+      .fallbackConf(FRONTEND_BIND_HOST)
 
   val FRONTEND_REST_BIND_PORT: ConfigEntry[Int] = buildConf("frontend.rest.bind.port")
     .doc("Port of the machine on which to run the REST frontend service.")
@@ -501,11 +502,11 @@ object KyuubiConf {
     .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
     .createWithDefault(10099)
 
-  val FRONTEND_MYSQL_BIND_HOST: OptionalConfigEntry[String] = buildConf("frontend.mysql.bind.host")
-    .doc("Hostname or IP of the machine on which to run the MySQL frontend service.")
-    .version("1.4.0")
-    .stringConf
-    .createOptional
+  val FRONTEND_MYSQL_BIND_HOST: ConfigEntry[Option[String]] =
+    buildConf("frontend.mysql.bind.host")
+      .doc("Hostname or IP of the machine on which to run the MySQL frontend service.")
+      .version("1.4.0")
+      .fallbackConf(FRONTEND_BIND_HOST)
 
   val FRONTEND_MYSQL_BIND_PORT: ConfigEntry[Int] = buildConf("frontend.mysql.bind.port")
     .doc("Port of the machine on which to run the MySQL frontend service.")
@@ -514,49 +515,35 @@ object KyuubiConf {
     .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
     .createWithDefault(3309)
 
-  val FRONTEND_MYSQL_NETTY_BOSS_THREADS: ConfigEntry[Int] =
-    buildConf("frontend.mysql.netty.boss.threads")
-      .doc("Thread number in the netty boss event loop of MySQL frontend service")
-      .version("1.4.0")
-      .intConf
-      .createWithDefault(1)
-
-  val FRONTEND_MYSQL_NETTY_WORKER_THREADS: ConfigEntry[Int] =
+  val FRONTEND_MYSQL_NETTY_WORKER_THREADS: OptionalConfigEntry[Int] =
     buildConf("frontend.mysql.netty.worker.threads")
       .doc("Number of thread in the netty worker event loop of MySQL frontend service")
       .version("1.4.0")
       .intConf
-      .createWithDefault(4)
+      .checkValue(n => n > 0 && n <= MAX_NETTY_THREADS,
+        s"Invalid thread number, must in (0, $MAX_NETTY_THREADS]")
+      .createOptional
 
-  val FRONTEND_MYSQL_EXEC_POOL_SIZE: ConfigEntry[Int] =
-    buildConf("frontend.mysql.exec.pool.size")
-      .doc("Number of threads in the command execution thread pool in MySQL frontend service")
+  val FRONTEND_MYSQL_MIN_WORKER_THREADS: ConfigEntry[Int] =
+    buildConf("frontend.mysql.min.worker.threads")
+      .doc("Minimum number of threads in the command execution thread pool for the MySQL " +
+        "frontend service")
       .version("1.4.0")
-      .intConf
-      .createWithDefault(100)
+      .fallbackConf(FRONTEND_MIN_WORKER_THREADS)
 
-  val FRONTEND_MYSQL_EXEC_WAIT_QUEUE_SIZE: ConfigEntry[Int] =
-    buildConf("frontend.mysql.exec.pool.wait.queue.size")
-      .doc("Size of the wait queue for the command execution thread pool in MySQL frontend service")
+  val FRONTEND_MYSQL_MAX_WORKER_THREADS: ConfigEntry[Int] =
+    buildConf("frontend.mysql.max.worker.threads")
+      .doc("Maximum number of threads in the command execution thread pool for the MySQL " +
+        "frontend service")
       .version("1.4.0")
-      .intConf
-      .createWithDefault(100)
+      .fallbackConf(FRONTEND_MAX_WORKER_THREADS)
 
-  val FRONTEND_MYSQL_EXEC_KEEPALIVE_TIME: ConfigEntry[Long] =
-    buildConf("frontend.mysql.exec.pool.keepalive.time")
+  val FRONTEND_MYSQL_WORKER_KEEPALIVE_TIME: ConfigEntry[Long] =
+    buildConf("frontend.mysql.worker.keepalive.time")
       .doc("Time(ms) that an idle async thread of the command execution thread pool will wait" +
         " for a new task to arrive before terminating in MySQL frontend service")
       .version("1.4.0")
-      .timeConf
-      .createWithDefault(Duration.ofSeconds(60).toMillis)
-
-  val FRONTEND_MYSQL_EXEC_POOL_SHUTDOWN_TIMEOUT: ConfigEntry[Long] =
-    buildConf("frontend.mysql.exec.pool.shutdown.timeout")
-      .doc("Timeout(ms) for the command execution thread pool to terminate in MySQL" +
-        " frontend service")
-      .version("1.4.0")
-      .timeConf
-      .createWithDefault(Duration.ofSeconds(10).toMillis)
+      .fallbackConf(FRONTEND_WORKER_KEEPALIVE_TIME)
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //

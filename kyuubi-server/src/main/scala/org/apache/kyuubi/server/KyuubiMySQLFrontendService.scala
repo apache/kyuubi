@@ -23,16 +23,15 @@ import java.util.concurrent.{ThreadPoolExecutor, TimeUnit}
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.PooledByteBufAllocator
 import io.netty.channel.{ChannelFuture, ChannelInitializer, ChannelOption}
-import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.SocketChannel
-import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.logging.{LoggingHandler, LogLevel}
 
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
-import org.apache.kyuubi.util.{NamedThreadFactory, ThreadUtils}
+import org.apache.kyuubi.util.ExecutorPoolCaptureOom
+import org.apache.kyuubi.util.NettyUtils._
 
 /**
  * A frontend service implement MySQL protocol.
@@ -49,26 +48,28 @@ class KyuubiMySQLFrontendService(override val serverable: Serverable)
 
   @volatile protected var isStarted = false
 
+  protected def oomHook: Runnable = () => serverable.stop()
+
   override def initialize(conf: KyuubiConf): Unit = synchronized {
-    val poolSize = conf.get(FRONTEND_MYSQL_EXEC_POOL_SIZE)
-    val waitQueueSize = conf.get(FRONTEND_MYSQL_EXEC_WAIT_QUEUE_SIZE)
-    val keepAliveMs = conf.get(FRONTEND_MYSQL_EXEC_KEEPALIVE_TIME)
-    execPool = ThreadUtils.newDaemonQueuedThreadPool(
-      poolSize, waitQueueSize, keepAliveMs, "mysql-exec-pool")
+    val minThreads = conf.get(FRONTEND_MYSQL_MIN_WORKER_THREADS)
+    val maxThreads = conf.get(FRONTEND_MYSQL_MAX_WORKER_THREADS)
+    val keepAliveMs = conf.get(FRONTEND_MYSQL_WORKER_KEEPALIVE_TIME)
+    execPool = ExecutorPoolCaptureOom(
+      "mysql-exec-pool",
+      minThreads, maxThreads,
+      keepAliveMs,
+      oomHook)
 
     serverAddr = conf.get(FRONTEND_MYSQL_BIND_HOST)
       .map(InetAddress.getByName)
       .getOrElse(Utils.findLocalInetAddress)
     port = conf.get(FRONTEND_MYSQL_BIND_PORT)
-    val bossThreads = conf.get(FRONTEND_MYSQL_NETTY_BOSS_THREADS)
-    val workerThreads = conf.get(FRONTEND_MYSQL_NETTY_WORKER_THREADS)
-    val bossGroup = new NioEventLoopGroup(
-      bossThreads, new NamedThreadFactory("mysql-netty-boss", false))
-    val workerGroup = new NioEventLoopGroup(
-      workerThreads, new NamedThreadFactory("mysql-netty-worker", false))
+    val workerThreads = defaultNumThreads(conf.get(FRONTEND_MYSQL_NETTY_WORKER_THREADS))
+    val bossGroup = createEventLoop(1, "mysql-netty-boss")
+    val workerGroup = createEventLoop(workerThreads, "mysql-netty-worker")
     bootstrap = new ServerBootstrap()
       .group(bossGroup, workerGroup)
-      .channel(classOf[NioServerSocketChannel])
+      .channel(SERVER_CHANNEL_CLASS)
       .option(ChannelOption.SO_BACKLOG, Int.box(128))
       .option(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
       .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
