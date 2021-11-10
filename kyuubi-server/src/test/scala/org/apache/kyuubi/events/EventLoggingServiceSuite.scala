@@ -48,7 +48,7 @@ class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper 
 
   override protected def jdbcUrl: String = getJdbcUrl
 
-  test("statementEvent: generate, dump and query") {
+  test("round-trip for logging and querying statement events for both kyuubi server and engine") {
     val hostName = InetAddress.getLocalHost.getCanonicalHostName
     val serverStatementEventPath =
       Paths.get(serverLogRoot, "kyuubi_statement", s"day=$currentDate", s"server-$hostName.json")
@@ -58,7 +58,6 @@ class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper 
 
     withJdbcStatement() { statement =>
       statement.execute(sql)
-
       // check server statement events
       val serverTable = serverStatementEventPath.getParent
       val resultSet = statement.executeQuery(s"SELECT * FROM `json`.`${serverTable}`" +
@@ -66,9 +65,11 @@ class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper 
       val states = Array(INITIALIZED, PENDING, RUNNING, FINISHED, CLOSED)
       var stateIndex = 0
       while (resultSet.next()) {
-        assert(resultSet.getString("user") == Utils.currentUser)
-        assert(resultSet.getString("statement") == sql)
-        assert(resultSet.getString("state") == states(stateIndex).toString)
+        assert(resultSet.getString("statement") === sql)
+        assert(resultSet.getString("shouldRunAsync") === "true")
+        assert(resultSet.getString("state") === states(stateIndex).name())
+        assert(resultSet.getString("exception") === null)
+        assert(resultSet.getString("sessionUser") === Utils.currentUser)
         stateIndex += 1
       }
 

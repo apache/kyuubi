@@ -18,49 +18,69 @@
 package org.apache.kyuubi.events
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.operation.ExecuteStatement
-import org.apache.kyuubi.operation.OperationState.OperationState
+import org.apache.kyuubi.operation.{ExecuteStatement, OperationHandle}
 
 /**
+ * A [[KyuubiStatementEvent]] used to tracker the lifecycle of a statement at server side.
+ * <ul>
+ *   <li>Statement Basis</li>
+ *   <li>Statement Live Status</li>
+ *   <li>Parent Session Id</li>
+ * </ul>
  *
- * @param user: who connect to kyuubi server
- * @param statementId: the identifier of operationHandler
- * @param statement: the sql that you execute
- * @param remoteIp: the ip of user
- * @param sessionId: the identifier of a session
- * @param createTime: the create time of this statement
- * @param state: store each state that the sql has
- * @param stateTime: the time that the sql's state change
+ * @param statementId the unique identifier of a single statement
+ * @param remoteId the unique identifier of a single statement at engine side
+ * @param statement the sql that you execute
+ * @param shouldRunAsync the flag indicating whether the query runs synchronously or not
+ * @param state the current operation state
+ * @param eventTime the time when the event created & logged
+ * @param createTime the time for changing to the current operation state
+ * @param startTime the time the query start to time of this statement
+ * @param completeTime time time the query ends
  * @param exception: caught exception if have
+ * @param sessionId the identifier of the parent session
+ * @param sessionUser the authenticated client user
  */
-case class KyuubiStatementEvent(
-    user: String,
+case class KyuubiStatementEvent private (
     statementId: String,
+    remoteId: String,
     statement: String,
-    remoteIp: String,
-    sessionId: String,
+    shouldRunAsync: Boolean,
+    state: String,
+    eventTime: Long,
     createTime: Long,
-    var state: String,
-    var stateTime: Long,
-    var exception: String = "") extends KyuubiServerEvent {
+    startTime: Long,
+    completeTime: Long,
+    exception: Option[Throwable],
+    sessionId: String,
+    sessionUser: String) extends KyuubiServerEvent {
+
+  // statement events are partitioned by the date when the corresponding operations are
+  // created.
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(createTime)) :: Nil
 }
 
 object KyuubiStatementEvent {
-  def apply(statement: ExecuteStatement,
-      statementId: String,
-      state: OperationState,
-      stateTime: Long): KyuubiStatementEvent = {
+
+  /**
+   * Shorthand for instantiating a statement event with a [[ExecuteStatement]] instance
+   */
+  def apply(statement: ExecuteStatement): KyuubiStatementEvent = {
     val session = statement.getSession
+    val status = statement.getStatus
     new KyuubiStatementEvent(
-      session.user,
-      statementId,
+      statement.getHandle.identifier.toString,
+      Option(statement.remoteOpHandle()).map(OperationHandle(_).identifier.toString).orNull,
       statement.statement,
-      session.ipAddress,
+      statement.shouldRunAsync,
+      status.state.name(),
+      status.lastModified,
+      status.create,
+      status.start,
+      status.completed,
+      status.exception,
       session.handle.identifier.toString,
-      stateTime,
-      state.toString,
-      stateTime)
+      session.user)
   }
 }
