@@ -22,10 +22,14 @@ import javax.security.auth.login.Configuration
 
 import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
 import org.apache.curator.retry._
+import org.apache.curator.utils.ZKPaths
 import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hadoop.security.token.delegation.ZKDelegationTokenSecretManager.JaasConfiguration
+import org.apache.zookeeper.CreateMode.PERSISTENT
+import org.apache.zookeeper.KeeperException
+import org.apache.zookeeper.KeeperException.NodeExistsException
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
@@ -54,6 +58,35 @@ object ZooKeeperClientProvider extends Logging {
         new BoundedExponentialBackoffRetry(baseSleepTime, maxSleepTime, maxRetries)
       case UNTIL_ELAPSED => new RetryUntilElapsed(maxSleepTime, baseSleepTime)
       case _ => new ExponentialBackoffRetry(baseSleepTime, maxRetries)
+    }
+    val chrootIndex = connectionStr.indexOf("/")
+    val chrootOption = {
+      if (chrootIndex > 0) Some(connectionStr.substring(chrootIndex))
+      else None
+    }
+    // make sure zookeeper chroot path exists
+    chrootOption.foreach { chroot =>
+      val zkConnectionForChrootCreation = connectionStr.substring(0, chrootIndex)
+      val clonedConf = KyuubiConf(false)
+      clonedConf.set(HA_ZK_QUORUM, zkConnectionForChrootCreation)
+      val zkClient = buildZookeeperClient(clonedConf)
+      zkClient.start()
+      if (zkClient.checkExists().forPath(chroot) == null) {
+        val chrootPath = ZKPaths.makePath(null, chroot)
+        try {
+          zkClient
+            .create()
+            .creatingParentsIfNeeded()
+            .withMode(PERSISTENT)
+            .forPath(chrootPath)
+        } catch {
+          case _: NodeExistsException => // do nothing
+          case e: KeeperException =>
+            throw new KyuubiException(s"Failed to create chroot path '$chrootPath'", e)
+        }
+        info(s"Created zookeeper chroot path $chrootPath")
+      }
+      zkClient.close()
     }
     val builder = CuratorFrameworkFactory.builder()
       .connectString(connectionStr)
