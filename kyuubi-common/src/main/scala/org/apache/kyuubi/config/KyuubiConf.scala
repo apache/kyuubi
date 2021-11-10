@@ -519,8 +519,6 @@ object KyuubiConf {
       .doc("Thread number in the netty boss event loop of MySQL frontend service")
       .version("1.4.0")
       .intConf
-      .checkValue(n => n > 0 && n <= 64,
-        "Invalid thread number, must in (0, 64]")
       .createWithDefault(1)
 
   val FRONTEND_MYSQL_NETTY_WORKER_THREADS: ConfigEntry[Int] =
@@ -528,8 +526,6 @@ object KyuubiConf {
       .doc("Number of thread in the netty worker event loop of MySQL frontend service")
       .version("1.4.0")
       .intConf
-      .checkValue(n => n > 0 && n <= 64,
-        "Invalid thread number, must in (0, 64]")
       .createWithDefault(4)
 
   val FRONTEND_MYSQL_EXEC_POOL_SIZE: ConfigEntry[Int] =
