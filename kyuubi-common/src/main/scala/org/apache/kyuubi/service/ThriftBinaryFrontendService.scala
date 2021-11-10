@@ -188,7 +188,7 @@ abstract class ThriftBinaryFrontendService(name: String)
       Option(CURRENT_SERVER_CONTEXT.get()).foreach(_.setSessionHandle(sessionHandle))
     } catch {
       case e: Exception =>
-        warn("Error opening session: ", e)
+        error("Error opening session: ", e)
         resp.setStatus(KyuubiSQLException.toTStatus(e, verbose = true))
     }
     resp
@@ -204,7 +204,7 @@ abstract class ThriftBinaryFrontendService(name: String)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
-        warn("Error closing session: ", e)
+        error("Error closing session: ", e)
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     } finally {
       Option(CURRENT_SERVER_CONTEXT.get()).foreach(_.setSessionHandle(null))
@@ -222,7 +222,7 @@ abstract class ThriftBinaryFrontendService(name: String)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
-        warn("Error getting type info: ", e)
+        error("Error getting type info: ", e)
         resp.setInfoValue(TGetInfoValue.lenValue(0))
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
@@ -243,7 +243,7 @@ abstract class ThriftBinaryFrontendService(name: String)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
-        warn("Error executing statement: ", e)
+        error("Error executing statement: ", e)
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
@@ -258,7 +258,7 @@ abstract class ThriftBinaryFrontendService(name: String)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
-        warn("Error getting type info: ", e)
+        error("Error getting type info: ", e)
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
@@ -273,7 +273,7 @@ abstract class ThriftBinaryFrontendService(name: String)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
-        warn("Error getting catalogs: ", e)
+        error("Error getting catalogs: ", e)
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
@@ -289,7 +289,7 @@ abstract class ThriftBinaryFrontendService(name: String)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
-        warn("Error getting schemas: ", e)
+        error("Error getting schemas: ", e)
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
@@ -309,7 +309,7 @@ abstract class ThriftBinaryFrontendService(name: String)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
-        warn("Error getting tables: ", e)
+        error("Error getting tables: ", e)
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
@@ -324,7 +324,7 @@ abstract class ThriftBinaryFrontendService(name: String)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
-        warn("Error getting table types: ", e)
+        error("Error getting table types: ", e)
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
@@ -344,7 +344,7 @@ abstract class ThriftBinaryFrontendService(name: String)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
-        warn("Error getting columns: ", e)
+        error("Error getting columns: ", e)
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
@@ -363,7 +363,7 @@ abstract class ThriftBinaryFrontendService(name: String)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
-        warn("Error getting functions: ", e)
+        error("Error getting functions: ", e)
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
@@ -403,7 +403,7 @@ abstract class ThriftBinaryFrontendService(name: String)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
-        warn("Error getting operation status: ", e)
+        error("Error getting operation status: ", e)
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
@@ -417,7 +417,7 @@ abstract class ThriftBinaryFrontendService(name: String)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
-        warn("Error cancelling operation: ", e)
+        error("Error cancelling operation: ", e)
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
@@ -431,7 +431,7 @@ abstract class ThriftBinaryFrontendService(name: String)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
-        warn("Error closing operation: ", e)
+        error("Error closing operation: ", e)
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
@@ -446,7 +446,7 @@ abstract class ThriftBinaryFrontendService(name: String)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
-        warn("Error getting result set metadata: ", e)
+        error("Error getting result set metadata: ", e)
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
@@ -467,7 +467,7 @@ abstract class ThriftBinaryFrontendService(name: String)
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
-        warn("Error fetching results: ", e)
+        error("Error fetching results: ", e)
         resp.setStatus(KyuubiSQLException.toTStatus(e))
     }
     resp
@@ -513,7 +513,7 @@ abstract class ThriftBinaryFrontendService(name: String)
           be.closeSession(handle)
         } catch {
           case e: KyuubiSQLException =>
-            warn("Failed closing session", e)
+            error("Failed closing session", e)
         }
       }
     }
