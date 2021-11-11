@@ -65,7 +65,7 @@ object NettyUtils {
    * we will use Runtime get an approximate number of available cores.
    */
   def defaultNumThreads(numUsableCores: Option[Int]): Int = numUsableCores match {
-      case Some(num) => min(num, MAX_NETTY_THREADS)
-      case None => min(sys.runtime.availableProcessors, MAX_NETTY_THREADS)
-    }
+    case Some(num) => min(num, MAX_NETTY_THREADS)
+    case None => min(sys.runtime.availableProcessors, MAX_NETTY_THREADS)
+  }
 }

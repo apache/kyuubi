@@ -277,7 +277,6 @@ object KyuubiConf {
         s"the frontend protocol should be one or more of ${FrontendProtocols.values.mkString(",")}")
       .createWithDefault(Seq(FrontendProtocols.THRIFT_BINARY.toString))
 
-  @deprecated(s"using ${FRONTEND_THRIFT_BINARY_BIND_HOST.key} instead", "1.4.0")
   val FRONTEND_BIND_HOST: OptionalConfigEntry[String] = buildConf("frontend.bind.host")
     .doc("(deprecated) Hostname or IP of the machine on which to run the thrift frontend service " +
       "via binary protocol.")
@@ -307,7 +306,6 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_BIND_PORT)
 
-  @deprecated(s"using ${FRONTEND_THRIFT_MIN_WORKER_THREADS.key} instead", "1.4.0")
   val FRONTEND_MIN_WORKER_THREADS: ConfigEntry[Int] = buildConf("frontend.min.worker.threads")
     .doc("(deprecated) Minimum number of threads in the of frontend worker thread pool for " +
       "the thrift frontend service")
@@ -322,7 +320,6 @@ object KyuubiConf {
     .version("1.4.0")
     .fallbackConf(FRONTEND_MIN_WORKER_THREADS)
 
-  @deprecated(s"using ${FRONTEND_THRIFT_MAX_WORKER_THREADS.key} instead", "1.4.0")
   val FRONTEND_MAX_WORKER_THREADS: ConfigEntry[Int] = buildConf("frontend.max.worker.threads")
     .doc("(deprecated) Maximum number of threads in the of frontend worker thread pool for " +
       "the thrift frontend service")
@@ -337,7 +334,6 @@ object KyuubiConf {
     .version("1.4.0")
     .fallbackConf(FRONTEND_MAX_WORKER_THREADS)
 
-  @deprecated(s"using ${FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME.key} instead", "1.4.0")
   val FRONTEND_WORKER_KEEPALIVE_TIME: ConfigEntry[Long] =
     buildConf("frontend.worker.keepalive.time")
       .doc("(deprecated) Keep-alive time (in milliseconds) for an idle worker thread")
@@ -517,7 +513,8 @@ object KyuubiConf {
 
   val FRONTEND_MYSQL_NETTY_WORKER_THREADS: OptionalConfigEntry[Int] =
     buildConf("frontend.mysql.netty.worker.threads")
-      .doc("Number of thread in the netty worker event loop of MySQL frontend service")
+      .doc("Number of thread in the netty worker event loop of MySQL frontend service. " +
+        s"Use min(cpu_cores, $MAX_NETTY_THREADS) in default.")
       .version("1.4.0")
       .intConf
       .checkValue(n => n > 0 && n <= MAX_NETTY_THREADS,
