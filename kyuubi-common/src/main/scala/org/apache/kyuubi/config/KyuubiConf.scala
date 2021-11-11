@@ -1011,7 +1011,7 @@ object KyuubiConf {
 
   val ENGINE_SYNC_INIT: ConfigEntry[Boolean] =
     buildConf("engine.sync.init")
-      .doc("when open a kyuubi session, whether init backend engine with sync")
+      .doc("when opening kyuubi session, whether to init backend engine with sync")
       .version("1.4.0")
       .booleanConf.
       createWithDefault(true)

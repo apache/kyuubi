@@ -32,7 +32,7 @@ import org.apache.kyuubi.events.KyuubiSessionEvent
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
-import org.apache.kyuubi.operation.{Operation, OperationHandle}
+import org.apache.kyuubi.operation.{Operation, OperationHandle, OperationState}
 import org.apache.kyuubi.server.EventLoggingService
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
@@ -55,7 +55,8 @@ class KyuubiSessionImpl(
 
   val engine: EngineRef = new EngineRef(sessionConf, user)
   val engineSyncInit = sessionConf.get(ENGINE_SYNC_INIT)
-  var engineAsyncInitOp: Option[OperationHandle] = None
+  var engineInitOp: Operation = _
+  var engineInitFinished: Boolean = false
 
   private val sessionEvent = KyuubiSessionEvent(this)
   EventLoggingService.onEvent(sessionEvent)
@@ -63,29 +64,18 @@ class KyuubiSessionImpl(
   private var transport: TTransport = _
   private var client: KyuubiSyncThriftClient = _
 
-  private var _server_session_handle: Option[SessionHandle] = None
-  private var _engine_session_handle: Option[SessionHandle] = None
-  override def handle: SessionHandle = {
-    _server_session_handle.orElse(_engine_session_handle).orNull
-  }
-
-  def openServerSession(): Unit = {
-    _server_session_handle = Some(SessionHandle(protocol))
-    super.open()
-  }
+  private var _handle: SessionHandle = _
+  override def handle: SessionHandle = _handle
 
   override def open(): Unit = {
     MetricsSystem.tracing { ms =>
       ms.incCount(CONN_TOTAL)
       ms.incCount(MetricRegistry.name(CONN_OPEN, user))
     }
+    _handle = SessionHandle(protocol)
 
-    if (engineSyncInit) {
-      openEngineSession()
-    } else {
-      openServerSession()
-      engineAsyncInitOp = Option(initEngine())
-    }
+    engineInitOp = sessionManager.operationManager.newInitEngineOperation(this, !engineSyncInit)
+    runOperation(engineInitOp)
 
     // we should call super.open after kyuubi session is already opened
     super.open()
@@ -94,7 +84,6 @@ class KyuubiSessionImpl(
   private[kyuubi] def openEngineSession(): Unit = synchronized {
     withZkClient(sessionConf) { zkClient =>
       val (host, port) = engine.getOrCreate(zkClient)
-      if (_engine_session_handle.isDefined) return
       val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
       val loginTimeout = sessionConf.get(ENGINE_LOGIN_TIMEOUT).toInt
       val requestTimeout = sessionConf.get(ENGINE_REQUEST_TIMEOUT).toInt
@@ -106,7 +95,7 @@ class KyuubiSessionImpl(
       }
       client = new KyuubiSyncThriftClient(new TBinaryProtocol(transport))
       // use engine SessionHandle directly
-      _engine_session_handle = Some(client.openSession(protocol, user, passwd, normalizedConf))
+      client.openSession(protocol, user, passwd, normalizedConf)
       sessionManager.operationManager.setConnection(handle, client)
       sessionEvent.openedTime = System.currentTimeMillis()
       sessionEvent.sessionId = handle.identifier.toString
@@ -116,8 +105,29 @@ class KyuubiSessionImpl(
   }
 
   override protected def runOperation(operation: Operation): OperationHandle = {
+    waitForEngineInitOpFinished()
     sessionEvent.totalOperations += 1
     super.runOperation(operation)
+  }
+
+  private def waitForEngineInitOpFinished(): Unit = {
+    if (!engineInitFinished) {
+      Option(engineInitOp).foreach { op =>
+        while (!OperationState.isTerminal(op.getStatus.state)) {
+          info("The engine init operation has not been finished")
+          Thread.sleep(1000)
+        }
+
+        if (op.getStatus.state != OperationState.FINISHED) {
+          val ex = op.getStatus.exception.getOrElse(
+            KyuubiSQLException(s"Failed to init engine for session[$handle]"))
+          throw ex
+        }
+
+        engineInitFinished = true
+        engineInitOp = null
+      }
+    }
   }
 
   override def close(): Unit = {
@@ -139,10 +149,5 @@ class KyuubiSessionImpl(
         transport.close()
       }
     }
-  }
-
-  def initEngine(): OperationHandle = {
-    val operation = sessionManager.operationManager.newInitEngineOperation(this)
-    runOperation(operation)
   }
 }
