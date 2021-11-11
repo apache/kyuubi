@@ -21,14 +21,16 @@ import java.util.UUID
 import javax.ws.rs._
 import javax.ws.rs.{Consumes, DELETE, GET, POST, Path, PathParam, Produces}
 import javax.ws.rs.core.{MediaType, Response}
+
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
-import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
-import org.apache.kyuubi.Utils.error
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
+
+import org.apache.kyuubi.Utils.error
 import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.session.SessionHandle

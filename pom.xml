@@ -129,6 +129,8 @@
         <spark.archive.name>spark-${spark.version}-bin-hadoop${hadoop.binary.version}.tgz</spark.archive.name>
         <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
+        <swagger.version>2.1.11</swagger.version>
+        <swagger.scala.module.version>2.5.2</swagger.scala.module.version>
         <zookeeper.version>3.4.14</zookeeper.version>
 
         <!-- only apply to kyuubi-hive-jdbc module -->
@@ -593,14 +595,14 @@
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-jaxrs2</artifactId>
-                <version>2.1.11</version>
+                <version>${swagger.version}</version>
             </dependency>
 
             <!-- ref: https://github.com/swagger-akka-http/swagger-scala-module -->
             <dependency>
                 <groupId>com.github.swagger-akka-http</groupId>
                 <artifactId>swagger-scala-module_${scala.binary.version}</artifactId>
-                <version>2.5.2</version>
+                <version>${swagger.scala.module.version}</version>
             </dependency>
 
             <dependency>
