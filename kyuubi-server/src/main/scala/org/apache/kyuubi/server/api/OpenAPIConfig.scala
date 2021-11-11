@@ -20,7 +20,6 @@ package org.apache.kyuubi.server.api
 import io.swagger.v3.jaxrs2.integration.resources.OpenApiResource
 import io.swagger.v3.oas.annotations.OpenAPIDefinition
 import io.swagger.v3.oas.annotations.info.{Contact, Info, License}
-import io.swagger.v3.oas.annotations.servers.Server
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.glassfish.jersey.server.ResourceConfig
 
@@ -37,11 +36,10 @@ import org.glassfish.jersey.server.ResourceConfig
       name = "Apache 2.0",
       url = "https://www.apache.org/licenses/LICENSE-2.0.html")
   ),
-  servers = Array(new Server(url = "http://localhost:10099/api")),
   tags = Array(new Tag(name = "Session"))
 )
 class OpenAPIConfig extends ResourceConfig {
-//  packages("org.apache.kyuubi.server.api.v1")
+  packages("org.apache.kyuubi.server.api.v1")
   register(classOf[OpenApiResource]);
   register(classOf[KyuubiScalaObjectMapper])
 }

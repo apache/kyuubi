@@ -23,7 +23,7 @@ import javax.ws.rs.core.{MediaType, Response}
 
 import org.apache.kyuubi.server.api.ApiRequestContext
 
-@Path("/v1")
+@Path("/api/v1")
 private[v1] class ApiRootResource extends ApiRequestContext {
 
   @GET

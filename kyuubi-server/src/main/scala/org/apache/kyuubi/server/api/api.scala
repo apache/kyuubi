@@ -22,7 +22,7 @@ import javax.servlet.http.HttpServletRequest
 import javax.ws.rs.core.Context
 
 import org.eclipse.jetty.server.handler.ContextHandler
-import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
+import org.eclipse.jetty.servlet.{DefaultServlet, ServletContextHandler, ServletHolder}
 import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.servlet.ServletContainer
 
@@ -61,14 +61,14 @@ private[server] object ApiUtils {
     val handler = new ServletContextHandler(ServletContextHandler.NO_SESSIONS)
     BackendServiceProvider.setBackendService(handler, backendService)
     handler.addServlet(servlet, "/*")
-    handler
-//    val swagger = new ServletHolder("swagger-ui", classOf[DefaultServlet])
-//    swagger.setInitParameter("resourceBase", getClass.getClassLoader().getResource("META-INF/resources/webjars/swagger-ui/3.52.1/").toString())
-//    swagger.setInitParameter("pathInfoOnly", "true")
-//    handler.addServlet(swagger, "/swagger-ui/*");
 
-//    val collection = new ContextHandlerCollection()
-//    collection.setHandlers(Array(handler))
-//    collection
+    // install swagger-ui, these static files are copied from
+    // https://github.com/swagger-api/swagger-ui/tree/master/dist
+    val swaggerUI = new ServletHolder("swagger-ui", classOf[DefaultServlet])
+    swaggerUI.setInitParameter("resourceBase",
+      getClass.getClassLoader().getResource("static").toExternalForm)
+    swaggerUI.setInitParameter("pathInfoOnly", "true")
+    handler.addServlet(swaggerUI, "/swagger-ui/*");
+    handler
   }
 }
