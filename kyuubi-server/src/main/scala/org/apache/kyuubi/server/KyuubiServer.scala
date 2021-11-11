@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.server
 
+import java.util
+
 import scala.util.Properties
 
 import org.apache.curator.utils.ZKPaths
@@ -50,6 +52,14 @@ object KyuubiServer extends Logging {
     } else {
       // create chroot path if necessary
       val connectionStr = conf.get(HA_ZK_QUORUM)
+      val addresses = connectionStr.split(",")
+      val slashOption = util.Arrays.copyOfRange(addresses, 0, addresses.length -1)
+        .toList
+        .find(_.contains("/"))
+      if (slashOption.isDefined) {
+        throw new IllegalArgumentException(s"Illegal zookeeper quorum '$connectionStr', " +
+          s"the chroot path started with / is only allowed at the end!")
+      }
       val chrootIndex = connectionStr.indexOf("/")
       val chrootOption = {
         if (chrootIndex > 0) Some(connectionStr.substring(chrootIndex))
