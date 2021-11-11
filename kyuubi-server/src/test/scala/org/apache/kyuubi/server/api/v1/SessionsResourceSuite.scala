@@ -212,23 +212,81 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
         s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
 
-      val request = OperationRequest("EXECUTE_STATEMENT", List("show databases", true, 3000))
-      response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/operations")
-        .request().post(Entity.entity(request, MediaType.APPLICATION_JSON_TYPE))
+      val path = s"api/v1/sessions/$serializedSessionHandle"
+
+      response = webTarget
+        .path(s"$path/executeStatement")
+        .queryParam("statement", "show tables")
+        .queryParam("runAsync", "true")
+        .queryParam("queryTimeout", "3000")
+        .request().get()
       assert(200 == response.getStatus)
-      val operationHandle = response.readEntity(classOf[OperationHandle])
+      var operationHandle = response.readEntity(classOf[OperationHandle])
       assert(operationHandle.typ == OperationType.EXECUTE_STATEMENT)
 
-      // Invalid operationType
-      val request1 = OperationRequest("ERROR_TYPE", List("show databases", true, 3000))
-      response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/operations")
-        .request().post(Entity.entity(request1, MediaType.APPLICATION_JSON_TYPE))
-      assert(404 == response.getStatus)
+      response = webTarget.path(s"$path/getTypeInfo").request().get()
+      assert(200 == response.getStatus)
+      operationHandle = response.readEntity(classOf[OperationHandle])
+      assert(operationHandle.typ == OperationType.GET_TYPE_INFO)
 
-      // Invalid addition
-      val request2 = OperationRequest("EXECUTE_STATEMENT", List("show databases", "error", 3000))
-      response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/operations")
-        .request().post(Entity.entity(request2, MediaType.APPLICATION_JSON_TYPE))
+      response = webTarget.path(s"$path/getCatalogs").request().get()
+      assert(200 == response.getStatus)
+      operationHandle = response.readEntity(classOf[OperationHandle])
+      assert(operationHandle.typ == OperationType.GET_CATALOGS)
+
+      response = webTarget.path(s"$path/getSchemas")
+        .queryParam("catalogName", "default")
+        .queryParam("schemaName", "default")
+        .request().get()
+      assert(200 == response.getStatus)
+      operationHandle = response.readEntity(classOf[OperationHandle])
+      assert(operationHandle.typ == OperationType.GET_SCHEMAS)
+
+      response = webTarget.path(s"$path/getTables")
+        .queryParam("catalogName", "default")
+        .queryParam("schemaName", "default")
+        .queryParam("tableName", "default")
+        .queryParam("tableTypes", "default")
+        .request().get()
+      assert(200 == response.getStatus)
+      operationHandle = response.readEntity(classOf[OperationHandle])
+      assert(operationHandle.typ == OperationType.GET_TABLES)
+
+      response = webTarget.path(s"$path/getTableTypes").request().get()
+      assert(200 == response.getStatus)
+      operationHandle = response.readEntity(classOf[OperationHandle])
+      assert(operationHandle.typ == OperationType.GET_TABLE_TYPES)
+
+      response = webTarget.path(s"$path/getColumns")
+        .queryParam("catalogName", "default")
+        .queryParam("schemaName", "default")
+        .queryParam("tableName", "default")
+        .queryParam("columnName", "default")
+        .request().get()
+      assert(200 == response.getStatus)
+      operationHandle = response.readEntity(classOf[OperationHandle])
+      assert(operationHandle.typ == OperationType.GET_COLUMNS)
+
+      response = webTarget.path(s"$path/getFunctions")
+        .queryParam("catalogName", "default")
+        .queryParam("schemaName", "default")
+        .queryParam("functionName", "default")
+        .request().get()
+      assert(200 == response.getStatus)
+      operationHandle = response.readEntity(classOf[OperationHandle])
+      assert(operationHandle.typ == OperationType.GET_FUNCTIONS)
+
+      // Invalid queryParam
+      response = webTarget.path(s"$path/getFunctions")
+        .queryParam("errorCatalogName", "default")
+        .queryParam("schemaName", "default")
+        .queryParam("functionName", "default")
+        .request().get()
+      assert(404 == response.getStatus)
+      response = webTarget.path(s"$path/getFunctions")
+        .queryParam("schemaName", "default")
+        .queryParam("functionName", "default")
+        .request().get()
       assert(404 == response.getStatus)
     }
   }

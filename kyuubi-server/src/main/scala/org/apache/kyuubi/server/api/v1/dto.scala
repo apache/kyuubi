@@ -55,8 +55,3 @@ case class SessionOpenRequest(
   ipAddr: String,
   configs: Map[String, String]
 )
-
-case class OperationRequest(
-  operation: String,
-  addition: List[Any]
-)
