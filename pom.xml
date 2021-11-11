@@ -591,6 +591,19 @@
             </dependency>
 
             <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-jaxrs2</artifactId>
+                <version>2.1.11</version>
+            </dependency>
+
+            <!-- ref: https://github.com/swagger-akka-http/swagger-scala-module -->
+            <dependency>
+                <groupId>com.github.swagger-akka-http</groupId>
+                <artifactId>swagger-scala-module_${scala.binary.version}</artifactId>
+                <version>2.5.2</version>
+            </dependency>
+
+            <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
                 <version>${netty.version}</version>

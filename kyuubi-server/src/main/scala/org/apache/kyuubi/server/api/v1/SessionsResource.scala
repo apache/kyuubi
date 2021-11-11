@@ -19,31 +19,48 @@ package org.apache.kyuubi.server.api.v1
 
 import java.util.UUID
 import javax.ws.rs._
+import javax.ws.rs.{Consumes, DELETE, GET, POST, Path, PathParam, Produces}
 import javax.ws.rs.core.{MediaType, Response}
-
 import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
-
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
-
 import org.apache.kyuubi.Utils.error
+import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.session.SessionHandle
 
+@Tag(name = "Session")
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class SessionsResource extends ApiRequestContext {
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = "application/json"
+    )),
+    description = "get all the session list hosted in SessionManager"
+  )
   @GET
   def sessionInfoList(): SessionList = {
     SessionList(
       backendService.sessionManager.getSessionList().asScala.map {
         case (handle, session) =>
           SessionOverview(session.user, session.ipAddress, session.createTime, handle)
-      }.toList
+      }.toSeq
     )
   }
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = "application/json"
+    )),
+    description = "get a session via session handle identifier"
+  )
   @GET
   @Path("{sessionHandle}")
   def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): SessionDetail = {
@@ -60,6 +77,14 @@ private[v1] class SessionsResource extends ApiRequestContext {
     }
   }
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = "application/json"
+    )),
+    description =
+      "get a information detail via session handle identifier and a specific information type"
+  )
   @GET
   @Path("{sessionHandle}/info/{infoType}")
   def getInfo(@PathParam("sessionHandle") sessionHandleStr: String,
@@ -77,12 +102,26 @@ private[v1] class SessionsResource extends ApiRequestContext {
     }
   }
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = "application/json"
+    )),
+    description = "get open session count"
+  )
   @GET
   @Path("count")
   def sessionCount(): SessionOpenCount = {
     SessionOpenCount(backendService.sessionManager.getOpenSessionCount)
   }
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = "application/json"
+    )),
+    description = "get some statistic info of sessions"
+  )
   @GET
   @Path("execPool/statistic")
   def execPoolStatistic(): ExecPoolStatistic = {
@@ -90,6 +129,13 @@ private[v1] class SessionsResource extends ApiRequestContext {
       backendService.sessionManager.getActiveCount)
   }
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = "application/json"
+    )),
+    description = "Open(create) a Session"
+  )
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def openSession(request: SessionOpenRequest): SessionHandle = {
@@ -101,6 +147,13 @@ private[v1] class SessionsResource extends ApiRequestContext {
       request.configs)
   }
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = "application/json"
+    )),
+    description = "close a Session"
+  )
   @DELETE
   @Path("{sessionHandle}")
   def closeSession(@PathParam("sessionHandle") sessionHandleStr: String): Response = {
