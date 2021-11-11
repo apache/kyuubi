@@ -57,6 +57,7 @@ class KyuubiSessionImpl(
   val engineSyncInit = sessionConf.get(SESSION_ENGINE_SYNC_INIT)
   val engineStartupCheckInterval = sessionConf.get(SESSION_ENGINE_STARTUP_CHECK_INTERVAL)
   var engineInitOp: Operation = _
+  @volatile
   var engineInitFinished: Boolean = false
 
   private val sessionEvent = KyuubiSessionEvent(this)
@@ -68,6 +69,7 @@ class KyuubiSessionImpl(
   private var _handle: SessionHandle = _
   override def handle: SessionHandle = _handle
 
+  @volatile
   private var _initEngineOpHandle: OperationHandle = _
   def initEngineOpHandle: OperationHandle = _initEngineOpHandle
 
