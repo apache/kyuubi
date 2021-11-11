@@ -657,6 +657,20 @@ object KyuubiConf {
       .checkValue(_ > 0, "the maximum must be positive integer.")
       .createWithDefault(10)
 
+  val SESSION_ENGINE_SYNC_INIT: ConfigEntry[Boolean] =
+    buildConf("session.engine.sync.init")
+      .doc("when opening kyuubi session, whether to init backend engine synchronously")
+      .version("1.4.0")
+      .booleanConf.
+      createWithDefault(true)
+
+  val SESSION_ENGINE_STARTUP_CHECK_INTERVAL: ConfigEntry[Long] =
+    buildConf("session.engine.startup.check.interval")
+      .doc("The interval to check whether backend engine is ready during engine startup phase.")
+      .version("1.4.0")
+      .longConf
+      .createWithDefault(100)
+
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("backend.server.exec.pool.size")
       .doc("Number of threads in the operation execution thread pool of Kyuubi server")
@@ -1008,13 +1022,6 @@ object KyuubiConf {
       .intConf
       .checkValue(_ > 0, "retained statements must be positive.")
       .createWithDefault(200)
-
-  val ENGINE_SYNC_INIT: ConfigEntry[Boolean] =
-    buildConf("engine.sync.init")
-      .doc("when opening kyuubi session, whether to init backend engine synchronously")
-      .version("1.4.0")
-      .booleanConf.
-      createWithDefault(true)
 
   val ENGINE_OPERATION_LOG_DIR_ROOT: ConfigEntry[String] =
     buildConf("engine.operation.log.dir.root")

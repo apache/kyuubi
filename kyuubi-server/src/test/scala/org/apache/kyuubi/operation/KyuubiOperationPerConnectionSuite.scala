@@ -99,7 +99,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
   }
 
   test("test asynchronous open kyuubi session") {
-    withSessionConf(Map(KyuubiConf.ENGINE_SYNC_INIT.key -> "false"))(Map.empty)(Map.empty) {
+    withSessionConf(Map(KyuubiConf.SESSION_ENGINE_SYNC_INIT.key -> "false"))(Map.empty)(Map.empty) {
       withSessionHandle { (client, handle) =>
         val executeStmtReq = new TExecuteStatementReq()
         executeStmtReq.setStatement("select engine_name()")
