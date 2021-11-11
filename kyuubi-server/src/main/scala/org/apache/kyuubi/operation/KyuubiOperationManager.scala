@@ -26,7 +26,7 @@ import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
-import org.apache.kyuubi.session.{Session, SessionHandle}
+import org.apache.kyuubi.session.{KyuubiSessionImpl, Session, SessionHandle}
 import org.apache.kyuubi.util.ThriftUtils
 
 class KyuubiOperationManager private (name: String) extends OperationManager(name) {
@@ -42,7 +42,7 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     super.initialize(conf)
   }
 
-  private def getThriftClient(sessionHandle: SessionHandle): KyuubiSyncThriftClient = {
+  private[operation] def getThriftClient(sessionHandle: SessionHandle): KyuubiSyncThriftClient = {
     val client = handleToClient.get(sessionHandle)
     if (client == null) {
       throw KyuubiSQLException(s"$sessionHandle has not been initialized or already been closed")
@@ -137,6 +137,11 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       functionName: String): Operation = {
     val client = getThriftClient(session.handle)
     val operation = new GetFunctions(session, client, catalogName, schemaName, functionName)
+    addOperation(operation)
+  }
+
+  def newInitEngineOperation(session: KyuubiSessionImpl): Operation = {
+    val operation = new InitEngine(session)
     addOperation(operation)
   }
 

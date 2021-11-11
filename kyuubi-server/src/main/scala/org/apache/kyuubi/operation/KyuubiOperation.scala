@@ -37,7 +37,7 @@ import org.apache.kyuubi.util.ThriftUtils
 abstract class KyuubiOperation(
     opType: OperationType,
     session: Session,
-    client: KyuubiSyncThriftClient) extends AbstractOperation(opType, session) {
+    var client: KyuubiSyncThriftClient) extends AbstractOperation(opType, session) {
 
   @volatile protected var _remoteOpHandle: TOperationHandle = _
 

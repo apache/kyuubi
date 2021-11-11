@@ -30,7 +30,8 @@ object OperationType extends Enumeration {
       GET_TABLES,
       GET_TABLE_TYPES,
       GET_COLUMNS,
-      GET_FUNCTIONS = Value
+      GET_FUNCTIONS,
+      INIT_ENGINE = Value
 
   def getOperationType(from: TOperationType): OperationType = {
     from match {
@@ -57,6 +58,7 @@ object OperationType extends Enumeration {
       case GET_TABLE_TYPES => TOperationType.GET_TABLE_TYPES
       case GET_COLUMNS => TOperationType.GET_COLUMNS
       case GET_FUNCTIONS => TOperationType.GET_FUNCTIONS
+      case INIT_ENGINE => TOperationType.UNKNOWN
       case other =>
         throw new UnsupportedOperationException(s"Unsupported Operation type: ${other.toString}")
     }

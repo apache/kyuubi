@@ -1009,6 +1009,13 @@ object KyuubiConf {
       .checkValue(_ > 0, "retained statements must be positive.")
       .createWithDefault(200)
 
+  val ENGINE_SYNC_INIT: ConfigEntry[Boolean] =
+    buildConf("engine.sync.init")
+      .doc("when open a kyuubi session, whether init backend engine with sync")
+      .version("1.4.0")
+      .booleanConf.
+      createWithDefault(true)
+
   val ENGINE_OPERATION_LOG_DIR_ROOT: ConfigEntry[String] =
     buildConf("engine.operation.log.dir.root")
       .doc("Root directory for query operation log at engine-side.")
