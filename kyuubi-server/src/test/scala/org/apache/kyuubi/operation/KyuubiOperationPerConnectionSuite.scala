@@ -97,4 +97,20 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         "Caused by: java.net.SocketException: Broken pipe (Write failed)")
     }
   }
+
+  test("test asynchronous open kyuubi session") {
+    withSessionConf(Map(KyuubiConf.ENGINE_SYNC_INIT.key -> "false"))(Map.empty)(Map.empty) {
+      withSessionHandle { (client, handle) =>
+        val executeStmtReq = new TExecuteStatementReq()
+        executeStmtReq.setStatement("select engine_name()")
+        executeStmtReq.setSessionHandle(handle)
+        executeStmtReq.setRunAsync(false)
+        val executeStmtResp = client.ExecuteStatement(executeStmtReq)
+        val getOpStatusReq = new TGetOperationStatusReq(executeStmtResp.getOperationHandle)
+        val getOpStatusResp = client.GetOperationStatus(getOpStatusReq)
+        assert(getOpStatusResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        assert(getOpStatusResp.getOperationState === TOperationState.FINISHED_STATE)
+      }
+    }
+  }
 }
