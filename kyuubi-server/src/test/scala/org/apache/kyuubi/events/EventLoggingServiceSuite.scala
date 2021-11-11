@@ -121,7 +121,7 @@ class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper 
     }
   }
 
-  test("engine session id should be same with server session id") {
+  test("engine session id is not same with server session id") {
     val name = UUID.randomUUID().toString
     withSessionConf()(Map.empty)(Map(KyuubiConf.SESSION_NAME.key -> name)) {
       withJdbcStatement() { statement =>
@@ -145,7 +145,7 @@ class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper 
         val res2 = statement.executeQuery(
           s"SELECT * FROM `json`.`$engineSessionEventPath` " +
             s"where sessionId = '$serverSessionId' limit 1")
-        assert(res2.next())
+        assert(!res2.next())
       }
     }
   }

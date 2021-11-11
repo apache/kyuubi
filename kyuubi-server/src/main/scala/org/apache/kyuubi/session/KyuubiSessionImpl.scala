@@ -67,6 +67,9 @@ class KyuubiSessionImpl(
   private var _handle: SessionHandle = _
   override def handle: SessionHandle = _handle
 
+  private var _initEngineOpHandle: OperationHandle = _
+  def initEngineOpHandle: OperationHandle = _initEngineOpHandle
+
   override def open(): Unit = {
     MetricsSystem.tracing { ms =>
       ms.incCount(CONN_TOTAL)
@@ -75,6 +78,7 @@ class KyuubiSessionImpl(
     _handle = SessionHandle(protocol)
 
     engineInitOp = sessionManager.operationManager.newInitEngineOperation(this)
+    _initEngineOpHandle = engineInitOp.getHandle
     runOperation(engineInitOp)
 
     // we should call super.open after kyuubi session is already opened
@@ -105,10 +109,10 @@ class KyuubiSessionImpl(
   }
 
   override protected def runOperation(operation: Operation): OperationHandle = {
-    if (operation != engineInitOp) {
+    if (operation.getHandle != _initEngineOpHandle) {
       waitForEngineInitOpFinished()
+      sessionEvent.totalOperations += 1
     }
-    sessionEvent.totalOperations += 1
     super.runOperation(operation)
   }
 
