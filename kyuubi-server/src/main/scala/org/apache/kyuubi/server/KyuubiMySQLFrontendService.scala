@@ -37,7 +37,7 @@ import org.apache.kyuubi.util.NettyUtils._
  * A frontend service implement MySQL protocol.
  */
 class KyuubiMySQLFrontendService(override val serverable: Serverable)
-  extends AbstractFrontendService("MySQLFrontendService") with Logging {
+  extends AbstractFrontendService("KyuubiMySQLFrontendService") with Logging {
 
   private var execPool: ThreadPoolExecutor = _
 

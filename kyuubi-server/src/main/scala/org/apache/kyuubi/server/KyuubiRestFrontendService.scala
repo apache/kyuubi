@@ -34,7 +34,7 @@ import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
  * Note: Currently, it only be used in the Kyuubi Server side.
  */
 class KyuubiRestFrontendService(override val serverable: Serverable)
-  extends AbstractFrontendService("RestFrontendService") with Logging {
+  extends AbstractFrontendService("KyuubiRestFrontendService") with Logging {
 
   private var serverAddr: InetAddress = _
   private var portNum: Int = _
