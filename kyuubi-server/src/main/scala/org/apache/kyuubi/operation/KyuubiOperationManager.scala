@@ -140,8 +140,8 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
     addOperation(operation)
   }
 
-  def newInitEngineOperation(session: KyuubiSessionImpl, async: Boolean): Operation = {
-    val operation = new InitEngine(session, async)
+  def newInitEngineOperation(session: KyuubiSessionImpl): Operation = {
+    val operation = new InitEngine(session)
     addOperation(operation)
   }
 

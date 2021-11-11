@@ -20,7 +20,7 @@ package org.apache.kyuubi.operation
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.KyuubiSessionImpl
 
-class InitEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Boolean) extends
+class InitEngine(session: KyuubiSessionImpl) extends
   KyuubiOperation(OperationType.INIT_ENGINE, session, null) {
 
   private final val _operationLog: OperationLog = {
@@ -61,4 +61,6 @@ class InitEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Boolea
 
     if (!shouldRunAsync) getBackgroundHandle.get()
   }
+
+  override def shouldRunAsync: Boolean = !session.engineSyncInit
 }

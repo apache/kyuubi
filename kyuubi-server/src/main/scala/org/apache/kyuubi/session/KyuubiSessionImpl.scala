@@ -74,7 +74,7 @@ class KyuubiSessionImpl(
     }
     _handle = SessionHandle(protocol)
 
-    engineInitOp = sessionManager.operationManager.newInitEngineOperation(this, !engineSyncInit)
+    engineInitOp = sessionManager.operationManager.newInitEngineOperation(this)
     runOperation(engineInitOp)
 
     // we should call super.open after kyuubi session is already opened
