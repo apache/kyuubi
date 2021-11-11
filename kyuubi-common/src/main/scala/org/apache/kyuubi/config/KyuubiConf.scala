@@ -27,6 +27,7 @@ import scala.collection.JavaConverters._
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.engine.{EngineType, ShareLevel}
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
+import org.apache.kyuubi.util.NettyUtils.MAX_NETTY_THREADS
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   import KyuubiConf._
@@ -136,6 +137,8 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
     FRONTEND_THRIFT_BINARY_BIND_PORT,
     FRONTEND_REST_BIND_HOST,
     FRONTEND_REST_BIND_PORT,
+    FRONTEND_MYSQL_BIND_HOST,
+    FRONTEND_MYSQL_BIND_PORT,
     AUTHENTICATION_METHOD,
     KINIT_INTERVAL)
 
@@ -274,7 +277,6 @@ object KyuubiConf {
         s"the frontend protocol should be one or more of ${FrontendProtocols.values.mkString(",")}")
       .createWithDefault(Seq(FrontendProtocols.THRIFT_BINARY.toString))
 
-  @deprecated(s"using ${FRONTEND_THRIFT_BINARY_BIND_HOST.key} instead", "1.4.0")
   val FRONTEND_BIND_HOST: OptionalConfigEntry[String] = buildConf("frontend.bind.host")
     .doc("(deprecated) Hostname or IP of the machine on which to run the thrift frontend service " +
       "via binary protocol.")
@@ -300,11 +302,10 @@ object KyuubiConf {
 
   val FRONTEND_THRIFT_BINARY_BIND_PORT: ConfigEntry[Int] =
     buildConf("frontend.thrift.binary.bind.port")
-    .doc("Port of the machine on which to run the thrift frontend service via binary protocol.")
-    .version("1.4.0")
-    .fallbackConf(FRONTEND_BIND_PORT)
+      .doc("Port of the machine on which to run the thrift frontend service via binary protocol.")
+      .version("1.4.0")
+      .fallbackConf(FRONTEND_BIND_PORT)
 
-  @deprecated(s"using ${FRONTEND_THRIFT_MIN_WORKER_THREADS.key} instead", "1.4.0")
   val FRONTEND_MIN_WORKER_THREADS: ConfigEntry[Int] = buildConf("frontend.min.worker.threads")
     .doc("(deprecated) Minimum number of threads in the of frontend worker thread pool for " +
       "the thrift frontend service")
@@ -319,7 +320,6 @@ object KyuubiConf {
     .version("1.4.0")
     .fallbackConf(FRONTEND_MIN_WORKER_THREADS)
 
-  @deprecated(s"using ${FRONTEND_THRIFT_MAX_WORKER_THREADS.key} instead", "1.4.0")
   val FRONTEND_MAX_WORKER_THREADS: ConfigEntry[Int] = buildConf("frontend.max.worker.threads")
     .doc("(deprecated) Maximum number of threads in the of frontend worker thread pool for " +
       "the thrift frontend service")
@@ -334,7 +334,6 @@ object KyuubiConf {
     .version("1.4.0")
     .fallbackConf(FRONTEND_MAX_WORKER_THREADS)
 
-  @deprecated(s"using ${FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME.key} instead", "1.4.0")
   val FRONTEND_WORKER_KEEPALIVE_TIME: ConfigEntry[Long] =
     buildConf("frontend.worker.keepalive.time")
       .doc("(deprecated) Keep-alive time (in milliseconds) for an idle worker thread")
@@ -348,7 +347,7 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_WORKER_KEEPALIVE_TIME)
 
-  @deprecated(s"using ${FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME.key} instead", "1.4.0")
+  @deprecated(s"using ${FRONTEND_THRIFT_MAX_MESSAGE_SIZE.key} instead", "1.4.0")
   val FRONTEND_MAX_MESSAGE_SIZE: ConfigEntry[Int] =
     buildConf("frontend.max.message.size")
       .doc("(deprecated) Maximum message size in bytes a Kyuubi server will accept.")
@@ -486,11 +485,11 @@ object KyuubiConf {
     .transform(_.toLowerCase(Locale.ROOT))
     .createWithDefault(SaslQOP.AUTH.toString)
 
-  val FRONTEND_REST_BIND_HOST: OptionalConfigEntry[String] = buildConf("frontend.rest.bind.host")
-    .doc("Hostname or IP of the machine on which to run the REST frontend service.")
-    .version("1.4.0")
-    .stringConf
-    .createOptional
+  val FRONTEND_REST_BIND_HOST: ConfigEntry[Option[String]] =
+    buildConf("frontend.rest.bind.host")
+      .doc("Hostname or IP of the machine on which to run the REST frontend service.")
+      .version("1.4.0")
+      .fallbackConf(FRONTEND_BIND_HOST)
 
   val FRONTEND_REST_BIND_PORT: ConfigEntry[Int] = buildConf("frontend.rest.bind.port")
     .doc("Port of the machine on which to run the REST frontend service.")
@@ -498,6 +497,50 @@ object KyuubiConf {
     .intConf
     .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
     .createWithDefault(10099)
+
+  val FRONTEND_MYSQL_BIND_HOST: ConfigEntry[Option[String]] =
+    buildConf("frontend.mysql.bind.host")
+      .doc("Hostname or IP of the machine on which to run the MySQL frontend service.")
+      .version("1.4.0")
+      .fallbackConf(FRONTEND_BIND_HOST)
+
+  val FRONTEND_MYSQL_BIND_PORT: ConfigEntry[Int] = buildConf("frontend.mysql.bind.port")
+    .doc("Port of the machine on which to run the MySQL frontend service.")
+    .version("1.4.0")
+    .intConf
+    .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
+    .createWithDefault(3309)
+
+  val FRONTEND_MYSQL_NETTY_WORKER_THREADS: OptionalConfigEntry[Int] =
+    buildConf("frontend.mysql.netty.worker.threads")
+      .doc("Number of thread in the netty worker event loop of MySQL frontend service. " +
+        s"Use min(cpu_cores, $MAX_NETTY_THREADS) in default.")
+      .version("1.4.0")
+      .intConf
+      .checkValue(n => n > 0 && n <= MAX_NETTY_THREADS,
+        s"Invalid thread number, must in (0, $MAX_NETTY_THREADS]")
+      .createOptional
+
+  val FRONTEND_MYSQL_MIN_WORKER_THREADS: ConfigEntry[Int] =
+    buildConf("frontend.mysql.min.worker.threads")
+      .doc("Minimum number of threads in the command execution thread pool for the MySQL " +
+        "frontend service")
+      .version("1.4.0")
+      .fallbackConf(FRONTEND_MIN_WORKER_THREADS)
+
+  val FRONTEND_MYSQL_MAX_WORKER_THREADS: ConfigEntry[Int] =
+    buildConf("frontend.mysql.max.worker.threads")
+      .doc("Maximum number of threads in the command execution thread pool for the MySQL " +
+        "frontend service")
+      .version("1.4.0")
+      .fallbackConf(FRONTEND_MAX_WORKER_THREADS)
+
+  val FRONTEND_MYSQL_WORKER_KEEPALIVE_TIME: ConfigEntry[Long] =
+    buildConf("frontend.mysql.worker.keepalive.time")
+      .doc("Time(ms) that an idle async thread of the command execution thread pool will wait" +
+        " for a new task to arrive before terminating in MySQL frontend service")
+      .version("1.4.0")
+      .fallbackConf(FRONTEND_WORKER_KEEPALIVE_TIME)
 
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //

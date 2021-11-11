@@ -25,3 +25,6 @@ log4j.appender.console.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss.SSS} %p %
 # Set the default kyuubi-ctl log level to WARN. When running the kyuubi-ctl, the
 # log level for this class is used to overwrite the root logger's log level.
 log4j.logger.org.apache.kyuubi.ctl.ServiceControlCli=ERROR
+
+# Analysis MySQLFrontend protocol traffic
+# log4j.logger.org.apache.kyuubi.server.mysql.codec=TRACE
