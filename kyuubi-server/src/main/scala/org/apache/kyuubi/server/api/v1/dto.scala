@@ -55,3 +55,34 @@ case class SessionOpenRequest(
   ipAddr: String,
   configs: Map[String, String]
 )
+
+case class StatementRequest(
+  statement: String,
+  runAsync: Boolean,
+  queryTimeout: Long
+)
+
+case class GetSchemasRequest(
+  catalogName: String,
+  schemaName: String,
+)
+
+case class GetTablesRequest(
+  catalogName: String,
+  schemaName: String,
+  tableName: String,
+  tableTypes: java.util.List[String]
+)
+
+case class GetColumnsRequest(
+  catalogName: String,
+  schemaName: String,
+  tableName: String,
+  columnName: String
+)
+
+case class GetFunctionsRequest(
+  catalogName: String,
+  schemaName: String,
+  functionName: String
+)

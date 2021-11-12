@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.server.api.v1
 
+import java.util
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{MediaType, Response}
 
@@ -199,7 +200,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     }
   }
 
-  test("test get operations") {
+  test("test get operationHandle") {
     val requestObj = SessionOpenRequest(
       1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
 
@@ -214,80 +215,65 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
       val path = s"api/v1/sessions/$serializedSessionHandle"
 
+      val statementReq = StatementRequest("show tables", true, 3000)
       response = webTarget
-        .path(s"$path/executeStatement")
-        .queryParam("statement", "show tables")
-        .queryParam("runAsync", "true")
-        .queryParam("queryTimeout", "3000")
-        .request().get()
+        .path(s"$path/executestatement").request(MediaType.APPLICATION_JSON_TYPE)
+        .post(Entity.entity(statementReq, MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
       var operationHandle = response.readEntity(classOf[OperationHandle])
       assert(operationHandle.typ == OperationType.EXECUTE_STATEMENT)
 
-      response = webTarget.path(s"$path/getTypeInfo").request().get()
+      response = webTarget.path(s"$path/gettypeinfo").request()
+        .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
       operationHandle = response.readEntity(classOf[OperationHandle])
       assert(operationHandle.typ == OperationType.GET_TYPE_INFO)
 
-      response = webTarget.path(s"$path/getCatalogs").request().get()
+      response = webTarget.path(s"$path/getcatalogs")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
       operationHandle = response.readEntity(classOf[OperationHandle])
       assert(operationHandle.typ == OperationType.GET_CATALOGS)
 
-      response = webTarget.path(s"$path/getSchemas")
-        .queryParam("catalogName", "default")
-        .queryParam("schemaName", "default")
-        .request().get()
+      val getSchemasReq = GetSchemasRequest("default", "default")
+      response = webTarget.path(s"$path/getschemas")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .post(Entity.entity(getSchemasReq, MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
       operationHandle = response.readEntity(classOf[OperationHandle])
       assert(operationHandle.typ == OperationType.GET_SCHEMAS)
 
-      response = webTarget.path(s"$path/getTables")
-        .queryParam("catalogName", "default")
-        .queryParam("schemaName", "default")
-        .queryParam("tableName", "default")
-        .queryParam("tableTypes", "default")
-        .request().get()
+      val tableTypes = new util.ArrayList[String]()
+      val getTablesReq = GetTablesRequest("default", "default", "default", tableTypes)
+      response = webTarget.path(s"$path/gettables")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .post(Entity.entity(getTablesReq, MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
       operationHandle = response.readEntity(classOf[OperationHandle])
       assert(operationHandle.typ == OperationType.GET_TABLES)
 
-      response = webTarget.path(s"$path/getTableTypes").request().get()
+      response = webTarget.path(s"$path/gettabletypes").request()
+        .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
       operationHandle = response.readEntity(classOf[OperationHandle])
       assert(operationHandle.typ == OperationType.GET_TABLE_TYPES)
 
-      response = webTarget.path(s"$path/getColumns")
-        .queryParam("catalogName", "default")
-        .queryParam("schemaName", "default")
-        .queryParam("tableName", "default")
-        .queryParam("columnName", "default")
-        .request().get()
+      val getColumnsReq = GetColumnsRequest("default", "default", "default", "default")
+      response = webTarget.path(s"$path/getcolumns")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .post(Entity.entity(getColumnsReq, MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
       operationHandle = response.readEntity(classOf[OperationHandle])
       assert(operationHandle.typ == OperationType.GET_COLUMNS)
 
-      response = webTarget.path(s"$path/getFunctions")
-        .queryParam("catalogName", "default")
-        .queryParam("schemaName", "default")
-        .queryParam("functionName", "default")
-        .request().get()
+      var getFunctionsReq = GetFunctionsRequest("default", "default", "default")
+      response = webTarget.path(s"$path/getfunctions")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .post(Entity.entity(getFunctionsReq, MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
       operationHandle = response.readEntity(classOf[OperationHandle])
       assert(operationHandle.typ == OperationType.GET_FUNCTIONS)
-
-      // Invalid queryParam
-      response = webTarget.path(s"$path/getFunctions")
-        .queryParam("errorCatalogName", "default")
-        .queryParam("schemaName", "default")
-        .queryParam("functionName", "default")
-        .request().get()
-      assert(404 == response.getStatus)
-      response = webTarget.path(s"$path/getFunctions")
-        .queryParam("schemaName", "default")
-        .queryParam("functionName", "default")
-        .request().get()
-      assert(404 == response.getStatus)
     }
   }
 }

@@ -49,7 +49,6 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @Path("{sessionHandle}")
   def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): SessionDetail = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
-
     try {
       val session = backendService.sessionManager.getSession(sessionHandle)
       SessionDetail(session.user, session.ipAddress, session.createTime, sessionHandle,
@@ -110,25 +109,22 @@ private[v1] class SessionsResource extends ApiRequestContext {
     Response.ok().build()
   }
 
-  @GET
-  @Path("{sessionHandle}/executeStatement")
+  @POST
+  @Path("{sessionHandle}/executestatement")
   def executeStatement(@PathParam("sessionHandle") sessionHandleStr: String,
-                       @QueryParam("statement") statement: String,
-                       @QueryParam("runAsync") runAsync: String,
-                       @QueryParam("queryTimeout") queryTimeout: String): OperationHandle = {
-    checkQueryParams(statement, runAsync, queryTimeout)
+                       request: StatementRequest): OperationHandle = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
     try {
-      backendService.executeStatement(sessionHandle, statement, runAsync.toBoolean,
-        queryTimeout.toLong)
+      backendService.executeStatement(sessionHandle, request.statement, request.runAsync,
+        request.queryTimeout)
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(s"Error executing statement")
     }
   }
 
-  @GET
-  @Path("{sessionHandle}/getTypeInfo")
+  @POST
+  @Path("{sessionHandle}/gettypeinfo")
   def getTypeInfo(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
     try {
@@ -139,8 +135,8 @@ private[v1] class SessionsResource extends ApiRequestContext {
     }
   }
 
-  @GET
-  @Path("{sessionHandle}/getCatalogs")
+  @POST
+  @Path("{sessionHandle}/getcatalogs")
   def getCatalogs(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
     try {
@@ -151,41 +147,35 @@ private[v1] class SessionsResource extends ApiRequestContext {
     }
   }
 
-  @GET
-  @Path("{sessionHandle}/getSchemas")
+  @POST
+  @Path("{sessionHandle}/getschemas")
   def getSchemas(@PathParam("sessionHandle") sessionHandleStr: String,
-                 @QueryParam("catalogName") catalogName: String,
-                 @QueryParam("schemaName") schemaName: String): OperationHandle = {
-    checkQueryParams(catalogName, schemaName, catalogName)
+                 request: GetSchemasRequest): OperationHandle = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
     try {
-      backendService.getSchemas(sessionHandle, catalogName, schemaName)
+      backendService.getSchemas(sessionHandle, request.catalogName, request.schemaName)
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(s"Error getting schemas")
     }
   }
 
-  @GET
-  @Path("{sessionHandle}/getTables")
+  @POST
+  @Path("{sessionHandle}/gettables")
   def getTables(@PathParam("sessionHandle") sessionHandleStr: String,
-                @QueryParam("catalogName") catalogName: String,
-                @QueryParam("schemaName") schemaName: String,
-                @QueryParam("tableName") tableName: String,
-                @QueryParam("tableTypes") tableTypes: String): OperationHandle = {
-    checkQueryParams(catalogName, schemaName, tableName, tableTypes)
+                request: GetTablesRequest): OperationHandle = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
     try {
-      val tableList: java.util.List[String] = tableTypes.split(",").toList.asJava
-      backendService.getTables(sessionHandle, catalogName, schemaName, tableName, tableList)
+      backendService.getTables(sessionHandle, request.catalogName, request.schemaName,
+        request.tableName, request.tableTypes)
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(s"Error getting tables")
     }
   }
 
-  @GET
-  @Path("{sessionHandle}/getTableTypes")
+  @POST
+  @Path("{sessionHandle}/gettabletypes")
   def getTableTypes(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
     try {
@@ -196,33 +186,28 @@ private[v1] class SessionsResource extends ApiRequestContext {
     }
   }
 
-  @GET
-  @Path("{sessionHandle}/getColumns")
+  @POST
+  @Path("{sessionHandle}/getcolumns")
   def getColumns(@PathParam("sessionHandle") sessionHandleStr: String,
-                 @QueryParam("catalogName") catalogName: String,
-                 @QueryParam("schemaName") schemaName: String,
-                 @QueryParam("tableName") tableName: String,
-                 @QueryParam("columnName") columnName: String): OperationHandle = {
-    checkQueryParams(catalogName, schemaName, tableName, columnName)
+                 request: GetColumnsRequest): OperationHandle = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
     try {
-      backendService.getColumns(sessionHandle, catalogName, schemaName, tableName, columnName)
+      backendService.getColumns(sessionHandle, request.catalogName, request.schemaName,
+        request.tableName, request.columnName)
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(s"Error getting columns")
     }
   }
 
-  @GET
-  @Path("{sessionHandle}/getFunctions")
+  @POST
+  @Path("{sessionHandle}/getfunctions")
   def getFunctions(@PathParam("sessionHandle") sessionHandleStr: String,
-                   @QueryParam("catalogName") catalogName: String,
-                   @QueryParam("schemaName") schemaName: String,
-                   @QueryParam("functionName") functionName: String): OperationHandle = {
-    checkQueryParams(catalogName, schemaName, functionName)
+                   request: GetFunctionsRequest): OperationHandle = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
     try {
-      backendService.getFunctions(sessionHandle, catalogName, schemaName, functionName)
+      backendService.getFunctions(sessionHandle, request.catalogName, request.schemaName,
+        request.functionName)
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(s"Error getting functions")
@@ -244,12 +229,6 @@ private[v1] class SessionsResource extends ApiRequestContext {
       case NonFatal(e) =>
         error(s"Error getting sessionHandle by $sessionHandleStr.", e)
         throw new NotFoundException(s"Error getting sessionHandle by $sessionHandleStr.")
-    }
-  }
-
-  def checkQueryParams(params: String*): Unit = {
-    if (params.contains(null)) {
-      throw new NotFoundException(s"Params can't be null")
     }
   }
 }
