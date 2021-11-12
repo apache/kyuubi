@@ -113,4 +113,22 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       }
     }
   }
+
+  test("test asynchronous open kyuubi session failure") {
+    withSessionConf(Map(
+      KyuubiConf.SESSION_ENGINE_SYNC_INIT.key -> "false",
+    ))(Map.empty)(Map("spark.driver.host" -> "invalid")) {
+      withSessionHandle { (client, handle) =>
+        val executeStmtReq = new TExecuteStatementReq()
+        executeStmtReq.setStatement("select engine_name()")
+        executeStmtReq.setSessionHandle(handle)
+        executeStmtReq.setRunAsync(false)
+        val executeStmtResp = client.ExecuteStatement(executeStmtReq)
+        val getOpStatusReq = new TGetOperationStatusReq(executeStmtResp.getOperationHandle)
+        val getOpStatusResp = client.GetOperationStatus(getOpStatusReq)
+        assert(getOpStatusResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+        assert(getOpStatusResp.getOperationState === TOperationState.ERROR_STATE)
+      }
+    }
+  }
 }

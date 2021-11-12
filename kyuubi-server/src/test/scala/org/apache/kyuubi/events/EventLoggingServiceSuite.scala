@@ -106,14 +106,14 @@ class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper 
         assert(res.next())
         assert(res.getString("user") == Utils.currentUser)
         assert(res.getString("sessionName") == "test1")
-        assert(res.getString("serverSessionId") == "")
-        assert(res.getString("engineSessionId") == "")
+        assert(res.getString("sessionId") == "")
+        assert(res.getString("remoteSessionId") == "")
         assert(res.getLong("startTime") > 0)
         assert(res.getInt("totalOperations") == 0)
         assert(res.next())
         assert(res.getInt("totalOperations") == 0)
-        assert(res.getString("serverSessionId") != "")
-        assert(res.getString("engineSessionId") != "")
+        assert(res.getString("sessionId") != "")
+        assert(res.getString("remoteSessionId") != "")
         assert(res.getLong("openedTime") > 0)
         assert(res.next())
         assert(res.getInt("totalOperations") == 1)
@@ -139,14 +139,14 @@ class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper 
       withJdbcStatement() { statement =>
         val res = statement.executeQuery(
           s"SELECT * FROM `json`.`$serverSessionEventPath` " +
-            s"where sessionName = '$name' and serverSessionId != '' limit 1")
+            s"where sessionName = '$name' and sessionId != '' limit 1")
         assert(res.next())
-        val serverSessionId = res.getString("serverSessionId")
+        val serverSessionId = res.getString("sessionId")
         assert(!res.next())
 
         val res2 = statement.executeQuery(
           s"SELECT * FROM `json`.`$engineSessionEventPath` " +
-            s"where  sessionId = '$serverSessionId' limit 1")
+            s"where sessionId = '$serverSessionId' limit 1")
         assert(!res2.next())
       }
     }

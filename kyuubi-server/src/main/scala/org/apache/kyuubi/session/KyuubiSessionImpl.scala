@@ -19,10 +19,6 @@ package org.apache.kyuubi.session
 
 import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift._
-import org.apache.thrift.TException
-import org.apache.thrift.protocol.TBinaryProtocol
-import org.apache.thrift.transport.{TSocket, TTransport}
-
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
@@ -35,6 +31,9 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{Operation, OperationHandle, OperationState}
 import org.apache.kyuubi.server.EventLoggingService
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
+import org.apache.thrift.TException
+import org.apache.thrift.protocol.TBinaryProtocol
+import org.apache.thrift.transport.{TSocket, TTransport}
 
 class KyuubiSessionImpl(
     protocol: TProtocolVersion,
@@ -105,8 +104,8 @@ class KyuubiSessionImpl(
       logSessionInfo(s"Opened engine session[$engineSessionHandle]")
       sessionManager.operationManager.setConnection(handle, _client)
       sessionEvent.openedTime = System.currentTimeMillis()
-      sessionEvent.serverSessionId = handle.identifier.toString
-      sessionEvent.engineSessionId = engineSessionHandle.identifier.toString
+      sessionEvent.sessionId = handle.identifier.toString
+      sessionEvent.remoteSessionId = engineSessionHandle.identifier.toString
       sessionEvent.clientVersion = handle.protocol.getValue
       EventLoggingService.onEvent(sessionEvent)
     }
@@ -124,12 +123,12 @@ class KyuubiSessionImpl(
     if (!engineInitFinished) {
       Option(engineInitOp).foreach { op =>
         val waitingStartTime = System.currentTimeMillis()
-        info(s"Starting to wait the engine init operation finished")
+        logSessionInfo(s"Starting to wait the engine init operation finished")
 
         op.getBackgroundHandle.get()
 
         val elapsedTime = System.currentTimeMillis() - waitingStartTime
-        info(s"Engine init operation has finished, elapsed time: ${elapsedTime / 1000} s")
+        logSessionInfo(s"Engine init operation has finished, elapsed time: ${elapsedTime / 1000} s")
 
         if (op.getStatus.state != OperationState.FINISHED) {
           val ex = op.getStatus.exception.getOrElse(
