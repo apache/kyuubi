@@ -159,7 +159,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
 
   test("test render zookeeper service node info") {
     val title = "test render"
-    val nodes = Seq(ServiceNodeInfo("/kyuubi", "serviceNode", "localhost", 10000, Some("version")))
+    val nodes = Seq(
+      ServiceNodeInfo("/kyuubi", "serviceNode", "localhost", 10000, Some("version"), None))
     val renderedInfo = renderServiceNodesInfo(title, nodes, true)
     val expected = {
       s"\n               $title               " +
@@ -187,8 +188,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     System.setProperty(HA_ZK_NAMESPACE.key, uniqueNamespace)
 
     withZkClient(conf) { framework =>
-      createZkServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
-      createZkServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
+      createServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
+      createServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
 
       val newNamespace = getUniqueNamespace()
       val args = Array(
@@ -198,8 +199,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       )
 
       val expectedCreatedNodes = Seq(
-        ServiceNodeInfo(s"/$newNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION)),
-        ServiceNodeInfo(s"/$newNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION))
+        ServiceNodeInfo(s"/$newNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None),
+        ServiceNodeInfo(s"/$newNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION), None)
       )
 
       testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedCreatedNodes, false))
@@ -244,8 +245,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .set(KyuubiConf.FRONTEND_BIND_PORT, 0)
 
     withZkClient(conf) { framework =>
-      createZkServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
-      createZkServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
+      createServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
+      createServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
 
       val args = Array(
         "list", "server",
@@ -254,8 +255,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       )
 
       val expectedNodes = Seq(
-        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION)),
-        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION))
+        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None),
+        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION), None)
       )
 
       testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedNodes, false))
@@ -272,8 +273,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .set(KyuubiConf.FRONTEND_BIND_PORT, 0)
 
     withZkClient(conf) { framework =>
-      createZkServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
-      createZkServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
+      createServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
+      createServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
 
       val args = Array(
         "get", "server",
@@ -284,7 +285,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       )
 
       val expectedNodes = Seq(
-        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION))
+        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None)
       )
 
       testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedNodes, false))
@@ -302,8 +303,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
 
     withZkClient(conf) { framework =>
       withZkClient(conf) { zc =>
-        createZkServiceNode(conf, zc, uniqueNamespace, "localhost:10000", external = true)
-        createZkServiceNode(conf, zc, uniqueNamespace, "localhost:10001", external = true)
+        createServiceNode(conf, zc, uniqueNamespace, "localhost:10000", external = true)
+        createServiceNode(conf, zc, uniqueNamespace, "localhost:10001", external = true)
       }
 
       val args = Array(
@@ -315,7 +316,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       )
 
       val expectedDeletedNodes = Seq(
-        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION))
+        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None)
       )
 
       testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedDeletedNodes, false))
@@ -332,8 +333,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .set(KyuubiConf.FRONTEND_BIND_PORT, 0)
 
     withZkClient(conf) { framework =>
-      createZkServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
-      createZkServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
+      createServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
+      createServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
 
       val args = Array(
         "list", "server",
@@ -343,8 +344,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       )
 
       val expectedNodes = Seq(
-        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION)),
-        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION))
+        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None),
+        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION), None)
       )
 
       testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedNodes, true))

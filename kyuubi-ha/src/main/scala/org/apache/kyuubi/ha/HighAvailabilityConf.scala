@@ -21,7 +21,7 @@ import java.time.Duration
 
 import org.apache.hadoop.security.UserGroupInformation
 
-import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf}
+import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
 import org.apache.kyuubi.ha.client.RetryPolicies
 
 object HighAvailabilityConf {
@@ -99,4 +99,12 @@ object HighAvailabilityConf {
     .timeConf
     .checkValue(_ > 0, "Must be positive")
     .createWithDefault(Duration.ofSeconds(120).toMillis)
+
+  val HA_ZK_ENGINE_REF_ID: OptionalConfigEntry[String] =
+    buildConf("ha.engine.session.id")
+    .doc("The sessionId will be attached to zookeeper node when engine started, " +
+      "and the kyuubi server will check it cyclically.")
+    .version("1.3.2")
+    .stringConf
+    .createOptional
 }

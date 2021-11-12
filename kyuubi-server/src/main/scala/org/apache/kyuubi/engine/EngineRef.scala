@@ -30,7 +30,9 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_INIT_TIMEOUT, ENGINE_SHARE_LEVEL, ENGINE_SHARE_LEVEL_SUB_DOMAIN}
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, SERVER, ShareLevel}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_REF_ID
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NAMESPACE
+import org.apache.kyuubi.ha.client.ServiceDiscovery.getEngineBySessionId
 import org.apache.kyuubi.ha.client.ServiceDiscovery.getServerHost
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -123,12 +125,9 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
       }
   }
 
-  private def get(zkClient: CuratorFramework): Option[(String, Int)] = {
-    getServerHost(zkClient, engineSpace)
-  }
-
   private def create(zkClient: CuratorFramework): (String, Int) = tryWithLock(zkClient) {
-    var engineRef = get(zkClient)
+    // TODO: improve this after support engine pool. (KYUUBI #918)
+    var engineRef = getServerHost(zkClient, engineSpace)
     // Get the engine address ahead if another process has succeeded
     if (engineRef.nonEmpty) return engineRef.get
 
@@ -137,6 +136,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
     conf.set(SparkProcessBuilder.TAG_KEY,
       conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") + "KYUUBI")
     conf.set(HA_ZK_NAMESPACE, engineSpace)
+    conf.set(HA_ZK_ENGINE_REF_ID, sessionId)
     val builder = new SparkProcessBuilder(appUser, conf)
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     try {
@@ -163,7 +163,7 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
             s"Timeout($timeout ms) to launched Spark with $builder",
             builder.getError)
         }
-        engineRef = get(zkClient)
+        engineRef = getEngineBySessionId(zkClient, engineSpace, sessionId)
       }
       engineRef.get
     } finally {
@@ -177,9 +177,10 @@ private[kyuubi] class EngineRef private(conf: KyuubiConf, user: String, sessionI
    * Get the engine ref from engine space first first or create a new one
    */
   def getOrCreate(zkClient: CuratorFramework): (String, Int) = {
-    get(zkClient).getOrElse {
-      create(zkClient)
-    }
+    getServerHost(zkClient, engineSpace)
+      .getOrElse {
+        create(zkClient)
+      }
   }
 }
 
