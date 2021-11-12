@@ -101,8 +101,8 @@ object HighAvailabilityConf {
     .createWithDefault(Duration.ofSeconds(120).toMillis)
 
   val HA_ZK_ENGINE_REF_ID: OptionalConfigEntry[String] =
-    buildConf("ha.engine.session.id")
-    .doc("The sessionId will be attached to zookeeper node when engine started, " +
+    buildConf("ha.engine.ref.id")
+    .doc("The engine reference id will be attached to zookeeper node when engine started, " +
       "and the kyuubi server will check it cyclically.")
     .version("1.3.2")
     .stringConf
