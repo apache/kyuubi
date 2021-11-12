@@ -121,7 +121,13 @@ class KyuubiSessionImpl(
   private def waitForEngineInitOpFinished(): Unit = {
     if (!engineInitFinished) {
       Option(engineInitOp).foreach { op =>
+        val waitingStartTime = System.currentTimeMillis()
+        info(s"Starting to wait the engine init operation finished")
+
         op.getBackgroundHandle.get()
+
+        val elapsedTime = System.currentTimeMillis() - waitingStartTime
+        info(s"Engine init operation has finished, elapsed time:${elapsedTime / 1000}s")
 
         if (op.getStatus.state != OperationState.FINISHED) {
           val ex = op.getStatus.exception.getOrElse(
