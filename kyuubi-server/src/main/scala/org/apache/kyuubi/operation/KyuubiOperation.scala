@@ -36,8 +36,7 @@ import org.apache.kyuubi.util.ThriftUtils
 abstract class KyuubiOperation(opType: OperationType, session: Session)
   extends AbstractOperation(opType, session) {
 
-  protected def client = session.asInstanceOf[KyuubiSessionImpl].sessionManager
-    .operationManager.getThriftClient(session.handle)
+  protected lazy val client = session.asInstanceOf[KyuubiSessionImpl].client
 
   @volatile protected var _remoteOpHandle: TOperationHandle = _
 
@@ -92,7 +91,7 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
       setState(OperationState.CANCELED)
       if (_remoteOpHandle != null) {
         try {
-          Option(client).foreach(_.cancelOperation(_remoteOpHandle))
+          client.cancelOperation(_remoteOpHandle)
         } catch {
           case e @ (_: TException | _: KyuubiSQLException) =>
             warn(s"Error cancelling ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
@@ -112,7 +111,7 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
         }
 
         try {
-          Option(client).foreach(_.closeOperation(_remoteOpHandle))
+          client.closeOperation(_remoteOpHandle)
         } catch {
           case e @(_: TException | _: KyuubiSQLException) =>
             warn(s"Error closing ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)

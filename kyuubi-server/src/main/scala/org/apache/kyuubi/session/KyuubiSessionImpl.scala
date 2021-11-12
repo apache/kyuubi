@@ -63,7 +63,8 @@ class KyuubiSessionImpl(
   EventLoggingService.onEvent(sessionEvent)
 
   private var transport: TTransport = _
-  private var client: KyuubiSyncThriftClient = _
+  private var _client: KyuubiSyncThriftClient = _
+  def client: KyuubiSyncThriftClient = _client
 
   private var _handle: SessionHandle = _
   override def handle: SessionHandle = _handle
@@ -99,12 +100,13 @@ class KyuubiSessionImpl(
         transport.open()
         logSessionInfo(s"Connected to engine [$host:$port]")
       }
-      client = new KyuubiSyncThriftClient(new TBinaryProtocol(transport))
-      // use engine SessionHandle directly
-      client.openSession(protocol, user, passwd, normalizedConf)
-      sessionManager.operationManager.setConnection(handle, client)
+      _client = new KyuubiSyncThriftClient(new TBinaryProtocol(transport))
+      val engineSessionHandle = _client.openSession(protocol, user, passwd, normalizedConf)
+      logSessionInfo(s"Opened engine session[$engineSessionHandle]")
+      sessionManager.operationManager.setConnection(handle, _client)
       sessionEvent.openedTime = System.currentTimeMillis()
-      sessionEvent.sessionId = handle.identifier.toString
+      sessionEvent.serverSessionId = handle.identifier.toString
+      sessionEvent.engineSessionId = engineSessionHandle.identifier.toString
       sessionEvent.clientVersion = handle.protocol.getValue
       EventLoggingService.onEvent(sessionEvent)
     }
@@ -127,7 +129,7 @@ class KyuubiSessionImpl(
         op.getBackgroundHandle.get()
 
         val elapsedTime = System.currentTimeMillis() - waitingStartTime
-        info(s"Engine init operation has finished, elapsed time:${elapsedTime / 1000}s")
+        info(s"Engine init operation has finished, elapsed time: ${elapsedTime / 1000} s")
 
         if (op.getStatus.state != OperationState.FINISHED) {
           val ex = op.getStatus.exception.getOrElse(
@@ -148,7 +150,7 @@ class KyuubiSessionImpl(
       sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
     }
     try {
-      if (client != null) client.closeSession()
+      if (_client != null) _client.closeSession()
     } catch {
       case e: TException =>
         throw KyuubiSQLException("Error while cleaning up the engine resources", e)

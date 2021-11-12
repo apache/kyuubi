@@ -661,8 +661,8 @@ object KyuubiConf {
     buildConf("session.engine.sync.init")
       .doc("When opening kyuubi session, whether to init backend engine synchronously")
       .version("1.4.0")
-      .booleanConf.
-      createWithDefault(true)
+      .booleanConf
+      .createWithDefault(true)
 
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("backend.server.exec.pool.size")

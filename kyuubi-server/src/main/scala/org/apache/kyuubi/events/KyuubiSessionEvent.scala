@@ -23,7 +23,7 @@ import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.session.KyuubiSessionImpl
 
 /**
- * @param sessionId server session id
+ * @param serverSessionId server session id
  * @param sessionName if user not specify it, we use empty string instead
  * @param user session user
  * @param clientIP client ip address
@@ -43,7 +43,8 @@ case class KyuubiSessionEvent(
     serverIP: String,
     conf: Map[String, String],
     startTime: Long,
-    var sessionId: String = "",
+    var serverSessionId: String = "",
+    var engineSessionId: String = "",
     var clientVersion: Int = -1,
     var openedTime: Long = -1L,
     var endTime: Long = -1L,

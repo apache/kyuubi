@@ -17,15 +17,11 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.KyuubiSessionImpl
 
 class LaunchEngine(session: KyuubiSessionImpl) extends
   KyuubiOperation(OperationType.LAUNCH_ENGINE, session) {
-
-  private var _client: KyuubiSyncThriftClient = _
-  override protected def client: KyuubiSyncThriftClient = _client
 
   private final val _operationLog: OperationLog = {
     OperationLog.createOperationLog(session, getHandle)
@@ -48,7 +44,6 @@ class LaunchEngine(session: KyuubiSessionImpl) extends
       setState(OperationState.RUNNING)
       try {
         session.openEngineSession()
-        _client = session.sessionManager.operationManager.getThriftClient(session.handle)
         setState(OperationState.FINISHED)
       } catch onError()
     }
