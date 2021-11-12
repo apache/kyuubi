@@ -17,11 +17,42 @@
 
 package org.apache.kyuubi.server
 
-import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite}
+import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.ha.HighAvailabilityConf
+import org.apache.kyuubi.ha.client.ZooKeeperClientProvider
 import org.apache.kyuubi.service.ServiceState._
+import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
 class KyuubiServerSuite extends KyuubiFunSuite {
+
+  private var zkServer: EmbeddedZookeeper = _
+  private var server: KyuubiServer = _
+
+  override def beforeAll(): Unit = {
+    val conf = KyuubiConf()
+    zkServer = new EmbeddedZookeeper()
+    conf.set(ZookeeperConf.ZK_CLIENT_PORT, 0)
+    val zkData = Utils.createTempDir()
+    conf.set(ZookeeperConf.ZK_DATA_DIR, zkData.toString)
+    zkServer.initialize(conf)
+    zkServer.start()
+    super.beforeAll()
+    Thread.sleep(1000)
+  }
+
+  override def afterAll(): Unit = {
+    if (server != null) {
+      server.stop()
+      server = null
+    }
+
+    if (zkServer != null) {
+      zkServer.stop()
+      zkServer = null
+    }
+    super.afterAll()
+  }
 
   test("kyuubi server basic") {
     val server = new KyuubiServer()
@@ -64,5 +95,39 @@ class KyuubiServerSuite extends KyuubiFunSuite {
     val e = intercept[KyuubiException](new KyuubiServer().initialize(conf))
     assert(e.getMessage.contains("Failed to initialize frontend service"))
     assert(e.getCause.getMessage === "Invalid Port number")
+  }
+
+  test("invalid zookeeper quorum") {
+    val conf = KyuubiConf()
+    val quorum1 = "localhost:2181/lake,localhost:2182/lake"
+    conf.set(HighAvailabilityConf.HA_ZK_QUORUM, quorum1)
+    val exp1 = intercept[IllegalArgumentException](KyuubiServer.startServer(conf))
+    assert(exp1.getMessage === s"Illegal zookeeper quorum '$quorum1', " +
+      s"the chroot path started with / is only allowed at the end!")
+
+    val quorum2 = "localhost:2181/lake,localhost:2182"
+    conf.set(HighAvailabilityConf.HA_ZK_QUORUM, quorum2)
+    val exp2 = intercept[IllegalArgumentException](KyuubiServer.startServer(conf))
+    assert(exp2.getMessage === s"Illegal zookeeper quorum '$quorum2', " +
+      s"the chroot path started with / is only allowed at the end!")
+  }
+
+  test("kyuubi server starts with chroot") {
+    val conf = KyuubiConf()
+    val zkConnection = zkServer.getConnectString
+    val chrootPath = "/lake"
+    conf.set(HighAvailabilityConf.HA_ZK_QUORUM, zkConnection)
+    // chroot path does not exist before server start
+    ZooKeeperClientProvider.withZkClient(conf) { client =>
+      assert(client.checkExists().forPath(chrootPath) == null)
+    }
+
+    val zkWithChroot = zkConnection + chrootPath
+    val chrootConf = conf.clone.set(HighAvailabilityConf.HA_ZK_QUORUM, zkWithChroot)
+    server = KyuubiServer.startServer(chrootConf)
+    // chroot path exists after server started
+    ZooKeeperClientProvider.withZkClient(conf) { client =>
+      assert(client.checkExists().forPath(chrootPath) != null)
+    }
   }
 }
