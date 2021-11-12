@@ -26,7 +26,6 @@
 
 set -o pipefail
 set -e
-set -x
 
 KYUUBI_HOME="$(cd "`dirname "$0"`/.."; pwd)"
 DISTDIR="$KYUUBI_HOME/dist"
@@ -234,4 +233,5 @@ if [[ "$MAKE_TGZ" == "true" ]]; then
   cp -r "$DISTDIR" "$TARDIR"
   tar czf "$TARDIR_NAME.tgz" -C "$KYUUBI_HOME" "$TARDIR_NAME"
   rm -rf "$TARDIR"
+  echo "The Kyuubi tarball $TARDIR_NAME is successfully generated in $KYUUBI_HOME."
 fi
