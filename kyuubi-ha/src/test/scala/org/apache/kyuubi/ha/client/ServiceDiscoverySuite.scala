@@ -31,7 +31,6 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.service.{NoopServer, Serverable, ServiceState}
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
@@ -111,17 +110,17 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
     val acl = new ZooKeeperACLProvider(conf).getDefaultAcl
     assertACL(expectedNoACL, acl)
 
-    val serverConf = conf.clone.set(HA_ZK_ACL_ENABLED, true)
+    val serverConf = conf.clone.set(HA_ZK_AUTH_TYPE, ZooKeeperAuthTypes.KERBEROS.toString)
     val serverACL = new ZooKeeperACLProvider(serverConf).getDefaultAcl
     assertACL(expectedEnableACL, serverACL)
 
     val engineConf = serverConf.clone.set(HA_ZK_ENGINE_REF_ID, "ref")
-    engineConf.set(HA_ZK_ACL_ENGINE_ENABLED, false)
+    engineConf.set(HA_ZK_ENGINE_AUTH_TYPE, ZooKeeperAuthTypes.NONE.toString)
     val engineACL = new ZooKeeperACLProvider(engineConf).getDefaultAcl
     assertACL(expectedNoACL, engineACL)
 
     val enableEngineACLConf = serverConf.clone.set(HA_ZK_ENGINE_REF_ID, "ref")
-    enableEngineACLConf.set(HA_ZK_ACL_ENGINE_ENABLED, true)
+    enableEngineACLConf.set(HA_ZK_ENGINE_AUTH_TYPE, ZooKeeperAuthTypes.KERBEROS.toString)
     val enableEngineACL = new ZooKeeperACLProvider(enableEngineACLConf).getDefaultAcl
     assertACL(expectedEnableACL, enableEngineACL)
   }
@@ -131,9 +130,9 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
       val keytab = File.createTempFile("kentyao", ".keytab")
       val principal = "kentyao/_HOST@apache.org"
 
-      conf.set(KyuubiConf.SERVER_KEYTAB, keytab.getCanonicalPath)
-      conf.set(KyuubiConf.SERVER_PRINCIPAL, principal)
-      conf.set(HighAvailabilityConf.HA_ZK_ACL_ENABLED, true)
+      conf.set(HA_ZK_AUTH_KEYTAB.key, keytab.getCanonicalPath)
+      conf.set(HA_ZK_AUTH_PRINCIPAL.key, principal)
+      conf.set(HA_ZK_AUTH_TYPE.key, ZooKeeperAuthTypes.KERBEROS.toString)
 
       ZooKeeperClientProvider.setUpZooKeeperAuth(conf)
       val configuration = Configuration.getConfiguration
@@ -146,9 +145,9 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
       assert(options("principal") === s"kentyao/$hostname@apache.org")
       assert(options("useKeyTab").toString.toBoolean)
 
-      conf.set(KyuubiConf.SERVER_KEYTAB, keytab.getName)
+      conf.set(HA_ZK_AUTH_KEYTAB.key, s"${keytab.getName}")
       val e = intercept[IOException](ZooKeeperClientProvider.setUpZooKeeperAuth(conf))
-      assert(e.getMessage === s"${KyuubiConf.SERVER_KEYTAB.key} does not exists")
+      assert(e.getMessage === s"${HA_ZK_AUTH_KEYTAB.key} does not exists")
     }
   }
 
@@ -163,7 +162,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
         .set(HA_ZK_QUORUM, zkServer.getConnectString)
         .set(HA_ZK_NAMESPACE, namespace)
         .set(KyuubiConf.FRONTEND_BIND_PORT, 0)
-        .set(HA_ZK_ACL_ENABLED, false)
+        .set(HA_ZK_AUTH_TYPE, ZooKeeperAuthTypes.NONE.toString)
 
       val server: Serverable = new NoopServer()
       server.initialize(conf)

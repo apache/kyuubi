@@ -24,7 +24,7 @@ import org.apache.hadoop.security.UserGroupInformation
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
+import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery, ZooKeeperAuthTypes}
 import org.apache.kyuubi.metrics.{MetricsConf, MetricsSystem}
 import org.apache.kyuubi.service.{AbstractBackendService, KinitAuxiliaryService, Serverable}
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
@@ -38,7 +38,7 @@ object KyuubiServer extends Logging {
       zkServer.initialize(conf)
       zkServer.start()
       conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
-      conf.set(HA_ZK_ACL_ENABLED, false)
+      conf.set(HA_ZK_AUTH_TYPE, ZooKeeperAuthTypes.NONE.toString)
     }
 
     val server = new KyuubiServer()
