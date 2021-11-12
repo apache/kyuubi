@@ -121,10 +121,7 @@ class KyuubiSessionImpl(
   private def waitForEngineInitOpFinished(): Unit = {
     if (!engineInitFinished) {
       Option(engineInitOp).foreach { op =>
-        while (!OperationState.isTerminal(op.getStatus.state)) {
-          info("The engine init operation has not finished")
-          Thread.sleep(300)
-        }
+        op.getBackgroundHandle.get()
 
         if (op.getStatus.state != OperationState.FINISHED) {
           val ex = op.getStatus.exception.getOrElse(
