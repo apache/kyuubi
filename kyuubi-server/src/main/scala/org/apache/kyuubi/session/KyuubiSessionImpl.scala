@@ -88,7 +88,7 @@ class KyuubiSessionImpl(
     runOperation(engineInitOp)
   }
 
-  private[kyuubi] def openEngineSession(): Unit = synchronized {
+  private[kyuubi] def openEngineSession(): Unit = {
     withZkClient(sessionConf) { zkClient =>
       val (host, port) = engine.getOrCreate(zkClient)
       val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
