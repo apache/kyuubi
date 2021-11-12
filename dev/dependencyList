@@ -83,4 +83,6 @@ simpleclient_dropwizard/0.10.0//simpleclient_dropwizard-0.10.0.jar
 simpleclient_servlet/0.10.0//simpleclient_servlet-0.10.0.jar
 slf4j-api/1.7.30//slf4j-api-1.7.30.jar
 slf4j-log4j12/1.7.30//slf4j-log4j12-1.7.30.jar
+swagger-jaxrs2/2.1.11/swagger-jaxrs2-2.1.11.jar
+swagger-scala-module_2.12/2.5.2/swagger-scala-module_2.12-2.5.2.jar
 zookeeper/3.4.14//zookeeper-3.4.14.jar
