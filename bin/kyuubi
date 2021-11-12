@@ -62,7 +62,7 @@ function kyuubi_rotate_log() {
 
 export KYUUBI_HOME="$(cd "$(dirname "$0")"/..; pwd)"
 
-if [ $1 == "start" ]; then
+if [[ $1 == "start" ]] || [[ $1 == "run" ]]; then
   . "${KYUUBI_HOME}/bin/load-kyuubi-env.sh"
 else
   . "${KYUUBI_HOME}/bin/load-kyuubi-env.sh" -s
