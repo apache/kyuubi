@@ -99,7 +99,9 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
   }
 
   test("test asynchronous open kyuubi session") {
-    withSessionConf(Map(KyuubiConf.SESSION_ENGINE_SYNC_INIT.key -> "false"))(Map.empty)(Map.empty) {
+    withSessionConf(Map(
+      KyuubiConf.SESSION_ENGINE_SYNC_INIT.key -> "false"
+      ))(Map.empty)(Map.empty) {
       withSessionHandle { (client, handle) =>
         val executeStmtReq = new TExecuteStatementReq()
         executeStmtReq.setStatement("select engine_name()")
@@ -117,17 +119,16 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
   test("test asynchronous open kyuubi session failure") {
     withSessionConf(Map(
       KyuubiConf.SESSION_ENGINE_SYNC_INIT.key -> "false",
-    ))(Map.empty)(Map("spark.driver.host" -> "invalid")) {
+      "spark.master" -> "invalid"
+    ))(Map.empty)(Map.empty) {
       withSessionHandle { (client, handle) =>
         val executeStmtReq = new TExecuteStatementReq()
         executeStmtReq.setStatement("select engine_name()")
         executeStmtReq.setSessionHandle(handle)
         executeStmtReq.setRunAsync(false)
         val executeStmtResp = client.ExecuteStatement(executeStmtReq)
-        val getOpStatusReq = new TGetOperationStatusReq(executeStmtResp.getOperationHandle)
-        val getOpStatusResp = client.GetOperationStatus(getOpStatusReq)
-        assert(getOpStatusResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
-        assert(getOpStatusResp.getOperationState === TOperationState.ERROR_STATE)
+        assert(executeStmtResp.getStatus.getStatusCode == TStatusCode.ERROR_STATUS)
+        assert(executeStmtResp.getStatus.getErrorMessage.contains("kyuubi-spark-sql-engine.log"))
       }
     }
   }

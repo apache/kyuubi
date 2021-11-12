@@ -20,6 +20,8 @@ package org.apache.kyuubi.operation
 import java.sql.{DriverManager, ResultSet, SQLException, Statement}
 import java.util.Locale
 
+import scala.collection.JavaConverters._
+
 import org.apache.hive.service.rpc.thrift._
 import org.apache.hive.service.rpc.thrift.TCLIService.Iface
 import org.apache.hive.service.rpc.thrift.TOperationState._
@@ -154,6 +156,7 @@ trait HiveJDBCTestHelper extends KyuubiFunSuite {
       val req = new TOpenSessionReq()
       req.setUsername(user)
       req.setPassword("anonymous")
+      req.setConfiguration(_sessionConfigs.asJava)
       val resp = client.OpenSession(req)
       val handle = resp.getSessionHandle
 

@@ -19,6 +19,10 @@ package org.apache.kyuubi.session
 
 import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift._
+import org.apache.thrift.TException
+import org.apache.thrift.protocol.TBinaryProtocol
+import org.apache.thrift.transport.{TSocket, TTransport}
+
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
@@ -31,9 +35,6 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{Operation, OperationHandle, OperationState}
 import org.apache.kyuubi.server.EventLoggingService
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
-import org.apache.thrift.TException
-import org.apache.thrift.protocol.TBinaryProtocol
-import org.apache.thrift.transport.{TSocket, TTransport}
 
 class KyuubiSessionImpl(
     protocol: TProtocolVersion,
@@ -79,12 +80,12 @@ class KyuubiSessionImpl(
     }
     _handle = SessionHandle(protocol)
 
+    // we should call super.open before running launch engine operation
+    super.open()
+
     engineInitOp = sessionManager.operationManager.newLaunchEngineOperation(this)
     _initEngineOpHandle = engineInitOp.getHandle
     runOperation(engineInitOp)
-
-    // we should call super.open after kyuubi session is already opened
-    super.open()
   }
 
   private[kyuubi] def openEngineSession(): Unit = synchronized {
