@@ -45,11 +45,7 @@ class InitEngine(session: KyuubiSessionImpl) extends
       session.openEngineSession()
       client = session.sessionManager.operationManager.getThriftClient(session.handle)
       setState(OperationState.FINISHED)
-    } catch {
-      case e: Throwable =>
-        setState(OperationState.ERROR)
-        throw e
-    }
+    } catch onError()
   }
 
   override protected def runInternal(): Unit = {
