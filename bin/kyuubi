@@ -62,7 +62,11 @@ function kyuubi_rotate_log() {
 
 export KYUUBI_HOME="$(cd "$(dirname "$0")"/..; pwd)"
 
-. "${KYUUBI_HOME}/bin/load-kyuubi-env.sh"
+if [[ $1 == "start" ]] || [[ $1 == "run" ]]; then
+  . "${KYUUBI_HOME}/bin/load-kyuubi-env.sh"
+else
+  . "${KYUUBI_HOME}/bin/load-kyuubi-env.sh" -s
+fi
 
 if [[ -z ${JAVA_HOME} ]]; then
   echo "Error: JAVA_HOME IS NOT SET! CANNOT PROCEED."
