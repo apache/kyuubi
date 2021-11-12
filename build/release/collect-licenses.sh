@@ -26,7 +26,6 @@
 
 set -o pipefail
 set -e
-set -x
 
 SRC=${1:-.}
 DST=${2:-licenses-output}
