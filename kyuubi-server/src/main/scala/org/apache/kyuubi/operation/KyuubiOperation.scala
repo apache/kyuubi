@@ -26,18 +26,18 @@ import org.apache.thrift.TException
 import org.apache.thrift.transport.TTransportException
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
-import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.metrics.MetricsConstants.STATEMENT_FAIL
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationType.OperationType
-import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.session.{KyuubiSessionImpl, Session}
 import org.apache.kyuubi.util.ThriftUtils
 
-abstract class KyuubiOperation(
-    opType: OperationType,
-    session: Session,
-    var client: KyuubiSyncThriftClient) extends AbstractOperation(opType, session) {
+abstract class KyuubiOperation(opType: OperationType, session: Session)
+  extends AbstractOperation(opType, session) {
+
+  protected def client = session.asInstanceOf[KyuubiSessionImpl].sessionManager
+    .operationManager.getThriftClient(session.handle)
 
   @volatile protected var _remoteOpHandle: TOperationHandle = _
 
@@ -92,7 +92,7 @@ abstract class KyuubiOperation(
       setState(OperationState.CANCELED)
       if (_remoteOpHandle != null) {
         try {
-          client.cancelOperation(_remoteOpHandle)
+          Option(client).foreach(_.cancelOperation(_remoteOpHandle))
         } catch {
           case e @ (_: TException | _: KyuubiSQLException) =>
             warn(s"Error cancelling ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
@@ -112,7 +112,7 @@ abstract class KyuubiOperation(
         }
 
         try {
-          client.closeOperation(_remoteOpHandle)
+          Option(client).foreach(_.closeOperation(_remoteOpHandle))
         } catch {
           case e @(_: TException | _: KyuubiSQLException) =>
             warn(s"Error closing ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)

@@ -74,21 +74,18 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       statement: String,
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
-    val client = getThriftClient(session.handle)
-    val operation = new ExecuteStatement(session, client, statement, runAsync,
+    val operation = new ExecuteStatement(session, statement, runAsync,
       getQueryTimeout(queryTimeout))
     addOperation(operation)
   }
 
   override def newGetTypeInfoOperation(session: Session): Operation = {
-    val client = getThriftClient(session.handle)
-    val operation = new GetTypeInfo(session, client)
+    val operation = new GetTypeInfo(session)
     addOperation(operation)
   }
 
   override def newGetCatalogsOperation(session: Session): Operation = {
-    val client = getThriftClient(session.handle)
-    val operation = new GetCatalogs(session, client)
+    val operation = new GetCatalogs(session)
     addOperation(operation)
   }
 
@@ -96,8 +93,7 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       session: Session,
       catalog: String,
       schema: String): Operation = {
-    val client = getThriftClient(session.handle)
-    val operation = new GetSchemas(session, client, catalog, schema)
+    val operation = new GetSchemas(session, catalog, schema)
     addOperation(operation)
   }
 
@@ -107,15 +103,12 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       schemaName: String,
       tableName: String,
       tableTypes: java.util.List[String]): Operation = {
-    val client = getThriftClient(session.handle)
-    val operation = new GetTables(
-      session, client, catalogName, schemaName, tableName, tableTypes)
+    val operation = new GetTables(session, catalogName, schemaName, tableName, tableTypes)
     addOperation(operation)
   }
 
   override def newGetTableTypesOperation(session: Session): Operation = {
-    val client = getThriftClient(session.handle)
-    val operation = new GetTableTypes(session, client)
+    val operation = new GetTableTypes(session)
     addOperation(operation)
   }
 
@@ -125,8 +118,7 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       schemaName: String,
       tableName: String,
       columnName: String): Operation = {
-    val client = getThriftClient(session.handle)
-    val operation = new GetColumns(session, client, catalogName, schemaName, tableName, columnName)
+    val operation = new GetColumns(session, catalogName, schemaName, tableName, columnName)
     addOperation(operation)
   }
 
@@ -135,13 +127,12 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       catalogName: String,
       schemaName: String,
       functionName: String): Operation = {
-    val client = getThriftClient(session.handle)
-    val operation = new GetFunctions(session, client, catalogName, schemaName, functionName)
+    val operation = new GetFunctions(session, catalogName, schemaName, functionName)
     addOperation(operation)
   }
 
-  def newInitEngineOperation(session: KyuubiSessionImpl): Operation = {
-    val operation = new InitEngine(session)
+  def newLaunchEngineOperation(session: KyuubiSessionImpl): Operation = {
+    val operation = new LaunchEngine(session)
     addOperation(operation)
   }
 

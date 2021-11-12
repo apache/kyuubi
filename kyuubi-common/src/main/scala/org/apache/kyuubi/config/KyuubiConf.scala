@@ -664,13 +664,6 @@ object KyuubiConf {
       .booleanConf.
       createWithDefault(true)
 
-  val SESSION_ENGINE_STARTUP_CHECK_INTERVAL: ConfigEntry[Long] =
-    buildConf("session.engine.startup.check.interval")
-      .doc("The interval to check whether backend engine is ready during engine startup phase.")
-      .version("1.4.0")
-      .longConf
-      .createWithDefault(100)
-
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("backend.server.exec.pool.size")
       .doc("Number of threads in the operation execution thread pool of Kyuubi server")

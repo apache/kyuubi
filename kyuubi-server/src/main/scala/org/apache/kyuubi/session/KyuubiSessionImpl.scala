@@ -55,7 +55,6 @@ class KyuubiSessionImpl(
 
   val engine: EngineRef = new EngineRef(sessionConf, user)
   val engineSyncInit = sessionConf.get(SESSION_ENGINE_SYNC_INIT)
-  val engineStartupCheckInterval = sessionConf.get(SESSION_ENGINE_STARTUP_CHECK_INTERVAL)
   var engineInitOp: Operation = _
   @volatile
   var engineInitFinished: Boolean = false
@@ -80,7 +79,7 @@ class KyuubiSessionImpl(
     }
     _handle = SessionHandle(protocol)
 
-    engineInitOp = sessionManager.operationManager.newInitEngineOperation(this)
+    engineInitOp = sessionManager.operationManager.newLaunchEngineOperation(this)
     _initEngineOpHandle = engineInitOp.getHandle
     runOperation(engineInitOp)
 
@@ -124,7 +123,7 @@ class KyuubiSessionImpl(
       Option(engineInitOp).foreach { op =>
         while (!OperationState.isTerminal(op.getStatus.state)) {
           info("The engine init operation has not finished")
-          Thread.sleep(engineStartupCheckInterval)
+          Thread.sleep(300)
         }
 
         if (op.getStatus.state != OperationState.FINISHED) {
