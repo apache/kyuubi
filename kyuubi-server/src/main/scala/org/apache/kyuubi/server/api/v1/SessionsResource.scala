@@ -19,7 +19,7 @@ package org.apache.kyuubi.server.api.v1
 
 import java.util.UUID
 import javax.ws.rs._
-import javax.ws.rs.{Consumes, DELETE, GET, POST, Path, PathParam, Produces}
+import javax.ws.rs.{Consumes, DELETE, GET, Path, PathParam, POST, Produces}
 import javax.ws.rs.core.{MediaType, Response}
 
 import scala.collection.JavaConverters._
