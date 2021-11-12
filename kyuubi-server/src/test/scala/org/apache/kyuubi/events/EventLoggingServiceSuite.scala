@@ -21,13 +21,16 @@ import java.net.InetAddress
 import java.nio.file.Paths
 import java.util.UUID
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
 
-import org.apache.kyuubi.{Utils, WithKyuubiServer}
+import org.apache.kyuubi.{KYUUBI_VERSION, Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.OperationState._
+import org.apache.kyuubi.server.KyuubiServer
+import org.apache.kyuubi.service.ServiceState
 
 class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
@@ -150,5 +153,46 @@ class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper 
         assert(!res2.next())
       }
     }
+  }
+
+  test("test Kyuubi Server Start event") {
+    val confKv = List(("awesome.kyuubi", "true"), ("awesome.kyuubi.server", "yeah"))
+    for (kv <- confKv) {
+      conf.set(kv._1, kv._2)
+    }
+    val name = "KyuubiServerTest1"
+    val server = new KyuubiServer(name)
+    server.initialize(conf)
+    server.start()
+
+    val kyuubiServerStartEventPath =
+      Paths.get(serverLogRoot, "kyuubi_server_start", s"day=$currentDate", "*.json")
+
+    withJdbcStatement() { statement =>
+      val res = statement.executeQuery(
+        s"SELECT * FROM `json`.`$kyuubiServerStartEventPath` where serverName = '$name' limit 1")
+      res.next()
+      assert(res.getString("serverName") == name)
+      res.next()
+      assert(res.getLong("startTime") > 0)
+      res.next()
+      assert(res.getString("states") == ServiceState.STARTED.toString)
+      res.next()
+      val objMapper = new ObjectMapper()
+      val confMap = objMapper.readTree(res.getString("serverConf"))
+      for (kv <- confKv) {
+        assert(confMap.get(kv._1).asText() == kv._2)
+      }
+      res.next()
+      val envMap = objMapper.readTree(res.getString("serverEnv"))
+      val USER = "USER"
+      val envUser = if (envMap.has(USER)) envMap.get(USER).asText() else ""
+      assert(envUser == sys.env.getOrElse(USER, ""))
+      res.next()
+      assert(res.getString("serverVersion") == KYUUBI_VERSION)
+      res.next()
+      assert(res.getString("eventType") == "kyuubi_server_start")
+    }
+    server.stop()
   }
 }
