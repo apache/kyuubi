@@ -36,7 +36,7 @@ import org.apache.kyuubi.util.ThriftUtils
 abstract class KyuubiOperation(opType: OperationType, session: Session)
   extends AbstractOperation(opType, session) {
 
-  protected lazy val client = session.asInstanceOf[KyuubiSessionImpl].client
+  protected[operation] lazy val client = session.asInstanceOf[KyuubiSessionImpl].client
 
   @volatile protected var _remoteOpHandle: TOperationHandle = _
 

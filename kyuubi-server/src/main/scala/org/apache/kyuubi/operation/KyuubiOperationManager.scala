@@ -17,37 +17,25 @@
 
 package org.apache.kyuubi.operation
 
-import java.util.concurrent.{ConcurrentHashMap, TimeUnit}
+import java.util.concurrent.TimeUnit
 
 import org.apache.hive.service.rpc.thrift.TRowSet
 
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
-import org.apache.kyuubi.session.{KyuubiSessionImpl, Session, SessionHandle}
+import org.apache.kyuubi.session.{KyuubiSessionImpl, Session}
 import org.apache.kyuubi.util.ThriftUtils
 
 class KyuubiOperationManager private (name: String) extends OperationManager(name) {
 
   def this() = this(classOf[KyuubiOperationManager].getSimpleName)
 
-  private val handleToClient = new ConcurrentHashMap[SessionHandle, KyuubiSyncThriftClient]()
-
   private var queryTimeout: Option[Long] = None
 
   override def initialize(conf: KyuubiConf): Unit = {
     queryTimeout = conf.get(OPERATION_QUERY_TIMEOUT).map(TimeUnit.MILLISECONDS.toSeconds)
     super.initialize(conf)
-  }
-
-  private[operation] def getThriftClient(sessionHandle: SessionHandle): KyuubiSyncThriftClient = {
-    val client = handleToClient.get(sessionHandle)
-    if (client == null) {
-      throw KyuubiSQLException(s"$sessionHandle has not been initialized or already been closed")
-    }
-    client
   }
 
   private def getQueryTimeout(clientQueryTimeout: Long): Long = {
@@ -59,14 +47,6 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       case Some(systemQueryTimeout) => systemQueryTimeout
       case None => clientQueryTimeout
     }
-  }
-
-  def setConnection(sessionHandle: SessionHandle, client: KyuubiSyncThriftClient): Unit = {
-    handleToClient.put(sessionHandle, client)
-  }
-
-  def removeConnection(sessionHandle: SessionHandle): Unit = {
-    handleToClient.remove(sessionHandle)
   }
 
   override def newExecuteStatementOperation(
@@ -146,7 +126,7 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       case Some(log) => log.read(maxRows)
       case None =>
         val remoteHandle = operation.remoteOpHandle()
-        val client = getThriftClient(operation.getSession.handle)
+        val client = operation.client
         if (remoteHandle != null) {
           client.fetchResults(remoteHandle, order, maxRows, fetchLog = true)
         } else {

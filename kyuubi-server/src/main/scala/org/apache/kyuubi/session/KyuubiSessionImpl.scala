@@ -55,7 +55,7 @@ class KyuubiSessionImpl(
 
   val engine: EngineRef = new EngineRef(sessionConf, user)
   val engineSyncInit = sessionConf.get(SESSION_ENGINE_SYNC_INIT)
-  var engineInitOp: Operation = _
+  private val engineInitOp = sessionManager.operationManager.newLaunchEngineOperation(this)
   @volatile
   var engineInitFinished: Boolean = false
 
@@ -66,25 +66,17 @@ class KyuubiSessionImpl(
   private var _client: KyuubiSyncThriftClient = _
   def client: KyuubiSyncThriftClient = _client
 
-  private var _handle: SessionHandle = _
-  override def handle: SessionHandle = _handle
-
-  @volatile
-  private var _initEngineOpHandle: OperationHandle = _
-  def initEngineOpHandle: OperationHandle = _initEngineOpHandle
+  override val handle: SessionHandle = SessionHandle(protocol)
 
   override def open(): Unit = {
     MetricsSystem.tracing { ms =>
       ms.incCount(CONN_TOTAL)
       ms.incCount(MetricRegistry.name(CONN_OPEN, user))
     }
-    _handle = SessionHandle(protocol)
 
     // we should call super.open before running launch engine operation
     super.open()
 
-    engineInitOp = sessionManager.operationManager.newLaunchEngineOperation(this)
-    _initEngineOpHandle = engineInitOp.getHandle
     runOperation(engineInitOp)
   }
 
@@ -103,7 +95,6 @@ class KyuubiSessionImpl(
       _client = new KyuubiSyncThriftClient(new TBinaryProtocol(transport))
       val engineSessionHandle = _client.openSession(protocol, user, passwd, normalizedConf)
       logSessionInfo(s"Opened engine session[$engineSessionHandle]")
-      sessionManager.operationManager.setConnection(handle, _client)
       sessionEvent.openedTime = System.currentTimeMillis()
       sessionEvent.sessionId = handle.identifier.toString
       sessionEvent.remoteSessionId = engineSessionHandle.identifier.toString
@@ -113,7 +104,7 @@ class KyuubiSessionImpl(
   }
 
   override protected def runOperation(operation: Operation): OperationHandle = {
-    if (operation.getHandle != _initEngineOpHandle) {
+    if (operation != engineInitOp) {
       waitForEngineInitOpFinished()
       sessionEvent.totalOperations += 1
     }
@@ -138,7 +129,6 @@ class KyuubiSessionImpl(
         }
 
         engineInitFinished = true
-        engineInitOp = null
       }
     }
   }
@@ -146,7 +136,6 @@ class KyuubiSessionImpl(
   override def close(): Unit = {
     super.close()
     if (handle != null) {
-      sessionManager.operationManager.removeConnection(handle)
       sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
     }
     try {
