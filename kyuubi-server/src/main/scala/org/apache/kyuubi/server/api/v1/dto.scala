@@ -64,7 +64,7 @@ case class StatementRequest(
 
 case class GetSchemasRequest(
   catalogName: String,
-  schemaName: String,
+  schemaName: String
 )
 
 case class GetTablesRequest(
