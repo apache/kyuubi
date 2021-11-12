@@ -144,6 +144,8 @@ trait InsertZorderHelper extends Rule[LogicalPlan] with ZorderBuilder {
       } else {
         buildZorder(bound)
       }
+      // TODO: We can do rebalance partitions before local sort of zorder after SPARK 3.3
+      //   see https://github.com/apache/spark/pull/34542
       Sort(
         SortOrder(orderExpr, Ascending, NullsLast, Seq.empty) :: Nil,
         conf.getConf(KyuubiSQLConf.ZORDER_GLOBAL_SORT_ENABLED),
