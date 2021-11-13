@@ -100,7 +100,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
 
   test("test asynchronous open kyuubi session") {
     withSessionConf(Map(
-      KyuubiConf.SESSION_ENGINE_SYNC_INIT.key -> "false"
+      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "true"
       ))(Map.empty)(Map.empty) {
       withSessionHandle { (client, handle) =>
         val executeStmtReq = new TExecuteStatementReq()
@@ -118,7 +118,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
 
   test("test asynchronous open kyuubi session failure") {
     withSessionConf(Map(
-      KyuubiConf.SESSION_ENGINE_SYNC_INIT.key -> "false",
+      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "true",
       "spark.master" -> "invalid"
     ))(Map.empty)(Map.empty) {
       withSessionHandle { (client, handle) =>

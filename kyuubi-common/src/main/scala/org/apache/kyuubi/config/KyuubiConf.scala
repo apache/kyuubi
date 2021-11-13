@@ -657,12 +657,15 @@ object KyuubiConf {
       .checkValue(_ > 0, "the maximum must be positive integer.")
       .createWithDefault(10)
 
-  val SESSION_ENGINE_SYNC_INIT: ConfigEntry[Boolean] =
-    buildConf("session.engine.sync.init")
-      .doc("When opening kyuubi session, whether to init backend engine synchronously")
+  // TODO: make it true by default
+  val SESSION_ENGINE_LAUNCH_ASYNC: ConfigEntry[Boolean] =
+    buildConf("session.engine.launch.async")
+      .doc("When opening kyuubi session, whether to launch backend engine asynchronously." +
+        " When true, the Kyuubi server will set up the connection with the client without delay" +
+        " as the backend engine will be created asynchronously.")
       .version("1.4.0")
       .booleanConf
-      .createWithDefault(true)
+      .createWithDefault(false)
 
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("backend.server.exec.pool.size")

@@ -32,7 +32,7 @@ import org.apache.kyuubi.events.KyuubiSessionEvent
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
-import org.apache.kyuubi.operation.{Operation, OperationHandle, OperationState}
+import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.server.EventLoggingService
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
@@ -54,10 +54,11 @@ class KyuubiSessionImpl(
   }
 
   val engine: EngineRef = new EngineRef(sessionConf, user)
-  val engineSyncInit = sessionConf.get(SESSION_ENGINE_SYNC_INIT)
-  private val engineInitOp = sessionManager.operationManager.newLaunchEngineOperation(this)
+  val launchEngineAsync = sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC)
+  private val launchEngineOp = sessionManager.operationManager.newLaunchEngineOperation(
+    this, launchEngineAsync)
   @volatile
-  var engineInitFinished: Boolean = false
+  var engineLaunched: Boolean = false
 
   private val sessionEvent = KyuubiSessionEvent(this)
   EventLoggingService.onEvent(sessionEvent)
@@ -67,6 +68,7 @@ class KyuubiSessionImpl(
   def client: KyuubiSyncThriftClient = _client
 
   override val handle: SessionHandle = SessionHandle(protocol)
+  private var _engineSessionHandle: SessionHandle = _
 
   override def open(): Unit = {
     MetricsSystem.tracing { ms =>
@@ -77,7 +79,7 @@ class KyuubiSessionImpl(
     // we should call super.open before running launch engine operation
     super.open()
 
-    runOperation(engineInitOp)
+    runOperation(launchEngineOp)
   }
 
   private[kyuubi] def openEngineSession(): Unit = {
@@ -93,42 +95,42 @@ class KyuubiSessionImpl(
         logSessionInfo(s"Connected to engine [$host:$port]")
       }
       _client = new KyuubiSyncThriftClient(new TBinaryProtocol(transport))
-      val engineSessionHandle = _client.openSession(protocol, user, passwd, normalizedConf)
-      logSessionInfo(s"Opened engine session[$engineSessionHandle]")
+      _engineSessionHandle = _client.openSession(protocol, user, passwd, normalizedConf)
+      logSessionInfo(s"Opened engine session[${_engineSessionHandle}]")
       sessionEvent.openedTime = System.currentTimeMillis()
       sessionEvent.sessionId = handle.identifier.toString
-      sessionEvent.remoteSessionId = engineSessionHandle.identifier.toString
+      sessionEvent.remoteSessionId = _engineSessionHandle.identifier.toString
       sessionEvent.clientVersion = handle.protocol.getValue
       EventLoggingService.onEvent(sessionEvent)
     }
   }
 
   override protected def runOperation(operation: Operation): OperationHandle = {
-    if (operation != engineInitOp) {
-      waitForEngineInitOpFinished()
+    if (operation != launchEngineOp) {
+      waitForEngineLaunched()
       sessionEvent.totalOperations += 1
     }
     super.runOperation(operation)
   }
 
-  private def waitForEngineInitOpFinished(): Unit = {
-    if (!engineInitFinished) {
-      Option(engineInitOp).foreach { op =>
+  private def waitForEngineLaunched(): Unit = {
+    if (!engineLaunched) {
+      Option(launchEngineOp).foreach { op =>
         val waitingStartTime = System.currentTimeMillis()
-        logSessionInfo(s"Starting to wait the engine init operation finished")
+        logSessionInfo(s"Starting to wait the launch engine operation finished")
 
         op.getBackgroundHandle.get()
 
         val elapsedTime = System.currentTimeMillis() - waitingStartTime
-        logSessionInfo(s"Engine init operation has finished, elapsed time: ${elapsedTime / 1000} s")
+        logSessionInfo(s"Engine has been launched, elapsed time: ${elapsedTime / 1000} s")
 
-        if (op.getStatus.state != OperationState.FINISHED) {
+        if (_engineSessionHandle == null) {
           val ex = op.getStatus.exception.getOrElse(
-            KyuubiSQLException(s"Failed to init engine for session[$handle]"))
+            KyuubiSQLException(s"Failed to launch engine for session[$handle]"))
           throw ex
         }
 
-        engineInitFinished = true
+        engineLaunched = true
       }
     }
   }
