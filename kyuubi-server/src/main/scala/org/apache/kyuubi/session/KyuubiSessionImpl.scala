@@ -42,7 +42,7 @@ class KyuubiSessionImpl(
     password: String,
     ipAddress: String,
     conf: Map[String, String],
-    sessionManager: KyuubiSessionManager,
+    override val sessionManager: KyuubiSessionManager,
     sessionConf: KyuubiConf)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
@@ -54,62 +54,94 @@ class KyuubiSessionImpl(
   }
 
   val engine: EngineRef = new EngineRef(sessionConf, user)
+  val launchEngineAsync = sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC)
+  private val launchEngineOp = sessionManager.operationManager.newLaunchEngineOperation(
+    this, launchEngineAsync)
+  @volatile
+  var engineLaunched: Boolean = false
 
   private val sessionEvent = KyuubiSessionEvent(this)
   EventLoggingService.onEvent(sessionEvent)
 
   private var transport: TTransport = _
-  private var client: KyuubiSyncThriftClient = _
+  private var _client: KyuubiSyncThriftClient = _
+  def client: KyuubiSyncThriftClient = _client
 
-  private var _handle: SessionHandle = _
-  override def handle: SessionHandle = _handle
+  override val handle: SessionHandle = SessionHandle(protocol)
+  private var _engineSessionHandle: SessionHandle = _
 
   override def open(): Unit = {
     MetricsSystem.tracing { ms =>
       ms.incCount(CONN_TOTAL)
       ms.incCount(MetricRegistry.name(CONN_OPEN, user))
     }
-    withZkClient(sessionConf) { zkClient =>
-      val (host, port) = engine.getOrCreate(zkClient)
-      openSession(host, port)
-    }
-    // we should call super.open after kyuubi session is already opened
+
+    // we should call super.open before running launch engine operation
     super.open()
+
+    runOperation(launchEngineOp)
   }
 
-  private def openSession(host: String, port: Int): Unit = {
-    val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
-    val loginTimeout = sessionConf.get(ENGINE_LOGIN_TIMEOUT).toInt
-    val requestTimeout = sessionConf.get(ENGINE_REQUEST_TIMEOUT).toInt
-    transport = PlainSASLHelper.getPlainTransport(
-      user, passwd, new TSocket(host, port, requestTimeout, loginTimeout))
-    if (!transport.isOpen) {
-      transport.open()
-      logSessionInfo(s"Connected to engine [$host:$port]")
+  private[kyuubi] def openEngineSession(): Unit = {
+    withZkClient(sessionConf) { zkClient =>
+      val (host, port) = engine.getOrCreate(zkClient)
+      val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
+      val loginTimeout = sessionConf.get(ENGINE_LOGIN_TIMEOUT).toInt
+      val requestTimeout = sessionConf.get(ENGINE_REQUEST_TIMEOUT).toInt
+      transport = PlainSASLHelper.getPlainTransport(
+        user, passwd, new TSocket(host, port, requestTimeout, loginTimeout))
+      if (!transport.isOpen) {
+        transport.open()
+        logSessionInfo(s"Connected to engine [$host:$port]")
+      }
+      _client = new KyuubiSyncThriftClient(new TBinaryProtocol(transport))
+      _engineSessionHandle = _client.openSession(protocol, user, passwd, normalizedConf)
+      logSessionInfo(s"Opened engine session[${_engineSessionHandle}]")
+      sessionEvent.openedTime = System.currentTimeMillis()
+      sessionEvent.sessionId = handle.identifier.toString
+      sessionEvent.remoteSessionId = _engineSessionHandle.identifier.toString
+      sessionEvent.clientVersion = handle.protocol.getValue
+      EventLoggingService.onEvent(sessionEvent)
     }
-    client = new KyuubiSyncThriftClient(new TBinaryProtocol(transport))
-    // use engine SessionHandle directly
-    _handle = client.openSession(protocol, user, passwd, normalizedConf)
-    sessionManager.operationManager.setConnection(handle, client)
-    sessionEvent.openedTime = System.currentTimeMillis()
-    sessionEvent.sessionId = handle.identifier.toString
-    sessionEvent.clientVersion = handle.protocol.getValue
-    EventLoggingService.onEvent(sessionEvent)
   }
 
   override protected def runOperation(operation: Operation): OperationHandle = {
-    sessionEvent.totalOperations += 1
+    if (operation != launchEngineOp) {
+      waitForEngineLaunched()
+      sessionEvent.totalOperations += 1
+    }
     super.runOperation(operation)
+  }
+
+  private def waitForEngineLaunched(): Unit = {
+    if (!engineLaunched) {
+      Option(launchEngineOp).foreach { op =>
+        val waitingStartTime = System.currentTimeMillis()
+        logSessionInfo(s"Starting to wait the launch engine operation finished")
+
+        op.getBackgroundHandle.get()
+
+        val elapsedTime = System.currentTimeMillis() - waitingStartTime
+        logSessionInfo(s"Engine has been launched, elapsed time: ${elapsedTime / 1000} s")
+
+        if (_engineSessionHandle == null) {
+          val ex = op.getStatus.exception.getOrElse(
+            KyuubiSQLException(s"Failed to launch engine for session[$handle]"))
+          throw ex
+        }
+
+        engineLaunched = true
+      }
+    }
   }
 
   override def close(): Unit = {
     super.close()
     if (handle != null) {
-      sessionManager.operationManager.removeConnection(handle)
       sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
     }
     try {
-      if (client != null) client.closeSession()
+      if (_client != null) _client.closeSession()
     } catch {
       case e: TException =>
         throw KyuubiSQLException("Error while cleaning up the engine resources", e)

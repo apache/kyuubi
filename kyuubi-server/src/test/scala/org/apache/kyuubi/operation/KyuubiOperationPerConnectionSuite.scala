@@ -97,4 +97,39 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         "Caused by: java.net.SocketException: Broken pipe (Write failed)")
     }
   }
+
+  test("test asynchronous open kyuubi session") {
+    withSessionConf(Map(
+      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "true"
+      ))(Map.empty)(Map.empty) {
+      withSessionHandle { (client, handle) =>
+        val executeStmtReq = new TExecuteStatementReq()
+        executeStmtReq.setStatement("select engine_name()")
+        executeStmtReq.setSessionHandle(handle)
+        executeStmtReq.setRunAsync(false)
+        val executeStmtResp = client.ExecuteStatement(executeStmtReq)
+        val getOpStatusReq = new TGetOperationStatusReq(executeStmtResp.getOperationHandle)
+        val getOpStatusResp = client.GetOperationStatus(getOpStatusReq)
+        assert(getOpStatusResp.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+        assert(getOpStatusResp.getOperationState === TOperationState.FINISHED_STATE)
+      }
+    }
+  }
+
+  test("test asynchronous open kyuubi session failure") {
+    withSessionConf(Map(
+      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "true",
+      "spark.master" -> "invalid"
+    ))(Map.empty)(Map.empty) {
+      withSessionHandle { (client, handle) =>
+        val executeStmtReq = new TExecuteStatementReq()
+        executeStmtReq.setStatement("select engine_name()")
+        executeStmtReq.setSessionHandle(handle)
+        executeStmtReq.setRunAsync(false)
+        val executeStmtResp = client.ExecuteStatement(executeStmtReq)
+        assert(executeStmtResp.getStatus.getStatusCode == TStatusCode.ERROR_STATUS)
+        assert(executeStmtResp.getStatus.getErrorMessage.contains("kyuubi-spark-sql-engine.log"))
+      }
+    }
+  }
 }

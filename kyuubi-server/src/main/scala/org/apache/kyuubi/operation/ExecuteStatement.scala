@@ -24,7 +24,6 @@ import org.apache.hive.service.rpc.thrift.TOperationState._
 import org.apache.thrift.TException
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.KyuubiStatementEvent
 import org.apache.kyuubi.metrics.MetricsConstants._
@@ -37,11 +36,10 @@ import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, Sessi
 
 class ExecuteStatement(
     session: Session,
-    client: KyuubiSyncThriftClient,
     override val statement: String,
     override val shouldRunAsync: Boolean,
     queryTimeout: Long)
-  extends KyuubiOperation(OperationType.EXECUTE_STATEMENT, session, client) {
+  extends KyuubiOperation(OperationType.EXECUTE_STATEMENT, session) {
   EventLoggingService.onEvent(KyuubiStatementEvent(this))
 
   private final val _operationLog: OperationLog = if (shouldRunAsync) {

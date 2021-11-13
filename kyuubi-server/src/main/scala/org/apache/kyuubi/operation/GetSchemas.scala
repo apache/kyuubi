@@ -17,15 +17,13 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.session.Session
 
 class GetSchemas(
     session: Session,
-    client: KyuubiSyncThriftClient,
     catalogName: String,
     schemaName: String)
-  extends KyuubiOperation(OperationType.GET_SCHEMAS, session, client) {
+  extends KyuubiOperation(OperationType.GET_SCHEMAS, session) {
 
   override protected def runInternal(): Unit = {
     try {

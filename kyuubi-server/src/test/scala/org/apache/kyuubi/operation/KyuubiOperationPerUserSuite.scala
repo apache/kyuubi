@@ -65,6 +65,24 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
     assert(r1 === r2)
   }
 
+  test("ensure open session asynchronously for USER mode still share the same engine") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("SELECT engine_id()")
+      assert(resultSet.next())
+      val engineId = resultSet.getString(1)
+
+      withSessionConf(Map(
+        KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "true"
+      ))(Map.empty)(Map.empty) {
+        withJdbcStatement() { stmt =>
+          val rs = stmt.executeQuery("SELECT engine_id()")
+          assert(rs.next())
+          assert(rs.getString(1) == engineId)
+        }
+      }
+    }
+  }
+
   test("ensure two connections share the same engine when specifying subDomain.") {
     withSessionConf()(
       Map(
