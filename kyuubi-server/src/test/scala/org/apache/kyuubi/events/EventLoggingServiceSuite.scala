@@ -165,10 +165,12 @@ class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper 
     server.initialize(conf)
     server.start()
 
+    val hostName = InetAddress.getLocalHost.getCanonicalHostName
     val kyuubiServerStartEventPath =
-      Paths.get(serverLogRoot, "kyuubi_server_start", s"day=$currentDate", "*.json")
-
+      Paths.get(serverLogRoot, "kyuubi_server_start", s"day=$currentDate", s"server-$hostName.json")
     withJdbcStatement() { statement =>
+      // System environment may have same letter variable with different case
+      statement.executeQuery("set spark.sql.caseSensitive=true")
       val res = statement.executeQuery(
         s"SELECT * FROM `json`.`$kyuubiServerStartEventPath` where serverName = '$name' limit 1")
       res.next()
