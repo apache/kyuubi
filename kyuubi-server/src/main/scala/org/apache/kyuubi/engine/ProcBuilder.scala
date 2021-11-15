@@ -30,6 +30,7 @@ import org.apache.commons.lang3.StringUtils.containsIgnoreCase
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.NamedThreadFactory
 
 trait ProcBuilder {
@@ -51,6 +52,8 @@ trait ProcBuilder {
   protected def conf: KyuubiConf
 
   protected def env: Map[String, String] = conf.getEnvs
+
+  protected val extraEngineLog: Option[OperationLog]
 
   protected val workingDir: Path
 
@@ -136,6 +139,7 @@ trait ProcBuilder {
             } else if (line != null) {
               lastRowsOfLog.add(line)
             }
+            extraEngineLog.foreach(_.writeLine(line))
           } else {
             Thread.sleep(300)
           }

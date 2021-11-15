@@ -33,6 +33,7 @@ import org.apache.kyuubi.ha.client.ZooKeeperClientProvider._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.server.EventLoggingService
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
@@ -55,7 +56,7 @@ class KyuubiSessionImpl(
 
   val engine: EngineRef = new EngineRef(sessionConf, user)
   val launchEngineAsync = sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC)
-  private val launchEngineOp = sessionManager.operationManager.newLaunchEngineOperation(
+  private[kyuubi] val launchEngineOp = sessionManager.operationManager.newLaunchEngineOperation(
     this, launchEngineAsync)
   @volatile
   var engineLaunched: Boolean = false
@@ -82,9 +83,9 @@ class KyuubiSessionImpl(
     runOperation(launchEngineOp)
   }
 
-  private[kyuubi] def openEngineSession(): Unit = {
+  private[kyuubi] def openEngineSession(extraEngineLog: Option[OperationLog] = None): Unit = {
     withZkClient(sessionConf) { zkClient =>
-      val (host, port) = engine.getOrCreate(zkClient)
+      val (host, port) = engine.getOrCreate(zkClient, extraEngineLog)
       val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
       val loginTimeout = sessionConf.get(ENGINE_LOGIN_TIMEOUT).toInt
       val requestTimeout = sessionConf.get(ENGINE_REQUEST_TIMEOUT).toInt

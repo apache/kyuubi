@@ -64,4 +64,13 @@ object OperationType extends Enumeration {
         throw new UnsupportedOperationException(s"Unsupported Operation type: ${other.toString}")
     }
   }
+
+  /**
+   * Whether the operation type is defined by kyuubi and does not has related TOperationType
+   * @param opType
+   * @return
+   */
+  def isKyuubiDefinedOperationType(opType: OperationType): Boolean = {
+    opType == LAUNCH_ENGINE
+  }
 }

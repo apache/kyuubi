@@ -22,6 +22,9 @@ import org.apache.kyuubi.session.KyuubiSessionImpl
 
 class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Boolean) extends
   KyuubiOperation(OperationType.LAUNCH_ENGINE, session) {
+  import LaunchEngine._
+
+  override protected val operationTimeout: Long = 0
 
   private lazy val _operationLog: OperationLog = if (shouldRunAsync) {
     OperationLog.createOperationLog(session, getHandle)
@@ -37,21 +40,28 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
     setState(OperationState.PENDING)
   }
 
-  override protected def afterRun(): Unit = {
-    OperationLog.removeCurrentOperationLog()
-  }
+  override protected def afterRun(): Unit = { }
 
   override protected def runInternal(): Unit = {
     val asyncOperation: Runnable = () => {
       setState(OperationState.RUNNING)
       try {
-        session.openEngineSession()
+        session.openEngineSession(getOperationLog)
         setState(OperationState.FINISHED)
       } catch {
         onError()
       } finally {
-        // TODO: delay to close it for async mode to enable client to get more launch engine log
-        session.closeOperation(getHandle)
+        new Thread(s"close-launch-engine-op-${getHandle}") {
+          override def run(): Unit = {
+            if (shouldRunAsync) {
+              // delay to close it for async mode to enable client to get more launch engine log
+              Thread.sleep(DEFAULT_LAUNCH_ENGINE_OPERATION_CLOSE_DELAY)
+            }
+            if (!isClosedOrCanceled) {
+              session.closeOperation(getHandle)
+            }
+          }
+        }.start()
       }
     }
     try {
@@ -61,4 +71,13 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
 
     if (!shouldRunAsync) getBackgroundHandle.get()
   }
+
+  override def close(): Unit = {
+    OperationLog.removeCurrentOperationLog()
+    super.close()
+  }
+}
+
+object LaunchEngine {
+  val DEFAULT_LAUNCH_ENGINE_OPERATION_CLOSE_DELAY = 10 * 1000
 }

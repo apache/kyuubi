@@ -41,6 +41,7 @@ import org.apache.kyuubi.ha.client.ServiceDiscovery.getEngineByRefId
 import org.apache.kyuubi.ha.client.ServiceDiscovery.getServerHost
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
+import org.apache.kyuubi.operation.log.OperationLog
 
 /**
  * The description and functionality of an engine at server side
@@ -174,7 +175,8 @@ private[kyuubi] class EngineRef(
       }
   }
 
-  private def create(zkClient: CuratorFramework): (String, Int) = tryWithLock(zkClient) {
+  private def create(zkClient: CuratorFramework, extraEngineLog: Option[OperationLog]):
+  (String, Int) = tryWithLock(zkClient) {
     // Get the engine address ahead if another process has succeeded
     var engineRef = getServerHost(zkClient, engineSpace)
     if (engineRef.nonEmpty) return engineRef.get
@@ -187,7 +189,7 @@ private[kyuubi] class EngineRef(
         // tag is a seq type with comma-separated
         conf.set(SparkProcessBuilder.TAG_KEY,
           conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") + "KYUUBI")
-        new SparkProcessBuilder(appUser, conf)
+        new SparkProcessBuilder(appUser, conf, extraEngineLog)
       case _ => throw new UnsupportedOperationException(s"Unsupported engine type: ${engineType}")
     }
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
@@ -229,10 +231,12 @@ private[kyuubi] class EngineRef(
   /**
    * Get the engine ref from engine space first first or create a new one
    */
-  def getOrCreate(zkClient: CuratorFramework): (String, Int) = {
+  def getOrCreate(
+      zkClient: CuratorFramework,
+      extraEngineLog: Option[OperationLog] = None): (String, Int) = {
     getServerHost(zkClient, engineSpace)
       .getOrElse {
-        create(zkClient)
+        create(zkClient, extraEngineLog)
       }
   }
 }

@@ -17,9 +17,12 @@
 
 package org.apache.kyuubi.operation
 
+import scala.collection.JavaConverters._
+
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
@@ -81,6 +84,12 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
     val operation = synchronized { handleToOperation.get(opHandle) }
     if (operation == null) throw KyuubiSQLException(s"Invalid $opHandle")
     operation
+  }
+
+  @throws[KyuubiSQLException]
+  final def findOperation(handleIdentifier: HandleIdentifier):
+  Option[OperationHandle] = synchronized {
+    handleToOperation.asScala.find(_._1.identifier == handleIdentifier).map(_._1)
   }
 
   @throws[KyuubiSQLException]

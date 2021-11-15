@@ -31,10 +31,12 @@ import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE
 import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.ZooKeeperAuthTypes
+import org.apache.kyuubi.operation.log.OperationLog
 
 class SparkProcessBuilder(
     override val proxyUser: String,
-    override val conf: KyuubiConf)
+    override val conf: KyuubiConf,
+    val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder with Logging {
 
   import SparkProcessBuilder._

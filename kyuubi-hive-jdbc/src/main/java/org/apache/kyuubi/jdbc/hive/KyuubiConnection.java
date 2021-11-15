@@ -19,24 +19,15 @@ package org.apache.kyuubi.jdbc.hive;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.common.auth.HiveAuthUtils;
+import org.apache.hive.service.cli.RowSet;
+import org.apache.hive.service.cli.RowSetFactory;
+import org.apache.hive.service.rpc.thrift.*;
 import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
 import org.apache.hive.service.auth.HiveAuthFactory;
 import org.apache.hive.service.auth.KerberosSaslHelper;
 import org.apache.hive.service.auth.PlainSaslHelper;
 import org.apache.hive.service.auth.SaslQOP;
 import org.apache.hive.service.cli.thrift.EmbeddedThriftBinaryCLIService;
-import org.apache.hive.service.rpc.thrift.TCLIService;
-import org.apache.hive.service.rpc.thrift.TCancelDelegationTokenReq;
-import org.apache.hive.service.rpc.thrift.TCancelDelegationTokenResp;
-import org.apache.hive.service.rpc.thrift.TCloseSessionReq;
-import org.apache.hive.service.rpc.thrift.TGetDelegationTokenReq;
-import org.apache.hive.service.rpc.thrift.TGetDelegationTokenResp;
-import org.apache.hive.service.rpc.thrift.TOpenSessionReq;
-import org.apache.hive.service.rpc.thrift.TOpenSessionResp;
-import org.apache.hive.service.rpc.thrift.TProtocolVersion;
-import org.apache.hive.service.rpc.thrift.TRenewDelegationTokenReq;
-import org.apache.hive.service.rpc.thrift.TRenewDelegationTokenResp;
-import org.apache.hive.service.rpc.thrift.TSessionHandle;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
@@ -68,15 +59,12 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.nio.ByteBuffer;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.sql.Array;
@@ -97,13 +85,8 @@ import java.sql.SQLXML;
 import java.sql.Savepoint;
 import java.sql.Statement;
 import java.sql.Struct;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
@@ -114,6 +97,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class KyuubiConnection implements java.sql.Connection {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
+  private static final Long ENGINE_LOG_THREAD_END_DELAY = 10 * 1000L;
 
   private String jdbcUriString;
   private String host;
@@ -128,6 +112,7 @@ public class KyuubiConnection implements java.sql.Connection {
   private boolean isClosed = true;
   private SQLWarning warningChain = null;
   private TSessionHandle sessHandle = null;
+  private TOperationHandle launchEngineOpHandle = null;
   private final List<TProtocolVersion> supportedProtocols = new LinkedList<TProtocolVersion>();
   private int loginTimeout = 0;
   private TProtocolVersion protocol;
@@ -197,6 +182,7 @@ public class KyuubiConnection implements java.sql.Connection {
           client = new TCLIService.Client(new TBinaryProtocol(transport));
           // open client session
           openSession();
+          getLaunchEngineLog();
           executeInitSql();
 
           break;
@@ -230,6 +216,71 @@ public class KyuubiConnection implements java.sql.Connection {
 
     // Wrap the client with a thread-safe proxy to serialize the RPC calls
     client = newSynchronizedClient(client);
+  }
+
+  private void getLaunchEngineLog() {
+    if (launchEngineOpHandle != null) {
+      LOG.info("Starting to get launch engine log.");
+      Thread logThread = new Thread("engine-launch-log") {
+        long completeTime = 0;
+        long timeToEnd = Long.MAX_VALUE;
+        boolean continueToFetch = true;
+
+        @Override
+        public void run() {
+          try {
+            while (continueToFetch && System.currentTimeMillis() < timeToEnd) {
+              List<String> logs = fetchEngineLogs();
+              if (logs.isEmpty() && System.currentTimeMillis() > completeTime) {
+                continueToFetch = false;
+              }
+
+              for (String log: logs) {
+                LOG.info(log);
+              }
+
+              if (launchEngineOpCompleted()) {
+                completeTime = System.currentTimeMillis();
+                timeToEnd = completeTime + ENGINE_LOG_THREAD_END_DELAY;
+              }
+
+              Thread.sleep(300);
+            }
+          } catch (Exception e) {
+            // fo nothing
+          }
+          LOG.info("Finished to get launch engine log.");
+        }
+      };
+      logThread.start();
+    }
+  }
+
+  private boolean launchEngineOpCompleted() {
+    TGetOperationStatusReq opStatusReq = new TGetOperationStatusReq(launchEngineOpHandle);
+    try {
+      return client.GetOperationStatus(opStatusReq).getOperationCompleted() != 0;
+    } catch (TException e) {
+      return true;
+    }
+  }
+
+  private List<String> fetchEngineLogs() throws SQLException {
+    TFetchResultsReq fetchResultsReq = new TFetchResultsReq(launchEngineOpHandle,
+      TFetchOrientation.FETCH_NEXT, fetchSize);
+    fetchResultsReq.setFetchType((short) 1);
+
+    List<String> logs = new ArrayList<>();
+    try {
+      TFetchResultsResp tFetchResultsResp = client.FetchResults(fetchResultsReq);
+      RowSet rowSet = RowSetFactory.create(tFetchResultsResp.getResults(), this.getProtocol());
+      for (Object[] row: rowSet) {
+        logs.add(String.valueOf(row[0]));
+      }
+    } catch (TException e) {
+      throw new SQLException("Error building result set for query log", e);
+    }
+    return Collections.unmodifiableList(logs);
   }
 
   private void executeInitSql() throws SQLException {
@@ -686,11 +737,33 @@ public class KyuubiConnection implements java.sql.Connection {
       protocol = openResp.getServerProtocolVersion();
       sessHandle = openResp.getSessionHandle();
 
+      Map<String, String> openRespConf = openResp.getConfiguration();
       // Update fetchSize if modified by server
-      String serverFetchSize =
-        openResp.getConfiguration().get("hive.server2.thrift.resultset.default.fetch.size");
+      String serverFetchSize = openRespConf.get("hive.server2.thrift.resultset.default.fetch.size");
       if (serverFetchSize != null) {
         fetchSize = Integer.parseInt(serverFetchSize);
+      }
+
+      // Get launch engine operation handle
+      String launchEngineOpHandleGuid =
+        openRespConf.get("kyuubi.session.launch.engine.operation.handle.identifier.guid");
+      String launchEngineOpHandleSecret =
+        openRespConf.get("kyuubi.session.launch.engine.operation.handle.identifier.secret");
+      String launchEngineOpHandleCharset =
+        openRespConf.get("kyuubi.session.launch.engine.operation.handle.identifier.charset");
+
+      if (launchEngineOpHandleGuid != null && launchEngineOpHandleSecret != null &&
+        launchEngineOpHandleCharset != null) {
+        try {
+          byte[] guidBytes = launchEngineOpHandleGuid.getBytes(launchEngineOpHandleCharset);
+          byte[] secretBytes = launchEngineOpHandleSecret.getBytes(launchEngineOpHandleCharset);
+          THandleIdentifier handleIdentifier = new THandleIdentifier(ByteBuffer.wrap(guidBytes),
+            ByteBuffer.wrap(secretBytes));
+          launchEngineOpHandle =
+            new TOperationHandle(handleIdentifier, TOperationType.UNKNOWN, false);
+        } catch (UnsupportedEncodingException e) {
+          LOG.error("Failed to decode launch engine operation handle from open session resp", e);
+        }
       }
     } catch (TException e) {
       LOG.error("Error opening session", e);

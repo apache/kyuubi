@@ -17,8 +17,11 @@
 
 package org.apache.kyuubi.server
 
+import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TOpenSessionResp}
+
 import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, ThriftBinaryFrontendService}
+import org.apache.kyuubi.session.{KyuubiSessionImpl, SessionHandle}
 
 class KyuubiThriftBinaryFrontendService(
     override val serverable: Serverable)
@@ -30,6 +33,21 @@ class KyuubiThriftBinaryFrontendService(
     } else {
       None
     }
+  }
+
+  override def OpenSession(req: TOpenSessionReq): TOpenSessionResp = {
+    val resp = super.OpenSession(req)
+    val sessionHandle = SessionHandle(resp.getSessionHandle)
+    val launchEngineOpHandle = be.sessionManager.getSession(sessionHandle)
+      .asInstanceOf[KyuubiSessionImpl].launchEngineOp.getHandle
+    val tOpHandleId = launchEngineOpHandle.identifier.toTHandleIdentifier
+    resp.getConfiguration.put("kyuubi.session.launch.engine.operation.handle.identifier.guid",
+      new String(tOpHandleId.getGuid, "UTF-8"))
+    resp.getConfiguration.put("kyuubi.session.launch.engine.operation.handle.identifier.secret",
+      new String(tOpHandleId.getSecret, "UTF-8"))
+    resp.getConfiguration.put("kyuubi.session.launch.engine.operation.handle.identifier.charset",
+      "UTF-8")
+    resp
   }
 
   override def connectionUrl: String = {

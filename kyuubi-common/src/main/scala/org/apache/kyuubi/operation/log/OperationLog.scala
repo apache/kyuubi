@@ -96,6 +96,15 @@ class OperationLog(path: Path) {
   }
 
   /**
+   * write a line to the operation log file
+   */
+  def writeLine(line: String): Unit = {
+    if (line != null) {
+      write(line + "\n")
+    }
+  }
+
+  /**
    * Read to log file line by line
    *
    * @param maxRows maximum result number can reach
