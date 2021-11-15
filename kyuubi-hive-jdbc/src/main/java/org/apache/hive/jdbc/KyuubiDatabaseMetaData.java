@@ -30,29 +30,8 @@ import java.util.jar.Attributes;
 
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hive.service.cli.GetInfoType;
-import org.apache.hive.service.rpc.thrift.TCLIService;
-import org.apache.hive.service.rpc.thrift.TGetCatalogsReq;
-import org.apache.hive.service.rpc.thrift.TGetCatalogsResp;
-import org.apache.hive.service.rpc.thrift.TGetColumnsReq;
-import org.apache.hive.service.rpc.thrift.TGetColumnsResp;
-import org.apache.hive.service.rpc.thrift.TGetCrossReferenceReq;
-import org.apache.hive.service.rpc.thrift.TGetCrossReferenceResp;
-import org.apache.hive.service.rpc.thrift.TGetFunctionsReq;
-import org.apache.hive.service.rpc.thrift.TGetFunctionsResp;
-import org.apache.hive.service.rpc.thrift.TGetInfoReq;
-import org.apache.hive.service.rpc.thrift.TGetInfoResp;
-import org.apache.hive.service.rpc.thrift.TGetInfoType;
-import org.apache.hive.service.rpc.thrift.TGetPrimaryKeysReq;
-import org.apache.hive.service.rpc.thrift.TGetPrimaryKeysResp;
-import org.apache.hive.service.rpc.thrift.TGetSchemasReq;
-import org.apache.hive.service.rpc.thrift.TGetSchemasResp;
-import org.apache.hive.service.rpc.thrift.TGetTableTypesReq;
-import org.apache.hive.service.rpc.thrift.TGetTableTypesResp;
-import org.apache.hive.service.rpc.thrift.TGetTablesReq;
-import org.apache.hive.service.rpc.thrift.TGetTablesResp;
-import org.apache.hive.service.rpc.thrift.TGetTypeInfoReq;
-import org.apache.hive.service.rpc.thrift.TGetTypeInfoResp;
-import org.apache.hive.service.rpc.thrift.TSessionHandle;
+import org.apache.hive.service.cli.HiveSQLException;
+import org.apache.hive.service.rpc.thrift.*;
 import org.apache.thrift.TException;
 
 /**
@@ -667,35 +646,32 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     .build();
   }
 
+  @Override
   public ResultSet getTables(String catalog, String schemaPattern,
                              String tableNamePattern, String[] types) throws SQLException {
-    TGetTablesResp getTableResp;
-    if (schemaPattern == null) {
-      // if schemaPattern is null it means that the schemaPattern value should not be used to narrow the search
-      schemaPattern = "%";
-    }
+
     TGetTablesReq getTableReq = new TGetTablesReq(sessHandle);
+    getTableReq.setCatalogName(catalog);
+    getTableReq.setSchemaName(schemaPattern == null ? "%" : schemaPattern);
     getTableReq.setTableName(tableNamePattern);
-
-    // TODO: need to set catalog parameter
-
     if (types != null) {
       getTableReq.setTableTypes(Arrays.asList(types));
     }
-    getTableReq.setSchemaName(schemaPattern);
-
+    TGetTablesResp getTableResp;
     try {
       getTableResp = client.GetTables(getTableReq);
-    } catch (TException e) {
-      throw new SQLException(e.getMessage(), "08S01", e);
+    } catch (TException rethrow) {
+      throw new SQLException(rethrow.getMessage(), "08S01", rethrow);
     }
-    Utils.verifySuccess(getTableResp.getStatus());
-
-    return new KyuubiQueryResultSet.Builder(connection)
-    .setClient(client)
-    .setSessionHandle(sessHandle)
-    .setStmtHandle(getTableResp.getOperationHandle())
-    .build();
+    TStatus tStatus = getTableResp.getStatus();
+    if (tStatus.getStatusCode() != TStatusCode.SUCCESS_STATUS) {
+      throw new HiveSQLException(tStatus);
+    }
+    return new HiveQueryResultSet.Builder(connection)
+      .setClient(client)
+      .setSessionHandle(sessHandle)
+      .setStmtHandle(getTableResp.getOperationHandle())
+      .build();
   }
 
   /**
