@@ -28,7 +28,6 @@ import java.util.Comparator;
 import java.util.jar.Attributes;
 
 import org.apache.hadoop.hive.metastore.TableType;
-import org.apache.hive.jdbc.HiveQueryResultSet;
 import org.apache.hive.service.cli.GetInfoType;
 import org.apache.hive.service.cli.HiveSQLException;
 import org.apache.hive.service.rpc.thrift.*;
@@ -669,7 +668,7 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     if (tStatus.getStatusCode() != TStatusCode.SUCCESS_STATUS) {
       throw new HiveSQLException(tStatus);
     }
-    return new HiveQueryResultSet.Builder(connection)
+    return new KyuubiQueryResultSet.Builder(connection)
       .setClient(client)
       .setSessionHandle(sessHandle)
       .setStmtHandle(getTableResp.getOperationHandle())

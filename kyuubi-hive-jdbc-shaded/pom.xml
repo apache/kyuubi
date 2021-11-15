@@ -146,19 +146,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.hive</groupId>
-            <artifactId>hive-jdbc</artifactId>
-            <version>${hive.jdbc.version}</version>
-            <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>*</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
             <version>${hive.jdbc.commons-codec.version}</version>
@@ -387,13 +374,6 @@
                             <excludes>
                                 <exclude>META-INF/MANIFEST.MF</exclude>
                                 <exclude>hive-webapps/**</exclude>
-                            </excludes>
-                        </filter>
-                        <filter>
-                            <artifact>org.apache.hive:hive-jdbc</artifact>
-                            <excludes>
-                                <exclude>META-INF/MANIFEST.MF</exclude>
-                                <exclude>META-INF/services/*</exclude>
                             </excludes>
                         </filter>
                         <filter>
