@@ -54,6 +54,7 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.common.auth.HiveAuthUtils;
 import org.apache.hive.service.cli.RowSet;
@@ -163,6 +164,7 @@ public class KyuubiConnection implements java.sql.Connection {
 
       // open client session
       openSession();
+      getLaunchEngineLog();
       executeInitSql();
     } else {
       int maxRetries = 1;
@@ -749,19 +751,16 @@ public class KyuubiConnection implements java.sql.Connection {
         openRespConf.get("kyuubi.session.launch.engine.operation.handle.identifier.guid");
       String launchEngineOpHandleSecret =
         openRespConf.get("kyuubi.session.launch.engine.operation.handle.identifier.secret");
-      String launchEngineOpHandleCharset =
-        openRespConf.get("kyuubi.session.launch.engine.operation.handle.identifier.charset");
 
-      if (launchEngineOpHandleGuid != null && launchEngineOpHandleSecret != null &&
-        launchEngineOpHandleCharset != null) {
+      if (launchEngineOpHandleGuid != null && launchEngineOpHandleSecret != null) {
         try {
-          byte[] guidBytes = launchEngineOpHandleGuid.getBytes(launchEngineOpHandleCharset);
-          byte[] secretBytes = launchEngineOpHandleSecret.getBytes(launchEngineOpHandleCharset);
+          byte[] guidBytes = Base64.decodeBase64(launchEngineOpHandleGuid);
+          byte[] secretBytes = Base64.decodeBase64(launchEngineOpHandleSecret);
           THandleIdentifier handleIdentifier = new THandleIdentifier(ByteBuffer.wrap(guidBytes),
             ByteBuffer.wrap(secretBytes));
           launchEngineOpHandle =
             new TOperationHandle(handleIdentifier, TOperationType.UNKNOWN, false);
-        } catch (UnsupportedEncodingException e) {
+        } catch (Exception e) {
           LOG.error("Failed to decode launch engine operation handle from open session resp", e);
         }
       }

@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.server
 
+import org.apache.commons.codec.binary.Base64
 import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TOpenSessionResp}
 
 import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
@@ -37,16 +38,16 @@ class KyuubiThriftBinaryFrontendService(
 
   override def OpenSession(req: TOpenSessionReq): TOpenSessionResp = {
     val resp = super.OpenSession(req)
-    val sessionHandle = SessionHandle(resp.getSessionHandle)
-    val launchEngineOpHandle = be.sessionManager.getSession(sessionHandle)
-      .asInstanceOf[KyuubiSessionImpl].launchEngineOp.getHandle
-    val tOpHandleId = launchEngineOpHandle.identifier.toTHandleIdentifier
-    resp.getConfiguration.put("kyuubi.session.launch.engine.operation.handle.identifier.guid",
-      new String(tOpHandleId.getGuid, "UTF-8"))
-    resp.getConfiguration.put("kyuubi.session.launch.engine.operation.handle.identifier.secret",
-      new String(tOpHandleId.getSecret, "UTF-8"))
-    resp.getConfiguration.put("kyuubi.session.launch.engine.operation.handle.identifier.charset",
-      "UTF-8")
+    if (resp.getSessionHandle != null) {
+      val sessionHandle = SessionHandle(resp.getSessionHandle)
+      val launchEngineOpHandle = be.sessionManager.getSession(sessionHandle)
+        .asInstanceOf[KyuubiSessionImpl].launchEngineOp.getHandle
+      val tOpHandleId = launchEngineOpHandle.identifier.toTHandleIdentifier
+      resp.getConfiguration.put("kyuubi.session.launch.engine.operation.handle.identifier.guid",
+        Base64.encodeBase64String(tOpHandleId.getGuid))
+      resp.getConfiguration.put("kyuubi.session.launch.engine.operation.handle.identifier.secret",
+        Base64.encodeBase64String(tOpHandleId.getSecret))
+    }
     resp
   }
 
