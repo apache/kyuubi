@@ -66,9 +66,7 @@ object OperationType extends Enumeration {
   }
 
   /**
-   * Whether the operation type is defined by kyuubi and does not has related TOperationType
-   * @param opType
-   * @return
+   * Whether the operation type is defined by kyuubi and its TOperationType should be UNKNOWN.
    */
   def isKyuubiDefinedOperationType(opType: OperationType): Boolean = {
     opType == LAUNCH_ENGINE

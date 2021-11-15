@@ -87,9 +87,8 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
   }
 
   @throws[KyuubiSQLException]
-  final def findOperation(handleIdentifier: HandleIdentifier):
-  Option[OperationHandle] = synchronized {
-    handleToOperation.asScala.find(_._1.identifier == handleIdentifier).map(_._1)
+  final def findOperation(handleId: HandleIdentifier): Option[OperationHandle] = synchronized {
+    handleToOperation.asScala.find(_._1.identifier == handleId).map(_._1)
   }
 
   @throws[KyuubiSQLException]
