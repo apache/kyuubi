@@ -55,10 +55,10 @@ import java.util.Map;
  * HiveStatement.
  *
  */
-public class HiveStatement implements java.sql.Statement {
-  public static final Logger LOG = LoggerFactory.getLogger(HiveStatement.class.getName());
+public class KyuubiStatement implements java.sql.Statement {
+  public static final Logger LOG = LoggerFactory.getLogger(KyuubiStatement.class.getName());
   public static final int DEFAULT_FETCH_SIZE = 1000;
-  private final HiveConnection connection;
+  private final KyuubiConnection connection;
   private TCLIService.Iface client;
   private TOperationHandle stmtHandle = null;
   private final TSessionHandle sessHandle;
@@ -117,23 +117,23 @@ public class HiveStatement implements java.sql.Statement {
 
   private InPlaceUpdateStream inPlaceUpdateStream = InPlaceUpdateStream.NO_OP;
 
-  public HiveStatement(HiveConnection connection, TCLIService.Iface client,
-      TSessionHandle sessHandle) {
+  public KyuubiStatement(KyuubiConnection connection, TCLIService.Iface client,
+                         TSessionHandle sessHandle) {
     this(connection, client, sessHandle, false, DEFAULT_FETCH_SIZE);
   }
 
-  public HiveStatement(HiveConnection connection, TCLIService.Iface client,
-      TSessionHandle sessHandle, int fetchSize) {
+  public KyuubiStatement(KyuubiConnection connection, TCLIService.Iface client,
+                         TSessionHandle sessHandle, int fetchSize) {
     this(connection, client, sessHandle, false, fetchSize);
   }
 
-  public HiveStatement(HiveConnection connection, TCLIService.Iface client,
-                       TSessionHandle sessHandle, boolean isScrollableResultset) {
+  public KyuubiStatement(KyuubiConnection connection, TCLIService.Iface client,
+                         TSessionHandle sessHandle, boolean isScrollableResultset) {
     this(connection, client, sessHandle, isScrollableResultset, DEFAULT_FETCH_SIZE);
   }
 
-  public HiveStatement(HiveConnection connection, TCLIService.Iface client,
-      TSessionHandle sessHandle, boolean isScrollableResultset, int fetchSize) {
+  public KyuubiStatement(KyuubiConnection connection, TCLIService.Iface client,
+                         TSessionHandle sessHandle, boolean isScrollableResultset, int fetchSize) {
     this.connection = connection;
     this.client = client;
     this.sessHandle = sessHandle;
@@ -257,7 +257,7 @@ public class HiveStatement implements java.sql.Statement {
     if (!status.isHasResultSet() && !stmtHandle.isHasResultSet()) {
       return false;
     }
-    resultSet =  new HiveQueryResultSet.Builder(this).setClient(client).setSessionHandle(sessHandle)
+    resultSet =  new KyuubiQueryResultSet.Builder(this).setClient(client).setSessionHandle(sessHandle)
         .setStmtHandle(stmtHandle).setMaxRows(maxRows).setFetchSize(fetchSize)
         .setScrollable(isScrollableResultset)
         .build();
@@ -286,7 +286,7 @@ public class HiveStatement implements java.sql.Statement {
       return false;
     }
     resultSet =
-        new HiveQueryResultSet.Builder(this).setClient(client).setSessionHandle(sessHandle)
+        new KyuubiQueryResultSet.Builder(this).setClient(client).setSessionHandle(sessHandle)
             .setStmtHandle(stmtHandle).setMaxRows(maxRows).setFetchSize(fetchSize)
             .setScrollable(isScrollableResultset).build();
     return true;

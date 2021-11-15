@@ -54,7 +54,7 @@ import org.apache.hive.service.cli.TableSchema;
  * Data independent base class which implements the common part of
  * all Hive result sets.
  */
-public abstract class HiveBaseResultSet implements ResultSet {
+public abstract class KyuubiBaseResultSet implements ResultSet {
 
   protected Statement statement = null;
   protected SQLWarning warningChain = null;
@@ -381,7 +381,7 @@ public abstract class HiveBaseResultSet implements ResultSet {
   }
 
   public ResultSetMetaData getMetaData() throws SQLException {
-    return new HiveResultSetMetaData(columnNames, columnTypes, columnAttributes);
+    return new KyuubiResultSetMetaData(columnNames, columnTypes, columnAttributes);
   }
 
   public Reader getNCharacterStream(int arg0) throws SQLException {

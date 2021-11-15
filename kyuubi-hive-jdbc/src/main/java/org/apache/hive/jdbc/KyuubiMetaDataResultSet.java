@@ -22,11 +22,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class HiveMetaDataResultSet<M> extends HiveBaseResultSet {
+public abstract class KyuubiMetaDataResultSet<M> extends KyuubiBaseResultSet {
   protected final List<M> data;
 
   @SuppressWarnings("unchecked")
-  public HiveMetaDataResultSet(final List<String> columnNames
+  public KyuubiMetaDataResultSet(final List<String> columnNames
           , final List<String> columnTypes
           , final List<M> data) throws SQLException {
     if (data!=null) {

@@ -27,15 +27,15 @@ import java.util.logging.Logger;
 import javax.sql.DataSource;
 
 /**
- * HiveDataSource.
+ * KyuubiDataSource.
  *
  */
-public class HiveDataSource implements DataSource {
+public class KyuubiDataSource implements DataSource {
 
   /**
    *
    */
-  public HiveDataSource() {
+  public KyuubiDataSource() {
     // TODO Auto-generated constructor stub
   }
 
@@ -60,7 +60,7 @@ public class HiveDataSource implements DataSource {
   public Connection getConnection(String username, String password)
       throws SQLException {
     try {
-      return new HiveConnection("", null);
+      return new KyuubiConnection("", null);
     } catch (Exception ex) {
       throw new SQLException("Error in getting HiveConnection",ex);
     }

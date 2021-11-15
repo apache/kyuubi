@@ -43,16 +43,16 @@ import java.util.Calendar;
 import java.util.Map;
 
 /**
- * HiveCallableStatement.
+ * KyuubiCallableStatement.
  *
  */
-public class HiveCallableStatement implements java.sql.CallableStatement {
+public class KyuubiCallableStatement implements java.sql.CallableStatement {
   private final Connection connection;
 
   /**
    *
    */
-  public HiveCallableStatement(Connection connection) {
+  public KyuubiCallableStatement(Connection connection) {
     this.connection = connection;
   }
 
@@ -1389,7 +1389,7 @@ public class HiveCallableStatement implements java.sql.CallableStatement {
    */
 
   public ResultSet executeQuery() throws SQLException {
-    return new HiveQueryResultSet.Builder(this).build();
+    return new KyuubiQueryResultSet.Builder(this).build();
   }
 
   /*

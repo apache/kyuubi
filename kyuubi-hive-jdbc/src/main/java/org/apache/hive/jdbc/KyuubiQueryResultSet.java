@@ -60,9 +60,9 @@ import org.slf4j.LoggerFactory;
  * HiveQueryResultSet.
  *
  */
-public class HiveQueryResultSet extends HiveBaseResultSet {
+public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
 
-  public static final Logger LOG = LoggerFactory.getLogger(HiveQueryResultSet.class);
+  public static final Logger LOG = LoggerFactory.getLogger(KyuubiQueryResultSet.class);
 
   private TCLIService.Iface client;
   private TOperationHandle stmtHandle;
@@ -175,16 +175,16 @@ public class HiveQueryResultSet extends HiveBaseResultSet {
       return this;
     }
 
-    public HiveQueryResultSet build() throws SQLException {
-      return new HiveQueryResultSet(this);
+    public KyuubiQueryResultSet build() throws SQLException {
+      return new KyuubiQueryResultSet(this);
     }
 
     public TProtocolVersion getProtocolVersion() throws SQLException {
-      return ((HiveConnection)connection).getProtocol();
+      return ((KyuubiConnection)connection).getProtocol();
     }
   }
 
-  protected HiveQueryResultSet(Builder builder) throws SQLException {
+  protected KyuubiQueryResultSet(Builder builder) throws SQLException {
     this.statement = builder.statement;
     this.client = builder.client;
     this.stmtHandle = builder.stmtHandle;
@@ -304,8 +304,8 @@ public class HiveQueryResultSet extends HiveBaseResultSet {
 
   @Override
   public void close() throws SQLException {
-    if (this.statement != null && (this.statement instanceof HiveStatement)) {
-      HiveStatement s = (HiveStatement) this.statement;
+    if (this.statement != null && (this.statement instanceof KyuubiStatement)) {
+      KyuubiStatement s = (KyuubiStatement) this.statement;
       s.closeClientOperation();
     } else {
       // for those stmtHandle passed from HiveDatabaseMetaData instead of Statement
@@ -353,8 +353,8 @@ public class HiveQueryResultSet extends HiveBaseResultSet {
      * We need to wait only for HiveStatement to complete.
      * HiveDatabaseMetaData which also uses this ResultSet returns only after the RPC is complete.
      */
-    if ((statement != null) && (statement instanceof HiveStatement)) {
-      ((HiveStatement) statement).waitForOperationToComplete();
+    if ((statement != null) && (statement instanceof KyuubiStatement)) {
+      ((KyuubiStatement) statement).waitForOperationToComplete();
     }
 
     try {

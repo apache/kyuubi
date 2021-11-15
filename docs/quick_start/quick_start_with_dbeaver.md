@@ -86,7 +86,7 @@ Click next...
 
 ### Edit the Driver
 
-We can set libraries that include the `org.apache.hive.jdbc.HiveDriver` and all of its dependencies.
+We can set libraries that include the `org.apache.hive.jdbc.KyuubiHiveDriver` and all of its dependencies.
 
 ![](../imgs/dbeaver/download_driver.png)
 *Tips: zoom up if the pic looks small*

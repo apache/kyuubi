@@ -31,7 +31,6 @@ import java.util.jar.Attributes;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hive.service.cli.GetInfoType;
 import org.apache.hive.service.rpc.thrift.TCLIService;
-import org.apache.hive.service.rpc.thrift.TCLIService.Iface;
 import org.apache.hive.service.rpc.thrift.TGetCatalogsReq;
 import org.apache.hive.service.rpc.thrift.TGetCatalogsResp;
 import org.apache.hive.service.rpc.thrift.TGetColumnsReq;
@@ -60,9 +59,9 @@ import org.apache.thrift.TException;
  * HiveDatabaseMetaData.
  *
  */
-public class HiveDatabaseMetaData implements DatabaseMetaData {
+public class KyuubiDatabaseMetaData implements DatabaseMetaData {
 
-  private final HiveConnection connection;
+  private final KyuubiConnection connection;
   private final TCLIService.Iface client;
   private final TSessionHandle sessHandle;
   private static final String CATALOG_SEPARATOR = ".";
@@ -78,8 +77,8 @@ public class HiveDatabaseMetaData implements DatabaseMetaData {
   /**
    *
    */
-  public HiveDatabaseMetaData(HiveConnection connection, TCLIService.Iface client,
-      TSessionHandle sessHandle) {
+  public KyuubiDatabaseMetaData(KyuubiConnection connection, TCLIService.Iface client,
+                                TSessionHandle sessHandle) {
     this.connection = connection;
     this.client = client;
     this.sessHandle = sessHandle;
@@ -141,7 +140,7 @@ public class HiveDatabaseMetaData implements DatabaseMetaData {
     }
     Utils.verifySuccess(catalogResp.getStatus());
 
-    return new HiveQueryResultSet.Builder(connection)
+    return new KyuubiQueryResultSet.Builder(connection)
     .setClient(client)
     .setSessionHandle(sessHandle)
     .setStmtHandle(catalogResp.getOperationHandle())
@@ -225,7 +224,7 @@ public class HiveDatabaseMetaData implements DatabaseMetaData {
     }
     Utils.verifySuccess(colResp.getStatus());
     // build the resultset from response
-    return new HiveQueryResultSet.Builder(connection)
+    return new KyuubiQueryResultSet.Builder(connection)
     .setClient(client)
     .setSessionHandle(sessHandle)
     .setStmtHandle(colResp.getOperationHandle())
@@ -276,7 +275,7 @@ public class HiveDatabaseMetaData implements DatabaseMetaData {
    }
    Utils.verifySuccess(getFKResp.getStatus());
 
-   return new HiveQueryResultSet.Builder(connection)
+   return new KyuubiQueryResultSet.Builder(connection)
      .setClient(client)
      .setSessionHandle(sessHandle)
      .setStmtHandle(getFKResp.getOperationHandle())
@@ -311,19 +310,19 @@ public class HiveDatabaseMetaData implements DatabaseMetaData {
   }
 
   public int getDriverMajorVersion() {
-    return HiveDriver.getMajorDriverVersion();
+    return KyuubiHiveDriver.getMajorDriverVersion();
   }
 
   public int getDriverMinorVersion() {
-    return HiveDriver.getMinorDriverVersion();
+    return KyuubiHiveDriver.getMinorDriverVersion();
   }
 
   public String getDriverName() throws SQLException {
-    return HiveDriver.fetchManifestAttribute(Attributes.Name.IMPLEMENTATION_TITLE);
+    return KyuubiHiveDriver.fetchManifestAttribute(Attributes.Name.IMPLEMENTATION_TITLE);
   }
 
   public String getDriverVersion() throws SQLException {
-    return HiveDriver.fetchManifestAttribute(Attributes.Name.IMPLEMENTATION_VERSION);
+    return KyuubiHiveDriver.fetchManifestAttribute(Attributes.Name.IMPLEMENTATION_VERSION);
   }
 
   public ResultSet getExportedKeys(String catalog, String schema, String table)
@@ -357,7 +356,7 @@ public class HiveDatabaseMetaData implements DatabaseMetaData {
     }
     Utils.verifySuccess(funcResp.getStatus());
 
-    return new HiveQueryResultSet.Builder(connection)
+    return new KyuubiQueryResultSet.Builder(connection)
     .setClient(client)
     .setSessionHandle(sessHandle)
     .setStmtHandle(funcResp.getOperationHandle())
@@ -370,7 +369,7 @@ public class HiveDatabaseMetaData implements DatabaseMetaData {
 
   public ResultSet getImportedKeys(String catalog, String schema, String table)
       throws SQLException {
-    return new HiveQueryResultSet.Builder(connection)
+    return new KyuubiQueryResultSet.Builder(connection)
     .setClient(client)
     .setEmptyResultSet(true)
     .setSchema(
@@ -409,7 +408,7 @@ public class HiveDatabaseMetaData implements DatabaseMetaData {
 
   public ResultSet getIndexInfo(String catalog, String schema, String table,
       boolean unique, boolean approximate) throws SQLException {
-    return new HiveQueryResultSet.Builder(connection)
+    return new KyuubiQueryResultSet.Builder(connection)
         .setClient(client)
         .setEmptyResultSet(true)
         .setSchema(
@@ -530,7 +529,7 @@ public class HiveDatabaseMetaData implements DatabaseMetaData {
     }
     Utils.verifySuccess(getPKResp.getStatus());
 
-    return new HiveQueryResultSet.Builder(connection)
+    return new KyuubiQueryResultSet.Builder(connection)
     .setClient(client)
     .setSessionHandle(sessHandle)
     .setStmtHandle(getPKResp.getOperationHandle())
@@ -542,7 +541,7 @@ public class HiveDatabaseMetaData implements DatabaseMetaData {
       throws SQLException {
     // Hive doesn't support primary keys
     // using local schema with empty resultset
-    return new HiveQueryResultSet.Builder(connection).setClient(client).setEmptyResultSet(true).
+    return new KyuubiQueryResultSet.Builder(connection).setClient(client).setEmptyResultSet(true).
                   setSchema(
                     Arrays.asList("PROCEDURE_CAT", "PROCEDURE_SCHEM", "PROCEDURE_NAME", "COLUMN_NAME", "COLUMN_TYPE",
                               "DATA_TYPE", "TYPE_NAME", "PRECISION", "LENGTH", "SCALE", "RADIX", "NULLABLE", "REMARKS",
@@ -563,7 +562,7 @@ public class HiveDatabaseMetaData implements DatabaseMetaData {
       String procedureNamePattern) throws SQLException {
     // Hive doesn't support primary keys
     // using local schema with empty resultset
-    return new HiveQueryResultSet.Builder(connection).setClient(client).setEmptyResultSet(true).
+    return new KyuubiQueryResultSet.Builder(connection).setClient(client).setEmptyResultSet(true).
                   setSchema(
                     Arrays.asList("PROCEDURE_CAT", "PROCEDURE_SCHEM", "PROCEDURE_NAME", "RESERVERD", "RESERVERD",
                                   "RESERVERD", "REMARKS", "PROCEDURE_TYPE", "SPECIFIC_NAME"),
@@ -617,7 +616,7 @@ public class HiveDatabaseMetaData implements DatabaseMetaData {
     }
     Utils.verifySuccess(schemaResp.getStatus());
 
-    return new HiveQueryResultSet.Builder(connection)
+    return new KyuubiQueryResultSet.Builder(connection)
     .setClient(client)
     .setSessionHandle(sessHandle)
     .setStmtHandle(schemaResp.getOperationHandle())
@@ -661,7 +660,7 @@ public class HiveDatabaseMetaData implements DatabaseMetaData {
     }
     Utils.verifySuccess(tableTypeResp.getStatus());
 
-    return new HiveQueryResultSet.Builder(connection)
+    return new KyuubiQueryResultSet.Builder(connection)
     .setClient(client)
     .setSessionHandle(sessHandle)
     .setStmtHandle(tableTypeResp.getOperationHandle())
@@ -692,7 +691,7 @@ public class HiveDatabaseMetaData implements DatabaseMetaData {
     }
     Utils.verifySuccess(getTableResp.getStatus());
 
-    return new HiveQueryResultSet.Builder(connection)
+    return new KyuubiQueryResultSet.Builder(connection)
     .setClient(client)
     .setSessionHandle(sessHandle)
     .setStmtHandle(getTableResp.getOperationHandle())
@@ -750,7 +749,7 @@ public class HiveDatabaseMetaData implements DatabaseMetaData {
       throw new SQLException(e.getMessage(), "08S01", e);
     }
     Utils.verifySuccess(getTypeInfoResp.getStatus());
-    return new HiveQueryResultSet.Builder(connection)
+    return new KyuubiQueryResultSet.Builder(connection)
     .setClient(client)
     .setSessionHandle(sessHandle)
     .setStmtHandle(getTypeInfoResp.getOperationHandle())
@@ -760,7 +759,7 @@ public class HiveDatabaseMetaData implements DatabaseMetaData {
   public ResultSet getUDTs(String catalog, String schemaPattern,
       String typeNamePattern, int[] types) throws SQLException {
 
-    return new HiveMetaDataResultSet(
+    return new KyuubiMetaDataResultSet(
             Arrays.asList("TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "CLASS_NAME", "DATA_TYPE"
                     , "REMARKS", "BASE_TYPE")
             , Arrays.asList("STRING", "STRING", "STRING", "STRING", "INT", "STRING", "INT")
@@ -1172,7 +1171,7 @@ public class HiveDatabaseMetaData implements DatabaseMetaData {
   }
 
   public static void main(String[] args) throws SQLException {
-    HiveDatabaseMetaData meta = new HiveDatabaseMetaData(null, null, null);
+    KyuubiDatabaseMetaData meta = new KyuubiDatabaseMetaData(null, null, null);
     System.out.println("DriverName: " + meta.getDriverName());
     System.out.println("DriverVersion: " + meta.getDriverVersion());
   }

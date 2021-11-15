@@ -50,7 +50,7 @@ public class JdbcTable {
   }
 
   public String getSqlTableType() throws SQLException {
-    return HiveDatabaseMetaData.toJdbcTableType(type);
+    return KyuubiDatabaseMetaData.toJdbcTableType(type);
   }
 
   public String getComment() {

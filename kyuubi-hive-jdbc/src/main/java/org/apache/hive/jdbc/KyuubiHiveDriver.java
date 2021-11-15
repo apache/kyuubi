@@ -38,10 +38,10 @@ import org.apache.hive.jdbc.Utils.JdbcConnectionParams;
  * HiveDriver.
  *
  */
-public class HiveDriver implements Driver {
+public class KyuubiHiveDriver implements Driver {
   static {
     try {
-      java.sql.DriverManager.registerDriver(new HiveDriver());
+      java.sql.DriverManager.registerDriver(new KyuubiHiveDriver());
     } catch (SQLException e) {
       // TODO Auto-generated catch block
       e.printStackTrace();
@@ -72,7 +72,7 @@ public class HiveDriver implements Driver {
   /**
    *
    */
-  public HiveDriver() {
+  public KyuubiHiveDriver() {
     // TODO Auto-generated constructor stub
     SecurityManager security = System.getSecurityManager();
     if (security != null) {
@@ -104,7 +104,7 @@ public class HiveDriver implements Driver {
    */
   @Override
   public Connection connect(String url, Properties info) throws SQLException {
-    return acceptsURL(url) ? new HiveConnection(url, info) : null;
+    return acceptsURL(url) ? new KyuubiConnection(url, info) : null;
   }
 
   /**
@@ -115,7 +115,7 @@ public class HiveDriver implements Driver {
   static int getMajorDriverVersion() {
     int version = -1;
     try {
-      String fullVersion = HiveDriver.fetchManifestAttribute(
+      String fullVersion = KyuubiHiveDriver.fetchManifestAttribute(
           Attributes.Name.IMPLEMENTATION_VERSION);
       String[] tokens = fullVersion.split("\\."); //$NON-NLS-1$
 
@@ -139,7 +139,7 @@ public class HiveDriver implements Driver {
   static int getMinorDriverVersion() {
     int version = -1;
     try {
-      String fullVersion = HiveDriver.fetchManifestAttribute(
+      String fullVersion = KyuubiHiveDriver.fetchManifestAttribute(
           Attributes.Name.IMPLEMENTATION_VERSION);
       String[] tokens = fullVersion.split("\\."); //$NON-NLS-1$
 
@@ -160,7 +160,7 @@ public class HiveDriver implements Driver {
    */
   @Override
   public int getMajorVersion() {
-    return HiveDriver.getMajorDriverVersion();
+    return KyuubiHiveDriver.getMajorDriverVersion();
   }
 
   /**
@@ -168,7 +168,7 @@ public class HiveDriver implements Driver {
    */
   @Override
   public int getMinorVersion() {
-    return HiveDriver.getMinorDriverVersion();
+    return KyuubiHiveDriver.getMinorDriverVersion();
   }
 
   public Logger getParentLogger() throws SQLFeatureNotSupportedException {
@@ -276,7 +276,7 @@ public class HiveDriver implements Driver {
     if (manifestAttributes != null) {
       return;
     }
-    Class<?> clazz = HiveDriver.class;
+    Class<?> clazz = KyuubiHiveDriver.class;
     String classContainer = clazz.getProtectionDomain().getCodeSource()
         .getLocation().toString();
     URL manifestUrl = new URL("jar:" + classContainer

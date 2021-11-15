@@ -29,14 +29,14 @@ import org.apache.hadoop.hive.serde2.thrift.Type;
  * HiveResultSetMetaData.
  *
  */
-public class HiveResultSetMetaData implements java.sql.ResultSetMetaData {
+public class KyuubiResultSetMetaData implements java.sql.ResultSetMetaData {
   private final List<String> columnNames;
   private final List<String> columnTypes;
   private final List<JdbcColumnAttributes> columnAttributes;
 
-  public HiveResultSetMetaData(List<String> columnNames,
-      List<String> columnTypes,
-      List<JdbcColumnAttributes> columnAttributes) {
+  public KyuubiResultSetMetaData(List<String> columnNames,
+                                 List<String> columnTypes,
+                                 List<JdbcColumnAttributes> columnAttributes) {
     this.columnNames = columnNames;
     this.columnTypes = columnTypes;
     this.columnAttributes = columnAttributes;
