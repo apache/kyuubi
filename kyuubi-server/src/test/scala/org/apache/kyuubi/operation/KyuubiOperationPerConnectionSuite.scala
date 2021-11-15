@@ -147,5 +147,18 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       assert(resultSet.next())
       assert(!resultSet.getString(1).isEmpty)
     }
+
+    withSessionConf(Map.empty)(Map.empty)(Map(
+      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "false"
+    )) {
+      val driver = new KyuubiHiveDriver()
+      val connection = driver.connect(jdbcUrlWithConf, new Properties())
+
+      val stmt = connection.createStatement();
+      stmt.execute("select engine_name()")
+      val resultSet = stmt.getResultSet
+      assert(resultSet.next())
+      assert(!resultSet.getString(1).isEmpty)
+    }
   }
 }
