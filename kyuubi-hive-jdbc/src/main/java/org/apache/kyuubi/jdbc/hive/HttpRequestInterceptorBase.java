@@ -16,11 +16,10 @@
  * limitations under the License.
  */
 
-package org.apache.hive.jdbc;
+package org.apache.kyuubi.jdbc.hive;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;

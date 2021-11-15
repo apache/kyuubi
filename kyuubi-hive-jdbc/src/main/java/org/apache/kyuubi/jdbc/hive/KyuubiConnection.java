@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.hive.jdbc;
+package org.apache.kyuubi.jdbc.hive;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.common.auth.HiveAuthUtils;
-import org.apache.hive.jdbc.Utils.JdbcConnectionParams;
+import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
 import org.apache.hive.service.auth.HiveAuthFactory;
 import org.apache.hive.service.auth.KerberosSaslHelper;
 import org.apache.hive.service.auth.PlainSaslHelper;

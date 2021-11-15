@@ -12,7 +12,7 @@
  * limitations under the License. See accompanying LICENSE file.
  */
 
-package org.apache.hive.jdbc;
+package org.apache.kyuubi.jdbc.hive;
 
 import java.sql.SQLException;
 

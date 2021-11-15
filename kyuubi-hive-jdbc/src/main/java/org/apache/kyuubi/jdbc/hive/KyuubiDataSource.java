@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.hive.jdbc;
+package org.apache.kyuubi.jdbc.hive;
 
 import java.io.PrintWriter;
 import java.sql.Connection;

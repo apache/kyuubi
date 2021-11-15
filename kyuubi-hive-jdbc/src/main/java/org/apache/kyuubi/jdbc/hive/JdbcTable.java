@@ -16,23 +16,44 @@
  * limitations under the License.
  */
 
-package org.apache.hive.jdbc;
+package org.apache.kyuubi.jdbc.hive;
 
-class JdbcColumnAttributes {
-  public int precision = 0;
-  public int scale = 0;
+import java.sql.SQLException;
 
-  public JdbcColumnAttributes() {
+
+/**
+ * Table metadata.
+ */
+public class JdbcTable {
+  private String tableCatalog;
+  private String tableName;
+  private String type;
+  private String comment;
+
+  public JdbcTable(String tableCatalog, String tableName, String type, String comment) {
+    this.tableCatalog = tableCatalog;
+    this.tableName = tableName;
+    this.type = type;
+    this.comment = comment;
   }
 
-  public JdbcColumnAttributes(int precision, int scale) {
-    this.precision = precision;
-    this.scale = scale;
+  public String getTableCatalog() {
+    return tableCatalog;
   }
 
-  @Override
-  public String toString() {
-    return "(" + precision + "," + scale + ")";
+  public String getTableName() {
+    return tableName;
   }
 
+  public String getType() {
+    return type;
+  }
+
+  public String getSqlTableType() throws SQLException {
+    return KyuubiDatabaseMetaData.toJdbcTableType(type);
+  }
+
+  public String getComment() {
+    return comment;
+  }
 }

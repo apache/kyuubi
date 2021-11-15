@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.hive.jdbc;
+package org.apache.kyuubi.jdbc.hive;
 
 import java.io.IOException;
 import java.net.URL;
@@ -31,7 +31,7 @@ import java.util.jar.Manifest;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import org.apache.hive.jdbc.Utils.JdbcConnectionParams;
+import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
 
 
 /**

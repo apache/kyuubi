@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-package org.apache.hive.jdbc;
+package org.apache.kyuubi.jdbc.hive;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.hive.jdbc.logs.InPlaceUpdateStream;
+import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
 import org.apache.hive.service.cli.RowSet;
 import org.apache.hive.service.cli.RowSetFactory;
 import org.apache.hive.service.rpc.thrift.TCLIService;

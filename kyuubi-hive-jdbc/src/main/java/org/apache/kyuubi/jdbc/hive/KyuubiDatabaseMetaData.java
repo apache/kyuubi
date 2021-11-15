@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.hive.jdbc;
+package org.apache.kyuubi.jdbc.hive;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -29,6 +29,7 @@ import java.util.Comparator;
 import java.util.jar.Attributes;
 
 import org.apache.hadoop.hive.metastore.TableType;
+import org.apache.hive.jdbc.HiveQueryResultSet;
 import org.apache.hive.service.cli.GetInfoType;
 import org.apache.hive.service.cli.HiveSQLException;
 import org.apache.hive.service.rpc.thrift.*;

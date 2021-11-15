@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.hive.jdbc;
+package org.apache.kyuubi.jdbc.hive;
 
 import static org.apache.hive.service.rpc.thrift.TCLIServiceConstants.TYPE_NAMES;
 

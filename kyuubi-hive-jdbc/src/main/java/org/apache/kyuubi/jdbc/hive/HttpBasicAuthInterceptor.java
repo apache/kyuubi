@@ -16,12 +16,16 @@
  * limitations under the License.
  */
 
-package org.apache.hive.jdbc;
+package org.apache.kyuubi.jdbc.hive;
 
 import java.util.Map;
 
+import org.apache.http.Header;
 import org.apache.http.HttpRequest;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.CookieStore;
+import org.apache.http.impl.auth.AuthSchemeBase;
+import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.protocol.HttpContext;
 
 /**
@@ -29,19 +33,23 @@ import org.apache.http.protocol.HttpContext;
  * used to add header with these credentials to HTTP requests
  *
  */
-public class HttpTokenAuthInterceptor extends HttpRequestInterceptorBase {
-  private String tokenStr;
-  private static final String HIVE_DELEGATION_TOKEN_HEADER =  "X-Hive-Delegation-Token";
-  
-  public HttpTokenAuthInterceptor(String tokenStr, CookieStore cookieStore, String cn,
-      boolean isSSL, Map<String, String> additionalHeaders) {
+public class HttpBasicAuthInterceptor extends HttpRequestInterceptorBase {
+  UsernamePasswordCredentials credentials;
+  AuthSchemeBase authScheme;
+
+  public HttpBasicAuthInterceptor(String username, String password, CookieStore cookieStore,
+                           String cn, boolean isSSL, Map<String, String> additionalHeaders) {
     super(cookieStore, cn, isSSL, additionalHeaders);
-    this.tokenStr = tokenStr;
+    this.authScheme = new BasicScheme();
+    if (username != null){
+      this.credentials = new UsernamePasswordCredentials(username, password);
+    }
   }
 
   @Override
   protected void addHttpAuthHeader(HttpRequest httpRequest, HttpContext httpContext)
     throws Exception {
-    httpRequest.addHeader(HIVE_DELEGATION_TOKEN_HEADER, tokenStr);
+    Header basicAuthHeader = authScheme.authenticate(credentials, httpRequest, httpContext);
+    httpRequest.addHeader(basicAuthHeader);
   }
 }

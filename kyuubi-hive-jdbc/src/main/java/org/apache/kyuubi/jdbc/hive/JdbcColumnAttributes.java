@@ -16,11 +16,23 @@
  * limitations under the License.
  */
 
-package org.apache.hive.jdbc;
+package org.apache.kyuubi.jdbc.hive;
 
-/**
- * @deprecated Use `KyuubiHiveDriver` instead.
- */
-@Deprecated
-public class KyuubiDriver extends KyuubiHiveDriver {
+class JdbcColumnAttributes {
+  public int precision = 0;
+  public int scale = 0;
+
+  public JdbcColumnAttributes() {
+  }
+
+  public JdbcColumnAttributes(int precision, int scale) {
+    this.precision = precision;
+    this.scale = scale;
+  }
+
+  @Override
+  public String toString() {
+    return "(" + precision + "," + scale + ")";
+  }
+
 }

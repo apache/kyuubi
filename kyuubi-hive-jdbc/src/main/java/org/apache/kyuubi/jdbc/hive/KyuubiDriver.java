@@ -16,44 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.hive.jdbc;
-
-import java.sql.SQLException;
-
+package org.apache.kyuubi.jdbc.hive;
 
 /**
- * Table metadata.
+ * @deprecated Use `KyuubiHiveDriver` instead.
  */
-public class JdbcTable {
-  private String tableCatalog;
-  private String tableName;
-  private String type;
-  private String comment;
-
-  public JdbcTable(String tableCatalog, String tableName, String type, String comment) {
-    this.tableCatalog = tableCatalog;
-    this.tableName = tableName;
-    this.type = type;
-    this.comment = comment;
-  }
-
-  public String getTableCatalog() {
-    return tableCatalog;
-  }
-
-  public String getTableName() {
-    return tableName;
-  }
-
-  public String getType() {
-    return type;
-  }
-
-  public String getSqlTableType() throws SQLException {
-    return KyuubiDatabaseMetaData.toJdbcTableType(type);
-  }
-
-  public String getComment() {
-    return comment;
-  }
+@Deprecated
+public class KyuubiDriver extends KyuubiHiveDriver {
 }

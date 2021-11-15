@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.hive.jdbc;
+package org.apache.kyuubi.jdbc.hive;
 
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
