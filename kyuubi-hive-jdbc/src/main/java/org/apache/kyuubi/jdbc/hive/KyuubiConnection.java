@@ -99,6 +99,8 @@ import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
 public class KyuubiConnection implements java.sql.Connection {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
   private static final Long ENGINE_LOG_THREAD_END_DELAY = 10 * 1000L;
+  private static final String LAUNCH_ENGINE_OPERATION_HANDLE_GUID =
+    "kyuubi.session.launch.engine.operation.handle.identifier.guid";
 
   private String jdbcUriString;
   private String host;
