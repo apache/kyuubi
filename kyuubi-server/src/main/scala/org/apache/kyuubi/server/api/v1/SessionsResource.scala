@@ -110,7 +110,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   }
 
   @POST
-  @Path("{sessionHandle}/executestatement")
+  @Path("{sessionHandle}/operations/statement")
   def executeStatement(@PathParam("sessionHandle") sessionHandleStr: String,
                        request: StatementRequest): OperationHandle = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
@@ -124,7 +124,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   }
 
   @POST
-  @Path("{sessionHandle}/gettypeinfo")
+  @Path("{sessionHandle}/operations/typeinfo")
   def getTypeInfo(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
     try {
@@ -136,7 +136,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   }
 
   @POST
-  @Path("{sessionHandle}/getcatalogs")
+  @Path("{sessionHandle}/operations/catalogs")
   def getCatalogs(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
     try {
@@ -148,7 +148,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   }
 
   @POST
-  @Path("{sessionHandle}/getschemas")
+  @Path("{sessionHandle}/operations/schemas")
   def getSchemas(@PathParam("sessionHandle") sessionHandleStr: String,
                  request: GetSchemasRequest): OperationHandle = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
@@ -161,7 +161,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   }
 
   @POST
-  @Path("{sessionHandle}/gettables")
+  @Path("{sessionHandle}/operations/tables")
   def getTables(@PathParam("sessionHandle") sessionHandleStr: String,
                 request: GetTablesRequest): OperationHandle = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
@@ -175,7 +175,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   }
 
   @POST
-  @Path("{sessionHandle}/gettabletypes")
+  @Path("{sessionHandle}/operations/tabletypes")
   def getTableTypes(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
     try {
@@ -187,7 +187,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   }
 
   @POST
-  @Path("{sessionHandle}/getcolumns")
+  @Path("{sessionHandle}/operations/columns")
   def getColumns(@PathParam("sessionHandle") sessionHandleStr: String,
                  request: GetColumnsRequest): OperationHandle = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
@@ -201,7 +201,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   }
 
   @POST
-  @Path("{sessionHandle}/getfunctions")
+  @Path("{sessionHandle}/operations/functions")
   def getFunctions(@PathParam("sessionHandle") sessionHandleStr: String,
                    request: GetFunctionsRequest): OperationHandle = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
