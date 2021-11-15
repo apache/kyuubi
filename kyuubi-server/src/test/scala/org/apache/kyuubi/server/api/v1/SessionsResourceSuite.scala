@@ -217,19 +217,19 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
       val statementReq = StatementRequest("show tables", true, 3000)
       response = webTarget
-        .path(s"$path/executestatement").request(MediaType.APPLICATION_JSON_TYPE)
+        .path(s"$path/operations/statement").request(MediaType.APPLICATION_JSON_TYPE)
         .post(Entity.entity(statementReq, MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
       var operationHandle = response.readEntity(classOf[OperationHandle])
       assert(operationHandle.typ == OperationType.EXECUTE_STATEMENT)
 
-      response = webTarget.path(s"$path/gettypeinfo").request()
+      response = webTarget.path(s"$path/operations/typeinfo").request()
         .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
       operationHandle = response.readEntity(classOf[OperationHandle])
       assert(operationHandle.typ == OperationType.GET_TYPE_INFO)
 
-      response = webTarget.path(s"$path/getcatalogs")
+      response = webTarget.path(s"$path/operations/catalogs")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
@@ -237,7 +237,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(operationHandle.typ == OperationType.GET_CATALOGS)
 
       val getSchemasReq = GetSchemasRequest("default", "default")
-      response = webTarget.path(s"$path/getschemas")
+      response = webTarget.path(s"$path/operations/schemas")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .post(Entity.entity(getSchemasReq, MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
@@ -246,21 +246,21 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
       val tableTypes = new util.ArrayList[String]()
       val getTablesReq = GetTablesRequest("default", "default", "default", tableTypes)
-      response = webTarget.path(s"$path/gettables")
+      response = webTarget.path(s"$path/operations/tables")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .post(Entity.entity(getTablesReq, MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
       operationHandle = response.readEntity(classOf[OperationHandle])
       assert(operationHandle.typ == OperationType.GET_TABLES)
 
-      response = webTarget.path(s"$path/gettabletypes").request()
+      response = webTarget.path(s"$path/operations/tabletypes").request()
         .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
       operationHandle = response.readEntity(classOf[OperationHandle])
       assert(operationHandle.typ == OperationType.GET_TABLE_TYPES)
 
       val getColumnsReq = GetColumnsRequest("default", "default", "default", "default")
-      response = webTarget.path(s"$path/getcolumns")
+      response = webTarget.path(s"$path/operations/columns")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .post(Entity.entity(getColumnsReq, MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
@@ -268,7 +268,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(operationHandle.typ == OperationType.GET_COLUMNS)
 
       var getFunctionsReq = GetFunctionsRequest("default", "default", "default")
-      response = webTarget.path(s"$path/getfunctions")
+      response = webTarget.path(s"$path/operations/functions")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .post(Entity.entity(getFunctionsReq, MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
