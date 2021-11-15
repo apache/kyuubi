@@ -54,7 +54,7 @@ jobs:
           - java: 11
             spark: '3.1'
             spark-hadoop: '3.2'
-            profiles: '-DskipTests -Pspark-provided'
+            profiles: '-DskipTests -Pspark-provided -Pflink-provided'
 
     env:
       SPARK_LOCAL_IP: localhost

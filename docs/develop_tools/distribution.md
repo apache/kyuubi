@@ -33,11 +33,12 @@ For more information on usage, run `./build/dist --help`
 
 Usage:
 +--------------------------------------------------------------------------------------+
-| ./build/dist [--name <custom_name>] [--tgz] [--spark-provided] <maven build options> |
+| ./build/dist [--name <custom_name>] [--tgz] [--spark-provided] [--flink-provided] <maven build options> |
 +--------------------------------------------------------------------------------------+
 name:           -  custom binary name, using project version if undefined
 tgz:            -  whether to make a whole bundled package
 spark-provided: -  whether to make a package without Spark binary
+flink-provided: -  whether to make a package without Flink binary
 ```
 
 For instance,
@@ -48,10 +49,10 @@ For instance,
 
 This results in a Kyuubi distribution named `kyuubi-{version}-bin-custom-name.tgz` for you.
 
-If you are planing to deploy Kyuubi where `spark` is provided, in other word, it's not required to bundle spark binary, use 
+If you are planing to deploy Kyuubi where `spark`/`flink` is provided, in other word, it's not required to bundle spark/flink binary, use 
 
 ```bash
-./build/dist --tgz --spark-provided
+./build/dist --tgz --spark-provided --flink-provided
 ```
 
 Then you will get a Kyuubi distribution without spark binary named `kyuubi-{version}-bin.tgz`.
