@@ -72,6 +72,7 @@
         <module>kyuubi-common</module>
         <module>kyuubi-ctl</module>
         <module>kyuubi-ha</module>
+        <module>kyuubi-hive-beeline</module>
         <module>kyuubi-hive-jdbc</module>
         <module>kyuubi-hive-jdbc-shaded</module>
         <module>kyuubi-metrics</module>
@@ -143,6 +144,12 @@
         <hive.jdbc.thrift.version>0.9.3</hive.jdbc.thrift.version>
         <hive.jdbc.fb303.version>0.9.3</hive.jdbc.fb303.version>
         <hive.jdbc.zookeeper.version>3.4.14</hive.jdbc.zookeeper.version>
+
+        <!-- only apply for kyuubi-hive-beeline module -->
+        <hive.beeline.version>2.3.9</hive.beeline.version>
+        <hive.beeline.commons-cli.version>1.2</hive.beeline.commons-cli.version>
+        <hive.beeline.jline.version>2.12</hive.beeline.jline.version>
+        <hive.beeline.supercsv.version>2.2.0</hive.beeline.supercsv.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
