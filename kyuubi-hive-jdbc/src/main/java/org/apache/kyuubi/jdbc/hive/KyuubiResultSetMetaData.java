@@ -25,7 +25,7 @@ import java.util.List;
 import org.apache.hadoop.hive.serde2.thrift.Type;
 
 /**
- * HiveResultSetMetaData.
+ * KyuubiResultSetMetaData.
  *
  */
 public class KyuubiResultSetMetaData implements java.sql.ResultSetMetaData {

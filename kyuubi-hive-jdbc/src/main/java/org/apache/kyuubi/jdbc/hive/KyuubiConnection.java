@@ -109,7 +109,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * HiveConnection.
+ * KyuubiConnection.
  *
  */
 public class KyuubiConnection implements java.sql.Connection {

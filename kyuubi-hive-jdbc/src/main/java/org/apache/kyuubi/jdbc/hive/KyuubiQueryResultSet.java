@@ -56,7 +56,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * HiveQueryResultSet.
+ * KyuubiQueryResultSet.
  *
  */
 public class KyuubiQueryResultSet extends KyuubiBaseResultSet {

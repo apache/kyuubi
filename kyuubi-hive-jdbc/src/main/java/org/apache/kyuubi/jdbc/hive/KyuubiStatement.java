@@ -51,7 +51,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * HiveStatement.
+ * KyuubiStatement.
  *
  */
 public class KyuubiStatement implements java.sql.Statement {

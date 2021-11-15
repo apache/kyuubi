@@ -49,7 +49,7 @@ import org.apache.hive.service.rpc.thrift.TCLIService;
 import org.apache.hive.service.rpc.thrift.TSessionHandle;
 
 /**
- * HivePreparedStatement.
+ * KyuubiPreparedStatement.
  *
  */
 public class KyuubiPreparedStatement extends KyuubiStatement implements PreparedStatement {
