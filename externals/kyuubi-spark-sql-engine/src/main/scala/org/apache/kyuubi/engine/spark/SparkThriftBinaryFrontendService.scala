@@ -24,7 +24,6 @@ import org.apache.hive.service.rpc.thrift.{TRenewDelegationTokenReq, TRenewDeleg
 import org.apache.spark.kyuubi.SparkContextHelper
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_CONNECTION_URL_USE_HOSTNAME
 import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, ThriftBinaryFrontendService}
 import org.apache.kyuubi.util.KyuubiHadoopUtils
@@ -136,25 +135,6 @@ class SparkThriftBinaryFrontendService(
     } else {
       None
     }
-  }
-
-  override def connectionUrl: String = {
-    checkInitialized()
-    if (conf.get(ENGINE_CONNECTION_URL_USE_HOSTNAME)) {
-      s"${serverAddr.getCanonicalHostName}:$portNum"
-    } else {
-      // engine use address if run on k8s with cluster mode
-      s"${serverAddr.getHostAddress}:$portNum"
-    }
-  }
-
-  // When a OOM occurs, here we de-register the engine by stop its discoveryService.
-  // Then the current engine will not be connected by new client anymore but keep the existing ones
-  // alive. In this case we can reduce the engine's overhead and make it possible recover from that.
-  // We shall not tear down the whole engine by serverable.stop to make the engine unreachable for
-  // the existing clients which are still getting statuses and reporting to the end-users.
-  override protected def oomHook: Runnable = {
-    () => discoveryService.foreach(_.stop())
   }
 }
 
