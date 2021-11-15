@@ -1065,6 +1065,13 @@
                     <version>${maven.plugin.surefire.version}</version>
                     <configuration>
                         <skipTests>true</skipTests>
+                        <includes>
+                            <include>**/Test*.java</include>
+                            <include>**/*Test.java</include>
+                            <include>**/*TestCase.java</include>
+                            <include>**/*Suite.java</include>
+                        </includes>
+                        <failIfNoTests>false</failIfNoTests>
                     </configuration>
                 </plugin>
                 <!-- enable scalatest -->
