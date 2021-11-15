@@ -35,6 +35,8 @@ import org.apache.hive.service.cli.HiveSQLException;
 import org.apache.hive.service.rpc.thrift.*;
 import org.apache.thrift.TException;
 
+import org.apache.kyuubi.jdbc.KyuubiHiveDriver;
+
 /**
  * KyuubiDatabaseMetaData.
  *

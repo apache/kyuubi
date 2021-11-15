@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.jdbc.hive;
+package org.apache.kyuubi.jdbc;
 
 /**
  * @deprecated Use `KyuubiHiveDriver` instead.
