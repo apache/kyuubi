@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hive.jdbc;
+package org.apache.kyuubi.jdbc.hive;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
@@ -40,10 +40,10 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-public class TestHivePreparedStatement {
+public class TestKyuubiPreparedStatement {
 
 	@Mock
-	private HiveConnection connection;
+	private KyuubiConnection connection;
 	@Mock
 	private Iface client;
 	@Mock
@@ -75,7 +75,7 @@ public class TestHivePreparedStatement {
 	@Test
 	public void testNonParameterized() throws Exception {
 		String sql = "select 1";
-		HivePreparedStatement ps = new HivePreparedStatement(connection, client, sessHandle, sql);
+		KyuubiPreparedStatement ps = new KyuubiPreparedStatement(connection, client, sessHandle, sql);
 		ps.execute();
 
 		ArgumentCaptor<TExecuteStatementReq> argument = ArgumentCaptor.forClass(TExecuteStatementReq.class);
@@ -87,7 +87,7 @@ public class TestHivePreparedStatement {
 	@Test
 	public void unusedArgument() throws Exception {
 		String sql = "select 1";
-		HivePreparedStatement ps = new HivePreparedStatement(connection, client, sessHandle, sql);
+		KyuubiPreparedStatement ps = new KyuubiPreparedStatement(connection, client, sessHandle, sql);
 		ps.setString(1, "asd");
 		ps.execute();
 	}
@@ -96,7 +96,7 @@ public class TestHivePreparedStatement {
 	@Test(expected=SQLException.class)
 	public void unsetArgument() throws Exception {
 		String sql = "select 1 from x where a=?";
-		HivePreparedStatement ps = new HivePreparedStatement(connection, client, sessHandle, sql);
+		KyuubiPreparedStatement ps = new KyuubiPreparedStatement(connection, client, sessHandle, sql);
 		ps.execute();
 	}
 
@@ -104,7 +104,7 @@ public class TestHivePreparedStatement {
 	@Test
 	public void oneArgument() throws Exception {
 		String sql = "select 1 from x where a=?";
-		HivePreparedStatement ps = new HivePreparedStatement(connection, client, sessHandle, sql);
+		KyuubiPreparedStatement ps = new KyuubiPreparedStatement(connection, client, sessHandle, sql);
 		ps.setString(1, "asd");
 		ps.execute();
 		
@@ -117,7 +117,7 @@ public class TestHivePreparedStatement {
 	@Test
 	public void escapingOfStringArgument() throws Exception {
 		String sql = "select 1 from x where a=?";
-		HivePreparedStatement ps = new HivePreparedStatement(connection, client, sessHandle, sql);
+		KyuubiPreparedStatement ps = new KyuubiPreparedStatement(connection, client, sessHandle, sql);
 		ps.setString(1, "a'\"d");
 		ps.execute();
 		
@@ -130,7 +130,7 @@ public class TestHivePreparedStatement {
 	@Test
 	public void pastingIntoQuery() throws Exception {
 		String sql = "select 1 from x where a='e' || ?";
-		HivePreparedStatement ps = new HivePreparedStatement(connection, client, sessHandle, sql);
+		KyuubiPreparedStatement ps = new KyuubiPreparedStatement(connection, client, sessHandle, sql);
 		ps.setString(1, "v");
 		ps.execute();
 		
@@ -144,7 +144,7 @@ public class TestHivePreparedStatement {
 	@Test
 	public void pastingIntoEscapedQuery() throws Exception {
 		String sql = "select 1 from x where a='\\044e' || ?";
-		HivePreparedStatement ps = new HivePreparedStatement(connection, client, sessHandle, sql);
+		KyuubiPreparedStatement ps = new KyuubiPreparedStatement(connection, client, sessHandle, sql);
 		ps.setString(1, "v");
 		ps.execute();
 		

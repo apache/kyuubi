@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.hive.jdbc;
+package org.apache.kyuubi.jdbc.hive;
 
 import org.junit.Test;
 
@@ -23,18 +23,18 @@ import java.sql.SQLException;
 
 import static org.junit.Assert.assertEquals;
 
-public class HiveStatementTest {
+public class KyuubiStatementTest {
 
   @Test
   public void testSetFetchSize1() throws SQLException {
-    HiveStatement stmt = new HiveStatement(null, null, null);
+    KyuubiStatement stmt = new KyuubiStatement(null, null, null);
     stmt.setFetchSize(123);
     assertEquals(123, stmt.getFetchSize());
   }
 
   @Test
   public void testSetFetchSize2() throws SQLException {
-    HiveStatement stmt = new HiveStatement(null, null, null);
+    KyuubiStatement stmt = new KyuubiStatement(null, null, null);
     int initial = stmt.getFetchSize();
     stmt.setFetchSize(0);
     assertEquals(initial, stmt.getFetchSize());
@@ -42,13 +42,13 @@ public class HiveStatementTest {
 
   @Test(expected = SQLException.class)
   public void testSetFetchSize3() throws SQLException {
-    HiveStatement stmt = new HiveStatement(null, null, null);
+    KyuubiStatement stmt = new KyuubiStatement(null, null, null);
     stmt.setFetchSize(-1);
   }
 
   @Test
   public void testaddBatch() throws SQLException {
-    HiveStatement stmt = new HiveStatement(null, null, null);
+    KyuubiStatement stmt = new KyuubiStatement(null, null, null);
     try {
       stmt.addBatch(null);
     } catch (SQLException e) {
