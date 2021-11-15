@@ -36,7 +36,7 @@ import org.apache.hive.service.rpc.thrift.*;
 import org.apache.thrift.TException;
 
 /**
- * HiveDatabaseMetaData.
+ * KyuubiDatabaseMetaData.
  *
  */
 public class KyuubiDatabaseMetaData implements DatabaseMetaData {

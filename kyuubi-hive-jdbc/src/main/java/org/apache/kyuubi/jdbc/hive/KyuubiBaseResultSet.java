@@ -52,7 +52,7 @@ import org.apache.hive.service.cli.TableSchema;
 
 /**
  * Data independent base class which implements the common part of
- * all Hive result sets.
+ * all Kyuubi result sets.
  */
 public abstract class KyuubiBaseResultSet implements ResultSet {
 

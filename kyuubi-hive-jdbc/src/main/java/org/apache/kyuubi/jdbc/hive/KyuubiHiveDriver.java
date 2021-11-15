@@ -35,7 +35,7 @@ import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
 
 
 /**
- * HiveDriver.
+ * KyuubiHiveDriver.
  *
  */
 public class KyuubiHiveDriver implements Driver {

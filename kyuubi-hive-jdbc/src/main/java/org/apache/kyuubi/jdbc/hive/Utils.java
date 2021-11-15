@@ -50,7 +50,7 @@ public class Utils {
   static final String DEFAULT_PORT = "10000";
 
   /**
-   * Hive's default database name
+   * Kyuubi's default database name
    */
   static final String DEFAULT_DATABASE = "default";
 
