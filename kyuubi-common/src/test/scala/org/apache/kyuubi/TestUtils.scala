@@ -52,7 +52,7 @@ object TestUtils {
       }
       reader.close()
       val hint = s"$markdown out of date, please update doc with " +
-        s"KYUUBI_UPDATE=1 build/mvn clean install -Pspark-provided,flink-provided " +
+        s"KYUUBI_UPDATE=1 build/mvn clean install -Pflink-provided,spark-provided " +
         s"-DwildcardSuites=$agent"
       assert(newOutput.size === expected.size, hint)
 

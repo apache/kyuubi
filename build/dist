@@ -41,12 +41,12 @@ function usage {
   echo ""
   echo "Usage:"
   echo "+--------------------------------------------------------------------------------------+"
-  echo "| ./build/dist [--name <custom_name>] [--tgz] [--spark-provided] [--flink-provided] <maven build options> |"
+  echo "| ./build/dist [--name <custom_name>] [--tgz] [--flink-provided] [--spark-provided] <maven build options> |"
   echo "+--------------------------------------------------------------------------------------+"
   echo "name:           -  custom binary name, using project version if undefined"
   echo "tgz:            -  whether to make a whole bundled package"
-  echo "spark-provided: -  whether to make a package without Spark binary"
   echo "flink-provided: -  whether to make a package without Flink binary"
+  echo "spark-provided: -  whether to make a package without Spark binary"
   echo ""
 }
 

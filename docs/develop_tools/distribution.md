@@ -33,12 +33,12 @@ For more information on usage, run `./build/dist --help`
 
 Usage:
 +--------------------------------------------------------------------------------------+
-| ./build/dist [--name <custom_name>] [--tgz] [--spark-provided] [--flink-provided] <maven build options> |
+| ./build/dist [--name <custom_name>] [--tgz] [--flink-provided] [--spark-provided] <maven build options> |
 +--------------------------------------------------------------------------------------+
 name:           -  custom binary name, using project version if undefined
 tgz:            -  whether to make a whole bundled package
-spark-provided: -  whether to make a package without Spark binary
 flink-provided: -  whether to make a package without Flink binary
+spark-provided: -  whether to make a package without Spark binary
 ```
 
 For instance,

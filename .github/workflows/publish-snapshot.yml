@@ -37,9 +37,9 @@ jobs:
         ASF_PASSWORD: ${{ secrets.NEXUS_PW }}
       run: |
         rm -rf ~/.m2/repository/org/apache/kyuubi
-        ./build/mvn clean deploy -s ./build/release/asf-settings.xml -DskipTests -Pspark-provided -Pflink-provided
-        ./build/mvn clean deploy -s ./build/release/asf-settings.xml -DskipTests -Pspark-provided,spark-3.1 -Pflink-provided -pl dev/kyuubi-extension-spark-3-1 -am
-        ./build/mvn clean deploy -s ./build/release/asf-settings.xml -DskipTests -Pspark-provided,spark-3.2 -Pflink-provided -pl dev/kyuubi-extension-spark-3-2 -am
+        ./build/mvn clean deploy -s ./build/release/asf-settings.xml -DskipTests -Pflink-provided -Pspark-provided
+        ./build/mvn clean deploy -s ./build/release/asf-settings.xml -DskipTests -Pflink-provided -Pspark-provided,spark-3.1 -pl dev/kyuubi-extension-spark-3-1 -am
+        ./build/mvn clean deploy -s ./build/release/asf-settings.xml -DskipTests -Pflink-provided -Pspark-provided,spark-3.2 -pl dev/kyuubi-extension-spark-3-2 -am
     - name: Publish snapshot - branch-1.3
       if: ${{ matrix.branch == 'branch-1.3' }}
       env:
@@ -47,4 +47,4 @@ jobs:
         ASF_PASSWORD: ${{ secrets.NEXUS_PW }}
       run: |
         rm -rf ~/.m2/repository/org/apache/kyuubi
-        ./build/mvn clean deploy -s ./build/release/asf-settings.xml -DskipTests -Pspark-provided,kyuubi-extension-spark-3-1 -Pflink-provided
+        ./build/mvn clean deploy -s ./build/release/asf-settings.xml -DskipTests -Pflink-provided -Pspark-provided,kyuubi-extension-spark-3-1
