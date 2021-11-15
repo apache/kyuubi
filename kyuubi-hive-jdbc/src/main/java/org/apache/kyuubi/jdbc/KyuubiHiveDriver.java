@@ -17,9 +17,6 @@
 
 package org.apache.kyuubi.jdbc;
 
-import org.apache.hive.jdbc.Utils;
-import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
-
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -28,6 +25,9 @@ import java.util.Properties;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.logging.Logger;
+
+import org.apache.kyuubi.jdbc.hive.Utils;
+import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
 
 /**
  * Kyuubi JDBC driver to connect to Kyuubi server via HiveServer2 thrift protocol.
