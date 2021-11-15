@@ -43,6 +43,7 @@ object OperationType extends Enumeration {
       case TOperationType.GET_TABLE_TYPES => GET_TABLE_TYPES
       case TOperationType.GET_COLUMNS => GET_COLUMNS
       case TOperationType.GET_FUNCTIONS => GET_FUNCTIONS
+      case TOperationType.UNKNOWN => UNKNOWN_OPERATION
       case other =>
         throw new UnsupportedOperationException(s"Unsupported Operation type: ${other.toString}")
     }
@@ -58,17 +59,9 @@ object OperationType extends Enumeration {
       case GET_TABLE_TYPES => TOperationType.GET_TABLE_TYPES
       case GET_COLUMNS => TOperationType.GET_COLUMNS
       case GET_FUNCTIONS => TOperationType.GET_FUNCTIONS
-      // LAUNCH_ENGINE is not an OperationType defined in Hive thrift protocol
-      case LAUNCH_ENGINE => TOperationType.UNKNOWN
+      case UNKNOWN_OPERATION => TOperationType.UNKNOWN
       case other =>
         throw new UnsupportedOperationException(s"Unsupported Operation type: ${other.toString}")
     }
-  }
-
-  /**
-   * Whether the operation type is defined by kyuubi and its TOperationType should be UNKNOWN.
-   */
-  def isKyuubiDefinedOperationType(opType: OperationType): Boolean = {
-    opType == LAUNCH_ENGINE
   }
 }

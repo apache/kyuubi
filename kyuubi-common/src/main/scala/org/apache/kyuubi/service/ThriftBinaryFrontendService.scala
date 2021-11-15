@@ -30,9 +30,8 @@ import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TT
 import org.apache.thrift.transport.{TServerSocket, TTransport}
 
 import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Logging, Utils}
-import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle, OperationType}
+import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.{ExecutorPoolCaptureOom, KyuubiHadoopUtils, NamedThreadFactory}
@@ -390,7 +389,7 @@ abstract class ThriftBinaryFrontendService(name: String)
     debug(req.toString)
     val resp = new TGetOperationStatusResp
     try {
-      val operationHandle = getOperationHandle(req.getOperationHandle)
+      val operationHandle = OperationHandle(req.getOperationHandle)
       val operationStatus = be.getOperationStatus(operationHandle)
       resp.setOperationState(operationStatus.state)
       resp.setOperationStarted(operationStatus.start)
@@ -414,7 +413,7 @@ abstract class ThriftBinaryFrontendService(name: String)
     debug(req.toString)
     val resp = new TCancelOperationResp
     try {
-      be.cancelOperation(getOperationHandle(req.getOperationHandle))
+      be.cancelOperation(OperationHandle(req.getOperationHandle))
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
@@ -428,7 +427,7 @@ abstract class ThriftBinaryFrontendService(name: String)
     debug(req.toString)
     val resp = new TCloseOperationResp
     try {
-      be.closeOperation(getOperationHandle(req.getOperationHandle))
+      be.closeOperation(OperationHandle(req.getOperationHandle))
       resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
@@ -442,7 +441,7 @@ abstract class ThriftBinaryFrontendService(name: String)
     debug(req.toString)
     val resp = new TGetResultSetMetadataResp
     try {
-      val schema = be.getResultSetMetadata(getOperationHandle(req.getOperationHandle))
+      val schema = be.getResultSetMetadata(OperationHandle(req.getOperationHandle))
       resp.setSchema(schema)
       resp.setStatus(OK_STATUS)
     } catch {
@@ -457,7 +456,7 @@ abstract class ThriftBinaryFrontendService(name: String)
     debug(req.toString)
     val resp = new TFetchResultsResp
     try {
-      val operationHandle = getOperationHandle(req.getOperationHandle)
+      val operationHandle = OperationHandle(req.getOperationHandle)
       val orientation = FetchOrientation.getFetchOrientation(req.getOrientation)
       // 1 means fetching log
       val fetchLog = req.getFetchType == 1
@@ -499,27 +498,6 @@ abstract class ThriftBinaryFrontendService(name: String)
     val resp = new TRenewDelegationTokenResp
     resp.setStatus(notSupportTokenErrorStatus)
     resp
-  }
-
-  /**
-   * Get Operation handle from TOperationHandle.
-   * The actual operation type might be a Kyuubi defined operation type that uses hive thrift
-   * RPC with UNKNOWN OperationType, lookup it by HandleIdentifier.
-   * @param tOperationHandle hive thrift OperationHandle.
-   * @throws UnsupportedOperationException if the actual operation type is neither hive thrift
-   *                                       operation nor kyuubi defined operation
-   * @return actual operation handle, might be a kyuubi thrift operation
-   */
-  private def getOperationHandle(tOperationHandle: TOperationHandle): OperationHandle = {
-    try {
-      OperationHandle(tOperationHandle)
-    } catch {
-      case ue: UnsupportedOperationException =>
-        val handleIdentifier = HandleIdentifier(tOperationHandle.getOperationId)
-        be.sessionManager.operationManager.findOperation(handleIdentifier)
-          .filter(opHandle => OperationType.isKyuubiDefinedOperationType(opHandle.typ))
-          .getOrElse(throw ue)
-    }
   }
 
   class FeTServerEventHandler extends TServerEventHandler {
