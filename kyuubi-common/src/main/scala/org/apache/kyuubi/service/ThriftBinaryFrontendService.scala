@@ -51,7 +51,14 @@ abstract class ThriftBinaryFrontendService(name: String)
   private var authFactory: KyuubiAuthenticationFactory = _
   private var hadoopConf: Configuration = _
 
-  protected def oomHook: Runnable
+  // When a OOM occurs, here we de-register the engine by stop its discoveryService.
+  // Then the current engine will not be connected by new client anymore but keep the existing ones
+  // alive. In this case we can reduce the engine's overhead and make it possible recover from that.
+  // We shall not tear down the whole engine by serverable.stop to make the engine unreachable for
+  // the existing clients which are still getting statuses and reporting to the end-users.
+  protected def oomHook: Runnable = {
+    () => discoveryService.foreach(_.stop())
+  }
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
@@ -134,6 +141,16 @@ abstract class ThriftBinaryFrontendService(name: String)
       isStarted = false
     }
     super.stop()
+  }
+
+  override def connectionUrl: String = {
+    checkInitialized()
+    if (conf.get(ENGINE_CONNECTION_URL_USE_HOSTNAME)) {
+      s"${serverAddr.getCanonicalHostName}:$portNum"
+    } else {
+      // engine use address if run on k8s with cluster mode
+      s"${serverAddr.getHostAddress}:$portNum"
+    }
   }
 
   private def getProxyUser(
