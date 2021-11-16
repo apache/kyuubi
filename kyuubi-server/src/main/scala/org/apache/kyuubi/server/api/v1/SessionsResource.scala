@@ -28,6 +28,7 @@ import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 
 import org.apache.kyuubi.Utils.error
 import org.apache.kyuubi.cli.HandleIdentifier
+import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.session.SessionHandle
 
@@ -48,7 +49,6 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @Path("{sessionHandle}")
   def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): SessionDetail = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
-
     try {
       val session = backendService.sessionManager.getSession(sessionHandle)
       SessionDetail(session.user, session.ipAddress, session.createTime, sessionHandle,
@@ -109,6 +109,111 @@ private[v1] class SessionsResource extends ApiRequestContext {
     Response.ok().build()
   }
 
+  @POST
+  @Path("{sessionHandle}/operations/statement")
+  def executeStatement(@PathParam("sessionHandle") sessionHandleStr: String,
+                       request: StatementRequest): OperationHandle = {
+    val sessionHandle = getSessionHandle(sessionHandleStr)
+    try {
+      backendService.executeStatement(sessionHandle, request.statement, request.runAsync,
+        request.queryTimeout)
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Error executing statement")
+    }
+  }
+
+  @POST
+  @Path("{sessionHandle}/operations/typeinfo")
+  def getTypeInfo(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
+    val sessionHandle = getSessionHandle(sessionHandleStr)
+    try {
+      backendService.getTypeInfo(sessionHandle)
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Error getting type information")
+    }
+  }
+
+  @POST
+  @Path("{sessionHandle}/operations/catalogs")
+  def getCatalogs(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
+    val sessionHandle = getSessionHandle(sessionHandleStr)
+    try {
+      backendService.getCatalogs(sessionHandle)
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Error getting catalogs")
+    }
+  }
+
+  @POST
+  @Path("{sessionHandle}/operations/schemas")
+  def getSchemas(@PathParam("sessionHandle") sessionHandleStr: String,
+                 request: GetSchemasRequest): OperationHandle = {
+    val sessionHandle = getSessionHandle(sessionHandleStr)
+    try {
+      backendService.getSchemas(sessionHandle, request.catalogName, request.schemaName)
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Error getting schemas")
+    }
+  }
+
+  @POST
+  @Path("{sessionHandle}/operations/tables")
+  def getTables(@PathParam("sessionHandle") sessionHandleStr: String,
+                request: GetTablesRequest): OperationHandle = {
+    val sessionHandle = getSessionHandle(sessionHandleStr)
+    try {
+      backendService.getTables(sessionHandle, request.catalogName, request.schemaName,
+        request.tableName, request.tableTypes)
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Error getting tables")
+    }
+  }
+
+  @POST
+  @Path("{sessionHandle}/operations/tabletypes")
+  def getTableTypes(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
+    val sessionHandle = getSessionHandle(sessionHandleStr)
+    try {
+      backendService.getTableTypes(sessionHandle)
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Error getting table types")
+    }
+  }
+
+  @POST
+  @Path("{sessionHandle}/operations/columns")
+  def getColumns(@PathParam("sessionHandle") sessionHandleStr: String,
+                 request: GetColumnsRequest): OperationHandle = {
+    val sessionHandle = getSessionHandle(sessionHandleStr)
+    try {
+      backendService.getColumns(sessionHandle, request.catalogName, request.schemaName,
+        request.tableName, request.columnName)
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Error getting columns")
+    }
+  }
+
+  @POST
+  @Path("{sessionHandle}/operations/functions")
+  def getFunctions(@PathParam("sessionHandle") sessionHandleStr: String,
+                   request: GetFunctionsRequest): OperationHandle = {
+    val sessionHandle = getSessionHandle(sessionHandleStr)
+    try {
+      backendService.getFunctions(sessionHandle, request.catalogName, request.schemaName,
+        request.functionName)
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Error getting functions")
+    }
+  }
+
   def getSessionHandle(sessionHandleStr: String): SessionHandle = {
     try {
       val splitSessionHandle = sessionHandleStr.split("\\|")
@@ -125,6 +230,5 @@ private[v1] class SessionsResource extends ApiRequestContext {
         error(s"Error getting sessionHandle by $sessionHandleStr.", e)
         throw new NotFoundException(s"Error getting sessionHandle by $sessionHandleStr.")
     }
-
   }
 }

@@ -17,12 +17,14 @@
 
 package org.apache.kyuubi.server.api.v1
 
+import java.util
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{MediaType, Response}
 
 import scala.concurrent.duration._
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
+import org.apache.kyuubi.operation.{OperationHandle, OperationType}
 import org.apache.kyuubi.session.SessionHandle
 
 class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
@@ -195,6 +197,83 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/info/str")
         .request().get()
       assert(404 == response.getStatus)
+    }
+  }
+
+  test("test submit operation and get operation handle") {
+    val requestObj = SessionOpenRequest(
+      1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
+
+    withKyuubiRestServer { (_, _, _, webTarget) =>
+      var response: Response = webTarget.path("api/v1/sessions")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+
+      val sessionHandle = response.readEntity(classOf[SessionHandle])
+      val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
+        s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
+
+      val pathPrefix = s"api/v1/sessions/$serializedSessionHandle"
+
+      val statementReq = StatementRequest("show tables", true, 3000)
+      response = webTarget
+        .path(s"$pathPrefix/operations/statement").request(MediaType.APPLICATION_JSON_TYPE)
+        .post(Entity.entity(statementReq, MediaType.APPLICATION_JSON_TYPE))
+      assert(200 == response.getStatus)
+      var operationHandle = response.readEntity(classOf[OperationHandle])
+      assert(operationHandle.typ == OperationType.EXECUTE_STATEMENT)
+
+      response = webTarget.path(s"$pathPrefix/operations/typeinfo").request()
+        .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
+      assert(200 == response.getStatus)
+      operationHandle = response.readEntity(classOf[OperationHandle])
+      assert(operationHandle.typ == OperationType.GET_TYPE_INFO)
+
+      response = webTarget.path(s"$pathPrefix/operations/catalogs")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
+      assert(200 == response.getStatus)
+      operationHandle = response.readEntity(classOf[OperationHandle])
+      assert(operationHandle.typ == OperationType.GET_CATALOGS)
+
+      val getSchemasReq = GetSchemasRequest("default", "default")
+      response = webTarget.path(s"$pathPrefix/operations/schemas")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .post(Entity.entity(getSchemasReq, MediaType.APPLICATION_JSON_TYPE))
+      assert(200 == response.getStatus)
+      operationHandle = response.readEntity(classOf[OperationHandle])
+      assert(operationHandle.typ == OperationType.GET_SCHEMAS)
+
+      val tableTypes = new util.ArrayList[String]()
+      val getTablesReq = GetTablesRequest("default", "default", "default", tableTypes)
+      response = webTarget.path(s"$pathPrefix/operations/tables")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .post(Entity.entity(getTablesReq, MediaType.APPLICATION_JSON_TYPE))
+      assert(200 == response.getStatus)
+      operationHandle = response.readEntity(classOf[OperationHandle])
+      assert(operationHandle.typ == OperationType.GET_TABLES)
+
+      response = webTarget.path(s"$pathPrefix/operations/tabletypes").request()
+        .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
+      assert(200 == response.getStatus)
+      operationHandle = response.readEntity(classOf[OperationHandle])
+      assert(operationHandle.typ == OperationType.GET_TABLE_TYPES)
+
+      val getColumnsReq = GetColumnsRequest("default", "default", "default", "default")
+      response = webTarget.path(s"$pathPrefix/operations/columns")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .post(Entity.entity(getColumnsReq, MediaType.APPLICATION_JSON_TYPE))
+      assert(200 == response.getStatus)
+      operationHandle = response.readEntity(classOf[OperationHandle])
+      assert(operationHandle.typ == OperationType.GET_COLUMNS)
+
+      var getFunctionsReq = GetFunctionsRequest("default", "default", "default")
+      response = webTarget.path(s"$pathPrefix/operations/functions")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .post(Entity.entity(getFunctionsReq, MediaType.APPLICATION_JSON_TYPE))
+      assert(200 == response.getStatus)
+      operationHandle = response.readEntity(classOf[OperationHandle])
+      assert(operationHandle.typ == OperationType.GET_FUNCTIONS)
     }
   }
 }
