@@ -25,8 +25,6 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
 
   override protected def statement: String = "LAUNCH_ENGINE"
 
-  override protected val operationTimeout: Long = 0
-
   private lazy val _operationLog: OperationLog = if (shouldRunAsync) {
     OperationLog.createOperationLog(session, getHandle)
   } else {

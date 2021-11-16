@@ -34,7 +34,7 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
 
   private final val createTime = System.currentTimeMillis()
   private final val handle = OperationHandle(opType, session.protocol)
-  protected val operationTimeout: Long = {
+  private final val operationTimeout: Long = {
     session.sessionManager.getConf.get(OPERATION_IDLE_TIMEOUT)
   }
 
