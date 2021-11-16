@@ -19,6 +19,8 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: kyuubi-defaults
+  labels:
+    app: {{ template "kyuubi.name" . }}
 data:
   kyuubi-defaults.conf: |
     #

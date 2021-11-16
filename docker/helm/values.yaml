@@ -42,6 +42,7 @@ service:
   #   vim kube-apiserver.yaml (usually under path: /etc/kubernetes/manifests/)
   #   add or change line 'service-node-port-range=1-32767' under kube-apiserver
   port: 30009
+  annotations: {}
 
 resources: {}
   # Used to specify resource, default unlimited.
