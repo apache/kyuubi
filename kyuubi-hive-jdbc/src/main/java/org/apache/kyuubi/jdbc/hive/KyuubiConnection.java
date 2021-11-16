@@ -99,6 +99,7 @@ import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
 public class KyuubiConnection implements java.sql.Connection {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
   private static final Long ENGINE_LOG_THREAD_END_DELAY = 10 * 1000L;
+  private static boolean isBeelineMode = false;
 
   private String jdbcUriString;
   private String host;
@@ -113,12 +114,20 @@ public class KyuubiConnection implements java.sql.Connection {
   private boolean isClosed = true;
   private SQLWarning warningChain = null;
   private TSessionHandle sessHandle = null;
-  private TOperationHandle launchEngineOpHandle = null;
   private final List<TProtocolVersion> supportedProtocols = new LinkedList<TProtocolVersion>();
   private int loginTimeout = 0;
   private TProtocolVersion protocol;
   private int fetchSize = KyuubiStatement.DEFAULT_FETCH_SIZE;
   private String initFile = null;
+  private boolean initFileCompleted = false;
+
+  private TOperationHandle launchEngineOpHandle = null;
+  private boolean isEngineLogBeingGenerated = true;
+  private boolean launchEngineOpCompleted = false;
+
+  public static void setBeelineMode(boolean isBeelineMode) {
+    KyuubiConnection.isBeelineMode = isBeelineMode;
+  }
 
   public KyuubiConnection(String uri, Properties info) throws SQLException {
     setupLoginTimeout();
@@ -164,7 +173,7 @@ public class KyuubiConnection implements java.sql.Connection {
 
       // open client session
       openSession();
-      getLaunchEngineLog();
+      showLaunchEngineLog();
       executeInitSql();
     } else {
       int maxRetries = 1;
@@ -184,9 +193,10 @@ public class KyuubiConnection implements java.sql.Connection {
           client = new TCLIService.Client(new TBinaryProtocol(transport));
           // open client session
           openSession();
-          getLaunchEngineLog();
-          executeInitSql();
-
+          if (!isBeelineMode) {
+            showLaunchEngineLog();
+            executeInitSql();
+          }
           break;
         } catch (Exception e) {
           LOG.warn("Failed to connect to " + connParams.getHost() + ":" + connParams.getPort());
@@ -220,32 +230,23 @@ public class KyuubiConnection implements java.sql.Connection {
     client = newSynchronizedClient(client);
   }
 
-  private void getLaunchEngineLog() {
+  public boolean hasMoreEngineLogs() {
+    return launchEngineOpHandle != null && (launchEngineOpCompleted && !isEngineLogBeingGenerated);
+  }
+
+  private void showLaunchEngineLog() {
     if (launchEngineOpHandle != null) {
       LOG.info("Starting to get launch engine log.");
       Thread logThread = new Thread("engine-launch-log") {
-        boolean launchEngineCompleted = false;
-        long timeToEnd = Long.MAX_VALUE;
-        boolean continueToFetch = true;
 
         @Override
         public void run() {
           try {
-            while (continueToFetch && System.currentTimeMillis() < timeToEnd) {
-              List<String> logs = fetchEngineLogs();
-              if (launchEngineCompleted && logs.isEmpty()) {
-                continueToFetch = false;
-              }
-
+            while (hasMoreEngineLogs()) {
+              List<String> logs = getEngineLogs();
               for (String log: logs) {
                 LOG.info(log);
               }
-
-              if (!launchEngineCompleted && launchEngineOpCompleted()) {
-                launchEngineCompleted = true;
-                timeToEnd = System.currentTimeMillis() + ENGINE_LOG_THREAD_END_DELAY;
-              }
-
               Thread.sleep(300);
             }
           } catch (Exception e) {
@@ -258,16 +259,7 @@ public class KyuubiConnection implements java.sql.Connection {
     }
   }
 
-  private boolean launchEngineOpCompleted() {
-    TGetOperationStatusReq opStatusReq = new TGetOperationStatusReq(launchEngineOpHandle);
-    try {
-      return client.GetOperationStatus(opStatusReq).getOperationCompleted() != 0;
-    } catch (TException e) {
-      return true;
-    }
-  }
-
-  private List<String> fetchEngineLogs() throws SQLException {
+  public List<String> getEngineLogs() throws SQLException {
     TFetchResultsReq fetchResultsReq = new TFetchResultsReq(launchEngineOpHandle,
       TFetchOrientation.FETCH_NEXT, fetchSize);
     fetchResultsReq.setFetchType((short) 1);
@@ -282,10 +274,20 @@ public class KyuubiConnection implements java.sql.Connection {
     } catch (TException e) {
       throw new SQLException("Error building result set for query log", e);
     }
+    isEngineLogBeingGenerated = !logs.isEmpty();
+
+    TGetOperationStatusReq opStatusReq = new TGetOperationStatusReq(launchEngineOpHandle);
+    try {
+      launchEngineOpCompleted = client.GetOperationStatus(opStatusReq).getOperationCompleted() != 0;
+    } catch (TException e) {
+      launchEngineOpCompleted = true;
+    }
+
     return Collections.unmodifiableList(logs);
   }
 
   private void executeInitSql() throws SQLException {
+    if (initFileCompleted) return;
     if (initFile != null) {
       try {
         List<String> sqlList = parseInitFile(initFile);
@@ -304,6 +306,7 @@ public class KyuubiConnection implements java.sql.Connection {
         throw new SQLException(e.getMessage());
       }
     }
+    initFileCompleted = true;
   }
 
   public static List<String> parseInitFile(String initFile) throws IOException {
