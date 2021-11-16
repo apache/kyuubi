@@ -42,7 +42,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = "application/json"
+      mediaType = MediaType.APPLICATION_JSON
     )),
     description = "get all the session list hosted in SessionManager"
   )
@@ -59,7 +59,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = "application/json"
+      mediaType = MediaType.APPLICATION_JSON
     )),
     description = "get a session via session handle identifier"
   )
@@ -82,7 +82,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = "application/json"
+      mediaType = MediaType.APPLICATION_JSON
     )),
     description =
       "get a information detail via session handle identifier and a specific information type"
@@ -107,7 +107,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = "application/json"
+      mediaType = MediaType.APPLICATION_JSON
     )),
     description = "Get the current open session count"
   )
@@ -120,7 +120,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = "application/json"
+      mediaType = MediaType.APPLICATION_JSON
     )),
     description = "Get statistic info of background executors"
   )
@@ -134,7 +134,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = "application/json"
+      mediaType = MediaType.APPLICATION_JSON
     )),
     description = "Open(create) a session"
   )
@@ -152,7 +152,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = "application/json"
+      mediaType = MediaType.APPLICATION_JSON
     )),
     description = "Close a session"
   )
