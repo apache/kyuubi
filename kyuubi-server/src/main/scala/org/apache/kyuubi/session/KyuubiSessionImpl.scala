@@ -137,10 +137,9 @@ class KyuubiSessionImpl(
   }
 
   override def close(): Unit = {
+    closeOperation(launchEngineOp.getHandle)
     super.close()
-    if (handle != null) {
-      sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
-    }
+    sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
     try {
       if (_client != null) _client.closeSession()
     } catch {
