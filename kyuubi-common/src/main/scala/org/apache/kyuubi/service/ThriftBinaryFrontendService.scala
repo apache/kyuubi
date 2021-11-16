@@ -181,7 +181,7 @@ abstract class ThriftBinaryFrontendService(name: String)
   }
 
   @throws[KyuubiSQLException]
-  private def getSessionHandle(req: TOpenSessionReq, res: TOpenSessionResp): SessionHandle = {
+  protected def getSessionHandle(req: TOpenSessionReq, res: TOpenSessionResp): SessionHandle = {
     val protocol = getMinVersion(SERVER_VERSION, req.getClient_protocol)
     res.setServerProtocolVersion(protocol)
     val userName = getUserName(req)

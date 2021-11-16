@@ -21,7 +21,9 @@ import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.KyuubiSessionImpl
 
 class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Boolean) extends
-  KyuubiOperation(OperationType.LAUNCH_ENGINE, session) {
+  KyuubiOperation(OperationType.UNKNOWN_OPERATION, session) {
+
+  override protected def statement: String = "LAUNCH_ENGINE"
 
   private lazy val _operationLog: OperationLog = if (shouldRunAsync) {
     OperationLog.createOperationLog(session, getHandle)
@@ -45,14 +47,9 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
     val asyncOperation: Runnable = () => {
       setState(OperationState.RUNNING)
       try {
-        session.openEngineSession()
+        session.openEngineSession(getOperationLog)
         setState(OperationState.FINISHED)
-      } catch {
-        onError()
-      } finally {
-        // TODO: delay to close it for async mode to enable client to get more launch engine log
-        session.closeOperation(getHandle)
-      }
+      } catch onError()
     }
     try {
       val opHandle = session.sessionManager.submitBackgroundOperation(asyncOperation)

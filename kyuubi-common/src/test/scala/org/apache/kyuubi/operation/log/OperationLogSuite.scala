@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.operation.log
 
+import java.io.File
 import java.nio.file.{Files, Paths}
 
 import scala.collection.JavaConverters._
@@ -166,5 +167,36 @@ class OperationLogSuite extends KyuubiFunSuite {
 
     tempDir.setExecutable(true)
     tempDir.delete()
+  }
+
+  test("test support extra readers") {
+    val sessionManager = new NoopSessionManager
+    sessionManager.initialize(KyuubiConf())
+    val sHandle = sessionManager.openSession(
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10,
+      "kyuubi",
+      "passwd",
+      "localhost",
+      Map.empty)
+    val session = sessionManager.getSession(sHandle)
+    val oHandle = OperationHandle(
+      OperationType.EXECUTE_STATEMENT, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+    OperationLog.createOperationLogRootDirectory(session)
+
+    val operationLog = OperationLog.createOperationLog(session, oHandle)
+    val tempDir = Utils.createTempDir()
+    val extraLog = new File(tempDir.toFile, "extra.log").toPath
+    extraLog.toFile.createNewFile()
+
+    operationLog.write(msg1)
+    Files.write(extraLog, msg2.getBytes)
+    operationLog.addExtraLog(extraLog)
+
+    val rowSet = operationLog.read(-1).getColumns.get(0).getStringVal.getValues
+    assert(rowSet.get(0) == msg1)
+    assert(rowSet.get(1) == msg2)
+
+    operationLog.close()
+    tempDir.toFile.delete()
   }
 }
