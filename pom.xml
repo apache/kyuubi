@@ -940,7 +940,7 @@
 
             <!--
               1. This library only contains swagger-ui static resource (.html/.css/.js/.png), for more detail, see
-                 https://github.com/swagger-api/swagger-ui/blob/master/dist/favicon-16x16.png
+                 https://github.com/swagger-api/swagger-ui/blob/master/dist/
               2. Note that when trying to upgrade swagger-ui, we should also update the version in the file(
                  kyuubi-server/src/main/scala/org/apache/kyuubi/server/api/api.scala).
             -->
