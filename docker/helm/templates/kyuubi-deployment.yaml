@@ -39,9 +39,6 @@ spec:
         - name: kyuubi-server
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          env:
-            - name: KYUUBI_JAVA_OPTS
-              value: -Dkyuubi.frontend.bind.host={{ .Values.server.bind.host }} -Dkyuubi.frontend.bind.port={{ .Values.server.bind.port }}
           ports:
             - name: frontend-port
               containerPort: {{ .Values.server.bind.port }}
