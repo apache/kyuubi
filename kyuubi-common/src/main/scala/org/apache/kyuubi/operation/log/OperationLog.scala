@@ -152,9 +152,9 @@ class OperationLog(path: Path) {
 
   def close(): Unit = synchronized {
     try {
+      closeExtraReaders()
       reader.close()
       writer.close()
-      closeExtraReaders()
       Files.delete(path)
     } catch {
       case e: IOException =>
