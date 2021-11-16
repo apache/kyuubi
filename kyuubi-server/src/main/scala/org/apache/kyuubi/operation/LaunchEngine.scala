@@ -40,9 +40,6 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
   }
 
   override protected def afterRun(): Unit = {
-    if (shouldRunAsync) {
-      waitLaunchEngineComplete()
-    }
     OperationLog.removeCurrentOperationLog()
   }
 
@@ -60,13 +57,5 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
     } catch onError("submitting open engine operation in background, request rejected")
 
     if (!shouldRunAsync) getBackgroundHandle.get()
-  }
-
-  private def waitLaunchEngineComplete(): Unit = {
-    var isComplete = false
-    while (!isComplete) {
-      isComplete = OperationState.isTerminal(getStatus.state)
-      Thread.sleep(100)
-    }
   }
 }
