@@ -59,7 +59,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
   test("submit spark app timeout with last log output") {
     withSessionConf()(Map(KyuubiConf.ENGINE_INIT_TIMEOUT.key -> "2000"))(Map.empty) {
       val exception = intercept[SQLException] {
-        withJdbcStatement() { statement => // no-op
+        withJdbcStatement() { _ => // no-op
         }
       }
       val verboseMessage = Utils.stringifyException(exception)
@@ -141,11 +141,11 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       val driver = new KyuubiHiveDriver()
       val connection = driver.connect(jdbcUrlWithConf, new Properties())
 
-      val stmt = connection.createStatement();
+      val stmt = connection.createStatement()
       stmt.execute("select engine_name()")
       val resultSet = stmt.getResultSet
       assert(resultSet.next())
-      assert(!resultSet.getString(1).isEmpty)
+      assert(resultSet.getString(1).nonEmpty)
     }
 
     withSessionConf(Map.empty)(Map.empty)(Map(
@@ -154,11 +154,11 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       val driver = new KyuubiHiveDriver()
       val connection = driver.connect(jdbcUrlWithConf, new Properties())
 
-      val stmt = connection.createStatement();
+      val stmt = connection.createStatement()
       stmt.execute("select engine_name()")
       val resultSet = stmt.getResultSet
       assert(resultSet.next())
-      assert(!resultSet.getString(1).isEmpty)
+      assert(resultSet.getString(1).nonEmpty)
     }
   }
 }
