@@ -65,6 +65,7 @@ trait ProcBuilder {
     pb.directory(workingDir.toFile)
     pb.redirectError(engineLog)
     pb.redirectOutput(engineLog)
+    extraEngineLog.foreach(_.addExtraLog(engineLog.toPath))
     pb
   }
 
@@ -139,7 +140,6 @@ trait ProcBuilder {
             } else if (line != null) {
               lastRowsOfLog.add(line)
             }
-            extraEngineLog.foreach(_.writeLine(line))
           } else {
             Thread.sleep(300)
           }
