@@ -748,9 +748,9 @@ public class KyuubiConnection implements java.sql.Connection {
 
       // Get launch engine operation handle
       String launchEngineOpHandleGuid =
-        openRespConf.get("kyuubi.session.launch.engine.operation.handle.identifier.guid");
+        openRespConf.get("kyuubi.session.launch.engine.handle.guid");
       String launchEngineOpHandleSecret =
-        openRespConf.get("kyuubi.session.launch.engine.operation.handle.identifier.secret");
+        openRespConf.get("kyuubi.session.launch.engine.handle.secret");
 
       if (launchEngineOpHandleGuid != null && launchEngineOpHandleSecret != null) {
         try {

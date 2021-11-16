@@ -44,9 +44,9 @@ class KyuubiThriftBinaryFrontendService(
         .asInstanceOf[KyuubiSessionImpl].launchEngineOp
       if (launchEngineOp.shouldRunAsync) {
         val opHandleIdentifier = launchEngineOp.getHandle.identifier.toTHandleIdentifier
-        resp.getConfiguration.put("kyuubi.session.launch.engine.operation.handle.identifier.guid",
+        resp.getConfiguration.put("kyuubi.session.launch.engine.handle.guid",
           Base64.encodeBase64String(opHandleIdentifier.getGuid))
-        resp.getConfiguration.put("kyuubi.session.launch.engine.operation.handle.identifier.secret",
+        resp.getConfiguration.put("kyuubi.session.launch.engine.handle.secret",
           Base64.encodeBase64String(opHandleIdentifier.getSecret))
       }
     }

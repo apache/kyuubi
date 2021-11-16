@@ -154,8 +154,8 @@ class OperationLog(path: Path) {
     try {
       reader.close()
       writer.close()
-      Files.delete(path)
       closeExtraReaders()
+      Files.delete(path)
     } catch {
       case e: IOException =>
         // Printing log here may cause a deadlock. The lock order of OperationLog.write
