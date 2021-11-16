@@ -90,7 +90,7 @@ object MySQLRichByteBuf {
      * @return 6 byte fixed length integer
      */
     def readInt6: Long = {
-      var result = 0
+      var result = 0L
       var i = 0
       while (i < 6) {
         result |= (0xff & self.readByte).toLong << (8 * i)
