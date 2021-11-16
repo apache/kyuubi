@@ -50,9 +50,9 @@ The current supported share levels are,
 
 | Share Level | Syntax | Scenario | Isolation Degree | Sharability |
 | --- | --- | ---- | --- | --- |
-| **CONNECTION** | One engine per session | Huge ETL </br> Ad hoc | High | Low |
-| **USER** | One engine per user | Ad hoc </br> Small ETL | Medium | Medium|
-| **GROUP** | One engine per primary group | Ad hoc </br> Small ETL | Low | High |
+| **CONNECTION** | One engine per session | large-scale ETL </br> Ad hoc | High | Low |
+| **USER** | One engine per user | Ad hoc </br> small-scale ETL | Medium | Medium|
+| **GROUP** | One engine per primary group | Ad hoc </br> small-scale ETL | Low | High |
 | **SERVER**| One engine per cluster | Admin | Highest If Secured </br> Lowest If Unsecured | Admin ONLY If Secured |
 
 - Better isolation degree of engines gives us better stability of an engine and the query executions running on it.
@@ -165,4 +165,4 @@ All supported share levels can be used together in a single Kyuubi server or clu
 
 ## Conclusion
 
-With This feature, end-users are able to leverage engines in different ways to handle their different workloads.
+With This feature, end-users are able to leverage engines in different ways to handle their different workloads, such as large-scale ETL jobs and interactive ad hoc queries.
