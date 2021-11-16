@@ -131,6 +131,7 @@
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <swagger.version>2.1.11</swagger.version>
         <swagger.scala.module.version>2.5.2</swagger.scala.module.version>
+        <swagger-ui.version>3.52.1</swagger-ui.version>
         <zookeeper.version>3.4.14</zookeeper.version>
 
         <!-- only apply to kyuubi-hive-jdbc module -->
@@ -911,6 +912,12 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.jdbc.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.webjars</groupId>
+                <artifactId>swagger-ui</artifactId>
+                <version>${swagger-ui.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

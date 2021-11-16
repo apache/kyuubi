@@ -66,9 +66,11 @@ private[server] object ApiUtils {
     // https://github.com/swagger-api/swagger-ui/tree/master/dist
     val swaggerUI = new ServletHolder("swagger-ui", classOf[DefaultServlet])
     swaggerUI.setInitParameter("resourceBase",
-      getClass.getClassLoader().getResource("static").toExternalForm)
+      getClass.getClassLoader()
+        .getResource("META-INF/resources/webjars/swagger-ui/3.52.1/")
+        .toExternalForm)
     swaggerUI.setInitParameter("pathInfoOnly", "true")
-    handler.addServlet(swaggerUI, "/swagger-ui/*");
+    handler.addServlet(swaggerUI, "/swagger-ui-redirected/*");
     handler
   }
 }
