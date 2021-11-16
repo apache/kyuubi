@@ -131,7 +131,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
       backendService.getTypeInfo(sessionHandle)
     } catch {
       case NonFatal(_) =>
-        throw new NotFoundException(s"Error getting typeInfo")
+        throw new NotFoundException(s"Error getting type information")
     }
   }
 
@@ -182,7 +182,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
       backendService.getTableTypes(sessionHandle)
     } catch {
       case NonFatal(_) =>
-        throw new NotFoundException(s"Error getting tableTypes")
+        throw new NotFoundException(s"Error getting table types")
     }
   }
 
