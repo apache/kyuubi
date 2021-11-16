@@ -77,7 +77,7 @@ object OperationLog extends Logging {
           error(s"Failed to create operation log for $opHandle in ${session.handle}", e)
           null
       }
-    }.getOrElse(null)
+    }.orNull
   }
 }
 
@@ -112,7 +112,7 @@ class OperationLog(path: Path) {
       reader: BufferedReader,
       lastRows: Int,
       maxRows: Int): (JArrayList[String], Int) = {
-    val logs = new java.util.ArrayList[String]
+    val logs = new JArrayList[String]
     var i = 0
     try {
       var line: String = reader.readLine()
@@ -145,7 +145,7 @@ class OperationLog(path: Path) {
     }
 
     val tColumn = TColumn.stringVal(new TStringColumn(logs, ByteBuffer.allocate(0)))
-    val tRow = new TRowSet(0, new java.util.ArrayList[TRow](logs.size()))
+    val tRow = new TRowSet(0, new JArrayList[TRow](logs.size()))
     tRow.addToColumns(tColumn)
     tRow
   }
