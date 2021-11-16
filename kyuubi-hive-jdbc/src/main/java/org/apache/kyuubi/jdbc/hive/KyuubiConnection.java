@@ -306,7 +306,7 @@ public class KyuubiConnection implements java.sql.Connection {
     }
   }
 
-  private void executeInitSql() throws SQLException {
+  public void executeInitSql() throws SQLException {
     if (initFileCompleted) return;
     if (initFile != null) {
       try {
