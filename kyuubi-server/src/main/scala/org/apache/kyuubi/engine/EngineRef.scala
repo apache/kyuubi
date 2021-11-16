@@ -230,7 +230,10 @@ private[kyuubi] class EngineRef(
   }
 
   /**
-   * Get the engine ref from engine space first first or create a new one
+   * Get the engine ref from engine space first or create a new one
+   *
+   * @param zkClient the zookeeper client to get or create engine instance
+   * @param extraEngineLog the launch engine operation log, used to inject engine log into it
    */
   def getOrCreate(
       zkClient: CuratorFramework,

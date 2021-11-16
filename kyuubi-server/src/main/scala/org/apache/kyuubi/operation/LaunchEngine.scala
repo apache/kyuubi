@@ -54,9 +54,7 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
       try {
         session.openEngineSession(getOperationLog)
         setState(OperationState.FINISHED)
-      } catch {
-        onError()
-      }
+      } catch onError()
     }
     try {
       val opHandle = session.sessionManager.submitBackgroundOperation(asyncOperation)
@@ -66,10 +64,10 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
     if (!shouldRunAsync) getBackgroundHandle.get()
   }
 
-  private def waitLaunchEngineComplete(): Unit = try {
-    var isCompleted = false
-    while (!isCompleted) {
-      isCompleted = OperationState.isTerminal(getStatus.state)
+  private def waitLaunchEngineComplete(): Unit = {
+    var isComplete = false
+    while (!isComplete) {
+      isComplete = OperationState.isTerminal(getStatus.state)
       Thread.sleep(100)
     }
   }
