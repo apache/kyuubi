@@ -40,10 +40,10 @@ htrace-core4/4.1.0-incubating//htrace-core4-4.1.0-incubating.jar
 jackson-annotations/2.11.4//jackson-annotations-2.11.4.jar
 jackson-core/2.11.4//jackson-core-2.11.4.jar
 jackson-databind/2.11.4//jackson-databind-2.11.4.jar
-jackson-dataformat-yaml/2.12.1//jackson-dataformat-yaml-2.12.1.jar
-jackson-datatype-jsr310/2.12.1//jackson-datatype-jsr310-2.12.1.jar
-jackson-jaxrs-base/2.12.1//jackson-jaxrs-base-2.12.1.jar
-jackson-jaxrs-json-provider/2.12.1//jackson-jaxrs-json-provider-2.12.1.jar
+jackson-dataformat-yaml/2.11.4//jackson-dataformat-yaml-2.11.4.jar
+jackson-datatype-jsr310/2.11.4//jackson-datatype-jsr310-2.11.4.jar
+jackson-jaxrs-base/2.11.4//jackson-jaxrs-base-2.11.4.jar
+jackson-jaxrs-json-provider/2.11.4//jackson-jaxrs-json-provider-2.11.4.jar
 jackson-module-jaxb-annotations/2.9.9//jackson-module-jaxb-annotations-2.9.9.jar
 jackson-module-paranamer/2.11.4//jackson-module-paranamer-2.11.4.jar
 jackson-module-scala_2.12/2.11.4//jackson-module-scala_2.12-2.11.4.jar
@@ -90,7 +90,7 @@ simpleclient_dropwizard/0.10.0//simpleclient_dropwizard-0.10.0.jar
 simpleclient_servlet/0.10.0//simpleclient_servlet-0.10.0.jar
 slf4j-api/1.7.30//slf4j-api-1.7.30.jar
 slf4j-log4j12/1.7.30//slf4j-log4j12-1.7.30.jar
-snakeyaml/1.27//snakeyaml-1.27.jar
+snakeyaml/1.26//snakeyaml-1.26.jar
 swagger-annotations-jakarta/2.1.11//swagger-annotations-jakarta-2.1.11.jar
 swagger-annotations/2.1.11//swagger-annotations-2.1.11.jar
 swagger-core-jakarta/2.1.11//swagger-core-jakarta-2.1.11.jar
@@ -100,5 +100,5 @@ swagger-jaxrs2/2.1.11//swagger-jaxrs2-2.1.11.jar
 swagger-models-jakarta/2.1.11//swagger-models-jakarta-2.1.11.jar
 swagger-models/2.1.11//swagger-models-2.1.11.jar
 swagger-scala-module_2.12/2.5.2//swagger-scala-module_2.12-2.5.2.jar
-swagger-ui/3.52.1//swagger-ui-3.52.1.jar
+swagger-ui/4.1.0//swagger-ui-4.1.0.jar
 zookeeper/3.4.14//zookeeper-3.4.14.jar
