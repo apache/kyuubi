@@ -226,7 +226,7 @@ Inside an Engine, the Engine's user, a.k.a. `Spark User`, will also be the same.
 When an Engine runs queries received from the JDBC connection, the Engine's user must also have rights to access the data.
 Besides, if it needs access to metadata during this process, then we can also add a fine-grained SQL standard ACL management on the metadata layer now with [Submarine Spark Security Plugin](https://submarine.apache.org/docs/userDocs/submarine-security/spark-security/README).
 
-The Engines have their lifecycle, which is related to the `kyuubi.session.engine.share.level` specified via client configurations.
+The Engines have their lifecycle, which is related to the `kyuubi.engine.share.level` specified via client configurations.
 For example, if set to `CONNECTION`, then the corresponding Engine will be created for each JDBC connection and terminates itself when we close the connection.
 For another example, if set to `USER`,  the corresponding Engine is cached and shared with all JDBC connections from the same user, even through different Kyuubi servers in HA mode.
 The Engine will eventually timeout after all the sessions are closed.
