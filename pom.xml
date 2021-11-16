@@ -131,7 +131,7 @@
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <swagger.version>2.1.11</swagger.version>
         <swagger.scala.module.version>2.5.2</swagger.scala.module.version>
-        <swagger-ui.version>3.52.1</swagger-ui.version>
+        <swagger-ui.version>4.1.0</swagger-ui.version>
         <zookeeper.version>3.4.14</zookeeper.version>
 
         <!-- only apply to kyuubi-hive-jdbc module -->

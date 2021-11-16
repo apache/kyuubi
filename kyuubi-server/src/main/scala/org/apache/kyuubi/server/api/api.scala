@@ -67,7 +67,7 @@ private[server] object ApiUtils {
     val swaggerUI = new ServletHolder("swagger-ui", classOf[DefaultServlet])
     swaggerUI.setInitParameter("resourceBase",
       getClass.getClassLoader()
-        .getResource("META-INF/resources/webjars/swagger-ui/3.52.1/")
+        .getResource("META-INF/resources/webjars/swagger-ui/4.1.0/")
         .toExternalForm)
     swaggerUI.setInitParameter("pathInfoOnly", "true")
     handler.addServlet(swaggerUI, "/swagger-ui-redirected/*");
