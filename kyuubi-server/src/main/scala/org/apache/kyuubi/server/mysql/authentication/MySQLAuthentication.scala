@@ -41,8 +41,12 @@ object MySQLAuthentication {
     // format: on
 
   def randomBytes(length: Int): Array[Byte] = {
-    val result: Array[Byte] = new Array[Byte](length)
-    (0 until length).foreach(i => result(i) = seed(Random.nextInt(seed.length)))
+    val result = new Array[Byte](length)
+    var i = 0
+    while (i < length) {
+      result(i) = seed(Random.nextInt(seed.length))
+      i = i + 1
+    }
     result
   }
 

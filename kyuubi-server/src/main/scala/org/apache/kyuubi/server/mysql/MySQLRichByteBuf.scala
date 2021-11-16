@@ -21,9 +21,7 @@ import java.nio.charset.StandardCharsets
 
 import io.netty.buffer.ByteBuf
 
-/**
- * https://dev.mysql.com/doc/internals/en/integer.html#packet-Protocol
- */
+// https://dev.mysql.com/doc/internals/en/integer.html#packet-Protocol
 object MySQLRichByteBuf {
 
   private def charset = StandardCharsets.UTF_8
@@ -91,8 +89,14 @@ object MySQLRichByteBuf {
      *
      * @return 6 byte fixed length integer
      */
-    def readInt6: Long = (0 until 6).foldLeft(0L) { case (result, i) =>
-      result | self.readUnsignedByte.toLong << (8 * i)
+    def readInt6: Long = {
+      var result = 0
+      var i = 0
+      while (i < 6) {
+        result |= (0xff & self.readByte).toLong << (8 * i)
+        i = i + 1
+      }
+      result
     }
 
     /**
@@ -138,10 +142,10 @@ object MySQLRichByteBuf {
     def writeIntLenenc(value: Long): ByteBuf = {
       if (value < 0xfb) {
         self.writeByte(value.toInt)
-      } else if (value < Math.pow(2, 16)) {
+      } else if (value < (1 << 16)) {
         self.writeByte(0xfc)
         self.writeShortLE(value.toInt)
-      } else if (value < Math.pow(2, 24)) {
+      } else if (value < (1 << 24)) {
         self.writeByte(0xfd)
         self.writeMediumLE(value.toInt)
       } else {
@@ -156,8 +160,15 @@ object MySQLRichByteBuf {
      * @param length length read from byte buffers
      * @return fixed length long
      */
-    def readLong(length: Int): Long =
-      (0 until length).foldLeft(0) { case (result, _) => result << 8 | readInt1 }
+    def readLong(length: Int): Long = {
+      var result = 0
+      var i = 0
+      while (i < length) {
+        result = result << 8 | readInt1
+        i = i + 1
+      }
+      result
+    }
 
     /**
      * Read lenenc string from byte buffers.
@@ -189,12 +200,9 @@ object MySQLRichByteBuf {
      * @param value fixed length string
      */
     def writeStringLenenc(value: String): ByteBuf = {
-      if (value == null || value.isEmpty) {
-        self.writeByte(0)
-        return self
-      }
-      writeIntLenenc(value.getBytes(charset).length)
-      self.writeBytes(value.getBytes)
+      val bytes = value.getBytes(charset)
+      writeIntLenenc(bytes.length)
+      self.writeBytes(bytes)
     }
 
     /**
