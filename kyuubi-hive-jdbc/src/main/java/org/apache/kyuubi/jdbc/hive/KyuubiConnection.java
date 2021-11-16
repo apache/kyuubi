@@ -98,8 +98,7 @@ import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
  */
 public class KyuubiConnection implements java.sql.Connection {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
-  private static final Long ENGINE_LOG_THREAD_END_DELAY = 10 * 1000L;
-  private static boolean isBeelineMode = false;
+  private static boolean isBeeLineMode = false;
 
   private String jdbcUriString;
   private String host;
@@ -125,8 +124,8 @@ public class KyuubiConnection implements java.sql.Connection {
   private boolean isEngineLogBeingGenerated = true;
   private boolean launchEngineOpCompleted = false;
 
-  public static void setBeelineMode(boolean isBeelineMode) {
-    KyuubiConnection.isBeelineMode = isBeelineMode;
+  public static void setBeeLineMode(boolean isBeeLineMode) {
+    KyuubiConnection.isBeeLineMode = isBeeLineMode;
   }
 
   public KyuubiConnection(String uri, Properties info) throws SQLException {
@@ -193,7 +192,7 @@ public class KyuubiConnection implements java.sql.Connection {
           client = new TCLIService.Client(new TBinaryProtocol(transport));
           // open client session
           openSession();
-          if (!isBeelineMode) {
+          if (!isBeeLineMode) {
             showLaunchEngineLog();
             executeInitSql();
           }
@@ -230,36 +229,32 @@ public class KyuubiConnection implements java.sql.Connection {
     client = newSynchronizedClient(client);
   }
 
+  /**
+   * Check whether launch engine operation might be producing more logs to be fetched.
+   * This method is a public API for usage outside of Kyuubi, although it is not part of the
+   * interface java.sql.Connection.
+   * @return true if launch engine operation might be producing more logs. It does not indicate
+   *         if last log lines have been fetched by getEngineLog.
+   */
   public boolean hasMoreEngineLogs() {
-    return launchEngineOpHandle != null && (launchEngineOpCompleted && !isEngineLogBeingGenerated);
+    return launchEngineOpHandle != null && !(launchEngineOpCompleted && !isEngineLogBeingGenerated);
   }
 
-  private void showLaunchEngineLog() {
-    if (launchEngineOpHandle != null) {
-      LOG.info("Starting to get launch engine log.");
-      Thread logThread = new Thread("engine-launch-log") {
-
-        @Override
-        public void run() {
-          try {
-            while (hasMoreEngineLogs()) {
-              List<String> logs = getEngineLogs();
-              for (String log: logs) {
-                LOG.info(log);
-              }
-              Thread.sleep(300);
-            }
-          } catch (Exception e) {
-            // do nothing
-          }
-          LOG.info("Finished to get launch engine log.");
-        }
-      };
-      logThread.start();
+  /**
+   * Get the launch engine operation logs of current connection.
+   * This method is a public API for usage outside of Kyuubi, although it is not part of the
+   * interface java.sql.Connection.
+   * This method gets the incremental logs during launching engine, and uses fetchSize holden by
+   * KyuubiStatement object.
+   * @return a list of logs. It can be empty if there are no new logs to be retrieved at that time.
+   * @throws SQLException
+   * @throws ClosedConnectionException if connection has been closed
+   */
+  public List<String> getEngineLog() throws SQLException, ClosedConnectionException {
+    if (isClosed()) {
+      throw new ClosedConnectionException("Method getEngineLogs() failed. The " +
+        "connection has been closed.");
     }
-  }
-
-  public List<String> getEngineLogs() throws SQLException {
     TFetchResultsReq fetchResultsReq = new TFetchResultsReq(launchEngineOpHandle,
       TFetchOrientation.FETCH_NEXT, fetchSize);
     fetchResultsReq.setFetchType((short) 1);
@@ -284,6 +279,31 @@ public class KyuubiConnection implements java.sql.Connection {
     }
 
     return Collections.unmodifiableList(logs);
+  }
+
+  private void showLaunchEngineLog() {
+    if (launchEngineOpHandle != null) {
+      LOG.info("Starting to get launch engine log.");
+      Thread logThread = new Thread("engine-launch-log") {
+
+        @Override
+        public void run() {
+          try {
+            while (hasMoreEngineLogs()) {
+              List<String> logs = getEngineLog();
+              for (String log: logs) {
+                LOG.info(log);
+              }
+              Thread.sleep(300);
+            }
+          } catch (Exception e) {
+            // do nothing
+          }
+          LOG.info("Finished to get launch engine log.");
+        }
+      };
+      logThread.start();
+    }
   }
 
   private void executeInitSql() throws SQLException {
