@@ -224,7 +224,7 @@ public class KyuubiConnection implements java.sql.Connection {
     if (launchEngineOpHandle != null) {
       LOG.info("Starting to get launch engine log.");
       Thread logThread = new Thread("engine-launch-log") {
-        long completeTime = 0;
+        boolean launchEngineCompleted = false;
         long timeToEnd = Long.MAX_VALUE;
         boolean continueToFetch = true;
 
@@ -233,7 +233,7 @@ public class KyuubiConnection implements java.sql.Connection {
           try {
             while (continueToFetch && System.currentTimeMillis() < timeToEnd) {
               List<String> logs = fetchEngineLogs();
-              if (logs.isEmpty() && System.currentTimeMillis() > completeTime) {
+              if (launchEngineCompleted && logs.isEmpty()) {
                 continueToFetch = false;
               }
 
@@ -241,15 +241,15 @@ public class KyuubiConnection implements java.sql.Connection {
                 LOG.info(log);
               }
 
-              if (launchEngineOpCompleted()) {
-                completeTime = System.currentTimeMillis();
-                timeToEnd = completeTime + ENGINE_LOG_THREAD_END_DELAY;
+              if (!launchEngineCompleted && launchEngineOpCompleted()) {
+                launchEngineCompleted = true;
+                timeToEnd = System.currentTimeMillis() + ENGINE_LOG_THREAD_END_DELAY;
               }
 
               Thread.sleep(300);
             }
           } catch (Exception e) {
-            // fo nothing
+            // do nothing
           }
           LOG.info("Finished to get launch engine log.");
         }
