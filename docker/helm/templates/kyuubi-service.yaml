@@ -21,8 +21,10 @@ metadata:
   name: kyuubi-svc
   labels:
     app: {{ template "kyuubi.name" . }}
+  {{- with .Values.service.annotations }}
   annotations:
-  {{ toYaml .Values.service.annotations | indent 4 }}
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   ports:
     - name: http
