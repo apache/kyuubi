@@ -25,9 +25,9 @@ import org.glassfish.jersey.server.ResourceConfig
 
 @OpenAPIDefinition(
   info = new Info(
-    title = "Apache Kyuubi RESTful Api Documentation",
+    title = "Apache Kyuubi REST API Documentation",
     version = "1.4.0",
-    description = "Apache Kyuubi RESTful Api Documentation",
+    description = "Apache Kyuubi REST API Documentation",
     contact = new Contact(
       name = "Apache Kyuubi Community",
       url = "https://kyuubi.apache.org/issue_tracking.html",
