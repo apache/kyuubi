@@ -19,6 +19,13 @@ package org.apache.kyuubi.server.mysql
 
 import io.netty.buffer.ByteBuf
 
+/**
+ * The required `MySQLPacket`s are split into 4 groups, which are GENERIC, AUTHENTICATION,
+ * COMMAND and DATA.
+ * <p>
+ * As Kyuubi is designed to be a "MySQL Server", only part of packets need to be encodable
+ * and others just need to be decodable.
+ */
 trait MySQLPacket {
   def sequenceId: Int
 }

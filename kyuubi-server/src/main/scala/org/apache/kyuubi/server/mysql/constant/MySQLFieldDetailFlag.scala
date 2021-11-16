@@ -19,6 +19,7 @@ package org.apache.kyuubi.server.mysql.constant
 
 sealed abstract class MySQLFieldDetailFlag(val value: Int)
 
+// https://mariadb.com/kb/en/library/resultset/#field-detail-flag
 object MySQLFieldDetailFlag {
 
   object NOT_NULL extends MySQLFieldDetailFlag(0x00000001)

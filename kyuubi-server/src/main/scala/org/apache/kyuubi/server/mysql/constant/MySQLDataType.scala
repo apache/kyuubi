@@ -23,6 +23,7 @@ import org.apache.hive.service.rpc.thrift.TTypeId
 
 sealed abstract class MySQLDataType(val value: Int)
 
+// https://dev.mysql.com/doc/internals/en/com-query-response.html#column-type
 object MySQLDataType {
   object DECIMAL extends MySQLDataType(0x00)
 
@@ -68,6 +69,8 @@ object MySQLDataType {
   // Internal to MySQL Server
   object TIME2 extends MySQLDataType(0x13)
 
+  // Do not describe in document, but actual exist.
+  // https://github.com/apache/shardingsphere/issues/4795
   object JSON extends MySQLDataType(0xf5)
 
   object NEWDECIMAL extends MySQLDataType(0xf6)

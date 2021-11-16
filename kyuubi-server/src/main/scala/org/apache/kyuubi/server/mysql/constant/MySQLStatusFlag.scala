@@ -19,6 +19,7 @@ package org.apache.kyuubi.server.mysql.constant
 
 sealed abstract class MySQLStatusFlag(val value: Int)
 
+// https://dev.mysql.com/doc/internals/en/status-flags.html#packet-Protocol::StatusFlags
 object MySQLStatusFlag {
 
   object SERVER_STATUS_IN_TRANS extends MySQLStatusFlag(0x0001)

@@ -19,6 +19,7 @@ package org.apache.kyuubi.server.mysql.constant
 
 sealed abstract class MySQLCapabilityFlag(val value: Int)
 
+// https://dev.mysql.com/doc/dev/mysql-server/latest/group__group__cs__capabilities__flags.html
 object MySQLCapabilityFlag {
 
   object CLIENT_LONG_PASSWORD extends MySQLCapabilityFlag(0x00000001)
