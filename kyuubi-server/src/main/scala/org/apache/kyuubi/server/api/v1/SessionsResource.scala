@@ -109,7 +109,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
     content = Array(new Content(
       mediaType = "application/json"
     )),
-    description = "get open session count"
+    description = "Get the current open session count"
   )
   @GET
   @Path("count")
@@ -122,7 +122,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
     content = Array(new Content(
       mediaType = "application/json"
     )),
-    description = "get some statistic info of sessions"
+    description = "Get statistic info of background executors"
   )
   @GET
   @Path("execPool/statistic")
@@ -136,7 +136,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
     content = Array(new Content(
       mediaType = "application/json"
     )),
-    description = "Open(create) a Session"
+    description = "Open(create) a session"
   )
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
@@ -154,7 +154,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
     content = Array(new Content(
       mediaType = "application/json"
     )),
-    description = "close a Session"
+    description = "Close a session"
   )
   @DELETE
   @Path("{sessionHandle}")
