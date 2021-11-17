@@ -17,7 +17,10 @@
 
 package org.apache.hive.beeline;
 
+import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
+
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.sql.Driver;
 
@@ -52,6 +55,32 @@ public class KyuubiBeeLine extends BeeLine {
    */
   public static void main(String[] args) throws IOException {
     mainWithInputRedirection(args, null);
+  }
+
+  /**
+   * Starts the program with redirected input. For redirected output,
+   * setOutputStream() and setErrorStream can be used.
+   * Exits with 0 on success, 1 on invalid arguments, and 2 on any other error
+   *
+   * @param args
+   *          same as main()
+   *
+   * @param inputStream
+   *          redirected input, or null to use standard input
+   */
+  public static void mainWithInputRedirection(String[] args, InputStream inputStream)
+    throws IOException {
+    KyuubiBeeLine beeLine = new KyuubiBeeLine();
+    KyuubiConnection.setBeeLineMode(true);
+    try {
+      int status = beeLine.begin(args, inputStream);
+
+      if (!Boolean.getBoolean(BeeLineOpts.PROPERTY_NAME_EXIT)) {
+        System.exit(status);
+      }
+    } finally {
+      beeLine.close();
+    }
   }
 
   protected Driver getDefaultDriver() {
