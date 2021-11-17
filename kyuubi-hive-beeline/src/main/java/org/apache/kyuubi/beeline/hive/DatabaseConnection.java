@@ -23,12 +23,7 @@
 package org.apache.kyuubi.beeline.hive;
 
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.Driver;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,7 +35,9 @@ import java.util.TreeSet;
 import jline.console.completer.ArgumentCompleter;
 import jline.console.completer.Completer;
 import org.apache.hive.jdbc.HiveConnection;
+import org.apache.kyuubi.beeline.hive.logs.KyuubiBeelineInPlaceUpdateStream;
 import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
+import org.apache.kyuubi.jdbc.hive.logs.KyuubiInPlaceUpdateStream;
 
 
 class DatabaseConnection {
@@ -257,21 +254,21 @@ class DatabaseConnection {
   void setConnection(Connection connection) throws SQLException {
     if (connection != null && connection instanceof KyuubiConnection) {
       KyuubiConnection kyuubiConnection = (KyuubiConnection) connection;
+      Thread logThread = null;
 
-      new Thread("conn-engine") {
-        @Override
-        public void run() {
-          try {
-            while (kyuubiConnection.hasMoreEngineLogs()) {
-              for (String log : kyuubiConnection.getEngineLog()) {
-                beeLine.info(log);
-              }
-            }
-          } catch (Exception e) {
+      KyuubiInPlaceUpdateStream.EventNotifier eventNotifier =
+        new KyuubiInPlaceUpdateStream.EventNotifier();
+      logThread = new Thread(beeLine.getCommands().createConnectionLogRunnable(connection,
+        eventNotifier));
+      logThread.setDaemon(true);
+      logThread.start();
 
-          }
-        }
-      }.start();
+      kyuubiConnection.setInPlaceUpdateStream(
+        new KyuubiBeelineInPlaceUpdateStream(
+          beeLine.getErrorStream(),
+          eventNotifier
+        ));
+      kyuubiConnection.waitLaunchEngineToComplete();
       kyuubiConnection.executeInitSql();
      }
     this.connection = connection;

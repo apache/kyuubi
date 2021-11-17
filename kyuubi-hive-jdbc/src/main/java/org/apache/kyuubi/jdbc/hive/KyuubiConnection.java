@@ -25,24 +25,7 @@ import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
 import java.security.KeyStore;
 import java.security.SecureRandom;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.CallableStatement;
-import java.sql.Clob;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
-import java.sql.NClob;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLClientInfoException;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLWarning;
-import java.sql.SQLXML;
-import java.sql.Savepoint;
-import java.sql.Statement;
-import java.sql.Struct;
+import java.sql.*;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.Executor;
@@ -82,6 +65,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContexts;
+import org.apache.kyuubi.jdbc.hive.logs.KyuubiInPlaceUpdateStream;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.transport.THttpClient;
@@ -127,6 +111,7 @@ public class KyuubiConnection implements java.sql.Connection {
   private TOperationHandle launchEngineOpHandle = null;
   private boolean engineLogInflight = true;
   private boolean launchEngineOpCompleted = false;
+  private KyuubiInPlaceUpdateStream inPlaceUpdateStream = KyuubiInPlaceUpdateStream.NO_OP;
 
   public KyuubiConnection(String uri, Properties info) throws SQLException {
     setupLoginTimeout();
@@ -1631,5 +1616,74 @@ public class KyuubiConnection implements java.sql.Connection {
         lock.unlock();
       }
     }
+  }
+
+  public void waitLaunchEngineToComplete() throws SQLException {
+    TGetOperationStatusReq statusReq = new TGetOperationStatusReq(launchEngineOpHandle);
+    boolean shouldGetProgressUpdate = inPlaceUpdateStream != KyuubiInPlaceUpdateStream.NO_OP;
+    statusReq.setGetProgressUpdate(shouldGetProgressUpdate);
+    if (!shouldGetProgressUpdate) {
+      /**
+       * progress bar is completed if there is nothing we want to request in the first place.
+       */
+      inPlaceUpdateStream.getEventNotifier().progressBarCompleted();
+    }
+    TGetOperationStatusResp statusResp = null;
+
+    // Poll on the operation status, till the operation is complete
+    while (!launchEngineOpCompleted) {
+      try {
+        /**
+         * For an async SQLOperation, GetOperationStatus will use the long polling approach It will
+         * essentially return after the HIVE_SERVER2_LONG_POLLING_TIMEOUT (a server config) expires
+         */
+        statusResp = client.GetOperationStatus(statusReq);
+        inPlaceUpdateStream.update(statusResp.getProgressUpdateResponse());
+        Utils.verifySuccessWithInfo(statusResp.getStatus());
+        if (statusResp.isSetOperationState()) {
+          switch (statusResp.getOperationState()) {
+            case CLOSED_STATE:
+            case FINISHED_STATE:
+              launchEngineOpCompleted = true;
+              engineLogInflight = false;
+              break;
+            case CANCELED_STATE:
+              // 01000 -> warning
+              throw new SQLException("Launch engine was cancelled", "01000");
+            case TIMEDOUT_STATE:
+              throw new SQLTimeoutException("Launch engine timeout");
+            case ERROR_STATE:
+              // Get the error details from the underlying exception
+              throw new SQLException(statusResp.getErrorMessage(), statusResp.getSqlState(),
+                statusResp.getErrorCode());
+            case UKNOWN_STATE:
+              throw new SQLException("Unknown state", "HY000");
+            case INITIALIZED_STATE:
+            case PENDING_STATE:
+            case RUNNING_STATE:
+              break;
+          }
+        }
+      } catch (SQLException e) {
+        engineLogInflight = false;
+        throw e;
+      } catch (Exception e) {
+        engineLogInflight = false;
+        throw new SQLException(e.toString(), "08S01", e);
+      }
+    }
+
+    /*
+      we set progress bar to be completed when hive query execution has completed
+    */
+    inPlaceUpdateStream.getEventNotifier().progressBarCompleted();
+  }
+
+  /**
+   * This is only used by the beeline client to set the stream on which in place progress updates
+   * are to be shown
+   */
+  public void setInPlaceUpdateStream(KyuubiInPlaceUpdateStream stream) {
+    this.inPlaceUpdateStream = stream;
   }
 }

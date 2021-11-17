@@ -65,6 +65,7 @@ import com.google.common.annotations.VisibleForTesting;
 
 import org.apache.hive.jdbc.HiveStatement;
 import org.apache.hive.jdbc.logs.InPlaceUpdateStream;
+import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement;
 import org.apache.kyuubi.jdbc.hive.Utils;
 import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
@@ -82,6 +83,9 @@ public class Commands {
     this.beeLine = beeLine;
   }
 
+  protected BeeLine getBeeLine() {
+    return beeLine;
+  }
 
   public boolean metadata(String line) {
     beeLine.debug(line);
@@ -1318,13 +1322,18 @@ public class Commands {
 
   private Runnable createKyuubiLogRunnable(final KyuubiStatement statement,
                                            KyuubiInPlaceUpdateStream.EventNotifier eventNotifier) {
-    if (statement instanceof KyuubiStatement) {
-      return new KyuubiLogRunnable(this, statement, DEFAULT_QUERY_PROGRESS_INTERVAL,
-          eventNotifier);
+    return new KyuubiLogRunnable(this, statement, DEFAULT_QUERY_PROGRESS_INTERVAL,
+      eventNotifier);
+  }
+
+  protected Runnable createConnectionLogRunnable(final Connection connection,
+                                                 KyuubiInPlaceUpdateStream.EventNotifier eventNotifier) {
+    if (connection instanceof KyuubiConnection) {
+      return new KyuubiConnectionLogRunnable(this, (KyuubiConnection) connection,
+        DEFAULT_QUERY_PROGRESS_INTERVAL, eventNotifier);
     } else {
       beeLine.debug(
-          "The statement instance is not HiveStatement type: " + statement
-              .getClass());
+        "The connection instance is not KyuubiConnection type: " + connection.getClass());
       return new Runnable() {
         @Override
         public void run() {
@@ -1458,6 +1467,71 @@ public class Commands {
         commands.showRemainingLogsIfAny(kyuubiStatement);
       }
     }
+  }
+
+  static class KyuubiConnectionLogRunnable implements Runnable {
+    private final Commands commands;
+    private final KyuubiConnection kyuubiConnection;
+    private final long queryProgressInterval;
+    private final KyuubiInPlaceUpdateStream.EventNotifier notifier;
+
+    KyuubiConnectionLogRunnable(Commands commands, KyuubiConnection kyuubiConnection,
+                                long queryProgressInterval, KyuubiInPlaceUpdateStream.EventNotifier eventNotifier) {
+      this.kyuubiConnection = kyuubiConnection;
+      this.commands = commands;
+      this.queryProgressInterval = queryProgressInterval;
+      this.notifier = eventNotifier;
+    }
+
+    private void updateQueryLog() {
+      try {
+        List<String> engineLogs = kyuubiConnection.getEngineLog();
+        for (String log : engineLogs) {
+          commands.beeLine.info(log);
+        }
+        if (!engineLogs.isEmpty()) {
+          notifier.operationLogShowedToUser();
+        }
+      } catch (SQLException e) {
+        commands.error(new SQLWarning(e));
+      }
+    }
+
+    @Override public void run() {
+      try {
+        while (kyuubiConnection.hasMoreEngineLogs()) {
+          /*
+            get the operation logs once and print it, then wait till progress bar update is complete
+            before printing the remaining logs.
+          */
+          if (notifier.canOutputOperationLogs()) {
+            commands.debug("going to print launch engine operation logs");
+            updateQueryLog();
+            commands.debug("printed launch engine operation logs");
+          }
+          Thread.sleep(queryProgressInterval);
+        }
+      } catch (InterruptedException e) {
+        commands.debug("Getting log thread is interrupted, since query is done!");
+      } finally {
+        commands.showRemainingKyuubiEngineLogsIfAny(kyuubiConnection);
+      }
+    }
+  }
+
+  private void showRemainingKyuubiEngineLogsIfAny(KyuubiConnection kyuubiConnection) {
+    List<String> logs = null;
+    do {
+      try {
+        logs = kyuubiConnection.getEngineLog();
+      } catch (SQLException e) {
+        beeLine.error(new SQLWarning(e));
+        return;
+      }
+      for (String log : logs) {
+        beeLine.info(log);
+      }
+    } while (logs.size() > 0);
   }
 
   private void showRemainingLogsIfAny(Statement statement) {
