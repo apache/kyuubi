@@ -71,14 +71,14 @@ import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
 import org.apache.kyuubi.jdbc.hive.logs.KyuubiInPlaceUpdateStream;
 
 public class Commands {
-  private final KyuubiBeeLine beeLine;
+  private final BeeLine beeLine;
   private static final int DEFAULT_QUERY_PROGRESS_INTERVAL = 1000;
   private static final int DEFAULT_QUERY_PROGRESS_THREAD_TIMEOUT = 10 * 1000;
 
   /**
    * @param beeLine
    */
-  Commands(KyuubiBeeLine beeLine) {
+  Commands(BeeLine beeLine) {
     this.beeLine = beeLine;
   }
 
@@ -268,7 +268,7 @@ public class Commands {
 
 
   public boolean nativesql(String sql) throws Exception {
-    if (sql.startsWith(KyuubiBeeLine.COMMAND_PREFIX)) {
+    if (sql.startsWith(BeeLine.COMMAND_PREFIX)) {
       sql = sql.substring(1);
     }
     if (sql.startsWith("native")) {
@@ -915,7 +915,7 @@ public class Commands {
     if (cmd == null)
       return null;
     if (cmd.toLowerCase().equals("quit") || cmd.toLowerCase().equals("exit")) {
-      return KyuubiBeeLine.COMMAND_PREFIX + cmd;
+      return BeeLine.COMMAND_PREFIX + cmd;
     } else if (cmd.startsWith("!")) {
       String shell_cmd = cmd.substring(1);
       return "!sh " + shell_cmd;
@@ -946,7 +946,7 @@ public class Commands {
       return sourceFile(sql);
     }
 
-    if (sql.startsWith(KyuubiBeeLine.COMMAND_PREFIX)) {
+    if (sql.startsWith(BeeLine.COMMAND_PREFIX)) {
       return beeLine.execCommandWithPrefix(sql);
     }
 
@@ -1037,7 +1037,7 @@ public class Commands {
               }
               rs.close();
             }
-          } while (KyuubiBeeLine.getMoreResults(stmnt));
+          } while (BeeLine.getMoreResults(stmnt));
         } else {
           int count = stmnt.getUpdateCount();
           long end = System.currentTimeMillis();
@@ -1533,7 +1533,7 @@ public class Commands {
    */
   public boolean properties(String line) throws Exception {
     String example = "";
-    example += "Usage: properties <properties file>" + KyuubiBeeLine.getSeparator();
+    example += "Usage: properties <properties file>" + BeeLine.getSeparator();
 
     String[] parts = beeLine.split(line);
     if (parts.length < 2) {
@@ -1565,7 +1565,7 @@ public class Commands {
 
   public boolean connect(String line) throws Exception {
     String example = "Usage: connect <url> <username> <password> [driver]"
-        + KyuubiBeeLine.getSeparator();
+        + BeeLine.getSeparator();
 
     String[] parts = beeLine.split(line);
     if (parts == null) {
@@ -2039,7 +2039,7 @@ public class Commands {
 
 
   public boolean manual(String line) throws IOException {
-    InputStream in = KyuubiBeeLine.class.getResourceAsStream("manual.txt");
+    InputStream in = BeeLine.class.getResourceAsStream("manual.txt");
     if (in == null) {
       return beeLine.error(beeLine.loc("no-manual"));
     }

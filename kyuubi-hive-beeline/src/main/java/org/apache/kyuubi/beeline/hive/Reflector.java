@@ -31,9 +31,9 @@ import java.util.LinkedList;
 import java.util.List;
 
 class Reflector {
-  private final KyuubiBeeLine beeLine;
+  private final BeeLine beeLine;
 
-  public Reflector(KyuubiBeeLine beeLine) {
+  public Reflector(BeeLine beeLine) {
     this.beeLine = beeLine;
   }
 

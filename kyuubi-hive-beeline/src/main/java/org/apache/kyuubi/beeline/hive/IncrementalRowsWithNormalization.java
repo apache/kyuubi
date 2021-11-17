@@ -43,7 +43,7 @@ public class IncrementalRowsWithNormalization extends IncrementalRows {
   private final int incrementalBufferRows;
   private BufferedRows buffer;
 
-  IncrementalRowsWithNormalization(KyuubiBeeLine beeLine, ResultSet rs) throws SQLException {
+  IncrementalRowsWithNormalization(BeeLine beeLine, ResultSet rs) throws SQLException {
     super(beeLine, rs);
 
     this.incrementalBufferRows = beeLine.getOpts().getIncrementalBufferRows();

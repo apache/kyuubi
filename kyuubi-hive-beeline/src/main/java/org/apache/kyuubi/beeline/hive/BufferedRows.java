@@ -38,11 +38,11 @@ class BufferedRows extends Rows {
   private final Iterator<Row> iterator;
   private int maxColumnWidth;
 
-  BufferedRows(KyuubiBeeLine beeLine, ResultSet rs) throws SQLException {
+  BufferedRows(BeeLine beeLine, ResultSet rs) throws SQLException {
     this(beeLine, rs, Optional.<Integer> absent());
   }
 
-  BufferedRows(KyuubiBeeLine beeLine, ResultSet rs, Optional<Integer> limit) throws SQLException {
+  BufferedRows(BeeLine beeLine, ResultSet rs, Optional<Integer> limit) throws SQLException {
     super(beeLine, rs);
     list = new LinkedList<Row>();
     int count = rsMeta.getColumnCount();

@@ -47,7 +47,7 @@ class DatabaseConnection {
   private static final String HIVE_VAR_PREFIX = "hivevar:";
   private static final String HIVE_CONF_PREFIX = "hiveconf:";
 
-  private final KyuubiBeeLine beeLine;
+  private final BeeLine beeLine;
   private Connection connection;
   private DatabaseMetaData meta;
   private final String driver;
@@ -60,7 +60,7 @@ class DatabaseConnection {
     return (null == connection);
   }
 
-  public DatabaseConnection(KyuubiBeeLine beeLine, String driver, String url,
+  public DatabaseConnection(BeeLine beeLine, String driver, String url,
                             Properties info) throws SQLException {
     this.beeLine = beeLine;
     this.driver = driver;

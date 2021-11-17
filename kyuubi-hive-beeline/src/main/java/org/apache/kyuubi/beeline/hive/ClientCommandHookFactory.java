@@ -41,7 +41,7 @@ public class ClientCommandHookFactory {
     }
 
     @Override
-    public void postHook(KyuubiBeeLine beeLine) {
+    public void postHook(BeeLine beeLine) {
       if (!beeLine.isBeeLine()) {
         beeLine.getOpts().setHiveConf(beeLine.getCommands().getHiveConf(false));
       }
@@ -55,7 +55,7 @@ public class ClientCommandHookFactory {
     }
 
     @Override
-    public void postHook(KyuubiBeeLine beeLine) {
+    public void postHook(BeeLine beeLine) {
       // Handler multi-line sql
       String line = sql.replaceAll("\\s+", " ");
       String strs[] = line.split(" ");
@@ -77,7 +77,7 @@ public class ClientCommandHookFactory {
     }
 
     @Override
-    public void postHook(KyuubiBeeLine beeLine) {
+    public void postHook(BeeLine beeLine) {
       // Handler multi-line sql
       String line = sql.replaceAll("\\s+", " ");
       String strs[] = line.split(" ");
@@ -104,7 +104,7 @@ public class ClientCommandHookFactory {
     }
 
     @Override
-    public void postHook(KyuubiBeeLine beeLine) {
+    public void postHook(BeeLine beeLine) {
       String dbName = "";
       try {
         dbName = beeLine.getDatabaseConnection().getConnection().getSchema();
@@ -115,7 +115,7 @@ public class ClientCommandHookFactory {
     }
   }
 
-  public ClientHook getHook(KyuubiBeeLine beeLine, String cmdLine) {
+  public ClientHook getHook(BeeLine beeLine, String cmdLine) {
     if (!beeLine.isBeeLine()) {
       // In compatibility mode we need to hook to set, and use
       if (cmdLine.toLowerCase().startsWith("set")) {

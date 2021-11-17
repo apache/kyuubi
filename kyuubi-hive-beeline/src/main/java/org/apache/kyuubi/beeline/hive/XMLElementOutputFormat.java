@@ -23,12 +23,12 @@
 package org.apache.kyuubi.beeline.hive;
 
 class XMLElementOutputFormat extends AbstractOutputFormat {
-  private final KyuubiBeeLine beeLine;
+  private final BeeLine beeLine;
 
   /**
    * @param beeLine
    */
-  XMLElementOutputFormat(KyuubiBeeLine beeLine) {
+  XMLElementOutputFormat(BeeLine beeLine) {
     this.beeLine = beeLine;
   }
 
@@ -50,7 +50,7 @@ class XMLElementOutputFormat extends AbstractOutputFormat {
     beeLine.output("  <result>");
     for (int i = 0; i < head.length && i < vals.length; i++) {
       beeLine.output("    <" + head[i] + ">"
-          + (KyuubiBeeLine.xmlattrencode(vals[i]))
+          + (BeeLine.xmlattrencode(vals[i]))
           + "</" + head[i] + ">");
     }
     beeLine.output("  </result>");

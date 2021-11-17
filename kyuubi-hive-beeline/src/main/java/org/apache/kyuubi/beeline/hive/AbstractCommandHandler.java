@@ -34,7 +34,7 @@ import jline.console.completer.NullCompleter;
  *
  */
 public abstract class AbstractCommandHandler implements CommandHandler {
-  private final KyuubiBeeLine beeLine;
+  private final BeeLine beeLine;
   private final String name;
   private final String[] names;
   private final String helpText;
@@ -42,7 +42,7 @@ public abstract class AbstractCommandHandler implements CommandHandler {
 
   protected transient Throwable lastException;
 
-  public AbstractCommandHandler(KyuubiBeeLine beeLine, String[] names, String helpText,
+  public AbstractCommandHandler(BeeLine beeLine, String[] names, String helpText,
                                 Completer[] completors) {
     this.beeLine = beeLine;
     name = names[0];

@@ -39,7 +39,7 @@ class BeeLineCommandCompleter extends AggregateCompleter {
       if (commandNames != null) {
         for (String commandName : commandNames) {
           List<Completer> compl = new LinkedList<Completer>();
-          compl.add(new StringsCompleter(KyuubiBeeLine.COMMAND_PREFIX + commandName));
+          compl.add(new StringsCompleter(BeeLine.COMMAND_PREFIX + commandName));
           compl.addAll(Arrays.asList(handler.getParameterCompleters()));
           compl.add(new NullCompleter()); // last param no complete
           completers.add(new AggregateCompleter(compl.toArray(new Completer[compl.size()])));

@@ -103,9 +103,9 @@ import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
  *
  */
 @SuppressWarnings("static-access")
-public class KyuubiBeeLine implements Closeable {
+public class BeeLine implements Closeable {
   private static final ResourceBundle resourceBundle =
-      ResourceBundle.getBundle(KyuubiBeeLine.class.getSimpleName());
+      ResourceBundle.getBundle(BeeLine.class.getSimpleName());
   private final BeeLineSignalHandler signalHandler;
   private final Runnable shutdownHook;
   private static final String separator = System.getProperty("line.separator");
@@ -382,7 +382,7 @@ public class KyuubiBeeLine implements Closeable {
 
 
   static Manifest getManifest() throws IOException {
-    URL base = KyuubiBeeLine.class.getResource("/META-INF/MANIFEST.MF");
+    URL base = BeeLine.class.getResource("/META-INF/MANIFEST.MF");
     URLConnection c = base.openConnection();
     if (c instanceof JarURLConnection) {
       return ((JarURLConnection) c).getManifest();
@@ -417,7 +417,7 @@ public class KyuubiBeeLine implements Closeable {
 
 
   String getApplicationTitle() {
-    Package pack = KyuubiBeeLine.class.getPackage();
+    Package pack = BeeLine.class.getPackage();
 
     return loc("app-introduction", new Object[] { "Beeline",
         pack.getImplementationVersion() == null ? "???" : pack.getImplementationVersion(),
@@ -497,7 +497,7 @@ public class KyuubiBeeLine implements Closeable {
    */
   public static void mainWithInputRedirection(String[] args, InputStream inputStream)
       throws IOException {
-    KyuubiBeeLine beeLine = new KyuubiBeeLine();
+    BeeLine beeLine = new BeeLine();
     KyuubiConnection.setBeeLineMode(true);
     try {
       int status = beeLine.begin(args, inputStream);
@@ -510,11 +510,11 @@ public class KyuubiBeeLine implements Closeable {
     }
   }
 
-  public KyuubiBeeLine() {
+  public BeeLine() {
     this(true);
   }
 
-  public KyuubiBeeLine(boolean isBeeLine) {
+  public BeeLine(boolean isBeeLine) {
     this.isBeeLine = isBeeLine;
     this.signalHandler = new SunSignalHandler(this);
     this.shutdownHook = new Runnable() {
@@ -922,7 +922,7 @@ public class KyuubiBeeLine implements Closeable {
       if(startIndex != -1) {
         int endIndex = command.toString().indexOf(";", startIndex);
         command.replace(startIndex, (endIndex == -1 ? command.length() : endIndex),
-          KyuubiBeeLine.PASSWD_MASK);
+          BeeLine.PASSWD_MASK);
       }
     }
     // if the driver is not already available in the URL add the one provided

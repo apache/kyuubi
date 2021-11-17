@@ -42,7 +42,7 @@ class SQLCompleter extends StringsCompleter {
     super(completions);
   }
 
-  public static Set<String> getSQLCompleters(KyuubiBeeLine beeLine, boolean skipmeta)
+  public static Set<String> getSQLCompleters(BeeLine beeLine, boolean skipmeta)
       throws IOException, SQLException {
     Set<String> completions = new TreeSet<String>();
 

@@ -32,19 +32,19 @@ import jline.console.completer.Completer;
  *
  */
 class BeeLineCompleter implements Completer {
-  private final KyuubiBeeLine beeLine;
+  private final BeeLine beeLine;
 
   /**
    * @param beeLine
    */
-  BeeLineCompleter(KyuubiBeeLine beeLine) {
+  BeeLineCompleter(BeeLine beeLine) {
     this.beeLine = beeLine;
   }
 
   public int complete(String buf, int pos, List cand) {
-    if (buf != null && buf.startsWith(KyuubiBeeLine.COMMAND_PREFIX)
-        && !buf.startsWith(KyuubiBeeLine.COMMAND_PREFIX + "all")
-        && !buf.startsWith(KyuubiBeeLine.COMMAND_PREFIX + "sql")) {
+    if (buf != null && buf.startsWith(BeeLine.COMMAND_PREFIX)
+        && !buf.startsWith(BeeLine.COMMAND_PREFIX + "all")
+        && !buf.startsWith(BeeLine.COMMAND_PREFIX + "sql")) {
       return beeLine.getCommandCompletor().complete(buf, pos, cand);
     } else {
       if (beeLine.getDatabaseConnection() != null && beeLine.getDatabaseConnection().getSQLCompleter() != null) {

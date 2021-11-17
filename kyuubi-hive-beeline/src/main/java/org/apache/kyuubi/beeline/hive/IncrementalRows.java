@@ -39,7 +39,7 @@ public class IncrementalRows extends Rows {
   protected boolean normalizingWidths;
 
 
-  IncrementalRows(KyuubiBeeLine beeLine, ResultSet rs) throws SQLException {
+  IncrementalRows(BeeLine beeLine, ResultSet rs) throws SQLException {
     super(beeLine, rs);
     this.rs = rs;
 

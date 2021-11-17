@@ -23,13 +23,13 @@
 package org.apache.kyuubi.beeline.hive;
 
 class XMLAttributeOutputFormat extends AbstractOutputFormat {
-  private final KyuubiBeeLine beeLine;
+  private final BeeLine beeLine;
   private final StringBuilder buf = new StringBuilder();
 
   /**
    * @param beeLine
    */
-  XMLAttributeOutputFormat(KyuubiBeeLine beeLine) {
+  XMLAttributeOutputFormat(BeeLine beeLine) {
     this.beeLine = beeLine;
   }
 
@@ -56,7 +56,7 @@ class XMLAttributeOutputFormat extends AbstractOutputFormat {
       buf.append(' ')
         .append(head[i])
         .append("=\"")
-        .append(KyuubiBeeLine.xmlattrencode(vals[i]))
+        .append(BeeLine.xmlattrencode(vals[i]))
         .append('"');
     }
 
