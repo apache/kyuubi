@@ -25,13 +25,10 @@ import java.util.Properties;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.logging.Logger;
-
-import org.apache.kyuubi.jdbc.hive.Utils;
 import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
+import org.apache.kyuubi.jdbc.hive.Utils;
 
-/**
- * Kyuubi JDBC driver to connect to Kyuubi server via HiveServer2 thrift protocol.
- */
+/** Kyuubi JDBC driver to connect to Kyuubi server via HiveServer2 thrift protocol. */
 public class KyuubiHiveDriver implements Driver {
   static {
     try {
@@ -84,18 +81,19 @@ public class KyuubiHiveDriver implements Driver {
       info = parseURLForPropertyInfo(url, info);
     }
 
-    DriverPropertyInfo hostProp = new DriverPropertyInfo(HOST_PROPERTY_KEY,
-      info.getProperty(HOST_PROPERTY_KEY, ""));
+    DriverPropertyInfo hostProp =
+        new DriverPropertyInfo(HOST_PROPERTY_KEY, info.getProperty(HOST_PROPERTY_KEY, ""));
     hostProp.required = false;
     hostProp.description = "Hostname of Kyuubi Server";
 
-    DriverPropertyInfo portProp = new DriverPropertyInfo(PORT_PROPERTY_KEY,
-      info.getProperty(PORT_PROPERTY_KEY, ""));
+    DriverPropertyInfo portProp =
+        new DriverPropertyInfo(PORT_PROPERTY_KEY, info.getProperty(PORT_PROPERTY_KEY, ""));
     portProp.required = false;
     portProp.description = "Port number of Kyuubi Server";
 
-    DriverPropertyInfo dbProp = new DriverPropertyInfo(DBNAME_PROPERTY_KEY,
-      info.getProperty(DBNAME_PROPERTY_KEY, "default"));
+    DriverPropertyInfo dbProp =
+        new DriverPropertyInfo(
+            DBNAME_PROPERTY_KEY, info.getProperty(DBNAME_PROPERTY_KEY, "default"));
     dbProp.required = false;
     dbProp.description = "Database name";
 
@@ -108,20 +106,17 @@ public class KyuubiHiveDriver implements Driver {
     return dpi;
   }
 
-  /**
-   * Returns whether the driver is JDBC compliant.
-   */
+  /** Returns whether the driver is JDBC compliant. */
   @Override
   public boolean jdbcCompliant() {
     return false;
   }
 
-
   /**
-   * Takes a url in the form of jdbc:hive://[hostname]:[port]/[db_name] and
-   * parses it. Everything after jdbc:hive// is optional.
-   * <p>
-   * The output from Utils.parseUrl() is massaged for the needs of getPropertyInfo
+   * Takes a url in the form of jdbc:hive://[hostname]:[port]/[db_name] and parses it. Everything
+   * after jdbc:hive// is optional.
+   *
+   * <p>The output from Utils.parseUrl() is massaged for the needs of getPropertyInfo
    */
   private Properties parseURLForPropertyInfo(String url, Properties defaults) throws SQLException {
     Properties urlProps = (defaults != null) ? new Properties(defaults) : new Properties();
@@ -132,7 +127,8 @@ public class KyuubiHiveDriver implements Driver {
 
     Utils.JdbcConnectionParams params;
     try {
-      Method parseURLMethod = Utils.class.getDeclaredMethod("parseURL", String.class, Properties.class);
+      Method parseURLMethod =
+          Utils.class.getDeclaredMethod("parseURL", String.class, Properties.class);
       parseURLMethod.setAccessible(true);
       params = (Utils.JdbcConnectionParams) parseURLMethod.invoke(null, url, defaults);
     } catch (Exception e) {
@@ -156,14 +152,10 @@ public class KyuubiHiveDriver implements Driver {
     return urlProps;
   }
 
-  /**
-   * Lazy-load manifest attributes as needed.
-   */
+  /** Lazy-load manifest attributes as needed. */
   private static Attributes manifestAttributes = null;
 
-  /**
-   * Loads the manifest attributes from the jar.
-   */
+  /** Loads the manifest attributes from the jar. */
   private static synchronized void loadManifestAttributes() throws IOException {
     if (manifestAttributes != null) {
       return;
@@ -176,8 +168,8 @@ public class KyuubiHiveDriver implements Driver {
   }
 
   /**
-   * Package scoped to allow manifest fetching from other KyuubiHiveDriver classes
-   * Helper to initialize attributes and return one.
+   * Package scoped to allow manifest fetching from other KyuubiHiveDriver classes Helper to
+   * initialize attributes and return one.
    */
   public static String fetchManifestAttribute(Attributes.Name attributeName) throws SQLException {
     try {
@@ -192,7 +184,7 @@ public class KyuubiHiveDriver implements Driver {
    * Package scoped access to the Driver's Major Version
    *
    * @return The Major version number of the driver. -1 if it cannot be determined from the
-   * manifest.mf file.
+   *     manifest.mf file.
    */
   public static int getMajorDriverVersion() {
     int version = -1;
@@ -215,7 +207,7 @@ public class KyuubiHiveDriver implements Driver {
    * Package scoped access to the Driver's Minor Version
    *
    * @return The Minor version number of the driver. -1 if it cannot be determined from the
-   * manifest.mf file.
+   *     manifest.mf file.
    */
   public static int getMinorDriverVersion() {
     int version = -1;

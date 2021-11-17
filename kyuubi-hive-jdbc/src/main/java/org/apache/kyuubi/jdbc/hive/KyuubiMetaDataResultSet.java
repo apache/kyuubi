@@ -25,33 +25,31 @@ public abstract class KyuubiMetaDataResultSet<M> extends KyuubiBaseResultSet {
   protected final List<M> data;
 
   @SuppressWarnings("unchecked")
-  public KyuubiMetaDataResultSet(final List<String> columnNames
-          , final List<String> columnTypes
-          , final List<M> data) throws SQLException {
-    if (data!=null) {
+  public KyuubiMetaDataResultSet(
+      final List<String> columnNames, final List<String> columnTypes, final List<M> data)
+      throws SQLException {
+    if (data != null) {
       this.data = new ArrayList<M>(data);
     } else {
-      this.data =  new ArrayList<M>();
+      this.data = new ArrayList<M>();
     }
-    if (columnNames!=null) {
+    if (columnNames != null) {
       this.columnNames = new ArrayList<String>(columnNames);
       this.normalizedColumnNames = new ArrayList<String>();
       for (String colName : columnNames) {
         this.normalizedColumnNames.add(colName.toLowerCase());
       }
     } else {
-      this.columnNames =  new ArrayList<String>();
+      this.columnNames = new ArrayList<String>();
       this.normalizedColumnNames = new ArrayList<String>();
     }
-    if (columnTypes!=null) {
+    if (columnTypes != null) {
       this.columnTypes = new ArrayList<String>(columnTypes);
     } else {
-      this.columnTypes =  new ArrayList<String>();
+      this.columnTypes = new ArrayList<String>();
     }
   }
 
   @Override
-  public void close() throws SQLException {
-  }
-
+  public void close() throws SQLException {}
 }

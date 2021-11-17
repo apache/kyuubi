@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.hive.service.cli.HiveSQLException;
 import org.apache.hive.service.rpc.thrift.TStatus;
 import org.apache.hive.service.rpc.thrift.TStatusCode;
@@ -38,26 +37,21 @@ import org.slf4j.LoggerFactory;
 
 public class Utils {
   static final Logger LOG = LoggerFactory.getLogger(Utils.class.getName());
-  /**
-    * The required prefix for the connection URL.
-    */
+  /** The required prefix for the connection URL. */
   public static final String URL_PREFIX = "jdbc:hive2://";
 
-  /**
-    * If host is provided, without a port.
-    */
+  /** If host is provided, without a port. */
   static final String DEFAULT_PORT = "10000";
 
-  /**
-   * Kyuubi's default database name
-   */
+  /** Kyuubi's default database name */
   static final String DEFAULT_DATABASE = "default";
 
   private static final String URI_JDBC_PREFIX = "jdbc:";
 
   private static final String URI_HIVE_PREFIX = "hive2:";
 
-  // This value is set to true by the setServiceUnavailableRetryStrategy() when the server returns 401
+  // This value is set to true by the setServiceUnavailableRetryStrategy() when the server returns
+  // 401
   static final String HIVE_SERVER2_RETRY_KEY = "hive.server2.retryserver";
   static final String HIVE_SERVER2_RETRY_TRUE = "true";
   static final String HIVE_SERVER2_RETRY_FALSE = "false";
@@ -100,8 +94,8 @@ public class Utils {
     static final String HTTP_PATH_DEPRECATED = "hive.server2.thrift.http.path";
     public static final String HTTP_PATH = "httpPath";
     public static final String SERVICE_DISCOVERY_MODE = "serviceDiscoveryMode";
-    public static final String PROPERTY_DRIVER        = "driver";
-    public static final String PROPERTY_URL           = "url";
+    public static final String PROPERTY_DRIVER = "driver";
+    public static final String PROPERTY_URL = "url";
     // Don't use dynamic service discovery
     static final String SERVICE_DISCOVERY_MODE_NONE = "none";
     // Use ZooKeeper for indirection while using dynamic service discovery
@@ -130,7 +124,7 @@ public class Utils {
     static final String SSL_KEY_STORE_TYPE = "JKS";
     static final String SUNX509_ALGORITHM_STRING = "SunX509";
     static final String SUNJSSE_ALGORITHM_STRING = "SunJSSE";
-   // --------------- End 2 way ssl options ----------------------------
+    // --------------- End 2 way ssl options ----------------------------
 
     // Non-configurable params:
     // Currently supports JKS keystore format
@@ -142,17 +136,16 @@ public class Utils {
     private int port = 0;
     private String jdbcUriString;
     private String dbName = DEFAULT_DATABASE;
-    private Map<String,String> hiveConfs = new LinkedHashMap<String,String>();
-    private Map<String,String> hiveVars = new LinkedHashMap<String,String>();
-    private Map<String,String> sessionVars = new LinkedHashMap<String,String>();
+    private Map<String, String> hiveConfs = new LinkedHashMap<String, String>();
+    private Map<String, String> hiveVars = new LinkedHashMap<String, String>();
+    private Map<String, String> sessionVars = new LinkedHashMap<String, String>();
     private boolean isEmbeddedMode = false;
     private String[] authorityList;
     private String zooKeeperEnsemble = null;
     private String currentHostZnodePath;
     private final List<String> rejectedHostZnodePaths = new ArrayList<String>();
 
-    public JdbcConnectionParams() {
-    }
+    public JdbcConnectionParams() {}
 
     public String getHost() {
       return host;
@@ -259,42 +252,42 @@ public class Utils {
 
   // Verify success and optionally with_info status, else throw SQLException
   static void verifySuccess(TStatus status, boolean withInfo) throws SQLException {
-    if (status.getStatusCode() == TStatusCode.SUCCESS_STATUS ||
-        (withInfo && status.getStatusCode() == TStatusCode.SUCCESS_WITH_INFO_STATUS)) {
+    if (status.getStatusCode() == TStatusCode.SUCCESS_STATUS
+        || (withInfo && status.getStatusCode() == TStatusCode.SUCCESS_WITH_INFO_STATUS)) {
       return;
     }
     throw new HiveSQLException(status);
   }
 
-  public static JdbcConnectionParams parseURL(String uri) throws JdbcUriParseException,
-          SQLException, ZooKeeperHiveClientException {
+  public static JdbcConnectionParams parseURL(String uri)
+      throws JdbcUriParseException, SQLException, ZooKeeperHiveClientException {
     return parseURL(uri, new Properties());
   }
   /**
-   * Parse JDBC connection URL
-   * The new format of the URL is:
+   * Parse JDBC connection URL The new format of the URL is:
    * jdbc:hive2://<host1>:<port1>,<host2>:<port2>/dbName;sess_var_list?hive_conf_list#hive_var_list
-   * where the optional sess, conf and var lists are semicolon separated <key>=<val> pairs.
-   * For utilizing dynamic service discovery with HiveServer2 multiple comma separated host:port pairs can
-   * be specified as shown above.
-   * The JDBC driver resolves the list of uris and picks a specific server instance to connect to.
-   * Currently, dynamic service discovery using ZooKeeper is supported, in which case the host:port pairs represent a ZooKeeper ensemble.
+   * where the optional sess, conf and var lists are semicolon separated <key>=<val> pairs. For
+   * utilizing dynamic service discovery with HiveServer2 multiple comma separated host:port pairs
+   * can be specified as shown above. The JDBC driver resolves the list of uris and picks a specific
+   * server instance to connect to. Currently, dynamic service discovery using ZooKeeper is
+   * supported, in which case the host:port pairs represent a ZooKeeper ensemble.
    *
-   * As before, if the host/port is not specified, it the driver runs an embedded hive.
-   * examples -
-   *  jdbc:hive2://ubuntu:11000/db2?hive.cli.conf.printheader=true;hive.exec.mode.local.auto.inputbytes.max=9999#stab=salesTable;icol=customerID
-   *  jdbc:hive2://?hive.cli.conf.printheader=true;hive.exec.mode.local.auto.inputbytes.max=9999#stab=salesTable;icol=customerID
-   *  jdbc:hive2://ubuntu:11000/db2;user=foo;password=bar
+   * <p>As before, if the host/port is not specified, it the driver runs an embedded hive. examples
+   * -
+   * jdbc:hive2://ubuntu:11000/db2?hive.cli.conf.printheader=true;hive.exec.mode.local.auto.inputbytes.max=9999#stab=salesTable;icol=customerID
+   * jdbc:hive2://?hive.cli.conf.printheader=true;hive.exec.mode.local.auto.inputbytes.max=9999#stab=salesTable;icol=customerID
+   * jdbc:hive2://ubuntu:11000/db2;user=foo;password=bar
    *
-   *  Connect to http://server:10001/hs2, with specified basicAuth credentials and initial database:
-   *  jdbc:hive2://server:10001/db;user=foo;password=bar?hive.server2.transport.mode=http;hive.server2.thrift.http.path=hs2
+   * <p>Connect to http://server:10001/hs2, with specified basicAuth credentials and initial
+   * database:
+   * jdbc:hive2://server:10001/db;user=foo;password=bar?hive.server2.transport.mode=http;hive.server2.thrift.http.path=hs2
    *
    * @param uri
    * @return
    * @throws SQLException
    */
-  static JdbcConnectionParams parseURL(String uri, Properties info) throws JdbcUriParseException,
-      SQLException, ZooKeeperHiveClientException {
+  static JdbcConnectionParams parseURL(String uri, Properties info)
+      throws JdbcUriParseException, SQLException, ZooKeeperHiveClientException {
     JdbcConnectionParams connParams = new JdbcConnectionParams();
 
     if (!uri.startsWith(URL_PREFIX)) {
@@ -349,9 +342,10 @@ public class Utils {
         if (sessVars != null) {
           Matcher sessMatcher = pattern.matcher(sessVars);
           while (sessMatcher.find()) {
-            if (connParams.getSessionVars().put(sessMatcher.group(1), sessMatcher.group(2)) != null) {
-              throw new JdbcUriParseException("Bad URL format: Multiple values for property "
-                  + sessMatcher.group(1));
+            if (connParams.getSessionVars().put(sessMatcher.group(1), sessMatcher.group(2))
+                != null) {
+              throw new JdbcUriParseException(
+                  "Bad URL format: Multiple values for property " + sessMatcher.group(1));
             }
           }
         }
@@ -378,36 +372,47 @@ public class Utils {
         connParams.getHiveVars().put(varMatcher.group(1), varMatcher.group(2));
       }
     }
-    
+
     // Apply configs supplied in the JDBC connection properties object
     for (Map.Entry<Object, Object> kv : info.entrySet()) {
       if ((kv.getKey() instanceof String)) {
         String key = (String) kv.getKey();
         if (key.startsWith(JdbcConnectionParams.HIVE_VAR_PREFIX)) {
-          connParams.getHiveVars().put(
-              key.substring(JdbcConnectionParams.HIVE_VAR_PREFIX.length()), info.getProperty(key));
+          connParams
+              .getHiveVars()
+              .put(
+                  key.substring(JdbcConnectionParams.HIVE_VAR_PREFIX.length()),
+                  info.getProperty(key));
         } else if (key.startsWith(JdbcConnectionParams.HIVE_CONF_PREFIX)) {
-          connParams.getHiveConfs().put(
-              key.substring(JdbcConnectionParams.HIVE_CONF_PREFIX.length()), info.getProperty(key));
+          connParams
+              .getHiveConfs()
+              .put(
+                  key.substring(JdbcConnectionParams.HIVE_CONF_PREFIX.length()),
+                  info.getProperty(key));
         }
       }
     }
     // Extract user/password from JDBC connection properties if its not supplied
     // in the connection URL
     if (!connParams.getSessionVars().containsKey(JdbcConnectionParams.AUTH_USER)) {
-        if (info.containsKey(JdbcConnectionParams.AUTH_USER)) {
-            connParams.getSessionVars().put(JdbcConnectionParams.AUTH_USER,
-              info.getProperty(JdbcConnectionParams.AUTH_USER));
-        }
-        if (info.containsKey(JdbcConnectionParams.AUTH_PASSWD)) {
-          connParams.getSessionVars().put(JdbcConnectionParams.AUTH_PASSWD,
-              info.getProperty(JdbcConnectionParams.AUTH_PASSWD));
-        }
+      if (info.containsKey(JdbcConnectionParams.AUTH_USER)) {
+        connParams
+            .getSessionVars()
+            .put(JdbcConnectionParams.AUTH_USER, info.getProperty(JdbcConnectionParams.AUTH_USER));
+      }
+      if (info.containsKey(JdbcConnectionParams.AUTH_PASSWD)) {
+        connParams
+            .getSessionVars()
+            .put(
+                JdbcConnectionParams.AUTH_PASSWD,
+                info.getProperty(JdbcConnectionParams.AUTH_PASSWD));
+      }
     }
 
     if (info.containsKey(JdbcConnectionParams.AUTH_TYPE)) {
-      connParams.getSessionVars().put(JdbcConnectionParams.AUTH_TYPE,
-          info.getProperty(JdbcConnectionParams.AUTH_TYPE));
+      connParams
+          .getSessionVars()
+          .put(JdbcConnectionParams.AUTH_TYPE, info.getProperty(JdbcConnectionParams.AUTH_TYPE));
     }
 
     // Handle all deprecations here:
@@ -415,19 +420,30 @@ public class Utils {
     String usageUrlBase = "jdbc:hive2://<host>:<port>/dbName;";
     // Handle deprecation of AUTH_QOP_DEPRECATED
     newUsage = usageUrlBase + JdbcConnectionParams.AUTH_QOP + "=<qop_value>";
-    handleParamDeprecation(connParams.getSessionVars(), connParams.getSessionVars(),
-        JdbcConnectionParams.AUTH_QOP_DEPRECATED, JdbcConnectionParams.AUTH_QOP, newUsage);
+    handleParamDeprecation(
+        connParams.getSessionVars(),
+        connParams.getSessionVars(),
+        JdbcConnectionParams.AUTH_QOP_DEPRECATED,
+        JdbcConnectionParams.AUTH_QOP,
+        newUsage);
 
     // Handle deprecation of TRANSPORT_MODE_DEPRECATED
     newUsage = usageUrlBase + JdbcConnectionParams.TRANSPORT_MODE + "=<transport_mode_value>";
-    handleParamDeprecation(connParams.getHiveConfs(), connParams.getSessionVars(),
-        JdbcConnectionParams.TRANSPORT_MODE_DEPRECATED, JdbcConnectionParams.TRANSPORT_MODE,
+    handleParamDeprecation(
+        connParams.getHiveConfs(),
+        connParams.getSessionVars(),
+        JdbcConnectionParams.TRANSPORT_MODE_DEPRECATED,
+        JdbcConnectionParams.TRANSPORT_MODE,
         newUsage);
 
     // Handle deprecation of HTTP_PATH_DEPRECATED
     newUsage = usageUrlBase + JdbcConnectionParams.HTTP_PATH + "=<http_path_value>";
-    handleParamDeprecation(connParams.getHiveConfs(), connParams.getSessionVars(),
-        JdbcConnectionParams.HTTP_PATH_DEPRECATED, JdbcConnectionParams.HTTP_PATH, newUsage);
+    handleParamDeprecation(
+        connParams.getHiveConfs(),
+        connParams.getSessionVars(),
+        JdbcConnectionParams.HTTP_PATH_DEPRECATED,
+        JdbcConnectionParams.HTTP_PATH,
+        newUsage);
     // Extract host, port
     if (connParams.isEmbeddedMode()) {
       // In case of embedded mode we were supplied with an empty authority.
@@ -448,20 +464,25 @@ public class Utils {
   }
 
   /**
-   * Remove the deprecatedName param from the fromMap and put the key value in the toMap.
-   * Also log a deprecation message for the client.
+   * Remove the deprecatedName param from the fromMap and put the key value in the toMap. Also log a
+   * deprecation message for the client.
+   *
    * @param fromMap
    * @param toMap
    * @param deprecatedName
    * @param newName
    * @param newUsage
    */
-  private static void handleParamDeprecation(Map<String, String> fromMap, Map<String, String> toMap,
-      String deprecatedName, String newName, String newUsage) {
+  private static void handleParamDeprecation(
+      Map<String, String> fromMap,
+      Map<String, String> toMap,
+      String deprecatedName,
+      String newName,
+      String newUsage) {
     if (fromMap.containsKey(deprecatedName)) {
       LOG.warn("***** JDBC param deprecation *****");
       LOG.warn("The use of " + deprecatedName + " is deprecated.");
-      LOG.warn("Please use " + newName +" like so: " + newUsage);
+      LOG.warn("Please use " + newName + " like so: " + newUsage);
       String paramValue = fromMap.remove(deprecatedName);
       toMap.put(newName, paramValue);
     }
@@ -481,10 +502,9 @@ public class Utils {
     String authorities;
     /**
      * For a jdbc uri like:
-     * jdbc:hive2://<host1>:<port1>,<host2>:<port2>/dbName;sess_var_list?conf_list#var_list
-     * Extract the uri host:port list starting after "jdbc:hive2://",
-     * till the 1st "/" or "?" or "#" whichever comes first & in the given order
-     * Examples:
+     * jdbc:hive2://<host1>:<port1>,<host2>:<port2>/dbName;sess_var_list?conf_list#var_list Extract
+     * the uri host:port list starting after "jdbc:hive2://", till the 1st "/" or "?" or "#"
+     * whichever comes first & in the given order Examples:
      * jdbc:hive2://host1:port1,host2:port2,host3:port3/db;k1=v1?k2=v2#k3=v3
      * jdbc:hive2://host1:port1,host2:port2,host3:port3/;k1=v1?k2=v2#k3=v3
      * jdbc:hive2://host1:port1,host2:port2,host3:port3?k2=v2#k3=v3
@@ -512,8 +532,8 @@ public class Utils {
     String serviceDiscoveryMode =
         connParams.getSessionVars().get(JdbcConnectionParams.SERVICE_DISCOVERY_MODE);
     if ((serviceDiscoveryMode != null)
-        && (JdbcConnectionParams.SERVICE_DISCOVERY_MODE_ZOOKEEPER
-            .equalsIgnoreCase(serviceDiscoveryMode))) {
+        && (JdbcConnectionParams.SERVICE_DISCOVERY_MODE_ZOOKEEPER.equalsIgnoreCase(
+            serviceDiscoveryMode))) {
       // Set ZooKeeper ensemble in connParams for later use
       connParams.setZooKeeperEnsemble(joinStringArray(connParams.getAuthorityList(), ","));
       // Configure using ZooKeeper
@@ -529,9 +549,11 @@ public class Utils {
         String host = jdbcURI.getHost();
         int port = jdbcURI.getPort();
         if (host == null) {
-          throw new JdbcUriParseException("Bad URL format. Hostname not found "
-              + " in authority part of the url: " + jdbcURI.getAuthority()
-              + ". Are you missing a '/' after the hostname ?");
+          throw new JdbcUriParseException(
+              "Bad URL format. Hostname not found "
+                  + " in authority part of the url: "
+                  + jdbcURI.getAuthority()
+                  + ". Are you missing a '/' after the hostname ?");
         }
         // Set the port to default value; we do support jdbc url like:
         // jdbc:hive2://localhost/db
@@ -559,10 +581,14 @@ public class Utils {
     // Update connection params (including host, port) from ZooKeeper
     try {
       ZooKeeperHiveClientHelper.configureConnParams(connParams);
-      connParams.setJdbcUriString(connParams.getJdbcUriString().replace(
-          oldServerHost + ":" + oldServerPort, connParams.getHost() + ":" + connParams.getPort()));
+      connParams.setJdbcUriString(
+          connParams
+              .getJdbcUriString()
+              .replace(
+                  oldServerHost + ":" + oldServerPort,
+                  connParams.getHost() + ":" + connParams.getPort()));
       LOG.info("Selected HiveServer2 instance with uri: " + connParams.getJdbcUriString());
-    } catch(ZooKeeperHiveClientException e) {
+    } catch (ZooKeeperHiveClientException e) {
       LOG.error(e.getMessage());
       return false;
     }
@@ -582,21 +608,17 @@ public class Utils {
   }
 
   /**
-   * Takes a version string delimited by '.' and '-' characters
-   * and returns a partial version.
+   * Takes a version string delimited by '.' and '-' characters and returns a partial version.
    *
-   * @param fullVersion
-   *          version string.
-   * @param position
-   *          position of version string to get starting at 0. eg, for a X.x.xxx
-   *          string, 0 will return the major version, 1 will return minor
-   *          version.
+   * @param fullVersion version string.
+   * @param position position of version string to get starting at 0. eg, for a X.x.xxx string, 0
+   *     will return the major version, 1 will return minor version.
    * @return version part, or -1 if version string was malformed.
    */
   static int getVersionPart(String fullVersion, int position) {
     int version = -1;
     try {
-      String[] tokens = fullVersion.split("[\\.-]"); //$NON-NLS-1$
+      String[] tokens = fullVersion.split("[\\.-]"); // $NON-NLS-1$
 
       if (tokens != null && tokens.length > 1 && tokens[position] != null) {
         version = Integer.parseInt(tokens[position]);
@@ -608,14 +630,15 @@ public class Utils {
   }
 
   /**
-   * The function iterates through the list of cookies in the cookiestore and tries to
-   * match them with the cookieName. If there is a match, the cookieStore already
-   * has a valid cookie and the client need not send Credentials for validation purpose.
+   * The function iterates through the list of cookies in the cookiestore and tries to match them
+   * with the cookieName. If there is a match, the cookieStore already has a valid cookie and the
+   * client need not send Credentials for validation purpose.
+   *
    * @param cookieStore The cookie Store
    * @param cookieName Name of the cookie which needs to be validated
    * @param isSSL Whether this is a http/https connection
-   * @return true or false based on whether the client needs to send the credentials or
-   * not to the server.
+   * @return true or false based on whether the client needs to send the credentials or not to the
+   *     server.
    */
   static boolean needToSendCredentials(CookieStore cookieStore, String cookieName, boolean isSSL) {
     if (cookieName == null || cookieStore == null) {

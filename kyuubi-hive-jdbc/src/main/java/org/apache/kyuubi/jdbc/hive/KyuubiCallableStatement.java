@@ -41,16 +41,11 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Map;
 
-/**
- * KyuubiCallableStatement.
- *
- */
+/** KyuubiCallableStatement. */
 public class KyuubiCallableStatement implements java.sql.CallableStatement {
   private final Connection connection;
 
-  /**
-   *
-   */
+  /** */
   public KyuubiCallableStatement(Connection connection) {
     this.connection = connection;
   }
@@ -745,8 +740,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * @see java.sql.CallableStatement#registerOutParameter(int, int, int)
    */
 
-  public void registerOutParameter(int parameterIndex, int sqlType, int scale)
-      throws SQLException {
+  public void registerOutParameter(int parameterIndex, int sqlType, int scale) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -784,8 +778,8 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.lang.String)
    */
 
-  public void registerOutParameter(String parameterName, int sqlType,
-      String typeName) throws SQLException {
+  public void registerOutParameter(String parameterName, int sqlType, String typeName)
+      throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -797,8 +791,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.io.InputStream)
    */
 
-  public void setAsciiStream(String parameterName, InputStream x)
-      throws SQLException {
+  public void setAsciiStream(String parameterName, InputStream x) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -810,8 +803,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.io.InputStream, int)
    */
 
-  public void setAsciiStream(String parameterName, InputStream x, int length)
-      throws SQLException {
+  public void setAsciiStream(String parameterName, InputStream x, int length) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -823,8 +815,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.io.InputStream, long)
    */
 
-  public void setAsciiStream(String parameterName, InputStream x, long length)
-      throws SQLException {
+  public void setAsciiStream(String parameterName, InputStream x, long length) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -836,8 +827,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.math.BigDecimal)
    */
 
-  public void setBigDecimal(String parameterName, BigDecimal x)
-      throws SQLException {
+  public void setBigDecimal(String parameterName, BigDecimal x) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -849,8 +839,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.io.InputStream)
    */
 
-  public void setBinaryStream(String parameterName, InputStream x)
-      throws SQLException {
+  public void setBinaryStream(String parameterName, InputStream x) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -862,8 +851,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.io.InputStream, int)
    */
 
-  public void setBinaryStream(String parameterName, InputStream x, int length)
-      throws SQLException {
+  public void setBinaryStream(String parameterName, InputStream x, int length) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -899,8 +887,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.io.InputStream)
    */
 
-  public void setBlob(String parameterName, InputStream inputStream)
-      throws SQLException {
+  public void setBlob(String parameterName, InputStream inputStream) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -958,8 +945,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.io.Reader)
    */
 
-  public void setCharacterStream(String parameterName, Reader reader)
-      throws SQLException {
+  public void setCharacterStream(String parameterName, Reader reader) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -984,8 +970,8 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.io.Reader, long)
    */
 
-  public void setCharacterStream(String parameterName, Reader reader,
-      long length) throws SQLException {
+  public void setCharacterStream(String parameterName, Reader reader, long length)
+      throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1019,8 +1005,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * long)
    */
 
-  public void setClob(String parameterName, Reader reader, long length)
-      throws SQLException {
+  public void setClob(String parameterName, Reader reader, long length) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1043,8 +1028,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.util.Calendar)
    */
 
-  public void setDate(String parameterName, Date x, Calendar cal)
-      throws SQLException {
+  public void setDate(String parameterName, Date x, Calendar cal) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1100,8 +1084,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.io.Reader)
    */
 
-  public void setNCharacterStream(String parameterName, Reader value)
-      throws SQLException {
+  public void setNCharacterStream(String parameterName, Reader value) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1113,8 +1096,8 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.io.Reader, long)
    */
 
-  public void setNCharacterStream(String parameterName, Reader value,
-      long length) throws SQLException {
+  public void setNCharacterStream(String parameterName, Reader value, long length)
+      throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1148,8 +1131,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * long)
    */
 
-  public void setNClob(String parameterName, Reader reader, long length)
-      throws SQLException {
+  public void setNClob(String parameterName, Reader reader, long length) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1161,8 +1143,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.lang.String)
    */
 
-  public void setNString(String parameterName, String value)
-      throws SQLException {
+  public void setNString(String parameterName, String value) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1185,8 +1166,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.lang.String)
    */
 
-  public void setNull(String parameterName, int sqlType, String typeName)
-      throws SQLException {
+  public void setNull(String parameterName, int sqlType, String typeName) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1210,8 +1190,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.lang.Object, int)
    */
 
-  public void setObject(String parameterName, Object x, int targetSqlType)
-      throws SQLException {
+  public void setObject(String parameterName, Object x, int targetSqlType) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1223,8 +1202,8 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.lang.Object, int, int)
    */
 
-  public void setObject(String parameterName, Object x, int targetSqlType,
-      int scale) throws SQLException {
+  public void setObject(String parameterName, Object x, int targetSqlType, int scale)
+      throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1247,8 +1226,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.sql.SQLXML)
    */
 
-  public void setSQLXML(String parameterName, SQLXML xmlObject)
-      throws SQLException {
+  public void setSQLXML(String parameterName, SQLXML xmlObject) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1294,8 +1272,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.util.Calendar)
    */
 
-  public void setTime(String parameterName, Time x, Calendar cal)
-      throws SQLException {
+  public void setTime(String parameterName, Time x, Calendar cal) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1307,8 +1284,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.sql.Timestamp)
    */
 
-  public void setTimestamp(String parameterName, Timestamp x)
-      throws SQLException {
+  public void setTimestamp(String parameterName, Timestamp x) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1320,8 +1296,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.sql.Timestamp, java.util.Calendar)
    */
 
-  public void setTimestamp(String parameterName, Timestamp x, Calendar cal)
-      throws SQLException {
+  public void setTimestamp(String parameterName, Timestamp x, Calendar cal) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1453,8 +1428,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * int)
    */
 
-  public void setAsciiStream(int parameterIndex, InputStream x, int length)
-      throws SQLException {
+  public void setAsciiStream(int parameterIndex, InputStream x, int length) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1466,8 +1440,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * long)
    */
 
-  public void setAsciiStream(int arg0, InputStream arg1, long arg2)
-      throws SQLException {
+  public void setAsciiStream(int arg0, InputStream arg1, long arg2) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1478,8 +1451,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * @see java.sql.PreparedStatement#setBigDecimal(int, java.math.BigDecimal)
    */
 
-  public void setBigDecimal(int parameterIndex, BigDecimal x)
-      throws SQLException {
+  public void setBigDecimal(int parameterIndex, BigDecimal x) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1490,8 +1462,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * @see java.sql.PreparedStatement#setBinaryStream(int, java.io.InputStream)
    */
 
-  public void setBinaryStream(int parameterIndex, InputStream x)
-      throws SQLException {
+  public void setBinaryStream(int parameterIndex, InputStream x) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1503,8 +1474,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * int)
    */
 
-  public void setBinaryStream(int parameterIndex, InputStream x, int length)
-      throws SQLException {
+  public void setBinaryStream(int parameterIndex, InputStream x, int length) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1516,8 +1486,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * long)
    */
 
-  public void setBinaryStream(int parameterIndex, InputStream x, long length)
-      throws SQLException {
+  public void setBinaryStream(int parameterIndex, InputStream x, long length) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1539,8 +1508,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * @see java.sql.PreparedStatement#setBlob(int, java.io.InputStream)
    */
 
-  public void setBlob(int parameterIndex, InputStream inputStream)
-      throws SQLException {
+  public void setBlob(int parameterIndex, InputStream inputStream) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1596,8 +1564,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * @see java.sql.PreparedStatement#setCharacterStream(int, java.io.Reader)
    */
 
-  public void setCharacterStream(int parameterIndex, Reader reader)
-      throws SQLException {
+  public void setCharacterStream(int parameterIndex, Reader reader) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1656,8 +1623,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * @see java.sql.PreparedStatement#setClob(int, java.io.Reader, long)
    */
 
-  public void setClob(int parameterIndex, Reader reader, long length)
-      throws SQLException {
+  public void setClob(int parameterIndex, Reader reader, long length) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1680,8 +1646,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.util.Calendar)
    */
 
-  public void setDate(int parameterIndex, Date x, Calendar cal)
-      throws SQLException {
+  public void setDate(int parameterIndex, Date x, Calendar cal) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1736,8 +1701,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * @see java.sql.PreparedStatement#setNCharacterStream(int, java.io.Reader)
    */
 
-  public void setNCharacterStream(int parameterIndex, Reader value)
-      throws SQLException {
+  public void setNCharacterStream(int parameterIndex, Reader value) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1783,8 +1747,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * @see java.sql.PreparedStatement#setNClob(int, java.io.Reader, long)
    */
 
-  public void setNClob(int parameterIndex, Reader reader, long length)
-      throws SQLException {
+  public void setNClob(int parameterIndex, Reader reader, long length) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1817,8 +1780,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * @see java.sql.PreparedStatement#setNull(int, int, java.lang.String)
    */
 
-  public void setNull(int paramIndex, int sqlType, String typeName)
-      throws SQLException {
+  public void setNull(int paramIndex, int sqlType, String typeName) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1840,8 +1802,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * @see java.sql.PreparedStatement#setObject(int, java.lang.Object, int)
    */
 
-  public void setObject(int parameterIndex, Object x, int targetSqlType)
-      throws SQLException {
+  public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1852,8 +1813,8 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * @see java.sql.PreparedStatement#setObject(int, java.lang.Object, int, int)
    */
 
-  public void setObject(int parameterIndex, Object x, int targetSqlType,
-      int scale) throws SQLException {
+  public void setObject(int parameterIndex, Object x, int targetSqlType, int scale)
+      throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1886,8 +1847,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * @see java.sql.PreparedStatement#setSQLXML(int, java.sql.SQLXML)
    */
 
-  public void setSQLXML(int parameterIndex, SQLXML xmlObject)
-      throws SQLException {
+  public void setSQLXML(int parameterIndex, SQLXML xmlObject) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1932,8 +1892,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.util.Calendar)
    */
 
-  public void setTime(int parameterIndex, Time x, Calendar cal)
-      throws SQLException {
+  public void setTime(int parameterIndex, Time x, Calendar cal) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1956,8 +1915,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * java.util.Calendar)
    */
 
-  public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal)
-      throws SQLException {
+  public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1980,8 +1938,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * int)
    */
 
-  public void setUnicodeStream(int parameterIndex, InputStream x, int length)
-      throws SQLException {
+  public void setUnicodeStream(int parameterIndex, InputStream x, int length) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -2134,8 +2091,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * @see java.sql.Statement#executeUpdate(java.lang.String, int)
    */
 
-  public int executeUpdate(String sql, int autoGeneratedKeys)
-      throws SQLException {
+  public int executeUpdate(String sql, int autoGeneratedKeys) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -2157,8 +2113,7 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
    * @see java.sql.Statement#executeUpdate(java.lang.String, java.lang.String[])
    */
 
-  public int executeUpdate(String sql, String[] columnNames)
-      throws SQLException {
+  public int executeUpdate(String sql, String[] columnNames) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -2458,5 +2413,4 @@ public class KyuubiCallableStatement implements java.sql.CallableStatement {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
-
 }

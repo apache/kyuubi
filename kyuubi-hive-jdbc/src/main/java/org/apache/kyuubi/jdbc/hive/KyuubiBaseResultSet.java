@@ -43,16 +43,12 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.hadoop.hive.common.type.HiveIntervalDayTime;
 import org.apache.hadoop.hive.common.type.HiveIntervalYearMonth;
 import org.apache.hadoop.hive.serde2.thrift.Type;
 import org.apache.hive.service.cli.TableSchema;
 
-/**
- * Data independent base class which implements the common part of
- * all Kyuubi result sets.
- */
+/** Data independent base class which implements the common part of all Kyuubi result sets. */
 public abstract class KyuubiBaseResultSet implements ResultSet {
 
   protected Statement statement = null;
@@ -92,7 +88,7 @@ public abstract class KyuubiBaseResultSet implements ResultSet {
     for (String normalizedColumnName : normalizedColumnNames) {
       ++columnIndex;
       String[] names = normalizedColumnName.split("\\.");
-      String name = names[names.length -1];
+      String name = names[names.length - 1];
       if (name.equalsIgnoreCase(columnName) || normalizedColumnName.equalsIgnoreCase(columnName)) {
         findColumn = true;
         break;
@@ -129,7 +125,7 @@ public abstract class KyuubiBaseResultSet implements ResultSet {
     Object val = getObject(columnIndex);
 
     if (val == null || val instanceof BigDecimal) {
-      return (BigDecimal)val;
+      return (BigDecimal) val;
     }
 
     throw new SQLException("Illegal conversion");
@@ -153,19 +149,21 @@ public abstract class KyuubiBaseResultSet implements ResultSet {
     if (obj == null) {
       return null;
     } else if (obj instanceof InputStream) {
-      return (InputStream)obj;
+      return (InputStream) obj;
     } else if (obj instanceof byte[]) {
-      byte[] byteArray = (byte[])obj;
+      byte[] byteArray = (byte[]) obj;
       InputStream is = new ByteArrayInputStream(byteArray);
       return is;
     } else if (obj instanceof String) {
-      String str = (String)obj;
+      String str = (String) obj;
       InputStream is = null;
       try {
         is = new ByteArrayInputStream(str.getBytes("UTF-8"));
       } catch (UnsupportedEncodingException e) {
-        throw new SQLException("Illegal conversion to binary stream from column " +
-            columnIndex + " - Unsupported encoding exception");
+        throw new SQLException(
+            "Illegal conversion to binary stream from column "
+                + columnIndex
+                + " - Unsupported encoding exception");
       }
       return is;
     }
@@ -258,15 +256,14 @@ public abstract class KyuubiBaseResultSet implements ResultSet {
     }
     try {
       if (obj instanceof String) {
-        return Date.valueOf((String)obj);
+        return Date.valueOf((String) obj);
       }
     } catch (Exception e) {
-      throw new SQLException("Cannot convert column " + columnIndex
-              + " to date: " + e.toString(), e);
+      throw new SQLException(
+          "Cannot convert column " + columnIndex + " to date: " + e.toString(), e);
     }
     // If we fell through to here this is not a valid type conversion
-    throw new SQLException("Cannot convert column " + columnIndex
-        + " to date: Illegal conversion");
+    throw new SQLException("Cannot convert column " + columnIndex + " to date: Illegal conversion");
   }
 
   public Date getDate(String columnName) throws SQLException {
@@ -289,12 +286,12 @@ public abstract class KyuubiBaseResultSet implements ResultSet {
       } else if (obj == null) {
         return 0;
       } else if (String.class.isInstance(obj)) {
-        return Double.parseDouble((String)obj);
+        return Double.parseDouble((String) obj);
       }
       throw new Exception("Illegal conversion");
     } catch (Exception e) {
-      throw new SQLException("Cannot convert column " + columnIndex
-              + " to double: " + e.toString(), e);
+      throw new SQLException(
+          "Cannot convert column " + columnIndex + " to double: " + e.toString(), e);
     }
   }
 
@@ -318,12 +315,12 @@ public abstract class KyuubiBaseResultSet implements ResultSet {
       } else if (obj == null) {
         return 0;
       } else if (String.class.isInstance(obj)) {
-        return Float.parseFloat((String)obj);
+        return Float.parseFloat((String) obj);
       }
       throw new Exception("Illegal conversion");
     } catch (Exception e) {
-      throw new SQLException("Cannot convert column " + columnIndex
-              + " to float: " + e.toString(), e);
+      throw new SQLException(
+          "Cannot convert column " + columnIndex + " to float: " + e.toString(), e);
     }
   }
 
@@ -343,13 +340,12 @@ public abstract class KyuubiBaseResultSet implements ResultSet {
       } else if (obj == null) {
         return 0;
       } else if (String.class.isInstance(obj)) {
-        return Integer.parseInt((String)obj);
+        return Integer.parseInt((String) obj);
       }
       throw new Exception("Illegal conversion");
     } catch (Exception e) {
       throw new SQLException(
-          "Cannot convert column " + columnIndex + " to integer" + e.toString(),
-          e);
+          "Cannot convert column " + columnIndex + " to integer" + e.toString(), e);
     }
   }
 
@@ -365,13 +361,12 @@ public abstract class KyuubiBaseResultSet implements ResultSet {
       } else if (obj == null) {
         return 0;
       } else if (String.class.isInstance(obj)) {
-        return Long.parseLong((String)obj);
+        return Long.parseLong((String) obj);
       }
       throw new Exception("Illegal conversion");
     } catch (Exception e) {
       throw new SQLException(
-          "Cannot convert column " + columnIndex + " to long: " + e.toString(),
-          e);
+          "Cannot convert column " + columnIndex + " to long: " + e.toString(), e);
     }
   }
 
@@ -442,7 +437,7 @@ public abstract class KyuubiBaseResultSet implements ResultSet {
       case TIMESTAMP_TYPE:
         return Timestamp.valueOf((String) value);
       case DECIMAL_TYPE:
-        return new BigDecimal((String)value);
+        return new BigDecimal((String) value);
       case DATE_TYPE:
         return Date.valueOf((String) value);
       case INTERVAL_YEAR_MONTH_TYPE:
@@ -511,12 +506,12 @@ public abstract class KyuubiBaseResultSet implements ResultSet {
       } else if (obj == null) {
         return 0;
       } else if (String.class.isInstance(obj)) {
-        return Short.parseShort((String)obj);
+        return Short.parseShort((String) obj);
       }
       throw new Exception("Illegal conversion");
     } catch (Exception e) {
-      throw new SQLException("Cannot convert column " + columnIndex
-              + " to short: " + e.toString(), e);
+      throw new SQLException(
+          "Cannot convert column " + columnIndex + " to short: " + e.toString(), e);
     }
   }
 
@@ -537,8 +532,8 @@ public abstract class KyuubiBaseResultSet implements ResultSet {
     if (wasNull) {
       return null;
     }
-    if (value instanceof byte[]){
-      return new String((byte[])value);
+    if (value instanceof byte[]) {
+      return new String((byte[]) value);
     }
     return value.toString();
   }
@@ -572,7 +567,7 @@ public abstract class KyuubiBaseResultSet implements ResultSet {
       return (Timestamp) obj;
     }
     if (obj instanceof String) {
-      return Timestamp.valueOf((String)obj);
+      return Timestamp.valueOf((String) obj);
     }
     throw new SQLException("Illegal conversion");
   }
@@ -693,23 +688,20 @@ public abstract class KyuubiBaseResultSet implements ResultSet {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public void updateAsciiStream(int columnIndex, InputStream x, int length)
-          throws SQLException {
+  public void updateAsciiStream(int columnIndex, InputStream x, int length) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public void updateAsciiStream(String columnName, InputStream x, int length)
-          throws SQLException {
+  public void updateAsciiStream(String columnName, InputStream x, int length) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public void updateAsciiStream(int columnIndex, InputStream x, long length)
-          throws SQLException {
+  public void updateAsciiStream(int columnIndex, InputStream x, long length) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
   public void updateAsciiStream(String columnLabel, InputStream x, long length)
-          throws SQLException {
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -729,23 +721,20 @@ public abstract class KyuubiBaseResultSet implements ResultSet {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public void updateBinaryStream(int columnIndex, InputStream x, int length)
-          throws SQLException {
+  public void updateBinaryStream(int columnIndex, InputStream x, int length) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public void updateBinaryStream(String columnName, InputStream x, int length)
-          throws SQLException {
+  public void updateBinaryStream(String columnName, InputStream x, int length) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public void updateBinaryStream(int columnIndex, InputStream x, long length)
-          throws SQLException {
+  public void updateBinaryStream(int columnIndex, InputStream x, long length) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
   public void updateBinaryStream(String columnLabel, InputStream x, long length)
-          throws SQLException {
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -766,12 +755,12 @@ public abstract class KyuubiBaseResultSet implements ResultSet {
   }
 
   public void updateBlob(int columnIndex, InputStream inputStream, long length)
-          throws SQLException {
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public void updateBlob(String columnLabel, InputStream inputStream,
-                         long length) throws SQLException {
+  public void updateBlob(String columnLabel, InputStream inputStream, long length)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -807,23 +796,21 @@ public abstract class KyuubiBaseResultSet implements ResultSet {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public void updateCharacterStream(int columnIndex, Reader x, int length)
-          throws SQLException {
+  public void updateCharacterStream(int columnIndex, Reader x, int length) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
   public void updateCharacterStream(String columnName, Reader reader, int length)
-          throws SQLException {
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public void updateCharacterStream(int columnIndex, Reader x, long length)
-          throws SQLException {
+  public void updateCharacterStream(int columnIndex, Reader x, long length) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public void updateCharacterStream(String columnLabel, Reader reader,
-                                    long length) throws SQLException {
+  public void updateCharacterStream(String columnLabel, Reader reader, long length)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -903,8 +890,8 @@ public abstract class KyuubiBaseResultSet implements ResultSet {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public void updateNCharacterStream(String columnLabel, Reader reader,
-                                     long length) throws SQLException {
+  public void updateNCharacterStream(String columnLabel, Reader reader, long length)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 

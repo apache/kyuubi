@@ -18,13 +18,7 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
+import static org.junit.Assert.assertEquals;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -32,8 +26,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
-
-import static org.junit.Assert.assertEquals;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 @RunWith(Parameterized.class)
 public class TestJdbcDriver {
@@ -48,20 +47,21 @@ public class TestJdbcDriver {
 
   @Parameters
   public static Collection<Object[]> data() {
-    return Arrays.asList(new Object[][]{
-      // Here are some positive cases which can be executed as below :
-      {"show databases;show tables;", "show databases,show tables"},
-      {" show\n\r  tables;", "show tables"},
-      {"show databases; show\ntables;", "show databases,show tables"},
-      {"show    tables;", "show    tables"},
-      {"show tables ;", "show tables"},
-      // Here are some negative cases as below :
-      {"show tables", ","},
-      {"show tables show tables;", "show tables show tables"},
-      {"show tab les;", "show tab les"},
-      {"#show tables; show\n tables;", "tables"},
-      {"show tab les;show tables;", "show tab les,show tables"}
-    });
+    return Arrays.asList(
+        new Object[][] {
+          // Here are some positive cases which can be executed as below :
+          {"show databases;show tables;", "show databases,show tables"},
+          {" show\n\r  tables;", "show tables"},
+          {"show databases; show\ntables;", "show databases,show tables"},
+          {"show    tables;", "show    tables"},
+          {"show tables ;", "show tables"},
+          // Here are some negative cases as below :
+          {"show tables", ","},
+          {"show tables show tables;", "show tables show tables"},
+          {"show tab les;", "show tab les"},
+          {"#show tables; show\n tables;", "tables"},
+          {"show tab les;show tables;", "show tab les,show tables"}
+        });
   }
 
   @BeforeClass
@@ -86,9 +86,9 @@ public class TestJdbcDriver {
       bw = new BufferedWriter(new FileWriter(file));
       bw.write(input);
       bw.flush();
-      assertEquals(Arrays.asList(expected.split(",")),
-        KyuubiConnection.parseInitFile(file.toString()));
-    } catch(Exception e) {
+      assertEquals(
+          Arrays.asList(expected.split(",")), KyuubiConnection.parseInitFile(file.toString()));
+    } catch (Exception e) {
       Assert.fail("Test was failed due to " + e);
     } finally {
       if (bw != null) {

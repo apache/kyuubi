@@ -26,19 +26,14 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.jar.Attributes;
-
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hive.service.cli.GetInfoType;
 import org.apache.hive.service.cli.HiveSQLException;
 import org.apache.hive.service.rpc.thrift.*;
+import org.apache.kyuubi.jdbc.KyuubiHiveDriver;
 import org.apache.thrift.TException;
 
-import org.apache.kyuubi.jdbc.KyuubiHiveDriver;
-
-/**
- * KyuubiDatabaseMetaData.
- *
- */
+/** KyuubiDatabaseMetaData. */
 public class KyuubiDatabaseMetaData implements DatabaseMetaData {
 
   private final KyuubiConnection connection;
@@ -54,11 +49,9 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
   //  Cached values, to save on round trips to database.
   private String dbVersion = null;
 
-  /**
-   *
-   */
-  public KyuubiDatabaseMetaData(KyuubiConnection connection, TCLIService.Iface client,
-                                TSessionHandle sessHandle) {
+  /** */
+  public KyuubiDatabaseMetaData(
+      KyuubiConnection connection, TCLIService.Iface client, TSessionHandle sessHandle) {
     this.connection = connection;
     this.client = client;
     this.sessHandle = sessHandle;
@@ -92,13 +85,15 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public ResultSet getAttributes(String catalog, String schemaPattern,
-      String typeNamePattern, String attributeNamePattern) throws SQLException {
+  public ResultSet getAttributes(
+      String catalog, String schemaPattern, String typeNamePattern, String attributeNamePattern)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public ResultSet getBestRowIdentifier(String catalog, String schema,
-      String table, int scope, boolean nullable) throws SQLException {
+  public ResultSet getBestRowIdentifier(
+      String catalog, String schema, String table, int scope, boolean nullable)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -121,23 +116,24 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     Utils.verifySuccess(catalogResp.getStatus());
 
     return new KyuubiQueryResultSet.Builder(connection)
-    .setClient(client)
-    .setSessionHandle(sessHandle)
-    .setStmtHandle(catalogResp.getOperationHandle())
-    .build();
+        .setClient(client)
+        .setSessionHandle(sessHandle)
+        .setStmtHandle(catalogResp.getOperationHandle())
+        .build();
   }
 
   public ResultSet getClientInfoProperties() throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public ResultSet getColumnPrivileges(String catalog, String schema,
-      String table, String columnNamePattern) throws SQLException {
+  public ResultSet getColumnPrivileges(
+      String catalog, String schema, String table, String columnNamePattern) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public ResultSet getPseudoColumns(String catalog, String schemaPattern,
-      String tableNamePattern, String columnNamePattern) throws SQLException {
+  public ResultSet getPseudoColumns(
+      String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
+      throws SQLException {
     // JDK 1.7
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -148,16 +144,14 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
   }
 
   /**
-   * Convert a pattern containing JDBC catalog search wildcards into
-   * Java regex patterns.
+   * Convert a pattern containing JDBC catalog search wildcards into Java regex patterns.
    *
-   * @param pattern input which may contain '%' or '_' wildcard characters, or
-   * these characters escaped using {@link #getSearchStringEscape()}.
-   * @return replace %/_ with regex search characters, also handle escaped
-   * characters.
+   * @param pattern input which may contain '%' or '_' wildcard characters, or these characters
+   *     escaped using {@link #getSearchStringEscape()}.
+   * @return replace %/_ with regex search characters, also handle escaped characters.
    */
   private String convertPattern(final String pattern) {
-    if (pattern==null) {
+    if (pattern == null) {
       return ".*";
     } else {
       StringBuilder result = new StringBuilder(pattern.length());
@@ -188,8 +182,9 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     }
   }
 
-  public ResultSet getColumns(String catalog, String schemaPattern,
-      String tableNamePattern, String columnNamePattern) throws SQLException {
+  public ResultSet getColumns(
+      String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
+      throws SQLException {
     TGetColumnsResp colResp;
     TGetColumnsReq colReq = new TGetColumnsReq();
     colReq.setSessionHandle(sessHandle);
@@ -205,21 +200,21 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     Utils.verifySuccess(colResp.getStatus());
     // build the resultset from response
     return new KyuubiQueryResultSet.Builder(connection)
-    .setClient(client)
-    .setSessionHandle(sessHandle)
-    .setStmtHandle(colResp.getOperationHandle())
-    .build();
+        .setClient(client)
+        .setSessionHandle(sessHandle)
+        .setStmtHandle(colResp.getOperationHandle())
+        .build();
   }
 
   /**
-   * We sort the output of getColumns to guarantee jdbc compliance.
-   * First check by table name then by ordinal position
+   * We sort the output of getColumns to guarantee jdbc compliance. First check by table name then
+   * by ordinal position
    */
   private class GetColumnsComparator implements Comparator<JdbcColumn> {
 
     public int compare(JdbcColumn o1, JdbcColumn o2) {
       int compareName = o1.getTableName().compareTo(o2.getTableName());
-      if (compareName==0) {
+      if (compareName == 0) {
         if (o1.getOrdinalPos() > o2.getOrdinalPos()) {
           return 1;
         } else if (o1.getOrdinalPos() < o2.getOrdinalPos()) {
@@ -236,30 +231,35 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     return this.connection;
   }
 
-  public ResultSet getCrossReference(String primaryCatalog,
-      String primarySchema, String primaryTable, String foreignCatalog,
-      String foreignSchema, String foreignTable) throws SQLException {
-   TGetCrossReferenceResp getFKResp;
-   TGetCrossReferenceReq getFKReq = new TGetCrossReferenceReq(sessHandle);
-   getFKReq.setParentTableName(primaryTable);
-   getFKReq.setParentSchemaName(primarySchema);
-   getFKReq.setParentCatalogName(primaryCatalog);
-   getFKReq.setForeignTableName(foreignTable);
-   getFKReq.setForeignSchemaName(foreignSchema);
-   getFKReq.setForeignCatalogName(foreignCatalog);
+  public ResultSet getCrossReference(
+      String primaryCatalog,
+      String primarySchema,
+      String primaryTable,
+      String foreignCatalog,
+      String foreignSchema,
+      String foreignTable)
+      throws SQLException {
+    TGetCrossReferenceResp getFKResp;
+    TGetCrossReferenceReq getFKReq = new TGetCrossReferenceReq(sessHandle);
+    getFKReq.setParentTableName(primaryTable);
+    getFKReq.setParentSchemaName(primarySchema);
+    getFKReq.setParentCatalogName(primaryCatalog);
+    getFKReq.setForeignTableName(foreignTable);
+    getFKReq.setForeignSchemaName(foreignSchema);
+    getFKReq.setForeignCatalogName(foreignCatalog);
 
-   try {
-     getFKResp = client.GetCrossReference(getFKReq);
-   } catch (TException e) {
-     throw new SQLException(e.getMessage(), "08S01", e);
-   }
-   Utils.verifySuccess(getFKResp.getStatus());
+    try {
+      getFKResp = client.GetCrossReference(getFKReq);
+    } catch (TException e) {
+      throw new SQLException(e.getMessage(), "08S01", e);
+    }
+    Utils.verifySuccess(getFKResp.getStatus());
 
-   return new KyuubiQueryResultSet.Builder(connection)
-     .setClient(client)
-     .setSessionHandle(sessHandle)
-     .setStmtHandle(getFKResp.getOperationHandle())
-     .build();
+    return new KyuubiQueryResultSet.Builder(connection)
+        .setClient(client)
+        .setSessionHandle(sessHandle)
+        .setStmtHandle(getFKResp.getOperationHandle())
+        .build();
   }
 
   public int getDatabaseMajorVersion() throws SQLException {
@@ -276,7 +276,7 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
   }
 
   public String getDatabaseProductVersion() throws SQLException {
-    if (dbVersion != null) { //lazy-caching of the version.
+    if (dbVersion != null) { // lazy-caching of the version.
       return dbVersion;
     }
 
@@ -315,13 +315,13 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     return "";
   }
 
-  public ResultSet getFunctionColumns(String arg0, String arg1, String arg2,
-      String arg3) throws SQLException {
+  public ResultSet getFunctionColumns(String arg0, String arg1, String arg2, String arg3)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public ResultSet getFunctions(String catalogName, String schemaPattern, String functionNamePattern)
-      throws SQLException {
+  public ResultSet getFunctions(
+      String catalogName, String schemaPattern, String functionNamePattern) throws SQLException {
     TGetFunctionsResp funcResp;
     TGetFunctionsReq getFunctionsReq = new TGetFunctionsReq();
     getFunctionsReq.setSessionHandle(sessHandle);
@@ -337,10 +337,10 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     Utils.verifySuccess(funcResp.getStatus());
 
     return new KyuubiQueryResultSet.Builder(connection)
-    .setClient(client)
-    .setSessionHandle(sessHandle)
-    .setStmtHandle(funcResp.getOperationHandle())
-    .build();
+        .setClient(client)
+        .setSessionHandle(sessHandle)
+        .setStmtHandle(funcResp.getOperationHandle())
+        .build();
   }
 
   public String getIdentifierQuoteString() throws SQLException {
@@ -350,53 +350,67 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
   public ResultSet getImportedKeys(String catalog, String schema, String table)
       throws SQLException {
     return new KyuubiQueryResultSet.Builder(connection)
-    .setClient(client)
-    .setEmptyResultSet(true)
-    .setSchema(
-        Arrays.asList(
-            "PKTABLE_CAT",
-            "PKTABLE_SCHEM",
-            "PKTABLE_NAME",
-            "PKCOLUMN_NAME",
-            "FKTABLE_CAT",
-            "FKTABLE_SCHEM",
-            "FKTABLE_NAME",
-            "FKCOLUMN_NAME",
-            "KEY_SEQ",
-            "UPDATE_RULE",
-            "DELETE_RULE",
-            "FK_NAME",
-            "PK_NAME",
-            "DEFERRABILITY"),
-        Arrays.asList(
-            "STRING",
-            "STRING",
-            "STRING",
-            "STRING",
-            "STRING",
-            "STRING",
-            "STRING",
-            "STRING",
-            "SMALLINT",
-            "SMALLINT",
-            "SMALLINT",
-            "STRING",
-            "STRING",
-            "STRING"))
-            .build();
+        .setClient(client)
+        .setEmptyResultSet(true)
+        .setSchema(
+            Arrays.asList(
+                "PKTABLE_CAT",
+                "PKTABLE_SCHEM",
+                "PKTABLE_NAME",
+                "PKCOLUMN_NAME",
+                "FKTABLE_CAT",
+                "FKTABLE_SCHEM",
+                "FKTABLE_NAME",
+                "FKCOLUMN_NAME",
+                "KEY_SEQ",
+                "UPDATE_RULE",
+                "DELETE_RULE",
+                "FK_NAME",
+                "PK_NAME",
+                "DEFERRABILITY"),
+            Arrays.asList(
+                "STRING",
+                "STRING",
+                "STRING",
+                "STRING",
+                "STRING",
+                "STRING",
+                "STRING",
+                "STRING",
+                "SMALLINT",
+                "SMALLINT",
+                "SMALLINT",
+                "STRING",
+                "STRING",
+                "STRING"))
+        .build();
   }
 
-  public ResultSet getIndexInfo(String catalog, String schema, String table,
-      boolean unique, boolean approximate) throws SQLException {
+  public ResultSet getIndexInfo(
+      String catalog, String schema, String table, boolean unique, boolean approximate)
+      throws SQLException {
     return new KyuubiQueryResultSet.Builder(connection)
         .setClient(client)
         .setEmptyResultSet(true)
         .setSchema(
-            Arrays.asList("TABLE_CAT", "TABLE_SCHEM", "TABLE_NAME", "NON_UNIQUE",
-                "INDEX_QUALIFIER", "INDEX_NAME", "TYPE", "ORDINAL_POSITION", "COLUMN_NAME",
-                "ASC_OR_DESC", "CARDINALITY", "PAGES", "FILTER_CONDITION"),
-            Arrays.asList("STRING", "STRING", "STRING", "BOOLEAN", "STRING", "STRING", "SHORT",
-                "SHORT", "STRING", "STRING", "INT", "INT", "STRING")).build();
+            Arrays.asList(
+                "TABLE_CAT",
+                "TABLE_SCHEM",
+                "TABLE_NAME",
+                "NON_UNIQUE",
+                "INDEX_QUALIFIER",
+                "INDEX_NAME",
+                "TYPE",
+                "ORDINAL_POSITION",
+                "COLUMN_NAME",
+                "ASC_OR_DESC",
+                "CARDINALITY",
+                "PAGES",
+                "FILTER_CONDITION"),
+            Arrays.asList(
+                "STRING", "STRING", "STRING", "BOOLEAN", "STRING", "STRING", "SHORT", "SHORT",
+                "STRING", "STRING", "INT", "INT", "STRING"))
+        .build();
   }
 
   public int getJDBCMajorVersion() throws SQLException {
@@ -419,10 +433,7 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  /**
-   *  Returns the value of maxColumnNameLength.
-   *
-   */
+  /** Returns the value of maxColumnNameLength. */
   public int getMaxColumnNameLength() throws SQLException {
     return maxColumnNameLength;
   }
@@ -495,8 +506,7 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     return "";
   }
 
-  public ResultSet getPrimaryKeys(String catalog, String schema, String table)
-      throws SQLException {
+  public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException {
     TGetPrimaryKeysResp getPKResp;
     TGetPrimaryKeysReq getPKReq = new TGetPrimaryKeysReq(sessHandle);
     getPKReq.setTableName(table);
@@ -510,45 +520,99 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     Utils.verifySuccess(getPKResp.getStatus());
 
     return new KyuubiQueryResultSet.Builder(connection)
-    .setClient(client)
-    .setSessionHandle(sessHandle)
-    .setStmtHandle(getPKResp.getOperationHandle())
-    .build();
+        .setClient(client)
+        .setSessionHandle(sessHandle)
+        .setStmtHandle(getPKResp.getOperationHandle())
+        .build();
   }
 
-  public ResultSet getProcedureColumns(String catalog, String schemaPattern,
-      String procedureNamePattern, String columnNamePattern)
+  public ResultSet getProcedureColumns(
+      String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern)
       throws SQLException {
     // Hive doesn't support primary keys
     // using local schema with empty resultset
-    return new KyuubiQueryResultSet.Builder(connection).setClient(client).setEmptyResultSet(true).
-                  setSchema(
-                    Arrays.asList("PROCEDURE_CAT", "PROCEDURE_SCHEM", "PROCEDURE_NAME", "COLUMN_NAME", "COLUMN_TYPE",
-                              "DATA_TYPE", "TYPE_NAME", "PRECISION", "LENGTH", "SCALE", "RADIX", "NULLABLE", "REMARKS",
-                              "COLUMN_DEF", "SQL_DATA_TYPE", "SQL_DATETIME_SUB", "CHAR_OCTET_LENGTH", "ORDINAL_POSITION",
-                              "IS_NULLABLE", "SPECIFIC_NAME"),
-                    Arrays.asList("STRING", "STRING", "STRING", "STRING", "SMALLINT", "INT",
-                              "STRING", "INT", "INT", "SMALLINT", "SMALLINT", "SMALLINT", "STRING", "STRING",
-                              "INT", "INT", "INT", "INT",
-                              "STRING", "STRING"))
-                  .build();
+    return new KyuubiQueryResultSet.Builder(connection)
+        .setClient(client)
+        .setEmptyResultSet(true)
+        .setSchema(
+            Arrays.asList(
+                "PROCEDURE_CAT",
+                "PROCEDURE_SCHEM",
+                "PROCEDURE_NAME",
+                "COLUMN_NAME",
+                "COLUMN_TYPE",
+                "DATA_TYPE",
+                "TYPE_NAME",
+                "PRECISION",
+                "LENGTH",
+                "SCALE",
+                "RADIX",
+                "NULLABLE",
+                "REMARKS",
+                "COLUMN_DEF",
+                "SQL_DATA_TYPE",
+                "SQL_DATETIME_SUB",
+                "CHAR_OCTET_LENGTH",
+                "ORDINAL_POSITION",
+                "IS_NULLABLE",
+                "SPECIFIC_NAME"),
+            Arrays.asList(
+                "STRING",
+                "STRING",
+                "STRING",
+                "STRING",
+                "SMALLINT",
+                "INT",
+                "STRING",
+                "INT",
+                "INT",
+                "SMALLINT",
+                "SMALLINT",
+                "SMALLINT",
+                "STRING",
+                "STRING",
+                "INT",
+                "INT",
+                "INT",
+                "INT",
+                "STRING",
+                "STRING"))
+        .build();
   }
 
   public String getProcedureTerm() throws SQLException {
     return new String("UDF");
   }
 
-  public ResultSet getProcedures(String catalog, String schemaPattern,
-      String procedureNamePattern) throws SQLException {
+  public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern)
+      throws SQLException {
     // Hive doesn't support primary keys
     // using local schema with empty resultset
-    return new KyuubiQueryResultSet.Builder(connection).setClient(client).setEmptyResultSet(true).
-                  setSchema(
-                    Arrays.asList("PROCEDURE_CAT", "PROCEDURE_SCHEM", "PROCEDURE_NAME", "RESERVERD", "RESERVERD",
-                                  "RESERVERD", "REMARKS", "PROCEDURE_TYPE", "SPECIFIC_NAME"),
-                    Arrays.asList("STRING", "STRING", "STRING", "STRING", "STRING",
-                                  "STRING", "STRING", "SMALLINT", "STRING"))
-                  .build();
+    return new KyuubiQueryResultSet.Builder(connection)
+        .setClient(client)
+        .setEmptyResultSet(true)
+        .setSchema(
+            Arrays.asList(
+                "PROCEDURE_CAT",
+                "PROCEDURE_SCHEM",
+                "PROCEDURE_NAME",
+                "RESERVERD",
+                "RESERVERD",
+                "RESERVERD",
+                "REMARKS",
+                "PROCEDURE_TYPE",
+                "SPECIFIC_NAME"),
+            Arrays.asList(
+                "STRING",
+                "STRING",
+                "STRING",
+                "STRING",
+                "STRING",
+                "STRING",
+                "STRING",
+                "SMALLINT",
+                "STRING"))
+        .build();
   }
 
   public int getResultSetHoldability() throws SQLException {
@@ -575,8 +639,7 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     return getSchemas(null, null);
   }
 
-  public ResultSet getSchemas(String catalog, String schemaPattern)
-      throws SQLException {
+  public ResultSet getSchemas(String catalog, String schemaPattern) throws SQLException {
     TGetSchemasResp schemaResp;
 
     TGetSchemasReq schemaReq = new TGetSchemasReq();
@@ -597,10 +660,10 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     Utils.verifySuccess(schemaResp.getStatus());
 
     return new KyuubiQueryResultSet.Builder(connection)
-    .setClient(client)
-    .setSessionHandle(sessHandle)
-    .setStmtHandle(schemaResp.getOperationHandle())
-    .build();
+        .setClient(client)
+        .setSessionHandle(sessHandle)
+        .setStmtHandle(schemaResp.getOperationHandle())
+        .build();
   }
 
   public String getSearchStringEscape() throws SQLException {
@@ -611,13 +674,13 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     return "";
   }
 
-  public ResultSet getSuperTables(String catalog, String schemaPattern,
-      String tableNamePattern) throws SQLException {
+  public ResultSet getSuperTables(String catalog, String schemaPattern, String tableNamePattern)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public ResultSet getSuperTypes(String catalog, String schemaPattern,
-      String typeNamePattern) throws SQLException {
+  public ResultSet getSuperTypes(String catalog, String schemaPattern, String typeNamePattern)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -625,8 +688,8 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     return "";
   }
 
-  public ResultSet getTablePrivileges(String catalog, String schemaPattern,
-      String tableNamePattern) throws SQLException {
+  public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern)
+      throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -641,15 +704,16 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     Utils.verifySuccess(tableTypeResp.getStatus());
 
     return new KyuubiQueryResultSet.Builder(connection)
-    .setClient(client)
-    .setSessionHandle(sessHandle)
-    .setStmtHandle(tableTypeResp.getOperationHandle())
-    .build();
+        .setClient(client)
+        .setSessionHandle(sessHandle)
+        .setStmtHandle(tableTypeResp.getOperationHandle())
+        .build();
   }
 
   @Override
-  public ResultSet getTables(String catalog, String schemaPattern,
-                             String tableNamePattern, String[] types) throws SQLException {
+  public ResultSet getTables(
+      String catalog, String schemaPattern, String tableNamePattern, String[] types)
+      throws SQLException {
 
     TGetTablesReq getTableReq = new TGetTablesReq(sessHandle);
     getTableReq.setCatalogName(catalog);
@@ -669,21 +733,21 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
       throw new HiveSQLException(tStatus);
     }
     return new KyuubiQueryResultSet.Builder(connection)
-      .setClient(client)
-      .setSessionHandle(sessHandle)
-      .setStmtHandle(getTableResp.getOperationHandle())
-      .build();
+        .setClient(client)
+        .setSessionHandle(sessHandle)
+        .setStmtHandle(getTableResp.getOperationHandle())
+        .build();
   }
 
   /**
-   * We sort the output of getTables to guarantee jdbc compliance.
-   * First check by table type then by table name
+   * We sort the output of getTables to guarantee jdbc compliance. First check by table type then by
+   * table name
    */
   private class GetTablesComparator implements Comparator<JdbcTable> {
 
     public int compare(JdbcTable o1, JdbcTable o2) {
       int compareType = o1.getType().compareTo(o2.getType());
-      if (compareType==0) {
+      if (compareType == 0) {
         return o1.getTableName().compareTo(o2.getTableName());
       } else {
         return compareType;
@@ -693,11 +757,12 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
 
   /**
    * Translate hive table types into jdbc table types.
+   *
    * @param hivetabletype
    * @return the type of the table
    */
   public static String toJdbcTableType(String hivetabletype) {
-    if (hivetabletype==null) {
+    if (hivetabletype == null) {
       return null;
     } else if (hivetabletype.equals(TableType.MANAGED_TABLE.toString())) {
       return "TABLE";
@@ -727,20 +792,27 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     }
     Utils.verifySuccess(getTypeInfoResp.getStatus());
     return new KyuubiQueryResultSet.Builder(connection)
-    .setClient(client)
-    .setSessionHandle(sessHandle)
-    .setStmtHandle(getTypeInfoResp.getOperationHandle())
-    .build();
+        .setClient(client)
+        .setSessionHandle(sessHandle)
+        .setStmtHandle(getTypeInfoResp.getOperationHandle())
+        .build();
   }
 
-  public ResultSet getUDTs(String catalog, String schemaPattern,
-      String typeNamePattern, int[] types) throws SQLException {
+  public ResultSet getUDTs(
+      String catalog, String schemaPattern, String typeNamePattern, int[] types)
+      throws SQLException {
 
     return new KyuubiMetaDataResultSet(
-            Arrays.asList("TYPE_CAT", "TYPE_SCHEM", "TYPE_NAME", "CLASS_NAME", "DATA_TYPE"
-                    , "REMARKS", "BASE_TYPE")
-            , Arrays.asList("STRING", "STRING", "STRING", "STRING", "INT", "STRING", "INT")
-            , null) {
+        Arrays.asList(
+            "TYPE_CAT",
+            "TYPE_SCHEM",
+            "TYPE_NAME",
+            "CLASS_NAME",
+            "DATA_TYPE",
+            "REMARKS",
+            "BASE_TYPE"),
+        Arrays.asList("STRING", "STRING", "STRING", "STRING", "INT", "STRING", "INT"),
+        null) {
 
       public boolean next() throws SQLException {
         return false;
@@ -754,7 +826,7 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
       public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
         // JDK 1.7
         throw new SQLFeatureNotSupportedException("Method not supported");
-        }
+      }
     };
   }
 
@@ -919,8 +991,7 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public boolean supportsDataDefinitionAndDataManipulationTransactions()
-      throws SQLException {
+  public boolean supportsDataDefinitionAndDataManipulationTransactions() throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -1036,13 +1107,11 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     return false;
   }
 
-  public boolean supportsResultSetConcurrency(int type, int concurrency)
-      throws SQLException {
+  public boolean supportsResultSetConcurrency(int type, int concurrency) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public boolean supportsResultSetHoldability(int holdability)
-      throws SQLException {
+  public boolean supportsResultSetHoldability(int holdability) throws SQLException {
     return false;
   }
 
@@ -1110,8 +1179,7 @@ public class KyuubiDatabaseMetaData implements DatabaseMetaData {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public boolean supportsTransactionIsolationLevel(int level)
-      throws SQLException {
+  public boolean supportsTransactionIsolationLevel(int level) throws SQLException {
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 

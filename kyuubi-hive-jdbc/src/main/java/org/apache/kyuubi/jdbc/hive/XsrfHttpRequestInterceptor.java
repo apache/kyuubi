@@ -17,12 +17,11 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
+import java.io.IOException;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.protocol.HttpContext;
-
-import java.io.IOException;
 
 public class XsrfHttpRequestInterceptor implements HttpRequestInterceptor {
 
@@ -41,14 +40,14 @@ public class XsrfHttpRequestInterceptor implements HttpRequestInterceptor {
 
   private static boolean injectHeader = true;
 
-  public static void enableHeaderInjection(boolean enabled){
+  public static void enableHeaderInjection(boolean enabled) {
     injectHeader = enabled;
   }
 
   @Override
   public void process(HttpRequest httpRequest, HttpContext httpContext)
       throws HttpException, IOException {
-    if (injectHeader){
+    if (injectHeader) {
       httpRequest.addHeader("X-XSRF-HEADER", "true");
     }
   }

@@ -44,24 +44,21 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
-
 import org.apache.hive.service.rpc.thrift.TCLIService;
 import org.apache.hive.service.rpc.thrift.TSessionHandle;
 
-/**
- * KyuubiPreparedStatement.
- *
- */
+/** KyuubiPreparedStatement. */
 public class KyuubiPreparedStatement extends KyuubiStatement implements PreparedStatement {
   private final String sql;
 
-  /**
-   * save the SQL parameters {paramLoc:paramValue}
-   */
-  private final HashMap<Integer, String> parameters=new HashMap<Integer, String>();
+  /** save the SQL parameters {paramLoc:paramValue} */
+  private final HashMap<Integer, String> parameters = new HashMap<Integer, String>();
 
-  public KyuubiPreparedStatement(KyuubiConnection connection, TCLIService.Iface client,
-                                 TSessionHandle sessHandle, String sql) {
+  public KyuubiPreparedStatement(
+      KyuubiConnection connection,
+      TCLIService.Iface client,
+      TSessionHandle sessHandle,
+      String sql) {
     super(connection, client, sessHandle);
     this.sql = sql;
   }
@@ -88,25 +85,22 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
   }
 
   /**
-   *  Invokes executeQuery(sql) using the sql provided to the constructor.
+   * Invokes executeQuery(sql) using the sql provided to the constructor.
    *
-   *  @return boolean Returns true if a resultSet is created, false if not.
-   *                  Note: If the result set is empty a true is returned.
-   *
-   *  @throws SQLException
+   * @return boolean Returns true if a resultSet is created, false if not. Note: If the result set
+   *     is empty a true is returned.
+   * @throws SQLException
    */
-
   public boolean execute() throws SQLException {
     return super.execute(updateSql(sql, parameters));
   }
 
   /**
-   *  Invokes executeQuery(sql) using the sql provided to the constructor.
+   * Invokes executeQuery(sql) using the sql provided to the constructor.
    *
-   *  @return ResultSet
-   *  @throws SQLException
+   * @return ResultSet
+   * @throws SQLException
    */
-
   public ResultSet executeQuery() throws SQLException {
     return super.executeQuery(updateSql(sql, parameters));
   }
@@ -128,64 +122,63 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
    * @param sql
    * @param parameters
    * @return updated SQL string
-   * @throws SQLException 
+   * @throws SQLException
    */
-  private String updateSql(final String sql, HashMap<Integer, String> parameters) throws SQLException {
-    List<String>  parts=splitSqlStatement(sql);
-    
+  private String updateSql(final String sql, HashMap<Integer, String> parameters)
+      throws SQLException {
+    List<String> parts = splitSqlStatement(sql);
+
     StringBuilder newSql = new StringBuilder(parts.get(0));
-    for(int i=1;i<parts.size();i++){
-      if(!parameters.containsKey(i)){
-        throw new SQLException("Parameter #"+i+" is unset");
+    for (int i = 1; i < parts.size(); i++) {
+      if (!parameters.containsKey(i)) {
+        throw new SQLException("Parameter #" + i + " is unset");
       }
       newSql.append(parameters.get(i));
       newSql.append(parts.get(i));
     }
     return newSql.toString();
-
   }
-  
+
   /**
    * Splits the parametered sql statement at parameter boundaries.
-   * 
-   * taking into account ' and \ escaping.
-   * 
-   * output for: 'select 1 from ? where a = ?'
-   *  ['select 1 from ',' where a = ','']
-   * 
+   *
+   * <p>taking into account ' and \ escaping.
+   *
+   * <p>output for: 'select 1 from ? where a = ?' ['select 1 from ',' where a = ','']
+   *
    * @param sql
    * @return
    */
   private List<String> splitSqlStatement(String sql) {
-    List<String> parts=new ArrayList<>();
-    int apCount=0;
-    int off=0;
-    boolean skip=false;
+    List<String> parts = new ArrayList<>();
+    int apCount = 0;
+    int off = 0;
+    boolean skip = false;
 
     for (int i = 0; i < sql.length(); i++) {
       char c = sql.charAt(i);
-      if(skip){
-        skip=false;
+      if (skip) {
+        skip = false;
         continue;
       }
       switch (c) {
-      case '\'':
-        apCount++;
-        break;
-      case '\\':
-        skip = true;
-        break;
-      case '?':
-        if ((apCount & 1) == 0) {
-          parts.add(sql.substring(off,i));
-          off=i+1;
-        }
-        break;
-      default:
-        break;
+        case '\'':
+          apCount++;
+          break;
+        case '\\':
+          skip = true;
+          break;
+        case '?':
+          if ((apCount & 1) == 0) {
+            parts.add(sql.substring(off, i));
+            off = i + 1;
+          }
+          break;
+        default:
+          break;
       }
     }
-    parts.add(sql.substring(off,sql.length()));
+    parts.add(sql.substring(off, sql.length()));
     return parts;
   }
 
@@ -331,7 +324,7 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
    */
 
   public void setBlob(int parameterIndex, InputStream inputStream, long length)
-          throws SQLException {
+      throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -343,7 +336,7 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
    */
 
   public void setBoolean(int parameterIndex, boolean x) throws SQLException {
-    this.parameters.put(parameterIndex, ""+x);
+    this.parameters.put(parameterIndex, "" + x);
   }
 
   /*
@@ -353,7 +346,7 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
    */
 
   public void setByte(int parameterIndex, byte x) throws SQLException {
-    this.parameters.put(parameterIndex, ""+x);
+    this.parameters.put(parameterIndex, "" + x);
   }
 
   /*
@@ -466,7 +459,7 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
    */
 
   public void setDouble(int parameterIndex, double x) throws SQLException {
-    this.parameters.put(parameterIndex,""+x);
+    this.parameters.put(parameterIndex, "" + x);
   }
 
   /*
@@ -476,7 +469,7 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
    */
 
   public void setFloat(int parameterIndex, float x) throws SQLException {
-    this.parameters.put(parameterIndex,""+x);
+    this.parameters.put(parameterIndex, "" + x);
   }
 
   /*
@@ -486,7 +479,7 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
    */
 
   public void setInt(int parameterIndex, int x) throws SQLException {
-    this.parameters.put(parameterIndex,""+x);
+    this.parameters.put(parameterIndex, "" + x);
   }
 
   /*
@@ -496,7 +489,7 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
    */
 
   public void setLong(int parameterIndex, long x) throws SQLException {
-    this.parameters.put(parameterIndex,""+x);
+    this.parameters.put(parameterIndex, "" + x);
   }
 
   /*
@@ -621,10 +614,9 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
     } else {
       // Can't infer a type.
       throw new SQLException(
-          MessageFormat
-              .format(
-                  "Can''t infer the SQL type to use for an instance of {0}. Use setObject() with an explicit Types value to specify the type to use.",
-                  x.getClass().getName()));
+          MessageFormat.format(
+              "Can''t infer the SQL type to use for an instance of {0}. Use setObject() with an explicit Types value to specify the type to use.",
+              x.getClass().getName()));
     }
   }
 
@@ -634,8 +626,7 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
    * @see java.sql.PreparedStatement#setObject(int, java.lang.Object, int)
    */
 
-  public void setObject(int parameterIndex, Object x, int targetSqlType)
-      throws SQLException {
+  public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -692,7 +683,7 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
    */
 
   public void setShort(int parameterIndex, short x) throws SQLException {
-    this.parameters.put(parameterIndex,""+x);
+    this.parameters.put(parameterIndex, "" + x);
   }
 
   private String replaceBackSlashSingleQuote(String x) {
@@ -700,8 +691,8 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
     StringBuffer newX = new StringBuffer();
     for (int i = 0; i < x.length(); i++) {
       char c = x.charAt(i);
-      if (c == '\\' && i < x.length()-1) {
-        char c1 = x.charAt(i+1);
+      if (c == '\\' && i < x.length() - 1) {
+        char c1 = x.charAt(i + 1);
         if (c1 == '\'') {
           newX.append(c1);
         } else {
@@ -724,8 +715,8 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
 
   public void setString(int parameterIndex, String x) throws SQLException {
     x = replaceBackSlashSingleQuote(x);
-    x=x.replace("'", "\\'");
-    this.parameters.put(parameterIndex, "'"+x+"'");
+    x = x.replace("'", "\\'");
+    this.parameters.put(parameterIndex, "'" + x + "'");
   }
 
   /*
@@ -768,8 +759,7 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
    * java.util.Calendar)
    */
 
-  public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal)
-      throws SQLException {
+  public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -792,8 +782,7 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
    * int)
    */
 
-  public void setUnicodeStream(int parameterIndex, InputStream x, int length)
-      throws SQLException {
+  public void setUnicodeStream(int parameterIndex, InputStream x, int length) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }

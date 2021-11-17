@@ -22,16 +22,12 @@ import java.sql.Date;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
-
 import org.apache.hadoop.hive.common.type.HiveIntervalDayTime;
 import org.apache.hadoop.hive.common.type.HiveIntervalYearMonth;
 import org.apache.hadoop.hive.serde.serdeConstants;
 import org.apache.hadoop.hive.serde2.thrift.Type;
 
-
-/**
- * Column metadata.
- */
+/** Column metadata. */
 public class JdbcColumn {
   private final String columnName;
   private final String tableName;
@@ -40,8 +36,13 @@ public class JdbcColumn {
   private final String comment;
   private final int ordinalPos;
 
-  JdbcColumn(String columnName, String tableName, String tableCatalog
-          , String type, String comment, int ordinalPos) {
+  JdbcColumn(
+      String columnName,
+      String tableName,
+      String tableCatalog,
+      String type,
+      String comment,
+      int ordinalPos) {
     this.columnName = columnName;
     this.tableName = tableName;
     this.tableCatalog = tableCatalog;
@@ -69,7 +70,7 @@ public class JdbcColumn {
   static String columnClassName(Type hiveType, JdbcColumnAttributes columnAttributes)
       throws SQLException {
     int columnType = hiveTypeToSqlType(hiveType);
-    switch(columnType) {
+    switch (columnType) {
       case Types.NULL:
         return "null";
       case Types.BOOLEAN:
@@ -91,23 +92,24 @@ public class JdbcColumn {
         return Float.class.getName();
       case Types.DOUBLE:
         return Double.class.getName();
-      case  Types.TIMESTAMP:
+      case Types.TIMESTAMP:
         return Timestamp.class.getName();
       case Types.DECIMAL:
         return BigInteger.class.getName();
       case Types.BINARY:
         return byte[].class.getName();
       case Types.OTHER:
-      case Types.JAVA_OBJECT: {
-        switch (hiveType) {
-          case INTERVAL_YEAR_MONTH_TYPE:
-            return HiveIntervalYearMonth.class.getName();
-          case INTERVAL_DAY_TIME_TYPE:
-            return HiveIntervalDayTime.class.getName();
-          default:
-            return String.class.getName();
+      case Types.JAVA_OBJECT:
+        {
+          switch (hiveType) {
+            case INTERVAL_YEAR_MONTH_TYPE:
+              return HiveIntervalYearMonth.class.getName();
+            case INTERVAL_DAY_TIME_TYPE:
+              return HiveIntervalDayTime.class.getName();
+            default:
+              return String.class.getName();
+          }
         }
-      }
       case Types.ARRAY:
       case Types.STRUCT:
         return String.class.getName();
@@ -221,42 +223,44 @@ public class JdbcColumn {
       throws SQLException {
     // according to hiveTypeToSqlType possible options are:
     int columnType = hiveTypeToSqlType(hiveType);
-    switch(columnType) {
-    case Types.NULL:
-      return 4; // "NULL"
-    case Types.BOOLEAN:
-      return columnPrecision(hiveType, columnAttributes);
-    case Types.CHAR:
-    case Types.VARCHAR:
-      return columnPrecision(hiveType, columnAttributes);
-    case Types.BINARY:
-      return Integer.MAX_VALUE; // hive has no max limit for binary
-    case Types.TINYINT:
-    case Types.SMALLINT:
-    case Types.INTEGER:
-    case Types.BIGINT:
-      return columnPrecision(hiveType, columnAttributes) + 1; // allow +/-
-    case Types.DATE:
-      return 10;
-    case Types.TIMESTAMP:
-      return columnPrecision(hiveType, columnAttributes);
+    switch (columnType) {
+      case Types.NULL:
+        return 4; // "NULL"
+      case Types.BOOLEAN:
+        return columnPrecision(hiveType, columnAttributes);
+      case Types.CHAR:
+      case Types.VARCHAR:
+        return columnPrecision(hiveType, columnAttributes);
+      case Types.BINARY:
+        return Integer.MAX_VALUE; // hive has no max limit for binary
+      case Types.TINYINT:
+      case Types.SMALLINT:
+      case Types.INTEGER:
+      case Types.BIGINT:
+        return columnPrecision(hiveType, columnAttributes) + 1; // allow +/-
+      case Types.DATE:
+        return 10;
+      case Types.TIMESTAMP:
+        return columnPrecision(hiveType, columnAttributes);
 
-    // see http://download.oracle.com/javase/6/docs/api/constant-values.html#java.lang.Float.MAX_EXPONENT
-    case Types.FLOAT:
-      return 24; // e.g. -(17#).e-###
-    // see http://download.oracle.com/javase/6/docs/api/constant-values.html#java.lang.Double.MAX_EXPONENT
-    case Types.DOUBLE:
-      return 25; // e.g. -(17#).e-####
-    case Types.DECIMAL:
-      return columnPrecision(hiveType, columnAttributes) + 2;  // '-' sign and '.'
-    case Types.OTHER:
-    case Types.JAVA_OBJECT:
-      return columnPrecision(hiveType, columnAttributes);
-    case Types.ARRAY:
-    case Types.STRUCT:
-      return Integer.MAX_VALUE;
-    default:
-      throw new SQLException("Invalid column type: " + columnType);
+        // see
+        // http://download.oracle.com/javase/6/docs/api/constant-values.html#java.lang.Float.MAX_EXPONENT
+      case Types.FLOAT:
+        return 24; // e.g. -(17#).e-###
+        // see
+        // http://download.oracle.com/javase/6/docs/api/constant-values.html#java.lang.Double.MAX_EXPONENT
+      case Types.DOUBLE:
+        return 25; // e.g. -(17#).e-####
+      case Types.DECIMAL:
+        return columnPrecision(hiveType, columnAttributes) + 2; // '-' sign and '.'
+      case Types.OTHER:
+      case Types.JAVA_OBJECT:
+        return columnPrecision(hiveType, columnAttributes);
+      case Types.ARRAY:
+      case Types.STRUCT:
+        return Integer.MAX_VALUE;
+      default:
+        throw new SQLException("Invalid column type: " + columnType);
     }
   }
 
@@ -264,89 +268,89 @@ public class JdbcColumn {
       throws SQLException {
     int columnType = hiveTypeToSqlType(hiveType);
     // according to hiveTypeToSqlType possible options are:
-    switch(columnType) {
-    case Types.NULL:
-      return 0;
-    case Types.BOOLEAN:
-      return 1;
-    case Types.CHAR:
-    case Types.VARCHAR:
-      if (columnAttributes != null) {
+    switch (columnType) {
+      case Types.NULL:
+        return 0;
+      case Types.BOOLEAN:
+        return 1;
+      case Types.CHAR:
+      case Types.VARCHAR:
+        if (columnAttributes != null) {
+          return columnAttributes.precision;
+        }
+        return Integer.MAX_VALUE; // hive has no max limit for strings
+      case Types.BINARY:
+        return Integer.MAX_VALUE; // hive has no max limit for binary
+      case Types.TINYINT:
+        return 3;
+      case Types.SMALLINT:
+        return 5;
+      case Types.INTEGER:
+        return 10;
+      case Types.BIGINT:
+        return 19;
+      case Types.FLOAT:
+        return 7;
+      case Types.DOUBLE:
+        return 15;
+      case Types.DATE:
+        return 10;
+      case Types.TIMESTAMP:
+        return 29;
+      case Types.DECIMAL:
         return columnAttributes.precision;
-      }
-      return Integer.MAX_VALUE; // hive has no max limit for strings
-    case Types.BINARY:
-      return Integer.MAX_VALUE; // hive has no max limit for binary
-    case Types.TINYINT:
-      return 3;
-    case Types.SMALLINT:
-      return 5;
-    case Types.INTEGER:
-      return 10;
-    case Types.BIGINT:
-      return 19;
-    case Types.FLOAT:
-      return 7;
-    case Types.DOUBLE:
-      return 15;
-    case Types.DATE:
-      return 10;
-    case Types.TIMESTAMP:
-      return 29;
-    case Types.DECIMAL:
-      return columnAttributes.precision;
-    case Types.OTHER:
-    case Types.JAVA_OBJECT: {
-      switch (hiveType) {
-        case INTERVAL_YEAR_MONTH_TYPE:
-          // -yyyyyyy-mm  : should be more than enough
-          return 11;
-        case INTERVAL_DAY_TIME_TYPE:
-          // -ddddddddd hh:mm:ss.nnnnnnnnn
-          return 29;
-        default:
-          return Integer.MAX_VALUE;
-      }
-    }
-    case Types.ARRAY:
-    case Types.STRUCT:
-      return Integer.MAX_VALUE;
-    default:
-      throw new SQLException("Invalid column type: " + columnType);
+      case Types.OTHER:
+      case Types.JAVA_OBJECT:
+        {
+          switch (hiveType) {
+            case INTERVAL_YEAR_MONTH_TYPE:
+              // -yyyyyyy-mm  : should be more than enough
+              return 11;
+            case INTERVAL_DAY_TIME_TYPE:
+              // -ddddddddd hh:mm:ss.nnnnnnnnn
+              return 29;
+            default:
+              return Integer.MAX_VALUE;
+          }
+        }
+      case Types.ARRAY:
+      case Types.STRUCT:
+        return Integer.MAX_VALUE;
+      default:
+        throw new SQLException("Invalid column type: " + columnType);
     }
   }
 
-  static int columnScale(Type hiveType, JdbcColumnAttributes columnAttributes)
-      throws SQLException {
+  static int columnScale(Type hiveType, JdbcColumnAttributes columnAttributes) throws SQLException {
     int columnType = hiveTypeToSqlType(hiveType);
     // according to hiveTypeToSqlType possible options are:
-    switch(columnType) {
-    case Types.NULL:
-    case Types.BOOLEAN:
-    case Types.CHAR:
-    case Types.VARCHAR:
-    case Types.TINYINT:
-    case Types.SMALLINT:
-    case Types.INTEGER:
-    case Types.BIGINT:
-    case Types.DATE:
-    case Types.BINARY:
-      return 0;
-    case Types.FLOAT:
-      return 7;
-    case Types.DOUBLE:
-      return 15;
-    case  Types.TIMESTAMP:
-      return 9;
-    case Types.DECIMAL:
-      return columnAttributes.scale;
-    case Types.OTHER:
-    case Types.JAVA_OBJECT:
-    case Types.ARRAY:
-    case Types.STRUCT:
-      return 0;
-    default:
-      throw new SQLException("Invalid column type: " + columnType);
+    switch (columnType) {
+      case Types.NULL:
+      case Types.BOOLEAN:
+      case Types.CHAR:
+      case Types.VARCHAR:
+      case Types.TINYINT:
+      case Types.SMALLINT:
+      case Types.INTEGER:
+      case Types.BIGINT:
+      case Types.DATE:
+      case Types.BINARY:
+        return 0;
+      case Types.FLOAT:
+        return 7;
+      case Types.DOUBLE:
+        return 15;
+      case Types.TIMESTAMP:
+        return 9;
+      case Types.DECIMAL:
+        return columnAttributes.scale;
+      case Types.OTHER:
+      case Types.JAVA_OBJECT:
+      case Types.ARRAY:
+      case Types.STRUCT:
+        return 0;
+      default:
+        throw new SQLException("Invalid column type: " + columnType);
     }
   }
 

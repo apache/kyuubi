@@ -17,8 +17,17 @@
 
 package org.apache.kyuubi.jdbc.hive;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.SQLTimeoutException;
+import java.sql.SQLWarning;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
 import org.apache.hive.service.cli.RowSet;
 import org.apache.hive.service.cli.RowSetFactory;
 import org.apache.hive.service.rpc.thrift.TCLIService;
@@ -35,25 +44,12 @@ import org.apache.hive.service.rpc.thrift.TGetOperationStatusReq;
 import org.apache.hive.service.rpc.thrift.TGetOperationStatusResp;
 import org.apache.hive.service.rpc.thrift.TOperationHandle;
 import org.apache.hive.service.rpc.thrift.TSessionHandle;
+import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLTimeoutException;
-import java.sql.SQLWarning;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-/**
- * KyuubiStatement.
- *
- */
+/** KyuubiStatement. */
 public class KyuubiStatement implements java.sql.Statement {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiStatement.class.getName());
   public static final int DEFAULT_FETCH_SIZE = 1000;
@@ -61,13 +57,12 @@ public class KyuubiStatement implements java.sql.Statement {
   private TCLIService.Iface client;
   private TOperationHandle stmtHandle = null;
   private final TSessionHandle sessHandle;
-  Map<String,String> sessConf = new HashMap<String,String>();
+  Map<String, String> sessConf = new HashMap<String, String>();
   private int fetchSize = DEFAULT_FETCH_SIZE;
   private boolean isScrollableResultset = false;
   private boolean isOperationComplete = false;
   /**
-   * We need to keep a reference to the result set to support the following:
-   * <code>
+   * We need to keep a reference to the result set to support the following: <code>
    * statement.execute(String sql);
    * statement.getResultSet();
    * </code>.
@@ -76,34 +71,24 @@ public class KyuubiStatement implements java.sql.Statement {
 
   /**
    * Sets the limit for the maximum number of rows that any ResultSet object produced by this
-   * Statement can contain to the given number. If the limit is exceeded, the excess rows
-   * are silently dropped. The value must be >= 0, and 0 means there is not limit.
+   * Statement can contain to the given number. If the limit is exceeded, the excess rows are
+   * silently dropped. The value must be >= 0, and 0 means there is not limit.
    */
   private int maxRows = 0;
 
-  /**
-   * Add SQLWarnings to the warningChain if needed.
-   */
+  /** Add SQLWarnings to the warningChain if needed. */
   private SQLWarning warningChain = null;
 
-  /**
-   * Keep state so we can fail certain calls made after close().
-   */
+  /** Keep state so we can fail certain calls made after close(). */
   private boolean isClosed = false;
 
-  /**
-   * Keep state so we can fail certain calls made after cancel().
-   */
+  /** Keep state so we can fail certain calls made after cancel(). */
   private boolean isCancelled = false;
 
-  /**
-   * Keep this state so we can know whether the query in this statement is closed.
-   */
+  /** Keep this state so we can know whether the query in this statement is closed. */
   private boolean isQueryClosed = false;
 
-  /**
-   * Keep this state so we can know whether the query logs are being generated in HS2.
-   */
+  /** Keep this state so we can know whether the query logs are being generated in HS2. */
   private boolean isLogBeingGenerated = true;
 
   /**
@@ -116,23 +101,33 @@ public class KyuubiStatement implements java.sql.Statement {
 
   private InPlaceUpdateStream inPlaceUpdateStream = InPlaceUpdateStream.NO_OP;
 
-  public KyuubiStatement(KyuubiConnection connection, TCLIService.Iface client,
-                         TSessionHandle sessHandle) {
+  public KyuubiStatement(
+      KyuubiConnection connection, TCLIService.Iface client, TSessionHandle sessHandle) {
     this(connection, client, sessHandle, false, DEFAULT_FETCH_SIZE);
   }
 
-  public KyuubiStatement(KyuubiConnection connection, TCLIService.Iface client,
-                         TSessionHandle sessHandle, int fetchSize) {
+  public KyuubiStatement(
+      KyuubiConnection connection,
+      TCLIService.Iface client,
+      TSessionHandle sessHandle,
+      int fetchSize) {
     this(connection, client, sessHandle, false, fetchSize);
   }
 
-  public KyuubiStatement(KyuubiConnection connection, TCLIService.Iface client,
-                         TSessionHandle sessHandle, boolean isScrollableResultset) {
+  public KyuubiStatement(
+      KyuubiConnection connection,
+      TCLIService.Iface client,
+      TSessionHandle sessHandle,
+      boolean isScrollableResultset) {
     this(connection, client, sessHandle, isScrollableResultset, DEFAULT_FETCH_SIZE);
   }
 
-  public KyuubiStatement(KyuubiConnection connection, TCLIService.Iface client,
-                         TSessionHandle sessHandle, boolean isScrollableResultset, int fetchSize) {
+  public KyuubiStatement(
+      KyuubiConnection connection,
+      TCLIService.Iface client,
+      TSessionHandle sessHandle,
+      boolean isScrollableResultset,
+      int fetchSize) {
     this.connection = connection;
     this.client = client;
     this.sessHandle = sessHandle;
@@ -256,10 +251,15 @@ public class KyuubiStatement implements java.sql.Statement {
     if (!status.isHasResultSet() && !stmtHandle.isHasResultSet()) {
       return false;
     }
-    resultSet =  new KyuubiQueryResultSet.Builder(this).setClient(client).setSessionHandle(sessHandle)
-        .setStmtHandle(stmtHandle).setMaxRows(maxRows).setFetchSize(fetchSize)
-        .setScrollable(isScrollableResultset)
-        .build();
+    resultSet =
+        new KyuubiQueryResultSet.Builder(this)
+            .setClient(client)
+            .setSessionHandle(sessHandle)
+            .setStmtHandle(stmtHandle)
+            .setMaxRows(maxRows)
+            .setFetchSize(fetchSize)
+            .setScrollable(isScrollableResultset)
+            .build();
     return true;
   }
 
@@ -269,13 +269,12 @@ public class KyuubiStatement implements java.sql.Statement {
    * query type. Users should call ResultSet.next or Statement#getUpdateCount (depending on whether
    * query returns results) to ensure that query completes successfully. Calling another execute*
    * method, or close before query completion would result in the async query getting killed if it
-   * is not already finished.
-   * Note: This method is an API for limited usage outside of Hive by applications like Apache Ambari,
-   * although it is not part of the interface java.sql.Statement.
+   * is not already finished. Note: This method is an API for limited usage outside of Hive by
+   * applications like Apache Ambari, although it is not part of the interface java.sql.Statement.
    *
    * @param sql
    * @return true if the first result is a ResultSet object; false if it is an update count or there
-   *         are no results
+   *     are no results
    * @throws SQLException
    */
   public boolean executeAsync(String sql) throws SQLException {
@@ -285,9 +284,14 @@ public class KyuubiStatement implements java.sql.Statement {
       return false;
     }
     resultSet =
-        new KyuubiQueryResultSet.Builder(this).setClient(client).setSessionHandle(sessHandle)
-            .setStmtHandle(stmtHandle).setMaxRows(maxRows).setFetchSize(fetchSize)
-            .setScrollable(isScrollableResultset).build();
+        new KyuubiQueryResultSet.Builder(this)
+            .setClient(client)
+            .setSessionHandle(sessHandle)
+            .setStmtHandle(stmtHandle)
+            .setMaxRows(maxRows)
+            .setFetchSize(fetchSize)
+            .setScrollable(isScrollableResultset)
+            .build();
     return true;
   }
 
@@ -299,10 +303,9 @@ public class KyuubiStatement implements java.sql.Statement {
 
     TExecuteStatementReq execReq = new TExecuteStatementReq(sessHandle, sql);
     /**
-     * Run asynchronously whenever possible
-     * Currently only a SQLOperation can be run asynchronously,
-     * in a background operation thread
-     * Compilation can run asynchronously or synchronously and execution run asynchronously
+     * Run asynchronously whenever possible Currently only a SQLOperation can be run asynchronously,
+     * in a background operation thread Compilation can run asynchronously or synchronously and
+     * execution run asynchronously
      */
     execReq.setRunAsync(true);
     execReq.setConfOverlay(sessConf);
@@ -325,6 +328,7 @@ public class KyuubiStatement implements java.sql.Statement {
 
   /**
    * Poll the result set status by checking if isSetHasResultSet is set
+   *
    * @return
    * @throws SQLException
    */
@@ -332,7 +336,7 @@ public class KyuubiStatement implements java.sql.Statement {
     TGetOperationStatusReq statusReq = new TGetOperationStatusReq(stmtHandle);
     TGetOperationStatusResp statusResp = null;
 
-    while(statusResp == null || !statusResp.isSetHasResultSet()) {
+    while (statusResp == null || !statusResp.isSetHasResultSet()) {
       try {
         statusResp = client.GetOperationStatus(statusReq);
       } catch (TException e) {
@@ -349,9 +353,7 @@ public class KyuubiStatement implements java.sql.Statement {
     boolean shouldGetProgressUpdate = inPlaceUpdateStream != InPlaceUpdateStream.NO_OP;
     statusReq.setGetProgressUpdate(shouldGetProgressUpdate);
     if (!shouldGetProgressUpdate) {
-      /**
-       * progress bar is completed if there is nothing we want to request in the first place.
-       */
+      /** progress bar is completed if there is nothing we want to request in the first place. */
       inPlaceUpdateStream.getEventNotifier().progressBarCompleted();
     }
     TGetOperationStatusResp statusResp = null;
@@ -368,26 +370,28 @@ public class KyuubiStatement implements java.sql.Statement {
         Utils.verifySuccessWithInfo(statusResp.getStatus());
         if (statusResp.isSetOperationState()) {
           switch (statusResp.getOperationState()) {
-          case CLOSED_STATE:
-          case FINISHED_STATE:
-            isOperationComplete = true;
-            isLogBeingGenerated = false;
-            break;
-          case CANCELED_STATE:
-            // 01000 -> warning
-            throw new SQLException("Query was cancelled", "01000");
-          case TIMEDOUT_STATE:
-            throw new SQLTimeoutException("Query timed out after " + queryTimeout + " seconds");
-          case ERROR_STATE:
-            // Get the error details from the underlying exception
-            throw new SQLException(statusResp.getErrorMessage(), statusResp.getSqlState(),
-                statusResp.getErrorCode());
-          case UKNOWN_STATE:
-            throw new SQLException("Unknown query", "HY000");
-          case INITIALIZED_STATE:
-          case PENDING_STATE:
-          case RUNNING_STATE:
-            break;
+            case CLOSED_STATE:
+            case FINISHED_STATE:
+              isOperationComplete = true;
+              isLogBeingGenerated = false;
+              break;
+            case CANCELED_STATE:
+              // 01000 -> warning
+              throw new SQLException("Query was cancelled", "01000");
+            case TIMEDOUT_STATE:
+              throw new SQLTimeoutException("Query timed out after " + queryTimeout + " seconds");
+            case ERROR_STATE:
+              // Get the error details from the underlying exception
+              throw new SQLException(
+                  statusResp.getErrorMessage(),
+                  statusResp.getSqlState(),
+                  statusResp.getErrorCode());
+            case UKNOWN_STATE:
+              throw new SQLException("Unknown query", "HY000");
+            case INITIALIZED_STATE:
+            case PENDING_STATE:
+            case RUNNING_STATE:
+              break;
           }
         }
       } catch (SQLException e) {
@@ -859,22 +863,22 @@ public class KyuubiStatement implements java.sql.Statement {
   }
 
   /**
-   * Check whether query execution might be producing more logs to be fetched.
-   * This method is a public API for usage outside of Hive, although it is not part of the
-   * interface java.sql.Statement.
-   * @return true if query execution might be producing more logs. It does not indicate if last
-   *         log lines have been fetched by getQueryLog.
+   * Check whether query execution might be producing more logs to be fetched. This method is a
+   * public API for usage outside of Hive, although it is not part of the interface
+   * java.sql.Statement.
+   *
+   * @return true if query execution might be producing more logs. It does not indicate if last log
+   *     lines have been fetched by getQueryLog.
    */
   public boolean hasMoreLogs() {
     return isLogBeingGenerated;
   }
 
   /**
-   * Get the execution logs of the given SQL statement.
-   * This method is a public API for usage outside of Hive, although it is not part of the
-   * interface java.sql.Statement.
-   * This method gets the incremental logs during SQL execution, and uses fetchSize holden by
-   * HiveStatement object.
+   * Get the execution logs of the given SQL statement. This method is a public API for usage
+   * outside of Hive, although it is not part of the interface java.sql.Statement. This method gets
+   * the incremental logs during SQL execution, and uses fetchSize holden by HiveStatement object.
+   *
    * @return a list of logs. It can be empty if there are no new logs to be retrieved at that time.
    * @throws SQLException
    * @throws ClosedOrCancelledStatementException if statement has been cancelled or closed
@@ -884,11 +888,11 @@ public class KyuubiStatement implements java.sql.Statement {
   }
 
   /**
-   * Get the execution logs of the given SQL statement.
-   * This method is a public API for usage outside of Hive, although it is not part of the
-   * interface java.sql.Statement.
-   * @param incremental indicate getting logs either incrementally or from the beginning,
-   *                    when it is true or false.
+   * Get the execution logs of the given SQL statement. This method is a public API for usage
+   * outside of Hive, although it is not part of the interface java.sql.Statement.
+   *
+   * @param incremental indicate getting logs either incrementally or from the beginning, when it is
+   *     true or false.
    * @param fetchSize the number of lines to fetch
    * @return a list of logs. It can be empty if there are no new logs to be retrieved at that time.
    * @throws SQLException
@@ -898,23 +902,23 @@ public class KyuubiStatement implements java.sql.Statement {
       throws SQLException, ClosedOrCancelledStatementException {
     checkConnection("getQueryLog");
     if (isCancelled) {
-      throw new ClosedOrCancelledStatementException("Method getQueryLog() failed. The " +
-          "statement has been closed or cancelled.");
+      throw new ClosedOrCancelledStatementException(
+          "Method getQueryLog() failed. The " + "statement has been closed or cancelled.");
     }
 
     List<String> logs = new ArrayList<String>();
     TFetchResultsResp tFetchResultsResp = null;
     try {
       if (stmtHandle != null) {
-        TFetchResultsReq tFetchResultsReq = new TFetchResultsReq(stmtHandle,
-            getFetchOrientation(incremental), fetchSize);
-        tFetchResultsReq.setFetchType((short)1);
+        TFetchResultsReq tFetchResultsReq =
+            new TFetchResultsReq(stmtHandle, getFetchOrientation(incremental), fetchSize);
+        tFetchResultsReq.setFetchType((short) 1);
         tFetchResultsResp = client.FetchResults(tFetchResultsReq);
         Utils.verifySuccessWithInfo(tFetchResultsResp.getStatus());
       } else {
         if (isQueryClosed) {
-          throw new ClosedOrCancelledStatementException("Method getQueryLog() failed. The " +
-              "statement has been closed or cancelled.");
+          throw new ClosedOrCancelledStatementException(
+              "Method getQueryLog() failed. The " + "statement has been closed or cancelled.");
         } else {
           return logs;
         }
@@ -949,9 +953,9 @@ public class KyuubiStatement implements java.sql.Statement {
   }
 
   /**
-   * Returns the Yarn ATS GUID.
-   * This method is a public API for usage outside of Hive, although it is not part of the
-   * interface java.sql.Statement.
+   * Returns the Yarn ATS GUID. This method is a public API for usage outside of Hive, although it
+   * is not part of the interface java.sql.Statement.
+   *
    * @return Yarn ATS GUID or null if it hasn't been created yet.
    */
   public String getYarnATSGuid() {

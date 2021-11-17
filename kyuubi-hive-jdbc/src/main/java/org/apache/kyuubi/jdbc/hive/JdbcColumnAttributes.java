@@ -21,8 +21,7 @@ class JdbcColumnAttributes {
   public int precision = 0;
   public int scale = 0;
 
-  public JdbcColumnAttributes() {
-  }
+  public JdbcColumnAttributes() {}
 
   public JdbcColumnAttributes(int precision, int scale) {
     this.precision = precision;
@@ -33,5 +32,4 @@ class JdbcColumnAttributes {
   public String toString() {
     return "(" + precision + "," + scale + ")";
   }
-
 }
