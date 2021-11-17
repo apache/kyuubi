@@ -17,37 +17,151 @@
 
 package org.apache.hive.beeline;
 
+import org.apache.hive.beeline.logs.KyuubiBeelineInPlaceUpdateStream;
 import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
 import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
 
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.Properties;
 
 public class KyuubiDatabaseConnection extends DatabaseConnection {
+  private static final String HIVE_VAR_PREFIX = "hivevar:";
+  private static final String HIVE_CONF_PREFIX = "hiveconf:";
+
   private KyuubiBeeLine beeLine;
+  private String driver;
+  private String url;
+  private Properties info;
   KyuubiDatabaseConnection(KyuubiBeeLine beeLine, String driver, String url,
-                           Properties properties) throws SQLException {
-    super(beeLine, driver, url, properties);
+                           Properties info) throws SQLException {
+    super(beeLine, driver, url, info);
     this.beeLine = beeLine;
+    this.driver = driver;
+    this.url = url;
+    this.info = info;
   }
 
+
   @Override
-  void setConnection(Connection connection) {
-    if (connection != null) {
-      beeLine.debug("The connection to set is kind of " + connection.getClass().getSimpleName());
-      if (connection instanceof KyuubiConnection) {
-       KyuubiConnection kyuubiConnection = (KyuubiConnection) connection;
-        InPlaceUpdateStream.EventNotifier eventNotifier = new InPlaceUpdateStream.EventNotifier();
-        Thread logThread = new Thread(beeLine.commands.createConnectionLogRunnable(connection,
+  boolean connect() throws SQLException {
+    try {
+      if (driver != null && driver.length() != 0) {
+        Class.forName(driver);
+      }
+    } catch (ClassNotFoundException cnfe) {
+      return beeLine.error(cnfe);
+    }
+
+    boolean isDriverRegistered = false;
+    try {
+      isDriverRegistered = DriverManager.getDriver(getUrl()) != null;
+    } catch (Exception e) {
+    }
+
+    try {
+      close();
+    } catch (Exception e) {
+      return beeLine.error(e);
+    }
+
+    Map<String, String> hiveVars = beeLine.getOpts().getHiveVariables();
+    if (hiveVars != null){
+      for (Map.Entry<String, String> var : hiveVars.entrySet()) {
+        info.put(HIVE_VAR_PREFIX + var.getKey(), var.getValue());
+      }
+    }
+
+    Map<String, String> hiveConfVars = beeLine.getOpts().getHiveConfVariables();
+    if (hiveConfVars != null){
+      for (Map.Entry<String, String> var : hiveConfVars.entrySet()) {
+        info.put(HIVE_CONF_PREFIX + var.getKey(), var.getValue());
+      }
+    }
+
+    if (isDriverRegistered) {
+      boolean useDefaultDriver = beeLine.getDefaultDriver() != null &&
+        beeLine.getDefaultDriver().acceptsURL(url);
+      if (driver != null && !driver.equals(KyuubiBeeLine.KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER)) {
+        useDefaultDriver = false;
+      }
+
+      if (useDefaultDriver) {
+        beeLine.debug("Use the default driver:" + KyuubiBeeLine.KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER);
+        setConnection(getConnectionFromDefaultDriver(getUrl(), info));
+      } else {
+        beeLine.debug("Not use the default driver and specified driver is:" + driver);
+        // if the driver registered in the driver manager, get the connection via the driver manager
+        setConnection(DriverManager.getConnection(getUrl(), info));
+      }
+    } else {
+      beeLine.debug("Use the driver from local added jar file.");
+      setConnection(getConnectionFromLocalDriver(getUrl(), info));
+    }
+    setDatabaseMetaData(getConnection().getMetaData());
+
+    try {
+      beeLine.info(beeLine.loc("connected", new Object[] {
+        getDatabaseMetaData().getDatabaseProductName(),
+        getDatabaseMetaData().getDatabaseProductVersion()}));
+    } catch (Exception e) {
+      beeLine.handleException(e);
+    }
+
+    try {
+      beeLine.info(beeLine.loc("driver", new Object[] {
+        getDatabaseMetaData().getDriverName(),
+        getDatabaseMetaData().getDriverVersion()}));
+    } catch (Exception e) {
+      beeLine.handleException(e);
+    }
+
+    try {
+      getConnection().setAutoCommit(beeLine.getOpts().getAutoCommit());
+      // TODO: Setting autocommit should not generate an exception as long as it is set to false
+      // beeLine.autocommitStatus(getConnection());
+    } catch (Exception e) {
+      beeLine.handleException(e);
+    }
+
+    try {
+      beeLine.getCommands().isolation("isolation: " + beeLine.getOpts().getIsolation());
+    } catch (Exception e) {
+      beeLine.handleException(e);
+    }
+
+    return true;
+  }
+
+  public Connection getConnectionFromDefaultDriver(String url, Properties properties) {
+    try {
+      if (beeLine.getDefaultDriver() != null && beeLine.getDefaultDriver().acceptsURL(url)) {
+        KyuubiConnection kyuubiConnection = (KyuubiConnection) beeLine.getDefaultDriver().connect(url, properties);
+
+        InPlaceUpdateStream.EventNotifier eventNotifier =
+          new InPlaceUpdateStream.EventNotifier();
+        Thread logThread = new Thread(beeLine.commands.createConnectionLogRunnable(kyuubiConnection,
           eventNotifier));
         logThread.setDaemon(true);
         logThread.start();
 
+        kyuubiConnection.setInPlaceUpdateStream(
+          new KyuubiBeelineInPlaceUpdateStream(
+            beeLine.getErrorStream(),
+            eventNotifier
+          ));
+        kyuubiConnection.waitLaunchEngineToComplete();
+        logThread.interrupt();
+        kyuubiConnection.executeInitSql();
+
+        return kyuubiConnection;
       }
-
+    } catch (Exception e) {
+      beeLine.error("Fail to connect with default driver due to the exception:" + e);
+      beeLine.error(e);
     }
-
-    super.setConnection(connection);
+    return null;
   }
 }

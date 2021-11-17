@@ -54,8 +54,6 @@ public class KyuubiCommands extends Commands {
     }
   }
 
-
-
   static class KyuubiConnectionLogRunnable implements Runnable {
     private final KyuubiCommands commands;
     private final KyuubiConnection kyuubiConnection;
@@ -181,5 +179,4 @@ public class KyuubiCommands extends Commands {
       }
     } while (logs.size() > 0);
   }
-
 }
