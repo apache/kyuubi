@@ -42,6 +42,7 @@ public class KyuubiCommands extends Commands {
     this.beeLine = beeLine;
   }
 
+  @Override
   public boolean sql(String line) {
     return execute(line, false, false);
   }
@@ -242,10 +243,12 @@ public class KyuubiCommands extends Commands {
     return true;
   }
 
+  @Override
   public boolean sql(String line, boolean entireLineAsCommand) {
     return execute(line, false, entireLineAsCommand);
   }
 
+  @Override
   public boolean call(String line) {
     return execute(line, true, false);
   }
@@ -372,8 +375,8 @@ public class KyuubiCommands extends Commands {
   private Runnable createLogRunnable(final Statement statement,
                                      InPlaceUpdateStream.EventNotifier eventNotifier) {
     if (statement instanceof KyuubiStatement) {
-      return new KyuubiStatementLogRunnable(this, (KyuubiStatement) statement, DEFAULT_QUERY_PROGRESS_INTERVAL,
-        eventNotifier);
+      return new KyuubiStatementLogRunnable(this, (KyuubiStatement) statement,
+        DEFAULT_QUERY_PROGRESS_INTERVAL, eventNotifier);
     } else {
       beeLine.debug(
         "The statement instance is not KyuubiStatement type: " + statement
@@ -385,14 +388,6 @@ public class KyuubiCommands extends Commands {
         }
       };
     }
-  }
-
-  private void error(Throwable throwable) {
-    beeLine.error(throwable);
-  }
-
-  private void debug(String message) {
-    beeLine.debug(message);
   }
 
   private void showRemainingLogsIfAny(Statement statement) {
@@ -413,174 +408,6 @@ public class KyuubiCommands extends Commands {
     } else {
       beeLine.debug("The statement instance is not KyuubiStatement type: " + statement.getClass());
     }
-  }
-
-  public boolean quit(String line) {
-    beeLine.setExit(true);
-    close(null);
-    return true;
-  }
-
-  public boolean exit(String line) {
-    return quit(line);
-  }
-
-  /**
-   * Close all connections.
-   */
-  public boolean closeall(String line) {
-    if (close(null)) {
-      while (close(null)) {
-        ;
-      }
-      return true;
-    }
-    return false;
-  }
-
-
-  /**
-   * Close the current connection.
-   */
-  public boolean close(String line) {
-    if (beeLine.getDatabaseConnection() == null) {
-      return false;
-    }
-    try {
-      if (beeLine.getDatabaseConnection().getCurrentConnection() != null
-        && !(beeLine.getDatabaseConnection().getCurrentConnection().isClosed())) {
-        int index = beeLine.getDatabaseConnections().getIndex();
-        beeLine.info(beeLine.loc("closing", index, beeLine.getDatabaseConnection()));
-        beeLine.getDatabaseConnection().getCurrentConnection().close();
-      } else {
-        beeLine.info(beeLine.loc("already-closed"));
-      }
-    } catch (Exception e) {
-      return beeLine.error(e);
-    }
-    beeLine.getDatabaseConnections().remove();
-    return true;
-  }
-
-
-  /**
-   * Connect to the database defined in the specified properties file.
-   */
-  public boolean properties(String line) throws Exception {
-    String example = "";
-    example += "Usage: properties <properties file>" + BeeLine.getSeparator();
-
-    String[] parts = beeLine.split(line);
-    if (parts.length < 2) {
-      return beeLine.error(example);
-    }
-
-    int successes = 0;
-
-    for (int i = 1; i < parts.length; i++) {
-      Properties props = new Properties();
-      InputStream stream = new FileInputStream(parts[i]);
-      try {
-        props.load(stream);
-      } finally {
-        IOUtils.closeStream(stream);
-      }
-      if (connect(props)) {
-        successes++;
-      }
-    }
-
-    if (successes != (parts.length - 1)) {
-      return false;
-    } else {
-      return true;
-    }
-  }
-
-
-  public boolean connect(String line) throws Exception {
-    String example = "Usage: connect <url> <username> <password> [driver]"
-      + BeeLine.getSeparator();
-
-    String[] parts = beeLine.split(line);
-    if (parts == null) {
-      return false;
-    }
-
-    if (parts.length < 2) {
-      return beeLine.error(example);
-    }
-
-    String url = parts.length < 2 ? null : parts[1];
-    String user = parts.length < 3 ? null : parts[2];
-    String pass = parts.length < 4 ? null : parts[3];
-    String driver = parts.length < 5 ? null : parts[4];
-
-    Properties props = new Properties();
-    if (url != null) {
-      String saveUrl = getUrlToUse(url);
-      props.setProperty(JdbcConnectionParams.PROPERTY_URL, saveUrl);
-    }
-
-    String value = null;
-    if (driver != null) {
-      props.setProperty(JdbcConnectionParams.PROPERTY_DRIVER, driver);
-    } else {
-      value = Utils.parsePropertyFromUrl(url, JdbcConnectionParams.PROPERTY_DRIVER);
-      if (value != null) {
-        props.setProperty(JdbcConnectionParams.PROPERTY_DRIVER, value);
-      }
-    }
-
-    if (user != null) {
-      props.setProperty(JdbcConnectionParams.AUTH_USER, user);
-    } else {
-      value = Utils.parsePropertyFromUrl(url, JdbcConnectionParams.AUTH_USER);
-      if (value != null) {
-        props.setProperty(JdbcConnectionParams.AUTH_USER, value);
-      }
-    }
-
-    if (pass != null) {
-      props.setProperty(JdbcConnectionParams.AUTH_PASSWD, pass);
-    } else {
-      value = Utils.parsePropertyFromUrl(url, JdbcConnectionParams.AUTH_PASSWD);
-      if (value != null) {
-        props.setProperty(JdbcConnectionParams.AUTH_PASSWD, value);
-      }
-    }
-
-    value = Utils.parsePropertyFromUrl(url, JdbcConnectionParams.AUTH_TYPE);
-    if (value != null) {
-      props.setProperty(JdbcConnectionParams.AUTH_TYPE, value);
-    }
-    return connect(props);
-  }
-
-  private String getUrlToUse(String urlParam) {
-    boolean useIndirectUrl = false;
-    // If the url passed to us is a valid url with a protocol, we use it as-is
-    // Otherwise, we assume it is a name of parameter that we have to get the url from
-    try {
-      URI tryParse = new URI(urlParam);
-      if (tryParse.getScheme() == null){
-        // param had no scheme, so not a URL
-        useIndirectUrl = true;
-      }
-    } catch (URISyntaxException e){
-      // param did not parse as a URL, so not a URL
-      useIndirectUrl = true;
-    }
-    if (useIndirectUrl){
-      // Use url param indirectly - as the name of an env var that contains the url
-      // If the urlParam is "default", we would look for a BEELINE_URL_DEFAULT url
-      String envUrl = beeLine.getOpts().getEnv().get(
-        BeeLineOpts.URL_ENV_PREFIX + urlParam.toUpperCase());
-      if (envUrl != null){
-        return envUrl;
-      }
-    }
-    return urlParam; // default return the urlParam passed in as-is.
   }
 
   private String getProperty(Properties props, String[] keys) {
@@ -675,207 +502,6 @@ public class KyuubiCommands extends Commands {
     } catch (IOException ioe) {
       return beeLine.error(ioe);
     }
-  }
-
-
-
-  /**
-   * Run a script from the specified file.
-   */
-  public boolean run(String line) {
-    String[] parts = beeLine.split(line, 2, "Usage: run <scriptfile>");
-    if (parts == null) {
-      return false;
-    }
-
-    List<String> cmds = new LinkedList<String>();
-
-    try {
-      BufferedReader reader = new BufferedReader(new FileReader(
-        parts[1]));
-      try {
-        // ### NOTE: fix for sf.net bug 879427
-        StringBuilder cmd = null;
-        for (;;) {
-          String scriptLine = reader.readLine();
-
-          if (scriptLine == null) {
-            break;
-          }
-
-          String trimmedLine = scriptLine.trim();
-          if (beeLine.getOpts().getTrimScripts()) {
-            scriptLine = trimmedLine;
-          }
-
-          if (cmd != null) {
-            // we're continuing an existing command
-            cmd.append(" \n");
-            cmd.append(scriptLine);
-            if (trimmedLine.endsWith(";")) {
-              // this command has terminated
-              cmds.add(cmd.toString());
-              cmd = null;
-            }
-          } else {
-            // we're starting a new command
-            if (beeLine.needsContinuation(scriptLine)) {
-              // multi-line
-              cmd = new StringBuilder(scriptLine);
-            } else {
-              // single-line
-              cmds.add(scriptLine);
-            }
-          }
-        }
-
-        if (cmd != null) {
-          // ### REVIEW: oops, somebody left the last command
-          // unterminated; should we fix it for them or complain?
-          // For now be nice and fix it.
-          cmd.append(";");
-          cmds.add(cmd.toString());
-        }
-      } finally {
-        reader.close();
-      }
-
-      // success only if all the commands were successful
-      return beeLine.runCommands(cmds) == cmds.size();
-    } catch (Exception e) {
-      return beeLine.error(e);
-    }
-  }
-
-
-  /**
-   * Save or stop saving all output to a file.
-   */
-  public boolean record(String line) {
-    if (beeLine.getRecordOutputFile() == null) {
-      return startRecording(line);
-    } else {
-      return stopRecording(line);
-    }
-  }
-
-
-  /**
-   * Stop writing output to the record file.
-   */
-  private boolean stopRecording(String line) {
-    try {
-      beeLine.getRecordOutputFile().close();
-    } catch (Exception e) {
-      beeLine.handleException(e);
-    }
-    beeLine.setRecordOutputFile(null);
-    beeLine.output(beeLine.loc("record-closed", beeLine.getRecordOutputFile()));
-    return true;
-  }
-
-
-  /**
-   * Start writing to the specified record file.
-   */
-  private boolean startRecording(String line) {
-    if (beeLine.getRecordOutputFile() != null) {
-      return beeLine.error(beeLine.loc("record-already-running", beeLine.getRecordOutputFile()));
-    }
-
-    String[] parts = beeLine.split(line, 2, "Usage: record <filename>");
-    if (parts == null) {
-      return false;
-    }
-
-    try {
-      OutputFile recordOutput = new OutputFile(parts[1]);
-      beeLine.output(beeLine.loc("record-started", recordOutput));
-      beeLine.setRecordOutputFile(recordOutput);
-      return true;
-    } catch (Exception e) {
-      return beeLine.error(e);
-    }
-  }
-
-
-
-
-  public boolean describe(String line) throws SQLException {
-    String[] table = beeLine.split(line, 2, "Usage: describe <table name>");
-    if (table == null) {
-      return false;
-    }
-
-    ResultSet rs;
-
-    if (table[1].equals("tables")) {
-      rs = beeLine.getTables();
-    } else {
-      rs = beeLine.getColumns(table[1]);
-    }
-
-    if (rs == null) {
-      return false;
-    }
-
-    beeLine.print(rs);
-    rs.close();
-    return true;
-  }
-
-
-  public boolean help(String line) {
-    String[] parts = beeLine.split(line);
-    String cmd = parts.length > 1 ? parts[1] : "";
-    int count = 0;
-    TreeSet<ColorBuffer> clist = new TreeSet<ColorBuffer>();
-
-    for (int i = 0; i < beeLine.commandHandlers.length; i++) {
-      if (cmd.length() == 0 ||
-        Arrays.asList(beeLine.commandHandlers[i].getNames()).contains(cmd)) {
-        clist.add(beeLine.getColorBuffer().pad("!" + beeLine.commandHandlers[i].getName(), 20)
-          .append(beeLine.wrap(beeLine.commandHandlers[i].getHelpText(), 60, 20)));
-      }
-    }
-
-    for (Iterator<ColorBuffer> i = clist.iterator(); i.hasNext();) {
-      beeLine.output(i.next());
-    }
-
-    if (cmd.length() == 0) {
-      beeLine.output("");
-      beeLine.output(beeLine.loc("comments", beeLine.getApplicationContactInformation()));
-    }
-
-    return true;
-  }
-
-
-  public boolean manual(String line) throws IOException {
-    InputStream in = BeeLine.class.getResourceAsStream("manual.txt");
-    if (in == null) {
-      return beeLine.error(beeLine.loc("no-manual"));
-    }
-
-    BufferedReader breader = new BufferedReader(
-      new InputStreamReader(in));
-    String man;
-    int index = 0;
-    while ((man = breader.readLine()) != null) {
-      index++;
-      beeLine.output(man);
-
-      // silly little pager
-      if (index % (beeLine.getOpts().getMaxHeight() - 1) == 0) {
-        String ret = beeLine.getConsoleReader().readLine(beeLine.loc("enter-for-more"));
-        if (ret != null && ret.startsWith("q")) {
-          break;
-        }
-      }
-    }
-    breader.close();
-    return true;
   }
 
   protected Runnable createConnectionLogRunnable(final Connection connection,

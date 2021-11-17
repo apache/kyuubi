@@ -62,16 +62,14 @@ public class KyuubiBeeLine extends BeeLine {
    * setOutputStream() and setErrorStream can be used.
    * Exits with 0 on success, 1 on invalid arguments, and 2 on any other error
    *
-   * @param args
-   *          same as main()
+   * @param args same as main()
    *
-   * @param inputStream
-   *          redirected input, or null to use standard input
+   * @param inputStream redirected input, or null to use standard input
    */
   public static void mainWithInputRedirection(String[] args, InputStream inputStream)
     throws IOException {
-    KyuubiBeeLine beeLine = new KyuubiBeeLine();
     KyuubiConnection.setBeeLineMode(true);
+    KyuubiBeeLine beeLine = new KyuubiBeeLine();
     try {
       int status = beeLine.begin(args, inputStream);
 
