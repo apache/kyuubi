@@ -1619,6 +1619,8 @@ public class KyuubiConnection implements java.sql.Connection {
   }
 
   public void waitLaunchEngineToComplete() throws SQLException {
+    if (launchEngineOpHandle == null) return;
+
     TGetOperationStatusReq statusReq = new TGetOperationStatusReq(launchEngineOpHandle);
     boolean shouldGetProgressUpdate = inPlaceUpdateStream != KyuubiInPlaceUpdateStream.NO_OP;
     statusReq.setGetProgressUpdate(shouldGetProgressUpdate);
