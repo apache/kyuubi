@@ -484,8 +484,17 @@ public class BeeLine implements Closeable {
     String[] nargs = new String[] {
       "-u",
       "jdbc:hive2://localhost:10009/default;#kyuubi.session.engine.launch.async=true;kyuubi.engine.share.level=CONNECTION",
-      "--verbose=true",
     };
+
+    for (Driver driver : Collections.list(DriverManager.getDrivers())) {
+      if (!driver.getClass().getSimpleName().contains("Kyuubi")) {
+        try {
+          DriverManager.deregisterDriver(driver);
+        } catch (Exception e) {
+
+        }
+      }
+    }
 
     mainWithInputRedirection(nargs, null);
   }
