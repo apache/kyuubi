@@ -50,25 +50,7 @@ import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.text.ChoiceFormat;
 import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.StringTokenizer;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
 import java.util.zip.ZipEntry;
@@ -280,11 +262,11 @@ public class KyuubiBeeLine implements Closeable {
 
   private final Completer beeLineCommandCompleter = new BeeLineCommandCompleter(Arrays.asList(commandHandlers));
 
-  static final SortedSet<String> KNOWN_DRIVERS = new TreeSet<String>(Arrays.asList(
-      new String[] {
-          "org.apache.kyuubi.jdbc.KyuubiHiveDriver",
-//          "org.apache.hadoop.hive.jdbc.HiveDriver",
-      }));
+  static final LinkedHashSet<String> KNOWN_DRIVERS = new LinkedHashSet<>(Arrays.asList(
+    new String[] {
+      "org.apache.kyuubi.jdbc.KyuubiHiveDriver",
+      "org.apache.hadoop.hive.jdbc.HiveDriver",
+    }));
 
   static {
     try {
@@ -499,8 +481,7 @@ public class KyuubiBeeLine implements Closeable {
    * Starts the program.
    */
   public static void main(String[] args) throws IOException {
-    String[] nargs = new String[] {"-u", "jdbc:hive2://localhost:10009/default;#kyuubi.session.engine.launch.async=true;kyuubi.engine.share.level=CONNECTION"};
-    mainWithInputRedirection(nargs, null);
+    mainWithInputRedirection(args, null);
   }
 
   /**

@@ -221,7 +221,7 @@ class DatabaseConnection {
   }
 
 
-  public void close() {
+  public void close() throws SQLException {
     try {
       try {
         if (connection != null && !connection.isClosed()) {
@@ -254,7 +254,7 @@ class DatabaseConnection {
     return schema;
   }
 
-  void setConnection(Connection connection) {
+  void setConnection(Connection connection) throws SQLException {
     if (connection != null && connection instanceof KyuubiConnection) {
       KyuubiConnection kyuubiConnection = (KyuubiConnection) connection;
 
@@ -272,7 +272,7 @@ class DatabaseConnection {
           }
         }
       }.start();
-//      kyuubiConnection.executeInitSql();
+      kyuubiConnection.executeInitSql();
      }
     this.connection = connection;
   }
