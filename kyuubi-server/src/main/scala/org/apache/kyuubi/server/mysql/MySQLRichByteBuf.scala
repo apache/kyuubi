@@ -161,7 +161,7 @@ object MySQLRichByteBuf {
      * @return fixed length long
      */
     def readLong(length: Int): Long = {
-      var result = 0
+      var result = 0L
       var i = 0
       while (i < length) {
         result = result << 8 | readInt1
