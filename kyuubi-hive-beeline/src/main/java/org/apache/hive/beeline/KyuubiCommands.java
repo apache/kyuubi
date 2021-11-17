@@ -17,21 +17,20 @@
 
 package org.apache.hive.beeline;
 
-import org.apache.hadoop.io.IOUtils;
-import org.apache.hive.beeline.logs.KyuubiBeelineInPlaceUpdateStream;
-import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
-
-import org.apache.kyuubi.jdbc.hive.KyuubiStatement;
-import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
-
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.*;
 import java.util.*;
 
+import org.apache.hadoop.io.IOUtils;
+import org.apache.hive.beeline.logs.KyuubiBeelineInPlaceUpdateStream;
+
 import org.apache.kyuubi.jdbc.hive.Utils;
 import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
+import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
+import org.apache.kyuubi.jdbc.hive.KyuubiStatement;
+import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
 
 public class KyuubiCommands extends Commands {
   protected KyuubiBeeLine beeLine;
@@ -377,7 +376,7 @@ public class KyuubiCommands extends Commands {
         eventNotifier);
     } else {
       beeLine.debug(
-        "The statement instance is not HiveStatement type: " + statement
+        "The statement instance is not KyuubiStatement type: " + statement
           .getClass());
       return new Runnable() {
         @Override
@@ -412,7 +411,7 @@ public class KyuubiCommands extends Commands {
         }
       } while (logs.size() > 0);
     } else {
-      beeLine.debug("The statement instance is not HiveStatement type: " + statement.getClass());
+      beeLine.debug("The statement instance is not KyuubiStatement type: " + statement.getClass());
     }
   }
 

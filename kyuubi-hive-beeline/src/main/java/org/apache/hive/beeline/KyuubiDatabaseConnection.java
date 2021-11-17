@@ -17,15 +17,16 @@
 
 package org.apache.hive.beeline;
 
-import org.apache.hive.beeline.logs.KyuubiBeelineInPlaceUpdateStream;
-import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
-import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
+
+import org.apache.hive.beeline.logs.KyuubiBeelineInPlaceUpdateStream;
+
+import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
+import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
 
 public class KyuubiDatabaseConnection extends DatabaseConnection {
   private static final String HIVE_VAR_PREFIX = "hivevar:";
@@ -43,7 +44,6 @@ public class KyuubiDatabaseConnection extends DatabaseConnection {
     this.url = url;
     this.info = info;
   }
-
 
   @Override
   boolean connect() throws SQLException {

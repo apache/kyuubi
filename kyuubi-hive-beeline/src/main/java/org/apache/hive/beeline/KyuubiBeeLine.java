@@ -17,12 +17,12 @@
 
 package org.apache.hive.beeline;
 
-import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.sql.Driver;
+
+import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
 
 public class KyuubiBeeLine extends BeeLine {
   public static final String KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER = "org.apache.kyuubi.jdbc.KyuubiHiveDriver";
