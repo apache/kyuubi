@@ -17,13 +17,16 @@
 
 package org.apache.kyuubi.server.api.v1
 
-import com.google.common.annotations.VisibleForTesting
+import java.net.URI
 import javax.ws.rs.{GET, Path, Produces}
 import javax.ws.rs.core.{MediaType, Response}
 
+import com.google.common.annotations.VisibleForTesting
+
+import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.server.api.ApiRequestContext
 
-@Path("/v1")
+@Path("/api/v1")
 private[v1] class ApiRootResource extends ApiRequestContext {
 
   @GET
@@ -41,6 +44,16 @@ private[v1] class ApiRootResource extends ApiRequestContext {
   def test(): Response = {
     1 / 0
     Response.ok().build()
+  }
+
+  @GET
+  @Path("swagger-ui")
+  @Produces(Array(MediaType.TEXT_HTML))
+  def swaggerUi(): Response = {
+    val serverIP = KyuubiServer.kyuubiServer.frontendServices.head.connectionUrl
+    val swaggerUi =
+      s"http://$serverIP/swagger-ui-redirected/index.html?url=http://$serverIP/openapi.json"
+    Response.temporaryRedirect(new URI(swaggerUi)).build()
   }
 
 }

@@ -232,6 +232,11 @@ org.apache.htrace:htrace-core4
 com.fasterxml.jackson.core:jackson-annotations
 com.fasterxml.jackson.core:jackson-core
 com.fasterxml.jackson.core:jackson-databind
+com.fasterxml.jackson.dataformat:jackson-dataformat-yaml
+com.fasterxml.jackson.datatype:jackson-datatype-jsr310
+com.fasterxml.jackson.jaxrs:jackson-jaxrs-base
+com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider
+com.github.swagger-akka-http:swagger-scala-module_*
 org.eclipse.jetty:jetty-http
 org.eclipse.jetty:jetty-io
 org.eclipse.jetty:jetty-security
@@ -241,6 +246,8 @@ org.eclipse.jetty:jetty-util-ajax
 org.eclipse.jetty:jetty-util
 org.apache.thrift:libfb303
 org.apache.thrift:libthrift
+org.webjars:swagger-ui
+org.yaml:snakeyaml
 log4j:log4j
 io.dropwizard.metrics:metrics-core
 io.dropwizard.metrics:metrics-jmx
@@ -251,11 +258,24 @@ io.prometheus:simpleclient
 io.prometheus:simpleclient_common
 io.prometheus:simpleclient_dropwizard
 io.prometheus:simpleclient_servlet
+io.swagger.core.v3:swagger-annotations
+io.swagger.core.v3:swagger-annotations-jakarta
+io.swagger.core.v3:swagger-core
+io.swagger.core.v3:swagger-core-jakarta
+io.swagger.core.v3:swagger-integration
+io.swagger.core.v3:swagger-jaxrs2
+io.swagger.core.v3:swagger-models
+io.swagger.core.v3:swagger-models-jakarta
 org.apache.zookeeper:zookeeper
 
 BSD 3-Clause
 ------------
 org.scala-lang:scala-library
+
+Eclipse Distribution License - v 1.0
+------------------------------------
+com.sun.activation:jakarta.activation
+jakarta.xml.bind:jakarta.xml.bind-api
 
 Eclipse Public License (EPL) 2.0
 --------------------------------
@@ -271,3 +291,4 @@ org.slf4j:slf4j-api
 org.slf4j:slf4j-log4j12
 org.slf4j:jcl-over-slf4j
 com.github.scopt:scopt_*
+io.github.classgraph:classgraph

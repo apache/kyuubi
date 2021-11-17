@@ -203,6 +203,16 @@
         </dependency>
 
         <dependency>
+            <groupId>io.swagger.core.v3</groupId>
+            <artifactId>swagger-jaxrs2</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.swagger-akka-http</groupId>
+            <artifactId>swagger-scala-module_${scala.binary.version}</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-server</artifactId>
         </dependency>
@@ -432,6 +442,11 @@
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.webjars</groupId>
+            <artifactId>swagger-ui</artifactId>
         </dependency>
     </dependencies>
 

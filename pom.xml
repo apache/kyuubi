@@ -129,6 +129,9 @@
         <spark.archive.name>spark-${spark.version}-bin-hadoop${hadoop.binary.version}.tgz</spark.archive.name>
         <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
+        <swagger.version>2.1.11</swagger.version>
+        <swagger.scala.module.version>2.5.2</swagger.scala.module.version>
+        <swagger-ui.version>4.1.0</swagger-ui.version>
         <zookeeper.version>3.4.14</zookeeper.version>
 
         <!-- only apply to kyuubi-hive-jdbc module -->
@@ -569,6 +572,30 @@
             </dependency>
 
             <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.jaxrs</groupId>
+                <artifactId>jackson-jaxrs-base</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.jaxrs</groupId>
+                <artifactId>jackson-jaxrs-json-provider</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-scala_${scala.binary.version}</artifactId>
                 <version>${jackson.version}</version>
@@ -588,6 +615,19 @@
                 <groupId>io.prometheus</groupId>
                 <artifactId>simpleclient_servlet</artifactId>
                 <version>${prometheus.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-jaxrs2</artifactId>
+                <version>${swagger.version}</version>
+            </dependency>
+
+            <!-- ref: https://github.com/swagger-akka-http/swagger-scala-module -->
+            <dependency>
+                <groupId>com.github.swagger-akka-http</groupId>
+                <artifactId>swagger-scala-module_${scala.binary.version}</artifactId>
+                <version>${swagger.scala.module.version}</version>
             </dependency>
 
             <dependency>
@@ -896,6 +936,18 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.jdbc.version}</version>
+            </dependency>
+
+            <!--
+              1. This library only contains swagger-ui static resource (.html/.css/.js/.png), for more detail, see
+                 https://github.com/swagger-api/swagger-ui/blob/master/dist/
+              2. Note that when trying to upgrade swagger-ui, we should also update the version in the file(
+                 kyuubi-server/src/main/scala/org/apache/kyuubi/server/api/api.scala).
+            -->
+            <dependency>
+                <groupId>org.webjars</groupId>
+                <artifactId>swagger-ui</artifactId>
+                <version>${swagger-ui.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

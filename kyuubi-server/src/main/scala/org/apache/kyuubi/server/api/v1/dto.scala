@@ -23,7 +23,7 @@ case class SessionOpenCount(openSessionCount: Int)
 
 case class ExecPoolStatistic(execPoolSize: Int, execPoolActiveCount: Int)
 
-case class SessionList(sessionList: List[SessionOverview])
+case class SessionList(sessionList: Seq[SessionOverview])
 
 case class SessionOverview(
   user: String,
