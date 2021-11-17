@@ -100,6 +100,10 @@ public class KyuubiConnection implements java.sql.Connection {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
   private static boolean isBeeLineMode = false;
 
+  public static void setBeeLineMode(boolean isBeeLineMode) {
+    KyuubiConnection.isBeeLineMode = isBeeLineMode;
+  }
+
   private String jdbcUriString;
   private String host;
   private int port;
@@ -121,12 +125,8 @@ public class KyuubiConnection implements java.sql.Connection {
   private boolean initFileCompleted = false;
 
   private TOperationHandle launchEngineOpHandle = null;
-  private boolean isEngineLogBeingGenerated = true;
+  private boolean engineLogInflight = true;
   private boolean launchEngineOpCompleted = false;
-
-  public static void setBeeLineMode(boolean isBeeLineMode) {
-    KyuubiConnection.isBeeLineMode = isBeeLineMode;
-  }
 
   public KyuubiConnection(String uri, Properties info) throws SQLException {
     setupLoginTimeout();
@@ -237,7 +237,7 @@ public class KyuubiConnection implements java.sql.Connection {
    *         if last log lines have been fetched by getEngineLog.
    */
   public boolean hasMoreEngineLogs() {
-    return launchEngineOpHandle != null && !(launchEngineOpCompleted && !isEngineLogBeingGenerated);
+    return launchEngineOpHandle != null && (!launchEngineOpCompleted || engineLogInflight);
   }
 
   /**
@@ -269,7 +269,7 @@ public class KyuubiConnection implements java.sql.Connection {
     } catch (TException e) {
       throw new SQLException("Error building result set for query log", e);
     }
-    isEngineLogBeingGenerated = !logs.isEmpty();
+    engineLogInflight = !logs.isEmpty();
 
     TGetOperationStatusReq opStatusReq = new TGetOperationStatusReq(launchEngineOpHandle);
     try {

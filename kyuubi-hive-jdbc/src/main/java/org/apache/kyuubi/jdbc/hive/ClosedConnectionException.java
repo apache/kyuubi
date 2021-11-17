@@ -19,13 +19,10 @@ package org.apache.kyuubi.jdbc.hive;
 
 import java.sql.SQLException;
 
-public class ClosedConnectionException extends SQLException{
+public class ClosedConnectionException extends SQLException {
 
   private static final long serialVersionUID = 0;
 
-  /**
-   * @param msg (exception message)
-   */
   public ClosedConnectionException(String msg) {
     super(msg);
   }
