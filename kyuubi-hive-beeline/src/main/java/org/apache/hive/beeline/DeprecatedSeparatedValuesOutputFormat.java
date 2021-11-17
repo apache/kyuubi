@@ -33,10 +33,10 @@ package org.apache.hive.beeline;
  */
 class DeprecatedSeparatedValuesOutputFormat implements OutputFormat {
 
-  private final BeeLine beeLine;
+  private final KyuubiBeeLine beeLine;
   private char separator;
 
-  public DeprecatedSeparatedValuesOutputFormat(BeeLine beeLine, char separator) {
+  public DeprecatedSeparatedValuesOutputFormat(KyuubiBeeLine beeLine, char separator) {
     this.beeLine = beeLine;
     setSeparator(separator);
   }

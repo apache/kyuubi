@@ -64,7 +64,7 @@ class BeeLineOpts implements Completer {
 
   public static final String URL_ENV_PREFIX = "BEELINE_URL_";
 
-  private final BeeLine beeLine;
+  private final KyuubiBeeLine beeLine;
   private boolean autosave = false;
   private boolean silent = false;
   private boolean color = false;
@@ -142,7 +142,7 @@ class BeeLineOpts implements Completer {
     }
   };
 
-  public BeeLineOpts(BeeLine beeLine, Properties props) {
+  public BeeLineOpts(KyuubiBeeLine beeLine, Properties props) {
     this.beeLine = beeLine;
     if (terminal.getWidth() > 0) {
       maxWidth = terminal.getWidth();

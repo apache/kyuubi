@@ -34,11 +34,11 @@ import org.supercsv.prefs.CsvPreference;
  */
 class SeparatedValuesOutputFormat implements OutputFormat {
   public final static String DISABLE_QUOTING_FOR_SV = "disable.quoting.for.sv";
-  private final BeeLine beeLine;
+  private final KyuubiBeeLine beeLine;
   private CsvPreference quotedCsvPreference;
   private CsvPreference unquotedCsvPreference;
 
-  SeparatedValuesOutputFormat(BeeLine beeLine, char separator) {
+  SeparatedValuesOutputFormat(KyuubiBeeLine beeLine, char separator) {
     this.beeLine = beeLine;
     unquotedCsvPreference = new CsvPreference.Builder('\0', separator, "").build();
     quotedCsvPreference = new CsvPreference.Builder('"', separator, "").build();

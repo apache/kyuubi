@@ -32,7 +32,7 @@ import org.apache.hadoop.fs.shell.Command;
  *
  */
 public class ReflectiveCommandHandler extends AbstractCommandHandler {
-  private final BeeLine beeLine;
+  private final KyuubiBeeLine beeLine;
 
   /**
    * @param beeLine
@@ -41,7 +41,7 @@ public class ReflectiveCommandHandler extends AbstractCommandHandler {
    *                  documentation from BeeLine.properties file.
    * @param completer
    */
-  public ReflectiveCommandHandler(BeeLine beeLine, String[] cmds, Completer[] completer) {
+  public ReflectiveCommandHandler(KyuubiBeeLine beeLine, String[] cmds, Completer[] completer) {
     super(beeLine, cmds, beeLine.loc("help-" + cmds[0]), completer);
     this.beeLine = beeLine;
   }

@@ -27,13 +27,13 @@ package org.apache.hive.beeline;
  *
  */
 class TableOutputFormat implements OutputFormat {
-  private final BeeLine beeLine;
+  private final KyuubiBeeLine beeLine;
   private final StringBuilder sb = new StringBuilder();
 
   /**
    * @param beeLine
    */
-  TableOutputFormat(BeeLine beeLine) {
+  TableOutputFormat(KyuubiBeeLine beeLine) {
     this.beeLine = beeLine;
   }
 

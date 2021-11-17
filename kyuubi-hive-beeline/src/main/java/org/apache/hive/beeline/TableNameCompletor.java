@@ -28,12 +28,12 @@ import jline.console.completer.Completer;
 import jline.console.completer.StringsCompleter;
 
 class TableNameCompletor implements Completer {
-  private final BeeLine beeLine;
+  private final KyuubiBeeLine beeLine;
 
   /**
    * @param beeLine
    */
-  TableNameCompletor(BeeLine beeLine) {
+  TableNameCompletor(KyuubiBeeLine beeLine) {
     this.beeLine = beeLine;
   }
 

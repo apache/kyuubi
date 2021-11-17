@@ -29,5 +29,5 @@ public abstract class ClientHook {
     this.sql = sql;
   }
 
-  abstract void postHook(BeeLine beeLine);
+  abstract void postHook(KyuubiBeeLine beeLine);
 }

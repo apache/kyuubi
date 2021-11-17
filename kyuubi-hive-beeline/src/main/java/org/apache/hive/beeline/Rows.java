@@ -35,13 +35,13 @@ import java.util.Iterator;
  * Holds column values as strings
  */
 abstract class Rows implements Iterator {
-  protected final BeeLine beeLine;
+  protected final KyuubiBeeLine beeLine;
   final ResultSetMetaData rsMeta;
   final Boolean[] primaryKeys;
   final NumberFormat numberFormat;
   private final String nullStr;
 
-  Rows(BeeLine beeLine, ResultSet rs) throws SQLException {
+  Rows(KyuubiBeeLine beeLine, ResultSet rs) throws SQLException {
     this.beeLine = beeLine;
     nullStr = beeLine.getOpts().getNullString();
     rsMeta = rs.getMetaData();

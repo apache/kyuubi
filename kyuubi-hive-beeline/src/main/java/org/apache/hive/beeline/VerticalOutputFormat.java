@@ -27,12 +27,12 @@ package org.apache.hive.beeline;
  *
  */
 class VerticalOutputFormat implements OutputFormat {
-  private final BeeLine beeLine;
+  private final KyuubiBeeLine beeLine;
 
   /**
    * @param beeLine
    */
-  VerticalOutputFormat(BeeLine beeLine) {
+  VerticalOutputFormat(KyuubiBeeLine beeLine) {
     this.beeLine = beeLine;
   }
 

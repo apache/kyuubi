@@ -18,7 +18,7 @@
 package org.apache.kyuubi.jdbc.hive;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
+import org.apache.kyuubi.jdbc.hive.logs.KyuubiInPlaceUpdateStream;
 import org.apache.hive.service.cli.RowSet;
 import org.apache.hive.service.cli.RowSetFactory;
 import org.apache.hive.service.rpc.thrift.TCLIService;
@@ -114,7 +114,7 @@ public class KyuubiStatement implements java.sql.Statement {
 
   private int queryTimeout = 0;
 
-  private InPlaceUpdateStream inPlaceUpdateStream = InPlaceUpdateStream.NO_OP;
+  private KyuubiInPlaceUpdateStream inPlaceUpdateStream = KyuubiInPlaceUpdateStream.NO_OP;
 
   public KyuubiStatement(KyuubiConnection connection, TCLIService.Iface client,
                          TSessionHandle sessHandle) {
@@ -346,7 +346,7 @@ public class KyuubiStatement implements java.sql.Statement {
 
   TGetOperationStatusResp waitForOperationToComplete() throws SQLException {
     TGetOperationStatusReq statusReq = new TGetOperationStatusReq(stmtHandle);
-    boolean shouldGetProgressUpdate = inPlaceUpdateStream != InPlaceUpdateStream.NO_OP;
+    boolean shouldGetProgressUpdate = inPlaceUpdateStream != KyuubiInPlaceUpdateStream.NO_OP;
     statusReq.setGetProgressUpdate(shouldGetProgressUpdate);
     if (!shouldGetProgressUpdate) {
       /**
@@ -969,7 +969,7 @@ public class KyuubiStatement implements java.sql.Statement {
    * This is only used by the beeline client to set the stream on which in place progress updates
    * are to be shown
    */
-  public void setInPlaceUpdateStream(InPlaceUpdateStream stream) {
+  public void setInPlaceUpdateStream(KyuubiInPlaceUpdateStream stream) {
     this.inPlaceUpdateStream = stream;
   }
 }

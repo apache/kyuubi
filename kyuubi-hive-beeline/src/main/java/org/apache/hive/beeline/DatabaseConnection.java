@@ -37,16 +37,17 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.hive.jdbc.HiveConnection;
-
 import jline.console.completer.ArgumentCompleter;
 import jline.console.completer.Completer;
+import org.apache.hive.jdbc.HiveConnection;
+import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
+
 
 class DatabaseConnection {
   private static final String HIVE_VAR_PREFIX = "hivevar:";
   private static final String HIVE_CONF_PREFIX = "hiveconf:";
 
-  private final BeeLine beeLine;
+  private final KyuubiBeeLine beeLine;
   private Connection connection;
   private DatabaseMetaData meta;
   private final String driver;
@@ -59,8 +60,8 @@ class DatabaseConnection {
     return (null == connection);
   }
 
-  public DatabaseConnection(BeeLine beeLine, String driver, String url,
-       Properties info) throws SQLException {
+  public DatabaseConnection(KyuubiBeeLine beeLine, String driver, String url,
+                            Properties info) throws SQLException {
     this.beeLine = beeLine;
     this.driver = driver;
     this.url = url;
@@ -254,6 +255,25 @@ class DatabaseConnection {
   }
 
   void setConnection(Connection connection) {
+    if (connection != null && connection instanceof KyuubiConnection) {
+      KyuubiConnection kyuubiConnection = (KyuubiConnection) connection;
+
+      new Thread("conn-engine") {
+        @Override
+        public void run() {
+          try {
+            while (kyuubiConnection.hasMoreEngineLogs()) {
+              for (String log : kyuubiConnection.getEngineLog()) {
+                beeLine.info(log);
+              }
+            }
+          } catch (Exception e) {
+
+          }
+        }
+      }.start();
+//      kyuubiConnection.executeInitSql();
+     }
     this.connection = connection;
   }
 
@@ -270,7 +290,9 @@ class DatabaseConnection {
   }
 
   public String getConnectedUrl() {
-    if (connection instanceof HiveConnection) {
+    if (connection instanceof KyuubiConnection) {
+      return ((KyuubiConnection) connection).getConnectedUrl();
+    } else if (connection instanceof HiveConnection) {
       return ((HiveConnection) connection).getConnectedUrl();
     }
     return getUrl();

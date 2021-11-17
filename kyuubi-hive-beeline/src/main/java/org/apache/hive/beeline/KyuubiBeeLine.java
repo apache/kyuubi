@@ -96,12 +96,13 @@ import org.apache.hive.beeline.hs2connection.HS2ConnectionFileUtils;
 import org.apache.hive.beeline.hs2connection.UserHS2ConnectionFileParser;
 import org.apache.hive.beeline.hs2connection.HS2ConnectionFileParser;
 import org.apache.hive.beeline.hs2connection.HiveSiteHS2ConnectionFileParser;
+import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
 import org.apache.thrift.transport.TTransportException;
 
 import com.google.common.annotations.VisibleForTesting;
 
-import org.apache.hive.jdbc.Utils;
-import org.apache.hive.jdbc.Utils.JdbcConnectionParams;
+import org.apache.kyuubi.jdbc.hive.Utils;
+import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
 
 /**
  * A console SQL shell with command completion.
@@ -120,9 +121,9 @@ import org.apache.hive.jdbc.Utils.JdbcConnectionParams;
  *
  */
 @SuppressWarnings("static-access")
-public class BeeLine implements Closeable {
+public class KyuubiBeeLine implements Closeable {
   private static final ResourceBundle resourceBundle =
-      ResourceBundle.getBundle(BeeLine.class.getSimpleName());
+      ResourceBundle.getBundle(KyuubiBeeLine.class.getSimpleName());
   private final BeeLineSignalHandler signalHandler;
   private final Runnable shutdownHook;
   private static final String separator = System.getProperty("line.separator");
@@ -150,7 +151,7 @@ public class BeeLine implements Closeable {
 
   private static final Options options = new Options();
 
-  public static final String BEELINE_DEFAULT_JDBC_DRIVER = "org.apache.hive.jdbc.HiveDriver";
+  public static final String BEELINE_DEFAULT_JDBC_DRIVER = "org.apache.kyuubi.jdbc.KyuubiHiveDriver";
   public static final String DEFAULT_DATABASE_NAME = "default";
 
   private static final String SCRIPT_OUTPUT_PREFIX = ">>>";
@@ -281,8 +282,8 @@ public class BeeLine implements Closeable {
 
   static final SortedSet<String> KNOWN_DRIVERS = new TreeSet<String>(Arrays.asList(
       new String[] {
-          "org.apache.hive.jdbc.HiveDriver",
-          "org.apache.hadoop.hive.jdbc.HiveDriver",
+          "org.apache.kyuubi.jdbc.KyuubiHiveDriver",
+//          "org.apache.hadoop.hive.jdbc.HiveDriver",
       }));
 
   static {
@@ -399,7 +400,7 @@ public class BeeLine implements Closeable {
 
 
   static Manifest getManifest() throws IOException {
-    URL base = BeeLine.class.getResource("/META-INF/MANIFEST.MF");
+    URL base = KyuubiBeeLine.class.getResource("/META-INF/MANIFEST.MF");
     URLConnection c = base.openConnection();
     if (c instanceof JarURLConnection) {
       return ((JarURLConnection) c).getManifest();
@@ -434,7 +435,7 @@ public class BeeLine implements Closeable {
 
 
   String getApplicationTitle() {
-    Package pack = BeeLine.class.getPackage();
+    Package pack = KyuubiBeeLine.class.getPackage();
 
     return loc("app-introduction", new Object[] { "Beeline",
         pack.getImplementationVersion() == null ? "???" : pack.getImplementationVersion(),
@@ -498,7 +499,8 @@ public class BeeLine implements Closeable {
    * Starts the program.
    */
   public static void main(String[] args) throws IOException {
-    mainWithInputRedirection(args, null);
+    String[] nargs = new String[] {"-u", "jdbc:hive2://localhost:10009/default;#kyuubi.session.engine.launch.async=true;kyuubi.engine.share.level=CONNECTION"};
+    mainWithInputRedirection(nargs, null);
   }
 
   /**
@@ -514,7 +516,8 @@ public class BeeLine implements Closeable {
    */
   public static void mainWithInputRedirection(String[] args, InputStream inputStream)
       throws IOException {
-    BeeLine beeLine = new BeeLine();
+    KyuubiBeeLine beeLine = new KyuubiBeeLine();
+    KyuubiConnection.setBeeLineMode(true);
     try {
       int status = beeLine.begin(args, inputStream);
 
@@ -526,11 +529,11 @@ public class BeeLine implements Closeable {
     }
   }
 
-  public BeeLine() {
+  public KyuubiBeeLine() {
     this(true);
   }
 
-  public BeeLine(boolean isBeeLine) {
+  public KyuubiBeeLine(boolean isBeeLine) {
     this.isBeeLine = isBeeLine;
     this.signalHandler = new SunSignalHandler(this);
     this.shutdownHook = new Runnable() {
@@ -938,7 +941,7 @@ public class BeeLine implements Closeable {
       if(startIndex != -1) {
         int endIndex = command.toString().indexOf(";", startIndex);
         command.replace(startIndex, (endIndex == -1 ? command.length() : endIndex),
-          BeeLine.PASSWD_MASK);
+          KyuubiBeeLine.PASSWD_MASK);
       }
     }
     // if the driver is not already available in the URL add the one provided

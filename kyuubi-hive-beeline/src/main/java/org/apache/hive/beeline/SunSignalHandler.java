@@ -30,9 +30,9 @@ import sun.misc.SignalHandler;
 
 public class SunSignalHandler implements BeeLineSignalHandler, SignalHandler {
   private Statement stmt = null;
-  private final BeeLine beeLine;
+  private final KyuubiBeeLine beeLine;
 
-  SunSignalHandler (BeeLine beeLine) {
+  SunSignalHandler (KyuubiBeeLine beeLine) {
     this.beeLine = beeLine;
     // Interpret Ctrl+C as a request to cancel the currently
     // executing query.

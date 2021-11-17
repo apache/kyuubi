@@ -55,27 +55,30 @@ import java.util.TreeSet;
 
 import org.apache.hadoop.hive.common.cli.ShellCmdExecutor;
 import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.apache.hadoop.hive.conf.HiveVariableSource;
 import org.apache.hadoop.hive.conf.SystemVariables;
 import org.apache.hadoop.hive.conf.VariableSubstitution;
 import org.apache.hadoop.io.IOUtils;
-import org.apache.hive.beeline.logs.BeelineInPlaceUpdateStream;
-import org.apache.hive.jdbc.HiveStatement;
-import org.apache.hive.jdbc.Utils;
-import org.apache.hive.jdbc.Utils.JdbcConnectionParams;
+import org.apache.hive.beeline.logs.HiveBeelineInPlaceUpdateStream;
+import org.apache.hive.beeline.logs.KyuubiBeelineInPlaceUpdateStream;
 import com.google.common.annotations.VisibleForTesting;
+
+import org.apache.hive.jdbc.HiveStatement;
 import org.apache.hive.jdbc.logs.InPlaceUpdateStream;
+import org.apache.kyuubi.jdbc.hive.KyuubiStatement;
+import org.apache.kyuubi.jdbc.hive.Utils;
+import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
+import org.apache.kyuubi.jdbc.hive.logs.KyuubiInPlaceUpdateStream;
 
 public class Commands {
-  private final BeeLine beeLine;
+  private final KyuubiBeeLine beeLine;
   private static final int DEFAULT_QUERY_PROGRESS_INTERVAL = 1000;
   private static final int DEFAULT_QUERY_PROGRESS_THREAD_TIMEOUT = 10 * 1000;
 
   /**
    * @param beeLine
    */
-  Commands(BeeLine beeLine) {
+  Commands(KyuubiBeeLine beeLine) {
     this.beeLine = beeLine;
   }
 
@@ -265,7 +268,7 @@ public class Commands {
 
 
   public boolean nativesql(String sql) throws Exception {
-    if (sql.startsWith(BeeLine.COMMAND_PREFIX)) {
+    if (sql.startsWith(KyuubiBeeLine.COMMAND_PREFIX)) {
       sql = sql.substring(1);
     }
     if (sql.startsWith("native")) {
@@ -912,7 +915,7 @@ public class Commands {
     if (cmd == null)
       return null;
     if (cmd.toLowerCase().equals("quit") || cmd.toLowerCase().equals("exit")) {
-      return BeeLine.COMMAND_PREFIX + cmd;
+      return KyuubiBeeLine.COMMAND_PREFIX + cmd;
     } else if (cmd.startsWith("!")) {
       String shell_cmd = cmd.substring(1);
       return "!sh " + shell_cmd;
@@ -943,7 +946,7 @@ public class Commands {
       return sourceFile(sql);
     }
 
-    if (sql.startsWith(BeeLine.COMMAND_PREFIX)) {
+    if (sql.startsWith(KyuubiBeeLine.COMMAND_PREFIX)) {
       return beeLine.execCommandWithPrefix(sql);
     }
 
@@ -981,18 +984,33 @@ public class Commands {
           if (beeLine.getOpts().isSilent()) {
             hasResults = stmnt.execute(sql);
           } else {
-            InPlaceUpdateStream.EventNotifier eventNotifier =
+            if (stmnt instanceof KyuubiStatement) {
+              KyuubiStatement kyuubiStatement = (KyuubiStatement) stmnt;
+              KyuubiInPlaceUpdateStream.EventNotifier eventNotifier =
+                new KyuubiInPlaceUpdateStream.EventNotifier();
+              logThread = new Thread(createKyuubiLogRunnable(kyuubiStatement, eventNotifier));
+              logThread.setDaemon(true);
+              logThread.start();
+              kyuubiStatement.setInPlaceUpdateStream(
+                new KyuubiBeelineInPlaceUpdateStream(
+                  beeLine.getErrorStream(),
+                  eventNotifier
+                ));
+            } else {
+              InPlaceUpdateStream.EventNotifier eventNotifier =
                 new InPlaceUpdateStream.EventNotifier();
-            logThread = new Thread(createLogRunnable(stmnt, eventNotifier));
-            logThread.setDaemon(true);
-            logThread.start();
-            if (stmnt instanceof HiveStatement) {
-              HiveStatement hiveStatement = (HiveStatement) stmnt;
-              hiveStatement.setInPlaceUpdateStream(
-                  new BeelineInPlaceUpdateStream(
-                      beeLine.getErrorStream(),
-                      eventNotifier
-                  ));
+              logThread = new Thread(createLogRunnable(stmnt, eventNotifier));
+              logThread.setDaemon(true);
+              logThread.start();
+              if (stmnt instanceof HiveStatement) {
+                HiveStatement hiveStatement = (HiveStatement) stmnt;
+                hiveStatement.setInPlaceUpdateStream(
+                  new HiveBeelineInPlaceUpdateStream(
+                    beeLine.getErrorStream(),
+                    eventNotifier
+                  )
+                );
+              }
             }
             hasResults = stmnt.execute(sql);
             logThread.interrupt();
@@ -1019,7 +1037,7 @@ public class Commands {
               }
               rs.close();
             }
-          } while (BeeLine.getMoreResults(stmnt));
+          } while (KyuubiBeeLine.getMoreResults(stmnt));
         } else {
           int count = stmnt.getUpdateCount();
           long end = System.currentTimeMillis();
@@ -1298,15 +1316,33 @@ public class Commands {
     command.setLength(0);
   }
 
-  private Runnable createLogRunnable(final Statement statement,
-      InPlaceUpdateStream.EventNotifier eventNotifier) {
-    if (statement instanceof HiveStatement) {
-      return new LogRunnable(this, (HiveStatement) statement, DEFAULT_QUERY_PROGRESS_INTERVAL,
+  private Runnable createKyuubiLogRunnable(final KyuubiStatement statement,
+                                           KyuubiInPlaceUpdateStream.EventNotifier eventNotifier) {
+    if (statement instanceof KyuubiStatement) {
+      return new KyuubiLogRunnable(this, statement, DEFAULT_QUERY_PROGRESS_INTERVAL,
           eventNotifier);
     } else {
       beeLine.debug(
           "The statement instance is not HiveStatement type: " + statement
               .getClass());
+      return new Runnable() {
+        @Override
+        public void run() {
+          // do nothing.
+        }
+      };
+    }
+  }
+
+  private Runnable createLogRunnable(final Statement statement,
+                                     InPlaceUpdateStream.EventNotifier eventNotifier) {
+    if (statement instanceof HiveStatement) {
+      return new HiveLogRunnable(this, (HiveStatement) statement, DEFAULT_QUERY_PROGRESS_INTERVAL,
+        eventNotifier);
+    } else {
+      beeLine.debug(
+        "The statement instance is not HiveStatement type: " + statement
+          .getClass());
       return new Runnable() {
         @Override
         public void run() {
@@ -1324,14 +1360,14 @@ public class Commands {
     beeLine.debug(message);
   }
 
-  static class LogRunnable implements Runnable {
+  static class HiveLogRunnable implements Runnable {
     private final Commands commands;
     private final HiveStatement hiveStatement;
     private final long queryProgressInterval;
     private final InPlaceUpdateStream.EventNotifier notifier;
 
-    LogRunnable(Commands commands, HiveStatement hiveStatement,
-        long queryProgressInterval, InPlaceUpdateStream.EventNotifier eventNotifier) {
+    HiveLogRunnable(Commands commands, HiveStatement hiveStatement,
+                long queryProgressInterval, InPlaceUpdateStream.EventNotifier eventNotifier) {
       this.hiveStatement = hiveStatement;
       this.commands = commands;
       this.queryProgressInterval = queryProgressInterval;
@@ -1374,13 +1410,63 @@ public class Commands {
     }
   }
 
+  static class KyuubiLogRunnable implements Runnable {
+    private final Commands commands;
+    private final KyuubiStatement kyuubiStatement;
+    private final long queryProgressInterval;
+    private final KyuubiInPlaceUpdateStream.EventNotifier notifier;
+
+    KyuubiLogRunnable(Commands commands, KyuubiStatement kyuubiStatement,
+                      long queryProgressInterval, KyuubiInPlaceUpdateStream.EventNotifier eventNotifier) {
+      this.kyuubiStatement = kyuubiStatement;
+      this.commands = commands;
+      this.queryProgressInterval = queryProgressInterval;
+      this.notifier = eventNotifier;
+    }
+
+    private void updateQueryLog() {
+      try {
+        List<String> queryLogs = kyuubiStatement.getQueryLog();
+        for (String log : queryLogs) {
+          commands.beeLine.info(log);
+        }
+        if (!queryLogs.isEmpty()) {
+          notifier.operationLogShowedToUser();
+        }
+      } catch (SQLException e) {
+        commands.error(new SQLWarning(e));
+      }
+    }
+
+    @Override public void run() {
+      try {
+        while (kyuubiStatement.hasMoreLogs()) {
+          /*
+            get the operation logs once and print it, then wait till progress bar update is complete
+            before printing the remaining logs.
+          */
+          if (notifier.canOutputOperationLogs()) {
+            commands.debug("going to print operations logs");
+            updateQueryLog();
+            commands.debug("printed operations logs");
+          }
+          Thread.sleep(queryProgressInterval);
+        }
+      } catch (InterruptedException e) {
+        commands.debug("Getting log thread is interrupted, since query is done!");
+      } finally {
+        commands.showRemainingLogsIfAny(kyuubiStatement);
+      }
+    }
+  }
+
   private void showRemainingLogsIfAny(Statement statement) {
-    if (statement instanceof HiveStatement) {
-      HiveStatement hiveStatement = (HiveStatement) statement;
+    if (statement instanceof KyuubiStatement) {
+      KyuubiStatement kyuubiStatement = (KyuubiStatement) statement;
       List<String> logs = null;
       do {
         try {
-          logs = hiveStatement.getQueryLog();
+          logs = kyuubiStatement.getQueryLog();
         } catch (SQLException e) {
           beeLine.error(new SQLWarning(e));
           return;
@@ -1447,7 +1533,7 @@ public class Commands {
    */
   public boolean properties(String line) throws Exception {
     String example = "";
-    example += "Usage: properties <properties file>" + BeeLine.getSeparator();
+    example += "Usage: properties <properties file>" + KyuubiBeeLine.getSeparator();
 
     String[] parts = beeLine.split(line);
     if (parts.length < 2) {
@@ -1479,7 +1565,7 @@ public class Commands {
 
   public boolean connect(String line) throws Exception {
     String example = "Usage: connect <url> <username> <password> [driver]"
-        + BeeLine.getSeparator();
+        + KyuubiBeeLine.getSeparator();
 
     String[] parts = beeLine.split(line);
     if (parts == null) {
@@ -1953,7 +2039,7 @@ public class Commands {
 
 
   public boolean manual(String line) throws IOException {
-    InputStream in = BeeLine.class.getResourceAsStream("manual.txt");
+    InputStream in = KyuubiBeeLine.class.getResourceAsStream("manual.txt");
     if (in == null) {
       return beeLine.error(beeLine.loc("no-manual"));
     }

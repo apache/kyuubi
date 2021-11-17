@@ -17,13 +17,13 @@
  */
 package org.apache.hive.beeline.cli;
 
-import org.apache.hive.beeline.BeeLine;
+import org.apache.hive.beeline.KyuubiBeeLine;
 
 import java.io.IOException;
 import java.io.InputStream;
 
 public class HiveCli {
-  private BeeLine beeLine;
+  private KyuubiBeeLine beeLine;
 
   public static void main(String[] args) throws IOException {
     int status = new HiveCli().runWithArgs(args, null);
@@ -31,7 +31,7 @@ public class HiveCli {
   }
 
   public int runWithArgs(String[] cmd, InputStream inputStream) throws IOException {
-    beeLine = new BeeLine(false);
+    beeLine = new KyuubiBeeLine(false);
     try {
       return beeLine.begin(cmd, inputStream);
     } finally {

@@ -17,9 +17,9 @@
  */
 package org.apache.hive.beeline;
 
-import org.apache.hive.jdbc.Utils;
-
 import java.sql.SQLException;
+
+import org.apache.kyuubi.jdbc.hive.Utils;
 
 /**
  * We need to update some client side information after executing some Hive Commands
@@ -41,7 +41,7 @@ public class ClientCommandHookFactory {
     }
 
     @Override
-    public void postHook(BeeLine beeLine) {
+    public void postHook(KyuubiBeeLine beeLine) {
       if (!beeLine.isBeeLine()) {
         beeLine.getOpts().setHiveConf(beeLine.getCommands().getHiveConf(false));
       }
@@ -55,7 +55,7 @@ public class ClientCommandHookFactory {
     }
 
     @Override
-    public void postHook(BeeLine beeLine) {
+    public void postHook(KyuubiBeeLine beeLine) {
       // Handler multi-line sql
       String line = sql.replaceAll("\\s+", " ");
       String strs[] = line.split(" ");
@@ -77,7 +77,7 @@ public class ClientCommandHookFactory {
     }
 
     @Override
-    public void postHook(BeeLine beeLine) {
+    public void postHook(KyuubiBeeLine beeLine) {
       // Handler multi-line sql
       String line = sql.replaceAll("\\s+", " ");
       String strs[] = line.split(" ");
@@ -104,7 +104,7 @@ public class ClientCommandHookFactory {
     }
 
     @Override
-    public void postHook(BeeLine beeLine) {
+    public void postHook(KyuubiBeeLine beeLine) {
       String dbName = "";
       try {
         dbName = beeLine.getDatabaseConnection().getConnection().getSchema();
@@ -115,7 +115,7 @@ public class ClientCommandHookFactory {
     }
   }
 
-  public ClientHook getHook(BeeLine beeLine, String cmdLine) {
+  public ClientHook getHook(KyuubiBeeLine beeLine, String cmdLine) {
     if (!beeLine.isBeeLine()) {
       // In compatibility mode we need to hook to set, and use
       if (cmdLine.toLowerCase().startsWith("set")) {
