@@ -23,13 +23,13 @@ import java.net.UnknownHostException;
 import java.util.Properties;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hive.common.ServerUtils;
-import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.hive.conf.HiveConf.ConfVars;
+import org.apache.kyuubi.shade.org.apache.hadoop.hive.common.ServerUtils;
+import org.apache.kyuubi.shade.org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.kyuubi.shade.org.apache.hadoop.hive.conf.HiveConf.ConfVars;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.annotations.VisibleForTesting;
+import org.apache.kyuubi.shade.com.google.common.annotations.VisibleForTesting;
 
 /*
  * Looks for a hive-site.xml from the classpath. If found this class parses the hive-site.xml

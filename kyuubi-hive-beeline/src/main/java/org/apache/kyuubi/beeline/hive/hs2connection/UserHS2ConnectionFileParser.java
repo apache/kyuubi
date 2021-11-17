@@ -28,7 +28,7 @@ import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.annotations.VisibleForTesting;
+import org.apache.kyuubi.shade.com.google.common.annotations.VisibleForTesting;
 
 /**
  * This class implements HS2ConnectionFileParser for the user-specific connection configuration

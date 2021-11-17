@@ -27,7 +27,7 @@ import java.sql.SQLException;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import com.google.common.base.Optional;
+import org.apache.kyuubi.shade.com.google.common.base.Optional;
 
 
 /**

@@ -26,7 +26,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.NoSuchElementException;
 
-import com.google.common.base.Optional;
+import org.apache.kyuubi.shade.com.google.common.base.Optional;
 
 
 /**

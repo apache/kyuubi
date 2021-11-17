@@ -53,15 +53,15 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.hadoop.hive.common.cli.ShellCmdExecutor;
-import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.hive.conf.HiveVariableSource;
-import org.apache.hadoop.hive.conf.SystemVariables;
-import org.apache.hadoop.hive.conf.VariableSubstitution;
+import org.apache.kyuubi.shade.org.apache.hadoop.hive.common.cli.ShellCmdExecutor;
+import org.apache.kyuubi.shade.org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.kyuubi.shade.org.apache.hadoop.hive.conf.HiveVariableSource;
+import org.apache.kyuubi.shade.org.apache.hadoop.hive.conf.SystemVariables;
+import org.apache.kyuubi.shade.org.apache.hadoop.hive.conf.VariableSubstitution;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.kyuubi.beeline.hive.logs.HiveBeelineInPlaceUpdateStream;
 import org.apache.kyuubi.beeline.hive.logs.KyuubiBeelineInPlaceUpdateStream;
-import com.google.common.annotations.VisibleForTesting;
+import org.apache.kyuubi.shade.com.google.common.annotations.VisibleForTesting;
 
 import org.apache.hive.jdbc.HiveStatement;
 import org.apache.hive.jdbc.logs.InPlaceUpdateStream;

@@ -17,10 +17,10 @@
  */
 package org.apache.kyuubi.beeline.hive.logs;
 
-import org.apache.hadoop.hive.common.log.InPlaceUpdate;
-import org.apache.hadoop.hive.common.log.ProgressMonitor;
-import org.apache.hive.service.rpc.thrift.TJobExecutionStatus;
-import org.apache.hive.service.rpc.thrift.TProgressUpdateResp;
+import org.apache.kyuubi.shade.org.apache.hadoop.hive.common.log.InPlaceUpdate;
+import org.apache.kyuubi.shade.org.apache.hadoop.hive.common.log.ProgressMonitor;
+import org.apache.kyuubi.shade.org.apache.hive.service.rpc.thrift.TJobExecutionStatus;
+import org.apache.kyuubi.shade.org.apache.hive.service.rpc.thrift.TProgressUpdateResp;
 
 import org.apache.kyuubi.jdbc.hive.logs.KyuubiInPlaceUpdateStream;
 

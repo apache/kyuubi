@@ -69,19 +69,19 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.kyuubi.shade.org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.kyuubi.beeline.hive.cli.CliOptionsProcessor;
-import org.apache.hive.common.util.ShutdownHookManager;
+import org.apache.kyuubi.shade.org.apache.hive.common.util.ShutdownHookManager;
 import org.apache.kyuubi.beeline.hive.hs2connection.BeelineHS2ConnectionFileParseException;
 import org.apache.kyuubi.beeline.hive.hs2connection.HS2ConnectionFileUtils;
 import org.apache.kyuubi.beeline.hive.hs2connection.UserHS2ConnectionFileParser;
 import org.apache.kyuubi.beeline.hive.hs2connection.HS2ConnectionFileParser;
 import org.apache.kyuubi.beeline.hive.hs2connection.HiveSiteHS2ConnectionFileParser;
 import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
-import org.apache.thrift.transport.TTransportException;
+import org.apache.kyuubi.shade.org.apache.thrift.transport.TTransportException;
 
-import com.google.common.annotations.VisibleForTesting;
+import org.apache.kyuubi.shade.com.google.common.annotations.VisibleForTesting;
 
 import org.apache.kyuubi.jdbc.hive.Utils;
 import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
