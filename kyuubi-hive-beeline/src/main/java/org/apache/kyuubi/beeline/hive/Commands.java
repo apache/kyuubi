@@ -1500,15 +1500,9 @@ public class Commands {
     @Override public void run() {
       try {
         while (kyuubiConnection.hasMoreEngineLogs()) {
-          /*
-            get the operation logs once and print it, then wait till progress bar update is complete
-            before printing the remaining logs.
-          */
-          if (notifier.canOutputOperationLogs()) {
-            commands.debug("going to print launch engine operation logs");
-            updateQueryLog();
-            commands.debug("printed launch engine operation logs");
-          }
+          commands.debug("going to print launch engine operation logs");
+          updateQueryLog();
+          commands.debug("printed launch engine operation logs");
           Thread.sleep(queryProgressInterval);
         }
       } catch (InterruptedException e) {

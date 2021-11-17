@@ -138,9 +138,12 @@ class DatabaseConnection {
       }
     }
 
-    if (isDriverRegistered) {
+    if (isDriverRegistered && !BeeLine.BEELINE_DEFAULT_JDBC_DRIVER.equals(driver)) {
       // if the driver registered in the driver manager, get the connection via the driver manager
       setConnection(DriverManager.getConnection(getUrl(), info));
+    } else if (beeLine.getDefaultDriver() != null && beeLine.getDefaultDriver().acceptsURL(url)) {
+      beeLine.debug("Use the default driver:" + BeeLine.BEELINE_DEFAULT_JDBC_DRIVER);
+      setDatabaseMetaData(getConnectionFromDefaultDriver(getUrl(), info).getMetaData());
     } else {
       beeLine.debug("Use the driver from local added jar file.");
       setConnection(getConnectionFromLocalDriver(getUrl(), info));
@@ -178,6 +181,18 @@ class DatabaseConnection {
     }
 
     return true;
+  }
+
+  public Connection getConnectionFromDefaultDriver(String url, Properties properties) {
+    try {
+      if (beeLine.getDefaultDriver() != null && beeLine.getDefaultDriver().acceptsURL(url)) {
+        return beeLine.getDefaultDriver().connect(url, properties);
+      }
+    } catch (Exception e) {
+      beeLine.error("Fail to connect with default driver due to the exception:" + e);
+      beeLine.error(e);
+    }
+    return null;
   }
 
   public Connection getConnectionFromLocalDriver(String url, Properties properties) {

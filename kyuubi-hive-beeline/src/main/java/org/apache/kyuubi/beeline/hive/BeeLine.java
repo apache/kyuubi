@@ -113,6 +113,7 @@ public class BeeLine implements Closeable {
   private final DatabaseConnections connections = new DatabaseConnections();
   public static final String COMMAND_PREFIX = "!";
   private Collection<Driver> drivers = null;
+  private Driver defaultDriver = null;
   private final BeeLineOpts opts = new BeeLineOpts(this, System.getProperties());
   private String lastProgress = null;
   private final Map<SQLWarning, Date> seenWarnings = new HashMap<SQLWarning, Date>();
@@ -161,8 +162,7 @@ public class BeeLine implements Closeable {
   });
 
   private List<String> supportedLocalDriver =
-    new ArrayList<String>(Arrays.asList("com.mysql.jdbc.Driver", "org.postgresql.Driver",
-      "org.apache.hadoop.hive.jdbc.HiveDriver"));
+    new ArrayList<String>(Arrays.asList("com.mysql.jdbc.Driver", "org.postgresql.Driver"));
 
   final CommandHandler[] commandHandlers = new CommandHandler[] {
       new ReflectiveCommandHandler(this, new String[] {"quit", "done", "exit"},
@@ -264,9 +264,11 @@ public class BeeLine implements Closeable {
   private final Completer beeLineCommandCompleter = new BeeLineCommandCompleter(Arrays.asList(commandHandlers));
 
   static final SortedSet<String> KNOWN_DRIVERS = new TreeSet<String>(Arrays.asList(
-    new String[] {
-      "org.apache.kyuubi.jdbc.KyuubiHiveDriver",
-    }));
+      new String[] {
+          BEELINE_DEFAULT_JDBC_DRIVER,
+          "org.apache.hive.jdbc.HiveDriver",
+          "org.apache.hadoop.hive.jdbc.HiveDriver",
+      }));
 
   static {
     try {
@@ -481,22 +483,7 @@ public class BeeLine implements Closeable {
    * Starts the program.
    */
   public static void main(String[] args) throws IOException {
-    String[] nargs = new String[] {
-      "-u",
-      "jdbc:hive2://localhost:10009/default;#kyuubi.session.engine.launch.async=true;kyuubi.engine.share.level=CONNECTION",
-    };
-
-    for (Driver driver : Collections.list(DriverManager.getDrivers())) {
-      if (!driver.getClass().getSimpleName().contains("Kyuubi")) {
-        try {
-          DriverManager.deregisterDriver(driver);
-        } catch (Exception e) {
-
-        }
-      }
-    }
-
-    mainWithInputRedirection(nargs, null);
+    mainWithInputRedirection(args, null);
   }
 
   /**
@@ -531,6 +518,13 @@ public class BeeLine implements Closeable {
 
   public BeeLine(boolean isBeeLine) {
     this.isBeeLine = isBeeLine;
+    try {
+      defaultDriver = (Driver) Class.forName(BEELINE_DEFAULT_JDBC_DRIVER, true,
+          Thread.currentThread().getContextClassLoader())
+          .newInstance();
+    } catch (Exception e) {
+
+    }
     this.signalHandler = new SunSignalHandler(this);
     this.shutdownHook = new Runnable() {
       @Override
@@ -2300,6 +2294,10 @@ public class BeeLine implements Closeable {
 
   Collection<Driver> getDrivers() {
     return drivers;
+  }
+
+  protected Driver getDefaultDriver() {
+    return defaultDriver;
   }
 
   void setDrivers(Collection<Driver> drivers) {
