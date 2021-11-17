@@ -18,7 +18,6 @@
 
 ## Kyuubi Service Control Client Entrance
 CLASS="org.apache.kyuubi.beeline.hive.BeeLine"
-KYUUBI_DRIVER_CLASS="org.apache.kyuubi.jdbc.KyuubiHiveDriver"
 
 export KYUUBI_HOME="$(cd "$(dirname "$0")"/..; pwd)"
 
@@ -51,4 +50,4 @@ KYUUBI_BEELINE_CLASSPATH="${KYUUBI_JDBC_JAR_DIR}/*:"
 echo "exec ${RUNNER} ${KYUUBI_JAVA_OPTS} -cp ${KYUUBI_BEELINE_CLASSPATH} $CLASS -d $KYUUBI_DRIVER_CLASS "$@""
 
 KYUUBI_JAVA_OPTS="-Dlog4j.logger.org.apache.kyuubi.jdbc.hive.KyuubiConnection=CONSOLE"
-exec ${RUNNER} ${KYUUBI_JAVA_OPTS} -cp ${KYUUBI_BEELINE_CLASSPATH} $CLASS -d $KYUUBI_DRIVER_CLASS "$@"
+exec ${RUNNER} ${KYUUBI_JAVA_OPTS} -cp ${KYUUBI_BEELINE_CLASSPATH} $CLASS "$@"

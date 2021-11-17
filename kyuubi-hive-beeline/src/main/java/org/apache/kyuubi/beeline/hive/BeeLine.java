@@ -265,9 +265,9 @@ public class BeeLine implements Closeable {
 
   static final SortedSet<String> KNOWN_DRIVERS = new TreeSet<String>(Arrays.asList(
       new String[] {
-          BEELINE_DEFAULT_JDBC_DRIVER,
-          "org.apache.hive.jdbc.HiveDriver",
-          "org.apache.hadoop.hive.jdbc.HiveDriver",
+        "org.apache.kyuubi.jdbc.KyuubiHiveDriver",
+        "org.apache.hive.jdbc.HiveDriver",
+        "org.apache.hadoop.hive.jdbc.HiveDriver",
       }));
 
   static {
