@@ -19,13 +19,15 @@ package org.apache.kyuubi.events
 
 import java.net.InetAddress
 import java.nio.file.Paths
+import java.sql.ResultSet
 import java.util.UUID
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
+import org.apache.kyuubi
 
-import org.apache.kyuubi.{KYUUBI_VERSION, Utils, WithKyuubiServer}
+import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.OperationState._
@@ -155,46 +157,80 @@ class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper 
     }
   }
 
-  test("test Kyuubi Server Start event") {
+  test("test Kyuubi server info event") {
     val confKv = List(("awesome.kyuubi", "true"), ("awesome.kyuubi.server", "yeah"))
     for (kv <- confKv) {
       conf.set(kv._1, kv._2)
     }
-    val name = "KyuubiServerTest1"
+    val name = "KyuubiServerInfoTest"
     val server = new KyuubiServer(name)
     server.initialize(conf)
     server.start()
 
     val hostName = InetAddress.getLocalHost.getCanonicalHostName
     val kyuubiServerStartEventPath =
-      Paths.get(serverLogRoot, "kyuubi_server_start", s"day=$currentDate", s"server-$hostName.json")
-    withJdbcStatement() { statement =>
-      // System environment may have same letter variable with different case
-      statement.executeQuery("set spark.sql.caseSensitive=true")
-      val res = statement.executeQuery(
-        s"SELECT * FROM `json`.`$kyuubiServerStartEventPath` where serverName = '$name' limit 1")
-      res.next()
-      assert(res.getString("serverName") == name)
-      res.next()
-      assert(res.getLong("startTime") > 0)
-      res.next()
-      assert(res.getString("states") == ServiceState.STARTED.toString)
-      res.next()
+      Paths.get(serverLogRoot, "kyuubi_server_info", s"day=$currentDate", s"server-$hostName.json")
+
+    val EXTRA_START_INFO = "Server started"
+    val EXTRA_STOP_INFO = "Server stopping"
+
+    def compareResultWithState(extraStatesInfo: String, result: ResultSet): Unit = {
+      result.next()
+      assert(result.getString("serverName") == name)
+      result.next()
+      assert(result.getLong("startTime") > 0)
+      result.next()
+      assert(result.getLong("eventTime") > 0)
+      result.next()
+      assert(result.getString("states") == ServiceState.STARTED.toString)
+      result.next()
+      val serverIP = result.getString("serverIP")
+      assert(serverIP != null && !"".equals(serverIP))
       val objMapper = new ObjectMapper()
-      val confMap = objMapper.readTree(res.getString("serverConf"))
+      val confMap = objMapper.readTree(result.getString("serverConf"))
       for (kv <- confKv) {
         assert(confMap.get(kv._1).asText() == kv._2)
       }
-      res.next()
-      val envMap = objMapper.readTree(res.getString("serverEnv"))
+      result.next()
+      assert(result.getString("extraStatesInfo") == extraStatesInfo)
+      result.next()
+      val envMap = objMapper.readTree(result.getString("serverEnv"))
       val USER = "USER"
       val envUser = if (envMap.has(USER)) envMap.get(USER).asText() else ""
       assert(envUser == sys.env.getOrElse(USER, ""))
-      res.next()
-      assert(res.getString("serverVersion") == KYUUBI_VERSION)
-      res.next()
-      assert(res.getString("eventType") == "kyuubi_server_start")
+      result.next()
+      assert(result.getString("BUILD_USER") == kyuubi.BUILD_USER)
+      result.next()
+      assert(result.getString("BUILD_DATE") == kyuubi.BUILD_DATE)
+      result.next()
+      assert(result.getString("REPO_URL") == kyuubi.REPO_URL)
+      result.next()
+      val versionInfoMap = objMapper.readTree(result.getString("VERSION_INFO"))
+      assert(versionInfoMap.get("KYUUBI_VERSION").asText() == kyuubi.KYUUBI_VERSION)
+      assert(versionInfoMap.get("JAVA_COMPILE_VERSION").asText() == kyuubi.JAVA_COMPILE_VERSION)
+      assert(versionInfoMap.get("SCALA_COMPILE_VERSION").asText() == kyuubi.SCALA_COMPILE_VERSION)
+      assert(versionInfoMap.get("HIVE_COMPILE_VERSION").asText() == kyuubi.HIVE_COMPILE_VERSION)
+      assert(versionInfoMap.get("HADOOP_COMPILE_VERSION").asText() == kyuubi.HADOOP_COMPILE_VERSION)
+      result.next()
+      assert(result.getString("eventType") == "kyuubi_server_info")
     }
+
+    withJdbcStatement() { statement =>
+      // System environment variable may have same letter with different case
+      statement.executeQuery("set spark.sql.caseSensitive=true")
+      val res = statement.executeQuery(
+        s"SELECT * FROM `json`.`$kyuubiServerStartEventPath` " +
+          s"where extraStatesInfo = '$EXTRA_START_INFO' limit 1")
+      compareResultWithState(EXTRA_START_INFO, res)
+    }
+
     server.stop()
+    withJdbcStatement() { statement =>
+      statement.executeQuery("set spark.sql.caseSensitive=true")
+      val res = statement.executeQuery(
+        s"SELECT * FROM `json`.`$kyuubiServerStartEventPath` " +
+          s"where extraStatesInfo = '$EXTRA_STOP_INFO' limit 1")
+      compareResultWithState(EXTRA_STOP_INFO, res)
+    }
   }
 }
