@@ -115,7 +115,7 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
     }
   }
 
-  test("ensure mix use subdomain") {
+  test("ensure engine discovery works when mixed use subdomain") {
     var r1: String = null
     var r2: String = null
     withSessionConf()(Map.empty)(Map.empty) {
