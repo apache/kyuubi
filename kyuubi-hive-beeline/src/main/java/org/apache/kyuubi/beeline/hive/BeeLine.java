@@ -161,7 +161,8 @@ public class BeeLine implements Closeable {
   });
 
   private List<String> supportedLocalDriver =
-    new ArrayList<String>(Arrays.asList("com.mysql.jdbc.Driver", "org.postgresql.Driver"));
+    new ArrayList<String>(Arrays.asList("com.mysql.jdbc.Driver", "org.postgresql.Driver",
+      "org.apache.hadoop.hive.jdbc.HiveDriver"));
 
   final CommandHandler[] commandHandlers = new CommandHandler[] {
       new ReflectiveCommandHandler(this, new String[] {"quit", "done", "exit"},
@@ -262,10 +263,9 @@ public class BeeLine implements Closeable {
 
   private final Completer beeLineCommandCompleter = new BeeLineCommandCompleter(Arrays.asList(commandHandlers));
 
-  static final LinkedHashSet<String> KNOWN_DRIVERS = new LinkedHashSet<>(Arrays.asList(
+  static final SortedSet<String> KNOWN_DRIVERS = new TreeSet<String>(Arrays.asList(
     new String[] {
       "org.apache.kyuubi.jdbc.KyuubiHiveDriver",
-      "org.apache.hadoop.hive.jdbc.HiveDriver",
     }));
 
   static {
@@ -481,7 +481,13 @@ public class BeeLine implements Closeable {
    * Starts the program.
    */
   public static void main(String[] args) throws IOException {
-    mainWithInputRedirection(args, null);
+    String[] nargs = new String[] {
+      "-u",
+      "jdbc:hive2://localhost:10009/default;#kyuubi.session.engine.launch.async=true;kyuubi.engine.share.level=CONNECTION",
+      "--verbose=true",
+    };
+
+    mainWithInputRedirection(nargs, null);
   }
 
   /**

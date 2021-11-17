@@ -252,25 +252,28 @@ class DatabaseConnection {
   }
 
   void setConnection(Connection connection) throws SQLException {
-    if (connection != null && connection instanceof KyuubiConnection) {
-      KyuubiConnection kyuubiConnection = (KyuubiConnection) connection;
-      Thread logThread = null;
+    if (connection != null) {
+      beeLine.debug("The connection to set is kind of " + connection.getClass().getSimpleName());
 
-      KyuubiInPlaceUpdateStream.EventNotifier eventNotifier =
-        new KyuubiInPlaceUpdateStream.EventNotifier();
-      logThread = new Thread(beeLine.getCommands().createConnectionLogRunnable(connection,
-        eventNotifier));
-      logThread.setDaemon(true);
-      logThread.start();
+      if (connection instanceof KyuubiConnection) {
+        KyuubiConnection kyuubiConnection = (KyuubiConnection) connection;
+        KyuubiInPlaceUpdateStream.EventNotifier eventNotifier =
+          new KyuubiInPlaceUpdateStream.EventNotifier();
+        Thread logThread = new Thread(beeLine.getCommands().createConnectionLogRunnable(connection,
+          eventNotifier));
+        logThread.setDaemon(true);
+        logThread.start();
 
-      kyuubiConnection.setInPlaceUpdateStream(
-        new KyuubiBeelineInPlaceUpdateStream(
-          beeLine.getErrorStream(),
-          eventNotifier
-        ));
-      kyuubiConnection.waitLaunchEngineToComplete();
-      kyuubiConnection.executeInitSql();
-     }
+        kyuubiConnection.setInPlaceUpdateStream(
+          new KyuubiBeelineInPlaceUpdateStream(
+            beeLine.getErrorStream(),
+            eventNotifier
+          ));
+        kyuubiConnection.waitLaunchEngineToComplete();
+        logThread.interrupt();
+        kyuubiConnection.executeInitSql();
+      }
+    }
     this.connection = connection;
   }
 

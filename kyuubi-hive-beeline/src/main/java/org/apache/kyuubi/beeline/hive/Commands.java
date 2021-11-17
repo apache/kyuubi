@@ -1365,7 +1365,7 @@ public class Commands {
     beeLine.error(throwable);
   }
 
-  private void debug(String message) {
+  protected void debug(String message) {
     beeLine.debug(message);
   }
 
