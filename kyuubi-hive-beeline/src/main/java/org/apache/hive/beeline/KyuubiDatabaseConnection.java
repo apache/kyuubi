@@ -85,14 +85,14 @@ public class KyuubiDatabaseConnection extends DatabaseConnection {
       boolean useDefaultDriver = beeLine.getDefaultDriver() != null &&
         beeLine.getDefaultDriver().acceptsURL(url);
       if (driver != null && !driver.equals(KyuubiBeeLine.KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER)) {
-        useDefaultDriver = false;
+        beeLine.debug("Use default kyuubi driver and specified driver is:" + driver);
       }
 
       if (useDefaultDriver) {
         beeLine.debug("Use the default driver:" + KyuubiBeeLine.KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER);
         setConnection(getConnectionFromDefaultDriver(getUrl(), info));
       } else {
-        beeLine.debug("Not use the default driver and specified driver is:" + driver);
+        beeLine.debug("Not use the default kyuubi driver and specified driver is:" + driver);
         // if the driver registered in the driver manager, get the connection via the driver manager
         setConnection(DriverManager.getConnection(getUrl(), info));
       }
