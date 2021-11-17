@@ -69,7 +69,6 @@
         <module>externals/kyuubi-download</module>
         <module>externals/kyuubi-spark-sql-engine</module>
         <module>kyuubi-assembly</module>
-        <module>kyuubi-cli-assembly</module>
         <module>kyuubi-common</module>
         <module>kyuubi-ctl</module>
         <module>kyuubi-ha</module>
@@ -133,7 +132,7 @@
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <zookeeper.version>3.4.14</zookeeper.version>
 
-        <!-- only apply to kyuubi-hive-jdbc module -->
+        <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
         <hive.jdbc.version>2.3.9</hive.jdbc.version>
         <hive.jdbc.commons-lang.version>2.6</hive.jdbc.commons-lang.version>
         <hive.jdbc.commons-codec.version>1.15</hive.jdbc.commons-codec.version>
