@@ -17,11 +17,13 @@
 
 package org.apache.hive.beeline;
 
+import java.io.IOException;
+import java.lang.reflect.Field;
 import java.sql.Driver;
 
 public class KyuubiBeeLine extends BeeLine {
   public static final String KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER = "org.apache.kyuubi.jdbc.KyuubiHiveDriver";
-  protected KyuubiCommands commands;
+  protected KyuubiCommands commands = new KyuubiCommands(this);
   private Driver defaultDriver = null;
 
   public KyuubiBeeLine() {
@@ -31,11 +33,25 @@ public class KyuubiBeeLine extends BeeLine {
   public KyuubiBeeLine(boolean isBeeLine) {
     super(isBeeLine);
     try {
+      Field commandsFiled = BeeLine.class.getDeclaredField("commands");
+      commandsFiled.setAccessible(true);
+      commandsFiled.set(this, commands);
+    } catch (Throwable t) {
+      throw new ExceptionInInitializerError("Failed to inject kyuubi commands");
+    }
+    try {
       defaultDriver = (Driver) Class.forName(KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER, true,
         Thread.currentThread().getContextClassLoader()).newInstance();
     } catch (Throwable t) {
       throw new ExceptionInInitializerError(KYUUBI_BEELINE_DEFAULT_JDBC_DRIVER + "-missing");
     }
+  }
+
+  /**
+   * Starts the program.
+   */
+  public static void main(String[] args) throws IOException {
+    mainWithInputRedirection(args, null);
   }
 
   protected Driver getDefaultDriver() {
