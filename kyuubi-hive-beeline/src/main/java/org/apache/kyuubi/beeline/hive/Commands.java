@@ -59,12 +59,9 @@ import org.apache.kyuubi.shade.org.apache.hadoop.hive.conf.HiveVariableSource;
 import org.apache.kyuubi.shade.org.apache.hadoop.hive.conf.SystemVariables;
 import org.apache.kyuubi.shade.org.apache.hadoop.hive.conf.VariableSubstitution;
 import org.apache.hadoop.io.IOUtils;
-import org.apache.kyuubi.beeline.hive.logs.HiveBeelineInPlaceUpdateStream;
 import org.apache.kyuubi.beeline.hive.logs.KyuubiBeelineInPlaceUpdateStream;
 import org.apache.kyuubi.shade.com.google.common.annotations.VisibleForTesting;
 
-import org.apache.hive.jdbc.HiveStatement;
-import org.apache.hive.jdbc.logs.InPlaceUpdateStream;
 import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement;
 import org.apache.kyuubi.jdbc.hive.Utils;
@@ -988,33 +985,18 @@ public class Commands {
           if (beeLine.getOpts().isSilent()) {
             hasResults = stmnt.execute(sql);
           } else {
+            KyuubiInPlaceUpdateStream.EventNotifier eventNotifier =
+                new KyuubiInPlaceUpdateStream.EventNotifier();
+            logThread = new Thread(createLogRunnable(stmnt, eventNotifier));
+            logThread.setDaemon(true);
+            logThread.start();
             if (stmnt instanceof KyuubiStatement) {
               KyuubiStatement kyuubiStatement = (KyuubiStatement) stmnt;
-              KyuubiInPlaceUpdateStream.EventNotifier eventNotifier =
-                new KyuubiInPlaceUpdateStream.EventNotifier();
-              logThread = new Thread(createKyuubiLogRunnable(kyuubiStatement, eventNotifier));
-              logThread.setDaemon(true);
-              logThread.start();
               kyuubiStatement.setInPlaceUpdateStream(
-                new KyuubiBeelineInPlaceUpdateStream(
-                  beeLine.getErrorStream(),
-                  eventNotifier
-                ));
-            } else {
-              InPlaceUpdateStream.EventNotifier eventNotifier =
-                new InPlaceUpdateStream.EventNotifier();
-              logThread = new Thread(createLogRunnable(stmnt, eventNotifier));
-              logThread.setDaemon(true);
-              logThread.start();
-              if (stmnt instanceof HiveStatement) {
-                HiveStatement hiveStatement = (HiveStatement) stmnt;
-                hiveStatement.setInPlaceUpdateStream(
-                  new HiveBeelineInPlaceUpdateStream(
-                    beeLine.getErrorStream(),
-                    eventNotifier
-                  )
-                );
-              }
+                  new KyuubiBeelineInPlaceUpdateStream(
+                      beeLine.getErrorStream(),
+                      eventNotifier
+                  ));
             }
             hasResults = stmnt.execute(sql);
             logThread.interrupt();
@@ -1320,10 +1302,22 @@ public class Commands {
     command.setLength(0);
   }
 
-  private Runnable createKyuubiLogRunnable(final KyuubiStatement statement,
-                                           KyuubiInPlaceUpdateStream.EventNotifier eventNotifier) {
-    return new KyuubiLogRunnable(this, statement, DEFAULT_QUERY_PROGRESS_INTERVAL,
-      eventNotifier);
+  private Runnable createLogRunnable(final Statement statement,
+      KyuubiInPlaceUpdateStream.EventNotifier eventNotifier) {
+    if (statement instanceof KyuubiStatement) {
+      return new LogRunnable(this, (KyuubiStatement) statement, DEFAULT_QUERY_PROGRESS_INTERVAL,
+          eventNotifier);
+    } else {
+      beeLine.debug(
+          "The statement instance is not KyuubiStatement type: " + statement
+              .getClass());
+      return new Runnable() {
+        @Override
+        public void run() {
+          // do nothing.
+        }
+      };
+    }
   }
 
   protected Runnable createConnectionLogRunnable(final Connection connection,
@@ -1343,24 +1337,6 @@ public class Commands {
     }
   }
 
-  private Runnable createLogRunnable(final Statement statement,
-                                     InPlaceUpdateStream.EventNotifier eventNotifier) {
-    if (statement instanceof HiveStatement) {
-      return new HiveLogRunnable(this, (HiveStatement) statement, DEFAULT_QUERY_PROGRESS_INTERVAL,
-        eventNotifier);
-    } else {
-      beeLine.debug(
-        "The statement instance is not HiveStatement type: " + statement
-          .getClass());
-      return new Runnable() {
-        @Override
-        public void run() {
-          // do nothing.
-        }
-      };
-    }
-  }
-
   private void error(Throwable throwable) {
     beeLine.error(throwable);
   }
@@ -1369,64 +1345,14 @@ public class Commands {
     beeLine.debug(message);
   }
 
-  static class HiveLogRunnable implements Runnable {
-    private final Commands commands;
-    private final HiveStatement hiveStatement;
-    private final long queryProgressInterval;
-    private final InPlaceUpdateStream.EventNotifier notifier;
-
-    HiveLogRunnable(Commands commands, HiveStatement hiveStatement,
-                long queryProgressInterval, InPlaceUpdateStream.EventNotifier eventNotifier) {
-      this.hiveStatement = hiveStatement;
-      this.commands = commands;
-      this.queryProgressInterval = queryProgressInterval;
-      this.notifier = eventNotifier;
-    }
-
-    private void updateQueryLog() {
-      try {
-        List<String> queryLogs = hiveStatement.getQueryLog();
-        for (String log : queryLogs) {
-          commands.beeLine.info(log);
-        }
-        if (!queryLogs.isEmpty()) {
-          notifier.operationLogShowedToUser();
-        }
-      } catch (SQLException e) {
-        commands.error(new SQLWarning(e));
-      }
-    }
-
-    @Override public void run() {
-      try {
-        while (hiveStatement.hasMoreLogs()) {
-          /*
-            get the operation logs once and print it, then wait till progress bar update is complete
-            before printing the remaining logs.
-          */
-          if (notifier.canOutputOperationLogs()) {
-            commands.debug("going to print operations logs");
-            updateQueryLog();
-            commands.debug("printed operations logs");
-          }
-          Thread.sleep(queryProgressInterval);
-        }
-      } catch (InterruptedException e) {
-        commands.debug("Getting log thread is interrupted, since query is done!");
-      } finally {
-        commands.showRemainingLogsIfAny(hiveStatement);
-      }
-    }
-  }
-
-  static class KyuubiLogRunnable implements Runnable {
+  static class LogRunnable implements Runnable {
     private final Commands commands;
     private final KyuubiStatement kyuubiStatement;
     private final long queryProgressInterval;
     private final KyuubiInPlaceUpdateStream.EventNotifier notifier;
 
-    KyuubiLogRunnable(Commands commands, KyuubiStatement kyuubiStatement,
-                      long queryProgressInterval, KyuubiInPlaceUpdateStream.EventNotifier eventNotifier) {
+    LogRunnable(Commands commands, KyuubiStatement kyuubiStatement,
+        long queryProgressInterval, KyuubiInPlaceUpdateStream.EventNotifier eventNotifier) {
       this.kyuubiStatement = kyuubiStatement;
       this.commands = commands;
       this.queryProgressInterval = queryProgressInterval;

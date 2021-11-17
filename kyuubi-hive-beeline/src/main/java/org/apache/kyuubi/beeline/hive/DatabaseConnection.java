@@ -34,11 +34,9 @@ import java.util.TreeSet;
 
 import jline.console.completer.ArgumentCompleter;
 import jline.console.completer.Completer;
-import org.apache.hive.jdbc.HiveConnection;
 import org.apache.kyuubi.beeline.hive.logs.KyuubiBeelineInPlaceUpdateStream;
 import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
 import org.apache.kyuubi.jdbc.hive.logs.KyuubiInPlaceUpdateStream;
-
 
 class DatabaseConnection {
   private static final String HIVE_VAR_PREFIX = "hivevar:";
@@ -316,8 +314,6 @@ class DatabaseConnection {
   public String getConnectedUrl() {
     if (connection instanceof KyuubiConnection) {
       return ((KyuubiConnection) connection).getConnectedUrl();
-    } else if (connection instanceof HiveConnection) {
-      return ((HiveConnection) connection).getConnectedUrl();
     }
     return getUrl();
   }
