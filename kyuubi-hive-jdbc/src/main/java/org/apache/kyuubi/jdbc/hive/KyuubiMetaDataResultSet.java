@@ -29,24 +29,24 @@ public abstract class KyuubiMetaDataResultSet<M> extends KyuubiBaseResultSet {
       final List<String> columnNames, final List<String> columnTypes, final List<M> data)
       throws SQLException {
     if (data != null) {
-      this.data = new ArrayList<M>(data);
+      this.data = new ArrayList<>(data);
     } else {
-      this.data = new ArrayList<M>();
+      this.data = new ArrayList<>();
     }
     if (columnNames != null) {
-      this.columnNames = new ArrayList<String>(columnNames);
-      this.normalizedColumnNames = new ArrayList<String>();
+      this.columnNames = new ArrayList<>(columnNames);
+      this.normalizedColumnNames = new ArrayList<>();
       for (String colName : columnNames) {
         this.normalizedColumnNames.add(colName.toLowerCase());
       }
     } else {
-      this.columnNames = new ArrayList<String>();
-      this.normalizedColumnNames = new ArrayList<String>();
+      this.columnNames = new ArrayList<>();
+      this.normalizedColumnNames = new ArrayList<>();
     }
     if (columnTypes != null) {
-      this.columnTypes = new ArrayList<String>(columnTypes);
+      this.columnTypes = new ArrayList<>(columnTypes);
     } else {
-      this.columnTypes = new ArrayList<String>();
+      this.columnTypes = new ArrayList<>();
     }
   }
 

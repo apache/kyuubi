@@ -23,29 +23,12 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.SecureRandom;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.CallableStatement;
-import java.sql.Clob;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
-import java.sql.NClob;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLClientInfoException;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLWarning;
-import java.sql.SQLXML;
-import java.sql.Savepoint;
-import java.sql.Statement;
-import java.sql.Struct;
+import java.sql.*;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.net.ssl.KeyManagerFactory;
@@ -62,7 +45,7 @@ import org.apache.hive.service.auth.PlainSaslHelper;
 import org.apache.hive.service.auth.SaslQOP;
 import org.apache.hive.service.cli.RowSet;
 import org.apache.hive.service.cli.RowSetFactory;
-import org.apache.hive.service.cli.thrift.*;
+import org.apache.hive.service.cli.thrift.EmbeddedThriftBinaryCLIService;
 import org.apache.hive.service.rpc.thrift.*;
 import org.apache.http.HttpRequestInterceptor;
 import org.apache.http.HttpResponse;
@@ -82,6 +65,7 @@ import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
+import org.apache.kyuubi.jdbc.hive.adapter.SQLConnection;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.transport.THttpClient;
@@ -91,7 +75,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** KyuubiConnection. */
-public class KyuubiConnection implements java.sql.Connection {
+public class KyuubiConnection implements SQLConnection {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
   private static boolean isBeeLineMode = false;
 
@@ -112,7 +96,7 @@ public class KyuubiConnection implements java.sql.Connection {
   private boolean isClosed = true;
   private SQLWarning warningChain = null;
   private TSessionHandle sessHandle = null;
-  private final List<TProtocolVersion> supportedProtocols = new LinkedList<TProtocolVersion>();
+  private final List<TProtocolVersion> supportedProtocols = new LinkedList<>();
   private int loginTimeout = 0;
   private TProtocolVersion protocol;
   private int fetchSize = KyuubiStatement.DEFAULT_FETCH_SIZE;
@@ -333,7 +317,7 @@ public class KyuubiConnection implements java.sql.Connection {
     List<String> initSqlList = null;
     try {
       FileInputStream input = new FileInputStream(file);
-      br = new BufferedReader(new InputStreamReader(input, "UTF-8"));
+      br = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
       String line;
       StringBuilder sb = new StringBuilder("");
       while ((line = br.readLine()) != null) {
@@ -361,7 +345,7 @@ public class KyuubiConnection implements java.sql.Connection {
 
   private static List<String> getInitSql(String sbLine) {
     char[] sqlArray = sbLine.toCharArray();
-    List<String> initSqlList = new ArrayList();
+    List<String> initSqlList = new ArrayList<>();
     int index = 0;
     int beginIndex = 0;
     for (; index < sqlArray.length; index++) {
@@ -426,7 +410,7 @@ public class KyuubiConnection implements java.sql.Connection {
     HttpClientBuilder httpClientBuilder;
     // Request interceptor for any request pre-processing logic
     HttpRequestInterceptor requestInterceptor;
-    Map<String, String> additionalHttpHeaders = new HashMap<String, String>();
+    Map<String, String> additionalHttpHeaders = new HashMap<>();
 
     // Retrieve the additional HttpHeaders
     for (Map.Entry<String, String> entry : sessConfMap.entrySet()) {
@@ -625,7 +609,7 @@ public class KyuubiConnection implements java.sql.Connection {
       if (!JdbcConnectionParams.AUTH_SIMPLE.equals(
           sessConfMap.get(JdbcConnectionParams.AUTH_TYPE))) {
         // If Kerberos
-        Map<String, String> saslProps = new HashMap<String, String>();
+        Map<String, String> saslProps = new HashMap<>();
         SaslQOP saslQOP = SaslQOP.AUTH;
         if (sessConfMap.containsKey(JdbcConnectionParams.AUTH_QOP)) {
           try {
@@ -744,7 +728,7 @@ public class KyuubiConnection implements java.sql.Connection {
   private void openSession() throws SQLException {
     TOpenSessionReq openReq = new TOpenSessionReq();
 
-    Map<String, String> openConf = new HashMap<String, String>();
+    Map<String, String> openConf = new HashMap<>();
     // for remote JDBC client, try to set the conf var using 'set foo=bar'
     for (Entry<String, String> hiveConf : connParams.getHiveConfs().entrySet()) {
       openConf.put("set:hiveconf:" + hiveConf.getKey(), hiveConf.getValue());
@@ -883,11 +867,6 @@ public class KyuubiConnection implements java.sql.Connection {
     }
   }
 
-  public void abort(Executor executor) throws SQLException {
-    // JDK 1.7
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
   public String getDelegationToken(String owner, String renewer) throws SQLException {
     TGetDelegationTokenReq req = new TGetDelegationTokenReq(sessHandle, owner, renewer);
     try {
@@ -921,22 +900,10 @@ public class KyuubiConnection implements java.sql.Connection {
     }
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#clearWarnings()
-   */
-
   @Override
   public void clearWarnings() throws SQLException {
     warningChain = null;
   }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#close()
-   */
 
   @Override
   public void close() throws SQLException {
@@ -955,79 +922,6 @@ public class KyuubiConnection implements java.sql.Connection {
     }
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#commit()
-   */
-
-  @Override
-  public void commit() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#createArrayOf(java.lang.String,
-   * java.lang.Object[])
-   */
-
-  @Override
-  public Array createArrayOf(String arg0, Object[] arg1) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#createBlob()
-   */
-
-  @Override
-  public Blob createBlob() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#createClob()
-   */
-
-  @Override
-  public Clob createClob() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#createNClob()
-   */
-
-  @Override
-  public NClob createNClob() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#createSQLXML()
-   */
-
-  @Override
-  public SQLXML createSQLXML() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
   /**
    * Creates a Statement object for sending SQL statements to the database.
    *
@@ -1041,12 +935,6 @@ public class KyuubiConnection implements java.sql.Connection {
     }
     return new KyuubiStatement(this, client, sessHandle, fetchSize);
   }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#createStatement(int, int)
-   */
 
   @Override
   public Statement createStatement(int resultSetType, int resultSetConcurrency)
@@ -1065,94 +953,15 @@ public class KyuubiConnection implements java.sql.Connection {
         this, client, sessHandle, resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE, fetchSize);
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#createStatement(int, int, int)
-   */
-
-  @Override
-  public Statement createStatement(
-      int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#createStruct(java.lang.String, java.lang.Object[])
-   */
-
-  @Override
-  public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#getAutoCommit()
-   */
-
   @Override
   public boolean getAutoCommit() throws SQLException {
     return true;
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#getCatalog()
-   */
-
   @Override
   public String getCatalog() throws SQLException {
     return "";
   }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#getClientInfo()
-   */
-
-  @Override
-  public Properties getClientInfo() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#getClientInfo(java.lang.String)
-   */
-
-  @Override
-  public String getClientInfo(String name) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#getHoldability()
-   */
-
-  @Override
-  public int getHoldability() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#getMetaData()
-   */
 
   @Override
   public DatabaseMetaData getMetaData() throws SQLException {
@@ -1160,11 +969,6 @@ public class KyuubiConnection implements java.sql.Connection {
       throw new SQLException("Connection is closed");
     }
     return new KyuubiDatabaseMetaData(this, client, sessHandle);
-  }
-
-  public int getNetworkTimeout() throws SQLException {
-    // JDK 1.7
-    throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
   public String getSchema() throws SQLException {
@@ -1180,67 +984,25 @@ public class KyuubiConnection implements java.sql.Connection {
     }
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#getTransactionIsolation()
-   */
-
   @Override
   public int getTransactionIsolation() throws SQLException {
     return Connection.TRANSACTION_NONE;
   }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#getTypeMap()
-   */
-
-  @Override
-  public Map<String, Class<?>> getTypeMap() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#getWarnings()
-   */
 
   @Override
   public SQLWarning getWarnings() throws SQLException {
     return warningChain;
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#isClosed()
-   */
-
   @Override
   public boolean isClosed() throws SQLException {
     return isClosed;
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#isReadOnly()
-   */
-
   @Override
   public boolean isReadOnly() throws SQLException {
     return false;
   }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#isValid(int)
-   */
 
   @Override
   public boolean isValid(int timeout) throws SQLException {
@@ -1258,171 +1020,21 @@ public class KyuubiConnection implements java.sql.Connection {
     return rc;
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#nativeSQL(java.lang.String)
-   */
-
-  @Override
-  public String nativeSQL(String sql) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#prepareCall(java.lang.String)
-   */
-
-  @Override
-  public CallableStatement prepareCall(String sql) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#prepareCall(java.lang.String, int, int)
-   */
-
-  @Override
-  public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency)
-      throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#prepareCall(java.lang.String, int, int, int)
-   */
-
-  @Override
-  public CallableStatement prepareCall(
-      String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
-      throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#prepareStatement(java.lang.String)
-   */
-
   @Override
   public PreparedStatement prepareStatement(String sql) throws SQLException {
     return new KyuubiPreparedStatement(this, client, sessHandle, sql);
   }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#prepareStatement(java.lang.String, int)
-   */
 
   @Override
   public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
     return new KyuubiPreparedStatement(this, client, sessHandle, sql);
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#prepareStatement(java.lang.String, int[])
-   */
-
-  @Override
-  public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#prepareStatement(java.lang.String,
-   * java.lang.String[])
-   */
-
-  @Override
-  public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#prepareStatement(java.lang.String, int, int)
-   */
-
   @Override
   public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
       throws SQLException {
     return new KyuubiPreparedStatement(this, client, sessHandle, sql);
   }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#prepareStatement(java.lang.String, int, int, int)
-   */
-
-  @Override
-  public PreparedStatement prepareStatement(
-      String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
-      throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#releaseSavepoint(java.sql.Savepoint)
-   */
-
-  @Override
-  public void releaseSavepoint(Savepoint savepoint) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#rollback()
-   */
-
-  @Override
-  public void rollback() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#rollback(java.sql.Savepoint)
-   */
-
-  @Override
-  public void rollback(Savepoint savepoint) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#setAutoCommit(boolean)
-   */
 
   @Override
   public void setAutoCommit(boolean autoCommit) throws SQLException {
@@ -1440,12 +1052,6 @@ public class KyuubiConnection implements java.sql.Connection {
     }
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#setCatalog(java.lang.String)
-   */
-
   @Override
   public void setCatalog(String catalog) throws SQLException {
     // Per JDBC spec, if the driver does not support catalogs,
@@ -1455,53 +1061,6 @@ public class KyuubiConnection implements java.sql.Connection {
     }
     return;
   }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#setClientInfo(java.util.Properties)
-   */
-
-  @Override
-  public void setClientInfo(Properties properties) throws SQLClientInfoException {
-    // TODO Auto-generated method stub
-    throw new SQLClientInfoException("Method not supported", null);
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#setClientInfo(java.lang.String, java.lang.String)
-   */
-
-  @Override
-  public void setClientInfo(String name, String value) throws SQLClientInfoException {
-    // TODO Auto-generated method stub
-    throw new SQLClientInfoException("Method not supported", null);
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#setHoldability(int)
-   */
-
-  @Override
-  public void setHoldability(int holdability) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
-    // JDK 1.7
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#setReadOnly(boolean)
-   */
 
   @Override
   public void setReadOnly(boolean readOnly) throws SQLException {
@@ -1518,30 +1077,6 @@ public class KyuubiConnection implements java.sql.Connection {
     }
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#setSavepoint()
-   */
-
-  @Override
-  public Savepoint setSavepoint() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#setSavepoint(java.lang.String)
-   */
-
-  @Override
-  public Savepoint setSavepoint(String name) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
   public void setSchema(String schema) throws SQLException {
     // JDK 1.7
     if (isClosed) {
@@ -1555,51 +1090,9 @@ public class KyuubiConnection implements java.sql.Connection {
     stmt.close();
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#setTransactionIsolation(int)
-   */
-
   @Override
   public void setTransactionIsolation(int level) throws SQLException {
     // TODO: throw an exception?
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Connection#setTypeMap(java.util.Map)
-   */
-
-  @Override
-  public void setTypeMap(Map<String, Class<?>> map) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Wrapper#isWrapperFor(java.lang.Class)
-   */
-
-  @Override
-  public boolean isWrapperFor(Class<?> iface) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.Wrapper#unwrap(java.lang.Class)
-   */
-
-  @Override
-  public <T> T unwrap(Class<T> iface) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
   public TProtocolVersion getProtocol() {
@@ -1630,7 +1123,7 @@ public class KyuubiConnection implements java.sql.Connection {
       } catch (InvocationTargetException e) {
         // all IFace APIs throw TException
         if (e.getTargetException() instanceof TException) {
-          throw (TException) e.getTargetException();
+          throw e.getTargetException();
         } else {
           // should not happen
           throw new TException(

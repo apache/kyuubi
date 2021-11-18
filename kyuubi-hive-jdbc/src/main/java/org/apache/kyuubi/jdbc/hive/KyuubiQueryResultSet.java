@@ -23,7 +23,6 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -335,6 +334,7 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
    * @see java.sql.ResultSet#next()
    * @throws SQLException if a database access error occurs.
    */
+  @Override
   public boolean next() throws SQLException {
     if (isClosed) {
       throw new SQLException("Resultset is closed");
@@ -423,16 +423,6 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
       throw new SQLException("Resultset is closed");
     }
     return fetchSize;
-  }
-
-  public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
-    // JDK 1.7
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
-    // JDK 1.7
-    throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
   /**

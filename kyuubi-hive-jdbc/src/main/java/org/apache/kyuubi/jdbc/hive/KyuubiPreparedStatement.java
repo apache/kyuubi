@@ -18,37 +18,24 @@
 package org.apache.kyuubi.jdbc.hive;
 
 import java.io.InputStream;
-import java.io.Reader;
 import java.math.BigDecimal;
-import java.net.URL;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.Clob;
 import java.sql.Date;
-import java.sql.NClob;
-import java.sql.ParameterMetaData;
 import java.sql.PreparedStatement;
-import java.sql.Ref;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.RowId;
 import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLXML;
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Scanner;
 import org.apache.hive.service.rpc.thrift.TCLIService;
 import org.apache.hive.service.rpc.thrift.TSessionHandle;
+import org.apache.kyuubi.jdbc.hive.adapter.SQLPreparedStatement;
 
 /** KyuubiPreparedStatement. */
-public class KyuubiPreparedStatement extends KyuubiStatement implements PreparedStatement {
+public class KyuubiPreparedStatement extends KyuubiStatement implements SQLPreparedStatement {
   private final String sql;
 
   /** save the SQL parameters {paramLoc:paramValue} */
@@ -63,23 +50,7 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
     this.sql = sql;
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#addBatch()
-   */
-
-  public void addBatch() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#clearParameters()
-   */
-
+  @Override
   public void clearParameters() throws SQLException {
     this.parameters.clear();
   }
@@ -91,6 +62,7 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
    *     is empty a true is returned.
    * @throws SQLException
    */
+  @Override
   public boolean execute() throws SQLException {
     return super.execute(updateSql(sql, parameters));
   }
@@ -101,16 +73,12 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
    * @return ResultSet
    * @throws SQLException
    */
+  @Override
   public ResultSet executeQuery() throws SQLException {
     return super.executeQuery(updateSql(sql, parameters));
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#executeUpdate()
-   */
-
+  @Override
   public int executeUpdate() throws SQLException {
     super.executeUpdate(updateSql(sql, parameters));
     return 0;
@@ -182,429 +150,82 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
     return parts;
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#getMetaData()
-   */
-
-  public ResultSetMetaData getMetaData() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#getParameterMetaData()
-   */
-
-  public ParameterMetaData getParameterMetaData() throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setArray(int, java.sql.Array)
-   */
-
-  public void setArray(int i, Array x) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setAsciiStream(int, java.io.InputStream)
-   */
-
-  public void setAsciiStream(int parameterIndex, InputStream x) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setAsciiStream(int, java.io.InputStream,
-   * int)
-   */
-
-  public void setAsciiStream(int parameterIndex, InputStream x, int length) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setAsciiStream(int, java.io.InputStream,
-   * long)
-   */
-
-  public void setAsciiStream(int parameterIndex, InputStream x, long length) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setBigDecimal(int, java.math.BigDecimal)
-   */
-
+  @Override
   public void setBigDecimal(int parameterIndex, BigDecimal x) throws SQLException {
     this.parameters.put(parameterIndex, x.toString());
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setBinaryStream(int, java.io.InputStream)
-   */
-
+  @Override
   public void setBinaryStream(int parameterIndex, InputStream x) throws SQLException {
     String str = new Scanner(x, "UTF-8").useDelimiter("\\A").next();
     setString(parameterIndex, str);
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setBinaryStream(int, java.io.InputStream,
-   * int)
-   */
-
-  public void setBinaryStream(int parameterIndex, InputStream x, int length) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setBinaryStream(int, java.io.InputStream,
-   * long)
-   */
-
-  public void setBinaryStream(int parameterIndex, InputStream x, long length) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setBlob(int, java.sql.Blob)
-   */
-
-  public void setBlob(int i, Blob x) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setBlob(int, java.io.InputStream)
-   */
-
-  public void setBlob(int parameterIndex, InputStream inputStream) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setBlob(int, java.io.InputStream, long)
-   */
-
-  public void setBlob(int parameterIndex, InputStream inputStream, long length)
-      throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setBoolean(int, boolean)
-   */
-
+  @Override
   public void setBoolean(int parameterIndex, boolean x) throws SQLException {
     this.parameters.put(parameterIndex, "" + x);
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setByte(int, byte)
-   */
-
+  @Override
   public void setByte(int parameterIndex, byte x) throws SQLException {
     this.parameters.put(parameterIndex, "" + x);
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setBytes(int, byte[])
-   */
-
-  public void setBytes(int parameterIndex, byte[] x) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setCharacterStream(int, java.io.Reader)
-   */
-
-  public void setCharacterStream(int parameterIndex, Reader reader) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setCharacterStream(int, java.io.Reader,
-   * int)
-   */
-
-  public void setCharacterStream(int parameterIndex, Reader reader, int length)
-      throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setCharacterStream(int, java.io.Reader,
-   * long)
-   */
-
-  public void setCharacterStream(int parameterIndex, Reader reader, long length)
-      throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setClob(int, java.sql.Clob)
-   */
-
-  public void setClob(int i, Clob x) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setClob(int, java.io.Reader)
-   */
-
-  public void setClob(int parameterIndex, Reader reader) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setClob(int, java.io.Reader, long)
-   */
-
-  public void setClob(int parameterIndex, Reader reader, long length) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setDate(int, java.sql.Date)
-   */
-
+  @Override
   public void setDate(int parameterIndex, Date x) throws SQLException {
     this.parameters.put(parameterIndex, "'" + x.toString() + "'");
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setDate(int, java.sql.Date,
-   * java.util.Calendar)
-   */
-
-  public void setDate(int parameterIndex, Date x, Calendar cal) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setDouble(int, double)
-   */
-
+  @Override
   public void setDouble(int parameterIndex, double x) throws SQLException {
     this.parameters.put(parameterIndex, "" + x);
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setFloat(int, float)
-   */
-
+  @Override
   public void setFloat(int parameterIndex, float x) throws SQLException {
     this.parameters.put(parameterIndex, "" + x);
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setInt(int, int)
-   */
-
+  @Override
   public void setInt(int parameterIndex, int x) throws SQLException {
     this.parameters.put(parameterIndex, "" + x);
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setLong(int, long)
-   */
-
+  @Override
   public void setLong(int parameterIndex, long x) throws SQLException {
     this.parameters.put(parameterIndex, "" + x);
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setNCharacterStream(int, java.io.Reader)
-   */
-
-  public void setNCharacterStream(int parameterIndex, Reader value) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setNCharacterStream(int, java.io.Reader,
-   * long)
-   */
-
-  public void setNCharacterStream(int parameterIndex, Reader value, long length)
-      throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setNClob(int, java.sql.NClob)
-   */
-
-  public void setNClob(int parameterIndex, NClob value) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setNClob(int, java.io.Reader)
-   */
-
-  public void setNClob(int parameterIndex, Reader reader) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setNClob(int, java.io.Reader, long)
-   */
-
-  public void setNClob(int parameterIndex, Reader reader, long length) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setNString(int, java.lang.String)
-   */
-
-  public void setNString(int parameterIndex, String value) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setNull(int, int)
-   */
-
+  @Override
   public void setNull(int parameterIndex, int sqlType) throws SQLException {
     this.parameters.put(parameterIndex, "NULL");
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setNull(int, int, java.lang.String)
-   */
-
+  @Override
   public void setNull(int paramIndex, int sqlType, String typeName) throws SQLException {
     this.parameters.put(paramIndex, "NULL");
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setObject(int, java.lang.Object)
-   */
-
+  @Override
   public void setObject(int parameterIndex, Object x) throws SQLException {
     if (x == null) {
       setNull(parameterIndex, Types.NULL);
     } else if (x instanceof String) {
       setString(parameterIndex, (String) x);
     } else if (x instanceof Short) {
-      setShort(parameterIndex, ((Short) x).shortValue());
+      setShort(parameterIndex, (Short) x);
     } else if (x instanceof Integer) {
-      setInt(parameterIndex, ((Integer) x).intValue());
+      setInt(parameterIndex, (Integer) x);
     } else if (x instanceof Long) {
-      setLong(parameterIndex, ((Long) x).longValue());
+      setLong(parameterIndex, (Long) x);
     } else if (x instanceof Float) {
-      setFloat(parameterIndex, ((Float) x).floatValue());
+      setFloat(parameterIndex, (Float) x);
     } else if (x instanceof Double) {
-      setDouble(parameterIndex, ((Double) x).doubleValue());
+      setDouble(parameterIndex, (Double) x);
     } else if (x instanceof Boolean) {
-      setBoolean(parameterIndex, ((Boolean) x).booleanValue());
+      setBoolean(parameterIndex, (Boolean) x);
     } else if (x instanceof Byte) {
-      setByte(parameterIndex, ((Byte) x).byteValue());
+      setByte(parameterIndex, (Byte) x);
     } else if (x instanceof Character) {
       setString(parameterIndex, x.toString());
     } else if (x instanceof Timestamp) {
@@ -620,68 +241,7 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
     }
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setObject(int, java.lang.Object, int)
-   */
-
-  public void setObject(int parameterIndex, Object x, int targetSqlType) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setObject(int, java.lang.Object, int, int)
-   */
-
-  public void setObject(int parameterIndex, Object x, int targetSqlType, int scale)
-      throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setRef(int, java.sql.Ref)
-   */
-
-  public void setRef(int i, Ref x) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setRowId(int, java.sql.RowId)
-   */
-
-  public void setRowId(int parameterIndex, RowId x) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setSQLXML(int, java.sql.SQLXML)
-   */
-
-  public void setSQLXML(int parameterIndex, SQLXML xmlObject) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setShort(int, short)
-   */
-
+  @Override
   public void setShort(int parameterIndex, short x) throws SQLException {
     this.parameters.put(parameterIndex, "" + x);
   }
@@ -707,83 +267,15 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
     return newX.toString();
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setString(int, java.lang.String)
-   */
-
+  @Override
   public void setString(int parameterIndex, String x) throws SQLException {
     x = replaceBackSlashSingleQuote(x);
     x = x.replace("'", "\\'");
     this.parameters.put(parameterIndex, "'" + x + "'");
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setTime(int, java.sql.Time)
-   */
-
-  public void setTime(int parameterIndex, Time x) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setTime(int, java.sql.Time,
-   * java.util.Calendar)
-   */
-
-  public void setTime(int parameterIndex, Time x, Calendar cal) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setTimestamp(int, java.sql.Timestamp)
-   */
-
+  @Override
   public void setTimestamp(int parameterIndex, Timestamp x) throws SQLException {
     this.parameters.put(parameterIndex, "'" + x.toString() + "'");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setTimestamp(int, java.sql.Timestamp,
-   * java.util.Calendar)
-   */
-
-  public void setTimestamp(int parameterIndex, Timestamp x, Calendar cal) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setURL(int, java.net.URL)
-   */
-
-  public void setURL(int parameterIndex, URL x) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
-  }
-
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.sql.PreparedStatement#setUnicodeStream(int, java.io.InputStream,
-   * int)
-   */
-
-  public void setUnicodeStream(int parameterIndex, InputStream x, int length) throws SQLException {
-    // TODO Auto-generated method stub
-    throw new SQLFeatureNotSupportedException("Method not supported");
   }
 }

@@ -23,7 +23,6 @@ public class ClosedOrCancelledStatementException extends SQLException {
 
   private static final long serialVersionUID = 0;
 
-  /** @param msg (exception message) */
   public ClosedOrCancelledStatementException(String msg) {
     super(msg);
   }
