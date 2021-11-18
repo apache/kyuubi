@@ -152,8 +152,10 @@ public class KyuubiDatabaseConnection extends DatabaseConnection {
         beeLine.getErrorStream(),
         eventNotifier
       ));
+
     kyuubiConnection.waitLaunchEngineToComplete();
     logThread.interrupt();
+
     kyuubiConnection.executeInitSql();
 
     return kyuubiConnection;
