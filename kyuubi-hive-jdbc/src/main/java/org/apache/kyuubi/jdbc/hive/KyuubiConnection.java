@@ -77,11 +77,7 @@ import org.slf4j.LoggerFactory;
 /** KyuubiConnection. */
 public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
-  private static boolean isBeeLineMode = false;
-
-  public static void setBeeLineMode(boolean isBeeLineMode) {
-    KyuubiConnection.isBeeLineMode = isBeeLineMode;
-  }
+  public static final String BEELINE_MODE_PROPERTY = "BEELINE_MODE";
 
   private String jdbcUriString;
   private String host;
@@ -107,6 +103,8 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   private boolean engineLogInflight = true;
   private volatile boolean launchEngineOpCompleted = false;
 
+  private boolean isBeeLineMode;
+
   public KyuubiConnection(String uri, Properties info) throws SQLException {
     setupLoginTimeout();
     try {
@@ -114,6 +112,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     } catch (ZooKeeperHiveClientException e) {
       throw new SQLException(e);
     }
+    isBeeLineMode = Boolean.parseBoolean(info.getProperty(BEELINE_MODE_PROPERTY));
     jdbcUriString = connParams.getJdbcUriString();
     // JDBC URL: jdbc:hive2://<host>:<port>/dbName;sess_var_list?hive_conf_list#hive_var_list
     // each list: <key1>=<val1>;<key2>=<val2> and so on

@@ -142,6 +142,7 @@ public class KyuubiDatabaseConnection extends DatabaseConnection {
 
   public Connection getConnectionFromDefaultDriver(String url, Properties properties)
       throws SQLException {
+    properties.setProperty(KyuubiConnection.BEELINE_MODE_PROPERTY, "true");
     KyuubiConnection kyuubiConnection =
         (KyuubiConnection) beeLine.getDefaultDriver().connect(url, properties);
 
