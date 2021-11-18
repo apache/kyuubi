@@ -189,7 +189,7 @@ echo "Build flags: $@" >> "$DISTDIR/RELEASE"
 cp -r "$KYUUBI_HOME/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/" "$DISTDIR/jars"
 
 # Copy kyuubi beeline jars
-cp -r "$KYUUBI_HOME/kyuubi-hive-beeline/target/scala-${SCALA_VERSION}/jars" "$DISTDIR/beeline-jars"
+cp -r "$KYUUBI_HOME/kyuubi-hive-beeline/target/jars" "$DISTDIR/beeline-jars"
 cp -r "$KYUUBI_HOME/kyuubi-hive-beeline/target/kyuubi-hive-beeline-${VERSION}.jar" "$DISTDIR/beeline-jars/"
 
 # Copy spark engines

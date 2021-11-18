@@ -30,6 +30,10 @@
     <name>Kyuubi Project Hive Beeline</name>
     <packaging>jar</packaging>
 
+    <properties>
+        <jars.target.dir>${project.build.directory}/jars</jars.target.dir>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
@@ -178,36 +182,7 @@
     </dependencies>
 
     <build>
-        <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
-        <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
-
-        <plugins>
-            <plugin>
-                <groupId>net.alchim31.maven</groupId>
-                <artifactId>scala-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-scaladocs</id>
-                        <phase>none</phase>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.scalatest</groupId>
-                <artifactId>scalatest-maven-plugin</artifactId>
-                <configuration>
-                    <skipTests>true</skipTests>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.scalastyle</groupId>
-                <artifactId>scalastyle-maven-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-        </plugins>
+        <outputDirectory>target/classes</outputDirectory>
+        <testOutputDirectory>target/test-classes</testOutputDirectory>
     </build>
 </project>
