@@ -40,7 +40,7 @@ if [[ -z "$KYUUBI_BEELINE_LIB_DIR" ]]; then
   if [[ ! -d ${KYUUBI_BEELINE_JARS} ]]; then
     echo -e "\nCandidate Kyuubi beeline jars $KYUUBI_BEELINE_JARS doesn't exist, searching development environment..."
     MVN="$KYUUBI_HOME/build/mvn"
-    VERSION=$("$MVN" help:evaluate -Dexpression=project.version $@ 2>/dev/null\
+    VERSION=$("$MVN" help:evaluate -Dexpression=project.version 2>/dev/null\
         | grep -v "INFO"\
         | grep -v "WARNING"\
         | tail -n 1)
@@ -52,4 +52,4 @@ fi
 
 KYUUBI_BEELINE_CLASSPATH="${KYUUBI_BEELINE_JARS}/*:"
 
-exec ${RUNNER} ${KYUUBI_JAVA_OPTS} -cp ${KYUUBI_BEELINE_CLASSPATH} $CLASS "$@"
+exec ${RUNNER} ${KYUUBI_BEELINE_OPTS} -cp ${KYUUBI_BEELINE_CLASSPATH} $CLASS "$@"
