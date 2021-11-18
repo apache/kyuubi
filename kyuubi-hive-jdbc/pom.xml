@@ -40,7 +40,7 @@
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-storage-api</artifactId>
-            <version>${hive.jdbc.storage-api.version}</version>
+            <version>${hive.cli.storage-api.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -52,7 +52,7 @@
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-service-rpc</artifactId>
-            <version>${hive.jdbc.version}</version>
+            <version>${hive.cli.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -64,7 +64,7 @@
         <dependency>
             <groupId>org.apache.hive.shims</groupId>
             <artifactId>hive-shims-common</artifactId>
-            <version>${hive.jdbc.version}</version>
+            <version>${hive.cli.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -76,7 +76,7 @@
         <dependency>
             <groupId>org.apache.hive.shims</groupId>
             <artifactId>hive-shims-0.23</artifactId>
-            <version>${hive.jdbc.version}</version>
+            <version>${hive.cli.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -88,7 +88,7 @@
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-common</artifactId>
-            <version>${hive.jdbc.version}</version>
+            <version>${hive.cli.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -100,7 +100,7 @@
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-metastore</artifactId>
-            <version>${hive.jdbc.version}</version>
+            <version>${hive.cli.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -112,7 +112,7 @@
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-serde</artifactId>
-            <version>${hive.jdbc.version}</version>
+            <version>${hive.cli.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -124,7 +124,7 @@
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-service</artifactId>
-            <version>${hive.jdbc.version}</version>
+            <version>${hive.cli.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -136,25 +136,25 @@
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
-            <version>${hive.jdbc.commons-codec.version}</version>
+            <version>${hive.cli.commons-codec.version}</version>
         </dependency>
 
         <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
-            <version>${hive.jdbc.commons-lang.version}</version>
+            <version>${hive.cli.commons-lang.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>${hive.jdbc.guava.version}</version>
+            <version>${hive.cli.guava.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-framework</artifactId>
-            <version>${hive.jdbc.curator.version}</version>
+            <version>${hive.cli.curator.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -166,7 +166,7 @@
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-client</artifactId>
-            <version>${hive.jdbc.curator.version}</version>
+            <version>${hive.cli.curator.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -178,7 +178,7 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>${hive.jdbc.httpcomponents-client.version}</version>
+            <version>${hive.cli.httpcomponents-client.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -190,13 +190,13 @@
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpcore</artifactId>
-            <version>${hive.jdbc.httpcomponents-core.version}</version>
+            <version>${hive.cli.httpcomponents-core.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.thrift</groupId>
             <artifactId>libthrift</artifactId>
-            <version>${hive.jdbc.thrift.version}</version>
+            <version>${hive.cli.thrift.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -208,7 +208,7 @@
         <dependency>
             <groupId>org.apache.thrift</groupId>
             <artifactId>libfb303</artifactId>
-            <version>${hive.jdbc.fb303.version}</version>
+            <version>${hive.cli.fb303.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
@@ -220,7 +220,7 @@
         <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
-            <version>${hive.jdbc.zookeeper.version}</version>
+            <version>${hive.cli.zookeeper.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
