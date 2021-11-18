@@ -163,8 +163,9 @@ public class KyuubiConnection implements java.sql.Connection {
     if (isEmbeddedMode) {
       EmbeddedThriftBinaryCLIService embeddedClient = new EmbeddedThriftBinaryCLIService();
       embeddedClient.init(null);
-      client = embeddedClient;
-
+      TCLIService.Iface _client = client = embeddedClient;
+      // Wrap the client with a thread-safe proxy to serialize the RPC calls
+      client = newSynchronizedClient(_client);
       // open client session
       openSession();
       showLaunchEngineLog();
@@ -184,7 +185,9 @@ public class KyuubiConnection implements java.sql.Connection {
           // open the client transport
           openTransport();
           // set up the client
-          client = new TCLIService.Client(new TBinaryProtocol(transport));
+          TCLIService.Iface _client = new TCLIService.Client(new TBinaryProtocol(transport));
+          // Wrap the client with a thread-safe proxy to serialize the RPC calls
+          client = newSynchronizedClient(_client);
           // open client session
           openSession();
           if (!isBeeLineMode) {
@@ -220,9 +223,6 @@ public class KyuubiConnection implements java.sql.Connection {
         }
       }
     }
-
-    // Wrap the client with a thread-safe proxy to serialize the RPC calls
-    client = newSynchronizedClient(client);
   }
 
   /**
