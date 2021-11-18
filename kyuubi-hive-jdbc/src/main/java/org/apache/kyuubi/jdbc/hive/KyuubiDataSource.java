@@ -22,18 +22,12 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.logging.Logger;
-
 import javax.sql.DataSource;
 
-/**
- * KyuubiDataSource.
- *
- */
+/** KyuubiDataSource. */
 public class KyuubiDataSource implements DataSource {
 
-  /**
-   *
-   */
+  /** */
   public KyuubiDataSource() {
     // TODO Auto-generated constructor stub
   }
@@ -56,12 +50,11 @@ public class KyuubiDataSource implements DataSource {
    */
 
   @Override
-  public Connection getConnection(String username, String password)
-      throws SQLException {
+  public Connection getConnection(String username, String password) throws SQLException {
     try {
       return new KyuubiConnection("", null);
     } catch (Exception ex) {
-      throw new SQLException("Error in getting HiveConnection",ex);
+      throw new SQLException("Error in getting HiveConnection", ex);
     }
   }
 
@@ -141,5 +134,4 @@ public class KyuubiDataSource implements DataSource {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
-
 }

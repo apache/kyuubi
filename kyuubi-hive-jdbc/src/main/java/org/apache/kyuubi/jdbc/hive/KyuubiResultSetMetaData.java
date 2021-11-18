@@ -21,21 +21,18 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.List;
-
 import org.apache.hadoop.hive.serde2.thrift.Type;
 
-/**
- * KyuubiResultSetMetaData.
- *
- */
+/** KyuubiResultSetMetaData. */
 public class KyuubiResultSetMetaData implements java.sql.ResultSetMetaData {
   private final List<String> columnNames;
   private final List<String> columnTypes;
   private final List<JdbcColumnAttributes> columnAttributes;
 
-  public KyuubiResultSetMetaData(List<String> columnNames,
-                                 List<String> columnTypes,
-                                 List<JdbcColumnAttributes> columnAttributes) {
+  public KyuubiResultSetMetaData(
+      List<String> columnNames,
+      List<String> columnTypes,
+      List<JdbcColumnAttributes> columnAttributes) {
     this.columnNames = columnNames;
     this.columnTypes = columnTypes;
     this.columnAttributes = columnAttributes;
@@ -50,8 +47,8 @@ public class KyuubiResultSetMetaData implements java.sql.ResultSetMetaData {
   }
 
   public String getColumnClassName(int column) throws SQLException {
-    return JdbcColumn.columnClassName(getHiveType(column),
-        columnAttributes.get(toZeroIndex(column)));
+    return JdbcColumn.columnClassName(
+        getHiveType(column), columnAttributes.get(toZeroIndex(column)));
   }
 
   public int getColumnCount() throws SQLException {
@@ -59,8 +56,8 @@ public class KyuubiResultSetMetaData implements java.sql.ResultSetMetaData {
   }
 
   public int getColumnDisplaySize(int column) throws SQLException {
-    return JdbcColumn.columnDisplaySize(getHiveType(column),
-        columnAttributes.get(toZeroIndex(column)));
+    return JdbcColumn.columnDisplaySize(
+        getHiveType(column), columnAttributes.get(toZeroIndex(column)));
   }
 
   public String getColumnLabel(int column) throws SQLException {
@@ -84,13 +81,12 @@ public class KyuubiResultSetMetaData implements java.sql.ResultSetMetaData {
   }
 
   public int getPrecision(int column) throws SQLException {
-    return JdbcColumn.columnPrecision(getHiveType(column),
-        columnAttributes.get(toZeroIndex(column)));
+    return JdbcColumn.columnPrecision(
+        getHiveType(column), columnAttributes.get(toZeroIndex(column)));
   }
 
   public int getScale(int column) throws SQLException {
-    return JdbcColumn.columnScale(getHiveType(column),
-        columnAttributes.get(toZeroIndex(column)));
+    return JdbcColumn.columnScale(getHiveType(column), columnAttributes.get(toZeroIndex(column)));
   }
 
   public String getSchemaName(int column) throws SQLException {
@@ -111,7 +107,7 @@ public class KyuubiResultSetMetaData implements java.sql.ResultSetMetaData {
     // TODO: this would be better handled in an enum
     String type = columnTypes.get(toZeroIndex(column));
 
-    if("string".equalsIgnoreCase(type)) {
+    if ("string".equalsIgnoreCase(type)) {
       return true;
     } else {
       return false;
@@ -158,8 +154,7 @@ public class KyuubiResultSetMetaData implements java.sql.ResultSetMetaData {
 
   protected int toZeroIndex(int column) throws SQLException {
     if (columnTypes == null) {
-      throw new SQLException(
-          "Could not determine column type name for ResultSet");
+      throw new SQLException("Could not determine column type name for ResultSet");
     }
     if (column < 1 || column > columnTypes.size()) {
       throw new SQLException("Invalid column value: " + column);

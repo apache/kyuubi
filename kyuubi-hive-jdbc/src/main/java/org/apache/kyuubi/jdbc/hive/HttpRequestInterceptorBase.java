@@ -19,7 +19,6 @@ package org.apache.kyuubi.jdbc.hive;
 
 import java.io.IOException;
 import java.util.Map;
-
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpRequestInterceptor;
@@ -36,10 +35,10 @@ public abstract class HttpRequestInterceptorBase implements HttpRequestIntercept
 
   // Abstract function to add HttpAuth Header
   protected abstract void addHttpAuthHeader(HttpRequest httpRequest, HttpContext httpContext)
-    throws Exception;
+      throws Exception;
 
-  public HttpRequestInterceptorBase(CookieStore cs, String cn, boolean isSSL,
-    Map<String, String> additionalHeaders) {
+  public HttpRequestInterceptorBase(
+      CookieStore cs, String cn, boolean isSSL, Map<String, String> additionalHeaders) {
     this.cookieStore = cs;
     this.isCookieEnabled = (cs != null);
     this.cookieName = cn;
@@ -49,7 +48,7 @@ public abstract class HttpRequestInterceptorBase implements HttpRequestIntercept
 
   @Override
   public void process(HttpRequest httpRequest, HttpContext httpContext)
-    throws HttpException, IOException {
+      throws HttpException, IOException {
     try {
       // If cookie based authentication is allowed, generate ticket only when necessary.
       // The necessary condition is either when there are no server side cookies in the
@@ -63,12 +62,15 @@ public abstract class HttpRequestInterceptorBase implements HttpRequestIntercept
       // 2. The first time when the request is sent OR
       // 3. The server returns a 401, which sometimes means the cookie has expired
       // 4. The cookie is secured where as the client connect does not use SSL
-      if (!isCookieEnabled || ((httpContext.getAttribute(Utils.HIVE_SERVER2_RETRY_KEY) == null &&
-          (cookieStore == null || (cookieStore != null &&
-          Utils.needToSendCredentials(cookieStore, cookieName, isSSL)))) ||
-          (httpContext.getAttribute(Utils.HIVE_SERVER2_RETRY_KEY) != null &&
-          httpContext.getAttribute(Utils.HIVE_SERVER2_RETRY_KEY).
-          equals(Utils.HIVE_SERVER2_RETRY_TRUE)))) {
+      if (!isCookieEnabled
+          || ((httpContext.getAttribute(Utils.HIVE_SERVER2_RETRY_KEY) == null
+                  && (cookieStore == null
+                      || (cookieStore != null
+                          && Utils.needToSendCredentials(cookieStore, cookieName, isSSL))))
+              || (httpContext.getAttribute(Utils.HIVE_SERVER2_RETRY_KEY) != null
+                  && httpContext
+                      .getAttribute(Utils.HIVE_SERVER2_RETRY_KEY)
+                      .equals(Utils.HIVE_SERVER2_RETRY_TRUE)))) {
         addHttpAuthHeader(httpRequest, httpContext);
       }
       if (isCookieEnabled) {

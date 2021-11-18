@@ -53,16 +53,15 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.common.auth.HiveAuthUtils;
-import org.apache.hive.service.cli.RowSet;
-import org.apache.hive.service.cli.RowSetFactory;
 import org.apache.hive.service.auth.HiveAuthFactory;
 import org.apache.hive.service.auth.KerberosSaslHelper;
 import org.apache.hive.service.auth.PlainSaslHelper;
 import org.apache.hive.service.auth.SaslQOP;
+import org.apache.hive.service.cli.RowSet;
+import org.apache.hive.service.cli.RowSetFactory;
 import org.apache.hive.service.cli.thrift.*;
 import org.apache.hive.service.rpc.thrift.*;
 import org.apache.http.HttpRequestInterceptor;
@@ -82,6 +81,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContexts;
+import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.transport.THttpClient;
@@ -90,12 +90,7 @@ import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
-
-/**
- * KyuubiConnection.
- *
- */
+/** KyuubiConnection. */
 public class KyuubiConnection implements java.sql.Connection {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
   private static boolean isBeeLineMode = false;
@@ -181,10 +176,10 @@ public class KyuubiConnection implements java.sql.Connection {
         if (StringUtils.isNotBlank(strRetries)) {
           maxRetries = Integer.parseInt(strRetries);
         }
-      } catch(NumberFormatException e) { // Ignore the exception
+      } catch (NumberFormatException e) { // Ignore the exception
       }
 
-      for (int numRetries = 0;;) {
+      for (int numRetries = 0; ; ) {
         try {
           // open the client transport
           openTransport();
@@ -203,8 +198,9 @@ public class KyuubiConnection implements java.sql.Connection {
           String warnMsg = "Could not open client transport with JDBC Uri: " + jdbcUriString + ": ";
           if (isZkDynamicDiscoveryMode()) {
             errMsg = "Could not open client transport for any of the Server URI's in ZooKeeper: ";
-            // Try next available server in zookeeper, or retry all the servers again if retry is enabled
-            while(!Utils.updateConnParamsFromZooKeeper(connParams) && ++numRetries < maxRetries) {
+            // Try next available server in zookeeper, or retry all the servers again if retry is
+            // enabled
+            while (!Utils.updateConnParamsFromZooKeeper(connParams) && ++numRetries < maxRetries) {
               connParams.getRejectedHostZnodePaths().clear();
             }
             // Update with new values
@@ -230,40 +226,41 @@ public class KyuubiConnection implements java.sql.Connection {
   }
 
   /**
-   * Check whether launch engine operation might be producing more logs to be fetched.
-   * This method is a public API for usage outside of Kyuubi, although it is not part of the
-   * interface java.sql.Connection.
-   * @return true if launch engine operation might be producing more logs. It does not indicate
-   *         if last log lines have been fetched by getEngineLog.
+   * Check whether launch engine operation might be producing more logs to be fetched. This method
+   * is a public API for usage outside of Kyuubi, although it is not part of the interface
+   * java.sql.Connection.
+   *
+   * @return true if launch engine operation might be producing more logs. It does not indicate if
+   *     last log lines have been fetched by getEngineLog.
    */
   public boolean hasMoreEngineLogs() {
     return launchEngineOpHandle != null && (!launchEngineOpCompleted || engineLogInflight);
   }
 
   /**
-   * Get the launch engine operation logs of current connection.
-   * This method is a public API for usage outside of Kyuubi, although it is not part of the
-   * interface java.sql.Connection.
-   * This method gets the incremental logs during launching engine, and uses fetchSize holden by
+   * Get the launch engine operation logs of current connection. This method is a public API for
+   * usage outside of Kyuubi, although it is not part of the interface java.sql.Connection. This
+   * method gets the incremental logs during launching engine, and uses fetchSize holden by
    * KyuubiStatement object.
+   *
    * @return a list of logs. It can be empty if there are no new logs to be retrieved at that time.
    * @throws SQLException
    * @throws ClosedConnectionException if connection has been closed
    */
   public List<String> getEngineLog() throws SQLException, ClosedConnectionException {
     if (isClosed()) {
-      throw new ClosedConnectionException("Method getEngineLog() failed. The " +
-        "connection has been closed.");
+      throw new ClosedConnectionException(
+          "Method getEngineLog() failed. The " + "connection has been closed.");
     }
-    TFetchResultsReq fetchResultsReq = new TFetchResultsReq(launchEngineOpHandle,
-      TFetchOrientation.FETCH_NEXT, fetchSize);
+    TFetchResultsReq fetchResultsReq =
+        new TFetchResultsReq(launchEngineOpHandle, TFetchOrientation.FETCH_NEXT, fetchSize);
     fetchResultsReq.setFetchType((short) 1);
 
     List<String> logs = new ArrayList<>();
     try {
       TFetchResultsResp tFetchResultsResp = client.FetchResults(fetchResultsReq);
       RowSet rowSet = RowSetFactory.create(tFetchResultsResp.getResults(), this.getProtocol());
-      for (Object[] row: rowSet) {
+      for (Object[] row : rowSet) {
         logs.add(String.valueOf(row[0]));
       }
     } catch (TException e) {
@@ -284,24 +281,25 @@ public class KyuubiConnection implements java.sql.Connection {
   private void showLaunchEngineLog() {
     if (launchEngineOpHandle != null) {
       LOG.info("Starting to get launch engine log.");
-      Thread logThread = new Thread("engine-launch-log") {
+      Thread logThread =
+          new Thread("engine-launch-log") {
 
-        @Override
-        public void run() {
-          try {
-            while (hasMoreEngineLogs()) {
-              List<String> logs = getEngineLog();
-              for (String log: logs) {
-                LOG.info(log);
+            @Override
+            public void run() {
+              try {
+                while (hasMoreEngineLogs()) {
+                  List<String> logs = getEngineLog();
+                  for (String log : logs) {
+                    LOG.info(log);
+                  }
+                  Thread.sleep(300);
+                }
+              } catch (Exception e) {
+                // do nothing
               }
-              Thread.sleep(300);
+              LOG.info("Finished to get launch engine log.");
             }
-          } catch (Exception e) {
-            // do nothing
-          }
-          LOG.info("Finished to get launch engine log.");
-        }
-      };
+          };
       logThread.start();
     }
   }
@@ -312,7 +310,7 @@ public class KyuubiConnection implements java.sql.Connection {
       try {
         List<String> sqlList = parseInitFile(initFile);
         Statement st = createStatement();
-        for(String sql : sqlList) {
+        for (String sql : sqlList) {
           boolean hasResult = st.execute(sql);
           if (hasResult) {
             ResultSet rs = st.getResultSet();
@@ -321,7 +319,7 @@ public class KyuubiConnection implements java.sql.Connection {
             }
           }
         }
-      } catch(Exception e) {
+      } catch (Exception e) {
         LOG.error("Failed to execute initial SQL");
         throw new SQLException(e.getMessage());
       }
@@ -350,7 +348,7 @@ public class KyuubiConnection implements java.sql.Connection {
         }
       }
       initSqlList = getInitSql(sb.toString());
-    } catch(IOException e) {
+    } catch (IOException e) {
       LOG.error("Failed to read initial SQL file", e);
       throw new IOException(e);
     } finally {
@@ -376,16 +374,15 @@ public class KyuubiConnection implements java.sql.Connection {
     return initSqlList;
   }
 
-
   private void openTransport() throws Exception {
-      assumeSubject =
-          JdbcConnectionParams.AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT.equals(sessConfMap
-              .get(JdbcConnectionParams.AUTH_KERBEROS_AUTH_TYPE));
-      transport = isHttpTransportMode() ? createHttpTransport() : createBinaryTransport();
-      if (!transport.isOpen()) {
-        transport.open();
-        logZkDiscoveryMessage("Connected to " + connParams.getHost() + ":" + connParams.getPort());
-      }
+    assumeSubject =
+        JdbcConnectionParams.AUTH_KERBEROS_AUTH_TYPE_FROM_SUBJECT.equals(
+            sessConfMap.get(JdbcConnectionParams.AUTH_KERBEROS_AUTH_TYPE));
+    transport = isHttpTransportMode() ? createHttpTransport() : createBinaryTransport();
+    if (!transport.isOpen()) {
+      transport.open();
+      logZkDiscoveryMessage("Connected to " + connParams.getHost() + ":" + connParams.getPort());
+    }
   }
 
   public String getConnectedUrl() {
@@ -417,12 +414,14 @@ public class KyuubiConnection implements java.sql.Connection {
   }
 
   private CloseableHttpClient getHttpClient(Boolean useSsl) throws SQLException {
-    boolean isCookieEnabled = sessConfMap.get(JdbcConnectionParams.COOKIE_AUTH) == null ||
-      (!JdbcConnectionParams.COOKIE_AUTH_FALSE.equalsIgnoreCase(
-      sessConfMap.get(JdbcConnectionParams.COOKIE_AUTH)));
-    String cookieName = sessConfMap.get(JdbcConnectionParams.COOKIE_NAME) == null ?
-      JdbcConnectionParams.DEFAULT_COOKIE_NAMES_HS2 :
-      sessConfMap.get(JdbcConnectionParams.COOKIE_NAME);
+    boolean isCookieEnabled =
+        sessConfMap.get(JdbcConnectionParams.COOKIE_AUTH) == null
+            || (!JdbcConnectionParams.COOKIE_AUTH_FALSE.equalsIgnoreCase(
+                sessConfMap.get(JdbcConnectionParams.COOKIE_AUTH)));
+    String cookieName =
+        sessConfMap.get(JdbcConnectionParams.COOKIE_NAME) == null
+            ? JdbcConnectionParams.DEFAULT_COOKIE_NAMES_HS2
+            : sessConfMap.get(JdbcConnectionParams.COOKIE_NAME);
     CookieStore cookieStore = isCookieEnabled ? new BasicCookieStore() : null;
     HttpClientBuilder httpClientBuilder;
     // Request interceptor for any request pre-processing logic
@@ -434,85 +433,100 @@ public class KyuubiConnection implements java.sql.Connection {
       String key = entry.getKey();
 
       if (key.startsWith(JdbcConnectionParams.HTTP_HEADER_PREFIX)) {
-        additionalHttpHeaders.put(key.substring(JdbcConnectionParams.HTTP_HEADER_PREFIX.length()),
-          entry.getValue());
+        additionalHttpHeaders.put(
+            key.substring(JdbcConnectionParams.HTTP_HEADER_PREFIX.length()), entry.getValue());
       }
     }
     // Configure http client for kerberos/password based authentication
     if (isKerberosAuthMode()) {
       /**
-       * Add an interceptor which sets the appropriate header in the request.
-       * It does the kerberos authentication and get the final service ticket,
-       * for sending to the server before every request.
-       * In https mode, the entire information is encrypted
+       * Add an interceptor which sets the appropriate header in the request. It does the kerberos
+       * authentication and get the final service ticket, for sending to the server before every
+       * request. In https mode, the entire information is encrypted
        */
       requestInterceptor =
-          new HttpKerberosRequestInterceptor(sessConfMap.get(JdbcConnectionParams.AUTH_PRINCIPAL),
-              host, getServerHttpUrl(useSsl), assumeSubject, cookieStore, cookieName, useSsl,
+          new HttpKerberosRequestInterceptor(
+              sessConfMap.get(JdbcConnectionParams.AUTH_PRINCIPAL),
+              host,
+              getServerHttpUrl(useSsl),
+              assumeSubject,
+              cookieStore,
+              cookieName,
+              useSsl,
               additionalHttpHeaders);
     } else {
       // Check for delegation token, if present add it in the header
       String tokenStr = getClientDelegationToken(sessConfMap);
       if (tokenStr != null) {
         requestInterceptor =
-            new HttpTokenAuthInterceptor(tokenStr, cookieStore, cookieName, useSsl,
-                additionalHttpHeaders);
+            new HttpTokenAuthInterceptor(
+                tokenStr, cookieStore, cookieName, useSsl, additionalHttpHeaders);
       } else {
-      /**
-       * Add an interceptor to pass username/password in the header.
-       * In https mode, the entire information is encrypted
-       */
+        /**
+         * Add an interceptor to pass username/password in the header. In https mode, the entire
+         * information is encrypted
+         */
         requestInterceptor =
-            new HttpBasicAuthInterceptor(getUserName(), getPassword(), cookieStore, cookieName,
-                useSsl, additionalHttpHeaders);
+            new HttpBasicAuthInterceptor(
+                getUserName(),
+                getPassword(),
+                cookieStore,
+                cookieName,
+                useSsl,
+                additionalHttpHeaders);
       }
     }
     // Configure http client for cookie based authentication
     if (isCookieEnabled) {
       // Create a http client with a retry mechanism when the server returns a status code of 401.
       httpClientBuilder =
-          HttpClients.custom().setServiceUnavailableRetryStrategy(
-              new ServiceUnavailableRetryStrategy() {
-                @Override
-                public boolean retryRequest(final HttpResponse response, final int executionCount,
-                    final HttpContext context) {
-                  int statusCode = response.getStatusLine().getStatusCode();
-                  boolean ret = statusCode == 401 && executionCount <= 1;
+          HttpClients.custom()
+              .setServiceUnavailableRetryStrategy(
+                  new ServiceUnavailableRetryStrategy() {
+                    @Override
+                    public boolean retryRequest(
+                        final HttpResponse response,
+                        final int executionCount,
+                        final HttpContext context) {
+                      int statusCode = response.getStatusLine().getStatusCode();
+                      boolean ret = statusCode == 401 && executionCount <= 1;
 
-                  // Set the context attribute to true which will be interpreted by the request
-                  // interceptor
-                  if (ret) {
-                    context.setAttribute(Utils.HIVE_SERVER2_RETRY_KEY,
-                        Utils.HIVE_SERVER2_RETRY_TRUE);
-                  }
-                  return ret;
-                }
+                      // Set the context attribute to true which will be interpreted by the request
+                      // interceptor
+                      if (ret) {
+                        context.setAttribute(
+                            Utils.HIVE_SERVER2_RETRY_KEY, Utils.HIVE_SERVER2_RETRY_TRUE);
+                      }
+                      return ret;
+                    }
 
-                @Override
-                public long getRetryInterval() {
-                  // Immediate retry
-                  return 0;
-                }
-              });
+                    @Override
+                    public long getRetryInterval() {
+                      // Immediate retry
+                      return 0;
+                    }
+                  });
     } else {
       httpClientBuilder = HttpClientBuilder.create();
     }
     // In case the server's idletimeout is set to a lower value, it might close it's side of
     // connection. However we retry one more time on NoHttpResponseException
-    httpClientBuilder.setRetryHandler(new HttpRequestRetryHandler() {
-      @Override
-      public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
-        if (executionCount > 1) {
-          LOG.info("Retry attempts to connect to server exceeded.");
-          return false;
-        }
-        if (exception instanceof org.apache.http.NoHttpResponseException) {
-          LOG.info("Could not connect to the server. Retrying one more time.");
-          return true;
-        }
-        return false;
-      }
-    });
+    httpClientBuilder.setRetryHandler(
+        new HttpRequestRetryHandler() {
+          @Override
+          public boolean retryRequest(
+              IOException exception, int executionCount, HttpContext context) {
+            if (executionCount > 1) {
+              LOG.info("Retry attempts to connect to server exceeded.");
+              return false;
+            }
+            if (exception instanceof org.apache.http.NoHttpResponseException) {
+              LOG.info("Could not connect to the server. Retrying one more time.");
+              return true;
+            }
+            return false;
+          }
+        });
 
     // Add the request interceptor to the client builder
     httpClientBuilder.addInterceptorFirst(requestInterceptor);
@@ -524,16 +538,15 @@ public class KyuubiConnection implements java.sql.Connection {
     if (useSsl) {
       String useTwoWaySSL = sessConfMap.get(JdbcConnectionParams.USE_TWO_WAY_SSL);
       String sslTrustStorePath = sessConfMap.get(JdbcConnectionParams.SSL_TRUST_STORE);
-      String sslTrustStorePassword = sessConfMap.get(
-        JdbcConnectionParams.SSL_TRUST_STORE_PASSWORD);
+      String sslTrustStorePassword = sessConfMap.get(JdbcConnectionParams.SSL_TRUST_STORE_PASSWORD);
       KeyStore sslTrustStore;
       SSLConnectionSocketFactory socketFactory;
       SSLContext sslContext;
       /**
        * The code within the try block throws: SSLInitializationException, KeyStoreException,
        * IOException, NoSuchAlgorithmException, CertificateException, KeyManagementException &
-       * UnrecoverableKeyException. We don't want the client to retry on any of these,
-       * hence we catch all and throw a SQLException.
+       * UnrecoverableKeyException. We don't want the client to retry on any of these, hence we
+       * catch all and throw a SQLException.
        */
       try {
         if (useTwoWaySSL != null && useTwoWaySSL.equalsIgnoreCase(JdbcConnectionParams.TRUE)) {
@@ -552,7 +565,8 @@ public class KyuubiConnection implements java.sql.Connection {
               new SSLConnectionSocketFactory(sslContext, new DefaultHostnameVerifier(null));
         }
         final Registry<ConnectionSocketFactory> registry =
-            RegistryBuilder.<ConnectionSocketFactory> create().register("https", socketFactory)
+            RegistryBuilder.<ConnectionSocketFactory>create()
+                .register("https", socketFactory)
                 .build();
         httpClientBuilder.setConnectionManager(new BasicHttpClientConnectionManager(registry));
       } catch (Exception e) {
@@ -580,14 +594,14 @@ public class KyuubiConnection implements java.sql.Connection {
     if (isSslConnection()) {
       // get SSL socket
       String sslTrustStore = sessConfMap.get(JdbcConnectionParams.SSL_TRUST_STORE);
-      String sslTrustStorePassword = sessConfMap.get(
-        JdbcConnectionParams.SSL_TRUST_STORE_PASSWORD);
+      String sslTrustStorePassword = sessConfMap.get(JdbcConnectionParams.SSL_TRUST_STORE_PASSWORD);
 
       if (sslTrustStore == null || sslTrustStore.isEmpty()) {
         transport = HiveAuthUtils.getSSLSocket(host, port, loginTimeout);
       } else {
-        transport = HiveAuthUtils.getSSLSocket(host, port, loginTimeout,
-            sslTrustStore, sslTrustStorePassword);
+        transport =
+            HiveAuthUtils.getSSLSocket(
+                host, port, loginTimeout, sslTrustStore, sslTrustStorePassword);
       }
     } else {
       // get non-SSL socket transport
@@ -597,23 +611,19 @@ public class KyuubiConnection implements java.sql.Connection {
   }
 
   /**
-   * Create transport per the connection options
-   * Supported transport options are:
-   *   - SASL based transports over
-   *      + Kerberos
-   *      + Delegation token
-   *      + SSL
-   *      + non-SSL
-   *   - Raw (non-SASL) socket
+   * Create transport per the connection options Supported transport options are: - SASL based
+   * transports over + Kerberos + Delegation token + SSL + non-SSL - Raw (non-SASL) socket
    *
-   *   Kerberos and Delegation token supports SASL QOP configurations
+   * <p>Kerberos and Delegation token supports SASL QOP configurations
+   *
    * @throws SQLException, TTransportException
    */
   private TTransport createBinaryTransport() throws SQLException, TTransportException {
     try {
       TTransport socketTransport = createUnderlyingTransport();
       // handle secure connection if specified
-      if (!JdbcConnectionParams.AUTH_SIMPLE.equals(sessConfMap.get(JdbcConnectionParams.AUTH_TYPE))) {
+      if (!JdbcConnectionParams.AUTH_SIMPLE.equals(
+          sessConfMap.get(JdbcConnectionParams.AUTH_TYPE))) {
         // If Kerberos
         Map<String, String> saslProps = new HashMap<String, String>();
         SaslQOP saslQOP = SaslQOP.AUTH;
@@ -621,8 +631,10 @@ public class KyuubiConnection implements java.sql.Connection {
           try {
             saslQOP = SaslQOP.fromString(sessConfMap.get(JdbcConnectionParams.AUTH_QOP));
           } catch (IllegalArgumentException e) {
-            throw new SQLException("Invalid " + JdbcConnectionParams.AUTH_QOP +
-                " parameter. " + e.getMessage(), "42000", e);
+            throw new SQLException(
+                "Invalid " + JdbcConnectionParams.AUTH_QOP + " parameter. " + e.getMessage(),
+                "42000",
+                e);
           }
           saslProps.put(Sasl.QOP, saslQOP.toString());
         } else {
@@ -631,15 +643,19 @@ public class KyuubiConnection implements java.sql.Connection {
         }
         saslProps.put(Sasl.SERVER_AUTH, "true");
         if (sessConfMap.containsKey(JdbcConnectionParams.AUTH_PRINCIPAL)) {
-          transport = KerberosSaslHelper.getKerberosTransport(
-              sessConfMap.get(JdbcConnectionParams.AUTH_PRINCIPAL), host,
-              socketTransport, saslProps, assumeSubject);
+          transport =
+              KerberosSaslHelper.getKerberosTransport(
+                  sessConfMap.get(JdbcConnectionParams.AUTH_PRINCIPAL),
+                  host,
+                  socketTransport,
+                  saslProps,
+                  assumeSubject);
         } else {
           // If there's a delegation token available then use token based connection
           String tokenStr = getClientDelegationToken(sessConfMap);
           if (tokenStr != null) {
-            transport = KerberosSaslHelper.getTokenTransport(tokenStr,
-                host, socketTransport, saslProps);
+            transport =
+                KerberosSaslHelper.getTokenTransport(tokenStr, host, socketTransport, saslProps);
           } else {
             // we are using PLAIN Sasl connection with user/password
             String userName = getUserName();
@@ -653,8 +669,10 @@ public class KyuubiConnection implements java.sql.Connection {
         transport = socketTransport;
       }
     } catch (SaslException e) {
-      throw new SQLException("Could not create secure connection to "
-          + jdbcUriString + ": " + e.getMessage(), " 08S01", e);
+      throw new SQLException(
+          "Could not create secure connection to " + jdbcUriString + ": " + e.getMessage(),
+          " 08S01",
+          e);
     }
     return transport;
   }
@@ -663,40 +681,43 @@ public class KyuubiConnection implements java.sql.Connection {
     SSLConnectionSocketFactory socketFactory = null;
 
     try {
-      KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(
-        JdbcConnectionParams.SUNX509_ALGORITHM_STRING,
-        JdbcConnectionParams.SUNJSSE_ALGORITHM_STRING);
+      KeyManagerFactory keyManagerFactory =
+          KeyManagerFactory.getInstance(
+              JdbcConnectionParams.SUNX509_ALGORITHM_STRING,
+              JdbcConnectionParams.SUNJSSE_ALGORITHM_STRING);
       String keyStorePath = sessConfMap.get(JdbcConnectionParams.SSL_KEY_STORE);
       String keyStorePassword = sessConfMap.get(JdbcConnectionParams.SSL_KEY_STORE_PASSWORD);
       KeyStore sslKeyStore = KeyStore.getInstance(JdbcConnectionParams.SSL_KEY_STORE_TYPE);
 
       if (keyStorePath == null || keyStorePath.isEmpty()) {
-        throw new IllegalArgumentException(JdbcConnectionParams.SSL_KEY_STORE
-        + " Not configured for 2 way SSL connection, keyStorePath param is empty");
+        throw new IllegalArgumentException(
+            JdbcConnectionParams.SSL_KEY_STORE
+                + " Not configured for 2 way SSL connection, keyStorePath param is empty");
       }
       try (FileInputStream fis = new FileInputStream(keyStorePath)) {
         sslKeyStore.load(fis, keyStorePassword.toCharArray());
       }
       keyManagerFactory.init(sslKeyStore, keyStorePassword.toCharArray());
 
-      TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(
-        JdbcConnectionParams.SUNX509_ALGORITHM_STRING);
+      TrustManagerFactory trustManagerFactory =
+          TrustManagerFactory.getInstance(JdbcConnectionParams.SUNX509_ALGORITHM_STRING);
       String trustStorePath = sessConfMap.get(JdbcConnectionParams.SSL_TRUST_STORE);
-      String trustStorePassword = sessConfMap.get(
-        JdbcConnectionParams.SSL_TRUST_STORE_PASSWORD);
+      String trustStorePassword = sessConfMap.get(JdbcConnectionParams.SSL_TRUST_STORE_PASSWORD);
       KeyStore sslTrustStore = KeyStore.getInstance(JdbcConnectionParams.SSL_TRUST_STORE_TYPE);
 
       if (trustStorePath == null || trustStorePath.isEmpty()) {
-        throw new IllegalArgumentException(JdbcConnectionParams.SSL_TRUST_STORE
-        + " Not configured for 2 way SSL connection");
+        throw new IllegalArgumentException(
+            JdbcConnectionParams.SSL_TRUST_STORE + " Not configured for 2 way SSL connection");
       }
       try (FileInputStream fis = new FileInputStream(trustStorePath)) {
         sslTrustStore.load(fis, trustStorePassword.toCharArray());
       }
       trustManagerFactory.init(sslTrustStore);
       SSLContext context = SSLContext.getInstance("TLS");
-      context.init(keyManagerFactory.getKeyManagers(),
-        trustManagerFactory.getTrustManagers(), new SecureRandom());
+      context.init(
+          keyManagerFactory.getKeyManagers(),
+          trustManagerFactory.getTrustManagers(),
+          new SecureRandom());
       socketFactory = new SSLConnectionSocketFactory(context);
     } catch (Exception e) {
       throw new SQLException("Error while initializing 2 way ssl socket factory ", e);
@@ -705,13 +726,14 @@ public class KyuubiConnection implements java.sql.Connection {
   }
 
   // Lookup the delegation token. First in the connection URL, then Configuration
-  private String getClientDelegationToken(Map<String, String> jdbcConnConf)
-      throws SQLException {
+  private String getClientDelegationToken(Map<String, String> jdbcConnConf) throws SQLException {
     String tokenStr = null;
-    if (JdbcConnectionParams.AUTH_TOKEN.equalsIgnoreCase(jdbcConnConf.get(JdbcConnectionParams.AUTH_TYPE))) {
+    if (JdbcConnectionParams.AUTH_TOKEN.equalsIgnoreCase(
+        jdbcConnConf.get(JdbcConnectionParams.AUTH_TYPE))) {
       // check delegation token in job conf if any
       try {
-        tokenStr = org.apache.hadoop.hive.shims.Utils.getTokenStrForm(HiveAuthFactory.HS2_CLIENT_TOKEN);
+        tokenStr =
+            org.apache.hadoop.hive.shims.Utils.getTokenStrForm(HiveAuthFactory.HS2_CLIENT_TOKEN);
       } catch (IOException e) {
         throw new SQLException("Error reading token ", e);
       }
@@ -734,14 +756,14 @@ public class KyuubiConnection implements java.sql.Connection {
     // switch the database
     openConf.put("use:database", connParams.getDbName());
     // set the fetchSize
-    openConf.put("set:hiveconf:hive.server2.thrift.resultset.default.fetch.size",
-      Integer.toString(fetchSize));
+    openConf.put(
+        "set:hiveconf:hive.server2.thrift.resultset.default.fetch.size",
+        Integer.toString(fetchSize));
 
     // set the session configuration
     Map<String, String> sessVars = connParams.getSessionVars();
     if (sessVars.containsKey(HiveAuthFactory.HS2_PROXY_USER)) {
-      openConf.put(HiveAuthFactory.HS2_PROXY_USER,
-          sessVars.get(HiveAuthFactory.HS2_PROXY_USER));
+      openConf.put(HiveAuthFactory.HS2_PROXY_USER, sessVars.get(HiveAuthFactory.HS2_PROXY_USER));
     }
     openReq.setConfiguration(openConf);
 
@@ -771,40 +793,38 @@ public class KyuubiConnection implements java.sql.Connection {
 
       // Get launch engine operation handle
       String launchEngineOpHandleGuid =
-        openRespConf.get("kyuubi.session.launch.engine.handle.guid");
+          openRespConf.get("kyuubi.session.launch.engine.handle.guid");
       String launchEngineOpHandleSecret =
-        openRespConf.get("kyuubi.session.launch.engine.handle.secret");
+          openRespConf.get("kyuubi.session.launch.engine.handle.secret");
 
       if (launchEngineOpHandleGuid != null && launchEngineOpHandleSecret != null) {
         try {
           byte[] guidBytes = Base64.decodeBase64(launchEngineOpHandleGuid);
           byte[] secretBytes = Base64.decodeBase64(launchEngineOpHandleSecret);
-          THandleIdentifier handleIdentifier = new THandleIdentifier(ByteBuffer.wrap(guidBytes),
-            ByteBuffer.wrap(secretBytes));
+          THandleIdentifier handleIdentifier =
+              new THandleIdentifier(ByteBuffer.wrap(guidBytes), ByteBuffer.wrap(secretBytes));
           launchEngineOpHandle =
-            new TOperationHandle(handleIdentifier, TOperationType.UNKNOWN, false);
+              new TOperationHandle(handleIdentifier, TOperationType.UNKNOWN, false);
         } catch (Exception e) {
           LOG.error("Failed to decode launch engine operation handle from open session resp", e);
         }
       }
     } catch (TException e) {
       LOG.error("Error opening session", e);
-      throw new SQLException("Could not establish connection to "
-          + jdbcUriString + ": " + e.getMessage(), " 08S01", e);
+      throw new SQLException(
+          "Could not establish connection to " + jdbcUriString + ": " + e.getMessage(),
+          " 08S01",
+          e);
     }
     isClosed = false;
   }
 
-  /**
-   * @return username from sessConfMap
-   */
+  /** @return username from sessConfMap */
   private String getUserName() {
     return getSessionValue(JdbcConnectionParams.AUTH_USER, JdbcConnectionParams.ANONYMOUS_USER);
   }
 
-  /**
-   * @return password from sessConfMap
-   */
+  /** @return password from sessConfMap */
   private String getPassword() {
     return getSessionValue(JdbcConnectionParams.AUTH_PASSWD, JdbcConnectionParams.ANONYMOUS_PASSWD);
   }
@@ -820,7 +840,7 @@ public class KyuubiConnection implements java.sql.Connection {
 
   private boolean isHttpTransportMode() {
     String transportMode = sessConfMap.get(JdbcConnectionParams.TRANSPORT_MODE);
-    if(transportMode != null && (transportMode.equalsIgnoreCase("http"))) {
+    if (transportMode != null && (transportMode.equalsIgnoreCase("http"))) {
       return true;
     }
     return false;
@@ -828,8 +848,8 @@ public class KyuubiConnection implements java.sql.Connection {
 
   private boolean isZkDynamicDiscoveryMode() {
     return (sessConfMap.get(JdbcConnectionParams.SERVICE_DISCOVERY_MODE) != null)
-      && (JdbcConnectionParams.SERVICE_DISCOVERY_MODE_ZOOKEEPER.equalsIgnoreCase(sessConfMap
-      .get(JdbcConnectionParams.SERVICE_DISCOVERY_MODE)));
+        && (JdbcConnectionParams.SERVICE_DISCOVERY_MODE_ZOOKEEPER.equalsIgnoreCase(
+            sessConfMap.get(JdbcConnectionParams.SERVICE_DISCOVERY_MODE)));
   }
 
   private void logZkDiscoveryMessage(String message) {
@@ -839,8 +859,8 @@ public class KyuubiConnection implements java.sql.Connection {
   }
 
   /**
-   * Lookup varName in sessConfMap, if its null or empty return the default
-   * value varDefault
+   * Lookup varName in sessConfMap, if its null or empty return the default value varDefault
+   *
    * @param varName
    * @param varDefault
    * @return
@@ -875,34 +895,29 @@ public class KyuubiConnection implements java.sql.Connection {
       Utils.verifySuccess(tokenResp.getStatus());
       return tokenResp.getDelegationToken();
     } catch (TException e) {
-      throw new SQLException("Could not retrieve token: " +
-          e.getMessage(), " 08S01", e);
+      throw new SQLException("Could not retrieve token: " + e.getMessage(), " 08S01", e);
     }
   }
 
   public void cancelDelegationToken(String tokenStr) throws SQLException {
     TCancelDelegationTokenReq cancelReq = new TCancelDelegationTokenReq(sessHandle, tokenStr);
     try {
-      TCancelDelegationTokenResp cancelResp =
-          client.CancelDelegationToken(cancelReq);
+      TCancelDelegationTokenResp cancelResp = client.CancelDelegationToken(cancelReq);
       Utils.verifySuccess(cancelResp.getStatus());
       return;
     } catch (TException e) {
-      throw new SQLException("Could not cancel token: " +
-          e.getMessage(), " 08S01", e);
+      throw new SQLException("Could not cancel token: " + e.getMessage(), " 08S01", e);
     }
   }
 
   public void renewDelegationToken(String tokenStr) throws SQLException {
     TRenewDelegationTokenReq cancelReq = new TRenewDelegationTokenReq(sessHandle, tokenStr);
     try {
-      TRenewDelegationTokenResp renewResp =
-          client.RenewDelegationToken(cancelReq);
+      TRenewDelegationTokenResp renewResp = client.RenewDelegationToken(cancelReq);
       Utils.verifySuccess(renewResp.getStatus());
       return;
     } catch (TException e) {
-      throw new SQLException("Could not renew token: " +
-          e.getMessage(), " 08S01", e);
+      throw new SQLException("Could not renew token: " + e.getMessage(), " 08S01", e);
     }
   }
 
@@ -1016,11 +1031,9 @@ public class KyuubiConnection implements java.sql.Connection {
   /**
    * Creates a Statement object for sending SQL statements to the database.
    *
-   * @throws SQLException
-   *           if a database access error occurs.
+   * @throws SQLException if a database access error occurs.
    * @see java.sql.Connection#createStatement()
    */
-
   @Override
   public Statement createStatement() throws SQLException {
     if (isClosed) {
@@ -1039,15 +1052,17 @@ public class KyuubiConnection implements java.sql.Connection {
   public Statement createStatement(int resultSetType, int resultSetConcurrency)
       throws SQLException {
     if (resultSetConcurrency != ResultSet.CONCUR_READ_ONLY) {
-      throw new SQLException("Statement with resultset concurrency " +
-          resultSetConcurrency + " is not supported", "HYC00"); // Optional feature not implemented
+      throw new SQLException(
+          "Statement with resultset concurrency " + resultSetConcurrency + " is not supported",
+          "HYC00"); // Optional feature not implemented
     }
     if (resultSetType == ResultSet.TYPE_SCROLL_SENSITIVE) {
-      throw new SQLException("Statement with resultset type " + resultSetType +
-          " is not supported", "HYC00"); // Optional feature not implemented
+      throw new SQLException(
+          "Statement with resultset type " + resultSetType + " is not supported",
+          "HYC00"); // Optional feature not implemented
     }
-    return new KyuubiStatement(this, client, sessHandle,
-        resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE, fetchSize);
+    return new KyuubiStatement(
+        this, client, sessHandle, resultSetType == ResultSet.TYPE_SCROLL_INSENSITIVE, fetchSize);
   }
 
   /*
@@ -1057,8 +1072,8 @@ public class KyuubiConnection implements java.sql.Connection {
    */
 
   @Override
-  public Statement createStatement(int resultSetType, int resultSetConcurrency,
-      int resultSetHoldability) throws SQLException {
+  public Statement createStatement(
+      int resultSetType, int resultSetConcurrency, int resultSetHoldability) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1070,8 +1085,7 @@ public class KyuubiConnection implements java.sql.Connection {
    */
 
   @Override
-  public Struct createStruct(String typeName, Object[] attributes)
-      throws SQLException {
+  public Struct createStruct(String typeName, Object[] attributes) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1158,7 +1172,7 @@ public class KyuubiConnection implements java.sql.Connection {
       throw new SQLException("Connection is closed");
     }
     try (Statement stmt = createStatement();
-         ResultSet res = stmt.executeQuery("SELECT current_database()")) {
+        ResultSet res = stmt.executeQuery("SELECT current_database()")) {
       if (!res.next()) {
         throw new SQLException("Failed to get schema information");
       }
@@ -1235,8 +1249,8 @@ public class KyuubiConnection implements java.sql.Connection {
     }
     boolean rc = false;
     try {
-      String productName = new KyuubiDatabaseMetaData(this, client, sessHandle)
-              .getDatabaseProductName();
+      String productName =
+          new KyuubiDatabaseMetaData(this, client, sessHandle).getDatabaseProductName();
       rc = true;
     } catch (SQLException e) {
       // IGNORE
@@ -1275,8 +1289,8 @@ public class KyuubiConnection implements java.sql.Connection {
    */
 
   @Override
-  public CallableStatement prepareCall(String sql, int resultSetType,
-      int resultSetConcurrency) throws SQLException {
+  public CallableStatement prepareCall(String sql, int resultSetType, int resultSetConcurrency)
+      throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1288,8 +1302,9 @@ public class KyuubiConnection implements java.sql.Connection {
    */
 
   @Override
-  public CallableStatement prepareCall(String sql, int resultSetType,
-      int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+  public CallableStatement prepareCall(
+      String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
+      throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1312,8 +1327,7 @@ public class KyuubiConnection implements java.sql.Connection {
    */
 
   @Override
-  public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys)
-      throws SQLException {
+  public PreparedStatement prepareStatement(String sql, int autoGeneratedKeys) throws SQLException {
     return new KyuubiPreparedStatement(this, client, sessHandle, sql);
   }
 
@@ -1324,8 +1338,7 @@ public class KyuubiConnection implements java.sql.Connection {
    */
 
   @Override
-  public PreparedStatement prepareStatement(String sql, int[] columnIndexes)
-      throws SQLException {
+  public PreparedStatement prepareStatement(String sql, int[] columnIndexes) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1338,8 +1351,7 @@ public class KyuubiConnection implements java.sql.Connection {
    */
 
   @Override
-  public PreparedStatement prepareStatement(String sql, String[] columnNames)
-      throws SQLException {
+  public PreparedStatement prepareStatement(String sql, String[] columnNames) throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1351,8 +1363,8 @@ public class KyuubiConnection implements java.sql.Connection {
    */
 
   @Override
-  public PreparedStatement prepareStatement(String sql, int resultSetType,
-      int resultSetConcurrency) throws SQLException {
+  public PreparedStatement prepareStatement(String sql, int resultSetType, int resultSetConcurrency)
+      throws SQLException {
     return new KyuubiPreparedStatement(this, client, sessHandle, sql);
   }
 
@@ -1363,8 +1375,9 @@ public class KyuubiConnection implements java.sql.Connection {
    */
 
   @Override
-  public PreparedStatement prepareStatement(String sql, int resultSetType,
-      int resultSetConcurrency, int resultSetHoldability) throws SQLException {
+  public PreparedStatement prepareStatement(
+      String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability)
+      throws SQLException {
     // TODO Auto-generated method stub
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
@@ -1414,7 +1427,7 @@ public class KyuubiConnection implements java.sql.Connection {
   @Override
   public void setAutoCommit(boolean autoCommit) throws SQLException {
     // Per JDBC spec, if the connection is closed a SQLException should be thrown.
-    if(isClosed) {
+    if (isClosed) {
       throw new SQLException("Connection is closed");
     }
     // The auto-commit mode is always enabled for this connection. Per JDBC spec,
@@ -1450,8 +1463,7 @@ public class KyuubiConnection implements java.sql.Connection {
    */
 
   @Override
-  public void setClientInfo(Properties properties)
-      throws SQLClientInfoException {
+  public void setClientInfo(Properties properties) throws SQLClientInfoException {
     // TODO Auto-generated method stub
     throw new SQLClientInfoException("Method not supported", null);
   }
@@ -1463,8 +1475,7 @@ public class KyuubiConnection implements java.sql.Connection {
    */
 
   @Override
-  public void setClientInfo(String name, String value)
-      throws SQLClientInfoException {
+  public void setClientInfo(String name, String value) throws SQLClientInfoException {
     // TODO Auto-generated method stub
     throw new SQLClientInfoException("Method not supported", null);
   }
@@ -1499,9 +1510,10 @@ public class KyuubiConnection implements java.sql.Connection {
       throw new SQLException("Connection is closed");
     }
     // Per JDBC spec, the request defines a hint to the driver to enable database optimizations.
-    // The read-only mode for this connection is disabled and cannot be enabled (isReadOnly always returns false).
+    // The read-only mode for this connection is disabled and cannot be enabled (isReadOnly always
+    // returns false).
     // The most correct behavior is to throw only if the request tries to enable the read-only mode.
-    if(readOnly) {
+    if (readOnly) {
       throw new SQLException("Enabling read-only mode not supported");
     }
   }
@@ -1594,12 +1606,12 @@ public class KyuubiConnection implements java.sql.Connection {
     return protocol;
   }
 
-  public static TCLIService.Iface newSynchronizedClient(
-      TCLIService.Iface client) {
-    return (TCLIService.Iface) Proxy.newProxyInstance(
-        KyuubiConnection.class.getClassLoader(),
-      new Class [] { TCLIService.Iface.class },
-      new SynchronizedHandler(client));
+  public static TCLIService.Iface newSynchronizedClient(TCLIService.Iface client) {
+    return (TCLIService.Iface)
+        Proxy.newProxyInstance(
+            KyuubiConnection.class.getClassLoader(),
+            new Class[] {TCLIService.Iface.class},
+            new SynchronizedHandler(client));
   }
 
   private static class SynchronizedHandler implements InvocationHandler {
@@ -1611,19 +1623,18 @@ public class KyuubiConnection implements java.sql.Connection {
     }
 
     @Override
-    public Object invoke(Object proxy, Method method, Object [] args)
-        throws Throwable {
+    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
       try {
         lock.lock();
         return method.invoke(client, args);
       } catch (InvocationTargetException e) {
         // all IFace APIs throw TException
         if (e.getTargetException() instanceof TException) {
-          throw (TException)e.getTargetException();
+          throw (TException) e.getTargetException();
         } else {
           // should not happen
-          throw new TException("Error in calling method " + method.getName(),
-              e.getTargetException());
+          throw new TException(
+              "Error in calling method " + method.getName(), e.getTargetException());
         }
       } catch (Exception e) {
         throw new TException("Error in calling method " + method.getName(), e);

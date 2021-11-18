@@ -24,19 +24,18 @@ import org.slf4j.LoggerFactory;
 public interface InPlaceUpdateStream {
   void update(TProgressUpdateResp response);
 
-  InPlaceUpdateStream NO_OP = new InPlaceUpdateStream() {
-    private final EventNotifier eventNotifier = new EventNotifier();
-    @Override
-    public void update(TProgressUpdateResp response) {
+  InPlaceUpdateStream NO_OP =
+      new InPlaceUpdateStream() {
+        private final EventNotifier eventNotifier = new EventNotifier();
 
-    }
+        @Override
+        public void update(TProgressUpdateResp response) {}
 
-    @Override
-    public EventNotifier getEventNotifier() {
-      return eventNotifier;
-    }
-
-  };
+        @Override
+        public EventNotifier getEventNotifier() {
+          return eventNotifier;
+        }
+      };
 
   EventNotifier getEventNotifier();
 
@@ -52,7 +51,6 @@ public interface InPlaceUpdateStream {
 
     private synchronized boolean isProgressBarComplete() {
       return isComplete;
-
     }
 
     public synchronized void operationLogShowedToUser() {

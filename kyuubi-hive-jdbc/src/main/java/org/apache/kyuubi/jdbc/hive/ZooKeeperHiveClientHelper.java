@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
@@ -34,13 +33,10 @@ class ZooKeeperHiveClientHelper {
   static final Logger LOG = LoggerFactory.getLogger(ZooKeeperHiveClientHelper.class.getName());
   // Pattern for key1=value1;key2=value2
   private static final Pattern kvPattern = Pattern.compile("([^=;]*)=([^;]*)[;]?");
-  /**
-   * A no-op watcher class
-   */
+  /** A no-op watcher class */
   static class DummyWatcher implements Watcher {
     @Override
-    public void process(org.apache.zookeeper.WatchedEvent event) {
-    }
+    public void process(org.apache.zookeeper.WatchedEvent event) {}
   }
 
   static void configureConnParams(Utils.JdbcConnectionParams connParams)
@@ -55,8 +51,10 @@ class ZooKeeperHiveClientHelper {
     Random randomizer = new Random();
     String serverNode;
     CuratorFramework zooKeeperClient =
-        CuratorFrameworkFactory.builder().connectString(zooKeeperEnsemble)
-            .retryPolicy(new ExponentialBackoffRetry(1000, 3)).build();
+        CuratorFrameworkFactory.builder()
+            .connectString(zooKeeperEnsemble)
+            .retryPolicy(new ExponentialBackoffRetry(1000, 3))
+            .build();
     try {
       zooKeeperClient.start();
       serverHosts = zooKeeperClient.getChildren().forPath("/" + zooKeeperNamespace);
@@ -82,8 +80,8 @@ class ZooKeeperHiveClientHelper {
       if ((dataStr != null) && (!matcher.find())) {
         String[] split = dataStr.split(":");
         if (split.length != 2) {
-          throw new ZooKeeperHiveClientException("Unable to read HiveServer2 uri from ZooKeeper: "
-              + dataStr);
+          throw new ZooKeeperHiveClientException(
+              "Unable to read HiveServer2 uri from ZooKeeper: " + dataStr);
         }
         connParams.setHost(split[0]);
         connParams.setPort(Integer.parseInt(split[1]));
@@ -91,7 +89,8 @@ class ZooKeeperHiveClientHelper {
         applyConfs(dataStr, connParams);
       }
     } catch (Exception e) {
-      throw new ZooKeeperHiveClientException("Unable to read HiveServer2 configs from ZooKeeper", e);
+      throw new ZooKeeperHiveClientException(
+          "Unable to read HiveServer2 configs from ZooKeeper", e);
     } finally {
       // Close the client connection with ZooKeeper
       if (zooKeeperClient != null) {
@@ -115,8 +114,8 @@ class ZooKeeperHiveClientHelper {
       // Have to use this if-else since switch-case on String is supported Java 7 onwards
       if ((matcher.group(1) != null)) {
         if ((matcher.group(2) == null)) {
-          throw new Exception("Null config value for: " + matcher.group(1)
-              + " published by the server.");
+          throw new Exception(
+              "Null config value for: " + matcher.group(1) + " published by the server.");
         }
         // Set host
         if (matcher.group(1).equals("hive.server2.thrift.bind.host")) {
@@ -124,8 +123,12 @@ class ZooKeeperHiveClientHelper {
         }
         // Set transportMode
         if ((matcher.group(1).equals("hive.server2.transport.mode"))
-            && !(connParams.getSessionVars().containsKey(Utils.JdbcConnectionParams.TRANSPORT_MODE))) {
-          connParams.getSessionVars().put(Utils.JdbcConnectionParams.TRANSPORT_MODE, matcher.group(2));
+            && !(connParams
+                .getSessionVars()
+                .containsKey(Utils.JdbcConnectionParams.TRANSPORT_MODE))) {
+          connParams
+              .getSessionVars()
+              .put(Utils.JdbcConnectionParams.TRANSPORT_MODE, matcher.group(2));
         }
         // Set port
         if (matcher.group(1).equals("hive.server2.thrift.port")) {
@@ -146,38 +149,48 @@ class ZooKeeperHiveClientHelper {
           connParams.getSessionVars().put(Utils.JdbcConnectionParams.HTTP_PATH, matcher.group(2));
         }
         // Set SSL
-        if ((matcher.group(1) != null) && (matcher.group(1).equals("hive.server2.use.SSL"))
+        if ((matcher.group(1) != null)
+            && (matcher.group(1).equals("hive.server2.use.SSL"))
             && !(connParams.getSessionVars().containsKey(Utils.JdbcConnectionParams.USE_SSL))) {
           connParams.getSessionVars().put(Utils.JdbcConnectionParams.USE_SSL, matcher.group(2));
         }
         /**
-         * Note: this is pretty messy, but sticking to the current implementation.
-         * Set authentication configs. Note that in JDBC driver, we have 3 auth modes: NOSASL,
-         * Kerberos (including delegation token mechanism) and password based.
-         * The use of JdbcConnectionParams.AUTH_TYPE==JdbcConnectionParams.AUTH_SIMPLE picks NOSASL.
-         * The presence of JdbcConnectionParams.AUTH_PRINCIPAL==<principal> picks Kerberos.
-         * If principal is absent, the presence of
+         * Note: this is pretty messy, but sticking to the current implementation. Set
+         * authentication configs. Note that in JDBC driver, we have 3 auth modes: NOSASL, Kerberos
+         * (including delegation token mechanism) and password based. The use of
+         * JdbcConnectionParams.AUTH_TYPE==JdbcConnectionParams.AUTH_SIMPLE picks NOSASL. The
+         * presence of JdbcConnectionParams.AUTH_PRINCIPAL==<principal> picks Kerberos. If principal
+         * is absent, the presence of
          * JdbcConnectionParams.AUTH_TYPE==JdbcConnectionParams.AUTH_TOKEN uses delegation token.
          * Otherwise password based (which includes NONE, PAM, LDAP, CUSTOM)
          */
         if (matcher.group(1).equals("hive.server2.authentication")) {
           // NOSASL
           if (matcher.group(2).equalsIgnoreCase("NOSASL")
-              && !(connParams.getSessionVars().containsKey(Utils.JdbcConnectionParams.AUTH_TYPE) && connParams
-                  .getSessionVars().get(Utils.JdbcConnectionParams.AUTH_TYPE)
-                  .equalsIgnoreCase(Utils.JdbcConnectionParams.AUTH_SIMPLE))) {
-            connParams.getSessionVars().put(Utils.JdbcConnectionParams.AUTH_TYPE,
-                Utils.JdbcConnectionParams.AUTH_SIMPLE);
+              && !(connParams.getSessionVars().containsKey(Utils.JdbcConnectionParams.AUTH_TYPE)
+                  && connParams
+                      .getSessionVars()
+                      .get(Utils.JdbcConnectionParams.AUTH_TYPE)
+                      .equalsIgnoreCase(Utils.JdbcConnectionParams.AUTH_SIMPLE))) {
+            connParams
+                .getSessionVars()
+                .put(Utils.JdbcConnectionParams.AUTH_TYPE, Utils.JdbcConnectionParams.AUTH_SIMPLE);
           }
         }
         // KERBEROS
         // If delegation token is passed from the client side, do not set the principal
         if (matcher.group(1).equalsIgnoreCase("hive.server2.authentication.kerberos.principal")
-            && !(connParams.getSessionVars().containsKey(Utils.JdbcConnectionParams.AUTH_TYPE) && connParams
-                .getSessionVars().get(Utils.JdbcConnectionParams.AUTH_TYPE)
-                .equalsIgnoreCase(Utils.JdbcConnectionParams.AUTH_TOKEN))
-            && !(connParams.getSessionVars().containsKey(Utils.JdbcConnectionParams.AUTH_PRINCIPAL))) {
-          connParams.getSessionVars().put(Utils.JdbcConnectionParams.AUTH_PRINCIPAL, matcher.group(2));
+            && !(connParams.getSessionVars().containsKey(Utils.JdbcConnectionParams.AUTH_TYPE)
+                && connParams
+                    .getSessionVars()
+                    .get(Utils.JdbcConnectionParams.AUTH_TYPE)
+                    .equalsIgnoreCase(Utils.JdbcConnectionParams.AUTH_TOKEN))
+            && !(connParams
+                .getSessionVars()
+                .containsKey(Utils.JdbcConnectionParams.AUTH_PRINCIPAL))) {
+          connParams
+              .getSessionVars()
+              .put(Utils.JdbcConnectionParams.AUTH_PRINCIPAL, matcher.group(2));
         }
       }
     }

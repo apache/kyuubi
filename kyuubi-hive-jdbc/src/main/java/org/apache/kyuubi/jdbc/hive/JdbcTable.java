@@ -19,10 +19,7 @@ package org.apache.kyuubi.jdbc.hive;
 
 import java.sql.SQLException;
 
-
-/**
- * Table metadata.
- */
+/** Table metadata. */
 public class JdbcTable {
   private String tableCatalog;
   private String tableName;

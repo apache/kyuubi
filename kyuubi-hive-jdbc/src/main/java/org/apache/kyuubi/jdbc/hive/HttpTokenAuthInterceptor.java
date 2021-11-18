@@ -18,29 +18,31 @@
 package org.apache.kyuubi.jdbc.hive;
 
 import java.util.Map;
-
 import org.apache.http.HttpRequest;
 import org.apache.http.client.CookieStore;
 import org.apache.http.protocol.HttpContext;
 
 /**
- * The class is instantiated with the username and password, it is then
- * used to add header with these credentials to HTTP requests
- *
+ * The class is instantiated with the username and password, it is then used to add header with
+ * these credentials to HTTP requests
  */
 public class HttpTokenAuthInterceptor extends HttpRequestInterceptorBase {
   private String tokenStr;
-  private static final String HIVE_DELEGATION_TOKEN_HEADER =  "X-Hive-Delegation-Token";
-  
-  public HttpTokenAuthInterceptor(String tokenStr, CookieStore cookieStore, String cn,
-      boolean isSSL, Map<String, String> additionalHeaders) {
+  private static final String HIVE_DELEGATION_TOKEN_HEADER = "X-Hive-Delegation-Token";
+
+  public HttpTokenAuthInterceptor(
+      String tokenStr,
+      CookieStore cookieStore,
+      String cn,
+      boolean isSSL,
+      Map<String, String> additionalHeaders) {
     super(cookieStore, cn, isSSL, additionalHeaders);
     this.tokenStr = tokenStr;
   }
 
   @Override
   protected void addHttpAuthHeader(HttpRequest httpRequest, HttpContext httpContext)
-    throws Exception {
+      throws Exception {
     httpRequest.addHeader(HIVE_DELEGATION_TOKEN_HEADER, tokenStr);
   }
 }

@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
-
 import org.apache.hadoop.hive.common.type.HiveDecimal;
 import org.apache.hive.service.cli.RowSet;
 import org.apache.hive.service.cli.RowSetFactory;
@@ -55,10 +54,7 @@ import org.apache.hive.service.rpc.thrift.TTypeQualifiers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * KyuubiQueryResultSet.
- *
- */
+/** KyuubiQueryResultSet. */
 public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
 
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiQueryResultSet.class);
@@ -85,14 +81,15 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
     private final Statement statement;
     private TCLIService.Iface client = null;
     private TOperationHandle stmtHandle = null;
-    private TSessionHandle sessHandle  = null;
+    private TSessionHandle sessHandle = null;
 
     /**
      * Sets the limit for the maximum number of rows that any ResultSet object produced by this
-     * Statement can contain to the given number. If the limit is exceeded, the excess rows
-     * are silently dropped. The value must be >= 0, and 0 means there is not limit.
+     * Statement can contain to the given number. If the limit is exceeded, the excess rows are
+     * silently dropped. The value must be >= 0, and 0 means there is not limit.
      */
     private int maxRows = 0;
+
     private boolean retrieveSchema = true;
     private List<String> colNames;
     private List<String> colTypes;
@@ -134,16 +131,15 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
 
     public Builder setSchema(List<String> colNames, List<String> colTypes) {
       // no column attributes provided - create list of null attributes.
-      List<JdbcColumnAttributes> colAttributes =
-          new ArrayList<JdbcColumnAttributes>();
+      List<JdbcColumnAttributes> colAttributes = new ArrayList<JdbcColumnAttributes>();
       for (int idx = 0; idx < colTypes.size(); ++idx) {
         colAttributes.add(null);
       }
       return setSchema(colNames, colTypes, colAttributes);
     }
 
-    public Builder setSchema(List<String> colNames, List<String> colTypes,
-        List<JdbcColumnAttributes> colAttributes) {
+    public Builder setSchema(
+        List<String> colNames, List<String> colTypes, List<JdbcColumnAttributes> colAttributes) {
       this.colNames = new ArrayList<String>();
       this.colNames.addAll(colNames);
       this.colTypes = new ArrayList<String>();
@@ -179,7 +175,7 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
     }
 
     public TProtocolVersion getProtocolVersion() throws SQLException {
-      return ((KyuubiConnection)connection).getProtocol();
+      return ((KyuubiConnection) connection).getProtocol();
     }
   }
 
@@ -210,11 +206,11 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
 
   /**
    * Generate ColumnAttributes object from a TTypeQualifiers
+   *
    * @param primitiveTypeEntry primitive type
    * @return generated ColumnAttributes, or null
    */
-  private static JdbcColumnAttributes getColumnAttributes(
-      TPrimitiveTypeEntry primitiveTypeEntry) {
+  private static JdbcColumnAttributes getColumnAttributes(TPrimitiveTypeEntry primitiveTypeEntry) {
     JdbcColumnAttributes ret = null;
     if (primitiveTypeEntry.isSetTypeQualifiers()) {
       TTypeQualifiers tq = primitiveTypeEntry.getTypeQualifiers();
@@ -231,8 +227,10 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
         case DECIMAL_TYPE:
           TTypeQualifierValue prec = tq.getQualifiers().get(TCLIServiceConstants.PRECISION);
           TTypeQualifierValue scale = tq.getQualifiers().get(TCLIServiceConstants.SCALE);
-          ret = new JdbcColumnAttributes(prec == null ? HiveDecimal.USER_DEFAULT_PRECISION : prec.getI32Value(),
-              scale == null ? HiveDecimal.USER_DEFAULT_SCALE : scale.getI32Value());
+          ret =
+              new JdbcColumnAttributes(
+                  prec == null ? HiveDecimal.USER_DEFAULT_PRECISION : prec.getI32Value(),
+                  scale == null ? HiveDecimal.USER_DEFAULT_SCALE : scale.getI32Value());
           break;
         default:
           break;
@@ -241,14 +239,12 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
     return ret;
   }
 
-  /**
-   * Retrieve schema from the server
-   */
+  /** Retrieve schema from the server */
   private void retrieveSchema() throws SQLException {
     try {
       TGetResultSetMetadataReq metadataReq = new TGetResultSetMetadataReq(stmtHandle);
       // TODO need session handle
-      TGetResultSetMetadataResp  metadataResp;
+      TGetResultSetMetadataResp metadataResp;
       metadataResp = client.GetResultSetMetadata(metadataReq);
       Utils.verifySuccess(metadataResp.getStatus());
 
@@ -287,11 +283,12 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
 
   /**
    * Set the specified schema to the resultset
+   *
    * @param colNames
    * @param colTypes
    */
-  private void setSchema(List<String> colNames, List<String> colTypes,
-      List<JdbcColumnAttributes> colAttributes) {
+  private void setSchema(
+      List<String> colNames, List<String> colTypes, List<JdbcColumnAttributes> colAttributes) {
     columnNames.addAll(colNames);
     columnTypes.addAll(colTypes);
     columnAttributes.addAll(colAttributes);
@@ -336,8 +333,7 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
    * Moves the cursor down one row from its current position.
    *
    * @see java.sql.ResultSet#next()
-   * @throws SQLException
-   *           if a database access error occurs.
+   * @throws SQLException if a database access error occurs.
    */
   public boolean next() throws SQLException {
     if (isClosed) {
@@ -348,9 +344,9 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
     }
 
     /**
-     * Poll on the operation status, till the operation is complete.
-     * We need to wait only for HiveStatement to complete.
-     * HiveDatabaseMetaData which also uses this ResultSet returns only after the RPC is complete.
+     * Poll on the operation status, till the operation is complete. We need to wait only for
+     * HiveStatement to complete. HiveDatabaseMetaData which also uses this ResultSet returns only
+     * after the RPC is complete.
      */
     if ((statement != null) && (statement instanceof KyuubiStatement)) {
       ((KyuubiStatement) statement).waitForOperationToComplete();
@@ -366,8 +362,7 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
         fetchFirst = false;
       }
       if (fetchedRows == null || !fetchedRowsItr.hasNext()) {
-        TFetchResultsReq fetchReq = new TFetchResultsReq(stmtHandle,
-            orientation, fetchSize);
+        TFetchResultsReq fetchReq = new TFetchResultsReq(stmtHandle, orientation, fetchSize);
         TFetchResultsResp fetchResp;
         fetchResp = client.FetchResults(fetchReq);
         Utils.verifySuccessWithInfo(fetchResp.getStatus());
@@ -430,13 +425,13 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
     return fetchSize;
   }
 
-  public <T> T getObject(String columnLabel, Class<T> type)  throws SQLException {
-    //JDK 1.7
+  public <T> T getObject(String columnLabel, Class<T> type) throws SQLException {
+    // JDK 1.7
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
-  public <T> T getObject(int columnIndex, Class<T> type)  throws SQLException {
-    //JDK 1.7
+  public <T> T getObject(int columnIndex, Class<T> type) throws SQLException {
+    // JDK 1.7
     throw new SQLFeatureNotSupportedException("Method not supported");
   }
 
@@ -444,8 +439,7 @@ public class KyuubiQueryResultSet extends KyuubiBaseResultSet {
    * Moves the cursor before the first row of the resultset.
    *
    * @see java.sql.ResultSet#next()
-   * @throws SQLException
-   *           if a database access error occurs.
+   * @throws SQLException if a database access error occurs.
    */
   @Override
   public void beforeFirst() throws SQLException {
