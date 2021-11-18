@@ -27,6 +27,8 @@ object ShareLevel extends Enumeration {
     CONNECTION,
     /** DEFAULT level, An APP will be shared for all sessions created by a user */
     USER,
+    /** In this level, An APP will be shared for all sessions created by a user's default group */
+    GROUP,
     /** In this level, All sessions from one or more Kyuubi server's will share one single APP */
     SERVER = Value
 }

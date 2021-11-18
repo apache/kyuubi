@@ -17,18 +17,31 @@
 
 # Usage:
 #   Run the docker command below
-#      docker build --build-arg MVN_ARG="-Pspark-3.1,spark-hadoop-3.2" -f docker/Dockerfile -t apache/kyuubi:tagname .
+#      docker build \
+#        --build-arg MVN_ARG="-Pspark-3.1,spark-hadoop-3.2" \
+#        --file docker/Dockerfile \
+#        --tag apache/kyuubi:tagname \
+#        .
 #   Options:
-#     -f this docker file
-#     -t the target repo and tag name
-#     more options can be found with -h
+#     -f, --file  this docker file
+#     -t, --tag   the target repo and tag name
+#     more options can be found with -h, --help
 
-# declare the BASE_IMAGE argument in the first line. for more detail see: https://github.com/moby/moby/issues/38379
+# Declare the BASE_IMAGE argument in the first line, for more detail
+# see: https://github.com/moby/moby/issues/38379
 ARG BASE_IMAGE=openjdk:8-jdk
 
 FROM maven:3.6-jdk-8 as builder
 
 ARG MVN_ARG
+
+# Pass the environment variable `CI` into container, for internal use only.
+#
+# Continuous integration(aka. CI) services like GitHub Actions, Travis always provide
+# an environment variable `CI` in runners, and we detect this variable to run some
+# specific actions, e.g. run `mvn` in batch mode to suppress noisy logs.
+ARG CI
+ENV CI ${CI}
 
 ADD . /workspace/kyuubi
 WORKDIR /workspace/kyuubi

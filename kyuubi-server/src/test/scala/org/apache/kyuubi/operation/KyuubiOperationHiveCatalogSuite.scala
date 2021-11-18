@@ -22,7 +22,7 @@ import java.nio.file.Files
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 
-class KyuubiOperationHiveCatalogSuite extends WithKyuubiServer with HiveJDBCTests {
+class KyuubiOperationHiveCatalogSuite extends WithKyuubiServer with HiveMetadataTests {
 
   private val metastore = {
     val dir = Utils.createTempDir()

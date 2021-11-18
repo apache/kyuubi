@@ -21,8 +21,8 @@ import org.apache.curator.framework.CuratorFramework
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_ACL_ENABLED, HA_ZK_NAMESPACE, HA_ZK_QUORUM}
-import org.apache.kyuubi.ha.client.ZooKeeperClientProvider
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_AUTH_TYPE, HA_ZK_NAMESPACE, HA_ZK_QUORUM}
+import org.apache.kyuubi.ha.client.{ZooKeeperAuthTypes, ZooKeeperClientProvider}
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
 trait WithDiscoverySparkSQLEngine extends WithSparkSQLEngine {
@@ -31,7 +31,7 @@ trait WithDiscoverySparkSQLEngine extends WithSparkSQLEngine {
   override def withKyuubiConf: Map[String, String] = {
     assert(zkServer != null)
     Map(HA_ZK_QUORUM.key -> zkServer.getConnectString,
-      HA_ZK_ACL_ENABLED.key -> "false",
+      HA_ZK_AUTH_TYPE.key -> ZooKeeperAuthTypes.NONE.toString,
       HA_ZK_NAMESPACE.key -> namespace)
   }
 

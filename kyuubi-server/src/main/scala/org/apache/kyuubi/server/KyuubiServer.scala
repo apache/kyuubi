@@ -17,16 +17,25 @@
 
 package org.apache.kyuubi.server
 
+import java.util
+
 import scala.util.Properties
 
+import org.apache.curator.utils.ZKPaths
 import org.apache.hadoop.security.UserGroupInformation
+import org.apache.zookeeper.CreateMode.PERSISTENT
+import org.apache.zookeeper.KeeperException
+import org.apache.zookeeper.KeeperException.NodeExistsException
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_PROTOCOLS, FrontendProtocols}
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols._
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
+import org.apache.kyuubi.ha.client.{ServiceDiscovery, ZooKeeperAuthTypes}
+import org.apache.kyuubi.ha.client.ZooKeeperClientProvider._
 import org.apache.kyuubi.metrics.{MetricsConf, MetricsSystem}
-import org.apache.kyuubi.service.{AbstractBackendService, KinitAuxiliaryService, Serverable}
+import org.apache.kyuubi.service.{AbstractBackendService, AbstractFrontendService, Serverable}
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, SignalRegister}
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 
@@ -39,15 +48,50 @@ object KyuubiServer extends Logging {
       zkServer.initialize(conf)
       zkServer.start()
       conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
-      conf.set(HA_ZK_ACL_ENABLED, false)
+      conf.set(HA_ZK_AUTH_TYPE, ZooKeeperAuthTypes.NONE.toString)
+    } else {
+      // create chroot path if necessary
+      val connectionStr = conf.get(HA_ZK_QUORUM)
+      val addresses = connectionStr.split(",")
+      val slashOption = util.Arrays.copyOfRange(addresses, 0, addresses.length -1)
+        .toList
+        .find(_.contains("/"))
+      if (slashOption.isDefined) {
+        throw new IllegalArgumentException(s"Illegal zookeeper quorum '$connectionStr', " +
+          s"the chroot path started with / is only allowed at the end!")
+      }
+      val chrootIndex = connectionStr.indexOf("/")
+      val chrootOption = {
+        if (chrootIndex > 0) Some(connectionStr.substring(chrootIndex))
+        else None
+      }
+      chrootOption.foreach { chroot =>
+        val zkConnectionForChrootCreation = connectionStr.substring(0, chrootIndex)
+        val overrideQuorumConf = conf.clone.set(HA_ZK_QUORUM, zkConnectionForChrootCreation)
+        withZkClient(overrideQuorumConf) { zkClient =>
+          if (zkClient.checkExists().forPath(chroot) == null) {
+            val chrootPath = ZKPaths.makePath(null, chroot)
+            try {
+              zkClient
+                .create()
+                .creatingParentsIfNeeded()
+                .withMode(PERSISTENT)
+                .forPath(chrootPath)
+            } catch {
+              case _: NodeExistsException => // do nothing
+              case e: KeeperException =>
+                throw new KyuubiException(s"Failed to create chroot path '$chrootPath'", e)
+            }
+          }
+        }
+        info(s"Created zookeeper chroot path $chroot")
+      }
     }
 
     val server = new KyuubiServer()
     server.initialize(conf)
     server.start()
-    Utils.addShutdownHook(new Runnable {
-      override def run(): Unit = server.stop()
-    }, Utils.SERVER_SHUTDOWN_PRIORITY)
+    Utils.addShutdownHook(() => server.stop(), Utils.SERVER_SHUTDOWN_PRIORITY)
     server
   }
 
@@ -83,12 +127,18 @@ class KyuubiServer(name: String) extends Serverable(name) {
   def this() = this(classOf[KyuubiServer].getSimpleName)
 
   override val backendService: AbstractBackendService = new KyuubiBackendService()
-  val frontendService = new KyuubiFrontendServices(backendService)
+
+  override lazy val frontendServices: Seq[AbstractFrontendService] =
+    conf.get(FRONTEND_PROTOCOLS).map(FrontendProtocols.withName).map {
+      case THRIFT_BINARY => new KyuubiThriftBinaryFrontendService(this)
+      case REST =>
+        warn("REST frontend protocol is experimental, API may change in the future.")
+        new KyuubiRestFrontendService(this)
+      case other =>
+        throw new UnsupportedOperationException(s"Frontend protocol $other is not supported yet.")
+    }
+
   private val eventLoggingService: EventLoggingService = new EventLoggingService
-  override protected def supportsServiceDiscovery: Boolean = {
-    ServiceDiscovery.supportServiceDiscovery(conf)
-  }
-  override val discoveryService = new KyuubiServiceDiscovery(this)
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val kinit = new KinitAuxiliaryService()
@@ -98,9 +148,6 @@ class KyuubiServer(name: String) extends Serverable(name) {
     if (conf.get(MetricsConf.METRICS_ENABLED)) {
       addService(new MetricsSystem)
     }
-
-    addService(frontendService)
-
     super.initialize(conf)
   }
 
@@ -110,8 +157,4 @@ class KyuubiServer(name: String) extends Serverable(name) {
   }
 
   override protected def stopServer(): Unit = {}
-
-  override def connectionUrl: String = {
-    frontendService.connectionUrl(true)
-  }
 }

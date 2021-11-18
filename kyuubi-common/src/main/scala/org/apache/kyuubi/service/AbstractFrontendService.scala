@@ -17,12 +17,28 @@
 
 package org.apache.kyuubi.service
 
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.service.ServiceState.LATENT
+
 /**
- * A basic abstraction for frontend services.
+ * A [[AbstractFrontendService]] is an abstraction for fronted service.
+ * An frontend service will receive client requests and translate them to serverable operations or
+ * backend operations. It also support exposing itself by `ServiceDiscovery` if the concrete
+ * frontend service has a Discovery Service as its child.
+ *
  */
-abstract class AbstractFrontendService(name: String, be: BackendService)
-  extends AbstractService(name) {
+abstract class AbstractFrontendService(name: String)
+  extends CompositeService(name) with FrontendService {
 
-  def connectionUrl(server: Boolean = false): String
+  protected def checkInitialized(): Unit = {
+    if (getServiceState == ServiceState.LATENT) {
+      throw new IllegalStateException(
+        s"Illegal Service State: $LATENT for getting the connection URL of $getName")
+    }
+  }
 
+  override def initialize(conf: KyuubiConf): Unit = synchronized {
+    discoveryService.foreach(addService)
+    super.initialize(conf)
+  }
 }

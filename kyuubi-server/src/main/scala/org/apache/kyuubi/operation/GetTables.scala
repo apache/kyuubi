@@ -17,17 +17,15 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.session.Session
 
 class GetTables(
     session: Session,
-    client: KyuubiSyncThriftClient,
     catalogName: String,
     schemaName: String,
     tableName: String,
     tableTypes: java.util.List[String])
-  extends KyuubiOperation(OperationType.GET_TABLES, session, client) {
+  extends KyuubiOperation(OperationType.GET_TABLES, session) {
 
   override protected def runInternal(): Unit = {
     try {

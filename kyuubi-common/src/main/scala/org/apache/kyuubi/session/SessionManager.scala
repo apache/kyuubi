@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.session
 
+import java.io.IOException
+import java.nio.file.{Files, Paths}
 import java.util.concurrent.{ConcurrentHashMap, Future, ThreadPoolExecutor, TimeUnit}
 
 import scala.collection.JavaConverters._
@@ -40,6 +42,23 @@ import org.apache.kyuubi.util.ThreadUtils
 abstract class SessionManager(name: String) extends CompositeService(name) {
 
   @volatile private var shutdown = false
+
+  protected var _operationLogRoot: Option[String] = None
+
+  def operationLogRoot: Option[String] = _operationLogRoot
+
+  private def initOperationLogRootDir(): Unit = {
+    try {
+      _operationLogRoot.foreach { logRoot =>
+        val rootPath = Paths.get(logRoot)
+        Files.createDirectories(rootPath)
+      }
+    } catch {
+      case e: IOException =>
+        error(s"Failed to initialize operation log root directory: ${_operationLogRoot}", e)
+        _operationLogRoot = None
+    }
+  }
 
   @volatile private var _latestLogoutTime: Long = System.currentTimeMillis()
   def latestLogoutTime: Long = _latestLogoutTime
@@ -88,6 +107,10 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   def getOpenSessionCount: Int = handleToSession.size()
 
+  def getSessionList(): ConcurrentHashMap[SessionHandle, Session] = {
+    handleToSession
+  }
+
   def getExecPoolSize: Int = {
     assert(execPool != null)
     execPool.getPoolSize
@@ -100,6 +123,10 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   private var _confRestrictList: Set[String] = _
   private var _confIgnoreList: Set[String] = _
+  private lazy val _confRestrictMatchList: Set[String] =
+    _confRestrictList.filter(_.endsWith(".*")).map(_.stripSuffix(".*"))
+  private lazy val _confIgnoreMatchList: Set[String] =
+    _confIgnoreList.filter(_.endsWith(".*")).map(_.stripSuffix(".*"))
 
   // strip prefix and validate whether if key is restricted, ignored or valid
   def validateKey(key: String, value: String): Option[(String, String)] = {
@@ -122,10 +149,12 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
       key
     }
 
-    if (_confRestrictList.contains(normalizedKey)) {
+    if (_confRestrictMatchList.exists(normalizedKey.startsWith(_)) ||
+      _confRestrictList.contains(normalizedKey)) {
       throw KyuubiSQLException(s"$normalizedKey is a restrict key according to the server-side" +
         s" configuration, please remove it and retry if you want to proceed")
-    } else if (_confIgnoreList.contains(normalizedKey)) {
+    } else if (_confIgnoreMatchList.exists(normalizedKey.startsWith(_)) ||
+      _confIgnoreList.contains(normalizedKey)) {
       warn(s"$normalizedKey is a ignored key according to the server-side configuration")
       None
     } else {
@@ -139,6 +168,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     addService(operationManager)
+    initOperationLogRootDir()
 
     val poolSize: Int = if (isServer) {
       conf.get(SERVER_EXEC_POOL_SIZE)

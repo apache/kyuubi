@@ -147,6 +147,10 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
       sessionId: String,
       appUser: String,
       send: String => Unit): Unit = {
+    if (renewalExecutor.isEmpty) {
+      return
+    }
+
     val userRef = getOrCreateUserCredentialsRef(appUser)
     val sessionEpoch = getSessionCredentialsEpoch(sessionId)
 

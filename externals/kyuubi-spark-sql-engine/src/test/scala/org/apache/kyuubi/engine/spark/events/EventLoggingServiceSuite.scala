@@ -30,11 +30,11 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, WithSparkSQLEngine}
 import org.apache.kyuubi.events.EventLoggerType._
 import org.apache.kyuubi.events.JsonProtocol
-import org.apache.kyuubi.operation.{JDBCTestUtils, OperationHandle}
+import org.apache.kyuubi.operation.{HiveJDBCTestHelper, OperationHandle}
 
-class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
+class EventLoggingServiceSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 
-  private val logRoot = "file:" + Utils.createTempDir().toString
+  private val logRoot = "file://" + Utils.createTempDir().toString
   private val currentDate = Utils.getDateFromTimestamp(System.currentTimeMillis())
 
   override def withKyuubiConf: Map[String, String] = Map(
@@ -62,7 +62,7 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
     withJdbcStatement() { statement =>
       val table = engineEventPath.getParent
-      val resultSet = statement.executeQuery(s"SELECT * FROM `json`.`${table}`")
+      val resultSet = statement.executeQuery(s"SELECT * FROM `json`.`$table`")
       while (resultSet.next()) {
         assert(resultSet.getString("Event") === classOf[EngineEvent].getCanonicalName)
         assert(resultSet.getString("applicationId") === spark.sparkContext.applicationId)
@@ -78,7 +78,7 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
       }
 
       val table3 = sessionEventPath.getParent
-      val rs3 = statement.executeQuery(s"SELECT * FROM `json`.`${table3}`")
+      val rs3 = statement.executeQuery(s"SELECT * FROM `json`.`$table3`")
       while (rs3.next()) {
         assert(rs3.getString("Event") === classOf[SessionEvent].getCanonicalName)
         assert(rs3.getString("username") === Utils.currentUser)
@@ -99,7 +99,7 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
   test("statementEvent: generate, dump and query") {
     val statementEventPath = Paths.get(
-      logRoot, "spark_statement", s"day=$currentDate", engine.engineId + ".json")
+      logRoot, "spark_statement", s"day=$currentDate", spark.sparkContext.applicationId + ".json")
     val sql = "select timestamp'2021-09-01';"
     withSessionHandle { (client, handle) =>
 
@@ -112,8 +112,8 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
       val statementId = OperationHandle(opHandle).identifier.toString
 
       eventually(timeout(60.seconds), interval(5.seconds)) {
-        val result = spark.sql(s"select * from `json`.`${table}`")
-          .where(s"statementId = '${statementId}'")
+        val result = spark.sql(s"select * from `json`.`$table`")
+          .where(s"statementId = '$statementId'")
 
         assert(result.select("statementId").first().get(0) === statementId)
         assert(result.count() >= 1)

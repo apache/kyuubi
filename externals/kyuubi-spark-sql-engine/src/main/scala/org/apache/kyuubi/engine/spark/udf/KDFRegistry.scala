@@ -19,17 +19,21 @@ package org.apache.kyuubi.engine.spark.udf
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.spark.{SparkEnv, TaskContext}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions.udf
 
-import org.apache.kyuubi.KYUUBI_VERSION
+import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
+import org.apache.kyuubi.KyuubiSparkUtils.KYUUBI_SESSION_USER_KEY
 
 object KDFRegistry {
 
+  @transient
   val registeredFunctions = new ArrayBuffer[KyuubiDefinedFunction]()
 
-  val appName = SparkSession.active.sparkContext.appName
+  lazy val appName = SparkEnv.get.conf.get("spark.app.name")
+  lazy val appId = SparkEnv.get.conf.get("spark.app.id")
 
   val kyuubi_version: KyuubiDefinedFunction = create(
     "kyuubi_version",
@@ -46,12 +50,31 @@ object KDFRegistry {
     "1.3.0"
   )
 
+  val engine_id: KyuubiDefinedFunction = create(
+    "engine_id",
+    udf(() => appId).asNonNullable(),
+    "Return the spark application id for the associated query engine",
+    "string",
+    "1.4.0"
+  )
+
   val system_user: KyuubiDefinedFunction = create(
     "system_user",
-    udf(() => System.getProperty("user.name")).asNonNullable(),
+    udf(() => Utils.currentUser).asNonNullable(),
     "Return the system user name for the associated query engine",
     "string",
     "1.3.0")
+
+  val session_user: KyuubiDefinedFunction = create(
+    "session_user",
+    udf { () =>
+      Option(TaskContext.get()).map(_.getLocalProperty(KYUUBI_SESSION_USER_KEY))
+        .getOrElse(throw new RuntimeException("Unable to get session_user"))
+    },
+    "Return the session username for the associated query engine",
+    "string",
+    "1.4.0"
+  )
 
   def create(
     name: String,

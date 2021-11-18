@@ -33,7 +33,7 @@ DEP="${PWD}"/dev/dependencyList
 
 function build_classpath() {
   $MVN dependency:build-classpath -pl :kyuubi-assembly_2.12 |\
-    grep -v "INFO" | \
+    grep -v "INFO\|WARN" | \
     tr ":" "\n" | \
     awk -F '/' '{
       artifact_id=$(NF-2);

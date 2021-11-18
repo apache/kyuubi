@@ -26,6 +26,7 @@ In this section, you will learn how to setup and interact with kyuubi quickly.
     :numbered: 3
 
     quick_start
+    quick_start_with_helm
     quick_start_with_dbeaver
     quick_start_with_beeline
     quick_start_with_jdbc

@@ -32,6 +32,7 @@ import org.apache.kyuubi.session.Session
 abstract class AbstractOperation(opType: OperationType, session: Session)
   extends Operation with Logging {
 
+  private final val createTime = System.currentTimeMillis()
   private final val handle = OperationHandle(opType, session.protocol)
   private final val operationTimeout: Long = {
     session.sessionManager.getConf.get(OPERATION_IDLE_TIMEOUT)
@@ -44,7 +45,7 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
   @volatile protected var state: OperationState = INITIALIZED
   @volatile protected var startTime: Long = _
   @volatile protected var completedTime: Long = _
-  @volatile protected var lastAccessTime: Long = System.currentTimeMillis()
+  @volatile protected var lastAccessTime: Long = createTime
 
   @volatile protected var operationException: KyuubiSQLException = _
   @volatile protected var hasResultSet: Boolean = false
@@ -147,7 +148,8 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
   override def getHandle: OperationHandle = handle
 
   override def getStatus: OperationStatus = {
-    OperationStatus(state, startTime, completedTime, hasResultSet, Option(operationException))
+    OperationStatus(state, createTime, startTime, lastAccessTime, completedTime, hasResultSet,
+      Option(operationException))
   }
 
   override def shouldRunAsync: Boolean

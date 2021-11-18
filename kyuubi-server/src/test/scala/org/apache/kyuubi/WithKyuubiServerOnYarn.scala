@@ -32,9 +32,7 @@ trait WithKyuubiServerOnYarn extends WithKyuubiServer {
   private var miniYarnService: MiniYarnService = _
 
   override protected lazy final val conf: KyuubiConf = {
-    connectionConf.foreach { case (k, v) =>
-      kyuubiServerConf.set(k, v)
-    }
+    connectionConf.foreach { case (k, v) => kyuubiServerConf.set(k, v) }
     kyuubiServerConf
   }
 
