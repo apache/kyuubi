@@ -164,6 +164,13 @@ private[v1] class SessionsResource extends ApiRequestContext {
     Response.ok().build()
   }
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON
+    )),
+    description = "Create an operation with EXECUTE_STATEMENT type"
+  )
   @POST
   @Path("{sessionHandle}/operations/statement")
   def executeStatement(@PathParam("sessionHandle") sessionHandleStr: String,
@@ -178,6 +185,13 @@ private[v1] class SessionsResource extends ApiRequestContext {
     }
   }
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON
+    )),
+    description = "Create an operation with GET_TYPE_INFO type"
+  )
   @POST
   @Path("{sessionHandle}/operations/typeinfo")
   def getTypeInfo(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
@@ -190,6 +204,13 @@ private[v1] class SessionsResource extends ApiRequestContext {
     }
   }
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON
+    )),
+    description = "Create an operation with GET_CATALOGS type"
+  )
   @POST
   @Path("{sessionHandle}/operations/catalogs")
   def getCatalogs(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
@@ -202,6 +223,13 @@ private[v1] class SessionsResource extends ApiRequestContext {
     }
   }
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON
+    )),
+    description = "Create an operation with GET_SCHEMAS type"
+  )
   @POST
   @Path("{sessionHandle}/operations/schemas")
   def getSchemas(@PathParam("sessionHandle") sessionHandleStr: String,
@@ -215,6 +243,13 @@ private[v1] class SessionsResource extends ApiRequestContext {
     }
   }
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON
+    )),
+    description = "Create an operation with GET_TABLES type"
+  )
   @POST
   @Path("{sessionHandle}/operations/tables")
   def getTables(@PathParam("sessionHandle") sessionHandleStr: String,
@@ -229,6 +264,13 @@ private[v1] class SessionsResource extends ApiRequestContext {
     }
   }
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON
+    )),
+    description = "Create an operation with GET_TABLE_TYPES type"
+  )
   @POST
   @Path("{sessionHandle}/operations/tabletypes")
   def getTableTypes(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
@@ -241,6 +283,13 @@ private[v1] class SessionsResource extends ApiRequestContext {
     }
   }
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON
+    )),
+    description = "Create an operation with GET_COLUMNS type"
+  )
   @POST
   @Path("{sessionHandle}/operations/columns")
   def getColumns(@PathParam("sessionHandle") sessionHandleStr: String,
@@ -255,6 +304,13 @@ private[v1] class SessionsResource extends ApiRequestContext {
     }
   }
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON
+    )),
+    description = "Create an operation with GET_FUNCTIONS type"
+  )
   @POST
   @Path("{sessionHandle}/operations/functions")
   def getFunctions(@PathParam("sessionHandle") sessionHandleStr: String,
