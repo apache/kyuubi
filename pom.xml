@@ -1334,8 +1334,6 @@
                             <googleJavaFormat>
                                 <version>1.7</version>
                                 <style>GOOGLE</style>
-                                <reflowLongStrings>false</reflowLongStrings>
-                                <groupArtifact>com.google.googlejavaformat:google-java-format</groupArtifact>
                             </googleJavaFormat>
                         </java>
                     </configuration>

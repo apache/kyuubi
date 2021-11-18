@@ -615,7 +615,7 @@ public class KyuubiPreparedStatement extends KyuubiStatement implements Prepared
       // Can't infer a type.
       throw new SQLException(
           MessageFormat.format(
-              "Can''t infer the SQL type to use for an instance of {0}. Use setObject() with an explicit Types value to specify the type to use.",
+              "Can't infer the SQL type to use for an instance of {0}. Use setObject() with an explicit Types value to specify the type to use.",
               x.getClass().getName()));
     }
   }
