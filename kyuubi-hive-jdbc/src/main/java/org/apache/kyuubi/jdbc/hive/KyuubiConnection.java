@@ -25,24 +25,7 @@ import java.lang.reflect.Proxy;
 import java.nio.ByteBuffer;
 import java.security.KeyStore;
 import java.security.SecureRandom;
-import java.sql.Array;
-import java.sql.Blob;
-import java.sql.CallableStatement;
-import java.sql.Clob;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.DriverManager;
-import java.sql.NClob;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLClientInfoException;
-import java.sql.SQLException;
-import java.sql.SQLFeatureNotSupportedException;
-import java.sql.SQLWarning;
-import java.sql.SQLXML;
-import java.sql.Savepoint;
-import java.sql.Statement;
-import java.sql.Struct;
+import java.sql.*;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.Executor;
@@ -82,6 +65,8 @@ import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
+import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
+import org.apache.kyuubi.jdbc.hive.logs.KyuubiLoggable;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.transport.THttpClient;
@@ -91,7 +76,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** KyuubiConnection. */
-public class KyuubiConnection implements java.sql.Connection {
+public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
   private static boolean isBeeLineMode = false;
 
@@ -121,7 +106,8 @@ public class KyuubiConnection implements java.sql.Connection {
 
   private TOperationHandle launchEngineOpHandle = null;
   private boolean engineLogInflight = true;
-  private boolean launchEngineOpCompleted = false;
+  private volatile boolean launchEngineOpCompleted = false;
+  private InPlaceUpdateStream inPlaceUpdateStream = InPlaceUpdateStream.NO_OP;
 
   public KyuubiConnection(String uri, Properties info) throws SQLException {
     setupLoginTimeout();
@@ -169,6 +155,7 @@ public class KyuubiConnection implements java.sql.Connection {
       // open client session
       openSession();
       showLaunchEngineLog();
+      waitLaunchEngineToComplete();
       executeInitSql();
     } else {
       int maxRetries = 1;
@@ -192,6 +179,7 @@ public class KyuubiConnection implements java.sql.Connection {
           openSession();
           if (!isBeeLineMode) {
             showLaunchEngineLog();
+            waitLaunchEngineToComplete();
             executeInitSql();
           }
           break;
@@ -233,7 +221,7 @@ public class KyuubiConnection implements java.sql.Connection {
    * @return true if launch engine operation might be producing more logs. It does not indicate if
    *     last log lines have been fetched by getEngineLog.
    */
-  public boolean hasMoreEngineLogs() {
+  public boolean hasMoreLogs() {
     return launchEngineOpHandle != null && (!launchEngineOpCompleted || engineLogInflight);
   }
 
@@ -245,11 +233,11 @@ public class KyuubiConnection implements java.sql.Connection {
    *
    * @return a list of logs. It can be empty if there are no new logs to be retrieved at that time.
    * @throws SQLException
-   * @throws ClosedConnectionException if connection has been closed
+   * @throws ClosedOrCancelledException if connection has been closed
    */
-  public List<String> getEngineLog() throws SQLException, ClosedConnectionException {
+  public List<String> getExecLog() throws SQLException, ClosedOrCancelledException {
     if (isClosed()) {
-      throw new ClosedConnectionException(
+      throw new ClosedOrCancelledException(
           "Method getEngineLog() failed. The " + "connection has been closed.");
     }
     TFetchResultsReq fetchResultsReq =
@@ -267,14 +255,6 @@ public class KyuubiConnection implements java.sql.Connection {
       throw new SQLException("Error building result set for query log", e);
     }
     engineLogInflight = !logs.isEmpty();
-
-    TGetOperationStatusReq opStatusReq = new TGetOperationStatusReq(launchEngineOpHandle);
-    try {
-      launchEngineOpCompleted = client.GetOperationStatus(opStatusReq).getOperationCompleted() != 0;
-    } catch (TException e) {
-      launchEngineOpCompleted = true;
-    }
-
     return Collections.unmodifiableList(logs);
   }
 
@@ -287,8 +267,8 @@ public class KyuubiConnection implements java.sql.Connection {
             @Override
             public void run() {
               try {
-                while (hasMoreEngineLogs()) {
-                  List<String> logs = getEngineLog();
+                while (hasMoreLogs()) {
+                  List<String> logs = getExecLog();
                   for (String log : logs) {
                     LOG.info(log);
                   }
@@ -1642,5 +1622,78 @@ public class KyuubiConnection implements java.sql.Connection {
         lock.unlock();
       }
     }
+  }
+
+  public void waitLaunchEngineToComplete() throws SQLException {
+    if (launchEngineOpHandle == null) return;
+
+    TGetOperationStatusReq statusReq = new TGetOperationStatusReq(launchEngineOpHandle);
+    boolean shouldGetProgressUpdate = inPlaceUpdateStream != InPlaceUpdateStream.NO_OP;
+    statusReq.setGetProgressUpdate(shouldGetProgressUpdate);
+    if (!shouldGetProgressUpdate) {
+      /** progress bar is completed if there is nothing we want to request in the first place. */
+      inPlaceUpdateStream.getEventNotifier().progressBarCompleted();
+    }
+    TGetOperationStatusResp statusResp = null;
+
+    // Poll on the operation status, till the operation is complete
+    while (!launchEngineOpCompleted) {
+      try {
+        try {
+          statusResp = client.GetOperationStatus(statusReq);
+        } catch (Exception e) {
+          LOG.debug("Failed to get launch engine operation status, assume it has completed", e);
+          launchEngineOpCompleted = true;
+          break;
+        }
+        inPlaceUpdateStream.update(statusResp.getProgressUpdateResponse());
+        Utils.verifySuccessWithInfo(statusResp.getStatus());
+        if (statusResp.isSetOperationState()) {
+          switch (statusResp.getOperationState()) {
+            case CLOSED_STATE:
+            case FINISHED_STATE:
+              launchEngineOpCompleted = true;
+              engineLogInflight = false;
+              break;
+            case CANCELED_STATE:
+              // 01000 -> warning
+              throw new SQLException("Launch engine was cancelled", "01000");
+            case TIMEDOUT_STATE:
+              throw new SQLTimeoutException("Launch engine timeout");
+            case ERROR_STATE:
+              // Get the error details from the underlying exception
+              throw new SQLException(
+                  statusResp.getErrorMessage(),
+                  statusResp.getSqlState(),
+                  statusResp.getErrorCode());
+            case UKNOWN_STATE:
+              throw new SQLException("Unknown state", "HY000");
+            case INITIALIZED_STATE:
+            case PENDING_STATE:
+            case RUNNING_STATE:
+              break;
+          }
+        }
+      } catch (SQLException e) {
+        engineLogInflight = false;
+        throw e;
+      } catch (Exception e) {
+        engineLogInflight = false;
+        throw new SQLException(e.toString(), "08S01", e);
+      }
+    }
+
+    /*
+      we set progress bar to be completed when hive query execution has completed
+    */
+    inPlaceUpdateStream.getEventNotifier().progressBarCompleted();
+  }
+
+  /**
+   * This is only used by the beeline client to set the stream on which in place progress updates
+   * are to be shown
+   */
+  public void setInPlaceUpdateStream(InPlaceUpdateStream stream) {
+    this.inPlaceUpdateStream = stream;
   }
 }

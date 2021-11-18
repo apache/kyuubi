@@ -19,12 +19,12 @@ package org.apache.kyuubi.jdbc.hive;
 
 import java.sql.SQLException;
 
-public class ClosedOrCancelledStatementException extends SQLException {
+public class ClosedOrCancelledException extends SQLException {
 
   private static final long serialVersionUID = 0;
 
   /** @param msg (exception message) */
-  public ClosedOrCancelledStatementException(String msg) {
+  public ClosedOrCancelledException(String msg) {
     super(msg);
   }
 }

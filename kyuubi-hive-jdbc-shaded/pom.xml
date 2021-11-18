@@ -359,6 +359,9 @@
                         </filter>
                         <filter>
                             <artifact>org.apache.hive:hive-common</artifact>
+                            <includes>
+                                <include>**</include>
+                            </includes>
                             <excludes>
                                 <exclude>META-INF/MANIFEST.MF</exclude>
                             </excludes>
