@@ -1630,11 +1630,13 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     // Poll on the operation status, till the operation is complete
     while (!launchEngineOpCompleted) {
       try {
-        /**
-         * For an async SQLOperation, GetOperationStatus will use the long polling approach It will
-         * essentially return after the HIVE_SERVER2_LONG_POLLING_TIMEOUT (a server config) expires
-         */
-        statusResp = client.GetOperationStatus(statusReq);
+        try {
+          statusResp = client.GetOperationStatus(statusReq);
+        } catch (Exception e) {
+          LOG.debug("Failed to get launch engine operation status, assume it has completed", e);
+          launchEngineOpCompleted = true;
+          break;
+        }
         inPlaceUpdateStream.update(statusResp.getProgressUpdateResponse());
         Utils.verifySuccessWithInfo(statusResp.getStatus());
         if (statusResp.isSetOperationState()) {
