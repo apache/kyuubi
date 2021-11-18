@@ -84,4 +84,17 @@ public class KyuubiBeeLine extends BeeLine {
   protected Driver getDefaultDriver() {
     return defaultDriver;
   }
+
+  @Override
+  String getApplicationTitle() {
+    Package pack = BeeLine.class.getPackage();
+
+    return loc(
+        "app-introduction",
+        new Object[] {
+          "Beeline",
+          pack.getImplementationVersion() == null ? "???" : pack.getImplementationVersion(),
+          "Apache Kyuubi",
+        });
+  }
 }
