@@ -94,6 +94,12 @@
             <scope>provided</scope>
         </dependency>
 
+        <dependency>
+            <groupId>jline</groupId>
+            <artifactId>jline</artifactId>
+            <version>${jline.version}</version>
+        </dependency>
+
         <!-- default package with log4j -->
         <dependency>
             <groupId>org.slf4j</groupId>
