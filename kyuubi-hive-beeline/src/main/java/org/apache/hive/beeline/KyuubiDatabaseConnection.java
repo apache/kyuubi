@@ -154,14 +154,7 @@ public class KyuubiDatabaseConnection extends DatabaseConnection {
     logThread.setDaemon(true);
     logThread.start();
 
-    try {
-      while (!kyuubiConnection.isLaunchEngineOpCompleted()) {
-        Thread.sleep(KyuubiCommands.DEFAULT_QUERY_PROGRESS_INTERVAL);
-      }
-    } catch (Exception e) {
-      beeLine.debug("Exception when waiting the kyuubi launch engine to complete:" + e);
-    }
-
+    kyuubiConnection.waitLaunchEngineToComplete();
     logThread.interrupt();
     kyuubiConnection.executeInitSql();
 

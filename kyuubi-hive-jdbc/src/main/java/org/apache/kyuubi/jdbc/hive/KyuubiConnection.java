@@ -147,12 +147,13 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
     if (isEmbeddedMode) {
       EmbeddedThriftBinaryCLIService embeddedClient = new EmbeddedThriftBinaryCLIService();
       embeddedClient.init(null);
-      TCLIService.Iface _client = client = embeddedClient;
+      TCLIService.Iface _client = embeddedClient;
       // Wrap the client with a thread-safe proxy to serialize the RPC calls
       client = newSynchronizedClient(_client);
       // open client session
       openSession();
       showLaunchEngineLog();
+      waitLaunchEngineToComplete();
       executeInitSql();
     } else {
       int maxRetries = 1;
@@ -176,6 +177,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
           openSession();
           if (!isBeeLineMode) {
             showLaunchEngineLog();
+            waitLaunchEngineToComplete();
             executeInitSql();
           }
           break;
@@ -218,22 +220,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
    *     last log lines have been fetched by getEngineLog.
    */
   public boolean hasMoreLogs() {
-    return launchEngineOpHandle != null && (engineLogInflight || !isLaunchEngineOpCompleted());
-  }
-
-  public boolean isLaunchEngineOpCompleted() {
-    if (launchEngineOpHandle != null && !launchEngineOpCompleted) {
-      TGetOperationStatusReq opStatusReq = new TGetOperationStatusReq(launchEngineOpHandle);
-      try {
-        launchEngineOpCompleted =
-            client.GetOperationStatus(opStatusReq).getOperationCompleted() != 0;
-      } catch (TException e) {
-        launchEngineOpCompleted = true;
-      }
-      return launchEngineOpCompleted;
-    } else {
-      return true;
-    }
+    return launchEngineOpHandle != null && (engineLogInflight || !launchEngineOpCompleted);
   }
 
   /**
@@ -1631,6 +1618,59 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
         throw new TException("Error in calling method " + method.getName(), e);
       } finally {
         lock.unlock();
+      }
+    }
+  }
+
+  public void waitLaunchEngineToComplete() throws SQLException {
+    if (launchEngineOpHandle == null) return;
+
+    TGetOperationStatusReq statusReq = new TGetOperationStatusReq(launchEngineOpHandle);
+    TGetOperationStatusResp statusResp = null;
+
+    // Poll on the operation status, till the operation is complete
+    while (!launchEngineOpCompleted) {
+      try {
+        try {
+          statusResp = client.GetOperationStatus(statusReq);
+        } catch (Exception e) {
+          LOG.debug("Failed to get launch engine operation status, assume it has completed", e);
+          launchEngineOpCompleted = true;
+          break;
+        }
+        Utils.verifySuccessWithInfo(statusResp.getStatus());
+        if (statusResp.isSetOperationState()) {
+          switch (statusResp.getOperationState()) {
+            case CLOSED_STATE:
+            case FINISHED_STATE:
+              launchEngineOpCompleted = true;
+              engineLogInflight = false;
+              break;
+            case CANCELED_STATE:
+              // 01000 -> warning
+              throw new SQLException("Launch engine was cancelled", "01000");
+            case TIMEDOUT_STATE:
+              throw new SQLTimeoutException("Launch engine timeout");
+            case ERROR_STATE:
+              // Get the error details from the underlying exception
+              throw new SQLException(
+                  statusResp.getErrorMessage(),
+                  statusResp.getSqlState(),
+                  statusResp.getErrorCode());
+            case UKNOWN_STATE:
+              throw new SQLException("Unknown state", "HY000");
+            case INITIALIZED_STATE:
+            case PENDING_STATE:
+            case RUNNING_STATE:
+              break;
+          }
+        }
+      } catch (SQLException e) {
+        engineLogInflight = false;
+        throw e;
+      } catch (Exception e) {
+        engineLogInflight = false;
+        throw new SQLException(e.toString(), "08S01", e);
       }
     }
   }
