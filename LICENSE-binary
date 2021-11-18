@@ -268,6 +268,10 @@ io.swagger.core.v3:swagger-models
 io.swagger.core.v3:swagger-models-jakarta
 org.apache.zookeeper:zookeeper
 
+BSD
+------------
+jline:jline
+
 BSD 3-Clause
 ------------
 org.scala-lang:scala-library
