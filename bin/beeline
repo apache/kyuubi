@@ -40,12 +40,12 @@ export KYUUBI_PROJECT_VERSION="${KYUUBI_PROJECT_VERSION:-"1.4.0-SNAPSHOT"}"
 
 ## Find the Kyuubi jdbc Jar
 if [[ -z "$KYUUBI_BEELINE_LIB_DIR" ]]; then
-  KYUUBI_BEELINE_JARS="$KYUUBI_HOME/cli-jars"
+  KYUUBI_BEELINE_JARS="$KYUUBI_HOME/beeline-jars"
   if [[ ! -d ${KYUUBI_BEELINE_JARS} ]]; then
-    echo -e "\nCandidate Kyuubi jdbc lib $KYUUBI_JDBC_JAR_DIR doesn't exist, searching development environment..."
+    echo -e "\nCandidate Kyuubi beeline jars $KYUUBI_JDBC_JAR_DIR doesn't exist, searching development environment..."
     KYUUBI_BEELINE_JAR="$KYUUBI_HOME/kyuubi-hive-beeline/target/kyuubi-hive-beeline-${KYUUBI_PROJECT_VERSION}.jar"
     KYUUBI_BEELINE_JARS="${KYUUBI_BEELINE_JAR}:$KYUUBI_HOME/kyuubi-hive-beeline/target/scala-${KYUUBI_SCALA_VERSION}/jars"
-    echo -e "Found $KYUUBI_BEELINE_LIB_DIR as kyuubi beeline lib dir"
+    echo -e "Found $KYUUBI_BEELINE_JARS as kyuubi beeline jars"
   fi
 fi
 
