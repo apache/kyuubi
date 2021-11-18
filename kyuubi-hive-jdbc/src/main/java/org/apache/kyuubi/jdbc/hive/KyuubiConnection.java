@@ -111,7 +111,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
 
   private TOperationHandle launchEngineOpHandle = null;
   private boolean engineLogInflight = true;
-  private boolean launchEngineOpCompleted = false;
+  private volatile boolean launchEngineOpCompleted = false;
   private InPlaceUpdateStream inPlaceUpdateStream = InPlaceUpdateStream.NO_OP;
 
   public KyuubiConnection(String uri, Properties info) throws SQLException {
@@ -159,6 +159,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
       // open client session
       openSession();
       showLaunchEngineLog();
+      waitLaunchEngineToComplete();
       executeInitSql();
     } else {
       int maxRetries = 1;
@@ -180,6 +181,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
           openSession();
           if (!isBeeLineMode) {
             showLaunchEngineLog();
+            waitLaunchEngineToComplete();
             executeInitSql();
           }
           break;
@@ -256,14 +258,6 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
       throw new SQLException("Error building result set for query log", e);
     }
     engineLogInflight = !logs.isEmpty();
-
-    TGetOperationStatusReq opStatusReq = new TGetOperationStatusReq(launchEngineOpHandle);
-    try {
-      launchEngineOpCompleted = client.GetOperationStatus(opStatusReq).getOperationCompleted() != 0;
-    } catch (TException e) {
-      launchEngineOpCompleted = true;
-    }
-
     return Collections.unmodifiableList(logs);
   }
 

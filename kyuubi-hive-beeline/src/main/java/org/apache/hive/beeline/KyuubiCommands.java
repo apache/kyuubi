@@ -25,7 +25,6 @@ import org.apache.hive.beeline.logs.KyuubiBeelineInPlaceUpdateStream;
 
 import org.apache.kyuubi.jdbc.hive.Utils;
 import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
-import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement;
 import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
 import org.apache.kyuubi.jdbc.hive.logs.KyuubiLoggable;

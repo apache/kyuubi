@@ -28,7 +28,7 @@ public interface KyuubiLoggable {
    * @return true if the execution might be producing more logs. It does not indicate if last
    *         log lines have been fetched by getQueryLog.
    */
-  public boolean hasMoreLogs();
+  boolean hasMoreLogs();
 
   /**
    * Get the execution logs.
@@ -38,5 +38,5 @@ public interface KyuubiLoggable {
    * @throws SQLException
    * @throws ClosedOrCancelledException if the execution has been cancelled or closed
    */
-  public List<String> getExecLog() throws SQLException, ClosedOrCancelledException;
+  List<String> getExecLog() throws SQLException, ClosedOrCancelledException;
 }
