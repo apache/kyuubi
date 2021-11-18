@@ -29,8 +29,8 @@ import org.apache.kyuubi.jdbc.hive.logs.KyuubiLoggable;
 
 public class KyuubiCommands extends Commands {
   protected KyuubiBeeLine beeLine;
-  private static final int DEFAULT_QUERY_PROGRESS_INTERVAL = 1000;
-  private static final int DEFAULT_QUERY_PROGRESS_THREAD_TIMEOUT = 10 * 1000;
+  protected static final int DEFAULT_QUERY_PROGRESS_INTERVAL = 1000;
+  protected static final int DEFAULT_QUERY_PROGRESS_THREAD_TIMEOUT = 10 * 1000;
 
   public KyuubiCommands(KyuubiBeeLine beeLine) {
     super(beeLine);
