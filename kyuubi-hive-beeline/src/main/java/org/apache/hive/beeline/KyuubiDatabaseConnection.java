@@ -135,33 +135,27 @@ public class KyuubiDatabaseConnection extends DatabaseConnection {
     return true;
   }
 
-  public Connection getConnectionFromDefaultDriver(String url, Properties properties) {
-    try {
-      if (beeLine.getDefaultDriver() != null && beeLine.getDefaultDriver().acceptsURL(url)) {
-        KyuubiConnection kyuubiConnection = (KyuubiConnection) beeLine.getDefaultDriver().connect(url, properties);
+  public Connection getConnectionFromDefaultDriver(String url, Properties properties)
+    throws SQLException {
+    KyuubiConnection kyuubiConnection =
+      (KyuubiConnection) beeLine.getDefaultDriver().connect(url, properties);
 
-        InPlaceUpdateStream.EventNotifier eventNotifier =
-          new InPlaceUpdateStream.EventNotifier();
-        Thread logThread = new Thread(beeLine.commands.createLogRunnable(kyuubiConnection,
-          eventNotifier));
-        logThread.setDaemon(true);
-        logThread.start();
+    InPlaceUpdateStream.EventNotifier eventNotifier =
+      new InPlaceUpdateStream.EventNotifier();
+    Thread logThread = new Thread(beeLine.commands.createLogRunnable(kyuubiConnection,
+      eventNotifier));
+    logThread.setDaemon(true);
+    logThread.start();
 
-        kyuubiConnection.setInPlaceUpdateStream(
-          new KyuubiBeelineInPlaceUpdateStream(
-            beeLine.getErrorStream(),
-            eventNotifier
-          ));
-        kyuubiConnection.waitLaunchEngineToComplete();
-        logThread.interrupt();
-        kyuubiConnection.executeInitSql();
+    kyuubiConnection.setInPlaceUpdateStream(
+      new KyuubiBeelineInPlaceUpdateStream(
+        beeLine.getErrorStream(),
+        eventNotifier
+      ));
+    kyuubiConnection.waitLaunchEngineToComplete();
+    logThread.interrupt();
+    kyuubiConnection.executeInitSql();
 
-        return kyuubiConnection;
-      }
-    } catch (Exception e) {
-      beeLine.error("Fail to connect with default driver due to the exception:" + e);
-      beeLine.error(e);
-    }
-    return null;
+    return kyuubiConnection;
   }
 }
