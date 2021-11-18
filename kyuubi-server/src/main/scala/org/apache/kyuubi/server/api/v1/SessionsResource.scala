@@ -193,7 +193,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
     description = "Create an operation with GET_TYPE_INFO type"
   )
   @POST
-  @Path("{sessionHandle}/operations/typeinfo")
+  @Path("{sessionHandle}/operations/typeInfo")
   def getTypeInfo(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
     try {
@@ -272,7 +272,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
     description = "Create an operation with GET_TABLE_TYPES type"
   )
   @POST
-  @Path("{sessionHandle}/operations/tabletypes")
+  @Path("{sessionHandle}/operations/tableTypes")
   def getTableTypes(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
     try {

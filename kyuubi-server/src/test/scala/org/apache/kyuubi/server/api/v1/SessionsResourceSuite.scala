@@ -223,7 +223,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       var operationHandle = response.readEntity(classOf[OperationHandle])
       assert(operationHandle.typ == OperationType.EXECUTE_STATEMENT)
 
-      response = webTarget.path(s"$pathPrefix/operations/typeinfo").request()
+      response = webTarget.path(s"$pathPrefix/operations/typeInfo").request()
         .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
       operationHandle = response.readEntity(classOf[OperationHandle])
@@ -253,7 +253,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       operationHandle = response.readEntity(classOf[OperationHandle])
       assert(operationHandle.typ == OperationType.GET_TABLES)
 
-      response = webTarget.path(s"$pathPrefix/operations/tabletypes").request()
+      response = webTarget.path(s"$pathPrefix/operations/tableTypes").request()
         .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
       operationHandle = response.readEntity(classOf[OperationHandle])
