@@ -18,12 +18,9 @@
 package org.apache.hive.beeline;
 
 import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.sql.*;
 import java.util.*;
 
-import org.apache.hadoop.io.IOUtils;
 import org.apache.hive.beeline.logs.KyuubiBeelineInPlaceUpdateStream;
 
 import org.apache.kyuubi.jdbc.hive.Utils;
@@ -31,6 +28,7 @@ import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
 import org.apache.kyuubi.jdbc.hive.KyuubiConnection;
 import org.apache.kyuubi.jdbc.hive.KyuubiStatement;
 import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
+import org.apache.kyuubi.jdbc.hive.logs.KyuubiLoggable;
 
 public class KyuubiCommands extends Commands {
   protected KyuubiBeeLine beeLine;
@@ -372,14 +370,14 @@ public class KyuubiCommands extends Commands {
     command.setLength(0);
   }
 
-  private Runnable createLogRunnable(final Statement statement,
-                                     InPlaceUpdateStream.EventNotifier eventNotifier) {
-    if (statement instanceof KyuubiStatement) {
-      return new KyuubiStatementLogRunnable(this, (KyuubiStatement) statement,
+  protected Runnable createLogRunnable(final Object sqlObject,
+                                       InPlaceUpdateStream.EventNotifier eventNotifier) {
+    if (sqlObject instanceof KyuubiLoggable) {
+      return new KyuubiLogRunnable(this, (KyuubiLoggable) sqlObject,
         DEFAULT_QUERY_PROGRESS_INTERVAL, eventNotifier);
     } else {
       beeLine.debug(
-        "The statement instance is not KyuubiStatement type: " + statement
+        "The instance is not KyuubiLoggable type: " + sqlObject
           .getClass());
       return new Runnable() {
         @Override
@@ -390,13 +388,13 @@ public class KyuubiCommands extends Commands {
     }
   }
 
-  private void showRemainingLogsIfAny(Statement statement) {
-    if (statement instanceof KyuubiStatement) {
-      KyuubiStatement kyuubiStatement = (KyuubiStatement) statement;
+  private void showRemainingLogsIfAny(Object sqlObject) {
+    if (sqlObject instanceof KyuubiLoggable) {
+      KyuubiLoggable kyuubiLoggable = (KyuubiLoggable) sqlObject;
       List<String> logs = null;
       do {
         try {
-          logs = kyuubiStatement.getQueryLog();
+          logs = kyuubiLoggable.getExecLog();
         } catch (SQLException e) {
           beeLine.error(new SQLWarning(e));
           return;
@@ -406,7 +404,7 @@ public class KyuubiCommands extends Commands {
         }
       } while (logs.size() > 0);
     } else {
-      beeLine.debug("The statement instance is not KyuubiStatement type: " + statement.getClass());
+      beeLine.debug("The instance is not KyuubiLoggable type: " + sqlObject.getClass());
     }
   }
 
@@ -504,105 +502,27 @@ public class KyuubiCommands extends Commands {
     }
   }
 
-  protected Runnable createConnectionLogRunnable(final Connection connection,
-                                                 InPlaceUpdateStream.EventNotifier eventNotifier) {
-    if (connection instanceof KyuubiConnection) {
-      return new KyuubiConnectionLogRunnable(this, (KyuubiConnection) connection,
-        DEFAULT_QUERY_PROGRESS_INTERVAL, eventNotifier);
-    } else {
-      beeLine.debug(
-        "The connection instance is not KyuubiConnection type: " + connection.getClass());
-      return new Runnable() {
-        @Override
-        public void run() {
-          // do nothing.
-        }
-      };
-    }
-  }
-
-  static class KyuubiConnectionLogRunnable implements Runnable {
+  static class KyuubiLogRunnable implements Runnable {
     private final KyuubiCommands commands;
-    private final KyuubiConnection kyuubiConnection;
+    private final KyuubiLoggable kyuubiLoggable;
     private final long queryProgressInterval;
     private final InPlaceUpdateStream.EventNotifier notifier;
 
-    KyuubiConnectionLogRunnable(KyuubiCommands commands, KyuubiConnection kyuubiConnection,
-                                long queryProgressInterval,
-                                InPlaceUpdateStream.EventNotifier eventNotifier) {
-      this.commands = commands;
-      this.kyuubiConnection = kyuubiConnection;
-      this.queryProgressInterval = queryProgressInterval;
-      this.notifier = eventNotifier;
-    }
-
-    private void updateQueryLog() {
-      try {
-        List<String> engineLogs = kyuubiConnection.getEngineLog();
-        for (String log : engineLogs) {
-          commands.beeLine.info(log);
-        }
-        if (!engineLogs.isEmpty()) {
-          notifier.operationLogShowedToUser();
-        }
-      } catch (SQLException e) {
-        commands.beeLine.error(new SQLWarning(e));
-      }
-  }
-
-    @Override public void run() {
-      try {
-        while (kyuubiConnection.hasMoreEngineLogs()) {
-          commands.beeLine.debug("going to print launch engine operation logs");
-          updateQueryLog();
-          commands.beeLine.debug("printed launch engine operation logs");
-          Thread.sleep(queryProgressInterval);
-        }
-      } catch (InterruptedException e) {
-        commands.beeLine.debug("Getting log thread is interrupted, since query is done!");
-      } finally {
-        commands.showRemainingKyuubiEngineLogsIfAny(kyuubiConnection);
-      }
-    }
-  }
-
-  private void showRemainingKyuubiEngineLogsIfAny(KyuubiConnection kyuubiConnection) {
-    List<String> logs = null;
-    do {
-      try {
-        logs = kyuubiConnection.getEngineLog();
-      } catch (SQLException e) {
-        beeLine.error(new SQLWarning(e));
-        return;
-      }
-      for (String log: logs) {
-        beeLine.info(log);
-      }
-    } while (logs.size() > 0);
-  }
-
-  static class KyuubiStatementLogRunnable implements Runnable {
-    private final KyuubiCommands commands;
-    private final KyuubiStatement kyuubiStatement;
-    private final long queryProgressInterval;
-    private final InPlaceUpdateStream.EventNotifier notifier;
-
-    KyuubiStatementLogRunnable(KyuubiCommands commands, KyuubiStatement kyuubiStatement,
-                               long queryProgressInterval,
-                               InPlaceUpdateStream.EventNotifier eventNotifier) {
-      this.kyuubiStatement = kyuubiStatement;
+    KyuubiLogRunnable(KyuubiCommands commands, KyuubiLoggable kyuubiLoggable,
+                      long queryProgressInterval, InPlaceUpdateStream.EventNotifier eventNotifier) {
+      this.kyuubiLoggable = kyuubiLoggable;
       this.commands = commands;
       this.queryProgressInterval = queryProgressInterval;
       this.notifier = eventNotifier;
     }
 
-    private void updateQueryLog() {
+    private void updateExecLog() {
       try {
-        List<String> queryLogs = kyuubiStatement.getQueryLog();
-        for (String log : queryLogs) {
+        List<String> execLogs = kyuubiLoggable.getExecLog();
+        for (String log : execLogs) {
           commands.beeLine.info(log);
         }
-        if (!queryLogs.isEmpty()) {
+        if (!execLogs.isEmpty()) {
           notifier.operationLogShowedToUser();
         }
       } catch (SQLException e) {
@@ -612,14 +532,14 @@ public class KyuubiCommands extends Commands {
 
     @Override public void run() {
       try {
-        while (kyuubiStatement.hasMoreLogs()) {
+        while (kyuubiLoggable.hasMoreLogs()) {
           /*
             get the operation logs once and print it, then wait till progress bar update is complete
             before printing the remaining logs.
           */
           if (notifier.canOutputOperationLogs()) {
             commands.beeLine.debug("going to print operations logs");
-            updateQueryLog();
+            updateExecLog();
             commands.beeLine.debug("printed operations logs");
           }
           Thread.sleep(queryProgressInterval);
@@ -627,7 +547,7 @@ public class KyuubiCommands extends Commands {
       } catch (InterruptedException e) {
         commands.beeLine.debug("Getting log thread is interrupted, since query is done!");
       } finally {
-        commands.showRemainingLogsIfAny(kyuubiStatement);
+        commands.showRemainingLogsIfAny(kyuubiLoggable);
       }
     }
   }

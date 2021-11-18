@@ -142,7 +142,7 @@ public class KyuubiDatabaseConnection extends DatabaseConnection {
 
         InPlaceUpdateStream.EventNotifier eventNotifier =
           new InPlaceUpdateStream.EventNotifier();
-        Thread logThread = new Thread(beeLine.commands.createConnectionLogRunnable(kyuubiConnection,
+        Thread logThread = new Thread(beeLine.commands.createLogRunnable(kyuubiConnection,
           eventNotifier));
         logThread.setDaemon(true);
         logThread.start();

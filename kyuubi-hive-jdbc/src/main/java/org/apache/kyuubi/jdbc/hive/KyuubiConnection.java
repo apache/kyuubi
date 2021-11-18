@@ -66,6 +66,7 @@ import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
+import org.apache.kyuubi.jdbc.hive.logs.KyuubiLoggable;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.transport.THttpClient;
@@ -80,7 +81,7 @@ import org.apache.kyuubi.jdbc.hive.Utils.JdbcConnectionParams;
  * KyuubiConnection.
  *
  */
-public class KyuubiConnection implements java.sql.Connection {
+public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiConnection.class.getName());
   private static boolean isBeeLineMode = false;
 
@@ -221,7 +222,7 @@ public class KyuubiConnection implements java.sql.Connection {
    * @return true if launch engine operation might be producing more logs. It does not indicate
    *         if last log lines have been fetched by getEngineLog.
    */
-  public boolean hasMoreEngineLogs() {
+  public boolean hasMoreLogs() {
     return launchEngineOpHandle != null && (!launchEngineOpCompleted || engineLogInflight);
   }
 
@@ -233,11 +234,11 @@ public class KyuubiConnection implements java.sql.Connection {
    * KyuubiStatement object.
    * @return a list of logs. It can be empty if there are no new logs to be retrieved at that time.
    * @throws SQLException
-   * @throws ClosedConnectionException if connection has been closed
+   * @throws ClosedOrCancelledException if connection has been closed
    */
-  public List<String> getEngineLog() throws SQLException, ClosedConnectionException {
+  public List<String> getExecLog() throws SQLException, ClosedOrCancelledException {
     if (isClosed()) {
-      throw new ClosedConnectionException("Method getEngineLog() failed. The " +
+      throw new ClosedOrCancelledException("Method getEngineLog() failed. The " +
         "connection has been closed.");
     }
     TFetchResultsReq fetchResultsReq = new TFetchResultsReq(launchEngineOpHandle,
@@ -274,8 +275,8 @@ public class KyuubiConnection implements java.sql.Connection {
         @Override
         public void run() {
           try {
-            while (hasMoreEngineLogs()) {
-              List<String> logs = getEngineLog();
+            while (hasMoreLogs()) {
+              List<String> logs = getExecLog();
               for (String log: logs) {
                 LOG.info(log);
               }
