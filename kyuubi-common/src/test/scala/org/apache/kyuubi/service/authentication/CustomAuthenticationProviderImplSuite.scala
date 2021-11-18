@@ -33,7 +33,7 @@ class CustomAuthenticationProviderImplSuite extends KyuubiFunSuite {
       "authentication.custom.class must be set when auth method was CUSTOM."))
 
     conf.set(KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
-      "org.apache.kyuubi.service.authentication.UserDefineAuthenticationProviderImpl")
+      classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
     val p1 = getAuthenticationProvider(AuthMethods.withName("CUSTOM"), conf)
     val e2 = intercept[AuthenticationException](p1.authenticate("test", "test"))
     assert(e2.getMessage.contains("Username or password is not valid!"))

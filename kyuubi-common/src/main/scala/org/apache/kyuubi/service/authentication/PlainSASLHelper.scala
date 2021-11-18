@@ -71,8 +71,11 @@ object PlainSASLHelper {
     SQLPlainProcessorFactory(service)
   }
 
-  def getTransportFactory(authTypeStr: String, conf: KyuubiConf): TTransportFactory = {
-    val saslFactory = new TSaslServerTransport.Factory()
+  def getTransportFactory(
+      authTypeStr: String,
+      conf: KyuubiConf,
+      transportFactory: Option[TSaslServerTransport.Factory] = None): TTransportFactory = {
+    val saslFactory = transportFactory.getOrElse(new TSaslServerTransport.Factory())
     try {
       val handler = new PlainServerCallbackHandler(authTypeStr, conf)
       val props = new java.util.HashMap[String, String]

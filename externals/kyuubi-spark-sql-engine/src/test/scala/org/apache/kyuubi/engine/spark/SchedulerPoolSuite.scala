@@ -23,9 +23,9 @@ import org.apache.spark.scheduler.{SparkListener, SparkListenerJobEnd, SparkList
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
-import org.apache.kyuubi.operation.JDBCTestUtils
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
-class SchedulerPoolSuite extends WithSparkSQLEngine with JDBCTestUtils {
+class SchedulerPoolSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
   override protected def jdbcUrl: String = getJdbcUrl
   override def withKyuubiConf: Map[String, String] = {
     val poolFile =
@@ -44,7 +44,7 @@ class SchedulerPoolSuite extends WithSparkSQLEngine with JDBCTestUtils {
     val listener = new SparkListener {
       override def onJobStart(jobStart: SparkListenerJobStart): Unit = {
         info(jobStart)
-        jobStart.jobId match {
+        jobStart.jobId - initJobId match {
           case 1 => job1StartTime = jobStart.time
           case 2 => job2StartTime = jobStart.time
           case 0 => job0Started = true
@@ -53,7 +53,7 @@ class SchedulerPoolSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
       override def onJobEnd(jobEnd: SparkListenerJobEnd): Unit = {
         info(jobEnd)
-        jobEnd.jobId match {
+        jobEnd.jobId - initJobId match {
           case 1 => job1FinishTime = jobEnd.time
           case 2 => job2FinishTime = jobEnd.time
           case _ =>
@@ -64,13 +64,11 @@ class SchedulerPoolSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
     try {
       val threads = Executors.newFixedThreadPool(3)
-      threads.execute(new Runnable {
-        override def run(): Unit = {
-          withJdbcStatement() { statement =>
-            statement.execute("SET kyuubi.operation.scheduler.pool=p0")
-            statement.execute("SELECT java_method('java.lang.Thread', 'sleep', 5000l)" +
-              "FROM range(1, 3, 1, 2)")
-          }
+      threads.execute(() => {
+        withJdbcStatement() { statement =>
+          statement.execute("SET kyuubi.operation.scheduler.pool=p0")
+          statement.execute("SELECT java_method('java.lang.Thread', 'sleep', 5000l)" +
+            "FROM range(1, 3, 1, 2)")
         }
       })
       // make sure job0 started then we have no resource right now
@@ -78,23 +76,21 @@ class SchedulerPoolSuite extends WithSparkSQLEngine with JDBCTestUtils {
         assert(job0Started)
       }
       Seq(1, 0).foreach { priority =>
-        threads.execute(new Runnable {
-          override def run(): Unit = {
-            priority match {
-              case 0 =>
-                withJdbcStatement() { statement =>
-                  statement.execute("SET kyuubi.operation.scheduler.pool=p0")
-                  statement.execute("SELECT java_method('java.lang.Thread', 'sleep', 1500l)" +
-                    "FROM range(1, 3, 1, 2)")
-                }
+        threads.execute(() => {
+          priority match {
+            case 0 =>
+              withJdbcStatement() { statement =>
+                statement.execute("SET kyuubi.operation.scheduler.pool=p0")
+                statement.execute("SELECT java_method('java.lang.Thread', 'sleep', 1500l)" +
+                  "FROM range(1, 3, 1, 2)")
+              }
 
-              case 1 =>
-                withJdbcStatement() { statement =>
-                  statement.execute("SET kyuubi.operation.scheduler.pool=p1")
-                  statement.execute("SELECT java_method('java.lang.Thread', 'sleep', 1500l)" +
-                    " FROM range(1, 3, 1, 2)")
-                }
-            }
+            case 1 =>
+              withJdbcStatement() { statement =>
+                statement.execute("SET kyuubi.operation.scheduler.pool=p1")
+                statement.execute("SELECT java_method('java.lang.Thread', 'sleep', 1500l)" +
+                  " FROM range(1, 3, 1, 2)")
+              }
           }
         })
       }

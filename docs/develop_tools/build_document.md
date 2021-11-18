@@ -48,12 +48,12 @@ virtualenv kyuubi
 Activate it,
 
 ```bash
- source ./kyuubi/bin/activate
+source ./kyuubi/bin/activate
 ```
 
 ## Install all dependencies
 
-Install all dependencies enumerated in the `requirements.txt`
+Install all dependencies enumerated in the `requirements.txt`.
 
 ```bash
 pip install -r requirements.txt

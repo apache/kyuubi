@@ -47,6 +47,12 @@
         </dependency>
 
         <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>jul-to-slf4j</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>io.fabric8</groupId>
             <artifactId>kubernetes-client</artifactId>
             <scope>test</scope>
@@ -55,8 +61,9 @@
         <!-- for hive driver related dependency -->
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-hive-jdbc</artifactId>
+            <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

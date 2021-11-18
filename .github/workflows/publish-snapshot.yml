@@ -30,10 +30,21 @@ jobs:
       uses: actions/setup-java@v1
       with:
         java-version: 8
-    - name: Publish snapshot
+    - name: Publish snapshot - master
+      if: ${{ matrix.branch == 'master' }}
       env:
         ASF_USERNAME: ${{ secrets.NEXUS_USER }}
         ASF_PASSWORD: ${{ secrets.NEXUS_PW }}
       run: |
         rm -rf ~/.m2/repository/org/apache/kyuubi
-        ./build/mvn clean deploy -DskipTests -Pkyuubi-extension-spark-3-1,spark-provided -s ./build/release/asf-settings.xml
+        ./build/mvn clean deploy -s ./build/release/asf-settings.xml -DskipTests -Pspark-provided
+        ./build/mvn clean deploy -s ./build/release/asf-settings.xml -DskipTests -Pspark-provided,spark-3.1 -pl dev/kyuubi-extension-spark-3-1 -am
+        ./build/mvn clean deploy -s ./build/release/asf-settings.xml -DskipTests -Pspark-provided,spark-3.2 -pl dev/kyuubi-extension-spark-3-2 -am
+    - name: Publish snapshot - branch-1.3
+      if: ${{ matrix.branch == 'branch-1.3' }}
+      env:
+        ASF_USERNAME: ${{ secrets.NEXUS_USER }}
+        ASF_PASSWORD: ${{ secrets.NEXUS_PW }}
+      run: |
+        rm -rf ~/.m2/repository/org/apache/kyuubi
+        ./build/mvn clean deploy -s ./build/release/asf-settings.xml -DskipTests -Pspark-provided,kyuubi-extension-spark-3-1

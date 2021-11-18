@@ -20,9 +20,9 @@ package org.apache.kyuubi.engine.spark
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.operation.JDBCTestUtils
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
-class SparkSqlEngineSuite extends WithKyuubiServer with JDBCTestUtils {
+class SparkSqlEngineSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   override protected val conf: KyuubiConf = {
     KyuubiConf()
       .set(SESSION_CONF_IGNORE_LIST.key, "kyuubi.abc.xyz,spark.sql.abc.xyz,spark.sql.abc.var")
@@ -72,7 +72,7 @@ class SparkSqlEngineSuite extends WithKyuubiServer with JDBCTestUtils {
 
 
   test("Fail connections on invalid sub domains") {
-    Seq("1", ",", "", "a" * 15, "abc.xyz").foreach { invalid =>
+    Seq("/", "/tmp", "", "abc/efg", ".", "..").foreach { invalid =>
       val sparkHiveConfigs = Map(
         ENGINE_SHARE_LEVEL.key -> "USER",
         ENGINE_SHARE_LEVEL_SUBDOMAIN.key -> invalid)

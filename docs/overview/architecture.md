@@ -80,9 +80,9 @@ Next, let us share some of the key design concepts of Kyuubi.
 
 ## Unified Interface
 
-Kyuubi implements the [Hive Service RPC](https://mvnrepository.com/artifact/org.apache.hive/hive-service-rpc/2.3.7) module,
+Kyuubi implements the [Hive Service RPC](https://mvnrepository.com/artifact/org.apache.hive/hive-service-rpc/2.3.9) module,
 which provides the same way of accessing data as HiveServer2 and Spark Thrift Server.
-On the client side，you can build fantastic business reports, BI applications, or even ETL jobs only via the [Hive JDBC](https://mvnrepository.com/artifact/org.apache.hive/hive-jdbc/2.3.7) module.
+On the client side, you can build fantastic business reports, BI applications, or even ETL jobs only via the [Hive JDBC](https://mvnrepository.com/artifact/org.apache.hive/hive-jdbc/2.3.9) module.
 
 You only need to be familiar with Structured Query Language (SQL) and Java Database Connectivity (JDBC) to handle massive data.
 It helps you focus on the design and implementation of your business system.
@@ -122,15 +122,14 @@ With these features, Kyuubi provides a two-level elastic resource management arc
 For example,
 
 ```shell
-./beeline - u 'jdbc:hive2://kyuubi.org:10009/; \
-  hive.server2.proxy.user=tom# \
-  spark.yarn.queue=thequeue; \
-  spark.dynamicAllocation.enabled=true \
-  spark.dynamicAllocation.maxExecutors=500 \
-  spark.shuffle.service.enabled=true \
-  spark.executor.cores=3; \
-  spark.executor.memory=10g'
-
+./beeline -u "jdbc:hive2://kyuubi.org:10009/;\
+hive.server2.proxy.user=tom#\
+spark.yarn.queue=thequeue;\
+spark.dynamicAllocation.enabled=true;\
+spark.dynamicAllocation.maxExecutors=500;\
+spark.shuffle.service.enabled=true;\
+spark.executor.cores=3;\
+spark.executor.memory=10g"
 ```
 
 If the user named `tom` opens a connection like above, Kyuubi will try to create a Spark SQL engine application with [3, 500] executors (3 cores, 10g mem each) in the queue named `thequeue` in the Yarn cluster.
@@ -164,7 +163,7 @@ Let us try to break it down from top to bottom based on the above diagram.
 4. For connections from different users, the step 2 and 3 will be repeated.
    This is because in the service discovery layer,
    the namespaces used to store the address of the engine instances are isolated based on the user(by default),
-   and different users cannot access other' s instances across the namespace.
+   and different users cannot access other's instances across the namespace.
 
 ## Authentication & Authorization
 

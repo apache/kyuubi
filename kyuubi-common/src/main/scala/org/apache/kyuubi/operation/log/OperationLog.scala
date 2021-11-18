@@ -17,24 +17,21 @@
 
 package org.apache.kyuubi.operation.log
 
-import java.io.IOException
+import java.io.{BufferedReader, IOException}
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
+import java.util.{ArrayList => JArrayList}
+
+import scala.collection.mutable.ListBuffer
 
 import org.apache.hive.service.rpc.thrift.{TColumn, TRow, TRowSet, TStringColumn}
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.operation.OperationHandle
-import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.session.Session
 
 object OperationLog extends Logging {
-
-  def LOG_ROOT: String = if (Utils.isTesting) {
-    "target/operation_logs"
-  } else {
-    "operation_logs"
-  }
   private final val OPERATION_LOG: InheritableThreadLocal[OperationLog] = {
     new InheritableThreadLocal[OperationLog] {
       override def initialValue(): OperationLog = null
@@ -50,36 +47,37 @@ object OperationLog extends Logging {
   def removeCurrentOperationLog(): Unit = OPERATION_LOG.remove()
 
   /**
-   * The operation log root directory, here we choose $PWD/[[LOG_ROOT]]/$sessionId/ as the root per
-   * session, this directory will delete when JVM exit.
+   * The operation log root directory, this directory will delete when JVM exit.
    */
-  def createOperationLogRootDirectory(sessionHandle: SessionHandle): Unit = {
-    val path = Paths.get(LOG_ROOT, sessionHandle.identifier.toString)
-    try {
-      Files.createDirectories(path)
-      path.toFile.deleteOnExit()
-    } catch {
-      case e: IOException =>
-        error(s"Failed to create operation log root directory: $path", e)
+  def createOperationLogRootDirectory(session: Session): Unit = {
+    session.sessionManager.operationLogRoot.foreach { operationLogRoot =>
+      val path = Paths.get(operationLogRoot, session.handle.identifier.toString)
+      try {
+        Files.createDirectories(path)
+        path.toFile.deleteOnExit()
+      } catch {
+        case e: IOException =>
+          error(s"Failed to create operation log root directory: $path", e)
+      }
     }
   }
 
   /**
-   * Create the OperationLog for each operation, the log file will be located at
-   * $PWD/[[LOG_ROOT]]/$sessionId/$operationId
-   * @return
+   * Create the OperationLog for each operation.
    */
-  def createOperationLog(sessionHandle: SessionHandle, opHandle: OperationHandle): OperationLog = {
-    try {
-      val logPath = Paths.get(LOG_ROOT, sessionHandle.identifier.toString)
-      val logFile = Paths.get(logPath.toAbsolutePath.toString, opHandle.identifier.toString)
-      info(s"Creating operation log file $logFile")
-      new OperationLog(logFile)
-    } catch {
-      case e: IOException =>
-        error(s"Failed to create operation log for $opHandle in $sessionHandle", e)
-        null
-    }
+  def createOperationLog(session: Session, opHandle: OperationHandle): OperationLog = {
+    session.sessionManager.operationLogRoot.map { operationLogRoot =>
+      try {
+        val logPath = Paths.get(operationLogRoot, session.handle.identifier.toString)
+        val logFile = Paths.get(logPath.toAbsolutePath.toString, opHandle.identifier.toString)
+        info(s"Creating operation log file $logFile")
+        new OperationLog(logFile)
+      } catch {
+        case e: IOException =>
+          error(s"Failed to create operation log for $opHandle in ${session.handle}", e)
+          null
+      }
+    }.orNull
   }
 }
 
@@ -87,6 +85,16 @@ class OperationLog(path: Path) {
 
   private val writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)
   private val reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)
+
+  private val extraReaders: ListBuffer[BufferedReader] = ListBuffer()
+
+  def addExtraLog(path: Path): Unit = synchronized {
+    try {
+      extraReaders += Files.newBufferedReader(path, StandardCharsets.UTF_8)
+    } catch {
+      case _: IOException =>
+    }
+  }
 
   /**
    * write log to the operation log file
@@ -100,35 +108,51 @@ class OperationLog(path: Path) {
     }
   }
 
-  /**
-   * Read to log file line by line
-   *
-   * @param maxRows maximum result number can reach
-   */
-  def read(maxRows: Int): TRowSet = synchronized {
-    val logs = new java.util.ArrayList[String]
+  private def readLogs(
+      reader: BufferedReader,
+      lastRows: Int,
+      maxRows: Int): (JArrayList[String], Int) = {
+    val logs = new JArrayList[String]
     var i = 0
     try {
       var line: String = reader.readLine()
-      while ((i < maxRows || maxRows <= 0) && line != null) {
+      while ((i < lastRows || maxRows <= 0) && line != null) {
         logs.add(line)
         line = reader.readLine()
         i += 1
       }
+      (logs, i)
     } catch {
       case e: IOException =>
         val absPath = path.toAbsolutePath
         val opHandle = absPath.getFileName
         throw KyuubiSQLException(s"Operation[$opHandle] log file $absPath is not found", e)
     }
+  }
+
+  /**
+   * Read to log file line by line
+   *
+   * @param maxRows maximum result number can reach
+   */
+  def read(maxRows: Int): TRowSet = synchronized {
+    val (logs, lines) = readLogs(reader, maxRows, maxRows)
+    var lastRows = maxRows - lines
+    for (extraReader <- extraReaders if lastRows > 0 || maxRows <= 0) {
+      val (extraLogs, extraRows) = readLogs(extraReader, lastRows, maxRows)
+      lastRows = lastRows - extraRows
+      logs.addAll(extraLogs)
+    }
+
     val tColumn = TColumn.stringVal(new TStringColumn(logs, ByteBuffer.allocate(0)))
-    val tRow = new TRowSet(0, new java.util.ArrayList[TRow](logs.size()))
+    val tRow = new TRowSet(0, new JArrayList[TRow](logs.size()))
     tRow.addToColumns(tColumn)
     tRow
   }
 
   def close(): Unit = synchronized {
     try {
+      closeExtraReaders()
       reader.close()
       writer.close()
       Files.delete(path)
@@ -140,6 +164,16 @@ class OperationLog(path: Path) {
         // processing at the invocations
         throw new IOException(
           s"Failed to remove corresponding log file of operation: ${path.toAbsolutePath}", e)
+    }
+  }
+
+  private def closeExtraReaders(): Unit = {
+    extraReaders.foreach { extraReader =>
+      try {
+        extraReader.close()
+      } catch {
+        case _: IOException => // for the outside log file reader, ignore it
+      }
     }
   }
 }

@@ -17,29 +17,28 @@
 
 package org.apache.kyuubi.engine.spark.events
 
+import org.apache.spark.SparkContext
 import org.apache.spark.kyuubi.SparkContextHelper
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_LOGGERS
-import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, SparkSQLEngine}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_EVENT_JSON_LOG_PATH, ENGINE_EVENT_LOGGERS}
 import org.apache.kyuubi.engine.spark.events.EventLoggingService._service
-import org.apache.kyuubi.events.AbstractEventLoggingService
-import org.apache.kyuubi.events.EventLoggerType
-import org.apache.kyuubi.events.JsonEventLogger
+import org.apache.kyuubi.events.{AbstractEventLoggingService, EventLoggerType, JsonEventLogger}
 
-class EventLoggingService(engine: SparkSQLEngine)
+class EventLoggingService(spark: SparkContext)
   extends AbstractEventLoggingService[KyuubiSparkEvent] {
 
-  override def initialize(conf: KyuubiConf): Unit = {
+  override def initialize(conf: KyuubiConf): Unit = synchronized {
     conf.get(ENGINE_EVENT_LOGGERS)
       .map(EventLoggerType.withName)
       .foreach{
         case EventLoggerType.SPARK =>
-          addEventLogger(SparkContextHelper.createSparkHistoryLogger(engine.spark.sparkContext))
+          addEventLogger(SparkContextHelper.createSparkHistoryLogger(spark))
         case EventLoggerType.JSON =>
-          val jsonEventLogger = new JsonEventLogger[KyuubiSparkEvent](KyuubiSparkUtil.engineId,
-            ENGINE_EVENT_JSON_LOG_PATH, engine.spark.sparkContext.hadoopConfiguration)
+          val jsonEventLogger = new JsonEventLogger[KyuubiSparkEvent](
+            spark.applicationAttemptId.getOrElse(spark.applicationId),
+            ENGINE_EVENT_JSON_LOG_PATH,
+            spark.hadoopConfiguration)
           addService(jsonEventLogger)
           addEventLogger(jsonEventLogger)
         case logger =>
@@ -49,12 +48,13 @@ class EventLoggingService(engine: SparkSQLEngine)
     super.initialize(conf)
   }
 
-  override def start(): Unit = {
-    _service = Some(this)
+  override def start(): Unit = synchronized {
     super.start()
+    // expose the event logging service only when the loggers successfully start
+    _service = Some(this)
   }
 
-  override def stop(): Unit = {
+  override def stop(): Unit = synchronized {
     _service = None
     super.stop()
   }

@@ -20,28 +20,18 @@ package org.apache.kyuubi.service.authentication
 import javax.naming.CommunicationException
 import javax.security.sasl.AuthenticationException
 
-import com.unboundid.ldap.listener.InMemoryDirectoryServer
-import com.unboundid.ldap.listener.InMemoryDirectoryServerConfig
-
-import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 
-class LdapAuthenticationProviderImplSuite extends KyuubiFunSuite {
-
-  private var ldapServer: InMemoryDirectoryServer = _
+class LdapAuthenticationProviderImplSuite extends WithLdapServer {
+  override protected val ldapUser: String = "kentyao"
+  override protected val ldapUserPasswd: String = "kentyao"
 
   private val conf = new KyuubiConf()
 
   override def beforeAll(): Unit = {
-    val config = new InMemoryDirectoryServerConfig("ou=users")
-    config.addAdditionalBindCredentials("uid=kentyao,ou=users", "kentyao")
-    ldapServer = new InMemoryDirectoryServer(config)
-    ldapServer.startListening()
-
-    conf.set(AUTHENTICATION_LDAP_URL, s"ldap://localhost:" + ldapServer.getListenPort)
-
     super.beforeAll()
+    conf.set(AUTHENTICATION_LDAP_URL, ldapUrl)
   }
 
   override def afterAll(): Unit = {
@@ -67,8 +57,7 @@ class LdapAuthenticationProviderImplSuite extends KyuubiFunSuite {
     assert(e3.getMessage.contains(user))
     assert(e3.getCause.isInstanceOf[javax.naming.AuthenticationException])
 
-    val dn = "ou=users"
-    conf.set(AUTHENTICATION_LDAP_BASEDN, dn)
+    conf.set(AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
     val providerImpl2 = new LdapAuthenticationProviderImpl(conf)
     providerImpl2.authenticate("kentyao", "kentyao")
 

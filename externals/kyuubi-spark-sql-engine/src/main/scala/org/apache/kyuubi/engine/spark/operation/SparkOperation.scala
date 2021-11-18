@@ -22,7 +22,7 @@ import java.time.ZoneId
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
@@ -46,6 +46,8 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
   }
 
   protected var iter: FetchIterator[Row] = _
+
+  protected var result: DataFrame = _
 
   protected def resultSchema: StructType
 
@@ -91,6 +93,7 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
           setOperationException(ke)
           throw ke
         } else if (isTerminalState(state)) {
+          setOperationException(KyuubiSQLException(errMsg))
           warn(s"Ignore exception in terminal state with $statementId: $errMsg")
         } else {
           setState(OperationState.ERROR)
