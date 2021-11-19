@@ -159,8 +159,7 @@ object SparkSQLEngine extends Logging {
         countDownLatch.await()
       } catch {
         case e: KyuubiException => currentEngine match {
-          case Some(_) =>
-            val engine = currentEngine.get
+          case Some(engine) =>
             engine.stop()
             val event = EngineEvent(engine).copy(diagnostic = e.getMessage)
             EventLoggingService.onEvent(event)
