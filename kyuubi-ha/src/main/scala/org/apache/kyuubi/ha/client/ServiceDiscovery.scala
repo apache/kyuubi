@@ -22,10 +22,9 @@ import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-import com.google.common.annotations.VisibleForTesting
-
 import scala.collection.JavaConverters._
 
+import com.google.common.annotations.VisibleForTesting
 import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.framework.recipes.nodes.PersistentNode
 import org.apache.curator.framework.state.{ConnectionState, ConnectionStateListener}
