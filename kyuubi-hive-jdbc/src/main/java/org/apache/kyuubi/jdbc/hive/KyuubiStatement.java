@@ -45,12 +45,13 @@ import org.apache.hive.service.rpc.thrift.TGetOperationStatusResp;
 import org.apache.hive.service.rpc.thrift.TOperationHandle;
 import org.apache.hive.service.rpc.thrift.TSessionHandle;
 import org.apache.kyuubi.jdbc.hive.logs.InPlaceUpdateStream;
+import org.apache.kyuubi.jdbc.hive.logs.KyuubiLoggable;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** KyuubiStatement. */
-public class KyuubiStatement implements java.sql.Statement {
+public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
   public static final Logger LOG = LoggerFactory.getLogger(KyuubiStatement.class.getName());
   public static final int DEFAULT_FETCH_SIZE = 1000;
   private final KyuubiConnection connection;
@@ -881,9 +882,9 @@ public class KyuubiStatement implements java.sql.Statement {
    *
    * @return a list of logs. It can be empty if there are no new logs to be retrieved at that time.
    * @throws SQLException
-   * @throws ClosedOrCancelledStatementException if statement has been cancelled or closed
+   * @throws ClosedOrCancelledException if statement has been cancelled or closed
    */
-  public List<String> getQueryLog() throws SQLException, ClosedOrCancelledStatementException {
+  public List<String> getExecLog() throws SQLException, ClosedOrCancelledException {
     return getQueryLog(true, fetchSize);
   }
 
@@ -896,13 +897,13 @@ public class KyuubiStatement implements java.sql.Statement {
    * @param fetchSize the number of lines to fetch
    * @return a list of logs. It can be empty if there are no new logs to be retrieved at that time.
    * @throws SQLException
-   * @throws ClosedOrCancelledStatementException if statement has been cancelled or closed
+   * @throws ClosedOrCancelledException if statement has been cancelled or closed
    */
   public List<String> getQueryLog(boolean incremental, int fetchSize)
-      throws SQLException, ClosedOrCancelledStatementException {
+      throws SQLException, ClosedOrCancelledException {
     checkConnection("getQueryLog");
     if (isCancelled) {
-      throw new ClosedOrCancelledStatementException(
+      throw new ClosedOrCancelledException(
           "Method getQueryLog() failed. The " + "statement has been closed or cancelled.");
     }
 
@@ -917,7 +918,7 @@ public class KyuubiStatement implements java.sql.Statement {
         Utils.verifySuccessWithInfo(tFetchResultsResp.getStatus());
       } else {
         if (isQueryClosed) {
-          throw new ClosedOrCancelledStatementException(
+          throw new ClosedOrCancelledException(
               "Method getQueryLog() failed. The " + "statement has been closed or cancelled.");
         } else {
           return logs;

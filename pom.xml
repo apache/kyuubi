@@ -72,6 +72,7 @@
         <module>kyuubi-common</module>
         <module>kyuubi-ctl</module>
         <module>kyuubi-ha</module>
+        <module>kyuubi-hive-beeline</module>
         <module>kyuubi-hive-jdbc</module>
         <module>kyuubi-hive-jdbc-shaded</module>
         <module>kyuubi-metrics</module>
@@ -135,18 +136,22 @@
         <swagger-ui.version>4.1.0</swagger-ui.version>
         <zookeeper.version>3.4.14</zookeeper.version>
 
-        <!-- only apply to kyuubi-hive-jdbc module -->
-        <hive.jdbc.version>2.3.9</hive.jdbc.version>
-        <hive.jdbc.commons-lang.version>2.6</hive.jdbc.commons-lang.version>
-        <hive.jdbc.commons-codec.version>1.15</hive.jdbc.commons-codec.version>
-        <hive.jdbc.curator.version>2.12.0</hive.jdbc.curator.version>
-        <hive.jdbc.guava.version>14.0.1</hive.jdbc.guava.version>
-        <hive.jdbc.httpcomponents-client.version>4.5.13</hive.jdbc.httpcomponents-client.version>
-        <hive.jdbc.httpcomponents-core.version>4.4.13</hive.jdbc.httpcomponents-core.version>
-        <hive.jdbc.storage-api.version>2.4.0</hive.jdbc.storage-api.version>
-        <hive.jdbc.thrift.version>0.9.3</hive.jdbc.thrift.version>
-        <hive.jdbc.fb303.version>0.9.3</hive.jdbc.fb303.version>
-        <hive.jdbc.zookeeper.version>3.4.14</hive.jdbc.zookeeper.version>
+        <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
+        <hive.cli.version>2.3.9</hive.cli.version>
+        <hive.cli.version>2.3.9</hive.cli.version>
+        <hive.cli.commons-lang.version>2.6</hive.cli.commons-lang.version>
+        <hive.cli.commons-cli.version>1.2</hive.cli.commons-cli.version>
+        <hive.cli.commons-codec.version>1.15</hive.cli.commons-codec.version>
+        <hive.cli.curator.version>2.12.0</hive.cli.curator.version>
+        <hive.cli.guava.version>14.0.1</hive.cli.guava.version>
+        <hive.cli.httpcomponents-client.version>4.5.13</hive.cli.httpcomponents-client.version>
+        <hive.cli.httpcomponents-core.version>4.4.13</hive.cli.httpcomponents-core.version>
+        <hive.cli.jline.version>2.12</hive.cli.jline.version>
+        <hive.cli.storage-api.version>2.4.0</hive.cli.storage-api.version>
+        <hive.cli.supercsv.version>2.2.0</hive.cli.supercsv.version>
+        <hive.cli.thrift.version>0.9.3</hive.cli.thrift.version>
+        <hive.cli.fb303.version>0.9.3</hive.cli.fb303.version>
+        <hive.cli.zookeeper.version>3.4.14</hive.cli.zookeeper.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>

@@ -64,6 +64,8 @@ You can configure the environment variables in `$KYUUBI_HOME/conf/kyuubi-env.sh`
 #                           (Default: 5)
 # - KYUUBI_JAVA_OPTS        JVM options for the Kyuubi server itself in the form "-Dx=y".
 #                           (Default: none).
+# - KYUUBI_BEELINE_OPTS     JVM options for the Kyuubi BeeLine in the form "-Dx=Y".
+#                           (Default: none)
 # - KYUUBI_NICENESS         The scheduling priority for Kyuubi server.
 #                           (Default: 0)
 # - KYUUBI_WORK_DIR_ROOT    Root directory for launching sql engine applications.
@@ -82,6 +84,7 @@ You can configure the environment variables in `$KYUUBI_HOME/conf/kyuubi-env.sh`
 # export SPARK_HOME=/opt/spark
 # export HADOOP_CONF_DIR=/usr/ndp/current/mapreduce_client/conf
 # export KYUUBI_JAVA_OPTS="-Xmx10g -XX:+UnlockDiagnosticVMOptions -XX:ParGCCardsPerStrideChunk=4096 -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSConcurrentMTEnabled -XX:CMSInitiatingOccupancyFraction=70 -XX:+UseCMSInitiatingOccupancyOnly -XX:+CMSClassUnloadingEnabled -XX:+CMSParallelRemarkEnabled -XX:+UseCondCardMark -XX:MaxDirectMemorySize=1024m  -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=./logs -verbose:gc -XX:+PrintGCDetails -XX:+PrintGCDateStamps -XX:+PrintTenuringDistribution -Xloggc:./logs/kyuubi-server-gc-%t.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=5M -XX:NewRatio=3 -XX:MetaspaceSize=512m"
+# export KYUUBI_BEELINE_OPTS="-Xmx2g -XX:+UnlockDiagnosticVMOptions -XX:ParGCCardsPerStrideChunk=4096 -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:+CMSConcurrentMTEnabled -XX:CMSInitiatingOccupancyFraction=70 -XX:+UseCMSInitiatingOccupancyOnly -XX:+CMSClassUnloadingEnabled -XX:+CMSParallelRemarkEnabled -XX:+UseCondCardMark"
 ```
 
 For the environment variables that only needed to be transferred into engine side, you can set it with a Kyuubi configuration item formatted `kyuubi.engineEnv.VAR_NAME`. For example, with `kyuubi.engineEnv.SPARK_DRIVER_MEMORY=4g`, the environment variable `SPARK_DRIVER_MEMORY` with value `4g` would be transferred into engine side. With `kyuubi.engineEnv.SPARK_CONF_DIR=/apache/confs/spark/conf`, the value of `SPARK_CONF_DIR` in engine side is set to `/apache/confs/spark/conf`.
@@ -383,6 +386,9 @@ log4j.logger.org.apache.kyuubi.ctl.ServiceControlCli=ERROR
 
 # Analysis MySQLFrontend protocol traffic
 # log4j.logger.org.apache.kyuubi.server.mysql.codec=TRACE
+
+# Kyuubi BeeLine
+log4j.logger.org.apache.hive.beeline.KyuubiBeeLine=ERROR
 ```
 
 ## Other Configurations
