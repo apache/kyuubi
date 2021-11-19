@@ -22,6 +22,8 @@ import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
+import com.google.common.annotations.VisibleForTesting
+
 import scala.collection.JavaConverters._
 
 import org.apache.curator.framework.CuratorFramework
@@ -189,9 +191,7 @@ object ServiceDiscovery extends Logging {
       hosts.asScala.takeRight(size).map { p =>
         val path = ZKPaths.makePath(namespace, p)
         val instance = new String(zkClient.getData.forPath(path), StandardCharsets.UTF_8)
-        val strings = instance.split(":")
-        val host = strings.head
-        val port = strings(1).toInt
+        val (host, port) = parseInstanceHostPort(instance)
         val version = p.split(";").find(_.startsWith("version=")).map(_.stripPrefix("version="))
         val engineRefId = p.split(";").find(_.startsWith("refId=")).map(_.stripPrefix("refId="))
         info(s"Get service instance:$instance and version:$version under $namespace")
@@ -204,6 +204,23 @@ object ServiceDiscovery extends Logging {
         Nil
     }
   }
+
+  @VisibleForTesting
+  private[client] def parseInstanceHostPort(instance: String): (String, Int) = {
+    val maybeInfos = instance.split(";")
+      .map(_.split("=", 2))
+      .filter(_.size == 2)
+      .map(i => (i(0), i(1)))
+      .toMap
+    if (maybeInfos.size > 0) {
+      (maybeInfos.get("hive.server2.thrift.bind.host").get,
+        maybeInfos.get("hive.server2.thrift.port").get.toInt)
+    } else {
+      val strings = instance.split(":")
+      (strings(0), strings(1).toInt)
+    }
+  }
+
 
   def createServiceNode(
       conf: KyuubiConf,
