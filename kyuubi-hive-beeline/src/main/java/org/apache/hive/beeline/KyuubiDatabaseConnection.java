@@ -123,20 +123,6 @@ public class KyuubiDatabaseConnection extends DatabaseConnection {
       beeLine.handleException(e);
     }
 
-    try {
-      getConnection().setAutoCommit(beeLine.getOpts().getAutoCommit());
-      // TODO: Setting autocommit should not generate an exception as long as it is set to false
-      // beeLine.autocommitStatus(getConnection());
-    } catch (Exception e) {
-      beeLine.handleException(e);
-    }
-
-    try {
-      beeLine.getCommands().isolation("isolation: " + beeLine.getOpts().getIsolation());
-    } catch (Exception e) {
-      beeLine.handleException(e);
-    }
-
     return true;
   }
 
