@@ -178,7 +178,6 @@ mkdir -p "$DISTDIR/logs"
 mkdir -p "$DISTDIR/work"
 mkdir -p "$DISTDIR/externals/engines/spark"
 mkdir -p "$DISTDIR/beeline-jars"
-mkdir -p "$DISTDIR/share-jars"
 echo "Kyuubi $VERSION $GITREVSTRING built for" > "$DISTDIR/RELEASE"
 echo "Java $JAVA_VERSION" >> "$DISTDIR/RELEASE"
 echo "Scala $SCALA_VERSION" >> "$DISTDIR/RELEASE"
@@ -196,10 +195,8 @@ cp "$KYUUBI_HOME"/kyuubi-hive-beeline/target/*.jar "$DISTDIR/beeline-jars/"
 # Share the jars between server and beeline to reduce binary size
 for jar in $(ls "$DISTDIR/jars/"); do
   if [[ -f "$DISTDIR/beeline-jars/$jar" ]]; then
-    mv "$DISTDIR/jars/$jar" "$DISTDIR/share-jars/$jar"
     rm "$DISTDIR/beeline-jars/$jar"
-    ln -sn "$DISTDIR/share-jars/$jar" "$DISTDIR/jars/$jar"
-    ln -sn "$DISTDIR/share-jars/$jar" "$DISTDIR/beeline-jars/$jar"
+    ln -sn "$DISTDIR/jars/$jar" "$DISTDIR/beeline-jars/$jar"
   fi
 done
 
