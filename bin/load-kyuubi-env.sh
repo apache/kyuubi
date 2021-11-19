@@ -76,6 +76,10 @@ if [[ -f ${KYUUBI_HOME}/RELEASE ]]; then
   SPARK_BUILTIN="${KYUUBI_HOME}/externals/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD:0:3}"
 else
   MVN="${MVN:-"${KYUUBI_HOME}/build/mvn"}"
+  VERSION=$("$MVN" help:evaluate -Dexpression=project.version 2>/dev/null\
+    | grep -v "INFO"\
+    | grep -v "WARNING"\
+    | tail -n 1)
   SPARK_VERSION_BUILD=$("$MVN" help:evaluate -Dexpression=spark.version 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
