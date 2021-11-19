@@ -182,7 +182,8 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
         .request().get()
       assert(200 == response.getStatus)
       val sessions = response.readEntity(classOf[InfoDetail])
-      assert(sessions.infoType.equals("CLI_SERVER_NAME") && sessions.infoValue.equals("Kyuubi"))
+      assert(sessions.infoType.equals("CLI_SERVER_NAME") &&
+        sessions.infoValue.equals("Apache Kyuubi (Incubating)"))
       // Invalid sessionHandleStr
       val handle = "b88d6b56-d200-4bb6-bf0a-5da0ea572e11|0c4aad4e-ccf7-4abd-9305-943d4bfd2d9a|0"
       response = webTarget.path(s"api/v1/sessions/$handle/info/13").request().get()

@@ -402,7 +402,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
 
       import org.apache.kyuubi.KYUUBI_VERSION
       assert(metaData.allTablesAreSelectable)
-      assert(metaData.getDatabaseProductName === "Spark SQL")
+      assert(metaData.getDatabaseProductName === "Apache Kyuubi (Incubating)")
       assert(metaData.getDatabaseProductVersion === KYUUBI_VERSION)
       assert(metaData.getDriverName === "Kyuubi Project Hive JDBC Shaded Client")
       assert(metaData.getDriverVersion === KYUUBI_VERSION)
