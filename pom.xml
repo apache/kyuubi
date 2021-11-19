@@ -875,6 +875,19 @@
                 <version>${javax-activation.version}</version>
             </dependency>
 
+            <!-- Zookeeper Cli required -->
+            <dependency>
+                <groupId>jline</groupId>
+                <artifactId>jline</artifactId>
+                <version>${jline.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>junit</artifactId>
+                        <groupId>junit</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
             <dependency>
                 <groupId>com.github.scopt</groupId>
                 <artifactId>scopt_${scala.binary.version}</artifactId>
