@@ -158,12 +158,16 @@ object SparkSQLEngine extends Logging {
         // blocking main thread
         countDownLatch.await()
       } catch {
-        case e: KyuubiException if currentEngine.isDefined =>
-          val engine = currentEngine.get
-          engine.stop()
-          val event = EngineEvent(engine).copy(diagnostic = e.getMessage)
-          EventLoggingService.onEvent(event)
-          error(event, e)
+        case e: KyuubiException => currentEngine match {
+          case Some(_) =>
+            val engine = currentEngine.get
+            engine.stop()
+            val event = EngineEvent(engine).copy(diagnostic = e.getMessage)
+            EventLoggingService.onEvent(event)
+            error(event, e)
+          case _ => error("Current SparkSQLEngine is not created.")
+        }
+
       }
     } catch {
       case t: Throwable => error(s"Failed to instantiate SparkSession: ${t.getMessage}", t)
