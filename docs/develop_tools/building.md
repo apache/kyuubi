@@ -44,7 +44,7 @@ bin/kyuubi start
 For instance, you can build the Kyuubi Common module using:
 
 ```bash
-build/mvn clean package -pl :kyuubi-common -DskipTests
+build/mvn clean package -pl kyuubi-common -DskipTests
 ```
 
 ## Building Submodules Individually
@@ -52,7 +52,7 @@ build/mvn clean package -pl :kyuubi-common -DskipTests
 For instance, you can build the Kyuubi Common module using:
 
 ```bash
-build/mvn clean package -pl :kyuubi-common,:kyuubi-ha -DskipTests
+build/mvn clean package -pl kyuubi-common,kyuubi-ha -DskipTests
 ```
 
 ## Skipping Some modules
@@ -60,7 +60,7 @@ build/mvn clean package -pl :kyuubi-common,:kyuubi-ha -DskipTests
 For instance, you can build the Kyuubi modules without Kyuubi Codecov and Assembly modules using:
 
 ```bash
- mvn clean install -pl '!:kyuubi-codecov,!:kyuubi-assembly' -DskipTests
+mvn clean install -pl '!dev/kyuubi-codecov,!kyuubi-assembly' -DskipTests
 ```
 
 ## Building Kyuubi against Different Apache Spark versions
