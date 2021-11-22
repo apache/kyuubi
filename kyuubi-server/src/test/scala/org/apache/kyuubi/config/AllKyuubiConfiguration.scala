@@ -57,7 +57,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
     try {
       buffer += "```bash"
       var line = env.readLine()
-      while(line != null) {
+      while (line != null) {
         buffer += line
         line = env.readLine()
       }
@@ -138,40 +138,39 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
       .filterNot(_.internal)
       .groupBy(_.key.split("\\.")(1))
       .toSeq.sortBy(_._1).foreach { case (category, entries) =>
+        newOutput += ""
+        newOutput += s"### ${category.capitalize}"
+        newOutput += ""
 
-      newOutput += ""
-      newOutput += s"### ${category.capitalize}"
-      newOutput += ""
+        newOutput += "Key | Default | Meaning | Type | Since"
+        newOutput += "--- | --- | --- | --- | ---"
 
-      newOutput += "Key | Default | Meaning | Type | Since"
-      newOutput += "--- | --- | --- | --- | ---"
-
-      entries.sortBy(_.key).foreach { c =>
-        val key = {
-          val sb = new StringBuilder()
-          var curLen = 0
-          c.key.split("\\.").foreach { str =>
-            if (curLen + str.length > 21) {
-              sb.append("<br>\\." + str)
-              curLen = str.length + 1
-            } else {
-              sb.append("\\." + str)
-              curLen += (str.length + 1)
+        entries.sortBy(_.key).foreach { c =>
+          val key = {
+            val sb = new StringBuilder()
+            var curLen = 0
+            c.key.split("\\.").foreach { str =>
+              if (curLen + str.length > 21) {
+                sb.append("<br>\\." + str)
+                curLen = str.length + 1
+              } else {
+                sb.append("\\." + str)
+                curLen += (str.length + 1)
+              }
             }
+            sb.toString().stripPrefix("\\.")
           }
-          sb.toString().stripPrefix("\\.")
+          val dft = c.defaultValStr.replace("<", "&lt;").replace(">", "&gt;")
+          val seq = Seq(
+            key,
+            s"<div style='width: 65pt;word-wrap: break-word;white-space: normal'>$dft</div>",
+            s"<div style='width: 170pt;word-wrap: break-word;white-space: normal'>${c.doc}</div>",
+            s"<div style='width: 30pt'>${c.typ}</div>",
+            s"<div style='width: 20pt'>${c.version}</div>")
+          newOutput += seq.mkString("|")
         }
-        val dft = c.defaultValStr.replace("<", "&lt;").replace(">", "&gt;")
-        val seq = Seq(
-          key,
-          s"<div style='width: 65pt;word-wrap: break-word;white-space: normal'>$dft</div>",
-          s"<div style='width: 170pt;word-wrap: break-word;white-space: normal'>${c.doc}</div>",
-          s"<div style='width: 30pt'>${c.typ}</div>",
-          s"<div style='width: 20pt'>${c.version}</div>")
-        newOutput += seq.mkString("|")
+        newOutput += ""
       }
-      newOutput += ""
-    }
 
     newOutput += ("## Spark Configurations")
     newOutput += ""
@@ -267,7 +266,7 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
     newOutput += ("# For a user named bob")
     newOutput += ("___bob___.spark.master=spark://master:7077")
     newOutput += ("___bob___.spark.executor.memory=8g")
-    newOutput += ( "```")
+    newOutput += ("```")
     newOutput += ""
     newOutput += "In the above case, if there are related configurations from" +
       " [JDBC Connection URL](#via-jdbc-connection-url), `kent` will run his SQL engine" +

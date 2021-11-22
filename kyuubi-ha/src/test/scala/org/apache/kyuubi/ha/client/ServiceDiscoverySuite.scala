@@ -82,7 +82,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
         val children = framework.getChildren.forPath(znodeRoot).asScala
         assert(children.head ===
           s"serviceUri=${server.frontendServices.head.connectionUrl};" +
-            s"version=$KYUUBI_VERSION;sequence=0000000000")
+          s"version=$KYUUBI_VERSION;sequence=0000000000")
 
         children.foreach { child =>
           framework.delete().forPath(s"""$znodeRoot/$child""")
@@ -181,7 +181,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
           val children = framework.getChildren.forPath(znodeRoot).asScala
           assert(children.head ===
             s"serviceUri=${server.frontendServices.head.connectionUrl};" +
-              s"version=$KYUUBI_VERSION;sequence=0000000000")
+            s"version=$KYUUBI_VERSION;sequence=0000000000")
 
           children.foreach { child =>
             framework.delete().forPath(s"""$znodeRoot/$child""")

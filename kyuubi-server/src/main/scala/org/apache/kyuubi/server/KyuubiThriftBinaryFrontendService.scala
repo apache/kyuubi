@@ -50,9 +50,11 @@ class KyuubiThriftBinaryFrontendService(
         .asInstanceOf[KyuubiSessionImpl].launchEngineOp
 
       val opHandleIdentifier = launchEngineOp.getHandle.identifier.toTHandleIdentifier
-      respConfiguration.put("kyuubi.session.engine.launch.handle.guid",
+      respConfiguration.put(
+        "kyuubi.session.engine.launch.handle.guid",
         Base64.encodeBase64String(opHandleIdentifier.getGuid))
-      respConfiguration.put("kyuubi.session.engine.launch.handle.secret",
+      respConfiguration.put(
+        "kyuubi.session.engine.launch.handle.secret",
         Base64.encodeBase64String(opHandleIdentifier.getSecret))
 
       resp.setSessionHandle(sessionHandle.toTSessionHandle)

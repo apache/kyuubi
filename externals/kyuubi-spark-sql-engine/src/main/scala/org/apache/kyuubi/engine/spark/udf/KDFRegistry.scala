@@ -47,16 +47,14 @@ object KDFRegistry {
     udf(() => appName).asNonNullable(),
     "Return the spark application name for the associated query engine",
     "string",
-    "1.3.0"
-  )
+    "1.3.0")
 
   val engine_id: KyuubiDefinedFunction = create(
     "engine_id",
     udf(() => appId).asNonNullable(),
     "Return the spark application id for the associated query engine",
     "string",
-    "1.4.0"
-  )
+    "1.4.0")
 
   val system_user: KyuubiDefinedFunction = create(
     "system_user",
@@ -73,15 +71,14 @@ object KDFRegistry {
     },
     "Return the session username for the associated query engine",
     "string",
-    "1.4.0"
-  )
+    "1.4.0")
 
   def create(
-    name: String,
-    udf: UserDefinedFunction,
-    description: String,
-    returnType: String,
-    since: String): KyuubiDefinedFunction = {
+      name: String,
+      udf: UserDefinedFunction,
+      description: String,
+      returnType: String,
+      since: String): KyuubiDefinedFunction = {
     val kdf = KyuubiDefinedFunction(name, udf, description, returnType, since)
     registeredFunctions += kdf
     kdf

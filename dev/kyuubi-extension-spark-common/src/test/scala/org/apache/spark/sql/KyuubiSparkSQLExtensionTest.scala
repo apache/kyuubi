@@ -27,14 +27,14 @@ import org.apache.spark.util.Utils
 import org.apache.kyuubi.sql.KyuubiSQLConf
 
 trait KyuubiSparkSQLExtensionTest extends QueryTest
-    with SQLTestUtils
-    with AdaptiveSparkPlanHelper {
+  with SQLTestUtils
+  with AdaptiveSparkPlanHelper {
   private var _spark: Option[SparkSession] = None
-  protected def spark: SparkSession = _spark.getOrElse{
+  protected def spark: SparkSession = _spark.getOrElse {
     throw new RuntimeException("test spark session don't initial before using it.")
   }
 
-  protected override def beforeAll(): Unit = {
+  override protected def beforeAll(): Unit = {
     if (_spark.isEmpty) {
       _spark = Option(SparkSession.builder()
         .master("local[1]")
@@ -45,7 +45,7 @@ trait KyuubiSparkSQLExtensionTest extends QueryTest
     super.beforeAll()
   }
 
-  protected override def afterAll(): Unit = {
+  override protected def afterAll(): Unit = {
     super.afterAll()
     cleanupData()
     _spark.foreach(_.stop)
@@ -55,13 +55,16 @@ trait KyuubiSparkSQLExtensionTest extends QueryTest
     val self = spark
     import self.implicits._
     spark.sparkContext.parallelize(
-      (1 to 100).map(i => TestData(i, i.toString)), 10)
+      (1 to 100).map(i => TestData(i, i.toString)),
+      10)
       .toDF("c1", "c2").createOrReplaceTempView("t1")
     spark.sparkContext.parallelize(
-      (1 to 10).map(i => TestData(i, i.toString)), 5)
+      (1 to 10).map(i => TestData(i, i.toString)),
+      5)
       .toDF("c1", "c2").createOrReplaceTempView("t2")
     spark.sparkContext.parallelize(
-      (1 to 50).map(i => TestData(i, i.toString)), 2)
+      (1 to 50).map(i => TestData(i, i.toString)),
+      2)
       .toDF("c1", "c2").createOrReplaceTempView("t3")
   }
 
@@ -76,13 +79,15 @@ trait KyuubiSparkSQLExtensionTest extends QueryTest
     val metastorePath = basePath + "/metastore_db"
     val warehousePath = basePath + "/warehouse"
     new SparkConf()
-      .set(StaticSQLConf.SPARK_SESSION_EXTENSIONS.key,
+      .set(
+        StaticSQLConf.SPARK_SESSION_EXTENSIONS.key,
         "org.apache.kyuubi.sql.KyuubiSparkSQLExtension")
       .set(KyuubiSQLConf.SQL_CLASSIFICATION_ENABLED.key, "true")
       .set(SQLConf.ADAPTIVE_EXECUTION_ENABLED.key, "true")
       .set("spark.hadoop.hive.exec.dynamic.partition.mode", "nonstrict")
       .set("spark.hadoop.hive.metastore.client.capability.check", "false")
-      .set(ConfVars.METASTORECONNECTURLKEY.varname,
+      .set(
+        ConfVars.METASTORECONNECTURLKEY.varname,
         s"jdbc:derby:;databaseName=$metastorePath;create=true")
       .set(StaticSQLConf.WAREHOUSE_PATH, warehousePath)
       .set("spark.ui.enabled", "false")

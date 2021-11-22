@@ -39,7 +39,7 @@ class SessionManagerSuite extends ThriftFrontendServiceSuite with Eventually {
     .set(KyuubiConf.SESSION_CONF_IGNORE_LIST, Seq("session.engine.*"))
 
   test("close expired operations") {
-    withSessionHandle{ (client, handle) =>
+    withSessionHandle { (client, handle) =>
       val req = new TCancelOperationReq()
       val req1 = new TGetSchemasReq(handle)
       val resp1 = client.GetSchemas(req1)
@@ -61,7 +61,7 @@ class SessionManagerSuite extends ThriftFrontendServiceSuite with Eventually {
       assert(lastAccessTime < session.lastAccessTime)
       lastAccessTime = session.lastAccessTime
 
-      eventually (timeout(Span(60, Seconds)), interval(Span(1, Seconds))) {
+      eventually(timeout(Span(60, Seconds)), interval(Span(1, Seconds))) {
         assert(session.lastIdleTime > lastAccessTime)
       }
 
@@ -69,7 +69,7 @@ class SessionManagerSuite extends ThriftFrontendServiceSuite with Eventually {
       assert(lastAccessTime == session.lastAccessTime)
       assert(sessionManager.getOpenSessionCount == 1)
 
-      eventually (timeout(Span(60, Seconds)), interval(Span(1, Seconds))) {
+      eventually(timeout(Span(60, Seconds)), interval(Span(1, Seconds))) {
         assert(session.lastAccessTime > lastAccessTime)
       }
       assert(sessionManager.getOpenSessionCount == 0)

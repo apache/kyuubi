@@ -56,8 +56,8 @@ class KyuubiSessionImpl(
 
   val engine: EngineRef = new EngineRef(sessionConf, user)
   val launchEngineAsync = sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC)
-  private[kyuubi] val launchEngineOp = sessionManager.operationManager.newLaunchEngineOperation(
-    this, launchEngineAsync)
+  private[kyuubi] val launchEngineOp =
+    sessionManager.operationManager.newLaunchEngineOperation(this, launchEngineAsync)
   @volatile
   var engineLaunched: Boolean = false
 
@@ -90,7 +90,9 @@ class KyuubiSessionImpl(
       val loginTimeout = sessionConf.get(ENGINE_LOGIN_TIMEOUT).toInt
       val requestTimeout = sessionConf.get(ENGINE_REQUEST_TIMEOUT).toInt
       transport = PlainSASLHelper.getPlainTransport(
-        user, passwd, new TSocket(host, port, requestTimeout, loginTimeout))
+        user,
+        passwd,
+        new TSocket(host, port, requestTimeout, loginTimeout))
       if (!transport.isOpen) {
         transport.open()
         logSessionInfo(s"Connected to engine [$host:$port]")

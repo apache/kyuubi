@@ -58,11 +58,13 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
           }
           val ke = e match {
             case kse: KyuubiSQLException => kse
-            case te: TTransportException if te.getType == TTransportException.END_OF_FILE &&
-                StringUtils.isEmpty(te.getMessage) =>
+            case te: TTransportException
+                if te.getType == TTransportException.END_OF_FILE &&
+                  StringUtils.isEmpty(te.getMessage) =>
               // https://issues.apache.org/jira/browse/THRIFT-4858
               KyuubiSQLException(
-                s"Error $action $opType: Socket for ${session.handle} is closed", e)
+                s"Error $action $opType: Socket for ${session.handle} is closed",
+                e)
             case e =>
               KyuubiSQLException(s"Error $action $opType: ${Utils.stringifyException(e)}", e)
           }
@@ -113,7 +115,7 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
         try {
           client.closeOperation(_remoteOpHandle)
         } catch {
-          case e @(_: TException | _: KyuubiSQLException) =>
+          case e @ (_: TException | _: KyuubiSQLException) =>
             warn(s"Error closing ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
         }
       }

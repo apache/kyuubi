@@ -21,7 +21,7 @@ object SaslQOP extends Enumeration {
   type SaslQOP = Value
 
   /** Authentication only. */
-  val AUTH = Value( "auth")
+  val AUTH = Value("auth")
 
   /** Authentication and integrity checking by using signatures. */
   val AUTH_INT = Value("auth-int")

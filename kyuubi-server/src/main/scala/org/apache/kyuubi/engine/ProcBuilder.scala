@@ -83,11 +83,12 @@ trait ProcBuilder {
     val processLogPath = workingDir
     val totalExistsFile = processLogPath.toFile.listFiles { (_, name) => name.startsWith(module) }
     val sorted = totalExistsFile.sortBy(_.getName.split("\\.").last.toInt)
-    val nextIndex = if (sorted.isEmpty) {
-      0
-    } else {
-      sorted.last.getName.split("\\.").last.toInt + 1
-    }
+    val nextIndex =
+      if (sorted.isEmpty) {
+        0
+      } else {
+        sorted.last.getName.split("\\.").last.toInt + 1
+      }
     val file = sorted.find(_.lastModified() < currentTime - engineLogTimeout)
       .map { existsFile =>
         try {

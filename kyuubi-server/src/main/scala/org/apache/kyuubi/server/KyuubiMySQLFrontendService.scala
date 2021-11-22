@@ -56,7 +56,8 @@ class KyuubiMySQLFrontendService(override val serverable: Serverable)
     val keepAliveMs = conf.get(FRONTEND_MYSQL_WORKER_KEEPALIVE_TIME)
     execPool = ExecutorPoolCaptureOom(
       "mysql-exec-pool",
-      minThreads, maxThreads,
+      minThreads,
+      maxThreads,
       keepAliveMs,
       oomHook)
 

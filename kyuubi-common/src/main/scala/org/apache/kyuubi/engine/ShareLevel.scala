@@ -23,12 +23,20 @@ package org.apache.kyuubi.engine
 object ShareLevel extends Enumeration {
   type ShareLevel = Value
   val
-    /** In this level, An APP will not be shared and used only for a single session */
-    CONNECTION,
-    /** DEFAULT level, An APP will be shared for all sessions created by a user */
-    USER,
-    /** In this level, An APP will be shared for all sessions created by a user's default group */
-    GROUP,
-    /** In this level, All sessions from one or more Kyuubi server's will share one single APP */
-    SERVER = Value
+  /**
+   * In this level, An APP will not be shared and used only for a single session
+   */
+  CONNECTION,
+  /*
+   * DEFAULT level, An APP will be shared for all sessions created by a user
+   */
+  USER,
+  /**
+   * In this level, An APP will be shared for all sessions created by a user's default group
+   */
+  GROUP,
+  /**
+   * In this level, All sessions from one or more Kyuubi server's will share one single APP
+   */
+  SERVER = Value
 }

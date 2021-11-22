@@ -34,7 +34,8 @@ import org.apache.kyuubi.sql.zorder.{OptimizeZorderCommandBase, Zorder, ZorderBy
 trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper {
   override def sparkConf(): SparkConf = {
     super.sparkConf()
-      .set(StaticSQLConf.SPARK_SESSION_EXTENSIONS.key,
+      .set(
+        StaticSQLConf.SPARK_SESSION_EXTENSIONS.key,
         "org.apache.kyuubi.sql.KyuubiSparkSQLCommonExtension")
   }
 
@@ -43,10 +44,23 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
       withTable("up") {
         sql(s"DROP TABLE IF EXISTS up")
 
-        val target = Seq(Seq(0, 0), Seq(1, 0), Seq(0, 1), Seq(1, 1),
-          Seq(2, 0), Seq(3, 0), Seq(2, 1), Seq(3, 1),
-          Seq(0, 2), Seq(1, 2), Seq(0, 3), Seq(1, 3),
-          Seq(2, 2), Seq(3, 2), Seq(2, 3), Seq(3, 3))
+        val target = Seq(
+          Seq(0, 0),
+          Seq(1, 0),
+          Seq(0, 1),
+          Seq(1, 1),
+          Seq(2, 0),
+          Seq(3, 0),
+          Seq(2, 1),
+          Seq(3, 1),
+          Seq(0, 2),
+          Seq(1, 2),
+          Seq(0, 3),
+          Seq(1, 3),
+          Seq(2, 2),
+          Seq(3, 2),
+          Seq(2, 3),
+          Seq(3, 3))
         sql(s"CREATE TABLE up (c1 INT, c2 INT, c3 INT)")
         sql(s"INSERT INTO TABLE up VALUES" +
           "(0,0,2),(0,1,2),(0,2,1),(0,3,3)," +
@@ -79,10 +93,23 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
       withTable("p") {
         sql("DROP TABLE IF EXISTS p")
 
-        val target = Seq(Seq(0, 0), Seq(1, 0), Seq(0, 1), Seq(1, 1),
-          Seq(2, 0), Seq(3, 0), Seq(2, 1), Seq(3, 1),
-          Seq(0, 2), Seq(1, 2), Seq(0, 3), Seq(1, 3),
-          Seq(2, 2), Seq(3, 2), Seq(2, 3), Seq(3, 3))
+        val target = Seq(
+          Seq(0, 0),
+          Seq(1, 0),
+          Seq(0, 1),
+          Seq(1, 1),
+          Seq(2, 0),
+          Seq(3, 0),
+          Seq(2, 1),
+          Seq(3, 1),
+          Seq(0, 2),
+          Seq(1, 2),
+          Seq(0, 3),
+          Seq(1, 3),
+          Seq(2, 2),
+          Seq(3, 2),
+          Seq(2, 3),
+          Seq(3, 3))
 
         sql(s"CREATE TABLE p (c1 INT, c2 INT, c3 INT) PARTITIONED BY (id INT)")
         sql(s"ALTER TABLE p ADD PARTITION (id = 1)")
@@ -125,14 +152,40 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
       withTable("p") {
         sql("DROP TABLE IF EXISTS p")
 
-        val target1 = Seq(Seq(0, 0), Seq(1, 0), Seq(0, 1), Seq(1, 1),
-          Seq(2, 0), Seq(3, 0), Seq(2, 1), Seq(3, 1),
-          Seq(0, 2), Seq(1, 2), Seq(0, 3), Seq(1, 3),
-          Seq(2, 2), Seq(3, 2), Seq(2, 3), Seq(3, 3))
-        val target2 = Seq(Seq(0, 0), Seq(0, 1), Seq(0, 2), Seq(0, 3),
-          Seq(1, 0), Seq(1, 1), Seq(1, 2), Seq(1, 3),
-          Seq(2, 0), Seq(2, 1), Seq(2, 2), Seq(2, 3),
-          Seq(3, 0), Seq(3, 1), Seq(3, 2), Seq(3, 3))
+        val target1 = Seq(
+          Seq(0, 0),
+          Seq(1, 0),
+          Seq(0, 1),
+          Seq(1, 1),
+          Seq(2, 0),
+          Seq(3, 0),
+          Seq(2, 1),
+          Seq(3, 1),
+          Seq(0, 2),
+          Seq(1, 2),
+          Seq(0, 3),
+          Seq(1, 3),
+          Seq(2, 2),
+          Seq(3, 2),
+          Seq(2, 3),
+          Seq(3, 3))
+        val target2 = Seq(
+          Seq(0, 0),
+          Seq(0, 1),
+          Seq(0, 2),
+          Seq(0, 3),
+          Seq(1, 0),
+          Seq(1, 1),
+          Seq(1, 2),
+          Seq(1, 3),
+          Seq(2, 0),
+          Seq(2, 1),
+          Seq(2, 2),
+          Seq(2, 3),
+          Seq(3, 0),
+          Seq(3, 1),
+          Seq(3, 2),
+          Seq(3, 3))
         sql(s"CREATE TABLE p (c1 INT, c2 INT, c3 INT) PARTITIONED BY (id INT)")
         sql(s"ALTER TABLE p ADD PARTITION (id = 1)")
         sql(s"ALTER TABLE p ADD PARTITION (id = 2)")
@@ -148,8 +201,7 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
           "(3,0,3),(3,1,4),(3,2,9),(3,3,0)")
 
         val e = intercept[KyuubiSQLExtensionException](
-          sql(s"OPTIMIZE p WHERE id = 1 AND c1 > 1 ZORDER BY c1, c2")
-        )
+          sql(s"OPTIMIZE p WHERE id = 1 AND c1 > 1 ZORDER BY c1, c2"))
         assert(e.getMessage == "Only partition column filters are allowed")
 
         sql(s"OPTIMIZE p WHERE id = 1 ZORDER BY c1, c2")
@@ -195,13 +247,14 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
       assert(plan.isInstanceOf[Sort] === resHasSort)
       if (plan.isInstanceOf[Sort]) {
         val colArr = cols.split(",")
-        val refs = if (colArr.length == 1) {
-          plan.asInstanceOf[Sort].order.head
-            .child.asInstanceOf[AttributeReference] :: Nil
-        } else {
-          plan.asInstanceOf[Sort].order.head
-            .child.asInstanceOf[Zorder].children.map(_.references.head)
-        }
+        val refs =
+          if (colArr.length == 1) {
+            plan.asInstanceOf[Sort].order.head
+              .child.asInstanceOf[AttributeReference] :: Nil
+          } else {
+            plan.asInstanceOf[Sort].order.head
+              .child.asInstanceOf[Zorder].children.map(_.references.head)
+          }
         assert(refs.size === colArr.size)
         refs.zip(colArr).foreach { case (ref, col) =>
           assert(ref.name === col.trim)
@@ -209,11 +262,12 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
       }
     }
 
-    val repartition = if (planHasRepartition) {
-      "/*+ repartition */"
-    } else {
-      ""
-    }
+    val repartition =
+      if (planHasRepartition) {
+        "/*+ repartition */"
+      } else {
+        ""
+      }
     withSQLConf("spark.sql.shuffle.partitions" -> "1") {
       // hive
       withSQLConf("spark.sql.hive.convertMetastoreParquet" -> "false") {
@@ -233,7 +287,8 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
           checkSort(df1.queryExecution.analyzed.children.head)
 
           Seq("true", "false").foreach { optimized =>
-            withSQLConf("spark.sql.hive.convertMetastoreCtas" -> optimized,
+            withSQLConf(
+              "spark.sql.hive.convertMetastoreCtas" -> optimized,
               "spark.sql.hive.convertMetastoreParquet" -> optimized) {
               val df2 =
                 sql(
@@ -347,8 +402,7 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
       Literal.create(1, DateType),
       Literal.create(null, DateType),
       Literal.create(BigDecimal(1, 1), DecimalType(1, 1)),
-      Literal.create(null, DecimalType(1, 1))
-    )
+      Literal.create(null, DecimalType(1, 1)))
     val zorder = Zorder(children)
     val plan = Project(Seq(Alias(zorder, "c")()), OneRowRelation())
     spark.sessionState.analyzer.checkAnalysis(plan)
@@ -366,18 +420,14 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
 //    // scalastyle:on
 
     val expected = Array(
-      0xFB, 0xEA, 0xAA, 0xBA, 0xAE, 0xAB, 0xAA, 0xEA, 0xBA, 0xAE,
-      0xAB, 0xAA, 0xEA, 0xBA, 0xA6, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-      0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-      0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-      0xBA, 0xBB, 0xAA, 0xAA, 0xAA, 0xBA, 0xAA, 0xBA, 0xAA, 0xBA,
-      0xAA, 0xBA, 0xAA, 0xBA, 0xAA, 0xBA, 0xAA, 0x9A, 0xAA, 0xAA,
-      0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-      0xAA, 0xAA, 0xAA, 0xAA, 0xEA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-      0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
-      0xAA, 0xAA, 0xBE, 0xAA, 0xAA, 0x8A, 0xBA, 0xAA, 0x2A, 0xEA,
-      0xA8, 0xAA, 0xAA, 0xA2, 0xAA, 0xAA, 0x8A, 0xAA, 0xAA, 0x2F,
-      0xEB, 0xFE)
+      0xFB, 0xEA, 0xAA, 0xBA, 0xAE, 0xAB, 0xAA, 0xEA, 0xBA, 0xAE, 0xAB, 0xAA, 0xEA, 0xBA, 0xA6,
+      0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
+      0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xBA, 0xBB, 0xAA, 0xAA, 0xAA,
+      0xBA, 0xAA, 0xBA, 0xAA, 0xBA, 0xAA, 0xBA, 0xAA, 0xBA, 0xAA, 0xBA, 0xAA, 0x9A, 0xAA, 0xAA,
+      0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xEA,
+      0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA, 0xAA,
+      0xAA, 0xAA, 0xBE, 0xAA, 0xAA, 0x8A, 0xBA, 0xAA, 0x2A, 0xEA, 0xA8, 0xAA, 0xAA, 0xA2, 0xAA,
+      0xAA, 0x8A, 0xAA, 0xAA, 0x2F, 0xEB, 0xFE)
       .map(_.toByte)
     checkEvaluation(zorder, expected, InternalRow.fromSeq(children))
   }
@@ -399,15 +449,17 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
 
   test("sort with zorder -- boolean column") {
     val schema = StructType(StructField("c1", BooleanType) :: StructField("c2", BooleanType) :: Nil)
-    val nonNullDF = spark.createDataFrame(spark.sparkContext.parallelize(
-      Seq(Row(false, false), Row(false, true), Row(true, false), Row(true, true))
-    ), schema)
+    val nonNullDF = spark.createDataFrame(
+      spark.sparkContext.parallelize(
+        Seq(Row(false, false), Row(false, true), Row(true, false), Row(true, true))),
+      schema)
     val expected =
       Row(false, false) :: Row(true, false) :: Row(false, true) :: Row(true, true) :: Nil
     checkSort(nonNullDF, expected, Array(BooleanType, BooleanType))
-    val df = spark.createDataFrame(spark.sparkContext.parallelize(
-      Seq(Row(false, false), Row(false, null), Row(null, false), Row(null, null))
-    ), schema)
+    val df = spark.createDataFrame(
+      spark.sparkContext.parallelize(
+        Seq(Row(false, false), Row(false, null), Row(null, false), Row(null, null))),
+      schema)
     val expected2 =
       Row(false, false) :: Row(null, false) :: Row(false, null) :: Row(null, null) :: Nil
     checkSort(df, expected2, Array(BooleanType, BooleanType))
@@ -445,22 +497,47 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
   test("sort with zorder -- string column") {
     val schema = StructType(StructField("c1", StringType) :: StructField("c2", StringType) :: Nil)
     val rdd = spark.sparkContext.parallelize(Seq(
-      Row("a", "a"), Row("a", "b"), Row("a", "c"), Row("a", "d"),
-      Row("b", "a"), Row("b", "b"), Row("b", "c"), Row("b", "d"),
-      Row("c", "a"), Row("c", "b"), Row("c", "c"), Row("c", "d"),
-      Row("d", "a"), Row("d", "b"), Row("d", "c"), Row("d", "d")))
+      Row("a", "a"),
+      Row("a", "b"),
+      Row("a", "c"),
+      Row("a", "d"),
+      Row("b", "a"),
+      Row("b", "b"),
+      Row("b", "c"),
+      Row("b", "d"),
+      Row("c", "a"),
+      Row("c", "b"),
+      Row("c", "c"),
+      Row("c", "d"),
+      Row("d", "a"),
+      Row("d", "b"),
+      Row("d", "c"),
+      Row("d", "d")))
     val input = spark.createDataFrame(rdd, schema)
     val expected = Row("a", "a") :: Row("b", "a") :: Row("c", "a") :: Row("a", "b") ::
-        Row("a", "c") :: Row("b", "b") :: Row("c", "b") :: Row("b", "c") ::
-        Row("c", "c") :: Row("d", "a") :: Row("d", "b") :: Row("d", "c") ::
-        Row("a", "d") :: Row("b", "d") :: Row("c", "d") :: Row("d", "d") :: Nil
+      Row("a", "c") :: Row("b", "b") :: Row("c", "b") :: Row("b", "c") ::
+      Row("c", "c") :: Row("d", "a") :: Row("d", "b") :: Row("d", "c") ::
+      Row("a", "d") :: Row("b", "d") :: Row("c", "d") :: Row("d", "d") :: Nil
     checkSort(input, expected, Array(StringType, StringType))
 
     val rdd2 = spark.sparkContext.parallelize(Seq(
-      Row(null, "a"), Row("a", "b"), Row("a", "c"), Row("a", null),
-      Row("b", "a"), Row(null, "b"), Row("b", null), Row("b", "d"),
-      Row("c", "a"), Row("c", null), Row(null, "c"), Row("c", "d"),
-      Row("d", null), Row("d", "b"), Row("d", "c"), Row(null, "d"), Row(null, null)))
+      Row(null, "a"),
+      Row("a", "b"),
+      Row("a", "c"),
+      Row("a", null),
+      Row("b", "a"),
+      Row(null, "b"),
+      Row("b", null),
+      Row("b", "d"),
+      Row("c", "a"),
+      Row("c", null),
+      Row(null, "c"),
+      Row("c", "d"),
+      Row("d", null),
+      Row("d", "b"),
+      Row("d", "c"),
+      Row(null, "d"),
+      Row(null, null)))
     val input2 = spark.createDataFrame(rdd2, schema)
     val expected2 = Row("b", "a") :: Row("c", "a") :: Row("a", "b") :: Row("a", "c") ::
       Row("d", "b") :: Row("d", "c") :: Row("b", "d") :: Row("c", "d") ::
@@ -561,14 +638,18 @@ trait ZorderSuite extends KyuubiSparkSQLExtensionTest with ExpressionEvalHelper 
   }
 
   test("fast approach test") {
-    Seq[Seq[Any]](Seq(1L, 2L), Seq(1L, 2L, 3L), Seq(1L, 2L, 3L, 4L), Seq(1L, 2L, 3L, 4L, 5L),
-      Seq(1L, 2L, 3L, 4L, 5L, 6L), Seq(1L, 2L, 3L, 4L, 5L, 6L, 7L),
+    Seq[Seq[Any]](
+      Seq(1L, 2L),
+      Seq(1L, 2L, 3L),
+      Seq(1L, 2L, 3L, 4L),
+      Seq(1L, 2L, 3L, 4L, 5L),
+      Seq(1L, 2L, 3L, 4L, 5L, 6L),
+      Seq(1L, 2L, 3L, 4L, 5L, 6L, 7L),
       Seq(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L))
       .foreach { inputs =>
         assert(java.util.Arrays.equals(
           ZorderBytesUtils.interleaveBits(inputs.toArray),
-          ZorderBytesUtils.interleaveBitsDefault(inputs.map(ZorderBytesUtils.toByteArray).toArray))
-        )
+          ZorderBytesUtils.interleaveBitsDefault(inputs.map(ZorderBytesUtils.toByteArray).toArray)))
       }
   }
 }

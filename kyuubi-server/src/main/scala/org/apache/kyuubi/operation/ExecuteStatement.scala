@@ -42,11 +42,12 @@ class ExecuteStatement(
   extends KyuubiOperation(OperationType.EXECUTE_STATEMENT, session) {
   EventLoggingService.onEvent(KyuubiStatementEvent(this))
 
-  private final val _operationLog: OperationLog = if (shouldRunAsync) {
-    OperationLog.createOperationLog(session, getHandle)
-  } else {
-    null
-  }
+  final private val _operationLog: OperationLog =
+    if (shouldRunAsync) {
+      OperationLog.createOperationLog(session, getHandle)
+    } else {
+      null
+    }
 
   private val maxStatusPollOnFailure = {
     session.sessionManager.getConf.get(KyuubiConf.OPERATION_STATUS_POLLING_MAX_ATTEMPTS)
@@ -77,66 +78,71 @@ class ExecuteStatement(
     } catch onError()
   }
 
-  private def waitStatementComplete(): Unit = try {
-    setState(OperationState.RUNNING)
-    var statusResp: TGetOperationStatusResp = null
-    var currentAttempts = 0
+  private def waitStatementComplete(): Unit =
+    try {
+      setState(OperationState.RUNNING)
+      var statusResp: TGetOperationStatusResp = null
+      var currentAttempts = 0
 
-    def fetchOperationStatusWithRetry(): Unit = {
-      try {
-        statusResp = client.getOperationStatus(_remoteOpHandle)
-        currentAttempts = 0 // reset attempts whenever get touch with engine again
-      } catch {
-        case e: TException if currentAttempts >= maxStatusPollOnFailure =>
-          error(s"Failed to get ${session.user}'s query[$getHandle] status after" +
-            s" $maxStatusPollOnFailure times, aborting", e)
-          throw e
-        case e: TException =>
-          currentAttempts += 1
-          warn(s"Failed to get ${session.user}'s query[$getHandle] status" +
-            s" ($currentAttempts / $maxStatusPollOnFailure)", e)
-          Thread.sleep(100)
+      def fetchOperationStatusWithRetry(): Unit = {
+        try {
+          statusResp = client.getOperationStatus(_remoteOpHandle)
+          currentAttempts = 0 // reset attempts whenever get touch with engine again
+        } catch {
+          case e: TException if currentAttempts >= maxStatusPollOnFailure =>
+            error(
+              s"Failed to get ${session.user}'s query[$getHandle] status after" +
+                s" $maxStatusPollOnFailure times, aborting",
+              e)
+            throw e
+          case e: TException =>
+            currentAttempts += 1
+            warn(
+              s"Failed to get ${session.user}'s query[$getHandle] status" +
+                s" ($currentAttempts / $maxStatusPollOnFailure)",
+              e)
+            Thread.sleep(100)
+        }
       }
-    }
 
-    // initialize operation status
-    while (statusResp == null) { fetchOperationStatusWithRetry() }
+      // initialize operation status
+      while (statusResp == null) { fetchOperationStatusWithRetry() }
 
-    var isComplete = false
-    while (!isComplete) {
+      var isComplete = false
+      while (!isComplete) {
+        fetchQueryLog()
+        verifyTStatus(statusResp.getStatus)
+        val remoteState = statusResp.getOperationState
+        info(s"Query[$statementId] in ${remoteState.name()}")
+        isComplete = true
+        remoteState match {
+          case INITIALIZED_STATE | PENDING_STATE | RUNNING_STATE =>
+            isComplete = false
+            fetchOperationStatusWithRetry()
+
+          case FINISHED_STATE =>
+            setState(OperationState.FINISHED)
+
+          case CLOSED_STATE =>
+            setState(OperationState.CLOSED)
+
+          case CANCELED_STATE =>
+            setState(OperationState.CANCELED)
+
+          case TIMEDOUT_STATE =>
+            setState(OperationState.TIMEOUT)
+
+          case ERROR_STATE =>
+            throw KyuubiSQLException(statusResp.getErrorMessage)
+
+          case UKNOWN_STATE =>
+            throw KyuubiSQLException(s"UNKNOWN STATE for $statement")
+        }
+        sendCredentialsIfNeeded()
+      }
+      // see if anymore log could be fetched
       fetchQueryLog()
-      verifyTStatus(statusResp.getStatus)
-      val remoteState = statusResp.getOperationState
-      info(s"Query[$statementId] in ${remoteState.name()}")
-      isComplete = true
-      remoteState match {
-        case INITIALIZED_STATE | PENDING_STATE | RUNNING_STATE =>
-          isComplete = false
-          fetchOperationStatusWithRetry()
-
-        case FINISHED_STATE =>
-          setState(OperationState.FINISHED)
-
-        case CLOSED_STATE =>
-          setState(OperationState.CLOSED)
-
-        case CANCELED_STATE =>
-          setState(OperationState.CANCELED)
-
-        case TIMEDOUT_STATE =>
-          setState(OperationState.TIMEOUT)
-
-        case ERROR_STATE =>
-          throw KyuubiSQLException(statusResp.getErrorMessage)
-
-        case UKNOWN_STATE =>
-          throw KyuubiSQLException(s"UNKNOWN STATE for $statement")
-      }
-      sendCredentialsIfNeeded()
-    }
-    // see if anymore log could be fetched
-    fetchQueryLog()
-  } catch onError()
+    } catch onError()
 
   private def sendCredentialsIfNeeded(): Unit = {
     val appUser = session.asInstanceOf[KyuubiSessionImpl].engine.appUser

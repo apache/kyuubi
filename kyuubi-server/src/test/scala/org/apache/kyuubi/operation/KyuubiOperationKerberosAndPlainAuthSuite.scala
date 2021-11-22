@@ -26,8 +26,8 @@ import org.apache.kyuubi.{KerberizedTestHelper, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.{UserDefineAuthenticationProviderImpl, WithLdapServer}
 
-class KyuubiOperationKerberosAndPlainAuthSuite extends
-  WithKyuubiServer with KerberizedTestHelper with WithLdapServer with HiveJDBCTestHelper {
+class KyuubiOperationKerberosAndPlainAuthSuite extends WithKyuubiServer with KerberizedTestHelper
+  with WithLdapServer with HiveJDBCTestHelper {
   private val customUser: String = "user"
   private val customPasswd: String = "password"
 
@@ -60,7 +60,8 @@ class KyuubiOperationKerberosAndPlainAuthSuite extends
       .set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)
       .set(KyuubiConf.AUTHENTICATION_LDAP_URL, ldapUrl)
       .set(KyuubiConf.AUTHENTICATION_LDAP_BASEDN, ldapBaseDn)
-      .set(KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
+      .set(
+        KyuubiConf.AUTHENTICATION_CUSTOM_CLASS,
         classOf[UserDefineAuthenticationProviderImpl].getCanonicalName)
   }
 

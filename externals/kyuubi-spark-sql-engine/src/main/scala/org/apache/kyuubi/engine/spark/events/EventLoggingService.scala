@@ -31,7 +31,7 @@ class EventLoggingService(spark: SparkContext)
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     conf.get(ENGINE_EVENT_LOGGERS)
       .map(EventLoggerType.withName)
-      .foreach{
+      .foreach {
         case EventLoggerType.SPARK =>
           addEventLogger(SparkContextHelper.createSparkHistoryLogger(spark))
         case EventLoggerType.JSON =>
@@ -69,4 +69,3 @@ object EventLoggingService {
     _service.foreach(_.onEvent(event))
   }
 }
-

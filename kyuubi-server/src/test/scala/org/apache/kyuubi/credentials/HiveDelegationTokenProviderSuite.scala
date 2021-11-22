@@ -126,7 +126,7 @@ class HiveDelegationTokenProviderSuite extends KerberizedTestHelper {
 class LocalMetaServer(
     hiveConf: HiveConf = defaultHiveConf(),
     serverContextClassLoader: ClassLoader)
-    extends Logging {
+  extends Logging {
   import LocalMetaServer._
 
   def start(): Unit = {
@@ -179,7 +179,7 @@ object LocalMetaServer {
 }
 
 class HadoopThriftAuthBridgeWithServerContextClassLoader(classloader: ClassLoader)
-    extends HadoopThriftAuthBridge23 {
+  extends HadoopThriftAuthBridge23 {
 
   override def createServer(
       keytabFile: String,
@@ -188,7 +188,7 @@ class HadoopThriftAuthBridgeWithServerContextClassLoader(classloader: ClassLoade
   }
 
   class Server(keytabFile: String, principalConf: String)
-      extends HadoopThriftAuthBridge.Server(keytabFile, principalConf) {
+    extends HadoopThriftAuthBridge.Server(keytabFile, principalConf) {
 
     override def wrapProcessor(processor: TProcessor): TProcessor = {
       new SetThreadContextClassLoaderProcess(super.wrapProcessor(processor))

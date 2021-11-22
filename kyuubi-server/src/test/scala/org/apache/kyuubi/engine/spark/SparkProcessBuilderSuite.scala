@@ -61,8 +61,8 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
       assert(error.isInstanceOf[KyuubiSQLException])
     }
 
-    val processBuilder1 = new SparkProcessBuilder("kentyao",
-      conf.set("spark.hive.metastore.uris", "thrift://dummy"))
+    val processBuilder1 =
+      new SparkProcessBuilder("kentyao", conf.set("spark.hive.metastore.uris", "thrift://dummy"))
 
     processBuilder1.start
     eventually(timeout(90.seconds), interval(500.milliseconds)) {
@@ -72,11 +72,10 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     }
   }
 
-
   test("engine log truncation") {
     val msg = "org.apache.spark.sql.hive."
-    val pb = new SparkProcessBuilder("kentyao",
-      conf.set("spark.hive.metastore.uris", "thrift://dummy"))
+    val pb =
+      new SparkProcessBuilder("kentyao", conf.set("spark.hive.metastore.uris", "thrift://dummy"))
     pb.start
     eventually(timeout(90.seconds), interval(500.milliseconds)) {
       val error1 = pb.getError
@@ -85,7 +84,8 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
       assert(error1.getMessage.contains(msg))
     }
 
-    val pb2 = new SparkProcessBuilder("kentyao",
+    val pb2 = new SparkProcessBuilder(
+      "kentyao",
       conf.set("spark.hive.metastore.uris", "thrift://dummy")
         .set(KyuubiConf.ENGINE_ERROR_MAX_SIZE, 200))
     pb2.start

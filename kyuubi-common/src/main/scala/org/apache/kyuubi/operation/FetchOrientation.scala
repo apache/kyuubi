@@ -22,12 +22,7 @@ import org.apache.hive.service.rpc.thrift.TFetchOrientation
 object FetchOrientation extends Enumeration {
   type FetchOrientation = Value
 
-  val FETCH_NEXT,
-      FETCH_PRIOR,
-      FETCH_FIRST,
-      FETCH_LAST,
-      FETCH_RELATIVE,
-      FETCH_ABSOLUTE = Value
+  val FETCH_NEXT, FETCH_PRIOR, FETCH_FIRST, FETCH_LAST, FETCH_RELATIVE, FETCH_ABSOLUTE = Value
 
   def getFetchOrientation(from: TFetchOrientation): FetchOrientation =
     from match {

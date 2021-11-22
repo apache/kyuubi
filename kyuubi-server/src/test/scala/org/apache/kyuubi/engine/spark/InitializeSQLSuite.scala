@@ -25,14 +25,16 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 class InitializeSQLSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   override protected val conf: KyuubiConf = {
     KyuubiConf()
-      .set(ENGINE_INITIALIZE_SQL.key,
+      .set(
+        ENGINE_INITIALIZE_SQL.key,
         "CREATE DATABASE IF NOT EXISTS INIT_DB;" +
-        "CREATE TABLE IF NOT EXISTS INIT_DB.test(a int) USING CSV;" +
-        "INSERT OVERWRITE TABLE INIT_DB.test VALUES (1);")
-      .set(ENGINE_SESSION_INITIALIZE_SQL.key,
+          "CREATE TABLE IF NOT EXISTS INIT_DB.test(a int) USING CSV;" +
+          "INSERT OVERWRITE TABLE INIT_DB.test VALUES (1);")
+      .set(
+        ENGINE_SESSION_INITIALIZE_SQL.key,
         "CREATE DATABASE IF NOT EXISTS INIT_DB;" +
-        "CREATE TABLE IF NOT EXISTS INIT_DB.test(a int) USING CSV;" +
-        "INSERT INTO INIT_DB.test VALUES (2);")
+          "CREATE TABLE IF NOT EXISTS INIT_DB.test(a int) USING CSV;" +
+          "INSERT INTO INIT_DB.test VALUES (2);")
   }
 
   override def afterAll(): Unit = {

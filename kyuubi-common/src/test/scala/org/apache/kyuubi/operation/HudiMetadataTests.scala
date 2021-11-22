@@ -20,7 +20,6 @@ package org.apache.kyuubi.operation
 import org.apache.kyuubi.HudiSuiteMixin
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
-
 trait HudiMetadataTests extends HiveJDBCTestHelper with HudiSuiteMixin {
 
   test("get catalogs") {
@@ -102,14 +101,31 @@ trait HudiMetadataTests extends HiveJDBCTestHelper with HudiSuiteMixin {
   }
 
   test("get columns type") {
-    val dataTypes = Seq("boolean", "int", "bigint", "float", "double", "decimal(38,20)",
-      "decimal(10,2)", "string", "array<bigint>", "array<string>", "date", "timestamp",
-      "struct<`X`: bigint, `Y`: double>", "binary", "struct<`X`: string>")
+    val dataTypes = Seq(
+      "boolean",
+      "int",
+      "bigint",
+      "float",
+      "double",
+      "decimal(38,20)",
+      "decimal(10,2)",
+      "string",
+      "array<bigint>",
+      "array<string>",
+      "date",
+      "timestamp",
+      "struct<`X`: bigint, `Y`: double>",
+      "binary",
+      "struct<`X`: string>")
     val cols = dataTypes.zipWithIndex.map { case (dt, idx) => s"c$idx" -> dt }
     val (colNames, _) = cols.unzip
 
-    val reservedCols = Seq("_hoodie_commit_time", "_hoodie_commit_seqno", "_hoodie_record_key",
-      "_hoodie_partition_path", "_hoodie_file_name")
+    val reservedCols = Seq(
+      "_hoodie_commit_time",
+      "_hoodie_commit_seqno",
+      "_hoodie_record_key",
+      "_hoodie_partition_path",
+      "_hoodie_file_name")
 
     val tableName = "hudi_get_col_operation"
     val ddl =
@@ -128,8 +144,22 @@ trait HudiMetadataTests extends HiveJDBCTestHelper with HudiSuiteMixin {
         val rowSet = metaData.getColumns(catalog, defaultSchema, tableName, columnPattern)
 
         import java.sql.Types._
-        val expectedJavaTypes = Seq(BOOLEAN, INTEGER, BIGINT, FLOAT, DOUBLE, DECIMAL, DECIMAL,
-          VARCHAR, ARRAY, ARRAY, DATE, TIMESTAMP, STRUCT, BINARY, STRUCT)
+        val expectedJavaTypes = Seq(
+          BOOLEAN,
+          INTEGER,
+          BIGINT,
+          FLOAT,
+          DOUBLE,
+          DECIMAL,
+          DECIMAL,
+          VARCHAR,
+          ARRAY,
+          ARRAY,
+          DATE,
+          TIMESTAMP,
+          STRUCT,
+          BINARY,
+          STRUCT)
 
         var pos = 0
         while (rowSet.next()) {

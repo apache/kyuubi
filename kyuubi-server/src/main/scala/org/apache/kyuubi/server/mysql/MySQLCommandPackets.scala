@@ -23,8 +23,7 @@ import org.apache.kyuubi.server.mysql.MySQLRichByteBuf.Implicit
 import org.apache.kyuubi.server.mysql.constant.MySQLCommandPacketType
 
 sealed abstract class MySQLCommandPacket(
-    cmdType: MySQLCommandPacketType
-) extends MySQLPacket {
+    cmdType: MySQLCommandPacketType) extends MySQLPacket {
   override def sequenceId: Int = 0
 }
 
@@ -41,8 +40,7 @@ object MySQLComInitDbPacket extends SupportsDecode[MySQLComInitDbPacket] {
   }
 }
 case class MySQLComInitDbPacket(
-    database: String
-) extends MySQLCommandPacket(MySQLCommandPacketType.COM_INIT_DB)
+    database: String) extends MySQLCommandPacket(MySQLCommandPacketType.COM_INIT_DB)
 
 object MySQLComFieldListPacket extends SupportsDecode[MySQLComFieldListPacket] {
   override def decode(payload: ByteBuf): MySQLComFieldListPacket = {
@@ -54,8 +52,7 @@ object MySQLComFieldListPacket extends SupportsDecode[MySQLComFieldListPacket] {
 
 case class MySQLComFieldListPacket(
     table: String,
-    fieldWildcard: String
-) extends MySQLCommandPacket(MySQLCommandPacketType.COM_FIELD_LIST)
+    fieldWildcard: String) extends MySQLCommandPacket(MySQLCommandPacketType.COM_FIELD_LIST)
 
 object MySQLComQueryPacket extends SupportsDecode[MySQLComQueryPacket] {
   override def decode(payload: ByteBuf): MySQLComQueryPacket = {
@@ -65,9 +62,7 @@ object MySQLComQueryPacket extends SupportsDecode[MySQLComQueryPacket] {
 }
 
 case class MySQLComQueryPacket(
-    sql: String
-) extends MySQLCommandPacket(MySQLCommandPacketType.COM_QUERY)
+    sql: String) extends MySQLCommandPacket(MySQLCommandPacketType.COM_QUERY)
 
 case class MySQLUnsupportedCommandPacket(
-    cmdType: MySQLCommandPacketType
-) extends MySQLCommandPacket(cmdType)
+    cmdType: MySQLCommandPacketType) extends MySQLCommandPacket(cmdType)

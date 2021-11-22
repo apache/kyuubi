@@ -36,7 +36,8 @@ class KyuubiOperationHiveCatalogSuite extends WithKyuubiServer with HiveMetadata
     KyuubiConf()
       .set(KyuubiConf.ENGINE_SHARE_LEVEL, "server")
       .set("spark.sql.catalogImplementation", "hive")
-      .set("spark.hadoop.javax.jdo.option.ConnectionURL",
+      .set(
+        "spark.hadoop.javax.jdo.option.ConnectionURL",
         s"jdbc:derby:;databaseName=$metastore;create=true")
   }
 }

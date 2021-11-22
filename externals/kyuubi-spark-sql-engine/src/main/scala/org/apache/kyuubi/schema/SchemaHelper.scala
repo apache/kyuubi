@@ -53,7 +53,8 @@ object SchemaHelper {
     val ret = new TTypeQualifiers()
     val qualifiers = typ match {
       case d: DecimalType =>
-        Map(TCLIServiceConstants.PRECISION -> TTypeQualifierValue.i32Value(d.precision),
+        Map(
+          TCLIServiceConstants.PRECISION -> TTypeQualifierValue.i32Value(d.precision),
           TCLIServiceConstants.SCALE -> TTypeQualifierValue.i32Value(d.scale)).asJava
       case _ => Collections.emptyMap[String, TTypeQualifierValue]()
     }
@@ -106,7 +107,6 @@ object SchemaHelper {
     case _ => java.sql.Types.OTHER
   }
 
-
   /**
    * For boolean, numeric and datetime types, it returns the default size of its catalyst type
    * For struct type, when its elements are fixed-size, the summation of all element sizes will be
@@ -115,7 +115,7 @@ object SchemaHelper {
    */
   def getColumnSize(sparkType: DataType): Option[Int] = sparkType match {
     case dt @ (BooleanType | _: NumericType | DateType | TimestampType |
-               CalendarIntervalType | NullType) =>
+        CalendarIntervalType | NullType) =>
       Some(dt.defaultSize)
     case StructType(fields) =>
       val sizeArr = fields.map(f => getColumnSize(f.dataType))
@@ -126,7 +126,6 @@ object SchemaHelper {
       }
     case _ => None
   }
-
 
   /**
    * The number of fractional digits for this type.

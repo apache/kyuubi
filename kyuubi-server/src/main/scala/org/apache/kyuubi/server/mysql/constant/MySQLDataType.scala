@@ -45,18 +45,18 @@ object MySQLDataType {
 
   object INT24 extends MySQLDataType(0x09)
 
-  object DATE extends MySQLDataType(0x0a)
+  object DATE extends MySQLDataType(0x0A)
 
-  object TIME extends MySQLDataType(0x0b)
+  object TIME extends MySQLDataType(0x0B)
 
-  object DATETIME extends MySQLDataType(0x0c)
+  object DATETIME extends MySQLDataType(0x0C)
 
-  object YEAR extends MySQLDataType(0x0d)
+  object YEAR extends MySQLDataType(0x0D)
 
   // Internal to MySQL Server
-  object NEWDATE extends MySQLDataType(0x0e)
+  object NEWDATE extends MySQLDataType(0x0E)
 
-  object VARCHAR extends MySQLDataType(0x0f)
+  object VARCHAR extends MySQLDataType(0x0F)
 
   object BIT extends MySQLDataType(0x10)
 
@@ -71,27 +71,27 @@ object MySQLDataType {
 
   // Do not describe in document, but actual exist.
   // https://github.com/apache/shardingsphere/issues/4795
-  object JSON extends MySQLDataType(0xf5)
+  object JSON extends MySQLDataType(0xF5)
 
-  object NEWDECIMAL extends MySQLDataType(0xf6)
+  object NEWDECIMAL extends MySQLDataType(0xF6)
 
-  object ENUM extends MySQLDataType(0xf7)
+  object ENUM extends MySQLDataType(0xF7)
 
-  object SET extends MySQLDataType(0xf8)
+  object SET extends MySQLDataType(0xF8)
 
-  object TINY_BLOB extends MySQLDataType(0xf9)
+  object TINY_BLOB extends MySQLDataType(0xF9)
 
-  object MEDIUM_BLOB extends MySQLDataType(0xfa)
+  object MEDIUM_BLOB extends MySQLDataType(0xFA)
 
-  object LONG_BLOB extends MySQLDataType(0xfb)
+  object LONG_BLOB extends MySQLDataType(0xFB)
 
-  object BLOB extends MySQLDataType(0xfc)
+  object BLOB extends MySQLDataType(0xFC)
 
-  object VAR_STRING extends MySQLDataType(0xfd)
+  object VAR_STRING extends MySQLDataType(0xFD)
 
-  object STRING extends MySQLDataType(0xfe)
+  object STRING extends MySQLDataType(0xFE)
 
-  object GEOMETRY extends MySQLDataType(0xff)
+  object GEOMETRY extends MySQLDataType(0xFF)
 
   def valueOf(value: Int): MySQLDataType = value match {
     case 0x00 => DECIMAL
@@ -104,27 +104,27 @@ object MySQLDataType {
     case 0x07 => TIMESTAMP
     case 0x08 => LONGLONG
     case 0x09 => INT24
-    case 0x0a => DATE
-    case 0x0b => TIME
-    case 0x0c => DATETIME
-    case 0x0d => YEAR
-    case 0x0e => NEWDATE
-    case 0x0f => VARCHAR
+    case 0x0A => DATE
+    case 0x0B => TIME
+    case 0x0C => DATETIME
+    case 0x0D => YEAR
+    case 0x0E => NEWDATE
+    case 0x0F => VARCHAR
     case 0x10 => BIT
     case 0x11 => TIMESTAMP2
     case 0x12 => DATETIME2
     case 0x13 => TIME2
-    case 0xf5 => JSON
-    case 0xf6 => NEWDECIMAL
-    case 0xf7 => ENUM
-    case 0xf8 => SET
-    case 0xf9 => TINY_BLOB
-    case 0xfa => MEDIUM_BLOB
-    case 0xfb => LONG_BLOB
-    case 0xfc => BLOB
-    case 0xfd => VAR_STRING
-    case 0xfe => STRING
-    case 0xff => GEOMETRY
+    case 0xF5 => JSON
+    case 0xF6 => NEWDECIMAL
+    case 0xF7 => ENUM
+    case 0xF8 => SET
+    case 0xF9 => TINY_BLOB
+    case 0xFA => MEDIUM_BLOB
+    case 0xFB => LONG_BLOB
+    case 0xFC => BLOB
+    case 0xFD => VAR_STRING
+    case 0xFE => STRING
+    case 0xFF => GEOMETRY
     case other => throw new IllegalArgumentException(
         s"Illegal value $other of MySQLDataType")
   }

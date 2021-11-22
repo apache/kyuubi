@@ -63,7 +63,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       val handle = sessionImpl.handle
       setSession(handle, sessionImpl)
       info(s"$username's session with $handle is opened, current opening sessions" +
-      s" $getOpenSessionCount")
+        s" $getOpenSessionCount")
       handle
     } catch {
       case e: Throwable =>
@@ -78,7 +78,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
             warn(s"Error closing session for $username client ip: $ipAddress", t)
         }
         throw KyuubiSQLException(
-          s"Error opening session for $username client ip $ipAddress, due to ${e.getMessage}", e)
+          s"Error opening session for $username client ip $ipAddress, due to ${e.getMessage}",
+          e)
     }
   }
 

@@ -31,7 +31,6 @@ import org.apache.kyuubi.config.KyuubiConf.{ENGINE_UI_SESSION_LIMIT, ENGINE_UI_S
  * - cleanup the events when reach a certain threshold:
  * 1). remove the finished events first.
  * 2). remove the active events if still reach the threshold.
- *
  */
 class EngineEventsStore(conf: KyuubiConf) {
 
@@ -136,4 +135,3 @@ class EngineEventsStore(conf: KyuubiConf) {
   }
 
 }
-

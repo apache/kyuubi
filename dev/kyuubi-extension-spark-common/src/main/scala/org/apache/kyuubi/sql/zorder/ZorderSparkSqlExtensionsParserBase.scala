@@ -56,8 +56,7 @@ abstract class ZorderSparkSqlExtensionsParserBase extends ParserInterface {
         // first, try parsing with potentially faster SLL mode
         parser.getInterpreter.setPredictionMode(PredictionMode.SLL)
         toResult(parser)
-      }
-      catch {
+      } catch {
         case _: ParseCancellationException =>
           // if we fail, parse with LL mode
           tokenStream.seek(0) // rewind input stream
@@ -67,8 +66,7 @@ abstract class ZorderSparkSqlExtensionsParserBase extends ParserInterface {
           parser.getInterpreter.setPredictionMode(PredictionMode.LL)
           toResult(parser)
       }
-    }
-    catch {
+    } catch {
       case e: ParseException if e.command.isDefined =>
         throw e
       case e: ParseException =>

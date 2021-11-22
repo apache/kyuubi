@@ -54,12 +54,14 @@ class SparkProcessBuilder(
           .toFile
           .listFiles(new FilenameFilter {
             override def accept(dir: File, name: String): Boolean = {
-              dir.isDirectory && name.startsWith("spark-")}}))
+              dir.isDirectory && name.startsWith("spark-")
+            }
+          }))
         .flatMap(_.headOption)
         .map(_.getAbsolutePath)
     }
 
-    sparkHomeOpt.map{ dir =>
+    sparkHomeOpt.map { dir =>
       Paths.get(dir, "bin", SPARK_SUBMIT_FILE).toAbsolutePath.toFile.getCanonicalPath
     }.getOrElse {
       throw KyuubiSQLException("SPARK_HOME is not set! " +
@@ -91,8 +93,8 @@ class SparkProcessBuilder(
       // 3. get the main resource from dev environment
       Option(Paths.get("externals", module, "target", jarName))
         .filter(Files.exists(_)).orElse {
-        Some(Paths.get("..", "externals", module, "target", jarName))
-      }.map(_.toAbsolutePath.toFile.getCanonicalPath)
+          Some(Paths.get("..", "externals", module, "target", jarName))
+        }.map(_.toAbsolutePath.toFile.getCanonicalPath)
     }
   }
 
@@ -132,7 +134,7 @@ class SparkProcessBuilder(
 
     // if enable sasl kerberos authentication for zookeeper, need to upload the server ketab file
     if (ZooKeeperAuthTypes.withName(conf.get(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE))
-      == ZooKeeperAuthTypes.KERBEROS) {
+        == ZooKeeperAuthTypes.KERBEROS) {
       allConf = allConf ++ zkAuthKeytabFileConf(allConf)
     }
 
@@ -143,13 +145,14 @@ class SparkProcessBuilder(
      * - Otherwise, the key will be added a `spark.` prefix
      */
     allConf.foreach { case (k, v) =>
-      val newKey = if (k.startsWith("spark.")) {
-        k
-      } else if (k.startsWith("hadoop.")) {
-        "spark.hadoop." + k
-      } else {
-        "spark." + k
-      }
+      val newKey =
+        if (k.startsWith("spark.")) {
+          k
+        } else if (k.startsWith("hadoop.")) {
+          "spark.hadoop." + k
+        } else {
+          "spark." + k
+        }
       buffer += CONF
       buffer += s"$newKey=$v"
     }
@@ -210,12 +213,12 @@ object SparkProcessBuilder {
   final val APP_KEY = "spark.app.name"
   final val TAG_KEY = "spark.yarn.tags"
 
-  private final val CONF = "--conf"
-  private final val CLASS = "--class"
-  private final val PROXY_USER = "--proxy-user"
-  private final val SPARK_FILES = "spark.files"
-  private final val PRINCIPAL = "spark.kerberos.principal"
-  private final val KEYTAB = "spark.kerberos.keytab"
+  final private val CONF = "--conf"
+  final private val CLASS = "--class"
+  final private val PROXY_USER = "--proxy-user"
+  final private val SPARK_FILES = "spark.files"
+  final private val PRINCIPAL = "spark.kerberos.principal"
+  final private val KEYTAB = "spark.kerberos.keytab"
   // Get the appropriate spark-submit file
-  private final val SPARK_SUBMIT_FILE = if (Utils.isWindows) "spark-submit.cmd" else "spark-submit"
+  final private val SPARK_SUBMIT_FILE = if (Utils.isWindows) "spark-submit.cmd" else "spark-submit"
 }

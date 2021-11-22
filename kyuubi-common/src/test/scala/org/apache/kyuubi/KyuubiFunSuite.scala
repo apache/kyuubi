@@ -73,14 +73,15 @@ trait KyuubiFunSuite extends AnyFunSuite
       appender: Appender,
       loggerName: Option[String] = None,
       level: Option[Level] = None)(
-    f: => Unit): Unit = {
+      f: => Unit): Unit = {
     val logger = loggerName.map(Logger.getLogger).getOrElse(Logger.getRootLogger)
     val restoreLevel = logger.getLevel
     logger.addAppender(appender)
     if (level.isDefined) {
       logger.setLevel(level.get)
     }
-    try f finally {
+    try f
+    finally {
       logger.removeAppender(appender)
       if (level.isDefined) {
         logger.setLevel(restoreLevel)

@@ -26,7 +26,8 @@ import org.apache.spark.sql.types.IntegerType
 
 trait RepartitionBuilderWithRepartitionByExpression extends RepartitionBuilder {
   override def buildRepartition(
-      dynamicPartitionColumns: Seq[Attribute], query: LogicalPlan): LogicalPlan = {
+      dynamicPartitionColumns: Seq[Attribute],
+      query: LogicalPlan): LogicalPlan = {
     if (dynamicPartitionColumns.isEmpty) {
       RepartitionByExpression(
         Seq.empty,
@@ -46,10 +47,11 @@ trait RepartitionBuilderWithRepartitionByExpression extends RepartitionBuilder {
     // Dynamic partition insertion will add repartition by partition column, but it could cause
     // data skew (one partition value has large data). So we add extra partition column for the
     // same dynamic partition to avoid skew.
-    Cast(Multiply(
-      new Rand(Literal(new Random().nextLong())),
-      Literal(partitionNumber.toDouble)
-    ), IntegerType) :: Nil
+    Cast(
+      Multiply(
+        new Rand(Literal(new Random().nextLong())),
+        Literal(partitionNumber.toDouble)),
+      IntegerType) :: Nil
   }
 }
 
@@ -61,8 +63,7 @@ trait RepartitionBuilderWithRepartitionByExpression extends RepartitionBuilder {
  */
 case class RepartitionBeforeWritingDatasource(session: SparkSession)
   extends RepartitionBeforeWritingDatasourceBase
-    with RepartitionBuilderWithRepartitionByExpression {
-}
+  with RepartitionBuilderWithRepartitionByExpression {}
 
 /**
  * For Hive table, there two commands can write data to table
@@ -72,5 +73,4 @@ case class RepartitionBeforeWritingDatasource(session: SparkSession)
  */
 case class RepartitionBeforeWritingHive(session: SparkSession)
   extends RepartitionBeforeWritingHiveBase
-    with RepartitionBuilderWithRepartitionByExpression {
-}
+  with RepartitionBuilderWithRepartitionByExpression {}

@@ -23,7 +23,8 @@ import org.apache.spark.sql.catalyst.plans.logical._
 
 trait RepartitionBuilderWithRebalance extends RepartitionBuilder {
   override def buildRepartition(
-      dynamicPartitionColumns: Seq[Attribute], query: LogicalPlan): LogicalPlan = {
+      dynamicPartitionColumns: Seq[Attribute],
+      query: LogicalPlan): LogicalPlan = {
     RebalancePartitions(dynamicPartitionColumns, query)
   }
 
@@ -45,8 +46,7 @@ trait RepartitionBuilderWithRebalance extends RepartitionBuilder {
  */
 case class RebalanceBeforeWritingDatasource(session: SparkSession)
   extends RepartitionBeforeWritingDatasourceBase
-    with RepartitionBuilderWithRebalance {
-}
+  with RepartitionBuilderWithRebalance {}
 
 /**
  * For Hive table, there two commands can write data to table
@@ -56,6 +56,4 @@ case class RebalanceBeforeWritingDatasource(session: SparkSession)
  */
 case class RebalanceBeforeWritingHive(session: SparkSession)
   extends RepartitionBeforeWritingHiveBase
-    with RepartitionBuilderWithRebalance {
-}
-
+  with RepartitionBuilderWithRebalance {}

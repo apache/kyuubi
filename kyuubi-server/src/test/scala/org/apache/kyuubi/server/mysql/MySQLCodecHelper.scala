@@ -32,8 +32,7 @@ trait MySQLCodecHelper extends KyuubiFunSuite {
   def verifyDecode[T <: MySQLPacket](
       decoder: SupportsDecode[T],
       payload: ByteBuf,
-      expected: T
-  )(assertion: (T, T) => Unit): Unit = {
+      expected: T)(assertion: (T, T) => Unit): Unit = {
     val decoded = decoder.decode(payload)
     assertion(decoded, expected)
   }

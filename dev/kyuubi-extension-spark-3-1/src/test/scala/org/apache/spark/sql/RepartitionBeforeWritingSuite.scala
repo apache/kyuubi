@@ -33,8 +33,7 @@ class RepartitionBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
             assert(r.optNumPartitions ===
               spark.sessionState.conf.getConf(KyuubiSQLConf.INSERT_REPARTITION_NUM))
             r
-        }.size == 1
-      )
+        }.size == 1)
     }
 
     // It's better to set config explicitly in case of we change the default value.
@@ -75,8 +74,7 @@ class RepartitionBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
       assert(
         df.queryExecution.analyzed.collect {
           case r: RepartitionByExpression => r
-        }.isEmpty
-      )
+        }.isEmpty)
     }
 
     withSQLConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true") {
@@ -132,7 +130,8 @@ class RepartitionBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
       }.size == 1)
     }
 
-    withSQLConf(KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true",
+    withSQLConf(
+      KyuubiSQLConf.INSERT_REPARTITION_BEFORE_WRITE.key -> "true",
       KyuubiSQLConf.DYNAMIC_PARTITION_INSERTION_REPARTITION_NUM.key -> "2") {
       Seq("USING PARQUET", "").foreach { storage =>
         withTable("tmp1") {
@@ -149,7 +148,8 @@ class RepartitionBeforeWritingSuite extends KyuubiSparkSQLExtensionTest {
   }
 
   test("OptimizedCreateHiveTableAsSelectCommand") {
-    withSQLConf(HiveUtils.CONVERT_METASTORE_PARQUET.key -> "true",
+    withSQLConf(
+      HiveUtils.CONVERT_METASTORE_PARQUET.key -> "true",
       HiveUtils.CONVERT_METASTORE_CTAS.key -> "true") {
       withTable("t") {
         val df = sql(s"CREATE TABLE t STORED AS parquet AS SELECT 1 as a")

@@ -57,7 +57,8 @@ trait HiveJDBCTestHelper extends KyuubiFunSuite {
     this._sessionConfigs = sessionConfigs
     this._jdbcConfigs = jdbcConfigs
     this._jdbcVars = jdbcVars
-    try f finally {
+    try f
+    finally {
       _jdbcVars = Map.empty
       _jdbcConfigs = Map.empty
       _sessionConfigs = Map.empty
@@ -70,16 +71,18 @@ trait HiveJDBCTestHelper extends KyuubiFunSuite {
 
   protected def jdbcUrlWithConf(jdbcUrl: String): String = {
     val sessionConfStr = sessionConfigs.map(kv => kv._1 + "=" + kv._2).mkString(";")
-    val jdbcConfStr = if (jdbcConfigs.isEmpty) {
-      ""
-    } else {
-      "?" + jdbcConfigs.map(kv => kv._1 + "=" + kv._2).mkString(";")
-    }
-    val jdbcVarsStr = if (jdbcVars.isEmpty) {
-      ""
-    } else {
-      "#" + jdbcVars.map(kv => kv._1 + "=" + kv._2).mkString(";")
-    }
+    val jdbcConfStr =
+      if (jdbcConfigs.isEmpty) {
+        ""
+      } else {
+        "?" + jdbcConfigs.map(kv => kv._1 + "=" + kv._2).mkString(";")
+      }
+    val jdbcVarsStr =
+      if (jdbcVars.isEmpty) {
+        ""
+      } else {
+        "#" + jdbcVars.map(kv => kv._1 + "=" + kv._2).mkString(";")
+      }
     jdbcUrl + sessionConfStr + jdbcConfStr + jdbcVarsStr
   }
 
@@ -175,7 +178,7 @@ trait HiveJDBCTestHelper extends KyuubiFunSuite {
 
   def checkGetSchemas(rs: ResultSet, dbNames: Seq[String], catalogName: String = ""): Unit = {
     var count = 0
-    while(rs.next()) {
+    while (rs.next()) {
       count += 1
       assert(dbNames.contains(rs.getString("TABLE_SCHEM")))
       assert(rs.getString("TABLE_CATALOG") === catalogName)

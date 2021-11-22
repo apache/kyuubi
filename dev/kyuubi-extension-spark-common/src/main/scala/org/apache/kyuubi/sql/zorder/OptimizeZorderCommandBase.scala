@@ -36,7 +36,7 @@ abstract class OptimizeZorderCommandBase extends DataWritingCommand {
 
   private def isHiveTable: Boolean = {
     catalogTable.provider.isEmpty ||
-      (catalogTable.provider.isDefined && "hive".equalsIgnoreCase(catalogTable.provider.get))
+    (catalogTable.provider.isDefined && "hive".equalsIgnoreCase(catalogTable.provider.get))
   }
 
   private def getWritingCommand(session: SparkSession): DataWritingCommand = {
@@ -48,8 +48,7 @@ abstract class OptimizeZorderCommandBase extends DataWritingCommand {
       query,
       overwrite = true,
       ifPartitionNotExists = false,
-      outputColumnNames
-    )
+      outputColumnNames)
   }
 
   override def run(session: SparkSession, child: SparkPlan): Seq[Row] = {

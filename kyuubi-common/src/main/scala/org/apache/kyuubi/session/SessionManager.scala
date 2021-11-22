@@ -101,7 +101,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     session
   }
 
-  protected final def setSession(sessionHandle: SessionHandle, session: Session): Unit = {
+  final protected def setSession(sessionHandle: SessionHandle, session: Session): Unit = {
     handleToSession.put(sessionHandle, session)
   }
 
@@ -130,24 +130,25 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
 
   // strip prefix and validate whether if key is restricted, ignored or valid
   def validateKey(key: String, value: String): Option[(String, String)] = {
-    val normalizedKey = if (key.startsWith(SET_PREFIX)) {
-      val newKey = key.substring(SET_PREFIX.length)
-      if (newKey.startsWith(ENV_PREFIX)) {
-        throw KyuubiSQLException(s"$key is forbidden, env:* variables can not be set.")
-      } else if (newKey.startsWith(SYSTEM_PREFIX)) {
-        newKey.substring(SYSTEM_PREFIX.length)
-      } else if (newKey.startsWith(HIVECONF_PREFIX)) {
-        newKey.substring(HIVECONF_PREFIX.length)
-      } else if (newKey.startsWith(HIVEVAR_PREFIX)) {
-        newKey.substring(HIVEVAR_PREFIX.length)
-      } else if (newKey.startsWith(METACONF_PREFIX)) {
-        newKey.substring(METACONF_PREFIX.length)
+    val normalizedKey =
+      if (key.startsWith(SET_PREFIX)) {
+        val newKey = key.substring(SET_PREFIX.length)
+        if (newKey.startsWith(ENV_PREFIX)) {
+          throw KyuubiSQLException(s"$key is forbidden, env:* variables can not be set.")
+        } else if (newKey.startsWith(SYSTEM_PREFIX)) {
+          newKey.substring(SYSTEM_PREFIX.length)
+        } else if (newKey.startsWith(HIVECONF_PREFIX)) {
+          newKey.substring(HIVECONF_PREFIX.length)
+        } else if (newKey.startsWith(HIVEVAR_PREFIX)) {
+          newKey.substring(HIVEVAR_PREFIX.length)
+        } else if (newKey.startsWith(METACONF_PREFIX)) {
+          newKey.substring(METACONF_PREFIX.length)
+        } else {
+          newKey
+        }
       } else {
-        newKey
+        key
       }
-    } else {
-      key
-    }
 
     if (_confRestrictMatchList.exists(normalizedKey.startsWith(_)) ||
       _confRestrictList.contains(normalizedKey)) {
@@ -163,35 +164,41 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   }
 
   def validateAndNormalizeConf(config: Map[String, String]): Map[String, String] = config.flatMap {
-    case(k, v) => validateKey(k, v)
+    case (k, v) => validateKey(k, v)
   }
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     addService(operationManager)
     initOperationLogRootDir()
 
-    val poolSize: Int = if (isServer) {
-      conf.get(SERVER_EXEC_POOL_SIZE)
-    } else {
-      conf.get(ENGINE_EXEC_POOL_SIZE)
-    }
+    val poolSize: Int =
+      if (isServer) {
+        conf.get(SERVER_EXEC_POOL_SIZE)
+      } else {
+        conf.get(ENGINE_EXEC_POOL_SIZE)
+      }
 
-    val waitQueueSize: Int = if (isServer) {
-      conf.get(SERVER_EXEC_WAIT_QUEUE_SIZE)
-    } else {
-      conf.get(ENGINE_EXEC_WAIT_QUEUE_SIZE)
-    }
-    val keepAliveMs: Long = if (isServer) {
-      conf.get(SERVER_EXEC_KEEPALIVE_TIME)
-    } else {
-      conf.get(ENGINE_EXEC_KEEPALIVE_TIME)
-    }
+    val waitQueueSize: Int =
+      if (isServer) {
+        conf.get(SERVER_EXEC_WAIT_QUEUE_SIZE)
+      } else {
+        conf.get(ENGINE_EXEC_WAIT_QUEUE_SIZE)
+      }
+    val keepAliveMs: Long =
+      if (isServer) {
+        conf.get(SERVER_EXEC_KEEPALIVE_TIME)
+      } else {
+        conf.get(ENGINE_EXEC_KEEPALIVE_TIME)
+      }
 
     _confRestrictList = conf.get(SESSION_CONF_RESTRICT_LIST).toSet
     _confIgnoreList = conf.get(SESSION_CONF_IGNORE_LIST).toSet
 
     execPool = ThreadUtils.newDaemonQueuedThreadPool(
-      poolSize, waitQueueSize, keepAliveMs, s"$name-exec-pool")
+      poolSize,
+      waitQueueSize,
+      keepAliveMs,
+      s"$name-exec-pool")
     super.initialize(conf)
   }
 
@@ -203,11 +210,12 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
   override def stop(): Unit = synchronized {
     super.stop()
     shutdown = true
-    val shutdownTimeout: Long = if (isServer) {
-      conf.get(ENGINE_EXEC_POOL_SHUTDOWN_TIMEOUT)
-    } else {
-      conf.get(SERVER_EXEC_POOL_SHUTDOWN_TIMEOUT)
-    }
+    val shutdownTimeout: Long =
+      if (isServer) {
+        conf.get(ENGINE_EXEC_POOL_SHUTDOWN_TIMEOUT)
+      } else {
+        conf.get(SERVER_EXEC_POOL_SHUTDOWN_TIMEOUT)
+      }
     timeoutChecker.shutdown()
     try {
       timeoutChecker.awaitTermination(shutdownTimeout, TimeUnit.MILLISECONDS)
@@ -222,7 +230,8 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
         execPool.awaitTermination(shutdownTimeout, TimeUnit.MILLISECONDS)
       } catch {
         case e: InterruptedException =>
-          warn(s"Exceeded timeout($shutdownTimeout ms) to wait the exec-pool shutdown gracefully",
+          warn(
+            s"Exceeded timeout($shutdownTimeout ms) to wait the exec-pool shutdown gracefully",
             e)
       }
     }

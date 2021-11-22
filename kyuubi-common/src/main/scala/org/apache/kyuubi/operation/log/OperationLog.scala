@@ -32,7 +32,7 @@ import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.session.Session
 
 object OperationLog extends Logging {
-  private final val OPERATION_LOG: InheritableThreadLocal[OperationLog] = {
+  final private val OPERATION_LOG: InheritableThreadLocal[OperationLog] = {
     new InheritableThreadLocal[OperationLog] {
       override def initialValue(): OperationLog = null
     }
@@ -163,7 +163,8 @@ class OperationLog(path: Path) {
         // lock order is OperationLog -> RootLogger. So the exception is thrown and
         // processing at the invocations
         throw new IOException(
-          s"Failed to remove corresponding log file of operation: ${path.toAbsolutePath}", e)
+          s"Failed to remove corresponding log file of operation: ${path.toAbsolutePath}",
+          e)
     }
   }
 

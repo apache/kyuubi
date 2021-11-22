@@ -30,7 +30,8 @@ trait WithDiscoverySparkSQLEngine extends WithSparkSQLEngine {
   def namespace: String
   override def withKyuubiConf: Map[String, String] = {
     assert(zkServer != null)
-    Map(HA_ZK_QUORUM.key -> zkServer.getConnectString,
+    Map(
+      HA_ZK_QUORUM.key -> zkServer.getConnectString,
       HA_ZK_AUTH_TYPE.key -> ZooKeeperAuthTypes.NONE.toString,
       HA_ZK_NAMESPACE.key -> namespace)
   }

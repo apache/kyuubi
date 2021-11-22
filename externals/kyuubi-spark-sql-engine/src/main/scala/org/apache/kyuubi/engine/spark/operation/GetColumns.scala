@@ -50,10 +50,18 @@ class GetColumns(
       .add(TABLE_NAME, "string", nullable = true, "Table name")
       .add(COLUMN_NAME, "string", nullable = true, "Column name")
       .add(DATA_TYPE, "int", nullable = true, "SQL type from java.sql.Types")
-      .add(TYPE_NAME, "string", nullable = true, "Data source dependent type name, for a UDT" +
-        " the type name is fully qualified")
-      .add(COLUMN_SIZE, "int", nullable = true, "Column size. For char or date types this is" +
-        " the maximum number of characters, for numeric or decimal types this is precision.")
+      .add(
+        TYPE_NAME,
+        "string",
+        nullable = true,
+        "Data source dependent type name, for a UDT" +
+          " the type name is fully qualified")
+      .add(
+        COLUMN_SIZE,
+        "int",
+        nullable = true,
+        "Column size. For char or date types this is" +
+          " the maximum number of characters, for numeric or decimal types this is precision.")
       .add(BUFFER_LENGTH, "tinyint", nullable = true, "Unused")
       .add(DECIMAL_DIGITS, "int", nullable = true, "he number of fractional digits")
       .add(NUM_PREC_RADIX, "int", nullable = true, "Radix (typically either 10 or 2)")
@@ -62,25 +70,46 @@ class GetColumns(
       .add(COLUMN_DEF, "string", nullable = true, "Default value (may be null)")
       .add(SQL_DATA_TYPE, "int", nullable = true, "Unused")
       .add(SQL_DATETIME_SUB, "int", nullable = true, "Unused")
-      .add(CHAR_OCTET_LENGTH, "int", nullable = true,
+      .add(
+        CHAR_OCTET_LENGTH,
+        "int",
+        nullable = true,
         "For char types the maximum number of bytes in the column")
       .add(ORDINAL_POSITION, "int", nullable = true, "Index of column in table (starting at 1)")
-      .add(IS_NULLABLE, "string", nullable = true,
+      .add(
+        IS_NULLABLE,
+        "string",
+        nullable = true,
         "'NO' means column definitely does not allow NULL values; 'YES' means the column might" +
           " allow NULL values. An empty string means nobody knows.")
-      .add(SCOPE_CATALOG, "string", nullable = true,
+      .add(
+        SCOPE_CATALOG,
+        "string",
+        nullable = true,
         "Catalog of table that is the scope of a reference attribute "
           + "(null if DATA_TYPE isn't REF)")
-      .add(SCOPE_SCHEMA, "string", nullable = true,
+      .add(
+        SCOPE_SCHEMA,
+        "string",
+        nullable = true,
         "Schema of table that is the scope of a reference attribute "
           + "(null if the DATA_TYPE isn't REF)")
-      .add(SCOPE_TABLE, "string", nullable = true,
+      .add(
+        SCOPE_TABLE,
+        "string",
+        nullable = true,
         "Table name that this the scope of a reference attribute "
           + "(null if the DATA_TYPE isn't REF)")
-      .add(SOURCE_DATA_TYPE, "smallint", nullable = true,
+      .add(
+        SOURCE_DATA_TYPE,
+        "smallint",
+        nullable = true,
         "Source type of a distinct type or user-generated Ref type, "
           + "SQL type from java.sql.Types (null if DATA_TYPE isn't DISTINCT or user-generated REF)")
-      .add(IS_AUTO_INCREMENT, "string", nullable = true,
+      .add(
+        IS_AUTO_INCREMENT,
+        "string",
+        nullable = true,
         "Indicates whether this column is auto incremented.")
   }
 

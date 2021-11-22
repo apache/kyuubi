@@ -72,7 +72,6 @@ class KinitAuxiliaryService() extends AbstractService("KinitAuxiliaryService") {
     super.initialize(conf)
   }
 
-
   override def start(): Unit = {
     super.start()
     if (UserGroupInformation.isSecurityEnabled) {

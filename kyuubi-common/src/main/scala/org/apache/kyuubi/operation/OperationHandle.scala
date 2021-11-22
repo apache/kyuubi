@@ -64,7 +64,8 @@ object OperationHandle {
   }
 
   def apply(tOperationHandle: TOperationHandle, protocol: TProtocolVersion): OperationHandle = {
-    apply(HandleIdentifier(tOperationHandle.getOperationId),
+    apply(
+      HandleIdentifier(tOperationHandle.getOperationId),
       OperationType.getOperationType(tOperationHandle.getOperationType),
       protocol)
   }

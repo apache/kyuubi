@@ -28,7 +28,7 @@ import org.apache.kyuubi.service.AbstractService
 
 class MiniDFSService(name: String, hdfsConf: Configuration)
   extends AbstractService(name)
-    with Logging {
+  with Logging {
 
   private var hdfsCluster: MiniDFSCluster = _
 

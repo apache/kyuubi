@@ -116,7 +116,7 @@ case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
    * @param remainder second part of the prefix which will be remained in the key
    */
   def getAllWithPrefix(dropped: String, remainder: String): Map[String, String] = {
-    getAll.filter { case (k, _) => k.startsWith(s"$dropped.$remainder")}.map {
+    getAll.filter { case (k, _) => k.startsWith(s"$dropped.$remainder") }.map {
       case (k, v) => (k.substring(dropped.length + 1), v)
     }
   }
@@ -166,6 +166,7 @@ object KyuubiConf {
 
   /** a custom directory that contains the [[KYUUBI_CONF_FILE_NAME]] */
   final val KYUUBI_CONF_DIR = "KYUUBI_CONF_DIR"
+
   /** the default file that contains kyuubi properties */
   final val KYUUBI_CONF_FILE_NAME = "kyuubi-defaults.conf"
   final val KYUUBI_HOME = "KYUUBI_HOME"
@@ -175,7 +176,8 @@ object KyuubiConf {
     java.util.Collections.synchronizedMap(new java.util.HashMap[String, ConfigEntry[_]]())
 
   private def register(entry: ConfigEntry[_]): Unit = kyuubiConfEntries.synchronized {
-    require(!kyuubiConfEntries.containsKey(entry.key),
+    require(
+      !kyuubiConfEntries.containsKey(entry.key),
       s"Duplicate SQLConfigEntry. ${entry.key} has been registered")
     kyuubiConfEntries.put(entry.key, entry)
   }
@@ -253,9 +255,9 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(true)
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                              Frontend Service Configuration                                 //
-  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // ///////////////////////////////////////////////////////////////////////////////////////////////
 
   object FrontendProtocols extends Enumeration {
     type FrontendProtocol = Value
@@ -273,7 +275,8 @@ object KyuubiConf {
       .stringConf
       .toSequence()
       .transform(_.map(_.toUpperCase(Locale.ROOT)))
-      .checkValue(_.forall(FrontendProtocols.values.map(_.toString).contains),
+      .checkValue(
+        _.forall(FrontendProtocols.values.map(_.toString).contains),
         s"the frontend protocol should be one or more of ${FrontendProtocols.values.mkString(",")}")
       .createWithDefault(Seq(FrontendProtocols.THRIFT_BINARY.toString))
 
@@ -286,10 +289,10 @@ object KyuubiConf {
 
   val FRONTEND_THRIFT_BINARY_BIND_HOST: ConfigEntry[Option[String]] =
     buildConf("frontend.thrift.binary.bind.host")
-    .doc("Hostname or IP of the machine on which to run the thrift frontend service " +
-      "via binary protocol.")
-    .version("1.4.0")
-    .fallbackConf(FRONTEND_BIND_HOST)
+      .doc("Hostname or IP of the machine on which to run the thrift frontend service " +
+        "via binary protocol.")
+      .version("1.4.0")
+      .fallbackConf(FRONTEND_BIND_HOST)
 
   @deprecated(s"using ${FRONTEND_THRIFT_BINARY_BIND_PORT.key} instead", "1.4.0")
   val FRONTEND_BIND_PORT: ConfigEntry[Int] = buildConf("frontend.bind.port")
@@ -315,10 +318,10 @@ object KyuubiConf {
 
   val FRONTEND_THRIFT_MIN_WORKER_THREADS: ConfigEntry[Int] =
     buildConf("frontend.thrift.min.worker.threads")
-    .doc("Minimum number of threads in the of frontend worker thread pool for the thrift " +
-      "frontend service")
-    .version("1.4.0")
-    .fallbackConf(FRONTEND_MIN_WORKER_THREADS)
+      .doc("Minimum number of threads in the of frontend worker thread pool for the thrift " +
+        "frontend service")
+      .version("1.4.0")
+      .fallbackConf(FRONTEND_MIN_WORKER_THREADS)
 
   val FRONTEND_MAX_WORKER_THREADS: ConfigEntry[Int] = buildConf("frontend.max.worker.threads")
     .doc("(deprecated) Maximum number of threads in the of frontend worker thread pool for " +
@@ -329,10 +332,10 @@ object KyuubiConf {
 
   val FRONTEND_THRIFT_MAX_WORKER_THREADS: ConfigEntry[Int] =
     buildConf("frontend.thrift.max.worker.threads")
-    .doc("Maximum number of threads in the of frontend worker thread pool for the thrift " +
-      "frontend service")
-    .version("1.4.0")
-    .fallbackConf(FRONTEND_MAX_WORKER_THREADS)
+      .doc("Maximum number of threads in the of frontend worker thread pool for the thrift " +
+        "frontend service")
+      .version("1.4.0")
+      .fallbackConf(FRONTEND_MAX_WORKER_THREADS)
 
   val FRONTEND_WORKER_KEEPALIVE_TIME: ConfigEntry[Long] =
     buildConf("frontend.worker.keepalive.time")
@@ -405,17 +408,18 @@ object KyuubiConf {
     .stringConf
     .toSequence()
     .transform(_.map(_.toUpperCase(Locale.ROOT)))
-    .checkValue(_.forall(AuthTypes.values.map(_.toString).contains),
+    .checkValue(
+      _.forall(AuthTypes.values.map(_.toString).contains),
       s"the authentication type should be one or more of ${AuthTypes.values.mkString(",")}")
     .createWithDefault(Seq(AuthTypes.NONE.toString))
 
   val AUTHENTICATION_CUSTOM_CLASS: OptionalConfigEntry[String] =
     buildConf("authentication.custom.class")
-    .doc("User-defined authentication implementation of " +
-      "org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider")
-    .version("1.3.0")
-    .stringConf
-    .createOptional
+      .doc("User-defined authentication implementation of " +
+        "org.apache.kyuubi.service.authentication.PasswdAuthenticationProvider")
+      .version("1.3.0")
+      .stringConf
+      .createOptional
 
   val AUTHENTICATION_LDAP_URL: OptionalConfigEntry[String] = buildConf("authentication.ldap.url")
     .doc("SPACE character separated LDAP connection URL(s).")
@@ -517,7 +521,8 @@ object KyuubiConf {
         s"Use min(cpu_cores, $MAX_NETTY_THREADS) in default.")
       .version("1.4.0")
       .intConf
-      .checkValue(n => n > 0 && n <= MAX_NETTY_THREADS,
+      .checkValue(
+        n => n > 0 && n <= MAX_NETTY_THREADS,
         s"Invalid thread number, must in (0, $MAX_NETTY_THREADS]")
       .createOptional
 
@@ -542,9 +547,9 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(FRONTEND_WORKER_KEEPALIVE_TIME)
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                 SQL Engine Configuration                                    //
-  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // ///////////////////////////////////////////////////////////////////////////////////////////////
 
   val ENGINE_ERROR_MAX_SIZE: ConfigEntry[Int] =
     buildConf("session.engine.startup.error.max.size")
@@ -552,7 +557,7 @@ object KyuubiConf {
         " error message(characters).")
       .version("1.1.0")
       .intConf
-      .checkValue( v => v >= 200 && v <= 8192, s"must in [200, 8192]")
+      .checkValue(v => v >= 200 && v <= 8192, s"must in [200, 8192]")
       .createWithDefault(8192)
 
   val ENGINE_LOG_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.log.timeout")
@@ -796,9 +801,7 @@ object KyuubiConf {
       .version("1.2.0")
       .stringConf
       .transform(_.toLowerCase(Locale.ROOT))
-      .checkValue(validEngineSubdomain.matcher(_).matches(),
-        "must be valid zookeeper sub path."
-      )
+      .checkValue(validEngineSubdomain.matcher(_).matches(), "must be valid zookeeper sub path.")
       .createOptional
 
   val ENGINE_SHARE_LEVEL_SUBDOMAIN: ConfigEntry[Option[String]] =
@@ -848,7 +851,6 @@ object KyuubiConf {
     .transform(_.toUpperCase(Locale.ROOT))
     .checkValues(EngineType.values.map(_.toString))
     .createWithDefault(EngineType.SPARK_SQL.toString)
-
 
   val ENGINE_POOL_SIZE_THRESHOLD: ConfigEntry[Int] = buildConf("engine.pool.size.threshold")
     .doc("This parameter is introduced as a server-side parameter, " +
@@ -971,8 +973,7 @@ object KyuubiConf {
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
       .toSequence()
-      .checkValue(_.toSet.subsetOf(Set("JSON", "JDBC", "CUSTOM")),
-        "Unsupported event loggers")
+      .checkValue(_.toSet.subsetOf(Set("JSON", "JDBC", "CUSTOM")), "Unsupported event loggers")
       .createWithDefault(Nil)
 
   val ENGINE_EVENT_LOGGERS: ConfigEntry[Seq[String]] =
@@ -988,7 +989,8 @@ object KyuubiConf {
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
       .toSequence()
-      .checkValue(_.toSet.subsetOf(Set("SPARK", "JSON", "JDBC", "CUSTOM")),
+      .checkValue(
+        _.toSet.subsetOf(Set("SPARK", "JSON", "JDBC", "CUSTOM")),
         "Unsupported event loggers")
       .createWithDefault(Seq("SPARK"))
 
