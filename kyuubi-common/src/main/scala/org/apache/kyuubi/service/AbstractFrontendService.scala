@@ -25,7 +25,6 @@ import org.apache.kyuubi.service.ServiceState.LATENT
  * An frontend service will receive client requests and translate them to serverable operations or
  * backend operations. It also support exposing itself by `ServiceDiscovery` if the concrete
  * frontend service has a Discovery Service as its child.
- *
  */
 abstract class AbstractFrontendService(name: String)
   extends CompositeService(name) with FrontendService {

@@ -34,10 +34,8 @@ import org.glassfish.jersey.server.ResourceConfig
       email = "dev@kyuubi.apache.org"),
     license = new License(
       name = "Apache 2.0",
-      url = "https://www.apache.org/licenses/LICENSE-2.0.html")
-  ),
-  tags = Array(new Tag(name = "Session"))
-)
+      url = "https://www.apache.org/licenses/LICENSE-2.0.html")),
+  tags = Array(new Tag(name = "Session")))
 class OpenAPIConfig extends ResourceConfig {
   packages("org.apache.kyuubi.server.api.v1")
   register(classOf[OpenApiResource]);

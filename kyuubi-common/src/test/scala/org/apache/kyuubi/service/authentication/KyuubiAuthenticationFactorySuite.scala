@@ -69,7 +69,6 @@ class KyuubiAuthenticationFactorySuite extends KyuubiFunSuite {
     assert(Security.getProviders.exists(_.isInstanceOf[SaslPlainProvider]))
   }
 
-
   test("AuthType KERBEROS w/o keytab/principal") {
     val conf = KyuubiConf().set(KyuubiConf.AUTHENTICATION_METHOD, Seq("KERBEROS"))
 

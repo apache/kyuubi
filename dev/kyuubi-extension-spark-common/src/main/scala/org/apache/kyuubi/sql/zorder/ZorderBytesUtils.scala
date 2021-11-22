@@ -25,10 +25,10 @@ import org.apache.spark.unsafe.types.UTF8String
 import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
 object ZorderBytesUtils {
-  private final val BIT_8_MASK = 1 << 7
-  private final val BIT_16_MASK = 1 << 15
-  private final val BIT_32_MASK = 1 << 31
-  private final val BIT_64_MASK = 1L << 63
+  final private val BIT_8_MASK = 1 << 7
+  final private val BIT_16_MASK = 1 << 15
+  final private val BIT_32_MASK = 1 << 31
+  final private val BIT_64_MASK = 1L << 63
 
   def interleaveBits(inputs: Array[Any]): Array[Byte] = {
     inputs.length match {
@@ -37,17 +37,38 @@ object ZorderBytesUtils {
       case 1 => longToByte(toLong(inputs(0)))
       case 2 => interleave2Longs(toLong(inputs(0)), toLong(inputs(1)))
       case 3 => interleave3Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)))
-      case 4 => interleave4Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)),
-        toLong(inputs(3)))
-      case 5 => interleave5Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)),
-        toLong(inputs(3)), toLong(inputs(4)))
-      case 6 => interleave6Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)),
-        toLong(inputs(3)), toLong(inputs(4)), toLong(inputs(5)))
-      case 7 => interleave7Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)),
-        toLong(inputs(3)), toLong(inputs(4)), toLong(inputs(5)), toLong(inputs(6)))
-      case 8 => interleave8Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)),
-        toLong(inputs(3)), toLong(inputs(4)), toLong(inputs(5)), toLong(inputs(6)),
-        toLong(inputs(7)))
+      case 4 =>
+        interleave4Longs(toLong(inputs(0)), toLong(inputs(1)), toLong(inputs(2)), toLong(inputs(3)))
+      case 5 => interleave5Longs(
+          toLong(inputs(0)),
+          toLong(inputs(1)),
+          toLong(inputs(2)),
+          toLong(inputs(3)),
+          toLong(inputs(4)))
+      case 6 => interleave6Longs(
+          toLong(inputs(0)),
+          toLong(inputs(1)),
+          toLong(inputs(2)),
+          toLong(inputs(3)),
+          toLong(inputs(4)),
+          toLong(inputs(5)))
+      case 7 => interleave7Longs(
+          toLong(inputs(0)),
+          toLong(inputs(1)),
+          toLong(inputs(2)),
+          toLong(inputs(3)),
+          toLong(inputs(4)),
+          toLong(inputs(5)),
+          toLong(inputs(6)))
+      case 8 => interleave8Longs(
+          toLong(inputs(0)),
+          toLong(inputs(1)),
+          toLong(inputs(2)),
+          toLong(inputs(3)),
+          toLong(inputs(4)),
+          toLong(inputs(5)),
+          toLong(inputs(6)),
+          toLong(inputs(7)))
 
       case _ =>
         // it's the default approach, use O(64 * n), n is the length of inputs
@@ -59,9 +80,9 @@ object ZorderBytesUtils {
     // output 8 * 16 bits
     val result = new Array[Byte](16)
     var i = 0
-    while(i < 8) {
-      val tmp1 = ((l1 >> (i * 8)) & 0xff).toShort
-      val tmp2 = ((l2 >> (i * 8)) & 0xff).toShort
+    while (i < 8) {
+      val tmp1 = ((l1 >> (i * 8)) & 0xFF).toShort
+      val tmp2 = ((l2 >> (i * 8)) & 0xFF).toShort
 
       var z = 0
       var j = 0
@@ -72,8 +93,8 @@ object ZorderBytesUtils {
         z |= (y_masked << (j + 1))
         j = j + 1
       }
-      result((7 - i) * 2 + 1) = (z & 0xff).toByte
-      result((7 - i) * 2) = ((z >> 8) & 0xff).toByte
+      result((7 - i) * 2 + 1) = (z & 0xFF).toByte
+      result((7 - i) * 2) = ((z >> 8) & 0xFF).toByte
       i = i + 1
     }
     result
@@ -83,10 +104,10 @@ object ZorderBytesUtils {
     // output 8 * 24 bits
     val result = new Array[Byte](24)
     var i = 0
-    while(i < 8) {
-      val tmp1 = ((l1 >> (i * 8)) & 0xff).toInt
-      val tmp2 = ((l2 >> (i * 8)) & 0xff).toInt
-      val tmp3 = ((l3 >> (i * 8)) & 0xff).toInt
+    while (i < 8) {
+      val tmp1 = ((l1 >> (i * 8)) & 0xFF).toInt
+      val tmp2 = ((l2 >> (i * 8)) & 0xFF).toInt
+      val tmp3 = ((l3 >> (i * 8)) & 0xFF).toInt
 
       var z = 0
       var j = 0
@@ -97,9 +118,9 @@ object ZorderBytesUtils {
         z |= (r1_mask << (2 * j)) | (r2_mask << (2 * j + 1)) | (r3_mask << (2 * j + 2))
         j = j + 1
       }
-      result((7 - i) * 3 + 2) = (z & 0xff).toByte
-      result((7 - i) * 3 + 1) = ((z >> 8) & 0xff).toByte
-      result((7 - i) * 3) = ((z >> 16) & 0xff).toByte
+      result((7 - i) * 3 + 2) = (z & 0xFF).toByte
+      result((7 - i) * 3 + 1) = ((z >> 8) & 0xFF).toByte
+      result((7 - i) * 3) = ((z >> 16) & 0xFF).toByte
       i = i + 1
     }
     result
@@ -109,11 +130,11 @@ object ZorderBytesUtils {
     // output 8 * 32 bits
     val result = new Array[Byte](32)
     var i = 0
-    while(i < 8) {
-      val tmp1 = ((l1 >> (i * 8)) & 0xff).toInt
-      val tmp2 = ((l2 >> (i * 8)) & 0xff).toInt
-      val tmp3 = ((l3 >> (i * 8)) & 0xff).toInt
-      val tmp4 = ((l4 >> (i * 8)) & 0xff).toInt
+    while (i < 8) {
+      val tmp1 = ((l1 >> (i * 8)) & 0xFF).toInt
+      val tmp2 = ((l2 >> (i * 8)) & 0xFF).toInt
+      val tmp3 = ((l3 >> (i * 8)) & 0xFF).toInt
+      val tmp4 = ((l4 >> (i * 8)) & 0xFF).toInt
 
       var z = 0
       var j = 0
@@ -126,10 +147,10 @@ object ZorderBytesUtils {
           (r4_mask << (3 * j + 3))
         j = j + 1
       }
-      result((7 - i) * 4 + 3) = (z & 0xff).toByte
-      result((7 - i) * 4 + 2) = ((z >> 8) & 0xff).toByte
-      result((7 - i) * 4 + 1) = ((z >> 16) & 0xff).toByte
-      result((7 - i) * 4) = ((z >> 24) & 0xff).toByte
+      result((7 - i) * 4 + 3) = (z & 0xFF).toByte
+      result((7 - i) * 4 + 2) = ((z >> 8) & 0xFF).toByte
+      result((7 - i) * 4 + 1) = ((z >> 16) & 0xFF).toByte
+      result((7 - i) * 4) = ((z >> 24) & 0xFF).toByte
       i = i + 1
     }
     result
@@ -144,12 +165,12 @@ object ZorderBytesUtils {
     // output 8 * 40 bits
     val result = new Array[Byte](40)
     var i = 0
-    while(i < 8) {
-      val tmp1 = ((l1 >> (i * 8)) & 0xff).toLong
-      val tmp2 = ((l2 >> (i * 8)) & 0xff).toLong
-      val tmp3 = ((l3 >> (i * 8)) & 0xff).toLong
-      val tmp4 = ((l4 >> (i * 8)) & 0xff).toLong
-      val tmp5 = ((l5 >> (i * 8)) & 0xff).toLong
+    while (i < 8) {
+      val tmp1 = ((l1 >> (i * 8)) & 0xFF).toLong
+      val tmp2 = ((l2 >> (i * 8)) & 0xFF).toLong
+      val tmp3 = ((l3 >> (i * 8)) & 0xFF).toLong
+      val tmp4 = ((l4 >> (i * 8)) & 0xFF).toLong
+      val tmp5 = ((l5 >> (i * 8)) & 0xFF).toLong
 
       var z = 0L
       var j = 0
@@ -163,11 +184,11 @@ object ZorderBytesUtils {
           (r4_mask << (4 * j + 3)) | (r5_mask << (4 * j + 4))
         j = j + 1
       }
-      result((7 - i) * 5 + 4) = (z & 0xff).toByte
-      result((7 - i) * 5 + 3) = ((z >> 8) & 0xff).toByte
-      result((7 - i) * 5 + 2) = ((z >> 16) & 0xff).toByte
-      result((7 - i) * 5 + 1) = ((z >> 24) & 0xff).toByte
-      result((7 - i) * 5) = ((z >> 32) & 0xff).toByte
+      result((7 - i) * 5 + 4) = (z & 0xFF).toByte
+      result((7 - i) * 5 + 3) = ((z >> 8) & 0xFF).toByte
+      result((7 - i) * 5 + 2) = ((z >> 16) & 0xFF).toByte
+      result((7 - i) * 5 + 1) = ((z >> 24) & 0xFF).toByte
+      result((7 - i) * 5) = ((z >> 32) & 0xFF).toByte
       i = i + 1
     }
     result
@@ -183,13 +204,13 @@ object ZorderBytesUtils {
     // output 8 * 48 bits
     val result = new Array[Byte](48)
     var i = 0
-    while(i < 8) {
-      val tmp1 = ((l1 >> (i * 8)) & 0xff).toLong
-      val tmp2 = ((l2 >> (i * 8)) & 0xff).toLong
-      val tmp3 = ((l3 >> (i * 8)) & 0xff).toLong
-      val tmp4 = ((l4 >> (i * 8)) & 0xff).toLong
-      val tmp5 = ((l5 >> (i * 8)) & 0xff).toLong
-      val tmp6 = ((l6 >> (i * 8)) & 0xff).toLong
+    while (i < 8) {
+      val tmp1 = ((l1 >> (i * 8)) & 0xFF).toLong
+      val tmp2 = ((l2 >> (i * 8)) & 0xFF).toLong
+      val tmp3 = ((l3 >> (i * 8)) & 0xFF).toLong
+      val tmp4 = ((l4 >> (i * 8)) & 0xFF).toLong
+      val tmp5 = ((l5 >> (i * 8)) & 0xFF).toLong
+      val tmp6 = ((l6 >> (i * 8)) & 0xFF).toLong
 
       var z = 0L
       var j = 0
@@ -204,12 +225,12 @@ object ZorderBytesUtils {
           (r4_mask << (5 * j + 3)) | (r5_mask << (5 * j + 4)) | (r6_mask << (5 * j + 5))
         j = j + 1
       }
-      result((7 - i) * 6 + 5) = (z & 0xff).toByte
-      result((7 - i) * 6 + 4) = ((z >> 8) & 0xff).toByte
-      result((7 - i) * 6 + 3) = ((z >> 16) & 0xff).toByte
-      result((7 - i) * 6 + 2) = ((z >> 24) & 0xff).toByte
-      result((7 - i) * 6 + 1) = ((z >> 32) & 0xff).toByte
-      result((7 - i) * 6) = ((z >> 40) & 0xff).toByte
+      result((7 - i) * 6 + 5) = (z & 0xFF).toByte
+      result((7 - i) * 6 + 4) = ((z >> 8) & 0xFF).toByte
+      result((7 - i) * 6 + 3) = ((z >> 16) & 0xFF).toByte
+      result((7 - i) * 6 + 2) = ((z >> 24) & 0xFF).toByte
+      result((7 - i) * 6 + 1) = ((z >> 32) & 0xFF).toByte
+      result((7 - i) * 6) = ((z >> 40) & 0xFF).toByte
       i = i + 1
     }
     result
@@ -226,14 +247,14 @@ object ZorderBytesUtils {
     // output 8 * 56 bits
     val result = new Array[Byte](56)
     var i = 0
-    while(i < 8) {
-      val tmp1 = ((l1 >> (i * 8)) & 0xff).toLong
-      val tmp2 = ((l2 >> (i * 8)) & 0xff).toLong
-      val tmp3 = ((l3 >> (i * 8)) & 0xff).toLong
-      val tmp4 = ((l4 >> (i * 8)) & 0xff).toLong
-      val tmp5 = ((l5 >> (i * 8)) & 0xff).toLong
-      val tmp6 = ((l6 >> (i * 8)) & 0xff).toLong
-      val tmp7 = ((l7 >> (i * 8)) & 0xff).toLong
+    while (i < 8) {
+      val tmp1 = ((l1 >> (i * 8)) & 0xFF).toLong
+      val tmp2 = ((l2 >> (i * 8)) & 0xFF).toLong
+      val tmp3 = ((l3 >> (i * 8)) & 0xFF).toLong
+      val tmp4 = ((l4 >> (i * 8)) & 0xFF).toLong
+      val tmp5 = ((l5 >> (i * 8)) & 0xFF).toLong
+      val tmp6 = ((l6 >> (i * 8)) & 0xFF).toLong
+      val tmp7 = ((l7 >> (i * 8)) & 0xFF).toLong
 
       var z = 0L
       var j = 0
@@ -250,13 +271,13 @@ object ZorderBytesUtils {
           (r7_mask << (6 * j + 6))
         j = j + 1
       }
-      result((7 - i) * 7 + 6) = (z & 0xff).toByte
-      result((7 - i) * 7 + 5) = ((z >> 8) & 0xff).toByte
-      result((7 - i) * 7 + 4) = ((z >> 16) & 0xff).toByte
-      result((7 - i) * 7 + 3) = ((z >> 24) & 0xff).toByte
-      result((7 - i) * 7 + 2) = ((z >> 32) & 0xff).toByte
-      result((7 - i) * 7 + 1) = ((z >> 40) & 0xff).toByte
-      result((7 - i) * 7) = ((z >> 48) & 0xff).toByte
+      result((7 - i) * 7 + 6) = (z & 0xFF).toByte
+      result((7 - i) * 7 + 5) = ((z >> 8) & 0xFF).toByte
+      result((7 - i) * 7 + 4) = ((z >> 16) & 0xFF).toByte
+      result((7 - i) * 7 + 3) = ((z >> 24) & 0xFF).toByte
+      result((7 - i) * 7 + 2) = ((z >> 32) & 0xFF).toByte
+      result((7 - i) * 7 + 1) = ((z >> 40) & 0xFF).toByte
+      result((7 - i) * 7) = ((z >> 48) & 0xFF).toByte
       i = i + 1
     }
     result
@@ -274,15 +295,15 @@ object ZorderBytesUtils {
     // output 8 * 64 bits
     val result = new Array[Byte](64)
     var i = 0
-    while(i < 8) {
-      val tmp1 = ((l1 >> (i * 8)) & 0xff).toLong
-      val tmp2 = ((l2 >> (i * 8)) & 0xff).toLong
-      val tmp3 = ((l3 >> (i * 8)) & 0xff).toLong
-      val tmp4 = ((l4 >> (i * 8)) & 0xff).toLong
-      val tmp5 = ((l5 >> (i * 8)) & 0xff).toLong
-      val tmp6 = ((l6 >> (i * 8)) & 0xff).toLong
-      val tmp7 = ((l7 >> (i * 8)) & 0xff).toLong
-      val tmp8 = ((l8 >> (i * 8)) & 0xff).toLong
+    while (i < 8) {
+      val tmp1 = ((l1 >> (i * 8)) & 0xFF).toLong
+      val tmp2 = ((l2 >> (i * 8)) & 0xFF).toLong
+      val tmp3 = ((l3 >> (i * 8)) & 0xFF).toLong
+      val tmp4 = ((l4 >> (i * 8)) & 0xFF).toLong
+      val tmp5 = ((l5 >> (i * 8)) & 0xFF).toLong
+      val tmp6 = ((l6 >> (i * 8)) & 0xFF).toLong
+      val tmp7 = ((l7 >> (i * 8)) & 0xFF).toLong
+      val tmp8 = ((l8 >> (i * 8)) & 0xFF).toLong
 
       var z = 0L
       var j = 0
@@ -300,14 +321,14 @@ object ZorderBytesUtils {
           (r7_mask << (7 * j + 6)) | (r8_mask << (7 * j + 7))
         j = j + 1
       }
-      result((7 - i) * 8 + 7) = (z & 0xff).toByte
-      result((7 - i) * 8 + 6) = ((z >> 8) & 0xff).toByte
-      result((7 - i) * 8 + 5) = ((z >> 16) & 0xff).toByte
-      result((7 - i) * 8 + 4) = ((z >> 24) & 0xff).toByte
-      result((7 - i) * 8 + 3) = ((z >> 32) & 0xff).toByte
-      result((7 - i) * 8 + 2) = ((z >> 40) & 0xff).toByte
-      result((7 - i) * 8 + 1) = ((z >> 48) & 0xff).toByte
-      result((7 - i) * 8) = ((z >> 56) & 0xff).toByte
+      result((7 - i) * 8 + 7) = (z & 0xFF).toByte
+      result((7 - i) * 8 + 6) = ((z >> 8) & 0xFF).toByte
+      result((7 - i) * 8 + 5) = ((z >> 16) & 0xFF).toByte
+      result((7 - i) * 8 + 4) = ((z >> 24) & 0xFF).toByte
+      result((7 - i) * 8 + 3) = ((z >> 32) & 0xFF).toByte
+      result((7 - i) * 8 + 2) = ((z >> 40) & 0xFF).toByte
+      result((7 - i) * 8 + 1) = ((z >> 48) & 0xFF).toByte
+      result((7 - i) * 8) = ((z >> 56) & 0xFF).toByte
       i = i + 1
     }
     result
@@ -333,8 +354,8 @@ object ZorderBytesUtils {
         if (bytePos < len) {
           val resultBytePos = totalLength - 1 - resultBit / 8
           val resultBitPos = resultBit % 8
-          result(resultBytePos) = updatePos(result(resultBytePos), resultBitPos,
-            arr(len - 1 - bytePos), bitPos)
+          result(resultBytePos) =
+            updatePos(result(resultBytePos), resultBitPos, arr(len - 1 - bytePos), bitPos)
           resultBit += 1
         }
       }
@@ -414,7 +435,7 @@ object ZorderBytesUtils {
 
   def shortToByte(a: Short): Array[Byte] = {
     val tmp = a ^ BIT_16_MASK
-    Array(((tmp >> 8) & 0xff).toByte, (tmp & 0xff).toByte)
+    Array(((tmp >> 8) & 0xFF).toByte, (tmp & 0xFF).toByte)
   }
 
   def intToByte(a: Int): Array[Byte] = {
@@ -423,7 +444,7 @@ object ZorderBytesUtils {
     val tmp = a ^ BIT_32_MASK
     while (i <= 3) {
       val offset = i * 8
-      result(3 - i) = ((tmp >> offset) & 0xff).toByte
+      result(3 - i) = ((tmp >> offset) & 0xFF).toByte
       i += 1
     }
     result
@@ -435,7 +456,7 @@ object ZorderBytesUtils {
     val tmp = a ^ BIT_64_MASK
     while (i <= 7) {
       val offset = i * 8
-      result(7 - i) = ((tmp >> offset) & 0xff).toByte
+      result(7 - i) = ((tmp >> offset) & 0xFF).toByte
       i += 1
     }
     result

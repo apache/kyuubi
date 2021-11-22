@@ -61,16 +61,20 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
     val sessionImpl = new SparkSessionImpl(protocol, user, password, ipAddress, conf, this)
     val handle = sessionImpl.handle
     try {
-      val sparkSession = if (singleSparkSession) {
-        spark
-      } else {
-        val ss = spark.newSession()
-        this.conf.get(ENGINE_SESSION_INITIALIZE_SQL).foreach { sqlStr =>
-          ss.sparkContext.setJobGroup(handle.identifier.toString, sqlStr, interruptOnCancel = true)
-          ss.sql(sqlStr).isEmpty
+      val sparkSession =
+        if (singleSparkSession) {
+          spark
+        } else {
+          val ss = spark.newSession()
+          this.conf.get(ENGINE_SESSION_INITIALIZE_SQL).foreach { sqlStr =>
+            ss.sparkContext.setJobGroup(
+              handle.identifier.toString,
+              sqlStr,
+              interruptOnCancel = true)
+            ss.sql(sqlStr).isEmpty
+          }
+          ss
         }
-        ss
-      }
 
       sessionImpl.normalizedConf.foreach {
         case ("use:database", database) => sparkSession.catalog.setCurrentDatabase(database)
@@ -81,7 +85,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       operationManager.setSparkSession(handle, sparkSession)
       setSession(handle, sessionImpl)
       info(s"$user's session with $handle is opened, current opening sessions" +
-      s" $getOpenSessionCount")
+        s" $getOpenSessionCount")
       handle
     } catch {
       case e: Exception =>

@@ -39,7 +39,7 @@ import org.apache.kyuubi.util.ThreadUtils
 class ExecuteStatement(
     spark: SparkSession,
     session: Session,
-    protected override val statement: String,
+    override protected val statement: String,
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
     incrementalCollect: Boolean)
@@ -62,8 +62,14 @@ class ExecuteStatement(
   private val operationListener: SQLOperationListener = new SQLOperationListener(this, spark)
 
   val statementEvent: SparkStatementEvent = SparkStatementEvent(
-    session.user, statementId, statement, spark.sparkContext.applicationId,
-    session.handle.identifier.toString, lastAccessTime, state.toString, lastAccessTime)
+    session.user,
+    statementId,
+    statement,
+    spark.sparkContext.applicationId,
+    session.handle.identifier.toString,
+    lastAccessTime,
+    state.toString,
+    lastAccessTime)
   EventLoggingService.onEvent(statementEvent)
 
   override protected def resultSchema: StructType = {
@@ -96,13 +102,14 @@ class ExecuteStatement(
       statementEvent.queryExecution = result.queryExecution.toString()
       setState(OperationState.COMPILED)
       debug(result.queryExecution)
-      iter = if (incrementalCollect) {
-        info("Execute in incremental collect mode")
-        new IterableFetchIterator[Row](result.toLocalIterator().asScala.toIterable)
-      } else {
-        info("Execute in full collect mode")
-        new ArrayFetchIterator(result.collect())
-      }
+      iter =
+        if (incrementalCollect) {
+          info("Execute in incremental collect mode")
+          new IterableFetchIterator[Row](result.toLocalIterator().asScala.toIterable)
+        } else {
+          info("Execute in full collect mode")
+          new ArrayFetchIterator(result.collect())
+        }
       setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
@@ -128,8 +135,8 @@ class ExecuteStatement(
       } catch {
         case rejected: RejectedExecutionException =>
           setState(OperationState.ERROR)
-          val ke = KyuubiSQLException("Error submitting query in background, query rejected",
-            rejected)
+          val ke =
+            KyuubiSQLException("Error submitting query in background, query rejected", rejected)
           setOperationException(ke)
           throw ke
       }
@@ -162,11 +169,14 @@ class ExecuteStatement(
     if (queryTimeout > 0) {
       val timeoutExecutor =
         ThreadUtils.newDaemonSingleThreadScheduledExecutor("query-timeout-thread")
-      timeoutExecutor.schedule(new Runnable {
-        override def run(): Unit = {
-          cleanup(OperationState.TIMEOUT)
-        }
-      }, queryTimeout, TimeUnit.SECONDS)
+      timeoutExecutor.schedule(
+        new Runnable {
+          override def run(): Unit = {
+            cleanup(OperationState.TIMEOUT)
+          }
+        },
+        queryTimeout,
+        TimeUnit.SECONDS)
       statementTimeoutCleaner = Some(timeoutExecutor)
     }
   }

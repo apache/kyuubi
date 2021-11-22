@@ -119,8 +119,7 @@ class OutputSchemaTPCDSSuite extends WithKyuubiServer
             baseResourcePath.toFile.getAbsolutePath,
             name,
             q.getFileName.toString,
-            s"${qf.getName.stripSuffix(".sql")}.output.schema"
-          )
+            s"${qf.getName.stripSuffix(".sql")}.output.schema")
           val queryString = fileToString(qf.toPath)
           runQuery(queryString, schemaFile)
         }

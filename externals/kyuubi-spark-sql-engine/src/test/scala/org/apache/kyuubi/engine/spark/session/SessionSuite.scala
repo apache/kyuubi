@@ -27,7 +27,7 @@ import org.apache.kyuubi.service.ServiceState._
 
 class SessionSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
   override def withKyuubiConf: Map[String, String] = {
-   Map(ENGINE_SHARE_LEVEL.key -> "CONNECTION")
+    Map(ENGINE_SHARE_LEVEL.key -> "CONNECTION")
   }
 
   override protected def beforeEach(): Unit = {
@@ -45,7 +45,7 @@ class SessionSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 
   test("release session if shared level is CONNECTION") {
     assert(engine.getServiceState == STARTED)
-    withJdbcStatement() {_ => }
+    withJdbcStatement() { _ => }
     eventually(Timeout(200.seconds)) {
       assert(engine.getServiceState == STOPPED)
     }

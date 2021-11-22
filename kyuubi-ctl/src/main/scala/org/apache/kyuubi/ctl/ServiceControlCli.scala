@@ -95,7 +95,12 @@ private[kyuubi] class ServiceControlCli extends Logging {
             info(s"Exposing server instance:${sn.instance} with version:${sn.version}" +
               s" from $fromNamespace to $toNamespace")
             val newNode = createServiceNode(
-              kyuubiConf, zc, args.cliArgs.namespace, sn.instance, sn.version, true)
+              kyuubiConf,
+              zc,
+              args.cliArgs.namespace,
+              sn.instance,
+              sn.version,
+              true)
             exposedServiceNodes += sn.copy(
               namespace = toNamespace,
               nodeName = newNode.getActualPath.split("/").last)
@@ -121,9 +126,10 @@ private[kyuubi] class ServiceControlCli extends Logging {
   private def list(args: ServiceControlCliArguments, filterHostPort: Boolean): Unit = {
     withZkClient(args.conf) { zkClient =>
       val znodeRoot = getZkNamespace(args)
-      val hostPortOpt = if (filterHostPort) {
-        Some((args.cliArgs.host, args.cliArgs.port.toInt))
-      } else None
+      val hostPortOpt =
+        if (filterHostPort) {
+          Some((args.cliArgs.host, args.cliArgs.port.toInt))
+        } else None
       val nodes = getServiceNodes(zkClient, znodeRoot, hostPortOpt)
 
       val title = "Zookeeper service nodes"
@@ -138,8 +144,8 @@ private[kyuubi] class ServiceControlCli extends Logging {
     val serviceNodes = getServiceNodesInfo(zkClient, znodeRoot)
     hostPortOpt match {
       case Some((host, port)) => serviceNodes.filter { sn =>
-        sn.host == host && sn.port == port
-      }
+          sn.host == host && sn.port == port
+        }
       case _ => serviceNodes
     }
   }
@@ -176,7 +182,6 @@ object ServiceControlCli extends CommandLineUtils with Logging {
   override def main(args: Array[String]): Unit = {
     val ctl = new ServiceControlCli() {
       self =>
-
       override protected def parseArguments(args: Array[String]): ServiceControlCliArguments = {
         new ServiceControlCliArguments(args) {
           override def info(msg: => Any): Unit = self.info(msg)
@@ -227,7 +232,8 @@ object ServiceControlCli extends CommandLineUtils with Logging {
   }
 
   private[ctl] def renderServiceNodesInfo(
-      title: String, serviceNodeInfo: Seq[ServiceNodeInfo],
+      title: String,
+      serviceNodeInfo: Seq[ServiceNodeInfo],
       verbose: Boolean): String = {
     val header = Seq("Namespace", "Host", "Port", "Version")
     val rows = serviceNodeInfo.sortBy(_.nodeName).map { sn =>

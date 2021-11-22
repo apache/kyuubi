@@ -53,7 +53,8 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
     val metastorePath = Utils.createTempDir()
     warehousePath.toFile.delete()
     metastorePath.toFile.delete()
-    System.setProperty("javax.jdo.option.ConnectionURL",
+    System.setProperty(
+      "javax.jdo.option.ConnectionURL",
       s"jdbc:derby:;databaseName=$metastorePath;create=true")
     System.setProperty("spark.sql.warehouse.dir", warehousePath.toString)
     System.setProperty("spark.sql.hive.metastore.sharedPrefixes", "org.apache.hive.jdbc")

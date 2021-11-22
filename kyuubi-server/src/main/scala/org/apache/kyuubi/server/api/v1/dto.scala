@@ -26,63 +26,54 @@ case class ExecPoolStatistic(execPoolSize: Int, execPoolActiveCount: Int)
 case class SessionList(sessionList: Seq[SessionOverview])
 
 case class SessionOverview(
-  user: String,
-  ipAddr: String,
-  createTime: Long,
-  sessionHandle: SessionHandle
-)
+    user: String,
+    ipAddr: String,
+    createTime: Long,
+    sessionHandle: SessionHandle)
 
 case class InfoDetail(
-  infoType: String,
-  infoValue: String
-)
+    infoType: String,
+    infoValue: String)
 
 case class SessionDetail(
-  user: String,
-  ipAddr: String,
-  createTime: Long,
-  sessionHandle: SessionHandle,
-  lastAccessTime: Long,
-  lastIdleTime: Long,
-  noOperationTime: Long,
-  configs: Map[String, String]
-)
+    user: String,
+    ipAddr: String,
+    createTime: Long,
+    sessionHandle: SessionHandle,
+    lastAccessTime: Long,
+    lastIdleTime: Long,
+    noOperationTime: Long,
+    configs: Map[String, String])
 
 case class SessionOpenRequest(
-  protocolVersion: Int,
-  user: String,
-  password: String,
-  ipAddr: String,
-  configs: Map[String, String]
-)
+    protocolVersion: Int,
+    user: String,
+    password: String,
+    ipAddr: String,
+    configs: Map[String, String])
 
 case class StatementRequest(
-  statement: String,
-  runAsync: Boolean,
-  queryTimeout: Long
-)
+    statement: String,
+    runAsync: Boolean,
+    queryTimeout: Long)
 
 case class GetSchemasRequest(
-  catalogName: String,
-  schemaName: String
-)
+    catalogName: String,
+    schemaName: String)
 
 case class GetTablesRequest(
-  catalogName: String,
-  schemaName: String,
-  tableName: String,
-  tableTypes: java.util.List[String]
-)
+    catalogName: String,
+    schemaName: String,
+    tableName: String,
+    tableTypes: java.util.List[String])
 
 case class GetColumnsRequest(
-  catalogName: String,
-  schemaName: String,
-  tableName: String,
-  columnName: String
-)
+    catalogName: String,
+    schemaName: String,
+    tableName: String,
+    columnName: String)
 
 case class GetFunctionsRequest(
-  catalogName: String,
-  schemaName: String,
-  functionName: String
-)
+    catalogName: String,
+    schemaName: String,
+    functionName: String)

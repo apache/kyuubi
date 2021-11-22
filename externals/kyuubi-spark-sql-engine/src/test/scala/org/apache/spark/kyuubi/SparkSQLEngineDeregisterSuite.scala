@@ -33,8 +33,7 @@ abstract class SparkSQLEngineDeregisterSuite extends WithDiscoverySparkSQLEngine
   override def withKyuubiConf: Map[String, String] = {
     super.withKyuubiConf ++ Map(
       ANSI_ENABLED.key -> "true",
-      ENGINE_DEREGISTER_JOB_MAX_FAILURES.key -> maxJobFailures.toString
-    )
+      ENGINE_DEREGISTER_JOB_MAX_FAILURES.key -> maxJobFailures.toString)
   }
 
   override val namespace: String = s"/kyuubi/deregister_test/${UUID.randomUUID().toString}"
@@ -78,8 +77,7 @@ class SparkSQLEngineDeregisterExceptionTTLSuite extends WithDiscoverySparkSQLEng
       ANSI_ENABLED.key -> "true",
       ENGINE_DEREGISTER_EXCEPTION_CLASSES.key -> classOf[ArithmeticException].getCanonicalName,
       ENGINE_DEREGISTER_JOB_MAX_FAILURES.key -> maxJobFailures.toString,
-      ENGINE_DEREGISTER_EXCEPTION_TTL.key -> deregisterExceptionTTL.toString
-    )
+      ENGINE_DEREGISTER_EXCEPTION_TTL.key -> deregisterExceptionTTL.toString)
   }
 
   override val namespace: String = s"/kyuubi/deregister_test/${UUID.randomUUID().toString}"

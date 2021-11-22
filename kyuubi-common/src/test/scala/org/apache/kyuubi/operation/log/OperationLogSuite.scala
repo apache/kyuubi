@@ -45,7 +45,8 @@ class OperationLogSuite extends KyuubiFunSuite {
       Map.empty)
     val session = sessionManager.getSession(sHandle)
     val oHandle = OperationHandle(
-      OperationType.EXECUTE_STATEMENT, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+      OperationType.EXECUTE_STATEMENT,
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
     assert(sessionManager.operationLogRoot.isDefined)
     val operationLogRoot = sessionManager.operationLogRoot.get
 
@@ -54,8 +55,8 @@ class OperationLogSuite extends KyuubiFunSuite {
     assert(Files.isDirectory(Paths.get(operationLogRoot, sHandle.identifier.toString)))
 
     val operationLog = OperationLog.createOperationLog(session, oHandle)
-    val logFile = Paths.get(operationLogRoot, sHandle.identifier.toString,
-      oHandle.identifier.toString)
+    val logFile =
+      Paths.get(operationLogRoot, sHandle.identifier.toString, oHandle.identifier.toString)
     assert(Files.exists(logFile))
 
     OperationLog.setCurrentOperationLog(operationLog)
@@ -91,7 +92,8 @@ class OperationLogSuite extends KyuubiFunSuite {
       Map.empty)
     val session = sessionManager.getSession(sHandle)
     val oHandle = OperationHandle(
-      OperationType.EXECUTE_STATEMENT, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+      OperationType.EXECUTE_STATEMENT,
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
 
     OperationLog.createOperationLogRootDirectory(session)
     val operationLog = OperationLog.createOperationLog(session, oHandle)
@@ -141,7 +143,8 @@ class OperationLogSuite extends KyuubiFunSuite {
     OperationLog.createOperationLogRootDirectory(session)
     assert(logRoot.isFile)
     val oHandle = OperationHandle(
-      OperationType.EXECUTE_STATEMENT, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+      OperationType.EXECUTE_STATEMENT,
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
     val log = OperationLog.createOperationLog(session, oHandle)
     assert(log === null)
     logRoot.delete()
@@ -180,7 +183,8 @@ class OperationLogSuite extends KyuubiFunSuite {
       Map.empty)
     val session = sessionManager.getSession(sHandle)
     val oHandle = OperationHandle(
-      OperationType.EXECUTE_STATEMENT, TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
+      OperationType.EXECUTE_STATEMENT,
+      TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V10)
     OperationLog.createOperationLogRootDirectory(session)
 
     val operationLog = OperationLog.createOperationLog(session, oHandle)

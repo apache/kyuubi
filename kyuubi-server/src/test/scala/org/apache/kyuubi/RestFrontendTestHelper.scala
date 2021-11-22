@@ -52,7 +52,7 @@ trait RestFrontendTestHelper {
   val restFrontendPort: Int = KyuubiConf().get(KyuubiConf.FRONTEND_REST_BIND_PORT)
 
   def withKyuubiRestServer(
-    f: (KyuubiRestFrontendService, String, Int, WebTarget) => Unit): Unit = {
+      f: (KyuubiRestFrontendService, String, Int, WebTarget) => Unit): Unit = {
 
     val server = new NoopRestFrontendServer()
     server.stop()
@@ -72,7 +72,8 @@ trait RestFrontendTestHelper {
     val webTarget = restApiBaseSuite.client.target(baseUri)
 
     try {
-      f(server.frontendServices.head,
+      f(
+        server.frontendServices.head,
         conf.get(KyuubiConf.FRONTEND_REST_BIND_HOST).get,
         restFrontendPort,
         webTarget)

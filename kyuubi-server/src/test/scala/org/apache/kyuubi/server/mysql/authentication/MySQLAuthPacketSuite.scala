@@ -55,9 +55,9 @@ class MySQLAuthPacketSuite extends KyuubiFunSuite with MySQLCodecHelper {
         |""".stripMargin)
     val expected = MySQLHandshakeResponse41Packet(
       1,
-      0x19ffa685,
+      0x19FFA685,
       16777216,
-      0x2d,
+      0x2D,
       "chengpan",
       decodeHex(
         """15 c6 82 8e 53 67 20 3a 44 f3 d1 3e 62 f8 2d 20

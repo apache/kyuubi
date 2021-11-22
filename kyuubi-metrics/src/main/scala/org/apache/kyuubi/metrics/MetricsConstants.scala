@@ -19,23 +19,23 @@ package org.apache.kyuubi.metrics
 
 object MetricsConstants {
 
-  private final val KYUUBI = "kyuubi."
+  final private val KYUUBI = "kyuubi."
 
   final val EXEC_POOL_ALIVE: String = KYUUBI + "exec.pool.threads.alive"
   final val EXEC_POOL_ACTIVE: String = KYUUBI + "exec.pool.threads.active"
 
-  private final val CONN = KYUUBI + "connection."
+  final private val CONN = KYUUBI + "connection."
 
   final val CONN_OPEN: String = CONN + "opened"
   final val CONN_FAIL: String = CONN + "failed"
   final val CONN_TOTAL: String = CONN + "total"
 
-  private final val STATEMENT = KYUUBI + "statement."
+  final private val STATEMENT = KYUUBI + "statement."
   final val STATEMENT_OPEN: String = STATEMENT + "opened"
   final val STATEMENT_FAIL: String = STATEMENT + "failed"
   final val STATEMENT_TOTAL: String = STATEMENT + "total"
 
-  private final val ENGINE = KYUUBI + "engine."
+  final private val ENGINE = KYUUBI + "engine."
   final val ENGINE_FAIL: String = ENGINE + "failed"
   final val ENGINE_TIMEOUT: String = ENGINE + "timeout"
   final val ENGINE_TOTAL: String = ENGINE + "total"

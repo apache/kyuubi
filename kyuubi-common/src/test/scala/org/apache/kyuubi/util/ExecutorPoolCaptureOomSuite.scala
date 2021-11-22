@@ -111,7 +111,7 @@ class ExecutorPoolCaptureOomSuite extends KyuubiFunSuite {
   }
 }
 
-class TestRunnableFuture[T](f: => T, isDone: Boolean = true) extends RunnableFuture[T]{
+class TestRunnableFuture[T](f: => T, isDone: Boolean = true) extends RunnableFuture[T] {
   override def run(): Unit = {}
   override def cancel(mayInterruptIfRunning: Boolean): Boolean = !isDone
   override def isCancelled: Boolean = isDone

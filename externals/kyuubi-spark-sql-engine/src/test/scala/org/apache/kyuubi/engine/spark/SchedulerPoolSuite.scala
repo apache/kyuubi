@@ -30,7 +30,8 @@ class SchedulerPoolSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
   override def withKyuubiConf: Map[String, String] = {
     val poolFile =
       Thread.currentThread().getContextClassLoader.getResource("test-scheduler-pool.xml")
-    Map("spark.scheduler.mode" -> "FAIR",
+    Map(
+      "spark.scheduler.mode" -> "FAIR",
       "spark.scheduler.allocation.file" -> poolFile.getFile,
       "spark.master" -> "local[2]")
   }

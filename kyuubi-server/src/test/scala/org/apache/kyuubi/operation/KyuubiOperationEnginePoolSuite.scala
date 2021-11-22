@@ -34,8 +34,7 @@ class KyuubiOperationEnginePoolSuite extends WithKyuubiServer with HiveJDBCTestH
     withSessionConf()(
       Map(
         KyuubiConf.ENGINE_SHARE_LEVEL.key -> "user",
-        KyuubiConf.ENGINE_POOL_SIZE.key -> "2"
-      ))(Map.empty) {
+        KyuubiConf.ENGINE_POOL_SIZE.key -> "2"))(Map.empty) {
 
       var r1: String = null
       withJdbcStatement() { statement =>
@@ -56,8 +55,7 @@ class KyuubiOperationEnginePoolSuite extends WithKyuubiServer with HiveJDBCTestH
     withSessionConf()(
       Map(
         KyuubiConf.ENGINE_SHARE_LEVEL.key -> "connection",
-        KyuubiConf.ENGINE_POOL_SIZE.key -> "2"
-      ))(Map.empty) {
+        KyuubiConf.ENGINE_POOL_SIZE.key -> "2"))(Map.empty) {
 
       var r1: String = null
       withJdbcStatement() { statement =>

@@ -22,23 +22,25 @@ object RetryPolicies extends Enumeration {
   type RetryPolicy = Value
 
   val
-     /** A retry policy that retries only once */
-     ONE_TIME,
+  /** A retry policy that retries only once */
+  ONE_TIME,
 
-     /** A retry policy that retries a max number of times */
-     N_TIME,
+  /** A retry policy that retries a max number of times */
+  N_TIME,
 
-     /** A retry policy that retries a set number of times with increasing sleep time between
-      *  retries
-      */
-     EXPONENTIAL_BACKOFF,
+  /**
+   * A retry policy that retries a set number of times with increasing sleep time between
+   *  retries
+   */
+  EXPONENTIAL_BACKOFF,
 
-     /** A retry policy that retries a set number of times with an increasing (up to a maximum
-      *  bound) sleep time between retries
-      */
-     BOUNDED_EXPONENTIAL_BACKOFF,
+  /**
+   * A retry policy that retries a set number of times with an increasing (up to a maximum
+   *  bound) sleep time between retries
+   */
+  BOUNDED_EXPONENTIAL_BACKOFF,
 
-     /** A retry policy that retries until a given amount of time elapses */
-     UNTIL_ELAPSED = Value
+  /** A retry policy that retries until a given amount of time elapses */
+  UNTIL_ELAPSED = Value
 
 }

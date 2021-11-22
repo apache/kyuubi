@@ -28,14 +28,13 @@ import org.apache.kyuubi.server.mysql.constant.MySQLErrorCode
 object MySQLNativePassword {
   case class PluginData(
       part1: Array[Byte] = randomBytes(8),
-      part2: Array[Byte] = randomBytes(12)
-  ) {
+      part2: Array[Byte] = randomBytes(12)) {
     lazy val full: Array[Byte] = Array.concat(part1, part2)
   }
 }
 
 class MySQLNativePassword {
-  private final val _pluginData = new PluginData
+  final private val _pluginData = new PluginData
 
   def pluginData: PluginData = _pluginData
 
@@ -43,8 +42,7 @@ class MySQLNativePassword {
       user: String,
       host: String,
       authResp: Array[Byte],
-      database: String
-  ): Option[MySQLErrorCode] = {
+      database: String): Option[MySQLErrorCode] = {
     if (isPasswordRight("kyuubi", authResp)) {
       // if (true) {
       None

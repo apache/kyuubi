@@ -79,8 +79,7 @@ case class AuthenticationResult(
     user: String,
     ip: String,
     database: String,
-    finished: Boolean
-)
+    finished: Boolean)
 
 object AuthenticationResult {
   def finished(username: String, ip: String, database: String): AuthenticationResult =
@@ -94,8 +93,8 @@ object AuthenticationResult {
 }
 
 class MySQLAuthenticationEngine {
-  private final val authenticator = new MySQLNativePassword
-  private final val currentSeqId = new AtomicInteger
+  final private val authenticator = new MySQLNativePassword
+  final private val currentSeqId = new AtomicInteger
   private var connectionPhase = MySQLConnectionPhase.INITIAL_HANDSHAKE
   private var authResponse: Array[Byte] = _
   private var authResult: AuthenticationResult = _
@@ -155,8 +154,7 @@ class MySQLAuthenticationEngine {
   private def createErrorPacket(
       ctx: ChannelHandlerContext,
       errorCode: MySQLErrorCode,
-      seqId: Int
-  ): MySQLErrPacket = errorCode match {
+      seqId: Int): MySQLErrPacket = errorCode match {
     case MySQLErrorCode.ER_DBACCESS_DENIED_ERROR => MySQLErrPacket(
         seqId,
         MySQLErrorCode.ER_DBACCESS_DENIED_ERROR,

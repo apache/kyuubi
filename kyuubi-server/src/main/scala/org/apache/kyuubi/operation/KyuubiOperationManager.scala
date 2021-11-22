@@ -54,8 +54,8 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
       statement: String,
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
-    val operation = new ExecuteStatement(session, statement, runAsync,
-      getQueryTimeout(queryTimeout))
+    val operation =
+      new ExecuteStatement(session, statement, runAsync, getQueryTimeout(queryTimeout))
     addOperation(operation)
   }
 
@@ -118,7 +118,8 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
 
   override def getOperationLogRowSet(
       opHandle: OperationHandle,
-      order: FetchOrientation, maxRows: Int): TRowSet = {
+      order: FetchOrientation,
+      maxRows: Int): TRowSet = {
 
     val operation = getOperation(opHandle).asInstanceOf[KyuubiOperation]
     val operationLog = operation.getOperationLog

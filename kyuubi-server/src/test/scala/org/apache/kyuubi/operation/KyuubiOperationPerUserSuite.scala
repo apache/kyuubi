@@ -72,8 +72,7 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
       val engineId = resultSet.getString(1)
 
       withSessionConf(Map(
-        KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "true"
-      ))(Map.empty)(Map.empty) {
+        KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "true"))(Map.empty)(Map.empty) {
         withJdbcStatement() { stmt =>
           val rs = stmt.executeQuery("SELECT engine_id()")
           assert(rs.next())
@@ -86,8 +85,7 @@ class KyuubiOperationPerUserSuite extends WithKyuubiServer with SparkQueryTests 
   test("ensure two connections share the same engine when specifying subdomain.") {
     withSessionConf()(
       Map(
-        KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key -> "abc"
-      ))(Map.empty) {
+        KyuubiConf.ENGINE_SHARE_LEVEL_SUBDOMAIN.key -> "abc"))(Map.empty) {
 
       var r1: String = null
       var r2: String = null

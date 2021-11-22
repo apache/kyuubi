@@ -95,8 +95,24 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
         val rowSet = metaData.getColumns("", defaultSchema, tableName, columnPattern)
 
         import java.sql.Types._
-        val expectedJavaTypes = Seq(BOOLEAN, TINYINT, SMALLINT, INTEGER, BIGINT, FLOAT, DOUBLE,
-          DECIMAL, DECIMAL, VARCHAR, ARRAY, ARRAY, JAVA_OBJECT, DATE, TIMESTAMP, STRUCT, BINARY,
+        val expectedJavaTypes = Seq(
+          BOOLEAN,
+          TINYINT,
+          SMALLINT,
+          INTEGER,
+          BIGINT,
+          FLOAT,
+          DOUBLE,
+          DECIMAL,
+          DECIMAL,
+          VARCHAR,
+          ARRAY,
+          ARRAY,
+          JAVA_OBJECT,
+          DATE,
+          TIMESTAMP,
+          STRUCT,
+          BINARY,
           STRUCT)
 
         var pos = 0
@@ -408,7 +424,8 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       assert(metaData.getDriverVersion === KYUUBI_VERSION)
       assert(metaData.getDatabaseMajorVersion === Utils.majorVersion(KYUUBI_VERSION))
       assert(metaData.getDatabaseMinorVersion === Utils.minorVersion(KYUUBI_VERSION))
-      assert(metaData.getIdentifierQuoteString === " ",
+      assert(
+        metaData.getIdentifierQuoteString === " ",
         "This method returns a space \" \" if identifier quoting is not supported")
       assert(metaData.getNumericFunctions === "")
       assert(metaData.getStringFunctions === "")
@@ -493,8 +510,8 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
 
   test("basic open | execute | close") {
     withThriftClient { client =>
-      val operationManager = engine.backendService.sessionManager.
-        operationManager.asInstanceOf[SparkSQLOperationManager]
+      val operationManager =
+        engine.backendService.sessionManager.operationManager.asInstanceOf[SparkSQLOperationManager]
       assert(operationManager.getOpenSparkSessionCount === 0)
 
       val req = new TOpenSessionReq()
@@ -584,7 +601,8 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       req.setUsername("kentyao")
       req.setPassword("anonymous")
       val queue = "spark.yarn.queue"
-      val conf = Map("use:database" -> "default",
+      val conf = Map(
+        "use:database" -> "default",
         "spark.sql.globalTempDatabase" -> "temp",
         queue -> "new",
         s"set:hiveconf:$queue" -> "newnew",
@@ -826,11 +844,11 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
     val conf = spark.sparkContext.hadoopConfiguration
     val origin = conf.get("hive.metastore.uris", "")
     conf.set("hive.metastore.uris", uris)
-    try func.apply(uris) finally {
+    try func.apply(uris)
+    finally {
       conf.set("hive.metastore.uris", origin)
     }
   }
-
 
   private def createCredentials(
       issueDate: Long,

@@ -45,7 +45,7 @@ trait HiveMetadataTests extends SparkMetadataTests {
       val metaData = statement.getConnection.getMetaData
       val rs1 = metaData.getTables(null, null, null, null)
       var i = 0
-      while(rs1.next()) {
+      while (rs1.next()) {
         val catalogName = rs1.getString(TABLE_CAT)
         assert(catalogName === "spark_catalog" || catalogName === null)
         assert(rs1.getString(TABLE_SCHEM) === schemas(i))
@@ -58,7 +58,7 @@ trait HiveMetadataTests extends SparkMetadataTests {
 
       val rs2 = metaData.getTables(null, null, null, Array("VIEW"))
       i = 2
-      while(rs2.next()) {
+      while (rs2.next()) {
         assert(rs2.getString(TABLE_NAME) == tables(i))
         i += 1
       }
@@ -66,7 +66,7 @@ trait HiveMetadataTests extends SparkMetadataTests {
 
       val rs3 = metaData.getTables(null, "*", "*", Array("VIEW"))
       i = 2
-      while(rs3.next()) {
+      while (rs3.next()) {
         assert(rs3.getString(TABLE_NAME) == tables(i))
         i += 1
       }
@@ -80,7 +80,7 @@ trait HiveMetadataTests extends SparkMetadataTests {
 
       val rs6 = metaData.getTables(null, null, "table%", Array("TABLE"))
       i = 0
-      while(rs6.next()) {
+      while (rs6.next()) {
         assert(rs6.getString(TABLE_NAME) == tables(i))
         i += 1
       }
@@ -88,7 +88,7 @@ trait HiveMetadataTests extends SparkMetadataTests {
 
       val rs7 = metaData.getTables(null, "default", "%", Array("VIEW"))
       i = 2
-      while(rs7.next()) {
+      while (rs7.next()) {
         assert(rs7.getString(TABLE_NAME) == view_test)
       }
 

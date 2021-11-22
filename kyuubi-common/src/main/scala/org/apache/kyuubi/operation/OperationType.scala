@@ -22,16 +22,8 @@ import org.apache.hive.service.rpc.thrift.TOperationType
 object OperationType extends Enumeration {
 
   type OperationType = Value
-  val UNKNOWN_OPERATION,
-      EXECUTE_STATEMENT,
-      GET_TYPE_INFO,
-      GET_CATALOGS,
-      GET_SCHEMAS,
-      GET_TABLES,
-      GET_TABLE_TYPES,
-      GET_COLUMNS,
-      GET_FUNCTIONS,
-      LAUNCH_ENGINE = Value
+  val UNKNOWN_OPERATION, EXECUTE_STATEMENT, GET_TYPE_INFO, GET_CATALOGS, GET_SCHEMAS, GET_TABLES,
+      GET_TABLE_TYPES, GET_COLUMNS, GET_FUNCTIONS, LAUNCH_ENGINE = Value
 
   def getOperationType(from: TOperationType): OperationType = {
     from match {

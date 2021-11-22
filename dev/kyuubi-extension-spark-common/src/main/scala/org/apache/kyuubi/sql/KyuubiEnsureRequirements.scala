@@ -65,7 +65,8 @@ object KyuubiEnsureRequirements extends Rule[SparkPlan] {
         val numPartitionsSet = childrenIndexes.flatMap {
           index => requiredChildDistributions(index).requiredNumPartitions
         }.toSet
-        assert(numPartitionsSet.size <= 1,
+        assert(
+          numPartitionsSet.size <= 1,
           s"$operator have incompatible requirements of the number of partitions for its children")
         numPartitionsSet.headOption
       }
@@ -75,22 +76,23 @@ object KyuubiEnsureRequirements extends Rule[SparkPlan] {
       // 1. We should avoid shuffling these children.
       // 2. We should have a reasonable parallelism.
       val nonShuffleChildrenNumPartitions =
-      childrenIndexes.map(children).filterNot(_.isInstanceOf[ShuffleExchangeExec])
-        .map(_.outputPartitioning.numPartitions)
-      val expectedChildrenNumPartitions = if (nonShuffleChildrenNumPartitions.nonEmpty) {
-        if (nonShuffleChildrenNumPartitions.length == childrenIndexes.length) {
-          // Here we pick the max number of partitions among these non-shuffle children.
-          nonShuffleChildrenNumPartitions.max
+        childrenIndexes.map(children).filterNot(_.isInstanceOf[ShuffleExchangeExec])
+          .map(_.outputPartitioning.numPartitions)
+      val expectedChildrenNumPartitions =
+        if (nonShuffleChildrenNumPartitions.nonEmpty) {
+          if (nonShuffleChildrenNumPartitions.length == childrenIndexes.length) {
+            // Here we pick the max number of partitions among these non-shuffle children.
+            nonShuffleChildrenNumPartitions.max
+          } else {
+            // Here we pick the max number of partitions among these non-shuffle children as the
+            // expected number of shuffle partitions. However, if it's smaller than
+            // `conf.numShufflePartitions`, we pick `conf.numShufflePartitions` as the
+            // expected number of shuffle partitions.
+            math.max(nonShuffleChildrenNumPartitions.max, conf.defaultNumShufflePartitions)
+          }
         } else {
-          // Here we pick the max number of partitions among these non-shuffle children as the
-          // expected number of shuffle partitions. However, if it's smaller than
-          // `conf.numShufflePartitions`, we pick `conf.numShufflePartitions` as the
-          // expected number of shuffle partitions.
-          math.max(nonShuffleChildrenNumPartitions.max, conf.defaultNumShufflePartitions)
+          childrenNumPartitions.max
         }
-      } else {
-        childrenNumPartitions.max
-      }
 
       val targetNumPartitions = requiredNumPartitions.getOrElse(expectedChildrenNumPartitions)
 

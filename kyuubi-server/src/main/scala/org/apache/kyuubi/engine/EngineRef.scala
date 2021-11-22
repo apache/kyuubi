@@ -178,7 +178,8 @@ private[kyuubi] class EngineRef(
       case SPARK_SQL =>
         conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
         // tag is a seq type with comma-separated
-        conf.set(SparkProcessBuilder.TAG_KEY,
+        conf.set(
+          SparkProcessBuilder.TAG_KEY,
           conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") + "KYUUBI")
         new SparkProcessBuilder(appUser, conf, extraEngineLog)
       case _ => throw new UnsupportedOperationException(s"Unsupported engine type: ${engineType}")

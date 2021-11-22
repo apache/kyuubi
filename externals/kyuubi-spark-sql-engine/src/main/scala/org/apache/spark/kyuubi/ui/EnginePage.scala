@@ -40,16 +40,16 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
   override def render(request: HttpServletRequest): Seq[Node] = {
     val content =
       generateBasicStats() ++
-      <br/> ++
-      stop(request) ++
-      <br/> ++
-      <h4>
+        <br/> ++
+        stop(request) ++
+        <br/> ++
+        <h4>
         {parent.engine.backendService.sessionManager.getOpenSessionCount} session(s) are online,
         running {parent.engine.backendService.sessionManager.operationManager.getOperationCount}
         operations
       </h4> ++
-      generateSessionStatsTable(request) ++
-      generateStatementStatsTable(request)
+        generateSessionStatsTable(request) ++
+        generateStatementStatsTable(request)
     UIUtils.headerSparkPage(request, parent.name, content, parent)
   }
 
@@ -102,33 +102,34 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
 
     val numStatement = store.getStatementList.size
 
-    val table = if (numStatement > 0) {
+    val table =
+      if (numStatement > 0) {
 
-      val sqlTableTag = "sqlstat"
+        val sqlTableTag = "sqlstat"
 
-      val sqlTablePage =
-        Option(request.getParameter(s"$sqlTableTag.page")).map(_.toInt).getOrElse(1)
+        val sqlTablePage =
+          Option(request.getParameter(s"$sqlTableTag.page")).map(_.toInt).getOrElse(1)
 
-      try {
-        Some(new StatementStatsPagedTable(
-          request,
-          parent,
-          store.getStatementList,
-          "kyuubi",
-          UIUtils.prependBaseUri(request, parent.basePath),
-          sqlTableTag).table(sqlTablePage))
-      } catch {
-        case e@(_: IllegalArgumentException | _: IndexOutOfBoundsException) =>
-          Some(<div class="alert alert-error">
+        try {
+          Some(new StatementStatsPagedTable(
+            request,
+            parent,
+            store.getStatementList,
+            "kyuubi",
+            UIUtils.prependBaseUri(request, parent.basePath),
+            sqlTableTag).table(sqlTablePage))
+        } catch {
+          case e @ (_: IllegalArgumentException | _: IndexOutOfBoundsException) =>
+            Some(<div class="alert alert-error">
             <p>Error while rendering job table:</p>
             <pre>
               {Utils.stringifyException(e)}
             </pre>
           </div>)
+        }
+      } else {
+        None
       }
-    } else {
-      None
-    }
     val content =
       <span id="sqlstat" class="collapse-aggregated-sqlstat collapse-table"
             onClick="collapseTable('collapse-aggregated-sqlstat',
@@ -147,34 +148,34 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
   /** Generate stats of sessions for the engine */
   private def generateSessionStatsTable(request: HttpServletRequest): Seq[Node] = {
     val numSessions = store.getSessionList.size
-    val table = if (numSessions > 0) {
+    val table =
+      if (numSessions > 0) {
 
-      val sessionTableTag = "sessionstat"
+        val sessionTableTag = "sessionstat"
 
-      val sessionTablePage =
-        Option(request.getParameter(s"$sessionTableTag.page")).map(_.toInt).getOrElse(1)
+        val sessionTablePage =
+          Option(request.getParameter(s"$sessionTableTag.page")).map(_.toInt).getOrElse(1)
 
-      try {
-        Some(new SessionStatsPagedTable(
-          request,
-          parent,
-          store.getSessionList,
-          "kyuubi",
-          UIUtils.prependBaseUri(request, parent.basePath),
-          sessionTableTag
-        ).table(sessionTablePage))
-      } catch {
-        case e@(_: IllegalArgumentException | _: IndexOutOfBoundsException) =>
-          Some(<div class="alert alert-error">
+        try {
+          Some(new SessionStatsPagedTable(
+            request,
+            parent,
+            store.getSessionList,
+            "kyuubi",
+            UIUtils.prependBaseUri(request, parent.basePath),
+            sessionTableTag).table(sessionTablePage))
+        } catch {
+          case e @ (_: IllegalArgumentException | _: IndexOutOfBoundsException) =>
+            Some(<div class="alert alert-error">
             <p>Error while rendering job table:</p>
             <pre>
               {Utils.stringifyException(e)}
             </pre>
           </div>)
+        }
+      } else {
+        None
       }
-    } else {
-      None
-    }
 
     val content =
       <span id="sessionstat" class="collapse-aggregated-sessionstat collapse-table"
@@ -243,13 +244,21 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
           ("Duration", true, None),
           ("Total Statements", true, None))
 
-      headerStatRow(sessionTableHeadersAndTooltips, desc, pageSize, sortColumn,
-        parameterPath, sessionStatsTableTag, sessionStatsTableTag)
+      headerStatRow(
+        sessionTableHeadersAndTooltips,
+        desc,
+        pageSize,
+        sortColumn,
+        parameterPath,
+        sessionStatsTableTag,
+        sessionStatsTableTag)
     }
 
     override def row(session: SessionEvent): Seq[Node] = {
       val sessionLink = "%s/%s/session/?id=%s".format(
-        UIUtils.prependBaseUri(request, parent.basePath), parent.prefix, session.sessionId)
+        UIUtils.prependBaseUri(request, parent.basePath),
+        parent.prefix,
+        session.sessionId)
       <tr>
         <td> {session.username} </td>
         <td> {session.ip} </td>
@@ -316,8 +325,14 @@ private class StatementStatsPagedTable(
         ("State", true, None),
         ("Query Execution", true, None))
 
-    headerStatRow(sqlTableHeadersAndTooltips, desc, pageSize, sortColumn, parameterPath,
-      sqlStatsTableTag, sqlStatsTableTag)
+    headerStatRow(
+      sqlTableHeadersAndTooltips,
+      desc,
+      pageSize,
+      sortColumn,
+      parameterPath,
+      sqlStatsTableTag,
+      sqlStatsTableTag)
   }
 
   override def row(sparkStatementEvent: SparkStatementEvent): Seq[Node] = {
@@ -442,9 +457,9 @@ private object TableSourceUtil {
    * Returns parameter of this table.
    */
   def getRequestTableParameters(
-     request: HttpServletRequest,
-     tableTag: String,
-     defaultSortColumn: String): (String, Boolean, Int) = {
+      request: HttpServletRequest,
+      tableTag: String,
+      defaultSortColumn: String): (String, Boolean, Int) = {
     val parameterSortColumn = request.getParameter(s"$tableTag.sort")
     val parameterSortDesc = request.getParameter(s"$tableTag.desc")
     val parameterPageSize = request.getParameter(s"$tableTag.pageSize")
@@ -452,8 +467,7 @@ private object TableSourceUtil {
       UIUtils.decodeURLParameter(sortColumn)
     }.getOrElse(defaultSortColumn)
     val desc = Option(parameterSortDesc).map(_.toBoolean).getOrElse(
-      sortColumn == defaultSortColumn
-    )
+      sortColumn == defaultSortColumn)
     val pageSize = Option(parameterPageSize).map(_.toInt).getOrElse(100)
 
     (sortColumn, desc, pageSize)
@@ -470,13 +484,13 @@ private object TableSourceUtil {
   }
 
   def headerStatRow(
-     headerInfo: Seq[(String, Boolean, Option[String])],
-     desc: Boolean,
-     pageSize: Int,
-     sortColumn: String,
-     parameterPath: String,
-     tableTag: String,
-     headerId: String): Seq[Node] = {
+      headerInfo: Seq[(String, Boolean, Option[String])],
+      desc: Boolean,
+      pageSize: Int,
+      sortColumn: String,
+      parameterPath: String,
+      tableTag: String,
+      headerId: String): Seq[Node] = {
     val row: Seq[Node] = {
       headerInfo.map { case (header, sortable, tooltip) =>
         if (header == sortColumn) {

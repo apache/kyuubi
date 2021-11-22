@@ -55,8 +55,8 @@ class ZorderCoreBenchmark extends KyuubiSparkSQLExtensionTest with KyuubiBenchma
   }
 
   private def interleaveMultiByteArrayBenchmark(): Unit = {
-    val benchmark = new Benchmark(
-      s"$numRows rows zorder core benchmark", numRows, output = output)
+    val benchmark =
+      new Benchmark(s"$numRows rows zorder core benchmark", numRows, output = output)
     benchmark.addCase("2 int columns benchmark", 3) { _ =>
       randomInt(2).foreach(ZorderBytesUtils.interleaveBits)
     }
@@ -88,8 +88,8 @@ class ZorderCoreBenchmark extends KyuubiSparkSQLExtensionTest with KyuubiBenchma
     val iterations = 10 * 1000 * 1000
 
     val b2 = Array('a'.toByte, 'b'.toByte)
-    val benchmark = new Benchmark(
-      s"$iterations iterations paddingTo8Byte benchmark", iterations, output = output)
+    val benchmark =
+      new Benchmark(s"$iterations iterations paddingTo8Byte benchmark", iterations, output = output)
     benchmark.addCase("2 length benchmark", 3) { _ =>
       (1 to iterations).foreach(_ => ZorderBytesUtils.paddingTo8Byte(b2))
     }

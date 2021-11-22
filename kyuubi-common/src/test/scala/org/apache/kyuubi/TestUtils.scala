@@ -29,7 +29,8 @@ object TestUtils {
   def verifyOutput(markdown: Path, newOutput: ArrayBuffer[String], agent: String): Unit = {
     if (System.getenv("KYUUBI_UPDATE") == "1") {
       val writer = Files.newBufferedWriter(
-        markdown, StandardCharsets.UTF_8,
+        markdown,
+        StandardCharsets.UTF_8,
         StandardOpenOption.TRUNCATE_EXISTING,
         StandardOpenOption.CREATE)
       try {

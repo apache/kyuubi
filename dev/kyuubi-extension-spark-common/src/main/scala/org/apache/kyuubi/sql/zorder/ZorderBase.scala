@@ -77,13 +77,14 @@ abstract class ZorderBase extends Expression {
            |}
            |""".stripMargin
     }
-    ev.copy(code =
-      code"""
-         |byte[] ${ev.value} = null;
-         |Object[] $values = new Object[${evals.length}];
-         |${inputs.mkString("\n")}
-         |${ev.value} = $util.interleaveBits($values);
-         |""".stripMargin,
+    ev.copy(
+      code =
+        code"""
+              |byte[] ${ev.value} = null;
+              |Object[] $values = new Object[${evals.length}];
+              |${inputs.mkString("\n")}
+              |${ev.value} = $util.interleaveBits($values);
+              |""".stripMargin,
       isNull = FalseLiteral)
   }
 }

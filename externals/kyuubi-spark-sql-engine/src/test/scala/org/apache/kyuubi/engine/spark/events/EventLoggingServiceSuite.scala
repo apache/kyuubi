@@ -41,23 +41,28 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with HiveJDBCTestHelpe
     KyuubiConf.ENGINE_EVENT_LOGGERS.key -> s"$JSON,$SPARK",
     KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH.key -> logRoot,
     "spark.eventLog.enabled" -> "true",
-    "spark.eventLog.dir" -> logRoot
-  )
+    "spark.eventLog.dir" -> logRoot)
 
   override protected def jdbcUrl: String = getJdbcUrl
 
   test("round-trip for event logging service") {
     val engineEventPath = Paths.get(
-      logRoot, "engine", s"day=$currentDate", KyuubiSparkUtil.engineId + ".json")
+      logRoot,
+      "engine",
+      s"day=$currentDate",
+      KyuubiSparkUtil.engineId + ".json")
     val sessionEventPath = Paths.get(
-      logRoot, "session", s"day=$currentDate", KyuubiSparkUtil.engineId + ".json")
+      logRoot,
+      "session",
+      s"day=$currentDate",
+      KyuubiSparkUtil.engineId + ".json")
 
     val fileSystem: FileSystem = FileSystem.get(new Configuration())
     val fs: FSDataInputStream = fileSystem.open(new Path(engineEventPath.toString))
     val engineEventReader = new BufferedReader(new InputStreamReader(fs))
 
-    val readEvent = JsonProtocol.jsonToEvent(engineEventReader.readLine(),
-      classOf[KyuubiSparkEvent])
+    val readEvent =
+      JsonProtocol.jsonToEvent(engineEventReader.readLine(), classOf[KyuubiSparkEvent])
     assert(readEvent.isInstanceOf[KyuubiSparkEvent])
 
     withJdbcStatement() { statement =>
@@ -83,7 +88,8 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with HiveJDBCTestHelpe
         assert(rs3.getString("Event") === classOf[SessionEvent].getCanonicalName)
         assert(rs3.getString("username") === Utils.currentUser)
         assert(rs3.getString("engineId") === spark.sparkContext.applicationId)
-        assert(rs3.getInt("totalOperations") === 0,
+        assert(
+          rs3.getInt("totalOperations") === 0,
           "update num of operations after session close as statement event will track these")
       }
     }
@@ -99,10 +105,12 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with HiveJDBCTestHelpe
 
   test("statementEvent: generate, dump and query") {
     val statementEventPath = Paths.get(
-      logRoot, "spark_statement", s"day=$currentDate", spark.sparkContext.applicationId + ".json")
+      logRoot,
+      "spark_statement",
+      s"day=$currentDate",
+      spark.sparkContext.applicationId + ".json")
     val sql = "select timestamp'2021-09-01';"
     withSessionHandle { (client, handle) =>
-
       val table = statementEventPath.getParent
       val req = new TExecuteStatementReq()
       req.setSessionHandle(handle)

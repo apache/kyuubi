@@ -42,7 +42,7 @@ case class EngineSessionPage(parent: EngineTab)
       require(sessionStat != null, "Invalid sessionID[" + parameterId + "]")
 
       generateBasicStats() ++
-          <br/> ++
+        <br/> ++
         <h4>
           User {sessionStat.username},
           IP {sessionStat.ip},
@@ -78,34 +78,34 @@ case class EngineSessionPage(parent: EngineTab)
     val executionList = store.getStatementList
       .filter(_.sessionId == sessionID)
     val numStatement = executionList.size
-    val table = if (numStatement > 0) {
+    val table =
+      if (numStatement > 0) {
 
-      val sqlTableTag = "sqlsessionstat"
+        val sqlTableTag = "sqlsessionstat"
 
-      val sqlTablePage =
-        Option(request.getParameter(s"$sqlTableTag.page")).map(_.toInt).getOrElse(1)
+        val sqlTablePage =
+          Option(request.getParameter(s"$sqlTableTag.page")).map(_.toInt).getOrElse(1)
 
-      try {
-        Some(new StatementStatsPagedTable(
-          request,
-          parent,
-          executionList,
-          "kyuubi/session",
-          UIUtils.prependBaseUri(request, parent.basePath),
-          sqlTableTag
-        ).table(sqlTablePage))
-      } catch {
-        case e@(_: IllegalArgumentException | _: IndexOutOfBoundsException) =>
-          Some(<div class="alert alert-error">
+        try {
+          Some(new StatementStatsPagedTable(
+            request,
+            parent,
+            executionList,
+            "kyuubi/session",
+            UIUtils.prependBaseUri(request, parent.basePath),
+            sqlTableTag).table(sqlTablePage))
+        } catch {
+          case e @ (_: IllegalArgumentException | _: IndexOutOfBoundsException) =>
+            Some(<div class="alert alert-error">
             <p>Error while rendering job table:</p>
             <pre>
               {Utils.exceptionString(e)}
             </pre>
           </div>)
+        }
+      } else {
+        None
       }
-    } else {
-      None
-    }
     val content =
       <span id="sqlsessionstat" class="collapse-aggregated-sqlsessionstat collapse-table"
             onClick="collapseTable('collapse-aggregated-sqlsessionstat',

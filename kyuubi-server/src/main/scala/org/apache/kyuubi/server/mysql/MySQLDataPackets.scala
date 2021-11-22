@@ -30,8 +30,7 @@ import org.apache.kyuubi.server.mysql.constant.{MySQLDataType, MySQLServerDefine
 
 case class MySQLFieldCountPacket(
     sequenceId: Int,
-    columnCount: Int
-) extends MySQLPacket with SupportsEncode {
+    columnCount: Int) extends MySQLPacket with SupportsEncode {
 
   override def encode(payload: ByteBuf): Unit = {
     payload.writeIntLenenc(columnCount)
@@ -44,10 +43,9 @@ case class MySQLColumnDefinition41Packet(
     name: String,
     columnLength: Int,
     columnType: MySQLDataType,
-    decimals: Int
-) extends MySQLPacket with SupportsEncode {
+    decimals: Int) extends MySQLPacket with SupportsEncode {
 
-  def nextLength: Int = 0x0c
+  def nextLength: Int = 0x0C
 
   def characterSet: Int = MySQLServerDefines.CHARSET
 
@@ -86,10 +84,9 @@ case class MySQLColumnDefinition41Packet(
 
 case class MySQLTextResultSetRowPacket(
     sequenceId: Int,
-    row: Seq[Any]
-) extends MySQLPacket with SupportsEncode {
+    row: Seq[Any]) extends MySQLPacket with SupportsEncode {
 
-  private def nullVal = 0xfb
+  private def nullVal = 0xFB
 
   override def encode(payload: ByteBuf): Unit = {
     row.foreach {

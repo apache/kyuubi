@@ -74,7 +74,7 @@ import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
  * </ol>
  */
 class HadoopCredentialsManager private (name: String) extends AbstractService(name)
-    with Logging {
+  with Logging {
 
   def this() = this(classOf[HadoopCredentialsManager].getSimpleName)
 

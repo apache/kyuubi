@@ -46,12 +46,20 @@ class GetFunctions(
     new StructType()
       .add(FUNCTION_CAT, "string", nullable = true, "Function catalog (may be null)")
       .add(FUNCTION_SCHEM, "string", nullable = true, "Function schema (may be null)")
-      .add(FUNCTION_NAME, "string", nullable = true, "Function name. This is the name used to" +
-        " invoke the function")
+      .add(
+        FUNCTION_NAME,
+        "string",
+        nullable = true,
+        "Function name. This is the name used to" +
+          " invoke the function")
       .add(REMARKS, "string", nullable = true, "Explanatory comment on the function")
       .add(FUNCTION_TYPE, "int", nullable = true, "Kind of function.")
-      .add(SPECIFIC_NAME, "string", nullable = true, "The name which uniquely identifies this" +
-        " function within its schema")
+      .add(
+        SPECIFIC_NAME,
+        "string",
+        nullable = true,
+        "The name which uniquely identifies this" +
+          " function within its schema")
   }
 
   override protected def runInternal(): Unit = {

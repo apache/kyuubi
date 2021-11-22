@@ -28,8 +28,7 @@ import org.apache.kyuubi.server.mysql.constant._
 case class MySQLOKPacket(
     sequenceId: Int = 0,
     affectedRows: Long = 0L,
-    lastInsertId: Long = 0L
-) extends MySQLPacket with SupportsEncode {
+    lastInsertId: Long = 0L) extends MySQLPacket with SupportsEncode {
 
   def header: Int = 0x00
 
@@ -70,10 +69,9 @@ object MySQLErrPacket {
 case class MySQLErrPacket(
     sequenceId: Int,
     sqlErrorCode: MySQLErrorCode,
-    errMsgArgs: String*
-) extends MySQLPacket with SupportsEncode {
+    errMsgArgs: String*) extends MySQLPacket with SupportsEncode {
 
-  def header: Int = 0xff
+  def header: Int = 0xFF
 
   def sqlStateMarker: String = "#"
 
@@ -93,10 +91,9 @@ case class MySQLErrPacket(
 }
 
 case class MySQLEofPacket(
-    sequenceId: Int = 0
-) extends MySQLPacket with SupportsEncode {
+    sequenceId: Int = 0) extends MySQLPacket with SupportsEncode {
 
-  def header: Int = 0xfe
+  def header: Int = 0xFE
 
   def warnings: Int = 0
 
