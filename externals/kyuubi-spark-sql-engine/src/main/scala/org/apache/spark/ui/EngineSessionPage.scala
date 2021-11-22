@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.kyuubi.ui
+package org.apache.spark.ui
 
 import java.util.Date
 import javax.servlet.http.HttpServletRequest
@@ -23,7 +23,6 @@ import javax.servlet.http.HttpServletRequest
 import scala.xml.Node
 
 import org.apache.spark.internal.Logging
-import org.apache.spark.ui._
 import org.apache.spark.ui.UIUtils._
 import org.apache.spark.util.Utils
 

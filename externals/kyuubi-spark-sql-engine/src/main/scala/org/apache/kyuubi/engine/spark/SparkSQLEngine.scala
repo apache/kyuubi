@@ -22,9 +22,8 @@ import java.util.concurrent.CountDownLatch
 
 import scala.util.control.NonFatal
 
-import org.apache.spark.SparkConf
+import org.apache.spark.{ui, SparkConf}
 import org.apache.spark.kyuubi.SparkSQLEngineListener
-import org.apache.spark.kyuubi.ui.EngineTab
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{KyuubiException, Logging}
@@ -134,7 +133,7 @@ object SparkSQLEngine extends Logging {
       }
       try {
         engine.start()
-        EngineTab(engine)
+        ui.EngineTab(engine)
         val event = EngineEvent(engine)
         info(event)
         EventLoggingService.onEvent(event)

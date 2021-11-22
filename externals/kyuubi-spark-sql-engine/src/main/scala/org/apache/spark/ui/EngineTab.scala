@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.kyuubi.ui
+package org.apache.spark.ui
 
 import javax.servlet.http.HttpServletRequest
 
