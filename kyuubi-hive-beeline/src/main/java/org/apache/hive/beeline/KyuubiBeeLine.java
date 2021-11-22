@@ -35,9 +35,9 @@ public class KyuubiBeeLine extends BeeLine {
   public KyuubiBeeLine(boolean isBeeLine) {
     super(isBeeLine);
     try {
-      Field commandsFiled = BeeLine.class.getDeclaredField("commands");
-      commandsFiled.setAccessible(true);
-      commandsFiled.set(this, commands);
+      Field commandsField = BeeLine.class.getDeclaredField("commands");
+      commandsField.setAccessible(true);
+      commandsField.set(this, commands);
     } catch (Throwable t) {
       throw new ExceptionInInitializerError("Failed to inject kyuubi commands");
     }
