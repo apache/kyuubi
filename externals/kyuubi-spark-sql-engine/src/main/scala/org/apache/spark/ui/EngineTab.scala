@@ -21,8 +21,6 @@ import javax.servlet.http.HttpServletRequest
 
 import scala.util.control.NonFatal
 
-import org.apache.spark.ui.SparkUITab
-
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
