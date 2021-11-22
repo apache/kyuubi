@@ -261,7 +261,7 @@ object KyuubiConf {
 
   object FrontendProtocols extends Enumeration {
     type FrontendProtocol = Value
-    val THRIFT_BINARY, REST = Value
+    val THRIFT_BINARY, REST, MYSQL = Value
   }
 
   val FRONTEND_PROTOCOLS: ConfigEntry[Seq[String]] =
@@ -270,6 +270,7 @@ object KyuubiConf {
         "<ul>" +
         " <li>THRIFT_BINARY - HiveServer2 compatible thrift binary protocol.</li>" +
         " <li>REST - Kyuubi defined REST API(experimental).</li> " +
+        " <li>MYSQL - MySQL compatible text protocol(experimental).</li> " +
         "</ul>")
       .version("1.4.0")
       .stringConf
