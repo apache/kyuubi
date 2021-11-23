@@ -193,12 +193,14 @@ cp -r "$KYUUBI_HOME/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/" "$DISTDIR
 cp "$KYUUBI_HOME"/kyuubi-hive-beeline/target/*.jar "$DISTDIR/beeline-jars/"
 
 # Share the jars between server and beeline to reduce binary size
+cd $DISTDIR/beeline-jars
 for jar in $(ls "$DISTDIR/jars/"); do
   if [[ -f "$DISTDIR/beeline-jars/$jar" ]]; then
     rm "$DISTDIR/beeline-jars/$jar"
-    ln -sn "$DISTDIR/jars/$jar" "$DISTDIR/beeline-jars/$jar"
+    ln -sn "../jars/$jar" "$DISTDIR/beeline-jars/$jar"
   fi
 done
+cd -
 
 # Copy spark engines
 cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/spark"
