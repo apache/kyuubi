@@ -94,7 +94,7 @@ private[kyuubi] class ServiceControlCli extends Logging {
           currentServerNodes.foreach { sn =>
             info(s"Exposing server instance:${sn.instance} with version:${sn.version}" +
               s" from $fromNamespace to $toNamespace")
-            val newNode = createServiceNode(
+            val newNodePath = createAndGetServiceNode(
               kyuubiConf,
               zc,
               args.cliArgs.namespace,
@@ -103,7 +103,7 @@ private[kyuubi] class ServiceControlCli extends Logging {
               true)
             exposedServiceNodes += sn.copy(
               namespace = toNamespace,
-              nodeName = newNode.getActualPath.split("/").last)
+              nodeName = newNodePath.split("/").last)
           }
         }
 
