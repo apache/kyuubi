@@ -60,9 +60,14 @@ trait WithFlinkSQLEngine extends KyuubiFunSuite {
     engineEnv = FlinkSQLEngine.createEngineEnvironment(
       EngineOptionsParser.parseEngineOptions(Array()))
     val dependencies = EngineEnvironmentUtil.discoverDependencies(
-      new util.ArrayList[URL](), new util.ArrayList[URL]())
-    val engineContext = new EngineContext(engineEnv, dependencies, flinkConfig,
-      new DefaultCLI, new DefaultClusterClientServiceLoader)
+      new util.ArrayList[URL](),
+      new util.ArrayList[URL]())
+    val engineContext = new EngineContext(
+      engineEnv,
+      dependencies,
+      flinkConfig,
+      new DefaultCLI,
+      new DefaultClusterClientServiceLoader)
     FlinkSQLEngine.startEngine(engineContext)
     engine = FlinkSQLEngine.currentEngine.get
     connectionUrl = engine.frontendServices.head.connectionUrl

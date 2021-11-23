@@ -39,7 +39,7 @@ class FlinkEngineProcessBuilder(
     override val proxyUser: String,
     override val conf: KyuubiConf,
     val extraEngineLog: Option[OperationLog] = None)
-  extends ProcBuilder with Logging{
+  extends ProcBuilder with Logging {
 
   override protected def executable: String = {
     val flinkEngineHomeOpt = env.get("FLINK_ENGINE_HOME").orElse {
@@ -54,13 +54,14 @@ class FlinkEngineProcessBuilder(
           .toFile
           .listFiles(new FilenameFilter {
             override def accept(dir: File, name: String): Boolean = {
-              dir.isDirectory && name.endsWith("-binary")}})
-      )
+              dir.isDirectory && name.endsWith("-binary")
+            }
+          }))
         .flatMap(_.headOption)
         .map(_.getAbsolutePath)
     }
 
-    flinkEngineHomeOpt.map{ dir =>
+    flinkEngineHomeOpt.map { dir =>
       Paths.get(dir, "bin", FLINK_ENGINE_BINARY_FILE).toAbsolutePath.toFile.getCanonicalPath
     } getOrElse {
       throw KyuubiSQLException("FLINK_ENGINE_HOME is not set! " +
@@ -88,8 +89,8 @@ class FlinkEngineProcessBuilder(
       // 3. get the main resource from dev environment
       Option(Paths.get("externals", module, "target", jarName))
         .filter(Files.exists(_)).orElse {
-        Some(Paths.get("..", "externals", module, "target", jarName))
-      }.map(_.toAbsolutePath.toFile.getCanonicalPath)
+          Some(Paths.get("..", "externals", module, "target", jarName))
+        }.map(_.toAbsolutePath.toFile.getCanonicalPath)
     }
   }
 
@@ -152,7 +153,9 @@ class FlinkEngineProcessBuilder(
           .toFile
           .listFiles(new FilenameFilter {
             override def accept(dir: File, name: String): Boolean = {
-              dir.isDirectory && name.startsWith("flink-")}}))
+              dir.isDirectory && name.startsWith("flink-")
+            }
+          }))
         .flatMap(_.headOption)
         .map(_.getAbsolutePath)
     }
@@ -198,5 +201,5 @@ class FlinkEngineProcessBuilder(
 
 object FlinkEngineProcessBuilder {
   // Get the appropriate spark-submit file
-  private final val FLINK_ENGINE_BINARY_FILE = "prepare.sh"
+  final private val FLINK_ENGINE_BINARY_FILE = "prepare.sh"
 }

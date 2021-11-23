@@ -35,7 +35,8 @@ class GetCatalogs(sessionContext: SessionContext, session: Session)
       val catalogs: java.util.List[String] =
         FlinkCatalogShim().getCatalogs(tableEnv).toList.asJava
       resultSet = OperationUtil.stringListToResultSet(
-        catalogs, Constants.SHOW_CATALOGS_RESULT)
+        catalogs,
+        Constants.SHOW_CATALOGS_RESULT)
     } catch {
       case e: Exception =>
         logger.error(e.getMessage, e)

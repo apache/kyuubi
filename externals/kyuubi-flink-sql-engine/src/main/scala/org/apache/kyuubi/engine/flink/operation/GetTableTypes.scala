@@ -29,6 +29,7 @@ class GetTableTypes(sessionContext: SessionContext, session: Session)
 
   override protected def runInternal(): Unit = {
     resultSet = OperationUtil.stringListToResultSet(
-      Constants.SUPPORTED_TABLE_TYPES.toList.asJava, "table_types")
+      Constants.SUPPORTED_TABLE_TYPES.toList.asJava,
+      "table_types")
   }
 }

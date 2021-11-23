@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.flink.operation
 
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
 import org.apache.kyuubi.engine.flink.result.Constants
-import org.apache.kyuubi.operation.{HiveJDBCTestHelper}
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   override def withKyuubiConf: Map[String, String] = Map.empty

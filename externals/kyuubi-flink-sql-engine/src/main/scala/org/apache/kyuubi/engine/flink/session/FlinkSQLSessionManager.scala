@@ -62,13 +62,13 @@ class FlinkSQLSessionManager(engineContext: EngineContext)
     if (executionType.equalsIgnoreCase(ExecutionEntry.EXECUTION_TYPE_VALUE_BATCH)) {
       newProperties += (
         EngineEnvironment.EXECUTION_ENTRY + "." + ExecutionEntry.EXECUTION_RESULT_MODE ->
-        ExecutionEntry.EXECUTION_RESULT_MODE_VALUE_TABLE)
+          ExecutionEntry.EXECUTION_RESULT_MODE_VALUE_TABLE)
     }
     // for streaming mode we ensure that results are provided in changelog form
     else {
       newProperties += (
         EngineEnvironment.EXECUTION_ENTRY + "." + ExecutionEntry.EXECUTION_RESULT_MODE ->
-        ExecutionEntry.EXECUTION_RESULT_MODE_VALUE_CHANGELOG)
+          ExecutionEntry.EXECUTION_RESULT_MODE_VALUE_CHANGELOG)
     }
 
     val sessionEnv = EngineEnvironment.enrich(

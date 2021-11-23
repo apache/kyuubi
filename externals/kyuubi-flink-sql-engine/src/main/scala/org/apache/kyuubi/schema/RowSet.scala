@@ -138,19 +138,31 @@ object RowSet {
     val nulls = new java.util.BitSet()
     if (logicalType.isInstanceOf[BooleanType]) {
       val values = getOrSetAsNull[java.lang.Boolean](
-        rows, ordinal, nulls, true)
+        rows,
+        ordinal,
+        nulls,
+        true)
       TColumn.boolVal(new TBoolColumn(values, nulls))
     } else if (logicalType.isInstanceOf[TinyIntType]) {
       val values = getOrSetAsNull[java.lang.Short](
-        rows, ordinal, nulls, 0.toShort)
+        rows,
+        ordinal,
+        nulls,
+        0.toShort)
       TColumn.i16Val(new TI16Column(values, nulls))
     } else if (logicalType.isInstanceOf[VarCharType]) {
       val values = getOrSetAsNull[java.lang.String](
-        rows, ordinal, nulls, "")
+        rows,
+        ordinal,
+        nulls,
+        "")
       TColumn.stringVal(new TStringColumn(values, nulls))
     } else if (logicalType.isInstanceOf[CharType]) {
       val values = getOrSetAsNull[java.lang.String](
-        rows, ordinal, nulls, "")
+        rows,
+        ordinal,
+        nulls,
+        "")
       TColumn.stringVal(new TStringColumn(values, nulls))
     } else {
       null
@@ -200,7 +212,8 @@ object RowSet {
     val ret = new TTypeQualifiers()
     val qualifiers = typ match {
       case d: DecimalType =>
-        Map(TCLIServiceConstants.PRECISION -> TTypeQualifierValue.i32Value(d.getPrecision),
+        Map(
+          TCLIServiceConstants.PRECISION -> TTypeQualifierValue.i32Value(d.getPrecision),
           TCLIServiceConstants.SCALE -> TTypeQualifierValue.i32Value(d.getScale)).asJava
       case _ => Collections.emptyMap[String, TTypeQualifierValue]()
     }
@@ -208,28 +221,30 @@ object RowSet {
     ret
   }
 
-  def toTTypeId(typ: LogicalType): TTypeId = if (typ.isInstanceOf[NullType]) {
-    TTypeId.NULL_TYPE
-  } else if (typ.isInstanceOf[BooleanType]) {
-    TTypeId.BOOLEAN_TYPE
-  } else if (typ.isInstanceOf[FloatType]) {
-    TTypeId.FLOAT_TYPE
-  } else if (typ.isInstanceOf[DoubleType]) {
-    TTypeId.DOUBLE_TYPE
-  } else if (typ.isInstanceOf[VarCharType]) {
-    TTypeId.STRING_TYPE
-  } else if (typ.isInstanceOf[CharType]) {
-    TTypeId.STRING_TYPE
-  } else {
-    null
-  }
+  def toTTypeId(typ: LogicalType): TTypeId =
+    if (typ.isInstanceOf[NullType]) {
+      TTypeId.NULL_TYPE
+    } else if (typ.isInstanceOf[BooleanType]) {
+      TTypeId.BOOLEAN_TYPE
+    } else if (typ.isInstanceOf[FloatType]) {
+      TTypeId.FLOAT_TYPE
+    } else if (typ.isInstanceOf[DoubleType]) {
+      TTypeId.DOUBLE_TYPE
+    } else if (typ.isInstanceOf[VarCharType]) {
+      TTypeId.STRING_TYPE
+    } else if (typ.isInstanceOf[CharType]) {
+      TTypeId.STRING_TYPE
+    } else {
+      null
+    }
 
   def toJavaRegex(input: String): String = {
-    val res = if (StringUtils.isEmpty(input) || input == "*") {
-      "%"
-    } else {
-      input
-    }
+    val res =
+      if (StringUtils.isEmpty(input) || input == "*") {
+        "%"
+      } else {
+        input
+      }
     val wStr = ".*"
     res
       .replaceAll("([^\\\\])%", "$1" + wStr).replaceAll("\\\\%", "%").replaceAll("^%", wStr)

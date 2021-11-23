@@ -38,7 +38,9 @@ import org.apache.kyuubi.schema.RowSet
 import org.apache.kyuubi.session.Session
 
 abstract class FlinkOperation(
-    sessionContext: SessionContext, opType: OperationType, session: Session)
+    sessionContext: SessionContext,
+    opType: OperationType,
+    session: Session)
   extends AbstractOperation(opType, session) {
 
   private val timeZone: ZoneId = {
@@ -98,7 +100,10 @@ abstract class FlinkOperation(
     }
     val token = resultSet.getData.asScala.take(rowSetSize)
     val resultRowSet = RowSet.resultSetToTRowSet(
-      token.toList, resultSet, getProtocolVersion, timeZone)
+      token.toList,
+      resultSet,
+      getProtocolVersion,
+      timeZone)
     resultRowSet.setStartRowOffset(resultSet.getData.getPosition)
     resultRowSet
   }

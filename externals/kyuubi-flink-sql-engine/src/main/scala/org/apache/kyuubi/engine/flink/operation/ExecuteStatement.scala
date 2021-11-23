@@ -44,7 +44,7 @@ import org.apache.kyuubi.util.ThreadUtils
 class ExecuteStatement(
     sessionContext: SessionContext,
     session: Session,
-    protected override val statement: String,
+    override protected val statement: String,
     override val shouldRunAsync: Boolean,
     queryTimeout: Long)
   extends FlinkOperation(sessionContext, OperationType.EXECUTE_STATEMENT, session) with Logging {
@@ -89,8 +89,8 @@ class ExecuteStatement(
       } catch {
         case rejected: RejectedExecutionException =>
           setState(OperationState.ERROR)
-          val ke = KyuubiSQLException("Error submitting query in background, query rejected",
-            rejected)
+          val ke =
+            KyuubiSQLException("Error submitting query in background, query rejected", rejected)
           setOperationException(ke)
           throw ke
       }
@@ -199,7 +199,10 @@ class ExecuteStatement(
     // shut down the cluster if the shell is closed
     configuration.set[java.lang.Boolean](DeploymentOptions.SHUTDOWN_IF_ATTACHED, true)
     // create execution
-    val deployer = new ProgramDeployer(configuration, jobName, pipeline,
+    val deployer = new ProgramDeployer(
+      configuration,
+      jobName,
+      pipeline,
       sessionContext.getExecutionContext.getClassLoader)
     setState(OperationState.COMPILED)
     var jobClient: JobClient = null
@@ -212,12 +215,18 @@ class ExecuteStatement(
     }
     val jobID = jobClient.getJobID
     this.clusterDescriptorAdapter = ClusterDescriptorAdapterFactory.create(
-      sessionContext.getExecutionContext, configuration, session.handle.toString, jobID)
+      sessionContext.getExecutionContext,
+      configuration,
+      session.handle.toString,
+      jobID)
     if (logger.isDebugEnabled) {
       logger.debug("Cluster Descriptor Adapter: {}", clusterDescriptorAdapter)
     }
-    logger.info("Session: {}. Submit flink job: {} successfully, query: ",
-      session.handle.toString, jobID.toString, query)
+    logger.info(
+      "Session: {}. Submit flink job: {} successfully, query: ",
+      session.handle.toString,
+      jobID.toString,
+      query)
     // start result retrieval
     result.startRetrieval(jobClient)
     new ResultDescriptor(
@@ -228,9 +237,9 @@ class ExecuteStatement(
   }
 
   private def createTable[C](
-    context: ExecutionContext[C],
-    tableEnv: TableEnvironment,
-    selectQuery: String) = {
+      context: ExecutionContext[C],
+      tableEnv: TableEnvironment,
+      selectQuery: String) = {
     // parse and validate query
     try context.wrapClassLoader(() => tableEnv.sqlQuery(selectQuery))
     catch {
@@ -245,7 +254,8 @@ class ExecuteStatement(
     for (i <- 0 until schema.getFieldCount) {
       val dataType = schema.getFieldDataTypes()(i)
       val convertedType = DataTypeUtils.replaceLogicalType(
-        dataType, LogicalTypeUtils.removeTimeAttributes(dataType.getLogicalType))
+        dataType,
+        LogicalTypeUtils.removeTimeAttributes(dataType.getLogicalType))
       builder.field(schema.getFieldNames()(i), convertedType)
     }
     builder.build
@@ -255,11 +265,14 @@ class ExecuteStatement(
     if (queryTimeout > 0) {
       val timeoutExecutor =
         ThreadUtils.newDaemonSingleThreadScheduledExecutor("query-timeout-thread")
-      timeoutExecutor.schedule(new Runnable {
-        override def run(): Unit = {
-          cleanup(OperationState.TIMEOUT)
-        }
-      }, queryTimeout, TimeUnit.SECONDS)
+      timeoutExecutor.schedule(
+        new Runnable {
+          override def run(): Unit = {
+            cleanup(OperationState.TIMEOUT)
+          }
+        },
+        queryTimeout,
+        TimeUnit.SECONDS)
       statementTimeoutCleaner = Some(timeoutExecutor)
     }
   }
@@ -269,12 +282,10 @@ class ExecuteStatement(
     val typedResult = result.retrieveChanges
     if (typedResult.getType eq TypedResult.ResultType.EOS) {
       Optional.empty
-    }
-    else if (typedResult.getType eq TypedResult.ResultType.PAYLOAD) {
+    } else if (typedResult.getType eq TypedResult.ResultType.PAYLOAD) {
       val payload = typedResult.getPayload
       Optional.of(Tuple2.of(payload, null))
-    }
-    else Optional.of(Tuple2.of(Collections.emptyList, null))
+    } else Optional.of(Tuple2.of(Collections.emptyList, null))
   }
 
 }

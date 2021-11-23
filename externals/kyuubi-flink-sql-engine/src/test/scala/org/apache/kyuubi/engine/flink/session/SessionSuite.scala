@@ -46,7 +46,7 @@ class SessionSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   test("release session if shared level is CONNECTION") {
     logger.info(s"jdbc url is $jdbcUrl")
     assert(engine.getServiceState == STARTED)
-    withJdbcStatement() {_ => }
+    withJdbcStatement() { _ => }
     eventually(Timeout(20.seconds)) {
       assert(engine.getServiceState == STOPPED)
     }

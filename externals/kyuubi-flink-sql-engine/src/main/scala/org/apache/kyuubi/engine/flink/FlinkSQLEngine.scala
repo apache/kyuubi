@@ -121,7 +121,8 @@ object FlinkSQLEngine extends Logging {
     val bindAddress = engineEnv.getServer.getBindAddress
 
     val dependencies = EngineEnvironmentUtil.discoverDependencies(
-      engineOptions.getJars, engineOptions.getLibraryDirs)
+      engineOptions.getJars,
+      engineOptions.getLibraryDirs)
 
     val engineContext = new EngineContext(engineEnv, dependencies)
     engineContext.getFlinkConfig().setString(RestOptions.ADDRESS, address)
