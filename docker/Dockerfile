@@ -26,8 +26,8 @@
 # TODO: REPALCE it with offical spark image iff Apache Spark community deploy
 # Or make one after kyuubi to be setup under ASF
 
-ARG SPARK_IMAGE=yaooqinn/spark:3.0.3
-FROM ${SPARK_IMAGE}
+ARG BASE_IMAGE=8-jre-slim
+FROM ${BASE_IMAGE}
 
 ARG kyuubi_uid=10009
 
