@@ -122,7 +122,7 @@ class EngineEventsStore(conf: KyuubiConf) {
     val reverseSeq = statements.values().asScala.toSeq.sortBy(_.createTime).reverse
 
     //  remove finished statements first.
-    for (event <- reverseSeq if event.endTime != -1L && countToDelete > 0) {
+    for (event <- reverseSeq if event.completeTime != -1L && countToDelete > 0) {
       statements.remove(event.statementId)
       countToDelete -= 1
     }

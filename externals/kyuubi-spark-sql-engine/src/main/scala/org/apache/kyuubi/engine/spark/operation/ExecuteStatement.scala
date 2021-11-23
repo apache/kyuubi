@@ -189,9 +189,9 @@ class ExecuteStatement(
   override def setState(newState: OperationState): Unit = {
     super.setState(newState)
     statementEvent.state = newState.toString
-    statementEvent.stateTime = lastAccessTime
+    statementEvent.eventTime = lastAccessTime
     if (newState == OperationState.ERROR || newState == OperationState.FINISHED) {
-      statementEvent.endTime = System.currentTimeMillis()
+      statementEvent.completeTime = System.currentTimeMillis()
     }
     EventLoggingService.onEvent(statementEvent)
   }
