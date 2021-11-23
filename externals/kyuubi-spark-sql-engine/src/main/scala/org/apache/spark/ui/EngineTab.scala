@@ -15,13 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.spark.kyuubi.ui
+package org.apache.spark.ui
 
 import javax.servlet.http.HttpServletRequest
 
 import scala.util.control.NonFatal
-
-import org.apache.spark.ui.SparkUITab
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf

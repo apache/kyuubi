@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.kyuubi.ui
+package org.apache.spark.ui
 
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.HttpClients

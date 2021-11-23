@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.kyuubi.ui
+package org.apache.spark.ui
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets.UTF_8
@@ -26,13 +26,11 @@ import scala.collection.JavaConverters.mapAsScalaMapConverter
 import scala.xml.{Node, Unparsed}
 
 import org.apache.commons.text.StringEscapeUtils
-import org.apache.spark.kyuubi.ui.TableSourceUtil._
-import org.apache.spark.ui.{PagedDataSource, PagedTable, UIUtils, WebUIPage}
+import org.apache.spark.ui.TableSourceUtil._
 import org.apache.spark.ui.UIUtils._
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.engine.spark.events.SessionEvent
-import org.apache.kyuubi.engine.spark.events.SparkStatementEvent
+import org.apache.kyuubi.engine.spark.events.{SessionEvent, SparkStatementEvent}
 
 case class EnginePage(parent: EngineTab) extends WebUIPage("") {
   private val store = parent.engine.store
@@ -401,7 +399,7 @@ private class SessionStatsTableDataSource(
       case "User" => Ordering.by(_.username)
       case "Client IP" => Ordering.by(_.ip)
       case "Session ID" => Ordering.by(_.sessionId)
-      case "Start Time" => Ordering by (_.startTime)
+      case "Start Time" => Ordering.by(_.startTime)
       case "Finish Time" => Ordering.by(_.endTime)
       case "Duration" => Ordering.by(_.duration)
       case "Total Statements" => Ordering.by(_.totalOperations)
@@ -435,7 +433,7 @@ private class StatementStatsTableDataSource(
     val ordering: Ordering[SparkStatementEvent] = sortColumn match {
       case "User" => Ordering.by(_.username)
       case "Statement ID" => Ordering.by(_.statementId)
-      case "Create Time" => Ordering by (_.createTime)
+      case "Create Time" => Ordering.by(_.createTime)
       case "Finish Time" => Ordering.by(_.completeTime)
       case "Duration" => Ordering.by(_.duration)
       case "Statement" => Ordering.by(_.statement)
