@@ -31,11 +31,11 @@ trait MySQLJDBCTestHelper extends JDBCTestHelper {
   private val _jdbcConfigs: Map[String, String] = Map(
     "useSSL" -> "false")
 
-  protected override def sessionConfigs: Map[String, String] = Map.empty
+  override protected def sessionConfigs: Map[String, String] = Map.empty
 
-  protected override def jdbcConfigs: Map[String, String] = _jdbcConfigs
+  override protected def jdbcConfigs: Map[String, String] = _jdbcConfigs
 
-  protected override def jdbcVars: Map[String, String] = Map.empty
+  override protected def jdbcVars: Map[String, String] = Map.empty
 
   protected def jdbcUrlWithConf(jdbcUrl: String): String = {
     val jdbcConfStr =

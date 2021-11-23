@@ -52,7 +52,7 @@ trait JDBCTestHelper extends KyuubiFunSuite {
   }
 
   def withMultipleConnectionJdbcStatement(
-    tableNames: String*)(fs: (Statement => Unit)*): Unit = {
+      tableNames: String*)(fs: (Statement => Unit)*): Unit = {
     val connections = fs.map { _ => DriverManager.getConnection(jdbcUrlWithConf, user, password) }
     val statements = connections.map(_.createStatement())
 

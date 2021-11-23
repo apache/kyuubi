@@ -58,8 +58,7 @@ trait MySQLQueryResult {
 
 class MySQLSimpleQueryResult(
     schema: Seq[MySQLField],
-    rows: Seq[Seq[Any]]
-) extends MySQLQueryResult {
+    rows: Seq[Seq[Any]]) extends MySQLQueryResult {
 
   override def colCount: Int = schema.size
 
@@ -87,8 +86,7 @@ class MySQLSimpleQueryResult(
 
 class MySQLThriftQueryResult(
     schema: TTableSchema,
-    rows: TRowSet
-) extends MySQLQueryResult {
+    rows: TRowSet) extends MySQLQueryResult {
 
   override def colCount: Int = schema.getColumnsSize
 
@@ -102,8 +100,7 @@ class MySQLThriftQueryResult(
 
   private def tColDescToMySQL(
       tCol: TColumnDesc,
-      sequenceId: Int
-  ): MySQLColumnDefinition41Packet = {
+      sequenceId: Int): MySQLColumnDefinition41Packet = {
     val tType = tCol.getTypeDesc
     val dataType = tTypeDescToMySQL(tType)
     val decimals = 0 // TODO
