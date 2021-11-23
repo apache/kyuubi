@@ -27,7 +27,6 @@ function error {
 if [ -z "${KYUUBI_HOME}" ]; then
   KYUUBI_HOME="$(cd "`dirname "$0"`"/..; pwd)"
 fi
-"${KYUUBI_HOME}/bin/load-kyuubi-env.sh"
 
 CTX_DIR="$KYUUBI_HOME/target/tmp/docker"
 
@@ -40,6 +39,7 @@ function cleanup_ctx_dir {
     rm -rf "$CTX_DIR"
   fi
 }
+trap cleanup_ctx_dir EXIT
 
 # trap cleanup_ctx_dir EXIT
 
@@ -244,10 +244,11 @@ do
    fi
    eval $(minikube docker-env --shell bash)
    ;;
-  u) KYUUBI_UID=${OPTARG};;
+ u) KYUUBI_UID=${OPTARG};;
  esac
 done
 
+. "${KYUUBI_HOME}/bin/load-kyuubi-env.sh"
 case "${@: -1}" in
   build)
     build
