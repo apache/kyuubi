@@ -360,7 +360,7 @@ private class StatementStatsPagedTable(
       <td>
         {sparkStatementEvent.state}
       </td>
-      {errorMessageCell(sparkStatementEvent.queryExecution)}
+      {errorMessageCell(sparkStatementEvent.exception)}
     </tr>
   }
 
