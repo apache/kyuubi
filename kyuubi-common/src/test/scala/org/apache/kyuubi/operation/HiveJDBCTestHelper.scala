@@ -37,17 +37,17 @@ trait HiveJDBCTestHelper extends JDBCTestHelper {
 
   protected def matchAllPatterns = Seq("", "*", "%", null, ".*", "_*", "_%", ".%")
 
-  protected override lazy val user: String = Utils.currentUser
-  protected override val password = "anonymous"
+  override protected lazy val user: String = Utils.currentUser
+  override protected val password = "anonymous"
   private var _sessionConfigs: Map[String, String] = Map.empty
   private var _jdbcConfigs: Map[String, String] = Map.empty
   private var _jdbcVars: Map[String, String] = Map.empty
 
-  protected override def sessionConfigs: Map[String, String] = _sessionConfigs
+  override protected def sessionConfigs: Map[String, String] = _sessionConfigs
 
-  protected override def jdbcConfigs: Map[String, String] = _jdbcConfigs
+  override protected def jdbcConfigs: Map[String, String] = _jdbcConfigs
 
-  protected override def jdbcVars: Map[String, String] = _jdbcVars
+  override protected def jdbcVars: Map[String, String] = _jdbcVars
 
   def withSessionConf[T](
       sessionConfigs: Map[String, String] = Map.empty)(
@@ -64,7 +64,7 @@ trait HiveJDBCTestHelper extends JDBCTestHelper {
     }
   }
 
-  protected override def jdbcUrlWithConf(jdbcUrl: String): String = {
+  override protected def jdbcUrlWithConf(jdbcUrl: String): String = {
     val sessionConfStr = sessionConfigs.map(kv => kv._1 + "=" + kv._2).mkString(";")
     val jdbcConfStr =
       if (jdbcConfigs.isEmpty) {

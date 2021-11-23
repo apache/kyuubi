@@ -42,7 +42,7 @@ object MySQLCommandHandler {
 class MySQLCommandHandler(be: BackendService, execPool: ThreadPoolExecutor)
   extends SimpleChannelInboundHandler[MySQLCommandPacket] with Logging {
 
-  private implicit val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(execPool)
+  implicit private val ec: ExecutionContextExecutor = ExecutionContext.fromExecutor(execPool)
 
   @volatile private var closed: Boolean = false
 
@@ -131,31 +131,27 @@ class MySQLCommandHandler(be: BackendService, execPool: ThreadPoolExecutor)
 
   def handlePing(
       ctx: ChannelHandlerContext,
-      pkg: MySQLComPingPacket
-  ): Seq[MySQLPacket] = {
+      pkg: MySQLComPingPacket): Seq[MySQLPacket] = {
     MySQLOKPacket(1) :: Nil
   }
 
   def handleInitDb(
       ctx: ChannelHandlerContext,
-      pkg: MySQLComInitDbPacket
-  ): Seq[MySQLPacket] = {
+      pkg: MySQLComInitDbPacket): Seq[MySQLPacket] = {
     beExecuteStatement(ctx, s"use ${pkg.database}")
     MySQLOKPacket(1) :: Nil
   }
 
   def handleQuit(
       ctx: ChannelHandlerContext,
-      pkg: MySQLComQuitPacket
-  ): Seq[MySQLPacket] = {
+      pkg: MySQLComQuitPacket): Seq[MySQLPacket] = {
     closeSession(ctx)
     MySQLOKPacket(1) :: Nil
   }
 
   def handleQuery(
       ctx: ChannelHandlerContext,
-      pkg: MySQLComQueryPacket
-  ): Seq[MySQLPacket] = {
+      pkg: MySQLComQueryPacket): Seq[MySQLPacket] = {
     debug(s"Receive query: ${pkg.sql}")
     executeStatement(ctx, pkg.sql).toPackets
   }
