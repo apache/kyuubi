@@ -347,7 +347,7 @@ private class StatementStatsPagedTable(
         {formatDate(sparkStatementEvent.createTime)}
       </td>
       <td>
-        {if (sparkStatementEvent.endTime > 0) formatDate(sparkStatementEvent.endTime)}
+        {if (sparkStatementEvent.completeTime > 0) formatDate(sparkStatementEvent.completeTime)}
       </td>
       <td >
         {formatDurationVerbose(sparkStatementEvent.duration)}
@@ -436,7 +436,7 @@ private class StatementStatsTableDataSource(
       case "User" => Ordering.by(_.username)
       case "Statement ID" => Ordering.by(_.statementId)
       case "Create Time" => Ordering by (_.createTime)
-      case "Finish Time" => Ordering.by(_.endTime)
+      case "Finish Time" => Ordering.by(_.completeTime)
       case "Duration" => Ordering.by(_.duration)
       case "Statement" => Ordering.by(_.statement)
       case "State" => Ordering.by(_.state)

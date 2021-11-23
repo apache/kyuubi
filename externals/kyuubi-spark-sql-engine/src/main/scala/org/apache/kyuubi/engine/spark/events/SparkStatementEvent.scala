@@ -29,7 +29,7 @@ import org.apache.kyuubi.Utils
  * @param sessionId: the identifier of a session
  * @param createTime: the create time of this statement
  * @param state: store each state that the sql has
- * @param stateTime: the time that the sql's state change
+ * @param eventTime: the time that the sql's state change
  * @param queryExecution: contains logicPlan and physicalPlan
  * @param exception: caught exception if have
  */
@@ -41,8 +41,8 @@ case class SparkStatementEvent(
     sessionId: String,
     createTime: Long,
     var state: String,
-    var stateTime: Long,
-    var endTime: Long = -1L,
+    var eventTime: Long,
+    var completeTime: Long = -1L,
     var queryExecution: String = "",
     var exception: String = "") extends KyuubiSparkEvent {
 
@@ -51,10 +51,10 @@ case class SparkStatementEvent(
     ("day", Utils.getDateFromTimestamp(createTime)) :: Nil
 
   def duration: Long = {
-    if (endTime == -1L) {
+    if (completeTime == -1L) {
       System.currentTimeMillis - createTime
     } else {
-      endTime - createTime
+      completeTime - createTime
     }
   }
 }
