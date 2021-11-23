@@ -197,8 +197,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     System.setProperty(HA_ZK_NAMESPACE.key, uniqueNamespace)
 
     withZkClient(conf) { framework =>
-      createServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
-      createServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
+      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
+      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
 
       val newNamespace = getUniqueNamespace()
       val args = Array(
@@ -260,8 +260,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     withZkClient(conf) { framework =>
-      createServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
-      createServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
+      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
+      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
 
       val args = Array(
         "list",
@@ -289,8 +289,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     withZkClient(conf) { framework =>
-      createServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
-      createServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
+      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
+      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
 
       val args = Array(
         "get",
@@ -322,8 +322,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
 
     withZkClient(conf) { framework =>
       withZkClient(conf) { zc =>
-        createServiceNode(conf, zc, uniqueNamespace, "localhost:10000", external = true)
-        createServiceNode(conf, zc, uniqueNamespace, "localhost:10001", external = true)
+        createAndGetServiceNode(conf, zc, uniqueNamespace, "localhost:10000", external = true)
+        createAndGetServiceNode(conf, zc, uniqueNamespace, "localhost:10001", external = true)
       }
 
       val args = Array(
@@ -355,8 +355,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     withZkClient(conf) { framework =>
-      createServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
-      createServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
+      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
+      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
 
       val args = Array(
         "list",

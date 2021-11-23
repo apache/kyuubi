@@ -225,7 +225,17 @@ object ServiceDiscovery extends Logging {
     }
   }
 
-  def createServiceNode(
+  def createAndGetServiceNode(
+      conf: KyuubiConf,
+      zkClient: CuratorFramework,
+      namespace: String,
+      instance: String,
+      version: Option[String] = None,
+      external: Boolean = false): String = {
+    createServiceNode(conf, zkClient, namespace, instance, version, external).getActualPath
+  }
+
+  private def createServiceNode(
       conf: KyuubiConf,
       zkClient: CuratorFramework,
       namespace: String,
