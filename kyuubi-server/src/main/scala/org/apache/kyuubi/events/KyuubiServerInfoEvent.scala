@@ -29,32 +29,30 @@ import org.apache.kyuubi.service.ServiceState
  * @param serverName the server name
  * @param startTime the time when the server started
  * @param eventTime the time when the event made
- * @param states the server states
+ * @param state the server states
  * @param serverIP the server ip
  * @param serverConf the server config
  * @param serverEnv the server environment
- * @param extraStatesInfo the server extra explain of states
  */
-case class KyuubiServerInfoEvent private(
+case class KyuubiServerInfoEvent private (
     serverName: String,
     startTime: Long,
     eventTime: Long,
-    states: String,
+    state: String,
     serverIP: String,
     serverConf: Map[String, String],
-    serverEnv: Map[String, String],
-    extraStatesInfo: String) extends KyuubiServerEvent {
+    serverEnv: Map[String, String]) extends KyuubiServerEvent {
 
   val BUILD_USER: String = kyuubi.BUILD_USER
   val BUILD_DATE: String = kyuubi.BUILD_DATE
   val REPO_URL: String = kyuubi.REPO_URL
 
   val VERSION_INFO = Map(
-    "KYUUBI_VERSION"         -> kyuubi.KYUUBI_VERSION,
-    "JAVA_COMPILE_VERSION"   -> kyuubi.JAVA_COMPILE_VERSION,
-    "SCALA_COMPILE_VERSION"  -> kyuubi.SCALA_COMPILE_VERSION,
-    "SPARK_COMPILE_VERSION"  -> kyuubi.SPARK_COMPILE_VERSION,
-    "HIVE_COMPILE_VERSION"   -> kyuubi.HIVE_COMPILE_VERSION,
+    "KYUUBI_VERSION" -> kyuubi.KYUUBI_VERSION,
+    "JAVA_COMPILE_VERSION" -> kyuubi.JAVA_COMPILE_VERSION,
+    "SCALA_COMPILE_VERSION" -> kyuubi.SCALA_COMPILE_VERSION,
+    "SPARK_COMPILE_VERSION" -> kyuubi.SPARK_COMPILE_VERSION,
+    "HIVE_COMPILE_VERSION" -> kyuubi.HIVE_COMPILE_VERSION,
     "HADOOP_COMPILE_VERSION" -> kyuubi.HADOOP_COMPILE_VERSION)
 
   override def partitions: Seq[(String, String)] =
@@ -62,22 +60,22 @@ case class KyuubiServerInfoEvent private(
 }
 
 object KyuubiServerInfoEvent {
-  def apply(server: KyuubiServer, extraStatesInfo: String): KyuubiServerInfoEvent = {
-    val serverState = server.getServiceState
-    serverState match {
+
+  def apply(
+      server: KyuubiServer,
+      state: ServiceState.ServiceState): Option[KyuubiServerInfoEvent] = {
+    server.getServiceState match {
       // Only server is started that we can log event
       case ServiceState.STARTED =>
-        KyuubiServerInfoEvent(
+        Some(KyuubiServerInfoEvent(
           server.getName,
           server.getStartTime,
           System.currentTimeMillis(),
-          serverState.toString,
+          state.toString,
           server.frontendServices.head.connectionUrl,
           server.getConf.getAll,
-          server.getConf.getEnvs,
-          extraStatesInfo
-        )
-      case _ => null
+          server.getConf.getEnvs))
+      case _ => None
     }
   }
 }
