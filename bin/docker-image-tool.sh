@@ -52,7 +52,7 @@ function image_ref {
   if [ -n "$TAG" ]; then
     image="$image:$TAG"
   fi
-  echo "$image"
+  echo "$image:$KYUUBI_VERSION"
 }
 
 function docker_push {
