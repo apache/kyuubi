@@ -31,15 +31,17 @@ class MySQLAuthPacketSuite extends KyuubiFunSuite with MySQLCodecHelper {
   }
 
   test("encode MySQLHandshakePacket") {
-    val packet = MySQLHandshakePacket(2, authPluginData)
+    val packet = new MySQLHandshakePacket(2, authPluginData) {
+      override def serverVersion: String = "5.7.22-Kyuubi-Server v1.4.0-incubating"
+    }
     val expected = decodeHex(
       """0a 35 2e 37 2e 32 32 2d 4b 79 75 75 62 69 2d 53
-        |65 72 76 65 72 20 31 2e 34 2e 30 2d 53 4e 41 50
-        |53 48 4f 54 00 02 00 00 00 77 37 34 35 45 51 55
-        |65 00 4f b7 2d 02 00 08 00 15 00 00 00 00 00 00
-        |00 00 00 00 69 44 57 32 44 44 33 4e 6d 36 69 74
-        |00 6d 79 73 71 6c 5f 6e 61 74 69 76 65 5f 70 61
-        |73 73 77 6f 72 64 00
+        |65 72 76 65 72 20 76 31 2e 34 2e 30 2d 69 6e 63
+        |75 62 61 74 69 6e 67 00 02 00 00 00 77 37 34 35
+        |45 51 55 65 00 4f b7 2d 02 00 08 00 15 00 00 00
+        |00 00 00 00 00 00 00 69 44 57 32 44 44 33 4e 6d
+        |36 69 74 00 6d 79 73 71 6c 5f 6e 61 74 69 76 65
+        |5f 70 61 73 73 77 6f 72 64 00
         |""".stripMargin)
     verifyEncode(expected, packet)
   }
