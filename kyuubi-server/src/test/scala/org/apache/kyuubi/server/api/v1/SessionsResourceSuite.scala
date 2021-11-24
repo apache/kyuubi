@@ -352,7 +352,6 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
         .request(MediaType.APPLICATION_JSON_TYPE).get()
       assert(404 == response.getStatus)
 
-
     }
   }
 }
