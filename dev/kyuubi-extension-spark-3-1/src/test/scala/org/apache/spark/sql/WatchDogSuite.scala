@@ -55,8 +55,7 @@ class WatchDogSuite extends KyuubiSparkSQLExtensionTest {
     (1270, 22, 5, 50),
     (1280, 23, 1, 50),
     (1290, 24, 1, 50),
-    (1300, 25, 1, 50)
-  )
+    (1300, 25, 1, 50))
 
   val storeData = Seq[(Int, String, String)](
     (1, "North-Holland", "NL"),
@@ -64,8 +63,7 @@ class WatchDogSuite extends KyuubiSparkSQLExtensionTest {
     (3, "Bavaria", "DE"),
     (4, "California", "US"),
     (5, "Texas", "US"),
-    (6, "Texas", "US")
-  )
+    (6, "Texas", "US"))
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     setupData()

@@ -37,8 +37,8 @@ import org.apache.kyuubi.sql.KyuubiSQLConf
  */
 case class MaxPartitionStrategy(session: SparkSession)
   extends Strategy
-    with SQLConfHelper
-    with PruneFileSourcePartitionHelper {
+  with SQLConfHelper
+  with PruneFileSourcePartitionHelper {
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = {
     conf.getConf(KyuubiSQLConf.WATCHDOG_MAX_PARTITIONS) match {
       case Some(maxScanPartitions) => plan match {
@@ -78,20 +78,20 @@ case class MaxPartitionStrategy(session: SparkSession)
                   Nil
                 }
             }
-          case _ @ ScanOperation(
-            _,
-            filters,
-            relation @ LogicalRelation(
-              fsRelation @ HadoopFsRelation(
-              fileIndex: InMemoryFileIndex,
-              partitionSchema,
-              _,
-              _,
-              _,
-              _),
-            _,
-            _,
-            _)) if fsRelation.partitionSchemaOption.isDefined =>
+          case ScanOperation(
+                _,
+                filters,
+                relation @ LogicalRelation(
+                  fsRelation @ HadoopFsRelation(
+                    fileIndex: InMemoryFileIndex,
+                    partitionSchema,
+                    _,
+                    _,
+                    _,
+                    _),
+                  _,
+                  _,
+                  _)) if fsRelation.partitionSchemaOption.isDefined =>
             val (partitionKeyFilters, dataFilter) =
               getPartitionKeyFiltersAndDataFilters(
                 fsRelation.sparkSession,
@@ -112,20 +112,20 @@ case class MaxPartitionStrategy(session: SparkSession)
                 fsRelation.partitionSchema)
             }
             Nil
-          case _ @ ScanOperation(
-            _,
-            filters,
-            logicalRelation @ LogicalRelation(
-            fsRelation @ HadoopFsRelation(
-              catalogFileIndex: CatalogFileIndex,
-              partitionSchema,
-              _,
-              _,
-              _,
-              _),
-            _,
-            _,
-            _)) if fsRelation.partitionSchemaOption.isDefined =>
+          case ScanOperation(
+                _,
+                filters,
+                logicalRelation @ LogicalRelation(
+                  fsRelation @ HadoopFsRelation(
+                    catalogFileIndex: CatalogFileIndex,
+                    partitionSchema,
+                    _,
+                    _,
+                    _,
+                    _),
+                  _,
+                  _,
+                  _)) if fsRelation.partitionSchemaOption.isDefined =>
             val (partitionKeyFilters, _) =
               getPartitionKeyFiltersAndDataFilters(
                 fsRelation.sparkSession,
@@ -149,8 +149,8 @@ case class MaxPartitionStrategy(session: SparkSession)
                 fsRelation.partitionSchema)
             }
             Nil
-        case _ => Nil
-      }
+          case _ => Nil
+        }
       case _ => Nil
     }
   }

@@ -31,13 +31,13 @@ trait PruneFileSourcePartitionHelper extends PredicateHelper {
       filters: Seq[Expression],
       output: Seq[AttributeReference]): (ExpressionSet, Seq[Expression]) = {
     val normalizedFilters = DataSourceStrategy.normalizeExprs(
-      filters.filter(f => f.deterministic && !SubqueryExpression.hasSubquery(f)), output)
+      filters.filter(f => f.deterministic && !SubqueryExpression.hasSubquery(f)),
+      output)
     val partitionColumns =
       relation.resolve(partitionSchema, sparkSession.sessionState.analyzer.resolver)
     val partitionSet = AttributeSet(partitionColumns)
     val (partitionFilters, dataFilters) = normalizedFilters.partition(f =>
-      f.references.subsetOf(partitionSet)
-    )
+      f.references.subsetOf(partitionSet))
     val extraPartitionFilter =
       dataFilters.flatMap(extractPredicatesWithinOutputSet(_, partitionSet))
 
