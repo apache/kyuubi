@@ -18,11 +18,55 @@
 package org.apache.spark.sql
 
 import org.apache.spark.sql.catalyst.plans.logical.GlobalLimit
-
 import org.apache.kyuubi.sql.KyuubiSQLConf
-import org.apache.kyuubi.sql.watchdog.MaxHivePartitionExceedException
+import org.apache.kyuubi.sql.watchdog.MaxPartitionExceedException
+//import org.apache.spark.sql.catalyst.planning.ScanOperation
+//import org.apache.kyuubi.sql.watchdog.MaxHivePartitionExceedException
 
 class WatchDogSuite extends KyuubiSparkSQLExtensionTest {
+  val factData = Seq[(Int, Int, Int, Int)](
+    (1000, 1, 1, 10),
+    (1010, 2, 1, 10),
+    (1020, 2, 1, 10),
+    (1030, 3, 2, 10),
+    (1040, 3, 2, 50),
+    (1050, 3, 2, 50),
+    (1060, 3, 2, 50),
+    (1070, 4, 2, 10),
+    (1080, 4, 3, 20),
+    (1090, 4, 3, 10),
+    (1100, 4, 3, 10),
+    (1110, 5, 3, 10),
+    (1120, 6, 4, 10),
+    (1130, 7, 4, 50),
+    (1140, 8, 4, 50),
+    (1150, 9, 1, 20),
+    (1160, 10, 1, 20),
+    (1170, 11, 1, 30),
+    (1180, 12, 2, 20),
+    (1190, 13, 2, 20),
+    (1200, 14, 3, 40),
+    (1200, 15, 3, 70),
+    (1210, 16, 4, 10),
+    (1220, 17, 4, 20),
+    (1230, 18, 4, 20),
+    (1240, 19, 5, 40),
+    (1250, 20, 5, 40),
+    (1260, 21, 5, 40),
+    (1270, 22, 5, 50),
+    (1280, 23, 1, 50),
+    (1290, 24, 1, 50),
+    (1300, 25, 1, 50)
+  )
+
+  val storeData = Seq[(Int, String, String)](
+    (1, "North-Holland", "NL"),
+    (2, "South-Holland", "NL"),
+    (3, "Bavaria", "DE"),
+    (4, "California", "US"),
+    (5, "Texas", "US"),
+    (6, "Texas", "US")
+  )
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     setupData()
@@ -31,38 +75,86 @@ class WatchDogSuite extends KyuubiSparkSQLExtensionTest {
   case class LimitAndExpected(limit: Int, expected: Int)
   val limitAndExpecteds = List(LimitAndExpected(1, 1), LimitAndExpected(11, 10))
 
-  test("test watchdog with scan maxHivePartitions") {
-    withTable("test", "temp") {
-      sql(
-        s"""
-           |CREATE TABLE test(i int)
-           |PARTITIONED BY (p int)
-           |STORED AS textfile""".stripMargin)
-      spark.range(0, 10, 1).selectExpr("id as col")
-        .createOrReplaceTempView("temp")
+  private def checkMaxPartition: Unit = {
+    withSQLConf(KyuubiSQLConf.WATCHDOG_MAX_PARTITIONS.key -> "100") {
+      checkAnswer(sql("SELECT count(distinct(p)) FROM test"), Row(10) :: Nil)
+    }
+    withSQLConf(KyuubiSQLConf.WATCHDOG_MAX_PARTITIONS.key -> "5") {
+      sql("SELECT * FROM test where p=1").queryExecution.sparkPlan
 
-      for (part <- Range(0, 10)) {
+      sql(s"SELECT * FROM test WHERE p in (${Range(0, 5).toList.mkString(",")})")
+        .queryExecution.sparkPlan
+
+      intercept[MaxPartitionExceedException](
+        sql("SELECT * FROM test where p != 1").queryExecution.sparkPlan)
+
+      intercept[MaxPartitionExceedException](
+        sql("SELECT * FROM test").queryExecution.sparkPlan)
+
+      intercept[MaxPartitionExceedException](sql(
+        s"SELECT * FROM test WHERE p in (${Range(0, 6).toList.mkString(",")})")
+        .queryExecution.sparkPlan)
+    }
+  }
+
+  test("watchdog with scan maxPartitions -- hive") {
+    Seq("textfile", "parquet").foreach { format =>
+      withTable("test", "temp") {
         sql(
           s"""
-             |INSERT OVERWRITE TABLE test PARTITION (p='$part')
-             |select col from temp""".stripMargin)
+             |CREATE TABLE test(i int)
+             |PARTITIONED BY (p int)
+             |STORED AS $format""".stripMargin)
+        spark.range(0, 10, 1).selectExpr("id as col")
+          .createOrReplaceTempView("temp")
+
+        for (part <- Range(0, 10)) {
+          sql(
+            s"""
+               |INSERT OVERWRITE TABLE test PARTITION (p='$part')
+               |select col from temp""".stripMargin)
+        }
+        checkMaxPartition
       }
+    }
+  }
 
-      withSQLConf(KyuubiSQLConf.WATCHDOG_MAX_HIVEPARTITION.key -> "5") {
+  test("watchdog with scan maxPartitions -- data source") {
+    withTempDir { dir =>
+      withTempView("test") {
+        spark.range(10).selectExpr("id", "id as p")
+          .write
+          .partitionBy("p")
+          .mode("overwrite")
+          .save(dir.getCanonicalPath)
+        spark.read.load(dir.getCanonicalPath).createOrReplaceTempView("test")
+        checkMaxPartition
+      }
+    }
+  }
 
-        sql("SELECT * FROM test where p=1").queryExecution.sparkPlan
+  test("watchdog with scan maxPartitions -- dynamic partition pruning") {
+    val s = spark
+    import s.implicits._
+    withTempDir { dir =>
+      factData.toDF("date_id", "store_id", "product_id", "units_sold")
+        .write
+        .partitionBy("store_id")
+        .save(s"${dir.getCanonicalPath}/fact_sk")
+      spark.read.load(s"${dir.getCanonicalPath}/fact_sk").createOrReplaceTempView("fact_sk")
 
-        sql(
-          s"SELECT * FROM test WHERE p in (${Range(0, 5).toList.mkString(",")})")
-          .queryExecution.sparkPlan
+      storeData.toDF("store_id", "state_province", "country")
+        .write
+        .save(s"${dir.getCanonicalPath}/dim_store")
+      spark.read.load(s"${dir.getCanonicalPath}/dim_store").createOrReplaceTempView("dim_store")
 
-        intercept[MaxHivePartitionExceedException](
-          sql("SELECT * FROM test").queryExecution.sparkPlan)
-
-        intercept[MaxHivePartitionExceedException](sql(
-          s"SELECT * FROM test WHERE p in (${Range(0, 6).toList.mkString(",")})")
-          .queryExecution.sparkPlan)
-
+      withSQLConf(KyuubiSQLConf.WATCHDOG_MAX_PARTITIONS.key -> "5") {
+        val query =
+          """
+            |SELECT f.date_id, f.store_id FROM fact_sk f
+            |JOIN dim_store s ON f.store_id = s.store_id AND s.country = 'NL'
+            |""".stripMargin
+        intercept[MaxPartitionExceedException](sql(query).queryExecution.sparkPlan)
       }
     }
   }
