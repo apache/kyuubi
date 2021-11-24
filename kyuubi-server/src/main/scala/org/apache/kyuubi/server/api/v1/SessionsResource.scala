@@ -32,7 +32,7 @@ import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 
 import org.apache.kyuubi.Utils.error
 import org.apache.kyuubi.cli.HandleIdentifier
-import org.apache.kyuubi.operation.OperationHandle
+import org.apache.kyuubi.operation.{OperationHandle, OperationType}
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.session.SessionHandle
 
@@ -322,6 +322,71 @@ private[v1] class SessionsResource extends ApiRequestContext {
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(s"Error getting functions")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON
+    )),
+    description = "Close an operation"
+  )
+  @DELETE
+  @Path("{sessionHandle}/operations/{operationHandle}")
+  def closeOperation(@PathParam("sessionHandle") sessionHandleStr: String,
+                     @PathParam("operationHandle") operationHandleStr: String): OperationHandle = {
+    val sessionHandle = getSessionHandle(sessionHandleStr)
+    val operationHandle = getOperationHandle(operationHandleStr)
+    try {
+      backendService.sessionManager.getSession(sessionHandle).closeOperation(operationHandle)
+      operationHandle
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Error closing an operation")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON
+    )),
+    description = "Get an operation handle with a given session identifier and operation identifier"
+  )
+  @GET
+  @Path("{sessionHandle}/operations/{operationHandle}")
+  def getOperationHandle(@PathParam("sessionHandle") sessionHandleStr: String,
+                         @PathParam("operationHandle") operationHandleStr: String
+                        ): OperationHandle = {
+    val sessionHandle = getSessionHandle(sessionHandleStr)
+    val operationHandle = getOperationHandle(operationHandleStr)
+    val hasHandle = backendService.sessionManager.getSession(sessionHandle)
+      .isHasOperationHandle(operationHandle)
+    if (hasHandle) {
+      operationHandle
+    } else {
+      throw new NotFoundException(s"Error getting operationHandle")
+    }
+
+  }
+
+  def getOperationHandle(operationHandleStr: String): OperationHandle = {
+    try {
+      val splitOperationHandle = operationHandleStr.split("\\|")
+      val handleIdentifier = new HandleIdentifier(
+        UUID.fromString(splitOperationHandle(0)), UUID.fromString(splitOperationHandle(1)))
+      val protocolVersion = TProtocolVersion.findByValue(splitOperationHandle(2).toInt)
+      val operationType = OperationType.withName(splitOperationHandle(3))
+      val operationHandle = new OperationHandle(handleIdentifier, operationType, protocolVersion)
+
+      // if the operationHandle is invalid, KyuubiSQLException will be thrown here.
+      backendService.sessionManager.operationManager.getOperation(operationHandle)
+      operationHandle
+    } catch {
+      case NonFatal(e) =>
+        error(s"Error getting operationHandle by $operationHandleStr.", e)
+        throw new NotFoundException(s"Error getting operationHandle by $operationHandleStr.")
     }
   }
 
