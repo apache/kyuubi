@@ -27,7 +27,7 @@
 # Or make one after kyuubi to be setup under ASF
 
 ARG BASE_IMAGE=8-jre-slim
-FROM ${BASE_IMAGE}
+FROM openjdk:${BASE_IMAGE}
 
 ARG kyuubi_uid=10009
 
