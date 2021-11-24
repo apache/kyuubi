@@ -34,6 +34,7 @@ ARG kyuubi_uid=10009
 USER root
 
 ENV KYUUBI_HOME /opt/kyuubi
+ENV SPARK_HOME /opt/spark
 ENV KYUUBI_LOG_DIR ${KYUUBI_HOME}/logs
 ENV KYUUBI_PID_DIR ${KYUUBI_HOME}/pid
 ENV KYUUBI_WORK_DIR_ROOT ${KYUUBI_HOME}/work
@@ -48,8 +49,8 @@ RUN set -ex && \
     chmod a+rwx -R ${KYUUBI_WORK_DIR_ROOT} && \
     rm -rf /var/cache/apt/*
 
+COPY spark /opt/spark
 COPY bin ${KYUUBI_HOME}/bin
-COPY conf ${KYUUBI_HOME}/conf
 COPY jars ${KYUUBI_HOME}/jars
 COPY externals/engines/spark ${KYUUBI_HOME}/externals/engines/spark
 

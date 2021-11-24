@@ -115,6 +115,18 @@ function build {
     KYUUBI_ROOT="$CTX_DIR/base"
   fi
 
+  # cp spark for kyuubi as submit client
+  # if user set -s(spark-provider), use if
+  # else use builtin spark
+  if [[ ! -d "$KYUUBI_ROOT/spark" ]]; then
+    mkdir "$KYUUBI_ROOT/spark"
+  fi
+  if [[ -n "$SPARK_BUILDIN" ]] && [[ -d "$SPARK_BUILDIN" ]]; then
+    cp -r "$SPARK_BUILDIN/" "$KYUUBI_ROOT/spark/"
+  else
+    cp -r "${KYUUBI_HOME}/externals/kyuubi-download/target/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD}/" "$KYUUBI_ROOT/spark/"
+  fi
+
   # Verify that the Docker image content directory is present
   if [ ! -d "$KYUUBI_ROOT/docker" ]; then
     error "Cannot find docker image. This script must be run from a runnable distribution of Apache Kyuubi."
@@ -224,8 +236,9 @@ BASEDOCKERFILE=
 NOCACHEARG=
 BUILD_PARAMS=
 KYUUBI_UID=
+SPARK_BUILDIN=
 CROSS_BUILD="false"
-while getopts f:mr:t:Xnb:u: option
+while getopts f:mr:t:Xnb:u:s: option
 do
  case "${option}"
  in
@@ -245,6 +258,7 @@ do
    eval $(minikube docker-env --shell bash)
    ;;
  u) KYUUBI_UID=${OPTARG};;
+ s) SPARK_BUILDIN=${OPTARG};;
  esac
 done
 
