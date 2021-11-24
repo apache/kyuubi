@@ -331,8 +331,9 @@ private[v1] class SessionsResource extends ApiRequestContext {
   )
   @DELETE
   @Path("{sessionHandle}/operations/{operationHandle}")
-  def closeOperation(@PathParam("sessionHandle") sessionHandleStr: String,
-                     @PathParam("operationHandle") operationHandleStr: String): OperationHandle = {
+  def closeOperation(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      @PathParam("operationHandle") operationHandleStr: String): OperationHandle = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
     val operationHandle = getOperationHandle(operationHandleStr)
     try {
@@ -353,9 +354,9 @@ private[v1] class SessionsResource extends ApiRequestContext {
   )
   @GET
   @Path("{sessionHandle}/operations/{operationHandle}")
-  def getOperationHandle(@PathParam("sessionHandle") sessionHandleStr: String,
-                         @PathParam("operationHandle") operationHandleStr: String
-                        ): OperationHandle = {
+  def getOperationHandle(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      @PathParam("operationHandle") operationHandleStr: String): OperationHandle = {
     val sessionHandle = getSessionHandle(sessionHandleStr)
     val operationHandle = getOperationHandle(operationHandleStr)
     val hasHandle = backendService.sessionManager.getSession(sessionHandle)
