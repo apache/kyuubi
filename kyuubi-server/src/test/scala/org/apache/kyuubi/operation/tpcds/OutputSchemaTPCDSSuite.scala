@@ -22,7 +22,7 @@ import java.nio.file.{Files, Path, Paths}
 
 import org.apache.kyuubi.{DeltaSuiteMixin, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.server.mysql.MySQLJDBCTestHelper
 import org.apache.kyuubi.tags.{DeltaTest, ExtendedSQLTest}
 
 // scalastyle:off line.size.limit
@@ -41,7 +41,7 @@ import org.apache.kyuubi.tags.{DeltaTest, ExtendedSQLTest}
 @DeltaTest
 @ExtendedSQLTest
 class OutputSchemaTPCDSSuite extends WithKyuubiServer
-  with HiveJDBCTestHelper
+  with MySQLJDBCTestHelper
   with TPCDSHelper
   with DeltaSuiteMixin {
 
@@ -119,8 +119,7 @@ class OutputSchemaTPCDSSuite extends WithKyuubiServer
             baseResourcePath.toFile.getAbsolutePath,
             name,
             q.getFileName.toString,
-            s"${qf.getName.stripSuffix(".sql")}.output.schema"
-          )
+            s"${qf.getName.stripSuffix(".sql")}.output.schema")
           val queryString = fileToString(qf.toPath)
           runQuery(queryString, schemaFile)
         }

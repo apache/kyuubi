@@ -55,9 +55,9 @@ class ZooKeeperACLProvider(conf: KyuubiConf) extends ACLProvider {
 
   private def enabledServerAcls(): Boolean = ZooKeeperAuthTypes
     .withName(conf.get(HighAvailabilityConf.HA_ZK_AUTH_TYPE)) match {
-      case ZooKeeperAuthTypes.NONE => false
-      case _ => true
-    }
+    case ZooKeeperAuthTypes.NONE => false
+    case _ => true
+  }
 
   private def enabledEngineAcls(): Boolean = ZooKeeperAuthTypes
     .withName(conf.get(HighAvailabilityConf.HA_ZK_ENGINE_AUTH_TYPE)) match {

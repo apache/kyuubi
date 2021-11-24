@@ -76,7 +76,6 @@ class KyuubiServerSuite extends KyuubiFunSuite {
     assert(server.getStartTime === 0)
     server.stop()
 
-
     server.start()
     assert(server.getServiceState === STARTED)
     assert(backendService.getServiceState == STARTED)

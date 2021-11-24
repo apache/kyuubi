@@ -15,16 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.jdbc.hive;
+package org.apache.kyuubi.server.mysql.constant
 
-import java.sql.SQLException;
+import io.netty.util.AttributeKey
+import io.netty.util.AttributeKey._
 
-public class ClosedOrCancelledStatementException extends SQLException {
+import org.apache.kyuubi.session.SessionHandle
 
-  private static final long serialVersionUID = 0;
-
-  /** @param msg (exception message) */
-  public ClosedOrCancelledStatementException(String msg) {
-    super(msg);
-  }
+object MySQLCtxAttrKey {
+  val CONNECTION_ID: AttributeKey[Integer] = valueOf("CONNECTION_ID")
+  val CAPABILITY_FLAG: AttributeKey[Integer] = valueOf("CAPABILITY_FLAG")
+  val USER: AttributeKey[String] = valueOf[String]("USER")
+  val REMOTE_IP: AttributeKey[String] = valueOf[String]("REMOTE_IP")
+  val DATABASE: AttributeKey[String] = valueOf[String]("DATABASE")
+  val SESSION_HANDLE: AttributeKey[SessionHandle] = valueOf[SessionHandle]("SESSION_HANDLE")
+  val OP_HANDLE: AttributeKey[SessionHandle] = valueOf[SessionHandle]("OP_HANDLE")
 }

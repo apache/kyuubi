@@ -72,18 +72,21 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf) extends Logging {
 
       hadoopAuthServer match {
         case Some(server) =>
-          transportFactory = try {
-            server.createSaslServerTransportFactory(getSaslProperties)
-          } catch {
-            case e: TTransportException => throw new LoginException(e.getMessage)
-          }
+          transportFactory =
+            try {
+              server.createSaslServerTransportFactory(getSaslProperties)
+            } catch {
+              case e: TTransportException => throw new LoginException(e.getMessage)
+            }
 
         case _ =>
       }
 
       plainAuthTypeOpt match {
         case Some(plainAuthType) =>
-          transportFactory = PlainSASLHelper.getTransportFactory(plainAuthType.toString, conf,
+          transportFactory = PlainSASLHelper.getTransportFactory(
+            plainAuthType.toString,
+            conf,
             Option(transportFactory)).asInstanceOf[TSaslServerTransport.Factory]
 
         case _ =>
@@ -138,7 +141,8 @@ object KyuubiAuthenticationFactory {
     } catch {
       case e: IOException =>
         throw KyuubiSQLException(
-          "Failed to validate proxy privilege of " + realUser + " for " + proxyUser, e)
+          "Failed to validate proxy privilege of " + realUser + " for " + proxyUser,
+          e)
     }
   }
 }

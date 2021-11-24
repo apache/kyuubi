@@ -15,15 +15,8 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.jdbc.hive;
+package org.apache.kyuubi.server.mysql
 
-import java.sql.SQLException;
+import org.apache.kyuubi.server.mysql.constant.MySQLDataType
 
-public class ClosedConnectionException extends SQLException {
-
-  private static final long serialVersionUID = 0;
-
-  public ClosedConnectionException(String msg) {
-    super(msg);
-  }
-}
+case class MySQLField(name: String, dataType: MySQLDataType)

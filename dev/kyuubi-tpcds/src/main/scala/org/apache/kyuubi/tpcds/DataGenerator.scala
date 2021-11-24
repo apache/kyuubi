@@ -51,7 +51,9 @@ object DataGenerator {
 
   import spark.implicits._
 
-  val catalog_sales: TableGenerator = TableGenerator("catalog_sales",
+  // format: off
+  val catalog_sales: TableGenerator = TableGenerator(
+    "catalog_sales",
     Seq("cs_sold_date_sk"),
     $"cs_sold_date_sk"          .int,
     $"cs_sold_time_sk"          .int,
@@ -88,7 +90,8 @@ object DataGenerator {
     $"cs_net_paid_inc_ship_tax" .decimal(7, 2),
     $"cs_net_profit"            .decimal(7, 2))
 
-  val catalog_returns: TableGenerator = TableGenerator("catalog_returns",
+  val catalog_returns: TableGenerator = TableGenerator(
+    "catalog_returns",
     Seq("cr_returned_date_sk"),
     $"cr_returned_date_sk"      .int,
     $"cr_returned_time_sk"      .int,
@@ -118,14 +121,16 @@ object DataGenerator {
     $"cr_store_credit"          .decimal(7, 2),
     $"cr_net_loss"              .decimal(7, 2))
 
-  val inventory: TableGenerator = TableGenerator("inventory",
+  val inventory: TableGenerator = TableGenerator(
+    "inventory",
     Seq("inv_date_sk"),
     $"inv_date_sk"              .int,
     $"inv_item_sk"              .int,
     $"inv_warehouse_sk"         .int,
     $"inv_quantity_on_hand"     .int)
 
-  val store_sales: TableGenerator = TableGenerator("store_sales",
+  val store_sales: TableGenerator = TableGenerator(
+    "store_sales",
     Seq("ss_sold_date_sk"),
     $"ss_sold_date_sk"          .int,
     $"ss_sold_time_sk"          .int,
@@ -151,7 +156,8 @@ object DataGenerator {
     $"ss_net_paid_inc_tax"      .decimal(7, 2),
     $"ss_net_profit"            .decimal(7, 2))
 
-  val store_returns: TableGenerator = TableGenerator("store_returns",
+  val store_returns: TableGenerator = TableGenerator(
+    "store_returns",
     Seq("sr_returned_date_sk"),
     $"sr_returned_date_sk"      .long,
     $"sr_return_time_sk"        .long,
@@ -174,7 +180,8 @@ object DataGenerator {
     $"sr_store_credit"          .decimal(7, 2),
     $"sr_net_loss"              .decimal(7, 2))
 
-  val web_sales: TableGenerator = TableGenerator("web_sales",
+  val web_sales: TableGenerator = TableGenerator(
+    "web_sales",
     Seq("ws_sold_date_sk"),
     $"ws_sold_date_sk"          .int,
     $"ws_sold_time_sk"          .int,
@@ -211,7 +218,8 @@ object DataGenerator {
     $"ws_net_paid_inc_ship_tax" .decimal(7, 2),
     $"ws_net_profit"            .decimal(7, 2))
 
-  val web_returns: TableGenerator = TableGenerator("web_returns",
+  val web_returns: TableGenerator = TableGenerator(
+    "web_returns",
     Seq("wr_returned_date_sk"),
     $"wr_returned_date_sk"      .long,
     $"wr_returned_time_sk"      .long,
@@ -238,7 +246,8 @@ object DataGenerator {
     $"wr_account_credit"        .decimal(7, 2),
     $"wr_net_loss"              .decimal(7, 2))
 
-  val call_center: TableGenerator = TableGenerator("call_center",
+  val call_center: TableGenerator = TableGenerator(
+    "call_center",
     Nil,
     $"cc_call_center_sk"        .int,
     $"cc_call_center_id"        .string,
@@ -272,7 +281,8 @@ object DataGenerator {
     $"cc_gmt_offset"            .decimal(5, 2),
     $"cc_tax_percentage"        .decimal(5, 2))
 
-  val catalog_page: TableGenerator = TableGenerator("catalog_page",
+  val catalog_page: TableGenerator = TableGenerator(
+    "catalog_page",
     Nil,
     $"cp_catalog_page_sk"       .int,
     $"cp_catalog_page_id"       .string,
@@ -284,7 +294,8 @@ object DataGenerator {
     $"cp_description"           .string,
     $"cp_type"                  .string)
 
-  val customer: TableGenerator = TableGenerator("customer",
+  val customer: TableGenerator = TableGenerator(
+    "customer",
     Nil,
     $"c_customer_sk"            .int,
     $"c_customer_id"            .string,
@@ -305,7 +316,8 @@ object DataGenerator {
     $"c_email_address"          .string,
     $"c_last_review_date"       .string)
 
-  val customer_address: TableGenerator = TableGenerator("customer_address",
+  val customer_address: TableGenerator = TableGenerator(
+    "customer_address",
     Nil,
     $"ca_address_sk"            .int,
     $"ca_address_id"            .string,
@@ -321,7 +333,8 @@ object DataGenerator {
     $"ca_gmt_offset"            .decimal(5, 2),
     $"ca_location_type"         .string)
 
-  val customer_demographics: TableGenerator = TableGenerator("customer_demographics",
+  val customer_demographics: TableGenerator = TableGenerator(
+    "customer_demographics",
     Nil,
     $"cd_demo_sk"               .int,
     $"cd_gender"                .string,
@@ -333,7 +346,8 @@ object DataGenerator {
     $"cd_dep_employed_count"    .int,
     $"cd_dep_college_count"     .int)
 
-  val date_dim: TableGenerator = TableGenerator("date_dim",
+  val date_dim: TableGenerator = TableGenerator(
+    "date_dim",
     Nil,
     $"d_date_sk"                .int,
     $"d_date_id"                .string,
@@ -364,7 +378,8 @@ object DataGenerator {
     $"d_current_quarter"        .string,
     $"d_current_year"           .string)
 
-  val household_demographics: TableGenerator = TableGenerator("household_demographics",
+  val household_demographics: TableGenerator = TableGenerator(
+    "household_demographics",
     Nil,
     $"hd_demo_sk"               .int,
     $"hd_income_band_sk"        .int,
@@ -372,13 +387,15 @@ object DataGenerator {
     $"hd_dep_count"             .int,
     $"hd_vehicle_count"         .int)
 
-  val income_band: TableGenerator = TableGenerator("income_band",
+  val income_band: TableGenerator = TableGenerator(
+    "income_band",
     Nil,
     $"ib_income_band_sk"        .int,
     $"ib_lower_bound"           .int,
     $"ib_upper_bound"           .int)
 
-  val item: TableGenerator = TableGenerator("item",
+  val item: TableGenerator = TableGenerator(
+    "item",
     Nil,
     $"i_item_sk"                .int,
     $"i_item_id"                .string,
@@ -403,7 +420,8 @@ object DataGenerator {
     $"i_manager_id"             .int,
     $"i_product_name"           .string)
 
-  val promotion: TableGenerator = TableGenerator("promotion",
+  val promotion: TableGenerator = TableGenerator(
+    "promotion",
     Nil,
     $"p_promo_sk"               .int,
     $"p_promo_id"               .string,
@@ -425,13 +443,15 @@ object DataGenerator {
     $"p_purpose"                .string,
     $"p_discount_active"        .string)
 
-  val reason: TableGenerator = TableGenerator("reason",
+  val reason: TableGenerator = TableGenerator(
+    "reason",
     Nil,
     $"r_reason_sk"              .int,
     $"r_reason_id"              .string,
     $"r_reason_desc"            .string)
 
-  val ship_mode: TableGenerator = TableGenerator("ship_mode",
+  val ship_mode: TableGenerator = TableGenerator(
+    "ship_mode",
     Nil,
     $"sm_ship_mode_sk"          .int,
     $"sm_ship_mode_id"          .string,
@@ -440,7 +460,8 @@ object DataGenerator {
     $"sm_carrier"               .string,
     $"sm_contract"              .string)
 
-  val store: TableGenerator = TableGenerator("store",
+  val store: TableGenerator = TableGenerator(
+    "store",
     Nil,
     $"s_store_sk"               .int,
     $"s_store_id"               .string,
@@ -472,7 +493,8 @@ object DataGenerator {
     $"s_gmt_offset"             .decimal(5, 2),
     $"s_tax_precentage"         .decimal(5, 2))
 
-  val time_dim: TableGenerator = TableGenerator("time_dim",
+  val time_dim: TableGenerator = TableGenerator(
+    "time_dim",
     Nil,
     $"t_time_sk"                .int,
     $"t_time_id"                .string,
@@ -485,7 +507,8 @@ object DataGenerator {
     $"t_sub_shift"              .string,
     $"t_meal_time"              .string)
 
-  val warehouse: TableGenerator = TableGenerator("warehouse",
+  val warehouse: TableGenerator = TableGenerator(
+    "warehouse",
     Nil,
     $"w_warehouse_sk"           .int,
     $"w_warehouse_id"           .string,
@@ -502,7 +525,8 @@ object DataGenerator {
     $"w_country"                .string,
     $"w_gmt_offset"             .decimal(5, 2))
 
-  val web_page: TableGenerator = TableGenerator("web_page",
+  val web_page: TableGenerator = TableGenerator(
+    "web_page",
     Nil,
     $"wp_web_page_sk"           .int,
     $"wp_web_page_id"           .string,
@@ -519,7 +543,8 @@ object DataGenerator {
     $"wp_image_count"           .int,
     $"wp_max_ad_count"          .int)
 
-  val web_site: TableGenerator = TableGenerator("web_site",
+  val web_site: TableGenerator = TableGenerator(
+    "web_site",
     Nil,
     $"web_site_sk"              .int,
     $"web_site_id"              .string,
@@ -547,6 +572,7 @@ object DataGenerator {
     $"web_country"              .string,
     $"web_gmt_offset"           .string,
     $"web_tax_percentage"       .decimal(5, 2))
+  // format: on
 
   val tpcdsTables = Seq(
     store_sales,

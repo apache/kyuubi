@@ -23,13 +23,14 @@ import org.apache.spark.sql.internal.SQLConf
 import org.apache.kyuubi.sql.{FinalStageConfigIsolation, KyuubiSQLConf}
 
 class FinalStageConfigIsolationSuite extends KyuubiSparkSQLExtensionTest {
-  protected override def beforeAll(): Unit = {
+  override protected def beforeAll(): Unit = {
     super.beforeAll()
     setupData()
   }
 
   test("final stage config set reset check") {
-    withSQLConf(KyuubiSQLConf.FINAL_STAGE_CONFIG_ISOLATION.key -> "true",
+    withSQLConf(
+      KyuubiSQLConf.FINAL_STAGE_CONFIG_ISOLATION.key -> "true",
       "spark.sql.finalStage.adaptive.coalescePartitions.minPartitionNum" -> "1",
       "spark.sql.finalStage.adaptive.advisoryPartitionSizeInBytes" -> "100") {
       // use loop to double check final stage config doesn't affect the sql query each other
@@ -79,8 +80,10 @@ class FinalStageConfigIsolationSuite extends KyuubiSparkSQLExtensionTest {
   }
 
   test("final stage config isolation") {
-    def checkPartitionNum(sqlString: String, previousPartitionNum: Int,
-                          finalPartitionNum: Int): Unit = {
+    def checkPartitionNum(
+        sqlString: String,
+        previousPartitionNum: Int,
+        finalPartitionNum: Int): Unit = {
       val df = sql(sqlString)
       df.collect()
       val shuffleReaders = collect(df.queryExecution.executedPlan) {
@@ -99,7 +102,8 @@ class FinalStageConfigIsolationSuite extends KyuubiSparkSQLExtensionTest {
       assert(df.rdd.partitions.length === finalPartitionNum)
     }
 
-    withSQLConf(SQLConf.AUTO_BROADCASTJOIN_THRESHOLD.key -> "-1",
+    withSQLConf(
+      SQLConf.AUTO_BROADCASTJOIN_THRESHOLD.key -> "-1",
       SQLConf.COALESCE_PARTITIONS_MIN_PARTITION_NUM.key -> "1",
       SQLConf.SHUFFLE_PARTITIONS.key -> "3",
       KyuubiSQLConf.FINAL_STAGE_CONFIG_ISOLATION.key -> "true",
@@ -156,8 +160,7 @@ class FinalStageConfigIsolationSuite extends KyuubiSparkSQLExtensionTest {
             |) t1 ON t0.c2 = t1.c2
             |""".stripMargin,
           3,
-          1
-        )
+          1)
 
         // one shuffle reader
         checkPartitionNum(
@@ -169,8 +172,7 @@ class FinalStageConfigIsolationSuite extends KyuubiSparkSQLExtensionTest {
             |) t1 ON t0.c1 = t1.c1
             |""".stripMargin,
           1,
-          1
-        )
+          1)
       }
     }
   }

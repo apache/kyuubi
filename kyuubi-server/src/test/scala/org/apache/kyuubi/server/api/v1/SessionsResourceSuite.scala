@@ -31,7 +31,11 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   test("test open and count session") {
     val requestObj = SessionOpenRequest(
-      1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
+      1,
+      "admin",
+      "123456",
+      "localhost",
+      Map("testConfig" -> "testValue"))
 
     withKyuubiRestServer { (_, _, _, webTarget) =>
       var response = webTarget.path("api/v1/sessions")
@@ -54,7 +58,11 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   test("test close and count session") {
     val requestObj = SessionOpenRequest(
-      1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
+      1,
+      "admin",
+      "123456",
+      "localhost",
+      Map("testConfig" -> "testValue"))
 
     withKyuubiRestServer { (_, _, _, webTarget) =>
       var response = webTarget.path("api/v1/sessions")
@@ -83,7 +91,6 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   test("test execPoolStatistic") {
     withKyuubiRestServer { (restFe, _, _, webTarget) =>
-
       val sessionManager = restFe.be.sessionManager
       val future = sessionManager.submitBackgroundOperation(() => Thread.sleep(1000))
 
@@ -108,7 +115,11 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   test("test getSessionList") {
     val requestObj = SessionOpenRequest(
-      1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
+      1,
+      "admin",
+      "123456",
+      "localhost",
+      Map("testConfig" -> "testValue"))
 
     withKyuubiRestServer { (_, _, _, webTarget) =>
       var response = webTarget.path("api/v1/sessions")
@@ -138,7 +149,11 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   test("test getSessionDetail") {
     val requestObj = SessionOpenRequest(
-      1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
+      1,
+      "admin",
+      "123456",
+      "localhost",
+      Map("testConfig" -> "testValue"))
 
     withKyuubiRestServer { (_, _, _, webTarget) =>
       var response: Response = webTarget.path("api/v1/sessions")
@@ -167,7 +182,11 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   test("test get infoType") {
     val requestObj = SessionOpenRequest(
-      1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
+      1,
+      "admin",
+      "123456",
+      "localhost",
+      Map("testConfig" -> "testValue"))
 
     withKyuubiRestServer { (_, _, _, webTarget) =>
       var response: Response = webTarget.path("api/v1/sessions")
@@ -182,7 +201,8 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
         .request().get()
       assert(200 == response.getStatus)
       val sessions = response.readEntity(classOf[InfoDetail])
-      assert(sessions.infoType.equals("CLI_SERVER_NAME") && sessions.infoValue.equals("Kyuubi"))
+      assert(sessions.infoType.equals("CLI_SERVER_NAME") &&
+        sessions.infoValue.equals("Apache Kyuubi (Incubating)"))
       // Invalid sessionHandleStr
       val handle = "b88d6b56-d200-4bb6-bf0a-5da0ea572e11|0c4aad4e-ccf7-4abd-9305-943d4bfd2d9a|0"
       response = webTarget.path(s"api/v1/sessions/$handle/info/13").request().get()
@@ -202,7 +222,11 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   test("test submit operation and get operation handle") {
     val requestObj = SessionOpenRequest(
-      1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
+      1,
+      "admin",
+      "123456",
+      "localhost",
+      Map("testConfig" -> "testValue"))
 
     withKyuubiRestServer { (_, _, _, webTarget) =>
       var response: Response = webTarget.path("api/v1/sessions")

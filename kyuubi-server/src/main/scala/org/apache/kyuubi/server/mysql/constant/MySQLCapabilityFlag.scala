@@ -87,7 +87,7 @@ object MySQLCapabilityFlag {
     CLIENT_SECURE_CONNECTION,
     CLIENT_PLUGIN_AUTH)
 
-  val handshakeValueLower: Int = handshakeValue & 0x0000ffff
+  val handshakeValueLower: Int = handshakeValue & 0x0000FFFF
 
   val handshakeValueUpper: Int = handshakeValue >>> 16
 

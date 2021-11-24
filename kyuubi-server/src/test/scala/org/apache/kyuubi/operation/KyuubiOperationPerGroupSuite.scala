@@ -66,7 +66,6 @@ class KyuubiOperationPerGroupSuite extends WithKyuubiServer with SparkQueryTests
     assert(r1.startsWith(s"kyuubi_GROUP_${conf.get(KyuubiConf.ENGINE_TYPE)}_testGG"))
   }
 
-
   test("kyuubi defined function - system_user/session_user") {
     withSessionConf(Map("hive.server2.proxy.user" -> "user1"))(Map.empty)(Map.empty) {
       withJdbcStatement() { statement =>

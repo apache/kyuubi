@@ -32,13 +32,13 @@ import org.apache.kyuubi.session.Session
 abstract class AbstractOperation(opType: OperationType, session: Session)
   extends Operation with Logging {
 
-  private final val createTime = System.currentTimeMillis()
-  private final val handle = OperationHandle(opType, session.protocol)
-  private final val operationTimeout: Long = {
+  final private val createTime = System.currentTimeMillis()
+  final private val handle = OperationHandle(opType, session.protocol)
+  final private val operationTimeout: Long = {
     session.sessionManager.getConf.get(OPERATION_IDLE_TIMEOUT)
   }
 
-  protected final val statementId = handle.identifier.toString
+  final protected val statementId = handle.identifier.toString
 
   override def getOperationLog: Option[OperationLog] = None
 
@@ -148,7 +148,13 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
   override def getHandle: OperationHandle = handle
 
   override def getStatus: OperationStatus = {
-    OperationStatus(state, createTime, startTime, lastAccessTime, completedTime, hasResultSet,
+    OperationStatus(
+      state,
+      createTime,
+      startTime,
+      lastAccessTime,
+      completedTime,
+      hasResultSet,
       Option(operationException))
   }
 
@@ -159,7 +165,7 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
       false
     } else {
       OperationState.isTerminal(state) &&
-        lastAccessTime + operationTimeout <= System.currentTimeMillis()
+      lastAccessTime + operationTimeout <= System.currentTimeMillis()
     }
   }
 }

@@ -31,7 +31,7 @@ class DDLTPCDSSuite extends WithKyuubiServer
 
   override protected val conf: KyuubiConf = {
     val kyuubiConf = KyuubiConf().set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 20000L)
-     extraConfigs.foreach { case (k, v) => kyuubiConf.set(k, v) }
+    extraConfigs.foreach { case (k, v) => kyuubiConf.set(k, v) }
     kyuubiConf
   }
 

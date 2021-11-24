@@ -37,8 +37,8 @@ import org.apache.kyuubi.sql.KyuubiSQLConf
 abstract class InsertZorderBeforeWritingDatasourceBase
   extends InsertZorderHelper {
   override def applyInternal(plan: LogicalPlan): LogicalPlan = plan match {
-    case insert: InsertIntoHadoopFsRelationCommand if insert.query.resolved &&
-      insert.bucketSpec.isEmpty && insert.catalogTable.isDefined &&
+    case insert: InsertIntoHadoopFsRelationCommand
+        if insert.query.resolved && insert.bucketSpec.isEmpty && insert.catalogTable.isDefined &&
           isZorderEnabled(insert.catalogTable.get.properties) =>
       val newQuery = insertZorder(insert.catalogTable.get, insert.query)
       if (newQuery.eq(insert.query)) {
@@ -47,8 +47,9 @@ abstract class InsertZorderBeforeWritingDatasourceBase
         insert.copy(query = newQuery)
       }
 
-    case ctas: CreateDataSourceTableAsSelectCommand if ctas.query.resolved &&
-      ctas.table.bucketSpec.isEmpty && isZorderEnabled(ctas.table.properties) =>
+    case ctas: CreateDataSourceTableAsSelectCommand
+        if ctas.query.resolved && ctas.table.bucketSpec.isEmpty &&
+          isZorderEnabled(ctas.table.properties) =>
       val newQuery = insertZorder(ctas.table, ctas.query)
       if (newQuery.eq(ctas.query)) {
         ctas
@@ -67,8 +68,9 @@ abstract class InsertZorderBeforeWritingDatasourceBase
 abstract class InsertZorderBeforeWritingHiveBase
   extends InsertZorderHelper {
   override def applyInternal(plan: LogicalPlan): LogicalPlan = plan match {
-    case insert: InsertIntoHiveTable if insert.query.resolved &&
-      insert.table.bucketSpec.isEmpty && isZorderEnabled(insert.table.properties) =>
+    case insert: InsertIntoHiveTable
+        if insert.query.resolved && insert.table.bucketSpec.isEmpty &&
+          isZorderEnabled(insert.table.properties) =>
       val newQuery = insertZorder(insert.table, insert.query)
       if (newQuery.eq(insert.query)) {
         insert
@@ -76,8 +78,9 @@ abstract class InsertZorderBeforeWritingHiveBase
         insert.copy(query = newQuery)
       }
 
-    case ctas: CreateHiveTableAsSelectCommand if ctas.query.resolved &&
-      ctas.tableDesc.bucketSpec.isEmpty && isZorderEnabled(ctas.tableDesc.properties) =>
+    case ctas: CreateHiveTableAsSelectCommand
+        if ctas.query.resolved && ctas.tableDesc.bucketSpec.isEmpty &&
+          isZorderEnabled(ctas.tableDesc.properties) =>
       val newQuery = insertZorder(ctas.tableDesc, ctas.query)
       if (newQuery.eq(ctas.query)) {
         ctas
@@ -85,8 +88,9 @@ abstract class InsertZorderBeforeWritingHiveBase
         ctas.copy(query = newQuery)
       }
 
-    case octas: OptimizedCreateHiveTableAsSelectCommand if octas.query.resolved &&
-      octas.tableDesc.bucketSpec.isEmpty && isZorderEnabled(octas.tableDesc.properties) =>
+    case octas: OptimizedCreateHiveTableAsSelectCommand
+        if octas.query.resolved && octas.tableDesc.bucketSpec.isEmpty &&
+          isZorderEnabled(octas.tableDesc.properties) =>
       val newQuery = insertZorder(octas.tableDesc, octas.query)
       if (newQuery.eq(octas.query)) {
         octas
@@ -108,8 +112,8 @@ trait InsertZorderHelper extends Rule[LogicalPlan] with ZorderBuilder {
 
   def isZorderEnabled(props: Map[String, String]): Boolean = {
     props.contains(KYUUBI_ZORDER_ENABLED) &&
-      "true".equalsIgnoreCase(props(KYUUBI_ZORDER_ENABLED)) &&
-      props.contains(KYUUBI_ZORDER_COLS)
+    "true".equalsIgnoreCase(props(KYUUBI_ZORDER_ENABLED)) &&
+    props.contains(KYUUBI_ZORDER_COLS)
   }
 
   def getZorderColumns(props: Map[String, String]): Seq[String] = {
@@ -139,18 +143,18 @@ trait InsertZorderHelper extends Rule[LogicalPlan] with ZorderBuilder {
       plan
     } else {
       val bound = cols.map(attrs(_))
-      val orderExpr = if (bound.length == 1) {
-        bound.head
-      } else {
-        buildZorder(bound)
-      }
+      val orderExpr =
+        if (bound.length == 1) {
+          bound.head
+        } else {
+          buildZorder(bound)
+        }
       // TODO: We can do rebalance partitions before local sort of zorder after SPARK 3.3
       //   see https://github.com/apache/spark/pull/34542
       Sort(
         SortOrder(orderExpr, Ascending, NullsLast, Seq.empty) :: Nil,
         conf.getConf(KyuubiSQLConf.ZORDER_GLOBAL_SORT_ENABLED),
-        plan
-      )
+        plan)
     }
   }
 

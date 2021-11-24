@@ -73,7 +73,8 @@ abstract class ThriftBinaryFrontendService(name: String)
       val keepAliveTime = conf.get(FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME)
       val executor = ExecutorPoolCaptureOom(
         name + "Handler-Pool",
-        minThreads, maxThreads,
+        minThreads,
+        maxThreads,
         keepAliveTime,
         oomHook)
       authFactory = new KyuubiAuthenticationFactory(conf)
@@ -105,29 +106,31 @@ abstract class ThriftBinaryFrontendService(name: String)
     } catch {
       case e: Throwable =>
         throw new KyuubiException(
-          s"Failed to initialize frontend service on $serverAddr:$portNum.", e)
+          s"Failed to initialize frontend service on $serverAddr:$portNum.",
+          e)
     }
     super.initialize(conf)
   }
 
   override def start(): Unit = synchronized {
     super.start()
-    if(!isStarted) {
+    if (!isStarted) {
       serverThread = new NamedThreadFactory(getName, false).newThread(this)
       serverThread.start()
       isStarted = true
     }
   }
 
-  override def run(): Unit = try {
-    info(s"Starting and exposing JDBC connection at: jdbc:hive2://${connectionUrl}/")
-    server.foreach(_.serve())
-  } catch {
-    case _: InterruptedException => error(s"$getName is interrupted")
-    case t: Throwable =>
-      error(s"Error starting $getName", t)
-      System.exit(-1)
-  }
+  override def run(): Unit =
+    try {
+      info(s"Starting and exposing JDBC connection at: jdbc:hive2://${connectionUrl}/")
+      server.foreach(_.serve())
+    } catch {
+      case _: InterruptedException => error(s"$getName is interrupted")
+      case t: Throwable =>
+        error(s"Error starting $getName", t)
+        System.exit(-1)
+    }
 
   override def stop(): Unit = synchronized {
     if (isStarted) {
@@ -189,7 +192,11 @@ abstract class ThriftBinaryFrontendService(name: String)
     val configuration =
       Option(req.getConfiguration).map(_.asScala.toMap).getOrElse(Map.empty[String, String])
     val sessionHandle = be.openSession(
-      protocol, userName, req.getPassword, ipAddress, configuration)
+      protocol,
+      userName,
+      req.getPassword,
+      ipAddress,
+      configuration)
     sessionHandle
   }
 
@@ -301,7 +308,9 @@ abstract class ThriftBinaryFrontendService(name: String)
     val resp = new TGetSchemasResp
     try {
       val opHandle = be.getSchemas(
-        SessionHandle(req.getSessionHandle), req.getCatalogName, req.getSchemaName)
+        SessionHandle(req.getSessionHandle),
+        req.getCatalogName,
+        req.getSchemaName)
       resp.setOperationHandle(opHandle.toTOperationHandle)
       resp.setStatus(OK_STATUS)
     } catch {

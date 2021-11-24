@@ -36,7 +36,7 @@ abstract class AbstractSession(
 
   protected def logSessionInfo(msg: String): Unit = info(s"[$user:$ipAddress] $handle - $msg")
 
-  private final val _createTime: Long = System.currentTimeMillis()
+  final private val _createTime: Long = System.currentTimeMillis()
   override def createTime: Long = _createTime
 
   @volatile private var _lastAccessTime: Long = _createTime
@@ -51,7 +51,7 @@ abstract class AbstractSession(
 
   val normalizedConf: Map[String, String] = sessionManager.validateAndNormalizeConf(conf)
 
-  private final val opHandleSet = new java.util.HashSet[OperationHandle]
+  final private val opHandleSet = new java.util.HashSet[OperationHandle]
 
   private def acquire(userAccess: Boolean): Unit = synchronized {
     if (userAccess) {
@@ -72,7 +72,8 @@ abstract class AbstractSession(
 
   private def withAcquireRelease[T](userAccess: Boolean = true)(f: => T): T = {
     acquire(userAccess)
-    try f finally release(userAccess)
+    try f
+    finally release(userAccess)
   }
 
   override def close(): Unit = withAcquireRelease() {
@@ -101,12 +102,12 @@ abstract class AbstractSession(
 
   override def getInfo(infoType: TGetInfoType): TGetInfoValue = withAcquireRelease() {
     infoType match {
-      case TGetInfoType.CLI_SERVER_NAME => TGetInfoValue.stringValue("Kyuubi")
-      case TGetInfoType.CLI_DBMS_NAME => TGetInfoValue.stringValue("Spark SQL")
+      case TGetInfoType.CLI_SERVER_NAME => TGetInfoValue.stringValue("Apache Kyuubi (Incubating)")
+      case TGetInfoType.CLI_DBMS_NAME => TGetInfoValue.stringValue("Apache Kyuubi (Incubating)")
       case TGetInfoType.CLI_DBMS_VER => TGetInfoValue.stringValue(org.apache.kyuubi.KYUUBI_VERSION)
       case TGetInfoType.CLI_MAX_COLUMN_NAME_LEN |
-           TGetInfoType.CLI_MAX_SCHEMA_NAME_LEN |
-           TGetInfoType.CLI_MAX_TABLE_NAME_LEN => TGetInfoValue.lenValue(128)
+          TGetInfoType.CLI_MAX_SCHEMA_NAME_LEN |
+          TGetInfoType.CLI_MAX_TABLE_NAME_LEN => TGetInfoValue.lenValue(128)
       case _ => throw KyuubiSQLException(s"Unrecognized GetInfoType value: $infoType")
     }
   }

@@ -69,8 +69,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
 
   test("client sync query cost time longer than engine.request.timeout") {
     withSessionConf(Map(
-      KyuubiConf.ENGINE_REQUEST_TIMEOUT.key -> "PT5S"
-    ))(Map.empty)(Map.empty) {
+      KyuubiConf.ENGINE_REQUEST_TIMEOUT.key -> "PT5S"))(Map.empty)(Map.empty) {
       withSessionHandle { (client, handle) =>
         val executeStmtReq = new TExecuteStatementReq()
         executeStmtReq.setStatement("select java_method('java.lang.Thread', 'sleep', 6000L)")
@@ -101,8 +100,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
 
   test("test asynchronous open kyuubi session") {
     withSessionConf(Map(
-      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "true"
-      ))(Map.empty)(Map.empty) {
+      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "true"))(Map.empty)(Map.empty) {
       withSessionHandle { (client, handle) =>
         val executeStmtReq = new TExecuteStatementReq()
         executeStmtReq.setStatement("select engine_name()")
@@ -120,8 +118,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
   test("test asynchronous open kyuubi session failure") {
     withSessionConf(Map(
       KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "true",
-      "spark.master" -> "invalid"
-    ))(Map.empty)(Map.empty) {
+      "spark.master" -> "invalid"))(Map.empty)(Map.empty) {
       withSessionHandle { (client, handle) =>
         val executeStmtReq = new TExecuteStatementReq()
         executeStmtReq.setStatement("select engine_name()")
@@ -136,8 +133,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
 
   test("open session with KyuubiConnection") {
     withSessionConf(Map.empty)(Map.empty)(Map(
-      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "true"
-    )) {
+      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "true")) {
       val driver = new KyuubiHiveDriver()
       val connection = driver.connect(jdbcUrlWithConf, new Properties())
 
@@ -149,8 +145,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
     }
 
     withSessionConf(Map.empty)(Map.empty)(Map(
-      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "false"
-    )) {
+      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "false")) {
       val driver = new KyuubiHiveDriver()
       val connection = driver.connect(jdbcUrlWithConf, new Properties())
 

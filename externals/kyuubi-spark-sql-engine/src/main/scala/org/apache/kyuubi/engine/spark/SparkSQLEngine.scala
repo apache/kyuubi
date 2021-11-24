@@ -22,9 +22,8 @@ import java.util.concurrent.CountDownLatch
 
 import scala.util.control.NonFatal
 
-import org.apache.spark.SparkConf
+import org.apache.spark.{ui, SparkConf}
 import org.apache.spark.kyuubi.SparkSQLEngineListener
-import org.apache.spark.kyuubi.ui.EngineTab
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{KyuubiException, Logging}
@@ -134,7 +133,7 @@ object SparkSQLEngine extends Logging {
       }
       try {
         engine.start()
-        EngineTab(engine)
+        ui.EngineTab(engine)
         val event = EngineEvent(engine)
         info(event)
         EventLoggingService.onEvent(event)
@@ -158,12 +157,15 @@ object SparkSQLEngine extends Logging {
         // blocking main thread
         countDownLatch.await()
       } catch {
-        case e: KyuubiException if currentEngine.isDefined =>
-          val engine = currentEngine.get
-          engine.stop()
-          val event = EngineEvent(engine).copy(diagnostic = e.getMessage)
-          EventLoggingService.onEvent(event)
-          error(event, e)
+        case e: KyuubiException => currentEngine match {
+            case Some(engine) =>
+              engine.stop()
+              val event = EngineEvent(engine).copy(diagnostic = e.getMessage)
+              EventLoggingService.onEvent(event)
+              error(event, e)
+            case _ => error("Current SparkSQLEngine is not created.")
+          }
+
       }
     } catch {
       case t: Throwable => error(s"Failed to instantiate SparkSession: ${t.getMessage}", t)

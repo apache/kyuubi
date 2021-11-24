@@ -32,7 +32,8 @@ import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 abstract class ResolveZorderBase extends Rule[LogicalPlan] {
   def session: SparkSession
   def buildOptimizeZorderCommand(
-      catalogTable: CatalogTable, query: LogicalPlan): OptimizeZorderCommandBase
+      catalogTable: CatalogTable,
+      query: LogicalPlan): OptimizeZorderCommandBase
 
   protected def checkQueryAllowed(query: LogicalPlan): Unit = query foreach {
     case Filter(condition, SubqueryAlias(_, tableRelation: HiveTableRelation)) =>
@@ -52,7 +53,7 @@ abstract class ResolveZorderBase extends Rule[LogicalPlan] {
     case Seq(tbl) => TableIdentifier.apply(tbl)
     case Seq(db, tbl) => TableIdentifier.apply(tbl, Some(db))
     case _ => throw new KyuubiSQLExtensionException(
-      "only support session catalog table, please use db.table instead")
+        "only support session catalog table, please use db.table instead")
   }
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
@@ -71,7 +72,8 @@ abstract class ResolveZorderBase extends Rule[LogicalPlan] {
  */
 case class ResolveZorder(session: SparkSession) extends ResolveZorderBase {
   override def buildOptimizeZorderCommand(
-      catalogTable: CatalogTable, query: LogicalPlan): OptimizeZorderCommandBase = {
+      catalogTable: CatalogTable,
+      query: LogicalPlan): OptimizeZorderCommandBase = {
     OptimizeZorderCommand(catalogTable, query)
   }
 }

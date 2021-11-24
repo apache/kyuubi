@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.service
 
-
 import java.util
 
 import scala.collection.JavaConverters._
@@ -94,7 +93,8 @@ class ThriftFrontendServiceSuite extends KyuubiFunSuite {
   }
 
   private def checkOperationResult(
-      client: TCLIService.Iface, handle: TOperationHandle): Unit = {
+      client: TCLIService.Iface,
+      handle: TOperationHandle): Unit = {
     val tFetchResultsReq = new TFetchResultsReq()
     tFetchResultsReq.setOperationHandle(handle)
     tFetchResultsReq.setFetchType(0)
@@ -106,7 +106,7 @@ class ThriftFrontendServiceSuite extends KyuubiFunSuite {
     assert(actual === expected)
     tFetchResultsReq.setFetchType(1)
     val resp1 = client.FetchResults(tFetchResultsReq)
-    assert(resp1.getStatus.getStatusCode ===  TStatusCode.SUCCESS_STATUS)
+    assert(resp1.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
     assert(resp1.getResults.getColumnCount === 0)
     val invalidHandle =
       OperationHandle(OperationType.getOperationType(handle.getOperationType), SERVER_VERSION)
@@ -169,9 +169,9 @@ class ThriftFrontendServiceSuite extends KyuubiFunSuite {
       val resp = client.GetInfo(req)
       assert(resp.getInfoValue.getStringValue === org.apache.kyuubi.KYUUBI_VERSION)
       req.setInfoType(TGetInfoType.CLI_SERVER_NAME)
-      assert(client.GetInfo(req).getInfoValue.getStringValue === "Kyuubi")
+      assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Kyuubi (Incubating)")
       req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
-      assert(client.GetInfo(req).getInfoValue.getStringValue === "Spark SQL")
+      assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Kyuubi (Incubating)")
       req.setInfoType(TGetInfoType.CLI_MAX_COLUMN_NAME_LEN)
       assert(client.GetInfo(req).getInfoValue.getLenValue === 128)
       req.setInfoType(TGetInfoType.CLI_MAX_SCHEMA_NAME_LEN)
@@ -330,7 +330,6 @@ class ThriftFrontendServiceSuite extends KyuubiFunSuite {
       assert(resp.getStatus.getErrorMessage startsWith "feature not supported")
     }
   }
-
 
   test("get cross reference") {
     withSessionHandle { (client, handle) =>

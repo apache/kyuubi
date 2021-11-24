@@ -26,10 +26,9 @@ import org.apache.kyuubi.server.mysql.constant._
 case class MySQLAuthSwitchRequestPacket(
     sequenceId: Int,
     authPluginName: String,
-    authPluginData: MySQLNativePassword.PluginData
-) extends MySQLPacket with SupportsEncode {
+    authPluginData: MySQLNativePassword.PluginData) extends MySQLPacket with SupportsEncode {
 
-  def header: Int = 0xfe
+  def header: Int = 0xFE
 
   override def encode(payload: ByteBuf): Unit = {
     payload.writeInt1(header)
@@ -49,13 +48,11 @@ object MySQLAuthSwitchResponsePacket extends SupportsDecode[MySQLAuthSwitchRespo
 
 case class MySQLAuthSwitchResponsePacket(
     sequenceId: Int,
-    authPluginResponse: Array[Byte]
-) extends MySQLPacket
+    authPluginResponse: Array[Byte]) extends MySQLPacket
 
 case class MySQLHandshakePacket(
     connectionId: Int,
-    authPluginData: MySQLNativePassword.PluginData
-) extends MySQLPacket with SupportsEncode {
+    authPluginData: MySQLNativePassword.PluginData) extends MySQLPacket with SupportsEncode {
 
   def protocolVersion: Int = MySQLServerDefines.PROTOCOL_VERSION
 
@@ -89,7 +86,7 @@ case class MySQLHandshakePacket(
   }
 
   private def isClientSecureConnection =
-    (capabilityFlagsLower & MySQLCapabilityFlag.CLIENT_SECURE_CONNECTION.value & 0x00000ffff) != 0
+    (capabilityFlagsLower & MySQLCapabilityFlag.CLIENT_SECURE_CONNECTION.value & 0x00000FFFF) != 0
 
   private def isClientPluginAuth =
     (capabilityFlagsUpper & MySQLCapabilityFlag.CLIENT_PLUGIN_AUTH.value >> 16) != 0
@@ -146,5 +143,4 @@ case class MySQLHandshakeResponse41Packet(
     username: String,
     authResponse: Array[Byte],
     database: String,
-    authPluginName: String
-) extends MySQLPacket
+    authPluginName: String) extends MySQLPacket

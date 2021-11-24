@@ -28,7 +28,10 @@ case class KyuubiDelegationTokenManager(
     tokenRenewInterval: Long,
     tokenRemoverScanInterval: Long)
   extends AbstractDelegationTokenSecretManager[KyuubiDelegationTokenIdentifier](
-    keyUpdateInterval, tokenMaxLifetime, tokenRenewInterval, tokenRemoverScanInterval) {
+    keyUpdateInterval,
+    tokenMaxLifetime,
+    tokenRenewInterval,
+    tokenRemoverScanInterval) {
   override def createIdentifier(): KyuubiDelegationTokenIdentifier = {
     new KyuubiDelegationTokenIdentifier()
   }
@@ -43,6 +46,9 @@ object KyuubiDelegationTokenManager {
     val tokenRemoverScanInterval = conf.get(DELEGATION_TOKEN_GC_INTERVAL)
 
     KyuubiDelegationTokenManager(
-      keyUpdateInterval, tokenMaxLifetime, tokenRenewInterval, tokenRemoverScanInterval)
+      keyUpdateInterval,
+      tokenMaxLifetime,
+      tokenRenewInterval,
+      tokenRemoverScanInterval)
   }
 }

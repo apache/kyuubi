@@ -45,7 +45,7 @@ abstract class ShareLevelSparkEngineSuite
     withZkClient { zkClient =>
       assert(engine.getServiceState == ServiceState.STARTED)
       assert(zkClient.checkExists().forPath(namespace) != null)
-      withJdbcStatement() {_ => }
+      withJdbcStatement() { _ => }
       shareLevel match {
         // Connection level, we will cleanup namespace since it's always a global unique value.
         case ShareLevel.CONNECTION =>

@@ -43,9 +43,11 @@ class MetricsSystem extends CompositeService("MetricsSystem") {
   }
 
   def registerGauge[T](name: String, value: => T, default: T): Unit = {
-    registry.register(MetricRegistry.name(name), new Gauge[T] {
-      override def getValue: T = Option(value).getOrElse(default)
-    })
+    registry.register(
+      MetricRegistry.name(name),
+      new Gauge[T] {
+        override def getValue: T = Option(value).getOrElse(default)
+      })
   }
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {

@@ -82,7 +82,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
         val children = framework.getChildren.forPath(znodeRoot).asScala
         assert(children.head ===
           s"serviceUri=${server.frontendServices.head.connectionUrl};" +
-            s"version=$KYUUBI_VERSION;sequence=0000000000")
+          s"version=$KYUUBI_VERSION;sequence=0000000000")
 
         children.foreach { child =>
           framework.delete().forPath(s"""$znodeRoot/$child""")
@@ -181,7 +181,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
           val children = framework.getChildren.forPath(znodeRoot).asScala
           assert(children.head ===
             s"serviceUri=${server.frontendServices.head.connectionUrl};" +
-              s"version=$KYUUBI_VERSION;sequence=0000000000")
+            s"version=$KYUUBI_VERSION;sequence=0000000000")
 
           children.foreach { child =>
             framework.delete().forPath(s"""$znodeRoot/$child""")
@@ -199,5 +199,22 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
         }
       }
     }
+  }
+
+  test("parse host and port from instance string") {
+    val host = "127.0.0.1"
+    val port = 10009
+    val instance1 = s"$host:$port"
+    val (host1, port1) = ServiceDiscovery.parseInstanceHostPort(instance1)
+    assert(host === host1)
+    assert(port === port1)
+
+    val instance2 = s"hive.server2.thrift.sasl.qop=auth;hive.server2.thrift.bind.host=$host;" +
+      s"hive.server2.transport.mode=binary;hive.server2.authentication=KERBEROS;" +
+      s"hive.server2.thrift.port=$port;" +
+      s"hive.server2.authentication.kerberos.principal=test/_HOST@apache.org"
+    val (host2, port2) = ServiceDiscovery.parseInstanceHostPort(instance2)
+    assert(host === host2)
+    assert(port === port2)
   }
 }

@@ -48,7 +48,6 @@ class KyuubiOperationManagerSuite extends WithKyuubiServer with HiveJDBCTestHelp
     intercept[IllegalArgumentException] { mgr4.initialize(conf4) }
   }
 
-
   test("query time out shall respect server-side first") {
     withJdbcStatement() { statement =>
       Range(-1, 20, 5).foreach { clientTimeout =>

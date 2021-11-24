@@ -65,7 +65,8 @@ private[server] object ApiUtils {
     // install swagger-ui, these static files are copied from
     // https://github.com/swagger-api/swagger-ui/tree/master/dist
     val swaggerUI = new ServletHolder("swagger-ui", classOf[DefaultServlet])
-    swaggerUI.setInitParameter("resourceBase",
+    swaggerUI.setInitParameter(
+      "resourceBase",
       getClass.getClassLoader()
         .getResource("META-INF/resources/webjars/swagger-ui/4.1.0/")
         .toExternalForm)

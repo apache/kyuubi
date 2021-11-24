@@ -53,7 +53,7 @@ object KyuubiServer extends Logging {
       // create chroot path if necessary
       val connectionStr = conf.get(HA_ZK_QUORUM)
       val addresses = connectionStr.split(",")
-      val slashOption = util.Arrays.copyOfRange(addresses, 0, addresses.length -1)
+      val slashOption = util.Arrays.copyOfRange(addresses, 0, addresses.length - 1)
         .toList
         .find(_.contains("/"))
       if (slashOption.isDefined) {
@@ -97,17 +97,17 @@ object KyuubiServer extends Logging {
 
   def main(args: Array[String]): Unit = {
     info(
-       """
-         |                  Welcome to
-         |  __  __                           __
-         | /\ \/\ \                         /\ \      __
-         | \ \ \/'/'  __  __  __  __  __  __\ \ \____/\_\
-         |  \ \ , <  /\ \/\ \/\ \/\ \/\ \/\ \\ \ '__`\/\ \
-         |   \ \ \\`\\ \ \_\ \ \ \_\ \ \ \_\ \\ \ \L\ \ \ \
-         |    \ \_\ \_\/`____ \ \____/\ \____/ \ \_,__/\ \_\
-         |     \/_/\/_/`/___/> \/___/  \/___/   \/___/  \/_/
-         |                /\___/
-         |                \/__/
+      """
+        |                  Welcome to
+        |  __  __                           __
+        | /\ \/\ \                         /\ \      __
+        | \ \ \/'/'  __  __  __  __  __  __\ \ \____/\_\
+        |  \ \ , <  /\ \/\ \/\ \/\ \/\ \/\ \\ \ '__`\/\ \
+        |   \ \ \\`\\ \ \_\ \ \ \_\ \ \ \_\ \\ \ \L\ \ \ \
+        |    \ \_\ \_\/`____ \ \____/\ \____/ \ \_,__/\ \_\
+        |     \/_/\/_/`/___/> \/___/  \/___/   \/___/  \/_/
+        |                /\___/
+        |                \/__/
        """.stripMargin)
     info(s"Version: $KYUUBI_VERSION, Revision: $REVISION, Branch: $BRANCH," +
       s" Java: $JAVA_COMPILE_VERSION, Scala: $SCALA_COMPILE_VERSION," +
@@ -134,6 +134,9 @@ class KyuubiServer(name: String) extends Serverable(name) {
       case REST =>
         warn("REST frontend protocol is experimental, API may change in the future.")
         new KyuubiRestFrontendService(this)
+      case MYSQL =>
+        warn("MYSQL frontend protocol is experimental.")
+        new KyuubiMySQLFrontendService(this)
       case other =>
         throw new UnsupportedOperationException(s"Frontend protocol $other is not supported yet.")
     }

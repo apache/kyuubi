@@ -15,11 +15,10 @@
  * limitations under the License.
  */
 
-package org.apache.spark.kyuubi.ui
+package org.apache.spark.ui
 
 import javax.servlet.http.HttpServletRequest
 
-import org.apache.spark.ui.SparkUITab
 import scala.util.control.NonFatal
 
 import org.apache.kyuubi.{Logging, Utils}
@@ -47,22 +46,24 @@ case class EngineTab(engine: SparkSQLEngine)
     try {
       // Spark shade the jetty package so here we use reflect
       Class.forName("org.apache.spark.ui.SparkUI")
-        .getMethod("attachHandler",
-          classOf[org.sparkproject.jetty.servlet.ServletContextHandler])
-        .invoke(ui,
+        .getMethod("attachHandler", classOf[org.sparkproject.jetty.servlet.ServletContextHandler])
+        .invoke(
+          ui,
           Class.forName("org.apache.spark.ui.JettyUtils")
-            .getMethod("createRedirectHandler",
+            .getMethod(
+              "createRedirectHandler",
               classOf[String],
               classOf[String],
               classOf[(HttpServletRequest) => Unit],
               classOf[String],
               classOf[scala.collection.immutable.Set[String]])
-            .invoke(null, "/kyuubi/stop", "/kyuubi", handleKillRequest _, "", Set("GET", "POST"))
-        )
+            .invoke(null, "/kyuubi/stop", "/kyuubi", handleKillRequest _, "", Set("GET", "POST")))
     } catch {
       case NonFatal(e) =>
-        warn("Failed to attach handler using SparkUI, please check the Spark version. " +
-          s"So the config '${KyuubiConf.ENGINE_UI_STOP_ENABLED.key}' does not work.", e)
+        warn(
+          "Failed to attach handler using SparkUI, please check the Spark version. " +
+            s"So the config '${KyuubiConf.ENGINE_UI_STOP_ENABLED.key}' does not work.",
+          e)
     }
   }
 

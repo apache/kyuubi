@@ -57,8 +57,8 @@ class SparkSQLEngineListener(
 
   override def onApplicationEnd(event: SparkListenerApplicationEnd): Unit = {
     server.getServiceState match {
-      case ServiceState.STOPPED => debug("Received ApplicationEnd Message form Spark after the" +
-        " engine has stopped")
+      case ServiceState.STOPPED =>
+        debug("Received ApplicationEnd Message form Spark after the engine has stopped")
       case state =>
         info(s"Received ApplicationEnd Message from Spark at $state, stopping")
         server.stop()
@@ -74,44 +74,45 @@ class SparkSQLEngineListener(
   override def onJobEnd(jobEnd: SparkListenerJobEnd): Unit = {
     info(s"Job end. Job ${jobEnd.jobId} state is ${jobEnd.jobResult.toString}")
     jobEnd.jobResult match {
-     case JobFailed(e) if e != null =>
-       val cause = findCause(e)
-       var deregisterInfo: Option[String] = None
-       if (deregisterExceptions.exists(_.equals(cause.getClass.getCanonicalName))) {
-         deregisterInfo = Some("Job failed exception class is in the set of " +
-           s"${ENGINE_DEREGISTER_EXCEPTION_CLASSES.key}, deregistering the engine.")
-       } else if (deregisterMessages.exists(stringifyException(cause).contains)) {
-         deregisterInfo = Some("Job failed exception message matches the specified " +
-           s"${ENGINE_DEREGISTER_EXCEPTION_MESSAGES.key}, deregistering the engine.")
-       }
+      case JobFailed(e) if e != null =>
+        val cause = findCause(e)
+        var deregisterInfo: Option[String] = None
+        if (deregisterExceptions.exists(_.equals(cause.getClass.getCanonicalName))) {
+          deregisterInfo = Some("Job failed exception class is in the set of " +
+            s"${ENGINE_DEREGISTER_EXCEPTION_CLASSES.key}, deregistering the engine.")
+        } else if (deregisterMessages.exists(stringifyException(cause).contains)) {
+          deregisterInfo = Some("Job failed exception message matches the specified " +
+            s"${ENGINE_DEREGISTER_EXCEPTION_MESSAGES.key}, deregistering the engine.")
+        }
 
-       deregisterInfo.foreach { din =>
-         val currentTime = System.currentTimeMillis()
-         if (lastFailureTime == 0 || currentTime - lastFailureTime < deregisterExceptionTTL) {
-           jobFailureNum.incrementAndGet()
-         } else {
-           info(s"It has been more than one deregister exception ttl [$deregisterExceptionTTL ms]" +
-             " since last failure, restart counting.")
-           jobFailureNum.set(1)
-         }
-         lastFailureTime = currentTime
-         val curFailures = jobFailureNum.get()
-         error(s"$din, current job failure number is [$curFailures]", e)
-         if (curFailures >= jobMaxFailures) {
-           error(s"Job failed $curFailures times; deregistering the engine")
-           val fe = server.frontendServices.head
-           fe.discoveryService.foreach(_.stop())
-         }
-       }
+        deregisterInfo.foreach { din =>
+          val currentTime = System.currentTimeMillis()
+          if (lastFailureTime == 0 || currentTime - lastFailureTime < deregisterExceptionTTL) {
+            jobFailureNum.incrementAndGet()
+          } else {
+            info(
+              s"It has been more than one deregister exception ttl [$deregisterExceptionTTL ms]" +
+                " since last failure, restart counting.")
+            jobFailureNum.set(1)
+          }
+          lastFailureTime = currentTime
+          val curFailures = jobFailureNum.get()
+          error(s"$din, current job failure number is [$curFailures]", e)
+          if (curFailures >= jobMaxFailures) {
+            error(s"Job failed $curFailures times; deregistering the engine")
+            val fe = server.frontendServices.head
+            fe.discoveryService.foreach(_.stop())
+          }
+        }
 
-     case _ =>
-   }
+      case _ =>
+    }
   }
 
   @tailrec
   private def findCause(t: Throwable): Throwable = t match {
     case e @ (_: SparkException | _: UndeclaredThrowableException | _: InvocationTargetException)
-      if e.getCause != null => findCause(e.getCause)
+        if e.getCause != null => findCause(e.getCause)
     case e => e
   }
 

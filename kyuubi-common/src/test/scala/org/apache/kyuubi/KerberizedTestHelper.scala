@@ -31,7 +31,8 @@ import org.scalatest.time.SpanSugar._
 
 trait KerberizedTestHelper extends KyuubiFunSuite {
   val baseDir: File = Utils.createTempDir(
-    this.getClass.getProtectionDomain.getCodeSource.getLocation.getPath, "kyuubi-kdc").toFile
+    this.getClass.getProtectionDomain.getCodeSource.getLocation.getPath,
+    "kyuubi-kdc").toFile
   val kdcConf = MiniKdc.createConf()
   val hostName = "localhost"
   kdcConf.setProperty(MiniKdc.INSTANCE, this.getClass.getSimpleName)
@@ -101,12 +102,13 @@ trait KerberizedTestHelper extends KyuubiFunSuite {
           s
         }).filter(!_.trim.startsWith("#")).mkString(System.lineSeparator())
 
-      val krb5confStr = if (!rewritten) {
-        "[libdefaults]" + addedConfig + System.lineSeparator() +
-          System.lineSeparator() + rewriteKrb5Conf
-      } else {
-        rewriteKrb5Conf
-      }
+      val krb5confStr =
+        if (!rewritten) {
+          "[libdefaults]" + addedConfig + System.lineSeparator() +
+            System.lineSeparator() + rewriteKrb5Conf
+        } else {
+          rewriteKrb5Conf
+        }
 
       kdc.getKrb5conf.delete()
       val writer = Files.newBufferedWriter(kdc.getKrb5conf.toPath, StandardCharsets.UTF_8)

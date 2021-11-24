@@ -34,17 +34,17 @@ class SparkSqlEngineSuite extends WithKyuubiServer with HiveJDBCTestHelper {
     val sparkHiveConfs = Map("spark.sql.abc.xyz" -> "123", "spark.sql.abc.xyz0" -> "123")
     val sparkHiveVars = Map("spark.sql.abc.var" -> "123", "spark.sql.abc.var0" -> "123")
     withSessionConf(sessionConf)(sparkHiveConfs)(sparkHiveVars) {
-     withJdbcStatement() { statement =>
-       Seq("spark.sql.abc.xyz", "spark.sql.abc.var").foreach { key =>
-         val rs1 = statement.executeQuery(s"SET ${key}0")
-         assert(rs1.next())
-         assert(rs1.getString("value") === "123")
-         val rs2 = statement.executeQuery(s"SET $key")
-         assert(rs2.next())
-         assert(rs2.getString("value") === "<undefined>", "ignored")
-       }
-     }
-   }
+      withJdbcStatement() { statement =>
+        Seq("spark.sql.abc.xyz", "spark.sql.abc.var").foreach { key =>
+          val rs1 = statement.executeQuery(s"SET ${key}0")
+          assert(rs1.next())
+          assert(rs1.getString("value") === "123")
+          val rs2 = statement.executeQuery(s"SET $key")
+          assert(rs2.next())
+          assert(rs2.getString("value") === "<undefined>", "ignored")
+        }
+      }
+    }
   }
 
   test("restricted config via system settings") {
@@ -54,7 +54,8 @@ class SparkSqlEngineSuite extends WithKyuubiServer with HiveJDBCTestHelper {
         sessionConfMap.keys.foreach { key =>
           val rs = statement.executeQuery(s"SET $key")
           assert(rs.next())
-          assert(rs.getString("value") === "<undefined>",
+          assert(
+            rs.getString("value") === "<undefined>",
             "session configs do not reach on server-side")
         }
 
@@ -69,7 +70,6 @@ class SparkSqlEngineSuite extends WithKyuubiServer with HiveJDBCTestHelper {
       assertJDBCConnectionFail()
     }
   }
-
 
   test("Fail connections on invalid sub domains") {
     Seq("/", "/tmp", "", "abc/efg", ".", "..").foreach { invalid =>

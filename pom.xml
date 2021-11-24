@@ -28,7 +28,7 @@
 
     <groupId>org.apache.kyuubi</groupId>
     <artifactId>kyuubi-parent</artifactId>
-    <version>1.4.0-SNAPSHOT</version>
+    <version>1.5.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Kyuubi Project Parent</name>
@@ -72,6 +72,7 @@
         <module>kyuubi-common</module>
         <module>kyuubi-ctl</module>
         <module>kyuubi-ha</module>
+        <module>kyuubi-hive-beeline</module>
         <module>kyuubi-hive-jdbc</module>
         <module>kyuubi-hive-jdbc-shaded</module>
         <module>kyuubi-metrics</module>
@@ -115,6 +116,7 @@
         <javax-activation.version>1.1.1</javax-activation.version>
         <jersey.version>2.30</jersey.version>
         <jetty.version>9.4.41.v20210516</jetty.version>
+        <jline.version>0.9.94</jline.version>
         <kubernetes-client.version>5.5.0</kubernetes-client.version>
         <ldapsdk.version>5.1.4</ldapsdk.version>
         <mysql.jdbc.version>8.0.27</mysql.jdbc.version>
@@ -134,18 +136,22 @@
         <swagger-ui.version>4.1.0</swagger-ui.version>
         <zookeeper.version>3.4.14</zookeeper.version>
 
-        <!-- only apply to kyuubi-hive-jdbc module -->
-        <hive.jdbc.version>2.3.9</hive.jdbc.version>
-        <hive.jdbc.commons-lang.version>2.6</hive.jdbc.commons-lang.version>
-        <hive.jdbc.commons-codec.version>1.15</hive.jdbc.commons-codec.version>
-        <hive.jdbc.curator.version>2.12.0</hive.jdbc.curator.version>
-        <hive.jdbc.guava.version>14.0.1</hive.jdbc.guava.version>
-        <hive.jdbc.httpcomponents-client.version>4.5.13</hive.jdbc.httpcomponents-client.version>
-        <hive.jdbc.httpcomponents-core.version>4.4.13</hive.jdbc.httpcomponents-core.version>
-        <hive.jdbc.storage-api.version>2.4.0</hive.jdbc.storage-api.version>
-        <hive.jdbc.thrift.version>0.9.3</hive.jdbc.thrift.version>
-        <hive.jdbc.fb303.version>0.9.3</hive.jdbc.fb303.version>
-        <hive.jdbc.zookeeper.version>3.4.14</hive.jdbc.zookeeper.version>
+        <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
+        <hive.client.version>2.3.9</hive.client.version>
+        <hive.client.version>2.3.9</hive.client.version>
+        <hive.client.commons-lang.version>2.6</hive.client.commons-lang.version>
+        <hive.client.commons-cli.version>1.2</hive.client.commons-cli.version>
+        <hive.client.commons-codec.version>1.15</hive.client.commons-codec.version>
+        <hive.client.curator.version>2.12.0</hive.client.curator.version>
+        <hive.client.guava.version>14.0.1</hive.client.guava.version>
+        <hive.client.httpcomponents-client.version>4.5.13</hive.client.httpcomponents-client.version>
+        <hive.client.httpcomponents-core.version>4.4.13</hive.client.httpcomponents-core.version>
+        <hive.client.jline.version>2.12</hive.client.jline.version>
+        <hive.client.storage-api.version>2.4.0</hive.client.storage-api.version>
+        <hive.client.supercsv.version>2.2.0</hive.client.supercsv.version>
+        <hive.client.thrift.version>0.9.3</hive.client.thrift.version>
+        <hive.client.fb303.version>0.9.3</hive.client.fb303.version>
+        <hive.client.zookeeper.version>3.4.14</hive.client.zookeeper.version>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <jars.target.dir>${project.build.directory}/scala-${scala.binary.version}/jars</jars.target.dir>
@@ -874,6 +880,19 @@
                 <version>${javax-activation.version}</version>
             </dependency>
 
+            <!-- Zookeeper Cli required -->
+            <dependency>
+                <groupId>jline</groupId>
+                <artifactId>jline</artifactId>
+                <version>${jline.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>junit</artifactId>
+                        <groupId>junit</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
             <dependency>
                 <groupId>com.github.scopt</groupId>
                 <artifactId>scopt_${scala.binary.version}</artifactId>
@@ -1117,7 +1136,6 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven.plugin.surefire.version}</version>
                     <configuration>
-                        <skipTests>true</skipTests>
                         <includes>
                             <include>**/Test*.java</include>
                             <include>**/*Test.java</include>
@@ -1330,12 +1348,21 @@
                                 <include>src/main/java/**/*.java</include>
                                 <include>src/test/java/**/*.java</include>
                             </includes>
-
                             <googleJavaFormat>
                                 <version>1.7</version>
                                 <style>GOOGLE</style>
                             </googleJavaFormat>
                         </java>
+                        <scala>
+                            <includes>
+                                <include>src/main/scala/**/*.scala</include>
+                                <include>src/test/scala/**/*.scala</include>
+                            </includes>
+                            <scalafmt>
+                                <version>3.1.1</version>
+                                <file>${maven.multiModuleProjectDirectory}/.scalafmt.conf</file>
+                            </scalafmt>
+                        </scala>
                     </configuration>
                     <executions>
                         <execution>

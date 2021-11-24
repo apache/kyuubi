@@ -24,13 +24,14 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 class SingleSessionSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 
   override def withKyuubiConf: Map[String, String] = {
-    Map(ENGINE_SHARE_LEVEL.key -> "SERVER",
+    Map(
+      ENGINE_SHARE_LEVEL.key -> "SERVER",
       ENGINE_SINGLE_SPARK_SESSION.key -> "true",
-      (ENGINE_SESSION_INITIALIZE_SQL.key,
+      (
+        ENGINE_SESSION_INITIALIZE_SQL.key,
         "CREATE DATABASE IF NOT EXISTS INIT_DB_SOLO;" +
-        "CREATE TABLE IF NOT EXISTS INIT_DB_SOLO.test(a int) USING CSV;" +
-        "INSERT INTO INIT_DB_SOLO.test VALUES (2);")
-    )
+          "CREATE TABLE IF NOT EXISTS INIT_DB_SOLO.test(a int) USING CSV;" +
+          "INSERT INTO INIT_DB_SOLO.test VALUES (2);"))
   }
 
   override def afterAll(): Unit = {

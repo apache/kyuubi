@@ -52,22 +52,22 @@ object MySQLCommandPacketType {
   object COM_STATISTICS extends MySQLCommandPacketType(0x09)
 
   // https://dev.mysql.com/doc/internals/en/com-process-info.html
-  object COM_PROCESS_INFO extends MySQLCommandPacketType(0x0a)
+  object COM_PROCESS_INFO extends MySQLCommandPacketType(0x0A)
 
   // https://dev.mysql.com/doc/internals/en/com-connect.html
-  object COM_CONNECT extends MySQLCommandPacketType(0x0b)
+  object COM_CONNECT extends MySQLCommandPacketType(0x0B)
 
   // https://dev.mysql.com/doc/internals/en/com-process-kill.html
-  object COM_PROCESS_KILL extends MySQLCommandPacketType(0x0c)
+  object COM_PROCESS_KILL extends MySQLCommandPacketType(0x0C)
 
   // https://dev.mysql.com/doc/internals/en/com-debug.html
-  object COM_DEBUG extends MySQLCommandPacketType(0x0d)
+  object COM_DEBUG extends MySQLCommandPacketType(0x0D)
 
   // https://dev.mysql.com/doc/internals/en/com-ping.html
-  object COM_PING extends MySQLCommandPacketType(0x0e)
+  object COM_PING extends MySQLCommandPacketType(0x0E)
 
   // https://dev.mysql.com/doc/internals/en/com-time.html
-  object COM_TIME extends MySQLCommandPacketType(0x0f)
+  object COM_TIME extends MySQLCommandPacketType(0x0F)
 
   // https://dev.mysql.com/doc/internals/en/com-delayed-insert.html
   object COM_DELAYED_INSERT extends MySQLCommandPacketType(0x10)
@@ -100,22 +100,22 @@ object MySQLCommandPacketType {
   object COM_STMT_CLOSE extends MySQLCommandPacketType(0x19)
 
   // https://dev.mysql.com/doc/internals/en/com-stmt-reset.html
-  object COM_STMT_RESET extends MySQLCommandPacketType(0x1a)
+  object COM_STMT_RESET extends MySQLCommandPacketType(0x1A)
 
   // https://dev.mysql.com/doc/internals/en/com-set-option.html
-  object COM_SET_OPTION extends MySQLCommandPacketType(0x1b)
+  object COM_SET_OPTION extends MySQLCommandPacketType(0x1B)
 
   // https://dev.mysql.com/doc/internals/en/com-stmt-fetch.html
-  object COM_STMT_FETCH extends MySQLCommandPacketType(0x1c)
+  object COM_STMT_FETCH extends MySQLCommandPacketType(0x1C)
 
   // https://dev.mysql.com/doc/internals/en/com-daemon.html
-  object COM_DAEMON extends MySQLCommandPacketType(0x1d)
+  object COM_DAEMON extends MySQLCommandPacketType(0x1D)
 
   // https://dev.mysql.com/doc/internals/en/com-binlog-dump-gtid.html
-  object COM_BINLOG_DUMP_GTID extends MySQLCommandPacketType(0x1e)
+  object COM_BINLOG_DUMP_GTID extends MySQLCommandPacketType(0x1E)
 
   // https://dev.mysql.com/doc/internals/en/com-reset-connection.html
-  object COM_RESET_CONNECTION extends MySQLCommandPacketType(0x1f)
+  object COM_RESET_CONNECTION extends MySQLCommandPacketType(0x1F)
 
   def valueOf(value: Int): MySQLCommandPacketType = value match {
     case COM_SLEEP.value => COM_SLEEP

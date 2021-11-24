@@ -27,9 +27,8 @@ trait KyuubiBenchmarkBase {
   var output: Option[OutputStream] = None
 
   private val prefix = {
-    val benchmarkClasses = ClassPath.from(
-      Thread.currentThread.getContextClassLoader
-    ).getTopLevelClassesRecursive("org.apache.spark.sql").asScala.toArray
+    val benchmarkClasses = ClassPath.from(Thread.currentThread.getContextClassLoader)
+      .getTopLevelClassesRecursive("org.apache.spark.sql").asScala.toArray
     assert(benchmarkClasses.nonEmpty)
     val benchmark = benchmarkClasses.find(_.load().getName.endsWith("Benchmark"))
     val targetDirOrProjDir =

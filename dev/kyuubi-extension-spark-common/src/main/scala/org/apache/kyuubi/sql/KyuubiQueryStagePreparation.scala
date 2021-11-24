@@ -73,7 +73,8 @@ object InsertShuffleNodeBeforeJoin extends Rule[SparkPlan] {
   }
 
   private def checkAndInsertShuffle(
-      distribution: Distribution, child: SparkPlan): SparkPlan = child match {
+      distribution: Distribution,
+      child: SparkPlan): SparkPlan = child match {
     case SortExec(_, _, _: Exchange, _) =>
       child
     case SortExec(_, _, _: QueryStageExec, _) =>
@@ -130,12 +131,13 @@ case class FinalStageConfigIsolation(session: SparkSession) extends Rule[SparkPl
           // store the previous config only if we have not stored, to avoid some query only
           // have one stage that will overwrite real config.
           if (!session.sessionState.conf.contains(previousStageConfigKey)) {
-            val originalValue = if (session.conf.getOption(sparkConfigKey).isDefined) {
-              session.sessionState.conf.getConfString(sparkConfigKey)
-            } else {
-              // the default value of config is None, so we need to use a internal tag
-              INTERNAL_UNSET_CONFIG_TAG
-            }
+            val originalValue =
+              if (session.conf.getOption(sparkConfigKey).isDefined) {
+                session.sessionState.conf.getConfString(sparkConfigKey)
+              } else {
+                // the default value of config is None, so we need to use a internal tag
+                INTERNAL_UNSET_CONFIG_TAG
+              }
             logInfo(s"Store config: $sparkConfigKey to previousStage, " +
               s"original value: $originalValue ")
             session.sessionState.conf.setConfString(previousStageConfigKey, originalValue)

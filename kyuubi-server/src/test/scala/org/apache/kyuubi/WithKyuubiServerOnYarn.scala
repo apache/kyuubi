@@ -31,7 +31,7 @@ trait WithKyuubiServerOnYarn extends WithKyuubiServer {
   protected val connectionConf: Map[String, String]
   private var miniYarnService: MiniYarnService = _
 
-  override protected lazy final val conf: KyuubiConf = {
+  final override protected lazy val conf: KyuubiConf = {
     connectionConf.foreach { case (k, v) => kyuubiServerConf.set(k, v) }
     kyuubiServerConf
   }

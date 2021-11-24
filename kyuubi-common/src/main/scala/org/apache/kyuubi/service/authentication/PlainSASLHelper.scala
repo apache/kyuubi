@@ -40,7 +40,7 @@ object PlainSASLHelper {
       new TSetIpAddressProcessor[Iface](service)
   }
 
-  private class PlainServerCallbackHandler private(authMethod: AuthMethod, conf: KyuubiConf)
+  private class PlainServerCallbackHandler private (authMethod: AuthMethod, conf: KyuubiConf)
     extends CallbackHandler {
 
     def this(authMethodStr: String, conf: KyuubiConf) =
@@ -83,7 +83,8 @@ object PlainSASLHelper {
     } catch {
       case e: NoSuchElementException =>
         throw new IllegalArgumentException(
-          s"Illegal authentication type $authTypeStr for plain transport", e)
+          s"Illegal authentication type $authTypeStr for plain transport",
+          e)
     }
     saslFactory
   }
@@ -108,8 +109,8 @@ object PlainSASLHelper {
       null,
       null,
       null,
-      Collections.emptyMap[String, String]()
-      , callBackHandler,
+      Collections.emptyMap[String, String](),
+      callBackHandler,
       underlyingTransport)
   }
 }

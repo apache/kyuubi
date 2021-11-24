@@ -106,11 +106,12 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
       tableName: String,
       tableTypes: java.util.List[String]): Operation = {
     val spark = getSparkSession(session.handle)
-    val tTypes = if (tableTypes == null || tableTypes.isEmpty) {
-      SparkCatalogShim.sparkTableTypes
-    } else {
-      tableTypes.asScala.toSet
-    }
+    val tTypes =
+      if (tableTypes == null || tableTypes.isEmpty) {
+        SparkCatalogShim.sparkTableTypes
+      } else {
+        tableTypes.asScala.toSet
+      }
     val op = new GetTables(spark, session, catalogName, schemaName, tableName, tTypes)
     addOperation(op)
   }

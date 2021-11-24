@@ -70,11 +70,12 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
    * @return the equivalent Java regular expression of the pattern
    */
   def toJavaRegex(input: String): String = {
-    val res = if (StringUtils.isEmpty(input) || input == "*") {
-      "%"
-    } else {
-      input
-    }
+    val res =
+      if (StringUtils.isEmpty(input) || input == "*") {
+        "%"
+      } else {
+        input
+      }
     val wStr = ".*"
     res
       .replaceAll("([^\\\\])%", "$1" + wStr).replaceAll("\\\\%", "%").replaceAll("^%", wStr)

@@ -67,7 +67,6 @@ object KyuubiGetSqlClassification extends Logging {
       }
     }.getOrElse(
       throw new IllegalArgumentException(
-        s"You should restart engine with: ${SQL_CLASSIFICATION_ENABLED.key} true")
-    )
+        s"You should restart engine with: ${SQL_CLASSIFICATION_ENABLED.key} true"))
   }
 }

@@ -75,7 +75,8 @@ class MetricsSystemSuite extends KyuubiFunSuite {
     val reportPath = Utils.createTempDir()
     val conf = KyuubiConf()
       .set(MetricsConf.METRICS_ENABLED, true)
-      .set(MetricsConf.METRICS_REPORTERS,
+      .set(
+        MetricsConf.METRICS_REPORTERS,
         ReporterType.values.filterNot(_ == ReporterType.PROMETHEUS).map(_.toString).toSeq)
       .set(MetricsConf.METRICS_JSON_INTERVAL, Duration.ofSeconds(1).toMillis)
       .set(MetricsConf.METRICS_JSON_LOCATION, reportPath.toString)

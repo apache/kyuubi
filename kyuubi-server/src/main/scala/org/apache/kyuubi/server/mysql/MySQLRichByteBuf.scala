@@ -93,7 +93,7 @@ object MySQLRichByteBuf {
       var result = 0L
       var i = 0
       while (i < 6) {
-        result |= (0xff & self.readByte).toLong << (8 * i)
+        result |= (0xFF & self.readByte).toLong << (8 * i)
         i = i + 1
       }
       result
@@ -127,10 +127,10 @@ object MySQLRichByteBuf {
      */
     def readIntLenenc: Long = {
       val firstByte = readInt1
-      if (firstByte < 0xfb) return firstByte
-      if (0xfb == firstByte) return 0
-      if (0xfc == firstByte) return readInt2
-      if (0xfd == firstByte) return readInt3
+      if (firstByte < 0xFB) return firstByte
+      if (0xFB == firstByte) return 0
+      if (0xFC == firstByte) return readInt2
+      if (0xFD == firstByte) return readInt3
       self.readLongLE
     }
 
@@ -140,16 +140,16 @@ object MySQLRichByteBuf {
      * @param value lenenc integer
      */
     def writeIntLenenc(value: Long): ByteBuf = {
-      if (value < 0xfb) {
+      if (value < 0xFB) {
         self.writeByte(value.toInt)
       } else if (value < (1 << 16)) {
-        self.writeByte(0xfc)
+        self.writeByte(0xFC)
         self.writeShortLE(value.toInt)
       } else if (value < (1 << 24)) {
-        self.writeByte(0xfd)
+        self.writeByte(0xFD)
         self.writeMediumLE(value.toInt)
       } else {
-        self.writeByte(0xfe)
+        self.writeByte(0xFE)
         self.writeLongLE(value)
       }
     }

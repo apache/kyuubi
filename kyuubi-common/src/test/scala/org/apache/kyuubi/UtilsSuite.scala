@@ -106,8 +106,7 @@ class UtilsSuite extends KyuubiFunSuite {
         override def run(): Unit = {
           assert(Utils.currentUser === "kentyao")
         }
-      }
-    )
+      })
   }
 
   test("version test") {

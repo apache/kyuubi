@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.server
 
-
 import java.io.{File, FileWriter}
 import java.net.InetAddress
 
@@ -45,7 +44,8 @@ class MiniYarnService(name: String) extends AbstractService(name) {
     val yarnConfig = new YarnConfiguration()
     // Disable the disk utilization check to avoid the test hanging when people's disks are
     // getting full.
-    yarnConfig.set("yarn.nodemanager.disk-health-checker.max-disk-utilization-per-disk-percentage",
+    yarnConfig.set(
+      "yarn.nodemanager.disk-health-checker.max-disk-utilization-per-disk-percentage",
       "100.0")
 
     // capacity-scheduler.xml is missing in hadoop-client-minicluster so this is a workaround

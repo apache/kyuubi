@@ -32,8 +32,7 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with SparkQ
 
   override protected val connectionConf: Map[String, String] = Map(
     "spark.master" -> "yarn",
-    "spark.executor.instances" -> "1"
-  )
+    "spark.executor.instances" -> "1")
 
   test("KYUUBI #527- Support test with mini yarn cluster") {
     withJdbcStatement() { statement =>

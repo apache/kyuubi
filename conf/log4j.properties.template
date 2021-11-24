@@ -28,3 +28,6 @@ log4j.logger.org.apache.kyuubi.ctl.ServiceControlCli=ERROR
 
 # Analysis MySQLFrontend protocol traffic
 # log4j.logger.org.apache.kyuubi.server.mysql.codec=TRACE
+
+# Kyuubi BeeLine
+log4j.logger.org.apache.hive.beeline.KyuubiBeeLine=ERROR

@@ -121,7 +121,7 @@ class KyuubiConfSuite extends KyuubiFunSuite {
     kyuubiConf.set(OPERATION_QUERY_TIMEOUT, 1000L)
     assert(kyuubiConf.get(OPERATION_QUERY_TIMEOUT) === Some(1000L))
     kyuubiConf.set(OPERATION_QUERY_TIMEOUT.key, "1000")
-    assert(kyuubiConf.get(OPERATION_QUERY_TIMEOUT) ===  Some(1000L))
+    assert(kyuubiConf.get(OPERATION_QUERY_TIMEOUT) === Some(1000L))
     kyuubiConf.set(OPERATION_QUERY_TIMEOUT.key, "  1000  ")
     assert(kyuubiConf.get(OPERATION_QUERY_TIMEOUT) === Some(1000L))
     kyuubiConf.set(OPERATION_QUERY_TIMEOUT.key, "1000A")

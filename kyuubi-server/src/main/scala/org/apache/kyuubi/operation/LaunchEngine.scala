@@ -20,17 +20,18 @@ package org.apache.kyuubi.operation
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.KyuubiSessionImpl
 
-class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Boolean) extends
-  KyuubiOperation(OperationType.UNKNOWN_OPERATION, session) {
+class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Boolean)
+  extends KyuubiOperation(OperationType.UNKNOWN_OPERATION, session) {
 
   override protected def statement: String = "LAUNCH_ENGINE"
 
-  private lazy val _operationLog: OperationLog = if (shouldRunAsync) {
-    OperationLog.createOperationLog(session, getHandle)
-  } else {
-    // when launch engine synchronously, operation log is not needed
-    null
-  }
+  private lazy val _operationLog: OperationLog =
+    if (shouldRunAsync) {
+      OperationLog.createOperationLog(session, getHandle)
+    } else {
+      // when launch engine synchronously, operation log is not needed
+      null
+    }
   override def getOperationLog: Option[OperationLog] = Option(_operationLog)
 
   override protected def beforeRun(): Unit = {

@@ -23,7 +23,7 @@ import org.apache.kyuubi.sql.KyuubiSQLConf
 import org.apache.kyuubi.sql.watchdog.MaxHivePartitionExceedException
 
 class WatchDogSuite extends KyuubiSparkSQLExtensionTest {
-  protected override def beforeAll(): Unit = {
+  override protected def beforeAll(): Unit = {
     super.beforeAll()
     setupData()
   }
@@ -72,27 +72,26 @@ class WatchDogSuite extends KyuubiSparkSQLExtensionTest {
     withSQLConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS.key -> "10") {
 
       List("", "ORDER BY c1", "ORDER BY c2").foreach { sort =>
-        List("", " DISTINCT").foreach{ distinct =>
-        assert(sql(
-          s"""
-             |SELECT $distinct *
-             |FROM t1
-             |$sort
-             |""".stripMargin).queryExecution.analyzed.isInstanceOf[GlobalLimit])
+        List("", " DISTINCT").foreach { distinct =>
+          assert(sql(
+            s"""
+               |SELECT $distinct *
+               |FROM t1
+               |$sort
+               |""".stripMargin).queryExecution.analyzed.isInstanceOf[GlobalLimit])
         }
       }
 
       limitAndExpecteds.foreach { case LimitAndExpected(limit, expected) =>
         List("", "ORDER BY c1", "ORDER BY c2").foreach { sort =>
-          List("", "DISTINCT").foreach{ distinct =>
+          List("", "DISTINCT").foreach { distinct =>
             assert(sql(
               s"""
                  |SELECT $distinct *
                  |FROM t1
                  |$sort
                  |LIMIT $limit
-                 |""".stripMargin).queryExecution.analyzed.maxRows.contains(expected)
-            )
+                 |""".stripMargin).queryExecution.analyzed.maxRows.contains(expected))
           }
         }
       }
@@ -122,7 +121,7 @@ class WatchDogSuite extends KyuubiSparkSQLExtensionTest {
         }
       }
 
-      limitAndExpecteds.foreach{ case LimitAndExpected(limit, expected) =>
+      limitAndExpecteds.foreach { case LimitAndExpected(limit, expected) =>
         havingConditions.foreach { having =>
           sorts.foreach { sort =>
             assert(sql(
@@ -252,7 +251,7 @@ class WatchDogSuite extends KyuubiSparkSQLExtensionTest {
       val havingConditions = List("", "HAVING cnt > 1")
 
       List("", "ALL").foreach { x =>
-        havingConditions.foreach{ having =>
+        havingConditions.foreach { having =>
           sorts.foreach { sort =>
             assert(sql(
               s"""

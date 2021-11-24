@@ -37,25 +37,28 @@ case class MaxHivePartitionStrategy(session: SparkSession)
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = {
     conf.getConf(KyuubiSQLConf.WATCHDOG_MAX_HIVEPARTITION) match {
       case Some(maxHivePartition) => plan match {
-        case ScanOperation(_, _, relation: HiveTableRelation) if relation.isPartitioned =>
+          case ScanOperation(_, _, relation: HiveTableRelation) if relation.isPartitioned =>
             relation.prunedPartitions match {
-              case Some(prunedPartitions) => if (prunedPartitions.size > maxHivePartition) {
-                throw new MaxHivePartitionExceedException(
-                  s"""
-                    |SQL job scan hive partition: ${prunedPartitions.size}
-                    |exceed restrict of hive scan maxPartition $maxHivePartition
-                    |You should optimize your SQL logical according partition structure
-                    |or shorten query scope such as p_date, detail as below:
-                    |Table: ${relation.tableMeta.qualifiedName}
-                    |Owner: ${relation.tableMeta.owner}
-                    |Partition Structure: ${relation.partitionCols.map(_.name).mkString(" -> ")}
-                    |""".stripMargin)
-              } else {
-                Nil
-              }
-              case _ => val totalPartitions = session
-                .sessionState.catalog.externalCatalog.listPartitionNames(
-                relation.tableMeta.database, relation.tableMeta.identifier.table)
+              case Some(prunedPartitions) =>
+                if (prunedPartitions.size > maxHivePartition) {
+                  throw new MaxHivePartitionExceedException(
+                    s"""
+                       |SQL job scan hive partition: ${prunedPartitions.size}
+                       |exceed restrict of hive scan maxPartition $maxHivePartition
+                       |You should optimize your SQL logical according partition structure
+                       |or shorten query scope such as p_date, detail as below:
+                       |Table: ${relation.tableMeta.qualifiedName}
+                       |Owner: ${relation.tableMeta.owner}
+                       |Partition Structure: ${relation.partitionCols.map(_.name).mkString(" -> ")}
+                       |""".stripMargin)
+                } else {
+                  Nil
+                }
+              case _ =>
+                val totalPartitions = session
+                  .sessionState.catalog.externalCatalog.listPartitionNames(
+                    relation.tableMeta.database,
+                    relation.tableMeta.identifier.table)
                 if (totalPartitions.size > maxHivePartition) {
                   throw new MaxHivePartitionExceedException(
                     s"""
@@ -66,12 +69,12 @@ case class MaxHivePartitionStrategy(session: SparkSession)
                        |Owner: ${relation.tableMeta.owner}
                        |Partition Structure: ${relation.partitionCols.map(_.name).mkString(" -> ")}
                        |""".stripMargin)
-                   } else {
+                } else {
                   Nil
                 }
             }
-        case _ => Nil
-      }
+          case _ => Nil
+        }
       case _ => Nil
     }
   }

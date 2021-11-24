@@ -32,7 +32,6 @@ import org.apache.kyuubi.session.{SessionHandle, SessionManager}
  * 4. Check [[OperationStatus]] <br/>
  * 5. Retrieve [[org.apache.kyuubi.operation.Operation]] results and metadata <br/>
  * 6. Cancel/Close [[org.apache.kyuubi.operation.Operation]] <br/>
- *
  */
 trait BackendService {
 
