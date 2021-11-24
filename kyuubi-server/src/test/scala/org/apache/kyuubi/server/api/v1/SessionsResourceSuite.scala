@@ -303,7 +303,11 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   test("test get an operationHandle by identifier") {
     val requestObj = SessionOpenRequest(
-      1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
+      1,
+      "admin",
+      "123456",
+      "localhost",
+      Map("testConfig" -> "testValue"))
 
     withKyuubiRestServer { (_, _, _, webTarget) =>
       var response: Response = webTarget.path("api/v1/sessions")
@@ -343,7 +347,11 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   test("test close an operation") {
     val requestObj = SessionOpenRequest(
-      1, "admin", "123456", "localhost", Map("testConfig" -> "testValue"))
+      1,
+      "admin",
+      "123456",
+      "localhost",
+      Map("testConfig" -> "testValue"))
 
     withKyuubiRestServer { (_, _, _, webTarget) =>
       var response: Response = webTarget.path("api/v1/sessions")

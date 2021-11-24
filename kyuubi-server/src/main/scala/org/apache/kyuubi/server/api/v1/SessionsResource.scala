@@ -325,10 +325,8 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON
-    )),
-    description = "Close an operation"
-  )
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "Close an operation")
   @DELETE
   @Path("{sessionHandle}/operations/{operationHandle}")
   def closeOperation(
@@ -348,10 +346,9 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON
-    )),
-    description = "Get an operation handle with a given session identifier and operation identifier"
-  )
+      mediaType = MediaType.APPLICATION_JSON)),
+    description =
+      "Get an operation handle with a given session identifier and operation identifier")
   @GET
   @Path("{sessionHandle}/operations/{operationHandle}")
   def getOperationHandle(
@@ -373,7 +370,8 @@ private[v1] class SessionsResource extends ApiRequestContext {
     try {
       val splitOperationHandle = operationHandleStr.split("\\|")
       val handleIdentifier = new HandleIdentifier(
-        UUID.fromString(splitOperationHandle(0)), UUID.fromString(splitOperationHandle(1)))
+        UUID.fromString(splitOperationHandle(0)),
+        UUID.fromString(splitOperationHandle(1)))
       val protocolVersion = TProtocolVersion.findByValue(splitOperationHandle(2).toInt)
       val operationType = OperationType.withName(splitOperationHandle(3))
       val operationHandle = new OperationHandle(handleIdentifier, operationType, protocolVersion)
