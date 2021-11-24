@@ -64,6 +64,8 @@ You can configure the environment variables in `$KYUUBI_HOME/conf/kyuubi-env.sh`
 #                           (Default: 5)
 # - KYUUBI_JAVA_OPTS        JVM options for the Kyuubi server itself in the form "-Dx=y".
 #                           (Default: none).
+# - KYUUBI_CTL_JAVA_OPTS    JVM options for the Kyuubi ctl itself in the form "-Dx=y".
+#                           (Default: none).
 # - KYUUBI_BEELINE_OPTS     JVM options for the Kyuubi BeeLine in the form "-Dx=Y".
 #                           (Default: none)
 # - KYUUBI_NICENESS         The scheduling priority for Kyuubi server.
