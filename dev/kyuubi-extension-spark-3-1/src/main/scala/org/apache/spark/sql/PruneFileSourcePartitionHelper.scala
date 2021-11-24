@@ -17,9 +17,9 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.catalyst.expressions.{AttributeReference, AttributeSet, Expression, ExpressionSet, PlanExpression, PredicateHelper, SubqueryExpression}
 import org.apache.spark.sql.catalyst.plans.logical.LeafNode
+import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.types.StructType
 
 trait PruneFileSourcePartitionHelper extends PredicateHelper {
@@ -43,7 +43,4 @@ trait PruneFileSourcePartitionHelper extends PredicateHelper {
 
     (ExpressionSet(partitionFilters ++ extraPartitionFilter), dataFilters)
   }
-
-  def isDynamicPruningFilter(e: Expression): Boolean =
-    e.find(_.isInstanceOf[PlanExpression[_]]).isDefined
 }

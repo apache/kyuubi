@@ -18,10 +18,9 @@
 package org.apache.spark.sql
 
 import org.apache.spark.sql.catalyst.plans.logical.GlobalLimit
+
 import org.apache.kyuubi.sql.KyuubiSQLConf
 import org.apache.kyuubi.sql.watchdog.MaxPartitionExceedException
-//import org.apache.spark.sql.catalyst.planning.ScanOperation
-//import org.apache.kyuubi.sql.watchdog.MaxHivePartitionExceedException
 
 class WatchDogSuite extends KyuubiSparkSQLExtensionTest {
   val factData = Seq[(Int, Int, Int, Int)](
