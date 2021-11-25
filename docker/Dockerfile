@@ -18,12 +18,11 @@
 # Usage:
 #   1. use ./build/dist to make binary distributions of Kyuubi or download a release
 #   2. Untar it and run the docker command below
-#      docker build -f docker/Dockerfile -t yaooqinn/kyuubi:tagname .
+#      docker build -f docker/Dockerfile -t repository/kyuubi:tagname .
 #   Options:
 #     -f this docker file
 #     -t the target repo and tag name
 #     more options can be found with -h
-# TODO: REPALCE it with offical spark image iff Apache Spark community deploy
 # Or make one after kyuubi to be setup under ASF
 
 ARG BASE_IMAGE=8-jre-slim
@@ -44,12 +43,12 @@ RUN set -ex && \
     apt-get update && \
     apt install -y bash tini libc6 libpam-modules krb5-user libnss3 procps && \
     useradd -u ${kyuubi_uid} -g root kyuubi && \
-    mkdir -p ${KYUUBI_HOME} ${KYUUBI_LOG_DIR} ${KYUUBI_PID_DIR} ${KYUUBI_WORK_DIR_ROOT} && \
+    mkdir -p ${KYUUBI_HOME} ${KYUUBI_LOG_DIR} ${KYUUBI_PID_DIR} ${KYUUBI_WORK_DIR_ROOT} ${SPARK_HOME} && \
     chmod ug+rw -R ${KYUUBI_HOME} && \
     chmod a+rwx -R ${KYUUBI_WORK_DIR_ROOT} && \
     rm -rf /var/cache/apt/*
 
-COPY spark /opt/spark
+COPY spark-binary ${SPARK_HOME}
 COPY bin ${KYUUBI_HOME}/bin
 COPY jars ${KYUUBI_HOME}/jars
 COPY externals/engines/spark ${KYUUBI_HOME}/externals/engines/spark

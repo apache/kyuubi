@@ -118,13 +118,13 @@ function build {
   # cp spark for kyuubi as submit client
   # if user set -s(spark-provider), use if
   # else use builtin spark
-  if [[ ! -d "$KYUUBI_ROOT/spark" ]]; then
-    mkdir "$KYUUBI_ROOT/spark"
+  if [[ ! -d "$KYUUBI_ROOT/spark-binary" ]]; then
+    mkdir "$KYUUBI_ROOT/spark-binary"
   fi
   if [[ -n "$SPARK_BUILDIN" ]] && [[ -d "$SPARK_BUILDIN" ]]; then
-    cp -r "$SPARK_BUILDIN/" "$KYUUBI_ROOT/spark/"
+    cp -r "$SPARK_BUILDIN/" "$KYUUBI_ROOT/spark-binary/"
   else
-    cp -r "${KYUUBI_HOME}/externals/kyuubi-download/target/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD}/" "$KYUUBI_ROOT/spark/"
+    cp -r "${KYUUBI_HOME}/externals/kyuubi-download/target/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD}/" "$KYUUBI_ROOT/spark-binary/"
   fi
 
   # Verify that the Docker image content directory is present
