@@ -258,7 +258,10 @@ do
    eval $(minikube docker-env --shell bash)
    ;;
  u) KYUUBI_UID=${OPTARG};;
- s) SPARK_BUILDIN=${OPTARG};;
+ s)
+   SPARK_BUILDIN=${OPTARG}
+   SPARK_HOME=${OPTARG}
+   ;;
  esac
 done
 
