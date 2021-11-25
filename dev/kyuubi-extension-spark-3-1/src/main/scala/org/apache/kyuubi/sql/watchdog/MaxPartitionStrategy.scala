@@ -43,114 +43,118 @@ case class MaxPartitionStrategy(session: SparkSession)
     val maxScanPartitionsOpt = conf.getConf(KyuubiSQLConf.WATCHDOG_MAX_PARTITIONS)
 
     if (maxScanPartitionsOpt.isDefined) {
-      val maxScanPartitions = maxScanPartitionsOpt.get
-
-      plan match {
-        case ScanOperation(_, _, relation: HiveTableRelation) if relation.isPartitioned =>
-          relation.prunedPartitions match {
-            case Some(prunedPartitions) =>
-              if (prunedPartitions.size > maxScanPartitions) {
-                throw new MaxPartitionExceedException(
-                  s"""
-                     |SQL job scan hive partition: ${prunedPartitions.size}
-                     |exceed restrict of hive scan maxPartition $maxScanPartitions
-                     |You should optimize your SQL logical according partition structure
-                     |or shorten query scope such as p_date, detail as below:
-                     |Table: ${relation.tableMeta.qualifiedName}
-                     |Owner: ${relation.tableMeta.owner}
-                     |Partition Structure: ${relation.partitionCols.map(_.name).mkString(" -> ")}
-                     |""".stripMargin)
-              }
-            case _ =>
-              val totalPartitions = session
-                .sessionState.catalog.externalCatalog.listPartitionNames(
-                  relation.tableMeta.database,
-                  relation.tableMeta.identifier.table)
-              if (totalPartitions.size > maxScanPartitions) {
-                throw new MaxPartitionExceedException(
-                  s"""
-                     |Your SQL job scan a whole huge table without any partition filter,
-                     |You should optimize your SQL logical according partition structure
-                     |or shorten query scope such as p_date, detail as below:
-                     |Table: ${relation.tableMeta.qualifiedName}
-                     |Owner: ${relation.tableMeta.owner}
-                     |Partition Structure: ${relation.partitionCols.map(_.name).mkString(" -> ")}
-                     |""".stripMargin)
-              }
-          }
-        case ScanOperation(
-              _,
-              filters,
-              relation @ LogicalRelation(
-                fsRelation @ HadoopFsRelation(
-                  fileIndex: InMemoryFileIndex,
-                  partitionSchema,
-                  _,
-                  _,
-                  _,
-                  _),
-                _,
-                _,
-                _)) if fsRelation.partitionSchemaOption.isDefined =>
-          val (partitionKeyFilters, dataFilter) =
-            getPartitionKeyFiltersAndDataFilters(
-              fsRelation.sparkSession,
-              relation,
-              partitionSchema,
-              filters,
-              relation.output)
-          val prunedPartitionSize = fileIndex.listFiles(
-            partitionKeyFilters.toSeq,
-            dataFilter)
-            .size
-          if (prunedPartitionSize > maxScanPartitions) {
-            throw maxPartitionExceedError(
-              prunedPartitionSize,
-              maxScanPartitions,
-              relation.catalogTable,
-              fileIndex.rootPaths,
-              fsRelation.partitionSchema)
-          }
-        case ScanOperation(
-              _,
-              filters,
-              logicalRelation @ LogicalRelation(
-                fsRelation @ HadoopFsRelation(
-                  catalogFileIndex: CatalogFileIndex,
-                  partitionSchema,
-                  _,
-                  _,
-                  _,
-                  _),
-                _,
-                _,
-                _)) if fsRelation.partitionSchemaOption.isDefined =>
-          val (partitionKeyFilters, _) =
-            getPartitionKeyFiltersAndDataFilters(
-              fsRelation.sparkSession,
-              logicalRelation,
-              partitionSchema,
-              filters,
-              logicalRelation.output)
-
-          val prunedPartitionSize =
-            catalogFileIndex.filterPartitions(
-              partitionKeyFilters.toSeq)
-              .partitionSpec()
-              .partitions
-              .size
-          if (prunedPartitionSize > maxScanPartitions) {
-            throw maxPartitionExceedError(
-              prunedPartitionSize,
-              maxScanPartitions,
-              logicalRelation.catalogTable,
-              catalogFileIndex.rootPaths,
-              fsRelation.partitionSchema)
-          }
-        case _ =>
-      }
+      checkRelationMaxPartitions(plan, maxScanPartitionsOpt.get)
     }
     Nil
+  }
+
+  private def checkRelationMaxPartitions(
+      plan: LogicalPlan,
+      maxScanPartitions: Int): Unit = {
+    plan match {
+      case ScanOperation(_, _, relation: HiveTableRelation) if relation.isPartitioned =>
+        relation.prunedPartitions match {
+          case Some(prunedPartitions) =>
+            if (prunedPartitions.size > maxScanPartitions) {
+              throw new MaxPartitionExceedException(
+                s"""
+                   |SQL job scan hive partition: ${prunedPartitions.size}
+                   |exceed restrict of hive scan maxPartition $maxScanPartitions
+                   |You should optimize your SQL logical according partition structure
+                   |or shorten query scope such as p_date, detail as below:
+                   |Table: ${relation.tableMeta.qualifiedName}
+                   |Owner: ${relation.tableMeta.owner}
+                   |Partition Structure: ${relation.partitionCols.map(_.name).mkString(" -> ")}
+                   |""".stripMargin)
+            }
+          case _ =>
+            val totalPartitions = session
+              .sessionState.catalog.externalCatalog.listPartitionNames(
+                relation.tableMeta.database,
+                relation.tableMeta.identifier.table)
+            if (totalPartitions.size > maxScanPartitions) {
+              throw new MaxPartitionExceedException(
+                s"""
+                   |Your SQL job scan a whole huge table without any partition filter,
+                   |You should optimize your SQL logical according partition structure
+                   |or shorten query scope such as p_date, detail as below:
+                   |Table: ${relation.tableMeta.qualifiedName}
+                   |Owner: ${relation.tableMeta.owner}
+                   |Partition Structure: ${relation.partitionCols.map(_.name).mkString(" -> ")}
+                   |""".stripMargin)
+            }
+        }
+      case ScanOperation(
+            _,
+            filters,
+            relation @ LogicalRelation(
+              fsRelation @ HadoopFsRelation(
+                fileIndex: InMemoryFileIndex,
+                partitionSchema,
+                _,
+                _,
+                _,
+                _),
+              _,
+              _,
+              _)) if fsRelation.partitionSchemaOption.isDefined =>
+        val (partitionKeyFilters, dataFilter) =
+          getPartitionKeyFiltersAndDataFilters(
+            fsRelation.sparkSession,
+            relation,
+            partitionSchema,
+            filters,
+            relation.output)
+        val prunedPartitionSize = fileIndex.listFiles(
+          partitionKeyFilters.toSeq,
+          dataFilter)
+          .size
+        if (prunedPartitionSize > maxScanPartitions) {
+          throw maxPartitionExceedError(
+            prunedPartitionSize,
+            maxScanPartitions,
+            relation.catalogTable,
+            fileIndex.rootPaths,
+            fsRelation.partitionSchema)
+        }
+      case ScanOperation(
+            _,
+            filters,
+            logicalRelation @ LogicalRelation(
+              fsRelation @ HadoopFsRelation(
+                catalogFileIndex: CatalogFileIndex,
+                partitionSchema,
+                _,
+                _,
+                _,
+                _),
+              _,
+              _,
+              _)) if fsRelation.partitionSchemaOption.isDefined =>
+        val (partitionKeyFilters, _) =
+          getPartitionKeyFiltersAndDataFilters(
+            fsRelation.sparkSession,
+            logicalRelation,
+            partitionSchema,
+            filters,
+            logicalRelation.output)
+
+        val prunedPartitionSize =
+          catalogFileIndex.filterPartitions(
+            partitionKeyFilters.toSeq)
+            .partitionSpec()
+            .partitions
+            .size
+        if (prunedPartitionSize > maxScanPartitions) {
+          throw maxPartitionExceedError(
+            prunedPartitionSize,
+            maxScanPartitions,
+            logicalRelation.catalogTable,
+            catalogFileIndex.rootPaths,
+            fsRelation.partitionSchema)
+        }
+      case _ =>
+    }
   }
 
   def maxPartitionExceedError(
