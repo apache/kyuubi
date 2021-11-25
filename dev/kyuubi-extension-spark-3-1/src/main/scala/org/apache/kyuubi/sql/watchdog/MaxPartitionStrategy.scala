@@ -64,7 +64,7 @@ case class MaxPartitionStrategy(session: SparkSession)
                    |or shorten query scope such as p_date, detail as below:
                    |Table: ${relation.tableMeta.qualifiedName}
                    |Owner: ${relation.tableMeta.owner}
-                   |Partition Structure: ${relation.partitionCols.map(_.name).mkString(" -> ")}
+                   |Partition Structure: ${relation.partitionCols.map(_.name).mkString(", ")}
                    |""".stripMargin)
             }
           case _ =>
@@ -80,7 +80,7 @@ case class MaxPartitionStrategy(session: SparkSession)
                    |or shorten query scope such as p_date, detail as below:
                    |Table: ${relation.tableMeta.qualifiedName}
                    |Owner: ${relation.tableMeta.owner}
-                   |Partition Structure: ${relation.partitionCols.map(_.name).mkString(" -> ")}
+                   |Partition Structure: ${relation.partitionCols.map(_.name).mkString(", ")}
                    |""".stripMargin)
             }
         }
@@ -179,7 +179,7 @@ case class MaxPartitionStrategy(session: SparkSession)
          |Table: ${tableMeta.map(_.qualifiedName).getOrElse("")}
          |Owner: ${tableMeta.map(_.owner).getOrElse("")}
          |RootPaths: $truncatedPaths
-         |Partition Structure: ${partitionSchema.map(_.name).mkString(" -> ")}
+         |Partition Structure: ${partitionSchema.map(_.name).mkString(", ")}
          |""".stripMargin)
   }
 }
