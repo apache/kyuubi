@@ -43,7 +43,7 @@ ARG MVN_ARG
 ARG CI
 ENV CI ${CI}
 
-ADD ../docker /workspace/kyuubi
+ADD . /workspace/kyuubi
 WORKDIR /workspace/kyuubi
 
 RUN ls -l && \
