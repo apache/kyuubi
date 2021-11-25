@@ -23,47 +23,6 @@ import org.apache.kyuubi.sql.KyuubiSQLConf
 import org.apache.kyuubi.sql.watchdog.MaxPartitionExceedException
 
 class WatchDogSuite extends KyuubiSparkSQLExtensionTest {
-  val factData = Seq[(Int, Int, Int, Int)](
-    (1000, 1, 1, 10),
-    (1010, 2, 1, 10),
-    (1020, 2, 1, 10),
-    (1030, 3, 2, 10),
-    (1040, 3, 2, 50),
-    (1050, 3, 2, 50),
-    (1060, 3, 2, 50),
-    (1070, 4, 2, 10),
-    (1080, 4, 3, 20),
-    (1090, 4, 3, 10),
-    (1100, 4, 3, 10),
-    (1110, 5, 3, 10),
-    (1120, 6, 4, 10),
-    (1130, 7, 4, 50),
-    (1140, 8, 4, 50),
-    (1150, 9, 1, 20),
-    (1160, 10, 1, 20),
-    (1170, 11, 1, 30),
-    (1180, 12, 2, 20),
-    (1190, 13, 2, 20),
-    (1200, 14, 3, 40),
-    (1200, 15, 3, 70),
-    (1210, 16, 4, 10),
-    (1220, 17, 4, 20),
-    (1230, 18, 4, 20),
-    (1240, 19, 5, 40),
-    (1250, 20, 5, 40),
-    (1260, 21, 5, 40),
-    (1270, 22, 5, 50),
-    (1280, 23, 1, 50),
-    (1290, 24, 1, 50),
-    (1300, 25, 1, 50))
-
-  val storeData = Seq[(Int, String, String)](
-    (1, "North-Holland", "NL"),
-    (2, "South-Holland", "NL"),
-    (3, "Bavaria", "DE"),
-    (4, "California", "US"),
-    (5, "Texas", "US"),
-    (6, "Texas", "US"))
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     setupData()
@@ -126,32 +85,6 @@ class WatchDogSuite extends KyuubiSparkSQLExtensionTest {
           .save(dir.getCanonicalPath)
         spark.read.load(dir.getCanonicalPath).createOrReplaceTempView("test")
         checkMaxPartition
-      }
-    }
-  }
-
-  test("watchdog with scan maxPartitions -- dynamic partition pruning") {
-    val s = spark
-    import s.implicits._
-    withTempDir { dir =>
-      factData.toDF("date_id", "store_id", "product_id", "units_sold")
-        .write
-        .partitionBy("store_id")
-        .save(s"${dir.getCanonicalPath}/fact_sk")
-      spark.read.load(s"${dir.getCanonicalPath}/fact_sk").createOrReplaceTempView("fact_sk")
-
-      storeData.toDF("store_id", "state_province", "country")
-        .write
-        .save(s"${dir.getCanonicalPath}/dim_store")
-      spark.read.load(s"${dir.getCanonicalPath}/dim_store").createOrReplaceTempView("dim_store")
-
-      withSQLConf(KyuubiSQLConf.WATCHDOG_MAX_PARTITIONS.key -> "5") {
-        val query =
-          """
-            |SELECT f.date_id, f.store_id FROM fact_sk f
-            |JOIN dim_store s ON f.store_id = s.store_id AND s.country = 'NL'
-            |""".stripMargin
-        intercept[MaxPartitionExceedException](sql(query).queryExecution.sparkPlan)
       }
     }
   }
