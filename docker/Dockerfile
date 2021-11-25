@@ -23,7 +23,6 @@
 #     -f this docker file
 #     -t the target repo and tag name
 #     more options can be found with -h
-#
 
 ARG BASE_IMAGE=8-jre-slim
 FROM openjdk:${BASE_IMAGE}
