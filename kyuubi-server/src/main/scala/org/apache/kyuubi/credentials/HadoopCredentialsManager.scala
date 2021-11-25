@@ -177,6 +177,9 @@ class HadoopCredentialsManager private (name: String) extends AbstractService(na
    * @param sessionId KyuubiSession id
    */
   def removeSessionCredentialsEpoch(sessionId: String): Unit = {
+    if (renewalExecutor.isEmpty) {
+      return
+    }
     sessionCredentialsEpochMap.remove(sessionId)
   }
 

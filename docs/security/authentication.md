@@ -50,7 +50,7 @@ kyuubi\.authentication<br>\.sasl\.qop|<div style='width: 80pt;word-wrap: break-w
 
 #### Using KERBEROS
 
-If you are deploying Kyuubi with a kerberized Hadoop cluster, it is strongly recommended that `kyuubi.authentication` should be set to `KERBEROS` too.
+If you are deploying Kyuubi with a kerberized Hadoop cluster which means your `core-site.xml` contains a property with key: `hadoop.security.authentication` and value: `kerberos`, you should also set `kyuubi.authentication` to `KERBEROS`.
 
 Kerberos is a network authentication protocol that provides the tools of authentication and strong cryptography over the network.
 The Kerberos protocol uses strong cryptography so that a client or a server can prove its identity to its server or client across an insecure network connection.

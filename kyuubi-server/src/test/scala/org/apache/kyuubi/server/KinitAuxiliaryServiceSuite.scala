@@ -40,6 +40,7 @@ class KinitAuxiliaryServiceSuite extends KerberizedTestHelper {
     tryWithSecurityEnabled {
       val service = new KinitAuxiliaryService()
       val conf = KyuubiConf()
+      conf.set(KyuubiConf.AUTHENTICATION_METHOD.key, "kerberos")
       val e = intercept[IllegalArgumentException](service.initialize(conf))
       assert(e.getMessage === "requirement failed: principal or keytab is missing")
       conf.set(KyuubiConf.SERVER_PRINCIPAL, testPrincipal)

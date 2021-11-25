@@ -18,6 +18,7 @@
 package org.apache.kyuubi.session
 
 import com.codahale.metrics.MetricRegistry
+import org.apache.hadoop.security.UserGroupInformation
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -36,7 +37,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
   val credentialsManager = new HadoopCredentialsManager()
 
   override def initialize(conf: KyuubiConf): Unit = {
-    addService(credentialsManager)
+    if (UserGroupInformation.isSecurityEnabled) {
+      addService(credentialsManager)
+    }
     _operationLogRoot = Some(conf.get(SERVER_OPERATION_LOG_DIR_ROOT))
     super.initialize(conf)
   }

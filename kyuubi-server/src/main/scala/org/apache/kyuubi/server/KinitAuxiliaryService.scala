@@ -23,6 +23,7 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.AbstractService
+import org.apache.kyuubi.service.authentication.AuthTypes
 import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
 
 class KinitAuxiliaryService() extends AbstractService("KinitAuxiliaryService") {
@@ -36,6 +37,12 @@ class KinitAuxiliaryService() extends AbstractService("KinitAuxiliaryService") {
   private var kinitTask: Runnable = _
 
   override def initialize(conf: KyuubiConf): Unit = {
+    val authTypes = conf.get(KyuubiConf.AUTHENTICATION_METHOD).map(AuthTypes.withName)
+    if (authTypes.contains(AuthTypes.KERBEROS)) {
+      require(UserGroupInformation.isSecurityEnabled,
+        s"Kyuubi authentication: [${authTypes.mkString(", ")}] is not equal to hadoop conf " +
+          "`hadoop.security.authentication`, please check if security should be disabled or not.")
+    }
     if (UserGroupInformation.isSecurityEnabled) {
       val keytab = conf.get(KyuubiConf.SERVER_KEYTAB)
       val principal = conf.get(KyuubiConf.SERVER_PRINCIPAL)
