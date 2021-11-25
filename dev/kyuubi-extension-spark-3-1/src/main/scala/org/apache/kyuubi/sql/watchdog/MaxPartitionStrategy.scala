@@ -157,8 +157,15 @@ case class MaxPartitionStrategy(session: SparkSession)
       prunedPartitionSize: Int,
       maxPartitionSize: Int,
       tableMeta: Option[CatalogTable],
-      fileIndex: Seq[Path],
+      rootPaths: Seq[Path],
       partitionSchema: StructType): Throwable = {
+    val truncatedPaths =
+      if (rootPaths.length > 5) {
+        rootPaths.slice(0, 5).mkString(",") + """... """ + (rootPaths.length - 5) + " more paths"
+      } else {
+        rootPaths.mkString(",")
+      }
+
     new MaxPartitionExceedException(
       s"""
          |SQL job scan data source partition: $prunedPartitionSize
@@ -167,7 +174,7 @@ case class MaxPartitionStrategy(session: SparkSession)
          |or shorten query scope such as p_date, detail as below:
          |Table: ${tableMeta.map(_.qualifiedName).getOrElse("")}
          |Owner: ${tableMeta.map(_.owner).getOrElse("")}
-         |RootPaths: ${fileIndex.mkString(",")}
+         |RootPaths: $truncatedPaths
          |Partition Structure: ${partitionSchema.map(_.name).mkString(" -> ")}
          |""".stripMargin)
   }
