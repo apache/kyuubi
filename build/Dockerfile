@@ -46,8 +46,7 @@ ENV CI ${CI}
 ADD . /workspace/kyuubi
 WORKDIR /workspace/kyuubi
 
-RUN ls -l && \
-    ./build/dist ${MVN_ARG} && \
+RUN ./build/dist ${MVN_ARG} && \
     mv /workspace/kyuubi/dist /opt/kyuubi && \
     # Removing stuff saves time because docker creates a temporary layer
     rm -rf ~/.m2 && \
