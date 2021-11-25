@@ -24,8 +24,8 @@ import java.util.UUID
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
-import org.apache.kyuubi
 
+import org.apache.kyuubi._
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
@@ -195,23 +195,23 @@ class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper 
       val envUser = if (envMap.has(USER)) envMap.get(USER).asText() else ""
       assert(envUser == sys.env.getOrElse(USER, ""))
 
-      assert(res.getString("BUILD_USER") == kyuubi.BUILD_USER)
-      assert(res.getString("BUILD_DATE") == kyuubi.BUILD_DATE)
-      assert(res.getString("REPO_URL") == kyuubi.REPO_URL)
+      assert(res.getString("BUILD_USER") == BUILD_USER)
+      assert(res.getString("BUILD_DATE") == BUILD_DATE)
+      assert(res.getString("REPO_URL") == REPO_URL)
 
       val versionInfoMap = objMapper.readTree(res.getString("VERSION_INFO"))
-      assert(versionInfoMap.get("KYUUBI_VERSION").asText() == kyuubi.KYUUBI_VERSION)
-      assert(versionInfoMap.get("JAVA_COMPILE_VERSION").asText() == kyuubi.JAVA_COMPILE_VERSION)
-      assert(versionInfoMap.get("SCALA_COMPILE_VERSION").asText() == kyuubi.SCALA_COMPILE_VERSION)
-      assert(versionInfoMap.get("HIVE_COMPILE_VERSION").asText() == kyuubi.HIVE_COMPILE_VERSION)
-      assert(versionInfoMap.get("HADOOP_COMPILE_VERSION").asText() == kyuubi.HADOOP_COMPILE_VERSION)
+      assert(versionInfoMap.get("KYUUBI_VERSION").asText() == KYUUBI_VERSION)
+      assert(versionInfoMap.get("JAVA_COMPILE_VERSION").asText() == JAVA_COMPILE_VERSION)
+      assert(versionInfoMap.get("SCALA_COMPILE_VERSION").asText() == SCALA_COMPILE_VERSION)
+      assert(versionInfoMap.get("HIVE_COMPILE_VERSION").asText() == HIVE_COMPILE_VERSION)
+      assert(versionInfoMap.get("HADOOP_COMPILE_VERSION").asText() == HADOOP_COMPILE_VERSION)
       assert(res.getString("eventType") == "kyuubi_server_info")
 
       res.next()
       assert(res.getString("serverName") == name)
       assert(startEventTime <= res.getLong("eventTime"))
       assert(res.getString("state") == ServiceState.STOPPED.toString)
-      assert(res.getString("BUILD_USER") == kyuubi.BUILD_USER)
+      assert(res.getString("BUILD_USER") == BUILD_USER)
       assert(res.getString("eventType") == "kyuubi_server_info")
     }
   }

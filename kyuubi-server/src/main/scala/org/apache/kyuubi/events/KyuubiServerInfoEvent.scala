@@ -17,8 +17,7 @@
 
 package org.apache.kyuubi.events
 
-import org.apache.kyuubi
-
+import org.apache.kyuubi.{BUILD_DATE => P_BUILD_DATE, BUILD_USER => P_BUILD_USER, REPO_URL => P_REPO_URL, _}
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.service.ServiceState
@@ -43,17 +42,17 @@ case class KyuubiServerInfoEvent private (
     serverConf: Map[String, String],
     serverEnv: Map[String, String]) extends KyuubiServerEvent {
 
-  val BUILD_USER: String = kyuubi.BUILD_USER
-  val BUILD_DATE: String = kyuubi.BUILD_DATE
-  val REPO_URL: String = kyuubi.REPO_URL
+  val BUILD_USER: String = P_BUILD_USER
+  val BUILD_DATE: String = P_BUILD_DATE
+  val REPO_URL: String = P_REPO_URL
 
   val VERSION_INFO = Map(
-    "KYUUBI_VERSION" -> kyuubi.KYUUBI_VERSION,
-    "JAVA_COMPILE_VERSION" -> kyuubi.JAVA_COMPILE_VERSION,
-    "SCALA_COMPILE_VERSION" -> kyuubi.SCALA_COMPILE_VERSION,
-    "SPARK_COMPILE_VERSION" -> kyuubi.SPARK_COMPILE_VERSION,
-    "HIVE_COMPILE_VERSION" -> kyuubi.HIVE_COMPILE_VERSION,
-    "HADOOP_COMPILE_VERSION" -> kyuubi.HADOOP_COMPILE_VERSION)
+    "KYUUBI_VERSION" -> KYUUBI_VERSION,
+    "JAVA_COMPILE_VERSION" -> JAVA_COMPILE_VERSION,
+    "SCALA_COMPILE_VERSION" -> SCALA_COMPILE_VERSION,
+    "SPARK_COMPILE_VERSION" -> SPARK_COMPILE_VERSION,
+    "HIVE_COMPILE_VERSION" -> HIVE_COMPILE_VERSION,
+    "HADOOP_COMPILE_VERSION" -> HADOOP_COMPILE_VERSION)
 
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(startTime)) :: Nil
