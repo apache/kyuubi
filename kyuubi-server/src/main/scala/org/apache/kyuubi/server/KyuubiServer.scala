@@ -90,7 +90,13 @@ object KyuubiServer extends Logging {
     }
 
     val server = new KyuubiServer()
-    server.initialize(conf)
+    try {
+      server.initialize(conf)
+    } catch {
+      case e: Exception =>
+        error("Failed to initialize Kyuubi server", e)
+        System.exit(-1)
+    }
     server.start()
     Utils.addShutdownHook(() => server.stop(), Utils.SERVER_SHUTDOWN_PRIORITY)
     server
