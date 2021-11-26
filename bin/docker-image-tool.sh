@@ -121,11 +121,7 @@ function build {
   if [[ ! -d "$KYUUBI_ROOT/spark-binary" ]]; then
     mkdir "$KYUUBI_ROOT/spark-binary"
   fi
-  if [[ -n "$SPARK_BUILDIN" ]] && [[ -d "$SPARK_BUILDIN" ]]; then
-    cp -r "$SPARK_BUILDIN/" "$KYUUBI_ROOT/spark-binary/"
-  else
-    cp -r "${KYUUBI_HOME}/externals/kyuubi-download/target/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD}/" "$KYUUBI_ROOT/spark-binary/"
-  fi
+  cp -r "$SPARK_HOME/" "$KYUUBI_ROOT/spark-binary/"
 
   # Verify that the Docker image content directory is present
   if [ ! -d "$KYUUBI_ROOT/docker" ]; then
@@ -184,25 +180,18 @@ Commands:
   push        Push a pre-built image to a registry. Requires a repository address to be provided.
 
 Options:
-  -f file               Dockerfile to build for JVM based Jobs. By default builds the Dockerfile shipped with Kyuubi.
-  -r repo               Repository address.
-  -t tag                Tag to apply to the built image, or to identify the image to be pushed.
-  -m                    Use minikube's Docker daemon.
+  -f                    Dockerfile to build for JVM based Jobs. By default builds the Dockerfile shipped with Kyuubi.
+  -r                    Repository address.
+  -t                    Tag to apply to the built image, or to identify the image to be pushed.
   -n                    Build docker image with --no-cache
-  -u uid                UID to use in the USER directive to set the user the main Kyuubi process runs as inside the
+  -u                    UID to use in the USER directive to set the user the main Kyuubi process runs as inside the
                         resulting container
   -X                    Use docker buildx to cross build. Automatically pushes.
                         See https://docs.docker.com/buildx/working-with-buildx/ for steps to setup buildx.
-  -b arg                Build arg to build or push the image. For multiple build args, this option needs to
+  -b                    Build arg to build or push the image. For multiple build args, this option needs to
                         be used separately for each build arg.
-
-Using minikube when building images will do so directly into minikube's Docker daemon.
-There is no need to push the images into minikube in that case, they'll be automatically
-available when running applications inside the minikube cluster.
-
-Check the following documentation for more information on using the minikube Docker daemon:
-
-  https://kubernetes.io/docs/getting-started-guides/minikube/#reusing-the-docker-daemon
+  -s                    Put the specified Spark into the Kyuubi image to be used as the internal SPARK_HOME
+                        of the container.
 
 Examples:
   - Build image in minikube with tag "testing"
@@ -212,15 +201,18 @@ Examples:
     $0 -r docker.io/myrepo -t v1.4.0 build
     $0 -r docker.io/myrepo -t v1.4.0 push
 
-  - Build and push Spark-3.1.2 image with tag "v3.0.0" to docker.io/myrepo
+  - Build and push with tag "v3.0.0" and Spark-3.1.2 as base image to docker.io/myrepo
     $0 -r docker.io/myrepo -t v3.0.0 -b BASE_IMAGE=repo/spark:3.1.2 build
     $0 -r docker.io/myrepo -t v3.0.0 push
 
-  - Build and push Spark-3.1.2 image for multiple archs to docker.io/myrepo
-    $0 -r docker.io/myrepo -t v3.0.0 -X -b BASE_IMAGE=repo/spark:3.1.2 build
+  - Build and push for multiple archs to docker.io/myrepo
+    $0 -r docker.io/myrepo -t v3.0.0 -X build
 
     # Note: buildx, which does cross building, needs to do the push during build
     # So there is no separate push step with -X
+
+  - Build with Spark placed "/path/spark"
+    $0 -s /path/spark build
 
 EOF
 }
@@ -236,9 +228,8 @@ BASEDOCKERFILE=
 NOCACHEARG=
 BUILD_PARAMS=
 KYUUBI_UID=
-SPARK_BUILDIN=
 CROSS_BUILD="false"
-while getopts f:mr:t:Xnb:u:s: option
+while getopts f:r:t:Xnb:u:s: option
 do
  case "${option}"
  in
@@ -248,20 +239,8 @@ do
  n) NOCACHEARG="--no-cache";;
  b) BUILD_PARAMS=${BUILD_PARAMS}" --build-arg "${OPTARG};;
  X) CROSS_BUILD=1;;
- m)
-   if ! which minikube 1>/dev/null; then
-     error "Cannot find minikube."
-   fi
-   if ! minikube status 1>/dev/null; then
-     error "Cannot contact minikube. Make sure it's running."
-   fi
-   eval $(minikube docker-env --shell bash)
-   ;;
  u) KYUUBI_UID=${OPTARG};;
- s)
-   SPARK_BUILDIN=${OPTARG}
-   SPARK_HOME=${OPTARG}
-   ;;
+ s) SPARK_HOME=${OPTARG};;
  esac
 done
 
