@@ -89,7 +89,7 @@ kubectl exec -it kyuubi-example -- /bin/bash
 ${SPARK_HOME}/bin/beeline -u 'jdbc:hive2://localhost:10009'
 ```
 
-Or You can submit tasks directly through local beeline:
+Or you can submit tasks directly through local beeline:
 ```shell
 ${SPARK_HOME}/bin/beeline -u 'jdbc:hive2://${hostname}:${port}'
 ```
