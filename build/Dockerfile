@@ -19,7 +19,7 @@
 #   Run the docker command below
 #      docker build \
 #        --build-arg MVN_ARG="-Pspark-3.1,spark-hadoop-3.2" \
-#        --file docker/Dockerfile \
+#        --file build/Dockerfile \
 #        --tag apache/kyuubi:tagname \
 #        .
 #   Options:
