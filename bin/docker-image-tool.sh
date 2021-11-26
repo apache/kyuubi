@@ -41,8 +41,6 @@ function cleanup_ctx_dir {
 }
 trap cleanup_ctx_dir EXIT
 
-# trap cleanup_ctx_dir EXIT
-
 function image_ref {
   local image="$1"
   local add_repo="${2:-1}"
@@ -194,8 +192,6 @@ Options:
                         of the container.
 
 Examples:
-  - Build image in minikube with tag "testing"
-    $0 -m -t testing build
 
   - Build and push image with tag "v1.4.0" to docker.io/myrepo
     $0 -r docker.io/myrepo -t v1.4.0 build
