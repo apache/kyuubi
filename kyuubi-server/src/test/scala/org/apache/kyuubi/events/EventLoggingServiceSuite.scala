@@ -21,6 +21,8 @@ import java.net.InetAddress
 import java.nio.file.Paths
 import java.util.UUID
 
+import scala.util.matching.Regex
+
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
@@ -185,19 +187,22 @@ class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper 
       val serverIP = res.getString("serverIP")
       assert(serverIP != null && !"".equals(serverIP))
 
-      val objMapper = new ObjectMapper()
-      val confMap = objMapper.readTree(res.getString("serverConf"))
-      confKv.foreach(kv => assert(confMap.get(kv._1).asText() == kv._2))
-
-      val USER = "USER"
-      val envMap = objMapper.readTree(res.getString("serverEnv"))
-      val envUser = if (envMap.has(USER)) envMap.get(USER).asText() else ""
-      assert(envUser == sys.env.getOrElse(USER, ""))
+      var confIdx = 0
+      List(""""awesome.kyuubi":"(.*?)"""".r, """"awesome.kyuubi.server":"(.*?)"""".r).foreach { p =>
+        val matchConf = p.findFirstMatchIn(res.getString("serverConf"))
+        assert(matchConf.isDefined)
+        matchConf.foreach {
+          case p(value) =>
+            assert(value == confKv(confIdx)._2)
+            confIdx += 1
+        }
+      }
 
       assert(res.getString("BUILD_USER") == BUILD_USER)
       assert(res.getString("BUILD_DATE") == BUILD_DATE)
       assert(res.getString("REPO_URL") == REPO_URL)
 
+      val objMapper = new ObjectMapper()
       val versionInfoMap = objMapper.readTree(res.getString("VERSION_INFO"))
       assert(versionInfoMap.get("KYUUBI_VERSION").asText() == KYUUBI_VERSION)
       assert(versionInfoMap.get("JAVA_COMPILE_VERSION").asText() == JAVA_COMPILE_VERSION)
@@ -212,6 +217,16 @@ class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper 
       assert(res.getString("state") == ServiceState.STOPPED.toString)
       assert(res.getString("BUILD_USER") == BUILD_USER)
       assert(res.getString("eventType") == "kyuubi_server_info")
+
+      val USER = "USER"
+      if (sys.env.contains(USER)) {
+        val pattern: Regex = s""""$USER":"(.*?)"""".r
+        val matchEnv = pattern.findFirstMatchIn(res.getString("serverEnv"))
+        assert(matchEnv.isDefined)
+        matchEnv.foreach {
+          case pattern(usr) => assert(usr == sys.env(USER))
+        }
+      }
     }
   }
 }
