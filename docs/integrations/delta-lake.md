@@ -30,33 +30,33 @@ As we know, Kyuubi provides a pure SQL gateway through Thrift JDBC/ODBC interfac
 
 ## Integrate Kyuubi With Delta Lake Based On Microsoft Azure Blob Storage
 
-#### 1. Microsoft Azure Registration And Configuration
-##### 1.1 Register a Microsoft Azure Account And Log In
+#### Microsoft Azure Registration And Configuration
+##### Register A Microsoft Azure Account And Log In
 Regarding the Microsoft Azure account, please contact your organization or register an account as an individual. For details, please refer to the [Microsoft Azure official website](https://azure.microsoft.com/en-gb/).
 
-##### 1.2 Create Microsoft Azure Storage Container
+##### Create Microsoft Azure Storage Container
 After logging in with your Microsoft Azure account, please follow the steps below to create a data storage container:
 ![](../imgs/deltalake/azure_create_new_container.png)
 
-##### 1.3 Create Microsoft Azure Access Key
+##### Get Microsoft Azure Access Key
 ![](../imgs/deltalake/azure_create_azure_access_key.png)
 
-#### 2. Deploy Spark
-##### 2.1 Download Spark Package
+#### Deploy Spark
+##### Download Spark Package
 Download spark package that matches your environment from [spark official website](https://spark.apache.org/downloads.html). And then unpackage:
 ```shell
 tar -xzvf spark-3.2.0-bin-hadoop3.2.tgz
 ```
 
-##### 2.2 Config Spark
-Enter the ./spark/conf directory, execute:
+##### Config Spark
+Enter the ./spark/conf directory and execute:
 ```shell
 cp spark-defaults.conf.tmp spark-defaults.conf
 ```
 
 Add following configuration to spark-defaults.conf, please refer to your own local configuration for specific personalized configuration:
 ```text
-spark.master                     spark://Your_Host:7077 
+spark.master                     spark://<YOUR_HOST>:7077 
 spark.sql.extensions             io.delta.sql.DeltaSparkSessionExtension
 spark.sql.catalog.spark_catalog  org.apache.spark.sql.delta.catalog.DeltaCatalog
 ```
@@ -71,7 +71,7 @@ Create a new file named core-site.xml under ./spark/conf directory, and add foll
  </property>
  <property>
   <name>fs.azure.account.key.Your_Azure_Account.blob.core.windows.net</name>
-  <value>Your_Azure_Account_Access_Key</value>
+  <value>YOUR_AZURE_ACCOUNT_ACCESS_KEY</value>
  </property>
  <property>
     <name>fs.azure.block.blob.with.compaction.dir</name>
@@ -87,7 +87,7 @@ Create a new file named core-site.xml under ./spark/conf directory, and add foll
  </property>
 </configuration>
 ```
-##### 2.3 Copy Dependencies To Spark
+##### Copy Dependencies To Spark
 Copy jar packages required by delta lake and microsoft azure to ./spark/jars directory:
 ```shell
 wget https://repo1.maven.org/maven2/com/microsoft/azure/azure-storage/8.6.6/azure-storage-8.6.6.jar -O ./spark/jars/azure-storage-8.6.6.jar
@@ -96,14 +96,14 @@ wget https://repo1.maven.org/maven2/com/azure/azure-storage-blob/12.14.2/azure-s
 
 wget https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-azure/3.1.1/hadoop-azure-3.1.1.jar -O ./spark/jars/hadoop-azure-3.1.1.jar
 ```
-##### 2.4 Start Spark
+##### Start Spark
 ```shell
-./spark/sbin/start-master.sh -h <Your Host> -p 7077 --webui-port 9090
+./spark/sbin/start-master.sh -h <YOUR_HOST> -p 7077 --webui-port 9090
 
-./spark/sbin/start-worker.sh spark://<Your Host>:7077
+./spark/sbin/start-worker.sh spark://<YOUR_HOST>:7077
 ```
 
-##### 2.5 Test the connectivity of spark and delta lake
+##### Test The connectivity Of Spark And Delta Lake
 Start spark shell:
 ```shell
 /usr/apache/current/spark/bin> ./spark-shell
@@ -130,14 +130,14 @@ scala>
 Generate a piece of random data and push them to delta lake:
 ```shell
 scala> val data = spark.range(1000, 2000)
-scala> data.write.format("delta").mode("overwrite").save("wasbs://your_container_name@your_azure_account.blob.core.windows.net/your_table_name")
+scala> data.write.format("delta").mode("overwrite").save("wasbs://<YOUR_CONTAINER_NAME>@<YOUR_AZURE_ACCOUNT>.blob.core.windows.net/<YOUR_TABLE_NAME>")
 ```
 After this, you can check your data on azure web UI. For example, my container name is 1000 and table name is alexDemo20211127:
 ![](../imgs/deltalake/azure_spark_connection_test_storage.png)
 
 You can also check data by reading back the data from delta lake:
 ```shell
-scala> val df=spark.read.format("delta").load("wasbs://your_container_name@your_azure_account.blob.core.windows.net/your_table_name")
+scala> val df=spark.read.format("delta").load("wasbs://<YOUR_CONTAINER_NAME>@<YOUR_AZURE_ACCOUNT>.blob.core.windows.net/<YOUR_TABLE_NAME>")
 scala> df.show()
 +----+
 |  id|
@@ -167,15 +167,15 @@ only showing top 20 rows
 ```
 If there is no problem with the above, it proves that spark has been built with delta lake.
 
-#### 3. Deploy Kyuubi
-##### 3.1 Install Kyuubi
+#### Deploy Kyuubi
+##### Install Kyuubi
 1.Download the latest version of [kyuubi](https://kyuubi.apache.org/releases.html).
 
 2.Unpackage
 ```shell
 tar -xzvf  apache-kyuubi-1.3.1-incubating-bin.tgz
 ```
-##### 3.2 Config Kyuubi
+##### Config Kyuubi
 Enter the ./kyuubi/conf directory
 ```shell
 cp kyuubi-defaults.conf.template kyuubi-defaults.conf
@@ -184,15 +184,15 @@ vim kyuubi-defaults.conf
 
 Add the following content:
 ```text
-spark.master                    spark://<Your_Host>:7077
+spark.master                    spark://<YOUR_HOST>:7077
 kyuubi.authentication           NONE
-kyuubi.frontend.bind.host       <Your_Host>
+kyuubi.frontend.bind.host       <YOUR_HOST>
 kyuubi.frontend.bind.port       10009
 # If you use your own zk cluster, you need to configure your zk host port.
-kyuubi.ha.zookeeper.quorum      <Your_Host>:2181 
+# kyuubi.ha.zookeeper.quorum    <YOUR_HOST>:2181 
 ```
 
-##### 3.3 Start Kyuubi
+##### Start Kyuubi
 ```shell
 /usr/apache/current/kyuubi/bin> kyuubi start
 Starting Kyuubi Server from /usr/apache/current/kyuubi
@@ -206,7 +206,7 @@ KYUUBI_WORK_DIR_ROOT: /usr/apache/current/kyuubi/work
 SPARK_HOME: /usr/apache/current/spark
 SPARK_CONF_DIR: /usr/apache/current/spark/conf
 HADOOP_CONF_DIR:
-Starting org.apache.kyuubi.server.KyuubiServer, logging to /usr/apache/current/kyuubi/logs/kyuubi-hadoop-org.apache.kyuubi.server.KyuubiServer-pvgl56604422a.out
+Starting org.apache.kyuubi.server.KyuubiServer, logging to /usr/apache/current/kyuubi/logs/kyuubi-hadoop-org.apache.kyuubi.server.KyuubiServer-host.out
 Welcome to
   __  __                           __
  /\ \/\ \                         /\ \      __
@@ -230,9 +230,7 @@ Check kyuubi log, in order to check kyuubi start status and find the jdbc connec
 2021-11-26 17:49:50.234 INFO session.KyuubiSessionManager: Service[KyuubiSessionManager] is started.
 2021-11-26 17:49:50.234 INFO server.KyuubiBackendService: Service[KyuubiBackendService] is started.
 2021-11-26 17:49:50.235 INFO service.ThriftFrontendService: Service[ThriftFrontendService] is started.
-
 2021-11-26 17:49:50.235 INFO service.ThriftFrontendService: Starting and exposing JDBC connection at: jdbc:hive2://host:10009/
-
 2021-11-26 17:49:50.239 INFO zookeeper.ClientCnxn: Session establishment complete on server host/*.*.*.*:2181, sessionid = 0x100046ec0ca01b5, negotiated timeout = 40000
 2021-11-26 17:49:50.245 INFO state.ConnectionStateManager: State change: CONNECTED
 2021-11-26 17:49:50.247 INFO client.KyuubiServiceDiscovery: Zookeeper client connection state changed to: CONNECTED
@@ -240,13 +238,17 @@ Check kyuubi log, in order to check kyuubi start status and find the jdbc connec
 2021-11-26 17:49:50.266 INFO client.KyuubiServiceDiscovery: Service[KyuubiServiceDiscovery] is started.
 2021-11-26 17:49:50.267 INFO server.KyuubiServer: Service[KyuubiServer] is started.
 ```
-##### 3.4 Test the connectivity of kyuubi and delta lake
+You can get the jdbc connection url by the log:
 ```shell
-/usr/apache/current/spark/bin> ./beeline -u 'jdbc:hive2://host:10009/'
+2021-11-26 17:49:50.235 INFO service.ThriftFrontendService: Starting and exposing JDBC connection at: jdbc:hive2://HOST:10009/
+```
+##### Test The Connectivity Of Kyuubi And Delta Lake
+```shell
+/usr/apache/current/spark/bin> ./beeline -u 'jdbc:hive2://HOST:10009/'
 log4j:WARN No appenders could be found for logger (org.apache.hadoop.util.Shell).
 log4j:WARN Please initialize the log4j system properly.
 log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.
-Connecting to jdbc:hive2://host:10009/
+Connecting to jdbc:hive2://HOST:10009/
 Connected to: Spark SQL (version 1.3.1-incubating)
 Driver: Hive JDBC (version 2.3.7)
 Transaction isolation: TRANSACTION_REPEATABLE_READ
@@ -256,8 +258,11 @@ Beeline version 2.3.7 by Apache Hive
 At the same time, you can also check whether the engine is running on the spark UI:
 ![](../imgs/deltalake/kyuubi_start_status_spark_UI.png)
 
-#### 4. Dealing delta lake data by using Kyuubi Examples
-Operate delta-lake data through SQL:
+When the engine started, it will expose a thrift endpoint and register itself into ZooKeeper, Kyuubi server can get the connection info from ZooKeeper and establish the connection to the engine.
+So, you can check the registration details in zookeeper path ’/kyuubi_USER/anonymous‘.
+
+#### Dealing Delta Lake Data By Using Kyuubi Examples
+Operate delta-lake data through SQL:  
 1.Create Table
 ```sql
 -- Create or replace table with path
@@ -269,8 +274,7 @@ CREATE OR REPLACE TABLE delta.`wasbs://1000@azure_account.blob.core.windows.net/
 USING DELTA
 PARTITIONED BY (date);
 ```
-2.Insert Data
-
+2.Insert Data  
 Append Mode:
 ```sql
 INSERT INTO delta.`wasbs://1000@azure_account.blob.core.windows.net/alexDemo20211129` (
