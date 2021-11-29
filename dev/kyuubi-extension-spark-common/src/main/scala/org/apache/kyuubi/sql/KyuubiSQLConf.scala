@@ -97,10 +97,12 @@ object KyuubiSQLConf {
       .booleanConf
       .createWithDefault(true)
 
-  val WATCHDOG_MAX_HIVEPARTITION =
-    buildConf("spark.sql.watchdog.maxHivePartitions")
-      .doc("Add maxHivePartitions Strategy to avoid scan excessive " +
-        "hive partitions on partitioned table, it's optional that works with defined")
+  val WATCHDOG_MAX_PARTITIONS =
+    buildConf("spark.sql.watchdog.maxPartitions")
+      .doc("Set the max partition number when spark scans a data source. " +
+        "Enable MaxPartitionStrategy by specifying this configuration. " +
+        "Add maxPartitions Strategy to avoid scan excessive partitions " +
+        "on partitioned table, it's optional that works with defined")
       .version("1.4.0")
       .intConf
       .createOptional
