@@ -29,13 +29,13 @@ If you want to deploy Kyuubi on Kubernetes, you'd better get a sense of the foll
 
 * Use Kyuubi official docker image or build Kyuubi docker image
 * An active Kubernetes cluster
-* Reading About [Deploy Kyuubi engines on Kubernetes](https://kyuubi.readthedocs.io/en/latest/deployment/egine_on_kubernetes.html)
+* Reading About [Deploy Kyuubi engines on Kubernetes](engine_on_kubernetes.html)
 * [Kubectl](https://kubernetes.io/docs/reference/kubectl/overview/)
 * KubeConfig of the target cluster
 
 ## Kyuubi Official Docker Image 
 
-You can find official docker image here [Apache Kyuubi (Incubating) Docker Hub](https://registry.hub.docker.com/r/apache/kyuubi).
+You can find the official docker image at [Apache Kyuubi (Incubating) Docker Hub](https://registry.hub.docker.com/r/apache/kyuubi).
 
 ## Build Kyuubi Docker Image
 
@@ -68,7 +68,7 @@ Multiple YAML files are provided under `${KYUUBI_HOME}/docker/` to help you depl
 
 You can deploy single-node Kyuubi through `${KYUUBI_HOME}/docker/kyuubi-pod.yaml` or `${KYUUBI_HOME}/docker/kyuubi-deployment.yaml`.
 
-Also, you can use `${KYUUBI_HOME}/docker/kyuubi-service.yaml` deploy Kyuubi Service.
+Also, you can use `${KYUUBI_HOME}/docker/kyuubi-service.yaml` to deploy Kyuubi Service.
 
 ## Config
 
@@ -78,7 +78,7 @@ Kyuubi provide `${KYUUBI_HOME}/docker/kyuubi-configmap.yaml` to build Configmap 
 
 You can find out how to use it in the comments inside the above file.
 
-If you want to know kyuubi engine on kubernetes configurations, you can refer to [Deploy Kyuubi engines on Kubernetes](https://kyuubi.readthedocs.io/en/latest/deployment/egine_on_kubernetes.html)
+If you want to know kyuubi engine on kubernetes configurations, you can refer to [Deploy Kyuubi engines on Kubernetes](engine_on_kubernetes.html)
 
 ## Connect
 
@@ -96,3 +96,6 @@ ${SPARK_HOME}/bin/beeline -u 'jdbc:hive2://${hostname}:${port}'
 As using service nodePort, port means nodePort and hostname means any hostname of kubernetes node.
 
 As using HostNetwork, port means kyuubi containerPort and hostname means hostname of node where Kyuubi deployed.
+
+## TODO 
+Kyuubi will provide other connection methods in the future, like `Ingress`, `Load Balance`.
