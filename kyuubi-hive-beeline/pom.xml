@@ -130,7 +130,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>${hive.client.guava.version}</version>
+            <version>${guava.version}</version>
         </dependency>
 
         <dependency>
