@@ -24,3 +24,4 @@ Integrations
     :numbered: 2
 
     kudu
+    delta-lake
