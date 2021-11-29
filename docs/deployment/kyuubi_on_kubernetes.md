@@ -29,7 +29,7 @@ If you want to deploy Kyuubi on Kubernetes, you'd better get a sense of the foll
 
 * Use Kyuubi official docker image or build Kyuubi docker image
 * An active Kubernetes cluster
-* Reading About [Deploy Kyuubi engines on Kubernetes](engine_on_kubernetes.html)
+* Reading About [Deploy Kyuubi engines on Kubernetes](engine_on_kubernetes.md)
 * [Kubectl](https://kubernetes.io/docs/reference/kubectl/overview/)
 * KubeConfig of the target cluster
 
@@ -78,7 +78,7 @@ Kyuubi provide `${KYUUBI_HOME}/docker/kyuubi-configmap.yaml` to build Configmap 
 
 You can find out how to use it in the comments inside the above file.
 
-If you want to know kyuubi engine on kubernetes configurations, you can refer to [Deploy Kyuubi engines on Kubernetes](engine_on_kubernetes.html)
+If you want to know kyuubi engine on kubernetes configurations, you can refer to [Deploy Kyuubi engines on Kubernetes](engine_on_kubernetes.md)
 
 ## Connect
 
