@@ -1686,7 +1686,7 @@
             <properties>
                 <spark.version>3.1.2</spark.version>
                 <delta.version>1.0.0</delta.version>
-                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest</maven.plugin.scalatest.exclude.tags>
             </properties>
             <modules>
                 <module>dev/kyuubi-extension-spark-common</module>
