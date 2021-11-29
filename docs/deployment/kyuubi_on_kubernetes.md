@@ -25,7 +25,7 @@
 
 ## Requirements
 
-If you want to deploy Kyuubi on Kubernetes, you'd better have cognition upon the following things.
+If you want to deploy Kyuubi on Kubernetes, you'd better get a sense of the following things.
 
 * Use Kyuubi official docker image or build Kyuubi docker image
 * An active Kubernetes cluster
@@ -35,7 +35,7 @@ If you want to deploy Kyuubi on Kubernetes, you'd better have cognition upon the
 
 ## Kyuubi Official Docker Image 
 
-You can find official docker image here [Apache Kyuubi Docker Hub](https://registry.hub.docker.com/r/apache/kyuubi).
+You can find official docker image here [Apache Kyuubi (Incubating) Docker Hub](https://registry.hub.docker.com/r/apache/kyuubi).
 
 ## Build Kyuubi Docker Image
 
@@ -60,21 +60,21 @@ Examples:
 
 `${KYUUBI_HOME}/bin/docker-image-tool.sh` use `Kyuubi Version` as default docker tag and always build `${repo}/kyuubi:${tag}` image.
 
-The script can also help build external Spark into a Kyuubi image that acts as a client for submitting tasks by `-s ${SPAAK_HOME`.
+The script can also help build external Spark into a Kyuubi image that acts as a client for submitting tasks by `-s ${SPAAK_HOME}`.
 
 ## Deploy
 
 Multiple YAML files are provided under `${KYUUBI_HOME}/docker/` to help you deploy Kyuubi.
 
-You can deploy single-node Kyuubi through `${KYUUBI_HOME/docker/kyuubi-pod.yaml}` or `${KYUUBI_HOME/docker/kyuubi-deployment.yaml}`.
+You can deploy single-node Kyuubi through `${KYUUBI_HOME}/docker/kyuubi-pod.yaml` or `${KYUUBI_HOME}/docker/kyuubi-deployment.yaml`.
 
-Also, you can use `${KYUUBI_HOME/docker/kyuubi-service.yaml}` deploy Kyuubi Service.
+Also, you can use `${KYUUBI_HOME}/docker/kyuubi-service.yaml` deploy Kyuubi Service.
 
 ## Config
 
 You can configure Kyuubi the old-fashioned way by placing kyuubi-default.conf inside the image. Kyuubi do not recommend using this way on Kubernetes.
 
-Kyuubi provide `${KYUUBI_HOME/docker/kyuubi-configmap.yaml}` to build Configmap for Kyuubi.
+Kyuubi provide `${KYUUBI_HOME}/docker/kyuubi-configmap.yaml` to build Configmap for Kyuubi.
 
 You can find out how to use it in the comments inside the above file.
 
@@ -82,7 +82,7 @@ If you want to know kyuubi engine on kubernetes configurations, you can refer to
 
 ## Connect
 
-If you do not use Service or HostNetwork to get the IP address of the node where Kyuubi resides.
+If you do not use Service or HostNetwork to get the IP address of the node where Kyuubi deployed.
 You should connect like:
 ```shell
 kubectl exec -it kyuubi-example -- /bin/bash
