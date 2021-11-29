@@ -109,7 +109,7 @@
         <hadoop.version>3.3.1</hadoop.version>
         <hadoop.binary.version>3.2</hadoop.binary.version>
         <hive.version>2.3.9</hive.version>
-        <hudi.version>0.9.0</hudi.version>
+        <hudi.version>0.10.0</hudi.version>
         <iceberg.name>iceberg-spark3-runtime</iceberg.name>
         <iceberg.version>0.12.1</iceberg.version>
         <jackson.version>2.12.5</jackson.version>
