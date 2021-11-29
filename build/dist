@@ -244,7 +244,7 @@ if [[ "$MAKE_TGZ" == "true" ]]; then
   TARDIR_NAME="apache-kyuubi-$VERSION-bin$SUFFIX"
   TARDIR="$KYUUBI_HOME/$TARDIR_NAME"
   rm -rf "$TARDIR"
-  cp -r "$DISTDIR" "$TARDIR"
+  cp -R "$DISTDIR" "$TARDIR"
   tar czf "$TARDIR_NAME.tgz" -C "$KYUUBI_HOME" "$TARDIR_NAME"
   rm -rf "$TARDIR"
   echo "The Kyuubi tarball $TARDIR_NAME.tgz is successfully generated in $KYUUBI_HOME."
