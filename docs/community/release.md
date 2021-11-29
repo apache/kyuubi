@@ -230,3 +230,16 @@ Once everything is working, create an announcement on the website and then send 
 The mailing list includes: `announce@apache.org`, `dev@kyuubi.apache.org`, `user@spark.apache.org`.
 
 Enjoy an adult beverage of your choice, and congratulations on making a Kyuubi release.
+
+
+## Remove the dist repo directories for deprecated release candidates
+
+Remove the deprecated dist repo directories at last. 
+
+```shell
+cd work/svn-dev
+svn delete https://dist.apache.org/repos/dist/dev/incubator/kyuubi/{RELEASE_TAG} \
+  --username "${ASF_USERNAME}" \
+  --password "${ASF_PASSWORD}" \
+  --message "Remove deprecated Apache Kyuubi ${RELEASE_TAG}" 
+```
