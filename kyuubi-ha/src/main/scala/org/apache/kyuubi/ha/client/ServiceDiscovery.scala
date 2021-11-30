@@ -43,17 +43,14 @@ abstract class ServiceDiscovery(
     val fe: FrontendService) extends AbstractService(name) {
 
   private var _discoveryClient: ServiceDiscoveryClient = _
-  private var _namespace: String = _
 
   def discoveryClient: ServiceDiscoveryClient = _discoveryClient
-  def namespace: String = _namespace
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
 
     _discoveryClient = new ServiceDiscoveryClient(this)
     discoveryClient.createClient(conf)
-    _namespace = discoveryClient.namespace
 
     super.initialize(conf)
   }

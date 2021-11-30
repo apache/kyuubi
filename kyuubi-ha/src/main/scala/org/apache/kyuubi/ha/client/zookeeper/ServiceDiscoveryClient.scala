@@ -128,8 +128,13 @@ class ServiceDiscoveryClient(serviceDiscovery: ServiceDiscovery) extends Logging
     }
   }
 
-  def postDeregisterService(path: String): Unit = {
-    zkClient.delete().deletingChildrenIfNeeded().forPath(path)
+  def postDeregisterService(): Boolean = {
+    if (namespace != null) {
+      zkClient.delete().deletingChildrenIfNeeded().forPath(namespace)
+      true
+    } else {
+      false
+    }
   }
 
   def closeClient(): Unit = {
