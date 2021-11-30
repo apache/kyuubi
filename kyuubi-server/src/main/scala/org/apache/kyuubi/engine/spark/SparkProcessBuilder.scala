@@ -184,7 +184,13 @@ class SparkProcessBuilder(
       try {
         val ugi = UserGroupInformation
           .loginUserFromKeytabAndReturnUGI(principal.get, keytab.get)
-        ugi.getShortUserName == proxyUser
+        val keytabEnabled = ugi.getShortUserName == proxyUser
+        if (!keytabEnabled) {
+          warn(s"The session proxy user: $proxyUser is not same with " +
+            s"spark principal: ${ugi.getShortUserName}, so we can't support use keytab. " +
+            s"Fallback to use proxy user.")
+        }
+        keytabEnabled
       } catch {
         case e: IOException =>
           error(s"Failed to login for ${principal.get}", e)
