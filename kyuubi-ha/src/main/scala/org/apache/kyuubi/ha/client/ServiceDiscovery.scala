@@ -50,29 +50,29 @@ abstract class ServiceDiscovery(
     name: String,
     val fe: FrontendService) extends AbstractService(name) {
 
-  private var _instanceClient: ServiceDiscoveryClient = _
+  private var _discoveryClient: ServiceDiscoveryClient = _
   private var _namespace: String = _
 
-  def instanceClient: ServiceDiscoveryClient = _instanceClient
+  def discoveryClient: ServiceDiscoveryClient = _discoveryClient
   def namespace: String = _namespace
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
 
-    _instanceClient = new ServiceDiscoveryClient(this)
-    instanceClient.createClient(conf)
-    _namespace = instanceClient.namespace
+    _discoveryClient = new ServiceDiscoveryClient(this)
+    discoveryClient.createClient(conf)
+    _namespace = discoveryClient.namespace
 
     super.initialize(conf)
   }
 
   override def start(): Unit = {
-    instanceClient.registerService(conf)
+    discoveryClient.registerService(conf)
     super.start()
   }
 
   override def stop(): Unit = {
-    instanceClient.closeClient()
+    discoveryClient.closeClient()
     super.stop()
   }
 
