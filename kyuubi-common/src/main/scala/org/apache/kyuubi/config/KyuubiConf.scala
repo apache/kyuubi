@@ -623,7 +623,9 @@ object KyuubiConf {
     .createWithDefault(Duration.ofMinutes(5).toMillis)
 
   val ENGINE_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.idle.timeout")
-    .doc("engine timeout, the engine will self-terminate when it's not accessed for this duration")
+    .doc("engine timeout, the engine will self-terminate when it's not accessed for this " +
+      "duration. The value of -1 disables this mechanism and prevents the engine from " +
+      "self-terminate.")
     .version("1.0.0")
     .timeConf
     .createWithDefault(Duration.ofMinutes(30L).toMillis)

@@ -270,15 +270,17 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     _latestLogoutTime = System.currentTimeMillis()
     val interval = conf.get(ENGINE_CHECK_INTERVAL)
     val idleTimeout = conf.get(ENGINE_IDLE_TIMEOUT)
-    val checkTask = new Runnable {
-      override def run(): Unit = {
-        if (!shutdown &&
-          System.currentTimeMillis() - latestLogoutTime > idleTimeout && getOpenSessionCount <= 0) {
-          info(s"Idled for more than $idleTimeout ms, terminating")
-          sys.exit(0)
+    if (idleTimeout > -1) {
+      val checkTask = new Runnable {
+        override def run(): Unit = {
+          if (!shutdown && System.currentTimeMillis() - latestLogoutTime > idleTimeout &&
+            getOpenSessionCount <= 0) {
+            info(s"Idled for more than $idleTimeout ms, terminating")
+            sys.exit(0)
+          }
         }
       }
+      timeoutChecker.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
     }
-    timeoutChecker.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
   }
 }
