@@ -55,10 +55,8 @@ case class SparkSQLEngine(
     // Start engine self-terminating checker after all services are ready and it can be reached by
     // all servers in engine spaces.
     backendService.sessionManager.startTerminatingChecker(() => {
-      currentEngine match {
-        case Some(engine) =>
-          engine.stop()
-      }
+      assert(currentEngine.isDefined)
+      currentEngine.get.stop()
     })
   }
 
