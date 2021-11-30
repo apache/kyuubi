@@ -17,28 +17,28 @@
 
 package org.apache.kyuubi.ha.client
 
-import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.collection.JavaConverters._
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.framework.recipes.nodes.PersistentNode
-import org.apache.curator.framework.state.{ConnectionState, ConnectionStateListener}
-import org.apache.curator.framework.state.ConnectionState.{CONNECTED, LOST, RECONNECTED}
 import org.apache.curator.utils.ZKPaths
-import org.apache.zookeeper.{CreateMode, KeeperException, WatchedEvent, Watcher}
+import org.apache.zookeeper.CreateMode
 import org.apache.zookeeper.CreateMode.PERSISTENT
+import org.apache.zookeeper.KeeperException
 import org.apache.zookeeper.KeeperException.NodeExistsException
 
-import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiException, Logging}
+import org.apache.kyuubi.KYUUBI_VERSION
+import org.apache.kyuubi.KyuubiException
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
+import org.apache.kyuubi.ha.client.zookeeper.ServiceDiscoveryClient
 import org.apache.kyuubi.service.{AbstractService, FrontendService}
-import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
+import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 /**
  * A abstract service for service discovery
@@ -48,90 +48,32 @@ import org.apache.kyuubi.util.{KyuubiHadoopUtils, ThreadUtils}
  */
 abstract class ServiceDiscovery(
     name: String,
-    fe: FrontendService) extends AbstractService(name) {
+    val fe: FrontendService) extends AbstractService(name) {
 
-  import ServiceDiscovery._
-  import ZooKeeperClientProvider._
-
-  private var _zkClient: CuratorFramework = _
-  private var _serviceNode: PersistentNode = _
-
-  /**
-   * a pre-defined namespace used to publish the instance of the associate service
-   */
+  private var _instanceClient: ServiceDiscoveryClient = _
   private var _namespace: String = _
 
-  def zkClient: CuratorFramework = _zkClient
-
-  def serviceNode: PersistentNode = _serviceNode
-
+  def instanceClient: ServiceDiscoveryClient = _instanceClient
   def namespace: String = _namespace
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
-    _namespace = conf.get(HA_ZK_NAMESPACE)
-    val maxSleepTime = conf.get(HA_ZK_CONN_MAX_RETRY_WAIT)
-    val maxRetries = conf.get(HA_ZK_CONN_MAX_RETRIES)
-    _zkClient = buildZookeeperClient(conf)
-    zkClient.getConnectionStateListenable.addListener(new ConnectionStateListener {
-      private val isConnected = new AtomicBoolean(false)
 
-      override def stateChanged(client: CuratorFramework, newState: ConnectionState): Unit = {
-        info(s"Zookeeper client connection state changed to: $newState")
-        newState match {
-          case CONNECTED | RECONNECTED => isConnected.set(true)
-          case LOST =>
-            isConnected.set(false)
-            val delay = maxRetries.toLong * maxSleepTime
-            connectionChecker.schedule(
-              new Runnable {
-                override def run(): Unit = if (!isConnected.get()) {
-                  error(s"Zookeeper client connection state changed to: $newState, but failed to" +
-                    s" reconnect in ${delay / 1000} seconds. Give up retry. ")
-                  stopGracefully()
-                }
-              },
-              delay,
-              TimeUnit.MILLISECONDS)
-          case _ =>
-        }
-      }
-    })
-    zkClient.start()
+    _instanceClient = new ServiceDiscoveryClient(this)
+    instanceClient.createClient(conf)
+    _namespace = instanceClient.namespace
+
     super.initialize(conf)
   }
 
   override def start(): Unit = {
-    val instance = fe.connectionUrl
-    _serviceNode = createServiceNode(conf, zkClient, namespace, instance)
-    // Set a watch on the serviceNode
-    val watcher = new DeRegisterWatcher
-    if (zkClient.checkExists.usingWatcher(watcher).forPath(serviceNode.getActualPath) == null) {
-      // No node exists, throw exception
-      throw new KyuubiException(s"Unable to create znode for this Kyuubi " +
-        s"instance[${fe.connectionUrl}] on ZooKeeper.")
-    }
+    instanceClient.registerService(conf)
     super.start()
   }
 
   override def stop(): Unit = {
-    closeServiceNode()
-    if (zkClient != null) zkClient.close()
+    instanceClient.closeClient()
     super.stop()
-  }
-
-  // close the EPHEMERAL_SEQUENTIAL node in zk
-  protected def closeServiceNode(): Unit = {
-    if (_serviceNode != null) {
-      try {
-        _serviceNode.close()
-      } catch {
-        case e: IOException =>
-          error("Failed to close the persistent ephemeral znode" + serviceNode.getActualPath, e)
-      } finally {
-        _serviceNode = null
-      }
-    }
   }
 
   // stop the server genteelly
@@ -143,22 +85,9 @@ abstract class ServiceDiscovery(
     fe.serverable.stop()
   }
 
-  class DeRegisterWatcher extends Watcher {
-    override def process(event: WatchedEvent): Unit = {
-      if (event.getType == Watcher.Event.EventType.NodeDeleted) {
-        warn(s"This Kyuubi instance ${fe.connectionUrl} is now de-registered from" +
-          s" ZooKeeper. The server will be shut down after the last client session completes.")
-        stopGracefully()
-      }
-    }
-  }
-
 }
 
 object ServiceDiscovery extends Logging {
-
-  final private lazy val connectionChecker =
-    ThreadUtils.newDaemonSingleThreadScheduledExecutor("zk-connection-checker")
 
   def supportServiceDiscovery(conf: KyuubiConf): Boolean = {
     val zkEnsemble = conf.get(HA_ZK_QUORUM)
@@ -235,7 +164,7 @@ object ServiceDiscovery extends Logging {
     createServiceNode(conf, zkClient, namespace, instance, version, external).getActualPath
   }
 
-  private def createServiceNode(
+  private[client] def createServiceNode(
       conf: KyuubiConf,
       zkClient: CuratorFramework,
       namespace: String,

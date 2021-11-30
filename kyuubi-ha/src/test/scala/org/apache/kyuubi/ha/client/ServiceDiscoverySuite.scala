@@ -29,7 +29,8 @@ import org.apache.zookeeper.ZooDefs
 import org.apache.zookeeper.data.ACL
 import org.scalatest.time.SpanSugar._
 
-import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION}
+import org.apache.kyuubi.KerberizedTestHelper
+import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.service.{NoopThriftBinaryFrontendServer, Serverable, ServiceState}

@@ -31,12 +31,12 @@ class EngineServiceDiscovery(
     fe: FrontendService) extends ServiceDiscovery("EngineServiceDiscovery", fe) {
 
   override def stop(): Unit = synchronized {
-    closeServiceNode()
+    instanceClient.deregisterService()
     conf.get(ENGINE_SHARE_LEVEL) match {
       // For connection level, we should clean up the namespace in zk in case the disk stress.
       case "CONNECTION" if namespace != null =>
         try {
-          zkClient.delete().deletingChildrenIfNeeded().forPath(namespace)
+          instanceClient.postDeregisterService(namespace)
           info("Clean up discovery service due to this is connection share level.")
         } catch {
           case NonFatal(e) =>
