@@ -270,7 +270,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     _latestLogoutTime = System.currentTimeMillis()
     val interval = conf.get(ENGINE_CHECK_INTERVAL)
     val idleTimeout = conf.get(ENGINE_IDLE_TIMEOUT)
-    if (idleTimeout > -1) {
+    if (idleTimeout > 0) {
       val checkTask = new Runnable {
         override def run(): Unit = {
           if (!shutdown && System.currentTimeMillis() - latestLogoutTime > idleTimeout &&
