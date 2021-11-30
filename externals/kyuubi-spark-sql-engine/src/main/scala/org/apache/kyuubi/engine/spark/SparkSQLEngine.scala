@@ -30,7 +30,7 @@ import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.spark.SparkSQLEngine.countDownLatch
+import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, EventLoggingService}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.RetryPolicies
@@ -54,7 +54,12 @@ case class SparkSQLEngine(
     super.start()
     // Start engine self-terminating checker after all services are ready and it can be reached by
     // all servers in engine spaces.
-    backendService.sessionManager.startTerminatingChecker()
+    backendService.sessionManager.startTerminatingChecker(() => {
+      currentEngine match {
+        case Some(engine) =>
+          engine.stop()
+      }
+    })
   }
 
   override protected def stopServer(): Unit = {
