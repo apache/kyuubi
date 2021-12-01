@@ -119,6 +119,9 @@ function build {
   if [[ ! -d "$KYUUBI_ROOT/spark-binary" ]]; then
     mkdir "$KYUUBI_ROOT/spark-binary"
   fi
+  if [[ ! -d "$SPARK_HOME" ]]; then
+    error "Cannot found dir $SPARK_HOME, you must configure SPARK_HOME correct."
+  fi
   cp -r "$SPARK_HOME/" "$KYUUBI_ROOT/spark-binary/"
 
   # Verify that the Docker image content directory is present
