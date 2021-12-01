@@ -265,7 +265,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
     timeoutChecker.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
   }
 
-  private[kyuubi] def startTerminatingChecker(): Unit = if (!isServer) {
+  private[kyuubi] def startTerminatingChecker(stop: () => Unit): Unit = if (!isServer) {
     // initialize `_latestLogoutTime` at start
     _latestLogoutTime = System.currentTimeMillis()
     val interval = conf.get(ENGINE_CHECK_INTERVAL)
@@ -276,7 +276,7 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
           if (!shutdown && System.currentTimeMillis() - latestLogoutTime > idleTimeout &&
             getOpenSessionCount <= 0) {
             info(s"Idled for more than $idleTimeout ms, terminating")
-            sys.exit(0)
+            stop()
           }
         }
       }
