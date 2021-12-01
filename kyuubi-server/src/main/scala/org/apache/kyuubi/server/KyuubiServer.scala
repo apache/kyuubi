@@ -90,7 +90,15 @@ object KyuubiServer extends Logging {
     }
 
     val server = new KyuubiServer()
-    server.initialize(conf)
+    try {
+      server.initialize(conf)
+    } catch {
+      case e: Exception =>
+        if (zkServer.getServiceState == ServiceState.STARTED) {
+          zkServer.stop()
+        }
+        throw e
+    }
     server.start()
     Utils.addShutdownHook(() => server.stop(), Utils.SERVER_SHUTDOWN_PRIORITY)
     server
