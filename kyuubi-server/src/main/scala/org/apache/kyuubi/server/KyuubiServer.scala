@@ -94,7 +94,9 @@ object KyuubiServer extends Logging {
       server.initialize(conf)
     } catch {
       case e: Exception =>
-        zkServer.stop()
+        if (zkServer.getServiceState == ServiceState.STARTED) {
+          zkServer.stop()
+        }
         throw e
     }
     server.start()
