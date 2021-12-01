@@ -27,5 +27,6 @@ This part describes the use of the SQL References in Kyuubi, including lists of 
 
     rules
     functions
+    z-order-introduction
     z-order-benchmark
 
