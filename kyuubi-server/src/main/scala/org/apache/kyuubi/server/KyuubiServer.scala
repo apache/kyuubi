@@ -94,8 +94,8 @@ object KyuubiServer extends Logging {
       server.initialize(conf)
     } catch {
       case e: Exception =>
-        error("Failed to initialize Kyuubi server", e)
-        System.exit(-1)
+        zkServer.stop()
+        throw e
     }
     server.start()
     Utils.addShutdownHook(() => server.stop(), Utils.SERVER_SHUTDOWN_PRIORITY)
