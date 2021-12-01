@@ -19,9 +19,6 @@ package org.apache.kyuubi.session
 
 import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift._
-import org.apache.thrift.TException
-import org.apache.thrift.protocol.TBinaryProtocol
-import org.apache.thrift.transport.{TSocket, TTransport}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.client.KyuubiSyncThriftClient
@@ -35,7 +32,6 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.server.EventLoggingService
-import org.apache.kyuubi.service.authentication.PlainSASLHelper
 
 class KyuubiSessionImpl(
     protocol: TProtocolVersion,
@@ -43,7 +39,7 @@ class KyuubiSessionImpl(
     password: String,
     ipAddress: String,
     conf: Map[String, String],
-    override val sessionManager: KyuubiSessionManager,
+    sessionManager: KyuubiSessionManager,
     sessionConf: KyuubiConf)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
@@ -55,16 +51,13 @@ class KyuubiSessionImpl(
   }
 
   val engine: EngineRef = new EngineRef(sessionConf, user)
-  val launchEngineAsync = sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC)
-  private[kyuubi] val launchEngineOp =
-    sessionManager.operationManager.newLaunchEngineOperation(this, launchEngineAsync)
-  @volatile
-  var engineLaunched: Boolean = false
+  private[kyuubi] val launchEngineOp = sessionManager.operationManager
+    .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
+  @volatile var engineLaunched: Boolean = false
 
   private val sessionEvent = KyuubiSessionEvent(this)
   EventLoggingService.onEvent(sessionEvent)
 
-  private var transport: TTransport = _
   private var _client: KyuubiSyncThriftClient = _
   def client: KyuubiSyncThriftClient = _client
 
@@ -87,19 +80,9 @@ class KyuubiSessionImpl(
     withZkClient(sessionConf) { zkClient =>
       val (host, port) = engine.getOrCreate(zkClient, extraEngineLog)
       val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
-      val loginTimeout = sessionConf.get(ENGINE_LOGIN_TIMEOUT).toInt
-      val requestTimeout = sessionConf.get(ENGINE_REQUEST_TIMEOUT).toInt
-      transport = PlainSASLHelper.getPlainTransport(
-        user,
-        passwd,
-        new TSocket(host, port, requestTimeout, loginTimeout))
-      if (!transport.isOpen) {
-        transport.open()
-        logSessionInfo(s"Connected to engine [$host:$port]")
-      }
-      _client = new KyuubiSyncThriftClient(new TBinaryProtocol(transport))
+      _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
       _engineSessionHandle = _client.openSession(protocol, user, passwd, normalizedConf)
-      logSessionInfo(s"Opened engine session[${_engineSessionHandle}]")
+      logSessionInfo(s"Connected to engine [$host:$port] with ${_engineSessionHandle}")
       sessionEvent.openedTime = System.currentTimeMillis()
       sessionEvent.sessionId = handle.identifier.toString
       sessionEvent.remoteSessionId = _engineSessionHandle.identifier.toString
@@ -144,16 +127,10 @@ class KyuubiSessionImpl(
     sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
     try {
       if (_client != null) _client.closeSession()
-    } catch {
-      case e: TException =>
-        throw KyuubiSQLException("Error while cleaning up the engine resources", e)
     } finally {
       sessionEvent.endTime = System.currentTimeMillis()
       EventLoggingService.onEvent(sessionEvent)
       MetricsSystem.tracing(_.decCount(MetricRegistry.name(CONN_OPEN, user)))
-      if (transport != null && transport.isOpen) {
-        transport.close()
-      }
     }
   }
 }

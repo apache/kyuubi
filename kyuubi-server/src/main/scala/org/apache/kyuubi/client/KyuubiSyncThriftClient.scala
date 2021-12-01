@@ -22,15 +22,19 @@ import java.util.concurrent.locks.ReentrantLock
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift._
-import org.apache.thrift.protocol.TProtocol
+import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
+import org.apache.thrift.transport.TSocket
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOGIN_TIMEOUT, ENGINE_REQUEST_TIMEOUT}
 import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.service.authentication.PlainSASLHelper
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.ThriftUtils
 
-class KyuubiSyncThriftClient(protocol: TProtocol)
+class KyuubiSyncThriftClient private (protocol: TProtocol)
   extends TCLIService.Client(protocol) with Logging {
 
   @volatile private var _remoteSessionHandle: TSessionHandle = _
@@ -70,8 +74,15 @@ class KyuubiSyncThriftClient(protocol: TProtocol)
 
   def closeSession(): Unit = {
     val req = new TCloseSessionReq(_remoteSessionHandle)
-    val resp = withLockAcquired(CloseSession(req))
-    ThriftUtils.verifyTStatus(resp.getStatus)
+    try {
+      val resp = withLockAcquired(CloseSession(req))
+      ThriftUtils.verifyTStatus(resp.getStatus)
+    } catch {
+      case e: Exception =>
+        throw KyuubiSQLException("Error while cleaning up the engine resources", e)
+    } finally {
+      protocol.getTransport.close()
+    }
   }
 
   def executeStatement(
@@ -195,10 +206,6 @@ class KyuubiSyncThriftClient(protocol: TProtocol)
     resp.getSchema
   }
 
-  override def FetchResults(req: TFetchResultsReq): TFetchResultsResp = {
-    withLockAcquired(super.FetchResults(req))
-  }
-
   def fetchResults(
       operationHandle: TOperationHandle,
       orientation: FetchOrientation,
@@ -208,7 +215,7 @@ class KyuubiSyncThriftClient(protocol: TProtocol)
     val req = new TFetchResultsReq(operationHandle, or, maxRows)
     val fetchType = if (fetchLog) 1.toShort else 0.toShort
     req.setFetchType(fetchType)
-    val resp = FetchResults(req)
+    val resp = withLockAcquired(FetchResults(req))
     ThriftUtils.verifyTStatus(resp.getStatus)
     resp.getResults
   }
@@ -229,5 +236,23 @@ class KyuubiSyncThriftClient(protocol: TProtocol)
     } catch {
       case e: Exception => warn(s"$req failed on engine side", e)
     }
+  }
+}
+
+private[kyuubi] object KyuubiSyncThriftClient {
+  def createClient(
+      user: String,
+      password: String,
+      host: String,
+      port: Int,
+      conf: KyuubiConf): KyuubiSyncThriftClient = {
+    val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
+    val loginTimeout = conf.get(ENGINE_LOGIN_TIMEOUT).toInt
+    val requestTimeout = conf.get(ENGINE_REQUEST_TIMEOUT).toInt
+    val tSocket = new TSocket(host, port, requestTimeout, loginTimeout)
+    val tTransport = PlainSASLHelper.getPlainTransport(user, passwd, tSocket)
+    tTransport.open()
+    val tProtocol = new TBinaryProtocol(tTransport)
+    new KyuubiSyncThriftClient(tProtocol)
   }
 }
