@@ -25,9 +25,22 @@
 
 ## Introduction
 
-Let describe the picture shows the workflow of z-order.
+The following picture shows the workflow of z-order.
 
 ![](../imgs/extension/zorder-workflow.png)
+
+It contains three parties:
+- Upstream
+
+  Due to the extra sort, the upstream job will run a little slower than before
+
+- Table
+
+  Z-order has the good data clustering, so the compression ratio can be improved
+
+- Downstream
+
+  Improve the downstream read performance benefit from data skipping. Since the parquet and orc file support collect data statistic automatically when you write data e.g. minimum and maximum values, the good data clustering let the pushed down filter more efficient
 
 ### Supported table format
 
@@ -77,7 +90,7 @@ If you want to optimize the history data of a table, the `OPTIMIZE ...` syntax i
 OPTIMIZE table_name [WHERE predicate] ZORDER BY col_name1 [, ...]
 ```
 
-Note that, the `predicate` only supports partition column.
+Note that, the `predicate` only supports partition spec.
 
 #### Examples
 ```sql
