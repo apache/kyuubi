@@ -21,7 +21,6 @@ import java.util.regex.Pattern
 
 import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.types.StructType
 
 class CatalogShim_v2_4 extends SparkCatalogShim {
 
@@ -126,10 +125,10 @@ class CatalogShim_v2_4 extends SparkCatalogShim {
     databases.flatMap { db =>
       val identifiers = catalog.listTables(db, tablePattern, includeLocalTempViews = true)
       catalog.getTablesByName(identifiers).flatMap { t =>
-        var tableSchema: StructType = null;
-        tableSchema = t.schema
-        if (t.provider.getOrElse("") == "delta") {
-          tableSchema = spark.table(t.identifier.table).schema
+        val tableSchema = if (t.provider.getOrElse("").equalsIgnoreCase("delta")) {
+          spark.table(t.identifier.table).schema
+        } else {
+          t.schema
         }
         tableSchema.zipWithIndex.filter(f => columnPattern.matcher(f._1.name).matches())
           .map { case (f, i) => toColumnResult(catalogName, t.database, t.identifier.table, f, i) }
