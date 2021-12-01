@@ -53,7 +53,6 @@ class KyuubiSessionImpl(
   val engine: EngineRef = new EngineRef(sessionConf, user)
   private[kyuubi] val launchEngineOp = sessionManager.operationManager
     .newLaunchEngineOperation(this, sessionConf.get(SESSION_ENGINE_LAUNCH_ASYNC))
-  @volatile var engineLaunched: Boolean = false
 
   private val sessionEvent = KyuubiSessionEvent(this)
   EventLoggingService.onEvent(sessionEvent)
@@ -99,6 +98,8 @@ class KyuubiSessionImpl(
     super.runOperation(operation)
   }
 
+  @volatile private var engineLaunched: Boolean = false
+
   private def waitForEngineLaunched(): Unit = {
     if (!engineLaunched) {
       Option(launchEngineOp).foreach { op =>
@@ -112,7 +113,7 @@ class KyuubiSessionImpl(
 
         if (_engineSessionHandle == null) {
           val ex = op.getStatus.exception.getOrElse(
-            KyuubiSQLException(s"Failed to launch engine for session[$handle]"))
+            KyuubiSQLException(s"Failed to launch engine for $handle"))
           throw ex
         }
 
