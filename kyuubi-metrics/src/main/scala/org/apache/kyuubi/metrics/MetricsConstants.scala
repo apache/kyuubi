@@ -39,4 +39,10 @@ object MetricsConstants {
   final val ENGINE_FAIL: String = ENGINE + "failed"
   final val ENGINE_TIMEOUT: String = ENGINE + "timeout"
   final val ENGINE_TOTAL: String = ENGINE + "total"
+
+  final private val OPERATION = KYUUBI + "operation."
+  final val OPERATION_OPEN: String = OPERATION + "opened"
+  final val OPERATION_FAIL: String = OPERATION + "failed"
+  final val OPERATION_TOTAL: String = OPERATION + "total"
+
 }

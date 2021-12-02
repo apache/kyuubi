@@ -26,7 +26,7 @@ import org.apache.thrift.TException
 import org.apache.thrift.transport.TTransportException
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
-import org.apache.kyuubi.metrics.MetricsConstants.STATEMENT_FAIL
+import org.apache.kyuubi.metrics.MetricsConstants.{OPERATION_FAIL, OPERATION_OPEN, OPERATION_TOTAL, STATEMENT_FAIL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationType.OperationType
@@ -35,6 +35,11 @@ import org.apache.kyuubi.util.ThriftUtils
 
 abstract class KyuubiOperation(opType: OperationType, session: Session)
   extends AbstractOperation(opType, session) {
+
+  MetricsSystem.tracing { ms =>
+    ms.incCount(MetricRegistry.name(OPERATION_OPEN, session.user))
+    ms.incCount(MetricRegistry.name(OPERATION_TOTAL, session.user))
+  }
 
   protected[operation] lazy val client = session.asInstanceOf[KyuubiSessionImpl].client
 
@@ -53,8 +58,9 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
           warn(s"Ignore exception in terminal state with $statementId: $e")
         } else {
           val errorType = e.getClass.getSimpleName
-          MetricsSystem.tracing {
-            _.incCount(MetricRegistry.name(STATEMENT_FAIL, errorType))
+          MetricsSystem.tracing { ms =>
+            ms.incCount(MetricRegistry.name(STATEMENT_FAIL, errorType))
+            ms.incCount(MetricRegistry.name(OPERATION_FAIL, session.user))
           }
           val ke = e match {
             case kse: KyuubiSQLException => kse
@@ -105,6 +111,7 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
   override def close(): Unit = state.synchronized {
     if (!isClosedOrCanceled) {
       setState(OperationState.CLOSED)
+      MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, session.user)))
       if (_remoteOpHandle != null) {
         try {
           getOperationLog.foreach(_.close())

@@ -23,6 +23,8 @@ import org.apache.hive.service.rpc.thrift.TRowSet
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT
+import org.apache.kyuubi.metrics.MetricsConstants.OPERATION_OPEN
+import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.session.{KyuubiSessionImpl, Session}
 import org.apache.kyuubi.util.ThriftUtils
@@ -134,5 +136,10 @@ class KyuubiOperationManager private (name: String) extends OperationManager(nam
           ThriftUtils.EMPTY_ROW_SET
         }
     }
+  }
+
+  override def start(): Unit = synchronized {
+    MetricsSystem.tracing(_.registerGauge(OPERATION_OPEN, getOperationCount, 0))
+    super.start()
   }
 }
