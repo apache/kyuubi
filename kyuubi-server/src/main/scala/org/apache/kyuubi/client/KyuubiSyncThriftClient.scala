@@ -81,7 +81,7 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
       case e: Exception =>
         throw KyuubiSQLException("Error while cleaning up the engine resources", e)
     } finally {
-      protocol.getTransport.close()
+      if (protocol.getTransport.isOpen) protocol.getTransport.close()
     }
   }
 
