@@ -57,7 +57,7 @@ Create a new file named core-site.xml under ./spark/conf directory, and add foll
     <value>org.apache.hadoop.fs.azure.Wasb</value>
  </property>
  <property>
-  <name>fs.azure.account.key.Your_Azure_Account.blob.core.windows.net</name>
+  <name>fs.azure.account.key.YOUR_AZURE_ACCOUNT.blob.core.windows.net</name>
   <value>YOUR_AZURE_ACCOUNT_ACCESS_KEY</value>
  </property>
  <property>
@@ -77,6 +77,8 @@ Create a new file named core-site.xml under ./spark/conf directory, and add foll
 #### Copy Dependencies To Spark
 Copy jar packages required by delta lake and microsoft azure to ./spark/jars directory:
 ```shell
+wget https://repo1.maven.org/maven2/io/delta/delta-core_2.12/1.0.0/delta-core_2.12-1.0.0.jar -O ./spark/jars/delta-core_2.12-1.0.0.jar
+
 wget https://repo1.maven.org/maven2/com/microsoft/azure/azure-storage/8.6.6/azure-storage-8.6.6.jar -O ./spark/jars/azure-storage-8.6.6.jar
 
 wget https://repo1.maven.org/maven2/com/azure/azure-storage-blob/12.14.2/azure-storage-blob-12.14.2.jar -O ./spark/jars/azure-storage-blob-12.14.2.jar
@@ -97,8 +99,8 @@ Start spark shell:
 Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties
 Setting default log level to "WARN".
 To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
-Spark context Web UI available at http://host:4040
-Spark context available as 'sc' (master = spark://host:7077, app id = app-20211126172803-0003).
+Spark context Web UI available at http://HOST:4040
+Spark context available as 'sc' (master = spark://HOST:7077, app id = app-20211126172803-0003).
 Spark session available as 'spark'.
 Welcome to
       ____              __
@@ -217,7 +219,7 @@ Check kyuubi log, in order to check kyuubi start status and find the jdbc connec
 2021-11-26 17:49:50.234 INFO session.KyuubiSessionManager: Service[KyuubiSessionManager] is started.
 2021-11-26 17:49:50.234 INFO server.KyuubiBackendService: Service[KyuubiBackendService] is started.
 2021-11-26 17:49:50.235 INFO service.ThriftFrontendService: Service[ThriftFrontendService] is started.
-2021-11-26 17:49:50.235 INFO service.ThriftFrontendService: Starting and exposing JDBC connection at: jdbc:hive2://host:10009/
+2021-11-26 17:49:50.235 INFO service.ThriftFrontendService: Starting and exposing JDBC connection at: jdbc:hive2://HOST:10009/
 2021-11-26 17:49:50.239 INFO zookeeper.ClientCnxn: Session establishment complete on server host/*.*.*.*:2181, sessionid = 0x100046ec0ca01b5, negotiated timeout = 40000
 2021-11-26 17:49:50.245 INFO state.ConnectionStateManager: State change: CONNECTED
 2021-11-26 17:49:50.247 INFO client.KyuubiServiceDiscovery: Zookeeper client connection state changed to: CONNECTED
@@ -231,7 +233,7 @@ You can get the jdbc connection url by the log:
 ```
 #### Test The Connectivity Of Kyuubi And Delta Lake
 ```shell
-/usr/apache/current/spark/bin> ./beeline -u 'jdbc:hive2://HOST:10009/'
+/usr/apache/current/spark/bin> ./beeline -u 'jdbc:hive2://<YOUR_HOST>:10009/'
 log4j:WARN No appenders could be found for logger (org.apache.hadoop.util.Shell).
 log4j:WARN Please initialize the log4j system properly.
 log4j:WARN See http://logging.apache.org/log4j/1.2/faq.html#noconfig for more info.
@@ -240,7 +242,7 @@ Connected to: Spark SQL (version 1.3.1-incubating)
 Driver: Hive JDBC (version 2.3.7)
 Transaction isolation: TRANSACTION_REPEATABLE_READ
 Beeline version 2.3.7 by Apache Hive
-0: jdbc:hive2://host>
+0: jdbc:hive2://YOUR_HOST>
 ```
 At the same time, you can also check whether the engine is running on the spark UI:
 ![](../imgs/deltalake/kyuubi_start_status_spark_UI.png)
