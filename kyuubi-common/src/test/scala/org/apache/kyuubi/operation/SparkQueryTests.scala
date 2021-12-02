@@ -412,4 +412,38 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
       }
     }
   }
+
+  test("execute simple scala code") {
+    withJdbcStatement() { statement =>
+      statement.execute("SET kyuubi.operation.language=scala")
+      val rs = statement.executeQuery("spark.version")
+      rs.next()
+      // scala repl will return resX = YYYYY, and here we only check YYYYY
+      val sparkVer = rs.getString(1).split("=")(1).trim
+      assert("\\d\\.\\d\\.\\d".r.pattern.matcher(sparkVer).matches())
+      assert(rs.getMetaData.getColumnName(1) === "output")
+    }
+  }
+
+  test("execute simple scala code with result returned") {
+    withJdbcStatement() { statement =>
+      statement.execute("SET kyuubi.operation.language=scala")
+      val code =
+        """
+          |val df = spark
+          |  .range(0, 10, 2, 2)
+          |  .map(x => (x, x + 1, x * 2))
+          |  .toDF
+          |""".stripMargin
+      val rs1 = statement.executeQuery(code)
+      rs1.next()
+      rs1.getString(1)
+      assert(rs1.getString(1) startsWith "df: org.apache.spark.sql.DataFrame")
+
+      // continue
+      val rs2 = statement.executeQuery("df.count()")
+      rs2.next()
+      assert(rs2.getLong(1) === 5)
+    }
+  }
 }

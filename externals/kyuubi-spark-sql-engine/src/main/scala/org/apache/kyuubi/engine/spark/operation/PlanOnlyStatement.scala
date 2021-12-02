@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.types.StructType
 
@@ -31,11 +31,10 @@ import org.apache.kyuubi.session.Session
  * Perform the statement parsing, analyzing or optimizing only without executing it
  */
 class PlanOnlyStatement(
-    spark: SparkSession,
     session: Session,
     override protected val statement: String,
     mode: OperationMode)
-  extends SparkOperation(spark, OperationType.EXECUTE_STATEMENT, session) {
+  extends SparkOperation(OperationType.EXECUTE_STATEMENT, session) {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
   override def getOperationLog: Option[OperationLog] = Option(operationLog)

@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.spark.session
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
-import org.apache.spark.sql.{AnalysisException, SparkSession}
+import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
@@ -26,7 +26,6 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
 import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
-import org.apache.kyuubi.engine.spark.udf.KDFRegistry
 import org.apache.kyuubi.session._
 
 /**
@@ -58,57 +57,49 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       ipAddress: String,
       conf: Map[String, String]): SessionHandle = {
     info(s"Opening session for $user@$ipAddress")
-    val sessionImpl = new SparkSessionImpl(protocol, user, password, ipAddress, conf, this)
-    val handle = sessionImpl.handle
-    try {
-      val sparkSession =
+    val sparkSession =
+      try {
         if (singleSparkSession) {
           spark
         } else {
           val ss = spark.newSession()
           this.conf.get(ENGINE_SESSION_INITIALIZE_SQL).foreach { sqlStr =>
-            ss.sparkContext.setJobGroup(
-              handle.identifier.toString,
-              sqlStr,
-              interruptOnCancel = true)
+            ss.sparkContext.setJobDescription(sqlStr)
             ss.sql(sqlStr).isEmpty
           }
           ss
         }
-
-      sessionImpl.normalizedConf.foreach {
-        case ("use:database", database) => sparkSession.catalog.setCurrentDatabase(database)
-        case (key, value) => setModifiableConfig(sparkSession, key, value)
+      } catch {
+        case e: Exception => throw KyuubiSQLException(e)
       }
-      sessionImpl.open()
-      KDFRegistry.registerAll(sparkSession)
-      operationManager.setSparkSession(handle, sparkSession)
-      setSession(handle, sessionImpl)
+
+    val session = new SparkSessionImpl(
+      protocol,
+      user,
+      password,
+      ipAddress,
+      conf,
+      this,
+      sparkSession)
+    try {
+      val handle = session.handle
+      session.open()
+      setSession(handle, session)
       info(s"$user's session with $handle is opened, current opening sessions" +
         s" $getOpenSessionCount")
       handle
     } catch {
       case e: Exception =>
-        sessionImpl.close()
+        session.close()
         throw KyuubiSQLException(e)
     }
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {
     super.closeSession(sessionHandle)
-    operationManager.removeSparkSession(sessionHandle)
     if (conf.get(ENGINE_SHARE_LEVEL) == ShareLevel.CONNECTION.toString) {
       info("Session stopped due to shared level is Connection.")
       stopSession()
-    }
-  }
-
-  private def setModifiableConfig(spark: SparkSession, key: String, value: String): Unit = {
-    try {
-      spark.conf.set(key, value)
-    } catch {
-      case e: AnalysisException =>
-        warn(e.getMessage())
     }
   }
 
