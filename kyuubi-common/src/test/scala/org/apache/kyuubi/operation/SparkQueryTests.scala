@@ -21,9 +21,10 @@ import java.sql.{Date, SQLException, SQLTimeoutException, Timestamp}
 
 import scala.collection.JavaConverters._
 
-import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq, TStatusCode}
+
+import org.apache.kyuubi.KYUUBI_VERSION
 
 trait SparkQueryTests extends HiveJDBCTestHelper {
 
@@ -476,7 +477,7 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
           |""".stripMargin
       val rs5 = statement.executeQuery(code2)
       rs5.next()
-      assert(rs5.getString(1)  startsWith "df: org.apache.spark.sql.DataFrame")
+      assert(rs5.getString(1) startsWith "df: org.apache.spark.sql.DataFrame")
 
       // re-assign
       val rs6 = statement.executeQuery("results += df")
