@@ -41,6 +41,10 @@ class EventLoggingService(spark: SparkContext)
             spark.hadoopConfiguration)
           addService(jsonEventLogger)
           addEventLogger(jsonEventLogger)
+        case EventLoggerType.JDBC =>
+          val jdbcEventLogger = new JdbcEventLogger[KyuubiSparkEvent]()
+          addService(jdbcEventLogger)
+          addEventLogger(jdbcEventLogger)
         case logger =>
           // TODO: Add more implementations
           throw new IllegalArgumentException(s"Unrecognized event logger: $logger")
@@ -65,6 +69,7 @@ object EventLoggingService {
 
   private var _service: Option[EventLoggingService] = None
 
+  // TODO: it's syn, should change it to async
   def onEvent(event: KyuubiSparkEvent): Unit = {
     _service.foreach(_.onEvent(event))
   }

@@ -98,6 +98,33 @@ class SparkProcessBuilder(
     }
   }
 
+  def thirdPartyResource: StringBuilder = {
+    val mainResourceJarName = s"${module}_$SCALA_COMPILE_VERSION-$KYUUBI_VERSION.jar"
+    val stringBuilder = new StringBuilder()
+    val sparkHome = env.get(KyuubiConf.KYUUBI_HOME)
+    if (sparkHome.nonEmpty) {
+      val dir: File = new File(
+        Paths.get(env.get(KyuubiConf.KYUUBI_HOME).get, "externals", "engines", "spark").toUri)
+      val fileNameList = dir.list(new FilenameFilter {
+        override def accept(dir: File, name: String): Boolean = {
+          if (name.contains(mainResourceJarName)) {
+            return false
+          }
+          return true
+        }
+      })
+      for (i <- 0 until fileNameList.length) {
+        stringBuilder.append(
+          Paths.get(env.get(KyuubiConf.KYUUBI_HOME).get,
+            "externals", "engines", "spark", fileNameList.apply(i)).toString)
+        if (i < fileNameList.length - 1) {
+          stringBuilder.append(",")
+        }
+      }
+    }
+    return stringBuilder
+  }
+
   override protected val workingDir: Path = {
     env.get("KYUUBI_WORK_DIR_ROOT").map { root =>
       val workingRoot = Paths.get(root).toAbsolutePath
@@ -163,6 +190,13 @@ class SparkProcessBuilder(
       buffer += proxyUser
     }
 
+    // Add thirdparty dependency
+    val thirdPartyJars = thirdPartyResource
+    if (thirdPartyJars.length > 0) {
+      buffer += JAR
+      buffer += thirdPartyJars.toString()
+    }
+
     mainResource.foreach { r => buffer += r }
 
     buffer.toArray
@@ -219,6 +253,7 @@ object SparkProcessBuilder {
   final private val SPARK_FILES = "spark.files"
   final private val PRINCIPAL = "spark.kerberos.principal"
   final private val KEYTAB = "spark.kerberos.keytab"
+  final private val JAR = "--jars"
   // Get the appropriate spark-submit file
   final private val SPARK_SUBMIT_FILE = if (Utils.isWindows) "spark-submit.cmd" else "spark-submit"
 }

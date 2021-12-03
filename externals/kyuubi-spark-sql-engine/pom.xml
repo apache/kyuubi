@@ -167,6 +167,7 @@
                     <shadedArtifactAttached>false</shadedArtifactAttached>
                     <artifactSet>
                         <includes>
+                            <include>com.alibaba:druid</include>
                             <include>org.apache.kyuubi:kyuubi-common_${scala.binary.version}</include>
                             <include>org.apache.kyuubi:kyuubi-ha_${scala.binary.version}</include>
                             <include>org.apache.curator:curator-client</include>
@@ -208,5 +209,26 @@
                 </executions>
             </plugin>
         </plugins>
+
+        <resources>
+            <resource>
+                <directory>${project.basedir}/src/main/resources</directory>
+                <includes>
+                    <include>**/*.sql</include>
+                </includes>
+                <filtering>false</filtering>
+            </resource>
+            <resource>
+                <!-- Include the properties file to provide the build information. -->
+                <directory>${project.build.directory}/extra-resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+
+        <testResources>
+            <testResource>
+                <directory>${project.basedir}/src/test/resources</directory>
+            </testResource>
+        </testResources>
     </build>
 </project>

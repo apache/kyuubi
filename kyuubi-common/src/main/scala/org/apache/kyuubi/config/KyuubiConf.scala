@@ -1048,4 +1048,23 @@ object KyuubiConf {
       .transform(_.toUpperCase(Locale.ROOT))
       .checkValues(OperationModes.values.map(_.toString))
       .createWithDefault(OperationModes.NONE.toString)
+
+  val ENGINE_EVENT_STORE_JDBC_URL: OptionalConfigEntry[String] =
+    buildConf("engine.event.store.jdbc.url")
+      .doc("This configuration item is used for storing engine/session/operation information" +
+        "into database. Now just support innodb engine. " +
+        s"When you set this item, you should add username and password for this DB. " +
+        s"First, you should set ${ENGINE_EVENT_LOGGERS} to 'JDBC'." +
+        s"When you use this way to store engine events, " +
+        s"you should copy mysql-connector-java-#{version}.jar into path:externals/engines/spark/ ")
+      .version("1.5.0")
+      .stringConf
+      .createOptional
+
+  val SERVER_CLUSTER: ConfigEntry[String] =
+    buildConf("server.cluster")
+      .doc("It just shows which cluster this server belong to.")
+      .version("1.5.0")
+      .stringConf
+      .createWithDefault("default")
 }

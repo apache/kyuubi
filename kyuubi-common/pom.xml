@@ -120,6 +120,12 @@
             <artifactId>jul-to-slf4j</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid</artifactId>
+            <version>1.1.20</version>
+        </dependency>
     </dependencies>
 
     <build>
