@@ -60,7 +60,7 @@ RELEASE_TEMP_DIR=${RELEASE_DIR}/tmp
 mkdir -p ${RELEASE_TEMP_DIR}
 DEV_VOTE=${RELEASE_TEMP_DIR}/${release_rc_tag}_dev_vote.temp
 
-cat <<EOF >${DEV_VOTE}
+cat >${DEV_VOTE}<<EOF
 Title: [VOTE] Release Apache Kyuubi ${release_version} ${release_rc_no}
 
 Content:

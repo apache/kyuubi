@@ -71,7 +71,7 @@ RELEASE_TEMP_DIR=${RELEASE_DIR}/tmp
 mkdir -p ${RELEASE_TEMP_DIR}
 GENERAL_VOTE=${RELEASE_TEMP_DIR}/${release_rc_tag}_general_vote.temp
 
-cat <<EOF> $GENERAL_VOTE
+cat >$GENERAL_VOTE<<EOF
 Title: [VOTE] Release Apache Kyuubi(Incubating) ${release_version} ${release_rc_no}
 
 Content:

@@ -35,7 +35,7 @@ RELEASE_TEMP_DIR=${RELEASE_DIR}/tmp
 mkdir -p ${RELEASE_TEMP_DIR}
 ANNOUNCE=${RELEASE_TEMP_DIR}/${release_version}_announce.temp
 
-cat <<EOF >$ANNOUNCE
+cat >$ANNOUNCE<<EOF
 Title: [ANNOUNCE] Apache Kyuubi (Incubating) released ${release_version}
 
 Content:
