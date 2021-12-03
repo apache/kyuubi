@@ -25,8 +25,9 @@ import scala.util.control.NonFatal
 import org.apache.spark.{ui, SparkConf}
 import org.apache.spark.kyuubi.SparkSQLEngineListener
 import org.apache.spark.sql.SparkSession
-
 import org.apache.kyuubi.{KyuubiException, Logging}
+import org.apache.spark.repl.Main
+
 import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
@@ -81,6 +82,9 @@ object SparkSQLEngine extends Logging {
     sparkConf.setIfMissing("spark.sql.legacy.castComplexTypesToString.enabled", "true")
     sparkConf.setIfMissing("spark.master", "local")
     sparkConf.setIfMissing("spark.ui.port", "0")
+    // register the repl's output dir with the file server.
+    // see also `spark.repl.classdir`
+    sparkConf.set("spark.repl.class.outputDir", Main.outputDir.getAbsolutePath)
 
     val appName = s"kyuubi_${user}_spark_${Instant.now}"
     sparkConf.setIfMissing("spark.app.name", appName)

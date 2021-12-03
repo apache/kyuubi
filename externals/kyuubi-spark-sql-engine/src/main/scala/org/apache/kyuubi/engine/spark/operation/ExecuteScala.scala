@@ -46,26 +46,30 @@ class ExecuteScala(
   extends SparkOperation(OperationType.EXECUTE_STATEMENT, session) {
 
   override protected def resultSchema: StructType = {
-    if (repl.results.isEmpty || repl.results.head.isEmpty) {
+    if (result == null || result.schema.isEmpty) {
       new StructType().add("output", "string")
     } else {
-      repl.results.head.schema
+      result.schema
     }
   }
 
   override protected def runInternal(): Unit = {
     try {
       spark.sparkContext.setJobGroup(statementId, statement)
+      Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
       repl.interpret(statement) match {
         case Success =>
           iter =
             if (repl.results.nonEmpty) {
-              new ArrayFetchIterator[Row](repl.results.head.collect())
+              result = repl.results.remove(0)
+              new ArrayFetchIterator[Row](result.collect())
             } else {
               new ArrayFetchIterator[Row](Array(Row(repl.getOutput)))
             }
-        case Error => throw KyuubiSQLException(s"Interpret error\n$statement\n ${repl.getOutput}")
-        case Incomplete => info("Wait for more input")
+        case Error =>
+          throw KyuubiSQLException(s"Interpret error:\n$statement\n ${repl.getOutput}")
+        case Incomplete =>
+          throw KyuubiSQLException(s"Incomplete code:\n$statement")
       }
     } catch {
       onError(cancel = true)

@@ -28,12 +28,12 @@ import org.apache.spark.repl.{Main, SparkILoop}
 import org.apache.spark.sql.{Dataset, Row, SparkSession}
 import org.apache.spark.util.MutableURLClassLoader
 
-// TODO: Maybe we can inherit scala.tools.nsc.interpreter.ILoop directly
 private[spark] case class KyuubiSparkILoop private (
     spark: SparkSession,
     output: ByteArrayOutputStream)
   extends SparkILoop(None, new JPrintWriter(output)) {
 
+  // TODO: this is a little hacky
   val results = new ArrayBuffer[Dataset[Row]]()
 
   private def initialize(): Unit = {
@@ -71,6 +71,7 @@ private[spark] case class KyuubiSparkILoop private (
     }
 
     this.beQuietDuring {
+      // SparkSession/SparkContext and their implicits
       this.bind("spark", classOf[SparkSession].getCanonicalName, spark, List("""@transient"""))
       this.bind(
         "sc",
@@ -83,6 +84,7 @@ private[spark] case class KyuubiSparkILoop private (
       this.interpret("import spark.sql")
       this.interpret("import org.apache.spark.sql.functions._")
 
+      // for feeding results to client, e.g. beeline
       this.bind(
         "results",
         "scala.collection.mutable.ArrayBuffer[" +

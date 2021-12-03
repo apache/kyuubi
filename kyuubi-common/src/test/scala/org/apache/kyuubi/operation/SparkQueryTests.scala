@@ -21,10 +21,9 @@ import java.sql.{Date, SQLException, SQLTimeoutException, Timestamp}
 
 import scala.collection.JavaConverters._
 
+import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq, TStatusCode}
-
-import org.apache.kyuubi.KYUUBI_VERSION
 
 trait SparkQueryTests extends HiveJDBCTestHelper {
 
@@ -431,19 +430,91 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
       val code =
         """
           |val df = spark
-          |  .range(0, 10, 2, 2)
-          |  .map(x => (x, x + 1, x * 2))
+          |  .range(0, 10, 2, 1)
           |  .toDF
           |""".stripMargin
       val rs1 = statement.executeQuery(code)
       rs1.next()
-      rs1.getString(1)
       assert(rs1.getString(1) startsWith "df: org.apache.spark.sql.DataFrame")
 
       // continue
       val rs2 = statement.executeQuery("df.count()")
       rs2.next()
-      assert(rs2.getLong(1) === 5)
+      assert(rs2.getString(1).endsWith("5"))
+
+      // continue
+      val rs3 = statement.executeQuery("results += df")
+      for (i <- Range(0, 10, 2)) {
+        assert(rs3.next)
+        assert(rs3.getInt(1) === i)
+      }
+
+      // switch to sql
+      val set =
+        """
+          |spark.conf.set("kyuubi.operation.language", "SQL")
+          |""".stripMargin
+      val t = statement.executeQuery(set)
+      t.next()
+      val rs4 = statement.executeQuery("select 12345")
+      assert(rs4.next())
+      assert(rs4.getInt(1) === 12345)
+
+      // switch to scala again
+      statement.execute("SET kyuubi.operation.language=scala")
+      val code2 =
+        """
+          |/* this
+          | * is
+          | * a
+          | * multi-line comments
+          | */
+          |val df = spark
+          |  .range(0, 10, 2, 1)
+          |  .map(x => (x, x + 1, x * 2)) // this is a single-line comment
+          |  .toDF
+          |""".stripMargin
+      val rs5 = statement.executeQuery(code2)
+      rs5.next()
+      assert(rs5.getString(1)  startsWith "df: org.apache.spark.sql.DataFrame")
+
+      // re-assign
+      val rs6 = statement.executeQuery("results += df")
+      for (i <- Range(0, 10, 2)) {
+        assert(rs6.next)
+        assert(rs6.getInt(2) === i + 1)
+      }
+    }
+  }
+
+  test("incomplete scala code block will fail") {
+    withJdbcStatement() { statement =>
+      statement.execute("SET kyuubi.operation.language=scala")
+      // incomplete code block
+      val incompleteCode =
+        """
+          |val df = spark
+          |  .range(0, 10, 2, 1)
+          |  .map {
+          |    x => (x, x + 1, x * 2)
+          |""".stripMargin
+      val e = intercept[SQLException](statement.executeQuery(incompleteCode))
+      assert(e.getMessage contains "Incomplete code:")
+    }
+  }
+
+  test("scala code compile error will fail") {
+    withJdbcStatement() { statement =>
+      statement.execute("SET kyuubi.operation.language=scala")
+      // incomplete code block
+      val incompleteCode =
+        """
+          |val df = spark
+          |  .range(0, 10, 2, 1)
+          |  .map { x => (x, x + 1, y * 2) } // y is missing
+          |""".stripMargin
+      val e = intercept[SQLException](statement.executeQuery(incompleteCode))
+      assert(e.getMessage contains "not found: value y")
     }
   }
 }
