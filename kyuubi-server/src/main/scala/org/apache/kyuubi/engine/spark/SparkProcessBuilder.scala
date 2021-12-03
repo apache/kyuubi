@@ -115,8 +115,12 @@ class SparkProcessBuilder(
       })
       for (i <- 0 until fileNameList.length) {
         stringBuilder.append(
-          Paths.get(env.get(KyuubiConf.KYUUBI_HOME).get,
-            "externals", "engines", "spark", fileNameList.apply(i)).toString)
+          Paths.get(
+            env.get(KyuubiConf.KYUUBI_HOME).get,
+            "externals",
+            "engines",
+            "spark",
+            fileNameList.apply(i)).toString)
         if (i < fileNameList.length - 1) {
           stringBuilder.append(",")
         }

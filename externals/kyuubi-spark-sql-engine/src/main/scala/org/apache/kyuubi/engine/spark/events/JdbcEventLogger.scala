@@ -58,7 +58,7 @@ class JdbcEventLogger[T <: KyuubiEvent]()
       reader = new BufferedReader(
         new InputStreamReader(in, "UTF-8"))
       var tmp: String = null
-      while ({tmp = reader.readLine(); tmp} != null) {
+      while ({ tmp = reader.readLine(); tmp } != null) {
         sqlStringBuffer.append(" ")
           .append(tmp)
       }
@@ -66,13 +66,12 @@ class JdbcEventLogger[T <: KyuubiEvent]()
       case e: Exception =>
         error(s"Loading the file named engine-event failed. $e")
     } finally {
-      in.close()
       reader.close()
     }
     val connection = InitMySQLDatabase.getConnection()
     val statement: Statement = connection.createStatement()
     val arr = sqlStringBuffer.toString.split(";")
-    for ( i <- 0 until arr.length) {
+    for (i <- 0 until arr.length) {
       statement.addBatch(arr.apply(i))
     }
     try {
@@ -100,8 +99,8 @@ class JdbcEventLogger[T <: KyuubiEvent]()
           && StringUtils.isEmpty(engineEvent.diagnostic)) {
           // If the cache has this appId but endTime is less than 0 and diagnostic is null,
           // only need to insert data into detail table.
-          val detailSQL = InitMySQLDatabase.insertSQL("engine_event_detail",
-            ENGINE_EVENT_DETAIL_INSTER_FIELDS)
+          val detailSQL =
+            InitMySQLDatabase.insertSQL("engine_event_detail", ENGINE_EVENT_DETAIL_INSTER_FIELDS)
           engineDetailStatement = connection.prepareStatement(detailSQL.toString())
           engineDetailStatement.setString(1, appId)
           engineDetailStatement.setInt(2, engineEvent.state)
@@ -111,10 +110,12 @@ class JdbcEventLogger[T <: KyuubiEvent]()
           // 1. AppId does not exist in cache
           // 2. The cache has this appId and endTime is greater than 0 or diagnostic is not null
           // Above results need to updateOrInsert summary table and insert data into detail table.
-          val summarySQL = InitMySQLDatabase.insertOrUpdateSQL("engine_event_summary",
-            ENGINE_EVENT_SUMMARY_INSERT_FIELDS, ENGINE_EVENT_SUMMARY_UPDATE_FIELDS)
-          val detailSQL = InitMySQLDatabase.insertSQL("engine_event_detail",
-            ENGINE_EVENT_DETAIL_INSTER_FIELDS)
+          val summarySQL = InitMySQLDatabase.insertOrUpdateSQL(
+            "engine_event_summary",
+            ENGINE_EVENT_SUMMARY_INSERT_FIELDS,
+            ENGINE_EVENT_SUMMARY_UPDATE_FIELDS)
+          val detailSQL =
+            InitMySQLDatabase.insertSQL("engine_event_detail", ENGINE_EVENT_DETAIL_INSTER_FIELDS)
           engineSummaryStatement = connection.prepareStatement(summarySQL.toString())
           engineSummaryStatement.setString(1, conf.get(SERVER_CLUSTER))
           engineSummaryStatement.setString(2, appId)
@@ -159,7 +160,8 @@ class JdbcEventLogger[T <: KyuubiEvent]()
         var summarySQL: StringBuilder = null
         if (!checkExist(sessionId)) {
           // SessionId does not exist in cache, then should insert data into session summary table
-          summarySQL = InitMySQLDatabase.insertSQL("session_event_summary",
+          summarySQL = InitMySQLDatabase.insertSQL(
+            "session_event_summary",
             SESSION_EVENT_SUMMARY_INSERT_FIELDS)
           sessionSummaryStatement = connection.prepareStatement(summarySQL.toString())
           sessionSummaryStatement.setString(1, conf.get(SERVER_CLUSTER))
@@ -202,7 +204,9 @@ class JdbcEventLogger[T <: KyuubiEvent]()
           // If the cache has this statementId but completeTime is less than 0,
           // and exception is null,
           // only need to insert data into detail table.
-          val detailSQL = InitMySQLDatabase.insertSQL("spark_statement_event_detail", STATEMENT_EVENT_DETAIL_INSERT_FIELDS)
+          val detailSQL = InitMySQLDatabase.insertSQL(
+            "spark_statement_event_detail",
+            STATEMENT_EVENT_DETAIL_INSERT_FIELDS)
           statementDetailStatement = connection.prepareStatement(detailSQL.toString())
           statementDetailStatement.setString(1, statementId)
           statementDetailStatement.setString(2, sparkStatementEvent.state)
@@ -213,9 +217,12 @@ class JdbcEventLogger[T <: KyuubiEvent]()
           // 2. The cache has this statementId and completeTime is greater than 0
           // or diagnostic is not null
           // Above results need to updateOrInsert summary table and insert data into detail table.
-          val summarySQL = InitMySQLDatabase.insertOrUpdateSQL("spark_statement_event_summary",
-            STATEMENT_EVENT_SUMMARY_INSERT_FIELDS, STATEMENT_EVENT_SUMMARY_UPDATE_FIELDS)
-          val detailSQL = InitMySQLDatabase.insertSQL("spark_statement_event_detail",
+          val summarySQL = InitMySQLDatabase.insertOrUpdateSQL(
+            "spark_statement_event_summary",
+            STATEMENT_EVENT_SUMMARY_INSERT_FIELDS,
+            STATEMENT_EVENT_SUMMARY_UPDATE_FIELDS)
+          val detailSQL = InitMySQLDatabase.insertSQL(
+            "spark_statement_event_detail",
             STATEMENT_EVENT_DETAIL_INSERT_FIELDS)
           statementSummaryStatement = connection.prepareStatement(summarySQL.toString())
           statementSummaryStatement.setString(1, conf.get(SERVER_CLUSTER))
@@ -224,7 +231,7 @@ class JdbcEventLogger[T <: KyuubiEvent]()
           statementSummaryStatement.setString(4, statementId)
           statementSummaryStatement.setString(5, sparkStatementEvent.statement)
           statementSummaryStatement.setString(6, sparkStatementEvent.username)
-          statementSummaryStatement.setLong(7, sparkStatementEvent.createTime )
+          statementSummaryStatement.setLong(7, sparkStatementEvent.createTime)
           statementSummaryStatement.setLong(8, sparkStatementEvent.completeTime)
           // todo: need to get exceptionType from exception
           statementSummaryStatement.setString(9, "exceptionType")

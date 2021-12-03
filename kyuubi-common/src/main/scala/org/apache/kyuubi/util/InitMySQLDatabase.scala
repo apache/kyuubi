@@ -43,18 +43,19 @@ object InitMySQLDatabase {
 
   def getConnection(): DruidPooledConnection = {
     var druidConnection: DruidPooledConnection = null
-      try {
-        druidConnection = druidDataSource.getConnection
-      } catch {
-        case e: Exception =>
-          throw new IllegalArgumentException(s"Create datasource connection failed.")
-      }
+    try {
+      druidConnection = druidDataSource.getConnection
+    } catch {
+      case _: Exception =>
+        throw new IllegalArgumentException(s"Create datasource connection failed.")
+    }
     return druidConnection
   }
 
-  def close(connection: DruidPooledConnection,
-            preparedStatement: PreparedStatement,
-            statement: Statement): Unit = {
+  def close(
+      connection: DruidPooledConnection,
+      preparedStatement: PreparedStatement,
+      statement: Statement): Unit = {
     if (null != preparedStatement) {
       preparedStatement.close()
     }
@@ -77,9 +78,10 @@ object InitMySQLDatabase {
     return stringBuilder
   }
 
-  def insertOrUpdateSQL(tableName: String,
-                        insertFields: String,
-                        updateFields: Array[String]): StringBuilder = {
+  def insertOrUpdateSQL(
+      tableName: String,
+      insertFields: String,
+      updateFields: Array[String]): StringBuilder = {
     val stringBuilder: StringBuilder = new StringBuilder("insert into ")
       .append(tableName)
       .append(" ( ")
@@ -93,7 +95,7 @@ object InitMySQLDatabase {
     for (i <- 0 until updateFields.length) {
       stringBuilder.append(updateFields.apply(i))
         .append("=?")
-      if (i < updateFields.length-1) {
+      if (i < updateFields.length - 1) {
         stringBuilder.append(",")
       }
     }
@@ -113,7 +115,7 @@ object InitMySQLDatabase {
     if (arr.length >= 1 && !"".equals(arr(0).trim)) {
       stringBuilder.append("?")
     }
-    for ( _ <- 1 until arr.length ) {
+    for (_ <- 1 until arr.length) {
       stringBuilder.append(", ?")
     }
     return stringBuilder.toString()
