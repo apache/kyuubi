@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit
 
 import com.alibaba.druid.pool.DruidPooledConnection
 import com.google.common.cache.{Cache, CacheBuilder}
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.fs.FSDataOutputStream
 
 import org.apache.kyuubi.Logging
