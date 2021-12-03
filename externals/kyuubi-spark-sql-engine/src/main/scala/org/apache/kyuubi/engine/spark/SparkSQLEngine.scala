@@ -81,6 +81,9 @@ object SparkSQLEngine extends Logging {
     sparkConf.setIfMissing("spark.sql.legacy.castComplexTypesToString.enabled", "true")
     sparkConf.setIfMissing("spark.master", "local")
     sparkConf.setIfMissing("spark.ui.port", "0")
+    sparkConf.setIfMissing(
+      "spark.hadoop.mapreduce.input.fileinputformat.list-status.num-threads",
+      "20")
 
     val appName = s"kyuubi_${user}_spark_${Instant.now}"
     sparkConf.setIfMissing("spark.app.name", appName)
