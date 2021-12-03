@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,17 +17,32 @@
 # limitations under the License.
 #
 
-Title: [ANNOUNCE] Apache Kyuubi (Incubating) released {release_version}
+set -o pipefail
+set -e
+
+RELEASE_DIR="$(cd "$(dirname "$0")"/..; pwd)"
+
+######### Please modify the variables ##########
+# release version, e.g. 1.4.0-incubating
+release_version=
+################################################
+
+if [[ -z $release_version ]]; then
+  echo "Please input release version"
+fi
+
+RELEASE_TEMP_DIR=${RELEASE_DIR}/tmp
+mkdir -p ${RELEASE_TEMP_DIR}
+ANNOUNCE=${RELEASE_TEMP_DIR}/${release_version}_announce.temp
+
+cat <<EOF >$ANNOUNCE
+Title: [ANNOUNCE] Apache Kyuubi (Incubating) released ${release_version}
 
 Content:
-Hi all,
-
-# (To user@spark.apache.org)
-# Hello Spark Community,
-##
+Hello Kyuubi Community,
 
 The Apache Kyuubi (Incubating) community is pleased to announce that
-Apache Kyuubi (Incubating) {release_version} has been released!
+Apache Kyuubi (Incubating) ${release_version} has been released!
 
 Apache Kyuubi (Incubating) is a distributed multi-tenant JDBC server for
 large-scale data processing and analytics, built on top of Apache Spark
@@ -46,7 +63,7 @@ provides the administrators a way to achieve computing resource isolation,
 data security, high availability, high client concurrency, etc.
 
 The full release notes and download links are available at:
-Release Notes: https://kyuubi.apache.org/release/{release_version}.html
+Release Notes: https://kyuubi.apache.org/release/${release_version}.html
 
 To learn more about Apache Kyuubi (Incubating), please see
 https://kyuubi.apache.org/
@@ -60,3 +77,7 @@ community who made this release possible!
 
 Thanks,
 On behalf of Apache Kyuubi (Incubating) community
+EOF
+
+echo "please Use dev@kyuubi.apache.com
+see announce content in $ANNOUNCE"
