@@ -171,10 +171,6 @@ abstract class AbstractSession(
     runOperation(operation)
   }
 
-  override def isHasOperationHandle(operationHandle: OperationHandle): Boolean = {
-    opHandleSet.contains(operationHandle)
-  }
-
   override def cancelOperation(operationHandle: OperationHandle): Unit = withAcquireRelease() {
     sessionManager.operationManager.cancelOperation(operationHandle)
   }

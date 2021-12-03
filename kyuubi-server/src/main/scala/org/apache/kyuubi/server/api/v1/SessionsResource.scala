@@ -18,8 +18,7 @@
 package org.apache.kyuubi.server.api.v1
 
 import java.util.UUID
-import javax.ws.rs._
-import javax.ws.rs.{Consumes, DELETE, GET, Path, PathParam, POST, Produces}
+import javax.ws.rs.{Consumes, DELETE, GET, Path, PathParam, POST, Produces, _}
 import javax.ws.rs.core.{MediaType, Response}
 
 import scala.collection.JavaConverters._
@@ -30,6 +29,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Utils.error
 import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.operation.{OperationHandle, OperationType}
@@ -62,7 +62,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @GET
   @Path("{sessionHandle}")
   def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): SessionDetail = {
-    val sessionHandle = getSessionHandle(sessionHandleStr)
+    val sessionHandle = parseSessionHandle(sessionHandleStr)
     try {
       val session = backendService.sessionManager.getSession(sessionHandle)
       SessionDetail(
@@ -92,7 +92,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   def getInfo(
       @PathParam("sessionHandle") sessionHandleStr: String,
       @PathParam("infoType") infoType: Int): InfoDetail = {
-    val sessionHandle = getSessionHandle(sessionHandleStr)
+    val sessionHandle = parseSessionHandle(sessionHandleStr)
     val info = TGetInfoType.findByValue(infoType)
 
     try {
@@ -153,7 +153,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @DELETE
   @Path("{sessionHandle}")
   def closeSession(@PathParam("sessionHandle") sessionHandleStr: String): Response = {
-    val sessionHandle = getSessionHandle(sessionHandleStr)
+    val sessionHandle = parseSessionHandle(sessionHandleStr)
     backendService.closeSession(sessionHandle)
     Response.ok().build()
   }
@@ -168,7 +168,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   def executeStatement(
       @PathParam("sessionHandle") sessionHandleStr: String,
       request: StatementRequest): OperationHandle = {
-    val sessionHandle = getSessionHandle(sessionHandleStr)
+    val sessionHandle = parseSessionHandle(sessionHandleStr)
     try {
       backendService.executeStatement(
         sessionHandle,
@@ -189,7 +189,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @POST
   @Path("{sessionHandle}/operations/typeInfo")
   def getTypeInfo(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
-    val sessionHandle = getSessionHandle(sessionHandleStr)
+    val sessionHandle = parseSessionHandle(sessionHandleStr)
     try {
       backendService.getTypeInfo(sessionHandle)
     } catch {
@@ -206,7 +206,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @POST
   @Path("{sessionHandle}/operations/catalogs")
   def getCatalogs(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
-    val sessionHandle = getSessionHandle(sessionHandleStr)
+    val sessionHandle = parseSessionHandle(sessionHandleStr)
     try {
       backendService.getCatalogs(sessionHandle)
     } catch {
@@ -225,7 +225,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   def getSchemas(
       @PathParam("sessionHandle") sessionHandleStr: String,
       request: GetSchemasRequest): OperationHandle = {
-    val sessionHandle = getSessionHandle(sessionHandleStr)
+    val sessionHandle = parseSessionHandle(sessionHandleStr)
     try {
       backendService.getSchemas(sessionHandle, request.catalogName, request.schemaName)
     } catch {
@@ -244,7 +244,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   def getTables(
       @PathParam("sessionHandle") sessionHandleStr: String,
       request: GetTablesRequest): OperationHandle = {
-    val sessionHandle = getSessionHandle(sessionHandleStr)
+    val sessionHandle = parseSessionHandle(sessionHandleStr)
     try {
       backendService.getTables(
         sessionHandle,
@@ -266,7 +266,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @POST
   @Path("{sessionHandle}/operations/tableTypes")
   def getTableTypes(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
-    val sessionHandle = getSessionHandle(sessionHandleStr)
+    val sessionHandle = parseSessionHandle(sessionHandleStr)
     try {
       backendService.getTableTypes(sessionHandle)
     } catch {
@@ -285,7 +285,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   def getColumns(
       @PathParam("sessionHandle") sessionHandleStr: String,
       request: GetColumnsRequest): OperationHandle = {
-    val sessionHandle = getSessionHandle(sessionHandleStr)
+    val sessionHandle = parseSessionHandle(sessionHandleStr)
     try {
       backendService.getColumns(
         sessionHandle,
@@ -309,7 +309,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   def getFunctions(
       @PathParam("sessionHandle") sessionHandleStr: String,
       request: GetFunctionsRequest): OperationHandle = {
-    val sessionHandle = getSessionHandle(sessionHandleStr)
+    val sessionHandle = parseSessionHandle(sessionHandleStr)
     try {
       backendService.getFunctions(
         sessionHandle,
@@ -332,8 +332,8 @@ private[v1] class SessionsResource extends ApiRequestContext {
   def closeOperation(
       @PathParam("sessionHandle") sessionHandleStr: String,
       @PathParam("operationHandle") operationHandleStr: String): OperationHandle = {
-    val sessionHandle = getSessionHandle(sessionHandleStr)
-    val operationHandle = getOperationHandle(operationHandleStr)
+    val sessionHandle = parseSessionHandle(sessionHandleStr)
+    val operationHandle = parseOperationHandle(operationHandleStr)
     try {
       backendService.sessionManager.getSession(sessionHandle).closeOperation(operationHandle)
       operationHandle
@@ -348,36 +348,42 @@ private[v1] class SessionsResource extends ApiRequestContext {
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON)),
     description =
-      "Get an operation handle with a given session identifier and operation identifier")
+      "Get an operation detail with a given session identifier and operation identifier")
   @GET
   @Path("{sessionHandle}/operations/{operationHandle}")
   def getOperationHandle(
       @PathParam("sessionHandle") sessionHandleStr: String,
-      @PathParam("operationHandle") operationHandleStr: String): OperationHandle = {
-    val sessionHandle = getSessionHandle(sessionHandleStr)
-    val operationHandle = getOperationHandle(operationHandleStr)
-    val hasHandle = backendService.sessionManager.getSession(sessionHandle)
-      .isHasOperationHandle(operationHandle)
-    if (hasHandle) {
-      operationHandle
-    } else {
-      throw new NotFoundException(s"Error getting operationHandle")
+      @PathParam("operationHandle") operationHandleStr: String): OperationDetail = {
+    val operationHandle = parseOperationHandle(operationHandleStr)
+    try {
+      val operation = backendService.sessionManager.operationManager.getOperation(operationHandle)
+      OperationDetail(operation.shouldRunAsync, operation.isTimedOut, operation.getStatus)
+    } catch {
+      case NonFatal(e) =>
+        throw new NotFoundException(s"Error closing an operation")
     }
-
   }
 
-  def getOperationHandle(operationHandleStr: String): OperationHandle = {
+  def parseOperationHandle(operationHandleStr: String): OperationHandle = {
     try {
-      val splitOperationHandle = operationHandleStr.split("\\|")
+      val operationHandleParts = operationHandleStr.split("\\|")
+      require(
+        operationHandleParts.size == 4,
+        s"Expected 4 parameters but found ${operationHandleParts.size}.")
+
       val handleIdentifier = new HandleIdentifier(
-        UUID.fromString(splitOperationHandle(0)),
-        UUID.fromString(splitOperationHandle(1)))
-      val protocolVersion = TProtocolVersion.findByValue(splitOperationHandle(2).toInt)
-      val operationType = OperationType.withName(splitOperationHandle(3))
+        UUID.fromString(operationHandleParts(0)),
+        UUID.fromString(operationHandleParts(1)))
+
+      val protocolVersion = TProtocolVersion.findByValue(operationHandleParts(2).toInt)
+      val operationType = OperationType.withName(operationHandleParts(3))
       val operationHandle = new OperationHandle(handleIdentifier, operationType, protocolVersion)
 
-      // if the operationHandle is invalid, KyuubiSQLException will be thrown here.
-      backendService.sessionManager.operationManager.getOperation(operationHandle)
+      if (!backendService.sessionManager.operationManager.isHasOperation(operationHandle)) {
+        error(s"Invalid $operationHandle")
+        throw KyuubiSQLException(s"Invalid $operationHandle")
+      }
+
       operationHandle
     } catch {
       case NonFatal(e) =>
@@ -386,7 +392,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
     }
   }
 
-  def getSessionHandle(sessionHandleStr: String): SessionHandle = {
+  def parseSessionHandle(sessionHandleStr: String): SessionHandle = {
     try {
       val splitSessionHandle = sessionHandleStr.split("\\|")
       val handleIdentifier = new HandleIdentifier(

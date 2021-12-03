@@ -66,7 +66,6 @@ trait Session {
       schemaName: String,
       functionName: String): OperationHandle
 
-  def isHasOperationHandle(operationHandle: OperationHandle): Boolean
   def cancelOperation(operationHandle: OperationHandle): Unit
   def closeOperation(operationHandle: OperationHandle): Unit
   def getResultSetMetadata(operationHandle: OperationHandle): TTableSchema

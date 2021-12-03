@@ -24,7 +24,7 @@ import javax.ws.rs.core.{MediaType, Response}
 import scala.concurrent.duration._
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
-import org.apache.kyuubi.operation.{OperationHandle, OperationType}
+import org.apache.kyuubi.operation.{OperationHandle, OperationState, OperationType}
 import org.apache.kyuubi.session.SessionHandle
 
 class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
@@ -301,7 +301,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     }
   }
 
-  test("test get an operationHandle by identifier") {
+  test("test get an operation status by identifier") {
     val requestObj = SessionOpenRequest(
       1,
       "admin",
@@ -333,7 +333,9 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
       response = webTarget.path(s"$pathPrefix/operations/$serializedOperationHandle")
         .request(MediaType.APPLICATION_JSON_TYPE).get()
+      val operationDetail = response.readEntity(classOf[OperationDetail])
       assert(200 == response.getStatus)
+      assert(operationDetail.operationStatus.state == OperationState.FINISHED)
 
       // Invalid operationHandleStr
       val invalidOperationHandle = s"${operationHandle.identifier.publicId}|" +
