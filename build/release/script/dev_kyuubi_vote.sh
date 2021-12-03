@@ -24,13 +24,13 @@ RELEASE_DIR="$(cd "$(dirname "$0")"/..; pwd)"
 
 ######### Please modify the variables ##########
 # release version, e.g. 1.4.0-incubating
-release_version=
+release_version=${release_version-""}
 # release candidate number, e.g. 2
-release_rc_no=
+release_rc_no=${release_rc_no-""}
 # previous release candidate number, e.g. 1, could be empty if it is the first vote
-prev_release_rc_no=
+prev_release_rc_no=${prev_release_rc_no-""}
 # staging repository number, check it under https://repository.apache.org/content/repositories
-repo_no=
+repo_no=${repo_no-""}
 ################################################
 
 if [[ -z $release_version ]]; then
@@ -45,8 +45,16 @@ if [[ -z $repo_no ]]; then
   echo "Please input staging repository number, check it under https://repository.apache.org/content/repositories "
   exit 1
 fi
+
 release_rc_tag=${release_version}-${release_rc_no}
 git_commit_hash=$(git rev-list -n 1 $release_rc_tag)
+
+echo "Release version: ${release_version}"
+echo "Release candidate number: ${release_rc_no}"
+echo "Previous release candidate number: ${prev_release_rc_no}"
+echo "Staging repository number: ${repo_no}"
+echo "Release candidate tag: ${release_rc_tag}"
+echo "Release candidate tag commit hash: ${git_commit_hash}"
 
 if [[ ! -z "$prev_release_rc_no" ]]; then
   prev_release_rc_tag=${release_version}-${prev_release_rc_no}

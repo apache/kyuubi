@@ -24,12 +24,15 @@ RELEASE_DIR="$(cd "$(dirname "$0")"/..; pwd)"
 
 ######### Please modify the variables ##########
 # release version, e.g. 1.4.0-incubating
-release_version=
+release_version=${release_version-""}
 ################################################
 
 if [[ -z $release_version ]]; then
   echo "Please input release version"
+  exit 1
 fi
+
+echo "Release version: ${release_version}"
 
 RELEASE_TEMP_DIR=${RELEASE_DIR}/tmp
 mkdir -p ${RELEASE_TEMP_DIR}
