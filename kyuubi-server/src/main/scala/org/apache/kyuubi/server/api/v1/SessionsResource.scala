@@ -379,11 +379,6 @@ private[v1] class SessionsResource extends ApiRequestContext {
       val operationType = OperationType.withName(operationHandleParts(3))
       val operationHandle = new OperationHandle(handleIdentifier, operationType, protocolVersion)
 
-      if (!backendService.sessionManager.operationManager.isHasOperation(operationHandle)) {
-        error(s"Invalid $operationHandle")
-        throw KyuubiSQLException(s"Invalid $operationHandle")
-      }
-
       operationHandle
     } catch {
       case NonFatal(e) =>

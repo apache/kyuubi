@@ -104,10 +104,6 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
     operation.close()
   }
 
-  final def isHasOperation(opHandle: OperationHandle): Boolean = {
-    handleToOperation.containsKey(opHandle)
-  }
-
   final def getOperationResultSetSchema(opHandle: OperationHandle): TTableSchema = {
     getOperation(opHandle).getResultSetSchema
   }
