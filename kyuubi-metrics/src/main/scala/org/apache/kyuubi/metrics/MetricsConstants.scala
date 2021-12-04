@@ -30,11 +30,6 @@ object MetricsConstants {
   final val CONN_FAIL: String = CONN + "failed"
   final val CONN_TOTAL: String = CONN + "total"
 
-  final private val STATEMENT = KYUUBI + "statement."
-  final val STATEMENT_OPEN: String = STATEMENT + "opened"
-  final val STATEMENT_FAIL: String = STATEMENT + "failed"
-  final val STATEMENT_TOTAL: String = STATEMENT + "total"
-
   final private val ENGINE = KYUUBI + "engine."
   final val ENGINE_FAIL: String = ENGINE + "failed"
   final val ENGINE_TIMEOUT: String = ENGINE + "timeout"
