@@ -29,7 +29,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 
-import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Utils.error
 import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.operation.{OperationHandle, OperationType}
