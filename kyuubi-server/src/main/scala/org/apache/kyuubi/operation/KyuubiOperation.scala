@@ -36,11 +36,11 @@ import org.apache.kyuubi.util.ThriftUtils
 abstract class KyuubiOperation(opType: OperationType, session: Session)
   extends AbstractOperation(opType, session) {
 
-  private val OPERATION_CLASS_NAME = getClass.getSimpleName
+  private val operationClassName = getClass.getSimpleName
 
   MetricsSystem.tracing { ms =>
-    ms.incCount(MetricRegistry.name(OPERATION_OPEN, OPERATION_CLASS_NAME))
-    ms.incCount(MetricRegistry.name(OPERATION_TOTAL, OPERATION_CLASS_NAME))
+    ms.incCount(MetricRegistry.name(OPERATION_OPEN, operationClassName))
+    ms.incCount(MetricRegistry.name(OPERATION_TOTAL, operationClassName))
     ms.incCount(MetricRegistry.name(OPERATION_TOTAL))
   }
 
@@ -62,7 +62,7 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
         } else {
           val errorType = e.getClass.getSimpleName
           MetricsSystem.tracing(_.incCount(
-            MetricRegistry.name(OPERATION_FAIL, OPERATION_CLASS_NAME, errorType)))
+            MetricRegistry.name(OPERATION_FAIL, operationClassName, errorType)))
           val ke = e match {
             case kse: KyuubiSQLException => kse
             case te: TTransportException
@@ -112,7 +112,7 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
   override def close(): Unit = state.synchronized {
     if (!isClosedOrCanceled) {
       setState(OperationState.CLOSED)
-      MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, OPERATION_CLASS_NAME)))
+      MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, operationClassName)))
       if (_remoteOpHandle != null) {
         try {
           getOperationLog.foreach(_.close())
