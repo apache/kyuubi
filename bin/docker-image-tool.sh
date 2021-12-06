@@ -115,14 +115,15 @@ function build {
     KYUUBI_ROOT="$CTX_DIR/base"
   fi
 
-  # cp spark for kyuubi as submit client
-  # if user set -s(spark-provider), use if
-  # else use builtin spark
+  # mkdir spark-binary to cache spark
+  # clean cache if spark-binary exists
   if [[ ! -d "$KYUUBI_ROOT/spark-binary" ]]; then
     mkdir "$KYUUBI_ROOT/spark-binary"
   else
     rm -rf "$KYUUBI_ROOT/spark-binary/*"
   fi
+  # if with spark image means, kyuubi won't copy spark from local.
+  # In this case, we just pass SPARK_HOME without copy.
   if [[ "${WITHSPARKIMAGE}" != "false" ]]; then
     BUILD_ARGS+=(--build-arg spark_home=$SPARK_HOME)
   else
