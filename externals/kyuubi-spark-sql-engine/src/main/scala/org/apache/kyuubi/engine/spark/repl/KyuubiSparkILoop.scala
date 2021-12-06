@@ -93,6 +93,14 @@ private[spark] case class KyuubiSparkILoop private (
     }
   }
 
+  def interpretWithRedirectOutError(statement: String): scala.tools.nsc.interpreter.IR.Result = {
+    Console.withOut(output) {
+      Console.withErr(output) {
+        this.interpret(statement)
+      }
+    }
+  }
+
   def getOutput: String = {
     val res = output.toString.trim
     output.reset()
