@@ -30,8 +30,10 @@ import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 
 import org.apache.kyuubi.Utils.error
 import org.apache.kyuubi.operation.OperationHandle
+import org.apache.kyuubi.operation.OperationHandle.parseOperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.session.SessionHandle.parseSessionHandle
 
 @Tag(name = "Session")
 @Produces(Array(MediaType.APPLICATION_JSON))
@@ -60,9 +62,8 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @Path("{sessionHandle}")
   def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): SessionDetail = {
     try {
-      val sessionManager = backendService.sessionManager
-      val sessionHandle = sessionManager.parseSessionHandle(sessionHandleStr)
-      val session = sessionManager.getSession(sessionHandle)
+      val sessionHandle = parseSessionHandle(sessionHandleStr)
+      val session = backendService.sessionManager.getSession(sessionHandle)
       SessionDetail(
         session.user,
         session.ipAddress,
@@ -91,9 +92,8 @@ private[v1] class SessionsResource extends ApiRequestContext {
       @PathParam("sessionHandle") sessionHandleStr: String,
       @PathParam("infoType") infoType: Int): InfoDetail = {
     try {
-      val sessionHandle = backendService.sessionManager.parseSessionHandle(sessionHandleStr)
       val info = TGetInfoType.findByValue(infoType)
-      val infoValue = backendService.getInfo(sessionHandle, info)
+      val infoValue = backendService.getInfo(parseSessionHandle(sessionHandleStr), info)
       InfoDetail(info.toString, infoValue.getStringValue)
     } catch {
       case NonFatal(e) =>
@@ -150,8 +150,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @DELETE
   @Path("{sessionHandle}")
   def closeSession(@PathParam("sessionHandle") sessionHandleStr: String): Response = {
-    val sessionHandle = backendService.sessionManager.parseSessionHandle(sessionHandleStr)
-    backendService.closeSession(sessionHandle)
+    backendService.closeSession(parseSessionHandle(sessionHandleStr))
     Response.ok().build()
   }
 
@@ -167,7 +166,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
       request: StatementRequest): OperationHandle = {
     try {
       backendService.executeStatement(
-        backendService.sessionManager.parseSessionHandle(sessionHandleStr),
+        parseSessionHandle(sessionHandleStr),
         request.statement,
         request.runAsync,
         request.queryTimeout)
@@ -186,7 +185,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @Path("{sessionHandle}/operations/typeInfo")
   def getTypeInfo(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
     try {
-      backendService.getTypeInfo(backendService.sessionManager.parseSessionHandle(sessionHandleStr))
+      backendService.getTypeInfo(parseSessionHandle(sessionHandleStr))
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(s"Error getting type information")
@@ -202,7 +201,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @Path("{sessionHandle}/operations/catalogs")
   def getCatalogs(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
     try {
-      backendService.getCatalogs(backendService.sessionManager.parseSessionHandle(sessionHandleStr))
+      backendService.getCatalogs(parseSessionHandle(sessionHandleStr))
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(s"Error getting catalogs")
@@ -220,8 +219,10 @@ private[v1] class SessionsResource extends ApiRequestContext {
       @PathParam("sessionHandle") sessionHandleStr: String,
       request: GetSchemasRequest): OperationHandle = {
     try {
-      val sessionHandle = backendService.sessionManager.parseSessionHandle(sessionHandleStr)
-      backendService.getSchemas(sessionHandle, request.catalogName, request.schemaName)
+      backendService.getSchemas(
+        parseSessionHandle(sessionHandleStr),
+        request.catalogName,
+        request.schemaName)
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(s"Error getting schemas")
@@ -240,7 +241,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
       request: GetTablesRequest): OperationHandle = {
     try {
       backendService.getTables(
-        backendService.sessionManager.parseSessionHandle(sessionHandleStr),
+        parseSessionHandle(sessionHandleStr),
         request.catalogName,
         request.schemaName,
         request.tableName,
@@ -260,8 +261,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @Path("{sessionHandle}/operations/tableTypes")
   def getTableTypes(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
     try {
-      val sessionHandle = backendService.sessionManager.parseSessionHandle(sessionHandleStr)
-      backendService.getTableTypes(sessionHandle)
+      backendService.getTableTypes(parseSessionHandle(sessionHandleStr))
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(s"Error getting table types")
@@ -280,7 +280,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
       request: GetColumnsRequest): OperationHandle = {
     try {
       backendService.getColumns(
-        backendService.sessionManager.parseSessionHandle(sessionHandleStr),
+        parseSessionHandle(sessionHandleStr),
         request.catalogName,
         request.schemaName,
         request.tableName,
@@ -303,7 +303,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
       request: GetFunctionsRequest): OperationHandle = {
     try {
       backendService.getFunctions(
-        backendService.sessionManager.parseSessionHandle(sessionHandleStr),
+        parseSessionHandle(sessionHandleStr),
         request.catalogName,
         request.schemaName,
         request.functionName)
@@ -325,9 +325,8 @@ private[v1] class SessionsResource extends ApiRequestContext {
       @PathParam("operationHandle") operationHandleStr: String): OperationHandle = {
 
     try {
-      val sessionManager = backendService.sessionManager
-      val operationHandle = sessionManager.operationManager.parseOperationHandle(operationHandleStr)
-      sessionManager.getSession(sessionManager.parseSessionHandle(sessionHandleStr))
+      val operationHandle = parseOperationHandle(operationHandleStr)
+      backendService.sessionManager.getSession(parseSessionHandle(sessionHandleStr))
         .closeOperation(operationHandle)
       operationHandle
     } catch {

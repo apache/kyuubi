@@ -26,6 +26,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 
+import org.apache.kyuubi.operation.OperationHandle.parseOperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
 
 @Tag(name = "Operation")
@@ -40,16 +41,15 @@ private[v1] class OperationsResource extends ApiRequestContext {
       "Get an operation detail with a given session identifier and operation identifier")
   @GET
   @Path("{operationHandle}")
-  def getOperationHandle(
+  def getOperationDetail(
       @PathParam("operationHandle") operationHandleStr: String): OperationDetail = {
     try {
-      val operationManager = backendService.sessionManager.operationManager
-      val operationHandle = operationManager.parseOperationHandle(operationHandleStr)
-      val operation = operationManager.getOperation(operationHandle)
+      val operation = backendService.sessionManager.operationManager
+        .getOperation(parseOperationHandle(operationHandleStr))
       OperationDetail(operation.shouldRunAsync, operation.isTimedOut, operation.getStatus)
     } catch {
       case NonFatal(_) =>
-        throw new NotFoundException(s"Error closing an operation")
+        throw new NotFoundException(s"Error getting an operation detail")
     }
   }
 }
