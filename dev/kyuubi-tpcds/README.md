@@ -50,3 +50,9 @@ $SPARK_HOME/bin/spark-submit \
   --class org.apache.kyuubi.tpcds.benchmark.RunBenchmark \
   kyuubi-tpcds-*.jar --db tpcds_sf10 --filter q1-v2.4
 ```
+
+The result of tpcds benchmark like:
+
+| name    | minTimeMs |  maxTimeMs  |  avgTimeMs | stdDev   | stdDevPercent  |
+|---------|-----------|-------------|------------|----------|----------------|
+| q1-v2.4 | 50.522384 |  868.010383 | 323.398267 | 471.6482 | 145.8413108576 |
