@@ -124,7 +124,7 @@ function build {
   fi
   # if with spark image means, kyuubi won't copy spark from local.
   # In this case, we just pass SPARK_HOME without copy.
-  if [[ "${WITHSPARKIMAGE}" != "false" ]]; then
+  if [[ "${SPARK_PROVIDED}" != "false" ]]; then
     BUILD_ARGS+=(--build-arg spark_home=$SPARK_HOME)
   else
     if [[ ! -d "$SPARK_HOME" ]]; then
@@ -231,8 +231,8 @@ NOCACHEARG=
 BUILD_PARAMS=
 KYUUBI_UID=
 CROSS_BUILD="false"
-WITHSPARKIMAGE="false"
-while getopts f:r:t:Xnb:u:s:w option
+SPARK_PROVIDED="false"
+while getopts f:r:t:Xnb:u:s:p option
 do
  case "${option}"
  in
@@ -244,7 +244,7 @@ do
  X) CROSS_BUILD=1;;
  u) KYUUBI_UID=${OPTARG};;
  s) SPARK_HOME=${OPTARG};;
- w) WITHSPARKIMAGE=1;;
+ p) SPARK_PROVIDED=1;;
  esac
 done
 
