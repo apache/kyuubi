@@ -49,8 +49,10 @@ function image_ref {
   fi
   if [ -n "$TAG" ]; then
     image="$image:$TAG"
+  else
+    image="$image:$KYUUBI_VERSION"
   fi
-  echo "$image:$KYUUBI_VERSION"
+  echo "$image"
 }
 
 function docker_push {
@@ -118,11 +120,17 @@ function build {
   # else use builtin spark
   if [[ ! -d "$KYUUBI_ROOT/spark-binary" ]]; then
     mkdir "$KYUUBI_ROOT/spark-binary"
+  else
+    rm -rf "$KYUUBI_ROOT/spark-binary/*"
   fi
-  if [[ ! -d "$SPARK_HOME" ]]; then
-    error "Cannot found dir $SPARK_HOME, you must configure SPARK_HOME correct."
+  if [[ "${WITHSPARKIMAGE}" != "false" ]]; then
+    BUILD_ARGS+=(--build-arg spark_home=$SPARK_HOME)
+  else
+    if [[ ! -d "$SPARK_HOME" ]]; then
+      error "Cannot found dir $SPARK_HOME, you must configure SPARK_HOME correct."
+    fi
+    cp -r "$SPARK_HOME/" "$KYUUBI_ROOT/spark-binary/"
   fi
-  cp -r "$SPARK_HOME/" "$KYUUBI_ROOT/spark-binary/"
 
   # Verify that the Docker image content directory is present
   if [ ! -d "$KYUUBI_ROOT/docker" ]; then
@@ -143,12 +151,6 @@ function build {
   if [ -n "$KYUUBI_UID" ]; then
     BUILD_ARGS+=(--build-arg kyuubi_uid=$KYUUBI_UID)
   fi
-
-  local BINDING_BUILD_ARGS=(
-    ${BUILD_ARGS[@]}
-    --build-arg
-    base_img=$(image_ref kyuubi)
-  )
 
   local BASEDOCKERFILE=${BASEDOCKERFILE:-"docker/Dockerfile"}
   local ARCHS=${ARCHS:-"--platform linux/amd64,linux/arm64"}
@@ -228,7 +230,8 @@ NOCACHEARG=
 BUILD_PARAMS=
 KYUUBI_UID=
 CROSS_BUILD="false"
-while getopts f:r:t:Xnb:u:s: option
+WITHSPARKIMAGE="false"
+while getopts f:r:t:Xnb:u:s:w option
 do
  case "${option}"
  in
@@ -240,6 +243,7 @@ do
  X) CROSS_BUILD=1;;
  u) KYUUBI_UID=${OPTARG};;
  s) SPARK_HOME=${OPTARG};;
+ w) WITHSPARKIMAGE=1;;
  esac
 done
 
