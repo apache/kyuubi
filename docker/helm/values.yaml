@@ -31,14 +31,14 @@ image:
 probe:
   liveness:
     enabled: true
-    failureThreshold: 10
     initialDelaySeconds: 30
     periodSeconds: 10
+    failureThreshold: 10
   readiness:
     enabled: true
-    failureThreshold: 10
     initialDelaySeconds: 30
     periodSeconds: 10
+    failureThreshold: 10
 
 server:
   bind:
