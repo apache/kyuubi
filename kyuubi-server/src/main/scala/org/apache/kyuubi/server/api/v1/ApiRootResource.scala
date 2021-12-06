@@ -37,6 +37,9 @@ private[v1] class ApiRootResource extends ApiRequestContext {
   @Path("sessions")
   def sessions: Class[SessionsResource] = classOf[SessionsResource]
 
+  @Path("operations")
+  def operations: Class[OperationsResource] = classOf[OperationsResource]
+
   @GET
   @Path("exception")
   @Produces(Array(MediaType.TEXT_PLAIN))

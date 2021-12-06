@@ -19,13 +19,16 @@ package org.apache.kyuubi.session
 
 import java.io.IOException
 import java.nio.file.{Files, Paths}
+import java.util.UUID
 import java.util.concurrent.{ConcurrentHashMap, Future, ThreadPoolExecutor, TimeUnit}
 
 import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.operation.OperationManager
@@ -281,6 +284,24 @@ abstract class SessionManager(name: String) extends CompositeService(name) {
         }
       }
       timeoutChecker.scheduleWithFixedDelay(checkTask, interval, interval, TimeUnit.MILLISECONDS)
+    }
+  }
+
+  def parseSessionHandle(sessionHandleStr: String): SessionHandle = {
+    try {
+      val sessionHandleParts = sessionHandleStr.split("\\|")
+      require(
+        sessionHandleParts.size == 3,
+        s"Expected 4 parameters but found ${sessionHandleParts.size}.")
+
+      val handleIdentifier = new HandleIdentifier(
+        UUID.fromString(sessionHandleParts(0)),
+        UUID.fromString(sessionHandleParts(1)))
+      val protocolVersion = TProtocolVersion.findByValue(sessionHandleParts(2).toInt)
+      new SessionHandle(handleIdentifier, protocolVersion)
+    } catch {
+      case NonFatal(_) =>
+        throw KyuubiSQLException(s"Invalid $sessionHandleStr")
     }
   }
 }

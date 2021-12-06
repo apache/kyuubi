@@ -17,9 +17,14 @@
 
 package org.apache.kyuubi.operation
 
+import java.util.UUID
+
+import scala.util.control.NonFatal
+
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.cli.HandleIdentifier
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
@@ -135,6 +140,25 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
       } else {
         false
       }
+    }
+  }
+
+  def parseOperationHandle(operationHandleStr: String): OperationHandle = {
+    try {
+      val operationHandleParts = operationHandleStr.split("\\|")
+      require(
+        operationHandleParts.size == 4,
+        s"Expected 4 parameters but found ${operationHandleParts.size}.")
+
+      val handleIdentifier = new HandleIdentifier(
+        UUID.fromString(operationHandleParts(0)),
+        UUID.fromString(operationHandleParts(1)))
+      val protocolVersion = TProtocolVersion.findByValue(operationHandleParts(2).toInt)
+      val operationType = OperationType.withName(operationHandleParts(3))
+      new OperationHandle(handleIdentifier, operationType, protocolVersion)
+    } catch {
+      case NonFatal(_) =>
+        throw KyuubiSQLException(s"Invalid $operationHandleStr")
     }
   }
 }
