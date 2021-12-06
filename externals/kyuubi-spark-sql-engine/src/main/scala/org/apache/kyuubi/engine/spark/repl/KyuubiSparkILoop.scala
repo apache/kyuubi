@@ -19,13 +19,12 @@ package org.apache.kyuubi.engine.spark.repl
 
 import java.io.{ByteArrayOutputStream, File}
 
-import scala.collection.mutable.ArrayBuffer
 import scala.tools.nsc.Settings
 import scala.tools.nsc.interpreter.JPrintWriter
 
 import org.apache.spark.SparkContext
 import org.apache.spark.repl.{Main, SparkILoop}
-import org.apache.spark.sql.{Dataset, Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.util.MutableURLClassLoader
 
 private[spark] case class KyuubiSparkILoop private (
@@ -33,8 +32,7 @@ private[spark] case class KyuubiSparkILoop private (
     output: ByteArrayOutputStream)
   extends SparkILoop(None, new JPrintWriter(output)) {
 
-  // TODO: this is a little hacky
-  val results = new ArrayBuffer[Dataset[Row]]()
+  private val result = new DataFrameHolder()
 
   private def initialize(): Unit = {
     settings = new Settings
@@ -86,12 +84,14 @@ private[spark] case class KyuubiSparkILoop private (
 
       // for feeding results to client, e.g. beeline
       this.bind(
-        "results",
-        "scala.collection.mutable.ArrayBuffer[" +
-          "org.apache.spark.sql.Dataset[org.apache.spark.sql.Row]]",
-        results)
+        "result",
+        classOf[DataFrameHolder].getCanonicalName,
+        result,
+        List("""@transient"""))
     }
   }
+
+  def getResult: DataFrame = result.get()
 
   def getOutput: String = {
     val res = output.toString.trim
