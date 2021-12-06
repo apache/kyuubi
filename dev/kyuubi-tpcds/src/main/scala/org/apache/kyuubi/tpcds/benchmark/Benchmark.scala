@@ -24,28 +24,24 @@ import scala.language.implicitConversions
 import scala.util.{Failure => SFailure, Success, Try}
 import scala.util.control.NonFatal
 
-import org.apache.spark.sql.{DataFrame, Dataset, SparkSession, SQLContext}
+import org.apache.spark.sql.{DataFrame, Dataset, SparkSession}
 
 // scalastyle:off
 /**
  * A collection of queries that test a particular aspect of Spark SQL.
- *
- * @param sqlContext An existing SQLContext.
  */
 abstract class Benchmark(
-    @transient val sqlContext: SQLContext)
+    @transient val sparkSession: SparkSession)
   extends Serializable {
 
   import Benchmark._
 
-  def this() = this(SparkSession.builder.getOrCreate().sqlContext)
-
   val resultsLocation =
-    sqlContext.getAllConfs.getOrElse(
+    sparkSession.conf.get(
       "spark.sql.perf.results",
       "/spark/sql/performance")
 
-  protected def sparkContext = sqlContext.sparkContext
+  protected def sparkContext = sparkSession.sparkContext
 
   implicit protected def toOption[A](a: A): Option[A] = Option(a)
 
@@ -58,7 +54,7 @@ abstract class Benchmark(
   }.getOrElse(Map.empty)
 
   def currentConfiguration = BenchmarkConfiguration(
-    sqlConf = sqlContext.getAllConfs,
+    sqlConf = sparkSession.conf.getAll,
     sparkConf = sparkContext.getConf.getAll.toMap,
     defaultParallelism = sparkContext.defaultParallelism,
     buildInfo = buildInfo)
@@ -96,7 +92,7 @@ abstract class Benchmark(
       tags,
       timeout,
       resultLocation,
-      sqlContext,
+      sparkSession,
       currentConfiguration,
       forkThread = forkThread)
   }
@@ -108,7 +104,7 @@ abstract class Benchmark(
         sqlText: String,
         description: String,
         executionMode: ExecutionMode = ExecutionMode.ForeachResults): Query = {
-      new Query(name, sqlContext.sql(sqlText), description, Some(sqlText), executionMode)
+      new Query(name, sparkSession.sql(sqlText), description, Some(sqlText), executionMode)
     }
   }
 }
@@ -147,7 +143,7 @@ object Benchmark {
       tags: Map[String, String],
       timeout: Long,
       resultsLocation: String,
-      sqlContext: SQLContext,
+      sparkSession: SparkSession,
       currentConfiguration: BenchmarkConfiguration,
       forkThread: Boolean = true) {
     val currentResults = new collection.mutable.ArrayBuffer[BenchmarkResult]()
@@ -247,7 +243,7 @@ object Benchmark {
       }
 
       try {
-        val resultsTable = sqlContext.createDataFrame(results)
+        val resultsTable = sparkSession.createDataFrame(results)
         logMessage(s"Results written to table: 'sqlPerformance' at $resultPath")
         resultsTable
           .coalesce(1)
@@ -270,7 +266,7 @@ object Benchmark {
 
     /** Returns full iterations from an actively running experiment. */
     def getCurrentRuns(): DataFrame = {
-      val tbl = sqlContext.createDataFrame(currentRuns)
+      val tbl = sparkSession.createDataFrame(currentRuns)
       tbl.createOrReplaceTempView("currentRuns")
       tbl
     }

@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory
 /** A trait to describe things that can be benchmarked. */
 trait Benchmarkable {
   @transient protected[this] val sqlSession = SparkSession.builder.getOrCreate()
-  @transient protected[this] val sqlContext = sqlSession.sqlContext
   @transient protected[this] val sparkContext = sqlSession.sparkContext
 
   val name: String
@@ -50,7 +49,7 @@ trait Benchmarkable {
       } else {
         doBenchmark(includeBreakdown, description, messages)
       }
-    afterBenchmark(sqlContext.sparkContext)
+    afterBenchmark(sqlSession.sparkContext)
     result
   }
 

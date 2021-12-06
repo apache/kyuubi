@@ -73,16 +73,15 @@ object RunBenchmark {
       .setAppName(config.benchmarkName)
 
     val sparkSession = SparkSession.builder.config(conf).enableHiveSupport().getOrCreate()
-    val sqlContext = sparkSession.sqlContext
-    import sqlContext.implicits._
+    import sparkSession.implicits._
 
-    sqlContext.setConf("spark.sql.perf.results", new File("performance").toURI.toString)
+    sparkSession.conf.set("spark.sql.perf.results", new File("performance").toURI.toString)
 
-    val benchmark = new TPCDS(sqlContext = sqlContext)
+    val benchmark = new TPCDS(sparkSession)
 
     println("== USING DATABASES ==")
     println(config.db)
-    sqlContext.sql(s"use ${config.db}")
+    sparkSession.sql(s"use ${config.db}")
 
     val allQueries = config.filter.map { f =>
       benchmark.tpcds2_4Queries.filter(_.name contains f)
@@ -101,7 +100,7 @@ object RunBenchmark {
     println("== STARTING EXPERIMENT ==")
     experiment.waitForFinish(1000 * 60 * 30)
 
-    sqlContext.setConf("spark.sql.shuffle.partitions", "1")
+    sparkSession.conf.set("spark.sql.shuffle.partitions", "1")
 
     val toShow = experiment.getCurrentRuns()
       .withColumn("result", explode($"results"))
@@ -131,7 +130,7 @@ object RunBenchmark {
     }
 
     println()
-    println(s"""Results: sqlContext.read.json("${experiment.resultPath}")""")
+    println(s"""Results: spark.read.json("${experiment.resultPath}")""")
   }
 }
 // scalastyle:on

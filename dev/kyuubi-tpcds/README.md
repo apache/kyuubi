@@ -23,20 +23,35 @@ This module includes tpcds data generator and benchmark.
 package jar with following command:
 `./build/mvn install -DskipTests -Ptpcds -pl dev/kyuubi-tpcds -am`
 
-## data generator 
-Run following command to generate 10GB data with new database `tpcds_sf10`.
+## data generator
+
+Support options:
+
+| key         | default |  description                 |
+|-------------|---------|------------------------------|
+| db          | default | the databases to write data  |
+| scaleFactor | 1       | the scale factor of tpcds    |
+
+Example: the following command to generate 10GB data with new database `tpcds_sf10`.
 
 ```shell
 $SPARK_HOME/bin/spark-submit \
-  --conf spark.sql.tpcds.scale.factor=10 \
-  --conf spark.sql.tpcds.database=tpcds_sf10 \
   --class org.apache.kyuubi.tpcds.DataGenerator \
-  kyuubi-tpcds-*.jar
+  kyuubi-tpcds-*.jar --db tpcds_sf10 --scaleFactor 10
 ```
 
 ## do benchmark
 
-Run following command to benchmark tpcds sf10 with exists database `tpcds_sf10`.
+Support options:
+
+| key        | default              |  description                                           |
+|------------|----------------------|--------------------------------------------------------|
+| db         | none(required)       | the tpcds database                                     |
+| benchmark  | tpcds-v2.4-benchmark | the name of application                                |
+| iterations | 3                    | the number of iterations to run                        |
+| filter     | a                    | filter on the name of the queries to run, e.g. q1-v2.4 |
+
+Example: the following command to benchmark tpcds sf10 with exists database `tpcds_sf10`.
 
 ```shell
 $SPARK_HOME/bin/spark-submit \

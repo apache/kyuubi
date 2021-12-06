@@ -17,17 +17,12 @@
 
 package org.apache.kyuubi.tpcds.benchmark
 
-import org.apache.spark.sql.{SparkSession, SQLContext}
+import org.apache.spark.sql.SparkSession
 
 /**
  * TPC-DS benchmark's dataset.
- *
- * @param sqlContext An existing SQLContext.
  */
-class TPCDS(@transient sqlContext: SQLContext)
-  extends Benchmark(sqlContext)
+class TPCDS(@transient sparkSession: SparkSession)
+  extends Benchmark(sparkSession)
   with Tpcds_2_4_Queries
-  with Serializable {
-
-  def this() = this(SparkSession.builder.getOrCreate().sqlContext)
-}
+  with Serializable {}
