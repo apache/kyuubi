@@ -23,17 +23,17 @@ set -e
 RELEASE_DIR="$(cd "$(dirname "$0")"/..; pwd)"
 ######### Please modify the variables ##########
 # release version, e.g. 1.4.0-incubating
-release_version=${release_version-""}
+release_version=${release_version:-""}
 # release candidate number, e.g. 2
-release_rc_no=${release_rc_no-""}
+release_rc_no=${release_rc_no:-""}
 # previous release candidate number, e.g. 1, could be empty if it is the first vote
-prev_release_rc_no=${prev_release_rc_no-""}
+prev_release_rc_no=${prev_release_rc_no:-""}
 # staging repository number, check it under https://repository.apache.org/content/repositories
-repo_no=${repo_no-""}
+repo_no=${repo_no:-""}
 # vote email address in dev@kyuubi.apache.org, e.g. https://www.mail-archive.com/dev@kyuubi.apache.org/msg01458.html
-dev_kyuubi_vote_mail_address=${dev_kyuubi_vote_mail_address-""}
+dev_kyuubi_vote_mail_address=${dev_kyuubi_vote_mail_address:-""}
 # vote result email address in dev@kyuubi.apache.org, e.g. https://www.mail-archive.com/dev@kyuubi.apache.org/msg01492.html
-dev_kyuubi_vote_result_mail_address=${dev_kyuubi_vote_result_mail_address-""}
+dev_kyuubi_vote_result_mail_address=${dev_kyuubi_vote_result_mail_address:-""}
 ################################################
 
 if [[ -z $release_version ]]; then
