@@ -24,6 +24,7 @@ import scala.util.control.NonFatal
 
 import org.apache.spark.{ui, SparkConf}
 import org.apache.spark.kyuubi.SparkSQLEngineListener
+import org.apache.spark.repl.Main
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{KyuubiException, Logging}
@@ -81,6 +82,9 @@ object SparkSQLEngine extends Logging {
     sparkConf.setIfMissing("spark.sql.legacy.castComplexTypesToString.enabled", "true")
     sparkConf.setIfMissing("spark.master", "local")
     sparkConf.setIfMissing("spark.ui.port", "0")
+    // register the repl's output dir with the file server.
+    // see also `spark.repl.classdir`
+    sparkConf.set("spark.repl.class.outputDir", Main.outputDir.getAbsolutePath)
     sparkConf.setIfMissing(
       "spark.hadoop.mapreduce.input.fileinputformat.list-status.num-threads",
       "20")

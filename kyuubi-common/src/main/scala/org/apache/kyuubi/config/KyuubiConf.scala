@@ -982,10 +982,10 @@ object KyuubiConf {
       .doc("A comma separated list of engine history loggers, where engine/session/operation etc" +
         " events go. We use spark logger by default.<ul>" +
         " <li>SPARK: the events will be written to the spark listener bus.</li>" +
-        s" <li>JSON: the events will be written to the location of" +
+        " <li>JSON: the events will be written to the location of" +
         s" ${ENGINE_EVENT_JSON_LOG_PATH.key}</li>" +
-        s" <li>JDBC: to be done</li>" +
-        s" <li>CUSTOM: to be done.</li></ul>")
+        " <li>JDBC: to be done</li>" +
+        " <li>CUSTOM: to be done.</li></ul>")
       .version("1.3.0")
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
@@ -1048,4 +1048,20 @@ object KyuubiConf {
       .transform(_.toUpperCase(Locale.ROOT))
       .checkValues(OperationModes.values.map(_.toString))
       .createWithDefault(OperationModes.NONE.toString)
+
+  object OperationLanguages extends Enumeration {
+    type OperationLanguage = Value
+    val SQL, SCALA = Value
+  }
+
+  val OPERATION_LANGUAGE: ConfigEntry[String] =
+    buildConf("operation.language")
+      .doc("Choose a programing language for the following inputs" +
+        " <ul><li>SQL: (Default) Run all following statements as SQL queries.</li>" +
+        " <li>SCALA: Run all following input a scala codes</li></ul>")
+      .version("1.5.0")
+      .stringConf
+      .transform(_.toUpperCase(Locale.ROOT))
+      .checkValues(OperationLanguages.values.map(_.toString))
+      .createWithDefault(OperationLanguages.SQL.toString)
 }

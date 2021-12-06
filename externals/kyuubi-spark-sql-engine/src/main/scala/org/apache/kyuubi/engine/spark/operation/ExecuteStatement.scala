@@ -23,7 +23,6 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.kyuubi.SQLOperationListener
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
@@ -37,13 +36,12 @@ import org.apache.kyuubi.session.Session
 import org.apache.kyuubi.util.ThreadUtils
 
 class ExecuteStatement(
-    spark: SparkSession,
     session: Session,
     override protected val statement: String,
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
     incrementalCollect: Boolean)
-  extends SparkOperation(spark, OperationType.EXECUTE_STATEMENT, session) with Logging {
+  extends SparkOperation(OperationType.EXECUTE_STATEMENT, session) with Logging {
 
   import org.apache.kyuubi.KyuubiSparkUtils._
 

@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.engine.spark.IterableFetchIterator
@@ -27,13 +26,12 @@ import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
 class GetColumns(
-    spark: SparkSession,
     session: Session,
     catalogName: String,
     schemaName: String,
     tableName: String,
     columnName: String)
-  extends SparkOperation(spark, OperationType.GET_COLUMNS, session) {
+  extends SparkOperation(OperationType.GET_COLUMNS, session) {
 
   override def statement: String = {
     super.statement +
