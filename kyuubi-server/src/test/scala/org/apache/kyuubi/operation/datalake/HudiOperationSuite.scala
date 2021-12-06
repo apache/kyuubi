@@ -19,11 +19,11 @@ package org.apache.kyuubi.operation.datalake
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.BasicHudiJDBCTests
+import org.apache.kyuubi.operation.HudiMetadataTests
 import org.apache.kyuubi.tags.HudiTest
 
 @HudiTest
-class HudiOperationSuite extends WithKyuubiServer with BasicHudiJDBCTests {
+class HudiOperationSuite extends WithKyuubiServer with HudiMetadataTests {
   override protected val conf: KyuubiConf = {
     val kyuubiConf = KyuubiConf().set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 20000L)
     extraConfigs.foreach { case (k, v) => kyuubiConf.set(k, v) }

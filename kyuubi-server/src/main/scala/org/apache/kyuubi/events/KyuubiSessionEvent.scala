@@ -24,6 +24,7 @@ import org.apache.kyuubi.session.KyuubiSessionImpl
 
 /**
  * @param sessionId server session id
+ * @param remoteSessionId remote engine session id
  * @param sessionName if user not specify it, we use empty string instead
  * @param user session user
  * @param clientIP client ip address
@@ -44,6 +45,7 @@ case class KyuubiSessionEvent(
     conf: Map[String, String],
     startTime: Long,
     var sessionId: String = "",
+    var remoteSessionId: String = "",
     var clientVersion: Int = -1,
     var openedTime: Long = -1L,
     var endTime: Long = -1L,
@@ -55,7 +57,7 @@ case class KyuubiSessionEvent(
 object KyuubiSessionEvent {
   def apply(session: KyuubiSessionImpl): KyuubiSessionEvent = {
     assert(KyuubiServer.kyuubiServer != null)
-    val serverIP = KyuubiServer.kyuubiServer.connectionUrl
+    val serverIP = KyuubiServer.kyuubiServer.frontendServices.head.connectionUrl
     val sessionName: String = session.normalizedConf.getOrElse(KyuubiConf.SESSION_NAME.key, "")
     KyuubiSessionEvent(
       sessionName,

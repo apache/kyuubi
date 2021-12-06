@@ -121,6 +121,7 @@ object ResultSetSchemaConstant {
    * int => index of column in table (starting at 1)
    */
   final val ORDINAL_POSITION = "ORDINAL_POSITION"
+
   /**
    * String => ISO rules are used to determine the nullability for a column.
    * - YES --- if the column can include NULLs

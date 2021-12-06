@@ -52,21 +52,25 @@ class JsonReporterService(registry: MetricRegistry)
   override def start(): Unit = synchronized {
     val interval = conf.get(METRICS_JSON_INTERVAL)
     var writer: BufferedWriter = null
-    timer.schedule(new TimerTask {
-      override def run(): Unit = try {
-        val json = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(registry)
-        val tmpPath = Files.createTempFile(reportDir, "report", ".json").toAbsolutePath
-        writer = Files.newBufferedWriter(tmpPath, StandardCharsets.UTF_8)
-        writer.write(json)
-        writer.close()
-        Files.setPosixFilePermissions(tmpPath, PosixFilePermissions.fromString("rwxr--r--"))
-        Files.move(tmpPath, reportPath, StandardCopyOption.REPLACE_EXISTING)
-      } catch {
-        case NonFatal(e) => error("Error writing metrics to json file" + reportPath, e)
-      } finally {
-        if (writer != null) writer.close()
-      }
-    }, interval, interval)
+    timer.schedule(
+      new TimerTask {
+        override def run(): Unit =
+          try {
+            val json = jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(registry)
+            val tmpPath = Files.createTempFile(reportDir, "report", ".json").toAbsolutePath
+            writer = Files.newBufferedWriter(tmpPath, StandardCharsets.UTF_8)
+            writer.write(json)
+            writer.close()
+            Files.setPosixFilePermissions(tmpPath, PosixFilePermissions.fromString("rwxr--r--"))
+            Files.move(tmpPath, reportPath, StandardCopyOption.REPLACE_EXISTING)
+          } catch {
+            case NonFatal(e) => error("Error writing metrics to json file" + reportPath, e)
+          } finally {
+            if (writer != null) writer.close()
+          }
+      },
+      interval,
+      interval)
     super.start()
   }
 

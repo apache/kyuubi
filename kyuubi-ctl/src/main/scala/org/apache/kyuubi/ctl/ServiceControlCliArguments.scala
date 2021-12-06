@@ -112,12 +112,11 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
               .children(userOps)
               .text("\tList all the engine nodes for a user")),
         checkConfig(f => {
-          if (f.action == null)  failure("Must specify action command: [create|get|delete|list].")
+          if (f.action == null) failure("Must specify action command: [create|get|delete|list].")
           else success
         }),
         note(""),
-        help('h', "help").text("Show help message and exit.")
-      )
+        help('h', "help").text("Show help message and exit."))
     }
     CtlParser
   }
@@ -136,7 +135,7 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
             // validate arguments
             validateArguments()
           case _ =>
-            // arguments are bad, exit
+          // arguments are bad, exit
         }
     }
   }
@@ -248,7 +247,7 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
     }
 
     try {
-      if (cliArgs.port.toInt <= 0 ) {
+      if (cliArgs.port.toInt <= 0) {
         fail(s"Specified port should be a positive number")
       }
     } catch {
@@ -267,14 +266,14 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
     cliArgs.service match {
       case ServiceControlObject.SERVER =>
         s"""Parsed arguments:
-          |  action                  ${cliArgs.action}
-          |  service                 ${cliArgs.service}
-          |  zkQuorum                ${cliArgs.zkQuorum}
-          |  namespace               ${cliArgs.namespace}
-          |  host                    ${cliArgs.host}
-          |  port                    ${cliArgs.port}
-          |  version                 ${cliArgs.version}
-          |  verbose                 ${cliArgs.verbose}
+           |  action                  ${cliArgs.action}
+           |  service                 ${cliArgs.service}
+           |  zkQuorum                ${cliArgs.zkQuorum}
+           |  namespace               ${cliArgs.namespace}
+           |  host                    ${cliArgs.host}
+           |  port                    ${cliArgs.port}
+           |  version                 ${cliArgs.version}
+           |  verbose                 ${cliArgs.verbose}
         """.stripMargin
       case ServiceControlObject.ENGINE =>
         s"""Parsed arguments:

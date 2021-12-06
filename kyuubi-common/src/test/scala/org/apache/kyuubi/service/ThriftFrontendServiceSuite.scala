@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.service
 
-
 import java.util
 
 import scala.collection.JavaConverters._
@@ -29,13 +28,13 @@ import org.apache.thrift.transport.TSocket
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{OperationHandle, OperationType}
-import org.apache.kyuubi.service.ThriftFrontendService.{FeServiceServerContext, SERVER_VERSION}
+import org.apache.kyuubi.service.ThriftBinaryFrontendService.{FeServiceServerContext, SERVER_VERSION}
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 import org.apache.kyuubi.session.SessionHandle
 
 class ThriftFrontendServiceSuite extends KyuubiFunSuite {
 
-  protected val server = new NoopServer()
+  protected val server = new NoopThriftBinaryFrontendServer()
   protected val conf = KyuubiConf()
     .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     .set("kyuubi.test.server.should.fail", "false")
@@ -55,7 +54,7 @@ class ThriftFrontendServiceSuite extends KyuubiFunSuite {
   }
 
   protected def withThriftClient(f: TCLIService.Iface => Unit): Unit = {
-    val hostAndPort = server.connectionUrl.split(":")
+    val hostAndPort = server.frontendServices.head.connectionUrl.split(":")
     val host = hostAndPort.head
     val port = hostAndPort(1).toInt
     val socket = new TSocket(host, port)
@@ -94,7 +93,8 @@ class ThriftFrontendServiceSuite extends KyuubiFunSuite {
   }
 
   private def checkOperationResult(
-      client: TCLIService.Iface, handle: TOperationHandle): Unit = {
+      client: TCLIService.Iface,
+      handle: TOperationHandle): Unit = {
     val tFetchResultsReq = new TFetchResultsReq()
     tFetchResultsReq.setOperationHandle(handle)
     tFetchResultsReq.setFetchType(0)
@@ -106,7 +106,7 @@ class ThriftFrontendServiceSuite extends KyuubiFunSuite {
     assert(actual === expected)
     tFetchResultsReq.setFetchType(1)
     val resp1 = client.FetchResults(tFetchResultsReq)
-    assert(resp1.getStatus.getStatusCode ===  TStatusCode.SUCCESS_STATUS)
+    assert(resp1.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
     assert(resp1.getResults.getColumnCount === 0)
     val invalidHandle =
       OperationHandle(OperationType.getOperationType(handle.getOperationType), SERVER_VERSION)
@@ -169,9 +169,9 @@ class ThriftFrontendServiceSuite extends KyuubiFunSuite {
       val resp = client.GetInfo(req)
       assert(resp.getInfoValue.getStringValue === org.apache.kyuubi.KYUUBI_VERSION)
       req.setInfoType(TGetInfoType.CLI_SERVER_NAME)
-      assert(client.GetInfo(req).getInfoValue.getStringValue === "Kyuubi")
+      assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Kyuubi (Incubating)")
       req.setInfoType(TGetInfoType.CLI_DBMS_NAME)
-      assert(client.GetInfo(req).getInfoValue.getStringValue === "Spark SQL")
+      assert(client.GetInfo(req).getInfoValue.getStringValue === "Apache Kyuubi (Incubating)")
       req.setInfoType(TGetInfoType.CLI_MAX_COLUMN_NAME_LEN)
       assert(client.GetInfo(req).getInfoValue.getLenValue === 128)
       req.setInfoType(TGetInfoType.CLI_MAX_SCHEMA_NAME_LEN)
@@ -331,7 +331,6 @@ class ThriftFrontendServiceSuite extends KyuubiFunSuite {
     }
   }
 
-
   test("get cross reference") {
     withSessionHandle { (client, handle) =>
       val req = new TGetCrossReferenceReq(handle)
@@ -480,14 +479,5 @@ class ThriftFrontendServiceSuite extends KyuubiFunSuite {
       assert(tRenewDelegationTokenResp.getStatus.getErrorMessage ===
         "Delegation token is not supported")
     }
-  }
-
-  test("engine connect url use hostname") {
-    // default use hostname
-    assert(server.connectionUrl.startsWith("localhost"))
-
-    // use ip address
-    conf.set(KyuubiConf.ENGINE_CONNECTION_URL_USE_HOSTNAME, false)
-    assert(server.connectionUrl.startsWith("127.0.0.1"))
   }
 }

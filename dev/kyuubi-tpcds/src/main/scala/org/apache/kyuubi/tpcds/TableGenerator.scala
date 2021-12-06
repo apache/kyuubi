@@ -99,15 +99,16 @@ case class TableGenerator(
 
       logger.info(s"Finish w/ $res $cmd")
       val data = Paths.get(tempDir.toString, s"${name}_${i}_$parallelism.dat")
-      val iterator = if (Files.exists(data)) {
-        // ... realized that when opening the dat files I should use the “Cp1252” encoding.
-        // https://github.com/databricks/spark-sql-perf/pull/104
-        // noinspection SourceNotClosed
-        Source.fromFile(data.toFile, "cp1252", 8192).getLines
-      } else {
-        logger.warn(s"No data generated in child $i")
-        Nil
-      }
+      val iterator =
+        if (Files.exists(data)) {
+          // ... realized that when opening the dat files I should use the “Cp1252” encoding.
+          // https://github.com/databricks/spark-sql-perf/pull/104
+          // noinspection SourceNotClosed
+          Source.fromFile(data.toFile, "cp1252", 8192).getLines
+        } else {
+          logger.warn(s"No data generated in child $i")
+          Nil
+        }
       iterator
     }
 
@@ -131,37 +132,39 @@ case class TableGenerator(
   }
 
   def create(): Unit = {
-    val data = if (partitionCols.isEmpty) {
-      toDF.repartition(radix)
-    } else {
-      toDF.persist()
-    }
+    val data =
+      if (partitionCols.isEmpty) {
+        toDF.repartition(radix)
+      } else {
+        toDF.persist()
+      }
 
     val tempViewName = s"${name}_view"
 
     data.createOrReplaceTempView(tempViewName)
 
-    val writer = if (partitionCols.nonEmpty) {
-      val query =
-        s"""
-           |(SELECT
-           | ${fields.map(_.name).mkString(", ")}
-           |FROM
-           | $tempViewName WHERE ${partitionCols.head} IS NOT NULL
-           |DISTRIBUTE BY ${partitionCols.head})
-           |UNION ALL
-           |(SELECT
-           | ${fields.map(_.name).mkString(", ")}
-           |FROM
-           | $tempViewName
-           |WHERE ${partitionCols.head} IS NULL
-           |DISTRIBUTE BY CAST(RAND() * $radix AS INT))
-           |""".stripMargin
+    val writer =
+      if (partitionCols.nonEmpty) {
+        val query =
+          s"""
+             |(SELECT
+             | ${fields.map(_.name).mkString(", ")}
+             |FROM
+             | $tempViewName WHERE ${partitionCols.head} IS NOT NULL
+             |DISTRIBUTE BY ${partitionCols.head})
+             |UNION ALL
+             |(SELECT
+             | ${fields.map(_.name).mkString(", ")}
+             |FROM
+             | $tempViewName
+             |WHERE ${partitionCols.head} IS NULL
+             |DISTRIBUTE BY CAST(RAND() * $radix AS INT))
+             |""".stripMargin
 
-      ss.sql(query).write.partitionBy(partitionCols: _*)
-    } else {
-      data.write
-    }
+        ss.sql(query).write.partitionBy(partitionCols: _*)
+      } else {
+        data.write
+      }
     ss.sql(s"DROP TABLE IF EXISTS $name")
     writer.format(format).saveAsTable(name)
     data.unpersist()

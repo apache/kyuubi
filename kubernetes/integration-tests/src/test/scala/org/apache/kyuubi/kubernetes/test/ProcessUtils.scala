@@ -26,6 +26,7 @@ import scala.io.Source
 import org.apache.kyuubi.Logging
 
 object ProcessUtils extends Logging {
+
   /**
    * executeProcess is used to run a command and return the output if it
    * completes within timeout seconds.
@@ -45,17 +46,19 @@ object ProcessUtils extends Logging {
     try {
       Source.fromInputStream(inputStream, StandardCharsets.UTF_8.name())
         .getLines().foreach { line =>
-        if (dumpOutput) {
-          info(line)
+          if (dumpOutput) {
+            info(line)
+          }
+          outputLines += line
         }
-        outputLines += line
-      }
     } finally {
       inputStream.close()
     }
-    assert(proc.waitFor(timeout, TimeUnit.SECONDS),
+    assert(
+      proc.waitFor(timeout, TimeUnit.SECONDS),
       s"Timed out while executing ${fullCommand.mkString(" ")}")
-    assert(proc.exitValue == 0,
+    assert(
+      proc.exitValue == 0,
       s"Failed to execute -- ${fullCommand.mkString(" ")} --" +
         s"${if (dumpErrors) "\n" + outputLines.mkString("\n")}")
     outputLines.toSeq

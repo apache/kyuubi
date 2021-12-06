@@ -22,6 +22,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.credentials.HadoopCredentialsManager
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -36,6 +37,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   override def initialize(conf: KyuubiConf): Unit = {
     addService(credentialsManager)
+    _operationLogRoot = Some(conf.get(SERVER_OPERATION_LOG_DIR_ROOT))
     super.initialize(conf)
   }
 
@@ -61,7 +63,7 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       val handle = sessionImpl.handle
       setSession(handle, sessionImpl)
       info(s"$username's session with $handle is opened, current opening sessions" +
-      s" $getOpenSessionCount")
+        s" $getOpenSessionCount")
       handle
     } catch {
       case e: Throwable =>
@@ -76,7 +78,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
             warn(s"Error closing session for $username client ip: $ipAddress", t)
         }
         throw KyuubiSQLException(
-          s"Error opening session for $username client ip $ipAddress, due to ${e.getMessage}", e)
+          s"Error opening session for $username client ip $ipAddress, due to ${e.getMessage}",
+          e)
     }
   }
 

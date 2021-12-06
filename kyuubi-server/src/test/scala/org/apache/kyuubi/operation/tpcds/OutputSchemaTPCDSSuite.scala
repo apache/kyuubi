@@ -22,26 +22,26 @@ import java.nio.file.{Files, Path, Paths}
 
 import org.apache.kyuubi.{DeltaSuiteMixin, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.JDBCTestUtils
+import org.apache.kyuubi.server.mysql.MySQLJDBCTestHelper
 import org.apache.kyuubi.tags.{DeltaTest, ExtendedSQLTest}
 
 // scalastyle:off line.size.limit
 /**
  * To run this test suite:
  * {{{
- *   build/mvn test -Pspark-3.1 -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.OutputSchemaTPCDSSuite -Dmaven.plugin.scalatest.exclude.tags=''
+ *   build/mvn clean install -Pspark-3.1 -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.OutputSchemaTPCDSSuite
  * }}}
  *
  * To re-generate golden files for this suite:
  * {{{
- *   KYUUBI_UPDATE=1 build/mvn test -Pspark-3.1 -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.OutputSchemaTPCDSSuite -Dmaven.plugin.scalatest.exclude.tags=''
+ *   KYUUBI_UPDATE=1 build/mvn clean install -Pspark-3.1 -Dtest=none -DwildcardSuites=org.apache.kyuubi.operation.tpcds.OutputSchemaTPCDSSuite
  * }}}
  */
 // scalastyle:on line.size.limit
 @DeltaTest
 @ExtendedSQLTest
 class OutputSchemaTPCDSSuite extends WithKyuubiServer
-  with JDBCTestUtils
+  with MySQLJDBCTestHelper
   with TPCDSHelper
   with DeltaSuiteMixin {
 
@@ -119,8 +119,7 @@ class OutputSchemaTPCDSSuite extends WithKyuubiServer
             baseResourcePath.toFile.getAbsolutePath,
             name,
             q.getFileName.toString,
-            s"${qf.getName.stripSuffix(".sql")}.output.schema"
-          )
+            s"${qf.getName.stripSuffix(".sql")}.output.schema")
           val queryString = fileToString(qf.toPath)
           runQuery(queryString, schemaFile)
         }
