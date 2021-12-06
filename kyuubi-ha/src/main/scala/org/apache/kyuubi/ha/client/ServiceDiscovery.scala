@@ -153,13 +153,3 @@ object ServiceDiscovery extends Logging {
     createServiceNode(conf, zkClient, namespace, instance, version, external).getActualPath
   }
 }
-
-case class ServiceNodeInfo(
-    namespace: String,
-    nodeName: String,
-    host: String,
-    port: Int,
-    version: Option[String],
-    engineRefId: Option[String]) {
-  def instance: String = s"$host:$port"
-}
