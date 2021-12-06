@@ -522,10 +522,7 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
   test("scala code with console output") {
     withJdbcStatement() { statement =>
       statement.execute("SET kyuubi.operation.language=scala")
-      val code =
-        """
-          |spark.sql("SET kyuubi.operation.language=scala").show(false)
-          |""".stripMargin
+      val code = """spark.sql("SET kyuubi.operation.language").show(false)"""
       val rs = statement.executeQuery(code)
 
       var foundOperationLangItem = false
