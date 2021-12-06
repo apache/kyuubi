@@ -57,7 +57,7 @@ class ExecuteScala(
     try {
       spark.sparkContext.setJobGroup(statementId, statement)
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
-      repl.interpret(statement) match {
+      repl.interpretWithRedirectOutError(statement) match {
         case Success =>
           iter =
             if (repl.results.nonEmpty) {
