@@ -46,7 +46,7 @@
 
         <dependency>
             <groupId>com.github.scopt</groupId>
-            <artifactId>scopt_2.12</artifactId>
+            <artifactId>scopt_${scala.binary.version}</artifactId>
         </dependency>
 
         <dependency>
