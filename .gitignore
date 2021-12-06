@@ -43,6 +43,7 @@
 .scala_dependencies
 .settings
 build/apache-maven*
+build/release/tmp
 build/scala*
 build/test
 target/
