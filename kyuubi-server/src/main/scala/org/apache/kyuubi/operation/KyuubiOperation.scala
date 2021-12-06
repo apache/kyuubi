@@ -98,6 +98,7 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
   override def cancel(): Unit = state.synchronized {
     if (!isClosedOrCanceled) {
       setState(OperationState.CANCELED)
+      MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, operationClassName)))
       if (_remoteOpHandle != null) {
         try {
           client.cancelOperation(_remoteOpHandle)
