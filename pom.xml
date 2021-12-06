@@ -1405,6 +1405,7 @@
                             <exclude>**/*.json</exclude>
                             <exclude>**/*.prefs</exclude>
                             <exclude>**/*.log</exclude>
+                            <exclude>**/*.sql</exclude>
                             <exclude>**/*.md</exclude>
                             <exclude>**/*.iml</exclude>
                             <exclude>**/target/**</exclude>
