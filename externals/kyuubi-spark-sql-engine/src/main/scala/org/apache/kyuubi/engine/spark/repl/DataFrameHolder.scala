@@ -24,7 +24,7 @@ import org.apache.spark.sql.DataFrame
  *
  * @since 1.5.0
  */
-final class DataFrameHolder {
+class DataFrameHolder {
 
   @volatile private var result: DataFrame = _
 
