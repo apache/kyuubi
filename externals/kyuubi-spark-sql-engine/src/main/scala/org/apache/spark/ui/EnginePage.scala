@@ -29,7 +29,7 @@ import org.apache.commons.text.StringEscapeUtils
 import org.apache.spark.ui.TableSourceUtil._
 import org.apache.spark.ui.UIUtils._
 
-import org.apache.kyuubi.Utils
+import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
 import org.apache.kyuubi.engine.spark.events.{SessionEvent, SparkStatementEvent}
 
 case class EnginePage(parent: EngineTab) extends WebUIPage("") {
@@ -54,6 +54,10 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
   private def generateBasicStats(): Seq[Node] = {
     val timeSinceStart = System.currentTimeMillis() - parent.engine.getStartTime
     <ul class ="list-unstyled">
+      <li>
+        <strong>Kyuubi Version: </strong>
+        {KYUUBI_VERSION}
+      </li>
       <li>
         <strong>Started at: </strong>
         {new Date(parent.engine.getStartTime)}
