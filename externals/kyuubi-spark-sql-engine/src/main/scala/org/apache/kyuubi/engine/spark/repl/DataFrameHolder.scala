@@ -19,13 +19,12 @@ package org.apache.kyuubi.engine.spark.repl
 
 import org.apache.spark.sql.DataFrame
 
-import org.apache.kyuubi.Logging
 /**
  * Helper class to wrap a [[DataFrame]] and pass its results to clients
  *
  * @since 1.5.0
  */
-final class DataFrameHolder extends Logging {
+final class DataFrameHolder {
 
   @volatile private var result: DataFrame = _
 
