@@ -85,6 +85,9 @@ object SparkSQLEngine extends Logging {
     // register the repl's output dir with the file server.
     // see also `spark.repl.classdir`
     sparkConf.set("spark.repl.class.outputDir", Main.outputDir.getAbsolutePath)
+    sparkConf.setIfMissing(
+      "spark.hadoop.mapreduce.input.fileinputformat.list-status.num-threads",
+      "20")
 
     val appName = s"kyuubi_${user}_spark_${Instant.now}"
     sparkConf.setIfMissing("spark.app.name", appName)

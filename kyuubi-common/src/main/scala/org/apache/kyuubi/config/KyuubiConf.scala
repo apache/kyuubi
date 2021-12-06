@@ -664,7 +664,6 @@ object KyuubiConf {
       .checkValue(_ > 0, "the maximum must be positive integer.")
       .createWithDefault(10)
 
-  // TODO: make it true by default
   val SESSION_ENGINE_LAUNCH_ASYNC: ConfigEntry[Boolean] =
     buildConf("session.engine.launch.async")
       .doc("When opening kyuubi session, whether to launch backend engine asynchronously." +
@@ -672,7 +671,7 @@ object KyuubiConf {
         " as the backend engine will be created asynchronously.")
       .version("1.4.0")
       .booleanConf
-      .createWithDefault(false)
+      .createWithDefault(true)
 
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("backend.server.exec.pool.size")
