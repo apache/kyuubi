@@ -26,6 +26,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.spark.ArrayFetchIterator
 import org.apache.kyuubi.engine.spark.repl.KyuubiSparkILoop
 import org.apache.kyuubi.operation.OperationType
+import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
 /**
@@ -45,6 +46,9 @@ class ExecuteScala(
     override val statement: String)
   extends SparkOperation(OperationType.EXECUTE_STATEMENT, session) {
 
+  private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
+  override def getOperationLog: Option[OperationLog] = Option(operationLog)
+
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
       new StructType().add("output", "string")
@@ -55,6 +59,7 @@ class ExecuteScala(
 
   override protected def runInternal(): Unit = {
     try {
+      OperationLog.setCurrentOperationLog(operationLog)
       spark.sparkContext.setJobGroup(statementId, statement)
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
       repl.interpret(statement) match {
