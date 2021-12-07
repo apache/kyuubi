@@ -18,7 +18,7 @@
 package org.apache.kyuubi.server.api.v1
 
 import javax.ws.rs.{GET, Path, PathParam, Produces, _}
-import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.{MediaType, Response}
 
 import scala.util.control.NonFatal
 
@@ -26,6 +26,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.operation.OperationHandle.parseOperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
 
@@ -50,6 +51,33 @@ private[v1] class OperationsResource extends ApiRequestContext {
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(s"Error getting an operation detail")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description =
+      "apply an action for an operation")
+  @PUT
+  @Path("{operationHandle}")
+  def applyOpAction(
+      request: OpActionRequest,
+      @PathParam("operationHandle") operationHandleStr: String): Response = {
+    try {
+      val operationHandle = parseOperationHandle(operationHandleStr)
+      val operationManager = backendService.sessionManager.operationManager
+
+      request.action.toLowerCase() match {
+        case "cancel" => operationManager.cancelOperation(operationHandle)
+        case "close" => operationManager.closeOperation(operationHandle)
+        case _ => throw KyuubiSQLException(s"Invalid request $request")
+      }
+      Response.ok().build()
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Error applying ${request.action} for $operationHandleStr")
     }
   }
 }
