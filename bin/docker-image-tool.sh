@@ -115,6 +115,8 @@ function build {
     KYUUBI_ROOT="$CTX_DIR/base"
   fi
 
+  local BUILD_ARGS=(${BUILD_PARAMS})
+
   # mkdir spark-binary to cache spark
   # clean cache if spark-binary exists
   if [[ ! -d "$KYUUBI_ROOT/spark-binary" ]]; then
@@ -126,6 +128,7 @@ function build {
   # In this case, we just pass SPARK_HOME without copy.
   if [[ "${SPARK_PROVIDED}" != "false" ]]; then
     BUILD_ARGS+=(--build-arg spark_home=$SPARK_HOME)
+    BUILD_ARGS+=(--build-arg is_copy="copy")
   else
     if [[ ! -d "$SPARK_HOME" ]]; then
       error "Cannot found dir $SPARK_HOME, you must configure SPARK_HOME correct."
@@ -145,8 +148,6 @@ function build {
   if [ "${TOTAL_JARS}" -eq 0 ]; then
     error "Cannot find Kyuubi JARs. This script assumes that Apache Kyuubi has first been built locally or this is a runnable distribution."
   fi
-
-  local BUILD_ARGS=(${BUILD_PARAMS})
 
   # If a custom Kyuubi_UID was set add it to build arguments
   if [ -n "$KYUUBI_UID" ]; then
