@@ -133,7 +133,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     }
   }
 
-  test("test expose to same namespace or not specified namespace") {
+  test("test expose to same namespace") {
     conf
       .unset(KyuubiConf.SERVER_KEYTAB)
       .unset(KyuubiConf.SERVER_PRINCIPAL)
@@ -153,6 +153,14 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       "--port",
       port)
     testPrematureExit(args, "Only support expose Kyuubi server instance to another domain")
+  }
+
+  test("test not specified namespace") {
+    conf
+      .unset(KyuubiConf.SERVER_KEYTAB)
+      .unset(KyuubiConf.SERVER_PRINCIPAL)
+      .set(HA_ZK_QUORUM, zkServer.getConnectString)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     val args2 = Array(
       "create",
@@ -163,7 +171,29 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       host,
       "--port",
       port)
-    testPrematureExit(args2, "Zookeeper namespace is not specified")
+    testPrematureExit(args2, "Only support expose Kyuubi server instance to another domain")
+  }
+
+  test("test expose to another namespace") {
+    conf
+      .unset(KyuubiConf.SERVER_KEYTAB)
+      .unset(KyuubiConf.SERVER_PRINCIPAL)
+      .set(HA_ZK_QUORUM, zkServer.getConnectString)
+      .set(HA_ZK_NAMESPACE, namespace)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+
+    val args = Array(
+      "create",
+      "server",
+      "--zk-quorum",
+      zkServer.getConnectString,
+      "--namespace",
+      "other-kyuubi-server",
+      "--host",
+      host,
+      "--port",
+      port)
+    testPrematureExit(args, "")
   }
 
   test("test render zookeeper service node info") {
