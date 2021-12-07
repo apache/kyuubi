@@ -36,11 +36,14 @@ import org.apache.kyuubi.util.ThriftUtils
 abstract class KyuubiOperation(opType: OperationType, session: Session)
   extends AbstractOperation(opType, session) {
 
-  private val operationClassName = getClass.getSimpleName
+  private val opTypeName = (opType match {
+    case OperationType.UNKNOWN_OPERATION => statement
+    case _ => opType.toString
+  }).toLowerCase
 
   MetricsSystem.tracing { ms =>
-    ms.incCount(MetricRegistry.name(OPERATION_OPEN, operationClassName))
-    ms.incCount(MetricRegistry.name(OPERATION_TOTAL, operationClassName))
+    ms.incCount(MetricRegistry.name(OPERATION_OPEN, opTypeName))
+    ms.incCount(MetricRegistry.name(OPERATION_TOTAL, opTypeName))
     ms.incCount(MetricRegistry.name(OPERATION_TOTAL))
   }
 
@@ -62,7 +65,7 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
         } else {
           val errorType = e.getClass.getSimpleName
           MetricsSystem.tracing(_.incCount(
-            MetricRegistry.name(OPERATION_FAIL, operationClassName, errorType)))
+            MetricRegistry.name(OPERATION_FAIL, opTypeName, errorType)))
           val ke = e match {
             case kse: KyuubiSQLException => kse
             case te: TTransportException
@@ -98,7 +101,7 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
   override def cancel(): Unit = state.synchronized {
     if (!isClosedOrCanceled) {
       setState(OperationState.CANCELED)
-      MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, operationClassName)))
+      MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opTypeName)))
       if (_remoteOpHandle != null) {
         try {
           client.cancelOperation(_remoteOpHandle)
@@ -113,7 +116,7 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
   override def close(): Unit = state.synchronized {
     if (!isClosedOrCanceled) {
       setState(OperationState.CLOSED)
-      MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, operationClassName)))
+      MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opTypeName)))
       if (_remoteOpHandle != null) {
         try {
           getOperationLog.foreach(_.close())
