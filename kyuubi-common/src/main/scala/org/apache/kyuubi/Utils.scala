@@ -103,6 +103,19 @@ object Utils extends Logging {
       error)
   }
 
+  def getAbsolutePathFromWork(pathStr: String, env: Map[String, String] = sys.env): Path = {
+    val path = Paths.get(pathStr)
+    if (path.isAbsolute) {
+      path
+    } else {
+      val workDir = env.get("KYUUBI_WORK_DIR_ROOT") match {
+        case Some(dir) => dir
+        case _ => System.getProperty("user.dir")
+      }
+      Paths.get(workDir, pathStr)
+    }
+  }
+
   /**
    * Delete a directory recursively.
    */

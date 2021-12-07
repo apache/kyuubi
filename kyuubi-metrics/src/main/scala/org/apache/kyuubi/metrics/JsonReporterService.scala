@@ -30,6 +30,7 @@ import com.codahale.metrics.MetricRegistry
 import com.codahale.metrics.json.MetricsModule
 import com.fasterxml.jackson.databind.ObjectMapper
 
+import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.metrics.MetricsConf._
 import org.apache.kyuubi.service.AbstractService
@@ -43,7 +44,7 @@ class JsonReporterService(registry: MetricRegistry)
   private var reportPath: Path = _
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
-    reportDir = Paths.get(conf.get(METRICS_JSON_LOCATION)).toAbsolutePath
+    reportDir = Utils.getAbsolutePathFromWork(conf.get(METRICS_JSON_LOCATION))
     Files.createDirectories(reportDir)
     reportPath = Paths.get(reportDir.toString, "report.json").toAbsolutePath
     super.initialize(conf)
