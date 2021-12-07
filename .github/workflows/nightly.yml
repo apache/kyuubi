@@ -21,25 +21,25 @@ jobs:
         with:
           distribution: zulu
           java-version: 8
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         with:
           path: ~/.m2/repository/com
           key: ${{ runner.os }}-maven-com-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-com-
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         with:
           path: ~/.m2/repository/org
           key: ${{ runner.os }}-maven-org-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-org-
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         with:
           path: ~/.m2/repository/net
           key: ${{ runner.os }}-maven-net-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-net-
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         with:
           path: ~/.m2/repository/io
           key: ${{ runner.os }}-maven-io-${{ hashFiles('**/pom.xml') }}
