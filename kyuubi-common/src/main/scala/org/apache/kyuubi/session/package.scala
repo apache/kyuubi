@@ -27,4 +27,6 @@ package object session {
   val METACONF_PREFIX = "metaconf:"
 
   val SPARK_PREFIX = "spark."
+
+  val CLIENT_IP_KEY = "kyuubi.clent.ip"
 }

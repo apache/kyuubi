@@ -50,13 +50,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       conf: Map[String, String]): SessionHandle = {
 
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
-
+    // inject client ip into session conf
+    val newConf = conf + (CLIENT_IP_KEY -> ipAddress)
     val sessionImpl = new KyuubiSessionImpl(
       protocol,
       username,
       password,
       ipAddress,
-      conf,
+      newConf,
       this,
       this.getConf.getUserDefaults(user))
     try {

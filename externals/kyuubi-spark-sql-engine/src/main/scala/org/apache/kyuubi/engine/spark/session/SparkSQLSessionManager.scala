@@ -57,7 +57,8 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       password: String,
       ipAddress: String,
       conf: Map[String, String]): SessionHandle = {
-    info(s"Opening session for $user@$ipAddress")
+    val clientIp = conf.getOrElse(CLIENT_IP_KEY, ipAddress)
+    info(s"Opening session for $user@$clientIp")
     val sparkSession =
       try {
         if (singleSparkSession) {
@@ -78,7 +79,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       protocol,
       user,
       password,
-      ipAddress,
+      clientIp,
       conf,
       this,
       sparkSession)
