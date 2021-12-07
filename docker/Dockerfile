@@ -25,17 +25,17 @@
 #     more options can be found with -h
 
 ARG BASE_IMAGE=openjdk:8-jre-slim
-ARG is_copy="without_copy"
+ARG spark_provided="spark_builtin"
 
-FROM ${BASE_IMAGE} as builder_copy
+FROM ${BASE_IMAGE} as builder_spark_provided
 
-FROM ${BASE_IMAGE} as builder_without_copy
+FROM ${BASE_IMAGE} as builder_spark_builtin
 
 ONBUILD ENV SPARK_BINARY /opt/spark
 ONBUILD RUN mkdir -p  ${SPARK_BINARY}
 ONBUILD COPY spark-binary ${SPARK_BINARY}
 
-FROM builder_${is_copy}
+FROM builder_${spark_provided}
 
 ARG kyuubi_uid=10009
 ARG spark_home="/opt/spark"

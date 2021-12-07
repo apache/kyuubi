@@ -128,7 +128,7 @@ function build {
   # In this case, we just pass SPARK_HOME without copy.
   if [[ "${SPARK_PROVIDED}" != "false" ]]; then
     BUILD_ARGS+=(--build-arg spark_home=$SPARK_HOME)
-    BUILD_ARGS+=(--build-arg is_copy="copy")
+    BUILD_ARGS+=(--build-arg spark_provided="spark_provided")
   else
     if [[ ! -d "$SPARK_HOME" ]]; then
       error "Cannot found dir $SPARK_HOME, you must configure SPARK_HOME correct."
