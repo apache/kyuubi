@@ -33,12 +33,12 @@ Before you start, please read the [Code of Conduct](http://www.apache.org/founda
 ## Prepare github environment
 If you are new to submit a Pull Request, the follow steps are helpful to you.
 
-1. An available [git](https://git-scm.com/downloads), you can run `git version` if you not sure you have
+1. An available [git](https://git-scm.com/downloads), you can run `git version` if you are not sure if you have
 2. Fork [Kyuubi](https://github.com/apache/incubator-kyuubi) on github, now you have a cloned Kyuubi repo 
 3. Clone your Kyuubi repo with cmd `git clone https://github.com/${yourname}/kyuubi.git`
 4. Create a new branch with cmd `git checkout -b test-branch`
 5. Modify the code you want
-6. Commit and push code to your Kyuubi repo with commd `git commit -am "comment"; git push test-branch test-branch`
+6. Commit and push code to your Kyuubi repo with command `git commit -am "comment"; git push test-branch test-branch`
 7. Back to [Kyuubi](https://github.com/apache/incubator-kyuubi), you can see a banner about `new pull request`
 8. Now we can create a pull request to Kyuubi
 
@@ -54,7 +54,7 @@ Thanks for sending a pull request!
 
 Here are some tips for you:
   1. If this is your first time, please read our contributor guidelines:
-     https://kyuubi.readthedocs.io/en/latest/community/contributions.html
+     https://kyuubi.apache.org/docs/latest/community/contributions.html
 -->
 
 ### _Which issue are you going to fix?_
@@ -79,6 +79,6 @@ Please clarify why the changes are needed. For instance,
 
 - [ ] Add screenshots for manual tests if appropriate
 
-- [ ] [Run test](https://kyuubi.readthedocs.io/en/latest/develop_tools/testing.html#running-tests) locally before make a pull request
+- [ ] [Run test](https://kyuubi.apache.org/docs/latest/develop_tools/testing.html#running-tests) locally before make a pull request
 
 ```

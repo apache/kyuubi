@@ -29,7 +29,7 @@ They are both designed to provide better support for open API clients like JDBC 
 ## Hive on Spark
 
 The purpose of Hive on Spark is to add Spark as a third execution backend, parallel to MR and Tez.
-Comparing to Hive on MR, it the Spark DAG will help improve the performance of Hive queries, especially those
+Comparing to Hive on MR, it's use the Spark DAG will help improve the performance of Hive queries, especially those
 have multiple reducer stages.
 
 

@@ -112,14 +112,14 @@ class ConfigEntryWithDefault[T](
 }
 
 class ConfigEntryWithDefaultString[T](
-   _key: String,
-   _defaultVal: String,
-   _valueConverter: String => T,
-   _strConverter: T => String,
-   _doc: String,
-   _version: String,
-   _type: String,
-   _internal: Boolean) extends ConfigEntry[T] {
+    _key: String,
+    _defaultVal: String,
+    _valueConverter: String => T,
+    _strConverter: T => String,
+    _doc: String,
+    _version: String,
+    _type: String,
+    _internal: Boolean) extends ConfigEntry[T] {
   override def defaultValStr: String = _defaultVal
 
   override def defaultVal: Option[T] = Some(valueConverter(_defaultVal))
@@ -145,11 +145,11 @@ class ConfigEntryWithDefaultString[T](
 }
 
 class ConfigEntryFallback[T](
-  _key: String,
-  _doc: String,
-  _version: String,
-  _internal: Boolean,
-  fallback: ConfigEntry[T]) extends ConfigEntry[T] {
+    _key: String,
+    _doc: String,
+    _version: String,
+    _internal: Boolean,
+    fallback: ConfigEntry[T]) extends ConfigEntry[T] {
   override def defaultValStr: String = fallback.defaultValStr
 
   override def defaultVal: Option[T] = fallback.defaultVal

@@ -48,7 +48,7 @@ object Utils extends Logging {
   def getDefaultPropertiesFile(env: Map[String, String] = sys.env): Option[File] = {
     env.get(KYUUBI_CONF_DIR)
       .orElse(env.get(KYUUBI_HOME).map(_ + File.separator + "conf"))
-      .map( d => new File(d + File.separator + KYUUBI_CONF_FILE_NAME))
+      .map(d => new File(d + File.separator + KYUUBI_CONF_FILE_NAME))
       .filter(_.exists())
       .orElse {
         Option(getClass.getClassLoader.getResource(KYUUBI_CONF_FILE_NAME)).map { url =>
@@ -74,7 +74,8 @@ object Utils extends Logging {
       } catch {
         case e: IOException =>
           throw new KyuubiException(
-            s"Failed when loading Kyuubi properties from ${f.getAbsolutePath}", e)
+            s"Failed when loading Kyuubi properties from ${f.getAbsolutePath}",
+            e)
       }
     }.getOrElse(Map.empty)
   }
@@ -96,8 +97,10 @@ object Utils extends Logging {
         case e: IOException => error = e
       }
     }
-    throw new IOException("Failed to create a temp directory (under " + root + ") after " +
-      MAX_DIR_CREATION_ATTEMPTS + " attempts!", error)
+    throw new IOException(
+      "Failed to create a temp directory (under " + root + ") after " + MAX_DIR_CREATION_ATTEMPTS +
+        " attempts!",
+      error)
   }
 
   /**

@@ -27,11 +27,13 @@ import com.google.common.annotations.VisibleForTesting
 import org.apache.curator.framework.CuratorFramework
 import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex
 import org.apache.curator.utils.ZKPaths
+import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, SERVER, ShareLevel}
+import org.apache.kyuubi.engine.EngineType.{EngineType, SPARK_SQL}
+import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, SERVER, ShareLevel}
 import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_REF_ID
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NAMESPACE
@@ -39,6 +41,7 @@ import org.apache.kyuubi.ha.client.ServiceDiscovery.getEngineByRefId
 import org.apache.kyuubi.ha.client.ServiceDiscovery.getServerHost
 import org.apache.kyuubi.metrics.MetricsConstants.{ENGINE_FAIL, ENGINE_TIMEOUT, ENGINE_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
+import org.apache.kyuubi.operation.log.OperationLog
 
 /**
  * The description and functionality of an engine at server side
@@ -60,33 +63,41 @@ private[kyuubi] class EngineRef(
   // Share level of the engine
   private val shareLevel: ShareLevel = ShareLevel.withName(conf.get(ENGINE_SHARE_LEVEL))
 
+  private val engineType: EngineType = EngineType.withName(conf.get(ENGINE_TYPE))
+
   // Server-side engine pool size threshold
   private val poolThreshold: Int = conf.get(ENGINE_POOL_SIZE_THRESHOLD)
 
+  private val clientPoolSize: Int = conf.get(ENGINE_POOL_SIZE)
+
   @VisibleForTesting
-  private[kyuubi] val subdomain: Option[String] = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN).orElse {
-    val clientPoolSize: Int = conf.get(ENGINE_POOL_SIZE)
-
-    if (clientPoolSize > 0) {
-      val poolSize = if (clientPoolSize <= poolThreshold) {
-        clientPoolSize
-      } else {
-        warn(s"Request engine pool size($clientPoolSize) exceeds, fallback to system threshold " +
-          s"$poolThreshold")
-        poolThreshold
+  private[kyuubi] val subdomain: String = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN) match {
+    case Some(_subdomain) => _subdomain
+    case None if clientPoolSize > 0 =>
+      val poolSize = math.min(clientPoolSize, poolThreshold)
+      if (poolSize < clientPoolSize) {
+        warn(s"Request engine pool size($clientPoolSize) exceeds, fallback to " +
+          s"system threshold $poolThreshold")
       }
-
       // TODO: Currently, we use random policy, and later we can add a sequential policy,
       //  such as AtomicInteger % poolSize.
-      Some("engine-pool-" + Random.nextInt(poolSize))
-    } else {
-      None
-    }
+      "engine-pool-" + Random.nextInt(poolSize)
+    case _ => "default" // [KYUUBI #1293]
   }
 
   // Launcher of the engine
-  private val appUser: String = shareLevel match {
+  private[kyuubi] val appUser: String = shareLevel match {
     case SERVER => Utils.currentUser
+    case GROUP =>
+      val clientUGI = UserGroupInformation.createRemoteUser(user)
+      // Similar to `clientUGI.getPrimaryGroupName` (avoid IOE) to get the Primary GroupName of
+      // the client user mapping to
+      clientUGI.getGroupNames.headOption match {
+        case Some(primaryGroup) => primaryGroup
+        case None =>
+          warn(s"There is no primary group for $user, use the client user name as group directly")
+          user
+      }
     case _ => user
   }
 
@@ -94,11 +105,11 @@ private[kyuubi] class EngineRef(
    * The default engine name, used as default `spark.app.name` if not set
    */
   @VisibleForTesting
-  private[kyuubi] val defaultEngineName: String = shareLevel match {
-    case CONNECTION => s"kyuubi_${shareLevel}_${appUser}_$engineRefId"
-    case _ => subdomain match {
-      case Some(domain) => s"kyuubi_${shareLevel}_${appUser}_${domain}_$engineRefId"
-      case _ => s"kyuubi_${shareLevel}_${appUser}_$engineRefId"
+  private[kyuubi] val defaultEngineName: String = {
+    val commonNamePrefix = s"kyuubi_${shareLevel}_${engineType}_${appUser}"
+    shareLevel match {
+      case CONNECTION => s"${commonNamePrefix}_$engineRefId"
+      case _ => s"${commonNamePrefix}_${subdomain}_$engineRefId"
     }
   }
 
@@ -106,17 +117,20 @@ private[kyuubi] class EngineRef(
    * The EngineSpace used to expose itself to the KyuubiServers in `serverSpace`
    *
    * For `CONNECTION` share level:
-   *   /`serverSpace_CONNECTION`/`user`/`engineRefId`
+   *   /`serverSpace_CONNECTION_engineType`/`user`/`engineRefId`
    * For `USER` share level:
-   *   /`serverSpace_USER`/`user`[/`subdomain`]
-   *
+   *   /`serverSpace_USER_engineType`/`user`[/`subdomain`]
+   * For `GROUP` share level:
+   *   /`serverSpace_GROUP_engineType`/`primary group name`[/`subdomain`]
+   * For `SERVER` share level:
+   *   /`serverSpace_SERVER_engineType`/`kyuubi server user`[/`subdomain`]
    */
   @VisibleForTesting
-  private[kyuubi] lazy val engineSpace: String = shareLevel match {
-    case CONNECTION => ZKPaths.makePath(s"${serverSpace}_$shareLevel", appUser, engineRefId)
-    case _ => subdomain match {
-      case Some(domain) => ZKPaths.makePath(s"${serverSpace}_$shareLevel", appUser, domain)
-      case None => ZKPaths.makePath(s"${serverSpace}_$shareLevel", appUser)
+  private[kyuubi] lazy val engineSpace: String = {
+    val commonParent = s"${serverSpace}_${shareLevel}_$engineType"
+    shareLevel match {
+      case CONNECTION => ZKPaths.makePath(commonParent, appUser, engineRefId)
+      case _ => ZKPaths.makePath(commonParent, appUser, subdomain)
     }
   }
 
@@ -128,7 +142,7 @@ private[kyuubi] class EngineRef(
     case CONNECTION => f
     case _ =>
       val lockPath =
-        ZKPaths.makePath(s"${serverSpace}_$shareLevel", "lock", appUser, subdomain.orNull)
+        ZKPaths.makePath(s"${serverSpace}_$shareLevel", "lock", appUser, subdomain)
       var lock: InterProcessSemaphoreMutex = null
       try {
         try {
@@ -151,18 +165,25 @@ private[kyuubi] class EngineRef(
       }
   }
 
-  private def create(zkClient: CuratorFramework): (String, Int) = tryWithLock(zkClient) {
+  private def create(
+      zkClient: CuratorFramework,
+      extraEngineLog: Option[OperationLog]): (String, Int) = tryWithLock(zkClient) {
     // Get the engine address ahead if another process has succeeded
     var engineRef = getServerHost(zkClient, engineSpace)
     if (engineRef.nonEmpty) return engineRef.get
 
-    conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
-    // tag is a seq type with comma-separated
-    conf.set(SparkProcessBuilder.TAG_KEY,
-      conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") + "KYUUBI")
     conf.set(HA_ZK_NAMESPACE, engineSpace)
     conf.set(HA_ZK_ENGINE_REF_ID, engineRefId)
-    val builder = new SparkProcessBuilder(appUser, conf)
+    val builder = engineType match {
+      case SPARK_SQL =>
+        conf.setIfMissing(SparkProcessBuilder.APP_KEY, defaultEngineName)
+        // tag is a seq type with comma-separated
+        conf.set(
+          SparkProcessBuilder.TAG_KEY,
+          conf.getOption(SparkProcessBuilder.TAG_KEY).map(_ + ",").getOrElse("") + "KYUUBI")
+        new SparkProcessBuilder(appUser, conf, extraEngineLog)
+      case _ => throw new UnsupportedOperationException(s"Unsupported engine type: ${engineType}")
+    }
     MetricsSystem.tracing(_.incCount(ENGINE_TOTAL))
     try {
       info(s"Launching engine:\n$builder")
@@ -182,10 +203,11 @@ private[kyuubi] class EngineRef(
           }
         }
         if (started + timeout <= System.currentTimeMillis()) {
+          val killMessage = builder.killApplication()
           process.destroyForcibly()
           MetricsSystem.tracing(_.incCount(MetricRegistry.name(ENGINE_TIMEOUT, appUser)))
           throw KyuubiSQLException(
-            s"Timeout($timeout ms) to launched Spark with $builder",
+            s"Timeout($timeout ms) to launched $engineType engine with $builder. $killMessage",
             builder.getError)
         }
         engineRef = getEngineByRefId(zkClient, engineSpace, engineRefId)
@@ -199,12 +221,17 @@ private[kyuubi] class EngineRef(
   }
 
   /**
-   * Get the engine ref from engine space first first or create a new one
+   * Get the engine ref from engine space first or create a new one
+   *
+   * @param zkClient the zookeeper client to get or create engine instance
+   * @param extraEngineLog the launch engine operation log, used to inject engine log into it
    */
-  def getOrCreate(zkClient: CuratorFramework): (String, Int) = {
+  def getOrCreate(
+      zkClient: CuratorFramework,
+      extraEngineLog: Option[OperationLog] = None): (String, Int) = {
     getServerHost(zkClient, engineSpace)
       .getOrElse {
-        create(zkClient)
+        create(zkClient, extraEngineLog)
       }
   }
 }

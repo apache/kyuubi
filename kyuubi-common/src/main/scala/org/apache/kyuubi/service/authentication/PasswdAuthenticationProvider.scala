@@ -20,6 +20,7 @@ package org.apache.kyuubi.service.authentication
 import javax.security.sasl.AuthenticationException
 
 trait PasswdAuthenticationProvider {
+
   /**
    * The authenticate method is called by the Kyuubi Server authentication layer
    * to authenticate users for their requests.
@@ -31,6 +32,6 @@ trait PasswdAuthenticationProvider {
    *
    * @throws AuthenticationException When a user is found to be invalid by the implementation
    */
-    @throws[AuthenticationException]
-    def authenticate(user: String, password: String): Unit
+  @throws[AuthenticationException]
+  def authenticate(user: String, password: String): Unit
 }

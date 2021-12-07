@@ -30,9 +30,7 @@ import org.apache.kyuubi.KyuubiSparkUtils.KYUUBI_STATEMENT_ID_KEY
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.Utils.stringifyException
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.spark.monitor.KyuubiStatementMonitor
-import org.apache.kyuubi.engine.spark.monitor.entity.KyuubiJobInfo
-import org.apache.kyuubi.ha.client.EngineServiceDiscovery
+import org.apache.kyuubi.engine.spark.events.{EngineEventsStore, SessionEvent, SparkStatementEvent}
 import org.apache.kyuubi.service.{Serverable, ServiceState}
 
 /**
@@ -40,7 +38,9 @@ import org.apache.kyuubi.service.{Serverable, ServiceState}
  *
  * @param server the corresponding engine
  */
-class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logging {
+class SparkSQLEngineListener(
+    server: Serverable,
+    store: EngineEventsStore) extends SparkListener with Logging {
 
   // the conf of server is null before initialized, use lazy val here
   private lazy val deregisterExceptions: Seq[String] =
@@ -57,8 +57,8 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
 
   override def onApplicationEnd(event: SparkListenerApplicationEnd): Unit = {
     server.getServiceState match {
-      case ServiceState.STOPPED => debug("Received ApplicationEnd Message form Spark after the" +
-        " engine has stopped")
+      case ServiceState.STOPPED =>
+        debug("Received ApplicationEnd Message form Spark after the engine has stopped")
       case state =>
         info(s"Received ApplicationEnd Message from Spark at $state, stopping")
         server.stop()
@@ -67,54 +67,68 @@ class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logg
 
   override def onJobStart(jobStart: SparkListenerJobStart): Unit = {
     val statementId = jobStart.properties.getProperty(KYUUBI_STATEMENT_ID_KEY)
-    val kyuubiJobInfo = KyuubiJobInfo(
-      jobStart.jobId, statementId, jobStart.stageIds, jobStart.time)
-    KyuubiStatementMonitor.putJobInfoIntoMap(kyuubiJobInfo)
     debug(s"Add jobStartInfo. Query [$statementId]: Job ${jobStart.jobId} started with " +
       s"${jobStart.stageIds.length} stages")
   }
 
   override def onJobEnd(jobEnd: SparkListenerJobEnd): Unit = {
-    KyuubiStatementMonitor.insertJobEndTimeAndResult(jobEnd)
     info(s"Job end. Job ${jobEnd.jobId} state is ${jobEnd.jobResult.toString}")
     jobEnd.jobResult match {
-     case JobFailed(e) if e != null =>
-       val cause = findCause(e)
-       var deregisterInfo: Option[String] = None
-       if (deregisterExceptions.exists(_.equals(cause.getClass.getCanonicalName))) {
-         deregisterInfo = Some("Job failed exception class is in the set of " +
-           s"${ENGINE_DEREGISTER_EXCEPTION_CLASSES.key}, deregistering the engine.")
-       } else if (deregisterMessages.exists(stringifyException(cause).contains)) {
-         deregisterInfo = Some("Job failed exception message matches the specified " +
-           s"${ENGINE_DEREGISTER_EXCEPTION_MESSAGES.key}, deregistering the engine.")
-       }
+      case JobFailed(e) if e != null =>
+        val cause = findCause(e)
+        var deregisterInfo: Option[String] = None
+        if (deregisterExceptions.exists(_.equals(cause.getClass.getCanonicalName))) {
+          deregisterInfo = Some("Job failed exception class is in the set of " +
+            s"${ENGINE_DEREGISTER_EXCEPTION_CLASSES.key}, deregistering the engine.")
+        } else if (deregisterMessages.exists(stringifyException(cause).contains)) {
+          deregisterInfo = Some("Job failed exception message matches the specified " +
+            s"${ENGINE_DEREGISTER_EXCEPTION_MESSAGES.key}, deregistering the engine.")
+        }
 
-       deregisterInfo.foreach { din =>
-         val currentTime = System.currentTimeMillis()
-         if (lastFailureTime == 0 || currentTime - lastFailureTime < deregisterExceptionTTL) {
-           jobFailureNum.incrementAndGet()
-         } else {
-           info(s"It has been more than one deregister exception ttl [$deregisterExceptionTTL ms]" +
-             " since last failure, restart counting.")
-           jobFailureNum.set(1)
-         }
-         lastFailureTime = currentTime
-         val curFailures = jobFailureNum.get()
-         error(s"$din, current job failure number is [$curFailures]", e)
-         if (curFailures >= jobMaxFailures) {
-           error(s"Job failed $curFailures times; deregistering the engine")
-           server.discoveryService.asInstanceOf[EngineServiceDiscovery].stop()
-         }
-       }
+        deregisterInfo.foreach { din =>
+          val currentTime = System.currentTimeMillis()
+          if (lastFailureTime == 0 || currentTime - lastFailureTime < deregisterExceptionTTL) {
+            jobFailureNum.incrementAndGet()
+          } else {
+            info(
+              s"It has been more than one deregister exception ttl [$deregisterExceptionTTL ms]" +
+                " since last failure, restart counting.")
+            jobFailureNum.set(1)
+          }
+          lastFailureTime = currentTime
+          val curFailures = jobFailureNum.get()
+          error(s"$din, current job failure number is [$curFailures]", e)
+          if (curFailures >= jobMaxFailures) {
+            error(s"Job failed $curFailures times; deregistering the engine")
+            val fe = server.frontendServices.head
+            fe.discoveryService.foreach(_.stop())
+          }
+        }
 
-     case _ =>
-   }
+      case _ =>
+    }
   }
 
   @tailrec
   private def findCause(t: Throwable): Throwable = t match {
     case e @ (_: SparkException | _: UndeclaredThrowableException | _: InvocationTargetException)
-      if e.getCause != null => findCause(e.getCause)
+        if e.getCause != null => findCause(e.getCause)
     case e => e
+  }
+
+  override def onOtherEvent(event: SparkListenerEvent): Unit = {
+    event match {
+      case e: SessionEvent => updateSessionStore(e)
+      case e: SparkStatementEvent => updateStatementStore(e)
+      case _ => // Ignore
+    }
+  }
+
+  private def updateSessionStore(event: SessionEvent): Unit = {
+    store.saveSession(event)
+  }
+
+  private def updateStatementStore(event: SparkStatementEvent): Unit = {
+    store.saveStatement(event)
   }
 }

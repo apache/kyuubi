@@ -20,7 +20,8 @@ package org.apache.kyuubi.engine.spark
 /**
  * Borrowed from Apache Spark, see SPARK-33655
  */
-private[engine] sealed trait FetchIterator[A] extends Iterator[A] {
+sealed private[engine] trait FetchIterator[A] extends Iterator[A] {
+
   /**
    * Begin a fetch block, forward from the current position.
    * Resets the fetch start offset.

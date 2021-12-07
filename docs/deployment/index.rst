@@ -29,8 +29,9 @@ Basics
     :numbered: 3
     :glob:
 
-    on_yarn
-    on_kubernetes
+    engine_on_yarn
+    engine_on_kubernetes
+    kyuubi_on_kubernetes
     hive_metastore
     high_availability_guide
     metrics
@@ -47,3 +48,13 @@ Configurations
 
     settings
     spark/index
+
+Engines
+-------
+
+.. toctree::
+    :maxdepth: 2
+    :numbered: 3
+    :glob:
+
+    engine_share_level
