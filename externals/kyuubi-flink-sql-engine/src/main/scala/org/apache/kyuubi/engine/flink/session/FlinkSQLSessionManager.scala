@@ -71,12 +71,12 @@ class FlinkSQLSessionManager(engineContext: EngineContext)
           ExecutionEntry.EXECUTION_RESULT_MODE_VALUE_CHANGELOG)
     }
 
-    val sessionEnv = EngineEnvironment.enrich(
+    val engineEnv = EngineEnvironment.enrich(
       engineContext.getEngineEnv,
       newProperties.asJava,
       Collections.emptyMap[String, ViewEntry])
 
-    val sessionContext = new SessionContext(sessionEnv, engineContext)
+    val sessionContext = new SessionContext(engineEnv, engineContext)
 
     val sessionImpl = new FlinkSessionImpl(
       protocol,
