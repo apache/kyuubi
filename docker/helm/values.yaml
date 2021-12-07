@@ -28,6 +28,18 @@ image:
   # Overrides the image tag whose default is the chart appVersion.
   tag: "master-snapshot"
 
+probe:
+  liveness:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    failureThreshold: 10
+  readiness:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    failureThreshold: 10
+
 server:
   bind:
     host: 0.0.0.0

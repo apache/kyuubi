@@ -43,6 +43,22 @@ spec:
             - name: frontend-port
               containerPort: {{ .Values.server.bind.port }}
               protocol: TCP
+          {{- if .Values.probe.liveness.enabled }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.server.bind.port }
+            initialDelaySeconds: {{ .Values.probe.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probe.liveness.periodSeconds }}
+            failureThreshold: {{ .Values.probe.liveness.failureThreshold }}
+          {{- end }}
+          {{- if .Values.probe.readiness.enabled }}
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.server.bind.port }
+            initialDelaySeconds: {{ .Values.probe.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probe.readiness.periodSeconds }}
+            failureThreshold: {{ .Values.probe.readiness.failureThreshold }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           volumeMounts:
