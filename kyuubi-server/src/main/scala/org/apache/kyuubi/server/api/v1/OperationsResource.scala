@@ -67,12 +67,10 @@ private[v1] class OperationsResource extends ApiRequestContext {
       @PathParam("operationHandle") operationHandleStr: String): Response = {
     try {
       val operationHandle = parseOperationHandle(operationHandleStr)
-      val operationManager = backendService.sessionManager.operationManager
-
       request.action.toLowerCase() match {
-        case "cancel" => operationManager.cancelOperation(operationHandle)
-        case "close" => operationManager.closeOperation(operationHandle)
-        case _ => throw KyuubiSQLException(s"Invalid request $request")
+        case "cancel" => backendService.cancelOperation(operationHandle)
+        case "close" => backendService.closeOperation(operationHandle)
+        case _ => throw KyuubiSQLException(s"Invalid action $request")
       }
       Response.ok().build()
     } catch {
