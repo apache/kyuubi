@@ -83,3 +83,5 @@ case class OperationDetail(
     shouldRunAsync: Boolean,
     isTimedOut: Boolean,
     operationStatus: OperationStatus)
+
+case class OpActionRequest(action: String)
