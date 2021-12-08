@@ -53,7 +53,7 @@ object AuthenticationProviderFactory {
             c.newInstance().asInstanceOf[PasswdAuthenticationProvider]
           }
         case _ => throw new AuthenticationException(
-          s"$className must extend of PasswdAuthenticationProvider.")
+            s"$className must extend of PasswdAuthenticationProvider.")
       }
     case _ => throw new AuthenticationException("Not a valid authentication method")
   }

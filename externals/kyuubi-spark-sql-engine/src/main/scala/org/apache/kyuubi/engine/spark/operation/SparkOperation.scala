@@ -22,12 +22,13 @@ import java.time.ZoneId
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.engine.spark.FetchIterator
 import org.apache.kyuubi.engine.spark.operation.SparkOperation.TIMEZONE_KEY
+import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.operation.{AbstractOperation, OperationState}
 import org.apache.kyuubi.operation.FetchOrientation._
 import org.apache.kyuubi.operation.OperationState.OperationState
@@ -36,8 +37,10 @@ import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.schema.{RowSet, SchemaHelper}
 import org.apache.kyuubi.session.Session
 
-abstract class SparkOperation(spark: SparkSession, opType: OperationType, session: Session)
+abstract class SparkOperation(opType: OperationType, session: Session)
   extends AbstractOperation(opType, session) {
+
+  protected val spark: SparkSession = session.asInstanceOf[SparkSessionImpl].spark
 
   private val timeZone: ZoneId = {
     spark.conf.getOption(TIMEZONE_KEY).map { timeZoneId =>
@@ -46,6 +49,8 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
   }
 
   protected var iter: FetchIterator[Row] = _
+
+  protected var result: DataFrame = _
 
   protected def resultSchema: StructType
 
@@ -68,11 +73,12 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
    * @return the equivalent Java regular expression of the pattern
    */
   def toJavaRegex(input: String): String = {
-    val res = if (StringUtils.isEmpty(input) || input == "*") {
-      "%"
-    } else {
-      input
-    }
+    val res =
+      if (StringUtils.isEmpty(input) || input == "*") {
+        "%"
+      } else {
+        input
+      }
     val wStr = ".*"
     res
       .replaceAll("([^\\\\])%", "$1" + wStr).replaceAll("\\\\%", "%").replaceAll("^%", wStr)
@@ -91,6 +97,7 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
           setOperationException(ke)
           throw ke
         } else if (isTerminalState(state)) {
+          setOperationException(KyuubiSQLException(errMsg))
           warn(s"Ignore exception in terminal state with $statementId: $errMsg")
         } else {
           setState(OperationState.ERROR)

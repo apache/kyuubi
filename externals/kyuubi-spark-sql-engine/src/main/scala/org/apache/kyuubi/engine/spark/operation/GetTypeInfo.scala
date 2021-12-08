@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.spark.operation
 
 import java.sql.Types._
 
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.engine.spark.IterableFetchIterator
@@ -27,28 +27,48 @@ import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
-class GetTypeInfo(spark: SparkSession, session: Session)
-  extends SparkOperation(spark, OperationType.GET_TYPE_INFO, session) {
+class GetTypeInfo(session: Session)
+  extends SparkOperation(OperationType.GET_TYPE_INFO, session) {
   override protected def resultSchema: StructType = {
     new StructType()
       .add(TYPE_NAME, "string", nullable = false, "Type name")
       .add(DATA_TYPE, "int", nullable = false, "SQL data type from java.sql.Types")
       .add(PRECISION, "int", nullable = false, "Maximum precision")
-      .add("LITERAL_PREFIX", "string", nullable = true, "Prefix used to quote a literal (may be" +
-        " null)")
-      .add("LITERAL_SUFFIX", "string", nullable = true, "Suffix used to quote a literal (may be" +
-        " null)")
-      .add("CREATE_PARAMS", "string", nullable = true, "Parameters used in creating the type (may" +
-        " be null)")
+      .add(
+        "LITERAL_PREFIX",
+        "string",
+        nullable = true,
+        "Prefix used to quote a literal (may be" +
+          " null)")
+      .add(
+        "LITERAL_SUFFIX",
+        "string",
+        nullable = true,
+        "Suffix used to quote a literal (may be" +
+          " null)")
+      .add(
+        "CREATE_PARAMS",
+        "string",
+        nullable = true,
+        "Parameters used in creating the type (may" +
+          " be null)")
       .add(NULLABLE, "smallint", nullable = false, "Can you use NULL for this type")
       .add(CASE_SENSITIVE, "boolean", nullable = false, "Is it case sensitive")
       .add(SEARCHABLE, "smallint", nullable = false, "Can you use 'WHERE' based on this type")
       .add("UNSIGNED_ATTRIBUTE", "boolean", nullable = false, "Is it unsigned")
       .add("FIXED_PREC_SCALE", "boolean", nullable = false, "Can it be a money value")
-      .add("AUTO_INCREMENT", "boolean", nullable = false, "Can it be used for an auto-increment" +
-        " value")
-      .add("LOCAL_TYPE_NAME", "string", nullable = true, "Localized version of type name (may be" +
-        " null)")
+      .add(
+        "AUTO_INCREMENT",
+        "boolean",
+        nullable = false,
+        "Can it be used for an auto-increment" +
+          " value")
+      .add(
+        "LOCAL_TYPE_NAME",
+        "string",
+        nullable = true,
+        "Localized version of type name (may be" +
+          " null)")
       .add("MINIMUM_SCALE", "smallint", nullable = false, "Minimum scale supported")
       .add("MAXIMUM_SCALE", "smallint", nullable = false, "Maximum scale supported")
       .add(SQL_DATA_TYPE, "int", nullable = true, "Unused")
@@ -58,11 +78,13 @@ class GetTypeInfo(spark: SparkSession, session: Session)
 
   private def isNumericType(javaType: Int): Boolean = {
     javaType == TINYINT || javaType == SMALLINT || javaType == INTEGER || javaType == BIGINT ||
-      javaType == FLOAT || javaType == FLOAT || javaType == DOUBLE || javaType == DECIMAL
+    javaType == FLOAT || javaType == FLOAT || javaType == DOUBLE || javaType == DECIMAL
   }
 
   private def toRow(name: String, javaType: Int, precision: Integer = null): Row = {
-    Row(name,                                        // TYPE_NAME
+    // format: off
+    Row(
+      name,                                          // TYPE_NAME
       javaType,                                      // DATA_TYPE
       precision,                                     // PRECISION
       null,                                          // LITERAL_PREFIX
@@ -81,6 +103,7 @@ class GetTypeInfo(spark: SparkSession, session: Session)
       null,                                          // SQL_DATETIME_SUB
       if (isNumericType(javaType)) 10 else null      // NUM_PREC_RADIX
     )
+    // format: on
   }
 
   override protected def runInternal(): Unit = {
@@ -101,7 +124,6 @@ class GetTypeInfo(spark: SparkSession, session: Session)
       toRow("ARRAY", ARRAY),
       toRow("MAP", JAVA_OBJECT),
       toRow("STRUCT", STRUCT),
-      toRow("INTERVAL", OTHER)
-    ))
+      toRow("INTERVAL", OTHER)))
   }
 }

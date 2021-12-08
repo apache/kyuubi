@@ -18,8 +18,11 @@
 package org.apache.kyuubi.engine.spark.session
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.spark.sql.{AnalysisException, SparkSession}
 
 import org.apache.kyuubi.engine.spark.events.{EventLoggingService, SessionEvent}
+import org.apache.kyuubi.engine.spark.operation.SparkSQLOperationManager
+import org.apache.kyuubi.engine.spark.udf.KDFRegistry
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
 
@@ -29,13 +32,27 @@ class SparkSessionImpl(
     password: String,
     ipAddress: String,
     conf: Map[String, String],
-    sessionManager: SessionManager)
+    sessionManager: SessionManager,
+    val spark: SparkSession)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
   override val handle: SessionHandle = SessionHandle(protocol)
+
+  private def setModifiableConfig(key: String, value: String): Unit = {
+    try {
+      spark.conf.set(key, value)
+    } catch {
+      case e: AnalysisException => warn(e.getMessage())
+    }
+  }
 
   private val sessionEvent = SessionEvent(this)
 
   override def open(): Unit = {
+    normalizedConf.foreach {
+      case ("use:database", database) => spark.catalog.setCurrentDatabase(database)
+      case (key, value) => setModifiableConfig(key, value)
+    }
+    KDFRegistry.registerAll(spark)
     EventLoggingService.onEvent(sessionEvent)
     super.open()
   }
@@ -49,6 +66,7 @@ class SparkSessionImpl(
     sessionEvent.endTime = System.currentTimeMillis()
     EventLoggingService.onEvent(sessionEvent)
     super.close()
+    sessionManager.operationManager.asInstanceOf[SparkSQLOperationManager].closeILoop(handle)
   }
 
 }

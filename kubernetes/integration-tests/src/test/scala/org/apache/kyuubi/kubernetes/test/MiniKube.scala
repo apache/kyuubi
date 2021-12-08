@@ -33,9 +33,10 @@ object MiniKube {
   def executeMinikube(logOutput: Boolean, action: String, args: String*): Seq[String] = {
     ProcessUtils.executeProcess(
       Array("bash", "-c", s"MINIKUBE_IN_STYLE=true minikube $action ${args.mkString(" ")}"),
-      MINIKUBE_STARTUP_TIMEOUT_SECONDS, dumpOutput = logOutput).filter { x =>
+      MINIKUBE_STARTUP_TIMEOUT_SECONDS,
+      dumpOutput = logOutput).filter { x =>
       !x.contains("There is a newer version of minikube") &&
-        !x.contains("https://github.com/kubernetes")
+      !x.contains("https://github.com/kubernetes")
     }
   }
 
@@ -52,13 +53,17 @@ object MiniKube {
     versionArrayOpt match {
       case Some(Array(x, y, z)) =>
         if (Ordering.Tuple3[Int, Int, Int].lt((x, y, z), (1, 7, 3))) {
-          assert(false, s"Unsupported Minikube version is detected: $minikubeVersionString." +
-            "For integration testing Minikube version 1.7.3 or greater is expected.")
+          assert(
+            false,
+            s"Unsupported Minikube version is detected: $minikubeVersionString." +
+              "For integration testing Minikube version 1.7.3 or greater is expected.")
         }
       case _ =>
-        assert(false, s"Unexpected version format detected in `$minikubeVersionString`." +
-          "For minikube version a three-part version number is expected (the optional " +
-          "non-numeric suffix is intentionally dropped)")
+        assert(
+          false,
+          s"Unexpected version format detected in `$minikubeVersionString`." +
+            "For minikube version a three-part version number is expected (the optional " +
+            "non-numeric suffix is intentionally dropped)")
     }
 
     new DefaultKubernetesClient(Config.autoConfigure("minikube"))

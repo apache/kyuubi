@@ -17,8 +17,15 @@
 
 package org.apache.spark.kyuubi
 
+import org.apache.hadoop.security.Credentials
 import org.apache.spark.SparkContext
+import org.apache.spark.deploy.SparkHadoopUtil
+import org.apache.spark.scheduler.SchedulerBackend
+import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages.UpdateDelegationTokens
+import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
+import org.apache.spark.scheduler.local.LocalSchedulerBackend
 
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.spark.events.KyuubiSparkEvent
 import org.apache.kyuubi.events.EventLogger
 
@@ -26,10 +33,25 @@ import org.apache.kyuubi.events.EventLogger
  * A place to invoke non-public APIs of [[SparkContext]], anything to be added here need to
  * think twice
  */
-object SparkContextHelper {
+object SparkContextHelper extends Logging {
+
   def createSparkHistoryLogger(sc: SparkContext): EventLogger[KyuubiSparkEvent] = {
     new SparkHistoryEventLogger(sc)
   }
+
+  def updateDelegationTokens(sc: SparkContext, creds: Credentials): Unit = {
+    val bytes = SparkHadoopUtil.get.serialize(creds)
+    sc.schedulerBackend match {
+      case _: LocalSchedulerBackend =>
+        SparkHadoopUtil.get.addDelegationTokens(bytes, sc.conf)
+      case backend: CoarseGrainedSchedulerBackend =>
+        backend.driverEndpoint.send(UpdateDelegationTokens(bytes))
+      case backend: SchedulerBackend =>
+        warn(s"Failed to update delegation tokens due to unsupported SchedulerBackend " +
+          s"${backend.getClass.getName}.")
+    }
+  }
+
 }
 
 /**

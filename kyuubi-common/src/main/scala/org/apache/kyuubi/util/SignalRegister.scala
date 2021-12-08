@@ -35,10 +35,11 @@ object SignalRegister extends Logging {
       if (SystemUtils.IS_OS_UNIX) {
         val signal = new Signal(sig)
         try {
-          val handler = handlers.getOrElseUpdate(sig, {
-            info(s"Registering signal handler for $sig")
-            ActionHandler(signal)
-          })
+          val handler = handlers.getOrElseUpdate(
+            sig, {
+              info(s"Registering signal handler for $sig")
+              ActionHandler(signal)
+            })
           handler.register({
             log.error(s"RECEIVED SIGNAL ${signal.getNumber}: " + sig)
             false

@@ -28,7 +28,6 @@ import org.apache.kyuubi.engine.spark.SparkSQLEngine
 import org.apache.kyuubi.service.ServiceState
 
 /**
- *
  * @param applicationId application id a.k.a, the unique id for engine
  * @param applicationName the application name
  * @param owner the application user
@@ -70,11 +69,12 @@ case class EngineEvent(
     val executorCore = settings.getOrElse("spark.executor.cores", 2)
     val executorMemory = settings.getOrElse("spark.executor.memory", "1g")
     val dae = settings.getOrElse("spark.dynamicAllocation.enabled", "false").toBoolean
-    val maxExecutors = if (dae) {
-      settings.getOrElse("spark.dynamicAllocation.maxExecutors", Int.MaxValue)
-    } else {
-      settings.getOrElse("spark.executor.instances", 2)
-    }
+    val maxExecutors =
+      if (dae) {
+        settings.getOrElse("spark.dynamicAllocation.maxExecutors", Int.MaxValue)
+      } else {
+        settings.getOrElse("spark.executor.instances", 2)
+      }
     s"""
        |    Spark application name: $applicationName
        |          application ID:  $applicationId
@@ -82,7 +82,7 @@ case class EngineEvent(
        |          master: $master
        |          version: $sparkVersion
        |          driver: [cpu: $driverCores, mem: $driverMemory]
-       |          executor: [cpu: $executorCore, mem: $executorMemory MB, maxNum: $maxExecutors]
+       |          executor: [cpu: $executorCore, mem: $executorMemory, maxNum: $maxExecutors]
        |    Start time: ${new Date(startTime)}
        |    ${if (endTime != -1L) "End time: " + new Date(endTime) else ""}
        |    User: $owner (shared mode: $shareLevel)
@@ -98,13 +98,19 @@ object EngineEvent {
     val webUrl = sc.getConf.getOption(
       "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")
       .orElse(sc.uiWebUrl).getOrElse("")
+    val connectionUrl =
+      if (engine.getServiceState.equals(ServiceState.LATENT)) {
+        null
+      } else {
+        engine.frontendServices.head.connectionUrl
+      }
     new EngineEvent(
       sc.applicationId,
       sc.applicationAttemptId,
       sc.appName,
       sc.sparkUser,
       engine.getConf.get(ENGINE_SHARE_LEVEL),
-      engine.connectionUrl,
+      connectionUrl,
       sc.master,
       sc.version,
       webUrl,

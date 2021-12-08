@@ -157,7 +157,7 @@ After finish one task,  Spark Driver will schedule a new task for the executor w
 
 </div>
 
-If one executor reach the maximn timeout, it will be removed.
+If one executor reached the maximum timeout, it will be removed.
 ```properties
 spark.dynamicAllocation.executorIdleTimeout=60s
 spark.dynamicAllocation.cachedExecutorIdleTimeout=infinity

@@ -50,7 +50,7 @@ With Maven, you can use the -DwildcardSuites flag to run individual Scala tests:
 ./build/mvn test -Dtest=none -DwildcardSuites=org.apache.kyuubi.service.FrontendServiceSuite
 ```
 
-If you want to make a single test that need integrate with kyuubi-spark-sql-engine module, please build the package for kyuubi-spark-sql-engine module at first.
+If you want to make a single test that need to integrate with kyuubi-spark-sql-engine module, please build the package for kyuubi-spark-sql-engine module at first.
 
 You can leverage the ready-made tool for creating a binary distribution.
 

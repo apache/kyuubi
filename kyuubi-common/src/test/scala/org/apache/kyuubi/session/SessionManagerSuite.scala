@@ -23,6 +23,7 @@ import org.apache.hive.service.rpc.thrift._
 import org.scalatest.concurrent.Eventually
 import org.scalatest.time.{Seconds, Span}
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.ThriftFrontendServiceSuite
 
@@ -34,9 +35,11 @@ class SessionManagerSuite extends ThriftFrontendServiceSuite with Eventually {
     .set(KyuubiConf.SESSION_CHECK_INTERVAL, Duration.ofSeconds(5).toMillis)
     .set(KyuubiConf.SESSION_IDLE_TIMEOUT, Duration.ofSeconds(5).toMillis)
     .set(KyuubiConf.OPERATION_IDLE_TIMEOUT, Duration.ofSeconds(20).toMillis)
+    .set(KyuubiConf.SESSION_CONF_RESTRICT_LIST, Seq("spark.*"))
+    .set(KyuubiConf.SESSION_CONF_IGNORE_LIST, Seq("session.engine.*"))
 
   test("close expired operations") {
-    withSessionHandle{ (client, handle) =>
+    withSessionHandle { (client, handle) =>
       val req = new TCancelOperationReq()
       val req1 = new TGetSchemasReq(handle)
       val resp1 = client.GetSchemas(req1)
@@ -58,7 +61,7 @@ class SessionManagerSuite extends ThriftFrontendServiceSuite with Eventually {
       assert(lastAccessTime < session.lastAccessTime)
       lastAccessTime = session.lastAccessTime
 
-      eventually (timeout(Span(60, Seconds)), interval(Span(1, Seconds))) {
+      eventually(timeout(Span(60, Seconds)), interval(Span(1, Seconds))) {
         assert(session.lastIdleTime > lastAccessTime)
       }
 
@@ -66,10 +69,26 @@ class SessionManagerSuite extends ThriftFrontendServiceSuite with Eventually {
       assert(lastAccessTime == session.lastAccessTime)
       assert(sessionManager.getOpenSessionCount == 1)
 
-      eventually (timeout(Span(60, Seconds)), interval(Span(1, Seconds))) {
+      eventually(timeout(Span(60, Seconds)), interval(Span(1, Seconds))) {
         assert(session.lastAccessTime > lastAccessTime)
       }
       assert(sessionManager.getOpenSessionCount == 0)
     }
+  }
+
+  test("test validate and normalize config") {
+    val sessionManager = server.backendService.sessionManager
+    // test restrict
+    intercept[KyuubiSQLException] {
+      sessionManager.validateAndNormalizeConf(Map("spark.driver.memory" -> "2G"))
+    }
+
+    // test ignore
+    val conf = sessionManager.validateAndNormalizeConf(
+      Map(
+        "session.engine.spark.main.resource" -> "org.apahce.kyuubi.test",
+        "session.check.interval" -> "10000"))
+    assert(conf.size == 1)
+    assert(conf("session.check.interval") == "10000")
   }
 }

@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.4.0-SNAPSHOT</version>
+        <version>1.5.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -36,9 +36,6 @@
             <plugin>
                 <groupId>com.googlecode.maven-download-plugin</groupId>
                 <artifactId>download-maven-plugin</artifactId>
-                <configuration>
-                    <skip>${spark.archive.download.skip}</skip>
-                </configuration>
                 <executions>
                     <execution>
                         <id>download-spark-release</id>
@@ -47,6 +44,7 @@
                             <goal>wget</goal>
                         </goals>
                         <configuration>
+                            <skip>${spark.archive.download.skip}</skip>
                             <url>${spark.archive.mirror}/${spark.archive.name}</url>
                             <!-- sha512>${spark.archive.sha512}</sha512 -->
                             <outputDirectory>${project.build.directory}</outputDirectory>
@@ -55,7 +53,30 @@
                             <unpack>true</unpack>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>download-flink-release</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${flink.archive.download.skip}</skip>
+                            <url>${flink.archive.mirror}/${flink.archive.name}</url>
+                            <outputDirectory>${project.build.directory}</outputDirectory>
+                            <readTimeOut>60000</readTimeOut>
+                            <retries>3</retries>
+                            <unpack>true</unpack>
+                        </configuration>
+                    </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
             </plugin>
         </plugins>
     </build>

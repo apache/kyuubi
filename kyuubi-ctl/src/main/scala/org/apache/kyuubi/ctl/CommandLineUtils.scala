@@ -74,7 +74,10 @@ private[kyuubi] object Tabulator {
     if (str == null) 0 else str.length + fullWidthRegex.findAllIn(str).size
   }
 
-  def format(title: String, header: Seq[String], rows: Seq[Seq[String]],
+  def format(
+      title: String,
+      header: Seq[String],
+      rows: Seq[Seq[String]],
       verbose: Boolean): String = {
     val data = if (verbose) Seq(header).union(rows) else rows
     val sb = new StringBuilder

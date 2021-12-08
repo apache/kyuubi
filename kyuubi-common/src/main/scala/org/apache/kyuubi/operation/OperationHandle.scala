@@ -17,12 +17,14 @@
 
 package org.apache.kyuubi.operation
 
-import java.util.Objects
+import java.util.{Objects, UUID}
 
 import scala.language.implicitConversions
+import scala.util.control.NonFatal
 
 import org.apache.hive.service.rpc.thrift.{TOperationHandle, TProtocolVersion}
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.cli.{Handle, HandleIdentifier}
 import org.apache.kyuubi.operation.OperationType.OperationType
 
@@ -64,7 +66,8 @@ object OperationHandle {
   }
 
   def apply(tOperationHandle: TOperationHandle, protocol: TProtocolVersion): OperationHandle = {
-    apply(HandleIdentifier(tOperationHandle.getOperationId),
+    apply(
+      HandleIdentifier(tOperationHandle.getOperationId),
       OperationType.getOperationType(tOperationHandle.getOperationType),
       protocol)
   }
@@ -79,5 +82,24 @@ object OperationHandle {
     tOperationHandle.setOperationType(OperationType.toTOperationType(handle.typ))
     tOperationHandle.setHasResultSet(handle._hasResultSet)
     tOperationHandle
+  }
+
+  def parseOperationHandle(operationHandleStr: String): OperationHandle = {
+    try {
+      val operationHandleParts = operationHandleStr.split("\\|")
+      require(
+        operationHandleParts.size == 4,
+        s"Expected 4 parameters but found ${operationHandleParts.size}.")
+
+      val handleIdentifier = HandleIdentifier(
+        UUID.fromString(operationHandleParts(0)),
+        UUID.fromString(operationHandleParts(1)))
+      val protocolVersion = TProtocolVersion.findByValue(operationHandleParts(2).toInt)
+      val operationType = OperationType.withName(operationHandleParts(3))
+      OperationHandle(handleIdentifier, operationType, protocolVersion)
+    } catch {
+      case NonFatal(e) =>
+        throw KyuubiSQLException(s"Invalid $operationHandleStr", e)
+    }
   }
 }
