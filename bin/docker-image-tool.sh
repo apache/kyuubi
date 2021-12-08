@@ -124,10 +124,12 @@ function build {
   else
     rm -rf "$KYUUBI_ROOT/spark-binary/*"
   fi
-  # if with spark image means, kyuubi won't copy spark from local.
-  # In this case, we just pass SPARK_HOME without copy.
-  if [[ "${SPARK_PROVIDED}" != "false" ]]; then
-    BUILD_ARGS+=(--build-arg spark_home=$SPARK_HOME)
+
+  # If SPARK_HOME_IN_DOCKER configured,
+  # Kyuubi won't copy local spark into docker image.
+  # Use SPARK_HOME_IN_DOCKER as SPARK_HOME in docker image.
+  if [[ -n "${SPARK_HOME_IN_DOCKER}" ]]; then
+    BUILD_ARGS+=(--build-arg spark_home_in_docker=$SPARK_HOME_IN_DOCKER)
     BUILD_ARGS+=(--build-arg spark_provided="spark_provided")
   else
     if [[ ! -d "$SPARK_HOME" ]]; then
@@ -232,8 +234,8 @@ NOCACHEARG=
 BUILD_PARAMS=
 KYUUBI_UID=
 CROSS_BUILD="false"
-SPARK_PROVIDED="false"
-while getopts f:r:t:Xnb:u:s:p option
+SPARK_HOME_IN_DOCKER=
+while getopts f:r:t:Xnb:u:s:d: option
 do
  case "${option}"
  in
@@ -245,7 +247,7 @@ do
  X) CROSS_BUILD=1;;
  u) KYUUBI_UID=${OPTARG};;
  s) SPARK_HOME=${OPTARG};;
- p) SPARK_PROVIDED=1;;
+ d) SPARK_HOME_IN_DOCKER=${OPTARG};;
  esac
 done
 
