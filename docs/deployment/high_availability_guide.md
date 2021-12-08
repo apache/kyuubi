@@ -75,7 +75,7 @@ In this mode, multiple `k.i.`s can be registered to the same ServerSpace configu
 
 ## Client-side Usage
 
-With [Kyuubi Hive JDBC Driver](https://mvnrepository.com/artifact/org.apache.kyuubi/kyuubi-hive-jdbc) or raw Hive JDBC Driver, a client can specify service discovery mode in JDBC connection string, i.e. `serviceDiscoveryMode=zooKeeper;` and set `zooKeeperNamespace=kyuubi;`, then it can randomly pick one of the Kyuubi service uris from the specified ZooKeeper addresses in the `/kyuubi` path.
+With [Kyuubi Hive JDBC Driver](https://mvnrepository.com/artifact/org.apache.kyuubi/kyuubi-hive-jdbc) or vanilla Hive JDBC Driver, a client can specify service discovery mode in JDBC connection string, i.e. `serviceDiscoveryMode=zooKeeper;` and set `zooKeeperNamespace=kyuubi;`, then it can randomly pick one of the Kyuubi service uris from the specified ZooKeeper addresses in the `/kyuubi` path.
 
 For example,
 
