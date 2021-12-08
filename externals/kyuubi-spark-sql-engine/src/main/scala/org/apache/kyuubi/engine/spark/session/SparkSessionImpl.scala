@@ -30,6 +30,7 @@ class SparkSessionImpl(
     protocol: TProtocolVersion,
     user: String,
     password: String,
+    serverIpAddress: String,
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: SessionManager,
@@ -53,6 +54,7 @@ class SparkSessionImpl(
       case (key, value) => setModifiableConfig(key, value)
     }
     KDFRegistry.registerAll(spark)
+    sessionEvent.serverIp = serverIpAddress
     EventLoggingService.onEvent(sessionEvent)
     super.open()
   }

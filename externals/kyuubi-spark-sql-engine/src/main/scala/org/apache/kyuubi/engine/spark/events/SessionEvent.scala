@@ -31,6 +31,7 @@ import org.apache.kyuubi.session.Session
  * @param startTime Start time
  * @param endTime End time
  * @param ip Client IP address
+ * @param serverIp Kyuubi Server IP address
  * @param totalOperations how many queries and meta calls
  */
 case class SessionEvent(
@@ -40,6 +41,7 @@ case class SessionEvent(
     ip: String,
     startTime: Long,
     var endTime: Long = -1L,
+    var serverIp: String = "",
     var totalOperations: Int = 0) extends KyuubiSparkEvent {
 
   override def schema: StructType = Encoders.product[SessionEvent].schema

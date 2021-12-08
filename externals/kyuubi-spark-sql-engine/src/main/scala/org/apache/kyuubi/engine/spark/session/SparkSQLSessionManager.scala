@@ -79,6 +79,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       protocol,
       user,
       password,
+      ipAddress,
       clientIp,
       conf,
       this,
