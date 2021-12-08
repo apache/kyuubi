@@ -26,8 +26,6 @@ import org.apache.thrift.TException
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.events.KyuubiStatementEvent
-import org.apache.kyuubi.metrics.MetricsConstants._
-import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
@@ -67,10 +65,6 @@ class ExecuteStatement(
 
   private def executeStatement(): Unit = {
     try {
-      MetricsSystem.tracing { ms =>
-        ms.incCount(STATEMENT_OPEN)
-        ms.incCount(STATEMENT_TOTAL)
-      }
       // We need to avoid executing query in sync mode, because there is no heartbeat mechanism
       // in thrift protocol, in sync mode, we cannot distinguish between long-run query and
       // engine crash without response before socket read timeout.
@@ -183,7 +177,6 @@ class ExecuteStatement(
   }
 
   override def close(): Unit = {
-    MetricsSystem.tracing(_.decCount(STATEMENT_OPEN))
     super.close()
   }
 }

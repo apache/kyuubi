@@ -85,10 +85,10 @@ class MetricsSystemSuite extends KyuubiFunSuite {
     metricsSystem.start()
     val reportFile = Paths.get(reportPath.toString, "report.json")
     checkJsonFileMetrics(reportFile, "heap.usage")
-    metricsSystem.incCount(MetricsConstants.STATEMENT_TOTAL)
+    metricsSystem.incCount(MetricsConstants.OPERATION_TOTAL)
 
-    checkJsonFileMetrics(reportFile, MetricsConstants.STATEMENT_TOTAL)
-    metricsSystem.decCount(MetricsConstants.STATEMENT_TOTAL)
+    checkJsonFileMetrics(reportFile, MetricsConstants.OPERATION_TOTAL)
+    metricsSystem.decCount(MetricsConstants.OPERATION_TOTAL)
     metricsSystem.registerGauge(MetricsConstants.CONN_OPEN, 20181117, 0)
     checkJsonFileMetrics(reportFile, MetricsConstants.CONN_OPEN)
     checkJsonFileMetrics(reportFile, "20181117")
