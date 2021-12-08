@@ -75,7 +75,8 @@ private[v1] class OperationsResource extends ApiRequestContext {
       Response.ok().build()
     } catch {
       case NonFatal(_) =>
-        throw new NotFoundException(s"Error applying ${request.action} for operation handle $operationHandleStr")
+        throw new NotFoundException(s"Error applying ${request.action} " +
+          s"for operation handle $operationHandleStr")
     }
   }
 }
