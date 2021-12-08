@@ -24,15 +24,25 @@
 #     -t the target repo and tag name
 #     more options can be found with -h
 
-ARG BASE_IMAGE=8-jre-slim
-FROM openjdk:${BASE_IMAGE}
+ARG BASE_IMAGE=openjdk:8-jre-slim
+ARG spark_provided="spark_builtin"
+
+FROM ${BASE_IMAGE} as builder_spark_provided
+ONBUILD ARG spark_home_in_docker
+ONBUILD ENV SPARK_HOME ${spark_home_in_docker}
+
+FROM ${BASE_IMAGE} as builder_spark_builtin
+
+ONBUILD ENV SPARK_HOME /opt/spark
+ONBUILD RUN mkdir -p  ${SPARK_HOME}
+ONBUILD COPY spark-binary ${SPARK_HOME}
+
+FROM builder_${spark_provided}
 
 ARG kyuubi_uid=10009
-
 USER root
 
 ENV KYUUBI_HOME /opt/kyuubi
-ENV SPARK_HOME /opt/spark
 ENV KYUUBI_LOG_DIR ${KYUUBI_HOME}/logs
 ENV KYUUBI_PID_DIR ${KYUUBI_HOME}/pid
 ENV KYUUBI_WORK_DIR_ROOT ${KYUUBI_HOME}/work
@@ -42,12 +52,11 @@ RUN set -ex && \
     apt-get update && \
     apt install -y bash tini libc6 libpam-modules krb5-user libnss3 procps && \
     useradd -u ${kyuubi_uid} -g root kyuubi && \
-    mkdir -p ${KYUUBI_HOME} ${KYUUBI_LOG_DIR} ${KYUUBI_PID_DIR} ${KYUUBI_WORK_DIR_ROOT} ${SPARK_HOME} && \
+    mkdir -p ${KYUUBI_HOME} ${KYUUBI_LOG_DIR} ${KYUUBI_PID_DIR} ${KYUUBI_WORK_DIR_ROOT} && \
     chmod ug+rw -R ${KYUUBI_HOME} && \
     chmod a+rwx -R ${KYUUBI_WORK_DIR_ROOT} && \
     rm -rf /var/cache/apt/*
 
-COPY spark-binary ${SPARK_HOME}
 COPY bin ${KYUUBI_HOME}/bin
 COPY jars ${KYUUBI_HOME}/jars
 COPY externals/engines/spark ${KYUUBI_HOME}/externals/engines/spark
