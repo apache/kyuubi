@@ -35,8 +35,7 @@ object HighAvailabilityConf {
     .createWithDefault("")
 
   val HA_ZK_NAMESPACE: ConfigEntry[String] = buildConf("ha.zookeeper.namespace")
-    .doc("The root directory for the service to deploy its instance uri. Additionally, it will" +
-      " creates a -[username] suffixed root directory for each application")
+    .doc("The root directory for the service to deploy its instance uri")
     .version("1.0.0")
     .stringConf
     .createWithDefault("kyuubi")
