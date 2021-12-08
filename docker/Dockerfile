@@ -26,19 +26,18 @@
 
 ARG BASE_IMAGE=openjdk:8-jre-slim
 ARG spark_provided="spark_builtin"
+ARG spark_home="/opt/spark"
 
 FROM ${BASE_IMAGE} as builder_spark_provided
 
 FROM ${BASE_IMAGE} as builder_spark_builtin
 
-ONBUILD ENV SPARK_BINARY /opt/spark
-ONBUILD RUN mkdir -p  ${SPARK_BINARY}
-ONBUILD COPY spark-binary ${SPARK_BINARY}
+ONBUILD RUN mkdir -p  ${spark_home}
+ONBUILD COPY spark-binary ${spark_home}
 
 FROM builder_${spark_provided}
 
 ARG kyuubi_uid=10009
-ARG spark_home="/opt/spark"
 USER root
 
 ENV KYUUBI_HOME /opt/kyuubi
