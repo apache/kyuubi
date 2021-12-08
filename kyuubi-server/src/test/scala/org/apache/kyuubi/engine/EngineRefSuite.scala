@@ -109,7 +109,9 @@ class EngineRefSuite extends KyuubiFunSuite {
         conf.set(k.key, "abc")
         val engineRef2 = new EngineRef(conf, user, id)
         assert(engineRef2.engineSpace ===
-          ZKPaths.makePath(s"kyuubi_${KYUUBI_VERSION}_${GROUP}_${SPARK_SQL}", primaryGroupName,
+          ZKPaths.makePath(
+            s"kyuubi_${KYUUBI_VERSION}_${GROUP}_${SPARK_SQL}",
+            primaryGroupName,
             "abc"))
         assert(engineRef2.defaultEngineName ===
           s"kyuubi_${GROUP}_${SPARK_SQL}_${primaryGroupName}_abc_$id")
