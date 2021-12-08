@@ -64,24 +64,6 @@ public class DeploymentEntry extends ConfigEntry {
     properties.validateInt(DEPLOYMENT_ENGINE_PORT, true, 0, 65535);
   }
 
-  public long getResponseTimeout() {
-    return properties
-        .getOptionalLong(DEPLOYMENT_RESPONSE_TIMEOUT)
-        .orElseGet(() -> useDefaultValue(DEPLOYMENT_RESPONSE_TIMEOUT, 10000L));
-  }
-
-  public String getEngineAddress() {
-    return properties
-        .getOptionalString(DEPLOYMENT_ENGINE_ADDRESS)
-        .orElseGet(() -> useDefaultValue(DEPLOYMENT_ENGINE_ADDRESS, ""));
-  }
-
-  public int getEnginePort() {
-    return properties
-        .getOptionalInt(DEPLOYMENT_ENGINE_PORT)
-        .orElseGet(() -> useDefaultValue(DEPLOYMENT_ENGINE_PORT, 0));
-  }
-
   /**
    * Parses the given command line options from the deployment properties. Ignores properties that
    * are not defined by options.
@@ -120,15 +102,6 @@ public class DeploymentEntry extends ConfigEntry {
     return CliFrontendParser.parse(commandLineOptions, args.toArray(new String[args.size()]), true);
   }
 
-  private <V> V useDefaultValue(String key, V defaultValue) {
-    LOG.info(
-        "Property '{}.{}' not specified. Using default value: {}",
-        DEPLOYMENT_ENTRY,
-        key,
-        defaultValue);
-    return defaultValue;
-  }
-
   public Map<String, String> asTopLevelMap() {
     return properties.asPrefixedMap(DEPLOYMENT_ENTRY + '.');
   }
@@ -153,10 +126,7 @@ public class DeploymentEntry extends ConfigEntry {
     return new DeploymentEntry(properties);
   }
 
-  /**
-   * Creates a new deployment entry enriched with additional properties that are prefixed with
-   * {@link Environment#DEPLOYMENT_ENTRY}.
-   */
+  /** Creates a new deployment entry enriched with additional properties that are prefixed with */
   public static DeploymentEntry enrich(
       DeploymentEntry deployment, Map<String, String> prefixedProperties) {
     final Map<String, String> enrichedProperties = new HashMap<>(deployment.asMap());

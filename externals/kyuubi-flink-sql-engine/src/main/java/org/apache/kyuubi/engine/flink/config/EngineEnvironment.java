@@ -18,14 +18,10 @@
 
 package org.apache.kyuubi.engine.flink.config;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonMappingException;
 import org.apache.kyuubi.engine.flink.config.entries.CatalogEntry;
 import org.apache.kyuubi.engine.flink.config.entries.ConfigurationEntry;
 import org.apache.kyuubi.engine.flink.config.entries.DeploymentEntry;
@@ -105,84 +101,16 @@ public class EngineEnvironment {
     return modules;
   }
 
-  public void setModules(List<Map<String, Object>> modules) {
-    this.modules = new LinkedHashMap<>(modules.size());
-
-    modules.forEach(
-        config -> {
-          final ModuleEntry entry = ModuleEntry.create(config);
-          if (this.modules.containsKey(entry.getName())) {
-            throw new RuntimeException(
-                String.format(
-                    "Cannot register module '%s' because a module with this name is already registered.",
-                    entry.getName()));
-          }
-          this.modules.put(entry.getName(), entry);
-        });
-  }
-
   public Map<String, CatalogEntry> getCatalogs() {
     return catalogs;
-  }
-
-  public void setCatalogs(List<Map<String, Object>> catalogs) {
-    this.catalogs = new HashMap<>(catalogs.size());
-
-    catalogs.forEach(
-        config -> {
-          final CatalogEntry catalog = CatalogEntry.create(config);
-          if (this.catalogs.containsKey(catalog.getName())) {
-            throw new RuntimeException(
-                String.format(
-                    "Cannot create catalog '%s' because a catalog with this name is already registered.",
-                    catalog.getName()));
-          }
-          this.catalogs.put(catalog.getName(), catalog);
-        });
   }
 
   public Map<String, TableEntry> getTables() {
     return tables;
   }
 
-  public void setTables(List<Map<String, Object>> tables) {
-    this.tables = new LinkedHashMap<>(tables.size());
-
-    tables.forEach(
-        config -> {
-          final TableEntry table = TableEntry.create(config);
-          if (this.tables.containsKey(table.getName())) {
-            throw new RuntimeException(
-                "Cannot create table '"
-                    + table.getName()
-                    + "' because a table with this name is already registered.");
-          }
-          this.tables.put(table.getName(), table);
-        });
-  }
-
   public Map<String, FunctionEntry> getFunctions() {
     return functions;
-  }
-
-  public void setFunctions(List<Map<String, Object>> functions) {
-    this.functions = new HashMap<>(functions.size());
-
-    functions.forEach(
-        config -> {
-          final FunctionEntry function = FunctionEntry.create(config);
-          if (this.functions.containsKey(function.getName())) {
-            throw new RuntimeException(
-                "Cannot create function '"
-                    + function.getName()
-                    + "' because a function with this name is already registered.");
-          }
-          this.functions.put(function.getName(), function);
-        });
-  }
-
-  public void setExecution(Map<String, Object> config) {
-    this.execution = ExecutionEntry.create(config);
   }
 
   public ExecutionEntry getExecution() {
@@ -195,10 +123,6 @@ public class EngineEnvironment {
 
   public ConfigurationEntry getConfiguration() {
     return configuration;
-  }
-
-  public void setDeployment(Map<String, Object> config) {
-    this.deployment = DeploymentEntry.create(config);
   }
 
   public DeploymentEntry getDeployment() {
@@ -258,24 +182,6 @@ public class EngineEnvironment {
   }
 
   // --------------------------------------------------------------------------------------------
-
-  /** Parses an environment file from an URL. */
-  public static EngineEnvironment parse(URL url) throws IOException {
-    try {
-      return new ConfigUtil.LowerCaseYamlMapper().readValue(url, EngineEnvironment.class);
-    } catch (JsonMappingException e) {
-      throw new RuntimeException("Could not parse environment file. Cause: " + e.getMessage());
-    }
-  }
-
-  /** Parses an environment file from an String. */
-  public static EngineEnvironment parse(String content) throws IOException {
-    try {
-      return new ConfigUtil.LowerCaseYamlMapper().readValue(content, EngineEnvironment.class);
-    } catch (JsonMappingException e) {
-      throw new RuntimeException("Could not parse environment file. Cause: " + e.getMessage());
-    }
-  }
 
   /**
    * Merges two environments. The properties of the first environment might be overwritten by the

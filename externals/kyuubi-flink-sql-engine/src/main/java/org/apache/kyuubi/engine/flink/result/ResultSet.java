@@ -22,7 +22,6 @@ import com.google.common.collect.Iterators;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import javax.annotation.Nullable;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.Preconditions;
@@ -32,10 +31,6 @@ import org.apache.flink.util.Preconditions;
  * change flags for streaming mode.
  */
 public class ResultSet {
-  static final String FIELD_NAME_RESULT_KIND = "result_kind";
-  static final String FIELD_NAME_COLUMNS = "columns";
-  static final String FIELD_NAME_DATA = "data";
-  static final String FIELD_NAME_CHANGE_FLAGS = "change_flags";
 
   private final ResultKind resultKind;
   private final List<ColumnInfo> columns;
@@ -68,20 +63,12 @@ public class ResultSet {
     }
   }
 
-  public ResultKind getResultKind() {
-    return resultKind;
-  }
-
   public List<ColumnInfo> getColumns() {
     return columns;
   }
 
   public FetchIterator<Row> getData() {
     return data;
-  }
-
-  public Optional<List<Boolean>> getChangeFlags() {
-    return Optional.ofNullable(changeFlags);
   }
 
   @Override

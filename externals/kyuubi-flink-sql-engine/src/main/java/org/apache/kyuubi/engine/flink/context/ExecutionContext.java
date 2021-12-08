@@ -35,8 +35,6 @@ import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
-import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.api.dag.Pipeline;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.client.ClientUtils;
 import org.apache.flink.client.cli.CliArgsException;
@@ -157,32 +155,8 @@ public class ExecutionContext<ClusterID> {
     checkState(clusterClientFactory != null);
   }
 
-  public Configuration getFlinkConfig() {
-    return flinkConfig;
-  }
-
-  public ClassLoader getClassLoader() {
-    return classLoader;
-  }
-
-  public EngineEnvironment getEnvironment() {
-    return engineEnvironment;
-  }
-
   public ClusterDescriptor<ClusterID> createClusterDescriptor(Configuration configuration) {
     return clusterClientFactory.createClusterDescriptor(configuration);
-  }
-
-  public Map<String, Catalog> getCatalogs() {
-    Map<String, Catalog> catalogs = new HashMap<>();
-    for (String name : tableEnv.listCatalogs()) {
-      tableEnv.getCatalog(name).ifPresent(c -> catalogs.put(name, c));
-    }
-    return catalogs;
-  }
-
-  public SessionState getSessionState() {
-    return this.sessionState;
   }
 
   /**
@@ -207,29 +181,8 @@ public class ExecutionContext<ClusterID> {
     return tableEnv;
   }
 
-  public ExecutionConfig getExecutionConfig() {
-    if (streamExecEnv != null) {
-      return streamExecEnv.getConfig();
-    } else {
-      return execEnv.getConfig();
-    }
-  }
-
   public ClusterClientFactory<ClusterID> getClusterClientFactory() {
     return clusterClientFactory;
-  }
-
-  public Pipeline createPipeline(String name) {
-    return wrapClassLoader(
-        () -> {
-          if (streamExecEnv != null) {
-            StreamTableEnvironmentImpl streamTableEnv = (StreamTableEnvironmentImpl) tableEnv;
-            return streamTableEnv.getPipeline(name);
-          } else {
-            BatchTableEnvironmentImpl batchTableEnv = (BatchTableEnvironmentImpl) tableEnv;
-            return batchTableEnv.getPipeline(name);
-          }
-        });
   }
 
   /** Returns a builder for this {@link ExecutionContext}. */

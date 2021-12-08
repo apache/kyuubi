@@ -26,32 +26,6 @@ import org.apache.flink.types.Row;
 /** Utility class for flink operation. */
 public class OperationUtil {
 
-  public static final ResultSet OK =
-      ResultSet.builder()
-          .resultKind(ResultKind.SUCCESS)
-          .columns(ColumnInfo.create(Constants.RESULT, new VarCharType(2)))
-          .data(new Row[] {Row.of(Constants.OK)})
-          .build();
-
-  public static ResultSet singleStringToResultSet(String str, String columnName) {
-    boolean isNullable;
-    int length;
-
-    if (str == null) {
-      isNullable = true;
-      length = VarCharType.DEFAULT_LENGTH;
-    } else {
-      isNullable = false;
-      length = str.length();
-    }
-
-    return ResultSet.builder()
-        .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
-        .columns(ColumnInfo.create(columnName, new VarCharType(isNullable, length)))
-        .data(new Row[] {Row.of(str)})
-        .build();
-  }
-
   public static ResultSet stringListToResultSet(List<String> strings, String columnName) {
     List<Row> data = new ArrayList<>();
     boolean isNullable = false;

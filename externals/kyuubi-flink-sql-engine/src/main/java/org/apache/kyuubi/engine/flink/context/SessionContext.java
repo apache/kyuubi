@@ -33,16 +33,8 @@ public class SessionContext {
     this.executionContext = createExecutionContextBuilder(originalSessionEnv).build();
   }
 
-  public EngineEnvironment getOriginalSessionEnv() {
-    return this.originalSessionEnv;
-  }
-
   public ExecutionContext<?> getExecutionContext() {
     return executionContext;
-  }
-
-  public void setExecutionContext(ExecutionContext<?> executionContext) {
-    this.executionContext = executionContext;
   }
 
   /** Returns ExecutionContext.Builder with given {@link SessionContext} session context. */

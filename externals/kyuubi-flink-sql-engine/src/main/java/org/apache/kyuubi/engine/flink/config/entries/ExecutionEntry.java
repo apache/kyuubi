@@ -203,10 +203,6 @@ public class ExecutionEntry extends ConfigEntry {
     return false;
   }
 
-  public String getPlanner() {
-    return properties.getOptionalString(EXECUTION_PLANNER).orElse(EXECUTION_PLANNER_VALUE_OLD);
-  }
-
   public boolean isBatchPlanner() {
     final String planner =
         properties.getOptionalString(EXECUTION_PLANNER).orElse(EXECUTION_PLANNER_VALUE_OLD);
@@ -249,18 +245,6 @@ public class ExecutionEntry extends ConfigEntry {
     return properties
         .getOptionalLong(EXECUTION_PERIODIC_WATERMARKS_INTERVAL)
         .orElseGet(() -> useDefaultValue(EXECUTION_PERIODIC_WATERMARKS_INTERVAL, 200L));
-  }
-
-  public long getMinStateRetention() {
-    return properties
-        .getOptionalLong(EXECUTION_MIN_STATE_RETENTION)
-        .orElseGet(() -> useDefaultValue(EXECUTION_MIN_STATE_RETENTION, 0L));
-  }
-
-  public long getMaxStateRetention() {
-    return properties
-        .getOptionalLong(EXECUTION_MAX_STATE_RETENTION)
-        .orElseGet(() -> useDefaultValue(EXECUTION_MAX_STATE_RETENTION, 0L));
   }
 
   public int getParallelism() {
@@ -344,12 +328,6 @@ public class ExecutionEntry extends ConfigEntry {
 
   public Map<String, String> asTopLevelMap() {
     return properties.asPrefixedMap(EXECUTION_ENTRY + '.');
-  }
-
-  public int getMaxBufferSize() {
-    return properties
-        .getOptionalInt(EXECUTION_MAX_BUFFER_SIZE)
-        .orElseGet(() -> useDefaultValue(EXECUTION_MAX_BUFFER_SIZE, 5000));
   }
 
   private <V> V useDefaultValue(String key, V defaultValue) {

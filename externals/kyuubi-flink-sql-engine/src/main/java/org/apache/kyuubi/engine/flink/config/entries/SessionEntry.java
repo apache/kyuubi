@@ -21,7 +21,6 @@ package org.apache.kyuubi.engine.flink.config.entries;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.flink.table.descriptors.DescriptorProperties;
-import org.apache.flink.util.TimeUtils;
 import org.apache.kyuubi.engine.flink.config.ConfigUtil;
 import org.apache.kyuubi.engine.flink.config.EngineEnvironment;
 
@@ -68,19 +67,5 @@ public class SessionEntry extends ConfigEntry {
     properties.putProperties(mergedProperties);
 
     return new SessionEntry(properties);
-  }
-
-  public long getIdleTimeout() {
-    String timeout = properties.getOptionalString(SESSION_IDLE_TIMEOUT).orElse("1d");
-    return TimeUtils.parseDuration(timeout).toMillis();
-  }
-
-  public long getCheckInterval() {
-    String interval = properties.getOptionalString(SESSION_CHECK_INTERVAL).orElse("1h");
-    return TimeUtils.parseDuration(interval).toMillis();
-  }
-
-  public long getMaxCount() {
-    return properties.getOptionalLong(SESSION_MAX_COUNT).orElse(1000000L);
   }
 }

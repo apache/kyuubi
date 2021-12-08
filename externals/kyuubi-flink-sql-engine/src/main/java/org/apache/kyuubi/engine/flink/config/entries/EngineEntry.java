@@ -20,7 +20,6 @@ package org.apache.kyuubi.engine.flink.config.entries;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import org.apache.flink.table.descriptors.DescriptorProperties;
 import org.apache.kyuubi.engine.flink.config.ConfigUtil;
 import org.apache.kyuubi.engine.flink.config.EngineEnvironment;
@@ -30,10 +29,6 @@ public class EngineEntry extends ConfigEntry {
 
   public static final EngineEntry DEFAULT_INSTANCE =
       new EngineEntry(new DescriptorProperties(true));
-
-  private static final String DEFAULT_ADDRESS = "127.0.0.1";
-
-  private static final int DEFAULT_PORT = 8083;
 
   private static final String ENGINE_BIND_ADDRESS = "bind-address";
 
@@ -75,21 +70,5 @@ public class EngineEntry extends ConfigEntry {
     properties.putProperties(mergedProperties);
 
     return new EngineEntry(properties);
-  }
-
-  public Optional<String> getBindAddress() {
-    return properties.getOptionalString(ENGINE_BIND_ADDRESS);
-  }
-
-  public String getAddress() {
-    return properties.getOptionalString(ENGINE_ADDRESS).orElse(DEFAULT_ADDRESS);
-  }
-
-  public int getPort() {
-    return properties.getOptionalInt(ENGINE_PORT).orElse(DEFAULT_PORT);
-  }
-
-  public String getJvmArgs() {
-    return properties.getOptionalString(JVM_ARGS).orElse("");
   }
 }
