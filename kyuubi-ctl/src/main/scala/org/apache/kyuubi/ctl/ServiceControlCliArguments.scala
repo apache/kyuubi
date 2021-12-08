@@ -151,9 +151,7 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
       }
     }
 
-    // for create action, it only expose Kyuubi service instance to another domain,
-    // so we do not use namespace from default conf
-    if (arguments.action != ServiceControlAction.CREATE && arguments.namespace == null) {
+    if (arguments.namespace == null) {
       arguments = arguments.copy(namespace = conf.get(HA_ZK_NAMESPACE))
       if (arguments.verbose) {
         super.info(s"Zookeeper namespace is not specified, use value from default conf:" +
@@ -188,11 +186,12 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
     validateZkArguments()
 
     val defaultNamespace = conf.getOption(HA_ZK_NAMESPACE.key)
-    if (defaultNamespace.isEmpty || defaultNamespace.get.equals(cliArgs.namespace)) {
+      .getOrElse(HA_ZK_NAMESPACE.defaultValStr)
+    if (defaultNamespace.equals(cliArgs.namespace)) {
       fail(
         s"""
-           |Only support expose Kyuubi server instance to another domain, but the default
-           |namespace is [$defaultNamespace] and specified namespace is [${cliArgs.namespace}]
+           |Only support expose Kyuubi server instance to another domain, a different namespace
+           |than the default namespace [$defaultNamespace] should be specified.
         """.stripMargin)
     }
   }
@@ -223,11 +222,7 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
       fail("Zookeeper quorum is not specified and no default value to load")
     }
     if (cliArgs.namespace == null) {
-      if (cliArgs.action == ServiceControlAction.CREATE) {
-        fail("Zookeeper namespace is not specified")
-      } else {
-        fail("Zookeeper namespace is not specified and no default value to load")
-      }
+      fail("Zookeeper namespace is not specified and no default value to load")
     }
   }
 
