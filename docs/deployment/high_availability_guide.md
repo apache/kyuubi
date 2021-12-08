@@ -23,7 +23,7 @@
 
 # Kyuubi High Availability Guide
 
-As an enterprise-class ad-hoc SQL query service built on top of [Apache Spark](http://spark.apache.org/), Kyuubi takes high availability (HA) as a major characteristic, aiming to ensure an agreed level of service availability, such as a higher than normal period of uptime.
+As an enterprise-class ad-hoc SQL query service built on top of [Apache Spark](https://spark.apache.org/), Kyuubi takes high availability (HA) as a major characteristic, aiming to ensure an agreed level of service availability, such as a higher than normal period of uptime.
 
 Running Kyuubi in HA mode is to use groups of computers or containers that support SQL query service on Kyuubi that can be reliably utilized with a minimum amount of down-time. Kyuubi operates by using [Apache ZooKeeper](https://zookeeper.apache.org/) to harness redundant service instances in groups that provide continuous service when one or more components fail.
 
