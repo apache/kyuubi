@@ -199,6 +199,8 @@ Options:
                         be used separately for each build arg.
   -s                    Put the specified Spark into the Kyuubi image to be used as the internal SPARK_HOME
                         of the container.
+  -S                    Declare SPARK_HOME in Docker Image. When you configured -S, you need to provide an image
+                        with Spark as BASE_IMAGE.
 
 Examples:
 
@@ -219,6 +221,9 @@ Examples:
   - Build with Spark placed "/path/spark"
     $0 -s /path/spark build
 
+  - Build with Spark Image myrepo/spark:3.1.0
+    $0 -S /opt/spark -b BASE_IMAGE=myrepo/spark:3.1.0 build
+
 EOF
 }
 
@@ -235,7 +240,7 @@ BUILD_PARAMS=
 KYUUBI_UID=
 CROSS_BUILD="false"
 SPARK_HOME_IN_DOCKER=
-while getopts f:r:t:Xnb:u:s:d: option
+while getopts f:r:t:Xnb:u:s:S: option
 do
  case "${option}"
  in
@@ -247,7 +252,7 @@ do
  X) CROSS_BUILD=1;;
  u) KYUUBI_UID=${OPTARG};;
  s) SPARK_HOME=${OPTARG};;
- d) SPARK_HOME_IN_DOCKER=${OPTARG};;
+ S) SPARK_HOME_IN_DOCKER=${OPTARG};;
  esac
 done
 
