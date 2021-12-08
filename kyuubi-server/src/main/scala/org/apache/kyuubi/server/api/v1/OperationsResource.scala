@@ -70,12 +70,12 @@ private[v1] class OperationsResource extends ApiRequestContext {
       request.action.toLowerCase() match {
         case "cancel" => backendService.cancelOperation(operationHandle)
         case "close" => backendService.closeOperation(operationHandle)
-        case _ => throw KyuubiSQLException(s"Invalid action $request")
+        case _ => throw KyuubiSQLException(s"Invalid action ${request.action}")
       }
       Response.ok().build()
     } catch {
       case NonFatal(_) =>
-        throw new NotFoundException(s"Error applying ${request.action} for $operationHandleStr")
+        throw new NotFoundException(s"Error applying ${request.action} for operation handle $operationHandleStr")
     }
   }
 }
