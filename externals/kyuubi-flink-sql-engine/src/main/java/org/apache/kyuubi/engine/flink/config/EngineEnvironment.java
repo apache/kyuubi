@@ -20,7 +20,6 @@ package org.apache.kyuubi.engine.flink.config;
 
 import java.util.Collections;
 import java.util.Map;
-import org.apache.kyuubi.engine.flink.config.entries.ConfigurationEntry;
 import org.apache.kyuubi.engine.flink.config.entries.EngineEntry;
 import org.apache.kyuubi.engine.flink.config.entries.ExecutionEntry;
 
@@ -42,12 +41,9 @@ public class EngineEnvironment {
 
   private ExecutionEntry execution;
 
-  private ConfigurationEntry configuration;
-
   public EngineEnvironment() {
     this.engine = EngineEntry.DEFAULT_INSTANCE;
     this.execution = ExecutionEntry.DEFAULT_INSTANCE;
-    this.configuration = ConfigurationEntry.DEFAULT_INSTANCE;
   }
 
   public void setEngine(Map<String, Object> config) {
@@ -62,14 +58,6 @@ public class EngineEnvironment {
     return execution;
   }
 
-  public void setConfiguration(Map<String, Object> config) {
-    this.configuration = ConfigurationEntry.create(config);
-  }
-
-  public ConfigurationEntry getConfiguration() {
-    return configuration;
-  }
-
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder();
@@ -77,8 +65,6 @@ public class EngineEnvironment {
     engine.asTopLevelMap().forEach((k, v) -> sb.append(k).append(": ").append(v).append('\n'));
     sb.append("=================== Execution ====================\n");
     execution.asTopLevelMap().forEach((k, v) -> sb.append(k).append(": ").append(v).append('\n'));
-    sb.append("================== Configuration =================\n");
-    configuration.asMap().forEach((k, v) -> sb.append(k).append(": ").append(v).append('\n'));
     return sb.toString();
   }
 
@@ -97,10 +83,6 @@ public class EngineEnvironment {
     // merge execution properties
     mergedEnv.execution = ExecutionEntry.merge(env1.getExecution(), env2.getExecution());
 
-    // merge configuration properties
-    mergedEnv.configuration =
-        ConfigurationEntry.merge(env1.getConfiguration(), env2.getConfiguration());
-
     return mergedEnv;
   }
 
@@ -114,9 +96,6 @@ public class EngineEnvironment {
 
     // enrich execution properties
     enrichedEnv.execution = ExecutionEntry.enrich(env.execution, properties);
-
-    // enrich configuration properties
-    enrichedEnv.configuration = ConfigurationEntry.enrich(env.configuration, properties);
 
     // does not change engine properties
     enrichedEnv.engine = env.getEngine();

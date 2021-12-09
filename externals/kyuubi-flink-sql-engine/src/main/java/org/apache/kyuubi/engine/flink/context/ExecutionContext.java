@@ -203,10 +203,6 @@ public class ExecutionContext<ClusterID> {
     final EnvironmentSettings settings = engineEnvironment.getExecution().getEnvironmentSettings();
     // Step 0.0 Initialize the table configuration.
     final TableConfig config = new TableConfig();
-    engineEnvironment
-        .getConfiguration()
-        .asMap()
-        .forEach((k, v) -> config.getConfiguration().setString(k, v));
     final boolean noInheritedState = sessionState == null;
     if (noInheritedState) {
       // --------------------------------------------------------------------------------------------------------------
