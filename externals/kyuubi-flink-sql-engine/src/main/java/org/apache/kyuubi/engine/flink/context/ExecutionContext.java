@@ -25,7 +25,6 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -64,7 +63,6 @@ import org.apache.flink.table.delegation.Executor;
 import org.apache.flink.table.delegation.ExecutorFactory;
 import org.apache.flink.table.delegation.Planner;
 import org.apache.flink.table.delegation.PlannerFactory;
-import org.apache.flink.table.descriptors.CoreModuleDescriptorValidator;
 import org.apache.flink.table.factories.BatchTableSinkFactory;
 import org.apache.flink.table.factories.BatchTableSourceFactory;
 import org.apache.flink.table.factories.CatalogFactory;
@@ -382,20 +380,6 @@ public class ExecutionContext<ClusterID> {
 
       // Must initialize the table engineEnvironment before actually the
       createTableEnvironment(settings, config, catalogManager, moduleManager, functionCatalog);
-
-      // --------------------------------------------------------------------------------------------------------------
-      // Step.2 Create modules and load them into the TableEnvironment.
-      // --------------------------------------------------------------------------------------------------------------
-      // No need to register the modules info if already inherit from the same session.
-      Map<String, Module> modules = new LinkedHashMap<>();
-      engineEnvironment
-          .getModules()
-          .forEach((name, entry) -> modules.put(name, createModule(entry.asMap(), classLoader)));
-      if (!modules.isEmpty()) {
-        // unload core module first to respect whatever users configure
-        tableEnv.unloadModule(CoreModuleDescriptorValidator.MODULE_TYPE_CORE);
-        modules.forEach(tableEnv::loadModule);
-      }
 
       // --------------------------------------------------------------------------------------------------------------
       // Step.4 Create catalogs and register them.

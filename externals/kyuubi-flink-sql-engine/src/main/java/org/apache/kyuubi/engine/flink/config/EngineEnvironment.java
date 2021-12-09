@@ -27,7 +27,6 @@ import org.apache.kyuubi.engine.flink.config.entries.ConfigurationEntry;
 import org.apache.kyuubi.engine.flink.config.entries.DeploymentEntry;
 import org.apache.kyuubi.engine.flink.config.entries.EngineEntry;
 import org.apache.kyuubi.engine.flink.config.entries.ExecutionEntry;
-import org.apache.kyuubi.engine.flink.config.entries.ModuleEntry;
 import org.apache.kyuubi.engine.flink.config.entries.SessionEntry;
 import org.apache.kyuubi.engine.flink.config.entries.TableEntry;
 import org.apache.kyuubi.engine.flink.config.entries.ViewEntry;
@@ -54,8 +53,6 @@ public class EngineEnvironment {
 
   private SessionEntry session;
 
-  private Map<String, ModuleEntry> modules;
-
   private Map<String, CatalogEntry> catalogs;
 
   private Map<String, TableEntry> tables;
@@ -69,7 +66,6 @@ public class EngineEnvironment {
   public EngineEnvironment() {
     this.engine = EngineEntry.DEFAULT_INSTANCE;
     this.session = SessionEntry.DEFAULT_INSTANCE;
-    this.modules = new LinkedHashMap<>();
     this.catalogs = Collections.emptyMap();
     this.tables = Collections.emptyMap();
     this.execution = ExecutionEntry.DEFAULT_INSTANCE;
@@ -91,10 +87,6 @@ public class EngineEnvironment {
 
   public EngineEntry getEngine() {
     return engine;
-  }
-
-  public Map<String, ModuleEntry> getModules() {
-    return modules;
   }
 
   public Map<String, CatalogEntry> getCatalogs() {
@@ -128,14 +120,6 @@ public class EngineEnvironment {
     engine.asTopLevelMap().forEach((k, v) -> sb.append(k).append(": ").append(v).append('\n'));
     sb.append("==================== Session =====================\n");
     session.asTopLevelMap().forEach((k, v) -> sb.append(k).append(": ").append(v).append('\n'));
-    sb.append("===================== Modules =====================\n");
-    modules.forEach(
-        (name, module) -> {
-          sb.append("- ").append(ModuleEntry.MODULE_NAME).append(": ").append(name).append("\n");
-          module
-              .asMap()
-              .forEach((k, v) -> sb.append("  ").append(k).append(": ").append(v).append('\n'));
-        });
     sb.append("===================== Catalogs =====================\n");
     catalogs.forEach(
         (name, catalog) -> {
@@ -176,11 +160,6 @@ public class EngineEnvironment {
     // merge session properties
     mergedEnv.session = SessionEntry.merge(env1.getSession(), env2.getSession());
 
-    // merge modules
-    final Map<String, ModuleEntry> modules = new LinkedHashMap<>(env1.getModules());
-    modules.putAll(env2.getModules());
-    mergedEnv.modules = modules;
-
     // merge catalogs
     final Map<String, CatalogEntry> catalogs = new HashMap<>(env1.getCatalogs());
     catalogs.putAll(env2.getCatalogs());
@@ -212,8 +191,6 @@ public class EngineEnvironment {
   public static EngineEnvironment enrich(
       EngineEnvironment env, Map<String, String> properties, Map<String, ViewEntry> views) {
     final EngineEnvironment enrichedEnv = new EngineEnvironment();
-
-    enrichedEnv.modules = new LinkedHashMap<>(env.getModules());
 
     // merge catalogs
     enrichedEnv.catalogs = new LinkedHashMap<>(env.getCatalogs());
