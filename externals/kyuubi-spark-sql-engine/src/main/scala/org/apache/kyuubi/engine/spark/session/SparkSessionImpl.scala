@@ -30,6 +30,7 @@ class SparkSessionImpl(
     protocol: TProtocolVersion,
     user: String,
     password: String,
+    serverIpAddress: String,
     ipAddress: String,
     conf: Map[String, String],
     sessionManager: SessionManager,
@@ -46,6 +47,8 @@ class SparkSessionImpl(
   }
 
   private val sessionEvent = SessionEvent(this)
+
+  def serverIpAddress(): String = serverIpAddress
 
   override def open(): Unit = {
     normalizedConf.foreach {

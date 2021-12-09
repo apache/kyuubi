@@ -45,6 +45,7 @@ case class EngineSessionPage(parent: EngineTab)
         <h4>
           User {sessionStat.username},
           IP {sessionStat.ip},
+          Server {sessionStat.serverIp},
           Session created at {formatDate(sessionStat.startTime)},
           Total run {sessionStat.totalOperations} SQL
         </h4> ++
