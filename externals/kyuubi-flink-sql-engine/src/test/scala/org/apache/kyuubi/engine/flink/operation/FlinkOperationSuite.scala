@@ -29,7 +29,7 @@ import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.flink.config.EngineEnvironment
-import org.apache.kyuubi.engine.flink.config.entries.{ExecutionEntry, ViewEntry}
+import org.apache.kyuubi.engine.flink.config.entries.ExecutionEntry
 import org.apache.kyuubi.engine.flink.context.{EngineContext, SessionContext}
 import org.apache.kyuubi.engine.flink.session.{FlinkSessionImpl, FlinkSQLSessionManager}
 import org.apache.kyuubi.operation.FetchOrientation
@@ -53,8 +53,7 @@ class FlinkOperationSuite extends KyuubiFunSuite {
     engineEnv = EngineEnvironment.enrich(
       engineContext.getEngineEnv,
       Map(EngineEnvironment.EXECUTION_ENTRY + "." + ExecutionEntry.EXECUTION_TYPE
-        -> ExecutionEntry.EXECUTION_TYPE_VALUE_BATCH).asJava,
-      Collections.emptyMap[String, ViewEntry])
+        -> ExecutionEntry.EXECUTION_TYPE_VALUE_BATCH).asJava)
     sessionContext = new SessionContext(engineEnv, engineContext)
     val flinkSQLSessionManager = new FlinkSQLSessionManager(engineContext)
     flinkSQLSessionManager.initialize(KyuubiConf())

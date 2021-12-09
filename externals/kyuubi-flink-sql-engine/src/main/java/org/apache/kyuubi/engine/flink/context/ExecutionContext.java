@@ -24,7 +24,6 @@ import static org.apache.flink.util.Preconditions.checkState;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -47,7 +46,6 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.EnvironmentSettings;
-import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableConfig;
 import org.apache.flink.table.api.TableException;
 import org.apache.flink.table.api.bridge.java.BatchTableEnvironment;
@@ -84,11 +82,6 @@ import org.apache.flink.util.TemporaryClassLoaderContext;
 import org.apache.kyuubi.engine.flink.config.EngineEnvironment;
 import org.apache.kyuubi.engine.flink.config.entries.DeploymentEntry;
 import org.apache.kyuubi.engine.flink.config.entries.ExecutionEntry;
-import org.apache.kyuubi.engine.flink.config.entries.SinkTableEntry;
-import org.apache.kyuubi.engine.flink.config.entries.SourceSinkTableEntry;
-import org.apache.kyuubi.engine.flink.config.entries.SourceTableEntry;
-import org.apache.kyuubi.engine.flink.config.entries.TemporalTableEntry;
-import org.apache.kyuubi.engine.flink.config.entries.ViewEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -445,60 +438,6 @@ public class ExecutionContext<ClusterID> {
         });
 
     // --------------------------------------------------------------------------------------------------------------
-    // Step.2 create table sources & sinks, and register them.
-    // --------------------------------------------------------------------------------------------------------------
-    Map<String, TableSource<?>> tableSources = new HashMap<>();
-    Map<String, TableSink<?>> tableSinks = new HashMap<>();
-    engineEnvironment
-        .getTables()
-        .forEach(
-            (name, entry) -> {
-              if (entry instanceof SourceTableEntry || entry instanceof SourceSinkTableEntry) {
-                tableSources.put(
-                    name,
-                    createTableSource(
-                        engineEnvironment.getExecution(), entry.asMap(), classLoader));
-              }
-              if (entry instanceof SinkTableEntry || entry instanceof SourceSinkTableEntry) {
-                tableSinks.put(
-                    name,
-                    createTableSink(engineEnvironment.getExecution(), entry.asMap(), classLoader));
-              }
-            });
-    // register table sources
-    tableSources.forEach(tableEnv::registerTableSourceInternal);
-    // register table sinks
-    tableSinks.forEach(tableEnv::registerTableSinkInternal);
-
-    // --------------------------------------------------------------------------------------------------------------
-    // Step.4 Register temporal tables.
-    // --------------------------------------------------------------------------------------------------------------
-    engineEnvironment
-        .getTables()
-        .forEach(
-            (name, entry) -> {
-              if (entry instanceof TemporalTableEntry) {
-                final TemporalTableEntry temporalTableEntry = (TemporalTableEntry) entry;
-                registerTemporalTable(temporalTableEntry);
-              }
-            });
-
-    // --------------------------------------------------------------------------------------------------------------
-    // Step.5 Register views in specified order.
-    // --------------------------------------------------------------------------------------------------------------
-    engineEnvironment
-        .getTables()
-        .forEach(
-            (name, entry) -> {
-              // if registering a view fails at this point,
-              // it means that it accesses tables that are not available anymore
-              if (entry instanceof ViewEntry) {
-                final ViewEntry viewEntry = (ViewEntry) entry;
-                registerView(viewEntry);
-              }
-            });
-
-    // --------------------------------------------------------------------------------------------------------------
     // Step.6 Set current catalog and database.
     // --------------------------------------------------------------------------------------------------------------
     // Switch to the current catalog.
@@ -531,19 +470,6 @@ public class ExecutionContext<ClusterID> {
     return env;
   }
 
-  //  private void registerFunctions() {
-  //    Map<String, FunctionDefinition> functions = new LinkedHashMap<>();
-  //    engineEnvironment
-  //        .getFunctions()
-  //        .forEach(
-  //            (name, entry) -> {
-  //              final UserDefinedFunction function =
-  //                  FunctionService.createFunction(entry.getDescriptor(), classLoader, false);
-  //              functions.put(name, function);
-  //            });
-  //    registerFunctions(functions);
-  //  }
-
   private void registerFunctions(Map<String, FunctionDefinition> functions) {
     if (tableEnv instanceof StreamTableEnvironment) {
       StreamTableEnvironment streamTableEnvironment = (StreamTableEnvironment) tableEnv;
@@ -573,45 +499,6 @@ public class ExecutionContext<ClusterID> {
               throw new RuntimeException("Unsupported function type: " + v.getClass().getName());
             }
           });
-    }
-  }
-
-  private void registerView(ViewEntry viewEntry) {
-    try {
-      tableEnv.registerTable(viewEntry.getName(), tableEnv.sqlQuery(viewEntry.getQuery()));
-    } catch (Exception e) {
-      throw new RuntimeException(
-          "Invalid view '"
-              + viewEntry.getName()
-              + "' with query:\n"
-              + viewEntry.getQuery()
-              + "\nCause: "
-              + e.getMessage());
-    }
-  }
-
-  private void registerTemporalTable(TemporalTableEntry temporalTableEntry) {
-    try {
-      final Table table = tableEnv.scan(temporalTableEntry.getHistoryTable());
-      final TableFunction<?> function =
-          table.createTemporalTableFunction(
-              temporalTableEntry.getTimeAttribute(),
-              String.join(",", temporalTableEntry.getPrimaryKeyFields()));
-      if (tableEnv instanceof StreamTableEnvironment) {
-        StreamTableEnvironment streamTableEnvironment = (StreamTableEnvironment) tableEnv;
-        streamTableEnvironment.registerFunction(temporalTableEntry.getName(), function);
-      } else {
-        BatchTableEnvironment batchTableEnvironment = (BatchTableEnvironment) tableEnv;
-        batchTableEnvironment.registerFunction(temporalTableEntry.getName(), function);
-      }
-    } catch (Exception e) {
-      throw new RuntimeException(
-          "Invalid temporal table '"
-              + temporalTableEntry.getName()
-              + "' over table '"
-              + temporalTableEntry.getHistoryTable()
-              + ".\nCause: "
-              + e.getMessage());
     }
   }
 

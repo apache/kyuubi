@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine.flink.session
 
-import java.util.Collections
-
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
@@ -27,7 +25,7 @@ import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.flink.config.EngineEnvironment
-import org.apache.kyuubi.engine.flink.config.entries.{ExecutionEntry, ViewEntry}
+import org.apache.kyuubi.engine.flink.config.entries.ExecutionEntry
 import org.apache.kyuubi.engine.flink.context.{EngineContext, SessionContext}
 import org.apache.kyuubi.engine.flink.operation.FlinkSQLOperationManager
 import org.apache.kyuubi.session.{SessionHandle, SessionManager}
@@ -72,8 +70,7 @@ class FlinkSQLSessionManager(engineContext: EngineContext)
 
     val engineEnv = EngineEnvironment.enrich(
       engineContext.getEngineEnv,
-      newProperties.asJava,
-      Collections.emptyMap[String, ViewEntry])
+      newProperties.asJava)
 
     val sessionContext = new SessionContext(engineEnv, engineContext)
 

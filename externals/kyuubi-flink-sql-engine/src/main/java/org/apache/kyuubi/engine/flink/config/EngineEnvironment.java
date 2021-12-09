@@ -28,8 +28,6 @@ import org.apache.kyuubi.engine.flink.config.entries.DeploymentEntry;
 import org.apache.kyuubi.engine.flink.config.entries.EngineEntry;
 import org.apache.kyuubi.engine.flink.config.entries.ExecutionEntry;
 import org.apache.kyuubi.engine.flink.config.entries.SessionEntry;
-import org.apache.kyuubi.engine.flink.config.entries.TableEntry;
-import org.apache.kyuubi.engine.flink.config.entries.ViewEntry;
 
 /**
  * EngineEnvironment configuration that represents the content of an environment file.
@@ -55,8 +53,6 @@ public class EngineEnvironment {
 
   private Map<String, CatalogEntry> catalogs;
 
-  private Map<String, TableEntry> tables;
-
   private ExecutionEntry execution;
 
   private ConfigurationEntry configuration;
@@ -67,7 +63,6 @@ public class EngineEnvironment {
     this.engine = EngineEntry.DEFAULT_INSTANCE;
     this.session = SessionEntry.DEFAULT_INSTANCE;
     this.catalogs = Collections.emptyMap();
-    this.tables = Collections.emptyMap();
     this.execution = ExecutionEntry.DEFAULT_INSTANCE;
     this.configuration = ConfigurationEntry.DEFAULT_INSTANCE;
     this.deployment = DeploymentEntry.DEFAULT_INSTANCE;
@@ -91,10 +86,6 @@ public class EngineEnvironment {
 
   public Map<String, CatalogEntry> getCatalogs() {
     return catalogs;
-  }
-
-  public Map<String, TableEntry> getTables() {
-    return tables;
   }
 
   public ExecutionEntry getExecution() {
@@ -128,14 +119,6 @@ public class EngineEnvironment {
               .asMap()
               .forEach((k, v) -> sb.append("  ").append(k).append(": ").append(v).append('\n'));
         });
-    sb.append("===================== Tables =====================\n");
-    tables.forEach(
-        (name, table) -> {
-          sb.append("- ").append(TableEntry.TABLES_NAME).append(": ").append(name).append("\n");
-          table
-              .asMap()
-              .forEach((k, v) -> sb.append("  ").append(k).append(": ").append(v).append('\n'));
-        });
     sb.append("=================== Execution ====================\n");
     execution.asTopLevelMap().forEach((k, v) -> sb.append(k).append(": ").append(v).append('\n'));
     sb.append("================== Configuration =================\n");
@@ -165,11 +148,6 @@ public class EngineEnvironment {
     catalogs.putAll(env2.getCatalogs());
     mergedEnv.catalogs = catalogs;
 
-    // merge tables
-    final Map<String, TableEntry> tables = new LinkedHashMap<>(env1.getTables());
-    tables.putAll(env2.getTables());
-    mergedEnv.tables = tables;
-
     // merge execution properties
     mergedEnv.execution = ExecutionEntry.merge(env1.getExecution(), env2.getExecution());
 
@@ -184,20 +162,15 @@ public class EngineEnvironment {
   }
 
   public EngineEnvironment clone() {
-    return enrich(this, Collections.emptyMap(), Collections.emptyMap());
+    return enrich(this, Collections.emptyMap());
   }
 
   /** Enriches an environment with new/modified properties or views and returns the new instance. */
-  public static EngineEnvironment enrich(
-      EngineEnvironment env, Map<String, String> properties, Map<String, ViewEntry> views) {
+  public static EngineEnvironment enrich(EngineEnvironment env, Map<String, String> properties) {
     final EngineEnvironment enrichedEnv = new EngineEnvironment();
 
     // merge catalogs
     enrichedEnv.catalogs = new LinkedHashMap<>(env.getCatalogs());
-
-    // merge tables
-    enrichedEnv.tables = new LinkedHashMap<>(env.getTables());
-    enrichedEnv.tables.putAll(views);
 
     // enrich execution properties
     enrichedEnv.execution = ExecutionEntry.enrich(env.execution, properties);
