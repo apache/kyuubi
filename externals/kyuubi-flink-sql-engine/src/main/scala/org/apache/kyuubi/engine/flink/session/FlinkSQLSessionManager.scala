@@ -17,16 +17,9 @@
 
 package org.apache.kyuubi.engine.flink.session
 
-import scala.collection.JavaConverters.mapAsJavaMapConverter
-
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
-import org.apache.kyuubi.engine.ShareLevel
-import org.apache.kyuubi.engine.flink.config.EngineEnvironment
-import org.apache.kyuubi.engine.flink.config.entries.ExecutionEntry
-import org.apache.kyuubi.engine.flink.context.{EngineContext, SessionContext}
+import org.apache.kyuubi.engine.flink.context.EngineContext
 import org.apache.kyuubi.engine.flink.operation.FlinkSQLOperationManager
 import org.apache.kyuubi.session.{SessionHandle, SessionManager}
 
@@ -42,71 +35,7 @@ class FlinkSQLSessionManager(engineContext: EngineContext)
       user: String,
       password: String,
       ipAddress: String,
-      conf: Predef.Map[String, String]): SessionHandle = {
-    val newProperties = collection.mutable.Map[String, String]()
+      conf: Predef.Map[String, String]): SessionHandle = null
 
-    newProperties ++= conf
-
-    val executionTypeFullKey =
-      EngineEnvironment.EXECUTION_ENTRY + "." + ExecutionEntry.EXECUTION_TYPE
-    val executionType = newProperties.getOrElse(
-      executionTypeFullKey,
-      ExecutionEntry.EXECUTION_TYPE_VALUE_BATCH)
-
-    newProperties += executionTypeFullKey -> executionType
-
-    // for batch mode we ensure that results are provided in materialized form
-    if (executionType.equalsIgnoreCase(ExecutionEntry.EXECUTION_TYPE_VALUE_BATCH)) {
-      newProperties += (
-        EngineEnvironment.EXECUTION_ENTRY + "." + ExecutionEntry.EXECUTION_RESULT_MODE ->
-          ExecutionEntry.EXECUTION_RESULT_MODE_VALUE_TABLE)
-    }
-    // for streaming mode we ensure that results are provided in changelog form
-    else {
-      newProperties += (
-        EngineEnvironment.EXECUTION_ENTRY + "." + ExecutionEntry.EXECUTION_RESULT_MODE ->
-          ExecutionEntry.EXECUTION_RESULT_MODE_VALUE_CHANGELOG)
-    }
-
-    val engineEnv = EngineEnvironment.enrich(
-      engineContext.getEngineEnv,
-      newProperties.asJava)
-
-    val sessionContext = new SessionContext(engineEnv, engineContext)
-
-    val sessionImpl = new FlinkSessionImpl(
-      protocol,
-      user,
-      password,
-      ipAddress,
-      conf,
-      this,
-      sessionContext)
-    val handle = sessionImpl.handle
-
-    try {
-      sessionImpl.open()
-
-      operationManager.setFlinkSession(handle, sessionContext)
-      setSession(handle, sessionImpl)
-      info(s"$user's session with $handle is opened, current opening sessions" +
-        s" $getOpenSessionCount")
-      handle
-    } catch {
-      case e: Exception =>
-        sessionImpl.close()
-        throw KyuubiSQLException(e)
-    }
-  }
-
-  override def closeSession(sessionHandle: SessionHandle): Unit = {
-    super.closeSession(sessionHandle)
-    operationManager.removeFlinkSession(sessionHandle)
-    if (conf.get(ENGINE_SHARE_LEVEL) == ShareLevel.CONNECTION.toString) {
-      info("Session stopped due to shared level is Connection.")
-      stopSession()
-    }
-  }
-
-  private def stopSession(): Unit = {}
+  override def closeSession(sessionHandle: SessionHandle): Unit = {}
 }

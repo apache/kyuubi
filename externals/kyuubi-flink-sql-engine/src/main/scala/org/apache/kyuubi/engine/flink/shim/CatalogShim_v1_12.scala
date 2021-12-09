@@ -17,16 +17,9 @@
 
 package org.apache.kyuubi.engine.flink.shim
 
-import org.apache.flink.api.java.ExecutionEnvironment
 import org.apache.flink.table.api.internal.TableEnvironmentInternal
-import org.apache.flink.types.Row
 
 class CatalogShim_v1_12 extends FlinkCatalogShim {
-
-  override def getSchemas(
-      env: ExecutionEnvironment,
-      catalogName: String,
-      schemaPattern: String): Seq[Row] = null
 
   override def getCatalogs(tableEnv: TableEnvironmentInternal): Array[String] = {
     tableEnv.listCatalogs
