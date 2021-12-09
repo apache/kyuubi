@@ -18,9 +18,6 @@
 
 package org.apache.kyuubi.engine.flink.context;
 
-import static org.apache.flink.util.Preconditions.checkNotNull;
-import static org.apache.flink.util.Preconditions.checkState;
-
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Collections;
@@ -39,9 +36,7 @@ import org.apache.flink.client.cli.CliArgsException;
 import org.apache.flink.client.cli.CustomCommandLine;
 import org.apache.flink.client.cli.ExecutionConfigAccessor;
 import org.apache.flink.client.cli.ProgramOptions;
-import org.apache.flink.client.deployment.ClusterClientFactory;
 import org.apache.flink.client.deployment.ClusterClientServiceLoader;
-import org.apache.flink.client.deployment.ClusterDescriptor;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -80,7 +75,6 @@ import org.apache.flink.table.sources.TableSource;
 import org.apache.flink.util.FlinkException;
 import org.apache.flink.util.TemporaryClassLoaderContext;
 import org.apache.kyuubi.engine.flink.config.EngineEnvironment;
-import org.apache.kyuubi.engine.flink.config.entries.DeploymentEntry;
 import org.apache.kyuubi.engine.flink.config.entries.ExecutionEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,7 +94,7 @@ public class ExecutionContext<ClusterID> {
   private final ClassLoader classLoader;
 
   private final Configuration flinkConfig;
-//  private final ClusterClientFactory<ClusterID> clusterClientFactory;
+  //  private final ClusterClientFactory<ClusterID> clusterClientFactory;
 
   private TableEnvironmentInternal tableEnv;
   private ExecutionEnvironment execEnv;
