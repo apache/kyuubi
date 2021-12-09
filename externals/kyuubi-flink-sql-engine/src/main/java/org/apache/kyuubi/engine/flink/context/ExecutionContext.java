@@ -283,20 +283,6 @@ public class ExecutionContext<ClusterID> {
 
   private void initializeCatalogs() {
     // --------------------------------------------------------------------------------------------------------------
-    // Step.1 Create catalogs and register them.
-    // --------------------------------------------------------------------------------------------------------------
-    wrapClassLoader(
-        () -> {
-          engineEnvironment
-              .getCatalogs()
-              .forEach(
-                  (name, entry) -> {
-                    Catalog catalog = createCatalog(name, entry.asMap(), classLoader);
-                    tableEnv.registerCatalog(name, catalog);
-                  });
-        });
-
-    // --------------------------------------------------------------------------------------------------------------
     // Step.6 Set current catalog and database.
     // --------------------------------------------------------------------------------------------------------------
     // Switch to the current catalog.
