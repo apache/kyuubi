@@ -29,7 +29,6 @@ import org.apache.flink.api.common.time.Time;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.descriptors.DescriptorProperties;
-import org.apache.kyuubi.engine.flink.config.ConfigUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -344,10 +343,6 @@ public class ExecutionEntry extends ConfigEntry {
   }
 
   // --------------------------------------------------------------------------------------------
-
-  public static ExecutionEntry create(Map<String, Object> config) {
-    return new ExecutionEntry(ConfigUtil.normalizeYaml(config));
-  }
 
   /**
    * Merges two execution entries. The properties of the first execution entry might be overwritten

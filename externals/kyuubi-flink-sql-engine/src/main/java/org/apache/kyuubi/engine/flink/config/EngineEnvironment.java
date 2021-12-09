@@ -46,10 +46,6 @@ public class EngineEnvironment {
     this.execution = ExecutionEntry.DEFAULT_INSTANCE;
   }
 
-  public void setEngine(Map<String, Object> config) {
-    this.engine = EngineEntry.create(config);
-  }
-
   public EngineEntry getEngine() {
     return engine;
   }

@@ -21,7 +21,6 @@ package org.apache.kyuubi.engine.flink.config.entries;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.flink.table.descriptors.DescriptorProperties;
-import org.apache.kyuubi.engine.flink.config.ConfigUtil;
 import org.apache.kyuubi.engine.flink.config.EngineEnvironment;
 
 /** Describes a engine configuration entry. */
@@ -48,10 +47,6 @@ public class EngineEntry extends ConfigEntry {
     properties.validateString(ENGINE_ADDRESS, true);
     properties.validateInt(ENGINE_PORT, true, 1024, 65535);
     properties.validateString(JVM_ARGS, true);
-  }
-
-  public static EngineEntry create(Map<String, Object> config) {
-    return new EngineEntry(ConfigUtil.normalizeYaml(config));
   }
 
   public Map<String, String> asTopLevelMap() {
