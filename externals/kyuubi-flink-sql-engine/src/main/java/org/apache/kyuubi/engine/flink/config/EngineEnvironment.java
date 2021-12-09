@@ -20,7 +20,6 @@ package org.apache.kyuubi.engine.flink.config;
 
 import java.util.Collections;
 import java.util.Map;
-import org.apache.kyuubi.engine.flink.config.entries.EngineEntry;
 import org.apache.kyuubi.engine.flink.config.entries.ExecutionEntry;
 
 /**
@@ -35,19 +34,10 @@ public class EngineEnvironment {
 
   public static final String EXECUTION_ENTRY = "execution";
 
-  public static final String CONFIGURATION_ENTRY = "table";
-
-  private EngineEntry engine;
-
   private ExecutionEntry execution;
 
   public EngineEnvironment() {
-    this.engine = EngineEntry.DEFAULT_INSTANCE;
     this.execution = ExecutionEntry.DEFAULT_INSTANCE;
-  }
-
-  public EngineEntry getEngine() {
-    return engine;
   }
 
   public ExecutionEntry getExecution() {
@@ -57,8 +47,6 @@ public class EngineEnvironment {
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder();
-    sb.append("==================== Engine =====================\n");
-    engine.asTopLevelMap().forEach((k, v) -> sb.append(k).append(": ").append(v).append('\n'));
     sb.append("=================== Execution ====================\n");
     execution.asTopLevelMap().forEach((k, v) -> sb.append(k).append(": ").append(v).append('\n'));
     return sb.toString();
@@ -72,9 +60,6 @@ public class EngineEnvironment {
    */
   public static EngineEnvironment merge(EngineEnvironment env1, EngineEnvironment env2) {
     final EngineEnvironment mergedEnv = new EngineEnvironment();
-
-    // merge engine properties
-    mergedEnv.engine = EngineEntry.merge(env1.getEngine(), env2.getEngine());
 
     // merge execution properties
     mergedEnv.execution = ExecutionEntry.merge(env1.getExecution(), env2.getExecution());
@@ -92,9 +77,6 @@ public class EngineEnvironment {
 
     // enrich execution properties
     enrichedEnv.execution = ExecutionEntry.enrich(env.execution, properties);
-
-    // does not change engine properties
-    enrichedEnv.engine = env.getEngine();
 
     return enrichedEnv;
   }
