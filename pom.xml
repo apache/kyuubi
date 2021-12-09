@@ -140,7 +140,6 @@
 
         <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
         <hive.client.version>2.3.9</hive.client.version>
-        <hive.client.version>2.3.9</hive.client.version>
         <hive.client.commons-lang.version>2.6</hive.client.commons-lang.version>
         <hive.client.commons-cli.version>1.2</hive.client.commons-cli.version>
         <hive.client.commons-codec.version>1.15</hive.client.commons-codec.version>
