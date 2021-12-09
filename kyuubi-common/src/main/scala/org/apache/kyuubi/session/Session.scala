@@ -43,7 +43,6 @@ trait Session {
   def open(): Unit
   def close(): Unit
 
-
   def getInfo(infoType: TGetInfoType): TGetInfoValue
 
   def executeStatement(statement: String, runAsync: Boolean, queryTimeout: Long): OperationHandle

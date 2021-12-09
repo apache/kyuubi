@@ -126,7 +126,7 @@ object PlainSASLServer {
     }
   }
 
-  private final val version: Double = {
+  final private val version: Double = {
     val (major, minor) = Utils.majorMinorVersion(KYUUBI_VERSION)
     major + minor.toDouble / 10
   }

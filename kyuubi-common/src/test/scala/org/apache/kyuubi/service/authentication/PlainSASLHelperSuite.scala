@@ -23,16 +23,16 @@ import org.apache.thrift.transport.{TSaslServerTransport, TSocket}
 
 import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.service.{NoopServer, ThriftFrontendService}
+import org.apache.kyuubi.service.{NoopThriftBinaryFrontendServer, ThriftBinaryFrontendService}
 import org.apache.kyuubi.service.authentication.PlainSASLServer.SaslPlainProvider
 
 class PlainSASLHelperSuite extends KyuubiFunSuite {
 
   test("PlainSASLHelper") {
-    val server = new NoopServer()
+    val server = new NoopThriftBinaryFrontendServer()
     val conf = KyuubiConf().set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     server.initialize(conf)
-    val service = server.getServices(0).asInstanceOf[ThriftFrontendService]
+    val service = server.frontendServices.head.asInstanceOf[ThriftBinaryFrontendService]
     val tProcessorFactory = PlainSASLHelper.getProcessFactory(service)
     val tSocket = new TSocket("0.0.0.0", 0)
 

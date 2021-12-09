@@ -112,12 +112,11 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
               .children(userOps)
               .text("\tList all the engine nodes for a user")),
         checkConfig(f => {
-          if (f.action == null)  failure("Must specify action command: [create|get|delete|list].")
+          if (f.action == null) failure("Must specify action command: [create|get|delete|list].")
           else success
         }),
         note(""),
-        help('h', "help").text("Show help message and exit.")
-      )
+        help('h', "help").text("Show help message and exit."))
     }
     CtlParser
   }
@@ -136,7 +135,7 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
             // validate arguments
             validateArguments()
           case _ =>
-            // arguments are bad, exit
+          // arguments are bad, exit
         }
     }
   }
@@ -152,9 +151,7 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
       }
     }
 
-    // for create action, it only expose Kyuubi service instance to another domain,
-    // so we do not use namespace from default conf
-    if (arguments.action != ServiceControlAction.CREATE && arguments.namespace == null) {
+    if (arguments.namespace == null) {
       arguments = arguments.copy(namespace = conf.get(HA_ZK_NAMESPACE))
       if (arguments.verbose) {
         super.info(s"Zookeeper namespace is not specified, use value from default conf:" +
@@ -189,11 +186,12 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
     validateZkArguments()
 
     val defaultNamespace = conf.getOption(HA_ZK_NAMESPACE.key)
-    if (defaultNamespace.isEmpty || defaultNamespace.get.equals(cliArgs.namespace)) {
+      .getOrElse(HA_ZK_NAMESPACE.defaultValStr)
+    if (defaultNamespace.equals(cliArgs.namespace)) {
       fail(
         s"""
-           |Only support expose Kyuubi server instance to another domain, but the default
-           |namespace is [$defaultNamespace] and specified namespace is [${cliArgs.namespace}]
+           |Only support expose Kyuubi server instance to another domain, a different namespace
+           |than the default namespace [$defaultNamespace] should be specified.
         """.stripMargin)
     }
   }
@@ -224,11 +222,7 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
       fail("Zookeeper quorum is not specified and no default value to load")
     }
     if (cliArgs.namespace == null) {
-      if (cliArgs.action == ServiceControlAction.CREATE) {
-        fail("Zookeeper namespace is not specified")
-      } else {
-        fail("Zookeeper namespace is not specified and no default value to load")
-      }
+      fail("Zookeeper namespace is not specified and no default value to load")
     }
   }
 
@@ -248,7 +242,7 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
     }
 
     try {
-      if (cliArgs.port.toInt <= 0 ) {
+      if (cliArgs.port.toInt <= 0) {
         fail(s"Specified port should be a positive number")
       }
     } catch {
@@ -267,14 +261,14 @@ class ServiceControlCliArguments(args: Seq[String], env: Map[String, String] = s
     cliArgs.service match {
       case ServiceControlObject.SERVER =>
         s"""Parsed arguments:
-          |  action                  ${cliArgs.action}
-          |  service                 ${cliArgs.service}
-          |  zkQuorum                ${cliArgs.zkQuorum}
-          |  namespace               ${cliArgs.namespace}
-          |  host                    ${cliArgs.host}
-          |  port                    ${cliArgs.port}
-          |  version                 ${cliArgs.version}
-          |  verbose                 ${cliArgs.verbose}
+           |  action                  ${cliArgs.action}
+           |  service                 ${cliArgs.service}
+           |  zkQuorum                ${cliArgs.zkQuorum}
+           |  namespace               ${cliArgs.namespace}
+           |  host                    ${cliArgs.host}
+           |  port                    ${cliArgs.port}
+           |  version                 ${cliArgs.version}
+           |  verbose                 ${cliArgs.verbose}
         """.stripMargin
       case ServiceControlObject.ENGINE =>
         s"""Parsed arguments:

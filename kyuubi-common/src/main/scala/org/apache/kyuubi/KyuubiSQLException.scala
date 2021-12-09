@@ -58,8 +58,8 @@ class KyuubiSQLException(reason: String, sqlState: String, vendorCode: Int, caus
 
 object KyuubiSQLException {
 
-  private final val HEAD_MARK: String = "*"
-  private final val SEPARATOR: Char = ':'
+  final private val HEAD_MARK: String = "*"
+  final private val SEPARATOR: Char = ':'
 
   def apply(
       msg: String,
@@ -110,7 +110,7 @@ object KyuubiSQLException {
 
     if (parent != null) {
       var n = parent.length - 1
-      while (m >= 0 && n >=0 && trace(m).equals(parent(n))) {
+      while (m >= 0 && n >= 0 && trace(m).equals(parent(n))) {
         m = m - 1
         n = n - 1
       }
@@ -179,7 +179,7 @@ object KyuubiSQLException {
   @tailrec
   def findCause(t: Throwable): Throwable = t match {
     case e @ (_: UndeclaredThrowableException | _: InvocationTargetException)
-      if e.getCause != null => findCause(e.getCause)
+        if e.getCause != null => findCause(e.getCause)
     case e => e
   }
 }

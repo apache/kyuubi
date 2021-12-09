@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.engine.spark.IterableFetchIterator
@@ -26,8 +25,8 @@ import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 
-class GetSchemas(spark: SparkSession, session: Session, catalogName: String, schema: String)
-  extends SparkOperation(spark, OperationType.GET_SCHEMAS, session) {
+class GetSchemas(session: Session, catalogName: String, schema: String)
+  extends SparkOperation(OperationType.GET_SCHEMAS, session) {
 
   override def statement: String = {
     super.statement + s" [catalog : $catalogName, schemaPattern : $schema]"

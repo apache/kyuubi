@@ -30,12 +30,11 @@ import org.apache.kyuubi.session.Session
 /**
  * The [[OperationManager]] manages all the operations during their lifecycle.
  *
- *
  * @param name Service Name
  */
 abstract class OperationManager(name: String) extends AbstractService(name) {
 
-  private final val handleToOperation = new java.util.HashMap[OperationHandle, Operation]()
+  final private val handleToOperation = new java.util.HashMap[OperationHandle, Operation]()
 
   def getOperationCount: Int = handleToOperation.size()
 
@@ -121,7 +120,7 @@ abstract class OperationManager(name: String) extends AbstractService(name) {
       order: FetchOrientation,
       maxRows: Int): TRowSet = {
     val operationLog = getOperation(opHandle).getOperationLog
-    operationLog.map(_.read(maxRows)).getOrElse{
+    operationLog.map(_.read(maxRows)).getOrElse {
       throw KyuubiSQLException(s"$opHandle failed to generate operation log")
     }
   }

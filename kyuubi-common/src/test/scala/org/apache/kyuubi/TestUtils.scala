@@ -29,7 +29,8 @@ object TestUtils {
   def verifyOutput(markdown: Path, newOutput: ArrayBuffer[String], agent: String): Unit = {
     if (System.getenv("KYUUBI_UPDATE") == "1") {
       val writer = Files.newBufferedWriter(
-        markdown, StandardCharsets.UTF_8,
+        markdown,
+        StandardCharsets.UTF_8,
         StandardOpenOption.TRUNCATE_EXISTING,
         StandardOpenOption.CREATE)
       try {
@@ -50,8 +51,9 @@ object TestUtils {
         line = reader.readLine()
       }
       reader.close()
-      val hint = s"$markdown out of date, please update doc with build/mvn test" +
-        s" -DwildcardSuites=$agent"
+      val hint = s"$markdown out of date, please update doc with " +
+        s"KYUUBI_UPDATE=1 build/mvn clean install -Pflink-provided,spark-provided " +
+        s"-DwildcardSuites=$agent"
       assert(newOutput.size === expected.size, hint)
 
       newOutput.zip(expected).foreach { case (out, in) => assert(out === in, hint) }

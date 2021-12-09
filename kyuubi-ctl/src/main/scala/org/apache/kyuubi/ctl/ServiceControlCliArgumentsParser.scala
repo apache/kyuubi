@@ -22,21 +22,21 @@ import scopt.OParser
 import org.apache.kyuubi.ctl.ServiceControlAction.ServiceControlAction
 import org.apache.kyuubi.ctl.ServiceControlObject.ServiceControlObject
 
-private[kyuubi] abstract class ServiceControlCliArgumentsParser {
+abstract private[kyuubi] class ServiceControlCliArgumentsParser {
 
   /**
    * Description of available options
    */
   case class CliArguments(
-    action: ServiceControlAction = null,
-    service: ServiceControlObject = ServiceControlObject.SERVER,
-    zkQuorum: String = null,
-    namespace: String = null,
-    user: String = null,
-    host: String = null,
-    port: String = null,
-    version: String = null,
-    verbose: Boolean = false)
+      action: ServiceControlAction = null,
+      service: ServiceControlObject = ServiceControlObject.SERVER,
+      zkQuorum: String = null,
+      namespace: String = null,
+      user: String = null,
+      host: String = null,
+      port: String = null,
+      version: String = null,
+      verbose: Boolean = false)
 
   /**
    * Cli arguments parse rules.

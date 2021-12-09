@@ -19,7 +19,7 @@ package org.apache.kyuubi.sql.watchdog
 
 import org.apache.kyuubi.sql.KyuubiSQLExtensionException
 
-final class MaxHivePartitionExceedException(
+final class MaxPartitionExceedException(
     private val reason: String = "",
     private val cause: Throwable = None.orNull)
   extends KyuubiSQLExtensionException(reason, cause)

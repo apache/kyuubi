@@ -75,7 +75,7 @@ package_binary() {
 
   echo "Creating binary release tarball ${BIN_TGZ_FILE}"
 
-  ${KYUUBI_DIR}/build/dist --tgz --spark-provided -Pkyuubi-extension-spark-3-1
+  ${KYUUBI_DIR}/build/dist --tgz --spark-provided -Pspark-3.1
 
   cp "${BIN_TGZ_FILE}" "${RELEASE_DIR}"
 

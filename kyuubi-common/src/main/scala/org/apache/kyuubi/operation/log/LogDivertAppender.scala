@@ -26,9 +26,9 @@ import org.apache.log4j.spi.{Filter, LoggingEvent}
 
 class LogDivertAppender extends WriterAppender {
 
-  private final val writer = new CharArrayWriter
+  final private val writer = new CharArrayWriter
 
-  private final val lo = Logger.getRootLogger
+  final private val lo = Logger.getRootLogger
     .getAllAppenders.asScala
     .find(_.isInstanceOf[ConsoleAppender])
     .map(_.asInstanceOf[Appender].getLayout)

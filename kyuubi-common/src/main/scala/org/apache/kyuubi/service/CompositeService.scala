@@ -28,7 +28,7 @@ abstract class CompositeService(serviceName: String)
 
   import ServiceState.STOPPED
 
-  private final val serviceList = new ArrayBuffer[Service]
+  final private val serviceList = new ArrayBuffer[Service]
 
   def getServices: Seq[Service] = serviceList.toList
 

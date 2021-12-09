@@ -20,67 +20,49 @@ package org.apache.kyuubi.engine.spark
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 
-import org.apache.spark.SparkConf
+import scala.util.control.NonFatal
+
+import org.apache.spark.{ui, SparkConf}
 import org.apache.spark.kyuubi.SparkSQLEngineListener
-import org.apache.spark.kyuubi.ui.EngineTab
+import org.apache.spark.repl.Main
 import org.apache.spark.sql.SparkSession
 
-import org.apache.kyuubi.Logging
+import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.spark.SparkSQLEngine.countDownLatch
-import org.apache.kyuubi.engine.spark.events.{EngineEvent, EventLoggingService}
+import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
+import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, EventLoggingService}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, RetryPolicies, ServiceDiscovery}
-import org.apache.kyuubi.service.{Serverable, Service, ServiceState, ThriftFrontendService}
+import org.apache.kyuubi.ha.client.RetryPolicies
+import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.SignalRegister
 
-case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngine") {
+case class SparkSQLEngine(
+    spark: SparkSession,
+    store: EngineEventsStore) extends Serverable("SparkSQLEngine") {
 
-  lazy val engineStatus: EngineEvent = EngineEvent(this)
-
-  private val OOMHook = new Runnable { override def run(): Unit = stop() }
-  private val eventLogging = new EventLoggingService(this)
   override val backendService = new SparkSQLBackendService(spark)
-  val frontendService = new ThriftFrontendService(backendService, OOMHook)
-  override val discoveryService: Service = new EngineServiceDiscovery(this)
-
-  override protected def supportsServiceDiscovery: Boolean = {
-    ServiceDiscovery.supportServiceDiscovery(conf)
-  }
+  override val frontendServices = Seq(new SparkThriftBinaryFrontendService(this))
 
   override def initialize(conf: KyuubiConf): Unit = {
-    val listener = new SparkSQLEngineListener(this)
+    val listener = new SparkSQLEngineListener(this, store)
     spark.sparkContext.addSparkListener(listener)
-    addService(eventLogging)
-    addService(frontendService)
     super.initialize(conf)
-    eventLogging.onEvent(engineStatus.copy(state = ServiceState.INITIALIZED.id))
   }
 
   override def start(): Unit = {
     super.start()
     // Start engine self-terminating checker after all services are ready and it can be reached by
     // all servers in engine spaces.
-    backendService.sessionManager.startTerminatingChecker()
-    eventLogging.onEvent(engineStatus.copy(state = ServiceState.STARTED.id))
-  }
-
-  override def stop(): Unit = {
-    eventLogging.onEvent(
-      engineStatus.copy(state = ServiceState.STOPPED.id, endTime = System.currentTimeMillis()))
-    super.stop()
+    backendService.sessionManager.startTerminatingChecker(() => {
+      assert(currentEngine.isDefined)
+      currentEngine.get.stop()
+    })
   }
 
   override protected def stopServer(): Unit = {
     countDownLatch.countDown()
-  }
-
-  override def connectionUrl: String = frontendService.connectionUrl()
-
-  def engineId: String = {
-    spark.sparkContext.applicationAttemptId.getOrElse(spark.sparkContext.applicationId)
   }
 }
 
@@ -100,6 +82,12 @@ object SparkSQLEngine extends Logging {
     sparkConf.setIfMissing("spark.sql.legacy.castComplexTypesToString.enabled", "true")
     sparkConf.setIfMissing("spark.master", "local")
     sparkConf.setIfMissing("spark.ui.port", "0")
+    // register the repl's output dir with the file server.
+    // see also `spark.repl.classdir`
+    sparkConf.set("spark.repl.class.outputDir", Main.outputDir.getAbsolutePath)
+    sparkConf.setIfMissing(
+      "spark.hadoop.mapreduce.input.fileinputformat.list-status.num-threads",
+      "20")
 
     val appName = s"kyuubi_${user}_spark_${Instant.now}"
     sparkConf.setIfMissing("spark.app.name", appName)
@@ -132,14 +120,40 @@ object SparkSQLEngine extends Logging {
   }
 
   def startEngine(spark: SparkSession): Unit = {
-    currentEngine = Some(new SparkSQLEngine(spark))
+    val store = new EngineEventsStore(kyuubiConf)
+    currentEngine = Some(new SparkSQLEngine(spark, store))
     currentEngine.foreach { engine =>
-      engine.initialize(kyuubiConf)
-      engine.start()
+      // start event logging ahead so that we can capture all statuses
+      val eventLogging = new EventLoggingService(spark.sparkContext)
+      try {
+        eventLogging.initialize(kyuubiConf)
+        eventLogging.start()
+      } catch {
+        case NonFatal(e) =>
+          // Don't block the main process if the `EventLoggingService` failed to start
+          warn(s"Failed to initialize EventLoggingService: ${e.getMessage}", e)
+      }
+
+      try {
+        engine.initialize(kyuubiConf)
+        EventLoggingService.onEvent(EngineEvent(engine))
+      } catch {
+        case t: Throwable =>
+          throw new KyuubiException(s"Failed to initialize SparkSQLEngine: ${t.getMessage}", t)
+      }
+      try {
+        engine.start()
+        ui.EngineTab(engine)
+        val event = EngineEvent(engine)
+        info(event)
+        EventLoggingService.onEvent(event)
+      } catch {
+        case t: Throwable =>
+          throw new KyuubiException(s"Failed to start SparkSQLEngine: ${t.getMessage}", t)
+      }
       // Stop engine before SparkContext stopped to avoid calling a stopped SparkContext
-      addShutdownHook(() => engine.stop(), SPARK_CONTEXT_SHUTDOWN_PRIORITY + 1)
-      EngineTab(engine)
-      info(engine.engineStatus)
+      addShutdownHook(() => engine.stop(), SPARK_CONTEXT_SHUTDOWN_PRIORITY + 2)
+      addShutdownHook(() => eventLogging.stop(), SPARK_CONTEXT_SHUTDOWN_PRIORITY + 1)
     }
   }
 
@@ -148,20 +162,23 @@ object SparkSQLEngine extends Logging {
     var spark: SparkSession = null
     try {
       spark = createSpark()
-      startEngine(spark)
-      // blocking main thread
-      countDownLatch.await()
+      try {
+        startEngine(spark)
+        // blocking main thread
+        countDownLatch.await()
+      } catch {
+        case e: KyuubiException => currentEngine match {
+            case Some(engine) =>
+              engine.stop()
+              val event = EngineEvent(engine).copy(diagnostic = e.getMessage)
+              EventLoggingService.onEvent(event)
+              error(event, e)
+            case _ => error("Current SparkSQLEngine is not created.")
+          }
+
+      }
     } catch {
-      case t: Throwable if currentEngine.isDefined =>
-        currentEngine.foreach { engine =>
-          val status =
-            engine.engineStatus.copy(diagnostic = s"Error State SparkSQL Engine ${t.getMessage}")
-          EventLoggingService.onEvent(status)
-          error(status, t)
-          engine.stop()
-        }
-      case t: Throwable =>
-        error("Create SparkSQL Engine Failed", t)
+      case t: Throwable => error(s"Failed to instantiate SparkSession: ${t.getMessage}", t)
     } finally {
       if (spark != null) {
         spark.stop()

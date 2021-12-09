@@ -17,17 +17,15 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.session.Session
 
 class GetColumns(
     session: Session,
-    client: KyuubiSyncThriftClient,
     catalogName: String,
     schemaName: String,
     tableName: String,
     columnName: String)
-  extends KyuubiOperation(OperationType.GET_COLUMNS, session, client) {
+  extends KyuubiOperation(OperationType.GET_COLUMNS, session) {
 
   override protected def runInternal(): Unit = {
     try {
