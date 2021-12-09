@@ -27,7 +27,6 @@ import org.apache.kyuubi.engine.flink.config.entries.ConfigurationEntry;
 import org.apache.kyuubi.engine.flink.config.entries.DeploymentEntry;
 import org.apache.kyuubi.engine.flink.config.entries.EngineEntry;
 import org.apache.kyuubi.engine.flink.config.entries.ExecutionEntry;
-import org.apache.kyuubi.engine.flink.config.entries.SessionEntry;
 
 /**
  * EngineEnvironment configuration that represents the content of an environment file.
@@ -49,8 +48,6 @@ public class EngineEnvironment {
 
   private EngineEntry engine;
 
-  private SessionEntry session;
-
   private Map<String, CatalogEntry> catalogs;
 
   private ExecutionEntry execution;
@@ -61,19 +58,10 @@ public class EngineEnvironment {
 
   public EngineEnvironment() {
     this.engine = EngineEntry.DEFAULT_INSTANCE;
-    this.session = SessionEntry.DEFAULT_INSTANCE;
     this.catalogs = Collections.emptyMap();
     this.execution = ExecutionEntry.DEFAULT_INSTANCE;
     this.configuration = ConfigurationEntry.DEFAULT_INSTANCE;
     this.deployment = DeploymentEntry.DEFAULT_INSTANCE;
-  }
-
-  public void setSession(Map<String, Object> config) {
-    this.session = SessionEntry.create(config);
-  }
-
-  public SessionEntry getSession() {
-    return session;
   }
 
   public void setEngine(Map<String, Object> config) {
@@ -109,8 +97,6 @@ public class EngineEnvironment {
     final StringBuilder sb = new StringBuilder();
     sb.append("==================== Engine =====================\n");
     engine.asTopLevelMap().forEach((k, v) -> sb.append(k).append(": ").append(v).append('\n'));
-    sb.append("==================== Session =====================\n");
-    session.asTopLevelMap().forEach((k, v) -> sb.append(k).append(": ").append(v).append('\n'));
     sb.append("===================== Catalogs =====================\n");
     catalogs.forEach(
         (name, catalog) -> {
@@ -139,9 +125,6 @@ public class EngineEnvironment {
 
     // merge engine properties
     mergedEnv.engine = EngineEntry.merge(env1.getEngine(), env2.getEngine());
-
-    // merge session properties
-    mergedEnv.session = SessionEntry.merge(env1.getSession(), env2.getSession());
 
     // merge catalogs
     final Map<String, CatalogEntry> catalogs = new HashMap<>(env1.getCatalogs());
@@ -180,9 +163,6 @@ public class EngineEnvironment {
 
     // enrich deployment properties
     enrichedEnv.deployment = DeploymentEntry.enrich(env.deployment, properties);
-
-    // does not change session properties
-    enrichedEnv.session = env.getSession();
 
     // does not change engine properties
     enrichedEnv.engine = env.getEngine();
