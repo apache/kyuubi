@@ -27,7 +27,6 @@ import org.apache.kyuubi.engine.flink.config.entries.ConfigurationEntry;
 import org.apache.kyuubi.engine.flink.config.entries.DeploymentEntry;
 import org.apache.kyuubi.engine.flink.config.entries.EngineEntry;
 import org.apache.kyuubi.engine.flink.config.entries.ExecutionEntry;
-import org.apache.kyuubi.engine.flink.config.entries.FunctionEntry;
 import org.apache.kyuubi.engine.flink.config.entries.ModuleEntry;
 import org.apache.kyuubi.engine.flink.config.entries.SessionEntry;
 import org.apache.kyuubi.engine.flink.config.entries.TableEntry;
@@ -61,8 +60,6 @@ public class EngineEnvironment {
 
   private Map<String, TableEntry> tables;
 
-  private Map<String, FunctionEntry> functions;
-
   private ExecutionEntry execution;
 
   private ConfigurationEntry configuration;
@@ -75,7 +72,6 @@ public class EngineEnvironment {
     this.modules = new LinkedHashMap<>();
     this.catalogs = Collections.emptyMap();
     this.tables = Collections.emptyMap();
-    this.functions = Collections.emptyMap();
     this.execution = ExecutionEntry.DEFAULT_INSTANCE;
     this.configuration = ConfigurationEntry.DEFAULT_INSTANCE;
     this.deployment = DeploymentEntry.DEFAULT_INSTANCE;
@@ -107,10 +103,6 @@ public class EngineEnvironment {
 
   public Map<String, TableEntry> getTables() {
     return tables;
-  }
-
-  public Map<String, FunctionEntry> getFunctions() {
-    return functions;
   }
 
   public ExecutionEntry getExecution() {
@@ -160,18 +152,6 @@ public class EngineEnvironment {
               .asMap()
               .forEach((k, v) -> sb.append("  ").append(k).append(": ").append(v).append('\n'));
         });
-    sb.append("=================== Functions ====================\n");
-    functions.forEach(
-        (name, function) -> {
-          sb.append("- ")
-              .append(FunctionEntry.FUNCTIONS_NAME)
-              .append(": ")
-              .append(name)
-              .append("\n");
-          function
-              .asMap()
-              .forEach((k, v) -> sb.append("  ").append(k).append(": ").append(v).append('\n'));
-        });
     sb.append("=================== Execution ====================\n");
     execution.asTopLevelMap().forEach((k, v) -> sb.append(k).append(": ").append(v).append('\n'));
     sb.append("================== Configuration =================\n");
@@ -211,11 +191,6 @@ public class EngineEnvironment {
     tables.putAll(env2.getTables());
     mergedEnv.tables = tables;
 
-    // merge functions
-    final Map<String, FunctionEntry> functions = new HashMap<>(env1.getFunctions());
-    functions.putAll(env2.getFunctions());
-    mergedEnv.functions = functions;
-
     // merge execution properties
     mergedEnv.execution = ExecutionEntry.merge(env1.getExecution(), env2.getExecution());
 
@@ -246,9 +221,6 @@ public class EngineEnvironment {
     // merge tables
     enrichedEnv.tables = new LinkedHashMap<>(env.getTables());
     enrichedEnv.tables.putAll(views);
-
-    // merge functions
-    enrichedEnv.functions = new HashMap<>(env.getFunctions());
 
     // enrich execution properties
     enrichedEnv.execution = ExecutionEntry.enrich(env.execution, properties);

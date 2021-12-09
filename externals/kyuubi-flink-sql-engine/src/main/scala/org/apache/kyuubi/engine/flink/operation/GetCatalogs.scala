@@ -19,7 +19,6 @@ package org.apache.kyuubi.engine.flink.operation
 
 import scala.collection.JavaConverters._
 
-import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.flink.context.SessionContext
 import org.apache.kyuubi.engine.flink.result.{Constants, OperationUtil}
 import org.apache.kyuubi.engine.flink.shim.FlinkCatalogShim

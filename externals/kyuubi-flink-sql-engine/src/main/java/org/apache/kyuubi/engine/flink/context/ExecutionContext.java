@@ -75,10 +75,8 @@ import org.apache.flink.table.factories.TableSinkFactory;
 import org.apache.flink.table.factories.TableSourceFactory;
 import org.apache.flink.table.functions.AggregateFunction;
 import org.apache.flink.table.functions.FunctionDefinition;
-import org.apache.flink.table.functions.FunctionService;
 import org.apache.flink.table.functions.ScalarFunction;
 import org.apache.flink.table.functions.TableFunction;
-import org.apache.flink.table.functions.UserDefinedFunction;
 import org.apache.flink.table.module.Module;
 import org.apache.flink.table.module.ModuleManager;
 import org.apache.flink.table.sinks.TableSink;
@@ -400,12 +398,6 @@ public class ExecutionContext<ClusterID> {
       }
 
       // --------------------------------------------------------------------------------------------------------------
-      // Step.3 create user-defined functions and temporal tables then register them.
-      // --------------------------------------------------------------------------------------------------------------
-      // No need to register the functions if already inherit from the same session.
-      registerFunctions();
-
-      // --------------------------------------------------------------------------------------------------------------
       // Step.4 Create catalogs and register them.
       // --------------------------------------------------------------------------------------------------------------
       // No need to register the catalogs if already inherit from the same session.
@@ -555,18 +547,18 @@ public class ExecutionContext<ClusterID> {
     return env;
   }
 
-  private void registerFunctions() {
-    Map<String, FunctionDefinition> functions = new LinkedHashMap<>();
-    engineEnvironment
-        .getFunctions()
-        .forEach(
-            (name, entry) -> {
-              final UserDefinedFunction function =
-                  FunctionService.createFunction(entry.getDescriptor(), classLoader, false);
-              functions.put(name, function);
-            });
-    registerFunctions(functions);
-  }
+  //  private void registerFunctions() {
+  //    Map<String, FunctionDefinition> functions = new LinkedHashMap<>();
+  //    engineEnvironment
+  //        .getFunctions()
+  //        .forEach(
+  //            (name, entry) -> {
+  //              final UserDefinedFunction function =
+  //                  FunctionService.createFunction(entry.getDescriptor(), classLoader, false);
+  //              functions.put(name, function);
+  //            });
+  //    registerFunctions(functions);
+  //  }
 
   private void registerFunctions(Map<String, FunctionDefinition> functions) {
     if (tableEnv instanceof StreamTableEnvironment) {
