@@ -25,9 +25,4 @@ class CatalogShim_v1_12 extends FlinkCatalogShim {
     tableEnv.listCatalogs
   }
 
-  override protected def catalogExists(
-      tableEnv: TableEnvironmentInternal,
-      catalog: String): Boolean = {
-    tableEnv.listCatalogs().contains(catalog)
-  }
 }

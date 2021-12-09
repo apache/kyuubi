@@ -21,9 +21,5 @@ package org.apache.kyuubi.engine.flink.result;
 /** Constant column names. */
 public class Constants {
 
-  // for results with SUCCESS result kind
-  public static final String RESULT = "result";
-  public static final String OK = "OK";
-
   public static final String SHOW_CATALOGS_RESULT = "catalogs";
 }

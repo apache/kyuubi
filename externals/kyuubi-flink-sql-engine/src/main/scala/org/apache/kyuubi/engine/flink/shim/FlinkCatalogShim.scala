@@ -25,8 +25,6 @@ trait FlinkCatalogShim {
 
   def getCatalogs(tableEnv: TableEnvironmentInternal): Array[String]
 
-  protected def catalogExists(tableEnv: TableEnvironmentInternal, catalog: String): Boolean
-
 }
 
 object FlinkCatalogShim {

@@ -25,17 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import javax.annotation.Nullable;
-import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.client.ClientUtils;
-import org.apache.flink.client.cli.CliArgsException;
 import org.apache.flink.client.cli.CustomCommandLine;
-import org.apache.flink.client.cli.ExecutionConfigAccessor;
-import org.apache.flink.client.cli.ProgramOptions;
 import org.apache.flink.client.deployment.ClusterClientServiceLoader;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.TimeCharacteristic;
@@ -43,8 +37,6 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.TableConfig;
 import org.apache.flink.table.api.TableException;
-import org.apache.flink.table.api.bridge.java.BatchTableEnvironment;
-import org.apache.flink.table.api.bridge.java.StreamTableEnvironment;
 import org.apache.flink.table.api.bridge.java.internal.BatchTableEnvironmentImpl;
 import org.apache.flink.table.api.bridge.java.internal.StreamTableEnvironmentImpl;
 import org.apache.flink.table.api.internal.TableEnvironmentInternal;
@@ -56,26 +48,13 @@ import org.apache.flink.table.delegation.Executor;
 import org.apache.flink.table.delegation.ExecutorFactory;
 import org.apache.flink.table.delegation.Planner;
 import org.apache.flink.table.delegation.PlannerFactory;
-import org.apache.flink.table.factories.BatchTableSinkFactory;
-import org.apache.flink.table.factories.BatchTableSourceFactory;
 import org.apache.flink.table.factories.CatalogFactory;
 import org.apache.flink.table.factories.ComponentFactoryService;
-import org.apache.flink.table.factories.ModuleFactory;
 import org.apache.flink.table.factories.TableFactoryService;
-import org.apache.flink.table.factories.TableSinkFactory;
-import org.apache.flink.table.factories.TableSourceFactory;
-import org.apache.flink.table.functions.AggregateFunction;
-import org.apache.flink.table.functions.FunctionDefinition;
-import org.apache.flink.table.functions.ScalarFunction;
-import org.apache.flink.table.functions.TableFunction;
-import org.apache.flink.table.module.Module;
 import org.apache.flink.table.module.ModuleManager;
-import org.apache.flink.table.sinks.TableSink;
-import org.apache.flink.table.sources.TableSource;
 import org.apache.flink.util.FlinkException;
 import org.apache.flink.util.TemporaryClassLoaderContext;
 import org.apache.kyuubi.engine.flink.config.EngineEnvironment;
-import org.apache.kyuubi.engine.flink.config.entries.ExecutionEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,7 +73,6 @@ public class ExecutionContext<ClusterID> {
   private final ClassLoader classLoader;
 
   private final Configuration flinkConfig;
-  //  private final ClusterClientFactory<ClusterID> clusterClientFactory;
 
   private TableEnvironmentInternal tableEnv;
   private ExecutionEnvironment execEnv;
@@ -171,95 +149,11 @@ public class ExecutionContext<ClusterID> {
   // Non-public methods
   // ------------------------------------------------------------------------------------------------------------------
 
-  private static Configuration createExecutionConfig(
-      CommandLine commandLine,
-      Options commandLineOptions,
-      List<CustomCommandLine> availableCommandLines,
-      List<URL> dependencies)
-      throws FlinkException {
-    LOG.debug("Available commandline options: {}", commandLineOptions);
-    List<String> options =
-        Stream.of(commandLine.getOptions())
-            .map(o -> o.getOpt() + "=" + o.getValue())
-            .collect(Collectors.toList());
-    LOG.debug("Instantiated commandline args: {}, options: {}", commandLine.getArgList(), options);
-
-    final CustomCommandLine activeCommandLine =
-        findActiveCommandLine(availableCommandLines, commandLine);
-    LOG.debug(
-        "Available commandlines: {}, active commandline: {}",
-        availableCommandLines,
-        activeCommandLine);
-
-    Configuration executionConfig = activeCommandLine.toConfiguration(commandLine);
-
-    try {
-      final ProgramOptions programOptions = ProgramOptions.create(commandLine);
-      final ExecutionConfigAccessor executionConfigAccessor =
-          ExecutionConfigAccessor.fromProgramOptions(programOptions, dependencies);
-      executionConfigAccessor.applyToConfiguration(executionConfig);
-    } catch (CliArgsException e) {
-      throw new RuntimeException("Invalid deployment run options.", e);
-    }
-
-    LOG.info("Executor config: {}", executionConfig);
-    return executionConfig;
-  }
-
-  private static CustomCommandLine findActiveCommandLine(
-      List<CustomCommandLine> availableCommandLines, CommandLine commandLine) {
-    for (CustomCommandLine cli : availableCommandLines) {
-      if (cli.isActive(commandLine)) {
-        return cli;
-      }
-    }
-    throw new RuntimeException("Could not find a matching deployment.");
-  }
-
-  private Module createModule(Map<String, String> moduleProperties, ClassLoader classLoader) {
-    final ModuleFactory factory =
-        TableFactoryService.find(ModuleFactory.class, moduleProperties, classLoader);
-    return factory.createModule(moduleProperties);
-  }
-
   private Catalog createCatalog(
       String name, Map<String, String> catalogProperties, ClassLoader classLoader) {
     final CatalogFactory factory =
         TableFactoryService.find(CatalogFactory.class, catalogProperties, classLoader);
     return factory.createCatalog(name, catalogProperties);
-  }
-
-  private static TableSource<?> createTableSource(
-      ExecutionEntry execution, Map<String, String> sourceProperties, ClassLoader classLoader) {
-    if (execution.isStreamingPlanner()) {
-      final TableSourceFactory<?> factory =
-          (TableSourceFactory<?>)
-              TableFactoryService.find(TableSourceFactory.class, sourceProperties, classLoader);
-      return factory.createTableSource(sourceProperties);
-    } else if (execution.isBatchPlanner()) {
-      final BatchTableSourceFactory<?> factory =
-          (BatchTableSourceFactory<?>)
-              TableFactoryService.find(
-                  BatchTableSourceFactory.class, sourceProperties, classLoader);
-      return factory.createBatchTableSource(sourceProperties);
-    }
-    throw new RuntimeException("Unsupported execution type for sources.");
-  }
-
-  private static TableSink<?> createTableSink(
-      ExecutionEntry execution, Map<String, String> sinkProperties, ClassLoader classLoader) {
-    if (execution.isStreamingPlanner()) {
-      final TableSinkFactory<?> factory =
-          (TableSinkFactory<?>)
-              TableFactoryService.find(TableSinkFactory.class, sinkProperties, classLoader);
-      return factory.createTableSink(sinkProperties);
-    } else if (execution.isBatchPlanner()) {
-      final BatchTableSinkFactory<?> factory =
-          (BatchTableSinkFactory<?>)
-              TableFactoryService.find(BatchTableSinkFactory.class, sinkProperties, classLoader);
-      return factory.createBatchTableSink(sinkProperties);
-    }
-    throw new RuntimeException("Unsupported execution type for sinks.");
   }
 
   private TableEnvironmentInternal createStreamTableEnvironment(
@@ -433,38 +327,6 @@ public class ExecutionContext<ClusterID> {
               engineEnvironment.getExecution().getPeriodicWatermarksInterval());
     }
     return env;
-  }
-
-  private void registerFunctions(Map<String, FunctionDefinition> functions) {
-    if (tableEnv instanceof StreamTableEnvironment) {
-      StreamTableEnvironment streamTableEnvironment = (StreamTableEnvironment) tableEnv;
-      functions.forEach(
-          (k, v) -> {
-            if (v instanceof ScalarFunction) {
-              streamTableEnvironment.registerFunction(k, (ScalarFunction) v);
-            } else if (v instanceof AggregateFunction) {
-              streamTableEnvironment.registerFunction(k, (AggregateFunction<?, ?>) v);
-            } else if (v instanceof TableFunction) {
-              streamTableEnvironment.registerFunction(k, (TableFunction<?>) v);
-            } else {
-              throw new RuntimeException("Unsupported function type: " + v.getClass().getName());
-            }
-          });
-    } else {
-      BatchTableEnvironment batchTableEnvironment = (BatchTableEnvironment) tableEnv;
-      functions.forEach(
-          (k, v) -> {
-            if (v instanceof ScalarFunction) {
-              batchTableEnvironment.registerFunction(k, (ScalarFunction) v);
-            } else if (v instanceof AggregateFunction) {
-              batchTableEnvironment.registerFunction(k, (AggregateFunction<?, ?>) v);
-            } else if (v instanceof TableFunction) {
-              batchTableEnvironment.registerFunction(k, (TableFunction<?>) v);
-            } else {
-              throw new RuntimeException("Unsupported function type: " + v.getClass().getName());
-            }
-          });
-    }
   }
 
   // ~ Inner Class -------------------------------------------------------------------------------

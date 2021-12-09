@@ -22,7 +22,6 @@ import java.time.ZoneId
 
 import scala.collection.JavaConverters.{asScalaIteratorConverter, collectionAsScalaIterableConverter}
 
-import org.apache.flink.api.common.JobID
 import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
@@ -48,8 +47,6 @@ abstract class FlinkOperation(
   }
 
   protected var resultSet: ResultSet = _
-
-  protected var jobId: JobID = _
 
   override protected def beforeRun(): Unit = {
     setHasResultSet(true)
@@ -136,10 +133,6 @@ abstract class FlinkOperation(
           throw ke
         }
       }
-  }
-
-  protected def getJobName(statement: String): String = {
-    String.format("%s:%s", session.handle, statement)
   }
 
 }
