@@ -100,7 +100,7 @@ public class ExecutionContext<ClusterID> {
   private final ClassLoader classLoader;
 
   private final Configuration flinkConfig;
-  private final ClusterClientFactory<ClusterID> clusterClientFactory;
+//  private final ClusterClientFactory<ClusterID> clusterClientFactory;
 
   private TableEnvironmentInternal tableEnv;
   private ExecutionEnvironment execEnv;
@@ -130,22 +130,6 @@ public class ExecutionContext<ClusterID> {
 
     // Initialize the TableEnvironment.
     initializeTableEnvironment(sessionState);
-
-    LOG.debug("Deployment descriptor: {}", engineEnvironment.getDeployment());
-    final CommandLine commandLine =
-        createCommandLine(engineEnvironment.getDeployment(), commandLineOptions);
-
-    flinkConfig.addAll(
-        createExecutionConfig(
-            commandLine, commandLineOptions, availableCommandLines, dependencies));
-
-    final ClusterClientServiceLoader serviceLoader = checkNotNull(clusterClientServiceLoader);
-    clusterClientFactory = serviceLoader.getClusterClientFactory(flinkConfig);
-    checkState(clusterClientFactory != null);
-  }
-
-  public ClusterDescriptor<ClusterID> createClusterDescriptor(Configuration configuration) {
-    return clusterClientFactory.createClusterDescriptor(configuration);
   }
 
   /**
@@ -168,10 +152,6 @@ public class ExecutionContext<ClusterID> {
 
   public TableEnvironmentInternal getTableEnvironment() {
     return tableEnv;
-  }
-
-  public ClusterClientFactory<ClusterID> getClusterClientFactory() {
-    return clusterClientFactory;
   }
 
   /** Returns a builder for this {@link ExecutionContext}. */
@@ -230,15 +210,6 @@ public class ExecutionContext<ClusterID> {
 
     LOG.info("Executor config: {}", executionConfig);
     return executionConfig;
-  }
-
-  private static CommandLine createCommandLine(
-      DeploymentEntry deployment, Options commandLineOptions) {
-    try {
-      return deployment.getCommandLine(commandLineOptions);
-    } catch (Exception e) {
-      throw new RuntimeException("Invalid deployment options.", e);
-    }
   }
 
   private static CustomCommandLine findActiveCommandLine(

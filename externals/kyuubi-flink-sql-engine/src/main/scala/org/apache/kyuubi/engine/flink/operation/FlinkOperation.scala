@@ -27,7 +27,6 @@ import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.engine.flink.context.SessionContext
-import org.apache.kyuubi.engine.flink.deployment.ClusterDescriptorAdapter
 import org.apache.kyuubi.engine.flink.result.ResultSet
 import org.apache.kyuubi.operation.{AbstractOperation, OperationState}
 import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
@@ -50,7 +49,6 @@ abstract class FlinkOperation(
 
   protected var resultSet: ResultSet = _
 
-  protected var clusterDescriptorAdapter: ClusterDescriptorAdapter[_] = _
   protected var jobId: JobID = _
 
   override protected def beforeRun(): Unit = {

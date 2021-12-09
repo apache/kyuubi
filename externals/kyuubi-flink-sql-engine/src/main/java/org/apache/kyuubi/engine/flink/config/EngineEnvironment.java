@@ -24,7 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.apache.kyuubi.engine.flink.config.entries.CatalogEntry;
 import org.apache.kyuubi.engine.flink.config.entries.ConfigurationEntry;
-import org.apache.kyuubi.engine.flink.config.entries.DeploymentEntry;
 import org.apache.kyuubi.engine.flink.config.entries.EngineEntry;
 import org.apache.kyuubi.engine.flink.config.entries.ExecutionEntry;
 
@@ -54,14 +53,11 @@ public class EngineEnvironment {
 
   private ConfigurationEntry configuration;
 
-  private DeploymentEntry deployment;
-
   public EngineEnvironment() {
     this.engine = EngineEntry.DEFAULT_INSTANCE;
     this.catalogs = Collections.emptyMap();
     this.execution = ExecutionEntry.DEFAULT_INSTANCE;
     this.configuration = ConfigurationEntry.DEFAULT_INSTANCE;
-    this.deployment = DeploymentEntry.DEFAULT_INSTANCE;
   }
 
   public void setEngine(Map<String, Object> config) {
@@ -88,10 +84,6 @@ public class EngineEnvironment {
     return configuration;
   }
 
-  public DeploymentEntry getDeployment() {
-    return deployment;
-  }
-
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder();
@@ -109,8 +101,6 @@ public class EngineEnvironment {
     execution.asTopLevelMap().forEach((k, v) -> sb.append(k).append(": ").append(v).append('\n'));
     sb.append("================== Configuration =================\n");
     configuration.asMap().forEach((k, v) -> sb.append(k).append(": ").append(v).append('\n'));
-    sb.append("=================== Deployment ===================\n");
-    deployment.asTopLevelMap().forEach((k, v) -> sb.append(k).append(": ").append(v).append('\n'));
     return sb.toString();
   }
 
@@ -138,9 +128,6 @@ public class EngineEnvironment {
     mergedEnv.configuration =
         ConfigurationEntry.merge(env1.getConfiguration(), env2.getConfiguration());
 
-    // merge deployment properties
-    mergedEnv.deployment = DeploymentEntry.merge(env1.getDeployment(), env2.getDeployment());
-
     return mergedEnv;
   }
 
@@ -160,9 +147,6 @@ public class EngineEnvironment {
 
     // enrich configuration properties
     enrichedEnv.configuration = ConfigurationEntry.enrich(env.configuration, properties);
-
-    // enrich deployment properties
-    enrichedEnv.deployment = DeploymentEntry.enrich(env.deployment, properties);
 
     // does not change engine properties
     enrichedEnv.engine = env.getEngine();
