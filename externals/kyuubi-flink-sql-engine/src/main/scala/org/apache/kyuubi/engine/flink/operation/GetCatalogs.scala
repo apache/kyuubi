@@ -37,11 +37,7 @@ class GetCatalogs(sessionContext: SessionContext, session: Session)
       resultSet = OperationUtil.stringListToResultSet(
         catalogs,
         Constants.SHOW_CATALOGS_RESULT)
-    } catch {
-      case e: Exception =>
-        logger.error(e.getMessage, e)
-        throw KyuubiSQLException(e)
-    }
+    } catch onError()
   }
 
 }

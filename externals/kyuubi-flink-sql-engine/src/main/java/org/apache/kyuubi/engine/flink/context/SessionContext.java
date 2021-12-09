@@ -23,14 +23,14 @@ import org.apache.kyuubi.engine.flink.config.EngineEnvironment;
 
 /** Context describing current session properties, original properties, ExecutionContext, etc. */
 public class SessionContext {
-  private final EngineEnvironment originalSessionEnv;
+  private final EngineEnvironment engineEnv;
   private final EngineContext engineContext;
   private ExecutionContext<?> executionContext;
 
-  public SessionContext(EngineEnvironment originalSessionEnv, EngineContext engineContext) {
-    this.originalSessionEnv = originalSessionEnv;
+  public SessionContext(EngineEnvironment engineEnv, EngineContext engineContext) {
+    this.engineEnv = engineEnv;
     this.engineContext = engineContext;
-    this.executionContext = createExecutionContextBuilder(originalSessionEnv).build();
+    this.executionContext = createExecutionContextBuilder(engineEnv).build();
   }
 
   public ExecutionContext<?> getExecutionContext() {
@@ -58,12 +58,12 @@ public class SessionContext {
       return false;
     }
     SessionContext context = (SessionContext) o;
-    return Objects.equals(originalSessionEnv, context.originalSessionEnv)
+    return Objects.equals(engineEnv, context.engineEnv)
         && Objects.equals(executionContext, context.executionContext);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(originalSessionEnv, executionContext);
+    return Objects.hash(engineEnv, executionContext);
   }
 }
