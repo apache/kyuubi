@@ -22,7 +22,7 @@ import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
-import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 
 /**
  * Event Tracking for user sessions
@@ -39,9 +39,9 @@ case class SessionEvent(
     engineId: String,
     username: String,
     ip: String,
+    serverIp: String,
     startTime: Long,
     var endTime: Long = -1L,
-    var serverIp: String = "",
     var totalOperations: Int = 0) extends KyuubiSparkEvent {
 
   override def schema: StructType = Encoders.product[SessionEvent].schema
@@ -58,12 +58,13 @@ case class SessionEvent(
 }
 
 object SessionEvent {
-  def apply(session: Session): SessionEvent = {
+  def apply(session: SparkSessionImpl): SessionEvent = {
     new SessionEvent(
       session.handle.identifier.toString,
       KyuubiSparkUtil.engineId,
       session.user,
       session.ipAddress,
+      session.serverIpAddress,
       session.createTime)
   }
 }

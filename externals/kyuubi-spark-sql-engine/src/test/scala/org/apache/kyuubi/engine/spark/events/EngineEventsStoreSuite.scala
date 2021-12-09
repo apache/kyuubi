@@ -26,9 +26,9 @@ class EngineEventsStoreSuite extends KyuubiFunSuite {
   test("ensure that the sessions are stored in order") {
     val store = new EngineEventsStore(KyuubiConf())
 
-    val s1 = SessionEvent("a", "ea", "test1", "1.1.1.1", 1L)
-    val s2 = SessionEvent("c", "ea", "test2", "1.1.1.1", 3L)
-    val s3 = SessionEvent("b", "ea", "test3", "1.1.1.1", 2L)
+    val s1 = SessionEvent("a", "ea", "test1", "1.1.1.1", "1.1.1.2", 1L)
+    val s2 = SessionEvent("c", "ea", "test2", "1.1.1.1", "1.1.1.2", 3L)
+    val s3 = SessionEvent("b", "ea", "test3", "1.1.1.1", "1.1.1.2", 2L)
 
     store.saveSession(s1)
     store.saveSession(s2)
@@ -45,7 +45,7 @@ class EngineEventsStoreSuite extends KyuubiFunSuite {
 
     val store = new EngineEventsStore(conf)
     for (i <- 1 to 5) {
-      val s = SessionEvent(s"b$i", "ea", s"test$i", "1.1.1.1", 2L)
+      val s = SessionEvent(s"b$i", "ea", s"test$i", "1.1.1.1", "1.1.1.2", 2L)
       store.saveSession(s)
     }
 
@@ -58,10 +58,10 @@ class EngineEventsStoreSuite extends KyuubiFunSuite {
 
     val store = new EngineEventsStore(conf)
 
-    store.saveSession(SessionEvent("s1", "ea", "test1", "1.1.1.1", 1L, -1L))
-    store.saveSession(SessionEvent("s2", "ea", "test1", "1.1.1.1", 2L, -1L))
-    store.saveSession(SessionEvent("s3", "ea", "test1", "1.1.1.1", 3L, 1L))
-    store.saveSession(SessionEvent("s4", "ea", "test1", "1.1.1.1", 4L, -1L))
+    store.saveSession(SessionEvent("s1", "ea", "test1", "1.1.1.1", "1.1.1.2", 1L, -1L))
+    store.saveSession(SessionEvent("s2", "ea", "test1", "1.1.1.1", "1.1.1.2", 2L, -1L))
+    store.saveSession(SessionEvent("s3", "ea", "test1", "1.1.1.1", "1.1.1.2", 3L, 1L))
+    store.saveSession(SessionEvent("s4", "ea", "test1", "1.1.1.1", "1.1.1.2", 4L, -1L))
 
     assert(store.getSessionList.size == 3)
     assert(store.getSessionList(2).sessionId == "s4")
@@ -69,7 +69,7 @@ class EngineEventsStoreSuite extends KyuubiFunSuite {
 
   test("test check session after update session") {
     val store = new EngineEventsStore(KyuubiConf())
-    val s = SessionEvent("abc", "ea", "test3", "1.1.1.1", 2L)
+    val s = SessionEvent("abc", "ea", "test3", "1.1.1.1", "1.1.1.2", 2L)
     store.saveSession(s)
 
     val finishTimestamp: Long = 456L

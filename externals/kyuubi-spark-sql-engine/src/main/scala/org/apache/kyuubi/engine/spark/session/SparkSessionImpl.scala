@@ -48,13 +48,14 @@ class SparkSessionImpl(
 
   private val sessionEvent = SessionEvent(this)
 
+  def serverIpAddress(): String = serverIpAddress
+
   override def open(): Unit = {
     normalizedConf.foreach {
       case ("use:database", database) => spark.catalog.setCurrentDatabase(database)
       case (key, value) => setModifiableConfig(key, value)
     }
     KDFRegistry.registerAll(spark)
-    sessionEvent.serverIp = serverIpAddress
     EventLoggingService.onEvent(sessionEvent)
     super.open()
   }
