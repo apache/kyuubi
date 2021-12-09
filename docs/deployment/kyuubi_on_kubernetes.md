@@ -65,7 +65,7 @@ Examples:
 
 The script can also help build external Spark into a Kyuubi image that acts as a client for submitting tasks by `-s ${SPAAK_HOME}`.
 
-Of course, if you have an image that contains the Spark binary package, you don't have to copy Spark locally. Make your Spark Image as BASE_IMAGE by using the `-S` and `-b BASE_IMAGE=${SPARK_IMAGE}` arguments.
+Of course, if you have an image that contains the Spark binary package, you don't have to copy Spark locally. Make your Spark Image as BASE_IMAGE by using the `-S ${SPARK_HOME_IN_DOCKER}` and `-b BASE_IMAGE=${SPARK_IMAGE}` arguments.
 
 You can use `${KYUUBI_HOME}/bin/docker-image-tool.sh -h` for more parameters.
 
