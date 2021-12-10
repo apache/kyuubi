@@ -336,7 +336,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       assert(200 == response.getStatus)
 
       // verify operation
-      response = webTarget.path(s"api/v1/operations/$serializedOperationHandle")
+      response = webTarget.path(s"api/v1/operations/$serializedOperationHandle/statementEvent")
         .request(MediaType.APPLICATION_JSON_TYPE).get()
       assert(404 == response.getStatus)
 

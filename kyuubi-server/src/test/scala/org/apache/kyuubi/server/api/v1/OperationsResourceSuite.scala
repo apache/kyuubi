@@ -18,84 +18,75 @@
 package org.apache.kyuubi.server.api.v1
 
 import javax.ws.rs.client.{Entity, WebTarget}
-import javax.ws.rs.core.{MediaType, Response}
+import javax.ws.rs.core.MediaType
+
+import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
-import org.apache.kyuubi.operation.{OperationHandle, OperationState}
-import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.events.KyuubiStatementEvent
+import org.apache.kyuubi.operation.{ExecuteStatement, OperationState}
+import org.apache.kyuubi.server.KyuubiRestFrontendService
 
 class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
-  test("test get an operation detail by identifier") {
-    withKyuubiRestServer { (_, _, _, webTarget) =>
-      val opHandleStr = getOpHandleStr(webTarget, "catalogs")
-
-      var response = webTarget.path(s"api/v1/operations/$opHandleStr")
+  test("test get a statement event") {
+    withKyuubiRestServer { (fe, _, _, webTarget) =>
+      val opHandleStr = getOpHandleStr(fe)
+      var response = webTarget.path(s"api/v1/operations/$opHandleStr/statementEvent")
         .request(MediaType.APPLICATION_JSON_TYPE).get()
-      val operationDetail = response.readEntity(classOf[OperationDetail])
+      val operationEvent = response.readEntity(classOf[KyuubiStatementEvent])
       assert(200 == response.getStatus)
-      assert(operationDetail.operationStatus.state == OperationState.FINISHED)
+      assert(operationEvent.state == OperationState.INITIALIZED.name())
 
       // Invalid operationHandleStr
-      val invalidOperationHandle = opHandleStr.replaceAll("GET_CATALOGS", "GET_TYPE_INFO")
-      response = webTarget.path(s"api/v1/operations/$invalidOperationHandle")
+      val invalidOperationHandle = opHandleStr.replaceAll("EXECUTE_STATEMENT", "GET_TYPE_INFO")
+      response = webTarget.path(s"api/v1/operations/$invalidOperationHandle/statementEvent")
         .request(MediaType.APPLICATION_JSON_TYPE).get()
       assert(404 == response.getStatus)
-
     }
   }
 
   test("test apply an action for an operation") {
-    withKyuubiRestServer { (_, _, _, webTarget: WebTarget) =>
-      val opHandleStr = getOpHandleStr(webTarget, "catalogs")
+    withKyuubiRestServer { (fe, _, _, webTarget: WebTarget) =>
+      val opHandleStr = getOpHandleStr(fe)
 
       var response = webTarget.path(s"api/v1/operations/$opHandleStr")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .put(Entity.entity(OpActionRequest("cancel"), MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
 
-      response = webTarget.path(s"api/v1/operations/$opHandleStr")
+      response = webTarget.path(s"api/v1/operations/$opHandleStr/statementEvent")
         .request(MediaType.APPLICATION_JSON_TYPE).get()
-      val operationDetail = response.readEntity(classOf[OperationDetail])
-      assert(operationDetail.operationStatus.state == OperationState.FINISHED ||
-        operationDetail.operationStatus.state == OperationState.CANCELED)
+      val operationEvent = response.readEntity(classOf[KyuubiStatementEvent])
+      assert(operationEvent.state == OperationState.FINISHED.name() ||
+        operationEvent.state == OperationState.CANCELED.name())
 
       response = webTarget.path(s"api/v1/operations/$opHandleStr")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .put(Entity.entity(OpActionRequest("close"), MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
 
-      response = webTarget.path(s"api/v1/operations/$opHandleStr")
+      response = webTarget.path(s"api/v1/operations/$opHandleStr/statementEvent")
         .request(MediaType.APPLICATION_JSON_TYPE).get()
       assert(404 == response.getStatus)
 
     }
   }
 
-  def getOpHandleStr(webTarget: WebTarget, operationType: String): String = {
-    val requestObj = SessionOpenRequest(
-      1,
+  def getOpHandleStr(fe: KyuubiRestFrontendService): String = {
+    val sessionHandle = fe.be.sessionManager.openSession(
+      HIVE_CLI_SERVICE_PROTOCOL_V2,
       "admin",
       "123456",
       "localhost",
       Map("testConfig" -> "testValue"))
-
-    var response: Response = webTarget.path("api/v1/sessions")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
-    val sessionHandle = response.readEntity(classOf[SessionHandle])
-    val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
-      s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
-
-    response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/operations/$operationType")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
-    assert(200 == response.getStatus)
-    val operationHandle = response.readEntity(classOf[OperationHandle])
+    val session = fe.be.sessionManager.getSession(sessionHandle)
+    val op = new ExecuteStatement(session, "show tables", true, 3000)
+    fe.be.sessionManager.operationManager.addOperation(op)
+    val operationHandle = op.getHandle
 
     s"${operationHandle.identifier.publicId}|" +
       s"${operationHandle.identifier.secretId}|${operationHandle.protocol.getValue}|" +
       s"${operationHandle.typ.toString}"
-
   }
 }
