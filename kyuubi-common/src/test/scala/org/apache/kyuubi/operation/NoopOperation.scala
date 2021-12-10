@@ -24,7 +24,6 @@ import scala.collection.JavaConverters._
 import org.apache.hive.service.rpc.thrift.{TColumn, TColumnDesc, TPrimitiveTypeEntry, TRowSet, TStringColumn, TTableSchema, TTypeDesc, TTypeEntry, TTypeId}
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
@@ -85,8 +84,4 @@ class NoopOperation(typ: OperationType, session: Session, shouldFail: Boolean = 
   override def shouldRunAsync: Boolean = false
 
   override def getOperationLog: Option[OperationLog] = None
-
-  override def getOperationEvent(): Option[KyuubiEvent] = {
-    Option(NoopEvent(this))
-  }
 }

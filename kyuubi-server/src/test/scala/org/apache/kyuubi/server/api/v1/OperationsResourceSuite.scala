@@ -21,20 +21,20 @@ import javax.ws.rs.client.{Entity, WebTarget}
 import javax.ws.rs.core.{MediaType, Response}
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
-import org.apache.kyuubi.operation.{NoopEvent, OperationHandle, OperationState}
+import org.apache.kyuubi.operation.{OperationHandle, OperationState}
 import org.apache.kyuubi.session.SessionHandle
 
 class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
-  test("test get an operation event by identifier") {
+  test("test get an operation detail by identifier") {
     withKyuubiRestServer { (_, _, _, webTarget) =>
       val opHandleStr = getOpHandleStr(webTarget, "catalogs")
 
       var response = webTarget.path(s"api/v1/operations/$opHandleStr")
         .request(MediaType.APPLICATION_JSON_TYPE).get()
-      val operationEvent = response.readEntity(classOf[NoopEvent])
+      val operationDetail = response.readEntity(classOf[OperationDetail])
       assert(200 == response.getStatus)
-      assert(operationEvent.state == OperationState.FINISHED.name())
+      assert(operationDetail.operationStatus.state == OperationState.FINISHED)
 
       // Invalid operationHandleStr
       val invalidOperationHandle = opHandleStr.replaceAll("GET_CATALOGS", "GET_TYPE_INFO")
@@ -56,9 +56,9 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
 
       response = webTarget.path(s"api/v1/operations/$opHandleStr")
         .request(MediaType.APPLICATION_JSON_TYPE).get()
-      val operationEvent = response.readEntity(classOf[NoopEvent])
-      assert(operationEvent.state == OperationState.FINISHED.name() ||
-        operationEvent.state == OperationState.CANCELED.name())
+      val operationDetail = response.readEntity(classOf[OperationDetail])
+      assert(operationDetail.operationStatus.state == OperationState.FINISHED ||
+        operationDetail.operationStatus.state == OperationState.CANCELED)
 
       response = webTarget.path(s"api/v1/operations/$opHandleStr")
         .request(MediaType.APPLICATION_JSON_TYPE)

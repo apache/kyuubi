@@ -27,7 +27,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.OperationHandle.parseOperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
 
@@ -40,17 +39,18 @@ private[v1] class OperationsResource extends ApiRequestContext {
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON)),
     description =
-      "Get an operation event")
+      "Get an operation detail with a given session identifier and operation identifier")
   @GET
   @Path("{operationHandle}")
-  def getOperationEvent(
-      @PathParam("operationHandle") operationHandleStr: String): KyuubiEvent = {
+  def getOperationDetail(
+      @PathParam("operationHandle") operationHandleStr: String): OperationDetail = {
     try {
-      backendService.sessionManager.operationManager
-        .getOperation(parseOperationHandle(operationHandleStr)).getOperationEvent.get
+      val operation = backendService.sessionManager.operationManager
+        .getOperation(parseOperationHandle(operationHandleStr))
+      OperationDetail(operation.shouldRunAsync, operation.isTimedOut, operation.getStatus)
     } catch {
       case NonFatal(_) =>
-        throw new NotFoundException(s"Error getting an operation event")
+        throw new NotFoundException(s"Error getting an operation detail")
     }
   }
 
