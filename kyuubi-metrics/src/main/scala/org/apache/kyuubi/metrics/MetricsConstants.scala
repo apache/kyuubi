@@ -40,4 +40,5 @@ object MetricsConstants {
   final val OPERATION_FAIL: String = OPERATION + "failed"
   final val OPERATION_TOTAL: String = OPERATION + "total"
 
+  final val OPERATION_RPC_TIME: String = OPERATION + "rpc_time"
 }

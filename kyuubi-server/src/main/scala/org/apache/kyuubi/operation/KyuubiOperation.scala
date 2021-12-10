@@ -26,7 +26,8 @@ import org.apache.thrift.TException
 import org.apache.thrift.transport.TTransportException
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
-import org.apache.kyuubi.metrics.MetricsConstants.{OPERATION_FAIL, OPERATION_OPEN, OPERATION_TOTAL}
+import org.apache.kyuubi.client.KyuubiThriftClientCallTimeStatics
+import org.apache.kyuubi.metrics.MetricsConstants.{OPERATION_FAIL, OPERATION_OPEN, OPERATION_RPC_TIME, OPERATION_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationType.OperationType
@@ -47,7 +48,8 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
     ms.incCount(MetricRegistry.name(OPERATION_TOTAL))
   }
 
-  protected[operation] lazy val client = session.asInstanceOf[KyuubiSessionImpl].client
+  protected[operation] lazy val client = new KyuubiThriftClientCallTimeStatics(
+    session.asInstanceOf[KyuubiSessionImpl].client)
 
   @volatile protected var _remoteOpHandle: TOperationHandle = _
 
@@ -110,6 +112,9 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
             warn(s"Error cancelling ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
         }
       }
+      MetricsSystem.tracing(_.updateHistogram(
+        MetricRegistry.name(OPERATION_RPC_TIME, opTypeName),
+        client.getTimeCostMillis))
     }
   }
 
@@ -131,6 +136,9 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
             warn(s"Error closing ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
         }
       }
+      MetricsSystem.tracing(_.updateHistogram(
+        MetricRegistry.name(OPERATION_RPC_TIME, opTypeName),
+        client.getTimeCostMillis))
     }
   }
 

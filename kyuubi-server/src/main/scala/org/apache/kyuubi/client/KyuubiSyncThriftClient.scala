@@ -35,7 +35,7 @@ import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.ThriftUtils
 
 class KyuubiSyncThriftClient private (protocol: TProtocol)
-  extends TCLIService.Client(protocol) with Logging {
+  extends TCLIService.Client(protocol) with KyuubiThriftClient with Logging {
 
   @volatile private var _remoteSessionHandle: TSessionHandle = _
 

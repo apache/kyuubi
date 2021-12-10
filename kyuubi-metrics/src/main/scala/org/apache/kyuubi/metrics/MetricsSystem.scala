@@ -50,6 +50,11 @@ class MetricsSystem extends CompositeService("MetricsSystem") {
       })
   }
 
+  def updateHistogram(key: String, value: Long): Unit = {
+    val histogram = registry.histogram(key)
+    histogram.update(value)
+  }
+
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     registry.registerAll(new GarbageCollectorMetricSet)
     registry.registerAll(new MemoryUsageGaugeSet)
