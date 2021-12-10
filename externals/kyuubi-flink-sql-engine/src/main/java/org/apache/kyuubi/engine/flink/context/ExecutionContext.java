@@ -40,7 +40,6 @@ import org.apache.flink.table.api.TableException;
 import org.apache.flink.table.api.bridge.java.internal.BatchTableEnvironmentImpl;
 import org.apache.flink.table.api.bridge.java.internal.StreamTableEnvironmentImpl;
 import org.apache.flink.table.api.internal.TableEnvironmentInternal;
-import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.catalog.CatalogManager;
 import org.apache.flink.table.catalog.FunctionCatalog;
 import org.apache.flink.table.catalog.GenericInMemoryCatalog;
@@ -48,9 +47,7 @@ import org.apache.flink.table.delegation.Executor;
 import org.apache.flink.table.delegation.ExecutorFactory;
 import org.apache.flink.table.delegation.Planner;
 import org.apache.flink.table.delegation.PlannerFactory;
-import org.apache.flink.table.factories.CatalogFactory;
 import org.apache.flink.table.factories.ComponentFactoryService;
-import org.apache.flink.table.factories.TableFactoryService;
 import org.apache.flink.table.module.ModuleManager;
 import org.apache.flink.util.FlinkException;
 import org.apache.flink.util.TemporaryClassLoaderContext;
@@ -79,12 +76,8 @@ public class ExecutionContext<ClusterID> {
   private StreamExecutionEnvironment streamExecEnv;
   private Executor executor;
 
-  // Members that should be reused in the same session.
-  private SessionState sessionState;
-
   private ExecutionContext(
       EngineEnvironment engineEnvironment,
-      @Nullable SessionState sessionState,
       List<URL> dependencies,
       Configuration flinkConfig,
       ClusterClientServiceLoader clusterClientServiceLoader,
@@ -101,7 +94,7 @@ public class ExecutionContext<ClusterID> {
             dependencies, Collections.emptyList(), this.getClass().getClassLoader(), flinkConfig);
 
     // Initialize the TableEnvironment.
-    initializeTableEnvironment(sessionState);
+    initializeTableEnvironment();
   }
 
   /**
@@ -149,13 +142,6 @@ public class ExecutionContext<ClusterID> {
   // Non-public methods
   // ------------------------------------------------------------------------------------------------------------------
 
-  private Catalog createCatalog(
-      String name, Map<String, String> catalogProperties, ClassLoader classLoader) {
-    final CatalogFactory factory =
-        TableFactoryService.find(CatalogFactory.class, catalogProperties, classLoader);
-    return factory.createCatalog(name, catalogProperties);
-  }
-
   private TableEnvironmentInternal createStreamTableEnvironment(
       StreamExecutionEnvironment env,
       EnvironmentSettings settings,
@@ -199,51 +185,37 @@ public class ExecutionContext<ClusterID> {
     }
   }
 
-  private void initializeTableEnvironment(@Nullable SessionState sessionState) {
+  private void initializeTableEnvironment() {
     final EnvironmentSettings settings = engineEnvironment.getExecution().getEnvironmentSettings();
     // Step 0.0 Initialize the table configuration.
     final TableConfig config = new TableConfig();
-    final boolean noInheritedState = sessionState == null;
-    if (noInheritedState) {
-      // --------------------------------------------------------------------------------------------------------------
-      // Step.1 Create environments
-      // --------------------------------------------------------------------------------------------------------------
-      // Step 1.0 Initialize the ModuleManager if required.
-      final ModuleManager moduleManager = new ModuleManager();
-      // Step 1.1 Initialize the CatalogManager if required.
-      final CatalogManager catalogManager =
-          CatalogManager.newBuilder()
-              .classLoader(classLoader)
-              .config(config.getConfiguration())
-              .defaultCatalog(
-                  settings.getBuiltInCatalogName(),
-                  new GenericInMemoryCatalog(
-                      settings.getBuiltInCatalogName(), settings.getBuiltInDatabaseName()))
-              .build();
-      // Step 1.2 Initialize the FunctionCatalog if required.
-      final FunctionCatalog functionCatalog =
-          new FunctionCatalog(config, catalogManager, moduleManager);
-      // Step 1.4 Set up session state.
-      this.sessionState = SessionState.of(catalogManager, moduleManager, functionCatalog);
+    // --------------------------------------------------------------------------------------------------------------
+    // Step.1 Create environments
+    // --------------------------------------------------------------------------------------------------------------
+    // Step 1.0 Initialize the ModuleManager if required.
+    final ModuleManager moduleManager = new ModuleManager();
+    // Step 1.1 Initialize the CatalogManager if required.
+    final CatalogManager catalogManager =
+        CatalogManager.newBuilder()
+            .classLoader(classLoader)
+            .config(config.getConfiguration())
+            .defaultCatalog(
+                settings.getBuiltInCatalogName(),
+                new GenericInMemoryCatalog(
+                    settings.getBuiltInCatalogName(), settings.getBuiltInDatabaseName()))
+            .build();
+    // Step 1.2 Initialize the FunctionCatalog if required.
+    final FunctionCatalog functionCatalog =
+        new FunctionCatalog(config, catalogManager, moduleManager);
 
-      // Must initialize the table engineEnvironment before actually the
-      createTableEnvironment(settings, config, catalogManager, moduleManager, functionCatalog);
+    // Must initialize the table engineEnvironment before actually the
+    createTableEnvironment(settings, config, catalogManager, moduleManager, functionCatalog);
 
-      // --------------------------------------------------------------------------------------------------------------
-      // Step.4 Create catalogs and register them.
-      // --------------------------------------------------------------------------------------------------------------
-      // No need to register the catalogs if already inherit from the same session.
-      initializeCatalogs();
-    } else {
-      // Set up session state.
-      this.sessionState = sessionState;
-      createTableEnvironment(
-          settings,
-          config,
-          sessionState.catalogManager,
-          sessionState.moduleManager,
-          sessionState.functionCatalog);
-    }
+    // --------------------------------------------------------------------------------------------------------------
+    // Step.4 Create catalogs and register them.
+    // --------------------------------------------------------------------------------------------------------------
+    // No need to register the catalogs if already inherit from the same session.
+    initializeCatalogs();
   }
 
   private void createTableEnvironment(
@@ -326,9 +298,6 @@ public class ExecutionContext<ClusterID> {
     private EngineEnvironment defaultEnv;
     private EngineEnvironment currentEnv;
 
-    // Optional members.
-    @Nullable private SessionState sessionState;
-
     private Builder(
         EngineEnvironment defaultEnv,
         @Nullable EngineEnvironment sessionEnv,
@@ -351,18 +320,12 @@ public class ExecutionContext<ClusterID> {
       return this;
     }
 
-    public Builder sessionState(SessionState sessionState) {
-      this.sessionState = sessionState;
-      return this;
-    }
-
     public ExecutionContext<?> build() {
       try {
         return new ExecutionContext<>(
             this.currentEnv == null
                 ? EngineEnvironment.merge(defaultEnv, sessionEnv)
                 : this.currentEnv,
-            this.sessionState,
             this.dependencies,
             this.configuration,
             this.serviceLoader,
@@ -372,29 +335,6 @@ public class ExecutionContext<ClusterID> {
         // catch everything such that a configuration does not crash the executor
         throw new RuntimeException("Could not create execution context.", t);
       }
-    }
-  }
-
-  /** Represents the state that should be reused in one session. * */
-  public static class SessionState {
-    public final CatalogManager catalogManager;
-    public final ModuleManager moduleManager;
-    public final FunctionCatalog functionCatalog;
-
-    private SessionState(
-        CatalogManager catalogManager,
-        ModuleManager moduleManager,
-        FunctionCatalog functionCatalog) {
-      this.catalogManager = catalogManager;
-      this.moduleManager = moduleManager;
-      this.functionCatalog = functionCatalog;
-    }
-
-    public static SessionState of(
-        CatalogManager catalogManager,
-        ModuleManager moduleManager,
-        FunctionCatalog functionCatalog) {
-      return new SessionState(catalogManager, moduleManager, functionCatalog);
     }
   }
 }

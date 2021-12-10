@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.schema
+package org.apache.kyuubi.engine.flink.schema
 
 import java.nio.ByteBuffer
 import java.time.ZoneId
