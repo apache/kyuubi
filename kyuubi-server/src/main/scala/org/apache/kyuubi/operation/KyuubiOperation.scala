@@ -48,6 +48,12 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
     ms.incCount(MetricRegistry.name(OPERATION_TOTAL))
   }
 
+  private def metricTraceCloseOrCancel(): Unit = MetricsSystem.tracing { ms =>
+    ms.decCount(MetricRegistry.name(OPERATION_OPEN, opTypeName))
+    ms.updateHistogram(
+      MetricRegistry.name(OPERATION_RPC_TIME, opTypeName),
+      client.getTimeCostMillis)}
+
   protected[operation] lazy val client = new KyuubiThriftClientCallTimeStatics(
     session.asInstanceOf[KyuubiSessionImpl].client)
 
@@ -103,7 +109,6 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
   override def cancel(): Unit = state.synchronized {
     if (!isClosedOrCanceled) {
       setState(OperationState.CANCELED)
-      MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opTypeName)))
       if (_remoteOpHandle != null) {
         try {
           client.cancelOperation(_remoteOpHandle)
@@ -112,16 +117,13 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
             warn(s"Error cancelling ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
         }
       }
-      MetricsSystem.tracing(_.updateHistogram(
-        MetricRegistry.name(OPERATION_RPC_TIME, opTypeName),
-        client.getTimeCostMillis))
+      metricTraceCloseOrCancel()
     }
   }
 
   override def close(): Unit = state.synchronized {
     if (!isClosedOrCanceled) {
       setState(OperationState.CLOSED)
-      MetricsSystem.tracing(_.decCount(MetricRegistry.name(OPERATION_OPEN, opTypeName)))
       if (_remoteOpHandle != null) {
         try {
           getOperationLog.foreach(_.close())
@@ -136,9 +138,7 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
             warn(s"Error closing ${_remoteOpHandle.getOperationId}: ${e.getMessage}", e)
         }
       }
-      MetricsSystem.tracing(_.updateHistogram(
-        MetricRegistry.name(OPERATION_RPC_TIME, opTypeName),
-        client.getTimeCostMillis))
+      metricTraceCloseOrCancel()
     }
   }
 
