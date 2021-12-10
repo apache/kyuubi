@@ -23,6 +23,7 @@ import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet, TTableSche
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_IDLE_TIMEOUT
+import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState._
 import org.apache.kyuubi.operation.OperationType.OperationType
@@ -41,6 +42,8 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
   final protected val statementId = handle.identifier.toString
 
   override def getOperationLog: Option[OperationLog] = None
+
+  override def getOperationEvent: Option[KyuubiEvent] = None
 
   @volatile protected var state: OperationState = INITIALIZED
   @volatile protected var startTime: Long = _

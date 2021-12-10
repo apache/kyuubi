@@ -21,6 +21,7 @@ import java.util.concurrent.Future
 
 import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet, TTableSchema}
 
+import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -39,6 +40,7 @@ trait Operation {
   def getHandle: OperationHandle
   def getStatus: OperationStatus
   def getOperationLog: Option[OperationLog]
+  def getOperationEvent: Option[KyuubiEvent]
 
   def getBackgroundHandle: Future[_]
   def shouldRunAsync: Boolean

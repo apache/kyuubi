@@ -25,7 +25,7 @@ import org.apache.thrift.TException
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.events.KyuubiStatementEvent
+import org.apache.kyuubi.events.{KyuubiEvent, KyuubiStatementEvent}
 import org.apache.kyuubi.operation.FetchOrientation.FETCH_NEXT
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
@@ -39,6 +39,10 @@ class ExecuteStatement(
     queryTimeout: Long)
   extends KyuubiOperation(OperationType.EXECUTE_STATEMENT, session) {
   EventLoggingService.onEvent(KyuubiStatementEvent(this))
+
+  override def getOperationEvent(): Option[KyuubiEvent] = {
+    Option(KyuubiStatementEvent(this))
+  }
 
   final private val _operationLog: OperationLog =
     if (shouldRunAsync) {

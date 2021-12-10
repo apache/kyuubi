@@ -79,9 +79,4 @@ case class GetFunctionsRequest(
     schemaName: String,
     functionName: String)
 
-case class OperationDetail(
-    shouldRunAsync: Boolean,
-    isTimedOut: Boolean,
-    operationStatus: OperationStatus)
-
 case class OpActionRequest(action: String)
