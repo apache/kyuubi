@@ -120,7 +120,7 @@ object RowSet {
     } else {
       val tStrValue = new TStringValue
       if (row.getField(ordinal) != null) {
-        // TODO to be down
+        // TODO to be done
       }
       TColumnValue.stringVal(tStrValue)
     }
@@ -237,18 +237,5 @@ object RowSet {
     } else {
       null
     }
-
-  def toJavaRegex(input: String): String = {
-    val res =
-      if (StringUtils.isEmpty(input) || input == "*") {
-        "%"
-      } else {
-        input
-      }
-    val wStr = ".*"
-    res
-      .replaceAll("([^\\\\])%", "$1" + wStr).replaceAll("\\\\%", "%").replaceAll("^%", wStr)
-      .replaceAll("([^\\\\])_", "$1.").replaceAll("\\\\_", "_").replaceAll("^_", ".")
-  }
 
 }

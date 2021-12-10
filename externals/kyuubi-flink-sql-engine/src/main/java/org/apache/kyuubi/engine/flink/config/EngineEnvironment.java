@@ -30,8 +30,6 @@ import org.apache.kyuubi.engine.flink.config.entries.ExecutionEntry;
  */
 public class EngineEnvironment {
 
-  public static final String ENGINE_ENTRY = "engine";
-
   public static final String EXECUTION_ENTRY = "execution";
 
   private ExecutionEntry execution;
