@@ -44,7 +44,7 @@ private[v1] class OperationsResource extends ApiRequestContext {
       "Get a statement event")
   @GET
   @Path("{operationHandle}/statementEvent")
-  def getOperationEvent(
+  def getStatementEvent(
       @PathParam("operationHandle") operationHandleStr: String): KyuubiStatementEvent = {
     try {
       val operation = backendService.sessionManager.operationManager
