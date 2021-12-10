@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.spark
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, IterableFetchIterator}
 
 class FetchIteratorSuite extends KyuubiFunSuite {
 

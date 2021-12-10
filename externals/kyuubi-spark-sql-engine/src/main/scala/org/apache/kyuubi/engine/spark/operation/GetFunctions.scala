@@ -22,8 +22,7 @@ import java.sql.DatabaseMetaData
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.engine.spark.IterableFetchIterator
-import org.apache.kyuubi.operation.OperationType
+import org.apache.kyuubi.operation.{IterableFetchIterator, OperationType}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.session.Session
 

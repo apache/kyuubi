@@ -23,9 +23,8 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.engine.spark.ArrayFetchIterator
 import org.apache.kyuubi.engine.spark.repl.KyuubiSparkILoop
-import org.apache.kyuubi.operation.OperationType
+import org.apache.kyuubi.operation.{ArrayFetchIterator, OperationType}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
