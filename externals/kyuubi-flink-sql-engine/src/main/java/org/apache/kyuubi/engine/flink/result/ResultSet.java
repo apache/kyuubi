@@ -20,11 +20,14 @@ package org.apache.kyuubi.engine.flink.result;
 
 import com.google.common.collect.Iterators;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.Preconditions;
+import org.apache.kyuubi.operation.ArrayFetchIterator;
+import org.apache.kyuubi.operation.FetchIterator;
 
 /**
  * A set of one statement execution result containing result kind, column infos, rows of data and
@@ -58,7 +61,7 @@ public class ResultSet {
     this.changeFlags = changeFlags;
     if (changeFlags != null) {
       Preconditions.checkArgument(
-          Iterators.size(data) == changeFlags.size(),
+          Iterators.size((Iterator<?>) data) == changeFlags.size(),
           "the size of data and the size of changeFlags should be equal");
     }
   }

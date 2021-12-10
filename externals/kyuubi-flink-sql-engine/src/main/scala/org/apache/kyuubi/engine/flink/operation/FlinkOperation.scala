@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.flink.operation
 import java.io.IOException
 import java.time.ZoneId
 
-import scala.collection.JavaConverters.{asScalaIteratorConverter, collectionAsScalaIterableConverter}
+import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 
 import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
 
@@ -93,7 +93,7 @@ abstract class FlinkOperation(
       case FETCH_PRIOR => resultSet.getData.fetchPrior(rowSetSize);
       case FETCH_FIRST => resultSet.getData.fetchAbsolute(0);
     }
-    val token = resultSet.getData.asScala.take(rowSetSize)
+    val token = resultSet.getData.take(rowSetSize)
     val resultRowSet = RowSet.resultSetToTRowSet(
       token.toList,
       resultSet,

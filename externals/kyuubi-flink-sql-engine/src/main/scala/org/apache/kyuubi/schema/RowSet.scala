@@ -25,7 +25,6 @@ import java.util.Collections
 import scala.collection.JavaConverters.{collectionAsScalaIterableConverter, mapAsJavaMapConverter, seqAsJavaListConverter}
 import scala.language.implicitConversions
 
-import org.apache.commons.lang3.StringUtils
 import org.apache.flink.table.types.logical._
 import org.apache.flink.types.Row
 import org.apache.hive.service.rpc.thrift._
