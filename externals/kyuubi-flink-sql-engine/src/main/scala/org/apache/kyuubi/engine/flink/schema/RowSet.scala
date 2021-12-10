@@ -18,7 +18,6 @@
 package org.apache.kyuubi.engine.flink.schema
 
 import java.nio.ByteBuffer
-import java.time.ZoneId
 import java.util
 import java.util.Collections
 
@@ -36,19 +35,18 @@ object RowSet {
   def resultSetToTRowSet(
       rows: Seq[Row],
       resultSet: ResultSet,
-      protocolVersion: TProtocolVersion,
-      timeZone: ZoneId): TRowSet = {
+      protocolVersion: TProtocolVersion): TRowSet = {
     if (protocolVersion.getValue < TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6.getValue) {
-      toRowBaseSet(rows, resultSet, timeZone)
+      toRowBaseSet(rows, resultSet)
     } else {
-      toColumnBasedSet(rows, resultSet, timeZone)
+      toColumnBasedSet(rows, resultSet)
     }
   }
 
-  def toRowBaseSet(rows: Seq[Row], resultSet: ResultSet, timeZone: ZoneId): TRowSet = {
+  def toRowBaseSet(rows: Seq[Row], resultSet: ResultSet): TRowSet = {
     val tRows = rows.map { row =>
       val tRow = new TRow()
-      (0 until row.getArity).map(i => toTColumnValue(i, row, resultSet, timeZone))
+      (0 until row.getArity).map(i => toTColumnValue(i, row, resultSet))
         .foreach(tRow.addToColVals)
       tRow
     }.asJava
@@ -56,11 +54,11 @@ object RowSet {
     new TRowSet(0, tRows)
   }
 
-  def toColumnBasedSet(rows: Seq[Row], resultSet: ResultSet, timeZone: ZoneId): TRowSet = {
+  def toColumnBasedSet(rows: Seq[Row], resultSet: ResultSet): TRowSet = {
     val size = rows.length
     val tRowSet = new TRowSet(0, new util.ArrayList[TRow](size))
     resultSet.getColumns.asScala.zipWithIndex.foreach { case (filed, i) =>
-      val tColumn = toTColumn(rows, i, filed.getLogicalType, timeZone)
+      val tColumn = toTColumn(rows, i, filed.getLogicalType)
       tRowSet.addToColumns(tColumn)
     }
     tRowSet
@@ -69,8 +67,7 @@ object RowSet {
   private def toTColumnValue(
       ordinal: Int,
       row: Row,
-      resultSet: ResultSet,
-      timeZone: ZoneId): TColumnValue = {
+      resultSet: ResultSet): TColumnValue = {
 
     val logicalType = resultSet.getColumns.get(ordinal).getLogicalType
 
@@ -132,8 +129,7 @@ object RowSet {
   private def toTColumn(
       rows: Seq[Row],
       ordinal: Int,
-      logicalType: LogicalType,
-      timeZone: ZoneId): TColumn = {
+      logicalType: LogicalType): TColumn = {
     val nulls = new java.util.BitSet()
     if (logicalType.isInstanceOf[BooleanType]) {
       val values = getOrSetAsNull[java.lang.Boolean](

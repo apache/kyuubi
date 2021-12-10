@@ -18,32 +18,16 @@
 package org.apache.kyuubi.engine.flink.operation
 
 import java.util
-import java.util.concurrent.ConcurrentHashMap
 
-import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.flink.context.SessionContext
+import org.apache.kyuubi.engine.flink.session.FlinkSessionImpl
 import org.apache.kyuubi.operation.{Operation, OperationManager}
-import org.apache.kyuubi.session.{Session, SessionHandle}
+import org.apache.kyuubi.session.Session
 
 class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManager") {
 
-  private val sessionToFlink = new ConcurrentHashMap[SessionHandle, SessionContext]()
-
-  def getFlinkSession(sessionHandle: SessionHandle): SessionContext = {
-    val flinkSession = sessionToFlink.get(sessionHandle)
-    if (flinkSession == null) {
-      throw KyuubiSQLException(s"$sessionHandle has not been initialized or already been closed")
-    }
-    flinkSession
-  }
-
-  def setFlinkSession(sessionHandle: SessionHandle, sessionContext: SessionContext): Unit = {
-    sessionToFlink.put(sessionHandle, sessionContext)
-  }
-
-  def removeFlinkSession(sessionHandle: SessionHandle): SessionContext = {
-    logger.info(sessionToFlink.toString)
-    sessionToFlink.remove(sessionHandle)
+  def getSessionContext(session: Session): SessionContext = {
+    session.asInstanceOf[FlinkSessionImpl].getSessionContext
   }
 
   override def newExecuteStatementOperation(
@@ -55,7 +39,7 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
   override def newGetTypeInfoOperation(session: Session): Operation = null
 
   override def newGetCatalogsOperation(session: Session): Operation = {
-    val sessionContext = getFlinkSession(session.handle)
+    val sessionContext = getSessionContext(session)
     val op = new GetCatalogs(sessionContext, session)
     addOperation(op)
   }

@@ -35,7 +35,7 @@ class FlinkSQLSessionManager(engineContext: EngineContext)
       user: String,
       password: String,
       ipAddress: String,
-      conf: Predef.Map[String, String]): SessionHandle = null
+      conf: Map[String, String]): SessionHandle = null
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {}
 }

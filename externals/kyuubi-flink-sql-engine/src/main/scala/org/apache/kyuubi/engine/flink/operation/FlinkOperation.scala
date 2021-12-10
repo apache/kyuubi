@@ -18,7 +18,6 @@
 package org.apache.kyuubi.engine.flink.operation
 
 import java.io.IOException
-import java.time.ZoneId
 
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 
@@ -40,11 +39,6 @@ abstract class FlinkOperation(
     opType: OperationType,
     session: Session)
   extends AbstractOperation(opType, session) {
-
-  private val timeZone: ZoneId = {
-    // TODO : fetch it from flink
-    ZoneId.systemDefault()
-  }
 
   protected var resultSet: ResultSet = _
 
@@ -97,8 +91,7 @@ abstract class FlinkOperation(
     val resultRowSet = RowSet.resultSetToTRowSet(
       token.toList,
       resultSet,
-      getProtocolVersion,
-      timeZone)
+      getProtocolVersion)
     resultRowSet.setStartRowOffset(resultSet.getData.getPosition)
     resultRowSet
   }
@@ -108,7 +101,9 @@ abstract class FlinkOperation(
   protected def cleanup(targetState: OperationState): Unit = state.synchronized {
     if (!isTerminalState(state)) {
       setState(targetState)
-      Option(getBackgroundHandle).foreach(_.cancel(true))
+      if (shouldRunAsync) {
+        Option(getBackgroundHandle).foreach(_.cancel(true))
+      }
     }
   }
 

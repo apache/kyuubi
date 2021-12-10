@@ -21,7 +21,6 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.engine.flink.context.SessionContext
 import org.apache.kyuubi.engine.flink.result.{Constants, OperationUtil}
-import org.apache.kyuubi.engine.flink.shim.FlinkCatalogShim
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
@@ -32,7 +31,7 @@ class GetCatalogs(sessionContext: SessionContext, session: Session)
     try {
       val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
       val catalogs: java.util.List[String] =
-        FlinkCatalogShim().getCatalogs(tableEnv).toList.asJava
+        tableEnv.listCatalogs.toList.asJava
       resultSet = OperationUtil.stringListToResultSet(
         catalogs,
         Constants.SHOW_CATALOGS_RESULT)
