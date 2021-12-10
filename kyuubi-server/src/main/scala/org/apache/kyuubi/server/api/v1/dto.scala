@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.server.api.v1
 
-import org.apache.kyuubi.operation.OperationStatus
 import org.apache.kyuubi.session.SessionHandle
 
 case class SessionOpenCount(openSessionCount: Int)
