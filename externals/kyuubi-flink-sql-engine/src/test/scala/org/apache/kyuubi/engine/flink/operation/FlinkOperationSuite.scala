@@ -73,7 +73,7 @@ class FlinkOperationSuite extends KyuubiFunSuite {
   }
 
   test("get catalogs for flink sql") {
-    val getCatalogOperation = new GetCatalogs(sessionContext, flinkSession)
+    val getCatalogOperation = new GetCatalogs(flinkSession)
     getCatalogOperation.run()
 
     val resultSet = getCatalogOperation.getNextRowSet(FetchOrientation.FETCH_FIRST, 10)

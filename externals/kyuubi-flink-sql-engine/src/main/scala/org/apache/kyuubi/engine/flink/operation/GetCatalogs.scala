@@ -19,13 +19,12 @@ package org.apache.kyuubi.engine.flink.operation
 
 import scala.collection.JavaConverters._
 
-import org.apache.kyuubi.engine.flink.context.SessionContext
 import org.apache.kyuubi.engine.flink.result.{Constants, OperationUtil}
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
-class GetCatalogs(sessionContext: SessionContext, session: Session)
-  extends FlinkOperation(sessionContext, OperationType.GET_CATALOGS, session) {
+class GetCatalogs(session: Session)
+  extends FlinkOperation(OperationType.GET_CATALOGS, session) {
 
   override protected def runInternal(): Unit = {
     try {

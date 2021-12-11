@@ -27,6 +27,7 @@ import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.engine.flink.context.SessionContext
 import org.apache.kyuubi.engine.flink.result.ResultSet
 import org.apache.kyuubi.engine.flink.schema.RowSet
+import org.apache.kyuubi.engine.flink.session.FlinkSessionImpl
 import org.apache.kyuubi.operation.{AbstractOperation, OperationState}
 import org.apache.kyuubi.operation.FetchOrientation.{FETCH_FIRST, FETCH_NEXT, FETCH_PRIOR, FetchOrientation}
 import org.apache.kyuubi.operation.OperationState.OperationState
@@ -35,11 +36,12 @@ import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 
 abstract class FlinkOperation(
-    sessionContext: SessionContext,
     opType: OperationType,
     session: Session)
   extends AbstractOperation(opType, session) {
 
+  protected val sessionContext: SessionContext =
+    session.asInstanceOf[FlinkSessionImpl].getSessionContext
   protected var resultSet: ResultSet = _
 
   override protected def beforeRun(): Unit = {

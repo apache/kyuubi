@@ -19,16 +19,10 @@ package org.apache.kyuubi.engine.flink.operation
 
 import java.util
 
-import org.apache.kyuubi.engine.flink.context.SessionContext
-import org.apache.kyuubi.engine.flink.session.FlinkSessionImpl
 import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.Session
 
 class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManager") {
-
-  def getSessionContext(session: Session): SessionContext = {
-    session.asInstanceOf[FlinkSessionImpl].getSessionContext
-  }
 
   override def newExecuteStatementOperation(
       session: Session,
@@ -39,8 +33,7 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
   override def newGetTypeInfoOperation(session: Session): Operation = null
 
   override def newGetCatalogsOperation(session: Session): Operation = {
-    val sessionContext = getSessionContext(session)
-    val op = new GetCatalogs(sessionContext, session)
+    val op = new GetCatalogs(session)
     addOperation(op)
   }
 
