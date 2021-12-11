@@ -52,7 +52,8 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
     ms.decCount(MetricRegistry.name(OPERATION_OPEN, opTypeName))
     ms.updateHistogram(
       MetricRegistry.name(OPERATION_RPC_TIME, opTypeName),
-      client.getTimeCostMillis)}
+      client.getTimeCostMillis)
+  }
 
   protected[operation] lazy val client = new KyuubiThriftClientCallTimeStatics(
     session.asInstanceOf[KyuubiSessionImpl].client)
