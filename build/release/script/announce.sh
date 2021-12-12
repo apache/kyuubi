@@ -42,7 +42,7 @@ cat >$ANNOUNCE<<EOF
 Title: [ANNOUNCE] Apache Kyuubi (Incubating) released ${release_version}
 
 Content:
-Hello Kyuubi Community,
+Hi all,
 
 The Apache Kyuubi (Incubating) community is pleased to announce that
 Apache Kyuubi (Incubating) ${release_version} has been released!
@@ -82,5 +82,5 @@ Thanks,
 On behalf of Apache Kyuubi (Incubating) community
 EOF
 
-echo "please Use dev@kyuubi.apache.com
+echo "please Use general@incubator.apache.org, announce@apache.org, dev@kyuubi.apache.org, user@spark.apache.org
 see announce content in $ANNOUNCE"
