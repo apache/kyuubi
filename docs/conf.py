@@ -32,6 +32,7 @@
 import os
 import sys
 import shlex
+import subprocess
 
 sys.path.insert(0, os.path.abspath('.'))
 
@@ -72,7 +73,7 @@ limitations under the License.
 author = 'Kent Yao'
 
 # The full version, including alpha/beta/rc tags
-release = '1.3.0'
+release = subprocess.getoutput("cd .. && build/mvn help:evaluate -Dexpression=project.version|grep -v Using|grep -v INFO|grep -v WARNING|tail -n 1").split('\n')[-1]
 
 
 # -- General configuration ---------------------------------------------------
