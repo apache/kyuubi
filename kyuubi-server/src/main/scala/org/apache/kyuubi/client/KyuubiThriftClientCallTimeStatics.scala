@@ -50,11 +50,11 @@ class KyuubiThriftClientCallTimeStatics(client: KyuubiThriftClient) extends Kyuu
       user: String,
       password: String,
       configs: Map[String, String]): SessionHandle = {
-    time(client.openSession(protocol, user, password, configs))
+    client.openSession(protocol, user, password, configs)
   }
 
   override def closeSession(): Unit = {
-    time(client.closeSession())
+    client.closeSession()
   }
 
   override def executeStatement(

@@ -76,8 +76,8 @@ class KyuubiOperationMetricSuite extends WithKyuubiServer with HiveJDBCTestHelpe
           .get("count").asInt() == 1)
 
       val histograms = res2.get("histograms")
-      assert(histograms.has("kyuubi.operation.rpc_time.execute_statement"))
-      val rpcTimeHistograms = histograms.get("kyuubi.operation.rpc_time.execute_statement")
+      assert(histograms.has("kyuubi.operation.rpc_ms.execute_statement"))
+      val rpcTimeHistograms = histograms.get("kyuubi.operation.rpc_ms.execute_statement")
       assert(rpcTimeHistograms.get("count").asInt() == 3)
       assert(rpcTimeHistograms.get("max").asInt() >= rpcTimeHistograms.get("mean").asInt() &&
         rpcTimeHistograms.get("mean").asInt() >= rpcTimeHistograms.get("min").asInt())

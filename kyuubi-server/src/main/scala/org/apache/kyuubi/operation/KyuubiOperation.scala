@@ -27,7 +27,7 @@ import org.apache.thrift.transport.TTransportException
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.client.KyuubiThriftClientCallTimeStatics
-import org.apache.kyuubi.metrics.MetricsConstants.{OPERATION_FAIL, OPERATION_OPEN, OPERATION_RPC_TIME, OPERATION_TOTAL}
+import org.apache.kyuubi.metrics.MetricsConstants.{OPERATION_FAIL, OPERATION_OPEN, OPERATION_RPC_MS, OPERATION_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationType.OperationType
@@ -51,7 +51,7 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
   private def metricTraceCloseOrCancel(): Unit = MetricsSystem.tracing { ms =>
     ms.decCount(MetricRegistry.name(OPERATION_OPEN, opTypeName))
     ms.updateHistogram(
-      MetricRegistry.name(OPERATION_RPC_TIME, opTypeName),
+      MetricRegistry.name(OPERATION_RPC_MS, opTypeName),
       client.getTimeCostMillis)
   }
 
