@@ -26,29 +26,33 @@ import java.util.Locale
 
 import scala.language.implicitConversions
 
-object RowSetCommonUtils {
+object RowSetUtils {
 
   lazy val dateFormatter = {
-    createBuilder().appendPattern("yyyy-MM-dd")
+    createDateTimeFormatterBuilder()
+      .appendPattern("yyyy-MM-dd")
       .toFormatter(Locale.US)
       .withChronology(IsoChronology.INSTANCE)
   }
 
   lazy val timeFormatter: DateTimeFormatter = {
-    createBuilder().appendPattern("HH:mm:ss")
+    createDateTimeFormatterBuilder()
+      .appendPattern("HH:mm:ss")
       .toFormatter(Locale.US)
       .withChronology(IsoChronology.INSTANCE)
   }
 
   lazy val timestampFormatter: DateTimeFormatter = {
-    createBuilder().appendPattern("yyyy-MM-dd HH:mm:ss")
+    createDateTimeFormatterBuilder()
+      .appendPattern("yyyy-MM-dd HH:mm:ss")
       .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
       .toFormatter(Locale.US)
       .withChronology(IsoChronology.INSTANCE)
   }
 
   lazy val timestampWithZoneFormatter: DateTimeFormatter = {
-    createBuilder().appendPattern("yyyy-MM-dd HH:mm:ss")
+    createDateTimeFormatterBuilder()
+      .appendPattern("yyyy-MM-dd HH:mm:ss")
       .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
       .optionalStart()
       .appendOffsetId()
@@ -64,7 +68,7 @@ object RowSetCommonUtils {
     ByteBuffer.wrap(bitSet.toByteArray)
   }
 
-  private def createBuilder(): DateTimeFormatterBuilder = {
+  private def createDateTimeFormatterBuilder(): DateTimeFormatterBuilder = {
     new DateTimeFormatterBuilder().parseCaseInsensitive()
   }
 }

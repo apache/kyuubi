@@ -53,7 +53,7 @@ import org.apache.hive.service.rpc.thrift.TRowSet
 import org.apache.hive.service.rpc.thrift.TStringColumn
 import org.apache.hive.service.rpc.thrift.TStringValue
 
-import org.apache.kyuubi.util.RowSetCommonUtils._
+import org.apache.kyuubi.util.RowSetUtils._
 
 object RowSet {
 
@@ -277,7 +277,7 @@ object RowSet {
 
       // for Array Map and Row, temporarily convert to string
       // TODO further analysis of type
-      case (seq: scala.collection.Seq[_], _) =>
+      case (seq: Seq[_], _) =>
         formatValue(seq)
 
       case (m: Map[_, _], _) =>
