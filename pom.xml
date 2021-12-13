@@ -446,7 +446,6 @@
                 </exclusions>
             </dependency>
 
-            <!-- trino dependency -->
             <dependency>
                 <groupId>io.trino</groupId>
                 <artifactId>trino-client</artifactId>

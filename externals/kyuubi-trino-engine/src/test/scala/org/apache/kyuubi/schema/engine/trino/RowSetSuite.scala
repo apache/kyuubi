@@ -304,7 +304,8 @@ class RowSetSuite extends KyuubiFunSuite {
     val r7 = iter.next().getColVals
     assert(r7.get(9).getStringVal.getValue === "2018-11-17 13:33:33.6")
     assert(r7.get(10).getStringVal.getValue === toHiveString(
-      (Timestamp.valueOf("2018-11-17 13:33:33.6"), TIMESTAMP_WITH_TIME_ZONE), zoneId))
+      (Timestamp.valueOf("2018-11-17 13:33:33.6"), TIMESTAMP_WITH_TIME_ZONE),
+      zoneId))
 
     val r8 = iter.next().getColVals
     assert(r8.get(11).getStringVal.getValue === "13:33:07")

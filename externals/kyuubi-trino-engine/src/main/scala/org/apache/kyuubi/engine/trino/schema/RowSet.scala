@@ -130,7 +130,7 @@ object RowSet {
         TColumn.doubleVal(new TDoubleColumn(values, nulls))
 
       case VARCHAR =>
-        val values = getOrSetAsNull[java.lang.String](rows, ordinal, nulls, "")
+        val values = getOrSetAsNull[String](rows, ordinal, nulls, "")
         TColumn.stringVal(new TStringColumn(values, nulls))
 
       case VARBINARY =>
