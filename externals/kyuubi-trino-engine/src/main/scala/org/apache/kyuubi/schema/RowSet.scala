@@ -357,7 +357,7 @@ object RowSet {
 
       case row: Row =>
         row.getFields.asScala.map { r =>
-          val formattedValue = formatValue(r.getValue());
+          val formattedValue = formatValue(r.getValue())
           if (r.getName.isPresent) {
             r.getName.get() + "=" + formattedValue
           } else {

@@ -37,7 +37,7 @@ import org.apache.kyuubi.schema.RowSet.toHiveString
 
 class RowSetSuite extends KyuubiFunSuite {
 
-  private final val UUID_PREFIX = "486bb66f-1206-49e3-993f-0db68f3cd8"
+  final private val UUID_PREFIX = "486bb66f-1206-49e3-993f-0db68f3cd8"
 
   def genRow(value: Int): List[_] = {
     val boolVal = value % 3 match {
@@ -190,21 +190,22 @@ class RowSetSuite extends KyuubiFunSuite {
     timestampCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b.isEmpty)
       case (b, i) => assert(b ===
-        toHiveString((Timestamp.valueOf(s"2018-11-17 13:33:33.$i"), TIMESTAMP), zoneId))
+          toHiveString((Timestamp.valueOf(s"2018-11-17 13:33:33.$i"), TIMESTAMP), zoneId))
     }
 
     val timestampWithZoneCol = cols.next().getStringVal
     timestampWithZoneCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b.isEmpty)
       case (b, i) => assert(b === toHiveString(
-        (Timestamp.valueOf(s"2018-11-17 13:33:33.$i"), TIMESTAMP_WITH_TIME_ZONE), zoneId))
+          (Timestamp.valueOf(s"2018-11-17 13:33:33.$i"), TIMESTAMP_WITH_TIME_ZONE),
+          zoneId))
     }
 
     val timeCol = cols.next().getStringVal
     timeCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b.isEmpty)
       case (b, i) => assert(b ===
-        toHiveString((Time.valueOf(s"13:33:$i"), TIME), zoneId))
+          toHiveString((Time.valueOf(s"13:33:$i"), TIME), zoneId))
     }
 
     val binCol = cols.next().getBinaryVal
@@ -229,44 +230,44 @@ class RowSetSuite extends KyuubiFunSuite {
     rowCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b.isEmpty)
       case (b, i) => assert(b ===
-        toHiveString((Row.builder().addField(i.toString, i).build(), ROW), zoneId))
+          toHiveString((Row.builder().addField(i.toString, i).build(), ROW), zoneId))
     }
 
     val arrCol = cols.next().getStringVal
     arrCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b === toHiveString(
-        (Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toSeq, ARRAY),
-        zoneId))
+          (Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toSeq, ARRAY),
+          zoneId))
     }
 
     val mapCol = cols.next().getStringVal
     mapCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b === toHiveString(
-        (Map(i -> java.lang.Double.valueOf(s"$i.$i")), MAP),
-        zoneId))
+          (Map(i -> java.lang.Double.valueOf(s"$i.$i")), MAP),
+          zoneId))
     }
 
     val jsonCol = cols.next().getStringVal
     jsonCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b ===
-        toHiveString((s"""{"$i": $i}""", JSON), zoneId))
+          toHiveString((s"""{"$i": $i}""", JSON), zoneId))
     }
 
     val ipCol = cols.next().getStringVal
     ipCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b ===
-        toHiveString((s"${i}.${i}.${i}.${i}", IPADDRESS), zoneId))
+          toHiveString((s"${i}.${i}.${i}.${i}", IPADDRESS), zoneId))
     }
 
     val uuidCol = cols.next().getStringVal
     uuidCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b ===
-        toHiveString((s"$UUID_PREFIX${uuidSuffix(i)}", UUID), zoneId))
+          toHiveString((s"$UUID_PREFIX${uuidSuffix(i)}", UUID), zoneId))
     }
   }
 
@@ -310,17 +311,17 @@ class RowSetSuite extends KyuubiFunSuite {
     assert(r9.get(12).getStringVal.getValue === new String(
       Array.fill[Byte](8)(8.toByte),
       StandardCharsets.UTF_8))
-    assert(r9.get(13).getStringVal.getValue  === "8"*8)
-    assert(r9.get(14).getStringVal.getValue  === String.format(s"%10s", 8.toString))
+    assert(r9.get(13).getStringVal.getValue === "8" * 8)
+    assert(r9.get(14).getStringVal.getValue === String.format(s"%10s", 8.toString))
 
     val r10 = iter.next().getColVals
-    assert(r10.get(15).getStringVal.getValue  ===
+    assert(r10.get(15).getStringVal.getValue ===
       toHiveString((Row.builder().addField(9.toString, 9).build(), ROW), zoneId))
-    assert(r10.get(16).getStringVal.getValue  === Array.fill(9)(9.9d).mkString("[", ",", "]"))
-    assert(r10.get(17).getStringVal.getValue  === toHiveString((Map(9 -> 9.9d), MAP), zoneId))
-    assert(r10.get(18).getStringVal.getValue  === "{\"9\": 9}")
-    assert(r10.get(19).getStringVal.getValue  === "9.9.9.9")
-    assert(r10.get(20).getStringVal.getValue  === s"$UUID_PREFIX${uuidSuffix(9)}")
+    assert(r10.get(16).getStringVal.getValue === Array.fill(9)(9.9d).mkString("[", ",", "]"))
+    assert(r10.get(17).getStringVal.getValue === toHiveString((Map(9 -> 9.9d), MAP), zoneId))
+    assert(r10.get(18).getStringVal.getValue === "{\"9\": 9}")
+    assert(r10.get(19).getStringVal.getValue === "9.9.9.9")
+    assert(r10.get(20).getStringVal.getValue === s"$UUID_PREFIX${uuidSuffix(9)}")
   }
 
   test("to row set") {
