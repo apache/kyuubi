@@ -23,8 +23,9 @@
 
 # Kinit Auxiliary Service
 
-In order to work with a kerberos-enabled cluster, Kyuubi provides this kinit auxiliary service.
-It will periodically re-kinit with to keep the Ticket Cache fresh.
+Kinit auxiliary service is a critical service both for authentication between Kyuubi client/server 
+and authentication between Kyuubi server/Hadoop cluster in a Kerberos environment.
+It will get a kerberos Ticket Cache from KDC and periodically re-kinit to keep the Ticket Cache fresh.
 
 
 ## Installing and Configuring the Kerberos Clients
@@ -78,8 +79,20 @@ kyuubi\.kinit\.keytab|<div style='width: 80pt;word-wrap: break-word;white-space:
 kyuubi\.kinit\.interval|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT1H</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>How often will Kyuubi server run `kinit -kt [keytab] [principal]` to renew the local Kerberos credentials cache</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.kinit\.max<br>\.attempts|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>10</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>How many times will `kinit` process retry</div>|<div style='width: 20pt'>1.0.0</div>
 
-When `hadoop.security.authentication` is set to `KERBEROS`, in `$HADOOP_CONF_DIR/core-site` or `$KYUUBI_HOME/conf/kyuubi-defaults.conf`,
-it indicates that we are targeting a secured cluster, then we need to specify `kyuubi.kinit.principal` and `kyuubi.kinit.keytab` for authentication.
+When working with a kerberos-enabled Hadoop cluster, we should ensure that `hadoop.security.authentication` 
+is set to `KERBEROS` in `$HADOOP_CONF_DIR/core-site` or `$KYUUBI_HOME/conf/kyuubi-defaults.conf`. 
+Then we need to specify `kyuubi.kinit.principal` and `kyuubi.kinit.keytab` for authentication. 
+
+
+For example,
+
+```bash
+kyuubi.kinit.principal=spark/kyuubi.apache.org@KYUUBI.APACHE.ORG
+kyuubi.kinit.keytab=/path/to/kyuuib.keytab
+```
+
+**Note**: `kyuubi.kinit.principal` must be in the format: `<user>/<host>@<realm>`, and `<host>` must 
+be a FQDN of the host Kyuubi is running.
 
 Kyuubi will use this `principal` to impersonate client users,
 so the cluster should enable it to do impersonation for some particular user from some particular hosts.
