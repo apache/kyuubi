@@ -60,10 +60,6 @@ import org.apache.hive.service.rpc.thrift.TRowSet
 import org.apache.hive.service.rpc.thrift.TStringColumn
 import org.apache.hive.service.rpc.thrift.TStringValue
 
-import org.apache.kyuubi.engine.trino.TrinoIntervalDayTime
-import org.apache.kyuubi.engine.trino.TrinoIntervalYearMonth
-
-
 object RowSet {
 
   def toTRowSet(
@@ -329,12 +325,6 @@ object RowSet {
       case (s: String, VARCHAR) =>
         // Only match string in nested type values
         "\"" + s + "\""
-
-      case (intervalDayTime: TrinoIntervalDayTime, INTERVAL_DAY_TO_SECOND) =>
-        intervalDayTime.toString
-
-      case (intervalYearMonth: TrinoIntervalYearMonth, INTERVAL_YEAR_TO_MONTH) =>
-        intervalYearMonth.toString
 
       // for Array Map and Row, temporarily convert to string
       // TODO further analysis of type

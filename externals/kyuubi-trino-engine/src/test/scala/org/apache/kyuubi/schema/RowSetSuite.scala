@@ -33,8 +33,6 @@ import io.trino.client.Row
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.engine.trino.TrinoIntervalDayTime
-import org.apache.kyuubi.engine.trino.TrinoIntervalYearMonth
 import org.apache.kyuubi.schema.RowSet.toHiveString
 
 class RowSetSuite extends KyuubiFunSuite {
@@ -63,8 +61,6 @@ class RowSetSuite extends KyuubiFunSuite {
     val arrVal = Array.fill(value)(doubleVal).toSeq
     val mapVal = Map(value -> doubleVal)
     val jsonVal = s"""{"$value": $value}"""
-    val intervalDayTimeVal = TrinoIntervalDayTime(value, value, value, value, value)
-    val intervalYearMonthVal = TrinoIntervalYearMonth(value, value)
     val rowVal = Row.builder().addField(value.toString, value).build()
     val ipVal = s"${value}.${value}.${value}.${value}"
     val uuidVal = java.util.UUID.fromString(
@@ -80,8 +76,6 @@ class RowSetSuite extends KyuubiFunSuite {
       decimalVal,
       floatVal,
       doubleVal,
-      intervalDayTimeVal,
-      intervalYearMonthVal,
       timestampVal,
       timestampVal,
       timeVal,
@@ -106,23 +100,21 @@ class RowSetSuite extends KyuubiFunSuite {
     column("g", DECIMAL),
     column("h", REAL),
     column("i", DOUBLE),
-    column("j", INTERVAL_DAY_TO_SECOND),
-    column("k", INTERVAL_YEAR_TO_MONTH),
-    column("l", TIMESTAMP),
-    column("m", TIMESTAMP_WITH_TIME_ZONE),
-    column("n", TIME),
-    column("p", VARBINARY),
-    column("q", VARCHAR),
-    column("r", CHAR),
-    column("s", ROW),
-    column("t", ARRAY),
-    column("u", MAP),
-    column("v", JSON),
-    column("w", IPADDRESS),
-    column("x", UUID))
+    column("j", TIMESTAMP),
+    column("k", TIMESTAMP_WITH_TIME_ZONE),
+    column("l", TIME),
+    column("m", VARBINARY),
+    column("n", VARCHAR),
+    column("o", CHAR),
+    column("p", ROW),
+    column("q", ARRAY),
+    column("r", MAP),
+    column("s", JSON),
+    column("t", IPADDRESS),
+    column("u", UUID))
 
   private val zoneId: ZoneId = ZoneId.systemDefault()
-  private val rows: Seq[List[_]] = (0 to 10).map(genRow) ++ Seq(List.fill(23)(null))
+  private val rows: Seq[List[_]] = (0 to 10).map(genRow) ++ Seq(List.fill(21)(null))
 
   def column(name: String, tp: String): Column = new Column(name, tp, new ClientTypeSignature(tp))
 
@@ -192,18 +184,6 @@ class RowSetSuite extends KyuubiFunSuite {
     doubleCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === 0)
       case (b, i) => assert(b === java.lang.Double.valueOf(s"$i.$i"))
-    }
-
-    val intervalDayTimeCol = cols.next().getStringVal
-    intervalDayTimeCol.getValues.asScala.zipWithIndex.foreach {
-      case (b, 11) => assert(b.isEmpty)
-      case (b, i) => assert(b === TrinoIntervalDayTime(i, i, i, i, i).toString)
-    }
-
-    val intervalYearMonthCol = cols.next().getStringVal
-    intervalYearMonthCol.getValues.asScala.zipWithIndex.foreach {
-      case (b, 11) => assert(b.isEmpty)
-      case (b, i) => assert(b === TrinoIntervalYearMonth(i, i).toString)
     }
 
     val timestampCol = cols.next().getStringVal
@@ -320,29 +300,27 @@ class RowSetSuite extends KyuubiFunSuite {
     assert(r6.get(8).getDoubleVal.getValue === 5.5)
 
     val r7 = iter.next().getColVals
-    assert(r7.get(9).getStringVal.getValue === "6 06:06:06.006")
-    assert(r7.get(10).getStringVal.getValue === "0 00:00:00.078")
+    assert(r7.get(9).getStringVal.getValue === "2018-11-17 13:33:33.600")
+    assert(r7.get(10).getStringVal.getValue === "2018-11-17 13:33:33.6[Asia/Shanghai]")
 
     val r8 = iter.next().getColVals
-    assert(r8.get(11).getStringVal.getValue === "2018-11-17 13:33:33.700")
-    assert(r8.get(12).getStringVal.getValue === "2018-11-17 13:33:33.7[Asia/Shanghai]")
-    assert(r8.get(13).getStringVal.getValue === "13:33:07")
+    assert(r8.get(11).getStringVal.getValue === "13:33:07")
 
     val r9 = iter.next().getColVals
-    assert(r9.get(14).getStringVal.getValue === new String(
+    assert(r9.get(12).getStringVal.getValue === new String(
       Array.fill[Byte](8)(8.toByte),
       StandardCharsets.UTF_8))
-    assert(r9.get(15).getStringVal.getValue  === "8"*8)
-    assert(r9.get(16).getStringVal.getValue  === String.format(s"%10s", 8.toString))
+    assert(r9.get(13).getStringVal.getValue  === "8"*8)
+    assert(r9.get(14).getStringVal.getValue  === String.format(s"%10s", 8.toString))
 
     val r10 = iter.next().getColVals
-    assert(r10.get(17).getStringVal.getValue  ===
+    assert(r10.get(15).getStringVal.getValue  ===
       toHiveString((Row.builder().addField(9.toString, 9).build(), ROW), zoneId))
-    assert(r10.get(18).getStringVal.getValue  === Array.fill(9)(9.9d).mkString("[", ",", "]"))
-    assert(r10.get(19).getStringVal.getValue  === toHiveString((Map(9 -> 9.9d), MAP), zoneId))
-    assert(r10.get(20).getStringVal.getValue  === "{\"9\": 9}")
-    assert(r10.get(21).getStringVal.getValue  === "9.9.9.9")
-    assert(r10.get(22).getStringVal.getValue  === s"$UUID_PREFIX${uuidSuffix(9)}")
+    assert(r10.get(16).getStringVal.getValue  === Array.fill(9)(9.9d).mkString("[", ",", "]"))
+    assert(r10.get(17).getStringVal.getValue  === toHiveString((Map(9 -> 9.9d), MAP), zoneId))
+    assert(r10.get(18).getStringVal.getValue  === "{\"9\": 9}")
+    assert(r10.get(19).getStringVal.getValue  === "9.9.9.9")
+    assert(r10.get(20).getStringVal.getValue  === s"$UUID_PREFIX${uuidSuffix(9)}")
   }
 
   test("to row set") {
