@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.schema
+package org.apache.kyuubi.schema.engine.trino
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
@@ -33,7 +33,8 @@ import io.trino.client.Row
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.schema.RowSet.toHiveString
+import org.apache.kyuubi.engine.trino.schema.RowSet
+import org.apache.kyuubi.engine.trino.schema.RowSet.toHiveString
 
 class RowSetSuite extends KyuubiFunSuite {
 
@@ -301,8 +302,9 @@ class RowSetSuite extends KyuubiFunSuite {
     assert(r6.get(8).getDoubleVal.getValue === 5.5)
 
     val r7 = iter.next().getColVals
-    assert(r7.get(9).getStringVal.getValue === "2018-11-17 13:33:33.600")
-    assert(r7.get(10).getStringVal.getValue === "2018-11-17 13:33:33.6[Asia/Shanghai]")
+    assert(r7.get(9).getStringVal.getValue === "2018-11-17 13:33:33.6")
+    assert(r7.get(10).getStringVal.getValue === toHiveString(
+      (Timestamp.valueOf("2018-11-17 13:33:33.6"), TIMESTAMP_WITH_TIME_ZONE), zoneId))
 
     val r8 = iter.next().getColVals
     assert(r8.get(11).getStringVal.getValue === "13:33:07")

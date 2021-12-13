@@ -15,24 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.schema
+package org.apache.kyuubi.engine.trino.schema
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.sql.Time
 import java.sql.Timestamp
-import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.ZonedDateTime
 import java.time.ZoneId
-import java.time.chrono.IsoChronology
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeFormatterBuilder
-import java.time.temporal.ChronoField
 import java.util.Date
-import java.util.Locale
 
 import scala.collection.JavaConverters._
 
@@ -59,6 +52,8 @@ import org.apache.hive.service.rpc.thrift.TRow
 import org.apache.hive.service.rpc.thrift.TRowSet
 import org.apache.hive.service.rpc.thrift.TStringColumn
 import org.apache.hive.service.rpc.thrift.TStringValue
+
+import org.apache.kyuubi.util.RowSetCommonUtils._
 
 object RowSet {
 
@@ -180,12 +175,6 @@ object RowSet {
     ret
   }
 
-  import scala.language.implicitConversions
-
-  implicit private def bitSetToBuffer(bitSet: java.util.BitSet): ByteBuffer = {
-    ByteBuffer.wrap(bitSet.toByteArray)
-  }
-
   private def toTColumnValue(
       ordinal: Int,
       row: List[Any],
@@ -243,49 +232,6 @@ object RowSet {
     }
   }
 
-  private def createBuilder(): DateTimeFormatterBuilder = {
-    new DateTimeFormatterBuilder().parseCaseInsensitive()
-  }
-
-  private lazy val dateFormatter = {
-    createBuilder().appendPattern("yyyy-MM-dd")
-      .toFormatter(Locale.US)
-      .withChronology(IsoChronology.INSTANCE)
-  }
-
-  private lazy val simpleDateFormatter = new SimpleDateFormat("yyyy-MM-dd", Locale.US)
-
-  private lazy val timeFormatter: DateTimeFormatter = {
-    createBuilder().appendPattern("HH:mm:ss")
-      .toFormatter(Locale.US)
-      .withChronology(IsoChronology.INSTANCE)
-  }
-
-  private lazy val simpleTimeFormatter = new SimpleDateFormat("HH:mm:ss", Locale.US)
-
-  private lazy val timestampFormatter: DateTimeFormatter = {
-    createBuilder().appendPattern("yyyy-MM-dd HH:mm:ss")
-      .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
-      .toFormatter(Locale.US)
-      .withChronology(IsoChronology.INSTANCE)
-  }
-
-  private lazy val timestampWithZoneFormatter: DateTimeFormatter = {
-    createBuilder().appendPattern("yyyy-MM-dd HH:mm:ss")
-      .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
-      .optionalStart()
-      .appendLiteral('[')
-      .parseCaseSensitive()
-      .appendZoneRegionId()
-      .appendLiteral(']')
-      .toFormatter(Locale.US)
-      .withChronology(IsoChronology.INSTANCE)
-  }
-
-  private lazy val simpleTimestampFormatter = {
-    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
-  }
-
   /**
    * A simpler impl of Trino's toHiveString
    */
@@ -295,23 +241,26 @@ object RowSet {
         // Only match nulls in nested type values
         "null"
 
+      case (sd: java.sql.Date, DATE) =>
+        dateFormatter.format(sd.toLocalDate)
+
       case (d: Date, DATE) =>
-        simpleDateFormatter.format(d)
+        dateFormatter.format(d.toInstant)
 
       case (ld: LocalDate, DATE) =>
         dateFormatter.format(ld)
 
       case (t: Timestamp, TIMESTAMP) =>
-        simpleTimestampFormatter.format(t)
+        timestampFormatter.withZone(timeZone).format(t.toInstant)
 
       case (i: Instant, TIMESTAMP) =>
         timestampFormatter.withZone(timeZone).format(i)
 
       case (t: Timestamp, TIMESTAMP_WITH_TIME_ZONE) =>
-        ZonedDateTime.ofInstant(t.toInstant, timeZone).format(timestampWithZoneFormatter)
+        timestampWithZoneFormatter.withZone(timeZone).format(t.toInstant)
 
       case (t: Time, TIME) =>
-        simpleTimeFormatter.format(t)
+        timeFormatter.format(t.toLocalTime)
 
       case (lt: LocalTime, TIME) =>
         timeFormatter.format(lt)
