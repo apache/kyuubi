@@ -187,14 +187,8 @@ public class ExecutionContext<ClusterID> {
 
   private void initializeTableEnvironment() {
     final EnvironmentSettings settings = engineEnvironment.getExecution().getEnvironmentSettings();
-    // Step 0.0 Initialize the table configuration.
     final TableConfig config = new TableConfig();
-    // --------------------------------------------------------------------------------------------------------------
-    // Step.1 Create environments
-    // --------------------------------------------------------------------------------------------------------------
-    // Step 1.0 Initialize the ModuleManager if required.
     final ModuleManager moduleManager = new ModuleManager();
-    // Step 1.1 Initialize the CatalogManager if required.
     final CatalogManager catalogManager =
         CatalogManager.newBuilder()
             .classLoader(classLoader)
@@ -204,16 +198,12 @@ public class ExecutionContext<ClusterID> {
                 new GenericInMemoryCatalog(
                     settings.getBuiltInCatalogName(), settings.getBuiltInDatabaseName()))
             .build();
-    // Step 1.2 Initialize the FunctionCatalog if required.
     final FunctionCatalog functionCatalog =
         new FunctionCatalog(config, catalogManager, moduleManager);
 
     // Must initialize the table engineEnvironment before actually the
     createTableEnvironment(settings, config, catalogManager, moduleManager, functionCatalog);
 
-    // --------------------------------------------------------------------------------------------------------------
-    // Step.4 Create catalogs and register them.
-    // --------------------------------------------------------------------------------------------------------------
     // No need to register the catalogs if already inherit from the same session.
     initializeCatalogs();
   }
