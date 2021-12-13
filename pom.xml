@@ -136,6 +136,7 @@
         <swagger.version>2.1.11</swagger.version>
         <swagger.scala.module.version>2.5.2</swagger.scala.module.version>
         <swagger-ui.version>4.1.0</swagger-ui.version>
+        <trino.client.version>363</trino.client.version>
         <zookeeper.version>3.4.14</zookeeper.version>
 
         <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
@@ -443,6 +444,13 @@
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <!-- trino dependency -->
+            <dependency>
+                <groupId>io.trino</groupId>
+                <artifactId>trino-client</artifactId>
+                <version>${trino.client.version}</version>
             </dependency>
 
             <dependency>
