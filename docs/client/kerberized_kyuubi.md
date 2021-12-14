@@ -21,10 +21,10 @@
 
 </div>
 
-# Access kerberized Kyuubi with beeline & BI tools
+# Access Kerberized Kyuubi with Beeline & BI Tools
 
 ## Instructions
-When Kyuubi is secured by kerberos, we can not connect to Kyuubi simply by providing a JDBC url 
+When Kyuubi is secured by Kerberos, we can not connect to Kyuubi simply by providing a JDBC url 
 with username and password.
 Instead, following steps should be taken.
 
@@ -44,7 +44,7 @@ and we can use `KRB5_CONFIG` environmental variable to overwrite the location of
 
 Replace or configure `krb5.conf` to point to the same KDC as Kyuubi points to.
 
-## Get Kerberos ticket cache
+## Get Kerberos Ticket Cache
 Execute `kinit` command to get Kerberos ticket cache from KDC.
 
 Suppose user principal is `kyuubi_user@KYUUBI.APACHE.ORG`, user keytab located at `/etc/security/keytabs/kyuubi_user.keytab`, 
@@ -72,9 +72,9 @@ If Kyuubi is running on the same host, take care not to overwrite the ticket cac
 As the default ticket cache file is `/tmp/krb5cc_$(id -u)` on Linux, we should either set environment 
 variable `KRB5CCNAME` or switch to another OS user before executing `kinit` command.
 
-## Ensure core-site.xml exists in classpath
+## Ensure core-site.xml Exists in Classpath
 Like hadoop clients, `hadoop.security.authentication` should be set to `KERBEROS` in `core-site.xml` 
-to let Hive JDBC driver use kerberos authentication. `core-site.xml` should be placed under beeline's 
+to let Hive JDBC driver use Kerberos authentication. `core-site.xml` should be placed under beeline's 
 classpath or BI tools' classpath.
 
 ### Beeline
@@ -96,7 +96,7 @@ If `core-site.xml` is not found in above locations, create one with the followin
 </configuration>
 ```
 
-### BI tools
+### BI Tools
 As to BI tools, ways to add `core-site.xml` varies.  
 Take DBeaver as an example. We can add files to DBeaver's classpath through its `Global libraries` preference.  
 As `Global libraries` only accepts jar files, we have to package `core-site.xml` into a jar file.

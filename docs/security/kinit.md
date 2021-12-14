@@ -24,9 +24,12 @@
 # Kinit Auxiliary Service
 
 Kinit auxiliary service is a critical service both for authentication between Kyuubi client/server 
-and authentication between Kyuubi server/Hadoop cluster in a Kerberos environment.
-It will get a kerberos Ticket Cache from KDC and periodically re-kinit to keep the Ticket Cache fresh.
+and for authentication between Kyuubi server/Hadoop cluster in a Kerberos environment.
+It will get a Kerberos Ticket Cache from KDC and periodically re-kinit to keep the Ticket Cache fresh.
 
+**Note**:
+Kinit auxiliary service is critical to Kyuubi Kerberos authentication, but not vice versa.
+Kinit auxiliary service can also work with other authentication mode.
 
 ## Installing and Configuring the Kerberos Clients
 
@@ -79,7 +82,7 @@ kyuubi\.kinit\.keytab|<div style='width: 80pt;word-wrap: break-word;white-space:
 kyuubi\.kinit\.interval|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT1H</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>How often will Kyuubi server run `kinit -kt [keytab] [principal]` to renew the local Kerberos credentials cache</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.kinit\.max<br>\.attempts|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>10</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>How many times will `kinit` process retry</div>|<div style='width: 20pt'>1.0.0</div>
 
-When working with a kerberos-enabled Hadoop cluster, we should ensure that `hadoop.security.authentication` 
+When working with a Kerberos-enabled Hadoop cluster, we should ensure that `hadoop.security.authentication` 
 is set to `KERBEROS` in `$HADOOP_CONF_DIR/core-site` or `$KYUUBI_HOME/conf/kyuubi-defaults.conf`. 
 Then we need to specify `kyuubi.kinit.principal` and `kyuubi.kinit.keytab` for authentication. 
 
