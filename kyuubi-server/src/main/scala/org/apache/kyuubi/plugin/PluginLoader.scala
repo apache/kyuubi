@@ -25,20 +25,17 @@ object PluginLoader {
   def loadSessionConfAdvisor(conf: KyuubiConf): SessionConfAdvisor = {
     val advisorClass = conf.get(KyuubiConf.SESSION_CONF_ADVISOR)
 
-    val advisor =
-      try {
-        Class.forName(advisorClass).getConstructor().newInstance()
-      } catch {
-        case e: Throwable =>
-          throw new KyuubiException(
-            s"Failed to reflect the class $advisorClass",
-            e)
-      }
-
-    advisor match {
-      case provider: SessionConfAdvisor => provider
-      case _ => throw new KyuubiException(
+    try {
+      Class.forName(advisorClass).getConstructor().newInstance()
+        .asInstanceOf[SessionConfAdvisor]
+    } catch {
+      case _: ClassCastException =>
+        throw new KyuubiException(
           s"Class $advisorClass is not a child of EngineConfAdvisor")
+      case e: Throwable =>
+        throw new KyuubiException(
+          s"Failed to reflect the class $advisorClass",
+          e)
     }
   }
 }

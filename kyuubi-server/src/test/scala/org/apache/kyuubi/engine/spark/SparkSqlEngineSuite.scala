@@ -124,6 +124,5 @@ class SparkSqlEngineSuite extends WithKyuubiServer with HiveJDBCTestHelper {
     }
   }
 
-
   override protected def jdbcUrl: String = getJdbcUrl
 }
