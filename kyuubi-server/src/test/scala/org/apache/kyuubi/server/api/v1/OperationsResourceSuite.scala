@@ -23,24 +23,33 @@ import javax.ws.rs.core.MediaType
 import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
-import org.apache.kyuubi.events.KyuubiStatementEvent
-import org.apache.kyuubi.operation.{ExecuteStatement, OperationState}
+import org.apache.kyuubi.events.{KyuubiOperationEvent, KyuubiStatementEvent}
+import org.apache.kyuubi.operation.{ExecuteStatement, GetCatalogs, OperationState, OperationType}
+import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.server.KyuubiRestFrontendService
 
 class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
-  test("test get a statement event") {
+  test("test get a operation event") {
     withKyuubiRestServer { (fe, _, _, webTarget) =>
-      val opHandleStr = getOpHandleStr(fe)
-      var response = webTarget.path(s"api/v1/operations/$opHandleStr/statementEvent")
+      val catalogsHandleStr = getOpHandleStr(fe, OperationType.GET_CATALOGS)
+      var response = webTarget.path(s"api/v1/operations/$catalogsHandleStr/event")
         .request(MediaType.APPLICATION_JSON_TYPE).get()
-      val operationEvent = response.readEntity(classOf[KyuubiStatementEvent])
+      val operationEvent = response.readEntity(classOf[KyuubiOperationEvent])
       assert(200 == response.getStatus)
       assert(operationEvent.state == OperationState.INITIALIZED.name())
 
+      val statementHandleStr = getOpHandleStr(fe, OperationType.EXECUTE_STATEMENT)
+      response = webTarget.path(s"api/v1/operations/$statementHandleStr/event")
+        .request(MediaType.APPLICATION_JSON_TYPE).get()
+      val statementEvent = response.readEntity(classOf[KyuubiStatementEvent])
+      assert(200 == response.getStatus)
+      assert(statementEvent.state == OperationState.INITIALIZED.name())
+
       // Invalid operationHandleStr
-      val invalidOperationHandle = opHandleStr.replaceAll("EXECUTE_STATEMENT", "GET_TYPE_INFO")
-      response = webTarget.path(s"api/v1/operations/$invalidOperationHandle/statementEvent")
+      val invalidOperationHandle =
+        statementHandleStr.replaceAll("EXECUTE_STATEMENT", "GET_TYPE_INFO")
+      response = webTarget.path(s"api/v1/operations/$invalidOperationHandle/event")
         .request(MediaType.APPLICATION_JSON_TYPE).get()
       assert(404 == response.getStatus)
     }
@@ -48,14 +57,14 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
 
   test("test apply an action for an operation") {
     withKyuubiRestServer { (fe, _, _, webTarget: WebTarget) =>
-      val opHandleStr = getOpHandleStr(fe)
+      val opHandleStr = getOpHandleStr(fe, OperationType.EXECUTE_STATEMENT)
 
       var response = webTarget.path(s"api/v1/operations/$opHandleStr")
         .request(MediaType.APPLICATION_JSON_TYPE)
         .put(Entity.entity(OpActionRequest("cancel"), MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
 
-      response = webTarget.path(s"api/v1/operations/$opHandleStr/statementEvent")
+      response = webTarget.path(s"api/v1/operations/$opHandleStr/event")
         .request(MediaType.APPLICATION_JSON_TYPE).get()
       val operationEvent = response.readEntity(classOf[KyuubiStatementEvent])
       assert(operationEvent.state == OperationState.FINISHED.name() ||
@@ -66,23 +75,30 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
         .put(Entity.entity(OpActionRequest("close"), MediaType.APPLICATION_JSON_TYPE))
       assert(200 == response.getStatus)
 
-      response = webTarget.path(s"api/v1/operations/$opHandleStr/statementEvent")
+      response = webTarget.path(s"api/v1/operations/$opHandleStr/event")
         .request(MediaType.APPLICATION_JSON_TYPE).get()
       assert(404 == response.getStatus)
 
     }
   }
 
-  def getOpHandleStr(fe: KyuubiRestFrontendService): String = {
-    val sessionHandle = fe.be.sessionManager.openSession(
+  def getOpHandleStr(fe: KyuubiRestFrontendService, typ: OperationType): String = {
+    val sessionManager = fe.be.sessionManager
+    val sessionHandle = sessionManager.openSession(
       HIVE_CLI_SERVICE_PROTOCOL_V2,
       "admin",
       "123456",
       "localhost",
       Map("testConfig" -> "testValue"))
-    val session = fe.be.sessionManager.getSession(sessionHandle)
-    val op = new ExecuteStatement(session, "show tables", true, 3000)
-    fe.be.sessionManager.operationManager.addOperation(op)
+    val session = sessionManager.getSession(sessionHandle)
+
+    val op = typ match {
+      case OperationType.EXECUTE_STATEMENT =>
+        new ExecuteStatement(session, "show tables", true, 3000)
+      case OperationType.GET_CATALOGS =>
+        new GetCatalogs(session)
+    }
+    sessionManager.operationManager.addOperation(op)
     val operationHandle = op.getHandle
 
     s"${operationHandle.identifier.publicId}|" +
