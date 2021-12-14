@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark
+package org.apache.kyuubi.operation
 
 /**
  * Borrowed from Apache Spark, see SPARK-33655
  */
-sealed private[engine] trait FetchIterator[A] extends Iterator[A] {
+sealed trait FetchIterator[A] extends Iterator[A] {
 
   /**
    * Begin a fetch block, forward from the current position.
@@ -50,7 +50,7 @@ sealed private[engine] trait FetchIterator[A] extends Iterator[A] {
   def getPosition: Long
 }
 
-private[engine] class ArrayFetchIterator[A](src: Array[A]) extends FetchIterator[A] {
+class ArrayFetchIterator[A](src: Array[A]) extends FetchIterator[A] {
   private var fetchStart: Long = 0
 
   private var position: Long = 0
@@ -74,7 +74,7 @@ private[engine] class ArrayFetchIterator[A](src: Array[A]) extends FetchIterator
   }
 }
 
-private[engine] class IterableFetchIterator[A](iterable: Iterable[A]) extends FetchIterator[A] {
+class IterableFetchIterator[A](iterable: Iterable[A]) extends FetchIterator[A] {
   private var iter: Iterator[A] = iterable.iterator
 
   private var fetchStart: Long = 0

@@ -22,8 +22,7 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.config.KyuubiConf.OperationModes.{ANALYZE, OperationMode, OPTIMIZE, PARSE}
-import org.apache.kyuubi.engine.spark.{ArrayFetchIterator, IterableFetchIterator}
-import org.apache.kyuubi.operation.OperationType
+import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationType}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
 

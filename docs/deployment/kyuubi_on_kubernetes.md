@@ -56,11 +56,18 @@ Examples:
 
   - Build with Spark placed "/path/spark"
     $0 -s /path/spark build
+    
+  - Build with Spark Image myrepo/spark:3.1.0
+    $0 -S /opt/spark -b BASE_IMAGE=myrepo/spark:3.1.0 build
 ```
 
 `${KYUUBI_HOME}/bin/docker-image-tool.sh` use `Kyuubi Version` as default docker tag and always build `${repo}/kyuubi:${tag}` image.
 
 The script can also help build external Spark into a Kyuubi image that acts as a client for submitting tasks by `-s ${SPAAK_HOME}`.
+
+Of course, if you have an image that contains the Spark binary package, you don't have to copy Spark locally. Make your Spark Image as BASE_IMAGE by using the `-S ${SPARK_HOME_IN_DOCKER}` and `-b BASE_IMAGE=${SPARK_IMAGE}` arguments.
+
+You can use `${KYUUBI_HOME}/bin/docker-image-tool.sh -h` for more parameters.
 
 ## Deploy
 

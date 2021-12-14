@@ -15,26 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.operation
+package org.apache.kyuubi.engine.flink.session
 
-import org.apache.spark.sql.types.StructType
+import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.operation.{IterableFetchIterator, OperationType}
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
-import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.engine.flink.context.SessionContext
+import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
 
-class GetCatalogs(session: Session)
-  extends SparkOperation(OperationType.GET_CATALOGS, session) {
+class FlinkSessionImpl(
+    protocol: TProtocolVersion,
+    user: String,
+    password: String,
+    ipAddress: String,
+    conf: Map[String, String],
+    sessionManager: SessionManager,
+    sessionContext: SessionContext)
+  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
-  override protected def resultSchema: StructType = {
-    new StructType()
-      .add(TABLE_CAT, "string", nullable = true, "Catalog name. NULL if not applicable.")
-  }
+  override val handle: SessionHandle = SessionHandle(protocol)
 
-  override protected def runInternal(): Unit = {
-    try {
-      iter = new IterableFetchIterator(SparkCatalogShim().getCatalogs(spark).toList)
-    } catch onError()
-  }
+  def getSessionContext: SessionContext = sessionContext
+
 }

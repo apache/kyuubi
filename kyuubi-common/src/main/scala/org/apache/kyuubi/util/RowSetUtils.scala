@@ -15,26 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.operation
+package org.apache.kyuubi.util
 
-import org.apache.spark.sql.types.StructType
+import java.nio.ByteBuffer
 
-import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.operation.{IterableFetchIterator, OperationType}
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
-import org.apache.kyuubi.session.Session
+import scala.language.implicitConversions
 
-class GetCatalogs(session: Session)
-  extends SparkOperation(OperationType.GET_CATALOGS, session) {
+object RowSetUtils {
 
-  override protected def resultSchema: StructType = {
-    new StructType()
-      .add(TABLE_CAT, "string", nullable = true, "Catalog name. NULL if not applicable.")
-  }
-
-  override protected def runInternal(): Unit = {
-    try {
-      iter = new IterableFetchIterator(SparkCatalogShim().getCatalogs(spark).toList)
-    } catch onError()
+  implicit def bitSetToBuffer(bitSet: java.util.BitSet): ByteBuffer = {
+    ByteBuffer.wrap(bitSet.toByteArray)
   }
 }

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark
+package org.apache.kyuubi.operation
 
 import org.apache.kyuubi.KyuubiFunSuite
 

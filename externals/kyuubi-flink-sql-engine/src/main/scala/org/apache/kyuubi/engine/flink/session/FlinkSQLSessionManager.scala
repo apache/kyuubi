@@ -15,26 +15,27 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.operation
+package org.apache.kyuubi.engine.flink.session
 
-import org.apache.spark.sql.types.StructType
+import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.operation.{IterableFetchIterator, OperationType}
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
-import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.engine.flink.context.EngineContext
+import org.apache.kyuubi.engine.flink.operation.FlinkSQLOperationManager
+import org.apache.kyuubi.session.{SessionHandle, SessionManager}
 
-class GetCatalogs(session: Session)
-  extends SparkOperation(OperationType.GET_CATALOGS, session) {
+class FlinkSQLSessionManager(engineContext: EngineContext)
+  extends SessionManager("FlinkSQLSessionManager") {
 
-  override protected def resultSchema: StructType = {
-    new StructType()
-      .add(TABLE_CAT, "string", nullable = true, "Catalog name. NULL if not applicable.")
-  }
+  override protected def isServer: Boolean = false
 
-  override protected def runInternal(): Unit = {
-    try {
-      iter = new IterableFetchIterator(SparkCatalogShim().getCatalogs(spark).toList)
-    } catch onError()
-  }
+  val operationManager = new FlinkSQLOperationManager()
+
+  override def openSession(
+      protocol: TProtocolVersion,
+      user: String,
+      password: String,
+      ipAddress: String,
+      conf: Map[String, String]): SessionHandle = null
+
+  override def closeSession(sessionHandle: SessionHandle): Unit = {}
 }

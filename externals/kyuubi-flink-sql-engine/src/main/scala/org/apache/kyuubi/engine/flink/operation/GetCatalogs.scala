@@ -15,26 +15,26 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.operation
+package org.apache.kyuubi.engine.flink.operation
 
-import org.apache.spark.sql.types.StructType
+import scala.collection.JavaConverters._
 
-import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.operation.{IterableFetchIterator, OperationType}
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
+import org.apache.kyuubi.engine.flink.result.{Constants, OperationUtil}
+import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
 class GetCatalogs(session: Session)
-  extends SparkOperation(OperationType.GET_CATALOGS, session) {
-
-  override protected def resultSchema: StructType = {
-    new StructType()
-      .add(TABLE_CAT, "string", nullable = true, "Catalog name. NULL if not applicable.")
-  }
+  extends FlinkOperation(OperationType.GET_CATALOGS, session) {
 
   override protected def runInternal(): Unit = {
     try {
-      iter = new IterableFetchIterator(SparkCatalogShim().getCatalogs(spark).toList)
+      val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
+      val catalogs: java.util.List[String] =
+        tableEnv.listCatalogs.toList.asJava
+      resultSet = OperationUtil.stringListToResultSet(
+        catalogs,
+        Constants.SHOW_CATALOGS_RESULT)
     } catch onError()
   }
+
 }
