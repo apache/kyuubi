@@ -49,8 +49,6 @@ public class ExecutionEntry extends ConfigEntry {
 
   public static final String EXECUTION_PLANNER = "planner";
 
-  public static final String EXECUTION_PLANNER_VALUE_OLD = "old";
-
   public static final String EXECUTION_PLANNER_VALUE_BLINK = "blink";
 
   public static final String EXECUTION_TYPE = "type";
@@ -116,9 +114,7 @@ public class ExecutionEntry extends ConfigEntry {
   @Override
   protected void validate(DescriptorProperties properties) {
     properties.validateEnumValues(
-        EXECUTION_PLANNER,
-        true,
-        Arrays.asList(EXECUTION_PLANNER_VALUE_OLD, EXECUTION_PLANNER_VALUE_BLINK));
+        EXECUTION_PLANNER, true, Arrays.asList(EXECUTION_PLANNER_VALUE_BLINK));
     properties.validateEnumValues(
         EXECUTION_TYPE,
         true,
@@ -161,11 +157,9 @@ public class ExecutionEntry extends ConfigEntry {
     }
 
     final String planner =
-        properties.getOptionalString(EXECUTION_PLANNER).orElse(EXECUTION_PLANNER_VALUE_OLD);
+        properties.getOptionalString(EXECUTION_PLANNER).orElse(EXECUTION_PLANNER_VALUE_BLINK);
 
-    if (planner.equals(EXECUTION_PLANNER_VALUE_OLD)) {
-      builder.useOldPlanner();
-    } else if (planner.equals(EXECUTION_PLANNER_VALUE_BLINK)) {
+    if (planner.equals(EXECUTION_PLANNER_VALUE_BLINK)) {
       builder.useBlinkPlanner();
     }
 
@@ -188,34 +182,26 @@ public class ExecutionEntry extends ConfigEntry {
 
   public boolean isStreamingPlanner() {
     final String planner =
-        properties.getOptionalString(EXECUTION_PLANNER).orElse(EXECUTION_PLANNER_VALUE_OLD);
+        properties.getOptionalString(EXECUTION_PLANNER).orElse(EXECUTION_PLANNER_VALUE_BLINK);
 
     // Blink planner is a streaming planner
     if (planner.equals(EXECUTION_PLANNER_VALUE_BLINK)) {
       return true;
-    }
-    // Old planner can be a streaming or batch planner
-    else if (planner.equals(EXECUTION_PLANNER_VALUE_OLD)) {
+    } else {
       return inStreamingMode();
     }
-
-    return false;
   }
 
   public boolean isBatchPlanner() {
     final String planner =
-        properties.getOptionalString(EXECUTION_PLANNER).orElse(EXECUTION_PLANNER_VALUE_OLD);
+        properties.getOptionalString(EXECUTION_PLANNER).orElse(EXECUTION_PLANNER_VALUE_BLINK);
 
     // Blink planner is not a batch planner
     if (planner.equals(EXECUTION_PLANNER_VALUE_BLINK)) {
       return false;
-    }
-    // Old planner can be a streaming or batch planner
-    else if (planner.equals(EXECUTION_PLANNER_VALUE_OLD)) {
+    } else {
       return inBatchMode();
     }
-
-    return false;
   }
 
   public TimeCharacteristic getTimeCharacteristic() {

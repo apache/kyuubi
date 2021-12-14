@@ -20,9 +20,6 @@ package org.apache.kyuubi.engine.flink.result;
 
 import java.util.Objects;
 import javax.annotation.Nullable;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonCreator;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonIgnore;
-import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.utils.LogicalTypeParser;
 import org.apache.flink.util.Preconditions;
@@ -30,20 +27,13 @@ import org.apache.flink.util.Preconditions;
 /** A column info represents a table column's structure with column name, column type. */
 public class ColumnInfo {
 
-  private static final String FIELD_NAME_NAME = "name";
-  private static final String FIELD_NAME_TYPE = "type";
-
-  @JsonProperty(FIELD_NAME_NAME)
   private String name;
 
-  @JsonProperty(FIELD_NAME_TYPE)
   private String type;
 
-  @JsonIgnore @Nullable private LogicalType logicalType;
+  @Nullable private LogicalType logicalType;
 
-  @JsonCreator
-  public ColumnInfo(
-      @JsonProperty(FIELD_NAME_NAME) String name, @JsonProperty(FIELD_NAME_TYPE) String type) {
+  public ColumnInfo(String name, String type) {
     this.name = Preconditions.checkNotNull(name, "name must not be null");
     this.type = Preconditions.checkNotNull(type, "type must not be null");
   }
@@ -60,7 +50,6 @@ public class ColumnInfo {
     return type;
   }
 
-  @JsonIgnore
   public LogicalType getLogicalType() {
     if (logicalType == null) {
       logicalType = LogicalTypeParser.parse(type);

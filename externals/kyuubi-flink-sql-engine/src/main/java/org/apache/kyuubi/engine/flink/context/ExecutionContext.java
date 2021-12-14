@@ -27,17 +27,14 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
 import org.apache.commons.cli.Options;
-import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.client.ClientUtils;
 import org.apache.flink.client.cli.CustomCommandLine;
 import org.apache.flink.client.deployment.ClusterClientServiceLoader;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.EnvironmentSettings;
 import org.apache.flink.table.api.TableConfig;
 import org.apache.flink.table.api.TableException;
-import org.apache.flink.table.api.bridge.java.internal.BatchTableEnvironmentImpl;
 import org.apache.flink.table.api.bridge.java.internal.StreamTableEnvironmentImpl;
 import org.apache.flink.table.api.internal.TableEnvironmentInternal;
 import org.apache.flink.table.catalog.CatalogManager;
@@ -72,7 +69,6 @@ public class ExecutionContext<ClusterID> {
   private final Configuration flinkConfig;
 
   private TableEnvironmentInternal tableEnv;
-  private ExecutionEnvironment execEnv;
   private StreamExecutionEnvironment streamExecEnv;
   private Executor executor;
 
@@ -216,7 +212,6 @@ public class ExecutionContext<ClusterID> {
       FunctionCatalog functionCatalog) {
     if (engineEnvironment.getExecution().isStreamingPlanner()) {
       streamExecEnv = createStreamExecutionEnvironment();
-      execEnv = null;
 
       final Map<String, String> executorProperties = settings.toExecutorProperties();
       executor = lookupExecutor(executorProperties, streamExecEnv);
@@ -229,20 +224,12 @@ public class ExecutionContext<ClusterID> {
               catalogManager,
               moduleManager,
               functionCatalog);
-    } else if (engineEnvironment.getExecution().isBatchPlanner()) {
-      streamExecEnv = null;
-      execEnv = createExecutionEnvironment();
-      executor = null;
-      tableEnv = new BatchTableEnvironmentImpl(execEnv, config, catalogManager, moduleManager);
     } else {
       throw new RuntimeException("Unsupported execution type specified.");
     }
   }
 
   private void initializeCatalogs() {
-    // --------------------------------------------------------------------------------------------------------------
-    // Step.6 Set current catalog and database.
-    // --------------------------------------------------------------------------------------------------------------
     // Switch to the current catalog.
     Optional<String> catalog = engineEnvironment.getExecution().getCurrentCatalog();
     catalog.ifPresent(tableEnv::useCatalog);
@@ -252,24 +239,13 @@ public class ExecutionContext<ClusterID> {
     database.ifPresent(tableEnv::useDatabase);
   }
 
-  private ExecutionEnvironment createExecutionEnvironment() {
-    final ExecutionEnvironment execEnv = ExecutionEnvironment.getExecutionEnvironment();
-    execEnv.setRestartStrategy(engineEnvironment.getExecution().getRestartStrategy());
-    execEnv.setParallelism(engineEnvironment.getExecution().getParallelism());
-    return execEnv;
-  }
-
   private StreamExecutionEnvironment createStreamExecutionEnvironment() {
     final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     env.setRestartStrategy(engineEnvironment.getExecution().getRestartStrategy());
     env.setParallelism(engineEnvironment.getExecution().getParallelism());
     env.setMaxParallelism(engineEnvironment.getExecution().getMaxParallelism());
-    env.setStreamTimeCharacteristic(engineEnvironment.getExecution().getTimeCharacteristic());
-    if (env.getStreamTimeCharacteristic() == TimeCharacteristic.EventTime) {
-      env.getConfig()
-          .setAutoWatermarkInterval(
-              engineEnvironment.getExecution().getPeriodicWatermarksInterval());
-    }
+    env.getConfig()
+        .setAutoWatermarkInterval(engineEnvironment.getExecution().getPeriodicWatermarksInterval());
     return env;
   }
 
