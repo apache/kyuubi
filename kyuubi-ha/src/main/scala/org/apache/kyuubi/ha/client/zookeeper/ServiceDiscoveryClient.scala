@@ -46,7 +46,7 @@ import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_CONN_MAX_RETRY_WAIT
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_REF_ID
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NAMESPACE
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NODE_TIMEOUT
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_PUBLIST_CONFIGS
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_PUBLISH_CONFIGS
 import org.apache.kyuubi.ha.client.ServiceDiscovery
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider.buildZookeeperClient
 import org.apache.kyuubi.ha.client.zookeeper.ServiceDiscoveryClient.connectionChecker
@@ -187,7 +187,7 @@ object ServiceDiscoveryClient extends Logging {
       if (external) CreateMode.PERSISTENT_SEQUENTIAL
       else CreateMode.EPHEMERAL_SEQUENTIAL
     val znodeData =
-      if (conf.get(HA_ZK_PUBLIST_CONFIGS) && session.isEmpty) {
+      if (conf.get(HA_ZK_PUBLISH_CONFIGS) && session.isEmpty) {
         addConfsToPublish(conf, instance)
       } else {
         instance
