@@ -44,7 +44,7 @@ jackson-dataformat-yaml/2.11.4//jackson-dataformat-yaml-2.11.4.jar
 jackson-datatype-jsr310/2.11.4//jackson-datatype-jsr310-2.11.4.jar
 jackson-jaxrs-base/2.11.4//jackson-jaxrs-base-2.11.4.jar
 jackson-jaxrs-json-provider/2.11.4//jackson-jaxrs-json-provider-2.11.4.jar
-jackson-module-jaxb-annotations/2.9.9//jackson-module-jaxb-annotations-2.9.9.jar
+jackson-module-jaxb-annotations/2.11.4//jackson-module-jaxb-annotations-2.11.4.jar
 jackson-module-paranamer/2.11.4//jackson-module-paranamer-2.11.4.jar
 jackson-module-scala_2.12/2.11.4//jackson-module-scala_2.12-2.11.4.jar
 jakarta.activation/2.0.0//jakarta.activation-2.0.0.jar
