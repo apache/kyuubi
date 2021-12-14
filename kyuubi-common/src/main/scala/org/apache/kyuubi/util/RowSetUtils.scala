@@ -54,7 +54,6 @@ object RowSetUtils {
     createDateTimeFormatterBuilder()
       .appendPattern("yyyy-MM-dd HH:mm:ss")
       .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
-      .optionalStart()
       .appendOffsetId()
       .appendLiteral('[')
       .parseCaseSensitive()
