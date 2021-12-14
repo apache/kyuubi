@@ -21,7 +21,6 @@ import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.sql.Date
 import java.sql.Time
-import java.sql.Timestamp
 import java.time.ZoneId
 
 import scala.collection.JavaConverters._
@@ -53,14 +52,15 @@ class RowSetSuite extends KyuubiFunSuite {
     val floatVal = java.lang.Float.valueOf(s"$value.$value")
     val doubleVal = java.lang.Double.valueOf(s"$value.$value")
     val stringVal = value.toString * value
-    val decimalVal = new java.math.BigDecimal(s"$value.$value")
-    val day = java.lang.String.format("%02d", java.lang.Integer.valueOf(value + 1))
-    val dateVal = Date.valueOf(s"2018-11-$day")
-    val timeVal = Time.valueOf(s"13:33:$value")
-    val timestampVal = Timestamp.valueOf(s"2018-11-17 13:33:33.$value")
+    val decimalVal = new java.math.BigDecimal(s"$value.$value").toPlainString
+    val dayOrTime = java.lang.String.format("%02d", java.lang.Integer.valueOf(value + 1))
+    val dateVal = s"2018-11-$dayOrTime"
+    val timeVal = s"13:33:$dayOrTime"
+    val timestampVal = s"2018-11-17 13:33:33.$value"
+    val timestampWithZoneVal = s"2018-11-17 13:33:33.$value Asia/Shanghai"
     val binaryVal = Array.fill[Byte](value)(value.toByte)
-    val arrVal = Array.fill(value)(doubleVal).toSeq
-    val mapVal = Map(value -> doubleVal)
+    val arrVal = Array.fill(value)(doubleVal).toList.asJava
+    val mapVal = Map(value -> doubleVal).asJava
     val jsonVal = s"""{"$value": $value}"""
     val rowVal = Row.builder().addField(value.toString, value).build()
     val ipVal = s"${value}.${value}.${value}.${value}"
@@ -78,13 +78,13 @@ class RowSetSuite extends KyuubiFunSuite {
       floatVal,
       doubleVal,
       timestampVal,
-      timestampVal,
+      timestampWithZoneVal,
       timeVal,
       binaryVal,
       stringVal,
       charVal,
       rowVal,
-      arrVal.toList,
+      arrVal,
       mapVal,
       jsonVal,
       ipVal,
@@ -190,23 +190,19 @@ class RowSetSuite extends KyuubiFunSuite {
     val timestampCol = cols.next().getStringVal
     timestampCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b.isEmpty)
-      case (b, i) => assert(b ===
-          toHiveString((Timestamp.valueOf(s"2018-11-17 13:33:33.$i"), TIMESTAMP), zoneId))
+      case (b, i) => assert(b === s"2018-11-17 13:33:33.$i")
     }
 
     val timestampWithZoneCol = cols.next().getStringVal
     timestampWithZoneCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b.isEmpty)
-      case (b, i) => assert(b === toHiveString(
-          (Timestamp.valueOf(s"2018-11-17 13:33:33.$i"), TIMESTAMP_WITH_TIME_ZONE),
-          zoneId))
+      case (b, i) => assert(b === s"2018-11-17 13:33:33.$i Asia/Shanghai")
     }
 
     val timeCol = cols.next().getStringVal
     timeCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b.isEmpty)
-      case (b, i) => assert(b ===
-          toHiveString((Time.valueOf(s"13:33:$i"), TIME), zoneId))
+      case (b, i) => assert(b === toHiveString((Time.valueOf(s"13:33:${i + 1}"), TIME), zoneId))
     }
 
     val binCol = cols.next().getBinaryVal
@@ -238,7 +234,7 @@ class RowSetSuite extends KyuubiFunSuite {
     arrCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b === toHiveString(
-          (Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toSeq, ARRAY),
+          (Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toList.asJava, ARRAY),
           zoneId))
     }
 
@@ -246,7 +242,7 @@ class RowSetSuite extends KyuubiFunSuite {
     mapCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b === toHiveString(
-          (Map(i -> java.lang.Double.valueOf(s"$i.$i")), MAP),
+          (Map(i -> java.lang.Double.valueOf(s"$i.$i")).asJava, MAP),
           zoneId))
     }
 
@@ -303,12 +299,10 @@ class RowSetSuite extends KyuubiFunSuite {
 
     val r7 = iter.next().getColVals
     assert(r7.get(9).getStringVal.getValue === "2018-11-17 13:33:33.6")
-    assert(r7.get(10).getStringVal.getValue === toHiveString(
-      (Timestamp.valueOf("2018-11-17 13:33:33.6"), TIMESTAMP_WITH_TIME_ZONE),
-      zoneId))
+    assert(r7.get(10).getStringVal.getValue === "2018-11-17 13:33:33.6 Asia/Shanghai")
 
     val r8 = iter.next().getColVals
-    assert(r8.get(11).getStringVal.getValue === "13:33:07")
+    assert(r8.get(11).getStringVal.getValue === "13:33:08")
 
     val r9 = iter.next().getColVals
     assert(r9.get(12).getStringVal.getValue === new String(
@@ -321,7 +315,7 @@ class RowSetSuite extends KyuubiFunSuite {
     assert(r10.get(15).getStringVal.getValue ===
       toHiveString((Row.builder().addField(9.toString, 9).build(), ROW), zoneId))
     assert(r10.get(16).getStringVal.getValue === Array.fill(9)(9.9d).mkString("[", ",", "]"))
-    assert(r10.get(17).getStringVal.getValue === toHiveString((Map(9 -> 9.9d), MAP), zoneId))
+    assert(r10.get(17).getStringVal.getValue === toHiveString((Map(9 -> 9.9d).asJava, MAP), zoneId))
     assert(r10.get(18).getStringVal.getValue === "{\"9\": 9}")
     assert(r10.get(19).getStringVal.getValue === "9.9.9.9")
     assert(r10.get(20).getStringVal.getValue === s"$UUID_PREFIX${uuidSuffix(9)}")

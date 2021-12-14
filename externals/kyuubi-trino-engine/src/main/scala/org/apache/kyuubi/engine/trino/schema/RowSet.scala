@@ -19,13 +19,7 @@ package org.apache.kyuubi.engine.trino.schema
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-import java.sql.Time
-import java.sql.Timestamp
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalTime
 import java.time.ZoneId
-import java.util.Date
 
 import scala.collection.JavaConverters._
 
@@ -53,7 +47,7 @@ import org.apache.hive.service.rpc.thrift.TRowSet
 import org.apache.hive.service.rpc.thrift.TStringColumn
 import org.apache.hive.service.rpc.thrift.TStringValue
 
-import org.apache.kyuubi.util.RowSetUtils._
+import org.apache.kyuubi.util.RowSetUtils.bitSetToBuffer
 
 object RowSet {
 
@@ -241,35 +235,8 @@ object RowSet {
         // Only match nulls in nested type values
         "null"
 
-      case (sd: java.sql.Date, DATE) =>
-        dateFormatter.format(sd.toLocalDate)
-
-      case (d: Date, DATE) =>
-        dateFormatter.format(d.toInstant)
-
-      case (ld: LocalDate, DATE) =>
-        dateFormatter.format(ld)
-
-      case (t: Timestamp, TIMESTAMP) =>
-        timestampFormatter.withZone(timeZone).format(t.toInstant)
-
-      case (i: Instant, TIMESTAMP) =>
-        timestampFormatter.withZone(timeZone).format(i)
-
-      case (t: Timestamp, TIMESTAMP_WITH_TIME_ZONE) =>
-        timestampWithZoneFormatter.withZone(timeZone).format(t.toInstant)
-
-      case (t: Time, TIME) =>
-        timeFormatter.format(t.toLocalTime)
-
-      case (lt: LocalTime, TIME) =>
-        timeFormatter.format(lt)
-
       case (bin: Array[Byte], VARBINARY) =>
         new String(bin, StandardCharsets.UTF_8)
-
-      case (decimal: java.math.BigDecimal, DECIMAL) =>
-        decimal.toPlainString
 
       case (s: String, VARCHAR) =>
         // Only match string in nested type values
@@ -277,10 +244,10 @@ object RowSet {
 
       // for Array Map and Row, temporarily convert to string
       // TODO further analysis of type
-      case (seq: Seq[_], _) =>
-        formatValue(seq)
+      case (list: java.util.List[_], _) =>
+        formatValue(list)
 
-      case (m: Map[_, _], _) =>
+      case (m: java.util.Map[_, _], _) =>
         formatValue(m)
 
       case (row: Row, _) =>
@@ -296,13 +263,13 @@ object RowSet {
       case null =>
         "null"
 
-      case m: Map[_, _] =>
-        m.map { case (key, value) =>
+      case m: java.util.Map[_, _] =>
+        m.asScala.map { case (key, value) =>
           formatValue(key) + ":" + formatValue(value)
         }.toSeq.sorted.mkString("{", ",", "}")
 
-      case l: scala.collection.Seq[_] =>
-        l.map(formatValue).mkString("[", ",", "]")
+      case l: java.util.List[_] =>
+        l.asScala.map(formatValue).mkString("[", ",", "]")
 
       case row: Row =>
         row.getFields.asScala.map { r =>

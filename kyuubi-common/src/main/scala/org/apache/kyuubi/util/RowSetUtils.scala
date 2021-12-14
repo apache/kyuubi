@@ -18,56 +18,12 @@
 package org.apache.kyuubi.util
 
 import java.nio.ByteBuffer
-import java.time.chrono.IsoChronology
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeFormatterBuilder
-import java.time.temporal.ChronoField
-import java.util.Locale
 
 import scala.language.implicitConversions
 
 object RowSetUtils {
 
-  lazy val dateFormatter = {
-    createDateTimeFormatterBuilder()
-      .appendPattern("yyyy-MM-dd")
-      .toFormatter(Locale.US)
-      .withChronology(IsoChronology.INSTANCE)
-  }
-
-  lazy val timeFormatter: DateTimeFormatter = {
-    createDateTimeFormatterBuilder()
-      .appendPattern("HH:mm:ss")
-      .toFormatter(Locale.US)
-      .withChronology(IsoChronology.INSTANCE)
-  }
-
-  lazy val timestampFormatter: DateTimeFormatter = {
-    createDateTimeFormatterBuilder()
-      .appendPattern("yyyy-MM-dd HH:mm:ss")
-      .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
-      .toFormatter(Locale.US)
-      .withChronology(IsoChronology.INSTANCE)
-  }
-
-  lazy val timestampWithZoneFormatter: DateTimeFormatter = {
-    createDateTimeFormatterBuilder()
-      .appendPattern("yyyy-MM-dd HH:mm:ss")
-      .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
-      .appendOffsetId()
-      .appendLiteral('[')
-      .parseCaseSensitive()
-      .appendZoneRegionId()
-      .appendLiteral(']')
-      .toFormatter(Locale.US)
-      .withChronology(IsoChronology.INSTANCE)
-  }
-
   implicit def bitSetToBuffer(bitSet: java.util.BitSet): ByteBuffer = {
     ByteBuffer.wrap(bitSet.toByteArray)
-  }
-
-  private def createDateTimeFormatterBuilder(): DateTimeFormatterBuilder = {
-    new DateTimeFormatterBuilder().parseCaseInsensitive()
   }
 }
