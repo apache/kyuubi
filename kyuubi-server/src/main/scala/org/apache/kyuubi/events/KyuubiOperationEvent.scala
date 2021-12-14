@@ -18,7 +18,7 @@
 package org.apache.kyuubi.events
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.operation.{ExecuteStatement, KyuubiOperation, OperationHandle, OperationType}
+import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 
 /**
  * A [[KyuubiOperationEvent]] used to tracker the lifecycle of an operation at server side.
@@ -67,16 +67,12 @@ object KyuubiOperationEvent {
    * Shorthand for instantiating a operation event with a [[KyuubiOperation]] instance
    */
   def apply(operation: KyuubiOperation): KyuubiOperationEvent = {
-    val statement = operation.getHandle.typ match {
-      case OperationType.EXECUTE_STATEMENT => operation.asInstanceOf[ExecuteStatement].statement
-      case _ => ""
-    }
     val session = operation.getSession
     val status = operation.getStatus
     new KyuubiOperationEvent(
       operation.getHandle.identifier.toString,
       Option(operation.remoteOpHandle()).map(OperationHandle(_).identifier.toString).orNull,
-      statement,
+      operation.statement,
       operation.shouldRunAsync,
       status.state.name(),
       status.lastModified,
