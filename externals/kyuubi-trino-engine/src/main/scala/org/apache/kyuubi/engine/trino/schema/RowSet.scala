@@ -19,7 +19,6 @@ package org.apache.kyuubi.engine.trino.schema
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-import java.time.ZoneId
 
 import scala.collection.JavaConverters._
 
@@ -54,34 +53,32 @@ object RowSet {
   def toTRowSet(
       rows: Seq[List[_]],
       schema: List[Column],
-      protocolVersion: TProtocolVersion,
-      timeZone: ZoneId): TRowSet = {
+      protocolVersion: TProtocolVersion): TRowSet = {
     if (protocolVersion.getValue < TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6.getValue) {
-      toRowBasedSet(rows, schema, timeZone)
+      toRowBasedSet(rows, schema)
     } else {
-      toColumnBasedSet(rows, schema, timeZone)
+      toColumnBasedSet(rows, schema)
     }
   }
 
-  def toRowBasedSet(rows: Seq[List[_]], schema: List[Column], timeZone: ZoneId): TRowSet = {
+  def toRowBasedSet(rows: Seq[List[_]], schema: List[Column]): TRowSet = {
     val tRows = rows.map { row =>
       val tRow = new TRow()
-      (0 until row.size).map(i => toTColumnValue(i, row, schema, timeZone))
+      (0 until row.size).map(i => toTColumnValue(i, row, schema))
         .foreach(tRow.addToColVals)
       tRow
     }.asJava
     new TRowSet(0, tRows)
   }
 
-  def toColumnBasedSet(rows: Seq[List[_]], schema: List[Column], timeZone: ZoneId): TRowSet = {
+  def toColumnBasedSet(rows: Seq[List[_]], schema: List[Column]): TRowSet = {
     val size = rows.size
     val tRowSet = new TRowSet(0, new java.util.ArrayList[TRow](size))
     schema.zipWithIndex.foreach { case (filed, i) =>
       val tColumn = toTColumn(
         rows,
         i,
-        filed.getType,
-        timeZone)
+        filed.getType)
       tRowSet.addToColumns(tColumn)
     }
     tRowSet
@@ -90,8 +87,7 @@ object RowSet {
   private def toTColumn(
       rows: Seq[Seq[Any]],
       ordinal: Int,
-      typ: String,
-      timeZone: ZoneId): TColumn = {
+      typ: String): TColumn = {
     val nulls = new java.util.BitSet()
     typ match {
       case BOOLEAN =>
@@ -140,7 +136,7 @@ object RowSet {
           if (row(ordinal) == null) {
             ""
           } else {
-            toHiveString((row(ordinal), typ), timeZone)
+            toHiveString((row(ordinal), typ))
           }
         }.asJava
         TColumn.stringVal(new TStringColumn(values, nulls))
@@ -172,8 +168,7 @@ object RowSet {
   private def toTColumnValue(
       ordinal: Int,
       row: List[Any],
-      types: List[Column],
-      timeZone: ZoneId): TColumnValue = {
+      types: List[Column]): TColumnValue = {
 
     types(ordinal).getType match {
       case BOOLEAN =>
@@ -220,7 +215,7 @@ object RowSet {
         val tStrValue = new TStringValue
         if (row(ordinal) != null) {
           tStrValue.setValue(
-            toHiveString((row(ordinal), types(ordinal).getType), timeZone))
+            toHiveString((row(ordinal), types(ordinal).getType)))
         }
         TColumnValue.stringVal(tStrValue)
     }
@@ -229,7 +224,7 @@ object RowSet {
   /**
    * A simpler impl of Trino's toHiveString
    */
-  def toHiveString(dataWithType: (Any, String), timeZone: ZoneId): String = {
+  def toHiveString(dataWithType: (Any, String)): String = {
     dataWithType match {
       case (null, _) =>
         // Only match nulls in nested type values

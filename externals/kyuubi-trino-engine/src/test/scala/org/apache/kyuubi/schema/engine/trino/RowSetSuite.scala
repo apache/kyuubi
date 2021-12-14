@@ -21,7 +21,6 @@ import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.sql.Date
 import java.sql.Time
-import java.time.ZoneId
 
 import scala.collection.JavaConverters._
 
@@ -114,7 +113,6 @@ class RowSetSuite extends KyuubiFunSuite {
     column("t", IPADDRESS),
     column("u", UUID))
 
-  private val zoneId: ZoneId = ZoneId.systemDefault()
   private val rows: Seq[List[_]] = (0 to 10).map(genRow) ++ Seq(List.fill(21)(null))
 
   def column(name: String, tp: String): Column = new Column(name, tp, new ClientTypeSignature(tp))
@@ -122,7 +120,7 @@ class RowSetSuite extends KyuubiFunSuite {
   def uuidSuffix(value: Int): String = if (value > 9) value.toString else s"f$value"
 
   test("column based set") {
-    val tRowSet = RowSet.toColumnBasedSet(rows, schema, zoneId)
+    val tRowSet = RowSet.toColumnBasedSet(rows, schema)
     assert(tRowSet.getColumns.size() === schema.size)
     assert(tRowSet.getRowsSize === 0)
 
@@ -166,7 +164,7 @@ class RowSetSuite extends KyuubiFunSuite {
     dateCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b.isEmpty)
       case (b, i) =>
-        assert(b === toHiveString((Date.valueOf(s"2018-11-${i + 1}"), DATE), zoneId))
+        assert(b === toHiveString((Date.valueOf(s"2018-11-${i + 1}"), DATE)))
     }
 
     val decCol = cols.next().getStringVal
@@ -202,7 +200,7 @@ class RowSetSuite extends KyuubiFunSuite {
     val timeCol = cols.next().getStringVal
     timeCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b.isEmpty)
-      case (b, i) => assert(b === toHiveString((Time.valueOf(s"13:33:${i + 1}"), TIME), zoneId))
+      case (b, i) => assert(b === toHiveString((Time.valueOf(s"13:33:${i + 1}"), TIME)))
     }
 
     val binCol = cols.next().getBinaryVal
@@ -227,49 +225,47 @@ class RowSetSuite extends KyuubiFunSuite {
     rowCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b.isEmpty)
       case (b, i) => assert(b ===
-          toHiveString((Row.builder().addField(i.toString, i).build(), ROW), zoneId))
+          toHiveString((Row.builder().addField(i.toString, i).build(), ROW)))
     }
 
     val arrCol = cols.next().getStringVal
     arrCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b === toHiveString(
-          (Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toList.asJava, ARRAY),
-          zoneId))
+          (Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toList.asJava, ARRAY)))
     }
 
     val mapCol = cols.next().getStringVal
     mapCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b === toHiveString(
-          (Map(i -> java.lang.Double.valueOf(s"$i.$i")).asJava, MAP),
-          zoneId))
+          (Map(i -> java.lang.Double.valueOf(s"$i.$i")).asJava, MAP)))
     }
 
     val jsonCol = cols.next().getStringVal
     jsonCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b ===
-          toHiveString((s"""{"$i": $i}""", JSON), zoneId))
+          toHiveString((s"""{"$i": $i}""", JSON)))
     }
 
     val ipCol = cols.next().getStringVal
     ipCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b ===
-          toHiveString((s"${i}.${i}.${i}.${i}", IPADDRESS), zoneId))
+          toHiveString((s"${i}.${i}.${i}.${i}", IPADDRESS)))
     }
 
     val uuidCol = cols.next().getStringVal
     uuidCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b ===
-          toHiveString((s"$UUID_PREFIX${uuidSuffix(i)}", UUID), zoneId))
+          toHiveString((s"$UUID_PREFIX${uuidSuffix(i)}", UUID)))
     }
   }
 
   test("row based set") {
-    val tRowSet = RowSet.toRowBasedSet(rows, schema, zoneId)
+    val tRowSet = RowSet.toRowBasedSet(rows, schema)
     assert(tRowSet.getColumnCount === 0)
     assert(tRowSet.getRowsSize === rows.size)
     val iter = tRowSet.getRowsIterator
@@ -313,9 +309,9 @@ class RowSetSuite extends KyuubiFunSuite {
 
     val r10 = iter.next().getColVals
     assert(r10.get(15).getStringVal.getValue ===
-      toHiveString((Row.builder().addField(9.toString, 9).build(), ROW), zoneId))
+      toHiveString((Row.builder().addField(9.toString, 9).build(), ROW)))
     assert(r10.get(16).getStringVal.getValue === Array.fill(9)(9.9d).mkString("[", ",", "]"))
-    assert(r10.get(17).getStringVal.getValue === toHiveString((Map(9 -> 9.9d).asJava, MAP), zoneId))
+    assert(r10.get(17).getStringVal.getValue === toHiveString((Map(9 -> 9.9d).asJava, MAP)))
     assert(r10.get(18).getStringVal.getValue === "{\"9\": 9}")
     assert(r10.get(19).getStringVal.getValue === "9.9.9.9")
     assert(r10.get(20).getStringVal.getValue === s"$UUID_PREFIX${uuidSuffix(9)}")
@@ -323,7 +319,7 @@ class RowSetSuite extends KyuubiFunSuite {
 
   test("to row set") {
     TProtocolVersion.values().foreach { proto =>
-      val set = RowSet.toTRowSet(rows, schema, proto, zoneId)
+      val set = RowSet.toTRowSet(rows, schema, proto)
       if (proto.getValue < TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V6.getValue) {
         assert(!set.isSetColumns, proto.toString)
         assert(set.isSetRows, proto.toString)
