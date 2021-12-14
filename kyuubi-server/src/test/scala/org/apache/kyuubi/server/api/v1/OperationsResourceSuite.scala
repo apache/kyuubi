@@ -30,7 +30,7 @@ import org.apache.kyuubi.server.KyuubiRestFrontendService
 
 class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
-  test("test get a operation event") {
+  test("test get an operation event") {
     withKyuubiRestServer { (fe, _, _, webTarget) =>
       val catalogsHandleStr = getOpHandleStr(fe, OperationType.GET_CATALOGS)
       var response = webTarget.path(s"api/v1/operations/$catalogsHandleStr/event")

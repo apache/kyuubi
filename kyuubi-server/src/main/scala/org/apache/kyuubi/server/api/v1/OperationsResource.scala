@@ -41,7 +41,7 @@ private[v1] class OperationsResource extends ApiRequestContext {
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON)),
     description =
-      "Get a operation event")
+      "Get an operation event")
   @GET
   @Path("{operationHandle}/event")
   def getOperationEvent(
@@ -57,7 +57,7 @@ private[v1] class OperationsResource extends ApiRequestContext {
       }
     } catch {
       case NonFatal(_) =>
-        throw new NotFoundException(s"Error getting a operation event")
+        throw new NotFoundException(s"Error getting an operation event")
     }
   }
 
