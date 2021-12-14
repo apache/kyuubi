@@ -29,14 +29,9 @@ Basics
     :numbered: 3
     :glob:
 
-    engine_on_yarn
-    engine_on_kubernetes
     kyuubi_on_kubernetes
     hive_metastore
     high_availability_guide
-    metrics
-    logging
-    trouble_shooting
 
 Configurations
 --------------
@@ -47,7 +42,6 @@ Configurations
     :glob:
 
     settings
-    spark/index
 
 Engines
 -------
@@ -57,4 +51,8 @@ Engines
     :numbered: 3
     :glob:
 
+    engine_on_yarn
+    engine_on_kubernetes
     engine_share_level
+    engine_lifecycle
+    spark/index

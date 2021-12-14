@@ -16,8 +16,8 @@
 .. image:: ../../imgs/kyuubi_logo.png
    :align: center
 
-The Engine Configuration Guide
-==============================
+The Spark SQL Engine Configuration Guide
+========================================
 
 Kyuubi aims to bring Spark to end-users who need not qualify with Spark or something else related to the big data area.
 End-users can write SQL queries through JDBC against Kyuubi and nothing more.
