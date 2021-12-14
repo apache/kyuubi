@@ -146,5 +146,5 @@ object HighAvailabilityConf {
       .doc("Whether we should publish Kerberos configs to ZooKeeper.")
       .version("1.4.0")
       .booleanConf
-      .createWithDefault(UserGroupInformation.isSecurityEnabled)
+      .createWithDefault(false)
 }
