@@ -23,8 +23,8 @@ import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 /**
  * A [[KyuubiOperationEvent]] used to tracker the lifecycle of an operation at server side.
  * <ul>
- *   <li>operation Basis</li>
- *   <li>operation Live Status</li>
+ *   <li>Operation Basis</li>
+ *   <li>Operation Live Status</li>
  *   <li>Parent Session Id</li>
  * </ul>
  *
