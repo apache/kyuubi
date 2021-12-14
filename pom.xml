@@ -795,6 +795,10 @@
                 <version>${hudi.version}</version>
                 <exclusions>
                     <exclusion>
+                        <groupId>org.scala-lang</groupId>
+                        <artifactId>scala-library</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>org.apache.hudi</groupId>
                         <artifactId>hudi-timeline-service</artifactId>
                     </exclusion>
@@ -838,6 +842,10 @@
                 <artifactId>hudi-spark_${scala.binary.version}</artifactId>
                 <version>${hudi.version}</version>
                 <exclusions>
+                    <exclusion>
+                        <groupId>org.scala-lang</groupId>
+                        <artifactId>scala-library</artifactId>
+                    </exclusion>
                     <exclusion>
                         <groupId>org.apache.hudi</groupId>
                         <artifactId>hudi-spark-common_2.11</artifactId>
