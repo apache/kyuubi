@@ -28,7 +28,7 @@ import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
  *   <li>Parent Session Id</li>
  * </ul>
  *
- * @param handleIdentifier the unique identifier of a single operation
+ * @param statementId the unique identifier of a single operation
  * @param remoteId the unique identifier of a single operation at engine side
  * @param statement the sql that you execute
  * @param shouldRunAsync the flag indicating whether the query runs synchronously or not
@@ -42,7 +42,7 @@ import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
  * @param sessionUser the authenticated client user
  */
 case class KyuubiOperationEvent private (
-    handleIdentifier: String,
+    statementId: String,
     remoteId: String,
     statement: String,
     shouldRunAsync: Boolean,
