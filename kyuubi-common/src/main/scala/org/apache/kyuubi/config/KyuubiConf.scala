@@ -1064,4 +1064,11 @@ object KyuubiConf {
       .transform(_.toUpperCase(Locale.ROOT))
       .checkValues(OperationLanguages.values.map(_.toString))
       .createWithDefault(OperationLanguages.SQL.toString)
+
+  val SESSION_CONF_ADVISOR: ConfigEntry[String] =
+    buildConf("session.conf.advisor")
+      .doc("Choose a custom config advisor for session, the default implementation return empty.")
+      .version("1.5.0")
+      .stringConf
+      .createWithDefault("org.apache.kyuubi.plugin.DefaultSessionConfAdvisor")
 }

@@ -80,6 +80,7 @@
         <module>kyuubi-metrics</module>
         <module>kyuubi-server</module>
         <module>kyuubi-zookeeper</module>
+        <module>kyuubi-plugin</module>
     </modules>
 
     <properties>

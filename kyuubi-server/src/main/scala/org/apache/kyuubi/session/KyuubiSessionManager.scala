@@ -27,6 +27,7 @@ import org.apache.kyuubi.credentials.HadoopCredentialsManager
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.KyuubiOperationManager
+import org.apache.kyuubi.plugin.{PluginLoader, SessionConfAdvisor}
 
 class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
@@ -34,8 +35,10 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   val operationManager = new KyuubiOperationManager()
   val credentialsManager = new HadoopCredentialsManager()
+  var sessionConfAdvisor: SessionConfAdvisor = _
 
   override def initialize(conf: KyuubiConf): Unit = {
+    sessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
     addService(credentialsManager)
     val absPath = Utils.getAbsolutePathFromWork(conf.get(SERVER_OPERATION_LOG_DIR_ROOT))
     _operationLogRoot = Some(absPath.toAbsolutePath.toString)

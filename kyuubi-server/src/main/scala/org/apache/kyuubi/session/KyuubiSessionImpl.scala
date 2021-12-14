@@ -17,7 +17,12 @@
 
 package org.apache.kyuubi.session
 
+import java.util
+
+import scala.collection.JavaConverters._
+
 import com.codahale.metrics.MetricRegistry
+import com.google.common.collect.ImmutableMap
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
@@ -43,11 +48,37 @@ class KyuubiSessionImpl(
     sessionConf: KyuubiConf)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
-  // TODO: needs improve the hardcode
-  normalizedConf.foreach {
-    case ("use:database", _) =>
-    case ("kyuubi.engine.pool.size.threshold", _) =>
-    case (key, value) => sessionConf.set(key, value)
+  override val normalizedConf: Map[String, String] = {
+    val userSpecifiedConf = new util.HashMap[String, String]()
+    // TODO: needs improve the hardcode
+    super.normalizedConf.foreach {
+      case ("use:database", _) =>
+      case ("kyuubi.engine.pool.size.threshold", _) =>
+      case (key, value) =>
+        sessionConf.set(key, value)
+        userSpecifiedConf.put(key, value)
+    }
+
+    val sessionConfMap = ImmutableMap.copyOf[String, String](sessionConf.getAll.asJava)
+    val suggestion = sessionManager.sessionConfAdvisor.getConfSuggestion(
+      user,
+      sessionConfMap).asScala
+    val overlay = sessionManager.sessionConfAdvisor.getConfOverlay(
+      user,
+      sessionConfMap).asScala
+
+    suggestion.foreach {
+      case (key, value) =>
+        sessionConf.setIfMissing(key, value)
+        userSpecifiedConf.putIfAbsent(key, value)
+    }
+    overlay.foreach {
+      case (key, value) =>
+        sessionConf.set(key, value)
+        userSpecifiedConf.put(key, value)
+    }
+
+    userSpecifiedConf.asScala.toMap
   }
 
   val engine: EngineRef = new EngineRef(sessionConf, user)
