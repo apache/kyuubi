@@ -18,16 +18,24 @@
 package org.apache.kyuubi.events
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
+import org.apache.kyuubi.operation.{ExecuteStatement, KyuubiOperation, OperationHandle, OperationType}
 
 /**
+ * A [[KyuubiOperationEvent]] used to tracker the lifecycle of an operation at server side.
+ * <ul>
+ *   <li>operation Basis</li>
+ *   <li>operation Live Status</li>
+ *   <li>Parent Session Id</li>
+ * </ul>
+ *
  * @param handleIdentifier the unique identifier of a single operation
- * @param remoteId the unique identifier of a single statement at engine side
+ * @param remoteId the unique identifier of a single operation at engine side
+ * @param statement the sql that you execute
  * @param shouldRunAsync the flag indicating whether the query runs synchronously or not
  * @param state the current operation state
  * @param eventTime the time when the event created & logged
  * @param createTime the time for changing to the current operation state
- * @param startTime the time the query start to time of this statement
+ * @param startTime the time the query start to time of this operation
  * @param completeTime time time the query ends
  * @param exception: caught exception if have
  * @param sessionId the identifier of the parent session
@@ -36,6 +44,7 @@ import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 case class KyuubiOperationEvent private (
     handleIdentifier: String,
     remoteId: String,
+    statement: String,
     shouldRunAsync: Boolean,
     state: String,
     eventTime: Long,
@@ -46,17 +55,28 @@ case class KyuubiOperationEvent private (
     sessionId: String,
     sessionUser: String) extends KyuubiServerEvent {
 
+  // operation events are partitioned by the date when the corresponding operations are
+  // created.
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(createTime)) :: Nil
 }
 
 object KyuubiOperationEvent {
+
+  /**
+   * Shorthand for instantiating a operation event with a [[KyuubiOperation]] instance
+   */
   def apply(operation: KyuubiOperation): KyuubiOperationEvent = {
+    val statement = operation.getHandle.typ match {
+      case OperationType.EXECUTE_STATEMENT => operation.asInstanceOf[ExecuteStatement].statement
+      case _ => ""
+    }
     val session = operation.getSession
     val status = operation.getStatus
     new KyuubiOperationEvent(
       operation.getHandle.identifier.toString,
       Option(operation.remoteOpHandle()).map(OperationHandle(_).identifier.toString).orNull,
+      statement,
       operation.shouldRunAsync,
       status.state.name(),
       status.lastModified,

@@ -23,7 +23,7 @@ import javax.ws.rs.core.MediaType
 import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
-import org.apache.kyuubi.events.{KyuubiOperationEvent, KyuubiStatementEvent}
+import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.operation.{ExecuteStatement, GetCatalogs, OperationState, OperationType}
 import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.server.KyuubiRestFrontendService
@@ -42,7 +42,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
       val statementHandleStr = getOpHandleStr(fe, OperationType.EXECUTE_STATEMENT)
       response = webTarget.path(s"api/v1/operations/$statementHandleStr/event")
         .request(MediaType.APPLICATION_JSON_TYPE).get()
-      val statementEvent = response.readEntity(classOf[KyuubiStatementEvent])
+      val statementEvent = response.readEntity(classOf[KyuubiOperationEvent])
       assert(200 == response.getStatus)
       assert(statementEvent.state == OperationState.INITIALIZED.name())
 
@@ -66,7 +66,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
 
       response = webTarget.path(s"api/v1/operations/$opHandleStr/event")
         .request(MediaType.APPLICATION_JSON_TYPE).get()
-      val operationEvent = response.readEntity(classOf[KyuubiStatementEvent])
+      val operationEvent = response.readEntity(classOf[KyuubiOperationEvent])
       assert(operationEvent.state == OperationState.FINISHED.name() ||
         operationEvent.state == OperationState.CANCELED.name())
 
