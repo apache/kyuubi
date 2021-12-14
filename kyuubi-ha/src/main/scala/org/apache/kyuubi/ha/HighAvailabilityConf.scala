@@ -142,10 +142,11 @@ object HighAvailabilityConf {
       .stringConf
       .createOptional
 
-  val HA_ZK_PUBLIST_CONFIGS: ConfigEntry[Boolean] =
+  val HA_ZK_PUBLISH_CONFIGS: ConfigEntry[Boolean] =
     buildConf("ha.zookeeper.publish.configs")
-      .doc("Whether we should publish Kerberos configs to ZooKeeper.")
+      .doc("When set to true, publish Kerberos configs to Zookeeper." +
+        "Note that the Hive driver needs to be greater than 1.3 or 2.0 or apply HIVE-11581 patch.")
       .version("1.4.0")
       .booleanConf
-      .createWithDefault(UserGroupInformation.isSecurityEnabled)
+      .createWithDefault(false)
 }

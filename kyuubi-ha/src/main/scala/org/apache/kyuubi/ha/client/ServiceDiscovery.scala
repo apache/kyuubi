@@ -265,7 +265,7 @@ object ServiceDiscovery extends Logging {
       if (external) CreateMode.PERSISTENT_SEQUENTIAL
       else CreateMode.EPHEMERAL_SEQUENTIAL
     val znodeData =
-      if (conf.get(HA_ZK_PUBLIST_CONFIGS) && session.isEmpty) {
+      if (conf.get(HA_ZK_PUBLISH_CONFIGS) && session.isEmpty) {
         addConfsToPublish(conf, instance)
       } else {
         instance
