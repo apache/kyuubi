@@ -31,15 +31,15 @@ When Kyuubi is secured by Kerberos, the authentication procedure becomes a littl
 The graph above shows a simplified kerberos authentication procedure:
 1. Kerberos client sends user principal and secret key to KDC. Secret key can be a password or a keytab file.   
 2. KDC returns a `ticket-granting ticket`(TGT).
-3. Kerberos client stores TGT into a cache file.
-4. JDBC client, such as beeline and BI tools, reads TGT from cache file
-5. JDBC client sends TGT and server principal to KDC
-6. KDC returns a `client-to-server ticket`
-7. JDBC client sends `client-to-server ticket` to Kyuubi server to prove its identity
+3. Kerberos client stores TGT into a ticket cache.
+4. JDBC client, such as beeline and BI tools, reads TGT from the ticket cache.
+5. JDBC client sends TGT and server principal to KDC.
+6. KDC returns a `client-to-server ticket`.
+7. JDBC client sends `client-to-server ticket` to Kyuubi server to prove its identity.
 
 In the rest part of this page, we will describe steps needed to pass through this authentication.
 
-## Installing and Configuring the Kerberos Clients
+## Install Kerberos Client
 Usually, Kerberos client is installed as default. You can validate it using klist tool.
 
 Linux command and output:
@@ -65,6 +65,7 @@ Kerberos for Windows
 If the client is not installed, you should install it ahead based on the OS platform.  
 We recommend you to install the MIT Kerberos Distribution as all commands in this guide is based on it.  
 
+## Configure Kerberos Client
 Kerberos client needs a configuration file for tuning up the creation of Kerberos ticket cache.
 Following is the configuration file's default location on different OS:
 
@@ -115,12 +116,26 @@ Valid starting       Expires              Service principal
 (Command is identical on different OS platform. Ticket cache location may be different.)
 ```
 
-Kyuubi also has a TGT stored in a ticket cache. If you are running Kyuubi and execute `kinit` 
-on the same host with the same OS user, the ticket cache used by Kyuubi will be overwritten by
-new ticket cache.
+Ticket cache may have different storage type on different OS platform. 
 
-To avoid that, you should store the new ticket cache in another place.  
-Ticket cache location can be specified with `-c` argument.
+For example,
+
+OS | Default Ticket Cache Type and Location
+---| ---
+Linux | FILE:/tmp/krb5cc_%{uid}
+MacOS | KCM:%{uid}:%{gid}
+Windows | API:krb5cc
+
+You can find your ticket cache type and location in the `Ticket cache` part of `klist` output.
+
+**Note**:  
+- Ensure your ticket cache type is `FILE` as JVM can only read ticket cache stored as file.
+- Do not store TGT into default ticket cache if you are running Kyuubi and execute `kinit` on the same 
+host with the same OS user. The default ticket cache is already used by Kyuubi server.
+
+Either because the default ticket cache is not a file, or because it is used by Kyuubi server, you 
+should store ticket cache in another file location.  
+This can be achieved by specifying a file location with `-c` argument in `kinit` command.
 
 For example,
 ```
@@ -152,8 +167,6 @@ Windows | User scoep: `%USERPROFILE%\krb5.ini`<br/>System scope: `%windir%\krb5.
 You can use JVM system property, `java.security.krb5.conf`, to overwrite the default location.
 
 ## Add Kerberos Ticket Cache to JVM Search Path
-JVM also needs to read TGT from ticket cache to handle the Kerberos authentication.
-
 JVM determines the ticket cache location in the following order:
 1. Path specified by `KRB5CCNAME` environment variable. Path must start with `FILE:`.
 2. `/tmp/krb5cc_%{uid}` on Unix-like OS, e.g. Linux, MacOS
@@ -163,9 +176,7 @@ JVM determines the ticket cache location in the following order:
 **Note**:  
 - `${user.home}` and `${user.name}` are JVM system properties.
 - `${user.home}` should be replaced with `${user.dir}` if `${user.home}` is null.
-
-The ticket cache type may vary when created by Kerberos client on different OS platform. 
-While JVM can only read ticket cache stored as a file.  
+ 
 Ensure your ticket cache is stored as a file and put it in one of the above locations. 
 
 ## Ensure core-site.xml Exists in Classpath
