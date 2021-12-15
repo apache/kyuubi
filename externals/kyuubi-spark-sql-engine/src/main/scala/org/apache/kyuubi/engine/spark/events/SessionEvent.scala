@@ -22,7 +22,7 @@ import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
-import org.apache.kyuubi.session.Session
+import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 
 /**
  * Event Tracking for user sessions
@@ -31,6 +31,7 @@ import org.apache.kyuubi.session.Session
  * @param startTime Start time
  * @param endTime End time
  * @param ip Client IP address
+ * @param serverIp Kyuubi Server IP address
  * @param totalOperations how many queries and meta calls
  */
 case class SessionEvent(
@@ -38,6 +39,7 @@ case class SessionEvent(
     engineId: String,
     username: String,
     ip: String,
+    serverIp: String,
     startTime: Long,
     var endTime: Long = -1L,
     var totalOperations: Int = 0) extends KyuubiSparkEvent {
@@ -56,12 +58,13 @@ case class SessionEvent(
 }
 
 object SessionEvent {
-  def apply(session: Session): SessionEvent = {
+  def apply(session: SparkSessionImpl): SessionEvent = {
     new SessionEvent(
       session.handle.identifier.toString,
       KyuubiSparkUtil.engineId,
       session.user,
       session.ipAddress,
+      session.serverIpAddress,
       session.createTime)
   }
 }

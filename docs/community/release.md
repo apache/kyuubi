@@ -227,7 +227,7 @@ Fork and clone [Apache Kyuubi website](https://github.com/apache/incubator-kyuub
 ### Create an Announcement
 
 Once everything is working, create an announcement on the website and then send an e-mail to the mailing list.
-The mailing list includes: `announce@apache.org`, `dev@kyuubi.apache.org`, `user@spark.apache.org`.
+The mailing list includes: `general@incubator.apache.org`, `announce@apache.org`, `dev@kyuubi.apache.org`, `user@spark.apache.org`.
 
 Enjoy an adult beverage of your choice, and congratulations on making a Kyuubi release.
 

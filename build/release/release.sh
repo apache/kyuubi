@@ -23,8 +23,8 @@ set -x
 
 ASF_USERNAME=${ASF_USERNAME:?"ASF_USERNAME is required"}
 ASF_PASSWORD=${ASF_PASSWORD:?"ASF_PASSWORD is required"}
-RELEASE_VERSION=${RELEASE_VERSION:?"RELEASE_VERSION is required"}
-RELEASE_RC_NO=${RELEASE_RC_NO:?"RELEASE_RC_NO is required"}
+RELEASE_VERSION=${RELEASE_VERSION:?"RELEASE_VERSION is required, e.g. 1.4.0-incubating"}
+RELEASE_RC_NO=${RELEASE_RC_NO:?"RELEASE_RC_NO is required, e.g. 0"}
 
 exit_with_usage() {
   local NAME=$(basename $0)
@@ -110,16 +110,6 @@ finalize_svn() {
      --message "Apache Kyuubi ${RELEASE_VERSION}" \
      "${SVN_STAGING_REPO}/${RELEASE_TAG}" "${SVN_RELEASE_REPO}/kyuubi-${RELEASE_VERSION}"
   echo "Kyuubi tarballs moved"
-
-  echo "Sync'ing KEYS"
-  svn checkout --depth=files "${SVN_RELEASE_REPO}" "${SVN_RELEASE_DIR}"
-  curl "${SVN_STAGING_REPO}/KEYS" > "${SVN_RELEASE_DIR}/KEYS"
-  svn add "${SVN_RELEASE_DIR}/KEYS"
-  (
-    cd "${SVN_RELEASE_DIR}" && \
-    svn commit --username "${ASF_USERNAME}" --password "${ASF_PASSWORD}" --message "Update KEYS"
-  )
-  echo "KEYS sync'ed"
 }
 
 if [[ "$1" == "publish" ]]; then

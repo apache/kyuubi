@@ -518,4 +518,18 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
       assert(e.getMessage contains "not found: value y")
     }
   }
+
+  test("scala code with console output") {
+    withJdbcStatement() { statement =>
+      statement.execute("SET kyuubi.operation.language=scala")
+      val code = """spark.sql("SET kyuubi.operation.language").show(false)"""
+      val rs = statement.executeQuery(code)
+
+      var foundOperationLangItem = false
+      while (rs.next() && !foundOperationLangItem) {
+        foundOperationLangItem = rs.getString(1).contains("kyuubi.operation.language")
+      }
+      assert(foundOperationLangItem)
+    }
+  }
 }

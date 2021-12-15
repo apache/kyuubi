@@ -20,6 +20,7 @@ package org.apache.kyuubi.engine.spark.repl
 import java.io.{ByteArrayOutputStream, File}
 
 import scala.tools.nsc.Settings
+import scala.tools.nsc.interpreter.IR
 import scala.tools.nsc.interpreter.JPrintWriter
 
 import org.apache.spark.SparkContext
@@ -49,7 +50,7 @@ private[spark] case class KyuubiSparkILoop private (
     try {
       this.compilerClasspath
       this.ensureClassLoader()
-      var classLoader = Thread.currentThread().getContextClassLoader
+      var classLoader: ClassLoader = spark.sharedState.jarClassLoader
       while (classLoader != null) {
         classLoader match {
           case loader: MutableURLClassLoader =>
@@ -92,6 +93,14 @@ private[spark] case class KyuubiSparkILoop private (
   }
 
   def getResult: DataFrame = result.get()
+
+  def interpretWithRedirectOutError(statement: String): IR.Result = {
+    Console.withOut(output) {
+      Console.withErr(output) {
+        this.interpret(statement)
+      }
+    }
+  }
 
   def getOutput: String = {
     val res = output.toString.trim

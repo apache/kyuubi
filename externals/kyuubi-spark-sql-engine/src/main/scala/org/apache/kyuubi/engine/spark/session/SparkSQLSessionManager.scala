@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine.spark.session
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 import org.apache.spark.sql.SparkSession
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.ShareLevel
@@ -42,7 +42,8 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
   def this(spark: SparkSession) = this(classOf[SparkSQLSessionManager].getSimpleName, spark)
 
   override def initialize(conf: KyuubiConf): Unit = {
-    _operationLogRoot = Some(conf.get(ENGINE_OPERATION_LOG_DIR_ROOT))
+    val absPath = Utils.getAbsolutePathFromWork(conf.get(ENGINE_OPERATION_LOG_DIR_ROOT))
+    _operationLogRoot = Some(absPath.toAbsolutePath.toString)
     super.initialize(conf)
   }
 
@@ -56,7 +57,8 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       password: String,
       ipAddress: String,
       conf: Map[String, String]): SessionHandle = {
-    info(s"Opening session for $user@$ipAddress")
+    val clientIp = conf.getOrElse(CLIENT_IP_KEY, ipAddress)
+    info(s"Opening session for $user@$clientIp")
     val sparkSession =
       try {
         if (singleSparkSession) {
@@ -78,6 +80,7 @@ class SparkSQLSessionManager private (name: String, spark: SparkSession)
       user,
       password,
       ipAddress,
+      clientIp,
       conf,
       this,
       sparkSession)

@@ -17,7 +17,7 @@
    :align: center
 
 Develop Tools
-===========
+=============
 
 .. toctree::
     :maxdepth: 2
@@ -28,5 +28,4 @@ Develop Tools
     build_document
     testing
     debugging
-    community
     developer

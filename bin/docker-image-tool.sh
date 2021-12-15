@@ -49,8 +49,10 @@ function image_ref {
   fi
   if [ -n "$TAG" ]; then
     image="$image:$TAG"
+  else
+    image="$image:$KYUUBI_VERSION"
   fi
-  echo "$image:$KYUUBI_VERSION"
+  echo "$image"
 }
 
 function docker_push {
@@ -113,16 +115,28 @@ function build {
     KYUUBI_ROOT="$CTX_DIR/base"
   fi
 
-  # cp spark for kyuubi as submit client
-  # if user set -s(spark-provider), use if
-  # else use builtin spark
+  local BUILD_ARGS=(${BUILD_PARAMS})
+
+  # mkdir spark-binary to cache spark
+  # clean cache if spark-binary exists
   if [[ ! -d "$KYUUBI_ROOT/spark-binary" ]]; then
     mkdir "$KYUUBI_ROOT/spark-binary"
+  else
+    rm -rf "$KYUUBI_ROOT/spark-binary/*"
   fi
-  if [[ ! -d "$SPARK_HOME" ]]; then
-    error "Cannot found dir $SPARK_HOME, you must configure SPARK_HOME correct."
+
+  # If SPARK_HOME_IN_DOCKER configured,
+  # Kyuubi won't copy local spark into docker image.
+  # Use SPARK_HOME_IN_DOCKER as SPARK_HOME in docker image.
+  if [[ -n "${SPARK_HOME_IN_DOCKER}" ]]; then
+    BUILD_ARGS+=(--build-arg spark_home_in_docker=$SPARK_HOME_IN_DOCKER)
+    BUILD_ARGS+=(--build-arg spark_provided="spark_provided")
+  else
+    if [[ ! -d "$SPARK_HOME" ]]; then
+      error "Cannot found dir $SPARK_HOME, you must configure SPARK_HOME correct."
+    fi
+    cp -r "$SPARK_HOME/" "$KYUUBI_ROOT/spark-binary/"
   fi
-  cp -r "$SPARK_HOME/" "$KYUUBI_ROOT/spark-binary/"
 
   # Verify that the Docker image content directory is present
   if [ ! -d "$KYUUBI_ROOT/docker" ]; then
@@ -137,18 +151,10 @@ function build {
     error "Cannot find Kyuubi JARs. This script assumes that Apache Kyuubi has first been built locally or this is a runnable distribution."
   fi
 
-  local BUILD_ARGS=(${BUILD_PARAMS})
-
   # If a custom Kyuubi_UID was set add it to build arguments
   if [ -n "$KYUUBI_UID" ]; then
     BUILD_ARGS+=(--build-arg kyuubi_uid=$KYUUBI_UID)
   fi
-
-  local BINDING_BUILD_ARGS=(
-    ${BUILD_ARGS[@]}
-    --build-arg
-    base_img=$(image_ref kyuubi)
-  )
 
   local BASEDOCKERFILE=${BASEDOCKERFILE:-"docker/Dockerfile"}
   local ARCHS=${ARCHS:-"--platform linux/amd64,linux/arm64"}
@@ -193,6 +199,8 @@ Options:
                         be used separately for each build arg.
   -s                    Put the specified Spark into the Kyuubi image to be used as the internal SPARK_HOME
                         of the container.
+  -S                    Declare SPARK_HOME in Docker Image. When you configured -S, you need to provide an image
+                        with Spark as BASE_IMAGE.
 
 Examples:
 
@@ -213,6 +221,9 @@ Examples:
   - Build with Spark placed "/path/spark"
     $0 -s /path/spark build
 
+  - Build with Spark Image myrepo/spark:3.1.0
+    $0 -S /opt/spark -b BASE_IMAGE=myrepo/spark:3.1.0 build
+
 EOF
 }
 
@@ -228,7 +239,8 @@ NOCACHEARG=
 BUILD_PARAMS=
 KYUUBI_UID=
 CROSS_BUILD="false"
-while getopts f:r:t:Xnb:u:s: option
+SPARK_HOME_IN_DOCKER=
+while getopts f:r:t:Xnb:u:s:S: option
 do
  case "${option}"
  in
@@ -240,6 +252,7 @@ do
  X) CROSS_BUILD=1;;
  u) KYUUBI_UID=${OPTARG};;
  s) SPARK_HOME=${OPTARG};;
+ S) SPARK_HOME_IN_DOCKER=${OPTARG};;
  esac
 done
 

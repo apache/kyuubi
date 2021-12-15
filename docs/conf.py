@@ -32,6 +32,7 @@
 import os
 import sys
 import shlex
+import subprocess
 
 sys.path.insert(0, os.path.abspath('.'))
 
@@ -72,7 +73,7 @@ limitations under the License.
 author = 'Kent Yao'
 
 # The full version, including alpha/beta/rc tags
-release = '1.3.0'
+release = subprocess.getoutput("cd .. && build/mvn help:evaluate -Dexpression=project.version|grep -v Using|grep -v INFO|grep -v WARNING|tail -n 1").split('\n')[-1]
 
 
 # -- General configuration ---------------------------------------------------
@@ -117,7 +118,7 @@ pygments_style = 'sphinx'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = []
 htmlhelp_basename = 'Recommonmarkdoc'
 
 github_doc_root = 'https://github.com/apache/incubator-kyuubi/tree/master/docs/'

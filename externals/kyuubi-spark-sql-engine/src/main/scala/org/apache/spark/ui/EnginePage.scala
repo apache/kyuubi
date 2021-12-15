@@ -29,7 +29,7 @@ import org.apache.commons.text.StringEscapeUtils
 import org.apache.spark.ui.TableSourceUtil._
 import org.apache.spark.ui.UIUtils._
 
-import org.apache.kyuubi.Utils
+import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
 import org.apache.kyuubi.engine.spark.events.{SessionEvent, SparkStatementEvent}
 
 case class EnginePage(parent: EngineTab) extends WebUIPage("") {
@@ -54,6 +54,10 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
   private def generateBasicStats(): Seq[Node] = {
     val timeSinceStart = System.currentTimeMillis() - parent.engine.getStartTime
     <ul class ="list-unstyled">
+      <li>
+        <strong>Kyuubi Version: </strong>
+        {KYUUBI_VERSION}
+      </li>
       <li>
         <strong>Started at: </strong>
         {new Date(parent.engine.getStartTime)}
@@ -236,6 +240,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
         Seq(
           ("User", true, None),
           ("Client IP", true, None),
+          ("Server IP", true, None),
           ("Session ID", true, None),
           ("Start Time", true, None),
           ("Finish Time", true, None),
@@ -260,6 +265,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
       <tr>
         <td> {session.username} </td>
         <td> {session.ip} </td>
+        <td> {session.serverIp} </td>
         <td> <a href={sessionLink}> {session.sessionId} </a> </td>
         <td> {formatDate(session.startTime)} </td>
         <td> {if (session.endTime > 0) formatDate(session.endTime)} </td>
@@ -398,6 +404,7 @@ private class SessionStatsTableDataSource(
     val ordering: Ordering[SessionEvent] = sortColumn match {
       case "User" => Ordering.by(_.username)
       case "Client IP" => Ordering.by(_.ip)
+      case "Server IP" => Ordering.by(_.serverIp)
       case "Session ID" => Ordering.by(_.sessionId)
       case "Start Time" => Ordering.by(_.startTime)
       case "Finish Time" => Ordering.by(_.endTime)
