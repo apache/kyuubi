@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.schema
+package org.apache.kyuubi.engine.spark.schema
 
 import scala.collection.JavaConverters._
 
@@ -23,10 +23,9 @@ import org.apache.hive.service.rpc.thrift.{TCLIServiceConstants, TTypeId}
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.engine.spark.schema.SchemaHelper._
 
 class SchemaHelperSuite extends KyuubiFunSuite {
-
-  import SchemaHelper._
 
   val innerSchema: StructType = new StructType()
     .add("a", StringType, nullable = true, "")

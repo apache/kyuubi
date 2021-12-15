@@ -23,7 +23,7 @@ import org.apache.spark.sql.types.StructField
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.sparkMajorMinorVersion
-import org.apache.kyuubi.schema.SchemaHelper
+import org.apache.kyuubi.engine.spark.schema.SchemaHelper
 
 /**
  * A shim that defines the interface interact with Spark's catalogs
