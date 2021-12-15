@@ -20,28 +20,25 @@ package org.apache.kyuubi.ha.client
 import scala.util.control.NonFatal
 
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
-import org.apache.kyuubi.service.Serverable
+import org.apache.kyuubi.service.FrontendService
 
 /**
  * A service for service discovery used by engine side.
  *
- * @param name the name of the service itself
- * @param server the instance uri a service that used to publish itself
+ * @param fe the frontend service to publish for service discovery
  */
-class EngineServiceDiscovery private(
-    name: String,
-    server: Serverable) extends ServiceDiscovery(name, server) {
-  def this(server: Serverable) =
-    this(classOf[EngineServiceDiscovery].getSimpleName, server)
+class EngineServiceDiscovery(
+    fe: FrontendService) extends ServiceDiscovery("EngineServiceDiscovery", fe) {
 
   override def stop(): Unit = synchronized {
-    closeServiceNode()
+    discoveryClient.deregisterService()
     conf.get(ENGINE_SHARE_LEVEL) match {
       // For connection level, we should clean up the namespace in zk in case the disk stress.
-      case "CONNECTION" if namespace != null =>
+      case "CONNECTION" =>
         try {
-          zkClient.delete().deletingChildrenIfNeeded().forPath(namespace)
-          info("Clean up discovery service due to this is connection share level.")
+          if (discoveryClient.postDeregisterService) {
+            info("Clean up discovery service due to this is connection share level.")
+          }
         } catch {
           case NonFatal(e) =>
             warn("Failed to clean up Spark engine before stop.", e)

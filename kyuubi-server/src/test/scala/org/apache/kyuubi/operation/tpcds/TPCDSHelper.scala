@@ -279,7 +279,6 @@ trait TPCDSHelper {
     Table(tableIdent, fields)
   }
 
-
   val STORE: Table = {
     val tableIdent = TableIdent("store")
     val fields = Seq(
@@ -543,7 +542,6 @@ trait TPCDSHelper {
     Table(tableIdent, fields)
   }
 
-
   val ITEM: Table = {
     val tableIdent = TableIdent("item")
     val fields = Seq(
@@ -669,4 +667,3 @@ trait TPCDSHelper {
     SHIP_MODE,
     TIME_DIM)
 }
-

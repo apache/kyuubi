@@ -16,33 +16,30 @@
 #
 
 # Usage:
-#   Run the docker command below
-#      docker build --build-arg MVN_ARG="-Pspark-3.1,spark-hadoop-3.2" -f docker/Dockerfile -t apache/kyuubi:tagname .
+#   1. use ./build/dist to make binary distributions of Kyuubi or download a release
+#   2. Untar it and run the docker command below
+#      docker build -f docker/Dockerfile -t repository/kyuubi:tagname .
 #   Options:
 #     -f this docker file
 #     -t the target repo and tag name
 #     more options can be found with -h
 
-# declare the BASE_IMAGE argument in the first line. for more detail see: https://github.com/moby/moby/issues/38379
-ARG BASE_IMAGE=openjdk:8-jdk
+ARG BASE_IMAGE=openjdk:8-jre-slim
+ARG spark_provided="spark_builtin"
 
-FROM maven:3.6-jdk-8 as builder
+FROM ${BASE_IMAGE} as builder_spark_provided
+ONBUILD ARG spark_home_in_docker
+ONBUILD ENV SPARK_HOME ${spark_home_in_docker}
 
-ARG MVN_ARG
+FROM ${BASE_IMAGE} as builder_spark_builtin
 
-ADD . /workspace/kyuubi
-WORKDIR /workspace/kyuubi
+ONBUILD ENV SPARK_HOME /opt/spark
+ONBUILD RUN mkdir -p  ${SPARK_HOME}
+ONBUILD COPY spark-binary ${SPARK_HOME}
 
-RUN ./build/dist ${MVN_ARG} && \
-    mv /workspace/kyuubi/dist /opt/kyuubi && \
-    # Removing stuff saves time because docker creates a temporary layer
-    rm -rf ~/.m2 && \
-    rm -rf /workspace/kyuubi
-
-FROM ${BASE_IMAGE}
+FROM builder_${spark_provided}
 
 ARG kyuubi_uid=10009
-
 USER root
 
 ENV KYUUBI_HOME /opt/kyuubi
@@ -50,17 +47,19 @@ ENV KYUUBI_LOG_DIR ${KYUUBI_HOME}/logs
 ENV KYUUBI_PID_DIR ${KYUUBI_HOME}/pid
 ENV KYUUBI_WORK_DIR_ROOT ${KYUUBI_HOME}/work
 
-COPY --from=builder /opt/kyuubi ${KYUUBI_HOME}
-
 RUN set -ex && \
+    sed -i 's/http:\/\/deb.\(.*\)/https:\/\/deb.\1/g' /etc/apt/sources.list && \
     apt-get update && \
-    DEBIAN_FRONTEND=noninteractive \
     apt install -y bash tini libc6 libpam-modules krb5-user libnss3 procps && \
     useradd -u ${kyuubi_uid} -g root kyuubi && \
     mkdir -p ${KYUUBI_HOME} ${KYUUBI_LOG_DIR} ${KYUUBI_PID_DIR} ${KYUUBI_WORK_DIR_ROOT} && \
     chmod ug+rw -R ${KYUUBI_HOME} && \
     chmod a+rwx -R ${KYUUBI_WORK_DIR_ROOT} && \
     rm -rf /var/cache/apt/*
+
+COPY bin ${KYUUBI_HOME}/bin
+COPY jars ${KYUUBI_HOME}/jars
+COPY externals/engines/spark ${KYUUBI_HOME}/externals/engines/spark
 
 WORKDIR ${KYUUBI_HOME}
 

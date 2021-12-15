@@ -21,6 +21,7 @@ import org.apache.kyuubi.config.KyuubiConf
 
 trait Service {
   import ServiceState._
+
   /**
    * Initialize the service.
    *

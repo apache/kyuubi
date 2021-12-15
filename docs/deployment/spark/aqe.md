@@ -34,7 +34,7 @@ which supports a variety of optimizations such as,
 - Dynamically Coalesce Shuffle Partitions
 - Dynamically Handle Skew Joins
 
-In Kyuubi, we strongly recommended that you turn on all capabilities of AQE by default for Kyuubi engines no matter on what platform you run Kyuubi and Spark.
+In Kyuubi, we strongly recommended that you turn on all capabilities of AQE by default for Kyuubi engines, no matter on what platform you run Kyuubi and Spark.
 
 ### Dynamically Switch Join Strategies
 
@@ -76,7 +76,7 @@ Without this feature, Spark itself could be a small files maker sometimes, espec
 
 1. When `spark.sql.shuffle.partitions` is set too large compared to the total output size, there comes very small or empty files after a shuffle stage.
 2. When Spark performs a series of optimized `BroadcastHash Join` and `Union` together, the final output size for each partition might be reduced by the join conditions. However, the total final output file numbers get to explode.
-3. Some pipelined jobs with selective filters to produce temporary data.
+3. Some pipeline jobs with selective filters to produce temporary data.
 4. e.t.c
 
 Reading small files leads to very small partitions or tasks. Spark tasks will have worse I/O throughput and tend to suffer more from scheduling overhead and task setup overhead.
@@ -93,7 +93,7 @@ Reading small files leads to very small partitions or tasks. Spark tasks will ha
 </em>
 </p>
 
-Combining small partitions saves resources and improves cluster throughput. Spark provides serval ways to handle small file issues, for example, adding an extra shuffle operation on the partition columns with the `distribute by` clause or using `HINT`[5]. In most scenarios, you need to have a good grasp of your data, Spark jobs, and configurations to apply these solutions case by case. Mostly, the daily used config - `spark.sql.shuffle.partitions` is data-dependent and unchangeable with a single Spark SQL query. For real-life Spark jobs with multiple stages, it' impossible to use it as one size to fit all.
+Combining small partitions saves resources and improves cluster throughput. Spark provides several ways to handle small file issues, for example, adding an extra shuffle operation on the partition columns with the `distribute by` clause or using `HINT`[5]. In most scenarios, you need to have a good grasp of your data, Spark jobs, and configurations to apply these solutions case by case. Mostly, the daily used config - `spark.sql.shuffle.partitions` is data-dependent and unchangeable with a single Spark SQL query. For real-life Spark jobs with multiple stages, it' impossible to use it as one size to fit all.
 
 But with AQE, things become more comfortable for you as Spark will do the partition coalescing automatically.
 
@@ -141,7 +141,7 @@ But there are always exceptions. Relating these two seemingly unrelated paramete
 
 ##### How to set `spark.sql.adaptive.coalescePartitions.initialPartitionNum`?
 
-It stands for the initial number of shuffle partitions before coalescing. By default it equals to `spark.sql.shuffle.partitions(200)`. Firstly, it's better to set it explicitly rather than falling back to `spark.sql.shuffle.partitions`. Spark community suggests set a large number to it as Spark will dynamically coalesce shuffle partitions, which I cannot agree more.
+It stands for the initial number of shuffle partitions before coalescing. By default, it equals to `spark.sql.shuffle.partitions(200)`. Firstly, it's better to set it explicitly rather than falling back to `spark.sql.shuffle.partitions`. Spark community suggests set a large number to it as Spark will dynamically coalesce shuffle partitions, which I cannot agree more.
 
 ### Dynamically Handle Skew Joins
 

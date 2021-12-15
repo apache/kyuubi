@@ -22,7 +22,7 @@ import java.util.UUID
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_SHARE_LEVEL
 import org.apache.kyuubi.engine.ShareLevel
 import org.apache.kyuubi.engine.ShareLevel.ShareLevel
-import org.apache.kyuubi.operation.JDBCTestUtils
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.service.ServiceState
 
 /**
@@ -30,7 +30,7 @@ import org.apache.kyuubi.service.ServiceState
  * e.g. cleanup discovery service before stop.
  */
 abstract class ShareLevelSparkEngineSuite
-  extends WithDiscoverySparkSQLEngine with JDBCTestUtils {
+  extends WithDiscoverySparkSQLEngine with HiveJDBCTestHelper {
   def shareLevel: ShareLevel
   override def withKyuubiConf: Map[String, String] = {
     super.withKyuubiConf ++ Map(ENGINE_SHARE_LEVEL.key -> shareLevel.toString)
@@ -45,7 +45,7 @@ abstract class ShareLevelSparkEngineSuite
     withZkClient { zkClient =>
       assert(engine.getServiceState == ServiceState.STARTED)
       assert(zkClient.checkExists().forPath(namespace) != null)
-      withJdbcStatement() {_ => }
+      withJdbcStatement() { _ => }
       shareLevel match {
         // Connection level, we will cleanup namespace since it's always a global unique value.
         case ShareLevel.CONNECTION =>

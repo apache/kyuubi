@@ -21,7 +21,7 @@ import org.apache.kyuubi.WithKyuubiServerOnYarn
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_INIT_TIMEOUT
 
-class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with JDBCTestUtils {
+class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with SparkQueryTests {
 
   override protected def jdbcUrl: String = getJdbcUrl
 
@@ -32,14 +32,21 @@ class KyuubiOperationYarnClusterSuite extends WithKyuubiServerOnYarn with JDBCTe
 
   override protected val connectionConf: Map[String, String] = Map(
     "spark.master" -> "yarn",
-    "spark.executor.instances" -> "1"
-  )
+    "spark.executor.instances" -> "1")
 
   test("KYUUBI #527- Support test with mini yarn cluster") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("""SELECT "${spark.app.id}" as id""")
       assert(resultSet.next())
       assert(resultSet.getString("id").startsWith("application_"))
+    }
+  }
+
+  test("session_user shall work on yarn") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("SELECT SESSION_USER() as su")
+      assert(resultSet.next())
+      assert(resultSet.getString("su") === user)
     }
   }
 }

@@ -22,7 +22,7 @@ import org.scalatest.time.SpanSugar._
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 
-class KyuubiOperationEnginePoolSuite extends WithKyuubiServer with JDBCTestUtils {
+class KyuubiOperationEnginePoolSuite extends WithKyuubiServer with HiveJDBCTestHelper {
 
   override protected def jdbcUrl: String = getJdbcUrl
 
@@ -34,8 +34,7 @@ class KyuubiOperationEnginePoolSuite extends WithKyuubiServer with JDBCTestUtils
     withSessionConf()(
       Map(
         KyuubiConf.ENGINE_SHARE_LEVEL.key -> "user",
-        KyuubiConf.ENGINE_POOL_SIZE.key -> "2"
-      ))(Map.empty) {
+        KyuubiConf.ENGINE_POOL_SIZE.key -> "2"))(Map.empty) {
 
       var r1: String = null
       withJdbcStatement() { statement =>
@@ -56,8 +55,7 @@ class KyuubiOperationEnginePoolSuite extends WithKyuubiServer with JDBCTestUtils
     withSessionConf()(
       Map(
         KyuubiConf.ENGINE_SHARE_LEVEL.key -> "connection",
-        KyuubiConf.ENGINE_POOL_SIZE.key -> "2"
-      ))(Map.empty) {
+        KyuubiConf.ENGINE_POOL_SIZE.key -> "2"))(Map.empty) {
 
       var r1: String = null
       withJdbcStatement() { statement =>

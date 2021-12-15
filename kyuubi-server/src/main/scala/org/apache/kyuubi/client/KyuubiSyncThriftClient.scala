@@ -22,15 +22,20 @@ import java.util.concurrent.locks.ReentrantLock
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift._
-import org.apache.thrift.protocol.TProtocol
+import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
+import org.apache.thrift.transport.TSocket
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOGIN_TIMEOUT, ENGINE_REQUEST_TIMEOUT}
 import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
+import org.apache.kyuubi.service.authentication.PlainSASLHelper
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.util.ThriftUtils
 
-class KyuubiSyncThriftClient(protocol: TProtocol) extends TCLIService.Client(protocol) {
+class KyuubiSyncThriftClient private (protocol: TProtocol)
+  extends TCLIService.Client(protocol) with Logging {
 
   @volatile private var _remoteSessionHandle: TSessionHandle = _
 
@@ -69,8 +74,15 @@ class KyuubiSyncThriftClient(protocol: TProtocol) extends TCLIService.Client(pro
 
   def closeSession(): Unit = {
     val req = new TCloseSessionReq(_remoteSessionHandle)
-    val resp = withLockAcquired(CloseSession(req))
-    ThriftUtils.verifyTStatus(resp.getStatus)
+    try {
+      val resp = withLockAcquired(CloseSession(req))
+      ThriftUtils.verifyTStatus(resp.getStatus)
+    } catch {
+      case e: Exception =>
+        throw KyuubiSQLException("Error while cleaning up the engine resources", e)
+    } finally {
+      if (protocol.getTransport.isOpen) protocol.getTransport.close()
+    }
   }
 
   def executeStatement(
@@ -161,22 +173,30 @@ class KyuubiSyncThriftClient(protocol: TProtocol) extends TCLIService.Client(pro
     resp.getOperationHandle
   }
 
-  override def GetOperationStatus(req: TGetOperationStatusReq): TGetOperationStatusResp = {
-    withLockAcquired {
-      super.GetOperationStatus(req)
-    }
+  def getOperationStatus(operationHandle: TOperationHandle): TGetOperationStatusResp = {
+    val req = new TGetOperationStatusReq(operationHandle)
+    val resp = withLockAcquired(GetOperationStatus(req))
+    resp
   }
 
   def cancelOperation(operationHandle: TOperationHandle): Unit = {
     val req = new TCancelOperationReq(operationHandle)
     val resp = withLockAcquired(CancelOperation(req))
-    ThriftUtils.verifyTStatus(resp.getStatus)
+    if (resp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS) {
+      info(s"$req succeed on engine side")
+    } else {
+      warn(s"$req failed on engine side", KyuubiSQLException(resp.getStatus))
+    }
   }
 
   def closeOperation(operationHandle: TOperationHandle): Unit = {
     val req = new TCloseOperationReq(operationHandle)
     val resp = withLockAcquired(CloseOperation(req))
-    ThriftUtils.verifyTStatus(resp.getStatus)
+    if (resp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS) {
+      info(s"$req succeed on engine side")
+    } else {
+      warn(s"$req failed on engine side", KyuubiSQLException(resp.getStatus))
+    }
   }
 
   def getResultSetMetadata(operationHandle: TOperationHandle): TTableSchema = {
@@ -184,10 +204,6 @@ class KyuubiSyncThriftClient(protocol: TProtocol) extends TCLIService.Client(pro
     val resp = withLockAcquired(GetResultSetMetadata(req))
     ThriftUtils.verifyTStatus(resp.getStatus)
     resp.getSchema
-  }
-
-  override def FetchResults(req: TFetchResultsReq): TFetchResultsResp = {
-    withLockAcquired(super.FetchResults(req))
   }
 
   def fetchResults(
@@ -199,8 +215,44 @@ class KyuubiSyncThriftClient(protocol: TProtocol) extends TCLIService.Client(pro
     val req = new TFetchResultsReq(operationHandle, or, maxRows)
     val fetchType = if (fetchLog) 1.toShort else 0.toShort
     req.setFetchType(fetchType)
-    val resp = FetchResults(req)
+    val resp = withLockAcquired(FetchResults(req))
     ThriftUtils.verifyTStatus(resp.getStatus)
     resp.getResults
+  }
+
+  def sendCredentials(encodedCredentials: String): Unit = {
+    // We hacked `TCLIService.Iface.RenewDelegationToken` to transfer Credentials to Spark SQL
+    // engine
+    val req = new TRenewDelegationTokenReq()
+    req.setSessionHandle(_remoteSessionHandle)
+    req.setDelegationToken(encodedCredentials)
+    try {
+      val resp = withLockAcquired(RenewDelegationToken(req))
+      if (resp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS) {
+        debug(s"$req succeed on engine side")
+      } else {
+        warn(s"$req failed on engine side", KyuubiSQLException(resp.getStatus))
+      }
+    } catch {
+      case e: Exception => warn(s"$req failed on engine side", e)
+    }
+  }
+}
+
+private[kyuubi] object KyuubiSyncThriftClient {
+  def createClient(
+      user: String,
+      password: String,
+      host: String,
+      port: Int,
+      conf: KyuubiConf): KyuubiSyncThriftClient = {
+    val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
+    val loginTimeout = conf.get(ENGINE_LOGIN_TIMEOUT).toInt
+    val requestTimeout = conf.get(ENGINE_REQUEST_TIMEOUT).toInt
+    val tSocket = new TSocket(host, port, requestTimeout, loginTimeout)
+    val tTransport = PlainSASLHelper.getPlainTransport(user, passwd, tSocket)
+    tTransport.open()
+    val tProtocol = new TBinaryProtocol(tTransport)
+    new KyuubiSyncThriftClient(tProtocol)
   }
 }

@@ -51,7 +51,6 @@ class SchemaHelperSuite extends KyuubiFunSuite {
     .add("c15", innerSchema)
     .add("c16", CalendarIntervalType)
 
-
   test("toTTypeId") {
     assert(toTTypeId(outerSchema.head.dataType) === TTypeId.NULL_TYPE)
     assert(toTTypeId(outerSchema(1).dataType) === TTypeId.BOOLEAN_TYPE)

@@ -28,4 +28,4 @@ Community
     contributions
     improvement-proposals
     release
-    badges
+

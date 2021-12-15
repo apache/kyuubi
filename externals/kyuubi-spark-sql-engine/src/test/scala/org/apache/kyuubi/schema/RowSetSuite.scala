@@ -57,7 +57,8 @@ class RowSetSuite extends KyuubiFunSuite {
     val localDate = LocalDate.of(2018, 11, 17)
     val instant = Instant.now()
 
-    Row(boolVal,
+    Row(
+      boolVal,
       byteVal,
       shortVal,
       value,
@@ -94,8 +95,6 @@ class RowSetSuite extends KyuubiFunSuite {
     .add("o", "interval")
     .add("p", "date")
     .add("q", "timestamp")
-
-
 
   private val rows: Seq[Row] = (0 to 10).map(genRow) ++ Seq(Row.fromSeq(Seq.fill(17)(null)))
   private val zoneId: ZoneId = ZoneId.systemDefault()
@@ -175,7 +174,7 @@ class RowSetSuite extends KyuubiFunSuite {
     tsCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b.isEmpty)
       case (b, i) => assert(b ===
-        toHiveString((Timestamp.valueOf(s"2018-11-17 13:33:33.$i"), TimestampType), zoneId))
+          toHiveString((Timestamp.valueOf(s"2018-11-17 13:33:33.$i"), TimestampType), zoneId))
     }
 
     val binCol = cols.next().getBinaryVal
@@ -188,14 +187,16 @@ class RowSetSuite extends KyuubiFunSuite {
     arrCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b === toHiveString(
-        (Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toSeq, ArrayType(DoubleType)), zoneId))
+          (Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toSeq, ArrayType(DoubleType)),
+          zoneId))
     }
 
     val mapCol = cols.next().getStringVal
     mapCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b === toHiveString(
-        (Map(i -> java.lang.Double.valueOf(s"$i.$i")), MapType(IntegerType, DoubleType)), zoneId))
+          (Map(i -> java.lang.Double.valueOf(s"$i.$i")), MapType(IntegerType, DoubleType)),
+          zoneId))
     }
 
     val intervalCol = cols.next().getStringVal
@@ -238,7 +239,8 @@ class RowSetSuite extends KyuubiFunSuite {
     val r7 = iter.next().getColVals
     assert(r7.get(10).getStringVal.getValue === "2018-11-17 13:33:33.600")
     assert(r7.get(11).getStringVal.getValue === new String(
-      Array.fill[Byte](6)(6.toByte), StandardCharsets.UTF_8))
+      Array.fill[Byte](6)(6.toByte),
+      StandardCharsets.UTF_8))
 
     val r8 = iter.next().getColVals
     assert(r8.get(12).getStringVal.getValue === Array.fill(7)(7.7d).mkString("[", ",", "]"))

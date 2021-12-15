@@ -46,6 +46,9 @@ object MetricsConf {
     .stringConf
     .transform(_.toUpperCase())
     .toSequence()
+    .checkValue(
+      _.forall(ReporterType.values.map(_.toString).contains),
+      s"the reporter type should be one or more of ${ReporterType.values.mkString(",")}")
     .createWithDefault(Seq(JSON.toString))
 
   val METRICS_CONSOLE_INTERVAL: ConfigEntry[Long] = buildConf("metrics.console.interval")

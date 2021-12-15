@@ -17,50 +17,321 @@
 
 package org.apache.kyuubi.server.api.v1
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import java.util.UUID
-import javax.ws.rs.{Consumes, DELETE, GET, Path, PathParam, POST, Produces}
+import javax.ws.rs.{Consumes, DELETE, GET, Path, PathParam, POST, Produces, _}
 import javax.ws.rs.core.{MediaType, Response}
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.cli.HandleIdentifier
+import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
+
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.tags.Tag
+import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
+
+import org.apache.kyuubi.Utils.error
+import org.apache.kyuubi.operation.OperationHandle
+import org.apache.kyuubi.operation.OperationHandle.parseOperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.session.SessionHandle.parseSessionHandle
 
+@Tag(name = "Session")
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class SessionsResource extends ApiRequestContext {
 
-  private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
-
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "get all the session list hosted in SessionManager")
   @GET
-  @Path("count")
-  def sessionCount(): String = {
-    mapper.writeValueAsString(SessionOpenCount(backendService.sessionManager.getOpenSessionCount))
+  def sessionInfoList(): SessionList = {
+    SessionList(
+      backendService.sessionManager.getSessionList().asScala.map {
+        case (handle, session) =>
+          SessionOverview(session.user, session.ipAddress, session.createTime, handle)
+      }.toSeq)
   }
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "get a session via session handle identifier")
+  @GET
+  @Path("{sessionHandle}")
+  def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): SessionDetail = {
+    try {
+      val sessionHandle = parseSessionHandle(sessionHandleStr)
+      val session = backendService.sessionManager.getSession(sessionHandle)
+      SessionDetail(
+        session.user,
+        session.ipAddress,
+        session.createTime,
+        sessionHandle,
+        session.lastAccessTime,
+        session.lastIdleTime,
+        session.getNoOperationTime,
+        session.conf)
+    } catch {
+      case NonFatal(e) =>
+        error(s"Invalid $sessionHandleStr", e)
+        throw new NotFoundException(s"Invalid $sessionHandleStr")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description =
+      "get a information detail via session handle identifier and a specific information type")
+  @GET
+  @Path("{sessionHandle}/info/{infoType}")
+  def getInfo(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      @PathParam("infoType") infoType: Int): InfoDetail = {
+    try {
+      val info = TGetInfoType.findByValue(infoType)
+      val infoValue = backendService.getInfo(parseSessionHandle(sessionHandleStr), info)
+      InfoDetail(info.toString, infoValue.getStringValue)
+    } catch {
+      case NonFatal(e) =>
+        error(s"Unrecognized GetInfoType value: $infoType", e)
+        throw new NotFoundException(s"Unrecognized GetInfoType value: $infoType")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "Get the current open session count")
+  @GET
+  @Path("count")
+  def sessionCount(): SessionOpenCount = {
+    SessionOpenCount(backendService.sessionManager.getOpenSessionCount)
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "Get statistic info of background executors")
+  @GET
+  @Path("execPool/statistic")
+  def execPoolStatistic(): ExecPoolStatistic = {
+    ExecPoolStatistic(
+      backendService.sessionManager.getExecPoolSize,
+      backendService.sessionManager.getActiveCount)
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "Open(create) a session")
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
-  def openSession(req : String): String = {
-    val request = mapper.readValue(req, classOf[SessionOpenRequest])
-    val sessionHandle = backendService.openSession(
+  def openSession(request: SessionOpenRequest): SessionHandle = {
+    backendService.openSession(
       TProtocolVersion.findByValue(request.protocolVersion),
       request.user,
       request.password,
       request.ipAddr,
       request.configs)
-    mapper.writeValueAsString(sessionHandle)
   }
 
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "Close a session")
   @DELETE
   @Path("{sessionHandle}")
   def closeSession(@PathParam("sessionHandle") sessionHandleStr: String): Response = {
-    val splitSessionHandle = sessionHandleStr.split("\\|")
-    val handleIdentifier = new HandleIdentifier(
-      UUID.fromString(splitSessionHandle(0)), UUID.fromString(splitSessionHandle(1)))
-    val protocolVersion = TProtocolVersion.findByValue(splitSessionHandle(2).toInt)
-    val sessionHandle = new SessionHandle(handleIdentifier, protocolVersion)
-    backendService.closeSession(sessionHandle)
+    backendService.closeSession(parseSessionHandle(sessionHandleStr))
     Response.ok().build()
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "Create an operation with EXECUTE_STATEMENT type")
+  @POST
+  @Path("{sessionHandle}/operations/statement")
+  def executeStatement(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      request: StatementRequest): OperationHandle = {
+    try {
+      backendService.executeStatement(
+        parseSessionHandle(sessionHandleStr),
+        request.statement,
+        request.runAsync,
+        request.queryTimeout)
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Error executing statement")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "Create an operation with GET_TYPE_INFO type")
+  @POST
+  @Path("{sessionHandle}/operations/typeInfo")
+  def getTypeInfo(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
+    try {
+      backendService.getTypeInfo(parseSessionHandle(sessionHandleStr))
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Error getting type information")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "Create an operation with GET_CATALOGS type")
+  @POST
+  @Path("{sessionHandle}/operations/catalogs")
+  def getCatalogs(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
+    try {
+      backendService.getCatalogs(parseSessionHandle(sessionHandleStr))
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Error getting catalogs")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "Create an operation with GET_SCHEMAS type")
+  @POST
+  @Path("{sessionHandle}/operations/schemas")
+  def getSchemas(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      request: GetSchemasRequest): OperationHandle = {
+    try {
+      backendService.getSchemas(
+        parseSessionHandle(sessionHandleStr),
+        request.catalogName,
+        request.schemaName)
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Error getting schemas")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "Create an operation with GET_TABLES type")
+  @POST
+  @Path("{sessionHandle}/operations/tables")
+  def getTables(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      request: GetTablesRequest): OperationHandle = {
+    try {
+      backendService.getTables(
+        parseSessionHandle(sessionHandleStr),
+        request.catalogName,
+        request.schemaName,
+        request.tableName,
+        request.tableTypes)
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Error getting tables")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "Create an operation with GET_TABLE_TYPES type")
+  @POST
+  @Path("{sessionHandle}/operations/tableTypes")
+  def getTableTypes(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
+    try {
+      backendService.getTableTypes(parseSessionHandle(sessionHandleStr))
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Error getting table types")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "Create an operation with GET_COLUMNS type")
+  @POST
+  @Path("{sessionHandle}/operations/columns")
+  def getColumns(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      request: GetColumnsRequest): OperationHandle = {
+    try {
+      backendService.getColumns(
+        parseSessionHandle(sessionHandleStr),
+        request.catalogName,
+        request.schemaName,
+        request.tableName,
+        request.columnName)
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Error getting columns")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "Create an operation with GET_FUNCTIONS type")
+  @POST
+  @Path("{sessionHandle}/operations/functions")
+  def getFunctions(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      request: GetFunctionsRequest): OperationHandle = {
+    try {
+      backendService.getFunctions(
+        parseSessionHandle(sessionHandleStr),
+        request.catalogName,
+        request.schemaName,
+        request.functionName)
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Error getting functions")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "Close an operation")
+  @DELETE
+  @Path("{sessionHandle}/operations/{operationHandle}")
+  def closeOperation(
+      @PathParam("sessionHandle") sessionHandleStr: String,
+      @PathParam("operationHandle") operationHandleStr: String): OperationHandle = {
+
+    try {
+      val operationHandle = parseOperationHandle(operationHandleStr)
+      backendService.sessionManager.getSession(parseSessionHandle(sessionHandleStr))
+        .closeOperation(operationHandle)
+      operationHandle
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(s"Error closing an operation")
+    }
   }
 }

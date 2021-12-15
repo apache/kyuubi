@@ -75,7 +75,8 @@ class MetricsSystemSuite extends KyuubiFunSuite {
     val reportPath = Utils.createTempDir()
     val conf = KyuubiConf()
       .set(MetricsConf.METRICS_ENABLED, true)
-      .set(MetricsConf.METRICS_REPORTERS,
+      .set(
+        MetricsConf.METRICS_REPORTERS,
         ReporterType.values.filterNot(_ == ReporterType.PROMETHEUS).map(_.toString).toSeq)
       .set(MetricsConf.METRICS_JSON_INTERVAL, Duration.ofSeconds(1).toMillis)
       .set(MetricsConf.METRICS_JSON_LOCATION, reportPath.toString)
@@ -84,10 +85,10 @@ class MetricsSystemSuite extends KyuubiFunSuite {
     metricsSystem.start()
     val reportFile = Paths.get(reportPath.toString, "report.json")
     checkJsonFileMetrics(reportFile, "heap.usage")
-    metricsSystem.incCount(MetricsConstants.STATEMENT_TOTAL)
+    metricsSystem.incCount(MetricsConstants.OPERATION_TOTAL)
 
-    checkJsonFileMetrics(reportFile, MetricsConstants.STATEMENT_TOTAL)
-    metricsSystem.decCount(MetricsConstants.STATEMENT_TOTAL)
+    checkJsonFileMetrics(reportFile, MetricsConstants.OPERATION_TOTAL)
+    metricsSystem.decCount(MetricsConstants.OPERATION_TOTAL)
     metricsSystem.registerGauge(MetricsConstants.CONN_OPEN, 20181117, 0)
     checkJsonFileMetrics(reportFile, MetricsConstants.CONN_OPEN)
     checkJsonFileMetrics(reportFile, "20181117")

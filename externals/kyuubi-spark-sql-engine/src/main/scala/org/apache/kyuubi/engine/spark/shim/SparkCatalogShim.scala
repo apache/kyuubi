@@ -21,7 +21,8 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.types.StructField
 
-import org.apache.kyuubi.{Logging, Utils}
+import org.apache.kyuubi.Logging
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.sparkMajorMinorVersion
 import org.apache.kyuubi.schema.SchemaHelper
 
 /**
@@ -29,9 +30,9 @@ import org.apache.kyuubi.schema.SchemaHelper
  */
 trait SparkCatalogShim extends Logging {
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                          Catalog                                            //
-  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // ///////////////////////////////////////////////////////////////////////////////////////////////
 
   /**
    * Get all register catalogs in Spark's `CatalogManager`
@@ -40,9 +41,9 @@ trait SparkCatalogShim extends Logging {
 
   protected def catalogExists(spark: SparkSession, catalog: String): Boolean
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                           Schema                                            //
-  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // ///////////////////////////////////////////////////////////////////////////////////////////////
 
   /**
    * a list of [[Row]]s, with 2 fields `schemaName: String, catalogName: String`
@@ -51,9 +52,9 @@ trait SparkCatalogShim extends Logging {
 
   protected def getGlobalTempViewManager(spark: SparkSession, schemaPattern: String): Seq[String]
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                        Table & View                                         //
-  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // ///////////////////////////////////////////////////////////////////////////////////////////////
 
   def getCatalogTablesOrViews(
       spark: SparkSession,
@@ -73,10 +74,9 @@ trait SparkCatalogShim extends Logging {
       schemaPattern: String,
       tablePattern: String): Seq[TableIdentifier]
 
-
-  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                          Columns                                            //
-  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // ///////////////////////////////////////////////////////////////////////////////////////////////
 
   def getColumns(
       spark: SparkSession,
@@ -86,7 +86,12 @@ trait SparkCatalogShim extends Logging {
       columnPattern: String): Seq[Row]
 
   protected def toColumnResult(
-      catalog: String, db: String, table: String, col: StructField, pos: Int): Row = {
+      catalog: String,
+      db: String,
+      table: String,
+      col: StructField,
+      pos: Int): Row = {
+    // format: off
     Row(
       catalog,                                              // TABLE_CAT
       db,                                                   // TABLE_SCHEM
@@ -112,11 +117,12 @@ trait SparkCatalogShim extends Logging {
       null,                                                 // SOURCE_DATA_TYPE
       "NO"                                                  // IS_AUTO_INCREMENT
     )
+    // format: on
   }
 
-  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // ///////////////////////////////////////////////////////////////////////////////////////////////
   //                                         Miscellaneous                                       //
-  /////////////////////////////////////////////////////////////////////////////////////////////////
+  // ///////////////////////////////////////////////////////////////////////////////////////////////
 
   protected def invoke(
       obj: Any,
@@ -154,12 +160,11 @@ trait SparkCatalogShim extends Logging {
 
 object SparkCatalogShim {
   def apply(): SparkCatalogShim = {
-    val runtimeSparkVer = org.apache.spark.SPARK_VERSION
-    val (major, minor) = Utils.majorMinorVersion(runtimeSparkVer)
-    (major, minor) match {
+    sparkMajorMinorVersion match {
       case (3, _) => new CatalogShim_v3_0
       case (2, _) => new CatalogShim_v2_4
-      case _ => throw new IllegalArgumentException(s"Not Support spark version $runtimeSparkVer")
+      case _ =>
+        throw new IllegalArgumentException(s"Not Support spark version $sparkMajorMinorVersion")
     }
   }
 

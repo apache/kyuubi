@@ -75,12 +75,13 @@ private[kyuubi] case class ConfigBuilder(key: String) {
 
   def booleanConf: TypedConfigBuilder[Boolean] = {
     _type = "boolean"
-    def toBoolean(s: String) = try {
-      s.trim.toBoolean
-    } catch {
-      case e: IllegalArgumentException =>
-        throw new IllegalArgumentException(s"$key should be boolean, but was $s", e)
-    }
+    def toBoolean(s: String) =
+      try {
+        s.trim.toBoolean
+      } catch {
+        case e: IllegalArgumentException =>
+          throw new IllegalArgumentException(s"$key should be boolean, but was $s", e)
+      }
     new TypedConfigBuilder(this, toBoolean)
   }
 
@@ -97,10 +98,11 @@ private[kyuubi] case class ConfigBuilder(key: String) {
         .orElse(Try(trimmed.toLong)) match {
         case Success(millis) => millis
         case Failure(e) =>
-          throw new IllegalArgumentException(s"The formats accepted are 1) based on the ISO-8601" +
-            s" duration format `PnDTnHnMn.nS` with days considered to be exactly 24 hours. 2) A" +
-            s" plain long value represents total milliseconds, e.g. 2000 means 2 seconds" +
-            s" $trimmed for $key is not valid", e)
+          throw new IllegalArgumentException(
+            s"The formats accepted are 1) based on the ISO-8601 duration format `PnDTnHnMn.nS`" +
+              s" with days considered to be exactly 24 hours. 2). A plain long value represents" +
+              s" total milliseconds, e.g. 2000 means 2 seconds $trimmed for $key is not valid",
+            e)
       }
     }
 
@@ -158,7 +160,13 @@ private[kyuubi] case class TypedConfigBuilder[T](
 
   def createOptional: OptionalConfigEntry[T] = {
     val entry = new OptionalConfigEntry(
-      parent.key, fromStr, toStr, parent._doc, parent._version, parent._type, parent._internal)
+      parent.key,
+      fromStr,
+      toStr,
+      parent._doc,
+      parent._version,
+      parent._type,
+      parent._internal)
     parent._onCreate.foreach(_(entry))
     entry
   }
@@ -168,16 +176,28 @@ private[kyuubi] case class TypedConfigBuilder[T](
     case _ =>
       val d = fromStr(toStr(default))
       val entry = new ConfigEntryWithDefault(
-        parent.key, d, fromStr, toStr, parent._doc,
-        parent._version, parent._type, parent._internal)
+        parent.key,
+        d,
+        fromStr,
+        toStr,
+        parent._doc,
+        parent._version,
+        parent._type,
+        parent._internal)
       parent._onCreate.foreach(_(entry))
       entry
   }
 
   def createWithDefaultString(default: String): ConfigEntryWithDefaultString[T] = {
     val entry = new ConfigEntryWithDefaultString(
-      parent.key, default, fromStr, toStr, parent._doc,
-      parent._version, parent._type, parent._internal)
+      parent.key,
+      default,
+      fromStr,
+      toStr,
+      parent._doc,
+      parent._version,
+      parent._type,
+      parent._internal)
     parent._onCreate.foreach(_(entry))
     entry
   }

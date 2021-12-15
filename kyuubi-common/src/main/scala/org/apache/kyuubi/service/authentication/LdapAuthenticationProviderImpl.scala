@@ -58,11 +58,12 @@ class LdapAuthenticationProviderImpl(conf: KyuubiConf) extends PasswdAuthenticat
     conf.get(AUTHENTICATION_LDAP_URL).foreach(env.put(Context.PROVIDER_URL, _))
 
     val domain = conf.get(AUTHENTICATION_LDAP_DOMAIN)
-    val u = if (!hasDomain(user) && domain.nonEmpty) {
-      user + "@" + domain.get
-    } else {
-      user
-    }
+    val u =
+      if (!hasDomain(user) && domain.nonEmpty) {
+        user + "@" + domain.get
+      } else {
+        user
+      }
 
     val guidKey = conf.get(AUTHENTICATION_LDAP_GUIDKEY)
     val bindDn = conf.get(AUTHENTICATION_LDAP_BASEDN) match {

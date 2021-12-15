@@ -22,7 +22,7 @@ import java.time.Duration
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf, OptionalConfigEntry}
-import org.apache.kyuubi.ha.client.RetryPolicies
+import org.apache.kyuubi.ha.client.{RetryPolicies, ZooKeeperAuthTypes}
 
 object HighAvailabilityConf {
 
@@ -35,18 +35,50 @@ object HighAvailabilityConf {
     .createWithDefault("")
 
   val HA_ZK_NAMESPACE: ConfigEntry[String] = buildConf("ha.zookeeper.namespace")
-    .doc("The root directory for the service to deploy its instance uri. Additionally, it will" +
-      " creates a -[username] suffixed root directory for each application")
+    .doc("The root directory for the service to deploy its instance uri")
     .version("1.0.0")
     .stringConf
     .createWithDefault("kyuubi")
 
+  @deprecated(s"using ${HA_ZK_AUTH_TYPE.key} and ${HA_ZK_ENGINE_AUTH_TYPE.key} instead", "1.3.2")
   val HA_ZK_ACL_ENABLED: ConfigEntry[Boolean] =
     buildConf("ha.zookeeper.acl.enabled")
       .doc("Set to true if the zookeeper ensemble is kerberized")
       .version("1.0.0")
       .booleanConf
       .createWithDefault(UserGroupInformation.isSecurityEnabled)
+
+  val HA_ZK_AUTH_TYPE: ConfigEntry[String] =
+    buildConf("ha.zookeeper.auth.type")
+      .doc("The type of zookeeper authentication, all candidates are " +
+        s"${ZooKeeperAuthTypes.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
+      .version("1.3.2")
+      .stringConf
+      .checkValues(ZooKeeperAuthTypes.values.map(_.toString))
+      .createWithDefault(ZooKeeperAuthTypes.NONE.toString)
+
+  val HA_ZK_ENGINE_AUTH_TYPE: ConfigEntry[String] =
+    buildConf("ha.zookeeper.engine.auth.type")
+      .doc("The type of zookeeper authentication for engine, all candidates are " +
+        s"${ZooKeeperAuthTypes.values.mkString("<ul><li>", "</li><li> ", "</li></ul>")}")
+      .version("1.3.2")
+      .fallbackConf(HA_ZK_AUTH_TYPE)
+
+  val HA_ZK_AUTH_PRINCIPAL: ConfigEntry[Option[String]] = buildConf("ha.zookeeper.auth.principal")
+    .doc("Name of the Kerberos principal is used for zookeeper authentication.")
+    .version("1.3.2")
+    .fallbackConf(KyuubiConf.SERVER_PRINCIPAL)
+
+  val HA_ZK_AUTH_KEYTAB: ConfigEntry[Option[String]] = buildConf("ha.zookeeper.auth.keytab")
+    .doc("Location of Kyuubi server's keytab is used for zookeeper authentication.")
+    .version("1.3.2")
+    .fallbackConf(KyuubiConf.SERVER_KEYTAB)
+
+  val HA_ZK_AUTH_DIGEST: OptionalConfigEntry[String] = buildConf("ha.zookeeper.auth.digest")
+    .doc("The digest auth string is used for zookeeper authentication, like: username:password.")
+    .version("1.3.2")
+    .stringConf
+    .createOptional
 
   val HA_ZK_CONN_MAX_RETRIES: ConfigEntry[Int] =
     buildConf("ha.zookeeper.connection.max.retries")
@@ -105,7 +137,15 @@ object HighAvailabilityConf {
       .doc("The engine reference id will be attached to zookeeper node when engine started, " +
         "and the kyuubi server will check it cyclically.")
       .internal
-      .version("1.4.0")
+      .version("1.3.2")
       .stringConf
       .createOptional
+
+  val HA_ZK_PUBLISH_CONFIGS: ConfigEntry[Boolean] =
+    buildConf("ha.zookeeper.publish.configs")
+      .doc("When set to true, publish Kerberos configs to Zookeeper." +
+        "Note that the Hive driver needs to be greater than 1.3 or 2.0 or apply HIVE-11581 patch.")
+      .version("1.4.0")
+      .booleanConf
+      .createWithDefault(false)
 }

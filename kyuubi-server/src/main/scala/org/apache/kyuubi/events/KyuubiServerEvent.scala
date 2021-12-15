@@ -17,6 +17,4 @@
 
 package org.apache.kyuubi.events
 
-trait KyuubiServerEvent extends KyuubiEvent {
-
-}
+trait KyuubiServerEvent extends KyuubiEvent {}
