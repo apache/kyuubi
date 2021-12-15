@@ -29,10 +29,11 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 
 import org.apache.kyuubi.Utils.error
+import org.apache.kyuubi.events.KyuubiSessionEvent
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.operation.OperationHandle.parseOperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
-import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.session.{AbstractSession, SessionHandle}
 import org.apache.kyuubi.session.SessionHandle.parseSessionHandle
 
 @Tag(name = "Session")
@@ -57,22 +58,13 @@ private[v1] class SessionsResource extends ApiRequestContext {
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON)),
-    description = "get a session via session handle identifier")
+    description = "get a session event via session handle identifier")
   @GET
   @Path("{sessionHandle}")
-  def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): SessionDetail = {
+  def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): KyuubiSessionEvent = {
     try {
-      val sessionHandle = parseSessionHandle(sessionHandleStr)
-      val session = backendService.sessionManager.getSession(sessionHandle)
-      SessionDetail(
-        session.user,
-        session.ipAddress,
-        session.createTime,
-        sessionHandle,
-        session.lastAccessTime,
-        session.lastIdleTime,
-        session.getNoOperationTime,
-        session.conf)
+      KyuubiSessionEvent(backendService.sessionManager.getSession(
+        parseSessionHandle(sessionHandleStr)).asInstanceOf[AbstractSession])
     } catch {
       case NonFatal(e) =>
         error(s"Invalid $sessionHandleStr", e)

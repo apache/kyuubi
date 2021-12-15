@@ -35,16 +35,6 @@ case class InfoDetail(
     infoType: String,
     infoValue: String)
 
-case class SessionDetail(
-    user: String,
-    ipAddr: String,
-    createTime: Long,
-    sessionHandle: SessionHandle,
-    lastAccessTime: Long,
-    lastIdleTime: Long,
-    noOperationTime: Long,
-    configs: Map[String, String])
-
 case class SessionOpenRequest(
     protocolVersion: Int,
     user: String,

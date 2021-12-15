@@ -23,8 +23,13 @@ import javax.ws.rs.core.{MediaType, Response}
 
 import scala.concurrent.duration._
 
+import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
+
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.events.KyuubiSessionEvent
 import org.apache.kyuubi.operation.{OperationHandle, OperationType}
+import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.session.SessionHandle
 
 class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
@@ -147,28 +152,26 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     }
   }
 
-  test("test getSessionDetail") {
-    val requestObj = SessionOpenRequest(
-      1,
-      "admin",
-      "123456",
-      "localhost",
-      Map("testConfig" -> "testValue"))
-
-    withKyuubiRestServer { (_, _, _, webTarget) =>
-      var response: Response = webTarget.path("api/v1/sessions")
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
-
-      val sessionHandle = response.readEntity(classOf[SessionHandle])
+  test("test get session event") {
+    withKyuubiRestServer { (fe, _, _, webTarget) =>
+      val sessionManager = fe.be.sessionManager
+      val sessionHandle = sessionManager.openSession(
+        HIVE_CLI_SERVICE_PROTOCOL_V2,
+        "admin",
+        "123456",
+        "localhost",
+        Map("testConfig" -> "testValue"))
       val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
         s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
 
-      // get session detail
-      response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().get()
+      KyuubiServer.kyuubiServer = new KyuubiServer
+      KyuubiServer.kyuubiServer.initialize(KyuubiConf())
+
+      // get session event
+      var response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().get()
       assert(200 == response.getStatus)
-      val sessions = response.readEntity(classOf[SessionDetail])
-      assert(sessions.configs.nonEmpty)
+      val sessions = response.readEntity(classOf[KyuubiSessionEvent])
+      assert(sessions.conf("testConfig").equals("testValue"))
 
       // close a opened session
       response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().delete()
