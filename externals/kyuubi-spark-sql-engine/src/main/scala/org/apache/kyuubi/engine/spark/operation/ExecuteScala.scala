@@ -84,6 +84,8 @@ class ExecuteScala(
       }
     } catch {
       onError(cancel = true)
+    } finally {
+      repl.clearResult(statementId)
     }
   }
 }
