@@ -31,7 +31,7 @@ import org.apache.kyuubi.session.Session
  */
 class PlanOnlyStatement(
     session: Session,
-    override protected val statement: String,
+    override val statement: String,
     mode: OperationMode)
   extends SparkOperation(OperationType.EXECUTE_STATEMENT, session) {
 

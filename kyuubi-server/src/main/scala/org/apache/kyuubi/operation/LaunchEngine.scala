@@ -23,7 +23,7 @@ import org.apache.kyuubi.session.KyuubiSessionImpl
 class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Boolean)
   extends KyuubiOperation(OperationType.UNKNOWN_OPERATION, session) {
 
-  override protected def statement: String = "LAUNCH_ENGINE"
+  override def statement: String = "LAUNCH_ENGINE"
 
   private lazy val _operationLog: OperationLog =
     if (shouldRunAsync) {

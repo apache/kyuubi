@@ -37,7 +37,7 @@ import org.apache.kyuubi.util.ThreadUtils
 
 class ExecuteStatement(
     session: Session,
-    override protected val statement: String,
+    override val statement: String,
     override val shouldRunAsync: Boolean,
     queryTimeout: Long,
     incrementalCollect: Boolean)

@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.server.api.v1
 
-import org.apache.kyuubi.operation.OperationStatus
 import org.apache.kyuubi.session.SessionHandle
 
 case class SessionOpenCount(openSessionCount: Int)
@@ -78,10 +77,5 @@ case class GetFunctionsRequest(
     catalogName: String,
     schemaName: String,
     functionName: String)
-
-case class OperationDetail(
-    shouldRunAsync: Boolean,
-    isTimedOut: Boolean,
-    operationStatus: OperationStatus)
 
 case class OpActionRequest(action: String)

@@ -56,7 +56,7 @@ class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper 
   test("round-trip for logging and querying statement events for both kyuubi server and engine") {
     val hostName = InetAddress.getLocalHost.getCanonicalHostName
     val serverStatementEventPath =
-      Paths.get(serverLogRoot, "kyuubi_statement", s"day=$currentDate", s"server-$hostName.json")
+      Paths.get(serverLogRoot, "kyuubi_operation", s"day=$currentDate", s"server-$hostName.json")
     val engineStatementEventPath =
       Paths.get(engineLogRoot, "spark_statement", s"day=$currentDate", "*.json")
     val sql = "select timestamp'2021-06-01'"

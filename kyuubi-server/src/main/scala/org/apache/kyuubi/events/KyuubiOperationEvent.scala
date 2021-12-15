@@ -18,30 +18,30 @@
 package org.apache.kyuubi.events
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.operation.{ExecuteStatement, OperationHandle}
+import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
 
 /**
- * A [[KyuubiStatementEvent]] used to tracker the lifecycle of a statement at server side.
+ * A [[KyuubiOperationEvent]] used to tracker the lifecycle of an operation at server side.
  * <ul>
- *   <li>Statement Basis</li>
- *   <li>Statement Live Status</li>
+ *   <li>Operation Basis</li>
+ *   <li>Operation Live Status</li>
  *   <li>Parent Session Id</li>
  * </ul>
  *
- * @param statementId the unique identifier of a single statement
- * @param remoteId the unique identifier of a single statement at engine side
+ * @param statementId the unique identifier of a single operation
+ * @param remoteId the unique identifier of a single operation at engine side
  * @param statement the sql that you execute
  * @param shouldRunAsync the flag indicating whether the query runs synchronously or not
  * @param state the current operation state
  * @param eventTime the time when the event created & logged
  * @param createTime the time for changing to the current operation state
- * @param startTime the time the query start to time of this statement
+ * @param startTime the time the query start to time of this operation
  * @param completeTime time time the query ends
  * @param exception: caught exception if have
  * @param sessionId the identifier of the parent session
  * @param sessionUser the authenticated client user
  */
-case class KyuubiStatementEvent private (
+case class KyuubiOperationEvent private (
     statementId: String,
     remoteId: String,
     statement: String,
@@ -55,25 +55,25 @@ case class KyuubiStatementEvent private (
     sessionId: String,
     sessionUser: String) extends KyuubiServerEvent {
 
-  // statement events are partitioned by the date when the corresponding operations are
+  // operation events are partitioned by the date when the corresponding operations are
   // created.
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(createTime)) :: Nil
 }
 
-object KyuubiStatementEvent {
+object KyuubiOperationEvent {
 
   /**
-   * Shorthand for instantiating a statement event with a [[ExecuteStatement]] instance
+   * Shorthand for instantiating a operation event with a [[KyuubiOperation]] instance
    */
-  def apply(statement: ExecuteStatement): KyuubiStatementEvent = {
-    val session = statement.getSession
-    val status = statement.getStatus
-    new KyuubiStatementEvent(
-      statement.getHandle.identifier.toString,
-      Option(statement.remoteOpHandle()).map(OperationHandle(_).identifier.toString).orNull,
-      statement.statement,
-      statement.shouldRunAsync,
+  def apply(operation: KyuubiOperation): KyuubiOperationEvent = {
+    val session = operation.getSession
+    val status = operation.getStatus
+    new KyuubiOperationEvent(
+      operation.getHandle.identifier.toString,
+      Option(operation.remoteOpHandle()).map(OperationHandle(_).identifier.toString).orNull,
+      operation.statement,
+      operation.shouldRunAsync,
       status.state.name(),
       status.lastModified,
       status.create,
