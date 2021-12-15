@@ -176,6 +176,14 @@ class EngineRefSuite extends KyuubiFunSuite {
     val engineNumber = Integer.parseInt(engine5.subdomain.substring(12))
     val threshold = ENGINE_POOL_SIZE_THRESHOLD.defaultVal.get
     assert(engineNumber <= threshold)
+
+    // unset subdomain and set engine pool name and 1 <= engine pool size < threshold
+    conf.unset(ENGINE_SHARE_LEVEL_SUBDOMAIN)
+    val enginePoolName = "test-pool"
+    conf.set(ENGINE_POOL_NAME, enginePoolName)
+    conf.set(ENGINE_POOL_SIZE, 3)
+    val engine6 = new EngineRef(conf, user, id)
+    assert(engine6.subdomain.startsWith(s"$enginePoolName-"))
   }
 
   test("start and get engine address with lock") {

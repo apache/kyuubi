@@ -70,6 +70,8 @@ private[kyuubi] class EngineRef(
 
   private val clientPoolSize: Int = conf.get(ENGINE_POOL_SIZE)
 
+  private val clientPoolName: String = conf.get(ENGINE_POOL_NAME)
+
   @VisibleForTesting
   private[kyuubi] val subdomain: String = conf.get(ENGINE_SHARE_LEVEL_SUBDOMAIN) match {
     case Some(_subdomain) => _subdomain
@@ -81,7 +83,7 @@ private[kyuubi] class EngineRef(
       }
       // TODO: Currently, we use random policy, and later we can add a sequential policy,
       //  such as AtomicInteger % poolSize.
-      "engine-pool-" + Random.nextInt(poolSize)
+      s"$clientPoolName-${Random.nextInt(poolSize)}"
     case _ => "default" // [KYUUBI #1293]
   }
 
