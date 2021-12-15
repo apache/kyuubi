@@ -57,7 +57,9 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
   }
 
   test("submit spark app timeout with last log output") {
-    withSessionConf()(Map(KyuubiConf.ENGINE_INIT_TIMEOUT.key -> "2000"))(Map.empty) {
+    withSessionConf()(Map(
+      KyuubiConf.ENGINE_INIT_TIMEOUT.key -> "2000",
+      KyuubiConf.SESSION_ENGINE_LAUNCH_ASYNC.key -> "false"))(Map.empty) {
       val exception = intercept[SQLException] {
         withJdbcStatement() { _ => // no-op
         }

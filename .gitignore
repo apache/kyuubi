@@ -43,6 +43,7 @@
 .scala_dependencies
 .settings
 build/apache-maven*
+build/release/tmp
 build/scala*
 build/test
 target/
@@ -70,6 +71,7 @@ embedded_zookeeper/
 /work/
 /docs/_build/
 /kyuubi-common/metrics/
+/kyuubi-server/metrics/
 **/operation_logs/
 **/server_operation_logs/
 **/engine_operation_logs/

@@ -77,3 +77,5 @@ case class GetFunctionsRequest(
     catalogName: String,
     schemaName: String,
     functionName: String)
+
+case class OpActionRequest(action: String)

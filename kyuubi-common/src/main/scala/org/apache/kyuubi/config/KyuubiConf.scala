@@ -620,10 +620,11 @@ object KyuubiConf {
     .version("1.0.0")
     .timeConf
     .checkValue(_ >= Duration.ofSeconds(3).toMillis, "Minimum 3 seconds")
-    .createWithDefault(Duration.ofMinutes(5).toMillis)
+    .createWithDefault(Duration.ofMinutes(1).toMillis)
 
   val ENGINE_IDLE_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.idle.timeout")
-    .doc("engine timeout, the engine will self-terminate when it's not accessed for this duration")
+    .doc("engine timeout, the engine will self-terminate when it's not accessed for this " +
+      "duration. 0 or negative means not to self-terminate.")
     .version("1.0.0")
     .timeConf
     .createWithDefault(Duration.ofMinutes(30L).toMillis)
@@ -663,7 +664,6 @@ object KyuubiConf {
       .checkValue(_ > 0, "the maximum must be positive integer.")
       .createWithDefault(10)
 
-  // TODO: make it true by default
   val SESSION_ENGINE_LAUNCH_ASYNC: ConfigEntry[Boolean] =
     buildConf("session.engine.launch.async")
       .doc("When opening kyuubi session, whether to launch backend engine asynchronously." +
@@ -671,7 +671,7 @@ object KyuubiConf {
         " as the backend engine will be created asynchronously.")
       .version("1.4.0")
       .booleanConf
-      .createWithDefault(false)
+      .createWithDefault(true)
 
   val SERVER_EXEC_POOL_SIZE: ConfigEntry[Int] =
     buildConf("backend.server.exec.pool.size")
@@ -982,10 +982,10 @@ object KyuubiConf {
       .doc("A comma separated list of engine history loggers, where engine/session/operation etc" +
         " events go. We use spark logger by default.<ul>" +
         " <li>SPARK: the events will be written to the spark listener bus.</li>" +
-        s" <li>JSON: the events will be written to the location of" +
+        " <li>JSON: the events will be written to the location of" +
         s" ${ENGINE_EVENT_JSON_LOG_PATH.key}</li>" +
-        s" <li>JDBC: to be done</li>" +
-        s" <li>CUSTOM: to be done.</li></ul>")
+        " <li>JDBC: to be done</li>" +
+        " <li>CUSTOM: to be done.</li></ul>")
       .version("1.3.0")
       .stringConf
       .transform(_.toUpperCase(Locale.ROOT))
@@ -1048,6 +1048,22 @@ object KyuubiConf {
       .transform(_.toUpperCase(Locale.ROOT))
       .checkValues(OperationModes.values.map(_.toString))
       .createWithDefault(OperationModes.NONE.toString)
+
+  object OperationLanguages extends Enumeration {
+    type OperationLanguage = Value
+    val SQL, SCALA = Value
+  }
+
+  val OPERATION_LANGUAGE: ConfigEntry[String] =
+    buildConf("operation.language")
+      .doc("Choose a programing language for the following inputs" +
+        " <ul><li>SQL: (Default) Run all following statements as SQL queries.</li>" +
+        " <li>SCALA: Run all following input a scala codes</li></ul>")
+      .version("1.5.0")
+      .stringConf
+      .transform(_.toUpperCase(Locale.ROOT))
+      .checkValues(OperationLanguages.values.map(_.toString))
+      .createWithDefault(OperationLanguages.SQL.toString)
 
   val ENGINE_EVENT_STORE_JDBC_URL: OptionalConfigEntry[String] =
     buildConf("engine.event.store.jdbc.url")

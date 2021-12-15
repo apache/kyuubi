@@ -58,7 +58,7 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
 
   def getBackgroundHandle: Future[_] = _backgroundHandle
 
-  protected def statement: String = opType.toString
+  def statement: String = opType.toString
 
   protected def setHasResultSet(hasResultSet: Boolean): Unit = {
     this.hasResultSet = hasResultSet

@@ -125,7 +125,13 @@ class CatalogShim_v2_4 extends SparkCatalogShim {
     databases.flatMap { db =>
       val identifiers = catalog.listTables(db, tablePattern, includeLocalTempViews = true)
       catalog.getTablesByName(identifiers).flatMap { t =>
-        t.schema.zipWithIndex.filter(f => columnPattern.matcher(f._1.name).matches())
+        val tableSchema =
+          if (t.provider.getOrElse("").equalsIgnoreCase("delta")) {
+            spark.table(t.identifier.table).schema
+          } else {
+            t.schema
+          }
+        tableSchema.zipWithIndex.filter(f => columnPattern.matcher(f._1.name).matches())
           .map { case (f, i) => toColumnResult(catalogName, t.database, t.identifier.table, f, i) }
       }
     }

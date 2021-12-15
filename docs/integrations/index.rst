@@ -24,3 +24,5 @@ Integrations
     :numbered: 2
 
     kudu
+    delta_lake
+    delta_lake_with_azure_blob

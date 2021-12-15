@@ -17,10 +17,13 @@
 
 package org.apache.kyuubi.session
 
-import java.util.Objects
+import java.util.{Objects, UUID}
+
+import scala.util.control.NonFatal
 
 import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TSessionHandle}
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.cli.{Handle, HandleIdentifier}
 
 case class SessionHandle(
@@ -54,5 +57,23 @@ object SessionHandle {
 
   def apply(protocol: TProtocolVersion): SessionHandle = {
     apply(HandleIdentifier(), protocol)
+  }
+
+  def parseSessionHandle(sessionHandleStr: String): SessionHandle = {
+    try {
+      val sessionHandleParts = sessionHandleStr.split("\\|")
+      require(
+        sessionHandleParts.size == 3,
+        s"Expected 3 parameters but found ${sessionHandleParts.size}.")
+
+      val handleIdentifier = HandleIdentifier(
+        UUID.fromString(sessionHandleParts(0)),
+        UUID.fromString(sessionHandleParts(1)))
+      val protocolVersion = TProtocolVersion.findByValue(sessionHandleParts(2).toInt)
+      SessionHandle(handleIdentifier, protocolVersion)
+    } catch {
+      case NonFatal(e) =>
+        throw KyuubiSQLException(s"Invalid $sessionHandleStr", e)
+    }
   }
 }

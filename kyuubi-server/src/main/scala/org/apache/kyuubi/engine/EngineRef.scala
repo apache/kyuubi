@@ -29,7 +29,7 @@ import org.apache.curator.framework.recipes.locks.InterProcessSemaphoreMutex
 import org.apache.curator.utils.ZKPaths
 import org.apache.hadoop.security.UserGroupInformation
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
+import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.EngineType.{EngineType, SPARK_SQL}
@@ -127,7 +127,7 @@ private[kyuubi] class EngineRef(
    */
   @VisibleForTesting
   private[kyuubi] lazy val engineSpace: String = {
-    val commonParent = s"${serverSpace}_${shareLevel}_$engineType"
+    val commonParent = s"${serverSpace}_${KYUUBI_VERSION}_${shareLevel}_$engineType"
     shareLevel match {
       case CONNECTION => ZKPaths.makePath(commonParent, appUser, engineRefId)
       case _ => ZKPaths.makePath(commonParent, appUser, subdomain)

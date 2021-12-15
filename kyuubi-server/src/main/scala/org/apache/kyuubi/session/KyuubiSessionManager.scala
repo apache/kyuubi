@@ -20,7 +20,7 @@ package org.apache.kyuubi.session
 import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.credentials.HadoopCredentialsManager
@@ -37,7 +37,8 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   override def initialize(conf: KyuubiConf): Unit = {
     addService(credentialsManager)
-    _operationLogRoot = Some(conf.get(SERVER_OPERATION_LOG_DIR_ROOT))
+    val absPath = Utils.getAbsolutePathFromWork(conf.get(SERVER_OPERATION_LOG_DIR_ROOT))
+    _operationLogRoot = Some(absPath.toAbsolutePath.toString)
     super.initialize(conf)
   }
 
@@ -49,13 +50,14 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
       conf: Map[String, String]): SessionHandle = {
 
     val username = Option(user).filter(_.nonEmpty).getOrElse("anonymous")
-
+    // inject client ip into session conf
+    val newConf = conf + (CLIENT_IP_KEY -> ipAddress)
     val sessionImpl = new KyuubiSessionImpl(
       protocol,
       username,
       password,
       ipAddress,
-      conf,
+      newConf,
       this,
       this.getConf.getUserDefaults(user))
     try {

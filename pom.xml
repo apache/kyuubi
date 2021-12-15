@@ -67,7 +67,9 @@
     <modules>
         <module>dev/kyuubi-codecov</module>
         <module>externals/kyuubi-download</module>
+        <module>externals/kyuubi-flink-sql-engine</module>
         <module>externals/kyuubi-spark-sql-engine</module>
+        <module>externals/kyuubi-trino-engine</module>
         <module>kyuubi-assembly</module>
         <module>kyuubi-common</module>
         <module>kyuubi-ctl</module>
@@ -134,10 +136,10 @@
         <swagger.version>2.1.11</swagger.version>
         <swagger.scala.module.version>2.5.2</swagger.scala.module.version>
         <swagger-ui.version>4.1.0</swagger-ui.version>
+        <trino.client.version>363</trino.client.version>
         <zookeeper.version>3.4.14</zookeeper.version>
 
         <!-- apply to kyuubi-hive-jdbc/kyuubi-hive-beeline module -->
-        <hive.client.version>2.3.9</hive.client.version>
         <hive.client.version>2.3.9</hive.client.version>
         <hive.client.commons-lang.version>2.6</hive.client.commons-lang.version>
         <hive.client.commons-cli.version>1.2</hive.client.commons-cli.version>
@@ -250,6 +252,12 @@
 
             <dependency>
                 <groupId>org.scala-lang</groupId>
+                <artifactId>scala-compiler</artifactId>
+                <version>${scala.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.scala-lang</groupId>
                 <artifactId>scala-reflect</artifactId>
                 <version>${scala.version}</version>
             </dependency>
@@ -334,6 +342,18 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons-lang3.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.spark</groupId>
+                <artifactId>spark-repl_${scala.binary.version}</artifactId>
+                <version>${spark.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>*</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -423,6 +443,12 @@
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>io.trino</groupId>
+                <artifactId>trino-client</artifactId>
+                <version>${trino.client.version}</version>
             </dependency>
 
             <dependency>
@@ -604,6 +630,22 @@
 
             <dependency>
                 <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-jaxb-annotations</artifactId>
+                <version>${jackson.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>jakarta.xml.bind-api</artifactId>
+                        <groupId>jakarta.xml.bind</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>jakarta.activation-api</artifactId>
+                        <groupId>jakarta.activation</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-scala_${scala.binary.version}</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
@@ -635,6 +677,12 @@
                 <groupId>com.github.swagger-akka-http</groupId>
                 <artifactId>swagger-scala-module_${scala.binary.version}</artifactId>
                 <version>${swagger.scala.module.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>jakarta.xml.bind-api</artifactId>
+                        <groupId>jakarta.xml.bind</groupId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -902,6 +950,18 @@
             <!-- RESTful service required -->
             <dependency>
                 <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-common</artifactId>
+                <version>${jersey.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.sun.activation</groupId>
+                        <artifactId>jakarta.activation</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
                 <artifactId>jersey-server</artifactId>
                 <version>${jersey.version}</version>
                 <exclusions>
@@ -968,6 +1028,80 @@
                 <groupId>org.webjars</groupId>
                 <artifactId>swagger-ui</artifactId>
                 <version>${swagger-ui.version}</version>
+            </dependency>
+
+            <!-- flink -->
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-core</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-runtime_${scala.binary.version}</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-streaming-java_${scala.binary.version}</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-clients_${scala.binary.version}</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-table-common</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-table-api-java</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-table-api-java-bridge_${scala.binary.version}</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-table-planner_${scala.binary.version}</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-table-planner-blink_${scala.binary.version}</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-table-runtime-blink_${scala.binary.version}</artifactId>
+                <version>${flink.version}</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-sql-parser</artifactId>
+                <version>${flink.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.flink</groupId>
+                <artifactId>flink-yarn_${scala.binary.version}</artifactId>
+                <version>${flink.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -1565,7 +1699,8 @@
             <id>spark-3.2</id>
             <properties>
                 <spark.version>3.2.0</spark.version>
-                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <delta.version>1.1.0</delta.version>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
             <modules>
                 <module>dev/kyuubi-extension-spark-common</module>

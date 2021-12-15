@@ -16,9 +16,11 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-java@v1
+      - name: Setup JDK 8
+        uses: actions/setup-java@v2
         with:
-          java-version: '1.8'
+          distribution: zulu
+          java-version: 8
       - run: build/mvn org.apache.rat:apache-rat-plugin:check
       - name: Upload rat report
         if: failure()
@@ -54,35 +56,36 @@ jobs:
           - java: 11
             spark: '3.1'
             spark-hadoop: '3.2'
-            profiles: '-DskipTests -Pspark-provided'
+            profiles: '-DskipTests -Pflink-provided,spark-provided'
 
     env:
       SPARK_LOCAL_IP: localhost
     steps:
       - uses: actions/checkout@v2
       - name: Setup JDK ${{ matrix.java }}
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v2
         with:
+          distribution: zulu
           java-version: ${{ matrix.java }}
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         with:
           path: ~/.m2/repository/com
           key: ${{ runner.os }}-maven-com-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-com-
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         with:
           path: ~/.m2/repository/org
           key: ${{ runner.os }}-maven-org-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-org-
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         with:
           path: ~/.m2/repository/net
           key: ${{ runner.os }}-maven-net-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-net-
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         with:
           path: ~/.m2/repository/io
           key: ${{ runner.os }}-maven-io-${{ hashFiles('**/pom.xml') }}
@@ -117,29 +120,30 @@ jobs:
       SPARK_LOCAL_IP: localhost
     steps:
       - uses: actions/checkout@v2
-      - name: Setup JDK 1.8
-        uses: actions/setup-java@v1
+      - name: Setup JDK 8
+        uses: actions/setup-java@v2
         with:
-          java-version: '1.8'
-      - uses: actions/cache@v1
+          distribution: zulu
+          java-version: 8
+      - uses: actions/cache@v2
         with:
           path: ~/.m2/repository/com
           key: ${{ runner.os }}-maven-com-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-com-
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         with:
           path: ~/.m2/repository/org
           key: ${{ runner.os }}-maven-org-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-org-
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         with:
           path: ~/.m2/repository/net
           key: ${{ runner.os }}-maven-net-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-net-
-      - uses: actions/cache@v1
+      - uses: actions/cache@v2
         with:
           path: ~/.m2/repository/io
           key: ${{ runner.os }}-maven-io-${{ hashFiles('**/pom.xml') }}
@@ -168,7 +172,7 @@ jobs:
           # passthrough CI into build container
           build-args: CI=${CI}
           context: .
-          file: docker/Dockerfile
+          file: build/Dockerfile
           load: true
           tags: apache/kyuubi:latest
       # from https://github.com/marketplace/actions/setup-minikube-kubernetes-cluster

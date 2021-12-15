@@ -24,13 +24,14 @@ import scala.util.control.NonFatal
 
 import org.apache.spark.{ui, SparkConf}
 import org.apache.spark.kyuubi.SparkSQLEngineListener
+import org.apache.spark.repl.Main
 import org.apache.spark.sql.SparkSession
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.engine.spark.SparkSQLEngine.countDownLatch
+import org.apache.kyuubi.engine.spark.SparkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.engine.spark.events.{EngineEvent, EngineEventsStore, EventLoggingService}
 import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.ha.client.RetryPolicies
@@ -54,7 +55,10 @@ case class SparkSQLEngine(
     super.start()
     // Start engine self-terminating checker after all services are ready and it can be reached by
     // all servers in engine spaces.
-    backendService.sessionManager.startTerminatingChecker()
+    backendService.sessionManager.startTerminatingChecker(() => {
+      assert(currentEngine.isDefined)
+      currentEngine.get.stop()
+    })
   }
 
   override protected def stopServer(): Unit = {
@@ -78,6 +82,12 @@ object SparkSQLEngine extends Logging {
     sparkConf.setIfMissing("spark.sql.legacy.castComplexTypesToString.enabled", "true")
     sparkConf.setIfMissing("spark.master", "local")
     sparkConf.setIfMissing("spark.ui.port", "0")
+    // register the repl's output dir with the file server.
+    // see also `spark.repl.classdir`
+    sparkConf.set("spark.repl.class.outputDir", Main.outputDir.getAbsolutePath)
+    sparkConf.setIfMissing(
+      "spark.hadoop.mapreduce.input.fileinputformat.list-status.num-threads",
+      "20")
 
     val appName = s"kyuubi_${user}_spark_${Instant.now}"
     sparkConf.setIfMissing("spark.app.name", appName)

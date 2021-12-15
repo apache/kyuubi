@@ -27,6 +27,7 @@ import org.apache.thrift.transport.TSocket
 
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_THRIFT_BINARY_BIND_HOST, FRONTEND_THRIFT_BINARY_BIND_PORT}
 import org.apache.kyuubi.operation.{OperationHandle, OperationType}
 import org.apache.kyuubi.service.ThriftBinaryFrontendService.{FeServiceServerContext, SERVER_VERSION}
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
@@ -115,6 +116,26 @@ class ThriftFrontendServiceSuite extends KyuubiFunSuite {
     errResp.getStatus
     assert(errResp.getResults === null)
     assert(errResp.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+  }
+
+  test("engine connect url use hostname") {
+    val conf = new KyuubiConf()
+      .set(FRONTEND_THRIFT_BINARY_BIND_HOST.key, "localhost")
+      .set(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    val service = new ThriftBinaryFrontendService("DummyThriftBinaryFrontendService") {
+      override val serverable: Serverable = new NoopThriftBinaryFrontendServer
+      override val discoveryService: Option[Service] = None
+    }
+    intercept[IllegalStateException](service.connectionUrl)
+
+    conf.set(KyuubiConf.ENGINE_CONNECTION_URL_USE_HOSTNAME, true)
+    service.initialize(conf)
+    // default use hostname
+    assert(service.connectionUrl.startsWith("localhost"))
+
+    // use ip address
+    conf.set(KyuubiConf.ENGINE_CONNECTION_URL_USE_HOSTNAME, false)
+    assert(service.connectionUrl.startsWith("127.0.0.1"))
   }
 
   test("open session") {
