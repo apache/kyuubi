@@ -33,7 +33,7 @@ private[spark] case class KyuubiSparkILoop private (
     output: ByteArrayOutputStream)
   extends SparkILoop(None, new JPrintWriter(output)) {
 
-  private val result = new DataFrameHolder(spark)
+  val result = new DataFrameHolder(spark)
 
   private def initialize(): Unit = {
     settings = new Settings
@@ -50,7 +50,7 @@ private[spark] case class KyuubiSparkILoop private (
     try {
       this.compilerClasspath
       this.ensureClassLoader()
-      var classLoader: ClassLoader = spark.sharedState.jarClassLoader
+      var classLoader: ClassLoader = Thread.currentThread().getContextClassLoader
       while (classLoader != null) {
         classLoader match {
           case loader: MutableURLClassLoader =>
@@ -65,6 +65,9 @@ private[spark] case class KyuubiSparkILoop private (
             classLoader = classLoader.getParent
         }
       }
+
+      this.addUrlsToClassPath(
+        classOf[DataFrameHolder].getProtectionDomain.getCodeSource.getLocation)
     } finally {
       Thread.currentThread().setContextClassLoader(currentClassLoader)
     }
@@ -84,10 +87,9 @@ private[spark] case class KyuubiSparkILoop private (
       this.interpret("import org.apache.spark.sql.functions._")
 
       // for feeding results to client, e.g. beeline
-      this.interpret("import _root_.org.apache.kyuubi.engine.spark.repl.DataFrameHolder")
       this.bind(
         "result",
-        "_root_.org.apache.kyuubi.engine.spark.repl.DataFrameHolder",
+        classOf[DataFrameHolder].getCanonicalName,
         result)
     }
   }

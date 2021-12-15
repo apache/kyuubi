@@ -64,7 +64,6 @@ class ExecuteScala(
       if (legacyOutput.nonEmpty) {
         warn(s"Clearing legacy output from last interpreting:\n $legacyOutput")
       }
-      warn(s"${repl.getOutput}")
       repl.interpretWithRedirectOutError(statement) match {
         case Success =>
           iter = {
