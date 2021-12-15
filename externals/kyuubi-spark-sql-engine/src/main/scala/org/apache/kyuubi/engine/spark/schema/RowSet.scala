@@ -15,24 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.schema
+package org.apache.kyuubi.engine.spark.schema
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.sql.Timestamp
-import java.text.SimpleDateFormat
 import java.time.{Instant, LocalDate, ZoneId}
-import java.time.chrono.IsoChronology
-import java.time.format.{DateTimeFormatter, DateTimeFormatterBuilder}
-import java.time.temporal.ChronoField
-import java.util.{Date, Locale}
+import java.util.Date
 
 import scala.collection.JavaConverters._
-import scala.language.implicitConversions
 
 import org.apache.hive.service.rpc.thrift._
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
+
+import org.apache.kyuubi.util.RowSetUtils._
 
 object RowSet {
 
@@ -146,10 +143,6 @@ object RowSet {
     ret
   }
 
-  implicit private def bitSetToBuffer(bitSet: java.util.BitSet): ByteBuffer = {
-    ByteBuffer.wrap(bitSet.toByteArray)
-  }
-
   private def toTColumnValue(
       ordinal: Int,
       row: Row,
@@ -204,29 +197,6 @@ object RowSet {
         }
         TColumnValue.stringVal(tStrValue)
     }
-  }
-
-  private def createBuilder(): DateTimeFormatterBuilder = {
-    new DateTimeFormatterBuilder().parseCaseInsensitive()
-  }
-
-  private lazy val dateFormatter = {
-    createBuilder().appendPattern("yyyy-MM-dd")
-      .toFormatter(Locale.US)
-      .withChronology(IsoChronology.INSTANCE)
-  }
-
-  private lazy val simpleDateFormatter = new SimpleDateFormat("yyyy-MM-dd", Locale.US)
-
-  private lazy val timestampFormatter: DateTimeFormatter = {
-    createBuilder().appendPattern("yyyy-MM-dd HH:mm:ss")
-      .appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true)
-      .toFormatter(Locale.US)
-      .withChronology(IsoChronology.INSTANCE)
-  }
-
-  private lazy val simpleTimestampFormatter = {
-    new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US)
   }
 
   /**

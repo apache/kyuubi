@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.schema
+package org.apache.kyuubi.engine.spark.schema
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
@@ -30,7 +30,7 @@ import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.CalendarInterval
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.schema.RowSet.toHiveString
+import org.apache.kyuubi.engine.spark.schema.RowSet.toHiveString
 
 class RowSetSuite extends KyuubiFunSuite {
 
