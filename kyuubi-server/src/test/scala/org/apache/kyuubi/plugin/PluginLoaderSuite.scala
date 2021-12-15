@@ -30,7 +30,7 @@ class PluginLoaderSuite extends KyuubiFunSuite {
     val msg1 = intercept[KyuubiException] {
       PluginLoader.loadSessionConfAdvisor(conf)
     }.getMessage
-    assert(msg1.contains(s"is not a child of '${classOf[SessionConfAdvisor].getName}''"))
+    assert(msg1.contains(s"is not a child of '${classOf[SessionConfAdvisor].getName}'"))
 
     conf.set(KyuubiConf.SESSION_CONF_ADVISOR, "non.exists")
     val msg2 = intercept[IllegalArgumentException] {
