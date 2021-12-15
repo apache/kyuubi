@@ -24,9 +24,20 @@
 # Access Kerberized Kyuubi with Beeline & BI Tools
 
 ## Instructions
-When Kyuubi is secured by Kerberos, you can not connect to Kyuubi simply by providing a JDBC url 
-with username and password.
-Instead, following steps should be taken.
+When Kyuubi is secured by Kerberos, the authentication procedure becomes a little complicated.
+
+![](../imgs/kyuubi_kerberos_authentication.png)
+
+The graph above shows a simplified kerberos authentication procedure:
+1. Kerberos client sends user principal and secret key to KDC. Secret key can be a password or a keytab file.   
+2. KDC returns a `ticket-granting ticket`(TGT).
+3. Kerberos client stores TGT into a cache file.
+4. JDBC client, such as beeline and BI tools, reads TGT from cache file
+5. JDBC client sends TGT and server principal to KDC
+6. KDC returns a `client-to-server ticket`
+7. JDBC client sends `client-to-server ticket` to Kyuubi server to prove its identity
+
+In the rest part of this page, we will describe steps needed to pass through this authentication.
 
 ## Installing and Configuring the Kerberos Clients
 Usually, Kerberos client is installed as default. You can validate it using klist tool.
@@ -37,7 +48,7 @@ $ klist -V
 Kerberos 5 version 1.15.1
 ```
 
-Mac OS command and output:
+MacOS command and output:
 ```bash
 $ klist --version
 klist (Heimdal 1.5.1apple1)
@@ -60,16 +71,15 @@ Following is the configuration file's default location on different OS:
 OS | Path
 ---| ---
 Linux | /etc/krb5.conf
-Mac OS | /etc/krb5.conf
+MacOS | /etc/krb5.conf
 Windows | %ProgramData%\MIT\Kerberos5\krb5.ini
 
-If administrative privileges are not granted to you, you can put the configuration file in other place and 
-set `KRB5_CONFIG` environment variable to the location of it.
+You can use `KRB5_CONFIG` environment variable to overwrite the default location.
 
 The configuration file should be configured to point to the same KDC as Kyuubi points to.
 
-## Get Kerberos Ticket Cache
-Execute `kinit` command to get Kerberos ticket cache from KDC.
+## Get Kerberos TGT
+Execute `kinit` command to get TGT from KDC.
 
 Suppose user principal is `kyuubi_user@KYUUBI.APACHE.ORG` and user keytab file name is `kyuubi_user.keytab`, 
 the command should be:
@@ -80,7 +90,7 @@ $ kinit -kt kyuubi_user.keytab kyuubi_user@KYUUBI.APACHE.ORG
 (Command is identical on different OS platform)
 ```
 
-You may also execute `kinit` command with principal and password to get Kerberos ticket cache:
+You may also execute `kinit` command with principal and password to get TGT:
 
 ```
 $ kinit kyuubi_user@KYUUBI.APACHE.ORG
@@ -89,7 +99,8 @@ Password for kyuubi_user@KYUUBI.APACHE.ORG: password
 (Command is identical on different OS platform)
 ```
 
-If the command executes successfully, `klist` command output should be like this:
+If the command executes successfully, TGT will be store in ticket cache.   
+Use `klist` command to print TGT info in ticket cache:
 
 ```
 $ klist
@@ -101,14 +112,15 @@ Valid starting       Expires              Service principal
 2021-12-13T18:44:58  2021-12-14T04:44:58  krbtgt/KYUUBI.APACHE.ORG@KYUUBI.APACHE.ORG
     renew until 2021-12-14T18:44:57
     
-(Command and output are identical on different OS platform)
+(Command is identical on different OS platform. Ticket cache location may be different.)
 ```
 
-If you are running Kyuubi and executing `kinit` on the same host with the same OS user, the ticket 
-cache file used by Kyuubi will be overwritten by the new ticket cache.
+Kyuubi also has a TGT stored in a ticket cache. If you are running Kyuubi and execute `kinit` 
+on the same host with the same OS user, the ticket cache used by Kyuubi will be overwritten by
+new ticket cache.
 
 To avoid that, you should store the new ticket cache in another place.  
-Ticket cache file location can be specified with `-c` argument.
+Ticket cache location can be specified with `-c` argument.
 
 For example,
 ```
@@ -127,24 +139,24 @@ $ klist -c /tmp/krb5cc_beeline
 ```
 
 ## Add Kerberos Client Configuration File to JVM Search Path
-The JVM, which Beeline or BI Tools are running on, also needs to read the Kerberos client configuration file.
+The JVM, which JDBC client is running on, also needs to read the Kerberos client configuration file.
 However, JVM uses different default locations from Kerberos client, and does not honour `KRB5_CONFIG`
 environment variable.
 
 OS | JVM Search Paths
 ---| ---
 Linux | System scope: `/etc/krb5.conf`
-Mac OS | User scope: `$HOME/Library/Preferences/edu.mit.Kerberos`<br/>System scope: `/etc/krb5.conf`
+MacOS | User scope: `$HOME/Library/Preferences/edu.mit.Kerberos`<br/>System scope: `/etc/krb5.conf`
 Windows | User scoep: `%USERPROFILE%\krb5.ini`<br/>System scope: `%windir%\krb5.ini`
 
-Put a copy of the configuration file to the default location according to your OS platform.
+You can use JVM system property, `java.security.krb5.conf`, to overwrite the default location.
 
 ## Add Kerberos Ticket Cache to JVM Search Path
-JVM also needs to read the ticket cache to handle the Kerberos authentication.
+JVM also needs to read TGT from ticket cache to handle the Kerberos authentication.
 
 JVM determines the ticket cache location in the following order:
-1. Path specified by `KRB5CCNAME` environment variable
-2. `/tmp/krb5cc_%{uid}` on Unix-like OS, e.g. Linux, Mac OS
+1. Path specified by `KRB5CCNAME` environment variable. Path must start with `FILE:`.
+2. `/tmp/krb5cc_%{uid}` on Unix-like OS, e.g. Linux, MacOS
 3. `${user.home}/krb5cc_${user.name}` if `${user.name}` is not null
 4. `${user.home}/krb5cc` if `${user.name}` is null
 
@@ -152,7 +164,9 @@ JVM determines the ticket cache location in the following order:
 - `${user.home}` and `${user.name}` are JVM system properties.
 - `${user.home}` should be replaced with `${user.dir}` if `${user.home}` is null.
 
-Put the ticket cache file in one of the above locations. 
+The ticket cache type may vary when created by Kerberos client on different OS platform. 
+While JVM can only read ticket cache stored as a file.  
+Ensure your ticket cache is stored as a file and put it in one of the above locations. 
 
 ## Ensure core-site.xml Exists in Classpath
 Like hadoop clients, `hadoop.security.authentication` should be set to `KERBEROS` in `core-site.xml` 

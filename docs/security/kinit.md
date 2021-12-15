@@ -83,7 +83,7 @@ kyuubi\.kinit\.interval|<div style='width: 80pt;word-wrap: break-word;white-spac
 kyuubi\.kinit\.max<br>\.attempts|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>10</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>How many times will `kinit` process retry</div>|<div style='width: 20pt'>1.0.0</div>
 
 When working with a Kerberos-enabled Hadoop cluster, we should ensure that `hadoop.security.authentication` 
-is set to `KERBEROS` in `$HADOOP_CONF_DIR/core-site` or `$KYUUBI_HOME/conf/kyuubi-defaults.conf`. 
+is set to `KERBEROS` in `$HADOOP_CONF_DIR/core-site.xml` or `$KYUUBI_HOME/conf/kyuubi-defaults.conf`. 
 Then we need to specify `kyuubi.kinit.principal` and `kyuubi.kinit.keytab` for authentication. 
 
 
