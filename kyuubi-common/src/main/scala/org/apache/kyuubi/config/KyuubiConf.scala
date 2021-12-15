@@ -1056,7 +1056,8 @@ object KyuubiConf {
         s"When you set this item, you should add username and password for this DB. " +
         s"First, you should set ${ENGINE_EVENT_LOGGERS} to 'JDBC'." +
         s"When you use this way to store engine events, " +
-        s"you should copy mysql-connector-java-#{version}.jar into path:externals/engines/spark/ ")
+        s"you should copy mysql-connector-java-#{version}.jar into path:#{SPARK_HOME}/jars " +
+        s"The format is : jdbc:mysql://<username>:<password>@<host>:<port>/<db>")
       .version("1.5.0")
       .stringConf
       .createOptional

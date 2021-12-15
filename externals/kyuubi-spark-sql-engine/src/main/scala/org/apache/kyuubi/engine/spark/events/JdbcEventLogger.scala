@@ -18,10 +18,9 @@
 package org.apache.kyuubi.engine.spark.events
 
 import java.io._
-import java.sql.{PreparedStatement, SQLException, SQLIntegrityConstraintViolationException, Statement}
+import java.sql.{Connection, PreparedStatement, SQLException, SQLIntegrityConstraintViolationException, Statement}
 import java.util.concurrent.TimeUnit
 
-import com.alibaba.druid.pool.DruidPooledConnection
 import com.google.common.cache.{Cache, CacheBuilder}
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.fs.FSDataOutputStream
@@ -37,7 +36,6 @@ import org.apache.kyuubi.util.InitMySQLDatabase
 /**
  * This event logger insert kyuubi engine events into databases.
  * When we initialize this class, we will load the file: engine-event.sql first.
- * @param jdbcUrl jdbcUrl
  */
 class JdbcEventLogger[T <: KyuubiEvent]()
   extends AbstractService("JdbcEventLogger") with EventLogger[T] with Logging {
@@ -68,7 +66,7 @@ class JdbcEventLogger[T <: KyuubiEvent]()
     } finally {
       reader.close()
     }
-    val connection = InitMySQLDatabase.getConnection()
+    val connection = InitMySQLDatabase.getConnection
     val statement: Statement = connection.createStatement()
     val arr = sqlStringBuffer.toString.split(";")
     for (i <- 0 until arr.length) {
@@ -91,7 +89,7 @@ class JdbcEventLogger[T <: KyuubiEvent]()
       case engineEvent: EngineEvent =>
         val appId = engineEvent.applicationId
         val completeTime = engineEvent.endTime
-        val connection: DruidPooledConnection = InitMySQLDatabase.getConnection()
+        val connection: Connection = InitMySQLDatabase.getConnection
         var engineSummaryStatement: PreparedStatement = null
         var engineDetailStatement: PreparedStatement = null
         if (checkExist(appId)
@@ -155,7 +153,7 @@ class JdbcEventLogger[T <: KyuubiEvent]()
         }
       case sessionEvent: SessionEvent =>
         val sessionId = sessionEvent.sessionId
-        val connection: DruidPooledConnection = InitMySQLDatabase.getConnection()
+        val connection: Connection = InitMySQLDatabase.getConnection
         var sessionSummaryStatement: PreparedStatement = null
         var summarySQL: StringBuilder = null
         if (!checkExist(sessionId)) {
@@ -195,7 +193,7 @@ class JdbcEventLogger[T <: KyuubiEvent]()
       case sparkStatementEvent: SparkStatementEvent =>
         val statementId = sparkStatementEvent.statementId
         val completeTime = sparkStatementEvent.completeTime
-        val connection: DruidPooledConnection = InitMySQLDatabase.getConnection()
+        val connection: Connection = InitMySQLDatabase.getConnection
         var statementSummaryStatement: PreparedStatement = null
         var statementDetailStatement: PreparedStatement = null
         if (checkExist(statementId)
@@ -266,9 +264,9 @@ class JdbcEventLogger[T <: KyuubiEvent]()
 
   private def checkExist(id: String): Boolean = {
     if (StringUtils.isEmpty(CACHE.getIfPresent(id))) {
-      return false;
+      return false
     }
-    return true
+    true
   }
 }
 
@@ -276,16 +274,17 @@ object JdbcEventLogger {
   val CACHE: Cache[String, String] = CacheBuilder.newBuilder()
     .expireAfterWrite(24, TimeUnit.HOURS).build()
 
-  val ENGINE_EVENT_SUMMARY_INSERT_FIELDS = "cluster,app_id,app_name,owner,share_level," +
+  val ENGINE_EVENT_SUMMARY_INSERT_FIELDS: String = "cluster,app_id,app_name,owner,share_level," +
     "connection_url,master,spark_version,web_url,start_time,complete_time,diagnostic,settings"
-  val ENGINE_EVENT_SUMMARY_UPDATE_FIELDS = Array("complete_time", "diagnostic")
-  val ENGINE_EVENT_DETAIL_INSTER_FIELDS = "app_id,state,event_time"
+  val ENGINE_EVENT_SUMMARY_UPDATE_FIELDS: Array[String] = Array("complete_time", "diagnostic")
+  val ENGINE_EVENT_DETAIL_INSTER_FIELDS: String = "app_id,state,event_time"
 
-  val SESSION_EVENT_SUMMARY_INSERT_FIELDS = "cluster,app_id,session_id,user_name," +
+  val SESSION_EVENT_SUMMARY_INSERT_FIELDS: String = "cluster,app_id,session_id,user_name," +
     "ip,start_time,complete_time,total_operations"
 
-  val STATEMENT_EVENT_SUMMARY_INSERT_FIELDS = "cluster,app_id,session_id,statement_id,statement," +
-    "user_name,create_time,complete_time,exception_type,exception"
-  val STATEMENT_EVENT_SUMMARY_UPDATE_FIELDS = Array("complete_time", "exception_type", "exception")
-  val STATEMENT_EVENT_DETAIL_INSERT_FIELDS = "statement_id,state,event_time"
+  val STATEMENT_EVENT_SUMMARY_INSERT_FIELDS: String = "cluster,app_id,session_id,statement_id," +
+    "statement,user_name,create_time,complete_time,exception_type,exception"
+  val STATEMENT_EVENT_SUMMARY_UPDATE_FIELDS: Array[String] =
+    Array("complete_time", "exception_type", "exception")
+  val STATEMENT_EVENT_DETAIL_INSERT_FIELDS: String = "statement_id,state,event_time"
 }

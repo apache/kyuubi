@@ -17,9 +17,9 @@
 
 package org.apache.kyuubi.util
 
-import java.sql.{PreparedStatement, Statement}
+import java.sql.{Connection, PreparedStatement, Statement}
 
-import com.alibaba.druid.pool.{DruidDataSource, DruidPooledConnection}
+import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_STORE_JDBC_URL
@@ -30,30 +30,32 @@ import org.apache.kyuubi.config.KyuubiConf.ENGINE_EVENT_STORE_JDBC_URL
 object InitMySQLDatabase {
 
   private val mysqlName = "com.mysql.cj.jdbc.Driver"
-  private var druidDataSource: DruidDataSource = null
+//  private val mysqlName = "com.mysql.jdbc.Driver"
+  private var hikariDataSource: HikariDataSource = null
 
   def initialize(conf: KyuubiConf): Unit = {
-    if (null == druidDataSource) {
+    if (null == hikariDataSource) {
       val jdbcUrl = conf.get(ENGINE_EVENT_STORE_JDBC_URL).get
-      druidDataSource = new DruidDataSource()
-      druidDataSource.setDriverClassName(mysqlName)
-      druidDataSource.setUrl(jdbcUrl)
+      val hikariConfig: HikariConfig = new HikariConfig()
+      hikariConfig.setDriverClassName(mysqlName)
+      hikariConfig.setJdbcUrl(jdbcUrl)
+      hikariDataSource = new HikariDataSource(hikariConfig)
     }
   }
 
-  def getConnection(): DruidPooledConnection = {
-    var druidConnection: DruidPooledConnection = null
+  def getConnection: Connection = {
+    var connection: Connection = null
     try {
-      druidConnection = druidDataSource.getConnection
+      connection = hikariDataSource.getConnection
     } catch {
       case _: Exception =>
         throw new IllegalArgumentException(s"Create datasource connection failed.")
     }
-    return druidConnection
+    connection
   }
 
   def close(
-      connection: DruidPooledConnection,
+      connection: Connection,
       preparedStatement: PreparedStatement,
       statement: Statement): Unit = {
     if (null != preparedStatement) {
@@ -75,7 +77,7 @@ object InitMySQLDatabase {
       .append(" ) values ( ")
       .append(formQuestionMark(insertFields))
       .append(");")
-    return stringBuilder
+    stringBuilder
   }
 
   def insertOrUpdateSQL(
