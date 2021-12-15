@@ -82,14 +82,14 @@ private[spark] case class KyuubiSparkILoop private (
       this.interpret("import spark.implicits._")
       this.interpret("import spark.sql")
       this.interpret("import org.apache.spark.sql.functions._")
-
-      // for feeding results to client, e.g. beeline
-      this.interpret("import org.apache.kyuubi.engine.spark.repl.DataFrameHolder")
-      this.bind(
-        "result",
-        "org.apache.kyuubi.engine.spark.repl.DataFrameHolder",
-        result)
     }
+
+    // for feeding results to client, e.g. beeline
+    this.interpret("import org.apache.kyuubi.engine.spark.repl.DataFrameHolder")
+    this.bind(
+      "result",
+      "org.apache.kyuubi.engine.spark.repl.DataFrameHolder",
+      result)
   }
 
   def getResult(statementId: String): DataFrame = result.get(statementId)
