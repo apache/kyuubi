@@ -27,7 +27,7 @@ import java.util.Locale
 
 import scala.language.implicitConversions
 
-object RowSetUtils {
+private[kyuubi] object RowSetUtils {
 
   lazy val dateFormatter = {
     createDateTimeFormatterBuilder().appendPattern("yyyy-MM-dd")
