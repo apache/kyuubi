@@ -80,6 +80,15 @@ $ kinit -kt kyuubi_user.keytab kyuubi_user@KYUUBI.APACHE.ORG
 (Command is identical on different OS platform)
 ```
 
+You may also execute `kinit` command with principal and password to get Kerberos ticket cache:
+
+```
+$ kinit kyuubi_user@KYUUBI.APACHE.ORG
+Password for kyuubi_user@KYUUBI.APACHE.ORG: password 
+
+(Command is identical on different OS platform)
+```
+
 If the command executes successfully, `klist` command output should be like this:
 
 ```
@@ -95,11 +104,11 @@ Valid starting       Expires              Service principal
 (Command and output are identical on different OS platform)
 ```
 
-
-**Note**:  
 If you are running Kyuubi and executing `kinit` on the same host with the same OS user, the ticket 
-cache file used by Kyuubi will be overwritten by the new ticket cache. To avoid that, you should 
-store the new ticket cache in another place. Ticket cache file location can be specified with `-c` argument.
+cache file used by Kyuubi will be overwritten by the new ticket cache.
+
+To avoid that, you should store the new ticket cache in another place.  
+Ticket cache file location can be specified with `-c` argument.
 
 For example,
 ```
@@ -140,8 +149,8 @@ JVM determines the ticket cache location in the following order:
 4. `${user.home}/krb5cc` if `${user.name}` is null
 
 **Note**:  
-1. `${user.home}` and `${user.name}` are JVM system properties.
-2. `${user.home}` should be replaced with `${user.dir}` if `${user.home}` is null.
+- `${user.home}` and `${user.name}` are JVM system properties.
+- `${user.home}` should be replaced with `${user.dir}` if `${user.home}` is null.
 
 Put the ticket cache file in one of the above locations. 
 
@@ -189,7 +198,7 @@ jdbc:hive2://<kyuubi_server_a ddress>:<kyuubi_server_port>/<db>;principal=<kyuub
 ```
 
 **Note**:  
-1. `kyuubi_server_principal` is the value of `kyuubi.kinit.principal` set in `kyuubi-defaults.conf`.
-2. As a command line argument, JDBC URL should be quoted to avoid being split into 2 commands by ";".
-3. As to DBeaver, `<db>;principal=<kyuubi_server_principal>` should be set as the `Database/Schema` argument.
+- `kyuubi_server_principal` is the value of `kyuubi.kinit.principal` set in `kyuubi-defaults.conf`.
+- As a command line argument, JDBC URL should be quoted to avoid being split into 2 commands by ";".
+- As to DBeaver, `<db>;principal=<kyuubi_server_principal>` should be set as the `Database/Schema` argument.
 

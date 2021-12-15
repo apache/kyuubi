@@ -27,9 +27,9 @@ Kinit auxiliary service is a critical service both for authentication between Ky
 and for authentication between Kyuubi server/Hadoop cluster in a Kerberos environment.
 It will get a Kerberos Ticket Cache from KDC and periodically re-kinit to keep the Ticket Cache fresh.
 
-**Note**:
-Kinit auxiliary service is critical to Kyuubi Kerberos authentication, but not vice versa.
-Kinit auxiliary service can also work with other authentication mode.
+**Note**:  
+- Kinit auxiliary service is critical to Kyuubi Kerberos authentication, but not vice versa.
+- Kinit auxiliary service can also work with other authentication mode.
 
 ## Installing and Configuring the Kerberos Clients
 
@@ -94,7 +94,8 @@ kyuubi.kinit.principal=spark/kyuubi.apache.org@KYUUBI.APACHE.ORG
 kyuubi.kinit.keytab=/path/to/kyuuib.keytab
 ```
 
-**Note**: `kyuubi.kinit.principal` must be in the format: `<user>/<host>@<realm>`, and `<host>` must 
+**Note**:  
+`kyuubi.kinit.principal` must be in the format: `<user>/<host>@<realm>`, and `<host>` must 
 be a FQDN of the host Kyuubi is running.
 
 Kyuubi will use this `principal` to impersonate client users,
