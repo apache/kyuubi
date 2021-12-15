@@ -56,15 +56,14 @@ class ExecuteScala(
     }
   }
 
-  override protected def runInternal(): Unit = {
+  override protected def runInternal(): Unit = withLocalProperties {
     try {
       OperationLog.setCurrentOperationLog(operationLog)
-      spark.sparkContext.setJobGroup(statementId, statement)
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
       repl.interpretWithRedirectOutError(statement) match {
         case Success =>
           iter = {
-            result = repl.getResult
+            result = repl.getResult(statementId)
             if (result != null) {
               new ArrayFetchIterator[Row](result.collect())
             } else {
@@ -80,8 +79,6 @@ class ExecuteScala(
       }
     } catch {
       onError(cancel = true)
-    } finally {
-      spark.sparkContext.clearJobGroup()
     }
   }
 }

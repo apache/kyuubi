@@ -33,7 +33,7 @@ private[spark] case class KyuubiSparkILoop private (
     output: ByteArrayOutputStream)
   extends SparkILoop(None, new JPrintWriter(output)) {
 
-  private val result = new DataFrameHolder()
+  private val result = new DataFrameHolder(spark)
 
   private def initialize(): Unit = {
     settings = new Settings
@@ -92,7 +92,9 @@ private[spark] case class KyuubiSparkILoop private (
     }
   }
 
-  def getResult: DataFrame = result.get()
+  def getResult(statementId: String): DataFrame = result.get(statementId)
+
+  def clearResult(statementId: String): Unit = result.unset(statementId)
 
   def interpretWithRedirectOutError(statement: String): IR.Result = {
     Console.withOut(output) {

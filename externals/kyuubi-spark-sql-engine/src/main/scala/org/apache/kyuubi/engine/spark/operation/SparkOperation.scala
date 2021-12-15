@@ -26,6 +26,9 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_STATEMENT_ID_KEY}
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
 import org.apache.kyuubi.engine.spark.operation.SparkOperation.TIMEZONE_KEY
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationState}
@@ -71,7 +74,7 @@ abstract class SparkOperation(opType: OperationType, session: Session)
    * @param input the SQL pattern to convert
    * @return the equivalent Java regular expression of the pattern
    */
-  def toJavaRegex(input: String): String = {
+  protected def toJavaRegex(input: String): String = {
     val res =
       if (StringUtils.isEmpty(input) || input == "*") {
         "%"
@@ -82,6 +85,33 @@ abstract class SparkOperation(opType: OperationType, session: Session)
     res
       .replaceAll("([^\\\\])%", "$1" + wStr).replaceAll("\\\\%", "%").replaceAll("^%", wStr)
       .replaceAll("([^\\\\])_", "$1.").replaceAll("\\\\_", "_").replaceAll("^_", ".")
+  }
+
+  private val forceCancel =
+    session.sessionManager.getConf.get(KyuubiConf.OPERATION_FORCE_CANCEL)
+
+  private val schedulerPool =
+    spark.conf.getOption(KyuubiConf.OPERATION_SCHEDULER_POOL.key).orElse(
+      session.sessionManager.getConf.get(KyuubiConf.OPERATION_SCHEDULER_POOL))
+
+  protected def withLocalProperties[T](f: => T): T = {
+    try {
+      spark.sparkContext.setJobGroup(statementId, statement, forceCancel)
+      spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
+      spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
+      schedulerPool match {
+        case Some(pool) =>
+          spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, pool)
+        case None =>
+      }
+
+      f
+    } finally {
+      spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, null)
+      spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, null)
+      spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, null)
+      spark.sparkContext.clearJobGroup()
+    }
   }
 
   protected def onError(cancel: Boolean = false): PartialFunction[Throwable, Unit] = {

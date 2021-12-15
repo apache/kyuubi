@@ -17,24 +17,45 @@
 
 package org.apache.kyuubi.engine.spark.repl
 
-import org.apache.spark.sql.DataFrame
+import java.util.HashMap
+
+import org.apache.spark.kyuubi.SparkContextHelper
+import org.apache.spark.sql.{DataFrame, SparkSession}
 
 /**
  * Helper class to wrap a [[DataFrame]] and pass its results to clients
  *
  * @since 1.5.0
  */
-class DataFrameHolder {
+class DataFrameHolder(spark: SparkSession) {
 
-  @volatile private var result: DataFrame = _
+  private val results = new HashMap[String, DataFrame]()
 
-  def set(df: DataFrame): Unit = {
-    this.result = df
+  private def currentId: String = {
+    SparkContextHelper.getCurrentStatementId(spark.sparkContext)
   }
 
-  def get(): DataFrame = {
-    val tmp = this.result
-    this.result = null
-    tmp
+  /**
+   * Set Results
+   * @param df a DataFrame for pass result to to clients
+   */
+  def set(df: DataFrame): Unit = {
+    results.put(currentId, df)
+  }
+
+  /**
+   * Get Result
+   * @param statementId kyuubi statement id
+   */
+  def get(statementId: String): DataFrame = {
+    results.get(statementId)
+  }
+
+  /**
+   * Clear Result
+   * @param statementId kyuubi statement id
+   */
+  def unset(statementId: String): Unit = {
+    results.remove(statementId)
   }
 }

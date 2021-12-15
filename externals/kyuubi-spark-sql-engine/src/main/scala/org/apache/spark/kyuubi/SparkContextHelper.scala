@@ -26,6 +26,7 @@ import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.scheduler.local.LocalSchedulerBackend
 
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_STATEMENT_ID_KEY
 import org.apache.kyuubi.engine.spark.events.KyuubiSparkEvent
 import org.apache.kyuubi.events.EventLogger
 
@@ -50,6 +51,24 @@ object SparkContextHelper extends Logging {
         warn(s"Failed to update delegation tokens due to unsupported SchedulerBackend " +
           s"${backend.getClass.getName}.")
     }
+  }
+
+  /**
+   * Get a local property set in this thread, or null if it is missing. See
+   * `org.apache.spark.SparkContext.setLocalProperty`.
+   */
+  private def getLocalProperty(sc: SparkContext, propertyKey: String): String = {
+    sc.getLocalProperty(propertyKey)
+  }
+
+  /**
+   * Get `KYUUBI_STATEMENT_ID_KEY` set in this thread, or null if it is missing.
+   *
+   * @param sc an active SparkContext
+   * @return the current statementId or null
+   */
+  def getCurrentStatementId(sc: SparkContext): String = {
+    getLocalProperty(sc, KYUUBI_STATEMENT_ID_KEY)
   }
 
 }

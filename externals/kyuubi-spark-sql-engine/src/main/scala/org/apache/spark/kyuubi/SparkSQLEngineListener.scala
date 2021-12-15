@@ -26,10 +26,10 @@ import scala.annotation.tailrec
 import org.apache.spark.SparkException
 import org.apache.spark.scheduler._
 
-import org.apache.kyuubi.KyuubiSparkUtils.KYUUBI_STATEMENT_ID_KEY
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.Utils.stringifyException
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_STATEMENT_ID_KEY
 import org.apache.kyuubi.engine.spark.events.{EngineEventsStore, SessionEvent, SparkStatementEvent}
 import org.apache.kyuubi.service.{Serverable, ServiceState}
 

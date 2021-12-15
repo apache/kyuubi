@@ -26,8 +26,7 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.events.{EventLoggingService, SparkStatementEvent}
 import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationType}
 import org.apache.kyuubi.operation.OperationState.OperationState
@@ -42,15 +41,6 @@ class ExecuteStatement(
     queryTimeout: Long,
     incrementalCollect: Boolean)
   extends SparkOperation(OperationType.EXECUTE_STATEMENT, session) with Logging {
-
-  import org.apache.kyuubi.KyuubiSparkUtils._
-
-  private val forceCancel =
-    session.sessionManager.getConf.get(KyuubiConf.OPERATION_FORCE_CANCEL)
-
-  private val schedulerPool =
-    spark.conf.getOption(KyuubiConf.OPERATION_SCHEDULER_POOL.key).orElse(
-      session.sessionManager.getConf.get(KyuubiConf.OPERATION_SCHEDULER_POOL))
 
   private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
 
@@ -91,7 +81,7 @@ class ExecuteStatement(
   private def executeStatement(): Unit = withLocalProperties {
     try {
       setState(OperationState.RUNNING)
-      info(KyuubiSparkUtil.diagnostics)
+      info(diagnostics)
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
       // TODO: Make it configurable
       spark.sparkContext.addSparkListener(operationListener)
@@ -140,26 +130,6 @@ class ExecuteStatement(
       }
     } else {
       executeStatement()
-    }
-  }
-
-  private def withLocalProperties[T](f: => T): T = {
-    try {
-      spark.sparkContext.setJobGroup(statementId, statement, forceCancel)
-      spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
-      spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
-      schedulerPool match {
-        case Some(pool) =>
-          spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, pool)
-        case None =>
-      }
-
-      f
-    } finally {
-      spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, null)
-      spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, null)
-      spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, null)
-      spark.sparkContext.clearJobGroup()
     }
   }
 
