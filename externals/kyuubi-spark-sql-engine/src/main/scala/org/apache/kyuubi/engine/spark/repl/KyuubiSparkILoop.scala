@@ -84,11 +84,11 @@ private[spark] case class KyuubiSparkILoop private (
       this.interpret("import org.apache.spark.sql.functions._")
 
       // for feeding results to client, e.g. beeline
+      this.interpret("import org.apache.kyuubi.engine.spark.repl.DataFrameHolder")
       this.bind(
         "result",
-        classOf[DataFrameHolder].getCanonicalName,
-        result,
-        List("""@transient"""))
+        "org.apache.kyuubi.engine.spark.repl.DataFrameHolder",
+        result)
     }
   }
 

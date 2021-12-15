@@ -60,6 +60,11 @@ class ExecuteScala(
     try {
       OperationLog.setCurrentOperationLog(operationLog)
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
+      val legacyOutput = repl.getOutput
+      if (legacyOutput.nonEmpty) {
+        warn(s"Clearing legacy output from last interpreting:\n $legacyOutput")
+      }
+      warn(s"${repl.getOutput}")
       repl.interpretWithRedirectOutError(statement) match {
         case Success =>
           iter = {
