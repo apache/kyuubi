@@ -60,24 +60,20 @@ class KyuubiSessionImpl(
     }
 
     val sessionConfMap = ImmutableMap.copyOf[String, String](sessionConf.getAll.asJava)
-    val suggestion = sessionManager.sessionConfAdvisor.getConfSuggestion(
+    sessionManager.sessionConfAdvisor.getConfSuggestion(
       user,
-      sessionConfMap).asScala
-    val overlay = sessionManager.sessionConfAdvisor.getConfOverlay(
-      user,
-      sessionConfMap).asScala
-
-    suggestion.foreach {
+      sessionConfMap).asScala.foreach {
       case (key, value) =>
         sessionConf.setIfMissing(key, value)
         userSpecifiedConf.putIfAbsent(key, value)
     }
-    overlay.foreach {
+    sessionManager.sessionConfAdvisor.getConfOverlay(
+      user,
+      sessionConfMap).asScala.foreach {
       case (key, value) =>
         sessionConf.set(key, value)
         userSpecifiedConf.put(key, value)
     }
-
     userSpecifiedConf.asScala.toMap
   }
 

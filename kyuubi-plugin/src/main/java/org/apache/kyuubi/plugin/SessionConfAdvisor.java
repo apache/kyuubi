@@ -22,10 +22,12 @@ import java.util.Map;
 
 /** Provide the session configuration according to the user and session configuration. */
 public interface SessionConfAdvisor {
+  /** The returned conf is used if it is not existed in session conf */
   default Map<String, String> getConfSuggestion(String user, Map<String, String> sessionConf) {
     return new HashMap<>();
   }
 
+  /** The returned conf will overwrite the session conf */
   default Map<String, String> getConfOverlay(String user, Map<String, String> sessionConf) {
     return new HashMap<>();
   }

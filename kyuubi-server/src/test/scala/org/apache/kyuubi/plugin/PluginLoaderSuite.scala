@@ -30,13 +30,13 @@ class PluginLoaderSuite extends KyuubiFunSuite {
     val msg1 = intercept[KyuubiException] {
       PluginLoader.loadSessionConfAdvisor(conf)
     }.getMessage
-    assert(msg1.contains("is not a child of EngineConfAdvisor"))
+    assert(msg1.contains(s"is not a child of '${classOf[SessionConfAdvisor].getName}''"))
 
     conf.set(KyuubiConf.SESSION_CONF_ADVISOR, "non.exists")
-    val msg2 = intercept[KyuubiException] {
+    val msg2 = intercept[IllegalArgumentException] {
       PluginLoader.loadSessionConfAdvisor(conf)
     }.getMessage
-    assert(msg2.startsWith("Failed to reflect the class"))
+    assert(msg2.startsWith("Error while instantiating 'non.exists'"))
   }
 }
 

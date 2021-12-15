@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.plugin
 
+import scala.util.control.NonFatal
+
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
 
@@ -31,11 +33,9 @@ object PluginLoader {
     } catch {
       case _: ClassCastException =>
         throw new KyuubiException(
-          s"Class $advisorClass is not a child of EngineConfAdvisor")
-      case e: Throwable =>
-        throw new KyuubiException(
-          s"Failed to reflect the class $advisorClass",
-          e)
+          s"Class $advisorClass is not a child of '${classOf[SessionConfAdvisor].getName}'.'")
+      case NonFatal(e) =>
+        throw new IllegalArgumentException(s"Error while instantiating '$advisorClass':", e)
     }
   }
 }

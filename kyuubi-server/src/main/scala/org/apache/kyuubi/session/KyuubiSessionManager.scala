@@ -35,10 +35,9 @@ class KyuubiSessionManager private (name: String) extends SessionManager(name) {
 
   val operationManager = new KyuubiOperationManager()
   val credentialsManager = new HadoopCredentialsManager()
-  var sessionConfAdvisor: SessionConfAdvisor = _
+  lazy val sessionConfAdvisor: SessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
 
   override def initialize(conf: KyuubiConf): Unit = {
-    sessionConfAdvisor = PluginLoader.loadSessionConfAdvisor(conf)
     addService(credentialsManager)
     val absPath = Utils.getAbsolutePathFromWork(conf.get(SERVER_OPERATION_LOG_DIR_ROOT))
     _operationLogRoot = Some(absPath.toAbsolutePath.toString)
