@@ -792,7 +792,7 @@ object KyuubiConf {
 
   // [ZooKeeper Data Model]
   // (http://zookeeper.apache.org/doc/r3.7.0/zookeeperProgrammers.html#ch_zkDataModel)
-  private val validEngineSubdomain: Pattern = ("(?!^[\\u002e]{1,2}$)" +
+  private val validZookeeperSubPath: Pattern = ("(?!^[\\u002e]{1,2}$)" +
     "(^[\\u0020-\\u002e\\u0030-\\u007e\\u00a0-\\ud7ff\\uf900-\\uffef]{1,}$)").r.pattern
 
   @deprecated(s"using kyuubi.engine.share.level.subdomain instead", "1.4.0")
@@ -802,7 +802,7 @@ object KyuubiConf {
       .version("1.2.0")
       .stringConf
       .transform(_.toLowerCase(Locale.ROOT))
-      .checkValue(validEngineSubdomain.matcher(_).matches(), "must be valid zookeeper sub path.")
+      .checkValue(validZookeeperSubPath.matcher(_).matches(), "must be valid zookeeper sub path.")
       .createOptional
 
   val ENGINE_SHARE_LEVEL_SUBDOMAIN: ConfigEntry[Option[String]] =
@@ -852,6 +852,13 @@ object KyuubiConf {
     .transform(_.toUpperCase(Locale.ROOT))
     .checkValues(EngineType.values.map(_.toString))
     .createWithDefault(EngineType.SPARK_SQL.toString)
+
+  val ENGINE_POOL_NAME: ConfigEntry[String] = buildConf("engine.pool.name")
+    .doc("The name of engine pool.")
+    .version("1.5.0")
+    .stringConf
+    .checkValue(validZookeeperSubPath.matcher(_).matches(), "must be valid zookeeper sub path.")
+    .createWithDefault("engine-pool")
 
   val ENGINE_POOL_SIZE_THRESHOLD: ConfigEntry[Int] = buildConf("engine.pool.size.threshold")
     .doc("This parameter is introduced as a server-side parameter, " +
