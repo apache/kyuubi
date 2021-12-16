@@ -174,7 +174,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           # passthrough CI into build container
-          build-args: CI=${CI}
+          build-args: CI=${CI},MVN_ARG="-Pmirror-cn"
           context: .
           file: build/Dockerfile
           load: true
