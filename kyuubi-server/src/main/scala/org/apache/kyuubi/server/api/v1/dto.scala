@@ -69,3 +69,11 @@ case class GetFunctionsRequest(
     functionName: String)
 
 case class OpActionRequest(action: String)
+
+case class ResultSetMetaData(columns: Seq[ColumnDesc])
+
+case class ColumnDesc(
+    columnName: String,
+    comment: String,
+    position: Int,
+    typeDesc: String)

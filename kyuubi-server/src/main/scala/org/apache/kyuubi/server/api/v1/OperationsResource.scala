@@ -20,6 +20,7 @@ package org.apache.kyuubi.server.api.v1
 import javax.ws.rs.{GET, Path, PathParam, Produces, _}
 import javax.ws.rs.core.{MediaType, Response}
 
+import scala.collection.JavaConverters.asScalaBufferConverter
 import scala.util.control.NonFatal
 
 import io.swagger.v3.oas.annotations.media.Content
@@ -79,6 +80,32 @@ private[v1] class OperationsResource extends ApiRequestContext {
       case NonFatal(_) =>
         throw new NotFoundException(s"Error applying ${request.action} " +
           s"for operation handle $operationHandleStr")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description =
+      "get resultSet metadata")
+  @GET
+  @Path("{operationHandle}/resultsetmetadata")
+  def getResultSetMetadata(
+      @PathParam("operationHandle") operationHandleStr: String): ResultSetMetaData = {
+    try {
+      val operationHandle = parseOperationHandle(operationHandleStr)
+      ResultSetMetaData(
+        backendService.getResultSetMetadata(operationHandle).getColumns.asScala.map(c =>
+          ColumnDesc(
+            c.getColumnName,
+            c.getComment,
+            c.getPosition,
+            c.getTypeDesc.getTypes.get(0).getPrimitiveEntry.getType.toString)))
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(
+          s"Error getting resultSet metadata for operation handle $operationHandleStr")
     }
   }
 }
