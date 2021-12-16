@@ -100,7 +100,7 @@
         <commons-lang3.version>3.10</commons-lang3.version>
         <curator.version>2.12.0</curator.version>
         <delta.version>1.0.0</delta.version>
-        <flink.version>1.12.5</flink.version>
+        <flink.version>1.14.0</flink.version>
         <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
         <flink.archive.mirror>https://archive.apache.org/dist/flink/flink-${flink.version}</flink.archive.mirror>
         <flink.archive.download.skip>false</flink.archive.download.skip>
@@ -998,7 +998,7 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-runtime_${scala.binary.version}</artifactId>
+                <artifactId>flink-runtime</artifactId>
                 <version>${flink.version}</version>
             </dependency>
 
@@ -1040,13 +1040,7 @@
 
             <dependency>
                 <groupId>org.apache.flink</groupId>
-                <artifactId>flink-table-planner-blink_${scala.binary.version}</artifactId>
-                <version>${flink.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.flink</groupId>
-                <artifactId>flink-table-runtime-blink_${scala.binary.version}</artifactId>
+                <artifactId>flink-table-runtime_${scala.binary.version}</artifactId>
                 <version>${flink.version}</version>
                 <scope>provided</scope>
             </dependency>

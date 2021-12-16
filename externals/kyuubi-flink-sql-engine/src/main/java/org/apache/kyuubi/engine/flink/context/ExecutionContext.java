@@ -22,7 +22,6 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
@@ -43,8 +42,8 @@ import org.apache.flink.table.catalog.GenericInMemoryCatalog;
 import org.apache.flink.table.delegation.Executor;
 import org.apache.flink.table.delegation.ExecutorFactory;
 import org.apache.flink.table.delegation.Planner;
-import org.apache.flink.table.delegation.PlannerFactory;
-import org.apache.flink.table.factories.ComponentFactoryService;
+import org.apache.flink.table.factories.FactoryUtil;
+import org.apache.flink.table.factories.PlannerFactoryUtil;
 import org.apache.flink.table.module.ModuleManager;
 import org.apache.flink.util.FlinkException;
 import org.apache.flink.util.TemporaryClassLoaderContext;
@@ -146,10 +145,9 @@ public class ExecutionContext<ClusterID> {
       CatalogManager catalogManager,
       ModuleManager moduleManager,
       FunctionCatalog functionCatalog) {
-    final Map<String, String> plannerProperties = settings.toPlannerProperties();
     final Planner planner =
-        ComponentFactoryService.find(PlannerFactory.class, plannerProperties)
-            .create(plannerProperties, executor, config, functionCatalog, catalogManager);
+        PlannerFactoryUtil.createPlanner(
+            settings.getPlanner(), executor, config, catalogManager, functionCatalog);
 
     return new StreamTableEnvironmentImpl(
         catalogManager,
@@ -163,18 +161,16 @@ public class ExecutionContext<ClusterID> {
         classLoader);
   }
 
-  private static Executor lookupExecutor(
-      Map<String, String> executorProperties, StreamExecutionEnvironment executionEnvironment) {
+  private Executor lookupExecutor(
+      EnvironmentSettings settings, StreamExecutionEnvironment executionEnvironment) {
     try {
       ExecutorFactory executorFactory =
-          ComponentFactoryService.find(ExecutorFactory.class, executorProperties);
-      Method createMethod =
-          executorFactory
-              .getClass()
-              .getMethod("create", Map.class, StreamExecutionEnvironment.class);
+          FactoryUtil.discoverFactory(classLoader, ExecutorFactory.class, settings.getExecutor());
 
-      return (Executor)
-          createMethod.invoke(executorFactory, executorProperties, executionEnvironment);
+      Method createMethod =
+          executorFactory.getClass().getMethod("create", StreamExecutionEnvironment.class);
+
+      return (Executor) createMethod.invoke(executorFactory, executionEnvironment);
     } catch (Exception e) {
       throw new TableException(
           "Could not instantiate the executor. Make sure a planner module is on the classpath", e);
@@ -213,8 +209,7 @@ public class ExecutionContext<ClusterID> {
     if (engineEnvironment.getExecution().isStreamingPlanner()) {
       streamExecEnv = createStreamExecutionEnvironment();
 
-      final Map<String, String> executorProperties = settings.toExecutorProperties();
-      executor = lookupExecutor(executorProperties, streamExecEnv);
+      executor = lookupExecutor(settings, streamExecEnv);
       tableEnv =
           createStreamTableEnvironment(
               streamExecEnv,
