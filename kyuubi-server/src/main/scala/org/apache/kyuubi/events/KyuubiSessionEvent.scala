@@ -20,7 +20,7 @@ package org.apache.kyuubi.events
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.server.KyuubiServer
-import org.apache.kyuubi.session.KyuubiSessionImpl
+import org.apache.kyuubi.session.AbstractSession
 
 /**
  * @param sessionId server session id
@@ -55,7 +55,7 @@ case class KyuubiSessionEvent(
 }
 
 object KyuubiSessionEvent {
-  def apply(session: KyuubiSessionImpl): KyuubiSessionEvent = {
+  def apply(session: AbstractSession): KyuubiSessionEvent = {
     assert(KyuubiServer.kyuubiServer != null)
     val serverIP = KyuubiServer.kyuubiServer.frontendServices.head.connectionUrl
     val sessionName: String = session.normalizedConf.getOrElse(KyuubiConf.SESSION_NAME.key, "")
