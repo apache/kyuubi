@@ -28,16 +28,8 @@ object OperationState extends Enumeration {
 
   type OperationState = Value
 
-  val INITIALIZED,
-      PENDING,
-      RUNNING,
-      COMPILED,
-      FINISHED,
-      TIMEOUT,
-      CANCELED,
-      CLOSED,
-      ERROR,
-      UNKNOWN = Value
+  val INITIALIZED, PENDING, RUNNING, COMPILED, FINISHED, TIMEOUT, CANCELED, CLOSED, ERROR, UNKNOWN =
+    Value
 
   implicit def toTOperationState(from: OperationState): TOperationState = from match {
     case INITIALIZED => INITIALIZED_STATE
@@ -56,13 +48,14 @@ object OperationState extends Enumeration {
     oldState match {
       case INITIALIZED if Set(PENDING, RUNNING, TIMEOUT, CANCELED, CLOSED).contains(newState) =>
       case PENDING
-        if Set(RUNNING, COMPILED, FINISHED, TIMEOUT, CANCELED, CLOSED, ERROR).contains(newState) =>
+          if Set(RUNNING, COMPILED, FINISHED, TIMEOUT, CANCELED, CLOSED, ERROR).contains(
+            newState) =>
       case RUNNING
-        if Set(COMPILED, FINISHED, TIMEOUT, CANCELED, CLOSED, ERROR).contains(newState) =>
+          if Set(COMPILED, FINISHED, TIMEOUT, CANCELED, CLOSED, ERROR).contains(newState) =>
       case COMPILED if Set(FINISHED, TIMEOUT, CANCELED, CLOSED, ERROR).contains(newState) =>
       case FINISHED | CANCELED | TIMEOUT | ERROR if CLOSED.equals(newState) =>
       case _ => throw KyuubiSQLException(
-        s"Illegal Operation state transition from $oldState to $newState")
+          s"Illegal Operation state transition from $oldState to $newState")
     }
   }
 

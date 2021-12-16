@@ -71,11 +71,16 @@ fi
 export KYUUBI_SCALA_VERSION="${KYUUBI_SCALA_VERSION:-"2.12"}"
 
 if [[ -f ${KYUUBI_HOME}/RELEASE ]]; then
+  KYUUBI_VERSION="$(grep "Kyuubi " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
   SPARK_VERSION_BUILD="$(grep "Spark " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
   HADOOP_VERSION_BUILD="$(grep "Hadoop " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
   SPARK_BUILTIN="${KYUUBI_HOME}/externals/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD:0:3}"
 else
   MVN="${MVN:-"${KYUUBI_HOME}/build/mvn"}"
+  KYUUBI_VERSION=$("$MVN" help:evaluate -Dexpression=project.version 2>/dev/null\
+    | grep -v "INFO"\
+    | grep -v "WARNING"\
+    | tail -n 1)
   SPARK_VERSION_BUILD=$("$MVN" help:evaluate -Dexpression=spark.version 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
@@ -94,6 +99,7 @@ if [ $silent -eq 0 ]; then
   echo "JAVA_HOME: ${JAVA_HOME}"
 
   echo "KYUUBI_HOME: ${KYUUBI_HOME}"
+  echo "KYUUBI_VERSION: ${KYUUBI_VERSION}"
   echo "KYUUBI_CONF_DIR: ${KYUUBI_CONF_DIR}"
   echo "KYUUBI_LOG_DIR: ${KYUUBI_LOG_DIR}"
   echo "KYUUBI_PID_DIR: ${KYUUBI_PID_DIR}"

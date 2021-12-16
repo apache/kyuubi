@@ -17,17 +17,15 @@
 
 package org.apache.kyuubi.engine.spark.operation
 
-import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.engine.spark.IterableFetchIterator
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
-import org.apache.kyuubi.operation.OperationType
+import org.apache.kyuubi.operation.{IterableFetchIterator, OperationType}
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
 import org.apache.kyuubi.session.Session
 
-class GetCatalogs(spark: SparkSession, session: Session)
-  extends SparkOperation(spark, OperationType.GET_CATALOGS, session) {
+class GetCatalogs(session: Session)
+  extends SparkOperation(OperationType.GET_CATALOGS, session) {
 
   override protected def resultSchema: StructType = {
     new StructType()
@@ -35,8 +33,8 @@ class GetCatalogs(spark: SparkSession, session: Session)
   }
 
   override protected def runInternal(): Unit = {
-   try {
-     iter = new IterableFetchIterator(SparkCatalogShim().getCatalogs(spark).toList)
+    try {
+      iter = new IterableFetchIterator(SparkCatalogShim().getCatalogs(spark).toList)
     } catch onError()
   }
 }

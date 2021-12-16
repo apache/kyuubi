@@ -40,7 +40,12 @@ object ThreadUtils extends Logging {
     info(s"$threadPoolName: pool size: $poolSize, wait queue size: $poolQueueSize," +
       s" thread keepalive time: $keepAliveMs ms")
     val executor = new ThreadPoolExecutor(
-      poolSize, poolSize, keepAliveMs, TimeUnit.MILLISECONDS, queue, nameFactory)
+      poolSize,
+      poolSize,
+      keepAliveMs,
+      TimeUnit.MILLISECONDS,
+      queue,
+      nameFactory)
     executor.allowCoreThreadTimeOut(true)
     executor
   }

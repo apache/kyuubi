@@ -85,7 +85,6 @@ class HadoopThriftAuthBridgeServer(secretMgr: KyuubiDelegationTokenManager) {
   def getUserAuthMechanism: String = USER_AUTH_MECHANISM.get
 }
 
-
 object HadoopThriftAuthBridgeServer {
 
   final val REMOTE_ADDRESS = new ThreadLocal[InetAddress]() {
@@ -163,9 +162,9 @@ object HadoopThriftAuthBridgeServer {
               wrapped.process(in, out)
             } catch {
               case e: RuntimeException => e.getCause match {
-                case t: TException => throw t
-                case _ => throw e
-              }
+                  case t: TException => throw t
+                  case _ => throw e
+                }
               case e: InterruptedException => throw new RuntimeException(e)
               case e: IOException => throw new RuntimeException(e)
             } finally {

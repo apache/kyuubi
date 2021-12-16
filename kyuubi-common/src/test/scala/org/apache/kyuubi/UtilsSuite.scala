@@ -19,7 +19,7 @@ package org.apache.kyuubi
 
 import java.io.{File, IOException}
 import java.net.InetAddress
-import java.nio.file.Files
+import java.nio.file.{Files, Paths}
 import java.security.PrivilegedExceptionAction
 import java.util.Properties
 
@@ -106,8 +106,7 @@ class UtilsSuite extends KyuubiFunSuite {
         override def run(): Unit = {
           assert(Utils.currentUser === "kentyao")
         }
-      }
-    )
+      })
   }
 
   test("version test") {
@@ -130,5 +129,15 @@ class UtilsSuite extends KyuubiFunSuite {
     } else {
       assert(Utils.findLocalInetAddress !== InetAddress.getLocalHost)
     }
+  }
+
+  test("getAbsolutePathFromWork") {
+    val workDir = System.getenv("KYUUBI_WORK_DIR_ROOT")
+    val path1 = "path1"
+    assert(Utils.getAbsolutePathFromWork(path1).toAbsolutePath.toString ===
+      Paths.get(workDir, path1).toAbsolutePath.toString)
+
+    val path2 = "/tmp/path2"
+    assert(Utils.getAbsolutePathFromWork(path2).toString === path2)
   }
 }

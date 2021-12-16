@@ -38,14 +38,15 @@ case class ExecutorPoolCaptureOom(
     t match {
       case _: OutOfMemoryError => hook.run()
       case null => r match {
-        case f: Future[_] => try {
-          if (f.isDone) f.get()
-        } catch {
-          case _: InterruptedException => Thread.currentThread().interrupt()
-          case _: OutOfMemoryError => hook.run()
+          case f: Future[_] =>
+            try {
+              if (f.isDone) f.get()
+            } catch {
+              case _: InterruptedException => Thread.currentThread().interrupt()
+              case _: OutOfMemoryError => hook.run()
+            }
+          case _ =>
         }
-        case _ =>
-      }
       case _ =>
     }
   }

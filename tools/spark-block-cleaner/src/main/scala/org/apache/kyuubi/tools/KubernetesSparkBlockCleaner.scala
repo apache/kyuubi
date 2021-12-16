@@ -28,22 +28,22 @@ import org.apache.log4j.PropertyConfigurator
 import org.apache.kyuubi.Logging
 
 /*
-* Spark storage shuffle data as the following structure.
-*
-* local-dir1/
-*   blockmgr-uuid/
-*     hash-sub-dir/
-*       shuffle-data
-*       shuffle-index
-*
-* local-dir2/
-*   blockmgr-uuid/
-*     hash-sub-dir/
-*       shuffle-data
-*       shuffle-index
-*
-* ...
-*/
+ * Spark storage shuffle data as the following structure.
+ *
+ * local-dir1/
+ *   blockmgr-uuid/
+ *     hash-sub-dir/
+ *       shuffle-data
+ *       shuffle-index
+ *
+ * local-dir2/
+ *   blockmgr-uuid/
+ *     hash-sub-dir/
+ *       shuffle-data
+ *       shuffle-index
+ *
+ * ...
+ */
 object KubernetesSparkBlockCleaner extends Logging {
   import KubernetesSparkBlockCleanerConstants._
 
@@ -52,19 +52,17 @@ object KubernetesSparkBlockCleaner extends Logging {
   PropertyConfigurator.configure(
     Thread.currentThread().getContextClassLoader.getResource("log4j-block-cleaner.properties"))
 
-  private val freeSpaceThreshold = envMap.getOrDefault(FREE_SPACE_THRESHOLD_KEY,
-    "60").toInt
-  private val fileExpiredTime = envMap.getOrDefault(FILE_EXPIRED_TIME_KEY,
-    "604800").toLong * 1000
-  private val scheduleInterval = envMap.getOrDefault(SCHEDULE_INTERVAL,
-    "3600").toLong * 1000
-  private val deepCleanFileExpiredTime = envMap.getOrDefault(DEEP_CLEAN_FILE_EXPIRED_TIME_KEY,
-    "432000").toLong * 1000
-  private val cacheDirs = if (envMap.containsKey(CACHE_DIRS_KEY)) {
-    envMap.get(CACHE_DIRS_KEY).split(",").filter(!_.equals(""))
-  } else {
-    throw new IllegalArgumentException(s"the env $CACHE_DIRS_KEY must be set")
-  }
+  private val freeSpaceThreshold = envMap.getOrDefault(FREE_SPACE_THRESHOLD_KEY, "60").toInt
+  private val fileExpiredTime = envMap.getOrDefault(FILE_EXPIRED_TIME_KEY, "604800").toLong * 1000
+  private val scheduleInterval = envMap.getOrDefault(SCHEDULE_INTERVAL, "3600").toLong * 1000
+  private val deepCleanFileExpiredTime =
+    envMap.getOrDefault(DEEP_CLEAN_FILE_EXPIRED_TIME_KEY, "432000").toLong * 1000
+  private val cacheDirs =
+    if (envMap.containsKey(CACHE_DIRS_KEY)) {
+      envMap.get(CACHE_DIRS_KEY).split(",").filter(!_.equals(""))
+    } else {
+      throw new IllegalArgumentException(s"the env $CACHE_DIRS_KEY must be set")
+    }
   private val isTesting = envMap.getOrDefault("kyuubi.testing", "false").toBoolean
   checkConfiguration()
 
@@ -74,21 +72,19 @@ object KubernetesSparkBlockCleaner extends Logging {
   private val threadPool = Executors.newFixedThreadPool(cacheDirs.length)
 
   private def checkConfiguration(): Unit = {
-    require(fileExpiredTime > 0,
-      s"the env $FILE_EXPIRED_TIME_KEY should be greater than 0")
-    require(deepCleanFileExpiredTime > 0,
+    require(fileExpiredTime > 0, s"the env $FILE_EXPIRED_TIME_KEY should be greater than 0")
+    require(
+      deepCleanFileExpiredTime > 0,
       s"the env $DEEP_CLEAN_FILE_EXPIRED_TIME_KEY should be greater than 0")
-    require(scheduleInterval > 0,
-      s"the env $SCHEDULE_INTERVAL should be greater than 0")
-    require(freeSpaceThreshold > 0 && freeSpaceThreshold < 100,
+    require(scheduleInterval > 0, s"the env $SCHEDULE_INTERVAL should be greater than 0")
+    require(
+      freeSpaceThreshold > 0 && freeSpaceThreshold < 100,
       s"the env $FREE_SPACE_THRESHOLD_KEY should between 0 and 100")
     require(cacheDirs.nonEmpty, s"the env $CACHE_DIRS_KEY must be set")
     cacheDirs.foreach { dir =>
       val path = Paths.get(dir)
-      require(Files.exists(path),
-        s"the input cache dir: $dir does not exists")
-      require(Files.isDirectory(path),
-        s"the input cache dir: $dir should be a directory")
+      require(Files.exists(path), s"the input cache dir: $dir does not exists")
+      require(Files.isDirectory(path), s"the input cache dir: $dir should be a directory")
     }
 
     info(s"finish initializing configuration, " +
@@ -111,8 +107,8 @@ object KubernetesSparkBlockCleaner extends Logging {
           subDir.listFiles.map(file => checkAndDeleteFile(file, time)).sum
         }
         // delete empty blockManager directory and all empty sub directory
-        if (blockManagerDir.listFiles().forall(
-          subDir => subDir.isDirectory && subDir.listFiles().isEmpty)) {
+        if (blockManagerDir.listFiles().forall(subDir =>
+            subDir.isDirectory && subDir.listFiles().isEmpty)) {
           blockManagerDir.listFiles().foreach(checkAndDeleteFile(_, time, true))
           checkAndDeleteFile(blockManagerDir, time, true)
         }
@@ -134,11 +130,12 @@ object KubernetesSparkBlockCleaner extends Logging {
 
   private def checkAndDeleteFile(file: File, time: Long, isDir: Boolean = false): Long = {
     debug(s"check file ${file.getName}")
-    val shouldDeleteFile = if (isDir) {
-      file.listFiles.isEmpty && (System.currentTimeMillis() - file.lastModified() > time)
-    } else {
-      System.currentTimeMillis() - file.lastModified() > time
-    }
+    val shouldDeleteFile =
+      if (isDir) {
+        file.listFiles.isEmpty && (System.currentTimeMillis() - file.lastModified() > time)
+      } else {
+        System.currentTimeMillis() - file.lastModified() > time
+      }
     val length = if (isDir) 0 else file.length()
     if (shouldDeleteFile) {
       if (file.delete()) {
@@ -154,13 +151,20 @@ object KubernetesSparkBlockCleaner extends Logging {
   import scala.sys.process._
 
   private def needToDeepClean(dir: String): Boolean = {
-    val used = (s"df $dir" #| s"grep $dir").!!
-      .split(" ").filter(_.endsWith("%")) {
-      0
-    }.replace("%", "")
-    info(s"$dir now used $used% space")
+    try {
+      val used = (s"df $dir" #| s"grep $dir").!!
+        .split(" ").filter(_.endsWith("%")) {
+          0
+        }.replace("%", "")
+      info(s"$dir now used $used% space")
 
-    used.toInt > (100 - freeSpaceThreshold)
+      used.toInt > (100 - freeSpaceThreshold)
+    } catch {
+      case NonFatal(e) =>
+        error(s"An error occurs when querying the disk $dir capacity, " +
+          s"return true to make sure the disk space will not overruns: ${e.getMessage}")
+        true
+    }
   }
 
   private def doCleanJob(dir: String): Unit = {
