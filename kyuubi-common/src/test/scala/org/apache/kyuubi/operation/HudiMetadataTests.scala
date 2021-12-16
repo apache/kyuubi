@@ -120,17 +120,22 @@ trait HudiMetadataTests extends HiveJDBCTestHelper with HudiSuiteMixin {
     val cols = dataTypes.zipWithIndex.map { case (dt, idx) => s"c$idx" -> dt }
     val (colNames, _) = cols.unzip
 
-    val reservedCols = Seq(
+    val metadataCols = Seq(
       "_hoodie_commit_time",
       "_hoodie_commit_seqno",
       "_hoodie_record_key",
       "_hoodie_partition_path",
       "_hoodie_file_name")
 
+    val defaultPkCol = "uuid"
+
+    val reservedCols = metadataCols :+ defaultPkCol
+
     val tableName = "hudi_get_col_operation"
     val ddl =
       s"""
          |CREATE TABLE IF NOT EXISTS $catalog.$defaultSchema.$tableName (
+         |  $defaultPkCol string,
          |  ${cols.map { case (cn, dt) => cn + " " + dt }.mkString(",\n")}
          |)
          |USING hudi""".stripMargin

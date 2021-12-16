@@ -109,7 +109,7 @@
         <hadoop.version>3.3.1</hadoop.version>
         <hadoop.binary.version>3.2</hadoop.binary.version>
         <hive.version>2.3.9</hive.version>
-        <hudi.version>0.9.0</hudi.version>
+        <hudi.version>0.10.0</hudi.version>
         <iceberg.name>iceberg-spark3-runtime</iceberg.name>
         <iceberg.version>0.12.1</iceberg.version>
         <jackson.version>2.12.5</jackson.version>
@@ -777,6 +777,27 @@
             </dependency>
 
             <!-- Hudi dependency  -->
+            <!--
+              We don't use hadoop-common directly, it's only for suppressing exception:
+                 Failed to execute goal org.apache.maven.plugins:maven-shade-plugin:3.2.4:shade (default) on project
+                 kyuubi-spark-sql-engine_2.12: Error creating shaded jar: Could not resolve following dependencies:
+                 [jdk.tools:jdk.tools:jar:1.6 (system)]
+
+              The issue only occurs on GitHub Action environment with Hudi 0.10.0 and JDK 11.
+              After few days digging, only found one place introduces jdk.tools,
+
+              - org.apache.hudi:hudi-common:jar:0.10.0:test
+                - org.apache.hbase:hbase-server:jar:1.2.3:test
+                  - org.apache.hadoop:hadoop-common:jar:2.5.1:test
+                    - org.apache.hadoop:hadoop-annotations:jar:2.5.1:test
+                      - jdk.tools:jdk.tools:jar:1.6:system
+            -->
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-common</artifactId>
+                <version>${hadoop.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.apache.parquet</groupId>
                 <artifactId>parquet-avro</artifactId>
@@ -794,6 +815,10 @@
                 <artifactId>hudi-spark-common_${scala.binary.version}</artifactId>
                 <version>${hudi.version}</version>
                 <exclusions>
+                    <exclusion>
+                        <groupId>org.scala-lang</groupId>
+                        <artifactId>scala-library</artifactId>
+                    </exclusion>
                     <exclusion>
                         <groupId>org.apache.hudi</groupId>
                         <artifactId>hudi-timeline-service</artifactId>
@@ -826,6 +851,10 @@
                         <groupId>org.apache.orc</groupId>
                         <artifactId>*</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>org.apache.hudi</groupId>
+                        <artifactId>hudi-aws</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -834,6 +863,10 @@
                 <artifactId>hudi-spark_${scala.binary.version}</artifactId>
                 <version>${hudi.version}</version>
                 <exclusions>
+                    <exclusion>
+                        <groupId>org.scala-lang</groupId>
+                        <artifactId>scala-library</artifactId>
+                    </exclusion>
                     <exclusion>
                         <groupId>org.apache.hudi</groupId>
                         <artifactId>hudi-spark-common_2.11</artifactId>
@@ -1677,7 +1710,8 @@
             <properties>
                 <spark.version>3.0.3</spark.version>
                 <delta.version>0.8.0</delta.version>
-                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest</maven.plugin.scalatest.exclude.tags>
+                <!-- Hudi 0.10.0 still support Spark 3.0, but need build by user with specific profile -->
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
         </profile>
 
@@ -1686,7 +1720,7 @@
             <properties>
                 <spark.version>3.1.2</spark.version>
                 <delta.version>1.0.0</delta.version>
-                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest</maven.plugin.scalatest.exclude.tags>
             </properties>
             <modules>
                 <module>dev/kyuubi-extension-spark-common</module>
