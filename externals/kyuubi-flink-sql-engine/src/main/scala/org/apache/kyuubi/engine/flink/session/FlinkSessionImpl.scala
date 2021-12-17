@@ -17,9 +17,9 @@
 
 package org.apache.kyuubi.engine.flink.session
 
+import org.apache.flink.table.client.gateway.context.SessionContext
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.engine.flink.context.SessionContext
 import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
 
 class FlinkSessionImpl(

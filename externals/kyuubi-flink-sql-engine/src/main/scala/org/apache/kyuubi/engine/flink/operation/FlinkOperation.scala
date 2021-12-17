@@ -21,10 +21,10 @@ import java.io.IOException
 
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 
+import org.apache.flink.table.client.gateway.context.SessionContext
 import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
-import org.apache.kyuubi.engine.flink.context.SessionContext
 import org.apache.kyuubi.engine.flink.result.ResultSet
 import org.apache.kyuubi.engine.flink.schema.RowSet
 import org.apache.kyuubi.engine.flink.session.FlinkSessionImpl
