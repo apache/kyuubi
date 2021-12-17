@@ -17,13 +17,13 @@
 
 package org.apache.kyuubi.engine.flink.session
 
+import org.apache.flink.table.client.gateway.context.DefaultContext
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
-import org.apache.kyuubi.engine.flink.context.EngineContext
 import org.apache.kyuubi.engine.flink.operation.FlinkSQLOperationManager
 import org.apache.kyuubi.session.{SessionHandle, SessionManager}
 
-class FlinkSQLSessionManager(engineContext: EngineContext)
+class FlinkSQLSessionManager(engineContext: DefaultContext)
   extends SessionManager("FlinkSQLSessionManager") {
 
   override protected def isServer: Boolean = false

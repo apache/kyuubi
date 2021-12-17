@@ -19,18 +19,13 @@ package org.apache.kyuubi.engine.flink.operation
 
 import java.util.Collections
 
-import scala.collection.JavaConverters.mapAsJavaMapConverter
-
 import org.apache.flink.client.cli.DefaultCLI
-import org.apache.flink.client.deployment.DefaultClusterClientServiceLoader
 import org.apache.flink.configuration.Configuration
+import org.apache.flink.table.client.gateway.context.{DefaultContext, SessionContext}
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.engine.flink.config.EngineEnvironment
-import org.apache.kyuubi.engine.flink.config.entries.ExecutionEntry
-import org.apache.kyuubi.engine.flink.context.{EngineContext, SessionContext}
 import org.apache.kyuubi.engine.flink.session.{FlinkSessionImpl, FlinkSQLSessionManager}
 import org.apache.kyuubi.operation.FetchOrientation
 
@@ -39,22 +34,15 @@ class FlinkOperationSuite extends KyuubiFunSuite {
   val user: String = Utils.currentUser
   val password = "anonymous"
 
-  var engineEnv = new EngineEnvironment
-  var engineContext = new EngineContext(
-    engineEnv,
+  var engineContext = new DefaultContext(
     Collections.emptyList(),
     new Configuration,
-    new DefaultCLI,
-    new DefaultClusterClientServiceLoader)
+    Collections.singletonList(new DefaultCLI))
   var sessionContext: SessionContext = _
   var flinkSession: FlinkSessionImpl = _
 
   override def beforeAll(): Unit = {
-    engineEnv = EngineEnvironment.enrich(
-      engineContext.getEngineEnv,
-      Map(EngineEnvironment.EXECUTION_ENTRY + "." + ExecutionEntry.EXECUTION_TYPE
-        -> ExecutionEntry.EXECUTION_TYPE_VALUE_BATCH).asJava)
-    sessionContext = new SessionContext(engineEnv, engineContext)
+    sessionContext = SessionContext.create(engineContext, "test-session-id");
     val flinkSQLSessionManager = new FlinkSQLSessionManager(engineContext)
     flinkSQLSessionManager.initialize(KyuubiConf())
     flinkSession = new FlinkSessionImpl(
