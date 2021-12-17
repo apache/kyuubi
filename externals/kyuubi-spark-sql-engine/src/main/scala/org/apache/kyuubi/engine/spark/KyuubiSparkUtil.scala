@@ -26,6 +26,9 @@ import org.apache.kyuubi.Utils
 
 object KyuubiSparkUtil {
 
+  final val SPARK_SCHEDULER_POOL_KEY = "spark.scheduler.pool"
+  final val SPARK_SQL_EXECUTION_ID_KEY = "spark.sql.execution.id"
+
   def globalSparkContext: SparkContext = SparkSession.active.sparkContext
 
   def engineId: String =

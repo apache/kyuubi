@@ -19,13 +19,13 @@ package org.apache.kyuubi.engine.spark.repl
 
 import java.io.{ByteArrayOutputStream, File}
 
-import scala.collection.mutable.ArrayBuffer
 import scala.tools.nsc.Settings
+import scala.tools.nsc.interpreter.IR
 import scala.tools.nsc.interpreter.JPrintWriter
 
 import org.apache.spark.SparkContext
 import org.apache.spark.repl.{Main, SparkILoop}
-import org.apache.spark.sql.{Dataset, Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.util.MutableURLClassLoader
 
 private[spark] case class KyuubiSparkILoop private (
@@ -33,8 +33,7 @@ private[spark] case class KyuubiSparkILoop private (
     output: ByteArrayOutputStream)
   extends SparkILoop(None, new JPrintWriter(output)) {
 
-  // TODO: this is a little hacky
-  val results = new ArrayBuffer[Dataset[Row]]()
+  val result = new DataFrameHolder(spark)
 
   private def initialize(): Unit = {
     settings = new Settings
@@ -51,7 +50,7 @@ private[spark] case class KyuubiSparkILoop private (
     try {
       this.compilerClasspath
       this.ensureClassLoader()
-      var classLoader = Thread.currentThread().getContextClassLoader
+      var classLoader: ClassLoader = Thread.currentThread().getContextClassLoader
       while (classLoader != null) {
         classLoader match {
           case loader: MutableURLClassLoader =>
@@ -66,6 +65,9 @@ private[spark] case class KyuubiSparkILoop private (
             classLoader = classLoader.getParent
         }
       }
+
+      this.addUrlsToClassPath(
+        classOf[DataFrameHolder].getProtectionDomain.getCodeSource.getLocation)
     } finally {
       Thread.currentThread().setContextClassLoader(currentClassLoader)
     }
@@ -86,14 +88,17 @@ private[spark] case class KyuubiSparkILoop private (
 
       // for feeding results to client, e.g. beeline
       this.bind(
-        "results",
-        "scala.collection.mutable.ArrayBuffer[" +
-          "org.apache.spark.sql.Dataset[org.apache.spark.sql.Row]]",
-        results)
+        "result",
+        classOf[DataFrameHolder].getCanonicalName,
+        result)
     }
   }
 
-  def interpretWithRedirectOutError(statement: String): scala.tools.nsc.interpreter.IR.Result = {
+  def getResult(statementId: String): DataFrame = result.get(statementId)
+
+  def clearResult(statementId: String): Unit = result.unset(statementId)
+
+  def interpretWithRedirectOutError(statement: String): IR.Result = {
     Console.withOut(output) {
       Console.withErr(output) {
         this.interpret(statement)

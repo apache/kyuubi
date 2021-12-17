@@ -32,8 +32,8 @@ import org.apache.kyuubi.session.Session
  * Support executing Scala Script with or without common Spark APIs, only support running in sync
  * mode, as an operation may [[Incomplete]] and wait for others to make [[Success]].
  *
- * [[KyuubiSparkILoop.results]] is exposed as a [[org.apache.spark.sql.DataFrame]] to users in repl
- * to transfer result they wanted to client side.
+ * [[KyuubiSparkILoop.result]] is exposed as a [[org.apache.spark.sql.DataFrame]] holder to users
+ * in repl to transfer result they wanted to client side.
  *
  * @param session parent session
  * @param repl Scala Interpreter
@@ -56,20 +56,26 @@ class ExecuteScala(
     }
   }
 
-  override protected def runInternal(): Unit = {
+  override protected def runInternal(): Unit = withLocalProperties {
     try {
       OperationLog.setCurrentOperationLog(operationLog)
-      spark.sparkContext.setJobGroup(statementId, statement)
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
+      val legacyOutput = repl.getOutput
+      if (legacyOutput.nonEmpty) {
+        warn(s"Clearing legacy output from last interpreting:\n $legacyOutput")
+      }
       repl.interpretWithRedirectOutError(statement) match {
         case Success =>
-          iter =
-            if (repl.results.nonEmpty) {
-              result = repl.results.remove(0)
+          iter = {
+            result = repl.getResult(statementId)
+            if (result != null) {
               new ArrayFetchIterator[Row](result.collect())
             } else {
+              // TODO (#1498): Maybe we shall pass the output through operation log
+              // but some clients may not support operation log
               new ArrayFetchIterator[Row](Array(Row(repl.getOutput)))
             }
+          }
         case Error =>
           throw KyuubiSQLException(s"Interpret error:\n$statement\n ${repl.getOutput}")
         case Incomplete =>
@@ -78,7 +84,7 @@ class ExecuteScala(
     } catch {
       onError(cancel = true)
     } finally {
-      spark.sparkContext.clearJobGroup()
+      repl.clearResult(statementId)
     }
   }
 }

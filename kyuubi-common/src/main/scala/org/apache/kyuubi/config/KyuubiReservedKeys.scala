@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi
+package org.apache.kyuubi.config
 
-object KyuubiSparkUtils {
+object KyuubiReservedKeys {
   final val KYUUBI_SESSION_USER_KEY = "kyuubi.session.user"
   final val KYUUBI_STATEMENT_ID_KEY = "kyuubi.statement.id"
-  final val SPARK_SCHEDULER_POOL_KEY = "spark.scheduler.pool"
-  final val SPARK_SQL_EXECUTION_ID_KEY = "spark.sql.execution.id"
 }

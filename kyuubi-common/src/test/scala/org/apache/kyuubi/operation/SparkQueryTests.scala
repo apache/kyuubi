@@ -444,7 +444,7 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
       assert(rs2.getString(1).endsWith("5"))
 
       // continue
-      val rs3 = statement.executeQuery("results += df")
+      val rs3 = statement.executeQuery("result.set(df)")
       for (i <- Range(0, 10, 2)) {
         assert(rs3.next)
         assert(rs3.getInt(1) === i)
@@ -480,7 +480,7 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
       assert(rs5.getString(1) startsWith "df: org.apache.spark.sql.DataFrame")
 
       // re-assign
-      val rs6 = statement.executeQuery("results += df")
+      val rs6 = statement.executeQuery("result.set(df)")
       for (i <- Range(0, 10, 2)) {
         assert(rs6.next)
         assert(rs6.getInt(2) === i + 1)

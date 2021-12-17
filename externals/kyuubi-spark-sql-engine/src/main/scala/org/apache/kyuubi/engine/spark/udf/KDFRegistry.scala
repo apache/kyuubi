@@ -25,7 +25,7 @@ import org.apache.spark.sql.expressions.UserDefinedFunction
 import org.apache.spark.sql.functions.udf
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
-import org.apache.kyuubi.KyuubiSparkUtils.KYUUBI_SESSION_USER_KEY
+import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_USER_KEY
 
 object KDFRegistry {
 
