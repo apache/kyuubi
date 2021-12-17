@@ -114,4 +114,12 @@ object KyuubiSQLConf {
       .version("1.4.0")
       .intConf
       .createOptional
+
+  val DROP_IGNORE_NONEXISTENT =
+    buildConf("spark.sql.analyzer.drop.ignorenonexistent")
+      .doc("Do not report an error if DROP DATABASE/TABLE/VIEW/Function/Partition specifies " +
+        "a non-existent database/table/view/function/partition")
+      .version("1.5.0")
+      .booleanConf
+      .createWithDefault(false)
 }
