@@ -28,17 +28,16 @@ case class DropIgnoreNonexistent(session: SparkSession) extends Rule[LogicalPlan
   override def apply(plan: LogicalPlan): LogicalPlan = {
     if (conf.getConf(DROP_IGNORE_NONEXISTENT)) {
       plan match {
-        case i @ AlterTableDropPartitionCommand(tableName, specs, ifExists, purge, retainData)
-          if !ifExists =>
-          i.copy(tableName, specs, true, purge, retainData)
-        case i @ DropTable(child, ifExists, purge) if !ifExists =>
-          i.copy(child, true, purge)
-        case i @ DropTableCommand(tableName, ifExists, isView, purge) if !ifExists =>
-          i.copy(tableName, true, isView, purge)
-        case i @ DropDatabaseCommand(databaseName, ifExists, cascade) if !ifExists =>
-          i.copy(databaseName, true, cascade)
-        case i @ DropFunctionCommand(databaseName, functionName, ifExists, isTemp) if !ifExists =>
-          i.copy(databaseName, functionName, true, isTemp)
+        case i @ AlterTableDropPartitionCommand(_, _, ifExists, _, _) if !ifExists =>
+          i.copy(ifExists = true)
+        case i @ DropTable(_, ifExists, _) if !ifExists =>
+          i.copy(ifExists = true)
+        case i @ DropTableCommand(_, ifExists, _, _) if !ifExists =>
+          i.copy(ifExists = true)
+        case i @ DropDatabaseCommand(_, ifExists, _) if !ifExists =>
+          i.copy(ifExists = true)
+        case i @ DropFunctionCommand(_, _, ifExists, _) if !ifExists =>
+          i.copy(ifExists = true)
         case _ => plan
       }
     } else {
