@@ -88,7 +88,7 @@ private[v1] class OperationsResource extends ApiRequestContext {
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON)),
     description =
-      "get resultSet metadata")
+      "get result set metadata")
   @GET
   @Path("{operationHandle}/resultsetmetadata")
   def getResultSetMetadata(
@@ -105,7 +105,7 @@ private[v1] class OperationsResource extends ApiRequestContext {
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(
-          s"Error getting resultSet metadata for operation handle $operationHandleStr")
+          s"Error getting result set metadata for operation handle $operationHandleStr")
     }
   }
 }
