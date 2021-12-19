@@ -42,6 +42,11 @@ class MetricsSystem extends CompositeService("MetricsSystem") {
     counter.dec(1L)
   }
 
+  def updateHistogram(key: String, value: Long): Unit = {
+    val histogram = registry.histogram(key)
+    histogram.update(value)
+  }
+
   def registerGauge[T](name: String, value: => T, default: T): Unit = {
     registry.register(
       MetricRegistry.name(name),

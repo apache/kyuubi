@@ -135,7 +135,8 @@ class KyuubiServer(name: String) extends Serverable(name) {
 
   def this() = this(classOf[KyuubiServer].getSimpleName)
 
-  override val backendService: AbstractBackendService = new KyuubiBackendService()
+  override val backendService: AbstractBackendService =
+    new KyuubiBackendService() with BackendServiceTimeMetric
 
   override lazy val frontendServices: Seq[AbstractFrontendService] =
     conf.get(FRONTEND_PROTOCOLS).map(FrontendProtocols.withName).map {
