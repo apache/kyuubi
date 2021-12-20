@@ -30,7 +30,6 @@ class DropIgnoreNonexistentSuite extends KyuubiSparkSQLExtensionTest {
       assert(df1.queryExecution.analyzed.asInstanceOf[DropDatabaseCommand].ifExists == true)
 
       // drop nonexistent table
-      // related org.apache.spark.sql.catalyst.analysis.ResolveNoopDropTable
       val df2 = sql("DROP TABLE nonexistent_table")
       assert(df2.queryExecution.analyzed.isInstanceOf[NoopCommand])
 
