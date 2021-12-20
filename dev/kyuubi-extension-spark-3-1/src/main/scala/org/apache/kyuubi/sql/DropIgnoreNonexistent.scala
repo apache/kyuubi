@@ -17,7 +17,8 @@
 package org.apache.kyuubi.sql
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.plans.logical.{DropTable, LogicalPlan}
+import org.apache.spark.sql.catalyst.analysis.UnresolvedTableOrView
+import org.apache.spark.sql.catalyst.plans.logical.{DropTable, LogicalPlan, NoopDropTable}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.{AlterTableDropPartitionCommand, DropDatabaseCommand, DropFunctionCommand, DropTableCommand}
 
@@ -30,14 +31,15 @@ case class DropIgnoreNonexistent(session: SparkSession) extends Rule[LogicalPlan
       plan match {
         case i @ AlterTableDropPartitionCommand(_, _, false, _, _) =>
           i.copy(ifExists = true)
-        case i @ DropTable(_, false, _) =>
-          i.copy(ifExists = true)
         case i @ DropTableCommand(_, false, _, _) =>
           i.copy(ifExists = true)
         case i @ DropDatabaseCommand(_, false, _) =>
           i.copy(ifExists = true)
         case i @ DropFunctionCommand(_, _, false, _) =>
           i.copy(ifExists = true)
+        // like: org.apache.spark.sql.catalyst.analysis.ResolveNoopDropTable
+        case DropTable(u: UnresolvedTableOrView, false, _) =>
+          NoopDropTable(u.multipartIdentifier)
         case _ => plan
       }
     } else {

@@ -34,12 +34,12 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
     KyuubiSparkSQLCommonExtension.injectCommonExtensions(extensions)
     // a help rule for ForcedMaxOutputRowsRule
     extensions.injectResolutionRule(MarkAggregateOrderRule)
-    extensions.injectResolutionRule(DropIgnoreNonexistent)
 
     extensions.injectPostHocResolutionRule(KyuubiSqlClassification)
     extensions.injectPostHocResolutionRule(RepartitionBeforeWritingDatasource)
     extensions.injectPostHocResolutionRule(RepartitionBeforeWritingHive)
     extensions.injectPostHocResolutionRule(ForcedMaxOutputRowsRule)
+    extensions.injectPostHocResolutionRule(DropIgnoreNonexistent)
 
     extensions.injectPlannerStrategy(MaxPartitionStrategy)
   }
