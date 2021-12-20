@@ -18,11 +18,13 @@
 package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.operation.DeltaMetadataTests
+import org.apache.kyuubi.operation.{DeltaMetadataTests, DeltaRowLevelOperationTests}
 import org.apache.kyuubi.tags.DeltaTest
 
 @DeltaTest
-class SparkDeltaOperationSuite extends WithSparkSQLEngine with DeltaMetadataTests {
+class SparkDeltaOperationSuite extends WithSparkSQLEngine
+  with DeltaMetadataTests
+  with DeltaRowLevelOperationTests {
 
   override protected def jdbcUrl: String = getJdbcUrl
 
