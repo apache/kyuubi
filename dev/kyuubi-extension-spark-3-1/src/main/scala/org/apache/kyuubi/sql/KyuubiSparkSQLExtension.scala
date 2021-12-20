@@ -39,6 +39,7 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
     extensions.injectPostHocResolutionRule(RepartitionBeforeWritingDatasource)
     extensions.injectPostHocResolutionRule(RepartitionBeforeWritingHive)
     extensions.injectPostHocResolutionRule(ForcedMaxOutputRowsRule)
+    extensions.injectPostHocResolutionRule(DropIgnoreNonexistent)
 
     extensions.injectPlannerStrategy(MaxPartitionStrategy)
   }
