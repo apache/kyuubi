@@ -19,6 +19,8 @@ package org.apache.kyuubi.sql
 
 import org.apache.spark.sql.SparkSessionExtensions
 
+import org.apache.kyuubi.sql.watchdog.{ForcedMaxOutputRowsRule, MarkAggregateOrderRule, MaxPartitionStrategy}
+
 // scalastyle:off line.size.limit
 /**
  * Depend on Spark SQL Extension framework, we can use this extension follow steps
@@ -33,5 +35,11 @@ class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
     extensions.injectPostHocResolutionRule(RebalanceBeforeWritingDatasource)
     extensions.injectPostHocResolutionRule(RebalanceBeforeWritingHive)
     extensions.injectPostHocResolutionRule(DropIgnoreNonexistent)
+
+    // watchdog extension
+    // a help rule for ForcedMaxOutputRowsRule
+    extensions.injectResolutionRule(MarkAggregateOrderRule)
+    extensions.injectPostHocResolutionRule(ForcedMaxOutputRowsRule)
+    extensions.injectPlannerStrategy(MaxPartitionStrategy)
   }
 }
