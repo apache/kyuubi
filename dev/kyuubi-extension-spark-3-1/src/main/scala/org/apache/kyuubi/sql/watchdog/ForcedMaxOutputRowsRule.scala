@@ -58,8 +58,8 @@ case class MarkAggregateOrderRule(sparkSession: SparkSession) extends Rule[Logic
      * ORDER BY c1
      * */
     case a: Aggregate
-      if a.aggregateExpressions
-        .exists(x => x.resolved && x.name.equals("aggOrder")) =>
+        if a.aggregateExpressions
+          .exists(x => x.resolved && x.name.equals("aggOrder")) =>
       markChildAggregate(a)
       plan
     case _ =>
