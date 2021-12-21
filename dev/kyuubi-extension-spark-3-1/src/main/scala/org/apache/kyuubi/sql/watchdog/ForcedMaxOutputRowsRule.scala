@@ -18,13 +18,9 @@
 package org.apache.kyuubi.sql.watchdog
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.analysis.AnalysisContext
-import org.apache.spark.sql.catalyst.dsl.expressions._
-import org.apache.spark.sql.catalyst.expressions.Alias
-import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, Distinct, Filter, Limit, LogicalPlan, Project, RepartitionByExpression, Sort, Union}
+import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.trees.TreeNodeTag
-import org.apache.spark.sql.execution.command.DataWritingCommand
 
 import org.apache.kyuubi.sql.KyuubiSQLConf
 
@@ -33,81 +29,18 @@ object ForcedMaxOutputRowsConstraint {
   val CHILD_AGGREGATE_FLAG: String = "__kyuubi_child_agg__"
 }
 
-/*
- * Add ForcedMaxOutputRows rule for output rows limitation
- * to avoid huge output rows of non_limit query unexpectedly
- * mainly applied to cases as below:
- *
- * case 1:
- * {{{
- *   SELECT [c1, c2, ...]
- * }}}
- *
- * case 2:
- * {{{
- *   WITH CTE AS (
- *   ...)
- * SELECT [c1, c2, ...] FROM CTE ...
- * }}}
- *
- * The Logical Rule add a GlobalLimit node before root project
- * */
-case class ForcedMaxOutputRowsRule(session: SparkSession) extends Rule[LogicalPlan] {
-
-  private def isChildAggregate(a: Aggregate): Boolean = a
-    .aggregateExpressions.exists(p =>
+case class ForcedMaxOutputRowsRule(sparkSession: SparkSession) extends ForcedMaxOutputRowsBase {
+  override protected def isChildAggregate(a: Aggregate): Boolean =
+    a.aggregateExpressions.exists(p =>
       p.getTagValue(ForcedMaxOutputRowsConstraint.CHILD_AGGREGATE)
         .contains(ForcedMaxOutputRowsConstraint.CHILD_AGGREGATE_FLAG))
-
-  private def isView: Boolean = {
-    val nestedViewDepth = AnalysisContext.get.nestedViewDepth
-    nestedViewDepth > 0
-  }
-
-  private def canInsertLimitInner(p: LogicalPlan): Boolean = p match {
-
-    case Aggregate(_, Alias(_, "havingCondition") :: Nil, _) => false
-    case agg: Aggregate => !isChildAggregate(agg)
-    case _: RepartitionByExpression => true
-    case _: Distinct => true
-    case _: Filter => true
-    case _: Project => true
-    case Limit(_, _) => true
-    case _: Sort => true
-    case Union(children, _, _) =>
-      if (children.exists(_.isInstanceOf[DataWritingCommand])) {
-        false
-      } else {
-        true
-      }
-    case _ => false
-
-  }
-
-  private def canInsertLimit(p: LogicalPlan, maxOutputRowsOpt: Option[Int]): Boolean = {
-
-    maxOutputRowsOpt match {
-      case Some(forcedMaxOutputRows) => canInsertLimitInner(p) &&
-          !p.maxRows.exists(_ <= forcedMaxOutputRows) &&
-          !isView
-      case None => false
-    }
-  }
-
-  override def apply(plan: LogicalPlan): LogicalPlan = {
-    val maxOutputRowsOpt = conf.getConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS)
-    plan match {
-      case p if p.resolved && canInsertLimit(p, maxOutputRowsOpt) =>
-        Limit(
-          maxOutputRowsOpt.get,
-          plan)
-      case _ => plan
-    }
-  }
-
 }
 
-case class MarkAggregateOrderRule(session: SparkSession) extends Rule[LogicalPlan] {
+/**
+ * After SPARK-35712, we don't need mark child aggregate for spark 3.2.x or higher version,
+ * for more detail, please see https://github.com/apache/spark/pull/32470
+ */
+case class MarkAggregateOrderRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
   private def markChildAggregate(a: Aggregate): Unit = {
     // mark child aggregate
@@ -116,7 +49,7 @@ case class MarkAggregateOrderRule(session: SparkSession) extends Rule[LogicalPla
       ForcedMaxOutputRowsConstraint.CHILD_AGGREGATE_FLAG))
   }
 
-  private def findAndMarkChildAggregate(plan: LogicalPlan): LogicalPlan = plan match {
+  protected def findAndMarkChildAggregate(plan: LogicalPlan): LogicalPlan = plan match {
     /*
      * The case mainly process order not aggregate column but grouping column as below
      * SELECT c1, COUNT(*) as cnt
@@ -129,7 +62,6 @@ case class MarkAggregateOrderRule(session: SparkSession) extends Rule[LogicalPla
           .exists(x => x.resolved && x.name.equals("aggOrder")) =>
       markChildAggregate(a)
       plan
-
     case _ =>
       plan.children.foreach(_.foreach {
         case agg: Aggregate => markChildAggregate(agg)

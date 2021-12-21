@@ -32,15 +32,16 @@ import org.apache.kyuubi.sql.watchdog.{ForcedMaxOutputRowsRule, MarkAggregateOrd
 class KyuubiSparkSQLExtension extends (SparkSessionExtensions => Unit) {
   override def apply(extensions: SparkSessionExtensions): Unit = {
     KyuubiSparkSQLCommonExtension.injectCommonExtensions(extensions)
-    // a help rule for ForcedMaxOutputRowsRule
-    extensions.injectResolutionRule(MarkAggregateOrderRule)
 
     extensions.injectPostHocResolutionRule(KyuubiSqlClassification)
     extensions.injectPostHocResolutionRule(RepartitionBeforeWritingDatasource)
     extensions.injectPostHocResolutionRule(RepartitionBeforeWritingHive)
-    extensions.injectPostHocResolutionRule(ForcedMaxOutputRowsRule)
     extensions.injectPostHocResolutionRule(DropIgnoreNonexistent)
 
+    // watchdog extension
+    // a help rule for ForcedMaxOutputRowsRule
+    extensions.injectResolutionRule(MarkAggregateOrderRule)
+    extensions.injectPostHocResolutionRule(ForcedMaxOutputRowsRule)
     extensions.injectPlannerStrategy(MaxPartitionStrategy)
   }
 }
