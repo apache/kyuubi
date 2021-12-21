@@ -27,7 +27,7 @@ import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
-import org.apache.kyuubi.engine.spark.events.{EventLoggingService, SparkStatementEvent}
+import org.apache.kyuubi.engine.spark.events.{EventLoggingService, SparkOperationEvent}
 import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationType}
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.log.OperationLog
@@ -49,16 +49,7 @@ class ExecuteStatement(
 
   private val operationListener: SQLOperationListener = new SQLOperationListener(this, spark)
 
-  val statementEvent: SparkStatementEvent = SparkStatementEvent(
-    session.user,
-    statementId,
-    statement,
-    spark.sparkContext.applicationId,
-    session.handle.identifier.toString,
-    lastAccessTime,
-    state.toString,
-    lastAccessTime)
-  EventLoggingService.onEvent(statementEvent)
+  EventLoggingService.onEvent(SparkOperationEvent(this))
 
   override protected def resultSchema: StructType = {
     if (result == null || result.schema.isEmpty) {
@@ -87,7 +78,6 @@ class ExecuteStatement(
       spark.sparkContext.addSparkListener(operationListener)
       result = spark.sql(statement)
       // TODO #921: COMPILED need consider eagerly executed commands
-      statementEvent.queryExecution = result.queryExecution.toString()
       setState(OperationState.COMPILED)
       debug(result.queryExecution)
       iter =
@@ -156,17 +146,6 @@ class ExecuteStatement(
 
   override def setState(newState: OperationState): Unit = {
     super.setState(newState)
-    statementEvent.state = newState.toString
-    statementEvent.eventTime = lastAccessTime
-    if (newState == OperationState.ERROR || newState == OperationState.FINISHED) {
-      statementEvent.completeTime = System.currentTimeMillis()
-    }
-    EventLoggingService.onEvent(statementEvent)
-  }
-
-  override def setOperationException(opEx: KyuubiSQLException): Unit = {
-    super.setOperationException(opEx)
-    statementEvent.exception = opEx.toString
-    EventLoggingService.onEvent(statementEvent)
+    EventLoggingService.onEvent(SparkOperationEvent(this, Option(result)))
   }
 }

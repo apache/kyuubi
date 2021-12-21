@@ -92,23 +92,23 @@ class EngineEventsStore(conf: KyuubiConf) {
   /**
    * store all statements events.
    */
-  val statements = new ConcurrentHashMap[String, SparkStatementEvent]
+  val statements = new ConcurrentHashMap[String, SparkOperationEvent]
 
   /**
    * get all statement events order by startTime
    */
-  def getStatementList: Seq[SparkStatementEvent] = {
+  def getStatementList: Seq[SparkOperationEvent] = {
     statements.values().asScala.toSeq.sortBy(_.createTime)
   }
 
-  def getStatement(statementId: String): Option[SparkStatementEvent] = {
+  def getStatement(statementId: String): Option[SparkOperationEvent] = {
     Option(statements.get(statementId))
   }
 
   /**
    * save statement events and check the capacity threshold
    */
-  def saveStatement(statementEvent: SparkStatementEvent): Unit = {
+  def saveStatement(statementEvent: SparkOperationEvent): Unit = {
     statements.put(statementEvent.statementId, statementEvent)
     checkStatementCapacity()
   }
