@@ -74,8 +74,8 @@ case class ResultSetMetaData(columns: Seq[ColumnDesc])
 
 case class ColumnDesc(
     columnName: String,
-    comment: String,
-    position: Int,
     dataType: String,
+    columnIndex: Int,
     precision: Int,
-    scale: Int)
+    scale: Int,
+    comment: String)

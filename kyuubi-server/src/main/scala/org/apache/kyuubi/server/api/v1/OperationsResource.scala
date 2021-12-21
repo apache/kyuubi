@@ -109,11 +109,11 @@ private[v1] class OperationsResource extends ApiRequestContext {
           }
           ColumnDesc(
             c.getColumnName,
-            c.getComment,
-            c.getPosition,
             tPrimitiveTypeEntry.getType.toString,
+            c.getPosition,
             precision,
-            scale)
+            scale,
+            c.getComment)
         }))
     } catch {
       case NonFatal(_) =>
