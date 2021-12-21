@@ -22,8 +22,10 @@ import org.apache.curator.framework.imps.CuratorFrameworkState
 import org.apache.curator.retry.ExponentialBackoffRetry
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.Utils.findLocalInetAddress
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.ServiceState._
+import org.apache.kyuubi.zookeeper.ZookeeperConf.{ZK_CLIENT_PORT, ZK_CLIENT_PORT_ADDRESS, ZK_REPLACE_HOST_BY_IP}
 
 class EmbeddedZookeeperSuite extends KyuubiFunSuite {
 
@@ -61,5 +63,30 @@ class EmbeddedZookeeperSuite extends KyuubiFunSuite {
 
     assert(zkClient.getState === CuratorFrameworkState.STARTED)
     assert(zkClient.getZookeeperClient.blockUntilConnectedOrTimedOut())
+  }
+
+  test("using ip instead of host to bind") {
+    val zkServer = new EmbeddedZookeeper()
+    zkServer.initialize(KyuubiConf().set(ZK_REPLACE_HOST_BY_IP, true).set(ZK_CLIENT_PORT, 0))
+    zkServer.start()
+    assert(zkServer.getConnectString.contains(s"${findLocalInetAddress.getCanonicalHostName}"))
+    zkServer.stop()
+  }
+
+  test("use zookeeper.embedded.client.port.address cover default") {
+    val zkServer = new EmbeddedZookeeper()
+    // cover default hostname
+    val conf = KyuubiConf()
+      .set(ZK_CLIENT_PORT, 0)
+      .set(ZK_CLIENT_PORT_ADDRESS, "localhost")
+    zkServer.initialize(conf)
+    assert(zkServer.getConnectString.contains("localhost"))
+    zkServer.start()
+    zkServer.stop()
+    // cover default ip
+    conf.set(ZK_REPLACE_HOST_BY_IP, true)
+    zkServer.initialize(conf)
+    assert(zkServer.getConnectString.contains("localhost"))
+    zkServer.stop()
   }
 }
