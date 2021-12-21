@@ -26,6 +26,7 @@ import scala.util.control.NonFatal
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.apache.hive.service.rpc.thrift.TTypeQualifierValue
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.events.KyuubiOperationEvent
@@ -96,12 +97,24 @@ private[v1] class OperationsResource extends ApiRequestContext {
     try {
       val operationHandle = parseOperationHandle(operationHandleStr)
       ResultSetMetaData(
-        backendService.getResultSetMetadata(operationHandle).getColumns.asScala.map(c =>
+        backendService.getResultSetMetadata(operationHandle).getColumns.asScala.map(c => {
+          val tPrimitiveTypeEntry = c.getTypeDesc.getTypes.get(0).getPrimitiveEntry
+          var precision = 0
+          var scale = 0
+          if (tPrimitiveTypeEntry.getTypeQualifiers != null) {
+            val qualifiers = tPrimitiveTypeEntry.getTypeQualifiers.getQualifiers
+            val defaultValue = TTypeQualifierValue.i32Value(0);
+            precision = qualifiers.getOrDefault("precision", defaultValue).getI32Value
+            scale = qualifiers.getOrDefault("scale", defaultValue).getI32Value
+          }
           ColumnDesc(
             c.getColumnName,
             c.getComment,
             c.getPosition,
-            c.getTypeDesc.getTypes.get(0).getPrimitiveEntry.getType.toString)))
+            tPrimitiveTypeEntry.getType.toString,
+            precision,
+            scale)
+        }))
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(

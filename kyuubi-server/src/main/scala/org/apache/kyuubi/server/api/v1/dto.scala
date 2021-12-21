@@ -76,4 +76,6 @@ case class ColumnDesc(
     columnName: String,
     comment: String,
     position: Int,
-    typeDesc: String)
+    dataType: String,
+    precision: Int,
+    scale: Int)
