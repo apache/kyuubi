@@ -18,9 +18,12 @@
 package org.apache.kyuubi.sql.watchdog
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, WithCTE}
+import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, LogicalPlan, WithCTE}
 
 case class ForcedMaxOutputRowsRule(sparkSession: SparkSession) extends ForcedMaxOutputRowsBase {
+
+  override protected def isChildAggregate(a: Aggregate): Boolean = false
+
   override protected def canInsertLimitInner(p: LogicalPlan): Boolean = p match {
     case WithCTE(plan, _) => this.canInsertLimitInner(plan)
     case plan: LogicalPlan => super.canInsertLimitInner(plan)
@@ -31,14 +34,5 @@ case class ForcedMaxOutputRowsRule(sparkSession: SparkSession) extends ForcedMax
       case WithCTE(plan, _) => this.canInsertLimit(plan, maxOutputRowsOpt)
       case _ => super.canInsertLimit(p, maxOutputRowsOpt)
     }
-  }
-}
-
-case class MarkAggregateOrderRule(sparkSession: SparkSession) extends MarkAggregateOrderBase {
-  override protected def findAndMarkChildAggregate(plan: LogicalPlan): LogicalPlan = plan match {
-    case withCTE @ WithCTE(plan, _) =>
-      withCTE.copy(plan = this.findAndMarkChildAggregate(plan))
-    case _ =>
-      super.findAndMarkChildAggregate(plan)
   }
 }

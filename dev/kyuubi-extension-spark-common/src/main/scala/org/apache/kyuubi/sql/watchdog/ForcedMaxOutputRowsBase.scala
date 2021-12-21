@@ -22,15 +22,9 @@ import org.apache.spark.sql.catalyst.dsl.expressions._
 import org.apache.spark.sql.catalyst.expressions.Alias
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.catalyst.trees.TreeNodeTag
 import org.apache.spark.sql.execution.command.DataWritingCommand
 
 import org.apache.kyuubi.sql.KyuubiSQLConf
-
-object ForcedMaxOutputRowsConstraint {
-  val CHILD_AGGREGATE: TreeNodeTag[String] = TreeNodeTag[String]("__kyuubi_child_agg__")
-  val CHILD_AGGREGATE_FLAG: String = "__kyuubi_child_agg__"
-}
 
 /*
  * Add ForcedMaxOutputRows rule for output rows limitation
@@ -53,10 +47,7 @@ object ForcedMaxOutputRowsConstraint {
  * */
 trait ForcedMaxOutputRowsBase extends Rule[LogicalPlan] {
 
-  protected def isChildAggregate(a: Aggregate): Boolean = a
-    .aggregateExpressions.exists(p =>
-      p.getTagValue(ForcedMaxOutputRowsConstraint.CHILD_AGGREGATE)
-        .contains(ForcedMaxOutputRowsConstraint.CHILD_AGGREGATE_FLAG))
+  protected def isChildAggregate(a: Aggregate): Boolean
 
   protected def isView: Boolean = {
     val nestedViewDepth = AnalysisContext.get.nestedViewDepth
@@ -99,43 +90,5 @@ trait ForcedMaxOutputRowsBase extends Rule[LogicalPlan] {
           plan)
       case _ => plan
     }
-  }
-
-}
-
-trait MarkAggregateOrderBase extends Rule[LogicalPlan] {
-
-  private def markChildAggregate(a: Aggregate): Unit = {
-    // mark child aggregate
-    a.aggregateExpressions.filter(_.resolved).foreach(_.setTagValue(
-      ForcedMaxOutputRowsConstraint.CHILD_AGGREGATE,
-      ForcedMaxOutputRowsConstraint.CHILD_AGGREGATE_FLAG))
-  }
-
-  protected def findAndMarkChildAggregate(plan: LogicalPlan): LogicalPlan = plan match {
-    /*
-     * The case mainly process order not aggregate column but grouping column as below
-     * SELECT c1, COUNT(*) as cnt
-     * FROM t1
-     * GROUP BY c1
-     * ORDER BY c1
-     * */
-    case a: Aggregate
-        if a.aggregateExpressions
-          .exists(x => x.resolved && x.name.equals("aggOrder")) =>
-      markChildAggregate(a)
-      plan
-    case _ =>
-      plan.children.foreach(_.foreach {
-        case agg: Aggregate => markChildAggregate(agg)
-        case _ => Unit
-      })
-      plan
-  }
-
-  override def apply(plan: LogicalPlan): LogicalPlan = conf.getConf(
-    KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS) match {
-    case Some(_) => findAndMarkChildAggregate(plan)
-    case _ => plan
   }
 }
