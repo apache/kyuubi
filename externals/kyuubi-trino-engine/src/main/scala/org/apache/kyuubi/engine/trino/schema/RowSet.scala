@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets
 import scala.collection.JavaConverters._
 
 import io.trino.client.ClientStandardTypes._
+import io.trino.client.ClientTypeSignature
 import io.trino.client.Column
 import io.trino.client.Row
 import org.apache.hive.service.rpc.thrift.TBinaryColumn
@@ -78,7 +79,7 @@ object RowSet {
       val tColumn = toTColumn(
         rows,
         i,
-        filed.getType)
+        filed.getTypeSignature)
       tRowSet.addToColumns(tColumn)
     }
     tRowSet
@@ -87,9 +88,9 @@ object RowSet {
   private def toTColumn(
       rows: Seq[Seq[Any]],
       ordinal: Int,
-      typ: String): TColumn = {
+      typ: ClientTypeSignature): TColumn = {
     val nulls = new java.util.BitSet()
-    typ match {
+    typ.getRawType match {
       case BOOLEAN =>
         val values = getOrSetAsNull[java.lang.Boolean](rows, ordinal, nulls, true)
         TColumn.boolVal(new TBoolColumn(values, nulls))
@@ -136,7 +137,7 @@ object RowSet {
           if (row(ordinal) == null) {
             ""
           } else {
-            toHiveString((row(ordinal), typ))
+            toHiveString(row(ordinal), typ)
           }
         }.asJava
         TColumn.stringVal(new TStringColumn(values, nulls))
@@ -170,7 +171,7 @@ object RowSet {
       row: List[Any],
       types: List[Column]): TColumnValue = {
 
-    types(ordinal).getType match {
+    types(ordinal).getTypeSignature.getRawType match {
       case BOOLEAN =>
         val boolValue = new TBoolValue
         if (row(ordinal) != null) boolValue.setValue(row(ordinal).asInstanceOf[Boolean])
@@ -215,7 +216,7 @@ object RowSet {
         val tStrValue = new TStringValue
         if (row(ordinal) != null) {
           tStrValue.setValue(
-            toHiveString((row(ordinal), types(ordinal).getType)))
+            toHiveString(row(ordinal), types(ordinal).getTypeSignature))
         }
         TColumnValue.stringVal(tStrValue)
     }
@@ -224,8 +225,8 @@ object RowSet {
   /**
    * A simpler impl of Trino's toHiveString
    */
-  def toHiveString(dataWithType: (Any, String)): String = {
-    dataWithType match {
+  def toHiveString(data: Any, typ: ClientTypeSignature): String = {
+    (data, typ.getRawType) match {
       case (null, _) =>
         // Only match nulls in nested type values
         "null"
@@ -237,46 +238,32 @@ object RowSet {
         // Only match string in nested type values
         "\"" + s + "\""
 
-      // for Array Map and Row, temporarily convert to string
-      // TODO further analysis of type
-      case (list: java.util.List[_], _) =>
-        formatValue(list)
+      case (list: java.util.List[_], ARRAY) if typ.getArgumentsAsTypeSignatures.size() > 0 =>
+        val listType = typ.getArgumentsAsTypeSignatures.get(0)
+        list.asScala
+          .map(toHiveString(_, listType))
+          .mkString("[", ",", "]")
 
-      case (m: java.util.Map[_, _], _) =>
-        formatValue(m)
-
-      case (row: Row, _) =>
-        formatValue(row)
-
-      case (other, _) =>
-        other.toString
-    }
-  }
-
-  def formatValue(o: Any): String = {
-    o match {
-      case null =>
-        "null"
-
-      case m: java.util.Map[_, _] =>
+      case (m: java.util.Map[_, _], MAP) if typ.getArgumentsAsTypeSignatures.size() > 1 =>
+        val keyType = typ.getArgumentsAsTypeSignatures.get(0)
+        val valueType = typ.getArgumentsAsTypeSignatures.get(1)
         m.asScala.map { case (key, value) =>
-          formatValue(key) + ":" + formatValue(value)
+          toHiveString(key, keyType) + ":" + toHiveString(value, valueType)
         }.toSeq.sorted.mkString("{", ",", "}")
 
-      case l: java.util.List[_] =>
-        l.asScala.map(formatValue).mkString("[", ",", "]")
-
-      case row: Row =>
-        row.getFields.asScala.map { r =>
-          val formattedValue = formatValue(r.getValue())
-          if (r.getName.isPresent) {
-            r.getName.get() + "=" + formattedValue
+      case (row: Row, ROW) if typ.getArguments.size() == row.getFields.size() =>
+        row.getFields.asScala.zipWithIndex.map { case (r, index) =>
+          val namedRowType = typ.getArguments.get(index).getNamedTypeSignature
+          if (namedRowType.getName.isPresent) {
+            namedRowType.getName.get() + "=" +
+              toHiveString(r.getValue, namedRowType.getTypeSignature)
           } else {
-            formattedValue
+            toHiveString(r.getValue, namedRowType.getTypeSignature)
           }
         }.mkString("{", ",", "}")
 
-      case _ => o.toString
+      case (other, _) =>
+        other.toString
     }
   }
 }
