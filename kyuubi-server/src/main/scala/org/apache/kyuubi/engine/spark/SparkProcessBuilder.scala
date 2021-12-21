@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.spark
 
 import java.io.{File, FilenameFilter, IOException}
-import java.net.URI
+import java.net.{InetAddress, URI}
 import java.nio.file.{Files, Path, Paths}
 
 import scala.collection.mutable.ArrayBuffer
@@ -27,7 +27,7 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_HOST_USE_HOSTNAME, ENGINE_SPARK_MAIN_RESOURCE}
 import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.ZooKeeperAuthTypes
@@ -155,6 +155,16 @@ class SparkProcessBuilder(
         }
       buffer += CONF
       buffer += s"$newKey=$v"
+    }
+
+    /**
+     * When kyuubi on kubernetes submit spark engine by client mode,
+     * using ip instead of hostName as spark.driver.host.
+     * Otherwise, Executor Pod will catch UnKnowHostException.
+     */
+    if (!conf.get(ENGINE_SPARK_HOST_USE_HOSTNAME)) {
+      buffer += CONF
+      buffer += s"spark.driver.host=${InetAddress.getLocalHost.getHostAddress}"
     }
 
     // iff the keytab is specified, PROXY_USER is not supported
