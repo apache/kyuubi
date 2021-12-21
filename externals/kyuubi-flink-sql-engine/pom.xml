@@ -139,6 +139,12 @@
       <artifactId>jul-to-slf4j</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>flink-test-utils_2.12</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
 </project>
