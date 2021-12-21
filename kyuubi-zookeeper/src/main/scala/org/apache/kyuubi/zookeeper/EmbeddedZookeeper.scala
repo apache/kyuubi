@@ -42,15 +42,14 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
     val maxClientCnxns = conf.get(ZK_MAX_CLIENT_CONNECTIONS)
     val minSessionTimeout = conf.get(ZK_MIN_SESSION_TIMEOUT)
     val maxSessionTimeout = conf.get(ZK_MAX_SESSION_TIMEOUT)
-    val hostname = conf.get(ZK_CLIENT_PORT_ADDRESS).map(InetAddress.getByName)
-      .getOrElse(findLocalInetAddress).getCanonicalHostName
-
+    val hostnameOrIp = conf.get(ZK_CLIENT_PORT_ADDRESS).map(InetAddress.getByName)
+      .map(_.getCanonicalHostName).getOrElse(replaceHostByIP(conf))
     zks = new ZooKeeperServer(dataDirectory, dataDirectory, tickTime)
     zks.setMinSessionTimeout(minSessionTimeout)
     zks.setMaxSessionTimeout(maxSessionTimeout)
 
     serverFactory = new NIOServerCnxnFactory
-    serverFactory.configure(new InetSocketAddress(hostname, clientPort), maxClientCnxns)
+    serverFactory.configure(new InetSocketAddress(hostnameOrIp, clientPort), maxClientCnxns)
 
     super.initialize(conf)
   }
@@ -75,6 +74,14 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
   def getConnectString: String = synchronized {
     assert(zks != null, s"$getName is in $getServiceState")
     s"${serverFactory.getLocalAddress.getHostName}:${serverFactory.getLocalPort}"
+  }
+
+  def replaceHostByIP(conf: KyuubiConf): String = {
+    if (conf.get(ZK_REPLACE_HOST_BY_IP)) {
+      findLocalInetAddress.getHostAddress
+    } else {
+      findLocalInetAddress.getCanonicalHostName
+    }
   }
 
 }
