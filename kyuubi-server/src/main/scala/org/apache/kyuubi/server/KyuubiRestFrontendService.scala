@@ -40,7 +40,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
   private var portNum: Int = _
   private var jettyServer: Server = _
   private var connector: ServerConnector = _
-
+  private val ipPattern = "^((2[0-4]\\d|25[0-5]|[01]?\\d\\d?)\\.){3}(2[0-4]\\d|25[0-5]|[01]?\\d\\d?)$"
   @volatile protected var isStarted = false
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
@@ -76,7 +76,11 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   override def connectionUrl: String = {
     checkInitialized()
-    s"${serverAddr.getCanonicalHostName}:$portNum"
+    conf.get(FRONTEND_REST_BIND_HOST) match {
+      case host if host.isEmpty => s"${Utils.findLocalInetAddress}:$portNum"
+      case host if host.nonEmpty && host.get.matches(ipPattern) => s"${serverAddr.getHostAddress}:$portNum"
+      case _ => s"${serverAddr.getCanonicalHostName}:$portNum"
+    }
   }
 
   override def start(): Unit = {
