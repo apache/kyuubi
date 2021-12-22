@@ -17,29 +17,33 @@
 
 package org.apache.kyuubi.operation
 
-import org.apache.kyuubi.IcebergSuiteMixin
+import java.sql.Statement
 
-trait IcebergRowLevelOperationTests extends HiveJDBCTestHelper with IcebergSuiteMixin {
+import org.apache.kyuubi.DataLakeSuiteMixin
 
-  private def createAndInitTable(tableName: String)(records: Seq[(Int, String)]): Unit = {
-    withJdbcStatement() { stmt =>
-      stmt.execute(
-        s"""CREATE TABLE $tableName (
-           |  id   INT,
-           |  city STRING
-           |) USING iceberg
-           |""".stripMargin)
-      stmt.execute(
-        s"""INSERT INTO $tableName VALUES
-           |${records.map(r => s"(${r._1}, '${r._2}')").mkString(",\n")}
-           |""".stripMargin)
-    }
+trait RowLevelOperationTests extends HiveJDBCTestHelper with DataLakeSuiteMixin {
+
+  private def createAndInitTable(
+      stmt: Statement,
+      tableName: String)(records: => Seq[(Int, String)]): Unit = {
+    stmt.execute(
+      s"""CREATE TABLE $tableName (
+         |  id   INT,
+         |  city STRING
+         |) USING $format
+         |""".stripMargin)
+    stmt.execute(
+      s"""INSERT INTO $tableName VALUES
+         |${records.map(r => s"(${r._1}, '${r._2}')").mkString(",\n")}
+         |""".stripMargin)
   }
 
-  test("iceberg update operation") {
-    val testTbl = "iceberg_update"
+  test("update operation") {
+    val testTbl = s"${format}_update"
     withJdbcStatement(testTbl) { stmt =>
-      createAndInitTable(testTbl)((1, "HangZhou") :: (2, "Seattle") :: (3, "Beijing") :: Nil)
+      createAndInitTable(stmt, testTbl) {
+        (1, "HangZhou") :: (2, "Seattle") :: (3, "Beijing") :: Nil
+      }
       stmt.execute(s"UPDATE $testTbl SET city = 'Shanghai' WHERE id IN (1)")
       stmt.execute(s"UPDATE $testTbl SET id = -1 WHERE city = 'Seattle'")
 
@@ -57,10 +61,12 @@ trait IcebergRowLevelOperationTests extends HiveJDBCTestHelper with IcebergSuite
     }
   }
 
-  test("iceberg delete operation") {
-    val testTbl = "iceberg_delete"
+  test("delete operation") {
+    val testTbl = s"${format}_delete"
     withJdbcStatement(testTbl) { stmt =>
-      createAndInitTable(testTbl)((1, "HangZhou") :: (2, "Seattle") :: (3, "Beijing") :: Nil)
+      createAndInitTable(stmt, testTbl) {
+        (1, "HangZhou") :: (2, "Seattle") :: (3, "Beijing") :: Nil
+      }
       stmt.execute(s"DELETE FROM $testTbl WHERE WHERE id = 1")
       stmt.execute(s"DELETE FROM $testTbl WHERE WHERE city = 'Seattle'")
 
@@ -72,12 +78,16 @@ trait IcebergRowLevelOperationTests extends HiveJDBCTestHelper with IcebergSuite
     }
   }
 
-  test("iceberg merge into operation") {
-    val testTblBase = "iceberg_merge_into_base"
-    val testTblDelta = "iceberg_merge_into_delta"
+  test("merge into operation") {
+    val testTblBase = s"${format}_merge_into_base"
+    val testTblDelta = s"${format}_merge_into_delta"
     withJdbcStatement(testTblBase, testTblDelta) { stmt =>
-      createAndInitTable(testTblBase)((1, "HangZhou") :: (2, "Seattle") :: (3, "Beijing") :: Nil)
-      createAndInitTable(testTblDelta)((2, "Chicago") :: (3, "HongKong") :: (4, "London") :: Nil)
+      createAndInitTable(stmt, testTblBase) {
+        (1, "HangZhou") :: (2, "Seattle") :: (3, "Beijing") :: Nil
+      }
+      createAndInitTable(stmt, testTblDelta) {
+        (2, "Chicago") :: (3, "HongKong") :: (4, "London") :: Nil
+      }
       stmt.execute(
         s"""MERGE INTO $testTblBase t
            |USING (SELECT * FROM $testTblDelta) s
