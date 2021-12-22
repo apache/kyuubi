@@ -110,7 +110,7 @@ class FlinkOperationSuite extends KyuubiFunSuite {
 
     val resultSet = getCatalogOperation.getNextRowSet(FetchOrientation.FETCH_FIRST, 10)
     assert(1 == resultSet.getRowsSize)
-    assert(resultSet.getRows.get(0).getColVals().get(0).getStringVal.getValue === "default_catalog")
+    assert(resultSet.getRows.get(0).getColVals.get(0).getStringVal.getValue === "default_catalog")
   }
 
   test("execute statement -  select column name with dots") {
@@ -123,7 +123,7 @@ class FlinkOperationSuite extends KyuubiFunSuite {
 
     val resultSet = executeStatementOp.getNextRowSet(FetchOrientation.FETCH_FIRST, 10)
     assert(1 == resultSet.getRowsSize)
-    assert(resultSet.getRows.get(0).getColVals().get(0).getStringVal.getValue === "tmp.hello")
+    assert(resultSet.getRows.get(0).getColVals.get(0).getStringVal.getValue === "tmp.hello")
   }
 
 }

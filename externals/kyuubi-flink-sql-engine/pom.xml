@@ -142,7 +142,7 @@
 
     <dependency>
       <groupId>org.apache.flink</groupId>
-      <artifactId>flink-test-utils_2.12</artifactId>
+      <artifactId>flink-test-utils_${scala.binary.version}</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

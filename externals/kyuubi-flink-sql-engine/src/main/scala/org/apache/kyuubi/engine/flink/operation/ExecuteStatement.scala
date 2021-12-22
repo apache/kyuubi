@@ -18,12 +18,10 @@
 package org.apache.kyuubi.engine.flink.operation
 
 import java.util
-import java.util.List
 import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService, TimeUnit}
-import java.util.stream.IntStream
 
-import scala.collection.JavaConversions._
-import scala.collection.JavaConverters.collectionAsScalaIterableConverter
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 
 import com.google.common.annotations.VisibleForTesting
 import org.apache.flink.table.catalog.Column
@@ -50,7 +48,7 @@ class ExecuteStatement(
 
   private var resultDescriptor: ResultDescriptor = _
 
-  private var columnInfos: List[ColumnInfo] = _
+  private var columnInfos: util.List[ColumnInfo] = _
 
   private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
 
@@ -76,8 +74,6 @@ class ExecuteStatement(
   }
 
   override protected def runInternal(): Unit = {
-    //    executeStatement()
-
     addTimeoutMonitor()
     if (shouldRunAsync) {
       val asyncOperation = new Runnable {
@@ -119,31 +115,28 @@ class ExecuteStatement(
 
       val resultID = resultDescriptor.getResultId
 
-      var rows: util.List[Row] = new util.ArrayList[Row]()
+      val rows = new ArrayBuffer[Row]()
 
       var loop = true
       while (loop) {
         Thread.sleep(50) // slow the processing down
 
         val result = executor.snapshotResult(sessionId, resultID, 2)
-        if (result.getType eq TypedResult.ResultType.PAYLOAD) {
-          rows.clear()
-          IntStream.rangeClosed(1, result.getPayload).forEach((page: Int) => {
-            def foo(page: Int) = {
-              for (row <- executor.retrieveResultPage(resultID, page)) {
-                rows.add(row)
-              }
+        result.getType match {
+          case TypedResult.ResultType.PAYLOAD =>
+            rows.clear()
+            (1 to result.getPayload).foreach { page =>
+              rows ++= executor.retrieveResultPage(resultID, page).asScala
             }
-
-            foo(page)
-          })
-        } else if (result.getType eq TypedResult.ResultType.EOS) loop = false
+          case TypedResult.ResultType.EOS => loop = false
+          case TypedResult.ResultType.EMPTY =>
+        }
       }
 
       resultSet = ResultSet.builder
         .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
         .columns(columnInfos)
-        .data(rows.asScala.toArray[Row])
+        .data(rows.toArray[Row])
         .build
       setState(OperationState.FINISHED)
     } catch {
