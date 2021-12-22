@@ -238,20 +238,20 @@ object RowSet {
         // Only match string in nested type values
         "\"" + s + "\""
 
-      case (list: java.util.List[_], ARRAY) if typ.getArgumentsAsTypeSignatures.size() > 0 =>
+      case (list: java.util.List[_], ARRAY) =>
         val listType = typ.getArgumentsAsTypeSignatures.get(0)
         list.asScala
           .map(toHiveString(_, listType))
           .mkString("[", ",", "]")
 
-      case (m: java.util.Map[_, _], MAP) if typ.getArgumentsAsTypeSignatures.size() > 1 =>
+      case (m: java.util.Map[_, _], MAP) =>
         val keyType = typ.getArgumentsAsTypeSignatures.get(0)
         val valueType = typ.getArgumentsAsTypeSignatures.get(1)
         m.asScala.map { case (key, value) =>
           toHiveString(key, keyType) + ":" + toHiveString(value, valueType)
         }.toSeq.sorted.mkString("{", ",", "}")
 
-      case (row: Row, ROW) if typ.getArguments.size() == row.getFields.size() =>
+      case (row: Row, ROW) =>
         row.getFields.asScala.zipWithIndex.map { case (r, index) =>
           val namedRowType = typ.getArguments.get(index).getNamedTypeSignature
           if (namedRowType.getName.isPresent) {
