@@ -18,7 +18,7 @@
 package org.apache.kyuubi.zookeeper
 
 import java.io.File
-import java.net.{InetSocketAddress}
+import java.net.InetSocketAddress
 
 import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
 
