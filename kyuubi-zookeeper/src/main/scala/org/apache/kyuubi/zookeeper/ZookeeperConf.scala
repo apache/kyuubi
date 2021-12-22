@@ -90,12 +90,4 @@ object ZookeeperConf {
       .version("1.2.0")
       .intConf
       .createWithDefault(3000 * 20)
-
-  val ZK_REPLACE_HOST_BY_IP: ConfigEntry[Boolean] =
-    buildConf("zookeeper.embedded.replace.host")
-      .doc("When true, zk client bind to local ip;When false, zk client bind to" +
-        " default local hostname.This does not take effect when XXX is configured.")
-      .version("1.5.0")
-      .booleanConf
-      .createWithDefault(false)
 }
