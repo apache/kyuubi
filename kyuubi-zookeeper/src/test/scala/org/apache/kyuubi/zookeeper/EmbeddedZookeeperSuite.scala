@@ -83,10 +83,5 @@ class EmbeddedZookeeperSuite extends KyuubiFunSuite {
     assert(zkServer.getConnectString.contains("localhost"))
     zkServer.start()
     zkServer.stop()
-    // cover default ip
-    conf.set(ZK_REPLACE_HOST_BY_IP, true)
-    zkServer.initialize(conf)
-    assert(zkServer.getConnectString.contains("localhost"))
-    zkServer.stop()
   }
 }
