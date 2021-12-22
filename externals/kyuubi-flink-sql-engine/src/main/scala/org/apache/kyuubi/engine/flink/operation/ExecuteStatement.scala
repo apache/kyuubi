@@ -24,9 +24,8 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import com.google.common.annotations.VisibleForTesting
-import org.apache.flink.table.catalog.Column
 import org.apache.flink.table.client.gateway.{Executor, ResultDescriptor, TypedResult}
-import org.apache.flink.table.operations.{Operation, QueryOperation}
+import org.apache.flink.table.operations.QueryOperation
 import org.apache.flink.types.Row
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
@@ -103,20 +102,18 @@ class ExecuteStatement(
   private def executeStatement(): Unit = {
     try {
       setState(OperationState.RUNNING)
-      val operation: Operation = executor.parseStatement(sessionId, statement)
-      resultDescriptor = executor.executeQuery(sessionId, operation.asInstanceOf[QueryOperation])
 
-      val resultSchemaColumns: util.List[Column] =
-        resultDescriptor.getResultSchema.getColumns
       columnInfos = new util.ArrayList[ColumnInfo]
-      for (column <- resultSchemaColumns.asScala) {
+
+      val operation = executor.parseStatement(sessionId, statement)
+      resultDescriptor = executor.executeQuery(sessionId, operation.asInstanceOf[QueryOperation])
+      resultDescriptor.getResultSchema.getColumns.asScala.foreach { column =>
         columnInfos.add(ColumnInfo.create(column.getName, column.getDataType.getLogicalType))
       }
 
       val resultID = resultDescriptor.getResultId
 
       val rows = new ArrayBuffer[Row]()
-
       var loop = true
       while (loop) {
         Thread.sleep(50) // slow the processing down
@@ -150,16 +147,9 @@ class ExecuteStatement(
     if (queryTimeout > 0) {
       val timeoutExecutor =
         ThreadUtils.newDaemonSingleThreadScheduledExecutor("query-timeout-thread")
-      timeoutExecutor.schedule(
-        new Runnable {
-          override def run(): Unit = {
-            cleanup(OperationState.TIMEOUT)
-          }
-        },
-        queryTimeout,
-        TimeUnit.SECONDS)
+      val action: Runnable = () => cleanup(OperationState.TIMEOUT)
+      timeoutExecutor.schedule(action, queryTimeout, TimeUnit.SECONDS)
       statementTimeoutCleaner = Some(timeoutExecutor)
     }
   }
-
 }
