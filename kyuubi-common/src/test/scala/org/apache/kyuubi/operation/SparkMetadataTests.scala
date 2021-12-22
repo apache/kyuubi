@@ -21,6 +21,7 @@ import java.sql.{DatabaseMetaData, ResultSet, SQLException, SQLFeatureNotSupport
 
 import scala.util.Random
 
+import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
@@ -404,7 +405,6 @@ trait SparkMetadataTests extends HiveJDBCTestHelper {
         assert(e.getMessage === "Method not supported")
       }
 
-      import org.apache.kyuubi.KYUUBI_VERSION
       assert(metaData.allTablesAreSelectable)
       assert(metaData.getDatabaseProductName === "Apache Kyuubi (Incubating)")
       assert(metaData.getDatabaseProductVersion === KYUUBI_VERSION)
