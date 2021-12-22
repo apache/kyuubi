@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.flink.session
 
+import org.apache.flink.table.client.gateway.Executor
 import org.apache.flink.table.client.gateway.context.SessionContext
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
@@ -35,5 +36,9 @@ class FlinkSessionImpl(
   override val handle: SessionHandle = SessionHandle(protocol)
 
   def getSessionContext: SessionContext = sessionContext
+
+  def getExecutor: Executor = sessionManager.asInstanceOf[FlinkSQLSessionManager].executor
+
+  def getSessionId: String = handle.toString
 
 }

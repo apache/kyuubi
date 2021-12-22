@@ -113,6 +113,12 @@ object RowSet {
         tStringValue.setValue(row.getField(ordinal).asInstanceOf[String])
       }
       TColumnValue.stringVal(tStringValue)
+    } else if (logicalType.isInstanceOf[CharType]) {
+      val tStringValue = new TStringValue
+      if (row.getField(ordinal) != null) {
+        tStringValue.setValue(row.getField(ordinal).asInstanceOf[String])
+      }
+      TColumnValue.stringVal(tStringValue)
     } else {
       val tStrValue = new TStringValue
       if (row.getField(ordinal) != null) {
