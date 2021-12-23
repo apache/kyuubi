@@ -33,6 +33,11 @@ if [ ! -d "$FLINK_HOME" ]; then
   exit 1
 fi
 
+export FLINK_LIB_DIR="$FLINK_HOME/lib"
+echo "FLINK_HOME: $FLINK_HOME"
+export _FLINK_HOME_DETERMINED=1
+source "$FLINK_HOME/bin/config.sh"
+
 target="$0"
 # For the case, the executable has been directly symlinked, figure out
 # the correct bin path by following its symlink up to an upper bound.
@@ -52,8 +57,7 @@ done
 # Convert relative path to absolute path
 bin=`dirname "$target"`
 FLINK_SQL_ENGINE_HOME=`cd "$bin/.."; pwd -P`
-set -x
-export FLINK_CONF_DIR="$FLINK_HOME/conf"
+
 FLINK_SQL_ENGINE_CONF="$FLINK_HOME/conf"
 FLINK_SQL_ENGINE_LIB="$FLINK_SQL_ENGINE_HOME/target"
 FLINK_SQL_ENGINE_LOG="$FLINK_SQL_ENGINE_HOME/log"
@@ -63,33 +67,36 @@ FLINK_SQL_ENGINE_DEFAULT_CONF="$FLINK_SQL_ENGINE_CONF/flink-sql-engine-defaults.
 FLINK_SQL_ENGINE_JAR=$(find "$FLINK_SQL_ENGINE_LIB" -regex ".*/kyuubi-flink-sql-engine_.*\.jar" | grep -v "javadoc.jar" | grep -v "tests.jar")
 
 # build kyuubi-flink-sql-engine classpath
-FLINK_SQL_ENGINE_CLASSPATH=""
-while read -d '' -r jarfile ; do
-  if [[ "$FLINK_SQL_ENGINE_CLASSPATH" == "" ]]; then
-    FLINK_SQL_ENGINE_CLASSPATH="$jarfile";
-  else
-    FLINK_SQL_ENGINE_CLASSPATH="$FLINK_SQL_ENGINE_CLASSPATH":"$jarfile"
-  fi
-done < <(find "$FLINK_SQL_ENGINE_LIB" ! -type d -name '*.jar' -print0 | sort -z)
+#FLINK_SQL_ENGINE_CLASSPATH=""
+#while read -d '' -r jarfile ; do
+#  if [[ "$FLINK_SQL_ENGINE_CLASSPATH" == "" ]]; then
+#    FLINK_SQL_ENGINE_CLASSPATH="$jarfile";
+#  else
+#    FLINK_SQL_ENGINE_CLASSPATH="$FLINK_SQL_ENGINE_CLASSPATH":"$jarfile"
+#  fi
+#done < <(find "$FLINK_SQL_ENGINE_LIB" ! -type d -name '*.jar' -print0 | sort -z)
 
 FLINK_CONFIG_FILE="$FLINK_HOME/bin/config.sh"
 SQL_ENGINE_CONFIG_FILE="$FLINK_SQL_ENGINE_HOME"/bin/config.sh
 # replace target="$0" with target="<real_flink_config.sh_path>" and write to a new file
 # this could make sure flink-sql-engine.sh can be executed anywhere
-cat "$FLINK_CONFIG_FILE" | sed 's|target=\"$0\"|'target="$FLINK_CONFIG_FILE"'|g' > "$SQL_ENGINE_CONFIG_FILE"
-# execute flink config
-. "$SQL_ENGINE_CONFIG_FILE"
-# remove it
-rm -f "$SQL_ENGINE_CONFIG_FILE"
+#cat "$FLINK_CONFIG_FILE" | sed 's|target=\"$0\"|'target="$FLINK_CONFIG_FILE"'|g' > "$SQL_ENGINE_CONFIG_FILE"
+## execute flink config
+#. "$SQL_ENGINE_CONFIG_FILE"
+## remove it
+#rm -f "$SQL_ENGINE_CONFIG_FILE"
 
 if [ "$FLINK_IDENT_STRING" = "" ]; then
   FLINK_IDENT_STRING="$USER"
 fi
 
 FLINK_SQL_CLIENT_JAR=$(find "$FLINK_OPT_DIR" -regex ".*flink-sql-client.*.jar")
-CC_CLASSPATH=`constructFlinkClassPath`
+#CC_CLASSPATH=`constructFlinkClassPath`
+CC_CLASSPATH="$FLINK_HOME/lib/*"
 FULL_CLASSPATH="$FLINK_SQL_ENGINE_JAR:$FLINK_SQL_CLIENT_JAR:$CC_CLASSPATH:$INTERNAL_HADOOP_CLASSPATHS"
-
+set -x
+echo $CC_CLASSPATH
+set +x
 # build log config
 log=$FLINK_SQL_ENGINE_LOG/kyuubi-flink-sql-engine-$FLINK_IDENT_STRING-$HOSTNAME.log
 log_setting=(-Dlog.file="$log" -Dlog4j.configurationFile=file:"$FLINK_SQL_ENGINE_CONF"/log4j.properties -Dlog4j.configuration=file:"$FLINK_SQL_ENGINE_CONF"/log4j.properties -Dlogback.configurationFile=file:"$FLINK_SQL_ENGINE_CONF"/logback.xml)
@@ -107,7 +114,9 @@ log_setting=(-Dlog.file="$log" -Dlog4j.configurationFile=file:"$FLINK_SQL_ENGINE
 
 if [ -n "$FLINK_SQL_ENGINE_JAR" ]; then
   echo $JAVA_RUN $JVM_ARGS "${log_setting[@]}" -cp ${FULL_CLASSPATH} org.apache.kyuubi.engine.flink.FlinkSQLEngine "$@" --defaults "$FLINK_SQL_ENGINE_DEFAULT_CONF" "$FLINK_SQL_ENGINE_JAR"
-  exec $JAVA_RUN  "${log_setting[@]}" -cp ${FULL_CLASSPATH} org.apache.kyuubi.engine.flink.FlinkSQLEngine "$@" --defaults "$FLINK_SQL_ENGINE_DEFAULT_CONF" "$FLINK_SQL_ENGINE_JAR"
+  set -x
+  exec $JAVA_RUN $FLINK_SQL_ENGINE_DYNAMIC_ARGS "${log_setting[@]}" -cp ${FULL_CLASSPATH} org.apache.kyuubi.engine.flink.FlinkSQLEngine "$@" --defaults "$FLINK_SQL_ENGINE_DEFAULT_CONF" "$FLINK_SQL_ENGINE_JAR"
+  set +x
 else
   (>&2 echo "[ERROR] Flink SQL Engine JAR file 'kyuubi-flink-sql-engine*.jar' should be located in $FLINK_SQL_ENGINE_LIB.")
   exit 1
