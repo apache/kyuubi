@@ -18,11 +18,13 @@
 package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.operation.IcebergMetadataTests
+import org.apache.kyuubi.operation.{IcebergMetadataTests, RowLevelOperationTests}
 import org.apache.kyuubi.tags.IcebergTest
 
 @IcebergTest
-class SparkIcebergOperationSuite extends WithSparkSQLEngine with IcebergMetadataTests {
+class SparkIcebergOperationSuite extends WithSparkSQLEngine
+  with IcebergMetadataTests
+  with RowLevelOperationTests {
 
   override protected def jdbcUrl: String = getJdbcUrl
 
