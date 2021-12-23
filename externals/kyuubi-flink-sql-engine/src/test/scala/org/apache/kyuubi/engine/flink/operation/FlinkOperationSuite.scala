@@ -95,8 +95,8 @@ class FlinkOperationSuite extends KyuubiFunSuite {
       password,
       "localhost",
       Map(),
-      flinkSQLSessionManager,
-      sessionContext)
+      flinkSQLSessionManager)
+    flinkSession.setSessionContext(sessionContext)
     super.beforeAll()
   }
 

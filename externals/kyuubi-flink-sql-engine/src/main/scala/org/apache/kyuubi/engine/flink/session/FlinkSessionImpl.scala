@@ -29,13 +29,18 @@ class FlinkSessionImpl(
     password: String,
     ipAddress: String,
     conf: Map[String, String],
-    sessionManager: SessionManager,
-    sessionContext: SessionContext)
+    sessionManager: SessionManager)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
   override val handle: SessionHandle = SessionHandle(protocol)
 
+  private var sessionContext: SessionContext = _
+
   def getSessionContext: SessionContext = sessionContext
+
+  def setSessionContext(sessionContext: SessionContext): Unit = {
+    this.sessionContext = sessionContext
+  }
 
   def getExecutor: Executor = sessionManager.asInstanceOf[FlinkSQLSessionManager].executor
 

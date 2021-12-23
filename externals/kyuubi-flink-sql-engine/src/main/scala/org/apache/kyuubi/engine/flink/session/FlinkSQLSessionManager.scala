@@ -22,7 +22,9 @@ import org.apache.flink.table.client.gateway.context.DefaultContext
 import org.apache.flink.table.client.gateway.local.LocalExecutor
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.engine.flink.operation.FlinkSQLOperationManager
+import org.apache.kyuubi.engine.flink.result.ExecutorUtil
 import org.apache.kyuubi.session.{SessionHandle, SessionManager}
 
 class FlinkSQLSessionManager(engineContext: DefaultContext)
@@ -44,8 +46,34 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
       password: String,
       ipAddress: String,
       conf: Map[String, String]): SessionHandle = {
-    executor.openSession("")
-    null
+
+    val sessionImpl = new FlinkSessionImpl(
+      protocol,
+      user,
+      password,
+      ipAddress,
+      conf,
+      this)
+    val handle = sessionImpl.handle
+
+    executor.openSession(handle.toString)
+
+    val sessionContext = ExecutorUtil.getSessionContext(executor, handle.toString)
+    sessionImpl.setSessionContext(sessionContext)
+
+    try {
+      sessionImpl.open()
+
+      setSession(handle, sessionImpl)
+      info(s"$user's session with $handle is opened, current opening sessions" +
+        s" $getOpenSessionCount")
+      handle
+    } catch {
+      case e: Exception =>
+        sessionImpl.close()
+        executor.closeSession(handle.toString)
+        throw KyuubiSQLException(e)
+    }
   }
 
   override def closeSession(sessionHandle: SessionHandle): Unit = {

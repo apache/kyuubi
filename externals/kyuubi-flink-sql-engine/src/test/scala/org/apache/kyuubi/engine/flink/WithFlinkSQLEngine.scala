@@ -17,10 +17,12 @@
 
 package org.apache.kyuubi.engine.flink
 
+import java.util.Collections
+
+import org.apache.flink.client.cli.DefaultCLI
 import org.apache.flink.configuration.{Configuration, RestOptions}
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
-import org.apache.flink.table.client.cli.{CliOptions, CliOptionsParser}
-import org.apache.flink.table.client.gateway.local.LocalContextUtils
+import org.apache.flink.table.client.gateway.context.DefaultContext
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
@@ -52,8 +54,10 @@ trait WithFlinkSQLEngine extends KyuubiFunSuite {
       kyuubiConf.set(k, v)
     }
 
-    val cliOptions: CliOptions = CliOptionsParser.parseEmbeddedModeClient(Array())
-    val engineContext = LocalContextUtils.buildDefaultContext(cliOptions)
+    val engineContext: DefaultContext = new DefaultContext(
+      Collections.emptyList(),
+      flinkConfig,
+      Collections.singletonList(new DefaultCLI))
 
     FlinkSQLEngine.startEngine(engineContext)
     engine = FlinkSQLEngine.currentEngine.get
