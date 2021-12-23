@@ -21,6 +21,7 @@ import java.io.IOException
 
 import scala.collection.JavaConverters.collectionAsScalaIterableConverter
 
+import org.apache.flink.table.client.gateway.Executor
 import org.apache.flink.table.client.gateway.context.SessionContext
 import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
 
@@ -40,8 +41,20 @@ abstract class FlinkOperation(
     session: Session)
   extends AbstractOperation(opType, session) {
 
-  protected val sessionContext: SessionContext =
+  protected val sessionContext: SessionContext = {
     session.asInstanceOf[FlinkSessionImpl].getSessionContext
+  }
+
+  protected var executor: Executor = _
+
+  protected def setExecutor(executor: Executor): Unit = {
+    this.executor = session.asInstanceOf[FlinkSessionImpl].getExecutor
+  }
+
+  protected var sessionId: String = {
+    session.asInstanceOf[FlinkSessionImpl].getSessionId
+  }
+
   protected var resultSet: ResultSet = _
 
   override protected def beforeRun(): Unit = {

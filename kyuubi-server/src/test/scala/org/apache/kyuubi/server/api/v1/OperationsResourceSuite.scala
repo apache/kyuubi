@@ -78,7 +78,17 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
       response = webTarget.path(s"api/v1/operations/$opHandleStr/event")
         .request(MediaType.APPLICATION_JSON_TYPE).get()
       assert(404 == response.getStatus)
+    }
+  }
 
+  test("test get result set metadata") {
+    withKyuubiRestServer { (fe, _, _, webTarget: WebTarget) =>
+      val opHandleStr = getOpHandleStr(fe, OperationType.EXECUTE_STATEMENT)
+      val response = webTarget.path(s"api/v1/operations/$opHandleStr/resultsetmetadata")
+        .request(MediaType.APPLICATION_JSON_TYPE).get()
+      assert(200 == response.getStatus)
+      val resultSetMetaData = response.readEntity(classOf[ResultSetMetaData])
+      assert(resultSetMetaData.columns.head.columnName.equals("Result"))
     }
   }
 

@@ -15,25 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.spark.operation
+package org.apache.kyuubi.engine.trino.util;
 
-import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.operation.{IcebergMetadataTests, RowLevelOperationTests}
-import org.apache.kyuubi.tags.IcebergTest
+import com.google.common.base.Preconditions;
 
-@IcebergTest
-class SparkIcebergOperationSuite extends WithSparkSQLEngine
-  with IcebergMetadataTests
-  with RowLevelOperationTests {
-
-  override protected def jdbcUrl: String = getJdbcUrl
-
-  override def withKyuubiConf: Map[String, String] = extraConfigs
-
-  override def afterAll(): Unit = {
-    super.afterAll()
-    for ((k, _) <- withKyuubiConf) {
-      System.clearProperty(k)
-    }
+public class PreconditionsWrapper {
+  /**
+   * To avoid ambiguous reference to overloaded definition in scala. {@link
+   * Preconditions#checkArgument(boolean, Object)} {@link Preconditions#checkArgument(boolean,
+   * String, Object...)}
+   */
+  public static void checkArgument(boolean expression, Object errorMessage) {
+    Preconditions.checkArgument(expression, errorMessage);
   }
 }

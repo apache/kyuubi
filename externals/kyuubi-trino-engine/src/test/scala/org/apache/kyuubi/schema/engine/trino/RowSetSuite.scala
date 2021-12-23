@@ -21,13 +21,17 @@ import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.sql.Date
 import java.sql.Time
+import java.util.Optional
 
 import scala.collection.JavaConverters._
 
 import io.trino.client.ClientStandardTypes._
 import io.trino.client.ClientTypeSignature
+import io.trino.client.ClientTypeSignatureParameter
 import io.trino.client.Column
+import io.trino.client.NamedClientTypeSignature
 import io.trino.client.Row
+import io.trino.client.RowFieldName
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiFunSuite
@@ -37,6 +41,28 @@ import org.apache.kyuubi.engine.trino.schema.RowSet.toHiveString
 class RowSetSuite extends KyuubiFunSuite {
 
   final private val UUID_PREFIX = "486bb66f-1206-49e3-993f-0db68f3cd8"
+
+  lazy val arrayTypeSignature: ClientTypeSignature = new ClientTypeSignature(
+    ARRAY,
+    List(ClientTypeSignatureParameter.ofType(new ClientTypeSignature(DOUBLE))).asJava)
+
+  lazy val mapTypeSignature: ClientTypeSignature = new ClientTypeSignature(
+    MAP,
+    List(
+      ClientTypeSignatureParameter.ofType(new ClientTypeSignature(INTEGER)),
+      ClientTypeSignatureParameter.ofType(new ClientTypeSignature(DOUBLE))).asJava)
+
+  lazy val rowTypeSignature: ClientTypeSignature = new ClientTypeSignature(
+    ROW,
+    List(
+      ClientTypeSignatureParameter.ofNamedType(
+        new NamedClientTypeSignature(
+          Optional.of(new RowFieldName("foo")),
+          new ClientTypeSignature(VARCHAR))),
+      ClientTypeSignatureParameter.ofNamedType(
+        new NamedClientTypeSignature(
+          Optional.of(new RowFieldName("bar")),
+          mapTypeSignature))).asJava)
 
   def genRow(value: Int): List[_] = {
     val boolVal = value % 3 match {
@@ -61,7 +87,9 @@ class RowSetSuite extends KyuubiFunSuite {
     val arrVal = Array.fill(value)(doubleVal).toList.asJava
     val mapVal = Map(value -> doubleVal).asJava
     val jsonVal = s"""{"$value": $value}"""
-    val rowVal = Row.builder().addField(value.toString, value).build()
+    val rowVal = Row.builder()
+      .addField("", value.toString)
+      .addField("", mapVal).build()
     val ipVal = s"${value}.${value}.${value}.${value}"
     val uuidVal = java.util.UUID.fromString(
       s"$UUID_PREFIX${uuidSuffix(value)}")
@@ -106,16 +134,20 @@ class RowSetSuite extends KyuubiFunSuite {
     column("m", VARBINARY),
     column("n", VARCHAR),
     column("o", CHAR),
-    column("p", ROW),
-    column("q", ARRAY),
-    column("r", MAP),
+    column("p", ROW, rowTypeSignature),
+    column("q", ARRAY, arrayTypeSignature),
+    column("r", MAP, mapTypeSignature),
     column("s", JSON),
     column("t", IPADDRESS),
     column("u", UUID))
 
   private val rows: Seq[List[_]] = (0 to 10).map(genRow) ++ Seq(List.fill(21)(null))
 
-  def column(name: String, tp: String): Column = new Column(name, tp, new ClientTypeSignature(tp))
+  def column(name: String, tp: String): Column = column(name, tp, new ClientTypeSignature(tp))
+
+  def column(name: String, tp: String, signature: ClientTypeSignature): Column = {
+    new Column(name, tp, signature)
+  }
 
   def uuidSuffix(value: Int): String = if (value > 9) value.toString else s"f$value"
 
@@ -164,7 +196,7 @@ class RowSetSuite extends KyuubiFunSuite {
     dateCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b.isEmpty)
       case (b, i) =>
-        assert(b === toHiveString((Date.valueOf(s"2018-11-${i + 1}"), DATE)))
+        assert(b === toHiveString(Date.valueOf(s"2018-11-${i + 1}"), new ClientTypeSignature(DATE)))
     }
 
     val decCol = cols.next().getStringVal
@@ -200,7 +232,8 @@ class RowSetSuite extends KyuubiFunSuite {
     val timeCol = cols.next().getStringVal
     timeCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b.isEmpty)
-      case (b, i) => assert(b === toHiveString((Time.valueOf(s"13:33:${i + 1}"), TIME)))
+      case (b, i) => assert(b ===
+          toHiveString(Time.valueOf(s"13:33:${i + 1}"), new ClientTypeSignature(TIME)))
     }
 
     val binCol = cols.next().getBinaryVal
@@ -224,43 +257,48 @@ class RowSetSuite extends KyuubiFunSuite {
     val rowCol = cols.next().getStringVal
     rowCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b.isEmpty)
-      case (b, i) => assert(b ===
-          toHiveString((Row.builder().addField(i.toString, i).build(), ROW)))
+      case (b, i) => assert(b === toHiveString(
+          Row.builder().addField("", i.toString).addField(
+            "",
+            Map(i -> java.lang.Double.valueOf(s"$i.$i")).asJava).build(),
+          rowTypeSignature))
     }
 
     val arrCol = cols.next().getStringVal
     arrCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b === toHiveString(
-          (Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toList.asJava, ARRAY)))
+          Array.fill(i)(java.lang.Double.valueOf(s"$i.$i")).toList.asJava,
+          arrayTypeSignature))
     }
 
     val mapCol = cols.next().getStringVal
     mapCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b === toHiveString(
-          (Map(i -> java.lang.Double.valueOf(s"$i.$i")).asJava, MAP)))
+          Map(i -> java.lang.Double.valueOf(s"$i.$i")).asJava,
+          mapTypeSignature))
     }
 
     val jsonCol = cols.next().getStringVal
     jsonCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b ===
-          toHiveString((s"""{"$i": $i}""", JSON)))
+          toHiveString(s"""{"$i": $i}""", new ClientTypeSignature(JSON)))
     }
 
     val ipCol = cols.next().getStringVal
     ipCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b ===
-          toHiveString((s"${i}.${i}.${i}.${i}", IPADDRESS)))
+          toHiveString(s"${i}.${i}.${i}.${i}", new ClientTypeSignature(IPADDRESS)))
     }
 
     val uuidCol = cols.next().getStringVal
     uuidCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === "")
       case (b, i) => assert(b ===
-          toHiveString((s"$UUID_PREFIX${uuidSuffix(i)}", UUID)))
+          toHiveString(s"$UUID_PREFIX${uuidSuffix(i)}", new ClientTypeSignature(UUID)))
     }
   }
 
@@ -308,10 +346,12 @@ class RowSetSuite extends KyuubiFunSuite {
     assert(r9.get(14).getStringVal.getValue === String.format(s"%10s", 8.toString))
 
     val r10 = iter.next().getColVals
+    val mapStr =
+      Map(9 -> 9.9d).map { case (key, value) => s"$key:$value" }.toSeq.mkString("{", ",", "}")
     assert(r10.get(15).getStringVal.getValue ===
-      toHiveString((Row.builder().addField(9.toString, 9).build(), ROW)))
+      String.format("{foo=\"%s\",bar=%s}", "9", mapStr))
     assert(r10.get(16).getStringVal.getValue === Array.fill(9)(9.9d).mkString("[", ",", "]"))
-    assert(r10.get(17).getStringVal.getValue === toHiveString((Map(9 -> 9.9d).asJava, MAP)))
+    assert(r10.get(17).getStringVal.getValue === mapStr)
     assert(r10.get(18).getStringVal.getValue === "{\"9\": 9}")
     assert(r10.get(19).getStringVal.getValue === "9.9.9.9")
     assert(r10.get(20).getStringVal.getValue === s"$UUID_PREFIX${uuidSuffix(9)}")
