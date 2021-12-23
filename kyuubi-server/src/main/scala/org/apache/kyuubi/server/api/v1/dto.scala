@@ -79,3 +79,5 @@ case class ColumnDesc(
     precision: Int,
     scale: Int,
     comment: String)
+
+case class OperationLog(logRowSet: Seq[String], rowCount: Int)
