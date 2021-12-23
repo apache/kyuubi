@@ -75,12 +75,12 @@ kyuubi<br/>.backend_service<br/>.close_operation_ms         | | histogram | 1.5.
 kyuubi<br/>.backend_service<br/>.get_result_set_metadata_ms | | histogram | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `getResultSetMetadata` method time cost histogram statistics </div>
 kyuubi<br/>.backend_service<br/>.fetch_results_ms           | | histogram | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `fetchResults` method time cost histogram statistics </div>
 
-Before 1.5.0 version, if you use these metrics:
+Before v1.5.0, if you use these metrics:
 - `kyuubi.statement.total`
 - `kyuubi.statement.opened`
 - `kyuubi.statement.failed.${errorType}`
 
-After 1.5.0 version, you can use the following metrics to replace:
+Since v1.5.0, you can use the following metrics to replace:
 - `kyuubi.operation.total.ExecuteStatement`
 - `kyuubi.operation.opened.ExecuteStatement`
 - `kyuubi.operation.failed.ExecuteStatement.${errorType}`
