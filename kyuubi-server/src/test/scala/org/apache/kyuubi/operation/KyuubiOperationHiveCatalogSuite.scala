@@ -22,7 +22,7 @@ import java.nio.file.Files
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
 
-class KyuubiOperationHiveCatalogSuite extends WithKyuubiServer with HiveJDBCTests {
+class KyuubiOperationHiveCatalogSuite extends WithKyuubiServer with HiveMetadataTests {
 
   private val metastore = {
     val dir = Utils.createTempDir()
@@ -36,7 +36,8 @@ class KyuubiOperationHiveCatalogSuite extends WithKyuubiServer with HiveJDBCTest
     KyuubiConf()
       .set(KyuubiConf.ENGINE_SHARE_LEVEL, "server")
       .set("spark.sql.catalogImplementation", "hive")
-      .set("spark.hadoop.javax.jdo.option.ConnectionURL",
+      .set(
+        "spark.hadoop.javax.jdo.option.ConnectionURL",
         s"jdbc:derby:;databaseName=$metastore;create=true")
   }
 }

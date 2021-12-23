@@ -22,7 +22,7 @@ import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
 class OperationStatusSuite extends KyuubiFunSuite {
 
   test("operation status") {
-    val status = OperationStatus(OperationState.INITIALIZED, 0, 0, hasResultSet = false)
+    val status = OperationStatus(OperationState.INITIALIZED, 0, 0, 0, 0, hasResultSet = false)
     assert(status.exception.isEmpty)
     val status1 = status.copy(exception = Some(KyuubiSQLException("nothing")))
     assert(status1.exception.get.getMessage === "nothing")

@@ -22,15 +22,8 @@ import org.apache.hive.service.rpc.thrift.TOperationType
 object OperationType extends Enumeration {
 
   type OperationType = Value
-  val UNKNOWN_OPERATION,
-      EXECUTE_STATEMENT,
-      GET_TYPE_INFO,
-      GET_CATALOGS,
-      GET_SCHEMAS,
-      GET_TABLES,
-      GET_TABLE_TYPES,
-      GET_COLUMNS,
-      GET_FUNCTIONS = Value
+  val UNKNOWN_OPERATION, EXECUTE_STATEMENT, GET_TYPE_INFO, GET_CATALOGS, GET_SCHEMAS, GET_TABLES,
+      GET_TABLE_TYPES, GET_COLUMNS, GET_FUNCTIONS = Value
 
   def getOperationType(from: TOperationType): OperationType = {
     from match {
@@ -42,6 +35,7 @@ object OperationType extends Enumeration {
       case TOperationType.GET_TABLE_TYPES => GET_TABLE_TYPES
       case TOperationType.GET_COLUMNS => GET_COLUMNS
       case TOperationType.GET_FUNCTIONS => GET_FUNCTIONS
+      case TOperationType.UNKNOWN => UNKNOWN_OPERATION
       case other =>
         throw new UnsupportedOperationException(s"Unsupported Operation type: ${other.toString}")
     }
@@ -57,6 +51,7 @@ object OperationType extends Enumeration {
       case GET_TABLE_TYPES => TOperationType.GET_TABLE_TYPES
       case GET_COLUMNS => TOperationType.GET_COLUMNS
       case GET_FUNCTIONS => TOperationType.GET_FUNCTIONS
+      case UNKNOWN_OPERATION => TOperationType.UNKNOWN
       case other =>
         throw new UnsupportedOperationException(s"Unsupported Operation type: ${other.toString}")
     }

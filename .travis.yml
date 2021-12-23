@@ -25,7 +25,7 @@ branches:
 dist: bionic
 language: scala
 scala:
-  - 2.12.14
+  - 2.12.15
 jdk:
   - openjdk8
 

@@ -24,6 +24,7 @@ import org.apache.curator.retry.ExponentialBackoffRetry
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.ServiceState._
+import org.apache.kyuubi.zookeeper.ZookeeperConf.{ZK_CLIENT_PORT, ZK_CLIENT_PORT_ADDRESS}
 
 class EmbeddedZookeeperSuite extends KyuubiFunSuite {
 
@@ -61,5 +62,21 @@ class EmbeddedZookeeperSuite extends KyuubiFunSuite {
 
     assert(zkClient.getState === CuratorFrameworkState.STARTED)
     assert(zkClient.getZookeeperClient.blockUntilConnectedOrTimedOut())
+  }
+
+  test("use zookeeper.embedded.client.port.address cover default hostname") {
+    var zkServer = new EmbeddedZookeeper()
+    // cover default hostname
+    var conf = KyuubiConf()
+      .set(ZK_CLIENT_PORT, 0)
+      .set(ZK_CLIENT_PORT_ADDRESS, "localhost")
+    zkServer.initialize(conf)
+    assert(zkServer.getConnectString.contains("localhost"))
+    zkServer = new EmbeddedZookeeper()
+    conf = KyuubiConf()
+      .set(ZK_CLIENT_PORT, 0)
+      .set(ZK_CLIENT_PORT_ADDRESS, "127.0.0.1")
+    zkServer.initialize(conf)
+    assert(zkServer.getConnectString.contains("127.0.0.1"))
   }
 }

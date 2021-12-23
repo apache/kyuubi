@@ -18,17 +18,21 @@
 package org.apache.kyuubi.engine.spark.operation
 
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
-import org.apache.kyuubi.operation.BasicDeltaJDBCTests
+import org.apache.kyuubi.operation.{DeltaMetadataTests, RowLevelOperationTests}
 import org.apache.kyuubi.tags.DeltaTest
 
 @DeltaTest
-class SparkDeltaOperationSuite extends WithSparkSQLEngine with BasicDeltaJDBCTests {
+class SparkDeltaOperationSuite extends WithSparkSQLEngine
+  with DeltaMetadataTests
+  with RowLevelOperationTests {
+
   override protected def jdbcUrl: String = getJdbcUrl
+
   override def withKyuubiConf: Map[String, String] = extraConfigs
 
   override def afterAll(): Unit = {
     super.afterAll()
-    for ((k, _) <- extraConfigs) {
+    for ((k, _) <- withKyuubiConf) {
       System.clearProperty(k)
     }
   }

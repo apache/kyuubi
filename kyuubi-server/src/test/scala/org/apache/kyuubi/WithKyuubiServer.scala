@@ -19,7 +19,8 @@ package org.apache.kyuubi
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_ACL_ENABLED, HA_ZK_QUORUM}
+import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_AUTH_TYPE, HA_ZK_QUORUM}
+import org.apache.kyuubi.ha.client.ZooKeeperAuthTypes
 import org.apache.kyuubi.server.KyuubiServer
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
@@ -27,25 +28,31 @@ trait WithKyuubiServer extends KyuubiFunSuite {
 
   protected val conf: KyuubiConf
 
+  protected val frontendProtocols: Seq[FrontendProtocols.Value] =
+    FrontendProtocols.THRIFT_BINARY :: Nil
+
   private var zkServer: EmbeddedZookeeper = _
-  private var server: KyuubiServer = _
+  protected var server: KyuubiServer = _
 
   override def beforeAll(): Unit = {
+    conf.set(FRONTEND_PROTOCOLS, frontendProtocols.map(_.toString))
+    conf.set(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    conf.set(FRONTEND_REST_BIND_PORT, 0)
+    conf.set(FRONTEND_MYSQL_BIND_PORT, 0)
+
     zkServer = new EmbeddedZookeeper()
     conf.set(ZookeeperConf.ZK_CLIENT_PORT, 0)
     val zkData = Utils.createTempDir()
     conf.set(ZookeeperConf.ZK_DATA_DIR, zkData.toString)
     zkServer.initialize(conf)
     zkServer.start()
+    conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
+    conf.set(HA_ZK_AUTH_TYPE, ZooKeeperAuthTypes.NONE.toString)
 
     conf.set("spark.ui.enabled", "false")
     conf.setIfMissing("spark.sql.catalogImplementation", "in-memory")
-    conf.set(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     conf.setIfMissing(ENGINE_CHECK_INTERVAL, 3000L)
     conf.setIfMissing(ENGINE_IDLE_TIMEOUT, 10000L)
-    conf.set(HA_ZK_QUORUM, zkServer.getConnectString)
-    conf.set(HA_ZK_ACL_ENABLED, false)
-
     // TODO KYUUBI #745
     conf.setIfMissing(ENGINE_INIT_TIMEOUT, 300000L)
     server = KyuubiServer.startServer(conf)
@@ -67,5 +74,5 @@ trait WithKyuubiServer extends KyuubiFunSuite {
     super.afterAll()
   }
 
-  protected def getJdbcUrl: String = s"jdbc:hive2://${server.connectionUrl}/;"
+  protected def getJdbcUrl: String = s"jdbc:hive2://${server.frontendServices.head.connectionUrl}/;"
 }

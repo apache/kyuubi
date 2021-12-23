@@ -60,32 +60,14 @@ The Kerberos architecture is centered around a trusted authentication service ca
 Users and services in a Kerberos environment are referred to as principals;
 each principal shares a secret, such as a password, with the KDC.
 
-Set following for KERBEROS mode:
+Following configurations also need to be set to enable KERBEROS authentication:
 
 Key | Default | Meaning | Since
 --- | --- | --- | ---
 kyuubi\.kinit<br>\.principal|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Name of the Kerberos principal.</div>|<div style='width: 20pt'>1.0.0</div>
 kyuubi\.kinit\.keytab|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>Location of Kyuubi server's keytab.</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.kinit\.interval|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>PT1H</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>How often will Kyuubi server run `kinit -kt [keytab] [principal]` to renew the local Kerberos credentials cache</div>|<div style='width: 20pt'>1.0.0</div>
+kyuubi\.kinit\.max<br>\.attempts|<div style='width: 80pt;word-wrap: break-word;white-space: normal'>10</div>|<div style='width: 200pt;word-wrap: break-word;white-space: normal'>How many times will `kinit` process retry</div>|<div style='width: 20pt'>1.0.0</div>
 
 
-For example,
-
-- Configure with Kyuubi service principal 
-```bash
-kyuubi.authentication=KERBEROS
-kyuubi.kinit.principal=spark/kyuubi.apache.org@KYUUBI.APACHE.ORG
-kyuubi.kinit.keytab=/path/to/kyuuib.keytab
-```
-
-- Start Kyuubi
-```bash
-$ ./bin/kyuubi start
-```
-
-- Kinit with user principal and connect using beeline
-
-```bash
-$ kinit -kt user.keytab user.principal
-
-$ beeline -u "jdbc:hive2://localhost:10009/;principal=spark/kyuubi.apache.org@KYUUBI.APACHE.ORG"
-```
+Please refer to [Kinit Auxiliary Service](kinit.html) to get configuration steps.

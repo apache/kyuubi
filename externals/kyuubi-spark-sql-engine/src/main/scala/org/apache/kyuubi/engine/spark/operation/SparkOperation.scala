@@ -22,22 +22,28 @@ import java.time.ZoneId
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
-import org.apache.kyuubi.engine.spark.FetchIterator
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_STATEMENT_ID_KEY}
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
 import org.apache.kyuubi.engine.spark.operation.SparkOperation.TIMEZONE_KEY
-import org.apache.kyuubi.operation.{AbstractOperation, OperationState}
+import org.apache.kyuubi.engine.spark.schema.RowSet
+import org.apache.kyuubi.engine.spark.schema.SchemaHelper
+import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
+import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationState}
 import org.apache.kyuubi.operation.FetchOrientation._
 import org.apache.kyuubi.operation.OperationState.OperationState
 import org.apache.kyuubi.operation.OperationType.OperationType
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.schema.{RowSet, SchemaHelper}
 import org.apache.kyuubi.session.Session
 
-abstract class SparkOperation(spark: SparkSession, opType: OperationType, session: Session)
+abstract class SparkOperation(opType: OperationType, session: Session)
   extends AbstractOperation(opType, session) {
+
+  protected val spark: SparkSession = session.asInstanceOf[SparkSessionImpl].spark
 
   private val timeZone: ZoneId = {
     spark.conf.getOption(TIMEZONE_KEY).map { timeZoneId =>
@@ -46,6 +52,8 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
   }
 
   protected var iter: FetchIterator[Row] = _
+
+  protected var result: DataFrame = _
 
   protected def resultSchema: StructType
 
@@ -67,16 +75,44 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
    * @param input the SQL pattern to convert
    * @return the equivalent Java regular expression of the pattern
    */
-  def toJavaRegex(input: String): String = {
-    val res = if (StringUtils.isEmpty(input) || input == "*") {
-      "%"
-    } else {
-      input
-    }
+  protected def toJavaRegex(input: String): String = {
+    val res =
+      if (StringUtils.isEmpty(input) || input == "*") {
+        "%"
+      } else {
+        input
+      }
     val wStr = ".*"
     res
       .replaceAll("([^\\\\])%", "$1" + wStr).replaceAll("\\\\%", "%").replaceAll("^%", wStr)
       .replaceAll("([^\\\\])_", "$1.").replaceAll("\\\\_", "_").replaceAll("^_", ".")
+  }
+
+  private val forceCancel =
+    session.sessionManager.getConf.get(KyuubiConf.OPERATION_FORCE_CANCEL)
+
+  private val schedulerPool =
+    spark.conf.getOption(KyuubiConf.OPERATION_SCHEDULER_POOL.key).orElse(
+      session.sessionManager.getConf.get(KyuubiConf.OPERATION_SCHEDULER_POOL))
+
+  protected def withLocalProperties[T](f: => T): T = {
+    try {
+      spark.sparkContext.setJobGroup(statementId, statement, forceCancel)
+      spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
+      spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
+      schedulerPool match {
+        case Some(pool) =>
+          spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, pool)
+        case None =>
+      }
+
+      f
+    } finally {
+      spark.sparkContext.setLocalProperty(SPARK_SCHEDULER_POOL_KEY, null)
+      spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, null)
+      spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, null)
+      spark.sparkContext.clearJobGroup()
+    }
   }
 
   protected def onError(cancel: Boolean = false): PartialFunction[Throwable, Unit] = {
@@ -91,12 +127,13 @@ abstract class SparkOperation(spark: SparkSession, opType: OperationType, sessio
           setOperationException(ke)
           throw ke
         } else if (isTerminalState(state)) {
+          setOperationException(KyuubiSQLException(errMsg))
           warn(s"Ignore exception in terminal state with $statementId: $errMsg")
         } else {
-          setState(OperationState.ERROR)
           error(s"Error operating $opType: $errMsg", e)
           val ke = KyuubiSQLException(s"Error operating $opType: $errMsg", e)
           setOperationException(ke)
+          setState(OperationState.ERROR)
           throw ke
         }
       }

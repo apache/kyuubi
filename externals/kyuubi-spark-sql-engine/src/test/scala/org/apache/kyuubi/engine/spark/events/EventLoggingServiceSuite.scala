@@ -30,39 +30,44 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.{KyuubiSparkUtil, WithSparkSQLEngine}
 import org.apache.kyuubi.events.EventLoggerType._
 import org.apache.kyuubi.events.JsonProtocol
-import org.apache.kyuubi.operation.{JDBCTestUtils, OperationHandle}
+import org.apache.kyuubi.operation.{HiveJDBCTestHelper, OperationHandle}
 
-class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
+class EventLoggingServiceSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 
-  private val logRoot = "file:" + Utils.createTempDir().toString
+  private val logRoot = "file://" + Utils.createTempDir().toString
   private val currentDate = Utils.getDateFromTimestamp(System.currentTimeMillis())
 
   override def withKyuubiConf: Map[String, String] = Map(
     KyuubiConf.ENGINE_EVENT_LOGGERS.key -> s"$JSON,$SPARK",
     KyuubiConf.ENGINE_EVENT_JSON_LOG_PATH.key -> logRoot,
     "spark.eventLog.enabled" -> "true",
-    "spark.eventLog.dir" -> logRoot
-  )
+    "spark.eventLog.dir" -> logRoot)
 
   override protected def jdbcUrl: String = getJdbcUrl
 
   test("round-trip for event logging service") {
     val engineEventPath = Paths.get(
-      logRoot, "engine", s"day=$currentDate", KyuubiSparkUtil.engineId + ".json")
+      logRoot,
+      "engine",
+      s"day=$currentDate",
+      KyuubiSparkUtil.engineId + ".json")
     val sessionEventPath = Paths.get(
-      logRoot, "session", s"day=$currentDate", KyuubiSparkUtil.engineId + ".json")
+      logRoot,
+      "session",
+      s"day=$currentDate",
+      KyuubiSparkUtil.engineId + ".json")
 
     val fileSystem: FileSystem = FileSystem.get(new Configuration())
     val fs: FSDataInputStream = fileSystem.open(new Path(engineEventPath.toString))
     val engineEventReader = new BufferedReader(new InputStreamReader(fs))
 
-    val readEvent = JsonProtocol.jsonToEvent(engineEventReader.readLine(),
-      classOf[KyuubiSparkEvent])
+    val readEvent =
+      JsonProtocol.jsonToEvent(engineEventReader.readLine(), classOf[KyuubiSparkEvent])
     assert(readEvent.isInstanceOf[KyuubiSparkEvent])
 
     withJdbcStatement() { statement =>
       val table = engineEventPath.getParent
-      val resultSet = statement.executeQuery(s"SELECT * FROM `json`.`${table}`")
+      val resultSet = statement.executeQuery(s"SELECT * FROM `json`.`$table`")
       while (resultSet.next()) {
         assert(resultSet.getString("Event") === classOf[EngineEvent].getCanonicalName)
         assert(resultSet.getString("applicationId") === spark.sparkContext.applicationId)
@@ -78,12 +83,13 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
       }
 
       val table3 = sessionEventPath.getParent
-      val rs3 = statement.executeQuery(s"SELECT * FROM `json`.`${table3}`")
+      val rs3 = statement.executeQuery(s"SELECT * FROM `json`.`$table3`")
       while (rs3.next()) {
         assert(rs3.getString("Event") === classOf[SessionEvent].getCanonicalName)
         assert(rs3.getString("username") === Utils.currentUser)
         assert(rs3.getString("engineId") === spark.sparkContext.applicationId)
-        assert(rs3.getInt("totalOperations") === 0,
+        assert(
+          rs3.getInt("totalOperations") === 0,
           "update num of operations after session close as statement event will track these")
       }
     }
@@ -99,10 +105,12 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
 
   test("statementEvent: generate, dump and query") {
     val statementEventPath = Paths.get(
-      logRoot, "spark_statement", s"day=$currentDate", engine.engineId + ".json")
+      logRoot,
+      "spark_operation",
+      s"day=$currentDate",
+      spark.sparkContext.applicationId + ".json")
     val sql = "select timestamp'2021-09-01';"
     withSessionHandle { (client, handle) =>
-
       val table = statementEventPath.getParent
       val req = new TExecuteStatementReq()
       req.setSessionHandle(handle)
@@ -112,8 +120,8 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with JDBCTestUtils {
       val statementId = OperationHandle(opHandle).identifier.toString
 
       eventually(timeout(60.seconds), interval(5.seconds)) {
-        val result = spark.sql(s"select * from `json`.`${table}`")
-          .where(s"statementId = '${statementId}'")
+        val result = spark.sql(s"select * from `json`.`$table`")
+          .where(s"statementId = '$statementId'")
 
         assert(result.select("statementId").first().get(0) === statementId)
         assert(result.count() >= 1)

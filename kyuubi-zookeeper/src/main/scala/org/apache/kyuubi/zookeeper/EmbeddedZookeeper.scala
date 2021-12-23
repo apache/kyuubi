@@ -18,7 +18,7 @@
 package org.apache.kyuubi.zookeeper
 
 import java.io.File
-import java.net.{InetAddress, InetSocketAddress}
+import java.net.InetSocketAddress
 
 import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
 
@@ -34,6 +34,7 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
   private var dataDirectory: File = _
   // TODO: Is it right in prod?
   private val deleteDataDirectoryOnClose = true
+  private var host: String = _
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     dataDirectory = new File(conf.get(ZK_DATA_DIR))
@@ -42,15 +43,15 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
     val maxClientCnxns = conf.get(ZK_MAX_CLIENT_CONNECTIONS)
     val minSessionTimeout = conf.get(ZK_MIN_SESSION_TIMEOUT)
     val maxSessionTimeout = conf.get(ZK_MAX_SESSION_TIMEOUT)
-    val hostname = conf.get(ZK_CLIENT_PORT_ADDRESS).map(InetAddress.getByName)
-      .getOrElse(findLocalInetAddress).getCanonicalHostName
+    host = conf.get(ZK_CLIENT_PORT_ADDRESS)
+      .getOrElse(findLocalInetAddress.getCanonicalHostName)
 
     zks = new ZooKeeperServer(dataDirectory, dataDirectory, tickTime)
     zks.setMinSessionTimeout(minSessionTimeout)
     zks.setMaxSessionTimeout(maxSessionTimeout)
 
     serverFactory = new NIOServerCnxnFactory
-    serverFactory.configure(new InetSocketAddress(hostname, clientPort), maxClientCnxns)
+    serverFactory.configure(new InetSocketAddress(host, clientPort), maxClientCnxns)
 
     super.initialize(conf)
   }
@@ -74,7 +75,6 @@ class EmbeddedZookeeper extends AbstractService("EmbeddedZookeeper") {
 
   def getConnectString: String = synchronized {
     assert(zks != null, s"$getName is in $getServiceState")
-    s"${serverFactory.getLocalAddress.getHostName}:${serverFactory.getLocalPort}"
+    s"${host}:${serverFactory.getLocalPort}"
   }
-
 }

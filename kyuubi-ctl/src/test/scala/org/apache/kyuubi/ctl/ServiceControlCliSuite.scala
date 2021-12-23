@@ -50,7 +50,7 @@ trait TestPrematureExit {
   private[kyuubi] def testPrematureExit(
       input: Array[String],
       searchString: String,
-      mainObject: CommandLineUtils = ServiceControlCli) : Unit = {
+      mainObject: CommandLineUtils = ServiceControlCli): Unit = {
     val printStream = new BufferPrintStream()
     mainObject.printStream = printStream
 
@@ -60,12 +60,13 @@ trait TestPrematureExit {
     try {
       @volatile var exception: Exception = null
       val thread = new Thread {
-        override def run() = try {
-          mainObject.main(input)
-        } catch {
-          // Capture the exception to check whether the exception contains searchString or not
-          case e: Exception => exception = e
-        }
+        override def run() =
+          try {
+            mainObject.main(input)
+          } catch {
+            // Capture the exception to check whether the exception contains searchString or not
+            case e: Exception => exception = e
+          }
       }
       thread.start()
       thread.join()
@@ -121,7 +122,8 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
   }
 
   /** Get the rendered service node info without title */
-  private def getRenderedNodesInfoWithoutTitle(nodesInfo: Seq[ServiceNodeInfo],
+  private def getRenderedNodesInfoWithoutTitle(
+      nodesInfo: Seq[ServiceNodeInfo],
       verbose: Boolean): String = {
     val renderedInfo = renderServiceNodesInfo("", nodesInfo, verbose)
     if (verbose) {
@@ -131,7 +133,7 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     }
   }
 
-  test("test expose to same namespace or not specified namespace") {
+  test("test expose to same namespace") {
     conf
       .unset(KyuubiConf.SERVER_KEYTAB)
       .unset(KyuubiConf.SERVER_PRINCIPAL)
@@ -140,21 +142,58 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     val args = Array(
-      "create", "server",
-      "--zk-quorum", zkServer.getConnectString,
-      "--namespace", namespace,
-      "--host", host,
-      "--port", port
-    )
+      "create",
+      "server",
+      "--zk-quorum",
+      zkServer.getConnectString,
+      "--namespace",
+      namespace,
+      "--host",
+      host,
+      "--port",
+      port)
     testPrematureExit(args, "Only support expose Kyuubi server instance to another domain")
+  }
+
+  test("test not specified namespace") {
+    conf
+      .unset(KyuubiConf.SERVER_KEYTAB)
+      .unset(KyuubiConf.SERVER_PRINCIPAL)
+      .set(HA_ZK_QUORUM, zkServer.getConnectString)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     val args2 = Array(
-      "create", "server",
-      "--zk-quorum", zkServer.getConnectString,
-      "--host", host,
-      "--port", port
-    )
-    testPrematureExit(args2, "Zookeeper namespace is not specified")
+      "create",
+      "server",
+      "--zk-quorum",
+      zkServer.getConnectString,
+      "--host",
+      host,
+      "--port",
+      port)
+    testPrematureExit(args2, "Only support expose Kyuubi server instance to another domain")
+  }
+
+  test("test expose to another namespace") {
+    conf
+      .unset(KyuubiConf.SERVER_KEYTAB)
+      .unset(KyuubiConf.SERVER_PRINCIPAL)
+      .set(HA_ZK_QUORUM, zkServer.getConnectString)
+      .set(HA_ZK_NAMESPACE, namespace)
+      .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+
+    val args = Array(
+      "create",
+      "server",
+      "--zk-quorum",
+      zkServer.getConnectString,
+      "--namespace",
+      "other-kyuubi-server",
+      "--host",
+      host,
+      "--port",
+      port)
+    testPrematureExit(args, "")
   }
 
   test("test render zookeeper service node info") {
@@ -164,14 +203,14 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     val renderedInfo = renderServiceNodesInfo(title, nodes, true)
     val expected = {
       s"\n               $title               " +
-      """
-        |+----------+----------+----------+----------+
-        ||Namespace |   Host   |   Port   | Version  |
-        |+----------+----------+----------+----------+
-        || /kyuubi  |localhost |  10000   | version  |
-        |+----------+----------+----------+----------+
-        |1 row(s)
-        |""".stripMargin
+        """
+          |+----------+----------+----------+----------+
+          ||Namespace |   Host   |   Port   | Version  |
+          |+----------+----------+----------+----------+
+          || /kyuubi  |localhost |  10000   | version  |
+          |+----------+----------+----------+----------+
+          |1 row(s)
+          |""".stripMargin
     }
     assert(renderedInfo == expected)
     assert(renderedInfo.contains(getRenderedNodesInfoWithoutTitle(nodes, true)))
@@ -188,20 +227,21 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
     System.setProperty(HA_ZK_NAMESPACE.key, uniqueNamespace)
 
     withZkClient(conf) { framework =>
-      createServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
-      createServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
+      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
+      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
 
       val newNamespace = getUniqueNamespace()
       val args = Array(
-        "create", "server",
-        "--zk-quorum", zkServer.getConnectString,
-        "--namespace", newNamespace
-      )
+        "create",
+        "server",
+        "--zk-quorum",
+        zkServer.getConnectString,
+        "--namespace",
+        newNamespace)
 
       val expectedCreatedNodes = Seq(
         ServiceNodeInfo(s"/$newNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None),
-        ServiceNodeInfo(s"/$newNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION), None)
-      )
+        ServiceNodeInfo(s"/$newNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION), None))
 
       testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedCreatedNodes, false))
       val znodeRoot = s"/$newNamespace"
@@ -220,18 +260,23 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
 
   test("test get zk namespace for different service type") {
     val arg1 = Array(
-      "list", "server",
-      "--zk-quorum", zkServer.getConnectString,
-      "--namespace", namespace
-    )
+      "list",
+      "server",
+      "--zk-quorum",
+      zkServer.getConnectString,
+      "--namespace",
+      namespace)
     assert(getZkNamespace(new ServiceControlCliArguments(arg1)) == s"/$namespace")
 
     val arg2 = Array(
-      "list", "engine",
-      "--zk-quorum", zkServer.getConnectString,
-      "--namespace", namespace,
-      "--user", user
-    )
+      "list",
+      "engine",
+      "--zk-quorum",
+      zkServer.getConnectString,
+      "--namespace",
+      namespace,
+      "--user",
+      user)
     assert(getZkNamespace(new ServiceControlCliArguments(arg2)) == s"/${namespace}_USER/$user")
   }
 
@@ -245,19 +290,20 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     withZkClient(conf) { framework =>
-      createServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
-      createServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
+      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
+      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
 
       val args = Array(
-        "list", "server",
-        "--zk-quorum", zkServer.getConnectString,
-        "--namespace", uniqueNamespace
-      )
+        "list",
+        "server",
+        "--zk-quorum",
+        zkServer.getConnectString,
+        "--namespace",
+        uniqueNamespace)
 
       val expectedNodes = Seq(
         ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None),
-        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION), None)
-      )
+        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION), None))
 
       testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedNodes, false))
     }
@@ -273,20 +319,23 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     withZkClient(conf) { framework =>
-      createServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
-      createServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
+      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
+      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
 
       val args = Array(
-        "get", "server",
-        "--zk-quorum", zkServer.getConnectString,
-        "--namespace", uniqueNamespace,
-        "--host", "localhost",
-        "--port", "10000"
-      )
+        "get",
+        "server",
+        "--zk-quorum",
+        zkServer.getConnectString,
+        "--namespace",
+        uniqueNamespace,
+        "--host",
+        "localhost",
+        "--port",
+        "10000")
 
       val expectedNodes = Seq(
-        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None)
-      )
+        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None))
 
       testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedNodes, false))
     }
@@ -303,21 +352,24 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
 
     withZkClient(conf) { framework =>
       withZkClient(conf) { zc =>
-        createServiceNode(conf, zc, uniqueNamespace, "localhost:10000", external = true)
-        createServiceNode(conf, zc, uniqueNamespace, "localhost:10001", external = true)
+        createAndGetServiceNode(conf, zc, uniqueNamespace, "localhost:10000", external = true)
+        createAndGetServiceNode(conf, zc, uniqueNamespace, "localhost:10001", external = true)
       }
 
       val args = Array(
-        "delete", "server",
-        "--zk-quorum", zkServer.getConnectString,
-        "--namespace", uniqueNamespace,
-        "--host", "localhost",
-        "--port", "10000"
-      )
+        "delete",
+        "server",
+        "--zk-quorum",
+        zkServer.getConnectString,
+        "--namespace",
+        uniqueNamespace,
+        "--host",
+        "localhost",
+        "--port",
+        "10000")
 
       val expectedDeletedNodes = Seq(
-        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None)
-      )
+        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None))
 
       testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedDeletedNodes, false))
     }
@@ -333,20 +385,21 @@ class ServiceControlCliSuite extends KyuubiFunSuite with TestPrematureExit {
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
     withZkClient(conf) { framework =>
-      createServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
-      createServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
+      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10000")
+      createAndGetServiceNode(conf, framework, uniqueNamespace, "localhost:10001")
 
       val args = Array(
-        "list", "server",
-        "--zk-quorum", zkServer.getConnectString,
-        "--namespace", uniqueNamespace,
-        "--verbose"
-      )
+        "list",
+        "server",
+        "--zk-quorum",
+        zkServer.getConnectString,
+        "--namespace",
+        uniqueNamespace,
+        "--verbose")
 
       val expectedNodes = Seq(
         ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10000, Some(KYUUBI_VERSION), None),
-        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION), None)
-      )
+        ServiceNodeInfo(s"/$uniqueNamespace", "", "localhost", 10001, Some(KYUUBI_VERSION), None))
 
       testPrematureExit(args, getRenderedNodesInfoWithoutTitle(expectedNodes, true))
     }

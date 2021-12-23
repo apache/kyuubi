@@ -22,7 +22,12 @@ import java.time.{Instant, LocalDateTime, ZoneId}
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 
+import org.apache.kyuubi.Utils
+
 object KyuubiSparkUtil {
+
+  final val SPARK_SCHEDULER_POOL_KEY = "spark.scheduler.pool"
+  final val SPARK_SQL_EXECUTION_ID_KEY = "spark.sql.execution.id"
 
   def globalSparkContext: SparkContext = SparkSession.active.sparkContext
 
@@ -35,15 +40,17 @@ object KyuubiSparkUtil {
       "spark.org.apache.hadoop.yarn.server.webproxy.amfilter.AmIpFilter.param.PROXY_URI_BASES")
       .orElse(sc.uiWebUrl).getOrElse("")
     // scalastyle:off line.size.limit
+    // format: off
     s"""
        |           Spark application name: ${sc.appName}
-       |                 application ID: ${engineId}
+       |                 application ID: $engineId
        |                 application web UI: $webUrl
        |                 master: ${sc.master}
        |                 deploy mode: ${sc.deployMode}
        |                 version: ${sc.version}
        |           Start time: ${LocalDateTime.ofInstant(Instant.ofEpochMilli(sc.startTime), ZoneId.systemDefault)}
        |           User: ${sc.sparkUser}""".stripMargin
+    // format: on
     // scalastyle:on line.size.limit
   }
 
@@ -58,5 +65,10 @@ object KyuubiSparkUtil {
     } catch {
       case _: ClassNotFoundException | _: NoClassDefFoundError => false
     }
+  }
+
+  lazy val sparkMajorMinorVersion: (Int, Int) = {
+    val runtimeSparkVer = org.apache.spark.SPARK_VERSION
+    Utils.majorMinorVersion(runtimeSparkVer)
   }
 }

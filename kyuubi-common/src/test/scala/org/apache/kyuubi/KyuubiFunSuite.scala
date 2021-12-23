@@ -25,6 +25,7 @@ import org.apache.log4j.spi.LoggingEvent
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Outcome}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.funsuite.AnyFunSuite
+import org.slf4j.bridge.SLF4JBridgeHandler
 
 import org.apache.kyuubi.config.internal.Tests.IS_TESTING
 
@@ -34,6 +35,11 @@ trait KyuubiFunSuite extends AnyFunSuite
   with Eventually
   with ThreadAudit
   with Logging {
+
+  // Redirect jul to sl4j
+  SLF4JBridgeHandler.removeHandlersForRootLogger()
+  SLF4JBridgeHandler.install()
+
   // scalastyle:on
   override def beforeAll(): Unit = {
     System.setProperty(IS_TESTING.key, "true")
@@ -67,14 +73,15 @@ trait KyuubiFunSuite extends AnyFunSuite
       appender: Appender,
       loggerName: Option[String] = None,
       level: Option[Level] = None)(
-    f: => Unit): Unit = {
+      f: => Unit): Unit = {
     val logger = loggerName.map(Logger.getLogger).getOrElse(Logger.getRootLogger)
     val restoreLevel = logger.getLevel
     logger.addAppender(appender)
     if (level.isDefined) {
       logger.setLevel(level.get)
     }
-    try f finally {
+    try f
+    finally {
       logger.removeAppender(appender)
       if (level.isDefined) {
         logger.setLevel(restoreLevel)

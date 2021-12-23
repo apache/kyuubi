@@ -23,8 +23,8 @@ set -x
 
 ASF_USERNAME=${ASF_USERNAME:?"ASF_USERNAME is required"}
 ASF_PASSWORD=${ASF_PASSWORD:?"ASF_PASSWORD is required"}
-RELEASE_VERSION=${RELEASE_VERSION:?"RELEASE_VERSION is required"}
-RELEASE_RC_NO=${RELEASE_RC_NO:?"RELEASE_RC_NO is required"}
+RELEASE_VERSION=${RELEASE_VERSION:?"RELEASE_VERSION is required, e.g. 1.4.0-incubating"}
+RELEASE_RC_NO=${RELEASE_RC_NO:?"RELEASE_RC_NO is required, e.g. 0"}
 
 exit_with_usage() {
   local NAME=$(basename $0)
@@ -94,26 +94,22 @@ upload_svn_staging() {
 }
 
 upload_nexus_staging() {
-  ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,spark-provided \
+  ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided \
     -s "${KYUUBI_DIR}/build/release/asf-settings.xml"
+  ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,spark-3.1 \
+    -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
+    -pl dev/kyuubi-extension-spark-3-1 -am
+  ${KYUUBI_DIR}/build/mvn clean deploy -DskipTests -Papache-release,flink-provided,spark-provided,spark-3.2 \
+    -s "${KYUUBI_DIR}/build/release/asf-settings.xml" \
+    -pl dev/kyuubi-extension-spark-3-2 -am
 }
 
 finalize_svn() {
   echo "Moving Kyuubi tarballs to the release directory"
   svn mv --username "${ASF_USERNAME}" --password "${ASF_PASSWORD}" --no-auth-cache \
-     --message"Apache Kyuubi ${RELEASE_VERSION}" \
-     "${SVN_STAGING_DIR}/${RELEASE_TAG}" "${SVN_RELEASE_REPO}/kyuubi-${RELEASE_VERSION}"
+     --message "Apache Kyuubi ${RELEASE_VERSION}" \
+     "${SVN_STAGING_REPO}/${RELEASE_TAG}" "${SVN_RELEASE_REPO}/kyuubi-${RELEASE_VERSION}"
   echo "Kyuubi tarballs moved"
-
-  echo "Sync'ing KEYS"
-  svn checkout --depth=files "${SVN_RELEASE_REPO}" "${SVN_RELEASE_DIR}"
-  curl "$SVN_STAGING_REPO/KEYS" > "${SVN_RELEASE_DIR}/KEYS"
-  svn add "${SVN_RELEASE_DIR}/KEYS"
-  (
-    cd "${SVN_RELEASE_DIR}" && \
-    svn commit --username "${ASF_USERNAME}" --password "${ASF_PASSWORD}" --message "Update KEYS"
-  )
-  echo "KEYS sync'ed"
 }
 
 if [[ "$1" == "publish" ]]; then

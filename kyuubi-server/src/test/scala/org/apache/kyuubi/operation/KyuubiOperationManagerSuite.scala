@@ -23,7 +23,7 @@ import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_QUERY_TIMEOUT
 
-class KyuubiOperationManagerSuite extends WithKyuubiServer with JDBCTestUtils {
+class KyuubiOperationManagerSuite extends WithKyuubiServer with HiveJDBCTestHelper {
   override protected val conf: KyuubiConf = {
     KyuubiConf().set(OPERATION_QUERY_TIMEOUT.key, "PT1S")
   }
@@ -47,7 +47,6 @@ class KyuubiOperationManagerSuite extends WithKyuubiServer with JDBCTestUtils {
     val conf4 = kyuubiConf.set(OPERATION_QUERY_TIMEOUT, -1000000L)
     intercept[IllegalArgumentException] { mgr4.initialize(conf4) }
   }
-
 
   test("query time out shall respect server-side first") {
     withJdbcStatement() { statement =>

@@ -15,7 +15,7 @@
  - limitations under the License.
  -->
 
-# Kyuubi Server Metrics
+# Monitoring Kyuubi - Server Metrics
 
 Kyuubi has a configurable metrics system based on the [Dropwizard Metrics Library](https://metrics.dropwizard.io/).
 This allows users to report Kyuubi metrics to a variety of `kyuubi.metrics.reporters`. 
@@ -42,17 +42,45 @@ These metrics include:
 
 Metrics Prefix | Metrics Suffix | Type | Since | Description
 ---|---|---|---|---
-kyuubi<br/>.exec.pool<br/>.threads.alive ||gauge|1.2.0|<div style='width: 150pt;word-wrap: break-word;white-space: normal'> threads keepAlive in the backend executive thread pool</div>
-kyuubi<br/>.exec.pool<br/>.threads.active ||gauge|1.2.0|<div style='width: 150pt;word-wrap: break-word;white-space: normal'> threads active in the backend executive thread pool</div>
+kyuubi<br/>.exec.pool<br/>.threads.alive  | | gauge | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> threads keepAlive in the backend executive thread pool</div>
+kyuubi<br/>.exec.pool<br/>.threads.active | | gauge | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> threads active in the backend executive thread pool</div>
 kyuubi<br/>.connection.total   | | counter | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative connection count</div>
 kyuubi<br/>.connection.opened  | | gauge | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> current active connection count</div>
-kyuubi<br/>.connection.opened  | `${user}` | counter | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> cumulative connections requested by a `${user}`</div>
+kyuubi<br/>.connection.opened  | `${user}` | counter | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> current active connections count requested by a `${user}`</div>
 kyuubi<br/>.connection.failed  | | counter | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative failed connection count</div>
-kyuubi<br/>.connection.failed  | `${user}` | counter | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative failed connections for a `${user}`</div>
-kyuubi<br/>.statement.total    | | counter | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative opened statement count</div>
-kyuubi<br/>.statement.opened   | | counter | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  current opened statement count</div>
-kyuubi<br/>.statement.failed   | `${errorType}` | counter | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative failed statement for a particular `${errorType}`, e.g. `AnalysisException`</div>
+kyuubi<br/>.connection.failed  | `${user}` | counter | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> cumulative failed connections for a `${user}`</div>
+kyuubi<br/>.operation.total    | | counter | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative opened operation count</div>
+kyuubi<br/>.operation.total    | `${operationType}` | counter | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative opened count for the operation `${operationType}`</div>
+kyuubi<br/>.operation.opened   | | gauge | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  current opened operation count</div>
+kyuubi<br/>.operation.opened   | `${operationType}` | counter | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  current opened count for the operation `${operationType}`</div>
+kyuubi<br/>.operation.failed   | `${operationType}`<br/>`.${errorType}` | counter | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative failed count for the operation `${operationType}` with a particular `${errorType}`, e.g. `execute_statement.AnalysisException`</div>
 kyuubi<br/>.engine.total       | | counter | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative created engines</div>
 kyuubi<br/>.engine.timeout     | | counter | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative timeout engines</div>
 kyuubi<br/>.engine.failed      | `${user}` | counter | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'>  cumulative explicitly failed engine count for a `${user}`</div>
 kyuubi<br/>.engine.failed      | `${errorType}` | counter | 1.2.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> cumulative explicitly failed engine count for a particular `${errorType}`, e.g. `ClassNotFoundException`</div>
+kyuubi<br/>.backend_service<br/>.open_session_ms            | | histogram | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `openSession` method time cost histogram statistics </div>
+kyuubi<br/>.backend_service<br/>.close_session_ms           | | histogram | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `closeSession` method time cost histogram statistics </div>
+kyuubi<br/>.backend_service<br/>.get_info_ms                | | histogram | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `getInfo` method time cost histogram statistics </div>
+kyuubi<br/>.backend_service<br/>.execute_statement_ms       | | histogram | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `executeStatement` method time cost histogram statistics </div>
+kyuubi<br/>.backend_service<br/>.get_type_info_ms           | | histogram | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `getTypeInfo` method time cost histogram statistics </div>
+kyuubi<br/>.backend_service<br/>.get_catalogs_ms            | | histogram | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `getCatalogs` method time cost histogram statistics </div>
+kyuubi<br/>.backend_service<br/>.get_schemas_ms             | | histogram | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `getSchemas` method time cost histogram statistics </div>
+kyuubi<br/>.backend_service<br/>.get_tables_ms              | | histogram | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `getTables` method time cost histogram statistics </div>
+kyuubi<br/>.backend_service<br/>.get_table_types_ms         | | histogram | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `getTableTypes` method time cost histogram statistics </div>
+kyuubi<br/>.backend_service<br/>.get_columns_ms             | | histogram | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `getColumns` method time cost histogram statistics </div>
+kyuubi<br/>.backend_service<br/>.get_functions_ms           | | histogram | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `getFunctions` method time cost histogram statistics </div>
+kyuubi<br/>.backend_service<br/>.get_operation_status_ms    | | histogram | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `getOperationStatus` method time cost histogram statistics </div>
+kyuubi<br/>.backend_service<br/>.cancel_operation_ms        | | histogram | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `cancelOperation` method time cost histogram statistics </div>
+kyuubi<br/>.backend_service<br/>.close_operation_ms         | | histogram | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `closeOperation` method time cost histogram statistics </div>
+kyuubi<br/>.backend_service<br/>.get_result_set_metadata_ms | | histogram | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `getResultSetMetadata` method time cost histogram statistics </div>
+kyuubi<br/>.backend_service<br/>.fetch_results_ms           | | histogram | 1.5.0 |<div style='width: 150pt;word-wrap: break-word;white-space: normal'> kyuubi backend service `fetchResults` method time cost histogram statistics </div>
+
+Before v1.5.0, if you use these metrics:
+- `kyuubi.statement.total`
+- `kyuubi.statement.opened`
+- `kyuubi.statement.failed.${errorType}`
+
+Since v1.5.0, you can use the following metrics to replace:
+- `kyuubi.operation.total.ExecuteStatement`
+- `kyuubi.operation.opened.ExecuteStatement`
+- `kyuubi.operation.failed.ExecuteStatement.${errorType}`

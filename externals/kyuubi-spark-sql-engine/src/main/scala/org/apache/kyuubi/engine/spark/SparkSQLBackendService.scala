@@ -38,4 +38,6 @@ class SparkSQLBackendService(name: String, spark: SparkSession)
   def this(spark: SparkSession) = this(classOf[SparkSQLBackendService].getSimpleName, spark)
 
   override val sessionManager: SessionManager = new SparkSQLSessionManager(spark)
+
+  def sparkSession: SparkSession = spark
 }

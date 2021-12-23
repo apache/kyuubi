@@ -22,7 +22,9 @@ import org.apache.kyuubi.operation.OperationState.OperationState
 
 case class OperationStatus(
     state: OperationState,
+    create: Long,
     start: Long,
+    lastModified: Long,
     completed: Long,
     hasResultSet: Boolean,
     exception: Option[KyuubiSQLException] = None)

@@ -19,11 +19,11 @@ package org.apache.kyuubi.operation.datalake
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.operation.BasicIcebergJDBCTests
+import org.apache.kyuubi.operation.IcebergMetadataTests
 import org.apache.kyuubi.tags.IcebergTest
 
 @IcebergTest
-class IcebergOperationSuite extends WithKyuubiServer with BasicIcebergJDBCTests {
+class IcebergOperationSuite extends WithKyuubiServer with IcebergMetadataTests {
   override protected val conf: KyuubiConf = {
     val kyuubiConf = KyuubiConf().set(KyuubiConf.ENGINE_IDLE_TIMEOUT, 20000L)
     extraConfigs.foreach { case (k, v) => kyuubiConf.set(k, v) }
