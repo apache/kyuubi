@@ -136,10 +136,10 @@ abstract class FlinkOperation(
           setOperationException(KyuubiSQLException(errMsg))
           warn(s"Ignore exception in terminal state with $statementId: $errMsg")
         } else {
-          setState(OperationState.ERROR)
           error(s"Error operating $opType: $errMsg", e)
           val ke = KyuubiSQLException(s"Error operating $opType: $errMsg", e)
           setOperationException(ke)
+          setState(OperationState.ERROR)
           throw ke
         }
       }

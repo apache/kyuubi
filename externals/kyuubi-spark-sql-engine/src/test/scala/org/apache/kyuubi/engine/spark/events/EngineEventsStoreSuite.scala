@@ -82,9 +82,45 @@ class EngineEventsStoreSuite extends KyuubiFunSuite {
   test("ensure that the statements are stored in order") {
     val store = new EngineEventsStore(KyuubiConf())
 
-    val s1 = SparkStatementEvent("a", "ea1", "select 1", "app1", "sid1", 1L, "RUNNING", 2L)
-    val s2 = SparkStatementEvent("c", "ea2", "select 2", "app2", "sid1", 2L, "RUNNING", 2L)
-    val s3 = SparkStatementEvent("b", "ea3", "select 3", "app3", "sid1", 3L, "RUNNING", 2L)
+    val s1 = SparkOperationEvent(
+      "ea1",
+      "select 1",
+      true,
+      "RUNNING",
+      1L,
+      1L,
+      1L,
+      2L,
+      None,
+      "sid1",
+      "a",
+      "")
+    val s2 = SparkOperationEvent(
+      "ea2",
+      "select 2",
+      true,
+      "RUNNING",
+      2L,
+      2L,
+      2L,
+      4L,
+      None,
+      "sid1",
+      "c",
+      "")
+    val s3 = SparkOperationEvent(
+      "ea3",
+      "select 3",
+      true,
+      "RUNNING",
+      3L,
+      3L,
+      3L,
+      6L,
+      None,
+      "sid1",
+      "b",
+      "")
 
     store.saveStatement(s1)
     store.saveStatement(s2)
@@ -101,7 +137,19 @@ class EngineEventsStoreSuite extends KyuubiFunSuite {
 
     val store = new EngineEventsStore(conf)
     for (i <- 1 to 5) {
-      val s = SparkStatementEvent("a", s"ea1${i}", "select 1", "app1", "sid1", 1L, "RUNNING", 2L)
+      val s = SparkOperationEvent(
+        s"ea1${i}",
+        "select 1",
+        true,
+        "RUNNING",
+        1L,
+        1L,
+        1L,
+        2L,
+        None,
+        "sid1",
+        "a",
+        "")
       store.saveStatement(s)
     }
 
@@ -114,10 +162,58 @@ class EngineEventsStoreSuite extends KyuubiFunSuite {
 
     val store = new EngineEventsStore(conf)
 
-    store.saveStatement(SparkStatementEvent("a", "s1", "select 1", "a1", "si1", 1L, "RUNNING", -1L))
-    store.saveStatement(SparkStatementEvent("a", "s2", "select 1", "a2", "si1", 2L, "RUNNING", -1L))
-    store.saveStatement(SparkStatementEvent("a", "s3", "1", "a3", "si1", 3L, "ERROR", 3L, 3L))
-    store.saveStatement(SparkStatementEvent("a", "s4", "select 1", "a4", "si1", 4L, "RUNNING", -1L))
+    store.saveStatement(SparkOperationEvent(
+      "s1",
+      "select 1",
+      true,
+      "RUNNING",
+      1L,
+      1L,
+      1L,
+      -1L,
+      None,
+      "sid1",
+      "a",
+      ""))
+    store.saveStatement(SparkOperationEvent(
+      "s2",
+      "select 1",
+      true,
+      "RUNNING",
+      2L,
+      2L,
+      2L,
+      -1L,
+      None,
+      "sid1",
+      "a",
+      ""))
+    store.saveStatement(SparkOperationEvent(
+      "s3",
+      "select 1",
+      true,
+      "RUNNING",
+      3L,
+      3L,
+      3L,
+      3L,
+      None,
+      "sid1",
+      "a",
+      ""))
+    store.saveStatement(SparkOperationEvent(
+      "s4",
+      "select 1",
+      true,
+      "RUNNING",
+      4L,
+      4L,
+      4L,
+      -1L,
+      None,
+      "sid1",
+      "a",
+      ""))
 
     assert(store.getStatementList.size == 3)
     assert(store.getStatementList(2).statementId == "s4")

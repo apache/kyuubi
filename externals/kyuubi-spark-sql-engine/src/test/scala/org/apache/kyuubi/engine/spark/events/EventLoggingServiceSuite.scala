@@ -106,7 +106,7 @@ class EventLoggingServiceSuite extends WithSparkSQLEngine with HiveJDBCTestHelpe
   test("statementEvent: generate, dump and query") {
     val statementEventPath = Paths.get(
       logRoot,
-      "spark_statement",
+      "spark_operation",
       s"day=$currentDate",
       spark.sparkContext.applicationId + ".json")
     val sql = "select timestamp'2021-09-01';"

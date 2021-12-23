@@ -38,7 +38,7 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
     session.sessionManager.getConf.get(OPERATION_IDLE_TIMEOUT)
   }
 
-  final protected val statementId = handle.identifier.toString
+  final private[kyuubi] val statementId = handle.identifier.toString
 
   override def getOperationLog: Option[OperationLog] = None
 

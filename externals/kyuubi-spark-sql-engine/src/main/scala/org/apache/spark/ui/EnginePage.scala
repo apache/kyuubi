@@ -30,7 +30,7 @@ import org.apache.spark.ui.TableSourceUtil._
 import org.apache.spark.ui.UIUtils._
 
 import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
-import org.apache.kyuubi.engine.spark.events.{SessionEvent, SparkStatementEvent}
+import org.apache.kyuubi.engine.spark.events.{SessionEvent, SparkOperationEvent}
 
 case class EnginePage(parent: EngineTab) extends WebUIPage("") {
   private val store = parent.engine.store
@@ -280,10 +280,10 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
 private class StatementStatsPagedTable(
     request: HttpServletRequest,
     parent: EngineTab,
-    data: Seq[SparkStatementEvent],
+    data: Seq[SparkOperationEvent],
     subPath: String,
     basePath: String,
-    sqlStatsTableTag: String) extends PagedTable[SparkStatementEvent] {
+    sqlStatsTableTag: String) extends PagedTable[SparkOperationEvent] {
 
   private val (sortColumn, desc, pageSize) =
     getRequestTableParameters(request, sqlStatsTableTag, "Create Time")
@@ -339,32 +339,32 @@ private class StatementStatsPagedTable(
       sqlStatsTableTag)
   }
 
-  override def row(sparkStatementEvent: SparkStatementEvent): Seq[Node] = {
+  override def row(event: SparkOperationEvent): Seq[Node] = {
     <tr>
       <td>
-        {sparkStatementEvent.username}
+        {event.sessionUser}
       </td>
       <td>
-        {sparkStatementEvent.statementId}
+        {event.statementId}
       </td>
       <td >
-        {formatDate(sparkStatementEvent.createTime)}
+        {formatDate(event.createTime)}
       </td>
       <td>
-        {if (sparkStatementEvent.completeTime > 0) formatDate(sparkStatementEvent.completeTime)}
+        {if (event.completeTime > 0) formatDate(event.completeTime)}
       </td>
       <td >
-        {formatDurationVerbose(sparkStatementEvent.duration)}
+        {formatDurationVerbose(event.duration)}
       </td>
       <td>
         <span class="description-input">
-          {sparkStatementEvent.statement}
+          {event.statement}
         </span>
       </td>
       <td>
-        {sparkStatementEvent.state}
+        {event.state}
       </td>
-      {errorMessageCell(sparkStatementEvent.exception)}
+      {errorMessageCell(event.exception.map(Utils.stringifyException).getOrElse(""))}
     </tr>
   }
 
@@ -421,24 +421,24 @@ private class SessionStatsTableDataSource(
 }
 
 private class StatementStatsTableDataSource(
-    info: Seq[SparkStatementEvent],
+    info: Seq[SparkOperationEvent],
     pageSize: Int,
     sortColumn: String,
-    desc: Boolean) extends PagedDataSource[SparkStatementEvent](pageSize) {
+    desc: Boolean) extends PagedDataSource[SparkOperationEvent](pageSize) {
 
   // Sorting SessionEvent data
   private val data = info.sorted(ordering(sortColumn, desc))
 
   override def dataSize: Int = data.size
 
-  override def sliceData(from: Int, to: Int): Seq[SparkStatementEvent] = data.slice(from, to)
+  override def sliceData(from: Int, to: Int): Seq[SparkOperationEvent] = data.slice(from, to)
 
   /**
    * Return Ordering according to sortColumn and desc.
    */
-  private def ordering(sortColumn: String, desc: Boolean): Ordering[SparkStatementEvent] = {
-    val ordering: Ordering[SparkStatementEvent] = sortColumn match {
-      case "User" => Ordering.by(_.username)
+  private def ordering(sortColumn: String, desc: Boolean): Ordering[SparkOperationEvent] = {
+    val ordering: Ordering[SparkOperationEvent] = sortColumn match {
+      case "User" => Ordering.by(_.sessionUser)
       case "Statement ID" => Ordering.by(_.statementId)
       case "Create Time" => Ordering.by(_.createTime)
       case "Finish Time" => Ordering.by(_.completeTime)

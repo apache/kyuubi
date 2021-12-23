@@ -58,7 +58,7 @@ class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper 
     val serverStatementEventPath =
       Paths.get(serverLogRoot, "kyuubi_operation", s"day=$currentDate", s"server-$hostName.json")
     val engineStatementEventPath =
-      Paths.get(engineLogRoot, "spark_statement", s"day=$currentDate", "*.json")
+      Paths.get(engineLogRoot, "spark_operation", s"day=$currentDate", "*.json")
     val sql = "select timestamp'2021-06-01'"
 
     withJdbcStatement() { statement =>
@@ -86,9 +86,9 @@ class EventLoggingServiceSuite extends WithKyuubiServer with HiveJDBCTestHelper 
       stateIndex = 0
       while (resultSet2.next()) {
         assert(resultSet2.getString("Event") ==
-          "org.apache.kyuubi.engine.spark.events.SparkStatementEvent")
+          "org.apache.kyuubi.engine.spark.events.SparkOperationEvent")
         assert(resultSet2.getString("statement") == sql)
-        assert(resultSet2.getString("state") == engineStates(stateIndex).toString)
+        assert(resultSet2.getString("state") == engineStates(stateIndex).name())
         stateIndex += 1
       }
     }

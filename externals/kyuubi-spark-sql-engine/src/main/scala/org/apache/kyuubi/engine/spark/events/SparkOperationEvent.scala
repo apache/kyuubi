@@ -15,13 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.events
+package org.apache.kyuubi.engine.spark.events
+
+import org.apache.spark.sql.{DataFrame, Encoders}
+import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.Utils
-import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
+import org.apache.kyuubi.engine.spark.operation.SparkOperation
 
 /**
- * A [[KyuubiOperationEvent]] used to tracker the lifecycle of an operation at server side.
+ * A [[SparkOperationEvent]] used to tracker the lifecycle of an operation at Spark SQL Engine side.
  * <ul>
  *   <li>Operation Basis</li>
  *   <li>Operation Live Status</li>
@@ -29,7 +32,6 @@ import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
  * </ul>
  *
  * @param statementId the unique identifier of a single operation
- * @param remoteId the unique identifier of a single operation at engine side
  * @param statement the sql that you execute
  * @param shouldRunAsync the flag indicating whether the query runs synchronously or not
  * @param state the current operation state
@@ -40,10 +42,10 @@ import org.apache.kyuubi.operation.{KyuubiOperation, OperationHandle}
  * @param exception: caught exception if have
  * @param sessionId the identifier of the parent session
  * @param sessionUser the authenticated client user
+ * @param queryExecution the query execution of this operation
  */
-case class KyuubiOperationEvent private (
+case class SparkOperationEvent(
     statementId: String,
-    remoteId: String,
     statement: String,
     shouldRunAsync: Boolean,
     state: String,
@@ -53,25 +55,28 @@ case class KyuubiOperationEvent private (
     completeTime: Long,
     exception: Option[Throwable],
     sessionId: String,
-    sessionUser: String) extends KyuubiServerEvent {
+    sessionUser: String,
+    queryExecution: String) extends KyuubiSparkEvent {
 
-  // operation events are partitioned by the date when the corresponding operations are
-  // created.
+  override def schema: StructType = Encoders.product[SparkOperationEvent].schema
   override def partitions: Seq[(String, String)] =
     ("day", Utils.getDateFromTimestamp(createTime)) :: Nil
+
+  def duration: Long = {
+    if (completeTime == -1L) {
+      System.currentTimeMillis - createTime
+    } else {
+      completeTime - createTime
+    }
+  }
 }
 
-object KyuubiOperationEvent {
-
-  /**
-   * Shorthand for instantiating a operation event with a [[KyuubiOperation]] instance
-   */
-  def apply(operation: KyuubiOperation): KyuubiOperationEvent = {
+object SparkOperationEvent {
+  def apply(operation: SparkOperation, result: Option[DataFrame] = None): SparkOperationEvent = {
     val session = operation.getSession
     val status = operation.getStatus
-    new KyuubiOperationEvent(
+    new SparkOperationEvent(
       operation.statementId,
-      Option(operation.remoteOpHandle()).map(OperationHandle(_).identifier.toString).orNull,
       operation.statement,
       operation.shouldRunAsync,
       status.state.name(),
@@ -81,6 +86,7 @@ object KyuubiOperationEvent {
       status.completed,
       status.exception,
       session.handle.identifier.toString,
-      session.user)
+      session.user,
+      result.map(_.queryExecution.toString).orNull)
   }
 }

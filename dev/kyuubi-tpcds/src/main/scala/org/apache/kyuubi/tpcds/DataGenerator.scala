@@ -570,31 +570,31 @@ object DataGenerator {
       $"web_tax_percentage"       .decimal(5, 2))
     // format: on
 
-   Seq(
-     store_sales,
-     store_returns,
-     catalog_sales,
-     catalog_returns,
-     web_sales,
-     web_returns,
-     inventory,
-     catalog_page,
-     call_center,
-     customer,
-     customer_address,
-     customer_demographics,
-     household_demographics,
-     store,
-     warehouse,
-     item,
-     income_band,
-     web_site,
-     web_page,
-     date_dim,
-     time_dim,
-     ship_mode,
-     reason,
-     promotion)
+    Seq(
+      store_sales,
+      store_returns,
+      catalog_sales,
+      catalog_returns,
+      web_sales,
+      web_returns,
+      inventory,
+      catalog_page,
+      call_center,
+      customer,
+      customer_address,
+      customer_demographics,
+      household_demographics,
+      store,
+      warehouse,
+      item,
+      income_band,
+      web_site,
+      web_page,
+      date_dim,
+      time_dim,
+      ship_mode,
+      reason,
+      promotion)
   }
 
   def run(config: RunConfig): Unit = {
