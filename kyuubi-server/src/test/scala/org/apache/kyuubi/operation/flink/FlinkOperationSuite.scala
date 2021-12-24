@@ -17,12 +17,12 @@
 
 package org.apache.kyuubi.operation.flink
 
-import org.apache.kyuubi.WithKyuubiServer
+import org.apache.kyuubi.WithKyuubiServerAndFlinkMiniCluster
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_TYPE, FRONTEND_THRIFT_BINARY_BIND_PORT}
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
-class FlinkOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
+class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster with HiveJDBCTestHelper {
   override val conf: KyuubiConf = KyuubiConf()
     .set(ENGINE_TYPE, "FLINK_SQL")
     .set(FRONTEND_THRIFT_BINARY_BIND_PORT, 10019)
