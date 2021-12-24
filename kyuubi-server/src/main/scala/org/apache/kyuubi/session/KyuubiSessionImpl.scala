@@ -86,6 +86,7 @@ class KyuubiSessionImpl(
       sessionEvent.sessionId = handle.identifier.toString
       sessionEvent.remoteSessionId = _engineSessionHandle.identifier.toString
       sessionEvent.clientVersion = handle.protocol.getValue
+      _client.engineId.foreach(e => sessionEvent.engineId = e)
       EventLoggingService.onEvent(sessionEvent)
     }
   }
