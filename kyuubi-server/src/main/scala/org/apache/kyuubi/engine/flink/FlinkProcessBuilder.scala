@@ -163,9 +163,9 @@ class FlinkProcessBuilder(
     flinkHomeOpt.map { dir =>
       dir
     } getOrElse {
-      throw KyuubiSQLException("FLINK_ENGINE_HOME is not set! " +
-        "For more detail information on installing and configuring Spark, please visit " +
-        "https://kyuubi.apache.org/docs/stable/deployment/settings.html#environments")
+      throw KyuubiSQLException("FLINK_HOME is not set! " +
+        "For more detail information on installing and configuring Flink, please visit " +
+        "https://nightlies.apache.org/flink/flink-docs-master/docs/try-flink/local_installation/")
     }
   }
 
@@ -200,6 +200,5 @@ class FlinkProcessBuilder(
 }
 
 object FlinkProcessBuilder {
-  // Get the appropriate spark-submit file
   final private val FLINK_ENGINE_BINARY_FILE = "prepare.sh"
 }
