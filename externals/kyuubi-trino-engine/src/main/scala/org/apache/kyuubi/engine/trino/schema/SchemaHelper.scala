@@ -36,7 +36,7 @@ import org.apache.hive.service.rpc.thrift.TTypeQualifierValue
 
 object SchemaHelper {
 
-  private lazy val STRING_TYPES = Array(
+  private lazy val STRING_TYPES = Set(
     HYPER_LOG_LOG,
     QDIGEST,
     P4_HYPER_LOG_LOG,
@@ -71,7 +71,7 @@ object SchemaHelper {
     case ROW => TTypeId.STRUCT_TYPE
     case stringType if STRING_TYPES.contains(stringType) => TTypeId.STRING_TYPE
     case other =>
-      throw new IllegalArgumentException(s"Unrecognized type name: $other")
+      throw new IllegalArgumentException(s"Unrecognized trino type name: $other")
   }
 
   def toTTypeQualifiers(typ: ClientTypeSignature): TTypeQualifiers = {

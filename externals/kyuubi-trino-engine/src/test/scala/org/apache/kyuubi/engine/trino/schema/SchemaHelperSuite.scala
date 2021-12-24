@@ -82,7 +82,7 @@ class SchemaHelperSuite extends KyuubiFunSuite {
     assert(toTTypeId(outerSchema(21).getTypeSignature) === TTypeId.STRING_TYPE)
 
     val e1 = intercept[IllegalArgumentException](toTTypeId(textTypeSignature))
-    assert(e1.getMessage === "Unrecognized type name: text")
+    assert(e1.getMessage === "Unrecognized trino type name: text")
   }
 
   test("toTTypeQualifiers") {
