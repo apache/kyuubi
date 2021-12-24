@@ -15,54 +15,28 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.schema.engine.trino
+package org.apache.kyuubi.engine.trino.schema
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.sql.Date
 import java.sql.Time
-import java.util.Optional
 
 import scala.collection.JavaConverters._
 
 import io.trino.client.ClientStandardTypes._
 import io.trino.client.ClientTypeSignature
-import io.trino.client.ClientTypeSignatureParameter
 import io.trino.client.Column
-import io.trino.client.NamedClientTypeSignature
 import io.trino.client.Row
-import io.trino.client.RowFieldName
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
 import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.engine.trino.schema.RowSet
 import org.apache.kyuubi.engine.trino.schema.RowSet.toHiveString
+import org.apache.kyuubi.engine.trino.util.TestUtils._
 
 class RowSetSuite extends KyuubiFunSuite {
 
   final private val UUID_PREFIX = "486bb66f-1206-49e3-993f-0db68f3cd8"
-
-  lazy val arrayTypeSignature: ClientTypeSignature = new ClientTypeSignature(
-    ARRAY,
-    List(ClientTypeSignatureParameter.ofType(new ClientTypeSignature(DOUBLE))).asJava)
-
-  lazy val mapTypeSignature: ClientTypeSignature = new ClientTypeSignature(
-    MAP,
-    List(
-      ClientTypeSignatureParameter.ofType(new ClientTypeSignature(INTEGER)),
-      ClientTypeSignatureParameter.ofType(new ClientTypeSignature(DOUBLE))).asJava)
-
-  lazy val rowTypeSignature: ClientTypeSignature = new ClientTypeSignature(
-    ROW,
-    List(
-      ClientTypeSignatureParameter.ofNamedType(
-        new NamedClientTypeSignature(
-          Optional.of(new RowFieldName("foo")),
-          new ClientTypeSignature(VARCHAR))),
-      ClientTypeSignatureParameter.ofNamedType(
-        new NamedClientTypeSignature(
-          Optional.of(new RowFieldName("bar")),
-          mapTypeSignature))).asJava)
 
   def genRow(value: Int): List[_] = {
     val boolVal = value % 3 match {
