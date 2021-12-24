@@ -72,8 +72,8 @@ export KYUUBI_SCALA_VERSION="${KYUUBI_SCALA_VERSION:-"2.12"}"
 
 if [[ -f ${KYUUBI_HOME}/RELEASE ]]; then
   KYUUBI_VERSION="$(grep "Kyuubi " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
-  SPARK_VERSION_BUILD="$(grep "Spark " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
-  HADOOP_VERSION_BUILD="$(grep "Hadoop " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
+  SPARK_VERSION_BUILD="$(grep "Spark " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}' | grep -v 'Hadoop')"
+  HADOOP_VERSION_BUILD="$(grep "Spark Hadoop " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $3}')"
   SPARK_BUILTIN="${KYUUBI_HOME}/externals/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD:0:3}"
 else
   MVN="${MVN:-"${KYUUBI_HOME}/build/mvn"}"
