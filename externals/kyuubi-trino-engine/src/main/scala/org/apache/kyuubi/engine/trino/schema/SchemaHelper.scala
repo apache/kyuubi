@@ -36,6 +36,10 @@ import org.apache.hive.service.rpc.thrift.TTypeQualifierValue
 
 object SchemaHelper {
 
+  private lazy val STRING_TYPES = Array(HYPER_LOG_LOG, QDIGEST, P4_HYPER_LOG_LOG,
+    TIMESTAMP_WITH_TIME_ZONE, TIME, TIME_WITH_TIME_ZONE, JSON, IPADDRESS, UUID,
+    GEOMETRY, SPHERICAL_GEOGRAPHY, BING_TILE)
+
   def toTTypeId(typ: ClientTypeSignature): TTypeId = typ.getRawType.toLowerCase(Locale.ROOT) match {
     case BOOLEAN => TTypeId.BOOLEAN_TYPE
     case TINYINT => TTypeId.TINYINT_TYPE
@@ -55,7 +59,9 @@ object SchemaHelper {
     case ARRAY => TTypeId.ARRAY_TYPE
     case MAP => TTypeId.MAP_TYPE
     case ROW => TTypeId.STRUCT_TYPE
-    case _ => TTypeId.STRING_TYPE
+    case stringType if STRING_TYPES.contains(stringType) => TTypeId.STRING_TYPE
+    case other =>
+      throw new IllegalArgumentException(s"Unrecognized type name: $other")
   }
 
   def toTTypeQualifiers(typ: ClientTypeSignature): TTypeQualifiers = {

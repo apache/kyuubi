@@ -58,6 +58,8 @@ object TestUtils {
           Optional.of(new RowFieldName("bar")),
           mapTypeSignature))).asJava)
 
+  lazy val textTypeSignature: ClientTypeSignature = new ClientTypeSignature("text")
+
   def column(name: String, tp: String): Column = column(name, tp, new ClientTypeSignature(tp))
 
   def column(name: String, tp: String, signature: ClientTypeSignature): Column = {
