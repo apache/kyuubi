@@ -173,6 +173,7 @@
               <include>com.fasterxml.jackson.core:*</include>
               <include>com.fasterxml.jackson.module:*</include>
               <include>io.netty:netty-all</include>
+              <include>org.apache.hadoop:hadoop-client-api</include>
             </includes>
           </artifactSet>
           <relocations>
