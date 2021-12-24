@@ -141,8 +141,7 @@ private[v1] class OperationsResource extends ApiRequestContext {
       val logRowSet = rowSet.getColumns.get(0).getStringVal.getValues.asScala
       OperationLog(logRowSet, logRowSet.size)
     } catch {
-      case NonFatal(e) =>
-        e.printStackTrace()
+      case NonFatal(_) =>
         throw new NotFoundException(
           s"Error getting operation log for operation handle $operationHandleStr")
     }
