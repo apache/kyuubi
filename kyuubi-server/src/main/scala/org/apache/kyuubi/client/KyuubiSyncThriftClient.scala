@@ -38,6 +38,7 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
   extends TCLIService.Client(protocol) with Logging {
 
   @volatile private var _remoteSessionHandle: TSessionHandle = _
+  @volatile private var _engineId: Option[String] = _
 
   private val lock = new ReentrantLock()
 
@@ -54,6 +55,8 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
     } finally lock.unlock()
   }
 
+  def engineId: Option[String] = _engineId
+
   /**
    * Return the engine SessionHandle for kyuubi session so that we can get the same session id
    */
@@ -69,6 +72,9 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
     val resp = withLockAcquired(OpenSession(req))
     ThriftUtils.verifyTStatus(resp.getStatus)
     _remoteSessionHandle = resp.getSessionHandle
+    _engineId = Option(resp.getConfiguration)
+      .filter(_.containsKey("kyuubi.engine.id"))
+      .map(_.get("kyuubi.engine.id"))
     SessionHandle(_remoteSessionHandle, protocol)
   }
 

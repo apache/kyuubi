@@ -20,12 +20,13 @@ package org.apache.kyuubi.engine.spark
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
 import org.apache.hadoop.security.token.{Token, TokenIdentifier}
-import org.apache.hive.service.rpc.thrift.{TRenewDelegationTokenReq, TRenewDelegationTokenResp}
+import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TOpenSessionResp, TRenewDelegationTokenReq, TRenewDelegationTokenResp}
 import org.apache.spark.kyuubi.SparkContextHelper
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
 import org.apache.kyuubi.service.{Serverable, Service, ThriftBinaryFrontendService}
+import org.apache.kyuubi.service.ThriftBinaryFrontendService.{CURRENT_SERVER_CONTEXT, OK_STATUS}
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class SparkThriftBinaryFrontendService(
@@ -59,6 +60,27 @@ class SparkThriftBinaryFrontendService(
       case e: Exception =>
         warn("Error renew delegation tokens: ", e)
         resp.setStatus(KyuubiSQLException.toTStatus(e))
+    }
+    resp
+  }
+
+  override def OpenSession(req: TOpenSessionReq): TOpenSessionResp = {
+    debug(req.toString)
+    info("Client protocol version: " + req.getClient_protocol)
+    val resp = new TOpenSessionResp
+    try {
+      val respConfiguration = new java.util.HashMap[String, String]()
+      respConfiguration.put("kyuubi.engine.id", sc.applicationId)
+
+      val sessionHandle = getSessionHandle(req, resp)
+      resp.setSessionHandle(sessionHandle.toTSessionHandle)
+      resp.setConfiguration(respConfiguration)
+      resp.setStatus(OK_STATUS)
+      Option(CURRENT_SERVER_CONTEXT.get()).foreach(_.setSessionHandle(sessionHandle))
+    } catch {
+      case e: Exception =>
+        error("Error opening session: ", e)
+        resp.setStatus(KyuubiSQLException.toTStatus(e, verbose = true))
     }
     resp
   }
