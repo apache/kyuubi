@@ -42,6 +42,7 @@ class KyuubiSessionImpl(
     sessionManager: KyuubiSessionManager,
     sessionConf: KyuubiConf)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  override val handle: SessionHandle = SessionHandle(protocol)
 
   // TODO: needs improve the hardcode
   normalizedConf.foreach {
@@ -60,7 +61,6 @@ class KyuubiSessionImpl(
   private var _client: KyuubiSyncThriftClient = _
   def client: KyuubiSyncThriftClient = _client
 
-  override val handle: SessionHandle = SessionHandle(protocol)
   private var _engineSessionHandle: SessionHandle = _
 
   override def open(): Unit = {
