@@ -82,16 +82,16 @@ class KyuubiOpenApiResource extends BaseOpenApiResource {
 
   private def setKyuubiOpenAPIDefinition(openApi: OpenAPI): OpenAPI = {
     openApi.info(
-      new Info().title("Apache Kyuubi REST API Documentation")
+      new Info().title("Apache Kyuubi (Incubating) REST API Documentation")
         .version(org.apache.kyuubi.KYUUBI_VERSION)
-        .description("Apache Kyuubi REST API Documentation")
+        .description("Apache Kyuubi (Incubating) REST API Documentation")
         .contact(
           new Contact().name("Apache Kyuubi Community")
             .url("https://kyuubi.apache.org/issue_tracking.html")
             .email("dev@kyuubi.apache.org"))
         .license(
-          new License().name("Apache 2.0")
-            .url("https://www.apache.org/licenses/LICENSE-2.0.html")))
+          new License().name("Apache License 2.0")
+            .url("https://www.apache.org/licenses/LICENSE-2.0.txt")))
       .tags(List(new Tag().name("Session"), new Tag().name("Operation")).asJava)
   }
 }
