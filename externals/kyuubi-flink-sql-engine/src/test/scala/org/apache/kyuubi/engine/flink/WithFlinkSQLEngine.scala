@@ -41,11 +41,13 @@ trait WithFlinkSQLEngine extends KyuubiFunSuite {
   override def beforeAll(): Unit = {
     super.beforeAll()
     startMiniCluster()
+    startFlinkEngine()
   }
 
   override def afterAll(): Unit = {
-    super.afterAll()
+    stopFlinkEngine()
     miniCluster.close()
+    super.afterAll()
   }
 
   def startFlinkEngine(): Unit = {

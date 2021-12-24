@@ -25,16 +25,6 @@ class FlinkOperationITSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
 
   override protected def jdbcUrl: String = getJdbcUrl
 
-  override protected def beforeEach(): Unit = {
-    startFlinkEngine()
-    super.beforeEach()
-  }
-
-  override protected def afterEach(): Unit = {
-    super.afterEach()
-    stopFlinkEngine()
-  }
-
   test("get catalogs for flink sql") {
     withJdbcStatement() { statement =>
       val meta = statement.getConnection.getMetaData
