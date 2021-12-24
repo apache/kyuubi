@@ -24,31 +24,31 @@ import org.apache.kyuubi.session.AbstractSession
 
 /**
  * @param sessionId server session id
- * @param remoteSessionId remote engine session id
+ * @param clientVersion client version
  * @param sessionName if user not specify it, we use empty string instead
  * @param user session user
  * @param clientIP client ip address
  * @param serverIP A unique Kyuubi server id, e.g. kyuubi server ip address and port,
  *                 it is useful if has multi-instance Kyuubi Server
- * @param clientVersion client version
- * @param conf session config
+ * @param remoteSessionId remote engine session id
  * @param startTime session create time
+ * @param conf session config
  * @param openedTime session opened time
  * @param endTime session end time
  * @param totalOperations how many queries and meta calls
  * @param engineId engine id. For engine on yarn, it is applicationId.
  */
 case class KyuubiSessionEvent(
+    sessionId: String,
+    clientVersion: Int,
     sessionName: String,
     user: String,
     clientIP: String,
     serverIP: String,
     conf: Map[String, String],
     startTime: Long,
-    var sessionId: String = "",
     var remoteSessionId: String = "",
     var engineId: String = "",
-    var clientVersion: Int = -1,
     var openedTime: Long = -1L,
     var endTime: Long = -1L,
     var totalOperations: Int = 0) extends KyuubiServerEvent {
@@ -62,6 +62,8 @@ object KyuubiSessionEvent {
     val serverIP = KyuubiServer.kyuubiServer.frontendServices.head.connectionUrl
     val sessionName: String = session.normalizedConf.getOrElse(KyuubiConf.SESSION_NAME.key, "")
     KyuubiSessionEvent(
+      session.handle.toString,
+      session.protocol.getValue,
       sessionName,
       session.user,
       session.ipAddress,

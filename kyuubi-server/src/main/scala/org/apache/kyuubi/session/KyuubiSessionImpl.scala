@@ -42,6 +42,7 @@ class KyuubiSessionImpl(
     sessionManager: KyuubiSessionManager,
     sessionConf: KyuubiConf)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+  override val handle: SessionHandle = SessionHandle(protocol)
 
   // TODO: needs improve the hardcode
   normalizedConf.foreach {
@@ -60,7 +61,6 @@ class KyuubiSessionImpl(
   private var _client: KyuubiSyncThriftClient = _
   def client: KyuubiSyncThriftClient = _client
 
-  override val handle: SessionHandle = SessionHandle(protocol)
   private var _engineSessionHandle: SessionHandle = _
 
   override def open(): Unit = {
@@ -83,9 +83,7 @@ class KyuubiSessionImpl(
       _engineSessionHandle = _client.openSession(protocol, user, passwd, normalizedConf)
       logSessionInfo(s"Connected to engine [$host:$port] with ${_engineSessionHandle}")
       sessionEvent.openedTime = System.currentTimeMillis()
-      sessionEvent.sessionId = handle.identifier.toString
       sessionEvent.remoteSessionId = _engineSessionHandle.identifier.toString
-      sessionEvent.clientVersion = handle.protocol.getValue
       _client.engineId.foreach(e => sessionEvent.engineId = e)
       EventLoggingService.onEvent(sessionEvent)
     }
