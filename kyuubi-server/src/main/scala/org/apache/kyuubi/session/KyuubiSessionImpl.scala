@@ -83,9 +83,7 @@ class KyuubiSessionImpl(
       _engineSessionHandle = _client.openSession(protocol, user, passwd, normalizedConf)
       logSessionInfo(s"Connected to engine [$host:$port] with ${_engineSessionHandle}")
       sessionEvent.openedTime = System.currentTimeMillis()
-      sessionEvent.sessionId = handle.identifier.toString
       sessionEvent.remoteSessionId = _engineSessionHandle.identifier.toString
-      sessionEvent.clientVersion = handle.protocol.getValue
       _client.engineId.foreach(e => sessionEvent.engineId = e)
       EventLoggingService.onEvent(sessionEvent)
     }
