@@ -136,7 +136,7 @@ private[v1] class OperationsResource extends ApiRequestContext {
     try {
       val rowSet = backendService.sessionManager.operationManager.getOperationLogRowSet(
         parseOperationHandle(operationHandleStr),
-        FetchOrientation.FETCH_LAST,
+        FetchOrientation.FETCH_NEXT,
         maxRows)
       val logRowSet = rowSet.getColumns.get(0).getStringVal.getValues.asScala
       OperationLog(logRowSet, logRowSet.size)
