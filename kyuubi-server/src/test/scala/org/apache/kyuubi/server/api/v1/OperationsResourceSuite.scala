@@ -92,6 +92,20 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     }
   }
 
+  test("test get operation log") {
+    withKyuubiRestServer { (fe, _, _, webTarget: WebTarget) =>
+      val opHandleStr = getOpHandleStr(fe, OperationType.EXECUTE_STATEMENT)
+      val response = webTarget.path(
+        s"api/v1/operations/$opHandleStr/log")
+        .queryParam("maxrows", "10")
+        .request(MediaType.APPLICATION_JSON).get()
+      assert(200 == response.getStatus)
+      val logRowSet = response.readEntity(classOf[OperationLog])
+      assert(logRowSet.logRowSet.head.equals("test"))
+      assert(logRowSet.rowCount == 1)
+    }
+  }
+
   def getOpHandleStr(fe: KyuubiRestFrontendService, typ: OperationType): String = {
     val sessionManager = fe.be.sessionManager
     val sessionHandle = sessionManager.openSession(

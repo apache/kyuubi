@@ -30,7 +30,7 @@ import org.apache.hive.service.rpc.thrift.TTypeQualifierValue
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.events.KyuubiOperationEvent
-import org.apache.kyuubi.operation.KyuubiOperation
+import org.apache.kyuubi.operation.{FetchOrientation, KyuubiOperation}
 import org.apache.kyuubi.operation.OperationHandle.parseOperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
 
@@ -119,6 +119,31 @@ private[v1] class OperationsResource extends ApiRequestContext {
       case NonFatal(_) =>
         throw new NotFoundException(
           s"Error getting result set metadata for operation handle $operationHandleStr")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description =
+      "get operation log")
+  @GET
+  @Path("{operationHandle}/log")
+  def getOperationLog(
+      @PathParam("operationHandle") operationHandleStr: String,
+      @QueryParam("maxrows") maxRows: Int): OperationLog = {
+    try {
+      val rowSet = backendService.sessionManager.operationManager.getOperationLogRowSet(
+        parseOperationHandle(operationHandleStr),
+        FetchOrientation.FETCH_NEXT,
+        maxRows)
+      val logRowSet = rowSet.getColumns.get(0).getStringVal.getValues.asScala
+      OperationLog(logRowSet, logRowSet.size)
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(
+          s"Error getting operation log for operation handle $operationHandleStr")
     }
   }
 }
