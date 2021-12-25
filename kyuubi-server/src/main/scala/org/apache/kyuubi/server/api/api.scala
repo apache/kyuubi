@@ -68,7 +68,7 @@ private[server] object ApiUtils {
     swaggerUI.setInitParameter(
       "resourceBase",
       getClass.getClassLoader()
-        .getResource("META-INF/resources/webjars/swagger-ui/4.1.0/")
+        .getResource("META-INF/resources/webjars/swagger-ui/4.1.3/")
         .toExternalForm)
     swaggerUI.setInitParameter("pathInfoOnly", "true")
     handler.addServlet(swaggerUI, "/swagger-ui-redirected/*");
