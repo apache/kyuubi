@@ -217,7 +217,7 @@ object Utils extends Logging {
    */
   def findLocalInetAddress: InetAddress = {
     val address = InetAddress.getLocalHost
-    if (!address.isLoopbackAddress) {
+    if (address.isLoopbackAddress) {
       val activeNetworkIFs = NetworkInterface.getNetworkInterfaces.asScala.toSeq
       val reOrderedNetworkIFs = if (isWindows) activeNetworkIFs else activeNetworkIFs.reverse
 

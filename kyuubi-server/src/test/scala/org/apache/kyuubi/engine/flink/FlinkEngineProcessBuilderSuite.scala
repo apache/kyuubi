@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine.flink
 
-import java.nio.file.{Files, Paths}
-
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 
@@ -29,15 +27,5 @@ class FlinkEngineProcessBuilderSuite extends KyuubiFunSuite {
     val builder = new FlinkEngineProcessBuilder("vinoyang", conf)
     val commands = builder.toString.split(' ')
     assert(commands.exists(_ endsWith "flink-sql-engine.sh"))
-//    assert(commands.contains("-Dkyuubi.on=off"))
-//    assert(commands.contains("org.apache.kyuubi.engine.flink.FlinkSQLEngine"))
-    val pb = new ProcessBuilder(commands.head, "-h")
-    assert(pb.start().waitFor() === 1)
-    assert(Files.exists(Paths.get(commands.last)))
-
-    val process = builder.start
-    assert(process.isAlive)
-    process.destroyForcibly()
   }
-
 }

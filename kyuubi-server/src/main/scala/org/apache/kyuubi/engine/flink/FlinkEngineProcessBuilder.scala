@@ -165,9 +165,8 @@ class FlinkEngineProcessBuilder(
 }
 
 object FlinkEngineProcessBuilder {
-  final val APP_KEY = "spark.app.name"
-  final val TAG_KEY = "spark.yarn.tags"
+  final val APP_KEY = "yarn.application.name"
+  final val TAG_KEY = "yarn.tags"
 
-  // Get the appropriate spark-submit file
   final private val FLINK_ENGINE_BINARY_FILE = "flink-sql-engine.sh"
 }
