@@ -28,7 +28,8 @@ import org.apache.kyuubi.zookeeper.ZookeeperConf.{ZK_CLIENT_PORT, ZK_CLIENT_PORT
 
 class EmbeddedZookeeperSuite extends KyuubiFunSuite {
 
-  test("embedded zookeeper server") {
+  // TODO [KYUUBI #1632]
+  ignore("embedded zookeeper server") {
     val zkServer = new EmbeddedZookeeper()
     assert(zkServer.getConf == null)
     assert(zkServer.getName === zkServer.getClass.getSimpleName)
@@ -47,7 +48,8 @@ class EmbeddedZookeeperSuite extends KyuubiFunSuite {
     assert(zkServer.getServiceState === STOPPED)
   }
 
-  test("connect test with embedded zookeeper") {
+  // TODO [KYUUBI #1632]
+  ignore("connect test with embedded zookeeper") {
     val zkServer = new EmbeddedZookeeper()
     intercept[AssertionError](zkServer.getConnectString)
     zkServer.initialize(KyuubiConf().set(ZookeeperConf.ZK_CLIENT_PORT, 0))
