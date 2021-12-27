@@ -19,6 +19,7 @@ package org.apache.kyuubi
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.ha.HighAvailabilityConf.{HA_ZK_AUTH_TYPE, HA_ZK_QUORUM}
 import org.apache.kyuubi.ha.client.ZooKeeperAuthTypes
 import org.apache.kyuubi.server.KyuubiServer
@@ -28,7 +29,7 @@ trait WithKyuubiServer extends KyuubiFunSuite {
 
   protected val conf: KyuubiConf
 
-  protected val frontendProtocols: Seq[FrontendProtocols.Value] =
+  protected val frontendProtocols: Seq[FrontendProtocol] =
     FrontendProtocols.THRIFT_BINARY :: Nil
 
   private var zkServer: EmbeddedZookeeper = _

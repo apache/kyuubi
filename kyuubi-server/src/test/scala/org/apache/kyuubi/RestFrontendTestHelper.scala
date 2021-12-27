@@ -30,6 +30,7 @@ import org.glassfish.jersey.test.spi.TestContainerFactory
 import org.apache.kyuubi.RestFrontendTestHelper.RestApiBaseSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols.FrontendProtocol
 import org.apache.kyuubi.server.api.KyuubiScalaObjectMapper
 import org.apache.kyuubi.service.AbstractFrontendService
 
@@ -51,7 +52,7 @@ trait RestFrontendTestHelper extends WithKyuubiServer {
 
   override protected val conf: KyuubiConf = KyuubiConf()
 
-  override protected val frontendProtocols: Seq[FrontendProtocols.Value] =
+  override protected val frontendProtocols: Seq[FrontendProtocol] =
     FrontendProtocols.REST :: Nil
 
   private val restApiBaseSuite = new RestApiBaseSuite

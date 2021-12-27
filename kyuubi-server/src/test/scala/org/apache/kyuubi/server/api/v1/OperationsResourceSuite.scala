@@ -29,19 +29,18 @@ import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.OperationState.{FINISHED, OperationState}
 import org.apache.kyuubi.operation.OperationType.OperationType
-import org.apache.kyuubi.service.FrontendService
 
 class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
   test("test get an operation event") {
-    val catalogsHandleStr = getOpHandleStr(fe, OperationType.GET_CATALOGS)
+    val catalogsHandleStr = getOpHandleStr(OperationType.GET_CATALOGS)
     var response = webTarget.path(s"api/v1/operations/$catalogsHandleStr/event")
       .request(MediaType.APPLICATION_JSON_TYPE).get()
     val operationEvent = response.readEntity(classOf[KyuubiOperationEvent])
     assert(200 == response.getStatus)
     checkOpState(catalogsHandleStr, FINISHED)
 
-    val statementHandleStr = getOpHandleStr(fe, OperationType.EXECUTE_STATEMENT)
+    val statementHandleStr = getOpHandleStr(OperationType.EXECUTE_STATEMENT)
     response = webTarget.path(s"api/v1/operations/$statementHandleStr/event")
       .request(MediaType.APPLICATION_JSON_TYPE).get()
     val statementEvent = response.readEntity(classOf[KyuubiOperationEvent])
@@ -57,7 +56,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
   }
 
   test("test apply an action for an operation") {
-    val opHandleStr = getOpHandleStr(fe, OperationType.EXECUTE_STATEMENT)
+    val opHandleStr = getOpHandleStr(OperationType.EXECUTE_STATEMENT)
 
     var response = webTarget.path(s"api/v1/operations/$opHandleStr")
       .request(MediaType.APPLICATION_JSON_TYPE)
@@ -81,7 +80,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
   }
 
   test("test get result set metadata") {
-    val opHandleStr = getOpHandleStr(fe, OperationType.EXECUTE_STATEMENT)
+    val opHandleStr = getOpHandleStr(OperationType.EXECUTE_STATEMENT)
     checkOpState(opHandleStr, FINISHED)
     val response = webTarget.path(s"api/v1/operations/$opHandleStr/resultsetmetadata")
       .request(MediaType.APPLICATION_JSON_TYPE).get()
@@ -91,7 +90,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
   }
 
   test("test get operation log") {
-    val opHandleStr = getOpHandleStr(fe, OperationType.EXECUTE_STATEMENT)
+    val opHandleStr = getOpHandleStr(OperationType.EXECUTE_STATEMENT)
     checkOpState(opHandleStr, FINISHED)
     val response = webTarget.path(
       s"api/v1/operations/$opHandleStr/log")
@@ -103,7 +102,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     assert(logRowSet.rowCount === 10)
   }
 
-  def getOpHandleStr(fe: FrontendService, typ: OperationType): String = {
+  def getOpHandleStr(typ: OperationType): String = {
     val sessionHandle = fe.be.openSession(
       HIVE_CLI_SERVICE_PROTOCOL_V2,
       "admin",
