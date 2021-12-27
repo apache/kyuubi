@@ -56,7 +56,7 @@ class FlinkEngineProcessBuilder(
       Paths.get(dir, "bin", FLINK_ENGINE_BINARY_FILE).toAbsolutePath.toFile.getCanonicalPath
     } getOrElse {
       throw KyuubiSQLException("FLINK_ENGINE_HOME is not set! " +
-        "For more detail information on installing and configuring Spark, please visit " +
+        "For more detail information on installing and configuring Flink, please visit " +
         "https://kyuubi.apache.org/docs/stable/deployment/settings.html#environments")
     }
   }
@@ -155,8 +155,8 @@ class FlinkEngineProcessBuilder(
     flinkHomeOpt.map { dir =>
       dir
     } getOrElse {
-      throw KyuubiSQLException("FLINK_ENGINE_HOME is not set! " +
-        "For more detail information on installing and configuring Spark, please visit " +
+      throw KyuubiSQLException("FLINK_HOME is not set! " +
+        "For more detail information on installing and configuring Flink, please visit " +
         "https://kyuubi.apache.org/docs/stable/deployment/settings.html#environments")
     }
   }

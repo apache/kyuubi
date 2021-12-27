@@ -17,11 +17,11 @@
 
 package org.apache.kyuubi.engine.flink.schema
 
+import java.{lang, util}
 import java.nio.ByteBuffer
-import java.util
 import java.util.Collections
 
-import scala.collection.JavaConverters.{collectionAsScalaIterableConverter, mapAsJavaMapConverter, seqAsJavaListConverter}
+import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
 import org.apache.flink.table.types.logical._
@@ -71,60 +71,61 @@ object RowSet {
 
     val logicalType = resultSet.getColumns.get(ordinal).getLogicalType
 
-    if (logicalType.isInstanceOf[BooleanType]) {
-      val boolValue = new TBoolValue
-      if (row.getField(ordinal) != null) {
-        boolValue.setValue(row.getField(ordinal).asInstanceOf[Boolean])
-      }
-      TColumnValue.boolVal(boolValue)
-    } else if (logicalType.isInstanceOf[TinyIntType]) {
-      val tI16Value = new TI16Value
-      if (row.getField(ordinal) != null) {
-        tI16Value.setValue(row.getField(ordinal).asInstanceOf[Short])
-      }
-      TColumnValue.i16Val(tI16Value)
-    } else if (logicalType.isInstanceOf[IntType]) {
-      val tI32Value = new TI32Value
-      if (row.getField(ordinal) != null) {
-        tI32Value.setValue(row.getField(ordinal).asInstanceOf[Short])
-      }
-      TColumnValue.i32Val(tI32Value)
-    } else if (logicalType.isInstanceOf[BigIntType]) {
-      val tI64Value = new TI64Value
-      if (row.getField(ordinal) != null) {
-        tI64Value.setValue(row.getField(ordinal).asInstanceOf[Long])
-      }
-      TColumnValue.i64Val(tI64Value)
-    } else if (logicalType.isInstanceOf[FloatType]) {
-      val tDoubleValue = new TDoubleValue
-      if (row.getField(ordinal) != null) {
-        tDoubleValue.setValue(row.getField(ordinal).asInstanceOf[Float])
-      }
-      TColumnValue.doubleVal(tDoubleValue)
-    } else if (logicalType.isInstanceOf[DoubleType]) {
-      val tDoubleValue = new TDoubleValue
-      if (row.getField(ordinal) != null) {
-        tDoubleValue.setValue(row.getField(ordinal).asInstanceOf[Double])
-      }
-      TColumnValue.doubleVal(tDoubleValue)
-    } else if (logicalType.isInstanceOf[VarCharType]) {
-      val tStringValue = new TStringValue
-      if (row.getField(ordinal) != null) {
-        tStringValue.setValue(row.getField(ordinal).asInstanceOf[String])
-      }
-      TColumnValue.stringVal(tStringValue)
-    } else if (logicalType.isInstanceOf[CharType]) {
-      val tStringValue = new TStringValue
-      if (row.getField(ordinal) != null) {
-        tStringValue.setValue(row.getField(ordinal).asInstanceOf[String])
-      }
-      TColumnValue.stringVal(tStringValue)
-    } else {
-      val tStrValue = new TStringValue
-      if (row.getField(ordinal) != null) {
-        // TODO to be done
-      }
-      TColumnValue.stringVal(tStrValue)
+    logicalType match {
+      case _: BooleanType =>
+        val boolValue = new TBoolValue
+        if (row.getField(ordinal) != null) {
+          boolValue.setValue(row.getField(ordinal).asInstanceOf[Boolean])
+        }
+        TColumnValue.boolVal(boolValue)
+      case _: TinyIntType =>
+        val tI16Value = new TI16Value
+        if (row.getField(ordinal) != null) {
+          tI16Value.setValue(row.getField(ordinal).asInstanceOf[Short])
+        }
+        TColumnValue.i16Val(tI16Value)
+      case _: IntType =>
+        val tI32Value = new TI32Value
+        if (row.getField(ordinal) != null) {
+          tI32Value.setValue(row.getField(ordinal).asInstanceOf[Short])
+        }
+        TColumnValue.i32Val(tI32Value)
+      case _: BigIntType =>
+        val tI64Value = new TI64Value
+        if (row.getField(ordinal) != null) {
+          tI64Value.setValue(row.getField(ordinal).asInstanceOf[Long])
+        }
+        TColumnValue.i64Val(tI64Value)
+      case _: FloatType =>
+        val tDoubleValue = new TDoubleValue
+        if (row.getField(ordinal) != null) {
+          tDoubleValue.setValue(row.getField(ordinal).asInstanceOf[Float])
+        }
+        TColumnValue.doubleVal(tDoubleValue)
+      case _: DoubleType =>
+        val tDoubleValue = new TDoubleValue
+        if (row.getField(ordinal) != null) {
+          tDoubleValue.setValue(row.getField(ordinal).asInstanceOf[Double])
+        }
+        TColumnValue.doubleVal(tDoubleValue)
+      case _: VarCharType =>
+        val tStringValue = new TStringValue
+        if (row.getField(ordinal) != null) {
+          tStringValue.setValue(row.getField(ordinal).asInstanceOf[String])
+        }
+        TColumnValue.stringVal(tStringValue)
+      case _: CharType =>
+        val tStringValue = new TStringValue
+        if (row.getField(ordinal) != null) {
+          tStringValue.setValue(row.getField(ordinal).asInstanceOf[String])
+        }
+        TColumnValue.stringVal(tStringValue)
+      case _ =>
+        val tStrValue = new TStringValue
+        if (row.getField(ordinal) != null) {
+          // TODO to be done
+        }
+        TColumnValue.stringVal(tStrValue)
     }
   }
 
@@ -132,41 +133,23 @@ object RowSet {
     ByteBuffer.wrap(bitSet.toByteArray)
   }
 
-  private def toTColumn(
-      rows: Seq[Row],
-      ordinal: Int,
-      logicalType: LogicalType): TColumn = {
+  private def toTColumn(rows: Seq[Row], ordinal: Int, logicalType: LogicalType): TColumn = {
     val nulls = new java.util.BitSet()
-    if (logicalType.isInstanceOf[BooleanType]) {
-      val values = getOrSetAsNull[java.lang.Boolean](
-        rows,
-        ordinal,
-        nulls,
-        true)
-      TColumn.boolVal(new TBoolColumn(values, nulls))
-    } else if (logicalType.isInstanceOf[TinyIntType]) {
-      val values = getOrSetAsNull[java.lang.Short](
-        rows,
-        ordinal,
-        nulls,
-        0.toShort)
-      TColumn.i16Val(new TI16Column(values, nulls))
-    } else if (logicalType.isInstanceOf[VarCharType]) {
-      val values = getOrSetAsNull[java.lang.String](
-        rows,
-        ordinal,
-        nulls,
-        "")
-      TColumn.stringVal(new TStringColumn(values, nulls))
-    } else if (logicalType.isInstanceOf[CharType]) {
-      val values = getOrSetAsNull[java.lang.String](
-        rows,
-        ordinal,
-        nulls,
-        "")
-      TColumn.stringVal(new TStringColumn(values, nulls))
-    } else {
-      null
+    logicalType match {
+      case _: BooleanType =>
+        val values = getOrSetAsNull[lang.Boolean](rows, ordinal, nulls, true)
+        TColumn.boolVal(new TBoolColumn(values, nulls))
+      case _: TinyIntType =>
+        val values = getOrSetAsNull[lang.Short](rows, ordinal, nulls, 0.toShort)
+        TColumn.i16Val(new TI16Column(values, nulls))
+      case _: VarCharType =>
+        val values = getOrSetAsNull[String](rows, ordinal, nulls, "")
+        TColumn.stringVal(new TStringColumn(values, nulls))
+      case _: CharType =>
+        val values = getOrSetAsNull[String](rows, ordinal, nulls, "")
+        TColumn.stringVal(new TStringColumn(values, nulls))
+      case _ =>
+        null
     }
   }
 
@@ -222,21 +205,13 @@ object RowSet {
     ret
   }
 
-  def toTTypeId(typ: LogicalType): TTypeId =
-    if (typ.isInstanceOf[NullType]) {
-      TTypeId.NULL_TYPE
-    } else if (typ.isInstanceOf[BooleanType]) {
-      TTypeId.BOOLEAN_TYPE
-    } else if (typ.isInstanceOf[FloatType]) {
-      TTypeId.FLOAT_TYPE
-    } else if (typ.isInstanceOf[DoubleType]) {
-      TTypeId.DOUBLE_TYPE
-    } else if (typ.isInstanceOf[VarCharType]) {
-      TTypeId.STRING_TYPE
-    } else if (typ.isInstanceOf[CharType]) {
-      TTypeId.STRING_TYPE
-    } else {
-      null
-    }
-
+  def toTTypeId(typ: LogicalType): TTypeId = typ match {
+    case _: NullType => TTypeId.NULL_TYPE
+    case _: BooleanType => TTypeId.BOOLEAN_TYPE
+    case _: FloatType => TTypeId.FLOAT_TYPE
+    case _: DoubleType => TTypeId.DOUBLE_TYPE
+    case _: VarCharType => TTypeId.STRING_TYPE
+    case _: CharType => TTypeId.STRING_TYPE
+    case _ => null
+  }
 }

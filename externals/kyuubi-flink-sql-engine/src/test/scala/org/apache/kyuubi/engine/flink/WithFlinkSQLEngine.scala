@@ -32,7 +32,7 @@ trait WithFlinkSQLEngine extends KyuubiFunSuite {
   protected val flinkConfig = new Configuration()
   protected var miniCluster: MiniCluster = _
   protected var engine: FlinkSQLEngine = _
-  // conf will be loaded until start spark engine
+  // conf will be loaded until start flink engine
   def withKyuubiConf: Map[String, String]
   val kyuubiConf: KyuubiConf = FlinkSQLEngine.kyuubiConf
 

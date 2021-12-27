@@ -20,8 +20,11 @@ package org.apache.kyuubi.engine.flink
 import org.apache.flink.runtime.util.EnvironmentInformation
 import org.apache.flink.table.client.SqlClientException
 import org.apache.flink.table.client.cli.{CliOptions, CliOptionsParser}
+import org.apache.flink.table.client.gateway.context.SessionContext
+import org.apache.flink.table.client.gateway.local.LocalExecutor
 
 import org.apache.kyuubi.Logging
+
 object FlinkEngineUtils extends Logging {
 
   val MODE_EMBEDDED = "embedded"
@@ -45,5 +48,11 @@ object FlinkEngineUtils extends Logging {
       case _ => throw new SqlClientException("Other mode is not supported yet.")
     }
     options
+  }
+
+  def getSessionContext(localExecutor: LocalExecutor, sessionId: String): SessionContext = {
+    val method = classOf[LocalExecutor].getMethod("getSessionContext", classOf[String])
+    method.setAccessible(true)
+    method.invoke(localExecutor, sessionId).asInstanceOf[SessionContext]
   }
 }
