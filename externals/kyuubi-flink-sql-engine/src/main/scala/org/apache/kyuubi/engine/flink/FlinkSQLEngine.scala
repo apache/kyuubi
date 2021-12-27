@@ -32,9 +32,6 @@ import org.apache.kyuubi.engine.flink.FlinkSQLEngine.{countDownLatch, currentEng
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.SignalRegister
 
-/**
- * A flink sql engine just like an instance of Flink SQL Engine.
- */
 case class FlinkSQLEngine(engineContext: DefaultContext) extends Serverable("FlinkSQLEngine") {
 
   override val backendService = new FlinkSQLBackendService(engineContext)
