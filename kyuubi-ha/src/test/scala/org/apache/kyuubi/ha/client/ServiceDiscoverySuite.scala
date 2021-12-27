@@ -27,6 +27,7 @@ import scala.collection.JavaConverters._
 import org.apache.hadoop.util.StringUtils
 import org.apache.zookeeper.ZooDefs
 import org.apache.zookeeper.data.ACL
+import org.scalatest.Ignore
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION}
@@ -35,6 +36,7 @@ import org.apache.kyuubi.ha.HighAvailabilityConf._
 import org.apache.kyuubi.service.{NoopThriftBinaryFrontendServer, Serverable, ServiceState}
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
+@Ignore // TODO [KYUUBI #1632]
 class ServiceDiscoverySuite extends KerberizedTestHelper {
   import ZooKeeperClientProvider._
 
