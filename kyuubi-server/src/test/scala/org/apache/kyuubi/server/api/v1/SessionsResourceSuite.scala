@@ -34,7 +34,7 @@ import org.apache.kyuubi.session.SessionHandle
 
 class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
-  test("test open and count session") {
+  test("test open/close and count session") {
     val requestObj = SessionOpenRequest(
       1,
       "admin",
@@ -42,80 +42,54 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       "localhost",
       Map("testConfig" -> "testValue"))
 
-    withKyuubiRestServer { (_, _, _, webTarget) =>
-      var response = webTarget.path("api/v1/sessions")
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+    var response = webTarget.path("api/v1/sessions")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
 
-      assert(200 == response.getStatus)
+    assert(200 == response.getStatus)
 
-      val sessionHandle = response.readEntity(classOf[SessionHandle])
+    val sessionHandle = response.readEntity(classOf[SessionHandle])
 
-      assert(sessionHandle.protocol.getValue == 1)
-      assert(sessionHandle.identifier != null)
+    assert(sessionHandle.protocol.getValue == 1)
+    assert(sessionHandle.identifier != null)
 
-      // verify the open session count
-      response = webTarget.path("api/v1/sessions/count").request().get()
-      val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
-      assert(openedSessionCount.openSessionCount == 1)
-    }
-  }
+    // verify the open session count
+    response = webTarget.path("api/v1/sessions/count").request().get()
+    val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
+    assert(openedSessionCount.openSessionCount == 1)
 
-  test("test close and count session") {
-    val requestObj = SessionOpenRequest(
-      1,
-      "admin",
-      "123456",
-      "localhost",
-      Map("testConfig" -> "testValue"))
+    // close a opened session
+    val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
+      s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
+    response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().delete()
+    assert(200 == response.getStatus)
 
-    withKyuubiRestServer { (_, _, _, webTarget) =>
-      var response = webTarget.path("api/v1/sessions")
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
-
-      assert(200 == response.getStatus)
-
-      val sessionHandle = response.readEntity(classOf[SessionHandle])
-
-      assert(sessionHandle.protocol.getValue == 1)
-      assert(sessionHandle.identifier != null)
-
-      // close a opened session
-      val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
-        s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
-      response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().delete()
-      assert(200 == response.getStatus)
-
-      // verify the open session count again
-      response = webTarget.path("api/v1/sessions/count").request().get()
-      val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
-      assert(openedSessionCount.openSessionCount == 0)
-    }
+    // verify the open session count again
+    response = webTarget.path("api/v1/sessions/count").request().get()
+    val openedSessionCount2 = response.readEntity(classOf[SessionOpenCount])
+    assert(openedSessionCount2.openSessionCount == 0)
   }
 
   test("test execPoolStatistic") {
-    withKyuubiRestServer { (restFe, _, _, webTarget) =>
-      val sessionManager = restFe.be.sessionManager
-      val future = sessionManager.submitBackgroundOperation(() => Thread.sleep(1000))
+    val sessionManager = fe.be.sessionManager
+    val future = sessionManager.submitBackgroundOperation(() => Thread.sleep(1000))
 
-      // verify the exec pool statistic
-      var response = webTarget.path("api/v1/sessions/execPool/statistic").request().get()
-      val execPoolStatistic1 = response.readEntity(classOf[ExecPoolStatistic])
-      assert(execPoolStatistic1.execPoolSize == 1 && execPoolStatistic1.execPoolActiveCount == 1)
+    // verify the exec pool statistic
+    var response = webTarget.path("api/v1/sessions/execPool/statistic").request().get()
+    val execPoolStatistic1 = response.readEntity(classOf[ExecPoolStatistic])
+    assert(execPoolStatistic1.execPoolSize == 1 && execPoolStatistic1.execPoolActiveCount == 1)
 
-      future.cancel(true)
-      eventually(timeout(3.seconds), interval(200.milliseconds)) {
-        response = webTarget.path("api/v1/sessions/execPool/statistic").request().get()
-        val statistic = response.readEntity(classOf[ExecPoolStatistic])
-        assert(statistic.execPoolSize == 1 && statistic.execPoolActiveCount == 0)
-      }
-
-      sessionManager.stop()
+    future.cancel(true)
+    eventually(timeout(3.seconds), interval(200.milliseconds)) {
       response = webTarget.path("api/v1/sessions/execPool/statistic").request().get()
-      val execPoolStatistic3 = response.readEntity(classOf[ExecPoolStatistic])
-      assert(execPoolStatistic3.execPoolSize == 0 && execPoolStatistic3.execPoolActiveCount == 0)
+      val statistic = response.readEntity(classOf[ExecPoolStatistic])
+      assert(statistic.execPoolSize == 1 && statistic.execPoolActiveCount == 0)
     }
+
+    sessionManager.stop()
+    response = webTarget.path("api/v1/sessions/execPool/statistic").request().get()
+    val execPoolStatistic3 = response.readEntity(classOf[ExecPoolStatistic])
+    assert(execPoolStatistic3.execPoolSize == 0 && execPoolStatistic3.execPoolActiveCount == 0)
   }
 
   test("test getSessionList") {
@@ -126,61 +100,57 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       "localhost",
       Map("testConfig" -> "testValue"))
 
-    withKyuubiRestServer { (_, _, _, webTarget) =>
-      var response = webTarget.path("api/v1/sessions")
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+    var response = webTarget.path("api/v1/sessions")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
 
-      // get session list
-      var response2 = webTarget.path("api/v1/sessions").request().get()
-      assert(200 == response2.getStatus)
-      val sessions1 = response2.readEntity(classOf[SessionList])
-      assert(sessions1.sessionList.nonEmpty)
+    // get session list
+    var response2 = webTarget.path("api/v1/sessions").request().get()
+    assert(200 == response2.getStatus)
+    val sessions1 = response2.readEntity(classOf[SessionList])
+    assert(sessions1.sessionList.nonEmpty)
 
-      // close a opened session
-      val sessionHandle = response.readEntity(classOf[SessionHandle])
-      val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
-        s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
-      response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().delete()
-      assert(200 == response.getStatus)
+    // close a opened session
+    val sessionHandle = response.readEntity(classOf[SessionHandle])
+    val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
+      s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
+    response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().delete()
+    assert(200 == response.getStatus)
 
-      // get session list again
-      response2 = webTarget.path("api/v1/sessions").request().get()
-      assert(200 == response2.getStatus)
-      val sessions2 = response2.readEntity(classOf[SessionList])
-      assert(sessions2.sessionList.isEmpty)
-    }
+    // get session list again
+    response2 = webTarget.path("api/v1/sessions").request().get()
+    assert(200 == response2.getStatus)
+    val sessions2 = response2.readEntity(classOf[SessionList])
+    assert(sessions2.sessionList.isEmpty)
   }
 
   test("test get session event") {
-    withKyuubiRestServer { (fe, _, _, webTarget) =>
-      val sessionManager = fe.be.sessionManager
-      val sessionHandle = sessionManager.openSession(
-        HIVE_CLI_SERVICE_PROTOCOL_V2,
-        "admin",
-        "123456",
-        "localhost",
-        Map("testConfig" -> "testValue"))
-      val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
-        s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
+    val sessionManager = fe.be.sessionManager
+    val sessionHandle = sessionManager.openSession(
+      HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "admin",
+      "123456",
+      "localhost",
+      Map("testConfig" -> "testValue"))
+    val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
+      s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
 
-      KyuubiServer.kyuubiServer = new KyuubiServer
-      KyuubiServer.kyuubiServer.initialize(KyuubiConf())
+    KyuubiServer.kyuubiServer = new KyuubiServer
+    KyuubiServer.kyuubiServer.initialize(KyuubiConf())
 
-      // get session event
-      var response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().get()
-      assert(200 == response.getStatus)
-      val sessions = response.readEntity(classOf[KyuubiSessionEvent])
-      assert(sessions.conf("testConfig").equals("testValue"))
+    // get session event
+    var response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().get()
+    assert(200 == response.getStatus)
+    val sessions = response.readEntity(classOf[KyuubiSessionEvent])
+    assert(sessions.conf("testConfig").equals("testValue"))
 
-      // close a opened session
-      response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().delete()
-      assert(200 == response.getStatus)
+    // close a opened session
+    response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().delete()
+    assert(200 == response.getStatus)
 
-      // get session detail again
-      response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().get()
-      assert(404 == response.getStatus)
-    }
+    // get session detail again
+    response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().get()
+    assert(404 == response.getStatus)
   }
 
   test("test get infoType") {
@@ -191,36 +161,34 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       "localhost",
       Map("testConfig" -> "testValue"))
 
-    withKyuubiRestServer { (_, _, _, webTarget) =>
-      var response: Response = webTarget.path("api/v1/sessions")
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+    var response: Response = webTarget.path("api/v1/sessions")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
 
-      val sessionHandle = response.readEntity(classOf[SessionHandle])
-      val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
-        s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
+    val sessionHandle = response.readEntity(classOf[SessionHandle])
+    val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
+      s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
 
-      response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/info/13")
-        .request().get()
-      assert(200 == response.getStatus)
-      val sessions = response.readEntity(classOf[InfoDetail])
-      assert(sessions.infoType.equals("CLI_SERVER_NAME") &&
-        sessions.infoValue.equals("Apache Kyuubi (Incubating)"))
-      // Invalid sessionHandleStr
-      val handle = "b88d6b56-d200-4bb6-bf0a-5da0ea572e11|0c4aad4e-ccf7-4abd-9305-943d4bfd2d9a|0"
-      response = webTarget.path(s"api/v1/sessions/$handle/info/13").request().get()
-      assert(404 == response.getStatus)
-      response = webTarget.path(s"api/v1/sessions/0/info/13").request().get()
-      assert(404 == response.getStatus)
+    response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/info/13")
+      .request().get()
+    assert(200 == response.getStatus)
+    val sessions = response.readEntity(classOf[InfoDetail])
+    assert(sessions.infoType.equals("CLI_SERVER_NAME") &&
+      sessions.infoValue.equals("Apache Kyuubi (Incubating)"))
+    // Invalid sessionHandleStr
+    val handle = "b88d6b56-d200-4bb6-bf0a-5da0ea572e11|0c4aad4e-ccf7-4abd-9305-943d4bfd2d9a|0"
+    response = webTarget.path(s"api/v1/sessions/$handle/info/13").request().get()
+    assert(404 == response.getStatus)
+    response = webTarget.path(s"api/v1/sessions/0/info/13").request().get()
+    assert(404 == response.getStatus)
 
-      // Invalid infoType
-      response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/info/0")
-        .request().get()
-      assert(404 == response.getStatus)
-      response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/info/str")
-        .request().get()
-      assert(404 == response.getStatus)
-    }
+    // Invalid infoType
+    response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/info/0")
+      .request().get()
+    assert(404 == response.getStatus)
+    response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle/info/str")
+      .request().get()
+    assert(404 == response.getStatus)
   }
 
   test("test submit operation and get operation handle") {
@@ -231,77 +199,75 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       "localhost",
       Map("testConfig" -> "testValue"))
 
-    withKyuubiRestServer { (_, _, _, webTarget) =>
-      var response: Response = webTarget.path("api/v1/sessions")
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+    var response: Response = webTarget.path("api/v1/sessions")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
 
-      val sessionHandle = response.readEntity(classOf[SessionHandle])
-      val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
-        s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
+    val sessionHandle = response.readEntity(classOf[SessionHandle])
+    val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
+      s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
 
-      val pathPrefix = s"api/v1/sessions/$serializedSessionHandle"
+    val pathPrefix = s"api/v1/sessions/$serializedSessionHandle"
 
-      val statementReq = StatementRequest("show tables", true, 3000)
-      response = webTarget
-        .path(s"$pathPrefix/operations/statement").request(MediaType.APPLICATION_JSON_TYPE)
-        .post(Entity.entity(statementReq, MediaType.APPLICATION_JSON_TYPE))
-      assert(200 == response.getStatus)
-      var operationHandle = response.readEntity(classOf[OperationHandle])
-      assert(operationHandle.typ == OperationType.EXECUTE_STATEMENT)
+    val statementReq = StatementRequest("show tables", true, 3000)
+    response = webTarget
+      .path(s"$pathPrefix/operations/statement").request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(statementReq, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == response.getStatus)
+    var operationHandle = response.readEntity(classOf[OperationHandle])
+    assert(operationHandle.typ == OperationType.EXECUTE_STATEMENT)
 
-      response = webTarget.path(s"$pathPrefix/operations/typeInfo").request()
-        .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
-      assert(200 == response.getStatus)
-      operationHandle = response.readEntity(classOf[OperationHandle])
-      assert(operationHandle.typ == OperationType.GET_TYPE_INFO)
+    response = webTarget.path(s"$pathPrefix/operations/typeInfo").request()
+      .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == response.getStatus)
+    operationHandle = response.readEntity(classOf[OperationHandle])
+    assert(operationHandle.typ == OperationType.GET_TYPE_INFO)
 
-      response = webTarget.path(s"$pathPrefix/operations/catalogs")
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
-      assert(200 == response.getStatus)
-      operationHandle = response.readEntity(classOf[OperationHandle])
-      assert(operationHandle.typ == OperationType.GET_CATALOGS)
+    response = webTarget.path(s"$pathPrefix/operations/catalogs")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == response.getStatus)
+    operationHandle = response.readEntity(classOf[OperationHandle])
+    assert(operationHandle.typ == OperationType.GET_CATALOGS)
 
-      val getSchemasReq = GetSchemasRequest("default", "default")
-      response = webTarget.path(s"$pathPrefix/operations/schemas")
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .post(Entity.entity(getSchemasReq, MediaType.APPLICATION_JSON_TYPE))
-      assert(200 == response.getStatus)
-      operationHandle = response.readEntity(classOf[OperationHandle])
-      assert(operationHandle.typ == OperationType.GET_SCHEMAS)
+    val getSchemasReq = GetSchemasRequest("default", "default")
+    response = webTarget.path(s"$pathPrefix/operations/schemas")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(getSchemasReq, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == response.getStatus)
+    operationHandle = response.readEntity(classOf[OperationHandle])
+    assert(operationHandle.typ == OperationType.GET_SCHEMAS)
 
-      val tableTypes = new util.ArrayList[String]()
-      val getTablesReq = GetTablesRequest("default", "default", "default", tableTypes)
-      response = webTarget.path(s"$pathPrefix/operations/tables")
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .post(Entity.entity(getTablesReq, MediaType.APPLICATION_JSON_TYPE))
-      assert(200 == response.getStatus)
-      operationHandle = response.readEntity(classOf[OperationHandle])
-      assert(operationHandle.typ == OperationType.GET_TABLES)
+    val tableTypes = new util.ArrayList[String]()
+    val getTablesReq = GetTablesRequest("default", "default", "default", tableTypes)
+    response = webTarget.path(s"$pathPrefix/operations/tables")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(getTablesReq, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == response.getStatus)
+    operationHandle = response.readEntity(classOf[OperationHandle])
+    assert(operationHandle.typ == OperationType.GET_TABLES)
 
-      response = webTarget.path(s"$pathPrefix/operations/tableTypes").request()
-        .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
-      assert(200 == response.getStatus)
-      operationHandle = response.readEntity(classOf[OperationHandle])
-      assert(operationHandle.typ == OperationType.GET_TABLE_TYPES)
+    response = webTarget.path(s"$pathPrefix/operations/tableTypes").request()
+      .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == response.getStatus)
+    operationHandle = response.readEntity(classOf[OperationHandle])
+    assert(operationHandle.typ == OperationType.GET_TABLE_TYPES)
 
-      val getColumnsReq = GetColumnsRequest("default", "default", "default", "default")
-      response = webTarget.path(s"$pathPrefix/operations/columns")
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .post(Entity.entity(getColumnsReq, MediaType.APPLICATION_JSON_TYPE))
-      assert(200 == response.getStatus)
-      operationHandle = response.readEntity(classOf[OperationHandle])
-      assert(operationHandle.typ == OperationType.GET_COLUMNS)
+    val getColumnsReq = GetColumnsRequest("default", "default", "default", "default")
+    response = webTarget.path(s"$pathPrefix/operations/columns")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(getColumnsReq, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == response.getStatus)
+    operationHandle = response.readEntity(classOf[OperationHandle])
+    assert(operationHandle.typ == OperationType.GET_COLUMNS)
 
-      var getFunctionsReq = GetFunctionsRequest("default", "default", "default")
-      response = webTarget.path(s"$pathPrefix/operations/functions")
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .post(Entity.entity(getFunctionsReq, MediaType.APPLICATION_JSON_TYPE))
-      assert(200 == response.getStatus)
-      operationHandle = response.readEntity(classOf[OperationHandle])
-      assert(operationHandle.typ == OperationType.GET_FUNCTIONS)
-    }
+    var getFunctionsReq = GetFunctionsRequest("default", "default", "default")
+    response = webTarget.path(s"$pathPrefix/operations/functions")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(getFunctionsReq, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == response.getStatus)
+    operationHandle = response.readEntity(classOf[OperationHandle])
+    assert(operationHandle.typ == OperationType.GET_FUNCTIONS)
   }
 
   test("test close an operation") {
@@ -312,37 +278,34 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       "localhost",
       Map("testConfig" -> "testValue"))
 
-    withKyuubiRestServer { (_, _, _, webTarget) =>
-      var response: Response = webTarget.path("api/v1/sessions")
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
+    var response: Response = webTarget.path("api/v1/sessions")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
 
-      val sessionHandle = response.readEntity(classOf[SessionHandle])
-      val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
-        s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
+    val sessionHandle = response.readEntity(classOf[SessionHandle])
+    val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
+      s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
 
-      val pathPrefix = s"api/v1/sessions/$serializedSessionHandle"
+    val pathPrefix = s"api/v1/sessions/$serializedSessionHandle"
 
-      response = webTarget.path(s"$pathPrefix/operations/catalogs")
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
-      assert(200 == response.getStatus)
-      var operationHandle = response.readEntity(classOf[OperationHandle])
-      assert(operationHandle.typ == OperationType.GET_CATALOGS)
+    response = webTarget.path(s"$pathPrefix/operations/catalogs")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
+    assert(200 == response.getStatus)
+    var operationHandle = response.readEntity(classOf[OperationHandle])
+    assert(operationHandle.typ == OperationType.GET_CATALOGS)
 
-      val serializedOperationHandle = s"${operationHandle.identifier.publicId}|" +
-        s"${operationHandle.identifier.secretId}|${operationHandle.protocol.getValue}|" +
-        s"${operationHandle.typ.toString}"
+    val serializedOperationHandle = s"${operationHandle.identifier.publicId}|" +
+      s"${operationHandle.identifier.secretId}|${operationHandle.protocol.getValue}|" +
+      s"${operationHandle.typ.toString}"
 
-      response = webTarget.path(s"$pathPrefix/operations/$serializedOperationHandle")
-        .request(MediaType.APPLICATION_JSON_TYPE).delete()
-      assert(200 == response.getStatus)
+    response = webTarget.path(s"$pathPrefix/operations/$serializedOperationHandle")
+      .request(MediaType.APPLICATION_JSON_TYPE).delete()
+    assert(200 == response.getStatus)
 
-      // verify operation
-      response = webTarget.path(s"api/v1/operations/$serializedOperationHandle/event")
-        .request(MediaType.APPLICATION_JSON_TYPE).get()
-      assert(404 == response.getStatus)
-
-    }
+    // verify operation
+    response = webTarget.path(s"api/v1/operations/$serializedOperationHandle/event")
+      .request(MediaType.APPLICATION_JSON_TYPE).get()
+    assert(404 == response.getStatus)
   }
 }

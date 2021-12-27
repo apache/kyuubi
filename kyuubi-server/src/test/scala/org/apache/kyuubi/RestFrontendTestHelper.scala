@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi
 
+import java.net.URI
 import javax.ws.rs.client.WebTarget
 import javax.ws.rs.core.{Application, UriBuilder}
 
@@ -28,9 +29,9 @@ import org.glassfish.jersey.test.spi.TestContainerFactory
 
 import org.apache.kyuubi.RestFrontendTestHelper.RestApiBaseSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.server.KyuubiRestFrontendService
+import org.apache.kyuubi.config.KyuubiConf.FrontendProtocols
 import org.apache.kyuubi.server.api.KyuubiScalaObjectMapper
-import org.apache.kyuubi.service.NoopRestFrontendServer
+import org.apache.kyuubi.service.AbstractFrontendService
 
 object RestFrontendTestHelper {
 
@@ -46,40 +47,29 @@ object RestFrontendTestHelper {
   }
 }
 
-trait RestFrontendTestHelper {
+trait RestFrontendTestHelper extends WithKyuubiServer {
 
-  val restFrontendHost: String = "localhost"
-  val restFrontendPort: Int = KyuubiConf().get(KyuubiConf.FRONTEND_REST_BIND_PORT)
+  override protected val conf: KyuubiConf = KyuubiConf()
 
-  def withKyuubiRestServer(
-      f: (KyuubiRestFrontendService, String, Int, WebTarget) => Unit): Unit = {
+  override protected val frontendProtocols: Seq[FrontendProtocols.Value] =
+    FrontendProtocols.REST :: Nil
 
-    val server = new NoopRestFrontendServer()
-    server.stop()
-    val conf = KyuubiConf()
-    conf.set(KyuubiConf.FRONTEND_REST_BIND_HOST, Some(restFrontendHost))
+  private val restApiBaseSuite = new RestApiBaseSuite
 
-    server.initialize(conf)
-    server.start()
-
-    val restApiBaseSuite = new RestApiBaseSuite
+  override def beforeAll(): Unit = {
+    super.beforeAll()
     restApiBaseSuite.setUp()
-    // noinspection HttpUrlsUsage
-    val baseUri = UriBuilder
-      .fromUri(s"http://$restFrontendHost/")
-      .port(restFrontendPort)
-      .build()
-    val webTarget = restApiBaseSuite.client.target(baseUri)
-
-    try {
-      f(
-        server.frontendServices.head,
-        conf.get(KyuubiConf.FRONTEND_REST_BIND_HOST).get,
-        restFrontendPort,
-        webTarget)
-    } finally {
-      restApiBaseSuite.tearDown()
-      server.stop()
-    }
   }
+
+  override def afterAll(): Unit = {
+    restApiBaseSuite.tearDown()
+    server.stop()
+    super.afterAll()
+  }
+
+  protected lazy val fe: AbstractFrontendService = server.frontendServices.head
+
+  protected lazy val baseUri: URI = UriBuilder.fromUri(s"http://${fe.connectionUrl}/").build()
+
+  protected lazy val webTarget: WebTarget = restApiBaseSuite.client.target(baseUri)
 }
