@@ -39,7 +39,8 @@ else
   FLINK_SQL_ENGINE_LIB_DIR="$FLINK_SQL_ENGINE_HOME/target"
   FLINK_SQL_ENGINE_LOG_DIR="$FLINK_SQL_ENGINE_HOME/target"
   FLINK_SQL_ENGINE_JAR=$(find "$FLINK_SQL_ENGINE_LIB_DIR" -regex '.*/kyuubi-flink-sql-engine_.*\.jar$' | grep -v '\-javadoc.jar$' | grep -v '\-tests.jar$')
-  FLINK_HADOOP_CLASSPATH="${$(find "$FLINK_SQL_ENGINE_LIB_DIR" -regex '.*/hadoop-client-.*\.jar$' | tr '\n' ':')%:}"
+  _FLINK_SQL_ENGINE_HADOOP_CLIENT_JARS=$(find $FLINK_SQL_ENGINE_LIB_DIR -regex '.*/hadoop-client-.*\.jar$' | tr '\n' ':')
+  FLINK_HADOOP_CLASSPATH="${_FLINK_SQL_ENGINE_HADOOP_CLIENT_JARS%:}"
 fi
 
 # do NOT let config.sh detect FLINK_HOME

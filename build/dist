@@ -30,7 +30,7 @@ set -e
 KYUUBI_HOME="$(cd "`dirname "$0"`/.."; pwd)"
 DISTDIR="$KYUUBI_HOME/dist"
 MAKE_TGZ=false
-# TODO: add FLINK_PROVIDED option
+FLINK_PROVIDED=false
 SPARK_PROVIDED=false
 NAME=none
 MVN="$KYUUBI_HOME/build/mvn"
@@ -61,6 +61,9 @@ while (( "$#" )); do
   case $1 in
     --tgz)
       MAKE_TGZ=true
+      ;;
+    --flink-provided)
+      FLINK_PROVIDED=true
       ;;
     --spark-provided)
       SPARK_PROVIDED=true
@@ -124,6 +127,11 @@ SCALA_VERSION=$("$MVN" help:evaluate -Dexpression=scala.binary.version $@ 2>/dev
     | grep -v "WARNING"\
     | tail -n 1)
 
+FLINK_VERSION=$("$MVN" help:evaluate -Dexpression=flink.version $@ 2>/dev/null\
+    | grep -v "INFO"\
+    | grep -v "WARNING"\
+    | tail -n 1)
+
 SPARK_VERSION=$("$MVN" help:evaluate -Dexpression=spark.version $@ 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
@@ -144,14 +152,17 @@ HIVE_VERSION=$("$MVN" help:evaluate -Dexpression=hive.version $@ 2>/dev/null\
     | grep -v "WARNING"\
     | tail -n 1)
 
-echo "Building Kyuubi package of version $VERSION against Spark version - $SPARK_VERSION"
+echo "Building Kyuubi package of version $VERSION against Flink $FLINK_VERSION, Spark $SPARK_VERSION"
 
-SUFFIX="-$NAME"
-if [[ "$NAME" == "none" ]]; then
-  if [[ "$SPARK_PROVIDED" == "true" ]]; then
-    SUFFIX=""
-  else
-    SUFFIX="-spark-${SPARK_VERSION:0:3}-hadoop${SPARK_HADOOP_VERSION}"
+if [[ "$NAME" != "none" ]]; then
+  SUFFIX="-$NAME"
+else
+  SUFFIX=""
+  if [[ "$FLINK_PROVIDED" != "true" ]]; then
+    SUFFIX="$SUFFIX-flink-${FLINK_VERSION:0:4}"
+  fi
+  if [[ "$SPARK_PROVIDED" != "true" ]]; then
+    SUFFIX="$SUFFIX-spark-${SPARK_VERSION:0:3}-hadoop${SPARK_HADOOP_VERSION}"
   fi
 fi
 
@@ -163,7 +174,7 @@ fi
 
 MVN_DIST_OPT="-DskipTests"
 if [[ "$SPARK_PROVIDED" == "true" ]]; then
-  MVN_DIST_OPT="$MVN_DIST_OPT -Pspark-provided"
+  MVN_DIST_OPT="$MVN_DIST_OPT -Pflink-provided,spark-provided"
 fi
 
 BUILD_COMMAND=("$MVN" clean install $MVN_DIST_OPT $@)
@@ -178,7 +189,9 @@ rm -rf "$DISTDIR"
 mkdir -p "$DISTDIR/pid"
 mkdir -p "$DISTDIR/logs"
 mkdir -p "$DISTDIR/work"
-mkdir -p "$DISTDIR/externals/engines/flink"
+mkdir -p "$DISTDIR/externals/engines/flink/bin"
+mkdir -p "$DISTDIR/externals/engines/flink/conf"
+mkdir -p "$DISTDIR/externals/engines/flink/lib"
 mkdir -p "$DISTDIR/externals/engines/spark"
 mkdir -p "$DISTDIR/beeline-jars"
 echo "Kyuubi $VERSION $GITREVSTRING built for" > "$DISTDIR/RELEASE"
@@ -205,8 +218,11 @@ for jar in $(ls "$DISTDIR/jars/"); do
 done
 cd -
 
-# Copy flink engine
-cp "$KYUUBI_HOME/externals/kyuubi-flink-sql-engine/target/kyuubi-flink-sql-engine-${VERSION}.jar" "$DISTDIR/externals/engines/flink"
+# Copy flink engines
+cp "$KYUUBI_HOME/externals/kyuubi-flink-sql-engine/bin/*" "$DISTDIR/externals/engines/flink/bin"
+chmod a+x "$DISTDIR/externals/engines/flink/bin/*"
+cp "$KYUUBI_HOME/externals/kyuubi-flink-sql-engine/conf/*" "$DISTDIR/externals/engines/flink/conf"
+cp "$KYUUBI_HOME/externals/kyuubi-flink-sql-engine/target/kyuubi-flink-sql-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/flink/lib"
 
 # Copy spark engines
 cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/spark"
@@ -227,6 +243,12 @@ for SPARK_EXTENSION_VERSION in ${SPARK_EXTENSION_VERSIONS[@]}; do
     cp "$KYUUBI_HOME/dev/kyuubi-extension-spark-$SPARK_EXTENSION_VERSION/target/kyuubi-extension-spark-${SPARK_EXTENSION_VERSION}_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/extension"
   fi
 done
+
+if [[ "$FLINK_PROVIDED" != "true" ]]; then
+  # Copy flink binary dist
+  cp -r "$KYUUBI_HOME/externals/kyuubi-download/target/flink-$FLINK_VERSION/" \
+        "$DISTDIR/externals/flink-$FLINK_VERSION/"
+fi
 
 if [[ "$SPARK_PROVIDED" != "true" ]]; then
   # Copy spark binary dist

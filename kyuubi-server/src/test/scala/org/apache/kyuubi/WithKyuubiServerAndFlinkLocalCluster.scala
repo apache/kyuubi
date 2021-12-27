@@ -17,31 +17,22 @@
 
 package org.apache.kyuubi
 
-import org.apache.flink.configuration.{Configuration, RestOptions}
-import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
+import scala.sys.process._
 
-trait WithKyuubiServerAndFlinkMiniCluster extends WithKyuubiServer {
-  protected val flinkConfig = new Configuration()
-  protected var miniCluster: MiniCluster = _
+import org.apache.kyuubi.engine.flink.FlinkEngineProcessBuilder
+
+trait WithKyuubiServerAndFlinkLocalCluster extends WithKyuubiServer {
+
+  private lazy val FLINK_HOME: String =
+    new FlinkEngineProcessBuilder(Utils.currentUser, conf).FLINK_HOME
 
   override def beforeAll(): Unit = {
-    startMiniCluster()
+    s"$FLINK_HOME/bin/start-cluster.sh".!
     super.beforeAll()
   }
 
   override def afterAll(): Unit = {
     super.afterAll()
-    miniCluster.close()
-  }
-
-  private def startMiniCluster(): Unit = {
-    val cfg = new MiniClusterConfiguration.Builder()
-      .setConfiguration(flinkConfig)
-      .setNumSlotsPerTaskManager(1)
-      .build
-    miniCluster = new MiniCluster(cfg)
-    miniCluster.start()
-    flinkConfig.setString(RestOptions.ADDRESS, miniCluster.getRestAddress.get().getHost)
-    flinkConfig.setInteger(RestOptions.PORT, miniCluster.getRestAddress.get().getPort)
+    s"$FLINK_HOME/bin/stop-cluster.sh".!
   }
 }

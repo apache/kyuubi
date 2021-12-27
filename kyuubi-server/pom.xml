@@ -452,18 +452,6 @@
         </dependency>
 
         <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-table-runtime_${scala.binary.version}</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-test-utils_${scala.binary.version}</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.webjars</groupId>
             <artifactId>swagger-ui</artifactId>
         </dependency>
