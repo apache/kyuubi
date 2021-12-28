@@ -51,7 +51,7 @@ object FlinkEngineUtils extends Logging {
   }
 
   def getSessionContext(localExecutor: LocalExecutor, sessionId: String): SessionContext = {
-    val method = classOf[LocalExecutor].getMethod("getSessionContext", classOf[String])
+    val method = classOf[LocalExecutor].getDeclaredMethod("getSessionContext", classOf[String])
     method.setAccessible(true)
     method.invoke(localExecutor, sessionId).asInstanceOf[SessionContext]
   }
