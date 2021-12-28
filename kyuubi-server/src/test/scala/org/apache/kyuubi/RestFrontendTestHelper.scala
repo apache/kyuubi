@@ -64,7 +64,6 @@ trait RestFrontendTestHelper extends WithKyuubiServer {
 
   override def afterAll(): Unit = {
     restApiBaseSuite.tearDown()
-    server.stop()
     super.afterAll()
   }
 
