@@ -15,26 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.flink.session
+package org.apache.kyuubi
 
-import org.apache.flink.table.client.gateway.Executor
-import org.apache.flink.table.client.gateway.context.SessionContext
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import scala.sys.process._
 
-import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
+import org.apache.kyuubi.engine.flink.FlinkEngineProcessBuilder
 
-class FlinkSessionImpl(
-    protocol: TProtocolVersion,
-    user: String,
-    password: String,
-    ipAddress: String,
-    conf: Map[String, String],
-    sessionManager: SessionManager,
-    val handle: SessionHandle,
-    val sessionContext: SessionContext)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+trait WithKyuubiServerAndFlinkLocalCluster extends WithKyuubiServer {
 
-  def executor: Executor = sessionManager.asInstanceOf[FlinkSQLSessionManager].executor
+  private lazy val FLINK_HOME: String =
+    new FlinkEngineProcessBuilder(Utils.currentUser, conf).FLINK_HOME
 
-  def sessionId: String = handle.identifier.toString
+  override def beforeAll(): Unit = {
+    s"$FLINK_HOME/bin/start-cluster.sh".!
+    super.beforeAll()
+  }
+
+  override def afterAll(): Unit = {
+    super.afterAll()
+    s"$FLINK_HOME/bin/stop-cluster.sh".!
+  }
 }

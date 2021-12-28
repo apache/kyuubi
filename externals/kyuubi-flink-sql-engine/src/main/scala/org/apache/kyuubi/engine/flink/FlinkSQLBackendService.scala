@@ -15,26 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.flink.session
+package org.apache.kyuubi.engine.flink
 
-import org.apache.flink.table.client.gateway.Executor
-import org.apache.flink.table.client.gateway.context.SessionContext
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.flink.table.client.gateway.context.DefaultContext
 
-import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
+import org.apache.kyuubi.engine.flink.session.FlinkSQLSessionManager
+import org.apache.kyuubi.service.AbstractBackendService
+import org.apache.kyuubi.session.SessionManager
 
-class FlinkSessionImpl(
-    protocol: TProtocolVersion,
-    user: String,
-    password: String,
-    ipAddress: String,
-    conf: Map[String, String],
-    sessionManager: SessionManager,
-    val handle: SessionHandle,
-    val sessionContext: SessionContext)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+class FlinkSQLBackendService(engineContext: DefaultContext)
+  extends AbstractBackendService("FlinkSQLBackendService") {
 
-  def executor: Executor = sessionManager.asInstanceOf[FlinkSQLSessionManager].executor
+  override val sessionManager: SessionManager = new FlinkSQLSessionManager(engineContext)
 
-  def sessionId: String = handle.identifier.toString
 }

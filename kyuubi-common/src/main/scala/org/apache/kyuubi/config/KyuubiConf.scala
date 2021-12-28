@@ -577,6 +577,14 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val ENGINE_FLINK_MAIN_RESOURCE: OptionalConfigEntry[String] =
+    buildConf("session.engine.flink.main.resource")
+      .doc("The package used to create Flink SQL engine remote job. If it is undefined," +
+        " Kyuubi will use the default")
+      .version("1.4.0")
+      .stringConf
+      .createOptional
+
   val ENGINE_LOGIN_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.login.timeout")
     .doc("The timeout of creating the connection to remote sql query engine")
     .version("1.0.0")

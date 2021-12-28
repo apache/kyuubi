@@ -54,9 +54,7 @@ class ExecuteStatement(
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
   @VisibleForTesting
-  override def setExecutor(executor: Executor): Unit = {
-    this.executor = executor
-  }
+  override def setExecutor(executor: Executor): Unit = super.setExecutor(executor)
 
   def setSessionId(sessionId: String): Unit = {
     this.sessionId = sessionId

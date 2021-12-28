@@ -15,29 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.flink.operation
+package org.apache.kyuubi.operation.flink
 
-import org.scalatest.concurrent.PatienceConfiguration.Timeout
-import org.scalatest.time.SpanSugar._
-
-import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
+import org.apache.kyuubi.WithKyuubiServerAndFlinkLocalCluster
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_TYPE, FRONTEND_THRIFT_BINARY_BIND_PORT}
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
-import org.apache.kyuubi.service.ServiceState._
 
-class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
-  override def withKyuubiConf: Map[String, String] = Map()
+class FlinkOperationSuite extends WithKyuubiServerAndFlinkLocalCluster with HiveJDBCTestHelper {
+  override val conf: KyuubiConf = KyuubiConf()
+    .set(ENGINE_TYPE, "FLINK_SQL")
+    .set(FRONTEND_THRIFT_BINARY_BIND_PORT, 10019)
 
-  override protected def jdbcUrl: String =
-    s"jdbc:hive2://${engine.frontendServices.head.connectionUrl}/"
-
-  ignore("release session if shared level is CONNECTION") {
-    logger.info(s"jdbc url is $jdbcUrl")
-    assert(engine.getServiceState == STARTED)
-    withJdbcStatement() { _ => }
-    eventually(Timeout(20.seconds)) {
-      assert(engine.getServiceState == STOPPED)
-    }
-  }
+  override protected def jdbcUrl: String = getJdbcUrl
 
   test("get catalogs for flink sql") {
     withJdbcStatement() { statement =>

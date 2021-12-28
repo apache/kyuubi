@@ -20,6 +20,9 @@ package org.apache.kyuubi.engine.flink.result;
 
 /** ResultKind defines the types of the result. */
 public enum ResultKind {
+  // for DDL, DCL and statements with a simple "OK"
+  SUCCESS,
+
   // rows with important content are available (DML, DQL)
   SUCCESS_WITH_CONTENT
 }

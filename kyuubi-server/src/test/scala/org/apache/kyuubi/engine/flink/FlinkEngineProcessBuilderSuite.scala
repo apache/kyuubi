@@ -15,26 +15,17 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.flink.session
+package org.apache.kyuubi.engine.flink
 
-import org.apache.flink.table.client.gateway.Executor
-import org.apache.flink.table.client.gateway.context.SessionContext
-import org.apache.hive.service.rpc.thrift.TProtocolVersion
+import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.config.KyuubiConf
 
-import org.apache.kyuubi.session.{AbstractSession, SessionHandle, SessionManager}
+class FlinkEngineProcessBuilderSuite extends KyuubiFunSuite {
+  private def conf = KyuubiConf().set("kyuubi.on", "off")
 
-class FlinkSessionImpl(
-    protocol: TProtocolVersion,
-    user: String,
-    password: String,
-    ipAddress: String,
-    conf: Map[String, String],
-    sessionManager: SessionManager,
-    val handle: SessionHandle,
-    val sessionContext: SessionContext)
-  extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
-
-  def executor: Executor = sessionManager.asInstanceOf[FlinkSQLSessionManager].executor
-
-  def sessionId: String = handle.identifier.toString
+  test("flink engine process builder") {
+    val builder = new FlinkEngineProcessBuilder("vinoyang", conf)
+    val commands = builder.toString.split(' ')
+    assert(commands.exists(_ endsWith "flink-sql-engine.sh"))
+  }
 }
