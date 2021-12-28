@@ -23,7 +23,6 @@ import org.apache.spark.util.Utils
 
 import org.apache.kyuubi.Logging
 
-
 /**
  * A place to invoke non-public APIs of [[Utils]], anything to be added here need to
  * think twice

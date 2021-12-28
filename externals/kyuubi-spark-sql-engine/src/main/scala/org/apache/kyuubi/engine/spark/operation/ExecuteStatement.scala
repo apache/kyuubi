@@ -81,8 +81,7 @@ class ExecuteStatement(
       // TODO: Make it configurable
       spark.sparkContext.addSparkListener(operationListener)
       spark.sparkContext.setJobDescription(
-        redact(spark.sessionState.conf.stringRedactionPattern, statement)
-      )
+        redact(spark.sessionState.conf.stringRedactionPattern, statement))
       result = spark.sql(statement)
       // TODO #921: COMPILED need consider eagerly executed commands
       setState(OperationState.COMPILED)
