@@ -51,12 +51,10 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(sessionHandle.protocol.getValue == 1)
     assert(sessionHandle.identifier != null)
 
-    // verify the exec pool statistic
     val statistic = webTarget.path("api/v1/sessions/execPool/statistic").request().get()
     val execPoolStatistic1 = statistic.readEntity(classOf[ExecPoolStatistic])
     assert(execPoolStatistic1.execPoolSize == 1 && execPoolStatistic1.execPoolActiveCount == 1)
 
-    // verify the open session count
     response = webTarget.path("api/v1/sessions/count").request().get()
     val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
     assert(openedSessionCount.openSessionCount == 1)
@@ -67,7 +65,6 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().delete()
     assert(200 == response.getStatus)
 
-    // verify the open session count again
     response = webTarget.path("api/v1/sessions/count").request().get()
     val openedSessionCount2 = response.readEntity(classOf[SessionOpenCount])
     assert(openedSessionCount2.openSessionCount == 0)
@@ -91,7 +88,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val sessions1 = response2.readEntity(classOf[SessionList])
     assert(sessions1.sessionList.nonEmpty)
 
-    // close a opened session
+    // close an opened session
     val sessionHandle = response.readEntity(classOf[SessionHandle])
     val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
       s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
