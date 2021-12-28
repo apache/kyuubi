@@ -211,13 +211,15 @@ private[v1] class SessionsResource extends ApiRequestContext {
       @PathParam("sessionHandle") sessionHandleStr: String,
       request: GetSchemasRequest): OperationHandle = {
     try {
-      backendService.getSchemas(
-        parseSessionHandle(sessionHandleStr),
+      val sessionHandle = parseSessionHandle(sessionHandleStr)
+      val operationHandle = backendService.getSchemas(
+        sessionHandle,
         request.catalogName,
         request.schemaName)
+      operationHandle
     } catch {
-      case NonFatal(_) =>
-        throw new NotFoundException(s"Error getting schemas")
+      case NonFatal(e) =>
+        throw new NotFoundException(s"Error getting schemas", e)
     }
   }
 

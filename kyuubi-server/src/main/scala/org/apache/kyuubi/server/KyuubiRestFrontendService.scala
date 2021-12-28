@@ -76,7 +76,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
 
   override def connectionUrl: String = {
     checkInitialized()
-    s"${serverAddr.getCanonicalHostName}:$portNum"
+    s"${serverAddr.getCanonicalHostName}:${connector.getLocalPort}"
   }
 
   override def start(): Unit = {
