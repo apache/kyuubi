@@ -21,8 +21,6 @@ import java.util
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.{MediaType, Response}
 
-import scala.concurrent.duration._
-
 import org.apache.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
@@ -34,7 +32,7 @@ import org.apache.kyuubi.session.SessionHandle
 
 class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
-  test("test open/close and count session") {
+  test("open/close and count session") {
     val requestObj = SessionOpenRequest(
       1,
       "admin",
@@ -53,12 +51,17 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(sessionHandle.protocol.getValue == 1)
     assert(sessionHandle.identifier != null)
 
+    // verify the exec pool statistic
+    val statistic = webTarget.path("api/v1/sessions/execPool/statistic").request().get()
+    val execPoolStatistic1 = statistic.readEntity(classOf[ExecPoolStatistic])
+    assert(execPoolStatistic1.execPoolSize == 1 && execPoolStatistic1.execPoolActiveCount == 1)
+
     // verify the open session count
     response = webTarget.path("api/v1/sessions/count").request().get()
     val openedSessionCount = response.readEntity(classOf[SessionOpenCount])
     assert(openedSessionCount.openSessionCount == 1)
 
-    // close a opened session
+    // close an opened session
     val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
       s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
     response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().delete()
@@ -70,29 +73,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(openedSessionCount2.openSessionCount == 0)
   }
 
-  test("test execPoolStatistic") {
-    val sessionManager = fe.be.sessionManager
-    val future = sessionManager.submitBackgroundOperation(() => Thread.sleep(1000))
-
-    // verify the exec pool statistic
-    var response = webTarget.path("api/v1/sessions/execPool/statistic").request().get()
-    val execPoolStatistic1 = response.readEntity(classOf[ExecPoolStatistic])
-    assert(execPoolStatistic1.execPoolSize == 1 && execPoolStatistic1.execPoolActiveCount == 1)
-
-    future.cancel(true)
-    eventually(timeout(3.seconds), interval(200.milliseconds)) {
-      response = webTarget.path("api/v1/sessions/execPool/statistic").request().get()
-      val statistic = response.readEntity(classOf[ExecPoolStatistic])
-      assert(statistic.execPoolSize == 1 && statistic.execPoolActiveCount == 0)
-    }
-
-    sessionManager.stop()
-    response = webTarget.path("api/v1/sessions/execPool/statistic").request().get()
-    val execPoolStatistic3 = response.readEntity(classOf[ExecPoolStatistic])
-    assert(execPoolStatistic3.execPoolSize == 0 && execPoolStatistic3.execPoolActiveCount == 0)
-  }
-
-  test("test getSessionList") {
+  test("getSessionList") {
     val requestObj = SessionOpenRequest(
       1,
       "admin",
@@ -144,7 +125,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     val sessions = response.readEntity(classOf[KyuubiSessionEvent])
     assert(sessions.conf("testConfig").equals("testValue"))
 
-    // close a opened session
+    // close an opened session
     response = webTarget.path(s"api/v1/sessions/$serializedSessionHandle").request().delete()
     assert(200 == response.getStatus)
 
@@ -191,7 +172,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(404 == response.getStatus)
   }
 
-  test("test submit operation and get operation handle") {
+  test("submit operation and get operation handle") {
     val requestObj = SessionOpenRequest(
       1,
       "admin",
@@ -230,7 +211,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     operationHandle = response.readEntity(classOf[OperationHandle])
     assert(operationHandle.typ == OperationType.GET_CATALOGS)
 
-    val getSchemasReq = GetSchemasRequest("default", "default")
+    val getSchemasReq = GetSchemasRequest("spark_catalog", "default")
     response = webTarget.path(s"$pathPrefix/operations/schemas")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .post(Entity.entity(getSchemasReq, MediaType.APPLICATION_JSON_TYPE))
@@ -239,7 +220,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(operationHandle.typ == OperationType.GET_SCHEMAS)
 
     val tableTypes = new util.ArrayList[String]()
-    val getTablesReq = GetTablesRequest("default", "default", "default", tableTypes)
+    val getTablesReq = GetTablesRequest("spark_catalog", "default", "default", tableTypes)
     response = webTarget.path(s"$pathPrefix/operations/tables")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .post(Entity.entity(getTablesReq, MediaType.APPLICATION_JSON_TYPE))
@@ -253,7 +234,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     operationHandle = response.readEntity(classOf[OperationHandle])
     assert(operationHandle.typ == OperationType.GET_TABLE_TYPES)
 
-    val getColumnsReq = GetColumnsRequest("default", "default", "default", "default")
+    val getColumnsReq = GetColumnsRequest("spark_catalog", "default", "default", "default")
     response = webTarget.path(s"$pathPrefix/operations/columns")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .post(Entity.entity(getColumnsReq, MediaType.APPLICATION_JSON_TYPE))

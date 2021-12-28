@@ -23,7 +23,7 @@ class KyuubiRestFrontendServiceSuite extends RestFrontendTestHelper {
 
   test("kyuubi REST frontend service http basic") {
     val resp = webTarget.path("/api/v1/ping").request().get()
-    resp.getStatusInfo
+    assert(resp.readEntity(classOf[String]) === "pong")
   }
 
   test("test error and exception response") {
