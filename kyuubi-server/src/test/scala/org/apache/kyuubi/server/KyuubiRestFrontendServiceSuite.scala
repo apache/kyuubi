@@ -27,17 +27,14 @@ class KyuubiRestFrontendServiceSuite extends RestFrontendTestHelper {
   }
 
   test("error and exception response") {
-    // send a not exists request
     var response = webTarget.path("api/v1/pong").request().get()
     assert(404 == response.getStatus)
     assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("not found"))
 
-    // send a exists request but wrong http method
     response = webTarget.path("api/v1/ping").request().post(null)
     assert(405 == response.getStatus)
     assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("method not allowed"))
 
-    // send a request but throws a exception on the server side
     response = webTarget.path("api/v1/exception").request().get()
     assert(500 == response.getStatus)
     assert(response.getStatusInfo.getReasonPhrase.equalsIgnoreCase("server error"))
