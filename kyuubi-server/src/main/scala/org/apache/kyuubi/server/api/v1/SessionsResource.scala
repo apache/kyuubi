@@ -48,7 +48,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @GET
   def sessionInfoList(): SessionList = {
     SessionList(
-      backendService.sessionManager.getSessionList().asScala.map {
+      fe.be.sessionManager.getSessionList().asScala.map {
         case (handle, session) =>
           SessionOverview(session.user, session.ipAddress, session.createTime, handle)
       }.toSeq)
@@ -63,7 +63,8 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @Path("{sessionHandle}")
   def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): KyuubiSessionEvent = {
     try {
-      KyuubiSessionEvent(backendService.sessionManager.getSession(
+      // TODO: need to use KyuubiSessionEvent in session
+      KyuubiSessionEvent(fe.be.sessionManager.getSession(
         parseSessionHandle(sessionHandleStr)).asInstanceOf[AbstractSession])
     } catch {
       case NonFatal(e) =>
@@ -85,7 +86,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
       @PathParam("infoType") infoType: Int): InfoDetail = {
     try {
       val info = TGetInfoType.findByValue(infoType)
-      val infoValue = backendService.getInfo(parseSessionHandle(sessionHandleStr), info)
+      val infoValue = fe.be.getInfo(parseSessionHandle(sessionHandleStr), info)
       InfoDetail(info.toString, infoValue.getStringValue)
     } catch {
       case NonFatal(e) =>
@@ -102,7 +103,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @GET
   @Path("count")
   def sessionCount(): SessionOpenCount = {
-    SessionOpenCount(backendService.sessionManager.getOpenSessionCount)
+    SessionOpenCount(fe.be.sessionManager.getOpenSessionCount)
   }
 
   @ApiResponse(
@@ -114,8 +115,8 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @Path("execPool/statistic")
   def execPoolStatistic(): ExecPoolStatistic = {
     ExecPoolStatistic(
-      backendService.sessionManager.getExecPoolSize,
-      backendService.sessionManager.getActiveCount)
+      fe.be.sessionManager.getExecPoolSize,
+      fe.be.sessionManager.getActiveCount)
   }
 
   @ApiResponse(
@@ -126,7 +127,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @POST
   @Consumes(Array(MediaType.APPLICATION_JSON))
   def openSession(request: SessionOpenRequest): SessionHandle = {
-    backendService.openSession(
+    fe.be.openSession(
       TProtocolVersion.findByValue(request.protocolVersion),
       request.user,
       request.password,
@@ -142,7 +143,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @DELETE
   @Path("{sessionHandle}")
   def closeSession(@PathParam("sessionHandle") sessionHandleStr: String): Response = {
-    backendService.closeSession(parseSessionHandle(sessionHandleStr))
+    fe.be.closeSession(parseSessionHandle(sessionHandleStr))
     Response.ok().build()
   }
 
@@ -157,7 +158,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
       @PathParam("sessionHandle") sessionHandleStr: String,
       request: StatementRequest): OperationHandle = {
     try {
-      backendService.executeStatement(
+      fe.be.executeStatement(
         parseSessionHandle(sessionHandleStr),
         request.statement,
         request.runAsync,
@@ -177,7 +178,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @Path("{sessionHandle}/operations/typeInfo")
   def getTypeInfo(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
     try {
-      backendService.getTypeInfo(parseSessionHandle(sessionHandleStr))
+      fe.be.getTypeInfo(parseSessionHandle(sessionHandleStr))
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(s"Error getting type information")
@@ -193,7 +194,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @Path("{sessionHandle}/operations/catalogs")
   def getCatalogs(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
     try {
-      backendService.getCatalogs(parseSessionHandle(sessionHandleStr))
+      fe.be.getCatalogs(parseSessionHandle(sessionHandleStr))
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(s"Error getting catalogs")
@@ -212,7 +213,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
       request: GetSchemasRequest): OperationHandle = {
     try {
       val sessionHandle = parseSessionHandle(sessionHandleStr)
-      val operationHandle = backendService.getSchemas(
+      val operationHandle = fe.be.getSchemas(
         sessionHandle,
         request.catalogName,
         request.schemaName)
@@ -234,7 +235,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
       @PathParam("sessionHandle") sessionHandleStr: String,
       request: GetTablesRequest): OperationHandle = {
     try {
-      backendService.getTables(
+      fe.be.getTables(
         parseSessionHandle(sessionHandleStr),
         request.catalogName,
         request.schemaName,
@@ -255,7 +256,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @Path("{sessionHandle}/operations/tableTypes")
   def getTableTypes(@PathParam("sessionHandle") sessionHandleStr: String): OperationHandle = {
     try {
-      backendService.getTableTypes(parseSessionHandle(sessionHandleStr))
+      fe.be.getTableTypes(parseSessionHandle(sessionHandleStr))
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(s"Error getting table types")
@@ -273,7 +274,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
       @PathParam("sessionHandle") sessionHandleStr: String,
       request: GetColumnsRequest): OperationHandle = {
     try {
-      backendService.getColumns(
+      fe.be.getColumns(
         parseSessionHandle(sessionHandleStr),
         request.catalogName,
         request.schemaName,
@@ -296,7 +297,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
       @PathParam("sessionHandle") sessionHandleStr: String,
       request: GetFunctionsRequest): OperationHandle = {
     try {
-      backendService.getFunctions(
+      fe.be.getFunctions(
         parseSessionHandle(sessionHandleStr),
         request.catalogName,
         request.schemaName,
@@ -320,7 +321,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
 
     try {
       val operationHandle = parseOperationHandle(operationHandleStr)
-      backendService.sessionManager.getSession(parseSessionHandle(sessionHandleStr))
+      fe.be.sessionManager.getSession(parseSessionHandle(sessionHandleStr))
         .closeOperation(operationHandle)
       operationHandle
     } catch {
