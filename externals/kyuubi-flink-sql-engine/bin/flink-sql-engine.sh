@@ -26,7 +26,7 @@ if [[ -z "$FLINK_HOME" || ! -d "$FLINK_HOME" ]]; then
   exit 1
 fi
 
-FLINK_SQL_ENGINE_HOME="$(cd "$(dirname "$0")"/..; pwd)"
+FLINK_SQL_ENGINE_HOME="$(cd `dirname $0`/..; pwd)"
 if [[ "$FLINK_SQL_ENGINE_HOME" == "$KYUUBI_HOME/externals/engines/flink" ]]; then
   FLINK_SQL_ENGINE_CONF_DIR="$FLINK_SQL_ENGINE_HOME/conf"
   FLINK_SQL_ENGINE_LIB_DIR="$FLINK_SQL_ENGINE_HOME/lib"
