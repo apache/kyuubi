@@ -105,7 +105,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(sessions2.sessionList.isEmpty)
   }
 
-  test("test get session event") {
+  test("get session event") {
     val sessionManager = fe.be.sessionManager
     val sessionHandle = sessionManager.openSession(
       HIVE_CLI_SERVICE_PROTOCOL_V2,
@@ -134,7 +134,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(404 == response.getStatus)
   }
 
-  test("test get infoType") {
+  test("get infoType") {
     val requestObj = SessionOpenRequest(
       1,
       "admin",
@@ -251,7 +251,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(operationHandle.typ == OperationType.GET_FUNCTIONS)
   }
 
-  test("test close an operation") {
+  test("close an operation") {
     val requestObj = SessionOpenRequest(
       1,
       "admin",

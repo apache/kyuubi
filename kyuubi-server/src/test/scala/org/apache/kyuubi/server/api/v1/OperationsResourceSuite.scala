@@ -32,7 +32,7 @@ import org.apache.kyuubi.operation.OperationType.OperationType
 
 class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
-  test("test get an operation event") {
+  test("get an operation event") {
     val catalogsHandleStr = getOpHandleStr(OperationType.GET_CATALOGS)
     var response = webTarget.path(s"api/v1/operations/$catalogsHandleStr/event")
       .request(MediaType.APPLICATION_JSON_TYPE).get()
@@ -55,7 +55,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     assert(404 == response.getStatus)
   }
 
-  test("test apply an action for an operation") {
+  test("apply an action for an operation") {
     val opHandleStr = getOpHandleStr(OperationType.EXECUTE_STATEMENT)
 
     var response = webTarget.path(s"api/v1/operations/$opHandleStr")
@@ -79,7 +79,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     assert(404 == response.getStatus)
   }
 
-  test("test get result set metadata") {
+  test("get result set metadata") {
     val opHandleStr = getOpHandleStr(OperationType.EXECUTE_STATEMENT)
     checkOpState(opHandleStr, FINISHED)
     val response = webTarget.path(s"api/v1/operations/$opHandleStr/resultsetmetadata")
@@ -89,7 +89,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     assert(resultSetMetaData.columns.head.columnName.equals("database"))
   }
 
-  test("test get operation log") {
+  test("get operation log") {
     val opHandleStr = getOpHandleStr(OperationType.EXECUTE_STATEMENT)
     checkOpState(opHandleStr, FINISHED)
     val response = webTarget.path(

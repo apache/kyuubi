@@ -26,7 +26,7 @@ class KyuubiRestFrontendServiceSuite extends RestFrontendTestHelper {
     assert(resp.readEntity(classOf[String]) === "pong")
   }
 
-  test("test error and exception response") {
+  test("error and exception response") {
     // send a not exists request
     var response = webTarget.path("api/v1/pong").request().get()
     assert(404 == response.getStatus)
