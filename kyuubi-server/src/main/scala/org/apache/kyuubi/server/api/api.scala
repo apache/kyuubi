@@ -33,7 +33,7 @@ private[api] trait ApiRequestContext {
   @Context
   protected var httpRequest: HttpServletRequest = _
 
-  protected final def fe: KyuubiRestFrontendService = FrontendServiceContext.get(servletContext)
+  final protected def fe: KyuubiRestFrontendService = FrontendServiceContext.get(servletContext)
 }
 
 private[api] object FrontendServiceContext {
