@@ -154,15 +154,12 @@ HIVE_VERSION=$("$MVN" help:evaluate -Dexpression=hive.version $@ 2>/dev/null\
 
 echo "Building Kyuubi package of version $VERSION against Flink $FLINK_VERSION, Spark $SPARK_VERSION"
 
-if [[ "$NAME" != "none" ]]; then
-  SUFFIX="-$NAME"
-else
-  SUFFIX=""
-  if [[ "$FLINK_PROVIDED" != "true" ]]; then
-    SUFFIX="$SUFFIX-flink-${FLINK_VERSION:0:4}"
-  fi
-  if [[ "$SPARK_PROVIDED" != "true" ]]; then
-    SUFFIX="$SUFFIX-spark-${SPARK_VERSION:0:3}-hadoop${SPARK_HADOOP_VERSION}"
+SUFFIX="-$NAME"
+if [[ "$NAME" == "none" ]]; then
+  if [[ "$SPARK_PROVIDED" == "true" ]]; then
+    SUFFIX=""
+  else
+    SUFFIX="-spark-${SPARK_VERSION:0:3}-hadoop${SPARK_HADOOP_VERSION}"
   fi
 fi
 
