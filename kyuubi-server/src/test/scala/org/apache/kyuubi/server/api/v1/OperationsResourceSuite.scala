@@ -86,7 +86,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
       .request(MediaType.APPLICATION_JSON_TYPE).get()
     assert(200 == response.getStatus)
     val resultSetMetaData = response.readEntity(classOf[ResultSetMetaData])
-    assert(resultSetMetaData.columns.head.columnName.equals("database"))
+    assert(resultSetMetaData.columns(1).columnName.equals("tableName"))
   }
 
   test("get operation log") {
