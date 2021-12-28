@@ -239,7 +239,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     operationHandle = response.readEntity(classOf[OperationHandle])
     assert(operationHandle.typ == OperationType.GET_COLUMNS)
 
-    var getFunctionsReq = GetFunctionsRequest("default", "default", "default")
+    val getFunctionsReq = GetFunctionsRequest("default", "default", "default")
     response = webTarget.path(s"$pathPrefix/operations/functions")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .post(Entity.entity(getFunctionsReq, MediaType.APPLICATION_JSON_TYPE))
@@ -270,7 +270,7 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .request(MediaType.APPLICATION_JSON_TYPE)
       .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
     assert(200 == response.getStatus)
-    var operationHandle = response.readEntity(classOf[OperationHandle])
+    val operationHandle = response.readEntity(classOf[OperationHandle])
     assert(operationHandle.typ == OperationType.GET_CATALOGS)
 
     val serializedOperationHandle = s"${operationHandle.identifier.publicId}|" +
