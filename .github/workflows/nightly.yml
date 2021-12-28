@@ -54,4 +54,5 @@ jobs:
           name: unit-tests-log
           path: |
             **/target/unit-tests.log
+            **/kyuubi-flink-sql-engine.log*
             **/kyuubi-spark-sql-engine.log*
