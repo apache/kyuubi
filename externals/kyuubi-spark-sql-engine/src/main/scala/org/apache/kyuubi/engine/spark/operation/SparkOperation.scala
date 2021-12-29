@@ -100,8 +100,7 @@ abstract class SparkOperation(opType: OperationType, session: Session)
 
   protected def withLocalProperties[T](f: => T): T = {
     try {
-      spark.sparkContext.setJobGroup(statementId, statement, forceCancel)
-      spark.sparkContext.setJobDescription(redactedStatement)
+      spark.sparkContext.setJobGroup(statementId, redactedStatement, forceCancel)
       spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
       spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
       schedulerPool match {
