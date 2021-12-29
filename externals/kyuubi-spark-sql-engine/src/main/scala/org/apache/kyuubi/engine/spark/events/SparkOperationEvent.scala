@@ -77,7 +77,7 @@ object SparkOperationEvent {
     val status = operation.getStatus
     new SparkOperationEvent(
       operation.statementId,
-      operation.statement,
+      operation.redactedStatement,
       operation.shouldRunAsync,
       status.state.name(),
       status.lastModified,
