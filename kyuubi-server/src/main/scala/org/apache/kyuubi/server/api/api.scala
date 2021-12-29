@@ -40,8 +40,8 @@ private[api] object FrontendServiceContext {
 
   private val attribute = getClass.getCanonicalName
 
-  def set(contextHandler: ContextHandler, be: KyuubiRestFrontendService): Unit = {
-    contextHandler.setAttribute(attribute, be)
+  def set(contextHandler: ContextHandler, fe: KyuubiRestFrontendService): Unit = {
+    contextHandler.setAttribute(attribute, fe)
   }
 
   def get(context: ServletContext): KyuubiRestFrontendService = {
