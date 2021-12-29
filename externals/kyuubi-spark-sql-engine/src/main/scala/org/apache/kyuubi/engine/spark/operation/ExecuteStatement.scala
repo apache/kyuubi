@@ -21,7 +21,6 @@ import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorServic
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.kyuubi.SparkUtilsHelper.redact
 import org.apache.spark.kyuubi.SQLOperationListener
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.types._
@@ -70,9 +69,6 @@ class ExecuteStatement(
     OperationLog.removeCurrentOperationLog()
   }
 
-  override val redactedStatement: String =
-    redact(spark.sessionState.conf.stringRedactionPattern, statement)
-
   private def executeStatement(): Unit = withLocalProperties {
     try {
       setState(OperationState.RUNNING)
@@ -80,8 +76,6 @@ class ExecuteStatement(
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
       // TODO: Make it configurable
       spark.sparkContext.addSparkListener(operationListener)
-      spark.sparkContext.setJobDescription(
-        redact(spark.sessionState.conf.stringRedactionPattern, statement))
       result = spark.sql(statement)
       // TODO #921: COMPILED need consider eagerly executed commands
       setState(OperationState.COMPILED)

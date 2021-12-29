@@ -22,6 +22,7 @@ import java.time.ZoneId
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
+import org.apache.spark.kyuubi.SparkUtilsHelper.redact
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.sql.types.StructType
 
@@ -56,6 +57,8 @@ abstract class SparkOperation(opType: OperationType, session: Session)
   protected var result: DataFrame = _
 
   protected def resultSchema: StructType
+
+  def redactedStatement: String = redact(spark.sessionState.conf.stringRedactionPattern, statement)
 
   protected def cleanup(targetState: OperationState): Unit = state.synchronized {
     if (!isTerminalState(state)) {
@@ -98,6 +101,8 @@ abstract class SparkOperation(opType: OperationType, session: Session)
   protected def withLocalProperties[T](f: => T): T = {
     try {
       spark.sparkContext.setJobGroup(statementId, statement, forceCancel)
+      spark.sparkContext.setJobDescription(
+        redact(spark.sessionState.conf.stringRedactionPattern, statement))
       spark.sparkContext.setLocalProperty(KYUUBI_SESSION_USER_KEY, session.user)
       spark.sparkContext.setLocalProperty(KYUUBI_STATEMENT_ID_KEY, statementId)
       schedulerPool match {
