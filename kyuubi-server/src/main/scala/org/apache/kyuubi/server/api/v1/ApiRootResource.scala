@@ -55,10 +55,10 @@ private[v1] class ApiRootResource extends ApiRequestContext {
   @GET
   @Path("swagger-ui")
   @Produces(Array(MediaType.TEXT_HTML))
-  def swaggerUi(): Response = {
-    val swaggerUi = s"http://${fe.connectionUrl}/swagger-ui-redirected/index.html?url=" +
+  def swaggerUI(): Response = {
+    val swaggerUI = s"http://${fe.connectionUrl}/swagger-ui-redirected/index.html?url=" +
       s"http://${fe.connectionUrl}/openapi.json"
-    Response.temporaryRedirect(new URI(swaggerUi)).build()
+    Response.temporaryRedirect(new URI(swaggerUI)).build()
   }
 
 }
