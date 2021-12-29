@@ -25,7 +25,7 @@ import org.apache.kyuubi.client.KyuubiSyncThriftClient
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.EngineRef
-import org.apache.kyuubi.events.KyuubiSessionEvent
+import org.apache.kyuubi.events.{KyuubiEvent, KyuubiSessionEvent}
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider._
 import org.apache.kyuubi.metrics.MetricsConstants._
 import org.apache.kyuubi.metrics.MetricsSystem
@@ -57,6 +57,10 @@ class KyuubiSessionImpl(
 
   private val sessionEvent = KyuubiSessionEvent(this)
   EventLoggingService.onEvent(sessionEvent)
+
+  override def getSessionEvent: Option[KyuubiEvent] = {
+    Option(sessionEvent)
+  }
 
   private var _client: KyuubiSyncThriftClient = _
   def client: KyuubiSyncThriftClient = _client

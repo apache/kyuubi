@@ -29,11 +29,11 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 
 import org.apache.kyuubi.Utils.error
-import org.apache.kyuubi.events.KyuubiSessionEvent
+import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.operation.OperationHandle.parseOperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
-import org.apache.kyuubi.session.{AbstractSession, SessionHandle}
+import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.session.SessionHandle.parseSessionHandle
 
 @Tag(name = "Session")
@@ -61,11 +61,9 @@ private[v1] class SessionsResource extends ApiRequestContext {
     description = "get a session event via session handle identifier")
   @GET
   @Path("{sessionHandle}")
-  def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): KyuubiSessionEvent = {
+  def sessionInfo(@PathParam("sessionHandle") sessionHandleStr: String): KyuubiEvent = {
     try {
-      // TODO: need to use KyuubiSessionEvent in session
-      KyuubiSessionEvent(fe.be.sessionManager.getSession(
-        parseSessionHandle(sessionHandleStr)).asInstanceOf[AbstractSession])
+      fe.be.sessionManager.getSession(parseSessionHandle(sessionHandleStr)).getSessionEvent.get
     } catch {
       case NonFatal(e) =>
         error(s"Invalid $sessionHandleStr", e)
