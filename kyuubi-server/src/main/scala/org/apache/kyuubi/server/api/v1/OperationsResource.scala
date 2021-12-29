@@ -50,7 +50,7 @@ private[v1] class OperationsResource extends ApiRequestContext {
       @PathParam("operationHandle") operationHandleStr: String): KyuubiOperationEvent = {
     try {
       val opHandle = parseOperationHandle(operationHandleStr)
-      val operation = backendService.sessionManager.operationManager.getOperation(opHandle)
+      val operation = fe.be.sessionManager.operationManager.getOperation(opHandle)
       KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
     } catch {
       case NonFatal(_) =>
@@ -72,8 +72,8 @@ private[v1] class OperationsResource extends ApiRequestContext {
     try {
       val operationHandle = parseOperationHandle(operationHandleStr)
       request.action.toLowerCase() match {
-        case "cancel" => backendService.cancelOperation(operationHandle)
-        case "close" => backendService.closeOperation(operationHandle)
+        case "cancel" => fe.be.cancelOperation(operationHandle)
+        case "close" => fe.be.closeOperation(operationHandle)
         case _ => throw KyuubiSQLException(s"Invalid action ${request.action}")
       }
       Response.ok().build()
@@ -97,7 +97,7 @@ private[v1] class OperationsResource extends ApiRequestContext {
     try {
       val operationHandle = parseOperationHandle(operationHandleStr)
       ResultSetMetaData(
-        backendService.getResultSetMetadata(operationHandle).getColumns.asScala.map(c => {
+        fe.be.getResultSetMetadata(operationHandle).getColumns.asScala.map(c => {
           val tPrimitiveTypeEntry = c.getTypeDesc.getTypes.get(0).getPrimitiveEntry
           var precision = 0
           var scale = 0
@@ -134,7 +134,7 @@ private[v1] class OperationsResource extends ApiRequestContext {
       @PathParam("operationHandle") operationHandleStr: String,
       @QueryParam("maxrows") maxRows: Int): OperationLog = {
     try {
-      val rowSet = backendService.sessionManager.operationManager.getOperationLogRowSet(
+      val rowSet = fe.be.sessionManager.operationManager.getOperationLogRowSet(
         parseOperationHandle(operationHandleStr),
         FetchOrientation.FETCH_NEXT,
         maxRows)

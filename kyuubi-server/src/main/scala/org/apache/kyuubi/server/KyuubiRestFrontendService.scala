@@ -26,7 +26,7 @@ import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT}
-import org.apache.kyuubi.server.api.ApiUtils
+import org.apache.kyuubi.server.api.v1.ApiRootResource
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
 
 /**
@@ -56,7 +56,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     errorHandler.setServer(jettyServer)
     jettyServer.addBean(errorHandler)
 
-    jettyServer.setHandler(ApiUtils.getServletHandler(serverable.backendService))
+    jettyServer.setHandler(ApiRootResource.getServletHandler(this))
 
     connector = new ServerConnector(
       jettyServer,

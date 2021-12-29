@@ -22,11 +22,8 @@ import javax.servlet.http.HttpServletRequest
 import javax.ws.rs.core.Context
 
 import org.eclipse.jetty.server.handler.ContextHandler
-import org.eclipse.jetty.servlet.{DefaultServlet, ServletContextHandler, ServletHolder}
-import org.glassfish.jersey.server.ResourceConfig
-import org.glassfish.jersey.servlet.ServletContainer
 
-import org.apache.kyuubi.service.BackendService
+import org.apache.kyuubi.server.KyuubiRestFrontendService
 
 private[api] trait ApiRequestContext {
 
@@ -36,42 +33,18 @@ private[api] trait ApiRequestContext {
   @Context
   protected var httpRequest: HttpServletRequest = _
 
-  def backendService: BackendService = BackendServiceProvider.getBackendService(servletContext)
-
+  final protected def fe: KyuubiRestFrontendService = FrontendServiceContext.get(servletContext)
 }
 
-private[api] object BackendServiceProvider {
+private[api] object FrontendServiceContext {
 
   private val attribute = getClass.getCanonicalName
 
-  def setBackendService(contextHandler: ContextHandler, be: BackendService): Unit = {
-    contextHandler.setAttribute(attribute, be)
+  def set(contextHandler: ContextHandler, fe: KyuubiRestFrontendService): Unit = {
+    contextHandler.setAttribute(attribute, fe)
   }
 
-  def getBackendService(context: ServletContext): BackendService = {
-    context.getAttribute(attribute).asInstanceOf[BackendService]
-  }
-}
-
-private[server] object ApiUtils {
-
-  def getServletHandler(backendService: BackendService): ServletContextHandler = {
-    val openapiConf: ResourceConfig = new OpenAPIConfig
-    val servlet = new ServletHolder(new ServletContainer(openapiConf))
-    val handler = new ServletContextHandler(ServletContextHandler.NO_SESSIONS)
-    BackendServiceProvider.setBackendService(handler, backendService)
-    handler.addServlet(servlet, "/*")
-
-    // install swagger-ui, these static files are copied from
-    // https://github.com/swagger-api/swagger-ui/tree/master/dist
-    val swaggerUI = new ServletHolder("swagger-ui", classOf[DefaultServlet])
-    swaggerUI.setInitParameter(
-      "resourceBase",
-      getClass.getClassLoader()
-        .getResource("META-INF/resources/webjars/swagger-ui/4.1.3/")
-        .toExternalForm)
-    swaggerUI.setInitParameter("pathInfoOnly", "true")
-    handler.addServlet(swaggerUI, "/swagger-ui-redirected/*");
-    handler
+  def get(context: ServletContext): KyuubiRestFrontendService = {
+    context.getAttribute(attribute).asInstanceOf[KyuubiRestFrontendService]
   }
 }
