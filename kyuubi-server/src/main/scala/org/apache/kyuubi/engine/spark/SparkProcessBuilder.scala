@@ -26,7 +26,6 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
-import org.apache.kyuubi.Utils.findLocalInetAddress
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_MAIN_RESOURCE, FRONTEND_THRIFT_BINARY_BIND_HOST}
 import org.apache.kyuubi.engine.ProcBuilder
@@ -158,9 +157,17 @@ class SparkProcessBuilder(
       buffer += s"$newKey=$v"
     }
 
-    buffer += CONF
-    buffer += s"spark.driver.host=${conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST)
-      .getOrElse(findLocalInetAddress.getCanonicalHostName)}"
+    /**
+     * Kyuubi respect user setting config, if user set `spark.driver.host`, will pass it on.
+     * If user don't set this, will use thrift binary bind host to set.
+     * Kyuubi wants the Engine to bind hostName or IP with Kyuubi.
+     */
+    if (!allConf.contains("spark.driver.host")) {
+      conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST).foreach(host => {
+        buffer += CONF
+        buffer += s"spark.driver.host=${host}"
+      })
+    }
 
     // iff the keytab is specified, PROXY_USER is not supported
     if (!useKeytab()) {
