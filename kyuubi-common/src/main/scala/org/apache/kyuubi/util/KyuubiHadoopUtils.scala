@@ -41,9 +41,12 @@ object KyuubiHadoopUtils {
     classOf[Credentials].getDeclaredField("tokenMap")
   tokenMapField.setAccessible(true)
 
-  def newHadoopConf(conf: KyuubiConf): Configuration = {
-    val hadoopConf = new Configuration()
-    conf.getAll.foreach { case (k, v) => hadoopConf.set(k, v) }
+  def newHadoopConf(
+      conf: KyuubiConf,
+      loadDefaults: Boolean = true): Configuration = {
+    val hadoopConf = new Configuration(loadDefaults)
+    conf.getAll
+      .foreach { case (k, v) => hadoopConf.set(k, v) }
     hadoopConf
   }
 
