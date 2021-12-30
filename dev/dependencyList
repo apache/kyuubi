@@ -71,7 +71,6 @@ jetty-servlet/9.4.41.v20210516//jetty-servlet-9.4.41.v20210516.jar
 jetty-util-ajax/9.4.41.v20210516//jetty-util-ajax-9.4.41.v20210516.jar
 jetty-util/9.4.41.v20210516//jetty-util-9.4.41.v20210516.jar
 jline/0.9.94//jline-0.9.94.jar
-jsr305/3.0.2//jsr305-3.0.2.jar
 libfb303/0.9.3//libfb303-0.9.3.jar
 libthrift/0.9.3//libthrift-0.9.3.jar
 log4j/1.2.17//log4j-1.2.17.jar
