@@ -64,7 +64,7 @@ This will result in the creation of a subdirectory named `apache-kyuubi-1.3.1-in
 ```bash
 apache-kyuubi-1.3.1-incubating-bin
 ├── DISCLAIMER
-├── LICENSE
+├── LICENSE-semantic-ui.txt
 ├── NOTICE
 ├── RELEASE
 ├── bin

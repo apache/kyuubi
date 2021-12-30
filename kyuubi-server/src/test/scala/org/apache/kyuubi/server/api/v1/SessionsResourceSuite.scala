@@ -85,8 +85,8 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     // get session list
     var response2 = webTarget.path("api/v1/sessions").request().get()
     assert(200 == response2.getStatus)
-    val sessions1 = response2.readEntity(classOf[SessionList])
-    assert(sessions1.sessionList.nonEmpty)
+    val sessions1 = response2.readEntity(classOf[Seq[SessionData]])
+    assert(sessions1.nonEmpty)
 
     // close an opened session
     val sessionHandle = response.readEntity(classOf[SessionHandle])
@@ -98,8 +98,8 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     // get session list again
     response2 = webTarget.path("api/v1/sessions").request().get()
     assert(200 == response2.getStatus)
-    val sessions2 = response2.readEntity(classOf[SessionList])
-    assert(sessions2.sessionList.isEmpty)
+    val sessions2 = response2.readEntity(classOf[Seq[SessionData]])
+    assert(sessions2.isEmpty)
   }
 
   test("get session event") {

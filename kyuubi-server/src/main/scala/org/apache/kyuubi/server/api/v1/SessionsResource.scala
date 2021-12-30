@@ -20,7 +20,6 @@ package org.apache.kyuubi.server.api.v1
 import javax.ws.rs.{Consumes, DELETE, GET, Path, PathParam, POST, Produces, _}
 import javax.ws.rs.core.{MediaType, Response}
 
-import scala.collection.JavaConverters._
 import scala.util.control.NonFatal
 
 import io.swagger.v3.oas.annotations.media.Content
@@ -40,18 +39,25 @@ import org.apache.kyuubi.session.SessionHandle.parseSessionHandle
 @Produces(Array(MediaType.APPLICATION_JSON))
 private[v1] class SessionsResource extends ApiRequestContext {
 
+  private def sessionManager = fe.be.sessionManager
+
   @ApiResponse(
     responseCode = "200",
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON)),
-    description = "get all the session list hosted in SessionManager")
+    description = "get the list of all live sessions")
   @GET
-  def sessionInfoList(): SessionList = {
-    SessionList(
-      fe.be.sessionManager.getSessionList().asScala.map {
-        case (handle, session) =>
-          SessionOverview(session.user, session.ipAddress, session.createTime, handle)
-      }.toSeq)
+  def sessions(): Seq[SessionData] = {
+    sessionManager.allSessions().map { session =>
+      SessionData(
+        session.handle,
+        session.user,
+        session.ipAddress,
+        session.conf,
+        session.createTime,
+        session.lastAccessTime - session.createTime,
+        session.getNoOperationTime)
+    }.toSeq
   }
 
   @ApiResponse(
@@ -103,7 +109,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @GET
   @Path("count")
   def sessionCount(): SessionOpenCount = {
-    SessionOpenCount(fe.be.sessionManager.getOpenSessionCount)
+    SessionOpenCount(sessionManager.getOpenSessionCount)
   }
 
   @ApiResponse(
@@ -115,8 +121,8 @@ private[v1] class SessionsResource extends ApiRequestContext {
   @Path("execPool/statistic")
   def execPoolStatistic(): ExecPoolStatistic = {
     ExecPoolStatistic(
-      fe.be.sessionManager.getExecPoolSize,
-      fe.be.sessionManager.getActiveCount)
+      sessionManager.getExecPoolSize,
+      sessionManager.getActiveCount)
   }
 
   @ApiResponse(

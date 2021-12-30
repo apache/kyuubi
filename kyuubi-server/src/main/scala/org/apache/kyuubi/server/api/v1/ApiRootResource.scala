@@ -22,7 +22,7 @@ import javax.ws.rs.{GET, Path, Produces}
 import javax.ws.rs.core.{MediaType, Response}
 
 import com.google.common.annotations.VisibleForTesting
-import org.eclipse.jetty.servlet.{DefaultServlet, ServletContextHandler, ServletHolder}
+import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
 import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.servlet.ServletContainer
 
@@ -56,11 +56,9 @@ private[v1] class ApiRootResource extends ApiRequestContext {
   @Path("swagger-ui")
   @Produces(Array(MediaType.TEXT_HTML))
   def swaggerUI(): Response = {
-    val swaggerUI = s"http://${fe.connectionUrl}/swagger-ui-redirected/index.html?url=" +
-      s"http://${fe.connectionUrl}/openapi.json"
+    val swaggerUI = "swagger/index.html"
     Response.temporaryRedirect(new URI(swaggerUI)).build()
   }
-
 }
 
 private[server] object ApiRootResource {
@@ -71,17 +69,6 @@ private[server] object ApiRootResource {
     val handler = new ServletContextHandler(ServletContextHandler.NO_SESSIONS)
     FrontendServiceContext.set(handler, fe)
     handler.addServlet(servlet, "/*")
-
-    // install swagger-ui, these static files are copied from
-    // https://github.com/swagger-api/swagger-ui/tree/master/dist
-    val swaggerUI = new ServletHolder("swagger-ui", classOf[DefaultServlet])
-    swaggerUI.setInitParameter(
-      "resourceBase",
-      getClass.getClassLoader()
-        .getResource("META-INF/resources/webjars/swagger-ui/4.1.3/")
-        .toExternalForm)
-    swaggerUI.setInitParameter("pathInfoOnly", "true")
-    handler.addServlet(swaggerUI, "/swagger-ui-redirected/*");
     handler
   }
 }
