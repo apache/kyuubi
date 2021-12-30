@@ -16,6 +16,7 @@
 #
 
 aopalliance-repackaged/2.6.1//aopalliance-repackaged-2.6.1.jar
+classgraph/4.8.95//classgraph-4.8.95.jar
 commons-codec/1.15//commons-codec-1.15.jar
 commons-lang/2.6//commons-lang-2.6.jar
 commons-lang3/3.10//commons-lang3-3.10.jar
@@ -90,10 +91,10 @@ simpleclient_servlet/0.10.0//simpleclient_servlet-0.10.0.jar
 slf4j-api/1.7.30//slf4j-api-1.7.30.jar
 slf4j-log4j12/1.7.30//slf4j-log4j12-1.7.30.jar
 snakeyaml/1.27//snakeyaml-1.27.jar
-swagger-annotations/2.1.12//swagger-annotations-2.1.12.jar
-swagger-core/2.1.12//swagger-core-2.1.12.jar
-swagger-integration/2.1.12//swagger-integration-2.1.12.jar
-swagger-jaxrs2/2.1.12//swagger-jaxrs2-2.1.12.jar
-swagger-models/2.1.12//swagger-models-2.1.12.jar
+swagger-annotations/2.1.11//swagger-annotations-2.1.11.jar
+swagger-core/2.1.11//swagger-core-2.1.11.jar
+swagger-integration/2.1.11//swagger-integration-2.1.11.jar
+swagger-jaxrs2/2.1.11//swagger-jaxrs2-2.1.11.jar
+swagger-models/2.1.11//swagger-models-2.1.11.jar
 swagger-ui/4.1.3//swagger-ui-4.1.3.jar
 zookeeper/3.4.14//zookeeper-3.4.14.jar
