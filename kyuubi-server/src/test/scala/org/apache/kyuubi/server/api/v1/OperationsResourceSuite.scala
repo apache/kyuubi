@@ -49,7 +49,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
 
   test("apply an action for an operation") {
     var opHandleStr = ""
-    eventually(Timeout(10.seconds), interval(100.milliseconds)) {
+    eventually(Timeout(10.seconds)) {
       opHandleStr = getOpHandleStr(OperationType.EXECUTE_STATEMENT)
       var response = webTarget.path(s"api/v1/operations/$opHandleStr")
         .request(MediaType.APPLICATION_JSON_TYPE)
