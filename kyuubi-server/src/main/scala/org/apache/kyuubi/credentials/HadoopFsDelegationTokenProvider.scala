@@ -31,6 +31,7 @@ import org.apache.hadoop.security.UserGroupInformation.AuthenticationMethod
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.credentials.HadoopFsDelegationTokenProvider.{disableFsCache, doAsProxyUser}
+import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class HadoopFsDelegationTokenProvider extends HadoopDelegationTokenProvider with Logging {
 
@@ -80,7 +81,9 @@ object HadoopFsDelegationTokenProvider {
 
   def disableFsCache(kyuubiConf: KyuubiConf, hadoopConf: Configuration): Configuration = {
     // Avoid unnecessary disk io by not loading default resources
-    val newConf = new Configuration(false)
+    val newConf = KyuubiHadoopUtils.newHadoopConf(kyuubiConf, loadDefaults = false,
+      ignoreConfigs = Seq(KyuubiConf.CREDENTIALS_HADOOP_FS_URIS.key))
+
     hadoopConf.iterator().asScala.foreach(e => newConf.set(e.getKey, e.getValue))
 
     hadoopFSsToAccess(kyuubiConf, hadoopConf)

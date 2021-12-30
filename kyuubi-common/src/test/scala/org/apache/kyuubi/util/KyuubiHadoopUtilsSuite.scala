@@ -27,6 +27,8 @@ import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.authentication.KyuubiDelegationTokenIdentifier
 
+import java.util.stream.StreamSupport
+
 class KyuubiHadoopUtilsSuite extends KyuubiFunSuite {
 
   test("new hadoop conf with kyuubi conf") {
@@ -58,5 +60,33 @@ class KyuubiHadoopUtilsSuite extends KyuubiFunSuite {
     val decoded = KyuubiHadoopUtils.decodeCredentials(
       KyuubiHadoopUtils.encodeCredentials(credentials))
     assert(decoded.getToken(token.getKind) == credentials.getToken(token.getKind))
+  }
+
+  test("new hadoop conf with kyuubi conf with loadDefaults") {
+    val abc = "hadoop.abc"
+    val kyuubiConf = new KyuubiConf()
+      .set(abc, "xyz")
+
+    var hadoopConf = KyuubiHadoopUtils.newHadoopConf(kyuubiConf)
+    assert(StreamSupport.stream(hadoopConf.spliterator(), false)
+      .anyMatch(entry => entry.getKey.startsWith("hadoop") || entry.getKey.startsWith("fs")))
+
+    hadoopConf = KyuubiHadoopUtils.newHadoopConf(kyuubiConf, loadDefaults = false)
+    assert(StreamSupport.stream(hadoopConf.spliterator(), false)
+      .noneMatch(entry => entry.getKey.startsWith("hadoop") || entry.getKey.startsWith("fs")))
+  }
+
+  test("new hadoop conf with kyuubi conf with ignoreConfigs") {
+    val abc = "hadoop.abc"
+    val xyz = "hadoop.xyz"
+    val test = "hadoop.test"
+    val kyuubiConf = new KyuubiConf()
+      .set(abc, "xyz")
+      .set(xyz, "abc")
+      .set(test, "t")
+    val hadoopConf = KyuubiHadoopUtils.newHadoopConf(kyuubiConf, ignoreConfigs = Seq(abc, test))
+    assert(hadoopConf.get(abc) == null)
+    assert(hadoopConf.get(xyz) === "abc")
+    assert(hadoopConf.get(test) === null)
   }
 }

@@ -33,6 +33,7 @@ import org.apache.kyuubi.util.KyuubiHadoopUtils
 class EventLoggingService extends AbstractEventLoggingService[KyuubiServerEvent] {
 
   override def initialize(conf: KyuubiConf): Unit = {
+    val hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
     conf.get(SERVER_EVENT_LOGGERS)
       .map(EventLoggerType.withName)
       .foreach {
@@ -41,9 +42,9 @@ class EventLoggingService extends AbstractEventLoggingService[KyuubiServerEvent]
           val jsonEventLogger = new JsonEventLogger[KyuubiServerEvent](
             s"server-$hostName",
             SERVER_EVENT_JSON_LOG_PATH,
-            new Configuration())
+            hadoopConf)
           // TODO: #1180 kyuubiServerEvent need create logRoot automatically
-          jsonEventLogger.createEventLogRootDir(conf, KyuubiHadoopUtils.newHadoopConf(conf))
+          jsonEventLogger.createEventLogRootDir(conf, hadoopConf)
           addService(jsonEventLogger)
           addEventLogger(jsonEventLogger)
         case logger =>
