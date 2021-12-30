@@ -272,7 +272,7 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
 
   }
 
-  test("Engine Bind on hostName or IP with Kyuubi") {
+  test("engine bind on hostName or IP with Kyuubi") {
     val conf = KyuubiConf()
     conf.set(FRONTEND_THRIFT_BINARY_BIND_HOST.key, "kyuubi-example")
 
