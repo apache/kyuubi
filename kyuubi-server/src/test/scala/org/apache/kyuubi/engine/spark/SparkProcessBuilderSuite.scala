@@ -18,7 +18,6 @@
 package org.apache.kyuubi.engine.spark
 
 import java.io.File
-import java.net.InetAddress
 import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import java.time.Duration
 import java.util.concurrent.{Executors, TimeUnit}
@@ -27,7 +26,7 @@ import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.{KerberizedTestHelper, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOG_TIMEOUT, ENGINE_SPARK_HOST_USE_HOSTNAME, ENGINE_SPARK_MAIN_RESOURCE}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOG_TIMEOUT, ENGINE_SPARK_MAIN_RESOURCE}
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.ZooKeeperAuthTypes
 import org.apache.kyuubi.service.ServiceUtils
@@ -271,25 +270,6 @@ class SparkProcessBuilderSuite extends KerberizedTestHelper {
     val b1 = new SparkProcessBuilder("test", conf)
     assert(b1.toString.contains(s"--conf spark.files=$testKeytab"))
 
-  }
-
-  test("spark.driver.host use ip instead") {
-    val conf = KyuubiConf()
-    conf.set(ENGINE_SPARK_HOST_USE_HOSTNAME, false)
-
-    val process = new SparkProcessBuilder("test", conf)
-    assert(process.toString.contains(
-      s"--conf spark.driver.host=${InetAddress.getLocalHost.getHostAddress}"))
-  }
-
-  test("use below ip cover host as spark.driver.host") {
-    val conf = KyuubiConf()
-    conf.set("spark.driver.host", "kyuubi-example")
-    conf.set(ENGINE_SPARK_HOST_USE_HOSTNAME, false)
-
-    val process = new SparkProcessBuilder("test", conf)
-    assert(process.toString.contains(
-      s"--conf spark.driver.host=${InetAddress.getLocalHost.getHostAddress}"))
   }
 }
 

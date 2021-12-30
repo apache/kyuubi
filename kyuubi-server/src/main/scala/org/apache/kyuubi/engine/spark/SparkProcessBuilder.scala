@@ -18,7 +18,7 @@
 package org.apache.kyuubi.engine.spark
 
 import java.io.{File, FilenameFilter, IOException}
-import java.net.{InetAddress, URI}
+import java.net.URI
 import java.nio.file.{Files, Path, Paths}
 
 import scala.collection.mutable.ArrayBuffer
@@ -26,8 +26,9 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
+import org.apache.kyuubi.Utils.findLocalInetAddress
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_HOST_USE_HOSTNAME, ENGINE_SPARK_MAIN_RESOURCE}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_MAIN_RESOURCE, FRONTEND_THRIFT_BINARY_BIND_HOST}
 import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.ZooKeeperAuthTypes
@@ -157,15 +158,9 @@ class SparkProcessBuilder(
       buffer += s"$newKey=$v"
     }
 
-    /**
-     * When kyuubi on kubernetes submit spark engine by client mode,
-     * using ip instead of hostName as spark.driver.host.
-     * Otherwise, Executor Pod will catch UnKnowHostException.
-     */
-    if (!conf.get(ENGINE_SPARK_HOST_USE_HOSTNAME)) {
-      buffer += CONF
-      buffer += s"spark.driver.host=${InetAddress.getLocalHost.getHostAddress}"
-    }
+    buffer += CONF
+    buffer += s"spark.driver.host=${conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST)
+      .getOrElse(findLocalInetAddress.getCanonicalHostName)}"
 
     // iff the keytab is specified, PROXY_USER is not supported
     if (!useKeytab()) {

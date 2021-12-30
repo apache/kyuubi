@@ -729,14 +729,6 @@ object KyuubiConf {
       .version("1.0.0")
       .fallbackConf(SERVER_EXEC_POOL_SHUTDOWN_TIMEOUT)
 
-  val ENGINE_SPARK_HOST_USE_HOSTNAME: ConfigEntry[Boolean] =
-    buildConf("engine.host.use.hostName")
-      .doc("When true, as normal run." +
-        "When false, will submit --conf spark.driver.host=$LOCALHOST.IP")
-      .version("1.5.0")
-      .booleanConf
-      .createWithDefault(true)
-
   val OPERATION_STATUS_POLLING_TIMEOUT: ConfigEntry[Long] =
     buildConf("operation.status.polling.timeout")
       .doc("Timeout(ms) for long polling asynchronous running sql query's status")
