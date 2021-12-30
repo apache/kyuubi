@@ -364,7 +364,9 @@ private class StatementStatsPagedTable(
       <td>
         {event.state}
       </td>
-      {errorMessageCell(event.exception.map(Utils.stringifyException).getOrElse(""))}
+      <td>
+        {event.queryExecution}
+      </td>
     </tr>
   }
 
