@@ -36,7 +36,7 @@ if [ -z "$YARN_CMD" ] && [ -n "${HADOOP_HOME}" ] && check_cmd "${HADOOP_HOME}/bi
 fi
 
 if [[ -z "$YARN_CMD" ]]; then
-  echo "Error: Cannot find yarn command! CANNOT PROCEED."
+  echo "Error: Cannot find yarn command! Please ensure your 'yarn' command is available or define the 'HADOOP_HOME' which contains yarn script in 'kyuubi-env.sh'."
   exit 1
 fi
 
