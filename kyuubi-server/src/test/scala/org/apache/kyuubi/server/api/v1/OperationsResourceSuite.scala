@@ -48,15 +48,22 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
   }
 
   test("apply an action for an operation") {
-    val opHandleStr = getOpHandleStr(OperationType.EXECUTE_STATEMENT)
+    var opHandleStr = ""
+    eventually(Timeout(10.seconds), interval(100.milliseconds)) {
+      opHandleStr = getOpHandleStr(OperationType.EXECUTE_STATEMENT)
+      var response = webTarget.path(s"api/v1/operations/$opHandleStr")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .put(Entity.entity(OpActionRequest("cancel"), MediaType.APPLICATION_JSON_TYPE))
+      assert(response.getStatus === 200)
+
+      response = webTarget.path(s"api/v1/operations/$opHandleStr/event")
+        .request(MediaType.APPLICATION_JSON_TYPE).get()
+      assert(response.getStatus === 200)
+      val operationEvent = response.readEntity(classOf[KyuubiOperationEvent])
+      assert(operationEvent.state === OperationState.CANCELED.name())
+    }
 
     var response = webTarget.path(s"api/v1/operations/$opHandleStr")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .put(Entity.entity(OpActionRequest("cancel"), MediaType.APPLICATION_JSON_TYPE))
-    assert(200 == response.getStatus)
-    checkOpState(opHandleStr, OperationState.CANCELED)
-
-    response = webTarget.path(s"api/v1/operations/$opHandleStr")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .put(Entity.entity(OpActionRequest("close"), MediaType.APPLICATION_JSON_TYPE))
     assert(200 == response.getStatus)
