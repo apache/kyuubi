@@ -20,11 +20,11 @@ package org.apache.kyuubi.engine.flink
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 
-class FlinkEngineProcessBuilderSuite extends KyuubiFunSuite {
+class FlinkProcessBuilderSuite extends KyuubiFunSuite {
   private def conf = KyuubiConf().set("kyuubi.on", "off")
 
   test("flink engine process builder") {
-    val builder = new FlinkEngineProcessBuilder("vinoyang", conf)
+    val builder = new FlinkProcessBuilder("vinoyang", conf)
     val commands = builder.toString.split(' ')
     assert(commands.exists(_ endsWith "flink-sql-engine.sh"))
   }

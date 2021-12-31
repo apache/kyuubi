@@ -19,12 +19,12 @@ package org.apache.kyuubi
 
 import scala.sys.process._
 
-import org.apache.kyuubi.engine.flink.FlinkEngineProcessBuilder
+import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
 
 trait WithKyuubiServerAndFlinkLocalCluster extends WithKyuubiServer {
 
   private lazy val FLINK_HOME: String =
-    new FlinkEngineProcessBuilder(Utils.currentUser, conf).FLINK_HOME
+    new FlinkProcessBuilder(Utils.currentUser, conf).FLINK_HOME
 
   override def beforeAll(): Unit = {
     s"$FLINK_HOME/bin/start-cluster.sh".!

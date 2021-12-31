@@ -27,7 +27,7 @@ import org.apache.hadoop.security.UserGroupInformation
 
 import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SPARK_MAIN_RESOURCE
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_MAIN_RESOURCE, FRONTEND_THRIFT_BINARY_BIND_HOST}
 import org.apache.kyuubi.engine.ProcBuilder
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.ZooKeeperAuthTypes
@@ -155,6 +155,20 @@ class SparkProcessBuilder(
         }
       buffer += CONF
       buffer += s"$newKey=$v"
+    }
+
+    /**
+     * Kyuubi respect user setting config, if user set `spark.driver.host`, will pass it on.
+     * If user don't set this, will use thrift binary bind host to set.
+     * Kyuubi wants the Engine to bind hostName or IP with Kyuubi.
+     * Spark driver will pass this configuration as the driver-url to the executors
+     * to build RPC communication.
+     */
+    if (!allConf.contains("spark.driver.host")) {
+      conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST).foreach(host => {
+        buffer += CONF
+        buffer += s"spark.driver.host=${host}"
+      })
     }
 
     // iff the keytab is specified, PROXY_USER is not supported

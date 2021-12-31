@@ -236,7 +236,6 @@ com.fasterxml.jackson.dataformat:jackson-dataformat-yaml
 com.fasterxml.jackson.datatype:jackson-datatype-jsr310
 com.fasterxml.jackson.jaxrs:jackson-jaxrs-base
 com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider
-com.github.swagger-akka-http:swagger-scala-module_*
 org.eclipse.jetty:jetty-http
 org.eclipse.jetty:jetty-io
 org.eclipse.jetty:jetty-security
@@ -259,13 +258,10 @@ io.prometheus:simpleclient_common
 io.prometheus:simpleclient_dropwizard
 io.prometheus:simpleclient_servlet
 io.swagger.core.v3:swagger-annotations
-io.swagger.core.v3:swagger-annotations-jakarta
 io.swagger.core.v3:swagger-core
-io.swagger.core.v3:swagger-core-jakarta
 io.swagger.core.v3:swagger-integration
 io.swagger.core.v3:swagger-jaxrs2
 io.swagger.core.v3:swagger-models
-io.swagger.core.v3:swagger-models-jakarta
 org.apache.zookeeper:zookeeper
 
 BSD
@@ -278,7 +274,6 @@ org.scala-lang:scala-library
 
 Eclipse Distribution License - v 1.0
 ------------------------------------
-com.sun.activation:jakarta.activation
 jakarta.xml.bind:jakarta.xml.bind-api
 
 Eclipse Public License (EPL) 2.0
