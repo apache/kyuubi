@@ -134,7 +134,6 @@
         <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
         <spark.archive.download.skip>false</spark.archive.download.skip>
         <swagger.version>2.1.11</swagger.version>
-        <swagger.scala.module.version>2.5.2</swagger.scala.module.version>
         <trino.client.version>363</trino.client.version>
         <zookeeper.version>3.4.14</zookeeper.version>
 
@@ -669,17 +668,10 @@
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-jaxrs2</artifactId>
                 <version>${swagger.version}</version>
-            </dependency>
-
-            <!-- ref: https://github.com/swagger-akka-http/swagger-scala-module -->
-            <dependency>
-                <groupId>com.github.swagger-akka-http</groupId>
-                <artifactId>swagger-scala-module_${scala.binary.version}</artifactId>
-                <version>${swagger.scala.module.version}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>jakarta.xml.bind-api</artifactId>
-                        <groupId>jakarta.xml.bind</groupId>
+                        <groupId>com.sun.activation</groupId>
+                        <artifactId>jakarta.activation</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>

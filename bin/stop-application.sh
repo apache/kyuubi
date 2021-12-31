@@ -21,9 +21,23 @@ if [[ $# < 1 ]] ; then
   exit 1
 fi
 
-if [[ -z ${HADOOP_HOME} ]]; then
-  echo "Error: HADOOP_HOME IS NOT SET! CANNOT PROCEED."
+check_cmd() {
+    command -v "$1" > /dev/null 2>&1
+}
+
+YARN_CMD=""
+
+if check_cmd "yarn"; then
+  YARN_CMD="yarn"
+fi
+
+if [ -z "$YARN_CMD" ] && [ -n "${HADOOP_HOME}" ] && check_cmd "${HADOOP_HOME}/bin/yarn"; then
+  YARN_CMD="${HADOOP_HOME}/bin/yarn"
+fi
+
+if [[ -z "$YARN_CMD" ]]; then
+  echo "Error: Cannot find yarn command! Please ensure your 'yarn' command is available or define the 'HADOOP_HOME' which contains yarn script in 'kyuubi-env.sh'."
   exit 1
 fi
 
-$HADOOP_HOME/bin/yarn application -kill $1
+$YARN_CMD application -kill $1

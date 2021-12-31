@@ -28,7 +28,8 @@ import org.apache.kyuubi.operation.HiveJDBCTestHelper
 class EngineTabSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
   override def withKyuubiConf: Map[String, String] = Map(
     "spark.ui.enabled" -> "true",
-    "spark.ui.port" -> "0")
+    "spark.ui.port" -> "0",
+    "spark.sql.redaction.string.regex" -> "(?i)url|access|secret|password")
 
   override def beforeAll(): Unit = {
     SparkContext.getActive.foreach(_.stop())
@@ -133,6 +134,29 @@ class EngineTabSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 
       // check sql stats table title
       assert(resp.contains("Query Execution"))
+    }
+  }
+
+  test("statement redact for engine tab") {
+    assert(spark.sparkContext.ui.nonEmpty)
+    val client = HttpClients.createDefault()
+    val req = new HttpGet(spark.sparkContext.uiWebUrl.get + "/kyuubi/")
+    val response = client.execute(req)
+    assert(response.getStatusLine.getStatusCode === 200)
+    val resp = EntityUtils.toString(response.getEntity)
+    assert(resp.contains("0 session(s) are online,"))
+    withJdbcStatement() { statement =>
+      statement.execute(
+        """
+          |SET
+          |  fs.s3a.access.key=testkey
+        """.stripMargin)
+      val response = client.execute(req)
+      assert(response.getStatusLine.getStatusCode === 200)
+      val resp = EntityUtils.toString(response.getEntity)
+
+      // check redacted sql
+      assert(resp.contains("redacted"))
     }
   }
 
