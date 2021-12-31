@@ -19,7 +19,7 @@ package org.apache.kyuubi.server.api.v1
 
 import org.apache.kyuubi.session.SessionHandle
 
-class VersionInfo(val kyuubi: String = org.apache.kyuubi.KYUUBI_VERSION)
+class VersionInfo(val version: String = org.apache.kyuubi.KYUUBI_VERSION)
 
 case class SessionOpenCount(openSessionCount: Int)
 

@@ -41,8 +41,11 @@ class KyuubiRestFrontendServiceSuite extends RestFrontendTestHelper {
   }
 
   test("swagger ui") {
-    val resp = webTarget.path("/api/v1/swagger-ui").request().get()
-    assert(resp.getStatus === 200)
+    Seq("/docs", "/swagger").foreach { p =>
+      val resp = webTarget.path(p).request().get()
+      assert(resp.readEntity(classOf[String])
+        .contains("<title>Apache Kyuubi REST API Documentation</title>"))
+    }
   }
 
   test("swagger ui json data") {

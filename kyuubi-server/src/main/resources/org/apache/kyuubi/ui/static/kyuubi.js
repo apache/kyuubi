@@ -17,10 +17,12 @@
 
 'use strict';
 
+var kyuubiVersion = "";
+
 $.fn.api.settings.api = {
 	'get version' : '/api/v1/version',
 	'ping' : '/api/v1/version'
-}
+};
 
 $('.item.server.version')
 	.api({
@@ -33,3 +35,13 @@ $('.item.server.version')
 		}
 	})
 ;
+
+$(function(){
+	if (kyuubiVersion === "") {
+		$.getJSON(location.origin + "/api/v1/version", function (response) {
+			kyuubiVersion = response.version;
+		});
+	}
+	$('.item.server.version.right.padded').val(kyuubiVersion)
+	alert(kyuubiVersion);
+});
