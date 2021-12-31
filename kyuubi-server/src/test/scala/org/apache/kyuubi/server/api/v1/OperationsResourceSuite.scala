@@ -26,8 +26,8 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.events.KyuubiOperationEvent
-import org.apache.kyuubi.operation.{OperationState, OperationType}
-import org.apache.kyuubi.operation.OperationState.{FINISHED, OperationState}
+import org.apache.kyuubi.operation.{ExecuteStatement, OperationHandle, OperationState, OperationType}
+import org.apache.kyuubi.operation.OperationState.{CANCELED, FINISHED, OperationState}
 import org.apache.kyuubi.operation.OperationType.OperationType
 
 class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
@@ -48,22 +48,28 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
   }
 
   test("apply an action for an operation") {
-    var opHandleStr = ""
-    eventually(Timeout(10.seconds)) {
-      opHandleStr = getOpHandleStr(OperationType.EXECUTE_STATEMENT)
-      var response = webTarget.path(s"api/v1/operations/$opHandleStr")
-        .request(MediaType.APPLICATION_JSON_TYPE)
-        .put(Entity.entity(OpActionRequest("cancel"), MediaType.APPLICATION_JSON_TYPE))
-      assert(response.getStatus === 200)
-
-      response = webTarget.path(s"api/v1/operations/$opHandleStr/event")
-        .request(MediaType.APPLICATION_JSON_TYPE).get()
-      assert(response.getStatus === 200)
-      val operationEvent = response.readEntity(classOf[KyuubiOperationEvent])
-      assert(operationEvent.state === OperationState.CANCELED.name())
-    }
+    val sessionHandle = fe.be.openSession(
+      HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "admin",
+      "123456",
+      "localhost",
+      Map("testConfig" -> "testValue"))
+    val sessionManager = fe.be.sessionManager
+    val op = new ExecuteStatement(sessionManager.getSession(sessionHandle),
+      "show tables", true, 3000)
+    op.setState(OperationState.RUNNING)
+    sessionManager.operationManager.addOperation(op)
+    val opHandleStr = s"${op.getHandle.identifier.publicId}|" +
+      s"${op.getHandle.identifier.secretId}|${op.getHandle.protocol.getValue}|" +
+      s"${op.getHandle.typ.toString}"
 
     var response = webTarget.path(s"api/v1/operations/$opHandleStr")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .put(Entity.entity(OpActionRequest("cancel"), MediaType.APPLICATION_JSON_TYPE))
+    assert(response.getStatus === 200)
+    checkOpState(opHandleStr, CANCELED)
+
+    response = webTarget.path(s"api/v1/operations/$opHandleStr")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .put(Entity.entity(OpActionRequest("close"), MediaType.APPLICATION_JSON_TYPE))
     assert(200 == response.getStatus)
@@ -103,7 +109,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
       "localhost",
       Map("testConfig" -> "testValue"))
 
-    val op = typ match {
+    val op: OperationHandle = typ match {
       case OperationType.EXECUTE_STATEMENT =>
         fe.be.executeStatement(sessionHandle, "show tables", runAsync = true, 3000)
       case OperationType.GET_CATALOGS => fe.be.getCatalogs(sessionHandle)
