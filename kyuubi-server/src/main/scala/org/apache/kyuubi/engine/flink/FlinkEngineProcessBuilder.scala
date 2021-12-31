@@ -27,13 +27,13 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_FLINK_MAIN_RESOURCE
 import org.apache.kyuubi.engine.ProcBuilder
-import org.apache.kyuubi.engine.flink.FlinkEngineProcessBuilder.FLINK_ENGINE_BINARY_FILE
+import org.apache.kyuubi.engine.flink.FlinkProcessBuilder.FLINK_ENGINE_BINARY_FILE
 import org.apache.kyuubi.operation.log.OperationLog
 
 /**
  * A builder to build flink sql engine progress.
  */
-class FlinkEngineProcessBuilder(
+class FlinkProcessBuilder(
     override val proxyUser: String,
     override val conf: KyuubiConf,
     val extraEngineLog: Option[OperationLog] = None)
@@ -164,7 +164,7 @@ class FlinkEngineProcessBuilder(
   private def useKeytab(): Boolean = false
 }
 
-object FlinkEngineProcessBuilder {
+object FlinkProcessBuilder {
   final val APP_KEY = "yarn.application.name"
   final val TAG_KEY = "yarn.tags"
 
