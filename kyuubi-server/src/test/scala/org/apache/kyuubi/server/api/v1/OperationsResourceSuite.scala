@@ -55,8 +55,8 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
       "localhost",
       Map("testConfig" -> "testValue"))
     val sessionManager = fe.be.sessionManager
-    val op = new ExecuteStatement(sessionManager.getSession(sessionHandle),
-      "show tables", true, 3000)
+    val session = sessionManager.getSession(sessionHandle)
+    val op = new ExecuteStatement(session, "show tables", true, 3000)
     op.setState(OperationState.RUNNING)
     sessionManager.operationManager.addOperation(op)
     val opHandleStr = s"${op.getHandle.identifier.publicId}|" +
