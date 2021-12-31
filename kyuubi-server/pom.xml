@@ -208,8 +208,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.github.swagger-akka-http</groupId>
-            <artifactId>swagger-scala-module_${scala.binary.version}</artifactId>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
         </dependency>
 
         <dependency>
