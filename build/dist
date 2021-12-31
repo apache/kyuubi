@@ -171,7 +171,7 @@ fi
 
 MVN_DIST_OPT="-DskipTests"
 if [[ "$SPARK_PROVIDED" == "true" ]]; then
-  MVN_DIST_OPT="$MVN_DIST_OPT -Pflink-provided,spark-provided"
+  MVN_DIST_OPT="$MVN_DIST_OPT -Pspark-provided"
 fi
 
 BUILD_COMMAND=("$MVN" clean install $MVN_DIST_OPT $@)
