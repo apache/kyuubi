@@ -26,7 +26,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.events.KyuubiOperationEvent
-import org.apache.kyuubi.operation.{OperationState, OperationType}
+import org.apache.kyuubi.operation.{ExecuteStatement, OperationState, OperationType}
 import org.apache.kyuubi.operation.OperationState.{FINISHED, OperationState}
 import org.apache.kyuubi.operation.OperationType.OperationType
 
@@ -48,7 +48,20 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
   }
 
   test("apply an action for an operation") {
-    val opHandleStr = getOpHandleStr(OperationType.EXECUTE_STATEMENT)
+    val sessionHandle = fe.be.openSession(
+      HIVE_CLI_SERVICE_PROTOCOL_V2,
+      "admin",
+      "123456",
+      "localhost",
+      Map("testConfig" -> "testValue"))
+    val sessionManager = fe.be.sessionManager
+    val session = sessionManager.getSession(sessionHandle)
+    val op = new ExecuteStatement(session, "show tables", true, 3000)
+    op.setState(OperationState.RUNNING)
+    sessionManager.operationManager.addOperation(op)
+    val opHandleStr = s"${op.getHandle.identifier.publicId}|" +
+      s"${op.getHandle.identifier.secretId}|${op.getHandle.protocol.getValue}|" +
+      s"${op.getHandle.typ.toString}"
 
     var response = webTarget.path(s"api/v1/operations/$opHandleStr")
       .request(MediaType.APPLICATION_JSON_TYPE)
