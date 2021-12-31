@@ -40,8 +40,6 @@ build/scala-*/**
 **/apache-kyuubi-*-bin*/**
 **/benchmarks/**
 **/jquery-*.min.js
-**/semantic.js
-**/semantic.css
 **/semantic.min.js
 **/semantic.min.css
 **/icon.png
