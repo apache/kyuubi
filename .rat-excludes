@@ -44,4 +44,7 @@ build/scala-*/**
 **/semantic.css
 **/semantic.min.js
 **/semantic.min.css
+**/icon.png
+**/icon.min.css
+**/org/apache/kyuubi/ui/static/assets/**
 **/org/apache/kyuubi/ui/swagger/**

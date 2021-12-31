@@ -15,15 +15,18 @@
   ~ limitations under the License.
   -->
 
-<!-- HTML for static distribution bundle build -->
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8">
     <title>Apache Kyuubi REST API Documentation</title>
-    <link rel="stylesheet" type="text/css" href="./swagger-ui.css" />
-    <link rel="icon" type="image/png" href="./favicon-32x32.png" sizes="32x32" />
-    <link rel="icon" type="image/png" href="./favicon-16x16.png" sizes="16x16" />
+		<link rel="stylesheet" type="text/css" href="../static/semantic.min.css">
+		<link rel="stylesheet" type="text/css" href="./swagger-ui.css" />
+		<link rel="stylesheet" type="text/css" href="../static/icon.min.css">
+		<link rel="icon" type="image/png" href="./favicon-32x32.png" sizes="32x32" />
+		<link rel="icon" type="image/png" href="./favicon-16x16.png" sizes="16x16" />
+		<script src="../static/jquery-3.6.0.min.js"></script>
+		<script src="../static/semantic.min.js"></script>
     <style>
       html
       {
@@ -47,8 +50,24 @@
     </style>
   </head>
 
-  <body>
-    <div id="swagger-ui"></div>
+		<div class="ui page">
+			<div class="ui black inverted massive menu">
+				<div class="item">
+					<img src="../static/icon.png" alt="">
+				</div>
+				<a class="active item" href="./"><i class="home icon"></i>Home</a>
+				<a class="item" href="../static/environment.html" ><i class="settings icon"></i>Environment</a>
+				<a class="item" href="../static/sessions.html" ><i class="envelope icon"></i>Sessions</a>
+				<a class="item" href="../static/operations.html" ><i class="tasks icon"></i>Operations</a>
+				<a class="item" href="../static/metrics.html" ><i class="bars icon"></i>Metrics</a>
+				<a class="item" href="../static/threaddump.html" ><i class="bars icon"></i>Thread Dump</a>
+				<a class="item" href="./"><i class="h square icon"></i>REST API</a>
+				<a class="item" href="https://kyuubi.apache.org/docs/latest"><i class="book icon"></i>Documentation</a>
+				<a class="item server version right padded"><i class="flag icon"></i>Unknown</a>
+			</div>
+		</div>
+
+		<div id="swagger-ui"></div>
 
     <script src="./swagger-ui-bundle.js" charset="UTF-8"> </script>
     <script src="./swagger-ui-standalone-preset.js" charset="UTF-8"> </script>

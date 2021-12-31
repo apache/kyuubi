@@ -22,6 +22,8 @@ import javax.ws.rs.{GET, Path, Produces}
 import javax.ws.rs.core.{MediaType, Response}
 
 import com.google.common.annotations.VisibleForTesting
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.responses.ApiResponse
 import org.eclipse.jetty.servlet.{ServletContextHandler, ServletHolder}
 import org.glassfish.jersey.server.ResourceConfig
 import org.glassfish.jersey.servlet.ServletContainer
@@ -31,6 +33,15 @@ import org.apache.kyuubi.server.api.{ApiRequestContext, FrontendServiceContext, 
 
 @Path("/api/v1")
 private[v1] class ApiRootResource extends ApiRequestContext {
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description = "Get the version of Kyuubi server.")
+  @GET
+  @Path("version")
+  def version(): VersionInfo = new VersionInfo()
 
   @GET
   @Path("ping")

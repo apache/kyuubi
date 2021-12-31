@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.server
 
-import org.apache.kyuubi.{KyuubiException, Logging, Utils}
+import org.apache.kyuubi.{KyuubiException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_REST_BIND_HOST, FRONTEND_REST_BIND_PORT}
 import org.apache.kyuubi.server.api.v1.ApiRootResource
@@ -29,7 +29,7 @@ import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
  * Note: Currently, it only be used in the Kyuubi Server side.
  */
 class KyuubiRestFrontendService(override val serverable: Serverable)
-  extends AbstractFrontendService("KyuubiRestFrontendService") with Logging {
+  extends AbstractFrontendService("KyuubiRestFrontendService") {
 
   private var server: JettyServer = _
 
@@ -45,13 +45,12 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
     super.initialize(conf)
   }
 
-  private def initializeInternal(): Unit = {
+  private def startInternal(): Unit = {
     server.addHandler(ApiRootResource.getServletHandler(this))
-    val swagger =
-      JettyUtils.createStaticHandler("org/apache/kyuubi/ui/swagger", "/swagger")
-    server.addHandler(swagger)
-    val docs = JettyUtils.createRedirectHandler("docs", "/swagger/index.html")
-    server.addHandler(docs)
+    server.addStaticHandler("org/apache/kyuubi/ui/static", "/static")
+    server.addStaticHandler("org/apache/kyuubi/ui/swagger", "/swagger")
+    server.addRedirectHandler("/docs", "/swagger")
+    server.addRedirectHandler("/", "/static")
   }
 
   override def start(): Unit = synchronized {
@@ -59,7 +58,7 @@ class KyuubiRestFrontendService(override val serverable: Serverable)
       try {
         server.start()
         info(s"$getName has started at ${server.getServerUri}")
-        initializeInternal()
+        startInternal()
       } catch {
         case e: Exception => throw new KyuubiException(s"Cannot start $getName", e)
       }

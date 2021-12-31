@@ -53,4 +53,16 @@ private[kyuubi] case class JettyServer(
     rootHandler.addHandler(handler)
     if (!handler.isStarted) handler.start()
   }
+
+  def addStaticHandler(
+      resourceBase: String,
+      contextPath: String): Unit = {
+    addHandler(JettyUtils.createStaticHandler(resourceBase, contextPath))
+  }
+
+  def addRedirectHandler(
+      src: String,
+      dest: String): Unit = {
+    addHandler(JettyUtils.createRedirectHandler(src, dest))
+  }
 }
