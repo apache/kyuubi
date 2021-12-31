@@ -26,8 +26,8 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{KyuubiFunSuite, RestFrontendTestHelper}
 import org.apache.kyuubi.events.KyuubiOperationEvent
-import org.apache.kyuubi.operation.{ExecuteStatement, OperationHandle, OperationState, OperationType}
-import org.apache.kyuubi.operation.OperationState.{CANCELED, FINISHED, OperationState}
+import org.apache.kyuubi.operation.{ExecuteStatement, OperationState, OperationType}
+import org.apache.kyuubi.operation.OperationState.{FINISHED, OperationState}
 import org.apache.kyuubi.operation.OperationType.OperationType
 
 class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
@@ -66,8 +66,8 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     var response = webTarget.path(s"api/v1/operations/$opHandleStr")
       .request(MediaType.APPLICATION_JSON_TYPE)
       .put(Entity.entity(OpActionRequest("cancel"), MediaType.APPLICATION_JSON_TYPE))
-    assert(response.getStatus === 200)
-    checkOpState(opHandleStr, CANCELED)
+    assert(200 == response.getStatus)
+    checkOpState(opHandleStr, OperationState.CANCELED)
 
     response = webTarget.path(s"api/v1/operations/$opHandleStr")
       .request(MediaType.APPLICATION_JSON_TYPE)
@@ -109,7 +109,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
       "localhost",
       Map("testConfig" -> "testValue"))
 
-    val op: OperationHandle = typ match {
+    val op = typ match {
       case OperationType.EXECUTE_STATEMENT =>
         fe.be.executeStatement(sessionHandle, "show tables", runAsync = true, 3000)
       case OperationType.GET_CATALOGS => fe.be.getCatalogs(sessionHandle)
