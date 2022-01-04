@@ -222,7 +222,6 @@ cd -
 # Copy flink engines
 cp -r "$KYUUBI_HOME/externals/kyuubi-flink-sql-engine/bin/" "$DISTDIR/externals/engines/flink/bin/"
 chmod a+x "$DISTDIR/externals/engines/flink/bin/flink-sql-engine.sh"
-cp -r "$KYUUBI_HOME/externals/kyuubi-flink-sql-engine/conf/" "$DISTDIR/externals/engines/flink/conf/"
 cp "$KYUUBI_HOME/externals/kyuubi-flink-sql-engine/target/kyuubi-flink-sql-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/flink/lib"
 
 # Copy spark engines
