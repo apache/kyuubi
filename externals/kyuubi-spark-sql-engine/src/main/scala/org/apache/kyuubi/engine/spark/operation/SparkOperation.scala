@@ -58,7 +58,8 @@ abstract class SparkOperation(opType: OperationType, session: Session)
 
   protected def resultSchema: StructType
 
-  def redactedStatement: String = redact(spark.sessionState.conf.stringRedactionPattern, statement)
+  override def redactedStatement: String =
+    redact(spark.sessionState.conf.stringRedactionPattern, statement)
 
   protected def cleanup(targetState: OperationState): Unit = state.synchronized {
     if (!isTerminalState(state)) {

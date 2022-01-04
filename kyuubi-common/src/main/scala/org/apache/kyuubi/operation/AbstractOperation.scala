@@ -60,6 +60,8 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
 
   def statement: String = opType.toString
 
+  def redactedStatement: String = statement
+
   protected def setHasResultSet(hasResultSet: Boolean): Unit = {
     this.hasResultSet = hasResultSet
     handle.setHasResultSet(hasResultSet)
@@ -80,7 +82,7 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
       case _ =>
     }
     info(s"Processing ${session.user}'s query[$statementId]: ${state.name} -> ${newState.name}," +
-      s" statement: $statement$timeCost")
+      s" statement: $redactedStatement$timeCost")
     state = newState
     lastAccessTime = System.currentTimeMillis()
   }
