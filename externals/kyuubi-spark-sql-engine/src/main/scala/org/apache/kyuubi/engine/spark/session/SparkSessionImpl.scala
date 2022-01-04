@@ -69,6 +69,7 @@ class SparkSessionImpl(
     sessionEvent.endTime = System.currentTimeMillis()
     EventLoggingService.onEvent(sessionEvent)
     super.close()
+    spark.sessionState.catalog.getTempViewNames().foreach(spark.catalog.uncacheTable(_))
     sessionManager.operationManager.asInstanceOf[SparkSQLOperationManager].closeILoop(handle)
   }
 
