@@ -53,11 +53,6 @@ public class ResultSet {
     this.resultKind = Preconditions.checkNotNull(resultKind, "resultKind must not be null");
     this.columns = Preconditions.checkNotNull(columns, "columns must not be null");
     this.data = Preconditions.checkNotNull(data, "data must not be null");
-    if (data.hasNext()) {
-      Preconditions.checkArgument(
-          columns.size() == data.next().getArity(),
-          "the size of columns and the number of fields in the row should be equal");
-    }
     this.changeFlags = changeFlags;
     if (changeFlags != null) {
       Preconditions.checkArgument(
