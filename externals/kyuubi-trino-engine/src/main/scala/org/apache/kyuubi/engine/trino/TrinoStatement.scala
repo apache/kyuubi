@@ -19,10 +19,11 @@ package org.apache.kyuubi.engine.trino
 
 import java.util.ArrayList
 import java.util.concurrent.ArrayBlockingQueue
+import java.util.concurrent.Executors
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration
 import scala.concurrent.duration.Duration
@@ -35,15 +36,22 @@ import io.trino.client.StatementClient
 import io.trino.client.StatementClientFactory
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.trino.TrinoConf.DATA_PROCESSING_POOL_SIZE
 import org.apache.kyuubi.engine.trino.TrinoStatement._
 
 /**
  * Trino client communicate with trino cluster.
  */
-class TrinoStatement(trinoContext: TrinoContext, sql: String) {
+class TrinoStatement(trinoContext: TrinoContext, kyuubiConf: KyuubiConf, sql: String) {
 
   private lazy val trino = StatementClientFactory
     .newStatementClient(trinoContext.httpClient, trinoContext.getClientSession, sql)
+
+  private lazy val dataProcessingPoolSize = kyuubiConf.get(DATA_PROCESSING_POOL_SIZE)
+
+  implicit val ec: ExecutionContext =
+    ExecutionContext.fromExecutor(Executors.newFixedThreadPool(dataProcessingPoolSize))
 
   def getTrinoClient: StatementClient = trino
 
@@ -189,7 +197,7 @@ object TrinoStatement {
   final private val MAX_BUFFER_TIME = Duration(3, duration.SECONDS)
   final private val END_TOKEN = List[Any]()
 
-  def apply(trinoContext: TrinoContext, sql: String): TrinoStatement = {
-    new TrinoStatement(trinoContext, sql)
+  def apply(trinoContext: TrinoContext, kyuubiConf: KyuubiConf, sql: String): TrinoStatement = {
+    new TrinoStatement(trinoContext, kyuubiConf, sql)
   }
 }

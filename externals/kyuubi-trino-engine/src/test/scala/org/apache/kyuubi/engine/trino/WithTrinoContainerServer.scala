@@ -32,6 +32,7 @@ import okhttp3.OkHttpClient
 import org.testcontainers.containers.TrinoContainer
 
 import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.config.KyuubiConf
 
 trait WithTrinoContainerServer extends KyuubiFunSuite {
 
@@ -39,6 +40,7 @@ trait WithTrinoContainerServer extends KyuubiFunSuite {
   final val DOCKER_IMAGE_NAME = s"trinodb/trino:${IMAGE_VERSION}"
 
   val trino = new TrinoContainer(DOCKER_IMAGE_NAME)
+  val kyuubiConf: KyuubiConf = KyuubiConf()
 
   protected val catalog = "tpch"
   protected val schema = "tiny"

@@ -17,16 +17,17 @@
 
 package org.apache.kyuubi.engine.trino
 
-class TrinoContextSuite extends WithTrinoContainerServer {
+import org.apache.kyuubi.config.ConfigBuilder
+import org.apache.kyuubi.config.ConfigEntry
+import org.apache.kyuubi.config.KyuubiConf
 
-  test("set current schema") {
-    val trinoContext = TrinoContext(httpClient, session)
+object TrinoConf {
+  private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
 
-    val trinoStatement = TrinoStatement(trinoContext, kyuubiConf, "select 1")
-    assert("tiny" === trinoStatement.getCurrentDatabase)
-
-    trinoContext.setCurrentSchema("sf1")
-    val trinoStatement2 = TrinoStatement(trinoContext, kyuubiConf, "select 1")
-    assert("sf1" === trinoStatement2.getCurrentDatabase)
-  }
+  val DATA_PROCESSING_POOL_SIZE: ConfigEntry[Int] =
+    buildConf("trino.client.data.processing.pool.size")
+      .doc("The size of the thread pool used by the trino client to processing data")
+      .version("1.5.0")
+      .intConf
+      .createWithDefault(3)
 }

@@ -22,7 +22,7 @@ import org.apache.kyuubi.KyuubiSQLException
 class TrinoStatementSuite extends WithTrinoContainerServer {
 
   test("test query") {
-    val trinoStatement = TrinoStatement(TrinoContext(httpClient, session), "select 1")
+    val trinoStatement = TrinoStatement(TrinoContext(httpClient, session), kyuubiConf, "select 1")
     val schema = trinoStatement.getColumns
     val resultSet = trinoStatement.execute()
 
@@ -32,7 +32,8 @@ class TrinoStatementSuite extends WithTrinoContainerServer {
     assert(resultSet.toIterator.hasNext)
     assert(resultSet.toIterator.next() === List(1))
 
-    val trinoStatement2 = TrinoStatement(TrinoContext(httpClient, session), "show schemas")
+    val trinoStatement2 =
+      TrinoStatement(TrinoContext(httpClient, session), kyuubiConf, "show schemas")
     val schema2 = trinoStatement2.getColumns
     val resultSet2 = trinoStatement2.execute()
 
@@ -41,21 +42,21 @@ class TrinoStatementSuite extends WithTrinoContainerServer {
   }
 
   test("test update session") {
-    val trinoStatement = TrinoStatement(TrinoContext(httpClient, session), "select 1")
+    val trinoStatement = TrinoStatement(TrinoContext(httpClient, session), kyuubiConf, "select 1")
     val schema2 = trinoStatement.getColumns
 
     assert(schema2.size === 1)
     assert(schema2(0).getName === "_col0")
     assert(this.schema === trinoStatement.getCurrentDatabase)
 
-    val trinoStatement2 = TrinoStatement(TrinoContext(httpClient, session), "use sf1")
+    val trinoStatement2 = TrinoStatement(TrinoContext(httpClient, session), kyuubiConf, "use sf1")
     trinoStatement2.execute()
 
     assert("sf1" === trinoStatement2.getCurrentDatabase)
   }
 
   test("test exception") {
-    val trinoStatement = TrinoStatement(TrinoContext(httpClient, session), "use kyuubi")
+    val trinoStatement = TrinoStatement(TrinoContext(httpClient, session), kyuubiConf, "use kyuubi")
     val e1 = intercept[KyuubiSQLException](trinoStatement.execute())
     assert(e1.getMessage.contains("Schema does not exist: tpch.kyuubi"))
   }
