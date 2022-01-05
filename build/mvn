@@ -22,7 +22,7 @@ _DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Preserve the calling directory
 _CALLING_DIR="$(pwd)"
 # Options used during compilation
-_COMPILE_JVM_OPTS="-Xms2g -Xmx2g -XX:ReservedCodeCacheSize=1g -Xss128m"
+_COMPILE_JVM_OPTS="-Xms2g -Xmx2g -XX:ReservedCodeCacheSize=512m -Xss8m"
 
 if [ "$CI" ]; then
   export MAVEN_CLI_OPTS="--batch-mode --no-transfer-progress --errors --fail-fast"
