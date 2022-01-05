@@ -1604,6 +1604,8 @@
                             <exclude>**/*.output.schema</exclude>
                             <exclude>**/apache-kyuubi-*-bin*/**</exclude>
                             <exclude>**/benchmarks/**</exclude>
+                            <exclude>**/masters</exclude>
+                            <exclude>**/workers</exclude>
                         </excludes>
                     </configuration>
                 </plugin>
