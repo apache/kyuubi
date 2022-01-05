@@ -19,10 +19,9 @@ package org.apache.kyuubi.engine.trino
 
 import org.apache.kyuubi.KyuubiSQLException
 
-class TrinoStatementSuite extends WithTrinoLocalServer {
+class TrinoStatementSuite extends WithTrinoContainerServer {
 
   test("test query") {
-    info(connectUrl)
     val trinoStatement = TrinoStatement(TrinoContext(httpClient, session), "select 1")
     val schema = trinoStatement.getColumns
     val resultSet = trinoStatement.execute()
@@ -43,11 +42,11 @@ class TrinoStatementSuite extends WithTrinoLocalServer {
 
   test("test update session") {
     val trinoStatement = TrinoStatement(TrinoContext(httpClient, session), "select 1")
-    val schema = trinoStatement.getColumns
+    val schema2 = trinoStatement.getColumns
 
-    assert(schema.size === 1)
-    assert(schema(0).getName === "_col0")
-    assert("tiny" === trinoStatement.getCurrentDatabase)
+    assert(schema2.size === 1)
+    assert(schema2(0).getName === "_col0")
+    assert(this.schema === trinoStatement.getCurrentDatabase)
 
     val trinoStatement2 = TrinoStatement(TrinoContext(httpClient, session), "use sf1")
     trinoStatement2.execute()

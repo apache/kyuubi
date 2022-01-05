@@ -28,43 +28,43 @@ import scala.collection.JavaConverters._
 import io.airlift.units.Duration
 import io.trino.client.ClientSelectedRole
 import io.trino.client.ClientSession
-import io.trino.testing.DistributedQueryRunner
-import io.trino.tests.tpch.TpchQueryRunnerBuilder
 import okhttp3.OkHttpClient
+import org.testcontainers.containers.TrinoContainer
 
 import org.apache.kyuubi.KyuubiFunSuite
 
-trait WithTrinoLocalServer extends KyuubiFunSuite {
+trait WithTrinoContainerServer extends KyuubiFunSuite {
 
-  private var queryRunner: DistributedQueryRunner = _
+  final val IMAGE_VERSION = 363
+  final val DOCKER_IMAGE_NAME = s"trinodb/trino:${IMAGE_VERSION}"
+
+  val trino = new TrinoContainer(DOCKER_IMAGE_NAME)
+
+  protected val catalog = "tpch"
+  protected val schema = "tiny"
 
   override def beforeAll(): Unit = {
-    queryRunner = TpchQueryRunnerBuilder.builder()
-      .setExtraProperties(
-        Map(
-          "http-server.http.port" -> "8080",
-          "sql.default-catalog" -> "tpch",
-          "sql.default-schema" -> "tiny").asJava).build()
+    trino.start()
     super.beforeAll()
   }
 
   override def afterAll(): Unit = {
-    queryRunner.close()
+    trino.stop()
     super.afterAll()
   }
 
-  lazy val connectUrl = queryRunner.getCoordinator.getBaseUrl
+  lazy val connectionUrl = trino.getJdbcUrl.replace("jdbc:trino", "http")
 
   lazy val session = new ClientSession(
-    URI.create(connectUrl.toString),
+    URI.create(connectionUrl),
     "kyuubi_test",
     Optional.empty(),
     "kyuubi",
     Optional.empty(),
     Set[String]().asJava,
     null,
-    "tpch",
-    "tiny",
+    catalog,
+    schema,
     null,
     ZoneId.systemDefault(),
     Locale.getDefault,

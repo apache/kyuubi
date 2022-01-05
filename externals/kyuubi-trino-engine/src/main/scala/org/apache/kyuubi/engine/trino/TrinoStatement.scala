@@ -74,7 +74,7 @@ class TrinoStatement(trinoContext: TrinoContext, sql: String) {
   def execute(): Iterable[List[Any]] = {
     val rowQueue = new ArrayBlockingQueue[List[Any]](MAX_QUEUED_ROWS)
 
-    val future = Future[Unit] {
+    val dataProcessing = Future[Unit] {
       while (trino.isRunning) {
         val data = trino.currentData().getData()
         if (data != null) {
@@ -84,7 +84,7 @@ class TrinoStatement(trinoContext: TrinoContext, sql: String) {
         trino.advance()
       }
     }
-    future.onComplete {
+    dataProcessing.onComplete {
       case _ => putOrThrow(rowQueue, END_TOKEN)
     }
 
@@ -93,7 +93,7 @@ class TrinoStatement(trinoContext: TrinoContext, sql: String) {
     val result = ArrayBuffer[List[Any]]()
     try {
       breakable {
-        while (!future.isCompleted) {
+        while (!dataProcessing.isCompleted) {
           val atEnd = drainDetectingEnd(rowQueue, rowBuffer, MAX_BUFFERED_ROWS, END_TOKEN)
           if (!atEnd) {
             // Flush if needed

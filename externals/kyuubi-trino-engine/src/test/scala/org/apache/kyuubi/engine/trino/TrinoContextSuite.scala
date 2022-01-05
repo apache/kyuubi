@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.trino
 
-class TrinoContextSuite extends WithTrinoLocalServer {
+class TrinoContextSuite extends WithTrinoContainerServer {
 
   test("set current schema") {
     val trinoContext = TrinoContext(httpClient, session)
