@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi
 
+import java.nio.file.Paths
+
 import scala.sys.process._
 
 import org.apache.kyuubi.engine.flink.FlinkProcessBuilder
@@ -26,13 +28,31 @@ trait WithKyuubiServerAndFlinkLocalCluster extends WithKyuubiServer {
   private lazy val FLINK_HOME: String =
     new FlinkProcessBuilder(Utils.currentUser, conf).FLINK_HOME
 
+  private lazy val KYUUBI_PROJECT_DIR: String =
+    getClass.getProtectionDomain.getCodeSource.getLocation.getPath.split("kyuubi-server").head
+
+  private lazy val FLINK_CONF_DIR: String =
+    Paths.get(KYUUBI_PROJECT_DIR)
+      .resolve("kyuubi-server")
+      .resolve("src")
+      .resolve("test")
+      .resolve("resources")
+      .resolve("flink_conf")
+      .toAbsolutePath.toString
+
   override def beforeAll(): Unit = {
-    s"$FLINK_HOME/bin/start-cluster.sh".!
+    Process(
+      s"$FLINK_HOME/bin/start-cluster.sh",
+      Paths.get(KYUUBI_PROJECT_DIR).toFile,
+      "FLINK_CONF_DIR" -> FLINK_CONF_DIR).!
     super.beforeAll()
   }
 
   override def afterAll(): Unit = {
     super.afterAll()
-    s"$FLINK_HOME/bin/stop-cluster.sh".!
+    Process(
+      s"$FLINK_HOME/bin/stop-cluster.sh",
+      Paths.get(KYUUBI_PROJECT_DIR).toFile,
+      "FLINK_CONF_DIR" -> FLINK_CONF_DIR).!
   }
 }
