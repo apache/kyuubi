@@ -69,6 +69,7 @@ class ExecuteStatement(
       // in thrift protocol, in sync mode, we cannot distinguish between long-run query and
       // engine crash without response before socket read timeout.
       _remoteOpHandle = client.executeStatement(statement, true, queryTimeout)
+      setHasResultSet(_remoteOpHandle.isHasResultSet)
     } catch onError()
   }
 
