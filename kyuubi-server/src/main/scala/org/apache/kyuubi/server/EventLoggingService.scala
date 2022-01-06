@@ -22,12 +22,12 @@ import java.net.InetAddress
 import org.apache.hadoop.conf.Configuration
 
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.EVENT_LOGGER_CLASS
 import org.apache.kyuubi.config.KyuubiConf.SERVER_EVENT_JSON_LOG_PATH
 import org.apache.kyuubi.config.KyuubiConf.SERVER_EVENT_LOGGERS
-import org.apache.kyuubi.events.{AbstractEventLoggingService, EventLoggerType}
-import org.apache.kyuubi.events.JsonEventLogger
-import org.apache.kyuubi.events.KyuubiServerEvent
+import org.apache.kyuubi.events.{AbstractEventLoggingService, EventLogger, EventLoggerType, JsonEventLogger, KyuubiServerEvent}
 import org.apache.kyuubi.server.EventLoggingService._service
+import org.apache.kyuubi.service.Service
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
 class EventLoggingService extends AbstractEventLoggingService[KyuubiServerEvent] {
@@ -46,6 +46,14 @@ class EventLoggingService extends AbstractEventLoggingService[KyuubiServerEvent]
           jsonEventLogger.createEventLogRootDir(conf, KyuubiHadoopUtils.newHadoopConf(conf))
           addService(jsonEventLogger)
           addEventLogger(jsonEventLogger)
+        case EventLoggerType.CUSTOM if conf.get(EVENT_LOGGER_CLASS).isDefined =>
+          val clazz = conf.get(EVENT_LOGGER_CLASS).get
+          val eventLogger = Class.forName(clazz).newInstance()
+          eventLogger match {
+            case s: Service => addService(s)
+            case _ =>
+          }
+          addEventLogger(eventLogger.asInstanceOf[EventLogger[KyuubiServerEvent]])
         case logger =>
           // TODO: Add more implementations
           throw new IllegalArgumentException(s"Unrecognized event logger: $logger")

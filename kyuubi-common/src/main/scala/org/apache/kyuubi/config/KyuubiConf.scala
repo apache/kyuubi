@@ -1002,6 +1002,13 @@ object KyuubiConf {
         "Unsupported event loggers")
       .createWithDefault(Seq("SPARK"))
 
+  val EVENT_LOGGER_CLASS: OptionalConfigEntry[String] =
+    buildConf("event.logger.class")
+      .doc("The class of custom event logger.")
+      .version("1.5.0")
+      .stringConf
+      .createOptional
+
   val ENGINE_UI_STOP_ENABLED: ConfigEntry[Boolean] =
     buildConf("engine.ui.stop.enabled")
       .doc("When true, allows Kyuubi engine to be killed from the Spark Web UI.")
