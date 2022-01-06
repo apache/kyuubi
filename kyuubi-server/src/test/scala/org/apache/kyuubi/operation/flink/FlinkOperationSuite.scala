@@ -21,6 +21,7 @@ import org.apache.kyuubi.WithKyuubiServerAndFlinkLocalCluster
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_TYPE, FRONTEND_THRIFT_BINARY_BIND_PORT}
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
 
 class FlinkOperationSuite extends WithKyuubiServerAndFlinkLocalCluster with HiveJDBCTestHelper {
   override val conf: KyuubiConf = KyuubiConf()
@@ -35,7 +36,7 @@ class FlinkOperationSuite extends WithKyuubiServerAndFlinkLocalCluster with Hive
       val catalogs = meta.getCatalogs
       val expected = Set("default_catalog").toIterator
       while (catalogs.next()) {
-        assert(catalogs.getString("catalogs") === expected.next())
+        assert(catalogs.getString(TABLE_CAT) === expected.next())
       }
       assert(!expected.hasNext)
       assert(!catalogs.next())

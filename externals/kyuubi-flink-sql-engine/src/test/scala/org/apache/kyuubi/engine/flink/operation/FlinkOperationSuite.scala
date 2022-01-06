@@ -23,6 +23,7 @@ import org.scalatest.time.SpanSugar._
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
 import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_TYPE
 import org.apache.kyuubi.service.ServiceState._
 
@@ -47,7 +48,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       val catalogs = meta.getCatalogs
       val expected = Set("default_catalog").toIterator
       while (catalogs.next()) {
-        assert(catalogs.getString("catalogs") === expected.next())
+        assert(catalogs.getString(TABLE_CAT) === expected.next())
       }
       assert(!expected.hasNext)
       assert(!catalogs.next())
