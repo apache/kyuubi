@@ -200,6 +200,13 @@ kyuubi\.engine\.ui<br>\.retainedStatements|<div style='width: 65pt;word-wrap: br
 kyuubi\.engine\.ui\.stop<br>\.enabled|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>true</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>When true, allows Kyuubi engine to be killed from the Spark Web UI.</div>|<div style='width: 30pt'>boolean</div>|<div style='width: 20pt'>1.3.0</div>
 
 
+### Event
+
+Key | Default | Meaning | Type | Since
+--- | --- | --- | --- | ---
+kyuubi\.event\.logger<br>\.class|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>The class of custom event logger.</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.5.0</div>
+
+
 ### Frontend
 
 Key | Default | Meaning | Type | Since
