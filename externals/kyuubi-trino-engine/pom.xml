@@ -64,6 +64,25 @@
             <scope>test</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/org.testcontainers/trino -->
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>trino</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.trino</groupId>
+            <artifactId>trino-jdbc</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
 </project>
