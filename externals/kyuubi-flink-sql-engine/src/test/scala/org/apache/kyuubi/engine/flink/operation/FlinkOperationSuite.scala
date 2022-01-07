@@ -21,7 +21,9 @@ import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
+import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_TYPE
 import org.apache.kyuubi.service.ServiceState._
 
 class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
@@ -49,6 +51,19 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       }
       assert(!expected.hasNext)
       assert(!catalogs.next())
+    }
+  }
+
+  test("get table type for flink sql") {
+    withJdbcStatement() { statement =>
+      val meta = statement.getConnection.getMetaData
+      val types = meta.getTableTypes
+      val expected = Constants.SUPPORTED_TABLE_TYPES.toIterator
+      while (types.next()) {
+        assert(types.getString(TABLE_TYPE) === expected.next())
+      }
+      assert(!expected.hasNext)
+      assert(!types.next())
     }
   }
 
