@@ -90,4 +90,84 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       assert(metaData.getScale(2) == 2)
     }
   }
+
+  test("execute statement - show functions") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("show functions")
+      val metadata = resultSet.getMetaData
+      assert(metadata.getColumnName(1) == "function name")
+      assert(resultSet.next())
+    }
+  }
+
+  test("execute statement - show databases") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("show databases")
+      val metadata = resultSet.getMetaData
+      assert(metadata.getColumnName(1) == "database name")
+      assert(resultSet.next())
+      assert(resultSet.getString(1) == "default_database")
+    }
+  }
+
+  test("execute statement - show tables") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("show tables")
+      val metadata = resultSet.getMetaData
+      assert(metadata.getColumnName(1) == "table name")
+      assert(!resultSet.next())
+    }
+  }
+
+  test("execute statement - explain query") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("explain select 1")
+      val metadata = resultSet.getMetaData
+      assert(metadata.getColumnName(1) == "result")
+      assert(resultSet.next())
+    }
+  }
+
+  test("execute statement - create/alter/drop catalog") {
+    // TODO: validate table results after FLINK-25558 is resolved
+    withJdbcStatement()({ statement =>
+      statement.executeQuery("create catalog cat_a with ('type'='generic_in_memory')")
+      assert(statement.execute("drop catalog cat_a"))
+    })
+  }
+
+  test("execute statement - create/alter/drop database") {
+    // TODO: validate table results after FLINK-25558 is resolved
+    withJdbcStatement()({ statement =>
+      statement.executeQuery("create database db_a")
+      assert(statement.execute("alter database db_a set ('k1' = 'v1')"))
+      assert(statement.execute("drop database db_a"))
+    })
+  }
+
+  test("execute statement - create/alter/drop table") {
+    // TODO: validate table results after FLINK-25558 is resolved
+    withJdbcStatement()({ statement =>
+      statement.executeQuery("create table tbl_a (a string)")
+      assert(statement.execute("alter table tbl_a rename to tbl_b"))
+      assert(statement.execute("drop table tbl_b"))
+    })
+  }
+
+  test("execute statement - create/alter/drop view") {
+    // TODO: validate table results after FLINK-25558 is resolved
+    withMultipleConnectionJdbcStatement()({ statement =>
+      statement.executeQuery("create view view_a as select 1")
+      assert(statement.execute("alter view view_a rename to view_b"))
+      assert(statement.execute("drop view view_b"))
+    })
+  }
+
+  ignore("execute statement - insert into") {
+    // TODO: ignore temporally due to KYUUBI #1704
+    withMultipleConnectionJdbcStatement()({ statement =>
+      statement.executeQuery("create table tbl_a (a int) with ('connector' = 'blackhole')")
+      statement.executeUpdate("insert into tbl_a select 1")
+    })
+  }
 }

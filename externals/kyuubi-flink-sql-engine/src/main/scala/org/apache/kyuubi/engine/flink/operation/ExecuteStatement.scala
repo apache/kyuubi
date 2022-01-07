@@ -17,19 +17,19 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import java.util
 import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService, TimeUnit}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import com.google.common.annotations.VisibleForTesting
-import org.apache.flink.table.client.gateway.{Executor, ResultDescriptor, TypedResult}
-import org.apache.flink.table.operations.QueryOperation
+import org.apache.flink.table.api.ResultKind
+import org.apache.flink.table.client.gateway.{Executor, TypedResult}
+import org.apache.flink.table.operations.{Operation, QueryOperation}
 import org.apache.flink.types.Row
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.engine.flink.result.{ColumnInfo, ResultKind, ResultSet}
+import org.apache.kyuubi.engine.flink.result.ResultSet
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -44,10 +44,6 @@ class ExecuteStatement(
 
   private val operationLog: OperationLog =
     OperationLog.createOperationLog(session, getHandle)
-
-  private var resultDescriptor: ResultDescriptor = _
-
-  private var columnInfos: util.List[ColumnInfo] = _
 
   private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
 
@@ -101,44 +97,53 @@ class ExecuteStatement(
     try {
       setState(OperationState.RUNNING)
 
-      columnInfos = new util.ArrayList[ColumnInfo]
-
       val operation = executor.parseStatement(sessionId, statement)
-      resultDescriptor = executor.executeQuery(sessionId, operation.asInstanceOf[QueryOperation])
-      resultDescriptor.getResultSchema.getColumns.asScala.foreach { column =>
-        columnInfos.add(ColumnInfo.create(column.getName, column.getDataType.getLogicalType))
+      operation match {
+        case queryOperation: QueryOperation => runQueryOperation(queryOperation)
+        case operation: Operation => runOperation(operation)
       }
-
-      val resultID = resultDescriptor.getResultId
-
-      val rows = new ArrayBuffer[Row]()
-      var loop = true
-      while (loop) {
-        Thread.sleep(50) // slow the processing down
-
-        val result = executor.snapshotResult(sessionId, resultID, 2)
-        result.getType match {
-          case TypedResult.ResultType.PAYLOAD =>
-            rows.clear()
-            (1 to result.getPayload).foreach { page =>
-              rows ++= executor.retrieveResultPage(resultID, page).asScala
-            }
-          case TypedResult.ResultType.EOS => loop = false
-          case TypedResult.ResultType.EMPTY =>
-        }
-      }
-
-      resultSet = ResultSet.builder
-        .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
-        .columns(columnInfos)
-        .data(rows.toArray[Row])
-        .build
-      setState(OperationState.FINISHED)
     } catch {
       onError(cancel = true)
     } finally {
       statementTimeoutCleaner.foreach(_.shutdown())
     }
+  }
+
+  private def runQueryOperation(operation: QueryOperation): Unit = {
+    val resultDescriptor = executor.executeQuery(sessionId, operation)
+
+    val resultID = resultDescriptor.getResultId
+
+    val rows = new ArrayBuffer[Row]()
+    var loop = true
+    while (loop) {
+      Thread.sleep(50) // slow the processing down
+
+      val result = executor.snapshotResult(sessionId, resultID, 2)
+      result.getType match {
+        case TypedResult.ResultType.PAYLOAD =>
+          rows.clear()
+          (1 to result.getPayload).foreach { page =>
+            rows ++= executor.retrieveResultPage(resultID, page).asScala
+          }
+        case TypedResult.ResultType.EOS => loop = false
+        case TypedResult.ResultType.EMPTY =>
+      }
+    }
+
+    resultSet = ResultSet.builder
+      .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+      .columns(resultDescriptor.getResultSchema.getColumns)
+      .data(rows.toArray[Row])
+      .build
+    setState(OperationState.FINISHED)
+  }
+
+  private def runOperation(operation: Operation): Unit = {
+    val result = executor.executeOperation(sessionId, operation)
+    result.await()
+    resultSet = ResultSet.fromTableResult(result)
+    setState(OperationState.FINISHED)
   }
 
   private def addTimeoutMonitor(): Unit = {

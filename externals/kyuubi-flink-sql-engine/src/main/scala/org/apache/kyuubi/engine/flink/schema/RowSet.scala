@@ -24,11 +24,12 @@ import java.util.Collections
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
+import org.apache.flink.table.catalog.Column
 import org.apache.flink.table.types.logical.{DecimalType, _}
 import org.apache.flink.types.Row
 import org.apache.hive.service.rpc.thrift._
 
-import org.apache.kyuubi.engine.flink.result.{ColumnInfo, ResultSet}
+import org.apache.kyuubi.engine.flink.result.ResultSet
 
 object RowSet {
 
@@ -58,7 +59,7 @@ object RowSet {
     val size = rows.length
     val tRowSet = new TRowSet(0, new util.ArrayList[TRow](size))
     resultSet.getColumns.asScala.zipWithIndex.foreach { case (filed, i) =>
-      val tColumn = toTColumn(rows, i, filed.getLogicalType)
+      val tColumn = toTColumn(rows, i, filed.getDataType.getLogicalType)
       tRowSet.addToColumns(tColumn)
     }
     tRowSet
@@ -69,7 +70,7 @@ object RowSet {
       row: Row,
       resultSet: ResultSet): TColumnValue = {
 
-    val logicalType = resultSet.getColumns.get(ordinal).getLogicalType
+    val logicalType = resultSet.getColumns.get(ordinal).getDataType.getLogicalType
 
     logicalType match {
       case _: BooleanType =>
@@ -184,11 +185,11 @@ object RowSet {
     ret
   }
 
-  def toTColumnDesc(field: ColumnInfo, pos: Int): TColumnDesc = {
+  def toTColumnDesc(field: Column, pos: Int): TColumnDesc = {
     val tColumnDesc = new TColumnDesc()
     tColumnDesc.setColumnName(field.getName)
-    tColumnDesc.setTypeDesc(toTTypeDesc(field.getLogicalType))
-    tColumnDesc.setComment("")
+    tColumnDesc.setTypeDesc(toTTypeDesc(field.getDataType.getLogicalType))
+    tColumnDesc.setComment(field.getComment.orElse(""))
     tColumnDesc.setPosition(pos)
     tColumnDesc
   }
