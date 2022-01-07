@@ -19,6 +19,7 @@ package org.apache.kyuubi.event.logger.elasticsearch
 
 import java.io.Closeable
 
+import com.google.common.annotations.VisibleForTesting
 import org.apache.http.HttpHost
 import org.apache.http.auth.{AuthScope, UsernamePasswordCredentials}
 import org.apache.http.client.CredentialsProvider
@@ -51,6 +52,9 @@ class ElasticSearchClient(client: RestClient, sniffer: Sniffer) extends Closeabl
     sniffer.close()
     client.close()
   }
+
+  @VisibleForTesting
+  private[logger] def getClient(): RestClient = client
 
 }
 
