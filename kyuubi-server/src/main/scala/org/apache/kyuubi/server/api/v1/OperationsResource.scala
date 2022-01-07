@@ -26,7 +26,7 @@ import scala.util.control.NonFatal
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.apache.hive.service.rpc.thrift.TTypeQualifierValue
+import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.events.KyuubiOperationEvent
@@ -144,6 +144,53 @@ private[v1] class OperationsResource extends ApiRequestContext {
       case NonFatal(_) =>
         throw new NotFoundException(
           s"Error getting operation log for operation handle $operationHandleStr")
+    }
+  }
+
+  @ApiResponse(
+    responseCode = "200",
+    content = Array(new Content(
+      mediaType = MediaType.APPLICATION_JSON)),
+    description =
+      "get next row set")
+  @GET
+  @Path("{operationHandle}/rowset")
+  def getNextRowSet(
+      @PathParam("operationHandle") operationHandleStr: String,
+      @QueryParam("maxrows") maxRows: Int,
+      @QueryParam("fetchorientation") fetchOrientation: String): ResultRowSet = {
+    try {
+      val rowSet = fe.be.sessionManager.operationManager.getOperationNextRowSet(
+        parseOperationHandle(operationHandleStr),
+        FetchOrientation.withName(fetchOrientation),
+        maxRows)
+      val rows = rowSet.getRows.asScala.map(i => {
+        Row(i.getColVals.asScala.map(i => {
+          Field(
+            i.getSetField.name(),
+            i.getSetField match {
+              case TColumnValue._Fields.STRING_VAL =>
+                i.getStringVal.getFieldValue(TStringValue._Fields.VALUE)
+              case TColumnValue._Fields.BOOL_VAL =>
+                i.getBoolVal.getFieldValue(TBoolValue._Fields.VALUE)
+              case TColumnValue._Fields.BYTE_VAL =>
+                i.getByteVal.getFieldValue(TByteValue._Fields.VALUE)
+              case TColumnValue._Fields.DOUBLE_VAL =>
+                i.getDoubleVal.getFieldValue(TDoubleValue._Fields.VALUE)
+              case TColumnValue._Fields.I16_VAL =>
+                i.getI16Val.getFieldValue(TI16Value._Fields.VALUE)
+              case TColumnValue._Fields.I32_VAL =>
+                i.getI32Val.getFieldValue(TI32Value._Fields.VALUE)
+              case TColumnValue._Fields.I64_VAL =>
+                i.getI64Val.getFieldValue(TI64Value._Fields.VALUE)
+            })
+        }))
+      })
+      ResultRowSet(rows, rows.size)
+    } catch {
+      case NonFatal(_) =>
+        throw new NotFoundException(
+          s"Error getting next row set for operation handle $operationHandleStr")
     }
   }
 }
