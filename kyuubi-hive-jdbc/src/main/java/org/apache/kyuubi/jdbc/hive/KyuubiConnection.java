@@ -235,7 +235,7 @@ public class KyuubiConnection implements java.sql.Connection, KyuubiLoggable {
   public List<String> getExecLog() throws SQLException, ClosedOrCancelledException {
     if (isClosed()) {
       throw new ClosedOrCancelledException(
-          "Method getEngineLog() failed. The " + "connection has been closed.");
+          "Method getExecLog() failed. The " + "connection has been closed.");
     }
 
     if (launchEngineOpHandle == null) {
