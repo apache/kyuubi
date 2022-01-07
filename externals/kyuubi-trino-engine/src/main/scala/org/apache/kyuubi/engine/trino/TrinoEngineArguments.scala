@@ -15,13 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine
+package org.apache.kyuubi.engine.trino
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
-
-  val SPARK_SQL, FLINK_SQL, TRINO = Value
-}
+case class TrinoEngineArguments(
+    user: String = null,
+    server: String = null,
+    catalog: String = null,
+    schema: String = null,
+    configs: Map[String, String] = Map())
