@@ -152,7 +152,7 @@ private[v1] class OperationsResource extends ApiRequestContext {
     content = Array(new Content(
       mediaType = MediaType.APPLICATION_JSON)),
     description =
-      "get next row set")
+      "get result row set")
   @GET
   @Path("{operationHandle}/rowset")
   def getNextRowSet(
@@ -190,7 +190,7 @@ private[v1] class OperationsResource extends ApiRequestContext {
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(
-          s"Error getting next row set for operation handle $operationHandleStr")
+          s"Error getting result row set for operation handle $operationHandleStr")
     }
   }
 }

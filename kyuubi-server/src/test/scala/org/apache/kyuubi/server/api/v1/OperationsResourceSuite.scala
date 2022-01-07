@@ -100,7 +100,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     assert(logRowSet.rowCount === 10)
   }
 
-  test("test get next row set") {
+  test("test get result row set") {
     val opHandleStr =
       getOpHandleStr(OperationType.EXECUTE_STATEMENT, "select \"test\", 1, 0.32d, true")
     checkOpState(opHandleStr, FINISHED)
