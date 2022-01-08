@@ -24,7 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.metrics.MetricsConf
+import org.apache.kyuubi.metrics.{MetricsConf, MetricsConstants}
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 class BackendServiceTimeMetricSuite extends WithKyuubiServer with HiveJDBCTestHelper {
@@ -47,23 +47,23 @@ class BackendServiceTimeMetricSuite extends WithKyuubiServer with HiveJDBCTestHe
       Thread.sleep(Duration.ofMillis(111).toMillis)
 
       val res1 = objMapper.readTree(Paths.get(reportPath.toString, "report.json").toFile)
-      assert(res1.has("histograms"))
-      val histograms1 = res1.get("histograms")
+      assert(res1.has("timers"))
+      val histograms1 = res1.get("timers")
       assert(
-        histograms1.get("kyuubi.backend_service.execute_statement_ms").get("count").asInt() == 1)
+        histograms1.get(MetricsConstants.BS_EXECUTE_STATEMENT).get("count").asInt() == 1)
       assert(
-        histograms1.get("kyuubi.backend_service.execute_statement_ms").get("mean").asDouble() > 0)
+        histograms1.get(MetricsConstants.BS_EXECUTE_STATEMENT).get("mean").asDouble() > 0)
 
       statement.execute("show tables")
       Thread.sleep(Duration.ofMillis(111).toMillis)
 
       val res2 = objMapper.readTree(Paths.get(reportPath.toString, "report.json").toFile)
-      val histograms2 = res2.get("histograms")
+      val histograms2 = res2.get("timers")
       assert(
-        histograms2.get("kyuubi.backend_service.open_session_ms").get("count").asInt() == 1)
+        histograms2.get(MetricsConstants.BS_OPEN_SESSION).get("count").asInt() == 1)
       assert(
-        histograms2.get("kyuubi.backend_service.open_session_ms").get("min").asInt() > 0)
-      val execStatementNode2 = histograms2.get("kyuubi.backend_service.execute_statement_ms")
+        histograms2.get(MetricsConstants.BS_OPEN_SESSION).get("min").asInt() > 0)
+      val execStatementNode2 = histograms2.get(MetricsConstants.BS_EXECUTE_STATEMENT)
       assert(execStatementNode2.get("count").asInt() == 2)
       assert(
         execStatementNode2.get("max").asDouble() >= execStatementNode2.get("mean").asDouble() &&

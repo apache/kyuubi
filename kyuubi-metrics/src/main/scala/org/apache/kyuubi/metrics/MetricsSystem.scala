@@ -18,6 +18,7 @@
 package org.apache.kyuubi.metrics
 
 import java.lang.management.ManagementFactory
+import java.util.concurrent.TimeUnit
 
 import com.codahale.metrics.{Gauge, MetricRegistry}
 import com.codahale.metrics.jvm._
@@ -45,6 +46,11 @@ class MetricsSystem extends CompositeService("MetricsSystem") {
   def updateHistogram(key: String, value: Long): Unit = {
     val histogram = registry.histogram(key)
     histogram.update(value)
+  }
+
+  def updateTimer(key: String, duration: Long, unit: TimeUnit): Unit = {
+    val timer = registry.timer(key)
+    timer.update(duration, unit)
   }
 
   def registerGauge[T](name: String, value: => T, default: T): Unit = {
@@ -89,4 +95,16 @@ object MetricsSystem {
   def tracing[T](func: MetricsSystem => T): Unit = {
     maybeSystem.foreach(func(_))
   }
+
+  @throws[Exception]
+  def timerTracing[T](name: String)(f: => T): T = {
+    val startTime = System.nanoTime()
+    try {
+      f
+    } finally {
+      MetricsSystem.tracing(
+        _.updateTimer(name, System.nanoTime() - startTime, TimeUnit.NANOSECONDS))
+    }
+  }
+
 }
