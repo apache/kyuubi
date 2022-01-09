@@ -24,7 +24,7 @@ import java.util.Collections
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
-import org.apache.flink.table.types.logical._
+import org.apache.flink.table.types.logical.{DecimalType, _}
 import org.apache.flink.types.Row
 import org.apache.hive.service.rpc.thrift._
 
@@ -148,8 +148,17 @@ object RowSet {
       case _: CharType =>
         val values = getOrSetAsNull[String](rows, ordinal, nulls, "")
         TColumn.stringVal(new TStringColumn(values, nulls))
+
       case _ =>
-        null
+        val values = rows.zipWithIndex.toList.map { case (row, i) =>
+          nulls.set(i, row.getField(ordinal) == null)
+          if (row.getField(ordinal) == null) {
+            ""
+          } else {
+            toHiveString((row.getField(ordinal), logicalType))
+          }
+        }.asJava
+        TColumn.stringVal(new TStringColumn(values, nulls))
     }
   }
 
@@ -168,7 +177,7 @@ object RowSet {
         nulls.set(idx, true)
         ret.add(idx, defaultVal)
       } else {
-        ret.add(idx, row.getField(ordinal).asInstanceOf[T])
+        ret.add(idx, row.getFieldAs[T](ordinal))
       }
       idx += 1
     }
@@ -212,6 +221,25 @@ object RowSet {
     case _: DoubleType => TTypeId.DOUBLE_TYPE
     case _: VarCharType => TTypeId.STRING_TYPE
     case _: CharType => TTypeId.STRING_TYPE
-    case _ => null
+    case _: DecimalType => TTypeId.DECIMAL_TYPE
+    case other =>
+      throw new IllegalArgumentException(s"Unrecognized type name: ${other.asSummaryString()}")
+  }
+
+  /**
+   * A simpler impl of Flink's toHiveString
+   */
+  def toHiveString(dataWithType: (Any, LogicalType)): String = {
+    dataWithType match {
+      case (null, _) =>
+        // Only match nulls in nested type values
+        "null"
+
+      case (decimal: java.math.BigDecimal, _: DecimalType) =>
+        decimal.toPlainString
+
+      case (other, _) =>
+        other.toString
+    }
   }
 }
