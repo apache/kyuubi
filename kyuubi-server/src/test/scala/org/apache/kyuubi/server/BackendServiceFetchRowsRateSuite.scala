@@ -55,7 +55,7 @@ class BackendServiceFetchRowsRateSuite extends WithKyuubiServer with HiveJDBCTes
 
       assert(res1.has("meters"))
       val meters1 = res1.get("meters")
-      val logMeter1 = meters1.get(MetricsConstants.FETCH_LOG_RATE)
+      val logMeter1 = meters1.get(MetricsConstants.FETCH_LOG_ROWS_RATE)
       val logRows1 = logMeter1.get("count").asInt()
       assert(logRows1 > 0)
 
@@ -65,8 +65,8 @@ class BackendServiceFetchRowsRateSuite extends WithKyuubiServer with HiveJDBCTes
 
       val meters2 =
         objMapper.readTree(Paths.get(reportPath.toString, "report.json").toFile).get("meters")
-      assert(meters2.get(MetricsConstants.FETCH_RESULT_RATE).get("count").asInt() == 2)
-      assert(meters2.get(MetricsConstants.FETCH_LOG_RATE).get("count").asInt() >= logRows1)
+      assert(meters2.get(MetricsConstants.FETCH_RESULT_ROWS_RATE).get("count").asInt() == 2)
+      assert(meters2.get(MetricsConstants.FETCH_LOG_ROWS_RATE).get("count").asInt() >= logRows1)
     }
   }
 
