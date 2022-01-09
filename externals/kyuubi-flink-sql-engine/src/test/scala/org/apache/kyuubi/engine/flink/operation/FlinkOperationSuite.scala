@@ -74,4 +74,20 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       assert(resultSet.getString(1) === "tmp.hello")
     }
   }
+
+  test("execute statement - select decimal") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("SELECT 1.2BD, 1.23BD ")
+      assert(resultSet.next())
+      assert(resultSet.getBigDecimal(1) === java.math.BigDecimal.valueOf(1.2))
+      assert(resultSet.getBigDecimal(2) === java.math.BigDecimal.valueOf(1.23))
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.DECIMAL)
+      assert(metaData.getColumnType(2) === java.sql.Types.DECIMAL)
+      assert(metaData.getPrecision(1) == 2)
+      assert(metaData.getPrecision(2) == 3)
+      assert(metaData.getScale(1) == 1)
+      assert(metaData.getScale(2) == 2)
+    }
+  }
 }
