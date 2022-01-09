@@ -48,7 +48,8 @@ trait BackendServiceFetchRowsRate extends BackendService {
         rowSet.getRowsSize
       }
     MetricsSystem.tracing(_.markMeter(
-      if (fetchLog) MetricsConstants.FETCH_LOG_RATE else MetricsConstants.FETCH_RESULT_RATE,
+      if (fetchLog) MetricsConstants.FETCH_LOG_ROWS_RATE
+      else MetricsConstants.FETCH_RESULT_ROWS_RATE,
       rowsSize))
     rowSet
   }
