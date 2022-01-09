@@ -31,6 +31,7 @@ trait BackendServiceFetchRowsRate extends BackendService {
       maxRows: Int,
       fetchLog: Boolean): TRowSet = {
     val rowSet = super.fetchResults(operationHandle, orientation, maxRows, fetchLog)
+    if (rowSet == null) return rowSet
     val rowsSize =
       if (rowSet.getColumnsSize > 0) {
         rowSet.getColumns.get(0).getFieldValue match {
