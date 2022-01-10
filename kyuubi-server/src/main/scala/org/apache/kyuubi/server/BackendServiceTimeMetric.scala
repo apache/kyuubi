@@ -27,30 +27,19 @@ import org.apache.kyuubi.session.SessionHandle
 
 trait BackendServiceTimeMetric extends BackendService {
 
-  @throws[Exception]
-  private def timeMetric[T](name: String)(f: => T): T = {
-    val startTime = System.currentTimeMillis()
-    try {
-      f
-    } finally {
-      MetricsSystem.tracing(
-        _.updateHistogram(name, System.currentTimeMillis() - startTime))
-    }
-  }
-
   abstract override def openSession(
       protocol: TProtocolVersion,
       user: String,
       password: String,
       ipAddr: String,
       configs: Map[String, String]): SessionHandle = {
-    timeMetric(MetricsConstants.OPEN_SESSION_MS) {
+    MetricsSystem.timerTracing(MetricsConstants.BS_OPEN_SESSION) {
       super.openSession(protocol, user, password, ipAddr, configs)
     }
   }
 
   abstract override def closeSession(sessionHandle: SessionHandle): Unit = {
-    timeMetric(MetricsConstants.CLOSE_SESSION_MS) {
+    MetricsSystem.timerTracing(MetricsConstants.BS_CLOSE_SESSION) {
       super.closeSession(sessionHandle)
     }
   }
@@ -58,7 +47,7 @@ trait BackendServiceTimeMetric extends BackendService {
   abstract override def getInfo(
       sessionHandle: SessionHandle,
       infoType: TGetInfoType): TGetInfoValue = {
-    timeMetric(MetricsConstants.GET_INFO_MS) {
+    MetricsSystem.timerTracing(MetricsConstants.BS_GET_INFO) {
       super.getInfo(sessionHandle, infoType)
     }
   }
@@ -68,19 +57,19 @@ trait BackendServiceTimeMetric extends BackendService {
       statement: String,
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle = {
-    timeMetric(MetricsConstants.EXECUTE_STATEMENT_MS) {
+    MetricsSystem.timerTracing(MetricsConstants.BS_EXECUTE_STATEMENT) {
       super.executeStatement(sessionHandle, statement, runAsync, queryTimeout)
     }
   }
 
   abstract override def getTypeInfo(sessionHandle: SessionHandle): OperationHandle = {
-    timeMetric(MetricsConstants.GET_TYPE_INFO_MS) {
+    MetricsSystem.timerTracing(MetricsConstants.BS_GET_TYPE_INFO) {
       super.getTypeInfo(sessionHandle)
     }
   }
 
   abstract override def getCatalogs(sessionHandle: SessionHandle): OperationHandle = {
-    timeMetric(MetricsConstants.GET_CATALOGS_MS) {
+    MetricsSystem.timerTracing(MetricsConstants.BS_GET_CATALOGS) {
       super.getCatalogs(sessionHandle)
     }
   }
@@ -89,7 +78,7 @@ trait BackendServiceTimeMetric extends BackendService {
       sessionHandle: SessionHandle,
       catalogName: String,
       schemaName: String): OperationHandle = {
-    timeMetric(MetricsConstants.GET_SCHEMAS_MS) {
+    MetricsSystem.timerTracing(MetricsConstants.BS_GET_SCHEMAS) {
       super.getSchemas(sessionHandle, catalogName, schemaName)
     }
   }
@@ -100,13 +89,13 @@ trait BackendServiceTimeMetric extends BackendService {
       schemaName: String,
       tableName: String,
       tableTypes: java.util.List[String]): OperationHandle = {
-    timeMetric(MetricsConstants.GET_TABLES_MS) {
+    MetricsSystem.timerTracing(MetricsConstants.BS_GET_TABLES) {
       super.getTables(sessionHandle, catalogName, schemaName, tableName, tableTypes)
     }
   }
 
   abstract override def getTableTypes(sessionHandle: SessionHandle): OperationHandle = {
-    timeMetric(MetricsConstants.GET_TABLE_TYPES_MS) {
+    MetricsSystem.timerTracing(MetricsConstants.BS_GET_TABLE_TYPES) {
       super.getTableTypes(sessionHandle)
     }
   }
@@ -117,7 +106,7 @@ trait BackendServiceTimeMetric extends BackendService {
       schemaName: String,
       tableName: String,
       columnName: String): OperationHandle = {
-    timeMetric(MetricsConstants.GET_COLUMNS_MS) {
+    MetricsSystem.timerTracing(MetricsConstants.BS_GET_COLUMNS) {
       super.getColumns(sessionHandle, catalogName, schemaName, tableName, columnName)
     }
   }
@@ -127,31 +116,31 @@ trait BackendServiceTimeMetric extends BackendService {
       catalogName: String,
       schemaName: String,
       functionName: String): OperationHandle = {
-    timeMetric(MetricsConstants.GET_FUNCTIONS_MS) {
+    MetricsSystem.timerTracing(MetricsConstants.BS_GET_FUNCTIONS) {
       super.getFunctions(sessionHandle, catalogName, schemaName, functionName)
     }
   }
 
   abstract override def getOperationStatus(operationHandle: OperationHandle): OperationStatus = {
-    timeMetric(MetricsConstants.GET_OPERATION_STATUS_MS) {
+    MetricsSystem.timerTracing(MetricsConstants.BS_GET_OPERATION_STATUS) {
       super.getOperationStatus(operationHandle)
     }
   }
 
   abstract override def cancelOperation(operationHandle: OperationHandle): Unit = {
-    timeMetric(MetricsConstants.CANCEL_OPERATION_MS) {
+    MetricsSystem.timerTracing(MetricsConstants.BS_CANCEL_OPERATION) {
       super.cancelOperation(operationHandle)
     }
   }
 
   abstract override def closeOperation(operationHandle: OperationHandle): Unit = {
-    timeMetric(MetricsConstants.CLOSE_OPERATION_MS) {
+    MetricsSystem.timerTracing(MetricsConstants.BS_CLOSE_OPERATION) {
       super.closeOperation(operationHandle)
     }
   }
 
   abstract override def getResultSetMetadata(operationHandle: OperationHandle): TTableSchema = {
-    timeMetric(MetricsConstants.GET_RESULT_SET_METADATA_MS) {
+    MetricsSystem.timerTracing(MetricsConstants.BS_GET_RESULT_SET_METADATA) {
       super.getResultSetMetadata(operationHandle)
     }
   }
@@ -161,7 +150,7 @@ trait BackendServiceTimeMetric extends BackendService {
       orientation: FetchOrientation,
       maxRows: Int,
       fetchLog: Boolean): TRowSet = {
-    timeMetric(MetricsConstants.FETCH_RESULTS_MS) {
+    MetricsSystem.timerTracing(MetricsConstants.BS_FETCH_RESULTS) {
       super.fetchResults(operationHandle, orientation, maxRows, fetchLog)
     }
   }
