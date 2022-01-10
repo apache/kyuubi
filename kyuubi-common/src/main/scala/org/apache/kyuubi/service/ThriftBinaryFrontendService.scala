@@ -261,7 +261,7 @@ abstract class ThriftBinaryFrontendService(name: String)
       val sessionHandle = SessionHandle(req.getSessionHandle)
       val statement = req.getStatement
       val runAsync = req.isRunAsync
-      val confOverlay = req.getConfOverlay
+      val confOverlay = Option(req.getConfOverlay).getOrElse(Map.empty.asJava)
       val queryTimeout = req.getQueryTimeout
       val operationHandle = be.executeStatement(
         sessionHandle,
