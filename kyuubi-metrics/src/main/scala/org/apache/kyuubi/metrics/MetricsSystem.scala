@@ -102,8 +102,7 @@ object MetricsSystem {
     try {
       f
     } finally {
-      MetricsSystem.tracing(
-        _.updateTimer(name, System.nanoTime() - startTime, TimeUnit.NANOSECONDS))
+      tracing(_.updateTimer(name, System.nanoTime() - startTime, TimeUnit.NANOSECONDS))
     }
   }
 
