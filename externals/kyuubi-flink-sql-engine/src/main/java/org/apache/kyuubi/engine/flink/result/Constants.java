@@ -32,8 +32,6 @@ public class Constants {
 
   public static final String SHOW_CURRENT_CATALOG_RESULT = "catalog";
 
-  public static final String SHOW_CATALOGS_RESULT = "catalogs";
-
   public static final String SHOW_CURRENT_DATABASE_RESULT = "database";
 
   public static final String SHOW_DATABASES_RESULT = "databases";
