@@ -22,8 +22,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
-import scala.collection.mutable.ArrayBuffer
-
 import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Logging
@@ -41,6 +39,22 @@ class TrinoProcessBuilder(
     override val proxyUser: String,
     override val conf: KyuubiConf,
     val extraEngineLog: Option[OperationLog] = None) extends ProcBuilder with Logging {
+
+  private[trino] lazy val trinoConf: Map[String, String] = {
+    assert(
+      conf.get(ENGINE_TRINO_CONNECTION_URL).isDefined,
+      throw KyuubiSQLException(
+        s"Trino server url can not be null! Please set ${ENGINE_TRINO_CONNECTION_URL.key}"))
+    assert(
+      conf.get(ENGINE_TRINO_CONNECTION_CATALOG).isDefined,
+      throw KyuubiSQLException(
+        s"Trino default catalog can not be null!" +
+          s" Please set ${ENGINE_TRINO_CONNECTION_CATALOG.key}"))
+
+    conf.getAll.filter { case (k, v) =>
+      !k.startsWith("spark.") && !k.startsWith("hadoop.")
+    } + (USER -> proxyUser)
+  }
 
   override protected val executable: String = {
     val trinoHomeOpt = env.get("TRINO_ENGINE_HOME").orElse {
@@ -94,44 +108,11 @@ class TrinoProcessBuilder(
   override protected def mainClass: String = "org.apache.kyuubi.engine.trino.TrinoSqlEngine"
 
   override protected def childProcEnv: Map[String, String] = conf.getEnvs +
-    ("TRINO_ENGINE_JAR" -> mainResource.get)
+    ("TRINO_ENGINE_JAR" -> mainResource.get) +
+    ("TRINO_ENGINE_DYNAMIC_ARGS" ->
+      trinoConf.map { case (k, v) => s"-D$k=$v" }.mkString(" "))
 
-  override protected def commands: Array[String] = {
-    val buffer = new ArrayBuffer[String]()
-    buffer += executable
-
-    buffer += USER
-    buffer += proxyUser
-
-    val server = conf.get(ENGINE_TRINO_CONNECTION_URL)
-    val catalog = conf.get(ENGINE_TRINO_CONNECTION_CATALOG)
-
-    buffer += SERVER
-    buffer += server.getOrElse(throw KyuubiSQLException(
-      s"Trino server url can not be null! Please set ${ENGINE_TRINO_CONNECTION_URL.key}"))
-
-    buffer += CATALOG
-    buffer += catalog.getOrElse(throw KyuubiSQLException(
-      s"Trino default catalog can not be null! Please set ${ENGINE_TRINO_CONNECTION_CATALOG.key}"))
-
-    val allConf =
-      conf.getAll - ENGINE_TRINO_CONNECTION_URL.key - ENGINE_TRINO_CONNECTION_CATALOG.key
-
-    /**
-     * Converts kyuubi configs to configs that Trino could identify.
-     * - If the key is start with `spark.` or `hadoop.`, ignore
-     * - Otherwise, the key will be added a `trino.` prefix
-     */
-    allConf.filter { case (k, v) =>
-      !k.startsWith("spark.") && !k.startsWith("hadoop.")
-    }.foreach { case (k, v) =>
-      val newKey = "trino." + k
-      buffer += CONF
-      buffer += s"$newKey=$v"
-    }
-
-    buffer.toArray
-  }
+  override protected def commands: Array[String] = Array(executable)
 
   override protected val workingDir: Path = {
     env.get("KYUUBI_WORK_DIR_ROOT").map { root =>
@@ -166,10 +147,7 @@ class TrinoProcessBuilder(
 }
 
 object TrinoProcessBuilder {
-  final private val CONF = "--conf"
-  final private val SERVER = "--server"
-  final private val USER = "--user"
-  final private val CATALOG = "--catalog"
+  final private val USER = "kyuubi.trino.user"
 
   final private val TRINO_ENGINE_BINARY_FILE = "trino-engine.sh"
 }

@@ -17,46 +17,19 @@
 
 package org.apache.kyuubi.engine.trino
 
-import scopt.OptionParser
-
 import org.apache.kyuubi.Logging
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.util.SignalRegister
 
 object TrinoSqlEngine extends Logging {
+
+  val kyuubiConf: KyuubiConf = KyuubiConf()
+
   def main(args: Array[String]): Unit = {
     SignalRegister.registerLogger(logger)
 
-    val parser = new OptionParser[TrinoEngineArguments]("trino") {
-      opt[String]("user")
-        .action((v, c) => c.copy(user = v))
-      opt[String]("server")
-        .action((v, c) => c.copy(server = v))
-      opt[String]("catalog")
-        .action((v, c) => c.copy(catalog = v))
-      opt[String]("schema")
-        .action((v, c) => c.copy(schema = v))
-      opt[String]("conf")
-        .action { (v, c) =>
-          val (key, value) = v.split("=") match {
-            case Array(key, value) => (key, value)
-          }
-          val newConfigs = c.configs + (key -> value)
-          c.copy(configs = newConfigs)
-        }
-        .maxOccurs(100)
-    }
-
-    parser.parse(args, TrinoEngineArguments()) match {
-      case Some(params) => runProgram(params)
-      case _ =>
-        error("Parse parameters failed!")
-        sys.exit(1)
-    }
-  }
-
-  def runProgram(args: TrinoEngineArguments): Unit = {
     // TODO start engine
     warn("Trino engine under development...")
-    info(args)
+    info(kyuubiConf.getAll)
   }
 }

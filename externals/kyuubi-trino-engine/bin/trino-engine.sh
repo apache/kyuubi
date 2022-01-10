@@ -30,7 +30,7 @@ else
 fi
 
 if [ -n "$TRINO_CLIENT_JAR" ]; then
-  exec $RUNNER -cp ${TRINO_CLIENT_JAR} org.apache.kyuubi.engine.trino.TrinoSqlEngine "$@"
+  exec $RUNNER ${TRINO_ENGINE_DYNAMIC_ARGS} -cp ${TRINO_CLIENT_JAR} org.apache.kyuubi.engine.trino.TrinoSqlEngine "$@"
 else
   (>&2 echo "[ERROR] TRINO Engine JAR file 'kyuubi-trino-engine*.jar' should be located in $TRINO_ENGINE_HOME/jars.")
   exit 1
