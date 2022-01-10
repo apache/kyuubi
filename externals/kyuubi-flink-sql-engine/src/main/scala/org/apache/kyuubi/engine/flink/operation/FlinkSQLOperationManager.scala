@@ -27,6 +27,7 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
+      confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val op = new ExecuteStatement(session, statement, runAsync, queryTimeout)

@@ -48,10 +48,12 @@ class SparkSQLOperationManager private (name: String) extends OperationManager(n
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
+      confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val spark = session.asInstanceOf[SparkSessionImpl].spark
-    val lang = spark.conf.get(OPERATION_LANGUAGE.key, operationLanguageDefault)
+    val lang = confOverlay.get(OPERATION_LANGUAGE.key)
+      .getOrElse(spark.conf.get(OPERATION_LANGUAGE.key, operationLanguageDefault))
     val operation =
       OperationLanguages.withName(lang.toUpperCase(Locale.ROOT)) match {
         case OperationLanguages.SQL =>

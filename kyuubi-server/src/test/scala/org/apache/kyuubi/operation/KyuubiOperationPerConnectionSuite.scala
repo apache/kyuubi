@@ -20,7 +20,9 @@ package org.apache.kyuubi.operation
 import java.sql.SQLException
 import java.util.Properties
 
-import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TGetOperationStatusReq, TOperationState, TStatusCode}
+import scala.collection.JavaConverters._
+
+import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TGetOperationStatusReq, TOperationState, TStatusCode}
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.{Utils, WithKyuubiServer}
@@ -156,6 +158,27 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       val resultSet = stmt.getResultSet
       assert(resultSet.next())
       assert(resultSet.getString(1).nonEmpty)
+    }
+  }
+
+  test("support to specify OPERATION_LANGUAGE with confOverlay") {
+    withSessionHandle { (client, handle) =>
+      val executeStmtReq = new TExecuteStatementReq()
+      executeStmtReq.setStatement("""spark.sql("SET kyuubi.operation.language").show(false)""")
+      executeStmtReq.setSessionHandle(handle)
+      executeStmtReq.setRunAsync(false)
+      executeStmtReq.setConfOverlay(Map(KyuubiConf.OPERATION_LANGUAGE.key -> "SCALA").asJava)
+      val executeStmtResp = client.ExecuteStatement(executeStmtReq)
+      assert(executeStmtResp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS)
+
+      val tFetchResultsReq = new TFetchResultsReq()
+      tFetchResultsReq.setOperationHandle(executeStmtResp.getOperationHandle)
+      tFetchResultsReq.setFetchType(0)
+      tFetchResultsReq.setMaxRows(10)
+      val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
+      val resultSet = tFetchResultsResp.getResults.getColumns.asScala
+      assert(resultSet.size == 1)
+      assert(resultSet.head.getStringVal.getValues.get(0).contains("SQL"))
     }
   }
 }

@@ -55,10 +55,11 @@ trait BackendServiceTimeMetric extends BackendService {
   abstract override def executeStatement(
       sessionHandle: SessionHandle,
       statement: String,
+      confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): OperationHandle = {
     MetricsSystem.timerTracing(MetricsConstants.BS_EXECUTE_STATEMENT) {
-      super.executeStatement(sessionHandle, statement, runAsync, queryTimeout)
+      super.executeStatement(sessionHandle, statement, confOverlay, runAsync, queryTimeout)
     }
   }
 

@@ -31,6 +31,7 @@ class NoopOperationManager extends OperationManager("noop") {
   override def newExecuteStatementOperation(
       session: Session,
       statement: String,
+      confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val operation =

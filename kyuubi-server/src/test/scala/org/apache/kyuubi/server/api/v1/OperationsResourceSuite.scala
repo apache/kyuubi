@@ -56,7 +56,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
       Map("testConfig" -> "testValue"))
     val sessionManager = fe.be.sessionManager
     val session = sessionManager.getSession(sessionHandle)
-    val op = new ExecuteStatement(session, "show tables", true, 3000)
+    val op = new ExecuteStatement(session, "show tables", Map.empty, true, 3000)
     op.setState(OperationState.RUNNING)
     sessionManager.operationManager.addOperation(op)
     val opHandleStr = s"${op.getHandle.identifier.publicId}|" +
@@ -125,7 +125,7 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
 
     val op = typ match {
       case OperationType.EXECUTE_STATEMENT =>
-        fe.be.executeStatement(sessionHandle, statement, runAsync = true, 3000)
+        fe.be.executeStatement(sessionHandle, statement, Map.empty, runAsync = true, 3000)
       case OperationType.GET_CATALOGS => fe.be.getCatalogs(sessionHandle)
     }
 

@@ -170,7 +170,12 @@ class MySQLCommandHandler(be: BackendService, execPool: ThreadPoolExecutor)
   private def beExecuteStatement(ctx: ChannelHandlerContext, sql: String): MySQLQueryResult = {
     try {
       val ssHandle = ctx.channel.attr(SESSION_HANDLE).get
-      val opHandle = be.executeStatement(ssHandle, sql, runAsync = false, queryTimeout = 0)
+      val opHandle = be.executeStatement(
+        ssHandle,
+        sql,
+        confOverlay = Map.empty,
+        runAsync = false,
+        queryTimeout = 0)
       val opStatus = be.getOperationStatus(opHandle)
       if (opStatus.state != FINISHED) {
         throw opStatus.exception

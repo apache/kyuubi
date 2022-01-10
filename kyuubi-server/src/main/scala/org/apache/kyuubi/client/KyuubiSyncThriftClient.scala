@@ -93,11 +93,13 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
 
   def executeStatement(
       statement: String,
+      confOverlay: Map[String, String],
       shouldRunAsync: Boolean,
       queryTimeout: Long): TOperationHandle = {
     val req = new TExecuteStatementReq()
     req.setSessionHandle(_remoteSessionHandle)
     req.setStatement(statement)
+    req.setConfOverlay(confOverlay.asJava)
     req.setRunAsync(shouldRunAsync)
     req.setQueryTimeout(queryTimeout)
     val resp = withLockAcquired(ExecuteStatement(req))
