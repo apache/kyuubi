@@ -37,7 +37,7 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
+            <artifactId>kyuubi-hive-jdbc</artifactId>
             <version>${project.version}</version>
         </dependency>
 
