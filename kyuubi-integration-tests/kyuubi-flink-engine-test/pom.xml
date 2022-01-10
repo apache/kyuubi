@@ -20,7 +20,7 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>kyuubi-integ-tests</artifactId>
+        <artifactId>kyuubi-integration-tests</artifactId>
         <groupId>org.apache.kyuubi</groupId>
         <version>1.5.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
@@ -28,7 +28,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>kyuubi-flink-engine-test_2.12</artifactId>
-    <name>Kyuubi IT Tests : Flink SQL Engine</name>
+    <name>Kyuubi Project IT Flink SQL</name>
 
     <dependencies>
 
