@@ -15,15 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.operation.flink
+package org.apache.kyuubi.it.flink.operation
 
-import org.apache.kyuubi.WithKyuubiServerAndFlinkLocalCluster
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_TYPE, FRONTEND_THRIFT_BINARY_BIND_PORT}
+import org.apache.kyuubi.it.flink.WithKyuubiServerAndFlinkMiniCluster
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
 
-class FlinkOperationSuite extends WithKyuubiServerAndFlinkLocalCluster with HiveJDBCTestHelper {
+class FlinkOperationSuite extends WithKyuubiServerAndFlinkMiniCluster with HiveJDBCTestHelper {
   override val conf: KyuubiConf = KyuubiConf()
     .set(ENGINE_TYPE, "FLINK_SQL")
     .set(FRONTEND_THRIFT_BINARY_BIND_PORT, 10019)
