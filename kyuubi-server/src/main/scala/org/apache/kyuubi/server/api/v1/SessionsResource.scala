@@ -159,6 +159,7 @@ private[v1] class SessionsResource extends ApiRequestContext {
       fe.be.executeStatement(
         parseSessionHandle(sessionHandleStr),
         request.statement,
+        Map.empty,
         request.runAsync,
         request.queryTimeout)
     } catch {

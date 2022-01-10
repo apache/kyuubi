@@ -35,6 +35,7 @@ import org.apache.kyuubi.session.{KyuubiSessionImpl, KyuubiSessionManager, Sessi
 class ExecuteStatement(
     session: Session,
     override val statement: String,
+    confOverlay: Map[String, String],
     override val shouldRunAsync: Boolean,
     queryTimeout: Long)
   extends KyuubiOperation(OperationType.EXECUTE_STATEMENT, session) {
@@ -68,7 +69,7 @@ class ExecuteStatement(
       // We need to avoid executing query in sync mode, because there is no heartbeat mechanism
       // in thrift protocol, in sync mode, we cannot distinguish between long-run query and
       // engine crash without response before socket read timeout.
-      _remoteOpHandle = client.executeStatement(statement, true, queryTimeout)
+      _remoteOpHandle = client.executeStatement(statement, confOverlay, true, queryTimeout)
       setHasResultSet(_remoteOpHandle.isHasResultSet)
     } catch onError()
   }

@@ -47,7 +47,11 @@ trait Session {
 
   def getInfo(infoType: TGetInfoType): TGetInfoValue
 
-  def executeStatement(statement: String, runAsync: Boolean, queryTimeout: Long): OperationHandle
+  def executeStatement(
+      statement: String,
+      confOverlay: Map[String, String],
+      runAsync: Boolean,
+      queryTimeout: Long): OperationHandle
 
   def getTableTypes: OperationHandle
   def getTypeInfo: OperationHandle

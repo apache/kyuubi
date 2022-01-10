@@ -261,9 +261,14 @@ abstract class ThriftBinaryFrontendService(name: String)
       val sessionHandle = SessionHandle(req.getSessionHandle)
       val statement = req.getStatement
       val runAsync = req.isRunAsync
-      // val confOverlay = req.getConfOverlay
+      val confOverlay = Option(req.getConfOverlay).getOrElse(Map.empty.asJava)
       val queryTimeout = req.getQueryTimeout
-      val operationHandle = be.executeStatement(sessionHandle, statement, runAsync, queryTimeout)
+      val operationHandle = be.executeStatement(
+        sessionHandle,
+        statement,
+        confOverlay.asScala.toMap,
+        runAsync,
+        queryTimeout)
       resp.setOperationHandle(operationHandle.toTOperationHandle)
       resp.setStatus(OK_STATUS)
     } catch {
