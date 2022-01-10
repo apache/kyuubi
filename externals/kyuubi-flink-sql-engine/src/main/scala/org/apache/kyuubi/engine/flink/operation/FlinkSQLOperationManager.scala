@@ -19,6 +19,9 @@ package org.apache.kyuubi.engine.flink.operation
 
 import java.util
 
+import scala.collection.JavaConverters.asScalaBufferConverter
+
+import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.Session
 
@@ -50,7 +53,24 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       catalogName: String,
       schemaName: String,
       tableName: String,
-      tableTypes: util.List[String]): Operation = null
+      tableTypes: util.List[String]): Operation = {
+
+    val tTypes =
+      if (tableTypes == null || tableTypes.isEmpty) {
+        Constants.SUPPORTED_TABLE_TYPES.toSet
+      } else {
+        tableTypes.asScala.toSet
+      }
+
+    val op = new GetTables(
+      session = session,
+      catalog = catalogName,
+      schema = schemaName,
+      tableName = tableName,
+      tableTypes = tTypes)
+
+    addOperation(op)
+  }
 
   override def newGetTableTypesOperation(session: Session): Operation = {
     val op = new GetTableTypes(session)

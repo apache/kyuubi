@@ -19,6 +19,7 @@ package org.apache.kyuubi.operation
 
 import java.util.concurrent.Future
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TProtocolVersion, TRowSet, TTableSchema}
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
@@ -144,6 +145,29 @@ abstract class AbstractOperation(opType: OperationType, session: Session)
   override def getResultSetSchema: TTableSchema
 
   override def getNextRowSet(order: FetchOrientation, rowSetSize: Int): TRowSet
+
+  /**
+   * convert SQL 'like' pattern to a Java regular expression.
+   *
+   * Underscores (_) are converted to '.' and percent signs (%) are converted to '.*'.
+   *
+   * (referred to Spark's implementation: convertPattern function in file MetadataOperation.java)
+   *
+   * @param input the SQL pattern to convert
+   * @return the equivalent Java regular expression of the pattern
+   */
+  protected def toJavaRegex(input: String): String = {
+    val res =
+      if (StringUtils.isEmpty(input) || input == "*") {
+        "%"
+      } else {
+        input
+      }
+    val wStr = ".*"
+    res
+      .replaceAll("([^\\\\])%", "$1" + wStr).replaceAll("\\\\%", "%").replaceAll("^%", wStr)
+      .replaceAll("([^\\\\])_", "$1.").replaceAll("\\\\_", "_").replaceAll("^_", ".")
+  }
 
   override def getSession: Session = session
 
