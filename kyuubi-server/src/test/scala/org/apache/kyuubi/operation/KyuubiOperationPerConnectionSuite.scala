@@ -178,7 +178,7 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
       val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
       val resultSet = tFetchResultsResp.getResults.getColumns.asScala
       assert(resultSet.size == 1)
-      assert(resultSet.head.getStringVal.getValues.get(0).contains("SQL"))
+      assert(resultSet.head.getStringVal.getValues.get(0).contains("kyuubi.operation.language"))
     }
   }
 }
