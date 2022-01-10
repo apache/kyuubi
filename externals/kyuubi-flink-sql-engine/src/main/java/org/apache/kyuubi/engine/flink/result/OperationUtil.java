@@ -20,6 +20,10 @@ package org.apache.kyuubi.engine.flink.result;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.table.api.ResultKind;
+import org.apache.flink.table.catalog.Column;
+import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.VarCharType;
 import org.apache.flink.types.Row;
 
@@ -40,9 +44,14 @@ public class OperationUtil {
       }
     }
 
+    DataType dataType = DataTypes.VARCHAR(maxLength);
+    if (!isNullable) {
+      dataType.notNull();
+    }
+
     return ResultSet.builder()
         .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
-        .columns(ColumnInfo.create(columnName, new VarCharType(isNullable, maxLength)))
+        .columns(Column.physical(columnName, dataType))
         .data(data.toArray(new Row[0]))
         .build();
   }

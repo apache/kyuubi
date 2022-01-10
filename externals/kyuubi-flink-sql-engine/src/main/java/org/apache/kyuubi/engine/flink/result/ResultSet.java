@@ -19,24 +19,29 @@
 package org.apache.kyuubi.engine.flink.result;
 
 import com.google.common.collect.Iterators;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import javax.annotation.Nullable;
+import org.apache.flink.table.api.ResultKind;
+import org.apache.flink.table.api.TableResult;
+import org.apache.flink.table.catalog.Column;
+import org.apache.flink.table.catalog.ResolvedSchema;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.Preconditions;
 import org.apache.kyuubi.operation.ArrayFetchIterator;
 import org.apache.kyuubi.operation.FetchIterator;
 
 /**
- * A set of one statement execution result containing result kind, column infos, rows of data and
- * change flags for streaming mode.
+ * A set of one statement execution result containing result kind, columns, rows of data and change
+ * flags for streaming mode.
  */
 public class ResultSet {
 
   private final ResultKind resultKind;
-  private final List<ColumnInfo> columns;
+  private final List<Column> columns;
   private final FetchIterator<Row> data;
 
   // null in batch mode
@@ -47,7 +52,7 @@ public class ResultSet {
 
   private ResultSet(
       ResultKind resultKind,
-      List<ColumnInfo> columns,
+      List<Column> columns,
       FetchIterator<Row> data,
       @Nullable List<Boolean> changeFlags) {
     this.resultKind = Preconditions.checkNotNull(resultKind, "resultKind must not be null");
@@ -61,7 +66,7 @@ public class ResultSet {
     }
   }
 
-  public List<ColumnInfo> getColumns() {
+  public List<Column> getColumns() {
     return columns;
   }
 
@@ -103,6 +108,19 @@ public class ResultSet {
         + '}';
   }
 
+  public static ResultSet fromTableResult(TableResult tableResult) {
+    ResolvedSchema schema = tableResult.getResolvedSchema();
+    // collect all rows from table result as list
+    // this is ok as TableResult contains limited rows
+    List<Row> rows = new ArrayList<>();
+    tableResult.collect().forEachRemaining(rows::add);
+    return builder()
+        .resultKind(tableResult.getResultKind())
+        .columns(schema.getColumns())
+        .data(rows.toArray(new Row[0]))
+        .build();
+  }
+
   public static Builder builder() {
     return new Builder();
   }
@@ -110,7 +128,7 @@ public class ResultSet {
   /** Builder for {@link ResultSet}. */
   public static class Builder {
     private ResultKind resultKind = null;
-    private List<ColumnInfo> columns = null;
+    private List<Column> columns = null;
     private FetchIterator<Row> data = null;
     private List<Boolean> changeFlags = null;
 
@@ -122,14 +140,14 @@ public class ResultSet {
       return this;
     }
 
-    /** Set {@link ColumnInfo}s. */
-    public Builder columns(ColumnInfo... columns) {
+    /** Set columns. */
+    public Builder columns(Column... columns) {
       this.columns = Arrays.asList(columns);
       return this;
     }
 
-    /** Set {@link ColumnInfo}s. */
-    public Builder columns(List<ColumnInfo> columns) {
+    /** Set columns. */
+    public Builder columns(List<Column> columns) {
       this.columns = columns;
       return this;
     }
