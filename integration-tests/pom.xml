@@ -28,10 +28,11 @@
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
 
-    <artifactId>kyuubi-integration-tests</artifactId>
+    <artifactId>integration-tests</artifactId>
+    <name>Kyuubi Integration Tests</name>
 
     <modules>
-        <module>kyuubi-flink-engine-test</module>
+        <module>kyuubi-flink-it</module>
     </modules>
 
 </project>

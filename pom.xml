@@ -77,7 +77,7 @@
         <module>kyuubi-hive-beeline</module>
         <module>kyuubi-hive-jdbc</module>
         <module>kyuubi-hive-jdbc-shaded</module>
-        <module>kyuubi-integration-tests</module>
+        <module>integration-tests</module>
         <module>kyuubi-metrics</module>
         <module>kyuubi-server</module>
         <module>kyuubi-zookeeper</module>
