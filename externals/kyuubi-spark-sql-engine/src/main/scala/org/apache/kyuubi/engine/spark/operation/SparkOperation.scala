@@ -20,7 +20,6 @@ package org.apache.kyuubi.engine.spark.operation
 import java.io.IOException
 import java.time.ZoneId
 
-import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TRowSet, TTableSchema}
 import org.apache.spark.kyuubi.SparkUtilsHelper.redact
 import org.apache.spark.sql.{DataFrame, Row, SparkSession}
@@ -31,8 +30,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiReservedKeys.{KYUUBI_SESSION_USER_KEY, KYUUBI_STATEMENT_ID_KEY}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_SCHEDULER_POOL_KEY
 import org.apache.kyuubi.engine.spark.operation.SparkOperation.TIMEZONE_KEY
-import org.apache.kyuubi.engine.spark.schema.RowSet
-import org.apache.kyuubi.engine.spark.schema.SchemaHelper
+import org.apache.kyuubi.engine.spark.schema.{RowSet, SchemaHelper}
 import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
 import org.apache.kyuubi.operation.{AbstractOperation, FetchIterator, OperationState}
 import org.apache.kyuubi.operation.FetchOrientation._
@@ -67,29 +65,6 @@ abstract class SparkOperation(opType: OperationType, session: Session)
       Option(getBackgroundHandle).foreach(_.cancel(true))
       if (!spark.sparkContext.isStopped) spark.sparkContext.cancelJobGroup(statementId)
     }
-  }
-
-  /**
-   * convert SQL 'like' pattern to a Java regular expression.
-   *
-   * Underscores (_) are converted to '.' and percent signs (%) are converted to '.*'.
-   *
-   * (referred to Spark's implementation: convertPattern function in file MetadataOperation.java)
-   *
-   * @param input the SQL pattern to convert
-   * @return the equivalent Java regular expression of the pattern
-   */
-  protected def toJavaRegex(input: String): String = {
-    val res =
-      if (StringUtils.isEmpty(input) || input == "*") {
-        "%"
-      } else {
-        input
-      }
-    val wStr = ".*"
-    res
-      .replaceAll("([^\\\\])%", "$1" + wStr).replaceAll("\\\\%", "%").replaceAll("^%", wStr)
-      .replaceAll("([^\\\\])_", "$1.").replaceAll("\\\\_", "_").replaceAll("^_", ".")
   }
 
   private val forceCancel =

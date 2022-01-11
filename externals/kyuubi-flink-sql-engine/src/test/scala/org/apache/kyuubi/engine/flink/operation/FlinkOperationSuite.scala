@@ -68,6 +68,57 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     }
   }
 
+  test("get tables") {
+    val table = "table_1_test"
+    val table_view = "table_1_test_view"
+
+    withJdbcStatement(table) { statement =>
+      statement.execute(
+        s"""
+           | create table $table (
+           |  id int,
+           |  name string,
+           |  price double
+           | ) with (
+           |   'connector' = 'filesystem'
+           | )
+       """.stripMargin)
+
+      statement.execute(
+        s"""
+           | create view ${table_view}
+           | as select 1
+       """.stripMargin)
+
+      val metaData = statement.getConnection.getMetaData
+      val rs1 = metaData.getTables(null, null, null, null)
+      assert(rs1.next())
+      assert(rs1.getString(1) == table)
+      assert(rs1.next())
+      assert(rs1.getString(1) == table_view)
+
+      // get table , table name like table%
+      val rs2 = metaData.getTables(null, null, "table%", Array("TABLE"))
+      assert(rs2.next())
+      assert(rs2.getString(1) == table)
+      assert(!rs2.next())
+
+      // get view , view name like *
+      val rs3 = metaData.getTables(null, "default_database", "*", Array("VIEW"))
+      assert(rs3.next())
+      assert(rs3.getString(1) == table_view)
+
+      // get view , view name like *, schema pattern like default_%
+      val rs4 = metaData.getTables(null, "default_%", "*", Array("VIEW"))
+      assert(rs4.next())
+      assert(rs4.getString(1) == table_view)
+
+      // get view , view name like *, schema pattern like no_exists_%
+      val rs5 = metaData.getTables(null, "no_exists_%", "*", Array("VIEW"))
+      assert(!rs5.next())
+    }
+  }
+
   test("execute statement - select column name with dots") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("select 'tmp.hello'")

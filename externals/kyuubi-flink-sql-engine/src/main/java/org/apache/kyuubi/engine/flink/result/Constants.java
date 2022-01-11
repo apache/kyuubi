@@ -54,5 +54,8 @@ public class Constants {
   public static final String SET_KEY = "key";
   public static final String SET_VALUE = "value";
 
-  public static final String[] SUPPORTED_TABLE_TYPES = new String[] {"TABLE", "VIEW"};
+  public static final String TABLE_TYPE = "TABLE";
+  public static final String VIEW_TYPE = "VIEW";
+
+  public static final String[] SUPPORTED_TABLE_TYPES = new String[] {TABLE_TYPE, VIEW_TYPE};
 }
