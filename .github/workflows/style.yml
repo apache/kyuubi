@@ -27,8 +27,8 @@ on:
       - branch-*
 
 jobs:
-  lint-scala:
-    name: Scala style check
+  linter:
+    name: Style and Dep check
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
@@ -37,8 +37,11 @@ jobs:
         with:
           distribution: zulu
           java-version: 8
+      - name: Server dependency check
+        run: build/dependency.sh
       - name: Scalastyle with Maven
         run: build/mvn scalastyle:check -Ptpcds -Pspark-block-cleaner -Pkubernetes -Pspark-3.1 -Pspark-3.2
       - name: Upload scalastyle report
         if: failure()
         run: for log in `find * -name "scalastyle-output.xml"`;  do echo "=========$log========="; grep "error" $log; done
+
