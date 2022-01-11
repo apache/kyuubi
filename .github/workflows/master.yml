@@ -11,23 +11,6 @@ on:
       - branch-*
 
 jobs:
-  rat:
-    name: Check License
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v2
-      - name: Setup JDK 8
-        uses: actions/setup-java@v2
-        with:
-          distribution: zulu
-          java-version: 8
-      - run: build/mvn org.apache.rat:apache-rat-plugin:check
-      - name: Upload rat report
-        if: failure()
-        uses: actions/upload-artifact@v2
-        with:
-          name: rat
-          path: "**/target/rat*.txt"
 
   build:
     name: Build
@@ -93,16 +76,13 @@ jobs:
             ${{ runner.os }}-maven-io-
       - name: Build with Maven
         run: >-
-          ./build/mvn clean install -Dmaven.javadoc.skip=true -V
+          ./build/mvn clean install -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -V
           -Pspark-${{ matrix.spark }} -Pspark-hadoop-${{ matrix.spark-hadoop }} ${{ matrix.profiles }}
       - name: Code coverage
         if: ${{ matrix.codecov == 'true' }}
         uses: codecov/codecov-action@v2
         with:
           verbose: true
-      - name: Detected Dependency List Change
-        if: ${{ matrix.java == 8 }}
-        run: build/dependency.sh
       - name: Upload test logs
         if: failure()
         uses: actions/upload-artifact@v2
@@ -152,7 +132,7 @@ jobs:
             ${{ runner.os }}-maven-io-
       - name: Run TPC-DS Tests
         run: >-
-          ./build/mvn clean install -Dmaven.javadoc.skip=true -V
+          ./build/mvn clean install -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -V
           -pl kyuubi-server -am
           -Pspark-3.1
           -Dmaven.plugin.scalatest.exclude.tags=''
@@ -193,7 +173,7 @@ jobs:
         run: kubectl get pods
       - name: integration tests
         run: >-
-          ./build/mvn clean install -Dmaven.javadoc.skip=true -V
+          ./build/mvn clean install -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -V
           -pl kubernetes/integration-tests -am
           -Pkubernetes
           -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test

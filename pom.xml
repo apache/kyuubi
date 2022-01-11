@@ -70,6 +70,7 @@
         <module>externals/kyuubi-flink-sql-engine</module>
         <module>externals/kyuubi-spark-sql-engine</module>
         <module>externals/kyuubi-trino-engine</module>
+        <module>integration-tests</module>
         <module>kyuubi-assembly</module>
         <module>kyuubi-common</module>
         <module>kyuubi-ctl</module>
@@ -90,7 +91,6 @@
         <scala.version>2.12.15</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
 
-        <activation.version>1.1.1</activation.version>
         <antlr4.version>4.8</antlr4.version>
         <bouncycastle.version>1.67</bouncycastle.version>
         <codahale.metrics.version>4.1.1</codahale.metrics.version>
@@ -1599,32 +1599,7 @@
                                 <familyName>Apache License 2.0</familyName>
                             </licenseFamily>
                         </licenseFamilies>
-                        <excludes>
-                            <exclude>**/.*/**</exclude>
-                            <exclude>**/*.json</exclude>
-                            <exclude>**/*.prefs</exclude>
-                            <exclude>**/*.log</exclude>
-                            <exclude>**/*.md</exclude>
-                            <exclude>**/*.iml</exclude>
-                            <exclude>**/target/**</exclude>
-                            <exclude>**/out/**</exclude>
-                            <exclude>**/spark-warehouse/**</exclude>
-                            <exclude>**/metastore_db/**</exclude>
-                            <exclude>**/licenses/LICENSE*</exclude>
-                            <exclude>**/licenses-binary/LICENSE*</exclude>
-                            <exclude>**/dependency-reduced-pom.xml</exclude>
-                            <exclude>**/scalastyle-output.xml</exclude>
-                            <exclude>NOTICE*</exclude>
-                            <exclude>docs/**</exclude>
-                            <exclude>build/apache-maven-*/**</exclude>
-                            <exclude>build/scala-*/**</exclude>
-                            <exclude>**/**/operation_logs/**/**</exclude>
-                            <exclude>**/**/server_operation_logs/**/**</exclude>
-                            <exclude>**/**/engine_operation_logs/**/**</exclude>
-                            <exclude>**/*.output.schema</exclude>
-                            <exclude>**/apache-kyuubi-*-bin*/**</exclude>
-                            <exclude>**/benchmarks/**</exclude>
-                        </excludes>
+                        <excludesFile>.rat-excludes</excludesFile>
                     </configuration>
                 </plugin>
                 <plugin>

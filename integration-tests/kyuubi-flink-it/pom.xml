@@ -7,7 +7,7 @@
   ~ (the "License"); you may not use this file except in compliance with
   ~ the License.  You may obtain a copy of the License at
   ~
-  ~    http://www.apache.org/licenses/LICENSE-2.0
+  ~     http://www.apache.org/licenses/LICENSE-2.0
   ~
   ~ Unless required by applicable law or agreed to in writing, software
   ~ distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,38 +17,27 @@
   -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
+        <artifactId>integration-tests</artifactId>
         <groupId>org.apache.kyuubi</groupId>
-        <artifactId>kyuubi-parent</artifactId>
         <version>1.5.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
+    <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>kyuubi-assembly_2.12</artifactId>
-    <packaging>pom</packaging>
-    <name>Kyuubi Project Assembly</name>
+    <artifactId>kyuubi-flink-it_2.12</artifactId>
+    <name>Kyuubi Project IT Flink SQL</name>
 
     <dependencies>
+
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-common_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-ha_${scala.binary.version}</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-metrics_${scala.binary.version}</artifactId>
-            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -59,50 +48,44 @@
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-ctl_${scala.binary.version}</artifactId>
+            <artifactId>kyuubi-server_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client-api</artifactId>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- Flink -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-core</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client-runtime</artifactId>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-runtime</artifactId>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-framework</artifactId>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-table-runtime_${scala.binary.version}</artifactId>
+            <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-client</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-recipes</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>jline</groupId>
-            <artifactId>jline</artifactId>
-        </dependency>
-
-        <!-- default package with log4j -->
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
+            <artifactId>jul-to-slf4j</artifactId>
+            <scope>test</scope>
         </dependency>
+
     </dependencies>
+
 </project>
