@@ -91,7 +91,6 @@
         <scala.version>2.12.15</scala.version>
         <scala.binary.version>2.12</scala.binary.version>
 
-        <activation.version>1.1.1</activation.version>
         <antlr4.version>4.8</antlr4.version>
         <bouncycastle.version>1.67</bouncycastle.version>
         <codahale.metrics.version>4.1.1</codahale.metrics.version>
@@ -469,12 +468,6 @@
                 <groupId>org.testcontainers</groupId>
                 <artifactId>trino</artifactId>
                 <version>${testcontainers.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>javax.activation</groupId>
-                <artifactId>activation</artifactId>
-                <version>${activation.version}</version>
             </dependency>
 
             <dependency>
