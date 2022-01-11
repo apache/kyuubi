@@ -19,6 +19,8 @@ package org.apache.kyuubi.server.api.v1
 
 import org.apache.kyuubi.session.SessionHandle
 
+class VersionInfo(val version: String)
+
 case class SessionOpenCount(openSessionCount: Int)
 
 case class ExecPoolStatistic(execPoolSize: Int, execPoolActiveCount: Int)
