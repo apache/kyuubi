@@ -1605,32 +1605,7 @@
                                 <familyName>Apache License 2.0</familyName>
                             </licenseFamily>
                         </licenseFamilies>
-                        <excludes>
-                            <exclude>**/.*/**</exclude>
-                            <exclude>**/*.json</exclude>
-                            <exclude>**/*.prefs</exclude>
-                            <exclude>**/*.log</exclude>
-                            <exclude>**/*.md</exclude>
-                            <exclude>**/*.iml</exclude>
-                            <exclude>**/target/**</exclude>
-                            <exclude>**/out/**</exclude>
-                            <exclude>**/spark-warehouse/**</exclude>
-                            <exclude>**/metastore_db/**</exclude>
-                            <exclude>**/licenses/LICENSE*</exclude>
-                            <exclude>**/licenses-binary/LICENSE*</exclude>
-                            <exclude>**/dependency-reduced-pom.xml</exclude>
-                            <exclude>**/scalastyle-output.xml</exclude>
-                            <exclude>NOTICE*</exclude>
-                            <exclude>docs/**</exclude>
-                            <exclude>build/apache-maven-*/**</exclude>
-                            <exclude>build/scala-*/**</exclude>
-                            <exclude>**/**/operation_logs/**/**</exclude>
-                            <exclude>**/**/server_operation_logs/**/**</exclude>
-                            <exclude>**/**/engine_operation_logs/**/**</exclude>
-                            <exclude>**/*.output.schema</exclude>
-                            <exclude>**/apache-kyuubi-*-bin*/**</exclude>
-                            <exclude>**/benchmarks/**</exclude>
-                        </excludes>
+                        <excludesFile>.rat-excludes</excludesFile>
                     </configuration>
                 </plugin>
                 <plugin>
