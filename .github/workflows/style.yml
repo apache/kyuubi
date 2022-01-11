@@ -38,8 +38,7 @@ jobs:
           distribution: zulu
           java-version: 8
       - name: Scalastyle with Maven
-        run: build/mvn scalastyle:check -Ptpcds -Pspark-block-cleaner -Pkubernetes
-          ## TODO -Pspark-3.1 -Pspark-3.2 enable these after kyuubi-extension-spark-common_2.12 deployed
+        run: build/mvn scalastyle:check -Ptpcds -Pspark-block-cleaner -Pkubernete -Pspark-3.1 -Pspark-3.2
       - name: Upload scalastyle report
         if: failure()
         run: for log in `find * -name "scalastyle-output.xml"`;  do echo "=========$log========="; grep "error" $log; done
