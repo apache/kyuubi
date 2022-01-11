@@ -1,3 +1,5 @@
+name: License check
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -16,7 +18,7 @@
 #
 
 # This GitHub workflow checks Apache License v2.0 Header is added if needed
-name: License check
+
 
 on:
   pull_request:
