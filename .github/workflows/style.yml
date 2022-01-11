@@ -17,7 +17,7 @@ name: Style check
 # limitations under the License.
 #
 
-# This GitHub workflow checks Apache License v2.0 Header is added if needed
+# This GitHub workflow checks style & dependency issues.
 
 
 on:
@@ -30,6 +30,10 @@ jobs:
   linter:
     name: Style and Dep check
     runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        profiles:
+          - '-Ptpcds -Pspark-block-cleaner -Pkubernetes -Pspark-3.1 -Pspark-3.2'
     steps:
       - uses: actions/checkout@v2
       - name: Setup JDK 8
@@ -40,8 +44,9 @@ jobs:
       - name: Server dependency check
         run: build/dependency.sh
       - name: Scalastyle with Maven
-        run: build/mvn scalastyle:check -Ptpcds -Pspark-block-cleaner -Pkubernetes -Pspark-3.1 -Pspark-3.2
+        run: build/mvn scalastyle:check ${{ matrix.profiles }}
       - name: Upload scalastyle report
         if: failure()
         run: for log in `find * -name "scalastyle-output.xml"`;  do echo "=========$log========="; grep "error" $log; done
-
+      - name: JavaStyle with Maven
+        run: build/mvn spotless:check ${{ matrix.profiles }}
