@@ -70,6 +70,7 @@
         <module>externals/kyuubi-flink-sql-engine</module>
         <module>externals/kyuubi-spark-sql-engine</module>
         <module>externals/kyuubi-trino-engine</module>
+        <module>integration-tests</module>
         <module>kyuubi-assembly</module>
         <module>kyuubi-common</module>
         <module>kyuubi-ctl</module>
@@ -77,7 +78,6 @@
         <module>kyuubi-hive-beeline</module>
         <module>kyuubi-hive-jdbc</module>
         <module>kyuubi-hive-jdbc-shaded</module>
-        <module>integration-tests</module>
         <module>kyuubi-metrics</module>
         <module>kyuubi-server</module>
         <module>kyuubi-zookeeper</module>
