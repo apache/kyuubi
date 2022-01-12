@@ -111,6 +111,9 @@ class SharedSparkSQLEngineSuite extends WithSparkSQLEngine with HiveJDBCTestHelp
 
   test("clear shuffle dependencies") {
     val rdd = spark.emptyDataFrame.rdd
-    KyuubiSparkUtil.clearShuffleDependencies(rdd)
+    KyuubiSparkUtil.sparkMajorMinorVersion match {
+      case (3, 0) => assert(!KyuubiSparkUtil.clearShuffleDependencies(rdd))
+      case _ => assert(KyuubiSparkUtil.clearShuffleDependencies(rdd))
+    }
   }
 }
