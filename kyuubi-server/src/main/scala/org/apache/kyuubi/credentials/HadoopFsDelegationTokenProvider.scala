@@ -21,6 +21,7 @@ import java.lang.reflect.UndeclaredThrowableException
 import java.security.PrivilegedExceptionAction
 
 import scala.collection.JavaConverters._
+import scala.util.{Failure, Success, Try}
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileSystem, Path}
@@ -76,7 +77,7 @@ class HadoopFsDelegationTokenProvider extends HadoopDelegationTokenProvider with
 
 }
 
-object HadoopFsDelegationTokenProvider {
+object HadoopFsDelegationTokenProvider extends Logging {
 
   def disableFsCache(kyuubiConf: KyuubiConf, hadoopConf: Configuration): Configuration = {
     // Avoid unnecessary disk io by not loading default resources
@@ -89,13 +90,26 @@ object HadoopFsDelegationTokenProvider {
   }
 
   def hadoopFSsToAccess(kyuubiConf: KyuubiConf, hadoopConf: Configuration): Set[FileSystem] = {
-    val defaultFS = FileSystem.get(hadoopConf)
     val filesystemsToAccess = kyuubiConf
       .get(KyuubiConf.CREDENTIALS_HADOOP_FS_URIS)
-      .map(new Path(_).getFileSystem(hadoopConf))
+      .flatMap { uri =>
+        Try(new Path(uri).getFileSystem(hadoopConf)) match {
+          case Success(value) =>
+            Some(value)
+          case Failure(e) =>
+            warn(s"Failed to get Hadoop FileSystem instance by URI: $uri", e)
+            None
+        }
+      }
       .toSet
 
-    filesystemsToAccess + defaultFS
+    Try(FileSystem.get(hadoopConf)) match {
+      case Success(value) =>
+        filesystemsToAccess + value
+      case Failure(e) =>
+        warn(s"Failed to get default Hadoop FileSystem instance", e)
+        filesystemsToAccess
+    }
   }
 
   def doAsProxyUser[T](proxyUser: String)(f: => T): T = {
