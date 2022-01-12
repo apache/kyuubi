@@ -22,10 +22,12 @@ import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorServic
 import scala.collection.JavaConverters._
 
 import org.apache.spark.kyuubi.SQLOperationListener
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.sql.types._
-
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.spark.rdd.RDD
+
+import org.apache.kyuubi.config.KyuubiConf.OPERATION_CLEAR_SHUFFLE
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.events.{EventLoggingService, SparkOperationEvent}
 import org.apache.kyuubi.operation.{ArrayFetchIterator, IterableFetchIterator, OperationState, OperationType}
@@ -41,6 +43,9 @@ class ExecuteStatement(
     queryTimeout: Long,
     incrementalCollect: Boolean)
   extends SparkOperation(OperationType.EXECUTE_STATEMENT, session) with Logging {
+
+  private val clearShuffle = spark.conf.get(OPERATION_CLEAR_SHUFFLE.key, "false").toBoolean
+  private var tempResult: DataFrame = _
 
   private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
 
@@ -76,10 +81,12 @@ class ExecuteStatement(
       Thread.currentThread().setContextClassLoader(spark.sharedState.jarClassLoader)
       // TODO: Make it configurable
       spark.sparkContext.addSparkListener(operationListener)
-      result = spark.sql(statement)
+      tempResult = spark.sql(statement)
+      val rdd = tempResult.rdd
+      result = spark.createDataFrame(rdd, tempResult.schema)
       // TODO #921: COMPILED need consider eagerly executed commands
       setState(OperationState.COMPILED)
-      debug(result.queryExecution)
+      debug(tempResult.queryExecution)
       iter =
         if (incrementalCollect) {
           info("Execute in incremental collect mode")
@@ -92,6 +99,9 @@ class ExecuteStatement(
     } catch {
       onError(cancel = true)
     } finally {
+      if (clearShuffle && tempResult != null) {
+        clearShuffleDependencies(tempResult.rdd)
+      }
       statementTimeoutCleaner.foreach(_.shutdown())
     }
   }

@@ -19,12 +19,13 @@ package org.apache.kyuubi.engine.spark
 
 import java.time.{Instant, LocalDateTime, ZoneId}
 
-import org.apache.spark.SparkContext
+import org.apache.spark.{SPARK_VERSION, SparkContext}
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
-import org.apache.kyuubi.Utils
+import org.apache.kyuubi.{Logging, Utils}
 
-object KyuubiSparkUtil {
+object KyuubiSparkUtil extends Logging {
 
   final val SPARK_SCHEDULER_POOL_KEY = "spark.scheduler.pool"
   final val SPARK_SQL_EXECUTION_ID_KEY = "spark.sql.execution.id"
@@ -70,5 +71,16 @@ object KyuubiSparkUtil {
   lazy val sparkMajorMinorVersion: (Int, Int) = {
     val runtimeSparkVer = org.apache.spark.SPARK_VERSION
     Utils.majorMinorVersion(runtimeSparkVer)
+  }
+
+  private[spark] def clearShuffleDependencies(rdd: RDD[_]): Boolean = try {
+    val cleanShuffleDependencies = rdd.getClass.getDeclaredMethod("cleanShuffleDependencies")
+    cleanShuffleDependencies.setAccessible(true)
+    cleanShuffleDependencies.invoke(rdd)
+    true
+  } catch {
+    case _: NoSuchMethodException =>
+      warn(s"Method cleanShuffleDependencies for RDD not implemented in Spark $SPARK_VERSION")
+      false
   }
 }

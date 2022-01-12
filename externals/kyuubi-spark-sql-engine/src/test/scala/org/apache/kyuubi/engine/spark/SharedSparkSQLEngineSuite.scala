@@ -25,7 +25,7 @@ import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
-class SchedulerPoolSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
+class SharedSparkSQLEngineSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
   override protected def jdbcUrl: String = getJdbcUrl
   override def withKyuubiConf: Map[String, String] = {
     val poolFile =
@@ -106,5 +106,11 @@ class SchedulerPoolSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
     } finally {
       spark.sparkContext.removeSparkListener(listener)
     }
+  }
+
+
+  test("clear shuffle dependencies") {
+    val rdd = spark.emptyDataFrame.rdd
+    KyuubiSparkUtil.clearShuffleDependencies(rdd)
   }
 }

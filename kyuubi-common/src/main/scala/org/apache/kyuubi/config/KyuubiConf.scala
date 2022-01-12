@@ -782,6 +782,19 @@ object KyuubiConf {
       .booleanConf
       .createWithDefault(false)
 
+  val OPERATION_CLEAR_SHUFFLE: ConfigEntry[Boolean] =
+    buildConf("operation.clear.shuffle")
+      .internal
+      .doc("When true, the engine side will eagerly clear all shuffle dependencies, a.k.a," +
+        " trigger a garbage collection. By default, Spark uses" +
+        " spark.cleaner.periodicGC.interval to periodically do this clear task but not reliable." +
+        " For example, for engine with large driver JVM, where there is little memory pressure on" +
+        " the driver, this may happen very occasionally or not at all and lead to executors" +
+        " running out of disk space after a while.")
+      .version("1.5.0")
+      .booleanConf
+      .createWithDefault(false)
+
   val SERVER_OPERATION_LOG_DIR_ROOT: ConfigEntry[String] =
     buildConf("operation.log.dir.root")
       .doc("Root directory for query operation log at server-side.")
