@@ -23,32 +23,18 @@ import org.apache.curator.retry.ExponentialBackoffRetry
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.service.ServiceState._
 import org.apache.kyuubi.zookeeper.ZookeeperConf.{ZK_CLIENT_PORT, ZK_CLIENT_PORT_ADDRESS}
 
 class EmbeddedZookeeperSuite extends KyuubiFunSuite {
+  private var zkServer: EmbeddedZookeeper = _
 
-  test("embedded zookeeper server") {
-    val zkServer = new EmbeddedZookeeper()
-    assert(zkServer.getConf == null)
-    assert(zkServer.getName === zkServer.getClass.getSimpleName)
-    assert(zkServer.getServiceState === LATENT)
-    val conf = KyuubiConf()
-    conf.set(ZookeeperConf.ZK_CLIENT_PORT, 0)
-    zkServer.stop() // only for test coverage
-    zkServer.initialize(conf)
-    assert(zkServer.getConf === conf)
-    assert(zkServer.getServiceState === INITIALIZED)
-    assert(zkServer.getStartTime === 0)
-    zkServer.start()
-    assert(zkServer.getServiceState === STARTED)
-    assert(zkServer.getStartTime !== 0)
-    zkServer.stop()
-    assert(zkServer.getServiceState === STOPPED)
+  override def afterEach(): Unit = {
+    if (zkServer != null) zkServer.stop()
+    super.afterEach()
   }
 
   test("connect test with embedded zookeeper") {
-    val zkServer = new EmbeddedZookeeper()
+    zkServer = new EmbeddedZookeeper()
     intercept[AssertionError](zkServer.getConnectString)
     zkServer.initialize(KyuubiConf().set(ZookeeperConf.ZK_CLIENT_PORT, 0))
     zkServer.start()
@@ -65,7 +51,7 @@ class EmbeddedZookeeperSuite extends KyuubiFunSuite {
   }
 
   test("use zookeeper.embedded.client.port.address cover default hostname") {
-    var zkServer = new EmbeddedZookeeper()
+    zkServer = new EmbeddedZookeeper()
     // cover default hostname
     var conf = KyuubiConf()
       .set(ZK_CLIENT_PORT, 0)
