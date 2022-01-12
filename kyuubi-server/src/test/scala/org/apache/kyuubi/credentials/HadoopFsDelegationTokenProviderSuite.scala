@@ -17,7 +17,9 @@
 
 package org.apache.kyuubi.credentials
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
+import org.apache.hadoop.hdfs.DistributedFileSystem
 import org.apache.hadoop.hdfs.security.token.delegation.DelegationTokenIdentifier
 import org.apache.hadoop.io.Text
 import org.apache.hadoop.security.{Credentials, UserGroupInformation}
@@ -57,4 +59,23 @@ class HadoopFsDelegationTokenProviderSuite extends WithSecuredDFSService {
     }
   }
 
+  test("FileSystem implementation class not found") {
+    tryWithSecurityEnabled {
+      UserGroupInformation.loginUserFromKeytab(testPrincipal, testKeytab)
+
+      val hdfsConf = new Configuration(getHadoopConf)
+      val hdfsUri = hdfsConf.get("fs.defaultFS")
+      hdfsConf.set("fs.defaultFS", "unknown://kyuubi")
+      hdfsConf.set("fs.unknown.impl", "unknown.hadoop.FileSystem")
+
+      val kyuubiConf = new KyuubiConf(false)
+      kyuubiConf.set(
+        KyuubiConf.CREDENTIALS_HADOOP_FS_URIS,
+        Seq("unknown://kyuubi", hdfsUri))
+
+      val fileSystems = HadoopFsDelegationTokenProvider.hadoopFSsToAccess(kyuubiConf, hdfsConf)
+      assert(fileSystems.size == 1)
+      assert(fileSystems.head.isInstanceOf[DistributedFileSystem])
+    }
+  }
 }
