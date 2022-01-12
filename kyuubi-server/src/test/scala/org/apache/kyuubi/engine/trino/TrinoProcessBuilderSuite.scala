@@ -20,19 +20,13 @@ package org.apache.kyuubi.engine.trino
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_CONNECTION_URL
 
 class TrinoProcessBuilderSuite extends KyuubiFunSuite {
   private def conf = KyuubiConf().set("kyuubi.on", "off")
 
   test("trino process builder") {
-    val trinoConf = conf
-      .set(ENGINE_TRINO_CONNECTION_URL, "http://0.0.0.0:8080")
-      .set(ENGINE_TRINO_CONNECTION_CATALOG, "tpch")
-
-    val trinoUser = "kyuubi"
-    val builder = new TrinoProcessBuilder(trinoUser, trinoConf)
+    val builder = new TrinoProcessBuilder("kyuubi", conf)
     val commands = builder.toString.split(' ')
     assert(commands.exists(_.endsWith("trino-engine.sh")))
   }

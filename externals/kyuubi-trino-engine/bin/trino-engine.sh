@@ -25,15 +25,14 @@ RUNNER="${JAVA_HOME}/bin/java"
 if [[ "$TRINO_ENGINE_HOME" == "$KYUUBI_HOME/externals/engines/trino" ]]; then
   TRINO_CLIENT_JAR="$TRINO_ENGINE_JAR"
   TRINO_CLIENT_JARS_DIR="$TRINO_ENGINE_HOME/jars"
-  TRINO_CLIENT_CLASSPATH=$(find $TRINO_CLIENT_JARS_DIR -regex '.*\.jar' | grep -v '.*/kyuubi-trino-engine_.*.jar' | tr '\n' ':')
 else
   echo "\nTRINO_ENGINE_HOME $TRINO_ENGINE_HOME doesn't match production directory, assuming in development environment..."
-  TRINO_CLIENT_JAR=$(find $TRINO_ENGINE_HOME/target -regex '.*/kyuubi-trino-engine_.*.jar$' | grep -v '\-javadoc.jar$' | grep -v '\-tests.jar$')
+  TRINO_CLIENT_JAR=$(find $TRINO_ENGINE_HOME/target -regex '.*/kyuubi-trino-engine_.*.jar$' | grep -v '\-sources.jar$' | grep -v '\-javadoc.jar$' | grep -v '\-tests.jar$')
   TRINO_CLIENT_JARS_DIR=$(find $TRINO_ENGINE_HOME/target -regex '.*/jars')
-  TRINO_CLIENT_CLASSPATH=$(find $TRINO_CLIENT_JARS_DIR -regex '.*\.jar' | tr '\n' ':')
 fi
 
-FULL_CLASSPATH="${TRINO_CLIENT_CLASSPATH%:}:$TRINO_CLIENT_JAR"
+TRINO_CLIENT_CLASSPATH="$TRINO_CLIENT_JARS_DIR/*"
+FULL_CLASSPATH="$TRINO_CLIENT_CLASSPATH:$TRINO_CLIENT_JAR"
 
 if [ -n "$TRINO_CLIENT_JAR" ]; then
   exec $RUNNER ${TRINO_ENGINE_DYNAMIC_ARGS} -cp ${FULL_CLASSPATH} org.apache.kyuubi.engine.trino.TrinoSqlEngine "$@"
