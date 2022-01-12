@@ -58,4 +58,7 @@ object MetricsConstants {
   final val BS_GET_RESULT_SET_METADATA = BACKEND_SERVICE + "get_result_set_metadata"
   final val BS_FETCH_RESULTS = BACKEND_SERVICE + "fetch_results"
 
+  final private val KYUUBI_THRIFT_CLIENT = KYUUBI + "kyuubi_thrift_client."
+  final val CLIENT_WAIT_LOCK_THREADS = KYUUBI_THRIFT_CLIENT + "wait_lock_threads"
+
 }

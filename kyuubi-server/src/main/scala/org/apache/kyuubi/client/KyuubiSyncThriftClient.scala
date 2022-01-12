@@ -28,6 +28,7 @@ import org.apache.thrift.transport.TSocket
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_LOGIN_TIMEOUT, ENGINE_REQUEST_TIMEOUT}
+import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.FetchOrientation
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
@@ -47,7 +48,10 @@ class KyuubiSyncThriftClient private (protocol: TProtocol)
    */
   private def withLockAcquired[T](block: => T): T = {
     try {
+      MetricsSystem.tracing(_.incCount(MetricsConstants.CLIENT_WAIT_LOCK_THREADS))
       lock.lock()
+      MetricsSystem.tracing(_.decCount(MetricsConstants.CLIENT_WAIT_LOCK_THREADS))
+
       if (!protocol.getTransport.isOpen) {
         throw KyuubiSQLException.connectionDoesNotExist()
       }
