@@ -24,5 +24,5 @@ import org.apache.spark.sql.SparkSession
  */
 class TPCDS(@transient sparkSession: SparkSession)
   extends Benchmark(sparkSession)
-  with Tpcds_2_4_Queries
+  with TPCDS_2_4_Queries
   with Serializable {}
