@@ -17,9 +17,10 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import scala.collection.JavaConverters.{iterableAsScalaIterableConverter, seqAsJavaListConverter}
+import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
 
+import org.apache.commons.lang3.StringUtils
 import org.apache.flink.table.catalog.ObjectIdentifier
 
 import org.apache.kyuubi.engine.flink.result.{Constants, OperationUtil}
@@ -38,49 +39,33 @@ class GetTables(
     try {
       val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
 
-      var catalogName = catalog
-      if (catalog == null || catalog.isEmpty) {
-        catalogName = tableEnv.getCurrentCatalog
-      }
+      val catalogName = if (StringUtils.isEmpty(catalog)) tableEnv.getCurrentCatalog else catalog
 
-      val schemaPattern = toJavaRegex(schema).r.pattern
-      val tableNamePattern = toJavaRegex(tableName).r.pattern
+      val schemaPattern = toJavaRegex(schema).r
+      val tableNamePattern = toJavaRegex(tableName).r
 
-      var tables = List[String]()
-
-      val optional = tableEnv.getCatalog(catalogName)
-      if (optional.isPresent) {
-        val currCatalog = optional.get()
-        tables = currCatalog.listDatabases().asScala
-          .filter(database =>
-            schemaPattern.matcher(database).matches())
-          .flatMap { database =>
-            currCatalog.listTables(database).asScala
-              .filter(identifier =>
-                tableNamePattern.matcher(identifier).matches())
-              .filter(identifier => {
-                // only table or view
-                if (!tableTypes.contains(Constants.TABLE_TYPE) || !tableTypes.contains(
-                    Constants.VIEW_TYPE)) {
-                  // try to get table kind
-                  Try(currCatalog.getTable(ObjectIdentifier.of(
-                    catalogName,
-                    database,
-                    identifier).toObjectPath)) match {
-                    case Success(table) => tableTypes.contains(table.getTableKind.name())
+      var tables = tableEnv.getCatalog(catalogName).asScala.toSeq.flatMap { flinkCatalog =>
+        flinkCatalog.listDatabases().asScala
+          .filter { case schemaPattern(_*) => true; case _ => false }
+          .flatMap { _schema =>
+            flinkCatalog.listTables(_schema).asScala
+              .filter { case tableNamePattern(_*) => true; case _ => false }
+              .filter { _table =>
+                // skip check type of every table if request all types
+                if (Set(Constants.TABLE_TYPE, Constants.VIEW_TYPE) subsetOf tableTypes) {
+                  true
+                } else {
+                  val objPath = ObjectIdentifier.of(catalogName, _schema, _table).toObjectPath
+                  Try(flinkCatalog.getTable(objPath)) match {
+                    case Success(table) => tableTypes.contains(table.getTableKind.name)
                     case Failure(_) => false
                   }
-                } else {
-                  true
                 }
-              })
-          }.toList
+              }
+          }
       }
 
-      resultSet = OperationUtil.stringListToResultSet(
-        tables.asJava,
-        Constants.SHOW_TABLES_RESULT)
-
+      resultSet = OperationUtil.stringListToResultSet(tables.asJava, Constants.SHOW_TABLES_RESULT)
     } catch onError()
   }
 }

@@ -28,8 +28,7 @@ class GetTableTypes(session: Session)
   extends FlinkOperation(OperationType.GET_TABLE_TYPES, session) {
 
   override protected def runInternal(): Unit = {
-    resultSet = OperationUtil.stringListToResultSet(
-      Constants.SUPPORTED_TABLE_TYPES.toList.asJava,
-      TABLE_TYPE)
+    val tableTypes = Constants.SUPPORTED_TABLE_TYPES.toList.asJava
+    resultSet = OperationUtil.stringListToResultSet(tableTypes, TABLE_TYPE)
   }
 }

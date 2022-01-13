@@ -143,4 +143,7 @@ abstract class FlinkOperation(
       }
   }
 
+  implicit class RichOptional[A](val optional: java.util.Optional[A]) {
+    def asScala: Option[A] = if (optional.isPresent) Some(optional.get) else None
+  }
 }
