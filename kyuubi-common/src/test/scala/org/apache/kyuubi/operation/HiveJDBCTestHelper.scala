@@ -141,14 +141,4 @@ trait HiveJDBCTestHelper extends JDBCTestHelper {
     }
   }
 
-  def sparkEngineMajorMinorVersion: (Int, Int) = {
-    var sparkRuntimeVer = ""
-    withJdbcStatement() { stmt =>
-      val result = stmt.executeQuery("SELECT version()")
-      assert(result.next())
-      sparkRuntimeVer = result.getString(1)
-      assert(!result.next())
-    }
-    Utils.majorMinorVersion(sparkRuntimeVer)
-  }
 }
