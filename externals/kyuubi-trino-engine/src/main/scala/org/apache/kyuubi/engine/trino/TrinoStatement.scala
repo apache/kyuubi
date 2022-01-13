@@ -124,6 +124,8 @@ class TrinoStatement(trinoContext: TrinoContext, kyuubiConf: KyuubiConf, sql: St
       if (!rowQueue.isEmpty()) {
         drainDetectingEnd(rowQueue, rowBuffer, Integer.MAX_VALUE, END_TOKEN)
       }
+      result ++= rowBuffer.asScala
+
       val finalStatus = trino.finalStatusInfo()
       if (finalStatus.getError() != null) {
         val exception = KyuubiSQLException(
