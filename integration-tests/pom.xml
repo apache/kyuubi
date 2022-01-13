@@ -35,4 +35,12 @@
         <module>kyuubi-flink-it</module>
     </modules>
 
+    <profiles>
+        <profile>
+            <id>kubernetes-deployment-it</id>
+            <modules>
+                <module>kyuubi-kubernetes-deployment-it</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
