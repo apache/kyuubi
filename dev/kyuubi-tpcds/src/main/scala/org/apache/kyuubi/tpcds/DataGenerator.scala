@@ -621,7 +621,7 @@ object DataGenerator {
       head("Kyuubi TPC-DS Data Generator")
       opt[String]('d', "db")
         .action { (x, c) => c.copy(db = x) }
-        .text("the databases to write data")
+        .text("the database to write data")
       opt[Int]('s', "scaleFactor")
         .action { (x, c) => c.copy(scaleFactor = x) }
         .text("the scale factor of TPC-DS")

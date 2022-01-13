@@ -27,12 +27,12 @@ package jar with following command:
 
 Support options:
 
-| key          | default | description                       |
-|--------------|---------|-----------------------------------|
-| db           | default | the databases to write data       |
-| scaleFactor  | 1       | the scale factor of TPC-DS        |
-| format       | parquet | the format of table to store data |
-| parallel     | 20      | the parallelism of Spark job      |
+| key          | default         | description                       |
+|--------------|-----------------|-----------------------------------|
+| db           | default         | the database to write data        |
+| scaleFactor  | 1               | the scale factor of TPC-DS        |
+| format       | parquet         | the format of table to store data |
+| parallel     | scaleFactor * 2 | the parallelism of Spark job      |
 
 Example: the following command to generate 10GB data with new database `tpcds_sf10`.
 
