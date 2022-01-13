@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.spark
 
 import java.io.{File, FilenameFilter, IOException}
 import java.net.URI
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Paths}
 
 import scala.collection.mutable.ArrayBuffer
 

@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.flink
 
 import java.io.{File, FilenameFilter}
 import java.net.URI
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Paths}
 
 import com.google.common.annotations.VisibleForTesting
 
