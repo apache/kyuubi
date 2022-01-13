@@ -22,7 +22,6 @@ import java.net.URI
 import java.security.PrivilegedExceptionAction
 
 import scala.collection.JavaConverters._
-import scala.util.{Failure, Success, Try}
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
@@ -86,15 +85,17 @@ class HadoopFsDelegationTokenProvider extends HadoopDelegationTokenProvider with
 object HadoopFsDelegationTokenProvider extends Logging {
 
   def validatedFsUris(kyuubiConf: KyuubiConf, hadoopConf: Configuration): Seq[URI] = {
-    val uris = kyuubiConf.get(KyuubiConf.CREDENTIALS_HADOOP_FS_URIS).map(new URI(_)) :+
-      FileSystem.getDefaultUri(hadoopConf)
-    uris.filter { uri =>
-      Try(FileSystem.get(uri, hadoopConf)) match {
-        case Success(_) =>
-          true
-        case Failure(e) =>
-          warn(s"Failed to get Hadoop FileSystem instance by URI: $uri", e)
-          false
+    val uris = kyuubiConf.get(KyuubiConf.CREDENTIALS_HADOOP_FS_URIS) :+
+      hadoopConf.get("fs.defaultFS", "file:///")
+    uris.flatMap { str =>
+      try {
+        val uri = URI.create(str)
+        FileSystem.get(uri, hadoopConf)
+        Some(uri)
+      } catch {
+        case e: Throwable =>
+          warn(s"Failed to get Hadoop FileSystem instance by URI: $str", e)
+          None
       }
     }
   }
