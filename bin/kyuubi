@@ -23,7 +23,7 @@ function usage() {
   echo "Usage: bin/kyuubi command"
   echo "  commands:"
   echo "    start        - Run a Kyuubi server as a daemon"
-  echo "    restart      - restart Kyuubi server as a daemon"
+  echo "    restart      - Restart Kyuubi server as a daemon"
   echo "    run          - Run a Kyuubi server in the foreground"
   echo "    stop         - Stop the Kyuubi daemon"
   echo "    status       - Show status of the Kyuubi daemon"
@@ -204,9 +204,8 @@ case $1 in
     ;;
 
   (restart)
-    echo "kyuubi is Restarting.......... "
+    echo "Restarting Kyuubi"
     stop_kyuubi
-    echo "kyuubi is Starting.......... "
     start_kyuubi
     ;;
 
