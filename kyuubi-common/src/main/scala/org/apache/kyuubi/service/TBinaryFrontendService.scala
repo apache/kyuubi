@@ -113,14 +113,4 @@ abstract class TBinaryFrontendService(name: String)
     server.foreach(_.stop())
     server = None
   }
-
-  override def connectionUrl: String = {
-    checkInitialized()
-    if (conf.get(ENGINE_CONNECTION_URL_USE_HOSTNAME)) {
-      s"${serverAddr.getHostName}:${serverSocket.getLocalPort}"
-    } else {
-      // engine use address if run on k8s with cluster mode
-      s"${serverAddr.getHostAddress}:${serverSocket.getLocalPort}"
-    }
-  }
 }

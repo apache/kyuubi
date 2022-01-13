@@ -69,11 +69,6 @@ final class KyuubiTBinaryFrontendService(
     resp
   }
 
-  override def connectionUrl: String = {
-    checkInitialized()
-    s"${serverAddr.getHostName}:$portNum"
-  }
-
   override protected def oomHook: Runnable = {
     () => serverable.stop()
   }

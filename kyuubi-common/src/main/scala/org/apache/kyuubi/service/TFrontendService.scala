@@ -28,10 +28,10 @@ import org.apache.hive.service.rpc.thrift.{TCancelDelegationTokenReq, TCancelDel
 import org.apache.thrift.protocol.TProtocol
 import org.apache.thrift.server.{ServerContext, TServerEventHandler}
 import org.apache.thrift.transport.TTransport
-
 import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
+
 import org.apache.kyuubi.config.ConfigEntry
-import org.apache.kyuubi.config.KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_HOST
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST}
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.SessionHandle
@@ -74,6 +74,19 @@ abstract class TFrontendService(name: String)
       info(getName + " has stopped")
     }
     super.stop()
+  }
+
+  override def connectionUrl: String = {
+    checkInitialized()
+    val host = serverHost match {
+      case Some(h) => h
+      case None if conf.get(FRONTEND_CONNECTION_URL_USE_HOSTNAME) =>
+        serverAddr.getHostName
+      case None =>
+        serverAddr.getHostAddress
+    }
+    val actualPort = serverSocket.getLocalPort
+    host + ":" + actualPort
   }
 
   private def getProxyUser(
