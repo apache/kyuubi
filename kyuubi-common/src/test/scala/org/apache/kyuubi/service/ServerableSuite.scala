@@ -23,7 +23,7 @@ import org.apache.kyuubi.config.KyuubiConf
 class ServerableSuite extends KyuubiFunSuite {
 
   ignore("Serverable") {
-    val serverable1 = new NoopThriftBinaryFrontendServer()
+    val serverable1 = new NoopTBinaryFrontendServer()
     val conf = KyuubiConf().set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     serverable1.initialize(conf)
     assert(serverable1.getStartTime === 0)
@@ -44,16 +44,16 @@ class ServerableSuite extends KyuubiFunSuite {
 
   test("invalid port") {
     val conf = KyuubiConf().set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 100)
-    val e = intercept[KyuubiException](new NoopThriftBinaryFrontendServer().initialize(conf))
-    assert(e.getMessage.contains("Failed to initialize frontend service"))
-    assert(e.getCause.getMessage === "Invalid Port number")
+    val e = intercept[IllegalArgumentException](
+      new NoopTBinaryFrontendServer().initialize(conf))
+    assert(e.getMessage.contains("Invalid Port number"))
   }
 
   test("error start child services") {
     val conf = KyuubiConf()
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
       .set("kyuubi.test.server.should.fail", "true")
-    val server = new NoopThriftBinaryFrontendServer()
+    val server = new NoopTBinaryFrontendServer()
     server.initialize(conf)
     val e = intercept[IllegalArgumentException](server.start())
     assert(e.getMessage === "should fail")
@@ -61,10 +61,10 @@ class ServerableSuite extends KyuubiFunSuite {
     conf
       .set("kyuubi.test.server.should.fail", "false")
       .set("kyuubi.test.backend.should.fail", "true")
-    val server1 = new NoopThriftBinaryFrontendServer()
+    val server1 = new NoopTBinaryFrontendServer()
     server1.initialize(conf)
     val e1 = intercept[KyuubiException](server1.start())
-    assert(e1.getMessage === "Failed to Start NoopThriftBinaryFrontendServer")
+    assert(e1.getMessage === "Failed to Start NoopTBinaryFrontendServer")
     assert(e1.getCause.getMessage === "should fail backend")
   }
 }

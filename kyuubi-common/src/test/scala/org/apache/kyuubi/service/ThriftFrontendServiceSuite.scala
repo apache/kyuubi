@@ -29,13 +29,13 @@ import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_THRIFT_BINARY_BIND_HOST, FRONTEND_THRIFT_BINARY_BIND_PORT}
 import org.apache.kyuubi.operation.{OperationHandle, OperationType}
-import org.apache.kyuubi.service.ThriftBinaryFrontendService.{FeServiceServerContext, SERVER_VERSION}
+import org.apache.kyuubi.service.TFrontendService.{FeServiceServerContext, SERVER_VERSION}
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
 import org.apache.kyuubi.session.SessionHandle
 
 class ThriftFrontendServiceSuite extends KyuubiFunSuite {
 
-  protected val server = new NoopThriftBinaryFrontendServer()
+  protected val server = new NoopTBinaryFrontendServer()
   protected val conf = KyuubiConf()
     .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     .set("kyuubi.test.server.should.fail", "false")
@@ -122,8 +122,8 @@ class ThriftFrontendServiceSuite extends KyuubiFunSuite {
     val conf = new KyuubiConf()
       .set(FRONTEND_THRIFT_BINARY_BIND_HOST.key, "localhost")
       .set(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
-    val service = new ThriftBinaryFrontendService("DummyThriftBinaryFrontendService") {
-      override val serverable: Serverable = new NoopThriftBinaryFrontendServer
+    val service = new TBinaryFrontendService("DummyThriftBinaryFrontendService") {
+      override val serverable: Serverable = new NoopTBinaryFrontendServer
       override val discoveryService: Option[Service] = None
     }
     intercept[IllegalStateException](service.connectionUrl)

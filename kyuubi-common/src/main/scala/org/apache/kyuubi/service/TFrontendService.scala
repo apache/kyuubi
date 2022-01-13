@@ -18,143 +18,62 @@
 package org.apache.kyuubi.service
 
 import java.net.{InetAddress, ServerSocket}
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hive.service.rpc.thrift._
-import org.apache.thrift.protocol.{TBinaryProtocol, TProtocol}
-import org.apache.thrift.server.{ServerContext, TServer, TServerEventHandler, TThreadPoolServer}
-import org.apache.thrift.transport.{TServerSocket, TTransport}
+import org.apache.hive.service.rpc.thrift.{TCancelDelegationTokenReq, TCancelDelegationTokenResp, TCancelOperationReq, TCancelOperationResp, TCLIService, TCloseOperationReq, TCloseOperationResp, TCloseSessionReq, TCloseSessionResp, TExecuteStatementReq, TExecuteStatementResp, TFetchResultsReq, TFetchResultsResp, TGetCatalogsReq, TGetCatalogsResp, TGetColumnsReq, TGetColumnsResp, TGetCrossReferenceReq, TGetCrossReferenceResp, TGetDelegationTokenReq, TGetDelegationTokenResp, TGetFunctionsReq, TGetFunctionsResp, TGetInfoReq, TGetInfoResp, TGetInfoValue, TGetOperationStatusReq, TGetOperationStatusResp, TGetPrimaryKeysReq, TGetPrimaryKeysResp, TGetResultSetMetadataReq, TGetResultSetMetadataResp, TGetSchemasReq, TGetSchemasResp, TGetTablesReq, TGetTablesResp, TGetTableTypesReq, TGetTableTypesResp, TGetTypeInfoReq, TGetTypeInfoResp, TOpenSessionReq, TOpenSessionResp, TProtocolVersion, TRenewDelegationTokenReq, TRenewDelegationTokenResp, TStatus, TStatusCode}
+import org.apache.thrift.protocol.TProtocol
+import org.apache.thrift.server.{ServerContext, TServerEventHandler}
+import org.apache.thrift.transport.TTransport
 
-import org.apache.kyuubi.{KyuubiException, KyuubiSQLException, Logging, Utils}
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
+import org.apache.kyuubi.config.ConfigEntry
+import org.apache.kyuubi.config.KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_HOST
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.SessionHandle
-import org.apache.kyuubi.util.{ExecutorPoolCaptureOom, KyuubiHadoopUtils, NamedThreadFactory}
+import org.apache.kyuubi.util.{KyuubiHadoopUtils, NamedThreadFactory}
 
-abstract class ThriftBinaryFrontendService(name: String)
+/**
+ * Apache Thrift based hive-service-prc base class
+ *   1. http
+ *   2. binary
+ */
+abstract class TFrontendService(name: String)
   extends AbstractFrontendService(name) with TCLIService.Iface with Runnable with Logging {
+  import TFrontendService._
+  private val started = new AtomicBoolean(false)
+  private lazy val hadoopConf: Configuration = KyuubiHadoopUtils.newHadoopConf(conf)
+  private lazy val serverThread = new NamedThreadFactory(getName, false).newThread(this)
+  private lazy val serverHost = conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST)
 
-  import KyuubiConf._
-  import ThriftBinaryFrontendService._
-
-  private var server: Option[TServer] = None
-  private var serverThread: Thread = _
-  protected var serverAddr: InetAddress = _
-  protected var portNum: Int = _
-  @volatile protected var isStarted = false
-
-  private var authFactory: KyuubiAuthenticationFactory = _
-  private var hadoopConf: Configuration = _
-
-  // When a OOM occurs, here we de-register the engine by stop its discoveryService.
-  // Then the current engine will not be connected by new client anymore but keep the existing ones
-  // alive. In this case we can reduce the engine's overhead and make it possible recover from that.
-  // We shall not tear down the whole engine by serverable.stop to make the engine unreachable for
-  // the existing clients which are still getting statuses and reporting to the end-users.
-  protected def oomHook: Runnable = {
-    () => discoveryService.foreach(_.stop())
-  }
-
-  override def initialize(conf: KyuubiConf): Unit = {
-    this.conf = conf
-
-    try {
-      hadoopConf = KyuubiHadoopUtils.newHadoopConf(conf)
-      val serverHost = conf.get(FRONTEND_THRIFT_BINARY_BIND_HOST)
-      serverAddr = serverHost.map(InetAddress.getByName).getOrElse(Utils.findLocalInetAddress)
-      portNum = conf.get(FRONTEND_THRIFT_BINARY_BIND_PORT)
-      val minThreads = conf.get(FRONTEND_THRIFT_MIN_WORKER_THREADS)
-      val maxThreads = conf.get(FRONTEND_THRIFT_MAX_WORKER_THREADS)
-      val keepAliveTime = conf.get(FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME)
-      val executor = ExecutorPoolCaptureOom(
-        name + "Handler-Pool",
-        minThreads,
-        maxThreads,
-        keepAliveTime,
-        oomHook)
-      authFactory = new KyuubiAuthenticationFactory(conf)
-      val transFactory = authFactory.getTTransportFactory
-      val tProcFactory = authFactory.getTProcessorFactory(this)
-      val serverSocket = new ServerSocket(portNum, -1, serverAddr)
-      portNum = serverSocket.getLocalPort
-      val tServerSocket = new TServerSocket(serverSocket)
-
-      val maxMessageSize = conf.get(FRONTEND_THRIFT_MAX_MESSAGE_SIZE)
-      val requestTimeout = conf.get(FRONTEND_THRIFT_LOGIN_TIMEOUT).toInt
-      val beBackoffSlotLength = conf.get(FRONTEND_THRIFT_LOGIN_BACKOFF_SLOT_LENGTH).toInt
-
-      val args = new TThreadPoolServer.Args(tServerSocket)
-        .processorFactory(tProcFactory)
-        .transportFactory(transFactory)
-        .protocolFactory(new TBinaryProtocol.Factory)
-        .inputProtocolFactory(
-          new TBinaryProtocol.Factory(true, true, maxMessageSize, maxMessageSize))
-        .requestTimeout(requestTimeout).requestTimeoutUnit(TimeUnit.MILLISECONDS)
-        .beBackoffSlotLength(beBackoffSlotLength)
-        .beBackoffSlotLengthUnit(TimeUnit.MILLISECONDS)
-        .executorService(executor)
-      // TCP Server
-      server = Some(new TThreadPoolServer(args))
-      server.foreach(_.setServerEventHandler(new FeTServerEventHandler))
-      info(s"Initializing $name on host ${serverAddr.getCanonicalHostName} at port $portNum with" +
-        s" [$minThreads, $maxThreads] worker threads")
-    } catch {
-      case e: Throwable =>
-        error(e)
-        throw new KyuubiException(
-          s"Failed to initialize frontend service on $serverAddr:$portNum.",
-          e)
-    }
-    super.initialize(conf)
-  }
+  protected val portKey: ConfigEntry[Int]
+  protected lazy val portNum: Int = conf.get(portKey)
+  protected lazy val serverAddr: InetAddress =
+    serverHost.map(InetAddress.getByName).getOrElse(Utils.findLocalInetAddress)
+  protected lazy val serverSocket = new ServerSocket(portNum, -1, serverAddr)
+  protected lazy val authFactory: KyuubiAuthenticationFactory =
+    new KyuubiAuthenticationFactory(conf)
 
   override def start(): Unit = synchronized {
     super.start()
-    if (!isStarted) {
-      serverThread = new NamedThreadFactory(getName, false).newThread(this)
+    if (!started.getAndSet(true)) {
       serverThread.start()
-      isStarted = true
     }
   }
 
-  override def run(): Unit =
-    try {
-      info(s"Starting and exposing JDBC connection at: jdbc:hive2://${connectionUrl}/")
-      server.foreach(_.serve())
-    } catch {
-      case _: InterruptedException => error(s"$getName is interrupted")
-      case t: Throwable =>
-        error(s"Error starting $getName", t)
-        System.exit(-1)
-    }
+  protected def stopServer(): Unit
 
   override def stop(): Unit = synchronized {
-    if (isStarted) {
-      if (serverThread != null) {
-        serverThread.interrupt()
-        serverThread = null
-      }
-      server.foreach(_.stop())
-      server = None
-      info(this.name + " has stopped")
-      isStarted = false
+    if (started.getAndSet(false)) {
+      serverThread.interrupt()
+      stopServer()
+      info(getName + " has stopped")
     }
     super.stop()
-  }
-
-  override def connectionUrl: String = {
-    checkInitialized()
-    if (conf.get(ENGINE_CONNECTION_URL_USE_HOSTNAME)) {
-      s"${serverAddr.getCanonicalHostName}:$portNum"
-    } else {
-      // engine use address if run on k8s with cluster mode
-      s"${serverAddr.getHostAddress}:$portNum"
-    }
   }
 
   private def getProxyUser(
@@ -560,9 +479,10 @@ abstract class ThriftBinaryFrontendService(name: String)
       new FeServiceServerContext()
     }
   }
+
 }
 
-object ThriftBinaryFrontendService {
+private[kyuubi] object TFrontendService {
   final val OK_STATUS = new TStatus(TStatusCode.SUCCESS_STATUS)
 
   final val CURRENT_SERVER_CONTEXT = new ThreadLocal[FeServiceServerContext]()

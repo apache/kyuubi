@@ -35,7 +35,7 @@ import org.apache.kyuubi.util.SignalRegister
 case class FlinkSQLEngine(engineContext: DefaultContext) extends Serverable("FlinkSQLEngine") {
 
   override val backendService = new FlinkSQLBackendService(engineContext)
-  override val frontendServices = Seq(new FlinkThriftBinaryFrontendService(this))
+  override val frontendServices = Seq(new FlinkTBinaryFrontendService(this))
 
   override def initialize(conf: KyuubiConf): Unit = super.initialize(conf)
 

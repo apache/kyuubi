@@ -140,7 +140,7 @@ class KyuubiServer(name: String) extends Serverable(name) {
 
   override lazy val frontendServices: Seq[AbstractFrontendService] =
     conf.get(FRONTEND_PROTOCOLS).map(FrontendProtocols.withName).map {
-      case THRIFT_BINARY => new KyuubiThriftBinaryFrontendService(this)
+      case THRIFT_BINARY => new KyuubiTBinaryFrontendService(this)
       case REST =>
         warn("REST frontend protocol is experimental, API may change in the future.")
         new KyuubiRestFrontendService(this)

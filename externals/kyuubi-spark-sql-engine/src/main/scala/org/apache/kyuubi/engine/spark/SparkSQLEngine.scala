@@ -43,7 +43,7 @@ case class SparkSQLEngine(
     store: EngineEventsStore) extends Serverable("SparkSQLEngine") {
 
   override val backendService = new SparkSQLBackendService(spark)
-  override val frontendServices = Seq(new SparkThriftBinaryFrontendService(this))
+  override val frontendServices = Seq(new SparkTBinaryFrontendService(this))
 
   override def initialize(conf: KyuubiConf): Unit = {
     val listener = new SparkSQLEngineListener(this, store)

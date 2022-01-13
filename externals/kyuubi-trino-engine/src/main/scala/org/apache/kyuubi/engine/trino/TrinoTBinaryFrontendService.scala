@@ -15,14 +15,22 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.service
+package org.apache.kyuubi.engine.trino
 
-class NoopThriftBinaryFrontendService(override val serverable: Serverable)
-  extends ThriftBinaryFrontendService("NoopThriftBinaryFrontendService") {
+import org.apache.kyuubi.ha.client.EngineServiceDiscovery
+import org.apache.kyuubi.ha.client.ServiceDiscovery
+import org.apache.kyuubi.service.Serverable
+import org.apache.kyuubi.service.Service
+import org.apache.kyuubi.service.TBinaryFrontendService
 
-  override val discoveryService: Option[Service] = None
+class TrinoTBinaryFrontendService(
+    override val serverable: Serverable)
+  extends TBinaryFrontendService("TrinoTBinaryFrontend") {
 
-  override def connectionUrl: String = serverAddr.getCanonicalHostName + ":" + portNum
-
-  override protected def oomHook: Runnable = () => serverable.stop()
+  override lazy val discoveryService: Option[Service] =
+    if (ServiceDiscovery.supportServiceDiscovery(conf)) {
+      Some(new EngineServiceDiscovery(this))
+    } else {
+      None
+    }
 }
