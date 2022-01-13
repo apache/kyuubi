@@ -23,7 +23,7 @@ This module includes TPC-DS data generator and benchmark tool.
 package jar with following command:
 `./build/mvn clean package -Ptpcds -pl dev/kyuubi-tpcds -am`
 
-## Generator 
+## Data Generator
 
 Support options:
 
@@ -43,7 +43,7 @@ $SPARK_HOME/bin/spark-submit \
   --db tpcds_sf10 --scaleFactor 10 --format parquet --parallel 20
 ```
 
-## do benchmark
+## Benchmark Tool
 
 Support options:
 
