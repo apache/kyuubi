@@ -24,9 +24,8 @@ import scala.collection.JavaConverters._
 import org.apache.spark.kyuubi.SQLOperationListener
 import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.sql.types._
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.spark.rdd.RDD
 
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_CLEAR_SHUFFLE
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
 import org.apache.kyuubi.engine.spark.events.{EventLoggingService, SparkOperationEvent}

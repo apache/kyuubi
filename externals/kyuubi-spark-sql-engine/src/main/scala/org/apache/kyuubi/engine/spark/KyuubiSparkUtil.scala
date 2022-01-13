@@ -73,14 +73,15 @@ object KyuubiSparkUtil extends Logging {
     Utils.majorMinorVersion(runtimeSparkVer)
   }
 
-  private[spark] def clearShuffleDependencies(rdd: RDD[_]): Boolean = try {
-    val cleanShuffleDependencies = rdd.getClass.getDeclaredMethod("cleanShuffleDependencies")
-    cleanShuffleDependencies.setAccessible(true)
-    cleanShuffleDependencies.invoke(rdd)
-    true
-  } catch {
-    case _: NoSuchMethodException =>
-      warn(s"Method cleanShuffleDependencies for RDD not implemented in Spark $SPARK_VERSION")
-      false
-  }
+  private[spark] def clearShuffleDependencies(rdd: RDD[_]): Boolean =
+    try {
+      val cleanShuffleDependencies = rdd.getClass.getDeclaredMethod("cleanShuffleDependencies")
+      cleanShuffleDependencies.setAccessible(true)
+      cleanShuffleDependencies.invoke(rdd)
+      true
+    } catch {
+      case _: NoSuchMethodException =>
+        warn(s"Method cleanShuffleDependencies for RDD not implemented in Spark $SPARK_VERSION")
+        false
+    }
 }
