@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import org.apache.commons.lang3.StringUtils
 import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq, TStatusCode}
 
-import org.apache.kyuubi.KYUUBI_VERSION
+import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
 
 trait SparkQueryTests extends HiveJDBCTestHelper {
 
@@ -531,5 +531,16 @@ trait SparkQueryTests extends HiveJDBCTestHelper {
       }
       assert(foundOperationLangItem)
     }
+  }
+
+  def sparkEngineMajorMinorVersion: (Int, Int) = {
+    var sparkRuntimeVer = ""
+    withJdbcStatement() { stmt =>
+      val result = stmt.executeQuery("SELECT version()")
+      assert(result.next())
+      sparkRuntimeVer = result.getString(1)
+      assert(!result.next())
+    }
+    Utils.majorMinorVersion(sparkRuntimeVer)
   }
 }
