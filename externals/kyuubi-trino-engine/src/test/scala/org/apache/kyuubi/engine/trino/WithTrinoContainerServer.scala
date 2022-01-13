@@ -25,39 +25,38 @@ import java.util.concurrent.TimeUnit
 
 import scala.collection.JavaConverters._
 
+import com.dimafeng.testcontainers.TrinoContainer
+import com.dimafeng.testcontainers.scalatest.TestContainerForAll
 import io.airlift.units.Duration
 import io.trino.client.ClientSelectedRole
 import io.trino.client.ClientSession
 import okhttp3.OkHttpClient
-import org.testcontainers.containers.TrinoContainer
+import org.testcontainers.utility.DockerImageName
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 
-trait WithTrinoContainerServer extends KyuubiFunSuite {
+trait WithTrinoContainerServer extends KyuubiFunSuite with TestContainerForAll {
 
   final val IMAGE_VERSION = 363
   final val DOCKER_IMAGE_NAME = s"trinodb/trino:${IMAGE_VERSION}"
 
-  val trino = new TrinoContainer(DOCKER_IMAGE_NAME)
+  override val containerDef = TrinoContainer.Def(DockerImageName.parse(DOCKER_IMAGE_NAME))
+
   val kyuubiConf: KyuubiConf = KyuubiConf()
 
   protected val catalog = "tpch"
   protected val schema = "tiny"
 
-  override def beforeAll(): Unit = {
-    trino.start()
-    super.beforeAll()
+  def withTrinoContainer(tc: TrinoContext => Unit): Unit = {
+    withContainers { trinoContainer =>
+      val connectionUrl = trinoContainer.jdbcUrl.replace("jdbc:trino", "http")
+      val trinoContext = TrinoContext(httpClient, session(connectionUrl))
+      tc(trinoContext)
+    }
   }
 
-  override def afterAll(): Unit = {
-    trino.stop()
-    super.afterAll()
-  }
-
-  lazy val connectionUrl = trino.getJdbcUrl.replace("jdbc:trino", "http")
-
-  lazy val session = new ClientSession(
+  protected def session(connectionUrl: String): ClientSession = new ClientSession(
     URI.create(connectionUrl),
     "kyuubi_test",
     Optional.empty(),

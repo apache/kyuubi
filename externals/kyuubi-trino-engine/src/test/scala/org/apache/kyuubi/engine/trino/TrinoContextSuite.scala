@@ -20,13 +20,13 @@ package org.apache.kyuubi.engine.trino
 class TrinoContextSuite extends WithTrinoContainerServer {
 
   test("set current schema") {
-    val trinoContext = TrinoContext(httpClient, session)
+    withTrinoContainer { trinoContext =>
+      val trinoStatement = TrinoStatement(trinoContext, kyuubiConf, "select 1")
+      assert("tiny" === trinoStatement.getCurrentDatabase)
 
-    val trinoStatement = TrinoStatement(trinoContext, kyuubiConf, "select 1")
-    assert("tiny" === trinoStatement.getCurrentDatabase)
-
-    trinoContext.setCurrentSchema("sf1")
-    val trinoStatement2 = TrinoStatement(trinoContext, kyuubiConf, "select 1")
-    assert("sf1" === trinoStatement2.getCurrentDatabase)
+      trinoContext.setCurrentSchema("sf1")
+      val trinoStatement2 = TrinoStatement(trinoContext, kyuubiConf, "select 1")
+      assert("sf1" === trinoStatement2.getCurrentDatabase)
+    }
   }
 }

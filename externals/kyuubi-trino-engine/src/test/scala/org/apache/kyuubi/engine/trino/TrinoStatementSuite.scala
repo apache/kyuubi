@@ -22,42 +22,47 @@ import org.apache.kyuubi.KyuubiSQLException
 class TrinoStatementSuite extends WithTrinoContainerServer {
 
   test("test query") {
-    val trinoStatement = TrinoStatement(TrinoContext(httpClient, session), kyuubiConf, "select 1")
-    val schema = trinoStatement.getColumns
-    val resultSet = trinoStatement.execute()
+    withTrinoContainer { trinoContext =>
+      val trinoStatement = TrinoStatement(trinoContext, kyuubiConf, "select 1")
+      val schema = trinoStatement.getColumns
+      val resultSet = trinoStatement.execute()
 
-    assert(schema.size === 1)
-    assert(schema(0).getName === "_col0")
+      assert(schema.size === 1)
+      assert(schema(0).getName === "_col0")
 
-    assert(resultSet.toIterator.hasNext)
-    assert(resultSet.toIterator.next() === List(1))
+      assert(resultSet.toIterator.hasNext)
+      assert(resultSet.toIterator.next() === List(1))
 
-    val trinoStatement2 =
-      TrinoStatement(TrinoContext(httpClient, session), kyuubiConf, "show schemas")
-    val schema2 = trinoStatement2.getColumns
-    val resultSet2 = trinoStatement2.execute()
+      val trinoStatement2 = TrinoStatement(trinoContext, kyuubiConf, "show schemas")
+      val schema2 = trinoStatement2.getColumns
+      val resultSet2 = trinoStatement2.execute()
 
-    assert(schema2.size === 1)
-    assert(resultSet2.toIterator.hasNext)
+      assert(schema2.size === 1)
+      assert(resultSet2.toIterator.hasNext)
+    }
   }
 
   test("test update session") {
-    val trinoStatement = TrinoStatement(TrinoContext(httpClient, session), kyuubiConf, "select 1")
-    val schema2 = trinoStatement.getColumns
+    withTrinoContainer { trinoContext =>
+      val trinoStatement = TrinoStatement(trinoContext, kyuubiConf, "select 1")
+      val schema2 = trinoStatement.getColumns
 
-    assert(schema2.size === 1)
-    assert(schema2(0).getName === "_col0")
-    assert(this.schema === trinoStatement.getCurrentDatabase)
+      assert(schema2.size === 1)
+      assert(schema2(0).getName === "_col0")
+      assert(this.schema === trinoStatement.getCurrentDatabase)
 
-    val trinoStatement2 = TrinoStatement(TrinoContext(httpClient, session), kyuubiConf, "use sf1")
-    trinoStatement2.execute()
+      val trinoStatement2 = TrinoStatement(trinoContext, kyuubiConf, "use sf1")
+      trinoStatement2.execute()
 
-    assert("sf1" === trinoStatement2.getCurrentDatabase)
+      assert("sf1" === trinoStatement2.getCurrentDatabase)
+    }
   }
 
   test("test exception") {
-    val trinoStatement = TrinoStatement(TrinoContext(httpClient, session), kyuubiConf, "use kyuubi")
-    val e1 = intercept[KyuubiSQLException](trinoStatement.execute())
-    assert(e1.getMessage.contains("Schema does not exist: tpch.kyuubi"))
+    withTrinoContainer { trinoContext =>
+      val trinoStatement = TrinoStatement(trinoContext, kyuubiConf, "use kyuubi")
+      val e1 = intercept[KyuubiSQLException](trinoStatement.execute())
+      assert(e1.getMessage.contains("Schema does not exist: tpch.kyuubi"))
+    }
   }
 }
