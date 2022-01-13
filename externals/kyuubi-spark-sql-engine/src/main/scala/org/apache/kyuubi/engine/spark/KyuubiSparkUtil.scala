@@ -17,6 +17,7 @@
 
 package org.apache.kyuubi.engine.spark
 
+import java.lang.{Boolean => JBoolean}
 import java.time.{Instant, LocalDateTime, ZoneId}
 
 import org.apache.spark.{SPARK_VERSION, SparkContext}
@@ -73,15 +74,15 @@ object KyuubiSparkUtil extends Logging {
     Utils.majorMinorVersion(runtimeSparkVer)
   }
 
-  private[spark] def clearShuffleDependencies(rdd: RDD[_]): Boolean =
-    try {
-      val cleanShuffleDependencies = rdd.getClass.getDeclaredMethod("cleanShuffleDependencies")
-      cleanShuffleDependencies.setAccessible(true)
-      cleanShuffleDependencies.invoke(rdd)
-      true
-    } catch {
-      case _: NoSuchMethodException =>
-        warn(s"Method cleanShuffleDependencies for RDD not implemented in Spark $SPARK_VERSION")
+  private[spark] def clearShuffleDependencies(rdd: RDD[_]): Boolean = {
+    rdd.getClass.getMethods.find(p => p.getName == "cleanShuffleDependencies") match {
+      case Some(cleanShuffleDependencies) =>
+        cleanShuffleDependencies.setAccessible(true)
+        cleanShuffleDependencies.invoke(rdd, new JBoolean(true))
+        true
+      case None =>
+        debug(s"RDD.cleanShuffleDependencies not implemented in Spark $SPARK_VERSION")
         false
     }
+  }
 }
