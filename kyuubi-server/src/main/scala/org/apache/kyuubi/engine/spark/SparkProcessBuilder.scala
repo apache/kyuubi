@@ -98,32 +98,6 @@ class SparkProcessBuilder(
     }
   }
 
-  override protected val workingDir: Path = {
-    env.get("KYUUBI_WORK_DIR_ROOT").map { root =>
-      val workingRoot = Paths.get(root).toAbsolutePath
-      if (!Files.exists(workingRoot)) {
-        debug(s"Creating KYUUBI_WORK_DIR_ROOT at $workingRoot")
-        Files.createDirectories(workingRoot)
-      }
-      if (Files.isDirectory(workingRoot)) {
-        workingRoot.toString
-      } else null
-    }.map { rootAbs =>
-      val working = Paths.get(rootAbs, proxyUser)
-      if (!Files.exists(working)) {
-        debug(s"Creating $proxyUser's working directory at $working")
-        Files.createDirectories(working)
-      }
-      if (Files.isDirectory(working)) {
-        working
-      } else {
-        Utils.createTempDir(rootAbs, proxyUser)
-      }
-    }.getOrElse {
-      Utils.createTempDir(namePrefix = proxyUser)
-    }
-  }
-
   override protected def commands: Array[String] = {
     val buffer = new ArrayBuffer[String]()
     buffer += executable
