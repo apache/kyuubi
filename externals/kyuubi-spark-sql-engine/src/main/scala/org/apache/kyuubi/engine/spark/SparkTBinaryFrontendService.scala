@@ -25,14 +25,14 @@ import org.apache.spark.kyuubi.SparkContextHelper
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
-import org.apache.kyuubi.service.{Serverable, Service, ThriftBinaryFrontendService}
-import org.apache.kyuubi.service.ThriftBinaryFrontendService.{CURRENT_SERVER_CONTEXT, OK_STATUS}
+import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
+import org.apache.kyuubi.service.TFrontendService._
 import org.apache.kyuubi.util.KyuubiHadoopUtils
 
-class SparkThriftBinaryFrontendService(
+class SparkTBinaryFrontendService(
     override val serverable: Serverable)
-  extends ThriftBinaryFrontendService("SparkThriftBinaryFrontendService") {
-  import SparkThriftBinaryFrontendService._
+  extends TBinaryFrontendService("SparkTBinaryFrontend") {
+  import SparkTBinaryFrontendService._
 
   private lazy val sc = be.asInstanceOf[SparkSQLBackendService].sparkSession.sparkContext
 
@@ -55,7 +55,7 @@ class SparkThriftBinaryFrontendService(
         SparkContextHelper.updateDelegationTokens(sc, updateCreds)
       }
 
-      resp.setStatus(ThriftBinaryFrontendService.OK_STATUS)
+      resp.setStatus(OK_STATUS)
     } catch {
       case e: Exception =>
         warn("Error renew delegation tokens: ", e)
@@ -160,7 +160,7 @@ class SparkThriftBinaryFrontendService(
   }
 }
 
-object SparkThriftBinaryFrontendService {
+object SparkTBinaryFrontendService {
 
   val HIVE_DELEGATION_TOKEN = new Text("HIVE_DELEGATION_TOKEN")
 }

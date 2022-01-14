@@ -22,13 +22,13 @@ import org.apache.hive.service.rpc.thrift.{TOpenSessionReq, TOpenSessionResp}
 
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.ha.client.{KyuubiServiceDiscovery, ServiceDiscovery}
-import org.apache.kyuubi.service.{Serverable, Service, ThriftBinaryFrontendService}
+import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
+import org.apache.kyuubi.service.TFrontendService.{CURRENT_SERVER_CONTEXT, OK_STATUS}
 import org.apache.kyuubi.session.KyuubiSessionImpl
 
-class KyuubiThriftBinaryFrontendService(
+final class KyuubiTBinaryFrontendService(
     override val serverable: Serverable)
-  extends ThriftBinaryFrontendService("KyuubiThriftBinaryFrontendService") {
-  import ThriftBinaryFrontendService._
+  extends TBinaryFrontendService("KyuubiTBinaryFrontend") {
 
   override lazy val discoveryService: Option[Service] = {
     if (ServiceDiscovery.supportServiceDiscovery(conf)) {
@@ -67,11 +67,6 @@ class KyuubiThriftBinaryFrontendService(
         resp.setStatus(KyuubiSQLException.toTStatus(e, verbose = true))
     }
     resp
-  }
-
-  override def connectionUrl: String = {
-    checkInitialized()
-    s"${serverAddr.getCanonicalHostName}:$portNum"
   }
 
   override protected def oomHook: Runnable = {

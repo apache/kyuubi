@@ -845,13 +845,21 @@ object KyuubiConf {
       .version("1.4.0")
       .fallbackConf(ENGINE_SHARE_LEVEL_SUB_DOMAIN)
 
+  @deprecated(s"using ${FRONTEND_CONNECTION_URL_USE_HOSTNAME.key} instead, 1.5.0")
   val ENGINE_CONNECTION_URL_USE_HOSTNAME: ConfigEntry[Boolean] =
     buildConf("engine.connection.url.use.hostname")
-      .doc("When true, engine register with hostname to zookeeper. When spark run on k8s" +
+      .doc("(deprecated) " +
+        "When true, engine register with hostname to zookeeper. When spark run on k8s" +
         " with cluster mode, set to false to ensure that server can connect to engine")
       .version("1.3.0")
       .booleanConf
-      .createWithDefault(true)
+      .createWithDefault(false)
+
+  val FRONTEND_CONNECTION_URL_USE_HOSTNAME: ConfigEntry[Boolean] =
+    buildConf("frontend.connection.url.use.hostname")
+      .doc("When true, frontend services prefer hostname, otherwise, ip address")
+      .version("1.5.0")
+      .fallbackConf(ENGINE_CONNECTION_URL_USE_HOSTNAME)
 
   val ENGINE_SHARE_LEVEL: ConfigEntry[String] = buildConf("engine.share.level")
     .doc("Engines will be shared in different levels, available configs are: <ul>" +

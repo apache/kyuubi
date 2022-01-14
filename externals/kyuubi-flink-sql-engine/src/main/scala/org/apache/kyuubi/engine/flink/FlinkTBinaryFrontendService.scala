@@ -15,9 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.service
+package org.apache.kyuubi.engine.flink
 
-class NoopThriftBinaryFrontendServer extends AbstractNoopServer("NoopThriftBinaryFrontendServer") {
+import org.apache.kyuubi.ha.client.{EngineServiceDiscovery, ServiceDiscovery}
+import org.apache.kyuubi.service.{Serverable, Service, TBinaryFrontendService}
 
-  override val frontendServices = Seq(new NoopThriftBinaryFrontendService(this))
+class FlinkTBinaryFrontendService(
+    override val serverable: Serverable)
+  extends TBinaryFrontendService("FlinkThriftBinaryFrontendService") {
+
+  override lazy val discoveryService: Option[Service] = {
+    if (ServiceDiscovery.supportServiceDiscovery(conf)) {
+      Some(new EngineServiceDiscovery(this))
+    } else {
+      None
+    }
+  }
+
 }
