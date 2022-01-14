@@ -288,13 +288,6 @@ object KyuubiConf {
     .stringConf
     .createOptional
 
-  val FRONTEND_CONNECTION_URL_USE_HOSTNAME: ConfigEntry[Boolean] =
-    buildConf("frontend.connection.url.use.hostname")
-      .doc("When true, frontend services prefer hostname, otherwise, ip address")
-      .version("1.5.0")
-      .booleanConf
-      .createWithDefault(true)
-
   val FRONTEND_THRIFT_BINARY_BIND_HOST: ConfigEntry[Option[String]] =
     buildConf("frontend.thrift.binary.bind.host")
       .doc("Hostname or IP of the machine on which to run the thrift frontend service " +
@@ -837,7 +830,14 @@ object KyuubiConf {
         "When true, engine register with hostname to zookeeper. When spark run on k8s" +
         " with cluster mode, set to false to ensure that server can connect to engine")
       .version("1.3.0")
-      .fallbackConf(FRONTEND_CONNECTION_URL_USE_HOSTNAME)
+      .booleanConf
+      .createWithDefault(false)
+
+  val FRONTEND_CONNECTION_URL_USE_HOSTNAME: ConfigEntry[Boolean] =
+    buildConf("frontend.connection.url.use.hostname")
+      .doc("When true, frontend services prefer hostname, otherwise, ip address")
+      .version("1.5.0")
+      .fallbackConf(ENGINE_CONNECTION_URL_USE_HOSTNAME)
 
   val ENGINE_SHARE_LEVEL: ConfigEntry[String] = buildConf("engine.share.level")
     .doc("Engines will be shared in different levels, available configs are: <ul>" +
