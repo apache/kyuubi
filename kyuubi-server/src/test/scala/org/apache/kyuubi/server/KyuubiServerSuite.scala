@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.server
 
-import org.apache.kyuubi.{KyuubiException, KyuubiFunSuite, Utils}
+import org.apache.kyuubi.{KyuubiFunSuite, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider
@@ -91,9 +91,8 @@ class KyuubiServerSuite extends KyuubiFunSuite {
 
   test("invalid port") {
     val conf = KyuubiConf().set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 100)
-    val e = intercept[KyuubiException](new KyuubiServer().initialize(conf))
-    assert(e.getMessage.contains("Failed to initialize frontend service"))
-    assert(e.getCause.getMessage === "Invalid Port number")
+    val e = intercept[IllegalArgumentException](new KyuubiServer().initialize(conf))
+    assert(e.getMessage === "Invalid Port number")
   }
 
   test("invalid zookeeper quorum") {
@@ -112,7 +111,7 @@ class KyuubiServerSuite extends KyuubiFunSuite {
   }
 
   test("kyuubi server starts with chroot") {
-    val conf = KyuubiConf()
+    val conf = KyuubiConf().set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     val zkConnection = zkServer.getConnectString
     val chrootPath = "/lake"
     conf.set(HighAvailabilityConf.HA_ZK_QUORUM, zkConnection)
