@@ -20,7 +20,7 @@ package org.apache.kyuubi.engine
 import java.io.{File, IOException}
 import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, Paths}
 
 import scala.collection.JavaConverters._
 import scala.util.matching.Regex
@@ -28,7 +28,7 @@ import scala.util.matching.Regex
 import com.google.common.collect.EvictingQueue
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.util.NamedThreadFactory
@@ -57,7 +57,31 @@ trait ProcBuilder {
 
   protected val extraEngineLog: Option[OperationLog]
 
-  protected val workingDir: Path
+  protected val workingDir: Path = {
+    env.get("KYUUBI_WORK_DIR_ROOT").map { root =>
+      val workingRoot = Paths.get(root).toAbsolutePath
+      if (!Files.exists(workingRoot)) {
+        debug(s"Creating KYUUBI_WORK_DIR_ROOT at $workingRoot")
+        Files.createDirectories(workingRoot)
+      }
+      if (Files.isDirectory(workingRoot)) {
+        workingRoot.toString
+      } else null
+    }.map { rootAbs =>
+      val working = Paths.get(rootAbs, proxyUser)
+      if (!Files.exists(working)) {
+        debug(s"Creating $proxyUser's working directory at $working")
+        Files.createDirectories(working)
+      }
+      if (Files.isDirectory(working)) {
+        working
+      } else {
+        Utils.createTempDir(rootAbs, proxyUser)
+      }
+    }.getOrElse {
+      Utils.createTempDir(namePrefix = proxyUser)
+    }
+  }
 
   final lazy val processBuilder: ProcessBuilder = {
     val pb = new ProcessBuilder(commands: _*)
