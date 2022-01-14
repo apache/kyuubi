@@ -17,9 +17,9 @@
 
 package org.apache.kyuubi.service
 
-import scala.collection.JavaConverters._
-
 import java.util
+
+import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.protocol.TBinaryProtocol
@@ -27,7 +27,7 @@ import org.apache.thrift.transport.TSocket
 
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST, FRONTEND_THRIFT_BINARY_BIND_PORT}
+import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_BIND_HOST, FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST, FRONTEND_THRIFT_BINARY_BIND_PORT}
 import org.apache.kyuubi.operation.{OperationHandle, OperationType}
 import org.apache.kyuubi.service.TFrontendService.{FeServiceServerContext, SERVER_VERSION}
 import org.apache.kyuubi.service.authentication.PlainSASLHelper
@@ -142,7 +142,9 @@ class ThriftFrontendServiceSuite extends KyuubiFunSuite {
     val service2 = newService
     val conf2 = KyuubiConf()
       .set(FRONTEND_CONNECTION_URL_USE_HOSTNAME, false)
+      .set(FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
       .unset(FRONTEND_THRIFT_BINARY_BIND_HOST)
+      .unset(FRONTEND_BIND_HOST)
     service2.initialize(conf2)
     // use ip
     assert(service2.connectionUrl.split("\\.")(0).toInt > 0)
