@@ -41,24 +41,19 @@ class GetFunctions(
     try {
       val schemaPattern = toJavaRegex(schemaName)
       val functionPattern = toJavaRegex(functionName)
-      var rows: List[Row] = List()
       val tableEnv: TableEnvironment = sessionContext.getExecutionContext.getTableEnvironment
-      filterPattern(
+      val systemFunctions = filterPattern(
         tableEnv.listFunctions().diff(tableEnv.listUserDefinedFunctions()),
         functionPattern)
-        .foreach { f =>
-          rows = Row.of(null, null, f) +: rows
-        }
-      tableEnv.listCatalogs()
+        .map { f => Row.of(null, null, f) }
+      val catalogFunctions = tableEnv.listCatalogs()
         .filter { c => StringUtils.isEmpty(catalogName) || c == catalogName }
-        .foreach { c =>
+        .flatMap { c =>
           val catalog = tableEnv.getCatalog(c).get()
           filterPattern(catalog.listDatabases().asScala, schemaPattern)
-            .foreach { d =>
+            .flatMap { d =>
               filterPattern(catalog.listFunctions(d).asScala, functionPattern)
-                .foreach { f =>
-                  rows = Row.of(c, d, f) +: rows
-                }
+                .map { f => Row.of(c, d, f) }
             }
         }
       resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
@@ -66,7 +61,7 @@ class GetFunctions(
           Column.physical(FUNCTION_CAT, DataTypes.STRING()),
           Column.physical(FUNCTION_SCHEM, DataTypes.STRING()),
           Column.physical(FUNCTION_NAME, DataTypes.STRING()))
-        .data(rows.asJava.toArray(new Array[Row](0)))
+        .data(systemFunctions ++: catalogFunctions)
         .build
     } catch {
       onError()

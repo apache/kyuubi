@@ -19,12 +19,11 @@ package org.apache.kyuubi.engine.flink.util
 
 import java.util.regex.PatternSyntaxException
 
-import org.apache.kyuubi.Logging
-
-object StringUtils extends Logging {
+object StringUtils {
 
   /**
-   * This utility can be used for filtering pattern in the "Like" of "Show Tables / Functions" DDL
+   * This utility can be used for filtering pattern from the catalog, schema and function name etc.
+   * Forked from Apache Spark's org.apache.spark.sql.catalyst.util.StringUtils
    * @param names the names list to be filtered
    * @param pattern the filter pattern, only '*' and '|' are allowed as wildcards, others will
    *                follow regular expression convention, case insensitive match and white spaces
