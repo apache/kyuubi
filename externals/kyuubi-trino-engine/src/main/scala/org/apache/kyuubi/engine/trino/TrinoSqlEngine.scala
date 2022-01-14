@@ -15,13 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine
+package org.apache.kyuubi.engine.trino
 
-/**
- * Defines different engine types supported by Kyuubi.
- */
-object EngineType extends Enumeration {
-  type EngineType = Value
+import org.apache.kyuubi.Logging
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.util.SignalRegister
 
-  val SPARK_SQL, FLINK_SQL, TRINO = Value
+object TrinoSqlEngine extends Logging {
+
+  val kyuubiConf: KyuubiConf = KyuubiConf()
+
+  def main(args: Array[String]): Unit = {
+    SignalRegister.registerLogger(logger)
+
+    // TODO start engine
+    warn("Trino engine under development...")
+    info(kyuubiConf.getAll)
+  }
 }

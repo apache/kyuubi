@@ -585,6 +585,28 @@ object KyuubiConf {
       .stringConf
       .createOptional
 
+  val ENGINE_TRINO_MAIN_RESOURCE: OptionalConfigEntry[String] =
+    buildConf("session.engine.trino.main.resource")
+      .doc("The package used to create Trino engine remote job. If it is undefined," +
+        " Kyuubi will use the default")
+      .version("1.5.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_TRINO_CONNECTION_URL: OptionalConfigEntry[String] =
+    buildConf("session.engine.trino.connection.url")
+      .doc("The server url that trino engine will connect to")
+      .version("1.5.0")
+      .stringConf
+      .createOptional
+
+  val ENGINE_TRINO_CONNECTION_CATALOG: OptionalConfigEntry[String] =
+    buildConf("session.engine.trino.connection.catalog")
+      .doc("The default catalog that trino engine will connect to")
+      .version("1.5.0")
+      .stringConf
+      .createOptional
+
   val ENGINE_LOGIN_TIMEOUT: ConfigEntry[Long] = buildConf("session.engine.login.timeout")
     .doc("The timeout of creating the connection to remote sql query engine")
     .version("1.0.0")
