@@ -176,6 +176,134 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     }
   }
 
+  test("execute statement - select varchar/char") {
+    withJdbcStatement() { statement =>
+      val resultSet =
+        statement.executeQuery("select cast('varchar10' as varchar(10)), " +
+          "cast('char16' as char(16))")
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.VARCHAR)
+      assert(metaData.getPrecision(1) === 10)
+      assert(metaData.getColumnType(2) === java.sql.Types.CHAR)
+      assert(metaData.getPrecision(2) === 16)
+      assert(resultSet.next())
+      assert(resultSet.getString(1) === "varchar10")
+      assert(resultSet.getString(2) === "char16          ")
+    }
+  }
+
+  test("execute statement - select tinyint") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("select cast(1 as tinyint)")
+      assert(resultSet.next())
+      assert(resultSet.getByte(1) === 1)
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.TINYINT)
+    }
+  }
+
+  test("execute statement - select smallint") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("select cast(1 as smallint)")
+      assert(resultSet.next())
+      assert(resultSet.getShort(1) === 1)
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.SMALLINT)
+    }
+  }
+
+  test("execute statement - select int") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("select 1")
+      assert(resultSet.next())
+      assert(resultSet.getInt(1) === 1)
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.INTEGER)
+    }
+  }
+
+  test("execute statement - select bigint") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("select cast(1 as bigint)")
+      assert(resultSet.next())
+      assert(resultSet.getLong(1) === 1)
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.BIGINT)
+    }
+  }
+
+  test("execute statement - select date") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("select date '2022-01-01'")
+      assert(resultSet.next())
+      assert(resultSet.getDate(1).toLocalDate.toString == "2022-01-01")
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.DATE)
+    }
+  }
+
+  test("execute statement - select timestamp") {
+    withJdbcStatement() { statement =>
+      val resultSet =
+        statement.executeQuery(
+          "select timestamp '2022-01-01 00:00:00', timestamp '2022-01-01 00:00:00.123456789'")
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.TIMESTAMP)
+      assert(metaData.getColumnType(2) === java.sql.Types.TIMESTAMP)
+      // 9 digits for fraction of seconds
+      assert(metaData.getPrecision(1) == 29)
+      assert(metaData.getPrecision(2) == 29)
+      assert(resultSet.next())
+      assert(resultSet.getTimestamp(1).toString == "2022-01-01 00:00:00.0")
+      assert(resultSet.getTimestamp(2).toString == "2022-01-01 00:00:00.123456789")
+    }
+  }
+
+  test("execute statement - select array") {
+    withJdbcStatement() { statement =>
+      val resultSet =
+        statement.executeQuery("select array ['v1', 'v2', 'v3']")
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.ARRAY)
+      assert(resultSet.next())
+      assert(resultSet.getObject(1).toString == "[\"v1\",\"v2\",\"v3\"]")
+    }
+  }
+
+  test("execute statement - select map") {
+    withJdbcStatement() { statement =>
+      val resultSet =
+        statement.executeQuery("select map ['k1', 'v1', 'k2', 'v2']")
+      assert(resultSet.next())
+      assert(resultSet.getString(1) == "{k1=v1, k2=v2}")
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.JAVA_OBJECT)
+    }
+  }
+
+  test("execute statement - select row") {
+    withJdbcStatement() { statement =>
+      val resultSet =
+        statement.executeQuery("select (1, '2', true)")
+      assert(resultSet.next())
+      assert(
+        resultSet.getString(1) == "{INT NOT NULL:1,CHAR(1) NOT NULL:\"2\",BOOLEAN NOT NULL:true}")
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.STRUCT)
+    }
+  }
+
+  test("execute statement - select binary") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("select encode('kyuubi', 'UTF-8')")
+      assert(resultSet.next())
+      assert(
+        resultSet.getString(1) == "kyuubi")
+      val metaData = resultSet.getMetaData
+      assert(metaData.getColumnType(1) === java.sql.Types.BINARY)
+    }
+  }
+
   test("execute statement - show functions") {
     withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("show functions")
@@ -248,11 +376,15 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     })
   }
 
-  ignore("execute statement - insert into") {
-    // TODO: ignore temporally due to KYUUBI #1704
+  test("execute statement - insert into") {
     withMultipleConnectionJdbcStatement()({ statement =>
       statement.executeQuery("create table tbl_a (a int) with ('connector' = 'blackhole')")
-      statement.executeUpdate("insert into tbl_a select 1")
+      val resultSet = statement.executeQuery("insert into tbl_a select 1")
+      val metadata = resultSet.getMetaData
+      assert(metadata.getColumnName(1) == "default_catalog.default_database.tbl_a")
+      assert(metadata.getColumnType(1) == java.sql.Types.BIGINT)
+      assert(resultSet.next())
+      assert(resultSet.getLong(1) == -1L)
     })
   }
 }
