@@ -247,43 +247,4 @@ class SessionsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     operationHandle = response.readEntity(classOf[OperationHandle])
     assert(operationHandle.typ == OperationType.GET_FUNCTIONS)
   }
-
-  test("close an operation") {
-    val requestObj = SessionOpenRequest(
-      1,
-      "admin",
-      "123456",
-      "localhost",
-      Map("testConfig" -> "testValue"))
-
-    var response: Response = webTarget.path("api/v1/sessions")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .post(Entity.entity(requestObj, MediaType.APPLICATION_JSON_TYPE))
-
-    val sessionHandle = response.readEntity(classOf[SessionHandle])
-    val serializedSessionHandle = s"${sessionHandle.identifier.publicId}|" +
-      s"${sessionHandle.identifier.secretId}|${sessionHandle.protocol.getValue}"
-
-    val pathPrefix = s"api/v1/sessions/$serializedSessionHandle"
-
-    response = webTarget.path(s"$pathPrefix/operations/catalogs")
-      .request(MediaType.APPLICATION_JSON_TYPE)
-      .post(Entity.entity(null, MediaType.APPLICATION_JSON_TYPE))
-    assert(200 == response.getStatus)
-    val operationHandle = response.readEntity(classOf[OperationHandle])
-    assert(operationHandle.typ == OperationType.GET_CATALOGS)
-
-    val serializedOperationHandle = s"${operationHandle.identifier.publicId}|" +
-      s"${operationHandle.identifier.secretId}|${operationHandle.protocol.getValue}|" +
-      s"${operationHandle.typ.toString}"
-
-    response = webTarget.path(s"$pathPrefix/operations/$serializedOperationHandle")
-      .request(MediaType.APPLICATION_JSON_TYPE).delete()
-    assert(200 == response.getStatus)
-
-    // verify operation
-    response = webTarget.path(s"api/v1/operations/$serializedOperationHandle/event")
-      .request(MediaType.APPLICATION_JSON_TYPE).get()
-    assert(404 == response.getStatus)
-  }
 }

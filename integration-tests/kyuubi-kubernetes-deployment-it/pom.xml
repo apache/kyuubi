@@ -21,13 +21,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <groupId>org.apache.kyuubi</groupId>
-        <artifactId>kyuubi-parent</artifactId>
+        <artifactId>integration-tests</artifactId>
         <version>1.5.0-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>kubernetes-integration-tests_2.12</artifactId>
-    <name>Kyuubi Kubernetes Integration Tests</name>
+    <artifactId>kubernetes-deployment-integration-tests_2.12</artifactId>
+    <name>Kyuubi Test Kubernetes Deployment IT</name>
     <modelVersion>4.0.0</modelVersion>
 
     <dependencies>

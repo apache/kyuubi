@@ -17,32 +17,29 @@
 
 package org.apache.kyuubi.tpcds
 
-import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
 import org.slf4j.LoggerFactory
-
-case class RunConfig(
-    db: String = "default",
-    scaleFactor: Int = 1)
 
 /**
  * Usage:
  * <p>
  * Run following command to generate 10GB data with new database `tpcds_sf10`.
  * {{{
- *   `$SPARK_HOME/bin/spark-submit \
- *      --conf spark.sql.tpcds.scale.factor=10 \
- *      --conf spark.sql.tpcds.database=tpcds_sf10 \
+ *   $SPARK_HOME/bin/spark-submit \
  *      --class org.apache.kyuubi.tpcds.DataGenerator \
- *      kyuubi-tpcds-*.jar`
+ *      kyuubi-tpcds_*.jar \
+ *      --db tpcds_sf10 --scaleFactor 10 --format parquet --parallel 20
  * }}}
  */
 object DataGenerator {
-  private val logger =
-    LoggerFactory.getLogger(this.getClass.getSimpleName.stripSuffix("$"))
 
-  val SCALE_FACTOR_KEY = "spark.sql.tpcds.scale.factor"
-  val DATABASE_KEY = "spark.sql.tpcds.database"
+  case class Config(
+      db: String = "default",
+      scaleFactor: Int = 1,
+      format: String = "parquet",
+      parallel: Option[Int] = None)
+
+  private val logger = LoggerFactory.getLogger(this.getClass.getSimpleName.stripSuffix("$"))
 
   def initTable(spark: SparkSession): Seq[TableGenerator] = {
     import spark.implicits._
@@ -597,52 +594,50 @@ object DataGenerator {
       promotion)
   }
 
-  def run(config: RunConfig): Unit = {
-    val conf = new SparkConf()
-    val db = conf.get(DATABASE_KEY, config.db)
-    val scaleFactor = conf.get(DataGenerator.SCALE_FACTOR_KEY, config.scaleFactor.toString).toInt
-
+  def run(config: Config): Unit = {
     val spark = SparkSession.builder()
-      .appName(s"Kyuubi TPCDS Generation - ${scaleFactor}GB")
-      .config(conf)
+      .appName(s"Kyuubi TPC-DS Generation - ${config.scaleFactor}GB")
       .enableHiveSupport()
       .getOrCreate()
 
-    logger.info(s"Generating TPCDS tables under database $db")
-    spark.sql(s"CREATE DATABASE IF NOT EXISTS $db")
-    spark.sql(s"USE $db")
-    spark.sql(s"DESC DATABASE $db").show()
-
-    val parallel = spark.sparkContext.defaultParallelism
+    logger.info(s"Generating TPC-DS tables under database ${config.db}")
+    spark.sql(s"CREATE DATABASE IF NOT EXISTS ${config.db}")
+    spark.sql(s"USE ${config.db}")
+    spark.sql(s"DESC DATABASE ${config.db}").show()
 
     val tpcdsTables = initTable(spark)
     tpcdsTables.par.foreach { table =>
-      table.setScaleFactor(scaleFactor)
-      table.setParallelism(parallel)
+      table.setScaleFactor(config.scaleFactor)
+      table.setFormat(config.format)
+      config.parallel.foreach(table.setParallelism)
       spark.sparkContext.setJobDescription(table.toString)
-      logger.info(s"$table")
+      logger.info(s"Generating $table")
       table.create()
     }
   }
 
   def main(args: Array[String]): Unit = {
-    val parser = new scopt.OptionParser[RunConfig]("tpcds-data-generator") {
-      head("tpcds-data-generator", "")
+    val parser = new scopt.OptionParser[Config]("tpcds-data-generator") {
+      head("Kyuubi TPC-DS Data Generator")
       opt[String]('d', "db")
         .action { (x, c) => c.copy(db = x) }
-        .text("the databases to write data")
+        .text("the database to write data")
       opt[Int]('s', "scaleFactor")
         .action { (x, c) => c.copy(scaleFactor = x) }
-        .text("the scale factor of tpcds")
-      help("help")
+        .text("the scale factor of TPC-DS")
+      opt[String]('f', "format")
+        .action { (x, c) => c.copy(format = x) }
+        .text("the format of table to store data")
+      opt[Int]('p', "parallel")
+        .action { (x, c) => c.copy(parallel = Some(x)) }
+        .text("the parallelism of Spark job")
+      help('h', "help")
         .text("prints this usage text")
     }
 
-    parser.parse(args, RunConfig()) match {
-      case Some(config) =>
-        run(config)
-      case None =>
-        System.exit(1)
+    parser.parse(args, Config()) match {
+      case Some(config) => run(config)
+      case None => sys.exit(1)
     }
   }
 }

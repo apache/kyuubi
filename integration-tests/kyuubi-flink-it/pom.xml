@@ -28,7 +28,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>kyuubi-flink-it_2.12</artifactId>
-    <name>Kyuubi Project IT Flink SQL</name>
+    <name>Kyuubi Test Flink SQL IT</name>
 
     <dependencies>
 

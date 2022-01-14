@@ -16,57 +16,60 @@
  -->
 
 # Introduction
-This module includes tpcds data generator and benchmark.
+This module includes TPC-DS data generator and benchmark tool.
 
 # How to use
 
 package jar with following command:
-`./build/mvn install -DskipTests -Ptpcds -pl dev/kyuubi-tpcds -am`
+`./build/mvn clean package -Ptpcds -pl dev/kyuubi-tpcds -am`
 
-## data generator
+## Data Generator
 
 Support options:
 
-| key         | default |  description                 |
-|-------------|---------|------------------------------|
-| db          | default | the databases to write data  |
-| scaleFactor | 1       | the scale factor of tpcds    |
+| key          | default         | description                       |
+|--------------|-----------------|-----------------------------------|
+| db           | default         | the database to write data        |
+| scaleFactor  | 1               | the scale factor of TPC-DS        |
+| format       | parquet         | the format of table to store data |
+| parallel     | scaleFactor * 2 | the parallelism of Spark job      |
 
 Example: the following command to generate 10GB data with new database `tpcds_sf10`.
 
 ```shell
 $SPARK_HOME/bin/spark-submit \
   --class org.apache.kyuubi.tpcds.DataGenerator \
-  kyuubi-tpcds-*.jar --db tpcds_sf10 --scaleFactor 10
+  kyuubi-tpcds_*.jar \
+  --db tpcds_sf10 --scaleFactor 10 --format parquet --parallel 20
 ```
 
-## do benchmark
+## Benchmark Tool
 
 Support options:
 
 | key        | default              |  description                                           |
 |------------|----------------------|--------------------------------------------------------|
-| db         | none(required)       | the tpcds database                                     |
+| db         | none(required)       | the TPC-DS database                                    |
 | benchmark  | tpcds-v2.4-benchmark | the name of application                                |
 | iterations | 3                    | the number of iterations to run                        |
 | filter     | a                    | filter on the name of the queries to run, e.g. q1-v2.4 |
 
-Example: the following command to benchmark tpcds sf10 with exists database `tpcds_sf10`.
+Example: the following command to benchmark TPC-DS sf10 with exists database `tpcds_sf10`.
 
 ```shell
 $SPARK_HOME/bin/spark-submit \
   --class org.apache.kyuubi.tpcds.benchmark.RunBenchmark \
-  kyuubi-tpcds-*.jar --db tpcds_sf10
+  kyuubi-tpcds_*.jar --db tpcds_sf10
 ```
 
-We also support run one of the tpcds query:
+We also support run one of the TPC-DS query:
 ```shell
 $SPARK_HOME/bin/spark-submit \
   --class org.apache.kyuubi.tpcds.benchmark.RunBenchmark \
-  kyuubi-tpcds-*.jar --db tpcds_sf10 --filter q1-v2.4
+  kyuubi-tpcds_*.jar --db tpcds_sf10 --filter q1-v2.4
 ```
 
-The result of tpcds benchmark like:
+The result of TPC-DS benchmark like:
 
 | name    | minTimeMs |  maxTimeMs  |  avgTimeMs | stdDev   | stdDevPercent  |
 |---------|-----------|-------------|------------|----------|----------------|

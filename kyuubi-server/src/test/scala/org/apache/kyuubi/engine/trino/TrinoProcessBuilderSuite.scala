@@ -17,16 +17,23 @@
 
 package org.apache.kyuubi.engine.trino
 
-class TrinoContextSuite extends WithTrinoContainerServer {
+import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_CONNECTION_URL
 
-  test("set current schema") {
-    withTrinoContainer { trinoContext =>
-      val trinoStatement = TrinoStatement(trinoContext, kyuubiConf, "select 1")
-      assert("tiny" === trinoStatement.getCurrentDatabase)
+class TrinoProcessBuilderSuite extends KyuubiFunSuite {
+  private def conf = KyuubiConf().set("kyuubi.on", "off")
 
-      trinoContext.setCurrentSchema("sf1")
-      val trinoStatement2 = TrinoStatement(trinoContext, kyuubiConf, "select 1")
-      assert("sf1" === trinoStatement2.getCurrentDatabase)
-    }
+  test("trino process builder") {
+    val builder = new TrinoProcessBuilder("kyuubi", conf)
+    val commands = builder.toString.split(' ')
+    assert(commands.exists(_.endsWith("trino-engine.sh")))
+  }
+
+  test("capture error from trino process builder") {
+    val e1 = intercept[KyuubiSQLException](new TrinoProcessBuilder("kyuubi", conf).trinoConf)
+    assert(e1.getMessage ===
+      s"Trino server url can not be null! Please set ${ENGINE_TRINO_CONNECTION_URL.key}")
   }
 }

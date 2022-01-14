@@ -53,7 +53,7 @@ class Query(
     }
   }
 
-  lazy val tablesInvolved = buildDataFrame.queryExecution.logical collect {
+  lazy val tablesInvolved: Seq[String] = buildDataFrame.queryExecution.logical collect {
     case r: UnresolvedRelation => r.tableName
   }
 

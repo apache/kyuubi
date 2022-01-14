@@ -31,7 +31,6 @@ import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 import org.apache.kyuubi.Utils.error
 import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.OperationHandle
-import org.apache.kyuubi.operation.OperationHandle.parseOperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
 import org.apache.kyuubi.session.SessionHandle
 import org.apache.kyuubi.session.SessionHandle.parseSessionHandle
@@ -304,28 +303,6 @@ private[v1] class SessionsResource extends ApiRequestContext {
     } catch {
       case NonFatal(_) =>
         throw new NotFoundException(s"Error getting functions")
-    }
-  }
-
-  @ApiResponse(
-    responseCode = "200",
-    content = Array(new Content(
-      mediaType = MediaType.APPLICATION_JSON)),
-    description = "Close an operation")
-  @DELETE
-  @Path("{sessionHandle}/operations/{operationHandle}")
-  def closeOperation(
-      @PathParam("sessionHandle") sessionHandleStr: String,
-      @PathParam("operationHandle") operationHandleStr: String): OperationHandle = {
-
-    try {
-      val operationHandle = parseOperationHandle(operationHandleStr)
-      fe.be.sessionManager.getSession(parseSessionHandle(sessionHandleStr))
-        .closeOperation(operationHandle)
-      operationHandle
-    } catch {
-      case NonFatal(_) =>
-        throw new NotFoundException(s"Error closing an operation")
     }
   }
 }

@@ -78,7 +78,7 @@ jobs:
             ${{ runner.os }}-maven-io-
       - name: Build with Maven
         run: >-
-          ./build/mvn clean install -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -V
+          ./build/mvn clean install -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -V
           -Pspark-${{ matrix.spark }} -Pspark-hadoop-${{ matrix.spark-hadoop }} ${{ matrix.profiles }}
       - name: Code coverage
         if: ${{ matrix.codecov == 'true' }}
@@ -136,7 +136,7 @@ jobs:
             ${{ runner.os }}-maven-io-
       - name: Run TPC-DS Tests
         run: >-
-          ./build/mvn clean install -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -V
+          ./build/mvn clean install -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -V
           -pl kyuubi-server -am
           -Pspark-3.1
           -Dmaven.plugin.scalatest.exclude.tags=''
@@ -172,14 +172,14 @@ jobs:
           kubectl create serviceaccount kyuubi
           kubectl get serviceaccount
       - name: start kyuubi
-        run: kubectl apply -f kubernetes/integration-tests/test-k8s.yaml
+        run: kubectl apply -f integration-tests/kyuubi-kubernetes-deployment-it/test-k8s.yaml
       - name: kyuubi pod check
         run: kubectl get pods
       - name: integration tests
         run: >-
-          ./build/mvn clean install -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -V
-          -pl kubernetes/integration-tests -am
-          -Pkubernetes
+          ./build/mvn clean install -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -V
+          -pl integration-tests/kyuubi-kubernetes-deployment-it -am
+          -Pkubernetes-deployment-it
           -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test
       - name: Upload test logs
         if: failure()

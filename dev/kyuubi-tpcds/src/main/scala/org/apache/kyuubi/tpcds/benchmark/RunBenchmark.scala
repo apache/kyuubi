@@ -34,9 +34,11 @@ case class RunConfig(
 /**
  * Usage:
  * <p>
- * Run following command to benchmark tpcds sf10 with exists database `tpcds_sf10`.
+ * Run following command to benchmark TPC-DS sf10 with exists database `tpcds_sf10`.
  * {{{
- *   $SPARK_HOME/bin/spark-submit --class org.apache.kyuubi.tpcds.benchmark.RunBenchmark kyuubi-tpcds-*.jar --db tpcds_sf10
+ *   $SPARK_HOME/bin/spark-submit \
+ *      --class org.apache.kyuubi.tpcds.benchmark.RunBenchmark \
+ *      kyuubi-tpcds_*.jar --db tpcds_sf10
  * }}}
  */
 object RunBenchmark {
@@ -61,10 +63,8 @@ object RunBenchmark {
     }
 
     parser.parse(args, RunConfig()) match {
-      case Some(config) =>
-        run(config)
-      case None =>
-        System.exit(1)
+      case Some(config) => run(config)
+      case None => sys.exit(1)
     }
   }
 
@@ -95,7 +95,7 @@ object RunBenchmark {
     val experiment = benchmark.runExperiment(
       executionsToRun = allQueries,
       iterations = config.iterations,
-      tags = Map("host" -> InetAddress.getLocalHost().getHostName()))
+      tags = Map("host" -> InetAddress.getLocalHost.getHostName))
 
     println("== STARTING EXPERIMENT ==")
     experiment.waitForFinish(1000 * 60 * 30)

@@ -193,6 +193,7 @@ mkdir -p "$DISTDIR/work"
 mkdir -p "$DISTDIR/externals/engines/flink"
 mkdir -p "$DISTDIR/externals/engines/flink/lib"
 mkdir -p "$DISTDIR/externals/engines/spark"
+mkdir -p "$DISTDIR/externals/engines/trino"
 mkdir -p "$DISTDIR/beeline-jars"
 echo "Kyuubi $VERSION $GITREVSTRING built for" > "$DISTDIR/RELEASE"
 echo "Java $JAVA_VERSION" >> "$DISTDIR/RELEASE"
@@ -208,6 +209,9 @@ cp -r "$KYUUBI_HOME/kyuubi-assembly/target/scala-$SCALA_VERSION/jars/" "$DISTDIR
 
 # Copy kyuubi beeline jars
 cp "$KYUUBI_HOME"/kyuubi-hive-beeline/target/*.jar "$DISTDIR/beeline-jars/"
+
+# Copy kyuubi trino client jars
+cp -r "$KYUUBI_HOME/externals/kyuubi-trino-engine/target/scala-$SCALA_VERSION/jars/" "$DISTDIR/externals/engines/trino/jars"
 
 # Share the jars between server and beeline to reduce binary size
 cd $DISTDIR/beeline-jars
@@ -226,6 +230,11 @@ cp "$KYUUBI_HOME/externals/kyuubi-flink-sql-engine/target/kyuubi-flink-sql-engin
 
 # Copy spark engines
 cp "$KYUUBI_HOME/externals/kyuubi-spark-sql-engine/target/kyuubi-spark-sql-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/spark"
+
+# Copy trino engines
+cp -r "$KYUUBI_HOME/externals/kyuubi-trino-engine/bin/" "$DISTDIR/externals/engines/trino/bin/"
+chmod a+x "$DISTDIR/externals/engines/trino/bin/trino-engine.sh"
+cp "$KYUUBI_HOME/externals/kyuubi-trino-engine/target/kyuubi-trino-engine_${SCALA_VERSION}-${VERSION}.jar" "$DISTDIR/externals/engines/trino/jars"
 
 # Copy kyuubi tools
 if [[ -f "$KYUUBI_HOME/tools/spark-block-cleaner/target/spark-block-cleaner_${SCALA_VERSION}-${VERSION}.jar" ]]; then

@@ -17,12 +17,14 @@
 
 package org.apache.kyuubi.tpcds.benchmark
 
+import java.nio.charset.StandardCharsets
+
 import org.apache.commons.io.IOUtils
 
 /**
  * This implements the official TPCDS v2.4 queries with only cosmetic modifications.
  */
-trait Tpcds_2_4_Queries extends Benchmark {
+trait TPCDS_2_4_Queries extends Benchmark {
 
   import ExecutionMode._
 
@@ -132,15 +134,17 @@ trait Tpcds_2_4_Queries extends Benchmark {
     "q99",
     "ss_max")
 
-  val tpcds2_4Queries = queryNames.map { queryName =>
+  val tpcds2_4Queries: Seq[Query] = queryNames.map { queryName =>
     val queryContent: String = IOUtils.toString(
-      getClass().getClassLoader().getResourceAsStream(s"tpcds_2_4/$queryName.sql"))
+      getClass.getClassLoader.getResourceAsStream(s"tpcds_2_4/$queryName.sql"),
+      StandardCharsets.UTF_8)
     Query(
       queryName + "-v2.4",
       queryContent,
-      description = "TPCDS 2.4 Query",
+      description = "TPC-DS 2.4 Query",
       executionMode = CollectResults)
   }
 
-  val tpcds2_4QueriesMap = tpcds2_4Queries.map(q => q.name.split("-").get(0) -> q).toMap
+  val tpcds2_4QueriesMap: Map[String, Query] =
+    tpcds2_4Queries.map(q => q.name.split("-").get(0) -> q).toMap
 }

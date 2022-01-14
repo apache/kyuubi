@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.spark
 
 import java.io.{File, FilenameFilter, IOException}
 import java.net.URI
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Paths}
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -95,32 +95,6 @@ class SparkProcessBuilder(
         .filter(Files.exists(_)).orElse {
           Some(Paths.get("..", "externals", module, "target", jarName))
         }.map(_.toAbsolutePath.toFile.getCanonicalPath)
-    }
-  }
-
-  override protected val workingDir: Path = {
-    env.get("KYUUBI_WORK_DIR_ROOT").map { root =>
-      val workingRoot = Paths.get(root).toAbsolutePath
-      if (!Files.exists(workingRoot)) {
-        debug(s"Creating KYUUBI_WORK_DIR_ROOT at $workingRoot")
-        Files.createDirectories(workingRoot)
-      }
-      if (Files.isDirectory(workingRoot)) {
-        workingRoot.toString
-      } else null
-    }.map { rootAbs =>
-      val working = Paths.get(rootAbs, proxyUser)
-      if (!Files.exists(working)) {
-        debug(s"Creating $proxyUser's working directory at $working")
-        Files.createDirectories(working)
-      }
-      if (Files.isDirectory(working)) {
-        working
-      } else {
-        Utils.createTempDir(rootAbs, proxyUser)
-      }
-    }.getOrElse {
-      Utils.createTempDir(namePrefix = proxyUser)
     }
   }
 

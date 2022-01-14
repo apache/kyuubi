@@ -33,7 +33,7 @@ jobs:
     strategy:
       matrix:
         profiles:
-          - '-Ptpcds -Pspark-block-cleaner -Pkubernetes -Pspark-3.1 -Pspark-3.2'
+          - '-Ptpcds -Pspark-block-cleaner -Pkubernetes-deployment-it -Pspark-3.1 -Pspark-3.2'
     steps:
       - uses: actions/checkout@v2.3.5
       - name: Setup JDK 8
