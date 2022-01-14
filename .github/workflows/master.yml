@@ -177,7 +177,7 @@ jobs:
         run: kubectl get pods
       - name: integration tests
         run: >-
-          ./build/mvn clean install -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -V
+          ./build/mvn clean install -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -V
           -pl integration-tests/kyuubi-kubernetes-deployment-it -am
           -Pkubernetes-deployment-it
           -Dtest=none -DwildcardSuites=org.apache.kyuubi.kubernetes.test
