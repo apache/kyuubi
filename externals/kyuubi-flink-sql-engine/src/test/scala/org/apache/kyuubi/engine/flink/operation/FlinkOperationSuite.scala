@@ -136,6 +136,19 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
             }
           }
         }
+      val expected =
+        List("currentTimestamp", "currentDate", "currentTime", "localTimestamp", "localTime")
+      Seq("current", "local")
+        .foreach { func =>
+          Seq(metaData.getFunctions _).foreach { apiFunc =>
+            val resultSet = apiFunc(null, null, func)
+            while (resultSet.next()) {
+              assert(resultSet.getString(FUNCTION_CAT) == null)
+              assert(resultSet.getString(FUNCTION_SCHEM) === null)
+              assert(expected.contains(resultSet.getString(FUNCTION_NAME)))
+            }
+          }
+        }
     }
   }
 
