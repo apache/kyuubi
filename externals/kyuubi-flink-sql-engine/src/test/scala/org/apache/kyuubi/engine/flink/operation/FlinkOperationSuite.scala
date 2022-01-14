@@ -23,6 +23,9 @@ import org.scalatest.time.SpanSugar._
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
 import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.FUNCTION_CAT
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.FUNCTION_NAME
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.FUNCTION_SCHEM
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_TYPE
 import org.apache.kyuubi.service.ServiceState._
@@ -42,7 +45,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     }
   }
 
-  test("get catalogs for flink sql") {
+  test("get catalogs") {
     withJdbcStatement() { statement =>
       val meta = statement.getConnection.getMetaData
       val catalogs = meta.getCatalogs
@@ -55,7 +58,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     }
   }
 
-  test("get table type for flink sql") {
+  test("get table types") {
     withJdbcStatement() { statement =>
       val meta = statement.getConnection.getMetaData
       val types = meta.getTableTypes
@@ -116,6 +119,36 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       // get view , view name like *, schema pattern like no_exists_%
       val rs5 = metaData.getTables(null, "no_exists_%", "*", Array("VIEW"))
       assert(!rs5.next())
+    }
+  }
+
+  test("get functions") {
+    withJdbcStatement() { statement =>
+      val metaData = statement.getConnection.getMetaData
+      Seq("currentTimestamp", "currentDate", "currentTime", "localTimestamp", "localTime")
+        .foreach { func =>
+          Seq(metaData.getFunctions _).foreach { apiFunc =>
+            val resultSet = apiFunc(null, null, func)
+            while (resultSet.next()) {
+              assert(resultSet.getString(FUNCTION_CAT) == null)
+              assert(resultSet.getString(FUNCTION_SCHEM) === null)
+              assert(resultSet.getString(FUNCTION_NAME) === func)
+            }
+          }
+        }
+      val expected =
+        List("currentTimestamp", "currentDate", "currentTime", "localTimestamp", "localTime")
+      Seq("current", "local")
+        .foreach { funcPattern =>
+          Seq(metaData.getFunctions _).foreach { apiFunc =>
+            val resultSet = apiFunc(null, null, funcPattern)
+            while (resultSet.next()) {
+              assert(resultSet.getString(FUNCTION_CAT) == null)
+              assert(resultSet.getString(FUNCTION_SCHEM) === null)
+              assert(expected.contains(resultSet.getString(FUNCTION_NAME)))
+            }
+          }
+        }
     }
   }
 
