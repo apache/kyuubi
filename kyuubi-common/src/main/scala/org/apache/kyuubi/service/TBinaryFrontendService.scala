@@ -25,7 +25,7 @@ import org.apache.thrift.server.{TServer, TThreadPoolServer}
 import org.apache.thrift.transport.TServerSocket
 
 import org.apache.kyuubi.{KyuubiException, Logging}
-import org.apache.kyuubi.config.{ConfigEntry, KyuubiConf}
+import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.util.ExecutorPoolCaptureOom
 
 /**
@@ -42,7 +42,7 @@ abstract class TBinaryFrontendService(name: String)
    * @note this is final because we don't want new implementations for engine to override this.
    *       and we shall simply set it to zero for randomly picking an available port
    */
-  final override protected val portKey: ConfigEntry[Int] = FRONTEND_THRIFT_BINARY_BIND_PORT
+  final override protected lazy val portNum: Int = conf.get(FRONTEND_THRIFT_BINARY_BIND_PORT)
 
   private var server: Option[TServer] = None
 
