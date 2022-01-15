@@ -17,31 +17,35 @@
 
 package org.apache.kyuubi.service
 
-import java.util
+import java.time.Duration
 
 import scala.collection.JavaConverters._
 
 import org.apache.hive.service.rpc.thrift._
-import org.apache.thrift.protocol.TBinaryProtocol
-import org.apache.thrift.transport.TSocket
+import org.scalatest.time._
 
 import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{FRONTEND_BIND_HOST, FRONTEND_CONNECTION_URL_USE_HOSTNAME, FRONTEND_THRIFT_BINARY_BIND_HOST, FRONTEND_THRIFT_BINARY_BIND_PORT}
-import org.apache.kyuubi.operation.{OperationHandle, OperationType}
+import org.apache.kyuubi.operation.{OperationHandle, OperationType, TClientTestUtils}
 import org.apache.kyuubi.service.TFrontendService.{FeServiceServerContext, SERVER_VERSION}
-import org.apache.kyuubi.service.authentication.PlainSASLHelper
-import org.apache.kyuubi.session.SessionHandle
+import org.apache.kyuubi.session.{AbstractSession, SessionHandle}
 
-class ThriftFrontendServiceSuite extends KyuubiFunSuite {
+class TFrontendServiceSuite extends KyuubiFunSuite {
 
   protected val server = new NoopTBinaryFrontendServer()
   protected val conf = KyuubiConf()
     .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
     .set("kyuubi.test.server.should.fail", "false")
+    .set(KyuubiConf.SESSION_CHECK_INTERVAL, Duration.ofSeconds(5).toMillis)
+    .set(KyuubiConf.SESSION_IDLE_TIMEOUT, Duration.ofSeconds(5).toMillis)
+    .set(KyuubiConf.OPERATION_IDLE_TIMEOUT, Duration.ofSeconds(20).toMillis)
+    .set(KyuubiConf.SESSION_CONF_RESTRICT_LIST, Seq("spark.*"))
+    .set(KyuubiConf.SESSION_CONF_IGNORE_LIST, Seq("session.engine.*"))
 
-  val user: String = System.getProperty("user.name")
-  val sessionConf: util.Map[String, String] = new util.HashMap()
+  private def withSessionHandle(f: (TCLIService.Iface, TSessionHandle) => Unit): Unit = {
+    TClientTestUtils.withSessionHandle(server.frontendServices.head.connectionUrl, Map.empty)(f)
+  }
 
   override def beforeAll(): Unit = {
     server.initialize(conf)
@@ -52,45 +56,6 @@ class ThriftFrontendServiceSuite extends KyuubiFunSuite {
   override def afterAll(): Unit = {
     server.getServices.foreach(_.stop())
     super.afterAll()
-  }
-
-  protected def withThriftClient(f: TCLIService.Iface => Unit): Unit = {
-    val hostAndPort = server.frontendServices.head.connectionUrl.split(":")
-    val host = hostAndPort.head
-    val port = hostAndPort(1).toInt
-    val socket = new TSocket(host, port)
-    val transport = PlainSASLHelper.getPlainTransport(Utils.currentUser, "anonymous", socket)
-
-    val protocol = new TBinaryProtocol(transport)
-    val client = new TCLIService.Client(protocol)
-    transport.open()
-    try {
-      f(client)
-    } finally {
-      socket.close()
-    }
-  }
-
-  protected def withSessionHandle(f: (TCLIService.Iface, TSessionHandle) => Unit): Unit = {
-    withThriftClient { client =>
-      val req = new TOpenSessionReq()
-      req.setUsername(user)
-      req.setPassword("anonymous")
-      req.setConfiguration(sessionConf)
-      val resp = client.OpenSession(req)
-      val handle = resp.getSessionHandle
-
-      try {
-        f(client, handle)
-      } finally {
-        val tCloseSessionReq = new TCloseSessionReq(handle)
-        try {
-          client.CloseSession(tCloseSessionReq)
-        } catch {
-          case e: Exception => error(s"Failed to close $handle", e)
-        }
-      }
-    }
   }
 
   private def checkOperationResult(
@@ -151,24 +116,26 @@ class ThriftFrontendServiceSuite extends KyuubiFunSuite {
   }
 
   test("open session") {
-    withThriftClient { client =>
-      val req = new TOpenSessionReq()
-      req.setUsername(user)
-      req.setPassword("anonymous")
-      val resp = client.OpenSession(req)
-      val handle = resp.getSessionHandle
-      assert(handle != null)
-      assert(resp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS)
+    TClientTestUtils.withThriftClient(server.frontendServices.head) {
+      client =>
+        val req = new TOpenSessionReq()
+        req.setUsername(Utils.currentUser)
+        req.setPassword("anonymous")
+        val resp = client.OpenSession(req)
+        val handle = resp.getSessionHandle
+        assert(handle != null)
+        assert(resp.getStatus.getStatusCode == TStatusCode.SUCCESS_STATUS)
 
-      req.setConfiguration(Map("kyuubi.test.should.fail" -> "true").asJava)
-      val resp1 = client.OpenSession(req)
-      assert(resp1.getSessionHandle === null)
-      assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
-      val cause = KyuubiSQLException.toCause(resp1.getStatus.getInfoMessages.asScala)
-      assert(cause.isInstanceOf[KyuubiSQLException])
-      assert(cause.getMessage === "Asked to fail")
+        req.setConfiguration(Map("kyuubi.test.should.fail" -> "true").asJava)
+        val resp1 = client.OpenSession(req)
+        assert(resp1.getSessionHandle === null)
+        assert(resp1.getStatus.getStatusCode === TStatusCode.ERROR_STATUS)
+        val cause = KyuubiSQLException.toCause(resp1.getStatus.getInfoMessages.asScala)
+        assert(cause.isInstanceOf[KyuubiSQLException])
+        assert(cause.getMessage === "Asked to fail")
 
-      assert(resp1.getStatus.getErrorMessage === "Asked to fail")
+        assert(resp1.getStatus.getErrorMessage === "Asked to fail")
+
     }
   }
 
@@ -512,5 +479,59 @@ class ThriftFrontendServiceSuite extends KyuubiFunSuite {
       assert(tRenewDelegationTokenResp.getStatus.getErrorMessage ===
         "Delegation token is not supported")
     }
+  }
+
+  test("close expired operations") {
+    withSessionHandle { (client, handle) =>
+      val req = new TCancelOperationReq()
+      val req1 = new TGetSchemasReq(handle)
+      val resp1 = client.GetSchemas(req1)
+
+      val sessionManager = server.backendService.sessionManager
+      val session = sessionManager
+        .getSession(SessionHandle(handle))
+        .asInstanceOf[AbstractSession]
+      var lastAccessTime = session.lastAccessTime
+      assert(sessionManager.getOpenSessionCount == 1)
+      assert(session.lastIdleTime > 0)
+
+      resp1.getOperationHandle
+      req.setOperationHandle(resp1.getOperationHandle)
+      val resp2 = client.CancelOperation(req)
+      assert(resp2.getStatus.getStatusCode === TStatusCode.SUCCESS_STATUS)
+      assert(sessionManager.getOpenSessionCount == 1)
+      assert(session.lastIdleTime == 0)
+      assert(lastAccessTime < session.lastAccessTime)
+      lastAccessTime = session.lastAccessTime
+
+      eventually(timeout(Span(60, Seconds)), interval(Span(1, Seconds))) {
+        assert(session.lastIdleTime > lastAccessTime)
+      }
+
+      info("operation is terminated")
+      assert(lastAccessTime == session.lastAccessTime)
+      assert(sessionManager.getOpenSessionCount == 1)
+
+      eventually(timeout(Span(60, Seconds)), interval(Span(1, Seconds))) {
+        assert(session.lastAccessTime > lastAccessTime)
+      }
+      assert(sessionManager.getOpenSessionCount == 0)
+    }
+  }
+
+  test("test validate and normalize config") {
+    val sessionManager = server.backendService.sessionManager
+    // test restrict
+    intercept[KyuubiSQLException] {
+      sessionManager.validateAndNormalizeConf(Map("spark.driver.memory" -> "2G"))
+    }
+
+    // test ignore
+    val conf = sessionManager.validateAndNormalizeConf(
+      Map(
+        "session.engine.spark.main.resource" -> "org.apahce.kyuubi.test",
+        "session.check.interval" -> "10000"))
+    assert(conf.size == 1)
+    assert(conf("session.check.interval") == "10000")
   }
 }
