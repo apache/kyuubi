@@ -24,6 +24,7 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.SQLTimeoutException;
 import java.sql.SQLWarning;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -245,7 +246,12 @@ public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
 
   @Override
   public boolean execute(String sql) throws SQLException {
-    runAsyncOnServer(sql);
+    return executeWithConfOverlay(sql, null);
+  }
+
+  private boolean executeWithConfOverlay(String sql, Map<String, String> confOverlay)
+      throws SQLException {
+    runAsyncOnServer(sql, confOverlay);
     TGetOperationStatusResp status = waitForOperationToComplete();
 
     // The query should be completed by now
@@ -297,6 +303,10 @@ public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
   }
 
   private void runAsyncOnServer(String sql) throws SQLException {
+    runAsyncOnServer(sql, null);
+  }
+
+  private void runAsyncOnServer(String sql, Map<String, String> confOneTime) throws SQLException {
     checkConnection("execute");
 
     closeClientOperation();
@@ -309,7 +319,13 @@ public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
      * execution run asynchronously
      */
     execReq.setRunAsync(true);
-    execReq.setConfOverlay(sessConf);
+    if (confOneTime != null) {
+      Map<String, String> confOverlay = new HashMap<String, String>(sessConf);
+      confOverlay.putAll(confOneTime);
+      execReq.setConfOverlay(confOverlay);
+    } else {
+      execReq.setConfOverlay(sessConf);
+    }
     execReq.setQueryTimeout(queryTimeout);
     try {
       TExecuteStatementResp execResp = client.ExecuteStatement(execReq);
@@ -478,6 +494,14 @@ public class KyuubiStatement implements java.sql.Statement, KyuubiLoggable {
   @Override
   public ResultSet executeQuery(String sql) throws SQLException {
     if (!execute(sql)) {
+      throw new SQLException("The query did not generate a result set!");
+    }
+    return resultSet;
+  }
+
+  public ResultSet executeScala(String code) throws SQLException {
+    if (!executeWithConfOverlay(
+        code, Collections.singletonMap("kyuubi.operation.language", "SCALA"))) {
       throw new SQLException("The query did not generate a result set!");
     }
     return resultSet;

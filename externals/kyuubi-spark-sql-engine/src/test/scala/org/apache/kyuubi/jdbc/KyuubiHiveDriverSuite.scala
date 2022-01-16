@@ -22,6 +22,7 @@ import java.util.Properties
 import org.apache.kyuubi.IcebergSuiteMixin
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
 import org.apache.kyuubi.engine.spark.shim.SparkCatalogShim
+import org.apache.kyuubi.jdbc.hive.KyuubiStatement
 import org.apache.kyuubi.tags.IcebergTest
 
 @IcebergTest
@@ -81,6 +82,21 @@ class KyuubiHiveDriverSuite extends WithSparkSQLEngine with IcebergSuiteMixin {
       val resultSet = statement.executeQuery(s"SELECT 1")
       assert(resultSet.next())
       assert(resultSet.getInt(1) === 1)
+    } finally {
+      statement.close()
+      connection.close()
+    }
+  }
+
+  test("add executeScala api for KyuubiStatement") {
+    val driver = new KyuubiHiveDriver()
+    val connection = driver.connect(getJdbcUrl, new Properties())
+    val statement = connection.createStatement().asInstanceOf[KyuubiStatement]
+    try {
+      val code = """spark.sql("set kyuubi.operation.language").show(false)"""
+      val resultSet = statement.executeScala(code)
+      assert(resultSet.next())
+      assert(resultSet.getString(1).contains("kyuubi.operation.language"))
     } finally {
       statement.close()
       connection.close()
