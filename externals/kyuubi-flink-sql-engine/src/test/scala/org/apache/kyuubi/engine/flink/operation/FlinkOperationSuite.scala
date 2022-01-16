@@ -19,19 +19,14 @@ package org.apache.kyuubi.engine.flink.operation
 
 import org.apache.flink.table.api.EnvironmentSettings.DEFAULT_BUILTIN_CATALOG
 import org.apache.flink.table.api.EnvironmentSettings.DEFAULT_BUILTIN_DATABASE
+import org.apache.flink.table.types.logical.LogicalTypeRoot
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar._
 
 import org.apache.kyuubi.engine.flink.WithFlinkSQLEngine
 import org.apache.kyuubi.engine.flink.result.Constants
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.FUNCTION_CAT
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.FUNCTION_NAME
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.FUNCTION_SCHEM
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CATALOG
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_SCHEM
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_TYPE
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 import org.apache.kyuubi.service.ServiceState._
 
 class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
@@ -59,6 +54,274 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       }
       assert(!expected.hasNext)
       assert(!catalogs.next())
+    }
+  }
+
+  test("get type info") {
+    withJdbcStatement() { statement =>
+      val typeInfo = statement.getConnection.getMetaData.getTypeInfo
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.CHAR.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.CHAR)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 3)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.VARCHAR.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.VARCHAR)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 3)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.BOOLEAN.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.BOOLEAN)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 3)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.BINARY.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.BINARY)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 3)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.VARBINARY.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.VARBINARY)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 3)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.DECIMAL.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.DECIMAL)
+      assert(typeInfo.getInt(PRECISION) === 38)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 3)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 10)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.TINYINT.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.TINYINT)
+      assert(typeInfo.getInt(PRECISION) === 3)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 3)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 10)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.SMALLINT.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.SMALLINT)
+      assert(typeInfo.getInt(PRECISION) === 5)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 3)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 10)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.INTEGER.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.INTEGER)
+      assert(typeInfo.getInt(PRECISION) === 10)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 3)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 10)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.BIGINT.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.BIGINT)
+      assert(typeInfo.getInt(PRECISION) === 19)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 3)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 10)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.FLOAT.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.FLOAT)
+      assert(typeInfo.getInt(PRECISION) === 7)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 3)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 10)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.DOUBLE.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.DOUBLE)
+      assert(typeInfo.getInt(PRECISION) === 15)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 3)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 10)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.DATE.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.DATE)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 3)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.TIME_WITHOUT_TIME_ZONE.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.TIME)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 3)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.TIMESTAMP_WITHOUT_TIME_ZONE.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.TIMESTAMP)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 3)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.TIMESTAMP_WITH_TIME_ZONE.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.TIMESTAMP_WITH_TIMEZONE)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 0)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(
+        typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.TIMESTAMP_WITH_LOCAL_TIME_ZONE.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.TIMESTAMP_WITH_TIMEZONE)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 0)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.INTERVAL_YEAR_MONTH.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.OTHER)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 0)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.INTERVAL_DAY_TIME.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.OTHER)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 0)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.ARRAY.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.ARRAY)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 0)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.MULTISET.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.JAVA_OBJECT)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 0)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.MAP.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.JAVA_OBJECT)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 0)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.ROW.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.JAVA_OBJECT)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 0)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.DISTINCT_TYPE.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.OTHER)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 0)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.STRUCTURED_TYPE.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.OTHER)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 0)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.NULL.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.NULL)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 3)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.RAW.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.OTHER)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 0)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.SYMBOL.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.OTHER)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 0)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
+
+      typeInfo.next()
+      assert(typeInfo.getString(TYPE_NAME) === LogicalTypeRoot.UNRESOLVED.name())
+      assert(typeInfo.getInt(DATA_TYPE) === java.sql.Types.OTHER)
+      assert(typeInfo.getInt(PRECISION) === 0)
+      assert(typeInfo.getShort(NULLABLE) === 1)
+      assert(!typeInfo.getBoolean(CASE_SENSITIVE))
+      assert(typeInfo.getShort(SEARCHABLE) === 0)
+      assert(typeInfo.getInt(NUM_PREC_RADIX) === 0)
     }
   }
 
