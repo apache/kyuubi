@@ -30,12 +30,8 @@ class GetCatalogs(session: Session)
   override protected def runInternal(): Unit = {
     try {
       val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
-      val catalogs: java.util.List[String] =
-        tableEnv.listCatalogs.toList.asJava
-      resultSet = OperationUtil.stringListToResultSet(
-        catalogs,
-        TABLE_CAT)
+      val catalogs = tableEnv.listCatalogs.toList.asJava
+      resultSet = OperationUtil.stringListToResultSet(catalogs, TABLE_CAT)
     } catch onError()
   }
-
 }
