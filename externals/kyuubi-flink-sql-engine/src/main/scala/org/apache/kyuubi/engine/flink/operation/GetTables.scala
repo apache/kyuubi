@@ -24,6 +24,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.flink.table.catalog.ObjectIdentifier
 
 import org.apache.kyuubi.engine.flink.result.{Constants, OperationUtil}
+import org.apache.kyuubi.engine.flink.util.StringUtils._
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
@@ -44,12 +45,12 @@ class GetTables(
       val schemaPattern = toJavaRegex(schema).r
       val tableNamePattern = toJavaRegex(tableName).r
 
-      var tables = tableEnv.getCatalog(catalogName).asScala.toSeq.flatMap { flinkCatalog =>
+      val tables = tableEnv.getCatalog(catalogName).asScala.toSeq.flatMap { flinkCatalog =>
         flinkCatalog.listDatabases().asScala
-          .filter { case schemaPattern(_*) => true; case _ => false }
+          .filter { _schema => schemaPattern.pattern.matcher(_schema).matches() }
           .flatMap { _schema =>
             flinkCatalog.listTables(_schema).asScala
-              .filter { case tableNamePattern(_*) => true; case _ => false }
+              .filter { _table => tableNamePattern.pattern.matcher(_table).matches() }
               .filter { _table =>
                 // skip check type of every table if request all types
                 if (Set(Constants.TABLE_TYPE, Constants.VIEW_TYPE) subsetOf tableTypes) {
