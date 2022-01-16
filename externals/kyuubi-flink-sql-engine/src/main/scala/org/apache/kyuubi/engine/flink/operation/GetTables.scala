@@ -24,7 +24,6 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.flink.table.catalog.ObjectIdentifier
 
 import org.apache.kyuubi.engine.flink.result.{Constants, OperationUtil}
-import org.apache.kyuubi.engine.flink.util.StringUtils._
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
