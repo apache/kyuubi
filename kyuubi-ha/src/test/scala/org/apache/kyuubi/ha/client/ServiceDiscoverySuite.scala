@@ -92,7 +92,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
         children.foreach { child =>
           framework.delete().forPath(s"""$znodeRoot/$child""")
         }
-        eventually(timeout(10.seconds), interval(1.second)) {
+        eventually(timeout(5.seconds), interval(1.second)) {
           assert(serviceDiscovery.getServiceState === ServiceState.STOPPED)
           assert(server.getServiceState === ServiceState.STOPPED)
         }
