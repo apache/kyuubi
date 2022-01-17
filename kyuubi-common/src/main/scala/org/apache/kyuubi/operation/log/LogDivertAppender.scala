@@ -46,18 +46,20 @@ class LogDivertAppender(
     immediateFlush,
     properties,
     manager) {
-  import LogDivertAppender._
-
   final private val writer = new CharArrayWriter
 
   def this() = this(
     "KyuubiEngineLogDivertAppender",
-    initLayout(),
+    LogDivertAppender.initLayout(),
     null,
     false,
     true,
     Array.empty,
-    new WriterManager(new CharArrayWriter(), "KyuubiEngineLogDivertAppender", initLayout(), true))
+    new WriterManager(
+      new CharArrayWriter(),
+      "KyuubiEngineLogDivertAppender",
+      LogDivertAppender.initLayout(),
+      true))
 
   addFilter(new NameFilter())
 
