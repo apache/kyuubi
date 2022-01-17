@@ -37,7 +37,10 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
     addOperation(op)
   }
 
-  override def newGetTypeInfoOperation(session: Session): Operation = null
+  override def newGetTypeInfoOperation(session: Session): Operation = {
+    val op = new GetTypeInfo(session)
+    addOperation(op)
+  }
 
   override def newGetCatalogsOperation(session: Session): Operation = {
     val op = new GetCatalogs(session)
