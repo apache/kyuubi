@@ -35,11 +35,10 @@ class GetTypeInfo(session: Session)
 
   private def isNumericType(javaType: Int): Boolean = {
     javaType == TINYINT || javaType == SMALLINT || javaType == INTEGER || javaType == BIGINT ||
-    javaType == FLOAT || javaType == FLOAT || javaType == DOUBLE || javaType == DECIMAL
+    javaType == FLOAT || javaType == DOUBLE || javaType == DECIMAL
   }
 
   private def toRow(name: String, javaType: Int, precision: Integer = null): Row = {
-    // format: off
     Row.of(
       name, // TYPE_NAME
       Integer.valueOf(javaType), // DATA_TYPE
@@ -60,7 +59,6 @@ class GetTypeInfo(session: Session)
       null, // SQL_DATETIME_SUB
       if (isNumericType(javaType)) Integer.valueOf(10) else null // NUM_PREC_RADIX
     )
-    // format: on
   }
 
   override protected def runInternal(): Unit = {
