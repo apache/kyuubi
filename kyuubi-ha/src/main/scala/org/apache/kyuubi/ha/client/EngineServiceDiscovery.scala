@@ -31,21 +31,25 @@ class EngineServiceDiscovery(
     fe: FrontendService) extends ServiceDiscovery("EngineServiceDiscovery", fe) {
 
   override def stop(): Unit = synchronized {
-    discoveryClient.deregisterService()
-    conf.get(ENGINE_SHARE_LEVEL) match {
-      // For connection level, we should clean up the namespace in zk in case the disk stress.
-      case "CONNECTION" =>
-        try {
-          if (discoveryClient.postDeregisterService) {
-            info("Clean up discovery service due to this is connection share level.")
+    if (!isServerLost.get()) {
+      discoveryClient.deregisterService()
+      conf.get(ENGINE_SHARE_LEVEL) match {
+        // For connection level, we should clean up the namespace in zk in case the disk stress.
+        case "CONNECTION" =>
+          try {
+            if (discoveryClient.postDeregisterService) {
+              info("Clean up discovery service due to this is connection share level.")
+            }
+          } catch {
+            case NonFatal(e) =>
+              warn("Failed to clean up Spark engine before stop.", e)
           }
-        } catch {
-          case NonFatal(e) =>
-            warn("Failed to clean up Spark engine before stop.", e)
-        }
 
-      case _ =>
+        case _ =>
+      }
+      discoveryClient.closeClient()
     }
     super.stop()
   }
+
 }

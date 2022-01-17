@@ -26,4 +26,13 @@ import org.apache.kyuubi.service.FrontendService
  * @param fe the frontend service to publish for service discovery
  */
 class KyuubiServiceDiscovery(
-    fe: FrontendService) extends ServiceDiscovery("KyuubiServiceDiscovery", fe)
+    fe: FrontendService) extends ServiceDiscovery("KyuubiServiceDiscovery", fe) {
+
+  override def stop(): Unit = synchronized {
+    if (!isServerLost.get()) {
+      discoveryClient.deregisterService()
+      discoveryClient.closeClient()
+    }
+    super.stop()
+  }
+}

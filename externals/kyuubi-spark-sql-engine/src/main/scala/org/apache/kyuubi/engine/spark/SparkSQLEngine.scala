@@ -159,6 +159,7 @@ object SparkSQLEngine extends Logging {
 
   def main(args: Array[String]): Unit = {
     SignalRegister.registerLogger(logger)
+    initializeLoggerIfNecessary(false)
     var spark: SparkSession = null
     try {
       spark = createSpark()

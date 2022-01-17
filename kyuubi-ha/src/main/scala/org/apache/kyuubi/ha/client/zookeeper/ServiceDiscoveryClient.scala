@@ -41,14 +41,12 @@ import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_CONN_MAX_RETRIES
-import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_CONN_MAX_RETRY_WAIT
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_REF_ID
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NAMESPACE
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_NODE_TIMEOUT
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_PUBLISH_CONFIGS
 import org.apache.kyuubi.ha.client.ServiceDiscovery
-import org.apache.kyuubi.ha.client.ZooKeeperClientProvider.buildZookeeperClient
+import org.apache.kyuubi.ha.client.ZooKeeperClientProvider.{buildZookeeperClient, getGracefulStopThreadDelay}
 import org.apache.kyuubi.ha.client.zookeeper.ServiceDiscoveryClient.connectionChecker
 import org.apache.kyuubi.ha.client.zookeeper.ServiceDiscoveryClient.createServiceNode
 import org.apache.kyuubi.util.KyuubiHadoopUtils
@@ -69,8 +67,6 @@ class ServiceDiscoveryClient(serviceDiscovery: ServiceDiscovery) extends Logging
 
   def createClient(conf: KyuubiConf): Unit = {
     _namespace = conf.get(HA_ZK_NAMESPACE)
-    val maxSleepTime = conf.get(HA_ZK_CONN_MAX_RETRY_WAIT)
-    val maxRetries = conf.get(HA_ZK_CONN_MAX_RETRIES)
     zkClient = buildZookeeperClient(conf)
     zkClient.getConnectionStateListenable.addListener(new ConnectionStateListener {
       private val isConnected = new AtomicBoolean(false)
@@ -81,13 +77,13 @@ class ServiceDiscoveryClient(serviceDiscovery: ServiceDiscovery) extends Logging
           case CONNECTED | RECONNECTED => isConnected.set(true)
           case LOST =>
             isConnected.set(false)
-            val delay = maxRetries.toLong * maxSleepTime
+            val delay = getGracefulStopThreadDelay(conf)
             connectionChecker.schedule(
               new Runnable {
                 override def run(): Unit = if (!isConnected.get()) {
                   error(s"Zookeeper client connection state changed to: $newState, but failed to" +
-                    s" reconnect in ${delay / 1000} seconds. Give up retry. ")
-                  serviceDiscovery.stopGracefully()
+                    s" reconnect in ${delay / 1000} seconds. Give up retry and stop gracefully . ")
+                  serviceDiscovery.stopGracefully(true)
                 }
               },
               delay,
@@ -120,7 +116,7 @@ class ServiceDiscoveryClient(serviceDiscovery: ServiceDiscovery) extends Logging
       try {
         serviceNode.close()
       } catch {
-        case e: IOException =>
+        case e @ (_: IOException | _: KeeperException) =>
           error("Failed to close the persistent ephemeral znode" + serviceNode.getActualPath, e)
       } finally {
         serviceNode = null
@@ -130,15 +126,20 @@ class ServiceDiscoveryClient(serviceDiscovery: ServiceDiscovery) extends Logging
 
   def postDeregisterService(): Boolean = {
     if (namespace != null) {
-      zkClient.delete().deletingChildrenIfNeeded().forPath(namespace)
-      true
+      try {
+        zkClient.delete().deletingChildrenIfNeeded().forPath(namespace)
+        true
+      } catch {
+        case e: KeeperException =>
+          warn(s"Failed to delete $namespace", e)
+          false
+      }
     } else {
       false
     }
   }
 
   def closeClient(): Unit = {
-    deregisterService()
     if (zkClient != null) zkClient.close()
   }
 
