@@ -92,12 +92,12 @@ class OperationsResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper
     checkOpState(opHandleStr, FINISHED)
     val response = webTarget.path(
       s"api/v1/operations/$opHandleStr/log")
-      .queryParam("maxrows", "10")
+      .queryParam("maxrows", "5")
       .request(MediaType.APPLICATION_JSON).get()
     assert(200 == response.getStatus)
     val logRowSet = response.readEntity(classOf[OperationLog])
     assert(logRowSet.logRowSet.exists(_.contains("show tables")))
-    assert(logRowSet.rowCount === 10)
+    assert(logRowSet.rowCount === 5)
   }
 
   test("test get result row set") {
