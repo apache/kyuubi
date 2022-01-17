@@ -1,6 +1,7 @@
 name: Greetings
 
-on: [pull_request, issues]
+# on: [pull_request, issues]
+on: issues
 
 jobs:
   greeting:
