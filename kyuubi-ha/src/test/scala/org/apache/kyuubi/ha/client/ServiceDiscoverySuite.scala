@@ -32,7 +32,7 @@ import org.scalatest.time.SpanSugar._
 import org.apache.kyuubi.{KerberizedTestHelper, KYUUBI_VERSION}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf._
-import org.apache.kyuubi.service.{NoopTBinaryFrontendServer, Serverable, ServiceState}
+import org.apache.kyuubi.service.{NoopTBinaryFrontendServer, NoopTBinaryFrontendService, Serverable, Service, ServiceState}
 import org.apache.kyuubi.zookeeper.{EmbeddedZookeeper, ZookeeperConf}
 
 class ServiceDiscoverySuite extends KerberizedTestHelper {
@@ -66,17 +66,23 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
       .set(HA_ZK_NAMESPACE, namespace)
       .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
 
-    val server: Serverable = new NoopTBinaryFrontendServer()
+    var serviceDiscovery: KyuubiServiceDiscovery = null
+    val server: Serverable = new NoopTBinaryFrontendServer() {
+      override val frontendServices: Seq[NoopTBinaryFrontendService] = Seq(
+        new NoopTBinaryFrontendService(this) {
+          override val discoveryService: Option[Service] = {
+            serviceDiscovery = new KyuubiServiceDiscovery(this)
+            Some(serviceDiscovery)
+          }
+
+        }
+      )
+    }
     server.initialize(conf)
     server.start()
-
     val znodeRoot = s"/$namespace"
-    val serviceDiscovery = new KyuubiServiceDiscovery(server.frontendServices.head)
     withZkClient(conf) { framework =>
       try {
-        serviceDiscovery.initialize(conf)
-        serviceDiscovery.start()
-
         assert(framework.checkExists().forPath("/abc") === null)
         assert(framework.checkExists().forPath(znodeRoot) !== null)
         val children = framework.getChildren.forPath(znodeRoot).asScala
@@ -87,13 +93,14 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
         children.foreach { child =>
           framework.delete().forPath(s"""$znodeRoot/$child""")
         }
-        eventually(timeout(5.seconds), interval(1.second)) {
+        eventually(timeout(10.seconds), interval(1.second)) {
           assert(serviceDiscovery.getServiceState === ServiceState.STOPPED)
           assert(server.getServiceState === ServiceState.STOPPED)
         }
+        serviceDiscovery.getServiceState
+
       } finally {
         server.stop()
-        serviceDiscovery.stop()
       }
     }
   }
@@ -165,16 +172,24 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
         .set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
         .set(HA_ZK_AUTH_TYPE, ZooKeeperAuthTypes.NONE.toString)
 
-      val server: Serverable = new NoopTBinaryFrontendServer()
+      var serviceDiscovery: KyuubiServiceDiscovery = null
+      val server: Serverable = new NoopTBinaryFrontendServer() {
+        override val frontendServices: Seq[NoopTBinaryFrontendService] = Seq(
+          new NoopTBinaryFrontendService(this) {
+            override val discoveryService: Option[Service] = {
+              serviceDiscovery = new KyuubiServiceDiscovery(this)
+              Some(serviceDiscovery)
+            }
+
+          }
+        )
+      }
       server.initialize(conf)
       server.start()
 
       val znodeRoot = s"/$namespace"
-      val serviceDiscovery = new EngineServiceDiscovery(server.frontendServices.head)
       withZkClient(conf) { framework =>
         try {
-          serviceDiscovery.initialize(conf)
-          serviceDiscovery.start()
 
           assert(framework.checkExists().forPath("/abc") === null)
           assert(framework.checkExists().forPath(znodeRoot) !== null)
