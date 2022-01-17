@@ -366,12 +366,17 @@ private class StatementStatsPagedTable(
         {event.state}
       </td>
       <td>
-        { if (event.executionId.nonEmpty) {
-        <a href={"%s/SQL/execution/?id=%s".format(
-          UIUtils.prependBaseUri(request, parent.basePath),
-          event.executionId.get)}>
+        {
+      if (event.executionId.isDefined) {
+        <a href={
+          "%s/SQL/execution/?id=%s".format(
+            UIUtils.prependBaseUri(request, parent.basePath),
+            event.executionId.get)
+        }>
           {event.executionId.get}
-        </a>}}
+          </a>
+      }
+    }
       </td>
       {if (event.exception.isDefined) errorMessageCell(event.exception.get.getMessage)}
     </tr>
