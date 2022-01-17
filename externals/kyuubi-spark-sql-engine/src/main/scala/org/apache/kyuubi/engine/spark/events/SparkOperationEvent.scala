@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.spark.events
 
-import org.apache.spark.sql.{DataFrame, Encoders}
+import org.apache.spark.sql.Encoders
 import org.apache.spark.sql.types.StructType
 
 import org.apache.kyuubi.Utils
@@ -42,7 +42,7 @@ import org.apache.kyuubi.engine.spark.operation.SparkOperation
  * @param exception: caught exception if have
  * @param sessionId the identifier of the parent session
  * @param sessionUser the authenticated client user
- * @param queryExecution the query execution of this operation
+ * @param executionId the query execution id of this operation
  */
 case class SparkOperationEvent(
     statementId: String,
@@ -56,7 +56,7 @@ case class SparkOperationEvent(
     exception: Option[Throwable],
     sessionId: String,
     sessionUser: String,
-    queryExecution: String) extends KyuubiSparkEvent {
+    executionId: Option[Long]) extends KyuubiSparkEvent {
 
   override def schema: StructType = Encoders.product[SparkOperationEvent].schema
   override def partitions: Seq[(String, String)] =
@@ -72,7 +72,9 @@ case class SparkOperationEvent(
 }
 
 object SparkOperationEvent {
-  def apply(operation: SparkOperation, result: Option[DataFrame] = None): SparkOperationEvent = {
+  def apply(
+      operation: SparkOperation,
+      executionId: Option[Long] = None): SparkOperationEvent = {
     val session = operation.getSession
     val status = operation.getStatus
     new SparkOperationEvent(
@@ -87,6 +89,6 @@ object SparkOperationEvent {
       status.exception,
       session.handle.identifier.toString,
       session.user,
-      result.map(_.queryExecution.toString).orNull)
+      executionId)
   }
 }

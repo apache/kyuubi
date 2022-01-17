@@ -327,7 +327,8 @@ private class StatementStatsPagedTable(
         ("Duration", true, None),
         ("Statement", true, None),
         ("State", true, None),
-        ("Query Execution", true, None))
+        ("Query Details", true, None),
+        ("Failure Reason", true, None))
 
     headerStatRow(
       sqlTableHeadersAndTooltips,
@@ -365,8 +366,14 @@ private class StatementStatsPagedTable(
         {event.state}
       </td>
       <td>
-        {event.queryExecution}
+        { if (event.executionId.nonEmpty) {
+        <a href={"%s/SQL/execution/?id=%s".format(
+          UIUtils.prependBaseUri(request, parent.basePath),
+          event.executionId.get)}>
+          {event.executionId.get}
+        </a>}}
       </td>
+      {if (event.exception.isDefined) errorMessageCell(event.exception.get.getMessage)}
     </tr>
   }
 
@@ -447,7 +454,6 @@ private class StatementStatsTableDataSource(
       case "Duration" => Ordering.by(_.duration)
       case "Statement" => Ordering.by(_.statement)
       case "State" => Ordering.by(_.state)
-      case "Query Execution" => Ordering.by(_.queryExecution)
       case unknownColumn => throw new IllegalArgumentException(s"Unknown column: $unknownColumn")
     }
     if (desc) {
