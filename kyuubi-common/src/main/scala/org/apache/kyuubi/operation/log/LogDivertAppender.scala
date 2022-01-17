@@ -256,7 +256,9 @@ object LogDivertAppender {
   }
 
   def initialize(): Unit = {
+    val ap = new LogDivertAppender()
     org.apache.logging.log4j.LogManager.getRootLogger()
-      .asInstanceOf[org.apache.logging.log4j.core.Logger].addAppender(new LogDivertAppender())
+      .asInstanceOf[org.apache.logging.log4j.core.Logger].addAppender(ap)
+    ap.start()
   }
 }
