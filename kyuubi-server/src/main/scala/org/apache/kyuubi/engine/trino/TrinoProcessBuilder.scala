@@ -19,14 +19,12 @@ package org.apache.kyuubi.engine.trino
 
 import java.net.URI
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 
 import org.apache.kyuubi.KYUUBI_VERSION
 import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.SCALA_COMPILE_VERSION
-import org.apache.kyuubi.Utils
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_CONNECTION_URL
