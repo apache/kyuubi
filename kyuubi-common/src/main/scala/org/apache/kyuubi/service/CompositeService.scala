@@ -36,10 +36,6 @@ abstract class CompositeService(serviceName: String)
     serviceList += service
   }
 
-  protected def removeService(service: Service): Unit = {
-    serviceList -= service
-  }
-
   override def initialize(conf: KyuubiConf): Unit = {
     serviceList.foreach(_.initialize(conf))
     super.initialize(conf)
