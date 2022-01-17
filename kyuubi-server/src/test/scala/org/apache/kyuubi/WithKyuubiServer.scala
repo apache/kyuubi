@@ -56,6 +56,7 @@ trait WithKyuubiServer extends KyuubiFunSuite {
     conf.setIfMissing(ENGINE_IDLE_TIMEOUT, 10000L)
     // TODO KYUUBI #745
     conf.setIfMissing(ENGINE_INIT_TIMEOUT, 300000L)
+    conf.setIfMissing(ENGINE_SHARE_LEVEL, "CONNECTION")
     server = KyuubiServer.startServer(conf)
     super.beforeAll()
     Thread.sleep(1500)
