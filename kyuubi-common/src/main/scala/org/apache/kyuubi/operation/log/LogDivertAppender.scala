@@ -26,6 +26,7 @@ import org.apache.logging.log4j.core.{Filter, LogEvent, Logger, StringLayout}
 import org.apache.logging.log4j.core.Filter.Result
 import org.apache.logging.log4j.core.LifeCycle.State
 import org.apache.logging.log4j.core.appender.{AbstractWriterAppender, ConsoleAppender, WriterManager}
+import org.apache.logging.log4j.core.config.Property
 import org.apache.logging.log4j.core.layout.PatternLayout
 import org.apache.logging.log4j.message.Message
 
@@ -35,29 +36,24 @@ class LogDivertAppender(
     filter: Filter,
     ignoreExceptions: Boolean,
     immediateFlush: Boolean,
-    manager: WriterManager)
+    writer: CharArrayWriter)
   extends AbstractWriterAppender[WriterManager](
     name,
     layout,
     filter,
     ignoreExceptions,
     immediateFlush,
-    manager) {
+    Property.EMPTY_ARRAY,
+    new WriterManager(writer, name, layout, true)) {
   def this() = this(
     "KyuubiEngineLogDivertAppender",
     LogDivertAppender.initLayout(),
     null,
     false,
     true,
-    new WriterManager(
-      LogDivertAppender.writer,
-      "KyuubiEngineLogDivertAppender",
-      LogDivertAppender.initLayout(),
-      true))
+    LogDivertAppender.writer)
 
   addFilter(new NameFilter())
-
-  final private val writer = LogDivertAppender.writer
 
   /**
    * Overrides AbstractWriterAppender.append(), which does the real logging. No need
