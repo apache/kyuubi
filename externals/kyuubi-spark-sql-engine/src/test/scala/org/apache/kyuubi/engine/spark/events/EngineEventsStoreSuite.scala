@@ -94,7 +94,7 @@ class EngineEventsStoreSuite extends KyuubiFunSuite {
       None,
       "sid1",
       "a",
-      "")
+      None)
     val s2 = SparkOperationEvent(
       "ea2",
       "select 2",
@@ -107,7 +107,7 @@ class EngineEventsStoreSuite extends KyuubiFunSuite {
       None,
       "sid1",
       "c",
-      "")
+      None)
     val s3 = SparkOperationEvent(
       "ea3",
       "select 3",
@@ -120,7 +120,7 @@ class EngineEventsStoreSuite extends KyuubiFunSuite {
       None,
       "sid1",
       "b",
-      "")
+      None)
 
     store.saveStatement(s1)
     store.saveStatement(s2)
@@ -149,7 +149,7 @@ class EngineEventsStoreSuite extends KyuubiFunSuite {
         None,
         "sid1",
         "a",
-        "")
+        None)
       store.saveStatement(s)
     }
 
@@ -174,7 +174,7 @@ class EngineEventsStoreSuite extends KyuubiFunSuite {
       None,
       "sid1",
       "a",
-      ""))
+      None))
     store.saveStatement(SparkOperationEvent(
       "s2",
       "select 1",
@@ -187,7 +187,7 @@ class EngineEventsStoreSuite extends KyuubiFunSuite {
       None,
       "sid1",
       "a",
-      ""))
+      None))
     store.saveStatement(SparkOperationEvent(
       "s3",
       "select 1",
@@ -200,7 +200,7 @@ class EngineEventsStoreSuite extends KyuubiFunSuite {
       None,
       "sid1",
       "a",
-      ""))
+      None))
     store.saveStatement(SparkOperationEvent(
       "s4",
       "select 1",
@@ -213,7 +213,7 @@ class EngineEventsStoreSuite extends KyuubiFunSuite {
       None,
       "sid1",
       "a",
-      ""))
+      None))
 
     assert(store.getStatementList.size == 3)
     assert(store.getStatementList(2).statementId == "s4")

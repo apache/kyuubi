@@ -133,7 +133,7 @@ class EngineTabSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
       assert(resp.contains("sqlstat"))
 
       // check sql stats table title
-      assert(resp.contains("Query Execution"))
+      assert(resp.contains("Query Details"))
     }
   }
 

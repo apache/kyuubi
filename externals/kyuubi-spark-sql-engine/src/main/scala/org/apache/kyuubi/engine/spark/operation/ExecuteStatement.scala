@@ -146,6 +146,7 @@ class ExecuteStatement(
 
   override def setState(newState: OperationState): Unit = {
     super.setState(newState)
-    EventLoggingService.onEvent(SparkOperationEvent(this, Option(result)))
+    EventLoggingService.onEvent(
+      SparkOperationEvent(this, operationListener.getExecutionId))
   }
 }
