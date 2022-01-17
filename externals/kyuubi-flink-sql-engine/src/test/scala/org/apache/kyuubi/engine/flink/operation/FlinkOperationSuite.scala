@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import org.apache.flink.table.api.EnvironmentSettings.DEFAULT_BUILTIN_CATALOG
+import org.apache.flink.table.api.EnvironmentSettings.DEFAULT_BUILTIN_DATABASE
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar._
 
@@ -27,6 +29,8 @@ import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.FUNCTION_CAT
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.FUNCTION_NAME
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.FUNCTION_SCHEM
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CATALOG
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_SCHEM
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_TYPE
 import org.apache.kyuubi.service.ServiceState._
 
@@ -55,6 +59,24 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       }
       assert(!expected.hasNext)
       assert(!catalogs.next())
+    }
+  }
+
+  test("get schemas") {
+    withJdbcStatement() { statement =>
+      val metaData = statement.getConnection.getMetaData
+      var resultSet = metaData.getSchemas(null, null)
+      while (resultSet.next()) {
+        assert(resultSet.getString(TABLE_SCHEM) == DEFAULT_BUILTIN_DATABASE)
+        assert(resultSet.getString(TABLE_CATALOG) === DEFAULT_BUILTIN_CATALOG)
+      }
+      resultSet = metaData.getSchemas(
+        DEFAULT_BUILTIN_CATALOG.split("_").apply(0),
+        DEFAULT_BUILTIN_DATABASE.split("_").apply(0))
+      while (resultSet.next()) {
+        assert(resultSet.getString(TABLE_SCHEM) == DEFAULT_BUILTIN_DATABASE)
+        assert(resultSet.getString(TABLE_CATALOG) === DEFAULT_BUILTIN_CATALOG)
+      }
     }
   }
 
