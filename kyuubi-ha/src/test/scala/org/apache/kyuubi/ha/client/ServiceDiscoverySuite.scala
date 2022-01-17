@@ -191,7 +191,8 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
             assert(server.getServiceState === ServiceState.STOPPED)
             val msg = s"This Kyuubi instance ${server.frontendServices.head.connectionUrl}" +
               s" is now de-registered"
-            assert(logAppender.loggingEvents.exists(_.getRenderedMessage.contains(msg)))
+            assert(logAppender.loggingEvents.exists(
+              _.getMessage.getFormattedMessage.contains(msg)))
           }
         } finally {
           server.stop()

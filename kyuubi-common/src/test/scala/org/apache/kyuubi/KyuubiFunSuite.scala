@@ -20,8 +20,10 @@ package org.apache.kyuubi
 import scala.collection.mutable.ArrayBuffer
 
 // scalastyle:off
-import org.apache.log4j.{Appender, AppenderSkeleton, Level, Logger}
-import org.apache.log4j.spi.LoggingEvent
+import org.apache.logging.log4j._
+import org.apache.logging.log4j.core.{LogEvent, LoggerContext, Logger}
+import org.apache.logging.log4j.core.appender.AbstractAppender
+import org.apache.logging.log4j.core.config.Property
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Outcome}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.funsuite.AnyFunSuite
@@ -70,38 +72,64 @@ trait KyuubiFunSuite extends AnyFunSuite
    * appender and restores the log level if necessary.
    */
   final def withLogAppender(
-      appender: Appender,
-      loggerName: Option[String] = None,
+      appender: AbstractAppender,
+      loggerNames: Seq[String] = Seq.empty,
       level: Option[Level] = None)(
-      f: => Unit): Unit = {
-    val logger = loggerName.map(Logger.getLogger).getOrElse(Logger.getRootLogger)
-    val restoreLevel = logger.getLevel
-    logger.addAppender(appender)
-    if (level.isDefined) {
-      logger.setLevel(level.get)
+    f: => Unit): Unit = {
+    val loggers = if (loggerNames.nonEmpty) {
+      loggerNames.map(LogManager.getLogger)
+    } else {
+      Seq(LogManager.getRootLogger)
     }
-    try f
-    finally {
-      logger.removeAppender(appender)
+    val restoreLevels = loggers.map(_.getLevel)
+    loggers.foreach { l =>
+      val logger = l.asInstanceOf[Logger]
+      logger.addAppender(appender)
+      appender.start()
       if (level.isDefined) {
-        logger.setLevel(restoreLevel)
+        logger.setLevel(level.get)
+        logger.get().setLevel(level.get)
+        LogManager.getContext(false).asInstanceOf[LoggerContext].updateLoggers()
+      }
+    }
+    try f finally {
+      loggers.foreach(_.asInstanceOf[Logger].removeAppender(appender))
+      appender.stop()
+      if (level.isDefined) {
+        loggers.zipWithIndex.foreach { case (logger, i) =>
+          logger.asInstanceOf[Logger].setLevel(restoreLevels(i))
+          logger.asInstanceOf[Logger].get().setLevel(restoreLevels(i))
+        }
       }
     }
   }
 
-  class LogAppender(msg: String = "", maxEvents: Int = 1000) extends AppenderSkeleton {
-    val loggingEvents = new ArrayBuffer[LoggingEvent]()
+  class LogAppender(msg: String = "", maxEvents: Int = 1000)
+    extends AbstractAppender("logAppender", null, null, true, Property.EMPTY_ARRAY) {
+    private val _loggingEvents = new ArrayBuffer[LogEvent]()
+    private var _threshold: Level = Level.INFO
 
-    override def append(loggingEvent: LoggingEvent): Unit = {
-      if (loggingEvents.size >= maxEvents) {
-        val loggingInfo = if (msg == "") "." else s" while logging $msg."
-        throw new IllegalStateException(
-          s"Number of events reached the limit of $maxEvents$loggingInfo")
+    override def append(loggingEvent: LogEvent): Unit = loggingEvent.synchronized {
+      val copyEvent = loggingEvent.toImmutable
+      if (copyEvent.getLevel.isMoreSpecificThan(_threshold)) {
+        _loggingEvents.synchronized {
+          if (_loggingEvents.size >= maxEvents) {
+            val loggingInfo = if (msg == "") "." else s" while logging $msg."
+            throw new IllegalStateException(
+              s"Number of events reached the limit of $maxEvents$loggingInfo")
+          }
+          _loggingEvents.append(copyEvent)
+        }
       }
-      loggingEvents.append(loggingEvent)
     }
-    override def close(): Unit = {}
-    override def requiresLayout(): Boolean = false
+
+    def setThreshold(threshold: Level): Unit = {
+      _threshold = threshold
+    }
+
+    def loggingEvents: ArrayBuffer[LogEvent] = _loggingEvents.synchronized {
+      _loggingEvents.filterNot(_ == null)
+    }
   }
 
   final def withSystemProperty(key: String, value: String)(f: => Unit): Unit = {
