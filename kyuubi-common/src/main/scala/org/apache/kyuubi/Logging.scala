@@ -17,7 +17,10 @@
 
 package org.apache.kyuubi
 
+import org.apache.logging.log4j.{Level, LogManager}
+import org.apache.logging.log4j.core.LoggerContext
 import org.slf4j.{Logger, LoggerFactory}
+import org.slf4j.impl.StaticLoggerBinder
 
 /**
  * Simple version of logging adopted from Apache Spark.
@@ -88,6 +91,37 @@ trait Logging {
   }
 
   private def initializeLogging(isInterpreter: Boolean): Unit = {
+    if (!Logging.isLog4j12) {
+      val log4j12Initialized = !LogManager.getRootLogger
+        .asInstanceOf[org.apache.logging.log4j.core.Logger].getAppenders.isEmpty
+      // scalastyle:off println
+      if (!log4j12Initialized) {
+        Logging.useDefault = true
+        val defaultLogProps = "log4j2-defaults.properties"
+        Option(Thread.currentThread().getContextClassLoader.getResource(defaultLogProps)) match {
+          case Some(url) =>
+            val context = LogManager.getContext(false).asInstanceOf[LoggerContext]
+            context.setConfigLocation(url.toURI)
+          case None =>
+            System.err.println(s"Missing $defaultLogProps")
+        }
+      }
+
+      val rootLogger = LogManager.getRootLogger
+        .asInstanceOf[org.apache.logging.log4j.core.Logger]
+      if (Logging.defaultRootLevel == null) {
+        Logging.defaultRootLevel = rootLogger.getLevel
+      }
+
+      if (isInterpreter) {
+        // set kyuubi ctl log level, default ERROR
+        val ctlLogger = LogManager.getLogger(loggerName)
+          .asInstanceOf[org.apache.logging.log4j.core.Logger]
+        val ctlLevel = Option(ctlLogger.getLevel()).getOrElse(Level.ERROR)
+        rootLogger.setLevel(ctlLevel)
+      }
+      // scalastyle:on println
+    }
     Logging.initialized = true
 
     // Force a call into slf4j to initialize it. Avoids this happening from multiple threads
@@ -97,6 +131,15 @@ trait Logging {
 }
 
 object Logging {
+  @volatile private var useDefault = false
+  @volatile private var defaultRootLevel: Level = _
   @volatile private var initialized = false
   val initLock = new Object()
+  private def isLog4j12: Boolean = {
+    // This distinguishes the log4j 1.2 binding, currently
+    // org.slf4j.impl.Log4jLoggerFactory, from the log4j 2.0 binding, currently
+    // org.apache.logging.slf4j.Log4jLoggerFactory
+    val binderClass = StaticLoggerBinder.getSingleton.getLoggerFactoryClassStr
+    "org.slf4j.impl.Log4jLoggerFactory".equals(binderClass)
+  }
 }
