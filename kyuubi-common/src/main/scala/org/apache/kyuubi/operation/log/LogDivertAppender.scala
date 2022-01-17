@@ -39,19 +39,30 @@ class LogDivertAppender(
     properties: Array[Property],
     manager: WriterManager)
   extends AbstractWriterAppender[WriterManager](
-    name, layout, filter, ignoreExceptions, immediateFlush, properties, manager) {
+    name,
+    layout,
+    filter,
+    ignoreExceptions,
+    immediateFlush,
+    properties,
+    manager) {
   import LogDivertAppender._
 
   final private val writer = new CharArrayWriter
 
-  def this() = this("KyuubiEngineLogDivertAppender", initLayout(), null, false, true,
+  def this() = this(
+    "KyuubiEngineLogDivertAppender",
+    initLayout(),
+    null,
+    false,
+    true,
     Array.empty,
     new WriterManager(new CharArrayWriter(), "KyuubiEngineLogDivertAppender", initLayout(), true))
 
   addFilter(new NameFilter())
 
   /**
-   * Overrides WriterAppender.subAppend(), which does the real logging. No need
+   * Overrides AbstractWriterAppender.append(), which does the real logging. No need
    * to worry about concurrency since log4j calls this synchronously.
    */
   override def append(event: LogEvent): Unit = {
@@ -71,31 +82,137 @@ class LogDivertAppender(
     override def getOnMatch: Result = Result.NEUTRAL
 
     // scalastyle:off
-    override def filter(logger: Logger, level: Level, marker: Marker, msg: String, objects: java.lang.Object*): Result = Result.NEUTRAL
+    override def filter(
+        logger: Logger,
+        level: Level,
+        marker: Marker,
+        msg: String,
+        objects: java.lang.Object*): Result = Result.NEUTRAL
 
-    override def filter(logger: Logger, level: Level, marker: Marker, s: String, o: Any): Result = Result.NEUTRAL
+    override def filter(logger: Logger, level: Level, marker: Marker, s: String, o: Any): Result =
+      Result.NEUTRAL
 
-    override def filter(logger: Logger, level: Level, marker: Marker, s: String, o: Any, o1: Any): Result = Result.NEUTRAL
+    override def filter(
+        logger: Logger,
+        level: Level,
+        marker: Marker,
+        s: String,
+        o: Any,
+        o1: Any): Result = Result.NEUTRAL
 
-    override def filter(logger: Logger, level: Level, marker: Marker, s: String, o: Any, o1: Any, o2: Any): Result = Result.NEUTRAL
+    override def filter(
+        logger: Logger,
+        level: Level,
+        marker: Marker,
+        s: String,
+        o: Any,
+        o1: Any,
+        o2: Any): Result = Result.NEUTRAL
 
-    override def filter(logger: Logger, level: Level, marker: Marker, s: String, o: Any, o1: Any, o2: Any, o3: Any): Result = Result.NEUTRAL
+    override def filter(
+        logger: Logger,
+        level: Level,
+        marker: Marker,
+        s: String,
+        o: Any,
+        o1: Any,
+        o2: Any,
+        o3: Any): Result = Result.NEUTRAL
 
-    override def filter(logger: Logger, level: Level, marker: Marker, s: String, o: Any, o1: Any, o2: Any, o3: Any, o4: Any): Result = Result.NEUTRAL
+    override def filter(
+        logger: Logger,
+        level: Level,
+        marker: Marker,
+        s: String,
+        o: Any,
+        o1: Any,
+        o2: Any,
+        o3: Any,
+        o4: Any): Result = Result.NEUTRAL
 
-    override def filter(logger: Logger, level: Level, marker: Marker, s: String, o: Any, o1: Any, o2: Any, o3: Any, o4: Any, o5: Any): Result = Result.NEUTRAL
+    override def filter(
+        logger: Logger,
+        level: Level,
+        marker: Marker,
+        s: String,
+        o: Any,
+        o1: Any,
+        o2: Any,
+        o3: Any,
+        o4: Any,
+        o5: Any): Result = Result.NEUTRAL
 
-    override def filter(logger: Logger, level: Level, marker: Marker, s: String, o: Any, o1: Any, o2: Any, o3: Any, o4: Any, o5: Any, o6: Any): Result = Result.NEUTRAL
+    override def filter(
+        logger: Logger,
+        level: Level,
+        marker: Marker,
+        s: String,
+        o: Any,
+        o1: Any,
+        o2: Any,
+        o3: Any,
+        o4: Any,
+        o5: Any,
+        o6: Any): Result = Result.NEUTRAL
 
-    override def filter(logger: Logger, level: Level, marker: Marker, s: String, o: Any, o1: Any, o2: Any, o3: Any, o4: Any, o5: Any, o6: Any, o7: Any): Result = Result.NEUTRAL
+    override def filter(
+        logger: Logger,
+        level: Level,
+        marker: Marker,
+        s: String,
+        o: Any,
+        o1: Any,
+        o2: Any,
+        o3: Any,
+        o4: Any,
+        o5: Any,
+        o6: Any,
+        o7: Any): Result = Result.NEUTRAL
 
-    override def filter(logger: Logger, level: Level, marker: Marker, s: String, o: Any, o1: Any, o2: Any, o3: Any, o4: Any, o5: Any, o6: Any, o7: Any, o8: Any): Result = Result.NEUTRAL
+    override def filter(
+        logger: Logger,
+        level: Level,
+        marker: Marker,
+        s: String,
+        o: Any,
+        o1: Any,
+        o2: Any,
+        o3: Any,
+        o4: Any,
+        o5: Any,
+        o6: Any,
+        o7: Any,
+        o8: Any): Result = Result.NEUTRAL
 
-    override def filter(logger: Logger, level: Level, marker: Marker, s: String, o: Any, o1: Any, o2: Any, o3: Any, o4: Any, o5: Any, o6: Any, o7: Any, o8: Any, o9: Any): Result = Result.NEUTRAL
+    override def filter(
+        logger: Logger,
+        level: Level,
+        marker: Marker,
+        s: String,
+        o: Any,
+        o1: Any,
+        o2: Any,
+        o3: Any,
+        o4: Any,
+        o5: Any,
+        o6: Any,
+        o7: Any,
+        o8: Any,
+        o9: Any): Result = Result.NEUTRAL
 
-    override def filter(logger: Logger, level: Level, marker: Marker, o: Any, throwable: Throwable): Result = Result.NEUTRAL
+    override def filter(
+        logger: Logger,
+        level: Level,
+        marker: Marker,
+        o: Any,
+        throwable: Throwable): Result = Result.NEUTRAL
 
-    override def filter(logger: Logger, level: Level, marker: Marker, message: Message, throwable: Throwable): Result = Result.NEUTRAL
+    override def filter(
+        logger: Logger,
+        level: Level,
+        marker: Marker,
+        message: Message,
+        throwable: Throwable): Result = Result.NEUTRAL
     // scalastyle:on
 
     override def filter(event: LogEvent): Result = {
