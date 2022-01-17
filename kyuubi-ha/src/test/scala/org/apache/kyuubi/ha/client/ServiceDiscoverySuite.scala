@@ -74,7 +74,6 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
             serviceDiscovery = new KyuubiServiceDiscovery(this)
             Some(serviceDiscovery)
           }
-
         }
       )
     }
@@ -97,8 +96,6 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
           assert(serviceDiscovery.getServiceState === ServiceState.STOPPED)
           assert(server.getServiceState === ServiceState.STOPPED)
         }
-        serviceDiscovery.getServiceState
-
       } finally {
         server.stop()
       }
@@ -180,7 +177,6 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
               serviceDiscovery = new KyuubiServiceDiscovery(this)
               Some(serviceDiscovery)
             }
-
           }
         )
       }
