@@ -16,9 +16,8 @@
 #
 
 # Set everything to be logged to the file target/unit-tests.log
-rootLogger.level = debug
+rootLogger.level = info
 rootLogger.appenderRef.stdout.ref = STDOUT
-rootLogger.appenderRef.file.ref = File
 
 # Console Appender
 appender.console.type = Console
@@ -30,7 +29,7 @@ appender.console.layout.pattern = %d{HH:mm:ss.SSS} %p %c: %m%n
 appender.console.filter.1.type = Filters
 
 appender.console.filter.1.a.type = ThresholdFilter
-appender.console.filter.1.a.level = debug
+appender.console.filter.1.a.level = info
 
 # SPARK-34128: Suppress undesirable TTransportException warnings, due to THRIFT-4805
 appender.console.filter.1.b.type = RegexFilter
@@ -38,20 +37,15 @@ appender.console.filter.1.b.regex = .*Thrift error occurred during processing of
 appender.console.filter.1.b.onMatch = deny
 appender.console.filter.1.b.onMismatch = neutral
 
-# File Appender
-appender.file.type = File
-appender.file.name = File
-appender.file.fileName = target/unit-tests.log
-appender.file.layout.type = PatternLayout
-appender.file.layout.pattern = %d{HH:mm:ss.SSS} %t %p %c{1}: %m%n
+# Set the default kyuubi-ctl log level to WARN. When running the kyuubi-ctl, the
+# log level for this class is used to overwrite the root logger's log level.
+logger.ctl.name = org.apache.kyuubi.ctl.ServiceControlCli
+logger.ctl.level = error
 
-appender.file.filter.1.type = Filters
+# Analysis MySQLFrontend protocol traffic
+# logger.mysql.name = org.apache.kyuubi.server.mysql.codec
+# logger.mysql.level = trace
 
-appender.file.filter.1.a.type = RegexFilter
-appender.file.filter.1.a.regx = .*Thrift error occurred during processing of message.*
-appender.file.filter.1.a.onMatch = deny
-appender.file.filter.1.a.onMismatch = neutral
-
-# Set the logger level of File Appender to DEBUG
-appender.file.filter.1.b.type = ThresholdFilter
-appender.file.filter.1.b.level = debug
+# Kyuubi BeeLine
+logger.beeline.name = org.apache.hive.beeline.KyuubiBeeLine
+logger.beeline.level = error

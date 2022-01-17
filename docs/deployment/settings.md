@@ -363,7 +363,7 @@ Please refer to the Spark official online documentation for [SET Command](http:/
 
 ## Logging
 
-Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can configure it using `$KYUUBI_HOME/conf/log4j.properties`.
+Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can configure it using `$KYUUBI_HOME/conf/log4j2.properties`.
 ```bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -382,22 +382,40 @@ Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can 
 # limitations under the License.
 #
 
-# Set everything to be logged to the console
-log4j.rootCategory=INFO, console
-log4j.appender.console=org.apache.log4j.ConsoleAppender
-log4j.appender.console.target=System.err
-log4j.appender.console.layout=org.apache.log4j.PatternLayout
-log4j.appender.console.layout.ConversionPattern=%d{yyyy-MM-dd HH:mm:ss.SSS} %p %c{2}: %m%n
+# Set everything to be logged to the file target/unit-tests.log
+rootLogger.level = info
+rootLogger.appenderRef.stdout.ref = STDOUT
+
+# Console Appender
+appender.console.type = Console
+appender.console.name = STDOUT
+appender.console.target = SYSTEM_OUT
+appender.console.layout.type = PatternLayout
+appender.console.layout.pattern = %d{HH:mm:ss.SSS} %p %c: %m%n
+
+appender.console.filter.1.type = Filters
+
+appender.console.filter.1.a.type = ThresholdFilter
+appender.console.filter.1.a.level = info
+
+# SPARK-34128: Suppress undesirable TTransportException warnings, due to THRIFT-4805
+appender.console.filter.1.b.type = RegexFilter
+appender.console.filter.1.b.regex = .*Thrift error occurred during processing of message.*
+appender.console.filter.1.b.onMatch = deny
+appender.console.filter.1.b.onMismatch = neutral
 
 # Set the default kyuubi-ctl log level to WARN. When running the kyuubi-ctl, the
 # log level for this class is used to overwrite the root logger's log level.
-log4j.logger.org.apache.kyuubi.ctl.ServiceControlCli=ERROR
+logger.ctl.name = org.apache.kyuubi.ctl.ServiceControlCli
+logger.ctl.level = error
 
 # Analysis MySQLFrontend protocol traffic
-# log4j.logger.org.apache.kyuubi.server.mysql.codec=TRACE
+# logger.mysql.name = org.apache.kyuubi.server.mysql.codec
+# logger.mysql.level = trace
 
 # Kyuubi BeeLine
-log4j.logger.org.apache.hive.beeline.KyuubiBeeLine=ERROR
+logger.beeline.name = org.apache.hive.beeline.KyuubiBeeLine
+logger.beeline.level = error
 ```
 
 ## Other Configurations
