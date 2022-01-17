@@ -48,6 +48,8 @@ class EngineServiceDiscovery(
         case _ =>
       }
       discoveryClient.closeClient()
+    } else {
+      warn(s"The Zookeeper ensemble is LOST")
     }
     super.stop()
   }

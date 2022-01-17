@@ -32,6 +32,8 @@ class KyuubiServiceDiscovery(
     if (!isServerLost.get()) {
       discoveryClient.deregisterService()
       discoveryClient.closeClient()
+    } else {
+      warn(s"The Zookeeper ensemble is LOST")
     }
     super.stop()
   }
