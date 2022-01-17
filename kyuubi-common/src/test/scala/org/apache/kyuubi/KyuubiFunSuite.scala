@@ -21,7 +21,7 @@ import scala.collection.mutable.ArrayBuffer
 
 // scalastyle:off
 import org.apache.logging.log4j._
-import org.apache.logging.log4j.core.{LogEvent, LoggerContext, Logger}
+import org.apache.logging.log4j.core.{LogEvent, Logger, LoggerContext}
 import org.apache.logging.log4j.core.appender.AbstractAppender
 import org.apache.logging.log4j.core.config.Property
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Outcome}
@@ -75,12 +75,13 @@ trait KyuubiFunSuite extends AnyFunSuite
       appender: AbstractAppender,
       loggerNames: Seq[String] = Seq.empty,
       level: Option[Level] = None)(
-    f: => Unit): Unit = {
-    val loggers = if (loggerNames.nonEmpty) {
-      loggerNames.map(LogManager.getLogger)
-    } else {
-      Seq(LogManager.getRootLogger)
-    }
+      f: => Unit): Unit = {
+    val loggers =
+      if (loggerNames.nonEmpty) {
+        loggerNames.map(LogManager.getLogger)
+      } else {
+        Seq(LogManager.getRootLogger)
+      }
     val restoreLevels = loggers.map(_.getLevel)
     loggers.foreach { l =>
       val logger = l.asInstanceOf[Logger]
@@ -92,7 +93,8 @@ trait KyuubiFunSuite extends AnyFunSuite
         LogManager.getContext(false).asInstanceOf[LoggerContext].updateLoggers()
       }
     }
-    try f finally {
+    try f
+    finally {
       loggers.foreach(_.asInstanceOf[Logger].removeAppender(appender))
       appender.stop()
       if (level.isDefined) {
