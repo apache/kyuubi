@@ -89,7 +89,10 @@ object KyuubiServer extends Logging {
       }
     }
 
-    val server = new KyuubiServer()
+    val server = conf.get(KyuubiConf.SERVER_NAME) match {
+      case Some(s) => new KyuubiServer(s)
+      case _ => new KyuubiServer()
+    }
     try {
       server.initialize(conf)
     } catch {

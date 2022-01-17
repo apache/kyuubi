@@ -293,6 +293,13 @@ kyuubi\.operation<br>\.status\.polling\.max<br>\.attempts|<div style='width: 65p
 kyuubi\.operation<br>\.status\.polling<br>\.timeout|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>PT5S</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>Timeout(ms) for long polling asynchronous running sql query's status</div>|<div style='width: 30pt'>duration</div>|<div style='width: 20pt'>1.0.0</div>
 
 
+### Server
+
+Key | Default | Meaning | Type | Since
+--- | --- | --- | --- | ---
+kyuubi\.server\.name|<div style='width: 65pt;word-wrap: break-word;white-space: normal'>&lt;undefined&gt;</div>|<div style='width: 170pt;word-wrap: break-word;white-space: normal'>The name of Kyuubi Server.</div>|<div style='width: 30pt'>string</div>|<div style='width: 20pt'>1.5.0</div>
+
+
 ### Session
 
 Key | Default | Meaning | Type | Since

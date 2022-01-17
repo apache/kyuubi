@@ -1109,4 +1109,11 @@ object KyuubiConf {
       .transform(_.toUpperCase(Locale.ROOT))
       .checkValues(OperationLanguages.values.map(_.toString))
       .createWithDefault(OperationLanguages.SQL.toString)
+
+  val SERVER_NAME: OptionalConfigEntry[String] =
+    buildConf("server.name")
+      .doc("The name of Kyuubi Server.")
+      .version("1.5.0")
+      .stringConf
+      .createOptional
 }
