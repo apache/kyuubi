@@ -19,17 +19,22 @@ package org.apache.kyuubi.engine.flink.schema
 
 import java.{lang, util}
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
+import java.sql.{Date, Timestamp}
+import java.time.{LocalDate, LocalDateTime}
 import java.util.Collections
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
 import org.apache.flink.table.catalog.Column
-import org.apache.flink.table.types.logical.{DecimalType, _}
+import org.apache.flink.table.types.logical._
 import org.apache.flink.types.Row
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.engine.flink.result.ResultSet
+import org.apache.kyuubi.util.RowSetUtils.{dateFormatter, timestampFormatter}
 
 object RowSet {
 
@@ -70,7 +75,8 @@ object RowSet {
       row: Row,
       resultSet: ResultSet): TColumnValue = {
 
-    val logicalType = resultSet.getColumns.get(ordinal).getDataType.getLogicalType
+    val column = resultSet.getColumns.get(ordinal)
+    val logicalType = column.getDataType.getLogicalType
 
     logicalType match {
       case _: BooleanType =>
@@ -80,6 +86,12 @@ object RowSet {
         }
         TColumnValue.boolVal(boolValue)
       case _: TinyIntType =>
+        val tByteValue = new TByteValue
+        if (row.getField(ordinal) != null) {
+          tByteValue.setValue(row.getField(ordinal).asInstanceOf[Byte])
+        }
+        TColumnValue.byteVal(tByteValue)
+      case _: SmallIntType =>
         val tI16Value = new TI16Value
         if (row.getField(ordinal) != null) {
           tI16Value.setValue(row.getField(ordinal).asInstanceOf[Short])
@@ -88,7 +100,7 @@ object RowSet {
       case _: IntType =>
         val tI32Value = new TI32Value
         if (row.getField(ordinal) != null) {
-          tI32Value.setValue(row.getField(ordinal).asInstanceOf[Short])
+          tI32Value.setValue(row.getField(ordinal).asInstanceOf[Int])
         }
         TColumnValue.i32Val(tI32Value)
       case _: BigIntType =>
@@ -112,21 +124,23 @@ object RowSet {
       case _: VarCharType =>
         val tStringValue = new TStringValue
         if (row.getField(ordinal) != null) {
-          tStringValue.setValue(row.getField(ordinal).asInstanceOf[String])
+          val stringValue = row.getField(ordinal).asInstanceOf[String]
+          tStringValue.setValue(stringValue)
         }
         TColumnValue.stringVal(tStringValue)
       case _: CharType =>
         val tStringValue = new TStringValue
         if (row.getField(ordinal) != null) {
-          tStringValue.setValue(row.getField(ordinal).asInstanceOf[String])
+          val stringValue = row.getField(ordinal).asInstanceOf[String]
+          tStringValue.setValue(stringValue)
         }
         TColumnValue.stringVal(tStringValue)
-      case _ =>
-        val tStrValue = new TStringValue
+      case t =>
+        val tStringValue = new TStringValue
         if (row.getField(ordinal) != null) {
-          // TODO to be done
+          tStringValue.setValue(toHiveString((row.getField(ordinal), t)))
         }
-        TColumnValue.stringVal(tStrValue)
+        TColumnValue.stringVal(tStringValue)
     }
   }
 
@@ -141,15 +155,29 @@ object RowSet {
         val values = getOrSetAsNull[lang.Boolean](rows, ordinal, nulls, true)
         TColumn.boolVal(new TBoolColumn(values, nulls))
       case _: TinyIntType =>
+        val values = getOrSetAsNull[lang.Byte](rows, ordinal, nulls, 0.toByte)
+        TColumn.byteVal(new TByteColumn(values, nulls))
+      case _: SmallIntType =>
         val values = getOrSetAsNull[lang.Short](rows, ordinal, nulls, 0.toShort)
         TColumn.i16Val(new TI16Column(values, nulls))
+      case _: IntType =>
+        val values = getOrSetAsNull[lang.Integer](rows, ordinal, nulls, 0)
+        TColumn.i32Val(new TI32Column(values, nulls))
+      case _: BigIntType =>
+        val values = getOrSetAsNull[lang.Long](rows, ordinal, nulls, 0L)
+        TColumn.i64Val(new TI64Column(values, nulls))
+      case _: FloatType =>
+        val values = getOrSetAsNull[lang.Double](rows, ordinal, nulls, 0.0)
+        TColumn.doubleVal(new TDoubleColumn(values, nulls))
+      case _: DoubleType =>
+        val values = getOrSetAsNull[lang.Double](rows, ordinal, nulls, 0.0)
+        TColumn.doubleVal(new TDoubleColumn(values, nulls))
       case _: VarCharType =>
         val values = getOrSetAsNull[String](rows, ordinal, nulls, "")
         TColumn.stringVal(new TStringColumn(values, nulls))
       case _: CharType =>
         val values = getOrSetAsNull[String](rows, ordinal, nulls, "")
         TColumn.stringVal(new TStringColumn(values, nulls))
-
       case _ =>
         val values = rows.zipWithIndex.toList.map { case (row, i) =>
           nulls.set(i, row.getField(ordinal) == null)
@@ -209,6 +237,12 @@ object RowSet {
         Map(
           TCLIServiceConstants.PRECISION -> TTypeQualifierValue.i32Value(d.getPrecision),
           TCLIServiceConstants.SCALE -> TTypeQualifierValue.i32Value(d.getScale)).asJava
+      case v: VarCharType =>
+        Map(TCLIServiceConstants.CHARACTER_MAXIMUM_LENGTH ->
+          TTypeQualifierValue.i32Value(v.getLength)).asJava
+      case ch: CharType =>
+        Map(TCLIServiceConstants.CHARACTER_MAXIMUM_LENGTH ->
+          TTypeQualifierValue.i32Value(ch.getLength)).asJava
       case _ => Collections.emptyMap[String, TTypeQualifierValue]()
     }
     ret.setQualifiers(qualifiers)
@@ -220,15 +254,31 @@ object RowSet {
     case _: BooleanType => TTypeId.BOOLEAN_TYPE
     case _: FloatType => TTypeId.FLOAT_TYPE
     case _: DoubleType => TTypeId.DOUBLE_TYPE
-    case _: VarCharType => TTypeId.STRING_TYPE
-    case _: CharType => TTypeId.STRING_TYPE
+    case _: VarCharType => TTypeId.VARCHAR_TYPE
+    case _: CharType => TTypeId.CHAR_TYPE
+    case _: TinyIntType => TTypeId.TINYINT_TYPE
+    case _: SmallIntType => TTypeId.SMALLINT_TYPE
+    case _: IntType => TTypeId.INT_TYPE
+    case _: BigIntType => TTypeId.BIGINT_TYPE
     case _: DecimalType => TTypeId.DECIMAL_TYPE
+    case _: DateType => TTypeId.DATE_TYPE
+    case _: TimestampType => TTypeId.TIMESTAMP_TYPE
+    case _: ArrayType => TTypeId.ARRAY_TYPE
+    case _: MapType => TTypeId.MAP_TYPE
+    case _: RowType => TTypeId.STRUCT_TYPE
+    case _: BinaryType => TTypeId.BINARY_TYPE
+    case t @ (_: ZonedTimestampType | _: LocalZonedTimestampType | _: MultisetType |
+        _: YearMonthIntervalType | _: DayTimeIntervalType) =>
+      throw new IllegalArgumentException(
+        "Flink data type `%s` is not supported currently".format(t.asSummaryString()),
+        null)
     case other =>
       throw new IllegalArgumentException(s"Unrecognized type name: ${other.asSummaryString()}")
   }
 
   /**
    * A simpler impl of Flink's toHiveString
+   * TODO: support Flink's new data type system
    */
   def toHiveString(dataWithType: (Any, LogicalType)): String = {
     dataWithType match {
@@ -236,8 +286,50 @@ object RowSet {
         // Only match nulls in nested type values
         "null"
 
+      case (d: Int, _: DateType) =>
+        dateFormatter.format(LocalDate.ofEpochDay(d))
+
+      case (ld: LocalDate, _: DateType) =>
+        dateFormatter.format(ld)
+
+      case (d: Date, _: DateType) =>
+        dateFormatter.format(d.toInstant)
+
+      case (ldt: LocalDateTime, _: TimestampType) =>
+        timestampFormatter.format(ldt)
+
+      case (ts: Timestamp, _: TimestampType) =>
+        timestampFormatter.format(ts.toInstant)
+
       case (decimal: java.math.BigDecimal, _: DecimalType) =>
         decimal.toPlainString
+
+      case (a: Array[_], t: ArrayType) =>
+        a.map(v => toHiveString((v, t.getElementType))).toSeq.mkString(
+          "[",
+          ",",
+          "]")
+
+      case (m: Map[_, _], t: MapType) =>
+        m.map {
+          case (k, v) =>
+            toHiveString((k, t.getKeyType)) + ":" + toHiveString((v, t.getValueType))
+        }
+          .toSeq.mkString("{", ",", "}")
+
+      case (r: Row, t: RowType) =>
+        val lb = ListBuffer[String]()
+        for (i <- 0 until r.getArity) {
+          lb += s"""${t.getTypeAt(i).toString}:${toHiveString((r.getField(i), t.getTypeAt(i)))}"""
+        }
+        lb.toList.mkString("{", ",", "}")
+
+      case (s: String, _ @(_: VarCharType | _: CharType)) =>
+        // Only match string in nested type values
+        "\"" + s + "\""
+
+      case (bin: Array[Byte], _: BinaryType) =>
+        new String(bin, StandardCharsets.UTF_8)
 
       case (other, _) =>
         other.toString
