@@ -50,20 +50,21 @@ class LogDivertAppender(
     false,
     true,
     new WriterManager(
-      new CharArrayWriter(),
+      LogDivertAppender.writer,
       "KyuubiEngineLogDivertAppender",
       LogDivertAppender.initLayout(),
       true))
 
   addFilter(new NameFilter())
 
-  final private val writer = new CharArrayWriter
+  final private val writer = LogDivertAppender.writer
 
   /**
    * Overrides AbstractWriterAppender.append(), which does the real logging. No need
    * to worry about concurrency since log4j calls this synchronously.
    */
   override def append(event: LogEvent): Unit = {
+    super.append(event)
     // That should've gone into our writer. Notify the LogContext.
     val logOutput = writer.toString
     writer.reset()
@@ -241,6 +242,8 @@ class LogDivertAppender(
 }
 
 object LogDivertAppender {
+  val writer = new CharArrayWriter()
+
   def initLayout(): StringLayout = {
     LogManager.getRootLogger.asInstanceOf[org.apache.logging.log4j.core.Logger]
       .getAppenders.values().asScala
