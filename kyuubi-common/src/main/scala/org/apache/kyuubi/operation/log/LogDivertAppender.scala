@@ -26,7 +26,6 @@ import org.apache.logging.log4j.core.{Filter, LogEvent, Logger, StringLayout}
 import org.apache.logging.log4j.core.Filter.Result
 import org.apache.logging.log4j.core.LifeCycle.State
 import org.apache.logging.log4j.core.appender.{AbstractWriterAppender, ConsoleAppender, WriterManager}
-import org.apache.logging.log4j.core.config.Property
 import org.apache.logging.log4j.core.layout.PatternLayout
 import org.apache.logging.log4j.message.Message
 
@@ -36,7 +35,6 @@ class LogDivertAppender(
     filter: Filter,
     ignoreExceptions: Boolean,
     immediateFlush: Boolean,
-    properties: Array[Property],
     manager: WriterManager)
   extends AbstractWriterAppender[WriterManager](
     name,
@@ -44,17 +42,13 @@ class LogDivertAppender(
     filter,
     ignoreExceptions,
     immediateFlush,
-    properties,
     manager) {
-  final private val writer = new CharArrayWriter
-
   def this() = this(
     "KyuubiEngineLogDivertAppender",
     LogDivertAppender.initLayout(),
     null,
     false,
     true,
-    Array.empty,
     new WriterManager(
       new CharArrayWriter(),
       "KyuubiEngineLogDivertAppender",
@@ -63,12 +57,13 @@ class LogDivertAppender(
 
   addFilter(new NameFilter())
 
+  final private val writer = new CharArrayWriter
+
   /**
    * Overrides AbstractWriterAppender.append(), which does the real logging. No need
    * to worry about concurrency since log4j calls this synchronously.
    */
   override def append(event: LogEvent): Unit = {
-    super.append(event)
     // That should've gone into our writer. Notify the LogContext.
     val logOutput = writer.toString
     writer.reset()
