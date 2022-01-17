@@ -72,7 +72,6 @@ abstract class ServiceDiscovery(
     isServerLost.set(isLost)
     fe.serverable.stop()
   }
-
 }
 
 object ServiceDiscovery extends Logging {
