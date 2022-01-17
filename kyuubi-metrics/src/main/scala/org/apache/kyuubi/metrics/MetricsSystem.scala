@@ -53,6 +53,11 @@ class MetricsSystem extends CompositeService("MetricsSystem") {
     timer.update(duration, unit)
   }
 
+  def markMeter(key: String, value: Long = 1): Unit = {
+    val meter = registry.meter(key)
+    meter.mark(value)
+  }
+
   def registerGauge[T](name: String, value: => T, default: T): Unit = {
     registry.register(
       MetricRegistry.name(name),
@@ -105,5 +110,4 @@ object MetricsSystem {
       tracing(_.updateTimer(name, System.nanoTime() - startTime, TimeUnit.NANOSECONDS))
     }
   }
-
 }
