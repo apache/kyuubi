@@ -21,6 +21,12 @@ object MetricsConstants {
 
   final private val KYUUBI = "kyuubi."
 
+  final val GC_METRIC: String = KYUUBI + "gc"
+  final val MEMORY_USAGE: String = KYUUBI + "memory_usage"
+  final val BUFFER_POOL: String = KYUUBI + "buffer_pool"
+  final val THREAD_STATE: String = KYUUBI + "thread_state"
+  final val CLASS_LOADING: String = KYUUBI + "class_loading"
+
   final val EXEC_POOL_ALIVE: String = KYUUBI + "exec.pool.threads.alive"
   final val EXEC_POOL_ACTIVE: String = KYUUBI + "exec.pool.threads.active"
 
