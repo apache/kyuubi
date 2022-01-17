@@ -74,8 +74,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
             serviceDiscovery = new KyuubiServiceDiscovery(this)
             Some(serviceDiscovery)
           }
-        }
-      )
+        })
     }
     server.initialize(conf)
     server.start()
@@ -177,8 +176,7 @@ class ServiceDiscoverySuite extends KerberizedTestHelper {
               serviceDiscovery = new KyuubiServiceDiscovery(this)
               Some(serviceDiscovery)
             }
-          }
-        )
+          })
       }
       server.initialize(conf)
       server.start()
