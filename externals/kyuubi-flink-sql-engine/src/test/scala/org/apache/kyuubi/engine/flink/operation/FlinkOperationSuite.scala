@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import java.sql.DatabaseMetaData
+
 import org.apache.flink.table.api.EnvironmentSettings.DEFAULT_BUILTIN_CATALOG
 import org.apache.flink.table.api.EnvironmentSettings.DEFAULT_BUILTIN_DATABASE
 import org.apache.flink.table.types.logical.LogicalTypeRoot
@@ -330,14 +332,14 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       val metaData = statement.getConnection.getMetaData
       var resultSet = metaData.getSchemas(null, null)
       while (resultSet.next()) {
-        assert(resultSet.getString(TABLE_SCHEM) == DEFAULT_BUILTIN_DATABASE)
+        assert(resultSet.getString(TABLE_SCHEM) === DEFAULT_BUILTIN_DATABASE)
         assert(resultSet.getString(TABLE_CATALOG) === DEFAULT_BUILTIN_CATALOG)
       }
       resultSet = metaData.getSchemas(
         DEFAULT_BUILTIN_CATALOG.split("_").apply(0),
         DEFAULT_BUILTIN_DATABASE.split("_").apply(0))
       while (resultSet.next()) {
-        assert(resultSet.getString(TABLE_SCHEM) == DEFAULT_BUILTIN_DATABASE)
+        assert(resultSet.getString(TABLE_SCHEM) === DEFAULT_BUILTIN_DATABASE)
         assert(resultSet.getString(TABLE_CATALOG) === DEFAULT_BUILTIN_CATALOG)
       }
     }
@@ -412,26 +414,28 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       val metaData = statement.getConnection.getMetaData
       Seq("currentTimestamp", "currentDate", "currentTime", "localTimestamp", "localTime")
         .foreach { func =>
-          Seq(metaData.getFunctions _).foreach { apiFunc =>
-            val resultSet = apiFunc(null, null, func)
-            while (resultSet.next()) {
-              assert(resultSet.getString(FUNCTION_CAT) == null)
-              assert(resultSet.getString(FUNCTION_SCHEM) === null)
-              assert(resultSet.getString(FUNCTION_NAME) === func)
-            }
+          val resultSet = metaData.getFunctions(null, null, func)
+          while (resultSet.next()) {
+            assert(resultSet.getString(FUNCTION_CAT) === null)
+            assert(resultSet.getString(FUNCTION_SCHEM) === null)
+            assert(resultSet.getString(FUNCTION_NAME) === func)
+            assert(resultSet.getString(REMARKS) === null)
+            assert(resultSet.getInt(FUNCTION_TYPE) === DatabaseMetaData.functionResultUnknown)
+            assert(resultSet.getString(SPECIFIC_NAME) === null)
           }
         }
       val expected =
         List("currentTimestamp", "currentDate", "currentTime", "localTimestamp", "localTime")
       Seq("current", "local")
         .foreach { funcPattern =>
-          Seq(metaData.getFunctions _).foreach { apiFunc =>
-            val resultSet = apiFunc(null, null, funcPattern)
-            while (resultSet.next()) {
-              assert(resultSet.getString(FUNCTION_CAT) == null)
-              assert(resultSet.getString(FUNCTION_SCHEM) === null)
-              assert(expected.contains(resultSet.getString(FUNCTION_NAME)))
-            }
+          val resultSet = metaData.getFunctions(null, null, funcPattern)
+          while (resultSet.next()) {
+            assert(resultSet.getString(FUNCTION_CAT) === null)
+            assert(resultSet.getString(FUNCTION_SCHEM) === null)
+            assert(expected.contains(resultSet.getString(FUNCTION_NAME)))
+            assert(resultSet.getString(REMARKS) === null)
+            assert(resultSet.getString(FUNCTION_TYPE) === DatabaseMetaData.functionResultUnknown)
+            assert(resultSet.getString(SPECIFIC_NAME) === null)
           }
         }
     }

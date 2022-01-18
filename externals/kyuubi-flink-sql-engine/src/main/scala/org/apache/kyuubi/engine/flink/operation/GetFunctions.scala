@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import java.sql.DatabaseMetaData
+
 import scala.collection.JavaConverters._
 
 import org.apache.commons.lang3.StringUtils
@@ -45,7 +47,9 @@ class GetFunctions(
       val systemFunctions = filterPattern(
         tableEnv.listFunctions().diff(tableEnv.listUserDefinedFunctions()),
         functionPattern)
-        .map { f => Row.of(null, null, f) }
+        .map { f =>
+          Row.of(null, null, f, null, Integer.valueOf(DatabaseMetaData.functionResultUnknown), null)
+        }
       val catalogFunctions = tableEnv.listCatalogs()
         .filter { c => StringUtils.isEmpty(catalogName) || c == catalogName }
         .flatMap { c =>
@@ -53,14 +57,25 @@ class GetFunctions(
           filterPattern(catalog.listDatabases().asScala, schemaPattern)
             .flatMap { d =>
               filterPattern(catalog.listFunctions(d).asScala, functionPattern)
-                .map { f => Row.of(c, d, f) }
+                .map { f =>
+                  Row.of(
+                    c,
+                    d,
+                    f,
+                    null,
+                    Integer.valueOf(DatabaseMetaData.functionResultUnknown),
+                    null)
+                }
             }
         }
       resultSet = ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT)
         .columns(
           Column.physical(FUNCTION_CAT, DataTypes.STRING()),
           Column.physical(FUNCTION_SCHEM, DataTypes.STRING()),
-          Column.physical(FUNCTION_NAME, DataTypes.STRING()))
+          Column.physical(FUNCTION_NAME, DataTypes.STRING()),
+          Column.physical(REMARKS, DataTypes.STRING()),
+          Column.physical(FUNCTION_TYPE, DataTypes.INT()),
+          Column.physical(SPECIFIC_NAME, DataTypes.STRING()))
         .data(systemFunctions ++: catalogFunctions)
         .build
     } catch {
