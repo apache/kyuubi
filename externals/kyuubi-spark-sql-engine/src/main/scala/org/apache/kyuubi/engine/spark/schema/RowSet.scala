@@ -90,7 +90,7 @@ object RowSet {
 
       case FloatType =>
         val values = getOrSetAsNull[java.lang.Float](rows, ordinal, nulls, 0.toFloat)
-          .asScala.map(n => java.lang.Double.valueOf(n.toDouble)).asJava
+          .asScala.map(n => java.lang.Double.valueOf(n.toString)).asJava
         TColumn.doubleVal(new TDoubleColumn(values, nulls))
 
       case DoubleType =>

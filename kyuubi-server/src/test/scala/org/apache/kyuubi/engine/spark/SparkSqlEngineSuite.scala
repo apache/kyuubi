@@ -124,5 +124,13 @@ class SparkSqlEngineSuite extends WithKyuubiServer with HiveJDBCTestHelper {
     }
   }
 
+  test("KYUUBI-1784: float types should not lose precision") {
+    withJdbcStatement() { statement =>
+      val resultSet = statement.executeQuery("SELECT cast(0.1 as float) AS col")
+      assert(resultSet.next())
+      assert(resultSet.getString("col") == "0.1")
+    }
+  }
+
   override protected def jdbcUrl: String = getJdbcUrl
 }
