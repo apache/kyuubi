@@ -100,6 +100,7 @@ else
 fi
 
 export FLINK_HOME="${FLINK_HOME:-"${FLINK_BUILTIN}"}"
+export FLINK_ENGINE_HOME="${KYUUBI_HOME}/externals/engines/flink"
 export SPARK_HOME="${SPARK_HOME:-"${SPARK_BUILTIN}"}"
 
 # Print essential environment variables to console
@@ -114,6 +115,7 @@ if [ $silent -eq 0 ]; then
   echo "KYUUBI_WORK_DIR_ROOT: ${KYUUBI_WORK_DIR_ROOT}"
 
   echo "FLINK_HOME: ${FLINK_HOME}"
+  echo "FLINK_ENGINE_HOME: ${FLINK_ENGINE_HOME}"
 
   echo "SPARK_HOME: ${SPARK_HOME}"
   echo "SPARK_CONF_DIR: ${SPARK_CONF_DIR:-"${SPARK_HOME}/conf"}"
