@@ -73,6 +73,7 @@ export KYUUBI_SCALA_VERSION="${KYUUBI_SCALA_VERSION:-"2.12"}"
 if [[ -f ${KYUUBI_HOME}/RELEASE ]]; then
   KYUUBI_VERSION="$(grep "Kyuubi " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
   SPARK_VERSION_BUILD="$(grep "Spark " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}' | grep -v 'Hadoop')"
+  FLINK_VERSION_BUILD="$(grep "Flink " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
   HADOOP_VERSION_BUILD="$(grep "Spark Hadoop " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $3}')"
   SPARK_BUILTIN="${KYUUBI_HOME}/externals/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD:0:3}"
 else
@@ -93,6 +94,7 @@ else
 fi
 
 export SPARK_HOME="${SPARK_HOME:-"${SPARK_BUILTIN}"}"
+export FLINK_HOME=""
 
 # Print essential environment variables to console
 if [ $silent -eq 0 ]; then
@@ -107,6 +109,8 @@ if [ $silent -eq 0 ]; then
 
   echo "SPARK_HOME: ${SPARK_HOME}"
   echo "SPARK_CONF_DIR: ${SPARK_CONF_DIR:-"${SPARK_HOME}/conf"}"
+
+  echo "FLINK_HOME: ${FLINK_HOME}"
 
   echo "HADOOP_CONF_DIR: ${HADOOP_CONF_DIR}"
 fi
