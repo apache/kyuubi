@@ -226,7 +226,7 @@ class RowSetSuite extends KyuubiFunSuite {
 
     val r4 = iter.next().getColVals
     assert(r4.get(4).getI64Val.getValue === 3)
-    assert(r4.get(5).getDoubleVal.getValue === 3.3f)
+    assert(r4.get(5).getDoubleVal.getValue.toFloat === 3.3f)
 
     val r5 = iter.next().getColVals
     assert(r5.get(6).getDoubleVal.getValue === 4.4d)

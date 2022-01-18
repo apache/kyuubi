@@ -176,7 +176,10 @@ object RowSet {
 
       case FloatType =>
         val tDoubleValue = new TDoubleValue
-        if (!row.isNullAt(ordinal)) tDoubleValue.setValue(row.getFloat(ordinal))
+        if (!row.isNullAt(ordinal)) {
+          val doubleValue = java.lang.Double.valueOf(row.getFloat(ordinal).toString)
+          tDoubleValue.setValue(doubleValue)
+        }
         TColumnValue.doubleVal(tDoubleValue)
 
       case DoubleType =>
