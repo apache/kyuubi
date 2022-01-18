@@ -76,9 +76,14 @@ if [[ -f ${KYUUBI_HOME}/RELEASE ]]; then
   FLINK_VERSION_BUILD="$(grep "Flink " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
   HADOOP_VERSION_BUILD="$(grep "Spark Hadoop " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $3}')"
   SPARK_BUILTIN="${KYUUBI_HOME}/externals/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD:0:3}"
+  FLINK_BUILTIN="${KYUUBI_HOME}/externals/flink-$FLINK_VERSION_BUILD"
 else
   MVN="${MVN:-"${KYUUBI_HOME}/build/mvn"}"
   KYUUBI_VERSION=$("$MVN" help:evaluate -Dexpression=project.version 2>/dev/null\
+    | grep -v "INFO"\
+    | grep -v "WARNING"\
+    | tail -n 1)
+  FLINK_VERSION_BUILD=$("$MVN" help:evaluate -Dexpression=flink.version $@ 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | tail -n 1)
@@ -90,11 +95,12 @@ else
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | tail -n 1)
+  FLINK_BUILTIN="${KYUUBI_HOME}/externals/kyuubi-download/target/flink-$FLINK_VERSION_BUILD"
   SPARK_BUILTIN="${KYUUBI_HOME}/externals/kyuubi-download/target/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD}"
 fi
 
 export SPARK_HOME="${SPARK_HOME:-"${SPARK_BUILTIN}"}"
-export FLINK_HOME=""
+export FLINK_HOME="${FLINK_HOME:-"${FLINK_BUILTIN}"}"
 
 # Print essential environment variables to console
 if [ $silent -eq 0 ]; then
