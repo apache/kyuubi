@@ -72,11 +72,11 @@ export KYUUBI_SCALA_VERSION="${KYUUBI_SCALA_VERSION:-"2.12"}"
 
 if [[ -f ${KYUUBI_HOME}/RELEASE ]]; then
   KYUUBI_VERSION="$(grep "Kyuubi " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
-  SPARK_VERSION_BUILD="$(grep "Spark " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}' | grep -v 'Hadoop')"
   FLINK_VERSION_BUILD="$(grep "Flink " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}')"
+  SPARK_VERSION_BUILD="$(grep "Spark " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $2}' | grep -v 'Hadoop')"
   HADOOP_VERSION_BUILD="$(grep "Spark Hadoop " "$KYUUBI_HOME/RELEASE" | awk -F ' ' '{print $3}')"
-  SPARK_BUILTIN="${KYUUBI_HOME}/externals/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD:0:3}"
   FLINK_BUILTIN="${KYUUBI_HOME}/externals/flink-$FLINK_VERSION_BUILD"
+  SPARK_BUILTIN="${KYUUBI_HOME}/externals/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD:0:3}"
 else
   MVN="${MVN:-"${KYUUBI_HOME}/build/mvn"}"
   KYUUBI_VERSION=$("$MVN" help:evaluate -Dexpression=project.version 2>/dev/null\
@@ -99,8 +99,8 @@ else
   SPARK_BUILTIN="${KYUUBI_HOME}/externals/kyuubi-download/target/spark-$SPARK_VERSION_BUILD-bin-hadoop${HADOOP_VERSION_BUILD}"
 fi
 
-export SPARK_HOME="${SPARK_HOME:-"${SPARK_BUILTIN}"}"
 export FLINK_HOME="${FLINK_HOME:-"${FLINK_BUILTIN}"}"
+export SPARK_HOME="${SPARK_HOME:-"${SPARK_BUILTIN}"}"
 
 # Print essential environment variables to console
 if [ $silent -eq 0 ]; then
@@ -113,10 +113,10 @@ if [ $silent -eq 0 ]; then
   echo "KYUUBI_PID_DIR: ${KYUUBI_PID_DIR}"
   echo "KYUUBI_WORK_DIR_ROOT: ${KYUUBI_WORK_DIR_ROOT}"
 
+  echo "FLINK_HOME: ${FLINK_HOME}"
+
   echo "SPARK_HOME: ${SPARK_HOME}"
   echo "SPARK_CONF_DIR: ${SPARK_CONF_DIR:-"${SPARK_HOME}/conf"}"
-
-  echo "FLINK_HOME: ${FLINK_HOME}"
 
   echo "HADOOP_CONF_DIR: ${HADOOP_CONF_DIR}"
 fi
