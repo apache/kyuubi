@@ -83,7 +83,7 @@ else
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | tail -n 1)
-  FLINK_VERSION_BUILD=$("$MVN" help:evaluate -Dexpression=flink.version $@ 2>/dev/null\
+  FLINK_VERSION_BUILD=$("$MVN" help:evaluate -Dexpression=flink.version 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
     | tail -n 1)
