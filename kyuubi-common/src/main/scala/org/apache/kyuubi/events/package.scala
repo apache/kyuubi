@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi
 
-
 package object events {
   type EventHandler[T <: KyuubiEvent] = T => Unit
 }

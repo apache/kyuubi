@@ -22,7 +22,7 @@ import scala.reflect.{classTag, ClassTag}
 
 sealed trait EventBus {
   def post[T <: KyuubiEvent](event: T): Unit
-  def register[T <: KyuubiEvent : ClassTag](et: EventHandler[T]): EventBus
+  def register[T <: KyuubiEvent: ClassTag](et: EventHandler[T]): EventBus
 }
 
 object EventBus {
@@ -32,7 +32,7 @@ object EventBus {
 
   // Exposed api
   def post[T <: KyuubiEvent](event: T): Unit = defaultEventBus.post[T](event)
-  def register[T <: KyuubiEvent : ClassTag](et: EventHandler[T]): EventBus =
+  def register[T <: KyuubiEvent: ClassTag](et: EventHandler[T]): EventBus =
     defaultEventBus.register[T](et)
 
   // TODO: Asynchronous execution of event handler
@@ -43,7 +43,7 @@ object EventBus {
       eventHandlerRegistry.lookup[T](event).foreach(_(event))
     }
 
-    override def register[T <: KyuubiEvent : ClassTag](et: EventHandler[T]): EventBus = {
+    override def register[T <: KyuubiEvent: ClassTag](et: EventHandler[T]): EventBus = {
       eventHandlerRegistry.register(et)
       this
     }
@@ -52,7 +52,7 @@ object EventBus {
   private class Registry {
     private[this] val eventHandlers = mutable.Map[Class[_], List[EventHandler[_]]]()
 
-    def register[T <: KyuubiEvent : ClassTag](et: EventHandler[T]): Unit = {
+    def register[T <: KyuubiEvent: ClassTag](et: EventHandler[T]): Unit = {
       val clazz = classTag[T].runtimeClass
       val existEts = eventHandlers.getOrElse(clazz, Nil)
       eventHandlers.put(clazz, existEts :+ et)
@@ -60,8 +60,20 @@ object EventBus {
 
     def lookup[T <: KyuubiEvent](event: T): List[EventHandler[T]] = {
       val clazz = event.getClass
-      eventHandlers.getOrElse(clazz, Nil).asInstanceOf[List[EventHandler[T]]]
+      for {
+        parent <- getAllParentsClass(clazz)
+        et <- eventHandlers.getOrElse(parent, Nil).asInstanceOf[List[EventHandler[T]]]
+      } yield et
     }
+
+    def getAllParentsClass(clazz: Class[_]): List[Class[_]] = {
+      val parents = for {
+        cls <- Option(clazz.getSuperclass).toList ++ clazz.getInterfaces.toList
+        parent <- getAllParentsClass(cls)
+      } yield parent
+      clazz :: parents
+    }
+
   }
 
 }

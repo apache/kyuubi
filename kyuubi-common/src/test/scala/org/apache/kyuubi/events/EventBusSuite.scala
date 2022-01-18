@@ -30,14 +30,36 @@ class EventBusSuite extends KyuubiFunSuite {
     override def partitions: Seq[(String, String)] = Seq[(String, String)]()
   }
 
+  trait TestKyuubiEvent extends KyuubiEvent {}
+
+  case class Test2KyuubiEvent(name: String, content: String) extends TestKyuubiEvent {
+    override def partitions: Seq[(String, String)] = Seq[(String, String)]()
+  }
+
+  case class Test3KyuubiEvent(content: String) extends KyuubiEvent {
+    override def partitions: Seq[(String, String)] = Seq[(String, String)]()
+  }
 
   test("register event handler") {
+    var test0EventRecievedCount = 0
+    var test1EventRecievedCount = 0
+    var test2EventRecievedCount = 0
     val liveBus = EventBus()
+
     liveBus.register[Test0KyuubiEvent] { e =>
       assert(e.content == "test0")
+      assert(e.eventType == "test0_kyuubi")
+      test0EventRecievedCount += 1
     }
     liveBus.register[Test1KyuubiEvent] { e =>
       assert(e.content == "test1")
+      assert(e.eventType == "test1_kyuubi")
+      test1EventRecievedCount += 1
+    }
+    // scribe subclass event
+    liveBus.register[TestKyuubiEvent] { e =>
+      assert(e.eventType == "test2_kyuubi")
+      test2EventRecievedCount += 1
     }
 
     class Test0Handler extends EventHandler[Test0KyuubiEvent] {
@@ -54,12 +76,18 @@ class EventBusSuite extends KyuubiFunSuite {
       }
     })
 
-    (1 to 100) foreach { _ =>
+    (1 to 10) foreach { _ =>
       liveBus.post(Test0KyuubiEvent("test0"))
     }
-    (1 to 100) foreach { _ =>
+    (1 to 20) foreach { _ =>
       liveBus.post(Test1KyuubiEvent("test1"))
     }
+    (1 to 30) foreach { _ =>
+      liveBus.post(Test2KyuubiEvent("name2", "test2"))
+    }
+    assert(test0EventRecievedCount == 10)
+    assert(test1EventRecievedCount == 20)
+    assert(test2EventRecievedCount == 30)
   }
 
   test("register event handler for default bus") {
@@ -84,30 +112,30 @@ class EventBusSuite extends KyuubiFunSuite {
 
   test("combine with logging service") {
 
-    class Test1EventLogger extends EventLogger[Test1KyuubiEvent] {
-      override def logEvent(event: Test1KyuubiEvent): Unit = {
-        assert(event.content == "test1 logger service")
+    class Test3EventLogger extends EventLogger[Test3KyuubiEvent] {
+      override def logEvent(event: Test3KyuubiEvent): Unit = {
+        assert(event.content == "test3 logger service")
       }
     }
 
-    class Test1LogService extends AbstractEventLoggingService[Test1KyuubiEvent]
-      with EventHandler[Test1KyuubiEvent] {
+    class Test3LogService extends AbstractEventLoggingService[Test3KyuubiEvent]
+      with EventHandler[Test3KyuubiEvent] {
 
-      override def apply(e: Test1KyuubiEvent): Unit = {
+      override def apply(e: Test3KyuubiEvent): Unit = {
         onEvent(e)
       }
 
       override def initialize(conf: KyuubiConf): Unit = {
-        val testEventLogger = new Test1EventLogger
+        val testEventLogger = new Test3EventLogger
         addEventLogger(testEventLogger)
         super.initialize(conf)
       }
     }
 
-    val testLogService = new Test1LogService()
+    val testLogService = new Test3LogService()
     testLogService.initialize(new KyuubiConf())
 
-    EventBus.register[Test1KyuubiEvent](testLogService)
-    EventBus.post(Test1KyuubiEvent("test1 logger service"))
+    EventBus.register[Test3KyuubiEvent](testLogService)
+    EventBus.post(Test3KyuubiEvent("test3 logger service"))
   }
 }
