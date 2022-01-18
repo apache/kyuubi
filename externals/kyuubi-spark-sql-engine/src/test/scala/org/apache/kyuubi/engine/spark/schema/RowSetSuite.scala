@@ -142,7 +142,7 @@ class RowSetSuite extends KyuubiFunSuite {
     val floatCol = cols.next().getDoubleVal
     floatCol.getValues.asScala.zipWithIndex.foreach {
       case (b, 11) => assert(b === 0)
-      case (b, i) => assert(b === java.lang.Float.valueOf(s"$i.$i"))
+      case (b, i) => assert(b.toFloat === java.lang.Float.valueOf(s"$i.$i"))
     }
 
     val doubleCol = cols.next().getDoubleVal
