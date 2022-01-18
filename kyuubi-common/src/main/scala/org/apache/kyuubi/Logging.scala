@@ -121,6 +121,34 @@ trait Logging {
         rootLogger.setLevel(ctlLevel)
       }
       // scalastyle:on println
+    } else {
+      val log4j12Initialized =
+        org.apache.log4j.LogManager.getRootLogger.getAllAppenders.hasMoreElements
+      // scalastyle:off println
+      if (!log4j12Initialized) {
+        Logging.useDefault = true
+        val defaultLogProps = "log4j-defaults.properties"
+        Option(Thread.currentThread().getContextClassLoader.getResource(defaultLogProps)) match {
+          case Some(url) =>
+            org.apache.log4j.PropertyConfigurator.configure(url)
+
+          case None =>
+            System.err.println(s"Missing $defaultLogProps")
+        }
+
+        val rootLogger = org.apache.log4j.LogManager.getRootLogger
+        if (Logging.defaultRootLevel == null) {
+          Logging.defaultRootLevel = Level.getLevel(rootLogger.getLevel.toString)
+        }
+
+        if (isInterpreter) {
+          // set kyuubi ctl log level, default ERROR
+          val ctlLogger = org.apache.log4j.LogManager.getLogger(loggerName)
+          val ctlLevel = Option(ctlLogger.getLevel()).getOrElse(org.apache.log4j.Level.ERROR)
+          rootLogger.setLevel(ctlLevel)
+        }
+        // scalastyle:on println
+      }
     }
     Logging.initialized = true
 
