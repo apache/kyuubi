@@ -52,8 +52,8 @@ trait WithKyuubiServer extends KyuubiFunSuite {
 
     conf.set("spark.ui.enabled", "false")
     conf.setIfMissing("spark.sql.catalogImplementation", "in-memory")
-    conf.setIfMissing(ENGINE_CHECK_INTERVAL, 3000L)
-    conf.setIfMissing(ENGINE_IDLE_TIMEOUT, 10000L)
+    conf.setIfMissing(ENGINE_CHECK_INTERVAL, 1000L)
+    conf.setIfMissing(ENGINE_IDLE_TIMEOUT, 3000L)
     // TODO KYUUBI #745
     conf.setIfMissing(ENGINE_INIT_TIMEOUT, 300000L)
     server = KyuubiServer.startServer(conf)

@@ -20,6 +20,8 @@ package org.apache.kyuubi.ha.client
 import java.io.{File, IOException}
 import javax.security.auth.login.Configuration
 
+import scala.util.Random
+
 import org.apache.curator.framework.{CuratorFramework, CuratorFrameworkFactory}
 import org.apache.curator.retry._
 import org.apache.hadoop.security.UserGroupInformation
@@ -69,6 +71,27 @@ object ZooKeeperClientProvider extends Logging {
     }
 
     builder.build()
+  }
+
+  def getGracefulStopThreadDelay(conf: KyuubiConf): Long = {
+    val baseSleepTime = conf.get(HA_ZK_CONN_BASE_RETRY_WAIT)
+    val maxSleepTime = conf.get(HA_ZK_CONN_MAX_RETRY_WAIT)
+    val maxRetries = conf.get(HA_ZK_CONN_MAX_RETRIES)
+    val retryPolicyName = conf.get(HA_ZK_CONN_RETRY_POLICY)
+    RetryPolicies.withName(retryPolicyName) match {
+      case ONE_TIME => baseSleepTime
+      case N_TIME => maxRetries * baseSleepTime
+      case BOUNDED_EXPONENTIAL_BACKOFF =>
+        (0 until maxRetries).map { retryCount =>
+          val retryWait = baseSleepTime * Math.max(1, Random.nextInt(1 << (retryCount + 1)))
+          Math.min(retryWait, maxSleepTime)
+        }.sum
+      case UNTIL_ELAPSED => maxSleepTime
+      case EXPONENTIAL_BACKOFF =>
+        (0 until maxRetries).map { retryCount =>
+          baseSleepTime * Math.max(1, Random.nextInt(1 << (retryCount + 1)))
+        }.sum
+    }
   }
 
   /**

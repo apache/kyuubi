@@ -18,6 +18,7 @@
 package org.apache.kyuubi.ha.client
 
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.collection.JavaConverters._
 
@@ -42,6 +43,8 @@ abstract class ServiceDiscovery(
     name: String,
     val fe: FrontendService) extends AbstractService(name) {
 
+  protected val isServerLost = new AtomicBoolean(false)
+
   private var _discoveryClient: ServiceDiscoveryClient = _
 
   def discoveryClient: ServiceDiscoveryClient = _discoveryClient
@@ -60,20 +63,15 @@ abstract class ServiceDiscovery(
     super.start()
   }
 
-  override def stop(): Unit = {
-    discoveryClient.closeClient()
-    super.stop()
-  }
-
   // stop the server genteelly
-  def stopGracefully(): Unit = {
-    stop()
+  def stopGracefully(isLost: Boolean = false): Unit = {
     while (fe.be != null && fe.be.sessionManager.getOpenSessionCount > 0) {
+      debug(s"${fe.be.sessionManager.getOpenSessionCount} connection(s) are active, delay shutdown")
       Thread.sleep(1000 * 60)
     }
+    isServerLost.set(isLost)
     fe.serverable.stop()
   }
-
 }
 
 object ServiceDiscovery extends Logging {
