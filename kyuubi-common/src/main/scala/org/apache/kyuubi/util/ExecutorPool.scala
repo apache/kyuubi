@@ -30,5 +30,4 @@ case class ExecutorPool(
     keepAliveSeconds,
     TimeUnit.MILLISECONDS,
     new SynchronousQueue[Runnable](),
-    new NamedThreadFactory(poolName, false)) {
-}
+    new NamedThreadFactory(poolName, false)) {}
