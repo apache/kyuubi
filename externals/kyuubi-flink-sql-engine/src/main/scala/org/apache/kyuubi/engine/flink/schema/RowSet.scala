@@ -112,7 +112,8 @@ object RowSet {
       case _: FloatType =>
         val tDoubleValue = new TDoubleValue
         if (row.getField(ordinal) != null) {
-          tDoubleValue.setValue(row.getField(ordinal).asInstanceOf[Float])
+          val doubleValue = lang.Double.valueOf(row.getField(ordinal).asInstanceOf[Float].toString)
+          tDoubleValue.setValue(doubleValue)
         }
         TColumnValue.doubleVal(tDoubleValue)
       case _: DoubleType =>
@@ -167,7 +168,8 @@ object RowSet {
         val values = getOrSetAsNull[lang.Long](rows, ordinal, nulls, 0L)
         TColumn.i64Val(new TI64Column(values, nulls))
       case _: FloatType =>
-        val values = getOrSetAsNull[lang.Double](rows, ordinal, nulls, 0.0)
+        val values = getOrSetAsNull[lang.Float](rows, ordinal, nulls, 0.0f)
+          .asScala.map(n => lang.Double.valueOf(n.toString)).asJava
         TColumn.doubleVal(new TDoubleColumn(values, nulls))
       case _: DoubleType =>
         val values = getOrSetAsNull[lang.Double](rows, ordinal, nulls, 0.0)
