@@ -168,7 +168,7 @@ object RowSet {
         val values = getOrSetAsNull[lang.Long](rows, ordinal, nulls, 0L)
         TColumn.i64Val(new TI64Column(values, nulls))
       case _: FloatType =>
-        val values = getOrSetAsNull[lang.Float](rows, ordinal, nulls, 0.0F)
+        val values = getOrSetAsNull[lang.Float](rows, ordinal, nulls, 0.0f)
           .asScala.map(n => lang.Double.valueOf(n.toString)).asJava
         TColumn.doubleVal(new TDoubleColumn(values, nulls))
       case _: DoubleType =>

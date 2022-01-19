@@ -598,7 +598,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       val resultSet = statement.executeQuery("SELECT cast(0.1 as float)")
       assert(resultSet.next())
       assert(resultSet.getString(1) == "0.1")
-      assert(resultSet.getFloat(1) == 0.1F)
+      assert(resultSet.getFloat(1) == 0.1f)
     })
   }
 
