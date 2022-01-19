@@ -26,7 +26,7 @@ import org.apache.thrift.transport.TServerSocket
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.util.ExecutorPoolCaptureOom
+import org.apache.kyuubi.util.ExecutorPool
 
 /**
  * Apache Thrift based hive service rpc
@@ -46,14 +46,7 @@ abstract class TBinaryFrontendService(name: String)
 
   private var server: Option[TServer] = None
 
-  // When a OOM occurs, here we de-register the engine by stop its discoveryService.
-  // Then the current engine will not be connected by new client anymore but keep the existing ones
-  // alive. In this case we can reduce the engine's overhead and make it possible recover from that.
-  // We shall not tear down the whole engine by serverable.stop to make the engine unreachable for
-  // the existing clients which are still getting statuses and reporting to the end-users.
-  protected def oomHook: Runnable = {
-    () => discoveryService.foreach(_.stop())
-  }
+  // Removed OOM hook since KYUUBI#1800 to respect the hive server2 #2383
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     this.conf = conf
@@ -61,12 +54,11 @@ abstract class TBinaryFrontendService(name: String)
       val minThreads = conf.get(FRONTEND_THRIFT_MIN_WORKER_THREADS)
       val maxThreads = conf.get(FRONTEND_THRIFT_MAX_WORKER_THREADS)
       val keepAliveTime = conf.get(FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME)
-      val executor = ExecutorPoolCaptureOom(
+      val executor = ExecutorPool(
         name + "Handler-Pool",
         minThreads,
         maxThreads,
-        keepAliveTime,
-        oomHook)
+        keepAliveTime)
       val transFactory = authFactory.getTTransportFactory
       val tProcFactory = authFactory.getTProcessorFactory(this)
       val tServerSocket = new TServerSocket(serverSocket)

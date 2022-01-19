@@ -17,14 +17,13 @@
 
 package org.apache.kyuubi.util
 
-import java.util.concurrent.{Future, SynchronousQueue, ThreadPoolExecutor, TimeUnit}
+import java.util.concurrent.{SynchronousQueue, ThreadPoolExecutor, TimeUnit}
 
-case class ExecutorPoolCaptureOom(
+case class ExecutorPool(
     poolName: String,
     corePoolSize: Int,
     maximumPoolSize: Int,
-    keepAliveSeconds: Long,
-    hook: Runnable)
+    keepAliveSeconds: Long)
   extends ThreadPoolExecutor(
     corePoolSize,
     maximumPoolSize,
@@ -32,22 +31,4 @@ case class ExecutorPoolCaptureOom(
     TimeUnit.MILLISECONDS,
     new SynchronousQueue[Runnable](),
     new NamedThreadFactory(poolName, false)) {
-
-  override def afterExecute(r: Runnable, t: Throwable): Unit = {
-    super.afterExecute(r, t)
-    t match {
-      case _: OutOfMemoryError => hook.run()
-      case null => r match {
-          case f: Future[_] =>
-            try {
-              if (f.isDone) f.get()
-            } catch {
-              case _: InterruptedException => Thread.currentThread().interrupt()
-              case _: OutOfMemoryError => hook.run()
-            }
-          case _ =>
-        }
-      case _ =>
-    }
-  }
 }

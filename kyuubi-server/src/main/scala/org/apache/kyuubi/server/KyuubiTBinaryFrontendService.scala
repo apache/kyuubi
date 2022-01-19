@@ -69,9 +69,5 @@ final class KyuubiTBinaryFrontendService(
     resp
   }
 
-  override protected def oomHook: Runnable = {
-    () => serverable.stop()
-  }
-
   override protected def isServer(): Boolean = true
 }

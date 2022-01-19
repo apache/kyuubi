@@ -32,7 +32,7 @@ import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.server.mysql._
 import org.apache.kyuubi.server.mysql.authentication.MySQLAuthHandler
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
-import org.apache.kyuubi.util.ExecutorPoolCaptureOom
+import org.apache.kyuubi.util.ExecutorPool
 import org.apache.kyuubi.util.NettyUtils._
 
 /**
@@ -50,18 +50,15 @@ class KyuubiMySQLFrontendService(override val serverable: Serverable)
 
   @volatile protected var isStarted = false
 
-  protected def oomHook: Runnable = () => serverable.stop()
-
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     val minThreads = conf.get(FRONTEND_MYSQL_MIN_WORKER_THREADS)
     val maxThreads = conf.get(FRONTEND_MYSQL_MAX_WORKER_THREADS)
     val keepAliveMs = conf.get(FRONTEND_MYSQL_WORKER_KEEPALIVE_TIME)
-    execPool = ExecutorPoolCaptureOom(
+    execPool = ExecutorPool(
       "mysql-exec-pool",
       minThreads,
       maxThreads,
-      keepAliveMs,
-      oomHook)
+      keepAliveMs)
 
     serverAddr = conf.get(FRONTEND_MYSQL_BIND_HOST)
       .map(InetAddress.getByName)
