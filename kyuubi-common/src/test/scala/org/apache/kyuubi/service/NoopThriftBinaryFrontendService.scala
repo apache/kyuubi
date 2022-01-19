@@ -23,6 +23,4 @@ class NoopThriftBinaryFrontendService(override val serverable: Serverable)
   override val discoveryService: Option[Service] = None
 
   override def connectionUrl: String = serverAddr.getCanonicalHostName + ":" + portNum
-
-  override protected def oomHook: Runnable = () => serverable.stop()
 }

@@ -73,8 +73,4 @@ class KyuubiThriftBinaryFrontendService(
     checkInitialized()
     s"${serverAddr.getCanonicalHostName}:$portNum"
   }
-
-  override protected def oomHook: Runnable = {
-    () => serverable.stop()
-  }
 }
