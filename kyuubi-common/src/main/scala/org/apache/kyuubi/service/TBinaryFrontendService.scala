@@ -100,7 +100,9 @@ abstract class TBinaryFrontendService(name: String)
 
   override def run(): Unit =
     try {
-      info(s"Starting and exposing JDBC connection at: jdbc:hive2://$connectionUrl/")
+      if (isServer()) {
+        info(s"Starting and exposing JDBC connection at: jdbc:hive2://$connectionUrl/")
+      }
       server.foreach(_.serve())
     } catch {
       case _: InterruptedException => error(s"$getName is interrupted")
@@ -113,4 +115,6 @@ abstract class TBinaryFrontendService(name: String)
     server.foreach(_.stop())
     server = None
   }
+
+  protected def isServer(): Boolean = false
 }
