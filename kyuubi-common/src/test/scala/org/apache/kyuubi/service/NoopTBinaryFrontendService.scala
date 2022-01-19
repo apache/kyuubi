@@ -21,6 +21,4 @@ class NoopTBinaryFrontendService(override val serverable: Serverable)
   extends TBinaryFrontendService("NoopThriftBinaryFrontend") {
 
   override val discoveryService: Option[Service] = None
-
-  override protected def oomHook: Runnable = () => serverable.stop()
 }
