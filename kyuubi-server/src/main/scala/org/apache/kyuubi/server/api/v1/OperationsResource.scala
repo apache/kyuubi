@@ -29,6 +29,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.operation.{FetchOrientation, KyuubiOperation}
 import org.apache.kyuubi.operation.OperationHandle.parseOperationHandle
@@ -36,7 +37,7 @@ import org.apache.kyuubi.server.api.ApiRequestContext
 
 @Tag(name = "Operation")
 @Produces(Array(MediaType.APPLICATION_JSON))
-private[v1] class OperationsResource extends ApiRequestContext {
+private[v1] class OperationsResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
@@ -53,8 +54,10 @@ private[v1] class OperationsResource extends ApiRequestContext {
       val operation = fe.be.sessionManager.operationManager.getOperation(opHandle)
       KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
     } catch {
-      case NonFatal(_) =>
-        throw new NotFoundException(s"Error getting an operation event")
+      case NonFatal(e) =>
+        val errorMsg = "Error getting an operation event"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
     }
   }
 
@@ -78,9 +81,10 @@ private[v1] class OperationsResource extends ApiRequestContext {
       }
       Response.ok().build()
     } catch {
-      case NonFatal(_) =>
-        throw new NotFoundException(s"Error applying ${request.action} " +
-          s"for operation handle $operationHandleStr")
+      case NonFatal(e) =>
+        val errorMsg = s"Error applying ${request.action} for operation handle $operationHandleStr"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
     }
   }
 
@@ -116,9 +120,10 @@ private[v1] class OperationsResource extends ApiRequestContext {
             c.getComment)
         }))
     } catch {
-      case NonFatal(_) =>
-        throw new NotFoundException(
-          s"Error getting result set metadata for operation handle $operationHandleStr")
+      case NonFatal(e) =>
+        val errorMsg = s"Error getting result set metadata for operation handle $operationHandleStr"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
     }
   }
 
@@ -141,9 +146,10 @@ private[v1] class OperationsResource extends ApiRequestContext {
       val logRowSet = rowSet.getColumns.get(0).getStringVal.getValues.asScala
       OperationLog(logRowSet, logRowSet.size)
     } catch {
-      case NonFatal(_) =>
-        throw new NotFoundException(
-          s"Error getting operation log for operation handle $operationHandleStr")
+      case NonFatal(e) =>
+        val errorMsg = s"Error getting operation log for operation handle $operationHandleStr"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
     }
   }
 
@@ -188,9 +194,10 @@ private[v1] class OperationsResource extends ApiRequestContext {
       })
       ResultRowSet(rows, rows.size)
     } catch {
-      case NonFatal(_) =>
-        throw new NotFoundException(
-          s"Error getting result row set for operation handle $operationHandleStr")
+      case NonFatal(e) =>
+        val errorMsg = s"Error getting result row set for operation handle $operationHandleStr"
+        error(errorMsg, e)
+        throw new NotFoundException(errorMsg)
     }
   }
 }
