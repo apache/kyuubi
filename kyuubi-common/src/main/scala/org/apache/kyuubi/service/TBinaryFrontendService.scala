@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.service
 
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{SynchronousQueue, ThreadPoolExecutor, TimeUnit}
 
 import org.apache.hive.service.rpc.thrift._
 import org.apache.thrift.protocol.TBinaryProtocol
@@ -26,7 +26,7 @@ import org.apache.thrift.transport.TServerSocket
 
 import org.apache.kyuubi.{KyuubiException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.util.ExecutorPool
+import org.apache.kyuubi.util.NamedThreadFactory
 
 /**
  * Apache Thrift based hive service rpc
@@ -46,7 +46,7 @@ abstract class TBinaryFrontendService(name: String)
 
   private var server: Option[TServer] = None
 
-  // Removed OOM hook since KYUUBI#1800 to respect the hive server2 #2383
+  // Removed OOM hook since Kyuubi #1800 to respect the hive server2 #2383
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     this.conf = conf
@@ -54,11 +54,13 @@ abstract class TBinaryFrontendService(name: String)
       val minThreads = conf.get(FRONTEND_THRIFT_MIN_WORKER_THREADS)
       val maxThreads = conf.get(FRONTEND_THRIFT_MAX_WORKER_THREADS)
       val keepAliveTime = conf.get(FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME)
-      val executor = ExecutorPool(
-        name + "Handler-Pool",
+      val executor = new ThreadPoolExecutor(
         minThreads,
         maxThreads,
-        keepAliveTime)
+        keepAliveTime,
+        TimeUnit.MILLISECONDS,
+        new SynchronousQueue[Runnable](),
+        new NamedThreadFactory(name + "Handler-Pool", false))
       val transFactory = authFactory.getTTransportFactory
       val tProcFactory = authFactory.getTProcessorFactory(this)
       val tServerSocket = new TServerSocket(serverSocket)
