@@ -126,7 +126,9 @@ class KyuubiSessionImpl(
   }
 
   override def close(): Unit = {
-    closeOperation(launchEngineOp.getHandle)
+    if (!launchEngineOp.isTimedOut) {
+      closeOperation(launchEngineOp.getHandle)
+    }
     super.close()
     sessionManager.credentialsManager.removeSessionCredentialsEpoch(handle.identifier.toString)
     try {
