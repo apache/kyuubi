@@ -18,7 +18,7 @@
 package org.apache.kyuubi.service
 
 import java.net.{InetAddress, ServerSocket}
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{SynchronousQueue, ThreadPoolExecutor, TimeUnit}
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
@@ -34,7 +34,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.operation.{FetchOrientation, OperationHandle}
 import org.apache.kyuubi.service.authentication.KyuubiAuthenticationFactory
 import org.apache.kyuubi.session.SessionHandle
-import org.apache.kyuubi.util.{ExecutorPoolCaptureOom, KyuubiHadoopUtils, NamedThreadFactory}
+import org.apache.kyuubi.util.{KyuubiHadoopUtils, NamedThreadFactory}
 
 abstract class ThriftBinaryFrontendService(name: String)
   extends AbstractFrontendService(name) with TCLIService.Iface with Runnable with Logging {
@@ -51,14 +51,7 @@ abstract class ThriftBinaryFrontendService(name: String)
   private var authFactory: KyuubiAuthenticationFactory = _
   private var hadoopConf: Configuration = _
 
-  // When a OOM occurs, here we de-register the engine by stop its discoveryService.
-  // Then the current engine will not be connected by new client anymore but keep the existing ones
-  // alive. In this case we can reduce the engine's overhead and make it possible recover from that.
-  // We shall not tear down the whole engine by serverable.stop to make the engine unreachable for
-  // the existing clients which are still getting statuses and reporting to the end-users.
-  protected def oomHook: Runnable = {
-    () => discoveryService.foreach(_.stop())
-  }
+  // Removed OOM hook since Kyuubi #1800 to respect the hive server2 #2383
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
@@ -71,12 +64,13 @@ abstract class ThriftBinaryFrontendService(name: String)
       val minThreads = conf.get(FRONTEND_THRIFT_MIN_WORKER_THREADS)
       val maxThreads = conf.get(FRONTEND_THRIFT_MAX_WORKER_THREADS)
       val keepAliveTime = conf.get(FRONTEND_THRIFT_WORKER_KEEPALIVE_TIME)
-      val executor = ExecutorPoolCaptureOom(
-        name + "Handler-Pool",
+      val executor = new ThreadPoolExecutor(
         minThreads,
         maxThreads,
         keepAliveTime,
-        oomHook)
+        TimeUnit.MILLISECONDS,
+        new SynchronousQueue[Runnable](),
+        new NamedThreadFactory(name + "Handler-Pool", false))
       authFactory = new KyuubiAuthenticationFactory(conf)
       val transFactory = authFactory.getTTransportFactory
       val tProcFactory = authFactory.getTProcessorFactory(this)
