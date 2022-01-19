@@ -114,7 +114,7 @@ object RowSet {
 
       case REAL =>
         val values = getOrSetAsNull[java.lang.Float](rows, ordinal, nulls, 0.toFloat)
-          .asScala.map(n => java.lang.Double.valueOf(n.toDouble)).asJava
+          .asScala.map(n => java.lang.Double.valueOf(n.toString)).asJava
         TColumn.doubleVal(new TDoubleColumn(values, nulls))
 
       case DOUBLE =>
@@ -200,7 +200,10 @@ object RowSet {
 
       case REAL =>
         val tDoubleValue = new TDoubleValue
-        if (row(ordinal) != null) tDoubleValue.setValue(row(ordinal).asInstanceOf[Float])
+        if (row(ordinal) != null) {
+          val doubleValue = java.lang.Double.valueOf(row(ordinal).asInstanceOf[Float].toString)
+          tDoubleValue.setValue(doubleValue)
+        }
         TColumnValue.doubleVal(tDoubleValue)
 
       case DOUBLE =>
