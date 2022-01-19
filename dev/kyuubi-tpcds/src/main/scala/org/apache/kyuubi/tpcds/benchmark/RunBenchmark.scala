@@ -17,7 +17,6 @@
 
 package org.apache.kyuubi.tpcds.benchmark
 
-import java.io.File
 import java.net.InetAddress
 
 import org.apache.spark.SparkConf
@@ -28,6 +27,7 @@ case class RunConfig(
     db: String = null,
     benchmarkName: String = "tpcds-v2.4-benchmark",
     filter: Option[String] = None,
+    breakdown: Boolean = false,
     iterations: Int = 3)
 
 // scalastyle:off
@@ -55,6 +55,9 @@ object RunBenchmark {
       opt[String]('f', "filter")
         .action((x, c) => c.copy(filter = Some(x)))
         .text("a filter on the name of the queries to run")
+      opt[Boolean]('B', "breakdown")
+        .action((x, c) => c.copy(breakdown = x))
+        .text("whether to record breakdown results of an execution")
       opt[Int]('i', "iterations")
         .action((x, c) => c.copy(iterations = x))
         .text("the number of iterations to run")
@@ -75,8 +78,6 @@ object RunBenchmark {
     val sparkSession = SparkSession.builder.config(conf).enableHiveSupport().getOrCreate()
     import sparkSession.implicits._
 
-    sparkSession.conf.set("spark.sql.perf.results", new File("performance").toURI.toString)
-
     val benchmark = new TPCDS(sparkSession)
 
     println("== USING DATABASES ==")
@@ -94,6 +95,7 @@ object RunBenchmark {
 
     val experiment = benchmark.runExperiment(
       executionsToRun = allQueries,
+      includeBreakdown = config.breakdown,
       iterations = config.iterations,
       tags = Map("host" -> InetAddress.getLocalHost.getHostName))
 
