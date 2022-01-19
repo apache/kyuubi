@@ -29,7 +29,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift._
 
 import org.apache.kyuubi.KyuubiSQLException
-import org.apache.kyuubi.Utils.error
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.operation.{FetchOrientation, KyuubiOperation}
 import org.apache.kyuubi.operation.OperationHandle.parseOperationHandle
@@ -37,7 +37,7 @@ import org.apache.kyuubi.server.api.ApiRequestContext
 
 @Tag(name = "Operation")
 @Produces(Array(MediaType.APPLICATION_JSON))
-private[v1] class OperationsResource extends ApiRequestContext {
+private[v1] class OperationsResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",

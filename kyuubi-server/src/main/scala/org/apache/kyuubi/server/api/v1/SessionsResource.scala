@@ -28,7 +28,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.apache.hive.service.rpc.thrift.{TGetInfoType, TProtocolVersion}
 
-import org.apache.kyuubi.Utils.error
+import org.apache.kyuubi.Logging
 import org.apache.kyuubi.events.KyuubiEvent
 import org.apache.kyuubi.operation.OperationHandle
 import org.apache.kyuubi.server.api.ApiRequestContext
@@ -37,7 +37,7 @@ import org.apache.kyuubi.session.SessionHandle.parseSessionHandle
 
 @Tag(name = "Session")
 @Produces(Array(MediaType.APPLICATION_JSON))
-private[v1] class SessionsResource extends ApiRequestContext {
+private[v1] class SessionsResource extends ApiRequestContext with Logging {
 
   @ApiResponse(
     responseCode = "200",
