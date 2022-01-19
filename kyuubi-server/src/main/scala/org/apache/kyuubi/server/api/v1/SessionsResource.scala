@@ -163,7 +163,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
         request.queryTimeout)
     } catch {
       case NonFatal(e) =>
-        val errorMsg = s"Error executing statement"
+        val errorMsg = "Error executing statement"
         error(errorMsg, e)
         throw new NotFoundException(errorMsg)
     }
@@ -181,7 +181,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       fe.be.getTypeInfo(parseSessionHandle(sessionHandleStr))
     } catch {
       case NonFatal(e) =>
-        val errorMsg = s"Error getting type information"
+        val errorMsg = "Error getting type information"
         error(errorMsg, e)
         throw new NotFoundException(errorMsg)
     }
@@ -199,7 +199,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       fe.be.getCatalogs(parseSessionHandle(sessionHandleStr))
     } catch {
       case NonFatal(e) =>
-        val errorMsg = s"Error getting catalogs"
+        val errorMsg = "Error getting catalogs"
         error(errorMsg, e)
         throw new NotFoundException(errorMsg)
     }
@@ -224,7 +224,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       operationHandle
     } catch {
       case NonFatal(e) =>
-        val errorMsg = s"Error getting schemas"
+        val errorMsg = "Error getting schemas"
         error(errorMsg, e)
         throw new NotFoundException(errorMsg)
     }
@@ -249,7 +249,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
         request.tableTypes)
     } catch {
       case NonFatal(e) =>
-        val errorMsg = s"Error getting tables"
+        val errorMsg = "Error getting tables"
         error(errorMsg, e)
         throw new NotFoundException(errorMsg)
     }
@@ -267,7 +267,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
       fe.be.getTableTypes(parseSessionHandle(sessionHandleStr))
     } catch {
       case NonFatal(e) =>
-        val errorMsg = s"Error getting table types"
+        val errorMsg = "Error getting table types"
         error(errorMsg, e)
         throw new NotFoundException(errorMsg)
     }
@@ -292,7 +292,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
         request.columnName)
     } catch {
       case NonFatal(e) =>
-        val errorMsg = s"Error getting columns"
+        val errorMsg = "Error getting columns"
         error(errorMsg, e)
         throw new NotFoundException(errorMsg)
     }
@@ -316,7 +316,7 @@ private[v1] class SessionsResource extends ApiRequestContext with Logging {
         request.functionName)
     } catch {
       case NonFatal(e) =>
-        val errorMsg = s"Error getting functions"
+        val errorMsg = "Error getting functions"
         error(errorMsg, e)
         throw new NotFoundException(errorMsg)
     }

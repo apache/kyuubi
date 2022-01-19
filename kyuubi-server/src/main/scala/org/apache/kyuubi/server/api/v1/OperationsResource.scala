@@ -55,7 +55,7 @@ private[v1] class OperationsResource extends ApiRequestContext with Logging {
       KyuubiOperationEvent(operation.asInstanceOf[KyuubiOperation])
     } catch {
       case NonFatal(e) =>
-        val errorMsg = s"Error getting an operation event"
+        val errorMsg = "Error getting an operation event"
         error(errorMsg, e)
         throw new NotFoundException(errorMsg)
     }
