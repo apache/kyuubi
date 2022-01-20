@@ -98,10 +98,12 @@ trait ProcBuilder {
   @volatile private var error: Throwable = UNCAUGHT_ERROR
 
   private val engineLogMaxLines = conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_MAX_LOG_LINES)
+  private val waitCompletion = conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_WAIT_COMPLETION)
   private val lastRowsOfLog: EvictingQueue[String] = EvictingQueue.create(engineLogMaxLines)
   // Visible for test
   @volatile private[kyuubi] var logCaptureThreadReleased: Boolean = true
   private var logCaptureThread: Thread = _
+  private var process: Process = _
 
   private[kyuubi] lazy val engineLog: File = ProcBuilder.synchronized {
     val engineLogTimeout = conf.get(KyuubiConf.ENGINE_LOG_TIMEOUT)
@@ -140,8 +142,7 @@ trait ProcBuilder {
   }
 
   final def start: Process = synchronized {
-
-    val proc = processBuilder.start()
+    process = processBuilder.start()
     val reader = Files.newBufferedReader(engineLog.toPath, StandardCharsets.UTF_8)
 
     val redirect: Runnable = { () =>
@@ -183,7 +184,7 @@ trait ProcBuilder {
     logCaptureThreadReleased = false
     logCaptureThread = PROC_BUILD_LOGGER.newThread(redirect)
     logCaptureThread.start()
-    proc
+    process
   }
 
   val YARN_APP_NAME_REGEX: Regex = "application_\\d+_\\d+".r
@@ -212,6 +213,9 @@ trait ProcBuilder {
   def close(): Unit = {
     if (logCaptureThread != null) {
       logCaptureThread.interrupt()
+    }
+    if (!waitCompletion && process != null) {
+      process.destroyForcibly()
     }
   }
 
