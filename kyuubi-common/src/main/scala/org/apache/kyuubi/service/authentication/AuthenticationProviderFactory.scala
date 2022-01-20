@@ -29,7 +29,10 @@ object AuthenticationProviderFactory {
   @throws[AuthenticationException]
   def getAuthenticationProvider(
       method: AuthMethod,
-      conf: KyuubiConf): PasswdAuthenticationProvider = method match {
+      conf: KyuubiConf,
+      isServer: Boolean = true): PasswdAuthenticationProvider = method match {
+    case _ if !isServer && conf.get(KyuubiConf.ENGINE_SECURE_ACCESS_ENABLED) =>
+      new EngineSecureAuthenticationProviderImpl
     case AuthMethods.NONE => new AnonymousAuthenticationProviderImpl
     case AuthMethods.LDAP => new LdapAuthenticationProviderImpl(conf)
     case AuthMethods.CUSTOM =>

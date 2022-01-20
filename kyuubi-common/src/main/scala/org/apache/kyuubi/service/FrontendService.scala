@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.service
 
+import org.apache.kyuubi.service.authentication.SecureAccessor
+
 /**
  * A [[FrontendService]] in Kyuubi architecture is responsible for talking requests from clients
  */
@@ -41,4 +43,8 @@ trait FrontendService {
    * An optional `ServiceDiscovery` for [[FrontendService]] to expose itself
    */
   val discoveryService: Option[Service]
+
+  val engineSecureAccessor: Option[SecureAccessor]
+
+  protected def isServer(): Boolean = false
 }

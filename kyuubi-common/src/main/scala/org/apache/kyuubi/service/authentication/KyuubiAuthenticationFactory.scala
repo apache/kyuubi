@@ -34,7 +34,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.service.authentication.AuthTypes._
 
-class KyuubiAuthenticationFactory(conf: KyuubiConf) extends Logging {
+class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) extends Logging {
 
   private val authTypes = conf.get(AUTHENTICATION_METHOD).map(AuthTypes.withName)
   private val noSasl = authTypes == Seq(NOSASL)
@@ -87,6 +87,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf) extends Logging {
           transportFactory = PlainSASLHelper.getTransportFactory(
             plainAuthType.toString,
             conf,
+            isServer,
             Option(transportFactory)).asInstanceOf[TSaslServerTransport.Factory]
 
         case _ =>

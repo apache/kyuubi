@@ -1116,4 +1116,18 @@ object KyuubiConf {
       .version("1.5.0")
       .stringConf
       .createOptional
+
+  val ENGINE_SECURE_ACCESS_ENABLED: ConfigEntry[Boolean] =
+    buildConf("engine.secure.access.enabled")
+      .doc("unused yet")
+      .version("1.5.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val ENGINE_ACCESS_TOKEN_MAX_LIFETIME: ConfigEntry[Long] =
+    buildConf("engine.access.token.max.lifetime")
+      .doc("unused yet")
+      .version("1.5.0")
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(10).toMillis)
 }

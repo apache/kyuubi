@@ -32,6 +32,7 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.server.EventLoggingService
+import org.apache.kyuubi.service.authentication.SecureAccessor
 
 class KyuubiSessionImpl(
     protocol: TProtocolVersion,
@@ -82,7 +83,12 @@ class KyuubiSessionImpl(
   private[kyuubi] def openEngineSession(extraEngineLog: Option[OperationLog] = None): Unit = {
     withZkClient(sessionConf) { zkClient =>
       val (host, port) = engine.getOrCreate(zkClient, extraEngineLog)
-      val passwd = Option(password).filter(_.nonEmpty).getOrElse("anonymous")
+      val passwd =
+        if (sessionManager.getConf.get(ENGINE_SECURE_ACCESS_ENABLED)) {
+          SecureAccessor.get().issueToken()
+        } else {
+          Option(password).filter(_.nonEmpty).getOrElse("anonymous")
+        }
       _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
       _engineSessionHandle = _client.openSession(protocol, user, passwd, normalizedConf)
       logSessionInfo(s"Connected to engine [$host:$port] with ${_engineSessionHandle}")
