@@ -116,8 +116,10 @@ class ElasticSearchClientBuilder() {
     restClientBuilder.build()
   }
 
-  private def sniffer(): Sniffer = Sniffer.builder(restClient).build
-
-  def build(): ElasticSearchClient = new ElasticSearchClient(restClient, sniffer)
+  def build(): ElasticSearchClient = {
+    val client = restClient()
+    val sniffer = Sniffer.builder(client).build
+    new ElasticSearchClient(client, sniffer)
+  }
 
 }

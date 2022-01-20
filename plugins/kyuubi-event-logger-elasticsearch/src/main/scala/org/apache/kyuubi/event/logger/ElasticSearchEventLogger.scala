@@ -65,6 +65,7 @@ class ElasticSearchEventLogger[T <: KyuubiEvent]
    */
   override def stop(): Unit = synchronized {
     this.eventIndex.close()
+    super.stop()
   }
 
 }
