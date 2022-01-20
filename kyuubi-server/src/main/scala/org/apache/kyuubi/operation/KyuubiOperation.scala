@@ -26,7 +26,7 @@ import org.apache.thrift.TException
 import org.apache.thrift.transport.TTransportException
 
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
-import org.apache.kyuubi.metrics.MetricsConstants.{OPERATION_FAIL, OPERATION_OPEN, OPERATION_STATE_RATE, OPERATION_TOTAL}
+import org.apache.kyuubi.metrics.MetricsConstants.{OPERATION_FAIL, OPERATION_OPEN, OPERATION_STATE, OPERATION_TOTAL}
 import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
 import org.apache.kyuubi.operation.OperationState.OperationState
@@ -46,7 +46,7 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
     ms.incCount(MetricRegistry.name(OPERATION_OPEN, opTypeName))
     ms.incCount(MetricRegistry.name(OPERATION_TOTAL, opTypeName))
     ms.incCount(MetricRegistry.name(OPERATION_TOTAL))
-    ms.markMeter(MetricRegistry.name(OPERATION_STATE_RATE, state.toString.toLowerCase))
+    ms.markMeter(MetricRegistry.name(OPERATION_STATE, state.toString.toLowerCase))
   }
 
   protected[operation] lazy val client = session.asInstanceOf[KyuubiSessionImpl].client
@@ -164,6 +164,6 @@ abstract class KyuubiOperation(opType: OperationType, session: Session)
   override def setState(newState: OperationState): Unit = {
     super.setState(newState)
     MetricsSystem.tracing(
-      _.markMeter(MetricRegistry.name(OPERATION_STATE_RATE, newState.toString.toLowerCase)))
+      _.markMeter(MetricRegistry.name(OPERATION_STATE, newState.toString.toLowerCase)))
   }
 }
