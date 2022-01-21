@@ -704,4 +704,21 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       assert(resultSet.next())
     })
   }
+
+  test("execute statement - rest property") {
+    withMultipleConnectionJdbcStatement()({ statement =>
+      statement.executeQuery("set pipeline.jars = my.jar")
+      statement.executeQuery("reset pipeline.jars")
+      val resultSet = statement.executeQuery("set")
+      // Flink does not support set key without value currently,
+      // thus read all rows to find the desired one
+      var found = false
+      while (resultSet.next()) {
+        if (resultSet.getString(1) == "pipeline.jars = ") {
+          found = true
+        }
+      }
+      assert(found)
+    })
+  }
 }

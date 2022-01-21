@@ -55,4 +55,19 @@ public class OperationUtil {
         .data(data.toArray(new Row[0]))
         .build();
   }
+
+  /**
+   * Build a simple result with OK message. Returned when SQL commands are executed successfully.
+   * Noted that a new ResultSet is returned each time, because ResultSet is stateful (with its
+   * cursor).
+   *
+   * @return A simple result with OK message.
+   */
+  public static ResultSet successResultSet() {
+    return ResultSet.builder()
+        .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+        .columns(Column.physical("result", DataTypes.STRING()))
+        .data(new Row[] {Row.of("OK")})
+        .build();
+  }
 }

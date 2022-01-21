@@ -28,11 +28,11 @@ import org.apache.flink.table.api.{DataTypes, ResultKind}
 import org.apache.flink.table.catalog.Column
 import org.apache.flink.table.client.gateway.{Executor, TypedResult}
 import org.apache.flink.table.operations.{Operation, QueryOperation}
-import org.apache.flink.table.operations.command.SetOperation
+import org.apache.flink.table.operations.command.{ResetOperation, SetOperation}
 import org.apache.flink.types.Row
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.engine.flink.result.ResultSet
+import org.apache.kyuubi.engine.flink.result.{OperationUtil, ResultSet}
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -106,6 +106,7 @@ class ExecuteStatement(
       operation match {
         case queryOperation: QueryOperation => runQueryOperation(queryOperation)
         case setOperation: SetOperation => runSetOperation(setOperation)
+        case resetOperation: ResetOperation => runResetOperation(resetOperation)
         case operation: Operation => runOperation(operation)
       }
     } catch {
@@ -167,7 +168,7 @@ class ExecuteStatement(
       val entries = ArrayBuffer.empty[Row]
       properties.forEach((key, value) => entries.append(Row.of(PROPERTY_FORMAT.format(key, value))))
 
-      if (entries.nonEmpty ) {
+      if (entries.nonEmpty) {
         val prettyEntries = entries.sortBy(_.getField(0).asInstanceOf[String])
         resultSet = ResultSet.builder
           .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
@@ -182,6 +183,18 @@ class ExecuteStatement(
           .build
       }
     }
+    setState(OperationState.FINISHED)
+  }
+
+  private def runResetOperation(resetOperation: ResetOperation): Unit = {
+    if (resetOperation.getKey.isPresent) {
+      // reset the given property
+      executor.resetSessionProperty(sessionId, resetOperation.getKey.get())
+    } else {
+      // reset all properties
+      executor.resetSessionProperties(sessionId)
+    }
+    resultSet = OperationUtil.successResultSet()
     setState(OperationState.FINISHED)
   }
 
