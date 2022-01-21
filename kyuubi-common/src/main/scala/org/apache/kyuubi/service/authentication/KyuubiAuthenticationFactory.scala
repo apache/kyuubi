@@ -56,6 +56,12 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
     }
   }
 
+  if (conf.get(ENGINE_SECURE_ACCESS_ENABLED)) {
+    val engineSecureAccessor = new EngineSecureAccessor()
+    engineSecureAccessor.initialize(conf)
+    engineSecureAccessor.start()
+  }
+
   private def getSaslProperties: java.util.Map[String, String] = {
     val props = new java.util.HashMap[String, String]()
     val qop = SaslQOP.withName(conf.get(SASL_QOP))

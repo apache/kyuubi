@@ -19,7 +19,6 @@ package org.apache.kyuubi.service
 
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.ServiceState.LATENT
-import org.apache.kyuubi.service.authentication.EngineSecureAccessor
 
 /**
  * A [[AbstractFrontendService]] is an abstraction for fronted service.
@@ -29,14 +28,6 @@ import org.apache.kyuubi.service.authentication.EngineSecureAccessor
  */
 abstract class AbstractFrontendService(name: String)
   extends CompositeService(name) with FrontendService {
-
-  override lazy val engineSecureAccessor: Option[EngineSecureAccessor] = {
-    if (conf.get(KyuubiConf.ENGINE_SECURE_ACCESS_ENABLED)) {
-      Some(new EngineSecureAccessor())
-    } else {
-      None
-    }
-  }
 
   protected def checkInitialized(): Unit = {
     if (getServiceState == ServiceState.LATENT) {
@@ -48,6 +39,5 @@ abstract class AbstractFrontendService(name: String)
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     discoveryService.foreach(addService)
     super.initialize(conf)
-    engineSecureAccessor.foreach(addService)
   }
 }
