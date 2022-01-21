@@ -17,24 +17,16 @@
 
 package org.apache.kyuubi.engine.trino
 
-import org.apache.kyuubi.config.ConfigBuilder
-import org.apache.kyuubi.config.ConfigEntry
-import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.trino.session.TrinoSessionManager
+import org.apache.kyuubi.service.AbstractBackendService
+import org.apache.kyuubi.session.SessionManager
 
-object TrinoConf {
-  private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
+class TrinoBackendService(name: String, trinoContext: TrinoContext)
+  extends AbstractBackendService(name) {
+  def this(trino: TrinoContext) =
+    this(classOf[TrinoBackendService].getSimpleName, trino)
 
-  val DATA_PROCESSING_POOL_SIZE: ConfigEntry[Int] =
-    buildConf("trino.client.data.processing.pool.size")
-      .doc("The size of the thread pool used by the trino client to processing data")
-      .version("1.5.0")
-      .intConf
-      .createWithDefault(3)
+  override val sessionManager: SessionManager = new TrinoSessionManager(trinoContext)
 
-  val CLIENT_REQUEST_TIMEOUT: ConfigEntry[Int] =
-    buildConf("trino.client.request.timeout")
-      .doc("Client request will be closed when it's not accessed for this duration of time")
-      .version("1.5.0")
-      .intConf
-      .createWithDefault(2)
+  def trinoSession: TrinoContext = trinoContext
 }
