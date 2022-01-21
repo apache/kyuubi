@@ -23,7 +23,7 @@ import java.util.concurrent.CountDownLatch
 import scala.util.control.NonFatal
 
 import org.apache.spark.{ui, SparkConf}
-import org.apache.spark.kyuubi.SparkSQLEngineListener
+import org.apache.spark.kyuubi.{SparkSQLEngineEventListener, SparkSQLEngineListener}
 import org.apache.spark.repl.Main
 import org.apache.spark.sql.SparkSession
 
@@ -46,8 +46,10 @@ case class SparkSQLEngine(
   override val frontendServices = Seq(new SparkTBinaryFrontendService(this))
 
   override def initialize(conf: KyuubiConf): Unit = {
-    val listener = new SparkSQLEngineListener(this, store)
+    val listener = new SparkSQLEngineListener(this)
     spark.sparkContext.addSparkListener(listener)
+    val engineEventListener = new SparkSQLEngineEventListener(spark.sparkContext, conf)
+    spark.sparkContext.addSparkListener(engineEventListener)
     super.initialize(conf)
   }
 
