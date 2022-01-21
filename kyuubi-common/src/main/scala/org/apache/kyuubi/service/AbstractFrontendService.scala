@@ -47,7 +47,7 @@ abstract class AbstractFrontendService(name: String)
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     discoveryService.foreach(addService)
-    engineSecureAccessor.foreach(addService)
     super.initialize(conf)
+    engineSecureAccessor.foreach(addService)
   }
 }
