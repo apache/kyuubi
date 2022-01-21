@@ -17,7 +17,6 @@
 
 package org.apache.spark.kyuubi
 
-import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.{SparkListener, SparkListenerEvent}
 import org.apache.spark.status.{ElementTrackingStore, KVUtils}
 
@@ -25,10 +24,8 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_UI_SESSION_LIMIT, ENGINE_UI_STATEMENT_LIMIT}
 import org.apache.kyuubi.engine.spark.events.{SessionEvent, SparkOperationEvent}
 
-class SparkSQLEngineEventListener(sc: SparkContext,
+class SparkSQLEngineEventListener(kvstore: ElementTrackingStore,
     conf: KyuubiConf) extends SparkListener {
-
-  val kvstore: ElementTrackingStore = sc.statusStore.store.asInstanceOf[ElementTrackingStore]
 
   /**
    * The number of SQL client sessions kept in the Kyuubi Query Engine web UI.

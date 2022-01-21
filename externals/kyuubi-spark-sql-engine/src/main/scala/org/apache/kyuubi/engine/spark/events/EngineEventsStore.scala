@@ -17,12 +17,9 @@
 
 package org.apache.kyuubi.engine.spark.events
 
-import java.util.concurrent.ConcurrentHashMap
+import scala.collection.JavaConverters._
 
-import scala.collection.JavaConverters.collectionAsScalaIterableConverter
-
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_UI_SESSION_LIMIT, ENGINE_UI_STATEMENT_LIMIT}
+import org.apache.spark.util.kvstore.KVStore
 
 /**
  * A memory store that tracking the number of statements and sessions, it provides:
@@ -32,105 +29,35 @@ import org.apache.kyuubi.config.KyuubiConf.{ENGINE_UI_SESSION_LIMIT, ENGINE_UI_S
  * 1). remove the finished events first.
  * 2). remove the active events if still reach the threshold.
  */
-class EngineEventsStore(conf: KyuubiConf) {
-
-  /**
-   * The number of SQL client sessions kept in the Kyuubi Query Engine web UI.
-   */
-  private val retainedSessions: Int = conf.get(ENGINE_UI_SESSION_LIMIT)
-
-  /**
-   * The number of statements kept in the Kyuubi Query Engine web UI.
-   */
-  private val retainedStatements: Int = conf.get(ENGINE_UI_STATEMENT_LIMIT)
-
-  /**
-   * store all session events.
-   */
-  val sessions = new ConcurrentHashMap[String, SessionEvent]
+class EngineEventsStore(store: KVStore) {
 
   /**
    * get all session events order by startTime
    */
   def getSessionList: Seq[SessionEvent] = {
-    sessions.values().asScala.toSeq.sortBy(_.startTime)
+    store.view(classOf[SessionEvent]).asScala.toSeq
   }
 
   def getSession(sessionId: String): Option[SessionEvent] = {
-    Option(sessions.get(sessionId))
-  }
-
-  /**
-   * save session events and check the capacity threshold
-   */
-  def saveSession(sessionEvent: SessionEvent): Unit = {
-    sessions.put(sessionEvent.sessionId, sessionEvent)
-    checkSessionCapacity()
-  }
-
-  /**
-   * cleanup the session events if reach the threshold
-   */
-  private def checkSessionCapacity(): Unit = {
-    var countToDelete = sessions.size - retainedSessions
-
-    val reverseSeq = sessions.values().asScala.toSeq.sortBy(_.startTime).reverse
-
-    // remove finished sessions first.
-    for (event <- reverseSeq if event.endTime != -1L && countToDelete > 0) {
-      sessions.remove(event.sessionId)
-      countToDelete -= 1
-    }
-
-    // remove active event if still reach the threshold
-    for (event <- reverseSeq if countToDelete > 0) {
-      sessions.remove(event.sessionId)
-      countToDelete -= 1
+    try {
+      Some(store.read(classOf[SessionEvent], sessionId))
+    } catch {
+      case _: NoSuchElementException => None
     }
   }
-
-  /**
-   * store all statements events.
-   */
-  val statements = new ConcurrentHashMap[String, SparkOperationEvent]
 
   /**
    * get all statement events order by startTime
    */
   def getStatementList: Seq[SparkOperationEvent] = {
-    statements.values().asScala.toSeq.sortBy(_.createTime)
+    store.view(classOf[SparkOperationEvent]).asScala.toSeq
   }
 
   def getStatement(statementId: String): Option[SparkOperationEvent] = {
-    Option(statements.get(statementId))
-  }
-
-  /**
-   * save statement events and check the capacity threshold
-   */
-  def saveStatement(statementEvent: SparkOperationEvent): Unit = {
-    statements.put(statementEvent.statementId, statementEvent)
-    checkStatementCapacity()
-  }
-
-  /**
-   * cleanup the statement events if reach the threshold
-   */
-  private def checkStatementCapacity(): Unit = {
-    var countToDelete = statements.size - retainedStatements
-
-    val reverseSeq = statements.values().asScala.toSeq.sortBy(_.createTime).reverse
-
-    //  remove finished statements first.
-    for (event <- reverseSeq if event.completeTime != -1L && countToDelete > 0) {
-      statements.remove(event.statementId)
-      countToDelete -= 1
-    }
-
-    // remove active event if still reach the threshold
-    for (event <- reverseSeq if countToDelete > 0) {
-      statements.remove(event.statementId)
-      countToDelete -= 1
+    try {
+      Some(store.read(classOf[SparkOperationEvent], statementId))
+    } catch {
+      case _: NoSuchElementException => None
     }
   }
 

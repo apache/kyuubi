@@ -23,7 +23,7 @@ import java.util.concurrent.CountDownLatch
 import scala.util.control.NonFatal
 
 import org.apache.spark.{ui, SparkConf}
-import org.apache.spark.kyuubi.{SparkSQLEngineEventListener, SparkSQLEngineListener}
+import org.apache.spark.kyuubi.{SparkContextHelper, SparkSQLEngineEventListener, SparkSQLEngineListener}
 import org.apache.spark.repl.Main
 import org.apache.spark.sql.SparkSession
 
@@ -48,7 +48,8 @@ case class SparkSQLEngine(
   override def initialize(conf: KyuubiConf): Unit = {
     val listener = new SparkSQLEngineListener(this)
     spark.sparkContext.addSparkListener(listener)
-    val engineEventListener = new SparkSQLEngineEventListener(spark.sparkContext, conf)
+    val kvStore = SparkContextHelper.getKvStore(spark.sparkContext)
+    val engineEventListener = new SparkSQLEngineEventListener(kvStore, conf)
     spark.sparkContext.addSparkListener(engineEventListener)
     super.initialize(conf)
   }
@@ -122,7 +123,8 @@ object SparkSQLEngine extends Logging {
   }
 
   def startEngine(spark: SparkSession): Unit = {
-    val store = new EngineEventsStore(kyuubiConf)
+    val kvStore = SparkContextHelper.getKvStore(spark.sparkContext)
+    val store = new EngineEventsStore(kvStore)
     currentEngine = Some(new SparkSQLEngine(spark, store))
     currentEngine.foreach { engine =>
       // start event logging ahead so that we can capture all statuses

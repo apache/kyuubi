@@ -24,6 +24,7 @@ import org.apache.spark.scheduler.SchedulerBackend
 import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages.UpdateDelegationTokens
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.scheduler.local.LocalSchedulerBackend
+import org.apache.spark.status.ElementTrackingStore
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_STATEMENT_ID_KEY
@@ -38,6 +39,10 @@ object SparkContextHelper extends Logging {
 
   def createSparkHistoryLogger(sc: SparkContext): EventLogger[KyuubiSparkEvent] = {
     new SparkHistoryEventLogger(sc)
+  }
+
+  def getKvStore(sc: SparkContext): ElementTrackingStore = {
+    sc.statusStore.store.asInstanceOf[ElementTrackingStore]
   }
 
   def updateDelegationTokens(sc: SparkContext, creds: Credentials): Unit = {
