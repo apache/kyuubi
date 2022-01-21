@@ -25,6 +25,7 @@ import org.apache.spark.scheduler.cluster.CoarseGrainedClusterMessages.UpdateDel
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.scheduler.local.LocalSchedulerBackend
 import org.apache.spark.status.ElementTrackingStore
+import org.apache.spark.ui.SparkUI
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_STATEMENT_ID_KEY
@@ -43,6 +44,10 @@ object SparkContextHelper extends Logging {
 
   def getKvStore(sc: SparkContext): ElementTrackingStore = {
     sc.statusStore.store.asInstanceOf[ElementTrackingStore]
+  }
+
+  def getSparkUI(sc: SparkContext): Option[SparkUI] = {
+    sc.ui
   }
 
   def updateDelegationTokens(sc: SparkContext, creds: Credentials): Unit = {

@@ -61,4 +61,12 @@ class EngineEventsStore(store: KVStore) {
     }
   }
 
+  def getSessionCount: Long = {
+    store.count(classOf[SessionEvent])
+  }
+
+  def getStatementCount: Long = {
+    store.count(classOf[SparkOperationEvent])
+  }
+
 }

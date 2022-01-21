@@ -29,7 +29,7 @@ import org.apache.spark.util.Utils
 /** Page for Spark Web UI that shows statistics of jobs running in the engine server */
 case class EngineSessionPage(parent: EngineTab)
   extends WebUIPage("session") with Logging {
-  val store = parent.engine.store
+  val store = parent.store
 
   /** Render the page */
   def render(request: HttpServletRequest): Seq[Node] = {
@@ -55,22 +55,28 @@ case class EngineSessionPage(parent: EngineTab)
   }
 
   /** Generate basic stats of the engine server */
-  private def generateBasicStats(): Seq[Node] = {
-    val timeSinceStart = System.currentTimeMillis() - parent.engine.getStartTime
+  private def generateBasicStats(): Seq[Node] = if (parent.engine != null) {
+    val timeSinceStart = parent.endTime() - parent.startTime
     <ul class ="list-unstyled">
       <li>
         <strong>Started at: </strong>
-        {new Date(parent.engine.getStartTime)}
+        {new Date(parent.startTime)}
       </li>
-      <li>
-        <strong>Latest Logout at: </strong>
-        {new Date(parent.engine.backendService.sessionManager.latestLogoutTime)}
-      </li>
+      {
+        parent.engine.map { engine =>
+          <li>
+            <strong>Latest Logout at: </strong>
+            {new Date(engine.backendService.sessionManager.latestLogoutTime)}
+          </li>
+        }.getOrElse(Seq.empty)
+      }
       <li>
         <strong>Time since start: </strong>
         {formatDurationVerbose(timeSinceStart)}
       </li>
     </ul>
+  } else {
+    Seq.empty
   }
 
   /** Generate stats of batch statements of the engine server */
