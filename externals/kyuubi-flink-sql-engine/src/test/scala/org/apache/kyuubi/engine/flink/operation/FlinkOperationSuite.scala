@@ -685,4 +685,23 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       assert(resultSet.getLong(1) == -1L)
     })
   }
+
+  test("execute statement - set properties") {
+    withMultipleConnectionJdbcStatement()({ statement =>
+      val resultSet = statement.executeQuery("set table.dynamic-table-options.enabled = true")
+      val metadata = resultSet.getMetaData
+      assert(metadata.getColumnName(1) == "set")
+      assert(resultSet.next())
+      assert(resultSet.getString(1) == "table.dynamic-table-options.enabled = true")
+    })
+  }
+
+  test("execute statement - show properties") {
+    withMultipleConnectionJdbcStatement()({ statement =>
+      val resultSet = statement.executeQuery("set")
+      val metadata = resultSet.getMetaData
+      assert(metadata.getColumnName(1) == "set")
+      assert(resultSet.next())
+    })
+  }
 }
