@@ -19,12 +19,17 @@ package org.apache.kyuubi.engine.spark
 
 import java.time.{Instant, LocalDateTime, ZoneId}
 
+import scala.annotation.meta.getter
+
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.util.kvstore.KVIndex
 
 import org.apache.kyuubi.Utils
 
 object KyuubiSparkUtil {
+
+  type KVIndexParam = KVIndex @getter
 
   final val SPARK_SCHEDULER_POOL_KEY = "spark.scheduler.pool"
   final val SPARK_SQL_EXECUTION_ID_KEY = "spark.sql.execution.id"
