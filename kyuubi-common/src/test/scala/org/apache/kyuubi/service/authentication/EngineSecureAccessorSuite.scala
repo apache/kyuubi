@@ -21,7 +21,7 @@ import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 
 class EngineSecureAccessorSuite extends KyuubiFunSuite {
-  private val secureAccessor = new EngineSecureAccessor()
+  private val secureAccessor = new EngineSecureAccessor(true)
 
   override def beforeAll(): Unit = {
     val conf = KyuubiConf()

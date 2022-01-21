@@ -40,14 +40,11 @@ object PlainSASLHelper {
       new TSetIpAddressProcessor[Iface](service)
   }
 
-  private class PlainServerCallbackHandler private (
-      authMethod: AuthMethod,
-      conf: KyuubiConf,
-      isServer: Boolean)
+  private class PlainServerCallbackHandler private (authMethod: AuthMethod, conf: KyuubiConf)
     extends CallbackHandler {
 
-    def this(authMethodStr: String, conf: KyuubiConf, isServer: Boolean) =
-      this(AuthMethods.withName(authMethodStr), conf, isServer)
+    def this(authMethodStr: String, conf: KyuubiConf) =
+      this(AuthMethods.withName(authMethodStr), conf)
 
     @throws[UnsupportedCallbackException]
     override def handle(callbacks: Array[Callback]): Unit = {
@@ -64,8 +61,7 @@ object PlainSASLHelper {
           case _ => throw new UnsupportedCallbackException(callback)
         }
       }
-      val provider =
-        AuthenticationProviderFactory.getAuthenticationProvider(authMethod, conf, isServer)
+      val provider = AuthenticationProviderFactory.getAuthenticationProvider(authMethod, conf)
       provider.authenticate(username, password)
       if (ac != null) ac.setAuthorized(true)
     }
@@ -78,11 +74,10 @@ object PlainSASLHelper {
   def getTransportFactory(
       authTypeStr: String,
       conf: KyuubiConf,
-      isServer: Boolean = true,
       transportFactory: Option[TSaslServerTransport.Factory] = None): TTransportFactory = {
     val saslFactory = transportFactory.getOrElse(new TSaslServerTransport.Factory())
     try {
-      val handler = new PlainServerCallbackHandler(authTypeStr, conf, isServer)
+      val handler = new PlainServerCallbackHandler(authTypeStr, conf)
       val props = new java.util.HashMap[String, String]
       saslFactory.addServerDefinition("PLAIN", authTypeStr, null, props, handler)
     } catch {

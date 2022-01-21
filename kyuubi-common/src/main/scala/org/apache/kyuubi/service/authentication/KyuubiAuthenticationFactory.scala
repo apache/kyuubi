@@ -57,7 +57,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
   }
 
   if (conf.get(ENGINE_SECURE_ACCESS_ENABLED)) {
-    val engineSecureAccessor = new EngineSecureAccessor()
+    val engineSecureAccessor = new EngineSecureAccessor(isServer)
     engineSecureAccessor.initialize(conf)
     engineSecureAccessor.start()
   }
@@ -93,7 +93,6 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
           transportFactory = PlainSASLHelper.getTransportFactory(
             plainAuthType.toString,
             conf,
-            isServer,
             Option(transportFactory)).asInstanceOf[TSaslServerTransport.Factory]
 
         case _ =>

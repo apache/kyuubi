@@ -462,6 +462,8 @@ abstract class TFrontendService(name: String)
     resp
   }
 
+  protected def isServer(): Boolean = false
+
   class FeTServerEventHandler extends TServerEventHandler {
     implicit def toFeServiceServerContext(context: ServerContext): FeServiceServerContext = {
       context.asInstanceOf[FeServiceServerContext]

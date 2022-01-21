@@ -41,6 +41,4 @@ trait FrontendService {
    * An optional `ServiceDiscovery` for [[FrontendService]] to expose itself
    */
   val discoveryService: Option[Service]
-
-  protected def isServer(): Boolean = false
 }

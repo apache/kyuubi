@@ -24,10 +24,10 @@ import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.AbstractService
 
-class EngineSecureAccessor(name: String) extends AbstractService(name) {
+class EngineSecureAccessor(name: String, val isServer: Boolean) extends AbstractService(name) {
   import EngineSecureAccessor._
 
-  def this() = this(classOf[EngineSecureAccessor].getName)
+  def this(isServer: Boolean) = this(classOf[EngineSecureAccessor].getName, isServer)
 
   private var provider: EngineSecureAccessProvider = _
   private var tokenMaxLifeTime: Long = _
