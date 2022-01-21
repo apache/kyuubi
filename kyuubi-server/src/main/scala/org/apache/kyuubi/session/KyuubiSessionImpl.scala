@@ -32,7 +32,7 @@ import org.apache.kyuubi.metrics.MetricsSystem
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.server.EventLoggingService
-import org.apache.kyuubi.service.authentication.SecureAccessor
+import org.apache.kyuubi.service.authentication.EngineSecureAccessor
 
 class KyuubiSessionImpl(
     protocol: TProtocolVersion,
@@ -85,7 +85,7 @@ class KyuubiSessionImpl(
       val (host, port) = engine.getOrCreate(zkClient, extraEngineLog)
       val passwd =
         if (sessionManager.getConf.get(ENGINE_SECURE_ACCESS_ENABLED)) {
-          SecureAccessor.get().issueToken()
+          EngineSecureAccessor.get().issueToken()
         } else {
           Option(password).filter(_.nonEmpty).getOrElse("anonymous")
         }

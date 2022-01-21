@@ -1119,15 +1119,24 @@ object KyuubiConf {
 
   val ENGINE_SECURE_ACCESS_ENABLED: ConfigEntry[Boolean] =
     buildConf("engine.secure.access.enabled")
-      .doc("unused yet")
+      .doc("Whether to enable the internal secure access between Kyuubi server and engine.")
       .version("1.5.0")
       .booleanConf
       .createWithDefault(false)
 
-  val ENGINE_ACCESS_TOKEN_MAX_LIFETIME: ConfigEntry[Long] =
-    buildConf("engine.access.token.max.lifetime")
-      .doc("unused yet")
+  val ENGINE_SECURE_ACCESS_TOKEN_MAX_LIFETIME: ConfigEntry[Long] =
+    buildConf("engine.secure.access.token.max.lifetime")
+      .doc("The max lifetime of the token used for secure access between Kyuubi server and engine.")
       .version("1.5.0")
       .timeConf
       .createWithDefault(Duration.ofMinutes(10).toMillis)
+
+  val ENGINE_SECURE_ACCESS_SECRET_PROVIDER_CLASS: ConfigEntry[String] =
+    buildConf("engine.secure.access.secret.providerClass")
+      .doc("The class used to manage the engine secure access secret. This class must be a " +
+        "subclass of EngineSecureAccessProvider.")
+      .version("1.5.0")
+      .stringConf
+      .createWithDefault(
+        "org.apache.kyuubi.service.authentication.ZooKeeperEngineSecureAccessProviderImpl")
 }

@@ -17,15 +17,25 @@
 
 package org.apache.kyuubi.service.authentication
 
+import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 
-class UserDefinedSecureAccessProvider extends SecureAccessProvider {
-  override def initialize(kyuubiConf: KyuubiConf): Unit = {}
+class EngineSecureAccessorSuite extends KyuubiFunSuite {
+  private val secureAccessor = new EngineSecureAccessor()
 
-  override def supportSecureAccess: Boolean = true
+  override def beforeAll(): Unit = {
+    secureAccessor.initialize(KyuubiConf())
+    secureAccessor.start()
+  }
 
-  override def getSecretAndCipher(): (String, String) = {
-    // for AES, the secret key length should be 16
-    ("ENGINE____SECRET", "AES")
+  test("test encrypt and decrypt") {
+    val value = "tokenToEncrypt"
+    val encryptedValue = secureAccessor.encrypt(value)
+    assert(secureAccessor.decrypt(encryptedValue) === value)
+  }
+
+  test("test issue token and auth token") {
+    val token = secureAccessor.issueToken()
+    secureAccessor.authToken(token)
   }
 }

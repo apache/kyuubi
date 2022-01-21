@@ -17,48 +17,43 @@
 
 package org.apache.kyuubi.service.authentication
 
-import java.util.ServiceLoader
 import javax.crypto.Cipher
 import javax.crypto.spec.SecretKeySpec
-
-import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.AbstractService
 
-class SecureAccessor(name: String) extends AbstractService(name) {
-  import SecureAccessor._
+class EngineSecureAccessor(name: String) extends AbstractService(name) {
+  import EngineSecureAccessor._
 
-  def this() = this(classOf[SecureAccessor].getName)
+  def this() = this(classOf[EngineSecureAccessor].getName)
 
-  private var providerOpt: Option[SecureAccessProvider] = _
+  private var provider: EngineSecureAccessProvider = _
   private var tokenMaxLifeTime: Long = _
   private var encryptCipherInstance: Cipher = _
   private var decryptCipherInstance: Cipher = _
 
   override def initialize(conf: KyuubiConf): Unit = {
-    tokenMaxLifeTime = conf.get(KyuubiConf.ENGINE_ACCESS_TOKEN_MAX_LIFETIME)
-    providerOpt = loadProvider()
-    providerOpt.foreach(_.initialize(conf))
+    tokenMaxLifeTime = conf.get(KyuubiConf.ENGINE_SECURE_ACCESS_TOKEN_MAX_LIFETIME)
+    provider = create(conf.get(KyuubiConf.ENGINE_SECURE_ACCESS_SECRET_PROVIDER_CLASS))
+    provider.initialize(conf)
     super.initialize(conf)
-    SecureAccessor._secureAccessor = this
+    EngineSecureAccessor._secureAccessor = this
   }
 
   def supportSecureAccess(): Boolean = {
-    providerOpt.exists(_.supportSecureAccess)
+    provider.supportSecureAccess
   }
 
   override def start(): Unit = {
     super.start()
-    providerOpt.foreach { provider =>
-      val (secret, cipher) = provider.getSecretAndCipher()
-      val secretKeySpec = new SecretKeySpec(secret.getBytes, cipher)
-      encryptCipherInstance = Cipher.getInstance(cipher)
-      encryptCipherInstance.init(Cipher.ENCRYPT_MODE, secretKeySpec)
-      decryptCipherInstance = Cipher.getInstance(cipher)
-      decryptCipherInstance.init(Cipher.DECRYPT_MODE, secretKeySpec)
-    }
+    val (secret, cipher) = provider.getSecretAndCipher()
+    val secretKeySpec = new SecretKeySpec(secret.getBytes, cipher)
+    encryptCipherInstance = Cipher.getInstance(cipher)
+    encryptCipherInstance.init(Cipher.ENCRYPT_MODE, secretKeySpec)
+    decryptCipherInstance = Cipher.getInstance(cipher)
+    decryptCipherInstance.init(Cipher.DECRYPT_MODE, secretKeySpec)
   }
 
   def issueToken(): String = {
@@ -87,16 +82,16 @@ class SecureAccessor(name: String) extends AbstractService(name) {
   }
 }
 
-object SecureAccessor extends Logging {
-  @volatile private var _secureAccessor: SecureAccessor = _
+object EngineSecureAccessor extends Logging {
+  @volatile private var _secureAccessor: EngineSecureAccessor = _
 
-  def get(): SecureAccessor = {
+  def get(): EngineSecureAccessor = {
     _secureAccessor
   }
 
-  def loadProvider(): Option[SecureAccessProvider] = {
-    val loader = ServiceLoader.load(classOf[SecureAccessProvider], getClass.getClassLoader)
-    loader.iterator().asScala.toSeq.headOption
+  def create(providerClassName: String): EngineSecureAccessProvider = {
+    val providerClass = Class.forName(providerClassName)
+    providerClass.getConstructor().newInstance().asInstanceOf[EngineSecureAccessProvider]
   }
 
   private def hexStringToByteArray(str: String): Array[Byte] = {

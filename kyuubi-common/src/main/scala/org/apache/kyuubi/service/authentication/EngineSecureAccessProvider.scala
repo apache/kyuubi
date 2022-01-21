@@ -17,25 +17,12 @@
 
 package org.apache.kyuubi.service.authentication
 
-import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 
-class SecureAccessorSuite extends KyuubiFunSuite {
-  private val secureAccessor = new SecureAccessor()
+trait EngineSecureAccessProvider {
+  def initialize(conf: KyuubiConf): Unit
 
-  override def beforeAll(): Unit = {
-    secureAccessor.initialize(KyuubiConf())
-    secureAccessor.start()
-  }
+  def supportSecureAccess: Boolean
 
-  test("test encrypt and decrypt") {
-    val value = "tokenToEncrypt"
-    val encryptedValue = secureAccessor.encrypt(value)
-    assert(secureAccessor.decrypt(encryptedValue) === value)
-  }
-
-  test("test issue token and auth token") {
-    val token = secureAccessor.issueToken()
-    secureAccessor.authToken(token)
-  }
+  def getSecretAndCipher(): (String, String)
 }

@@ -19,10 +19,13 @@ package org.apache.kyuubi.service.authentication
 
 import org.apache.kyuubi.config.KyuubiConf
 
-trait SecureAccessProvider {
-  def initialize(conf: KyuubiConf): Unit
+class UserDefinedEngineSecureAccessProvider extends EngineSecureAccessProvider {
+  override def initialize(kyuubiConf: KyuubiConf): Unit = {}
 
-  def supportSecureAccess: Boolean
+  override def supportSecureAccess: Boolean = true
 
-  def getSecretAndCipher(): (String, String)
+  override def getSecretAndCipher(): (String, String) = {
+    // for AES, the secret key length should be 16
+    ("ENGINE____SECRET", "AES")
+  }
 }

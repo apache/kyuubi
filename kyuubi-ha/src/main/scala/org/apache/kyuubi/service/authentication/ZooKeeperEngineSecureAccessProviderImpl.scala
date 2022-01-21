@@ -23,9 +23,9 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_SECRET_NODE
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider
 
-class ZooKeeperSecureAccessProviderImpl extends SecureAccessProvider {
+class ZooKeeperEngineSecureAccessProviderImpl extends EngineSecureAccessProvider {
   import ZooKeeperClientProvider._
-  import ZooKeeperSecureAccessProviderImpl._
+  import ZooKeeperEngineSecureAccessProviderImpl._
 
   private var conf: KyuubiConf = _
 
@@ -48,7 +48,7 @@ class ZooKeeperSecureAccessProviderImpl extends SecureAccessProvider {
   }
 }
 
-object ZooKeeperSecureAccessProviderImpl {
+object ZooKeeperEngineSecureAccessProviderImpl {
   private def parseSecretCipher(secretInfo: String): (String, String) = {
     val maybeInfos = secretInfo.split("\\s+")
     if (maybeInfos.size != 2) {
