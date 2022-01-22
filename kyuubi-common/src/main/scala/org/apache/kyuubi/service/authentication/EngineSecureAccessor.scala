@@ -24,14 +24,9 @@ import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.security.EngineSecureCryptoConf
-import org.apache.kyuubi.service.AbstractService
 
-class EngineSecureAccessor(name: String, conf: KyuubiConf, val isServer: Boolean)
-  extends AbstractService(name) {
+class EngineSecureAccessor(conf: KyuubiConf, val isServer: Boolean) {
   import EngineSecureAccessor._
-
-  def this(conf: KyuubiConf, isServer: Boolean) =
-    this(classOf[EngineSecureAccessor].getName, conf, isServer)
 
   private val cryptoConf: EngineSecureCryptoConf = new EngineSecureCryptoConf(conf)
   private val tokenMaxLifeTime: Long = conf.get(ENGINE_SECURE_ACCESS_TOKEN_MAX_LIFETIME)
@@ -89,14 +84,14 @@ class EngineSecureAccessor(name: String, conf: KyuubiConf, val isServer: Boolean
 object EngineSecureAccessor extends Logging {
   @volatile private var _secureAccessor: EngineSecureAccessor = _
 
-  def get(): EngineSecureAccessor = {
-    _secureAccessor
-  }
-
   def getOrCreate(conf: KyuubiConf, isServer: Boolean): EngineSecureAccessor = {
     if (_secureAccessor == null) {
       _secureAccessor = new EngineSecureAccessor(conf, isServer)
     }
+    _secureAccessor
+  }
+
+  def get(): EngineSecureAccessor = {
     _secureAccessor
   }
 

@@ -15,15 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.service.authentication
+package org.apache.kyuubi.operation
 
-object CipherModes extends Enumeration {
-  type CipherMode = Value
-  val AES, CBC, PKCS5PADDING = Value
+import org.apache.kyuubi.WithKyuubiServer
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.service.authentication.ZooKeeperEngineSecureSecretProviderImpl
 
-  def getSecretLength(cipher: CipherMode): Int = cipher match {
-    case AES => 16
-    case CBC => 16
-    case PKCS5PADDING => 16
+class KyuubiOperationWithEngineSecure extends WithKyuubiServer with SparkQueryTests {
+  override protected def jdbcUrl: String = getJdbcUrl
+
+  override protected val conf: KyuubiConf = {
+    KyuubiConf().set(KyuubiConf.ENGINE_SECURE_ACCESS_ENABLED, true)
+      .set(
+        KyuubiConf.ENGINE_SECURE_ACCESS_SECRET_PROVIDER_CLASS,
+        classOf[ZooKeeperEngineSecureSecretProviderImpl].getCanonicalName)
   }
 }
