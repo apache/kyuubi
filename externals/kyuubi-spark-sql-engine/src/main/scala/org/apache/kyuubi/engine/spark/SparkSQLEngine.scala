@@ -24,10 +24,9 @@ import scala.util.control.NonFatal
 
 import org.apache.spark.{ui, SparkConf}
 import org.apache.spark.kyuubi.SparkSQLEngineListener
-import org.apache.spark.repl.Main
 import org.apache.spark.sql.SparkSession
 
-import org.apache.kyuubi.{KyuubiException, Logging}
+import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
@@ -76,6 +75,8 @@ object SparkSQLEngine extends Logging {
 
   private val countDownLatch = new CountDownLatch(1)
 
+  val replOutputDir = Utils.createTempDir(namePrefix = "repl").toFile
+
   def createSpark(): SparkSession = {
     val sparkConf = new SparkConf()
     sparkConf.setIfMissing("spark.sql.execution.topKSortFallbackThreshold", "10000")
@@ -84,7 +85,7 @@ object SparkSQLEngine extends Logging {
     sparkConf.setIfMissing("spark.ui.port", "0")
     // register the repl's output dir with the file server.
     // see also `spark.repl.classdir`
-    sparkConf.set("spark.repl.class.outputDir", Main.outputDir.getAbsolutePath)
+    sparkConf.set("spark.repl.class.outputDir", replOutputDir.getAbsolutePath)
     sparkConf.setIfMissing(
       "spark.hadoop.mapreduce.input.fileinputformat.list-status.num-threads",
       "20")

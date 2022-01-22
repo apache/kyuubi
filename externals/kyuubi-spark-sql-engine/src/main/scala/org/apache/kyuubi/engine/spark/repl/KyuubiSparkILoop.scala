@@ -24,9 +24,11 @@ import scala.tools.nsc.interpreter.IR
 import scala.tools.nsc.interpreter.JPrintWriter
 
 import org.apache.spark.SparkContext
-import org.apache.spark.repl.{Main, SparkILoop}
+import org.apache.spark.repl.SparkILoop
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.util.MutableURLClassLoader
+
+import org.apache.kyuubi.engine.spark.SparkSQLEngine
 
 private[spark] case class KyuubiSparkILoop private (
     spark: SparkSession,
@@ -40,7 +42,7 @@ private[spark] case class KyuubiSparkILoop private (
     val interpArguments = List(
       "-Yrepl-class-based",
       "-Yrepl-outdir",
-      s"${Main.outputDir.getAbsolutePath}")
+      s"${SparkSQLEngine.replOutputDir.getAbsolutePath}")
     settings.processArguments(interpArguments, processAll = true)
     settings.usejavacp.value = true
     val currentClassLoader = Thread.currentThread().getContextClassLoader
