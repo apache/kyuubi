@@ -19,7 +19,8 @@ package org.apache.kyuubi.service.authentication
 
 import org.apache.kyuubi.config.KyuubiConf
 
-trait EngineSecureAccessProvider {
+trait EngineSecureAccessSecretProvider {
+
   /**
    * Initialize with kyuubi conf.
    */
@@ -36,9 +37,9 @@ trait EngineSecureAccessProvider {
   def getSecret(): String
 }
 
-object EngineSecureAccessProvider {
-  def create(providerClassName: String): EngineSecureAccessProvider = {
+object EngineSecureAccessSecretProvider {
+  def create(providerClassName: String): EngineSecureAccessSecretProvider = {
     val providerClass = Class.forName(providerClassName)
-    providerClass.getConstructor().newInstance().asInstanceOf[EngineSecureAccessProvider]
+    providerClass.getConstructor().newInstance().asInstanceOf[EngineSecureAccessSecretProvider]
   }
 }

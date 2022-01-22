@@ -172,8 +172,6 @@ object KyuubiConf {
   final val KYUUBI_HOME = "KYUUBI_HOME"
   final val KYUUBI_ENGINE_ENV_PREFIX = "kyuubi.engineEnv"
 
-  final val KYUUBI_ENGINE_SECURE_CRYPTO_CONFIG_PREFIX = "kyuubi.engine.secure.crypto.config."
-
   val kyuubiConfEntries: java.util.Map[String, ConfigEntry[_]] =
     java.util.Collections.synchronizedMap(new java.util.HashMap[String, ConfigEntry[_]]())
 
@@ -1136,23 +1134,9 @@ object KyuubiConf {
   val ENGINE_SECURE_ACCESS_SECRET_PROVIDER_CLASS: ConfigEntry[String] =
     buildConf("engine.secure.access.secret.providerClass")
       .doc("The class used to manage the engine secure access secret. This class must be a " +
-        "subclass of EngineSecureAccessProvider.")
+        "subclass of EngineSecureAccessSecretProvider.")
       .version("1.5.0")
       .stringConf
       .createWithDefault(
         "org.apache.kyuubi.service.authentication.ZooKeeperEngineSecureAccessProviderImpl")
-
-  val ENGINE_SECURE_ENCRYPTION_KEY_SIZE_BYTES: ConfigEntry[Int] =
-    buildConf("engine.secure.encryption.keySizeBytes")
-      .version("1.5.0")
-      .intConf
-      .checkValues(Set(16, 24, 32))
-      .createWithDefault(16)
-
-  val ENGINE_SECURE_ENCRYPTION_CIPHER_TRANSFORMATION: ConfigEntry[String] =
-    buildConf("engine.secure.encryption.cipher.transformation")
-      .doc("")
-      .version("1.5.0")
-      .stringConf
-      .createWithDefault("AES/CBC/PKCS5PADDING")
 }

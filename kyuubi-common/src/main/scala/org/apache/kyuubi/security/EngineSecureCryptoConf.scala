@@ -34,33 +34,32 @@ class EngineSecureCryptoConf(conf: KyuubiConf) {
 object EngineSecureCryptoConf {
   private def buildConf(key: String): ConfigBuilder = KyuubiConf.buildConf(key)
 
-  final val KYUUBI_ENGINE_SECURE_CRYPTO_CONFIG_PREFIX = "kyuubi.engine.secure.crypto.config."
-  final val COMMONS_CRYPTO_CONFIG_PREFIX = "commons.crypto."
-
   val ENCRYPTION_KEY_LENGTH: ConfigEntry[Int] =
     buildConf("engine.secure.crypto.keyLength")
-      .doc("")
+      .doc("The length in bits of the encryption key to generate. " +
+        "Valid values are 128, 192 and 256")
       .version("1.5.0")
       .intConf
+      .checkValues(Set(128, 192, 256))
       .createWithDefault(128)
 
   val IV_LENGTH: ConfigEntry[Int] =
     buildConf("engine.secure.crypto.ivLength")
-      .doc("")
+      .doc("Initial vector length, in bytes.")
       .version("1.5.0")
       .intConf
       .createWithDefault(16)
 
   val KEY_ALGORITHM: ConfigEntry[String] =
     buildConf("engine.secure.crypto.keyAlgorithm")
-      .doc("")
+      .doc("The algorithm for generated secret keys.")
       .version("1.5.0")
       .stringConf
       .createWithDefault("AES")
 
   val CIPHER_TRANSFORMATION: ConfigEntry[String] =
     buildConf("engine.secure.crypto.cipher")
-      .doc("")
+      .doc("The cipher transformation to use for encrypting engine access token.")
       .version("1.5.0")
       .stringConf
       .createWithDefault("AES/CBC/PKCS5PADDING")

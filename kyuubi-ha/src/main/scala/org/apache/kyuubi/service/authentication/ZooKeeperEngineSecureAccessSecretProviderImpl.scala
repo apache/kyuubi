@@ -17,14 +17,32 @@
 
 package org.apache.kyuubi.service.authentication
 
+import java.nio.charset.StandardCharsets
+
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_SECRET_NODE
+import org.apache.kyuubi.ha.client.ZooKeeperClientProvider
 
-class UserDefinedEngineSecureAccessProvider extends EngineSecureAccessProvider {
-  override def initialize(kyuubiConf: KyuubiConf): Unit = {}
+class ZooKeeperEngineSecureAccessSecretProviderImpl extends EngineSecureAccessSecretProvider {
+  import ZooKeeperClientProvider._
 
-  override def supportSecureAccess: Boolean = true
+  private var conf: KyuubiConf = _
+
+  override def initialize(conf: KyuubiConf): Unit = {
+    this.conf = conf
+  }
+
+  override def supportSecureAccess: Boolean = {
+    conf.get(HA_ZK_ENGINE_SECRET_NODE).nonEmpty
+  }
 
   override def getSecret(): String = {
-    "ENGINE____SECRET"
+    var secret: String = ""
+    conf.get(HA_ZK_ENGINE_SECRET_NODE).map { zkNode =>
+      withZkClient(conf) { zkClient =>
+        secret = new String(zkClient.getData.forPath(zkNode), StandardCharsets.UTF_8)
+      }
+    }
+    secret
   }
 }

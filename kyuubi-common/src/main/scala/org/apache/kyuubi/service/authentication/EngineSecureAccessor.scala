@@ -29,23 +29,22 @@ import org.apache.kyuubi.security.EngineSecureCryptoConf
 import org.apache.kyuubi.service.AbstractService
 
 class EngineSecureAccessor(name: String, val isServer: Boolean) extends AbstractService(name) {
-  import EngineSecureAccessProvider._
   import EngineSecureAccessor._
+  import EngineSecureAccessSecretProvider._
 
   def this(isServer: Boolean) = this(classOf[EngineSecureAccessor].getName, isServer)
 
   private var initialized: Boolean = _
-  private var cryptoConf: EngineSecureCryptoConf = _
 
-  private var provider: EngineSecureAccessProvider = _
+  private var cryptoConf: EngineSecureCryptoConf = _
   private var tokenMaxLifeTime: Long = _
+  private var provider: EngineSecureAccessSecretProvider = _
   private var encryptor: Cipher = _
   private var decryptor: Cipher = _
 
   override def initialize(conf: KyuubiConf): Unit = {
     if (!initialized) {
       cryptoConf = new EngineSecureCryptoConf(conf)
-
       tokenMaxLifeTime = conf.get(ENGINE_SECURE_ACCESS_TOKEN_MAX_LIFETIME)
       provider = create(conf.get(ENGINE_SECURE_ACCESS_SECRET_PROVIDER_CLASS))
       provider.initialize(conf)
