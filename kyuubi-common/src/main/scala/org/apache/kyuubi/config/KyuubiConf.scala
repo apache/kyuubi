@@ -1070,6 +1070,59 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("engine_operation_logs")
 
+  val ENGINE_SECURE_ENABLED: ConfigEntry[Boolean] =
+    buildConf("engine.secure.enabled")
+      .doc("Whether to enable the internal secure access between Kyuubi server and engine.")
+      .version("1.5.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val ENGINE_SECURE_TOKEN_MAX_LIFETIME: ConfigEntry[Long] =
+    buildConf("engine.secure.token.max.lifetime")
+      .doc("The max lifetime of the token used for secure access between Kyuubi server and engine.")
+      .version("1.5.0")
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(10).toMillis)
+
+  val ENGINE_SECURE_SECRET_PROVIDER_CLASS: ConfigEntry[String] =
+    buildConf("engine.secure.secret.providerClass")
+      .doc("The class used to manage the engine secure access secret. This class must be a " +
+        "subclass of EngineSecureAccessSecretProvider.")
+      .version("1.5.0")
+      .stringConf
+      .createWithDefault(
+        "org.apache.kyuubi.service.authentication.ZooKeeperEngineSecureSecretProviderImpl")
+
+  val ENGINE_SECURE_CRYPTO_KEY_LENGTH: ConfigEntry[Int] =
+    buildConf("engine.secure.crypto.keyLength")
+      .doc("The length in bits of the encryption key to generate. " +
+        "Valid values are 128, 192 and 256")
+      .version("1.5.0")
+      .intConf
+      .checkValues(Set(128, 192, 256))
+      .createWithDefault(128)
+
+  val ENGINE_SECURE_CRYPTO_IV_LENGTH: ConfigEntry[Int] =
+    buildConf("engine.secure.crypto.ivLength")
+      .doc("Initial vector length, in bytes.")
+      .version("1.5.0")
+      .intConf
+      .createWithDefault(16)
+
+  val ENGINE_SECURE_CRYPTO_KEY_ALGORITHM: ConfigEntry[String] =
+    buildConf("engine.secure.crypto.keyAlgorithm")
+      .doc("The algorithm for generated secret keys.")
+      .version("1.5.0")
+      .stringConf
+      .createWithDefault("AES")
+
+  val ENGINE_SECURE_CRYPTO_CIPHER_TRANSFORMATION: ConfigEntry[String] =
+    buildConf("engine.secure.crypto.cipher")
+      .doc("The cipher transformation to use for encrypting engine access token.")
+      .version("1.5.0")
+      .stringConf
+      .createWithDefault("AES/CBC/PKCS5PADDING")
+
   val SESSION_NAME: OptionalConfigEntry[String] =
     buildConf("session.name")
       .doc("A human readable name of session and we use empty string by default. " +
@@ -1116,27 +1169,4 @@ object KyuubiConf {
       .version("1.5.0")
       .stringConf
       .createOptional
-
-  val ENGINE_SECURE_ACCESS_ENABLED: ConfigEntry[Boolean] =
-    buildConf("engine.secure.access.enabled")
-      .doc("Whether to enable the internal secure access between Kyuubi server and engine.")
-      .version("1.5.0")
-      .booleanConf
-      .createWithDefault(false)
-
-  val ENGINE_SECURE_ACCESS_TOKEN_MAX_LIFETIME: ConfigEntry[Long] =
-    buildConf("engine.secure.access.token.max.lifetime")
-      .doc("The max lifetime of the token used for secure access between Kyuubi server and engine.")
-      .version("1.5.0")
-      .timeConf
-      .createWithDefault(Duration.ofMinutes(10).toMillis)
-
-  val ENGINE_SECURE_ACCESS_SECRET_PROVIDER_CLASS: ConfigEntry[String] =
-    buildConf("engine.secure.access.secret.providerClass")
-      .doc("The class used to manage the engine secure access secret. This class must be a " +
-        "subclass of EngineSecureAccessSecretProvider.")
-      .version("1.5.0")
-      .stringConf
-      .createWithDefault(
-        "org.apache.kyuubi.service.authentication.ZooKeeperEngineSecureSecretProviderImpl")
 }

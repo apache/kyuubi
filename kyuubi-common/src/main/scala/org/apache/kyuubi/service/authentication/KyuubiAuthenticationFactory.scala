@@ -56,7 +56,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
     }
   }
 
-  if (conf.get(ENGINE_SECURE_ACCESS_ENABLED)) {
+  if (conf.get(ENGINE_SECURE_ENABLED)) {
     EngineSecureAccessor.getOrCreate(conf, isServer)
   }
 

@@ -84,7 +84,7 @@ class KyuubiSessionImpl(
     withZkClient(sessionConf) { zkClient =>
       val (host, port) = engine.getOrCreate(zkClient, extraEngineLog)
       val passwd =
-        if (sessionManager.getConf.get(ENGINE_SECURE_ACCESS_ENABLED)) {
+        if (sessionManager.getConf.get(ENGINE_SECURE_ENABLED)) {
           EngineSecureAccessor.get().issueToken()
         } else {
           Option(password).filter(_.nonEmpty).getOrElse("anonymous")

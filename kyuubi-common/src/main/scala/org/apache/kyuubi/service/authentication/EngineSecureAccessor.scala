@@ -23,20 +23,23 @@ import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.security.EngineSecureCryptoConf
 
 class EngineSecureAccessor(conf: KyuubiConf, val isServer: Boolean) {
   import EngineSecureAccessor._
 
-  private val cryptoConf: EngineSecureCryptoConf = new EngineSecureCryptoConf(conf)
-  private val tokenMaxLifeTime: Long = conf.get(ENGINE_SECURE_ACCESS_TOKEN_MAX_LIFETIME)
+  val cryptoKeyLengthBytes = conf.get(ENGINE_SECURE_CRYPTO_KEY_LENGTH) / java.lang.Byte.SIZE
+  val cryptoIvLength = conf.get(ENGINE_SECURE_CRYPTO_IV_LENGTH)
+  val cryptoKeyAlgorithm = conf.get(ENGINE_SECURE_CRYPTO_KEY_ALGORITHM)
+  val cryptoCipher = conf.get(ENGINE_SECURE_CRYPTO_CIPHER_TRANSFORMATION)
+
+  private val tokenMaxLifeTime: Long = conf.get(ENGINE_SECURE_TOKEN_MAX_LIFETIME)
   private val provider: EngineSecureSecretProvider = EngineSecureSecretProvider.create(conf)
   private val (encryptor, decryptor) =
-    initializeForAuth(cryptoConf.cipherTransformation, normalizeSecret(provider.getSecret()))
+    initializeForAuth(cryptoCipher, normalizeSecret(provider.getSecret()))
 
   private def initializeForAuth(cipher: String, secret: String): (Cipher, Cipher) = {
-    val secretKeySpec = new SecretKeySpec(secret.getBytes, cryptoConf.keyAlgorithm)
-    val nonce = new Array[Byte](cryptoConf.ivLength)
+    val secretKeySpec = new SecretKeySpec(secret.getBytes, cryptoKeyAlgorithm)
+    val nonce = new Array[Byte](cryptoIvLength)
     val iv = new IvParameterSpec(nonce)
 
     val _encryptor = Cipher.getInstance(cipher)
@@ -68,9 +71,8 @@ class EngineSecureAccessor(conf: KyuubiConf, val isServer: Boolean) {
   }
 
   private def normalizeSecret(secret: String): String = {
-    val secretLength = cryptoConf.encryptionKeyLength / java.lang.Byte.SIZE
-    val normalizedSecret = new Array[Char](secretLength)
-    for (i <- 0 until secretLength) {
+    val normalizedSecret = new Array[Char](cryptoKeyLengthBytes)
+    for (i <- 0 until cryptoKeyLengthBytes) {
       if (i < secret.length) {
         normalizedSecret.update(i, secret.charAt(i))
       } else {

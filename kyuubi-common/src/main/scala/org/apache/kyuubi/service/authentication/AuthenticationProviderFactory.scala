@@ -31,7 +31,7 @@ object AuthenticationProviderFactory {
       method: AuthMethod,
       conf: KyuubiConf): PasswdAuthenticationProvider = method match {
     case _
-        if conf.get(KyuubiConf.ENGINE_SECURE_ACCESS_ENABLED) &&
+        if conf.get(KyuubiConf.ENGINE_SECURE_ENABLED) &&
           !EngineSecureAccessor.get().isServer =>
       new EngineSecureAuthenticationProviderImpl
     case AuthMethods.NONE => new AnonymousAuthenticationProviderImpl

@@ -25,9 +25,9 @@ class KyuubiOperationWithEngineSecure extends WithKyuubiServer with SparkQueryTe
   override protected def jdbcUrl: String = getJdbcUrl
 
   override protected val conf: KyuubiConf = {
-    KyuubiConf().set(KyuubiConf.ENGINE_SECURE_ACCESS_ENABLED, true)
+    KyuubiConf().set(KyuubiConf.ENGINE_SECURE_ENABLED, true)
       .set(
-        KyuubiConf.ENGINE_SECURE_ACCESS_SECRET_PROVIDER_CLASS,
+        KyuubiConf.ENGINE_SECURE_SECRET_PROVIDER_CLASS,
         classOf[ZooKeeperEngineSecureSecretProviderImpl].getCanonicalName)
   }
 }
