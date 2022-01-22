@@ -19,23 +19,20 @@ package org.apache.kyuubi.service.authentication
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.security.EngineSecureCryptoConf
 
 class EngineSecureAccessorSuite extends KyuubiFunSuite {
   private val conf = KyuubiConf()
   conf.set(
-    ENGINE_SECURE_ACCESS_SECRET_PROVIDER_CLASS,
-    classOf[UserDefinedEngineSecureAccessSecretProvider].getCanonicalName)
+    KyuubiConf.ENGINE_SECURE_ACCESS_SECRET_PROVIDER_CLASS,
+    classOf[UserDefinedEngineSecureSecretProvider].getCanonicalName)
 
   test("test encrypt/decrypt, issue token/auth token") {
-    Seq("AES/CBC/PKCS5PADDING", "AES/CTR/NoPadding", "AES/CBC/NoPadding").foreach { cipher =>
+    Seq("AES/CBC/PKCS5PADDING", "AES/CTR/PKCS5PADDING").foreach { cipher =>
       val newConf = conf.clone
       newConf.set(EngineSecureCryptoConf.CIPHER_TRANSFORMATION, cipher)
 
-      val secureAccessor = new EngineSecureAccessor(true)
-      secureAccessor.initialize(conf)
-      secureAccessor.start()
+      val secureAccessor = new EngineSecureAccessor(newConf, true)
       val value = "tokenToEncrypt"
       val encryptedValue = secureAccessor.encrypt(value)
       assert(secureAccessor.decrypt(encryptedValue) === value)
@@ -43,6 +40,8 @@ class EngineSecureAccessorSuite extends KyuubiFunSuite {
       val token = secureAccessor.issueToken()
       secureAccessor.authToken(token)
 
+      val engineSecureAccessor = new EngineSecureAccessor(newConf, false)
+      engineSecureAccessor.authToken(token)
     }
   }
 }

@@ -20,73 +20,47 @@ package org.apache.kyuubi.service.authentication
 import javax.crypto.Cipher
 import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
 
-import scala.util.Random
-
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.security.EngineSecureCryptoConf
 import org.apache.kyuubi.service.AbstractService
 
-class EngineSecureAccessor(name: String, val isServer: Boolean) extends AbstractService(name) {
+class EngineSecureAccessor(name: String, conf: KyuubiConf, val isServer: Boolean)
+  extends AbstractService(name) {
   import EngineSecureAccessor._
-  import EngineSecureAccessSecretProvider._
 
-  def this(isServer: Boolean) = this(classOf[EngineSecureAccessor].getName, isServer)
+  def this(conf: KyuubiConf, isServer: Boolean) =
+    this(classOf[EngineSecureAccessor].getName, conf, isServer)
 
-  private var initialized: Boolean = _
+  private val cryptoConf: EngineSecureCryptoConf = new EngineSecureCryptoConf(conf)
+  private val tokenMaxLifeTime: Long = conf.get(ENGINE_SECURE_ACCESS_TOKEN_MAX_LIFETIME)
+  private val provider: EngineSecureSecretProvider = EngineSecureSecretProvider.create(conf)
+  private val (encryptor, decryptor) =
+    initializeForAuth(cryptoConf.cipherTransformation, normalizeSecret(provider.getSecret()))
 
-  private var cryptoConf: EngineSecureCryptoConf = _
-  private var tokenMaxLifeTime: Long = _
-  private var provider: EngineSecureAccessSecretProvider = _
-  private var encryptor: Cipher = _
-  private var decryptor: Cipher = _
-
-  override def initialize(conf: KyuubiConf): Unit = {
-    if (!initialized) {
-      cryptoConf = new EngineSecureCryptoConf(conf)
-      tokenMaxLifeTime = conf.get(ENGINE_SECURE_ACCESS_TOKEN_MAX_LIFETIME)
-      provider = create(conf.get(ENGINE_SECURE_ACCESS_SECRET_PROVIDER_CLASS))
-      provider.initialize(conf)
-
-      initializeForAuth(cryptoConf.cipherTransformation, normalizeSecret(provider.getSecret()))
-
-      super.initialize(conf)
-      initialized = true
-    }
-  }
-
-  private def initializeForAuth(cipher: String, secret: String): Unit = {
+  private def initializeForAuth(cipher: String, secret: String): (Cipher, Cipher) = {
     val secretKeySpec = new SecretKeySpec(secret.getBytes, cryptoConf.keyAlgorithm)
     val nonce = new Array[Byte](cryptoConf.ivLength)
-    Random.nextBytes(nonce)
     val iv = new IvParameterSpec(nonce)
 
-    encryptor = Cipher.getInstance(cipher)
-    encryptor.init(Cipher.ENCRYPT_MODE, secretKeySpec, iv)
+    val _encryptor = Cipher.getInstance(cipher)
+    _encryptor.init(Cipher.ENCRYPT_MODE, secretKeySpec, iv)
 
-    decryptor = Cipher.getInstance(cipher)
-    decryptor.init(Cipher.DECRYPT_MODE, secretKeySpec, iv)
-  }
+    val _decryptor = Cipher.getInstance(cipher)
+    _decryptor.init(Cipher.DECRYPT_MODE, secretKeySpec, iv)
 
-  def supportSecureAccess(): Boolean = {
-    provider.supportSecureAccess
+    (_encryptor, _decryptor)
   }
 
   def issueToken(): String = {
-    if (supportSecureAccess()) {
-      encrypt(KyuubiInternalAccessIdentifier.newIdentifier(tokenMaxLifeTime).toJson)
-    } else {
-      throw new UnsupportedOperationException("Do not support issue secure token")
-    }
+    encrypt(KyuubiInternalAccessIdentifier.newIdentifier(tokenMaxLifeTime).toJson)
   }
 
   def authToken(tokenStr: String): Unit = {
-    if (supportSecureAccess()) {
-      val identifier = KyuubiInternalAccessIdentifier.fromJson(decrypt(tokenStr))
-      if (identifier.issueDate + identifier.maxDate < System.currentTimeMillis()) {
-        throw KyuubiSQLException("The engine access token is expired")
-      }
+    val identifier = KyuubiInternalAccessIdentifier.fromJson(decrypt(tokenStr))
+    if (identifier.issueDate + identifier.maxDate < System.currentTimeMillis()) {
+      throw KyuubiSQLException("The engine access token is expired")
     }
   }
 
@@ -119,9 +93,9 @@ object EngineSecureAccessor extends Logging {
     _secureAccessor
   }
 
-  def getOrCreate(isServer: Boolean): EngineSecureAccessor = {
+  def getOrCreate(conf: KyuubiConf, isServer: Boolean): EngineSecureAccessor = {
     if (_secureAccessor == null) {
-      _secureAccessor = new EngineSecureAccessor(isServer)
+      _secureAccessor = new EngineSecureAccessor(conf, isServer)
     }
     _secureAccessor
   }

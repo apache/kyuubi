@@ -1138,5 +1138,5 @@ object KyuubiConf {
       .version("1.5.0")
       .stringConf
       .createWithDefault(
-        "org.apache.kyuubi.service.authentication.ZooKeeperEngineSecureAccessProviderImpl")
+        "org.apache.kyuubi.service.authentication.ZooKeeperEngineSecureSecretProviderImpl")
 }

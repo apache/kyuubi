@@ -23,17 +23,13 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_SECRET_NODE
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider
 
-class ZooKeeperEngineSecureAccessSecretProviderImpl extends EngineSecureAccessSecretProvider {
+class ZooKeeperEngineSecureSecretProviderImpl extends EngineSecureSecretProvider {
   import ZooKeeperClientProvider._
 
   private var conf: KyuubiConf = _
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf
-  }
-
-  override def supportSecureAccess: Boolean = {
-    conf.get(HA_ZK_ENGINE_SECRET_NODE).nonEmpty
   }
 
   override def getSecret(): String = {
