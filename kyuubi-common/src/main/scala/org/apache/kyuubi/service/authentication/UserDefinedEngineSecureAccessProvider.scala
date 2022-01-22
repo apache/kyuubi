@@ -25,6 +25,6 @@ class UserDefinedEngineSecureAccessProvider extends EngineSecureAccessProvider {
   override def supportSecureAccess: Boolean = true
 
   override def getSecret(): String = {
-    "ENGINE_SECURE_SECRET"
+    "ENGINE____SECRET"
   }
 }

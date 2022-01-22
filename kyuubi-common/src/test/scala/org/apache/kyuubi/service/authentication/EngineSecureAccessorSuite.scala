@@ -25,7 +25,8 @@ class EngineSecureAccessorSuite extends KyuubiFunSuite {
   private val conf = KyuubiConf()
   conf.set(ENGINE_SECURE_ACCESS_SECRET_PROVIDER_CLASS,
     classOf[UserDefinedEngineSecureAccessProvider].getCanonicalName)
-  conf.set(ENGINE_SECURE_CIPHER_MODE, "AES")
+  conf.set(ENGINE_SECURE_ENCRYPTION_KEY_SIZE_BYTES, 16)
+  conf.set(ENGINE_SECURE_ENCRYPTION_CIPHER_TRANSFORMATION, "AES/CBC/PKCS5Padding")
 
   test("test encrypt and decrypt") {
     val secureAccessor = new EngineSecureAccessor(true)
@@ -39,24 +40,6 @@ class EngineSecureAccessorSuite extends KyuubiFunSuite {
   test("test issue token and auth token") {
     val secureAccessor = new EngineSecureAccessor(true)
     secureAccessor.initialize(conf)
-    secureAccessor.start()
-    val token = secureAccessor.issueToken()
-    secureAccessor.authToken(token)
-  }
-
-  test("test CBC cipher mode") {
-    val cbcConf = conf.set(ENGINE_SECURE_CIPHER_MODE, "CBC")
-    val secureAccessor = new EngineSecureAccessor(true)
-    secureAccessor.initialize(cbcConf)
-    secureAccessor.start()
-    val token = secureAccessor.issueToken()
-    secureAccessor.authToken(token)
-  }
-
-  test("test PKCS5PADDING cipher mode") {
-    val cbcConf = conf.set(ENGINE_SECURE_CIPHER_MODE, "PKCS5PADDING")
-    val secureAccessor = new EngineSecureAccessor(true)
-    secureAccessor.initialize(cbcConf)
     secureAccessor.start()
     val token = secureAccessor.issueToken()
     secureAccessor.authToken(token)

@@ -26,7 +26,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.engine.{EngineType, ShareLevel}
-import org.apache.kyuubi.service.authentication.{AuthTypes, CipherModes, SaslQOP}
+import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
 import org.apache.kyuubi.util.NettyUtils.MAX_NETTY_THREADS
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
@@ -171,6 +171,8 @@ object KyuubiConf {
   final val KYUUBI_CONF_FILE_NAME = "kyuubi-defaults.conf"
   final val KYUUBI_HOME = "KYUUBI_HOME"
   final val KYUUBI_ENGINE_ENV_PREFIX = "kyuubi.engineEnv"
+
+  final val KYUUBI_ENGINE_SECURE_CRYPTO_CONFIG_PREFIX = "kyuubi.engine.secure.crypto.config."
 
   val kyuubiConfEntries: java.util.Map[String, ConfigEntry[_]] =
     java.util.Collections.synchronizedMap(new java.util.HashMap[String, ConfigEntry[_]]())
@@ -1140,13 +1142,17 @@ object KyuubiConf {
       .createWithDefault(
         "org.apache.kyuubi.service.authentication.ZooKeeperEngineSecureAccessProviderImpl")
 
-  val ENGINE_SECURE_CIPHER_MODE: ConfigEntry[String] =
-    buildConf("engine.secure.cipher.mode")
+  val ENGINE_SECURE_ENCRYPTION_KEY_SIZE_BYTES: ConfigEntry[Int] =
+    buildConf("engine.secure.encryption.keySizeBytes")
+      .version("1.5.0")
+      .intConf
+      .checkValues(Set(16, 24, 32))
+      .createWithDefault(16)
+
+  val ENGINE_SECURE_ENCRYPTION_CIPHER_TRANSFORMATION: ConfigEntry[String] =
+    buildConf("engine.secure.encryption.cipher.transformation")
       .doc("")
       .version("1.5.0")
       .stringConf
-      .transform(_.toUpperCase(Locale.ROOT))
-      .checkValue(v => CipherModes.values.map(_.toString).contains(v),
-        s"the cipher mode should be one of ${CipherModes.values.mkString(",")}")
-      .createWithDefault("AES")
+      .createWithDefault("AES/CBC/PKCS5PADDING")
 }
