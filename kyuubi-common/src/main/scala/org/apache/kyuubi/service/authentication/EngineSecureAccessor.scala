@@ -25,21 +25,30 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.AbstractService
 
 class EngineSecureAccessor(name: String, val isServer: Boolean) extends AbstractService(name) {
+  import CipherModes._
   import EngineSecureAccessor._
+  import EngineSecureAccessProvider._
 
   def this(isServer: Boolean) = this(classOf[EngineSecureAccessor].getName, isServer)
 
+  private var initialized: Boolean = _
+  private var started: Boolean = _
   private var provider: EngineSecureAccessProvider = _
+  private var cipher: String = _
+  private var secret: String = _
   private var tokenMaxLifeTime: Long = _
   private var encryptCipherInstance: Cipher = _
   private var decryptCipherInstance: Cipher = _
 
   override def initialize(conf: KyuubiConf): Unit = {
-    tokenMaxLifeTime = conf.get(KyuubiConf.ENGINE_SECURE_ACCESS_TOKEN_MAX_LIFETIME)
-    provider = create(conf.get(KyuubiConf.ENGINE_SECURE_ACCESS_SECRET_PROVIDER_CLASS))
-    provider.initialize(conf)
-    super.initialize(conf)
-    EngineSecureAccessor._secureAccessor = this
+    if (!initialized) {
+      tokenMaxLifeTime = conf.get(KyuubiConf.ENGINE_SECURE_ACCESS_TOKEN_MAX_LIFETIME)
+      provider = create(conf.get(KyuubiConf.ENGINE_SECURE_ACCESS_SECRET_PROVIDER_CLASS))
+      cipher = conf.get(KyuubiConf.ENGINE_SECURE_CIPHER_MODE)
+      provider.initialize(conf)
+      super.initialize(conf)
+      initialized = true
+    }
   }
 
   def supportSecureAccess(): Boolean = {
@@ -47,13 +56,16 @@ class EngineSecureAccessor(name: String, val isServer: Boolean) extends Abstract
   }
 
   override def start(): Unit = {
-    super.start()
-    val (secret, cipher) = provider.getSecretAndCipher()
-    val secretKeySpec = new SecretKeySpec(secret.getBytes, cipher)
-    encryptCipherInstance = Cipher.getInstance(cipher)
-    encryptCipherInstance.init(Cipher.ENCRYPT_MODE, secretKeySpec)
-    decryptCipherInstance = Cipher.getInstance(cipher)
-    decryptCipherInstance.init(Cipher.DECRYPT_MODE, secretKeySpec)
+    if (!started) {
+      super.start()
+      secret = normalizeSecret(provider.getSecret())
+      val secretKeySpec = new SecretKeySpec(secret.getBytes, cipher)
+      encryptCipherInstance = Cipher.getInstance(cipher)
+      encryptCipherInstance.init(Cipher.ENCRYPT_MODE, secretKeySpec)
+      decryptCipherInstance = Cipher.getInstance(cipher)
+      decryptCipherInstance.init(Cipher.DECRYPT_MODE, secretKeySpec)
+      started = true
+    }
   }
 
   def issueToken(): String = {
@@ -80,6 +92,19 @@ class EngineSecureAccessor(name: String, val isServer: Boolean) extends Abstract
   private[authentication] def decrypt(value: String): String = {
     new String(decryptCipherInstance.doFinal(hexStringToByteArray(value)))
   }
+
+  private def normalizeSecret(secret: String): String = {
+    val secretLength = getSecretLength(CipherModes.withName(cipher))
+    val normalizedSecret = new Array[Char](secretLength)
+    for (i <- 0 until secretLength) {
+      if (i < secret.length) {
+        normalizedSecret.update(i, secret.charAt(i))
+      } else {
+        normalizedSecret.update(i, ' ')
+      }
+    }
+    new String(normalizedSecret)
+  }
 }
 
 object EngineSecureAccessor extends Logging {
@@ -89,9 +114,11 @@ object EngineSecureAccessor extends Logging {
     _secureAccessor
   }
 
-  def create(providerClassName: String): EngineSecureAccessProvider = {
-    val providerClass = Class.forName(providerClassName)
-    providerClass.getConstructor().newInstance().asInstanceOf[EngineSecureAccessProvider]
+  def getOrCreate(isServer: Boolean): EngineSecureAccessor = {
+    if (_secureAccessor == null) {
+      _secureAccessor = new EngineSecureAccessor(isServer)
+    }
+    _secureAccessor
   }
 
   private def hexStringToByteArray(str: String): Array[Byte] = {

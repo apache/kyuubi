@@ -57,7 +57,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
   }
 
   if (conf.get(ENGINE_SECURE_ACCESS_ENABLED)) {
-    val engineSecureAccessor = new EngineSecureAccessor(isServer)
+    val engineSecureAccessor = EngineSecureAccessor.getOrCreate(isServer)
     engineSecureAccessor.initialize(conf)
     engineSecureAccessor.start()
   }

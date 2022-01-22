@@ -24,8 +24,7 @@ class UserDefinedEngineSecureAccessProvider extends EngineSecureAccessProvider {
 
   override def supportSecureAccess: Boolean = true
 
-  override def getSecretAndCipher(): (String, String) = {
-    // for AES, the secret key length should be 16
-    ("ENGINE____SECRET", "AES")
+  override def getSecret(): String = {
+    "ENGINE_SECURE_SECRET"
   }
 }

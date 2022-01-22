@@ -26,7 +26,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.engine.{EngineType, ShareLevel}
-import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
+import org.apache.kyuubi.service.authentication.{AuthTypes, CipherModes, SaslQOP}
 import org.apache.kyuubi.util.NettyUtils.MAX_NETTY_THREADS
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
@@ -1139,4 +1139,14 @@ object KyuubiConf {
       .stringConf
       .createWithDefault(
         "org.apache.kyuubi.service.authentication.ZooKeeperEngineSecureAccessProviderImpl")
+
+  val ENGINE_SECURE_CIPHER_MODE: ConfigEntry[String] =
+    buildConf("engine.secure.cipher.mode")
+      .doc("")
+      .version("1.5.0")
+      .stringConf
+      .transform(_.toUpperCase(Locale.ROOT))
+      .checkValue(v => CipherModes.values.map(_.toString).contains(v),
+        s"the cipher mode should be one of ${CipherModes.values.mkString(",")}")
+      .createWithDefault("AES")
 }

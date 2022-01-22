@@ -20,9 +20,25 @@ package org.apache.kyuubi.service.authentication
 import org.apache.kyuubi.config.KyuubiConf
 
 trait EngineSecureAccessProvider {
+  /**
+   * Initialize with kyuubi conf.
+   */
   def initialize(conf: KyuubiConf): Unit
 
+  /**
+   * Whether this provider is configured to support secure access between Kyuubi server and engine.
+   */
   def supportSecureAccess: Boolean
 
-  def getSecretAndCipher(): (String, String)
+  /**
+   * Get the secret to encrypt and decrypt the secure access token.
+   */
+  def getSecret(): String
+}
+
+object EngineSecureAccessProvider {
+  def create(providerClassName: String): EngineSecureAccessProvider = {
+    val providerClass = Class.forName(providerClassName)
+    providerClass.getConstructor().newInstance().asInstanceOf[EngineSecureAccessProvider]
+  }
 }
