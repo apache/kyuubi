@@ -17,16 +17,17 @@
 
 package org.apache.kyuubi.engine.flink
 
+import java.time.Instant
 import java.util.concurrent.CountDownLatch
 
 import scala.collection.JavaConverters._
 
 import org.apache.flink.client.cli.{CliFrontend, CustomCommandLine, DefaultCLI}
-import org.apache.flink.configuration.GlobalConfiguration
+import org.apache.flink.configuration.{GlobalConfiguration, PipelineOptions}
 import org.apache.flink.table.client.gateway.context.DefaultContext
 
 import org.apache.kyuubi.Logging
-import org.apache.kyuubi.Utils.{addShutdownHook, FLINK_ENGINE_SHUTDOWN_PRIORITY}
+import org.apache.kyuubi.Utils.{addShutdownHook, currentUser, FLINK_ENGINE_SHUTDOWN_PRIORITY}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.flink.FlinkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.service.Serverable
@@ -62,6 +63,8 @@ object FlinkSQLEngine extends Logging {
   val kyuubiConf: KyuubiConf = KyuubiConf()
   var currentEngine: Option[FlinkSQLEngine] = None
 
+  private val user = currentUser
+
   private val countDownLatch = new CountDownLatch(1)
 
   def main(args: Array[String]): Unit = {
@@ -72,6 +75,10 @@ object FlinkSQLEngine extends Logging {
     try {
       val flinkConfDir = CliFrontend.getConfigurationDirectoryFromEnv
       val flinkConf = GlobalConfiguration.loadConfiguration(flinkConfDir)
+
+      val appName = s"kyuubi_${user}_flink_${Instant.now}"
+      flinkConf.setString(PipelineOptions.NAME, appName)
+
       val engineContext = new DefaultContext(
         List.empty.asJava,
         flinkConf,
