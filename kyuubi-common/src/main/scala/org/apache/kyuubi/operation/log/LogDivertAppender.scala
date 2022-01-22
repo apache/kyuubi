@@ -28,6 +28,7 @@ import org.apache.logging.log4j.core.config.Property
 import org.apache.logging.log4j.core.filter.AbstractFilter
 import org.apache.logging.log4j.core.layout.PatternLayout
 
+import org.apache.kyuubi.Logging
 class LogDivertAppender(
     name: String,
     layout: StringLayout,
@@ -88,9 +89,13 @@ object LogDivertAppender {
   }
 
   def initialize(): Unit = {
-    val ap = new LogDivertAppender()
-    org.apache.logging.log4j.LogManager.getRootLogger()
-      .asInstanceOf[org.apache.logging.log4j.core.Logger].addAppender(ap)
-    ap.start()
+    if (Logging.isLog4j2()) {
+      val ap = new LogDivertAppender()
+      org.apache.logging.log4j.LogManager.getRootLogger()
+        .asInstanceOf[org.apache.logging.log4j.core.Logger].addAppender(ap)
+      ap.start()
+    } else {
+      LogDivertAppender12.initialize()
+    }
   }
 }

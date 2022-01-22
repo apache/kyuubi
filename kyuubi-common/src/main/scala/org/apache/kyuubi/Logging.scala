@@ -163,7 +163,7 @@ object Logging {
   @volatile private var defaultRootLevel: Level = _
   @volatile private var initialized = false
   val initLock = new Object()
-  private def isLog4j2(): Boolean = {
+  private[kyuubi] def isLog4j2(): Boolean = {
     // This distinguishes the log4j 1.2 binding, currently
     // org.slf4j.impl.Log4jLoggerFactory, from the log4j 2.0 binding, currently
     // org.apache.logging.slf4j.Log4jLoggerFactory
