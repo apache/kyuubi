@@ -17,12 +17,10 @@
 
 package org.apache.kyuubi.service.authentication
 
-import java.security.GeneralSecurityException
-import javax.crypto.{Cipher, ShortBufferException}
+import javax.crypto.Cipher
 import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
 
-import org.apache.commons.crypto.cipher.{CryptoCipher, CryptoCipherFactory}
-import org.apache.commons.crypto.random.{CryptoRandom, CryptoRandomFactory}
+import scala.util.Random
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
@@ -32,30 +30,27 @@ import org.apache.kyuubi.service.AbstractService
 
 class EngineSecureAccessor(name: String, val isServer: Boolean) extends AbstractService(name) {
   import EngineSecureAccessProvider._
+  import EngineSecureAccessor._
 
   def this(isServer: Boolean) = this(classOf[EngineSecureAccessor].getName, isServer)
 
   private var initialized: Boolean = _
-
   private var cryptoConf: EngineSecureCryptoConf = _
 
-  private var random: CryptoRandom = _
   private var provider: EngineSecureAccessProvider = _
-
   private var tokenMaxLifeTime: Long = _
-  private var encryptor: CryptoCipher = _
-  private var decryptor: CryptoCipher = _
+  private var encryptor: Cipher = _
+  private var decryptor: Cipher = _
 
   override def initialize(conf: KyuubiConf): Unit = {
     if (!initialized) {
       cryptoConf = new EngineSecureCryptoConf(conf)
-      random = CryptoRandomFactory.getCryptoRandom(cryptoConf.toCommonsCryptoConf())
 
       tokenMaxLifeTime = conf.get(ENGINE_SECURE_ACCESS_TOKEN_MAX_LIFETIME)
       provider = create(conf.get(ENGINE_SECURE_ACCESS_SECRET_PROVIDER_CLASS))
       provider.initialize(conf)
 
-      initializeForAuth(cryptoConf.cipherTransformation, provider.getSecret())
+      initializeForAuth(cryptoConf.cipherTransformation, normalizeSecret(provider.getSecret()))
 
       super.initialize(conf)
       initialized = true
@@ -63,21 +58,16 @@ class EngineSecureAccessor(name: String, val isServer: Boolean) extends Abstract
   }
 
   private def initializeForAuth(cipher: String, secret: String): Unit = {
-    val nonce = randomBytes(cryptoConf.encryptionKeyLength / java.lang.Byte.SIZE)
     val secretKeySpec = new SecretKeySpec(secret.getBytes, cryptoConf.keyAlgorithm)
-    // commons-crypto currently only supports ciphers that require an initial vector; so
-    // create a dummy vector so that we can initialize the ciphers. In the future, if
-    // different ciphers are supported, this will have to be configurable somehow.
-    val iv = new Array[Byte](cryptoConf.ivLength)
-    System.arraycopy(nonce, 0, iv, 0, Math.min(nonce.length, iv.length))
+    val nonce = new Array[Byte](cryptoConf.ivLength)
+    Random.nextBytes(nonce)
+    val iv = new IvParameterSpec(nonce)
 
-    val _encryptor = CryptoCipherFactory.getCryptoCipher(cipher, cryptoConf.toCommonsCryptoConf())
-    _encryptor.init(Cipher.ENCRYPT_MODE, secretKeySpec, new IvParameterSpec(iv))
-    encryptor = _encryptor
+    encryptor = Cipher.getInstance(cipher)
+    encryptor.init(Cipher.ENCRYPT_MODE, secretKeySpec, iv)
 
-    val _decryptoer = CryptoCipherFactory.getCryptoCipher(cipher, cryptoConf.toCommonsCryptoConf())
-    _decryptoer.init(Cipher.DECRYPT_MODE, secretKeySpec, new IvParameterSpec(iv))
-    decryptor = _decryptoer
+    decryptor = Cipher.getInstance(cipher)
+    decryptor.init(Cipher.DECRYPT_MODE, secretKeySpec, iv)
   }
 
   def supportSecureAccess(): Boolean = {
@@ -102,72 +92,24 @@ class EngineSecureAccessor(name: String, val isServer: Boolean) extends Abstract
   }
 
   private[authentication] def encrypt(value: String): String = {
-    new String(doCipherOp(Cipher.ENCRYPT_MODE, value.getBytes(), false))
+    byteArrayToHexString(encryptor.doFinal(value.getBytes))
   }
 
   private[authentication] def decrypt(value: String): String = {
-    new String(doCipherOp(Cipher.DECRYPT_MODE, value.getBytes(), false))
+    new String(decryptor.doFinal(hexStringToByteArray(value)))
   }
 
-  @throws[GeneralSecurityException]
-  private def doCipherOp(mode: Int, in: Array[Byte], isFinal: Boolean): Array[Byte] = {
-    var cipher: CryptoCipher = null
-    mode match {
-      case Cipher.ENCRYPT_MODE =>
-        cipher = encryptor
-
-      case Cipher.DECRYPT_MODE =>
-        cipher = decryptor
-
-      case _ =>
-        throw new IllegalArgumentException(String.valueOf(mode))
-    }
-    require(cipher != null, "Cipher is invalid because of previous error.")
-    try {
-      var scale = 1
-      var result: Array[Byte] = Array.empty
-
-      while (result.isEmpty) {
-        val size = in.length * scale
-        val buffer = new Array[Byte](size)
-        try {
-          val outSize = if (isFinal) {
-            cipher.doFinal(in, 0, in.length, buffer, 0)
-          } else {
-            cipher.update(in, 0, in.length, buffer, 0)
-          }
-
-          if (outSize != buffer.length) {
-            val output = new Array[Byte](outSize)
-            System.arraycopy(buffer, 0, output, 0, output.length)
-            result = output
-          } else {
-            result = buffer
-          }
-        } catch {
-          case _: ShortBufferException =>
-            // Try again with a bigger buffer.
-            scale *= 2
-        }
+  private def normalizeSecret(secret: String): String = {
+    val secretLength = cryptoConf.encryptionKeyLength / java.lang.Byte.SIZE
+    val normalizedSecret = new Array[Char](secretLength)
+    for (i <- 0 until secretLength) {
+      if (i < secret.length) {
+        normalizedSecret.update(i, secret.charAt(i))
+      } else {
+        normalizedSecret.update(i, ' ')
       }
-      result
-    } catch {
-      case ie: InternalError =>
-        // The commons-crypto library will throw InternalError if something goes wrong,
-        // and leave bad state behind in the Java wrappers, so it's not safe to use them afterwards.
-        if (mode == Cipher.ENCRYPT_MODE) {
-          this.encryptor = null
-        } else {
-          this.decryptor = null
-        }
-        throw ie
     }
-  }
-
-  private def randomBytes(count: Int) = {
-    val bytes = new Array[Byte](count)
-    random.nextBytes(bytes)
-    bytes
+    new String(normalizedSecret)
   }
 }
 
@@ -183,5 +125,25 @@ object EngineSecureAccessor extends Logging {
       _secureAccessor = new EngineSecureAccessor(isServer)
     }
     _secureAccessor
+  }
+
+  private def hexStringToByteArray(str: String): Array[Byte] = {
+    val len = str.length
+    val data = new Array[Byte](len / 2)
+    var i = 0
+    while (i < len) {
+      data.update(
+        i / 2,
+        ((Character.digit(str.charAt(i), 16) << 4) +
+          Character.digit(str.charAt(i + 1), 16)).asInstanceOf[Byte])
+      i += 2
+    }
+    data
+  }
+
+  private def byteArrayToHexString(bytes: Array[Byte]): String = {
+    bytes.map { byte =>
+      Integer.toHexString((byte >> 4) & 0xF) + Integer.toHexString(byte & 0xF)
+    }.reduce(_ + _)
   }
 }

@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.security
 
-import java.util.Properties
-
 import org.apache.kyuubi.config.{ConfigBuilder, ConfigEntry, KyuubiConf}
 
 class EngineSecureCryptoConf(conf: KyuubiConf) {
@@ -31,21 +29,6 @@ class EngineSecureCryptoConf(conf: KyuubiConf) {
   def keyAlgorithm: String = conf.get(KEY_ALGORITHM)
 
   def cipherTransformation: String = conf.get(CIPHER_TRANSFORMATION)
-
-  /**
-   * Extract the commons-crypto configuration embedded in a list of config values.
-   */
-  def toCommonsCryptoConf(): Properties = {
-    val props = new Properties
-    conf.getAll.foreach { case (key, value) =>
-      if (key.startsWith(KYUUBI_ENGINE_SECURE_CRYPTO_CONFIG_PREFIX)) {
-        props.setProperty(COMMONS_CRYPTO_CONFIG_PREFIX +
-          key.stripPrefix(KYUUBI_ENGINE_SECURE_CRYPTO_CONFIG_PREFIX),
-          value)
-      }
-    }
-    props
-  }
 }
 
 object EngineSecureCryptoConf {

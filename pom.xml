@@ -96,7 +96,6 @@
         <codahale.metrics.version>4.1.1</codahale.metrics.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-collections.version>3.2.2</commons-collections.version>
-        <commons-crypto.version>1.1.0</commons-crypto.version>
         <commons-io.version>2.8.0</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.10</commons-lang3.version>
@@ -322,12 +321,6 @@
                 <groupId>commons-collections</groupId>
                 <artifactId>commons-collections</artifactId>
                 <version>${commons-collections.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-crypto</artifactId>
-                <version>${commons-crypto.version}</version>
             </dependency>
 
             <dependency>
