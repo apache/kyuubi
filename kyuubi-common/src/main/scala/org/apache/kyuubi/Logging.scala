@@ -91,7 +91,7 @@ trait Logging {
   }
 
   private def initializeLogging(isInterpreter: Boolean): Unit = {
-    if (Logging.isLog4j2()) {
+    if (Logging.isLog4j2) {
       val log4j2Initialized = !LogManager.getRootLogger
         .asInstanceOf[org.apache.logging.log4j.core.Logger].getAppenders.isEmpty
       // scalastyle:off println
@@ -121,7 +121,7 @@ trait Logging {
         rootLogger.setLevel(ctlLevel)
       }
       // scalastyle:on println
-    } else {
+    } else if (Logging.isLog4j12) {
       val log4j12Initialized =
         org.apache.log4j.LogManager.getRootLogger.getAllAppenders.hasMoreElements
       // scalastyle:off println
@@ -163,7 +163,16 @@ object Logging {
   @volatile private var defaultRootLevel: Level = _
   @volatile private var initialized = false
   val initLock = new Object()
-  private[kyuubi] def isLog4j2(): Boolean = {
+
+  private[kyuubi] def isLog4j12: Boolean = {
+    // This distinguishes the log4j 1.2 binding, currently
+    // org.slf4j.impl.Log4jLoggerFactory, from the log4j 2.0 binding, currently
+    // org.apache.logging.slf4j.Log4jLoggerFactory
+    val binderClass = StaticLoggerBinder.getSingleton.getLoggerFactoryClassStr
+    "org.slf4j.impl.Log4jLoggerFactory".equals(binderClass)
+  }
+
+  private[kyuubi] def isLog4j2: Boolean = {
     // This distinguishes the log4j 1.2 binding, currently
     // org.slf4j.impl.Log4jLoggerFactory, from the log4j 2.0 binding, currently
     // org.apache.logging.slf4j.Log4jLoggerFactory

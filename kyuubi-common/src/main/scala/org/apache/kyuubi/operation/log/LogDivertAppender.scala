@@ -29,6 +29,7 @@ import org.apache.logging.log4j.core.filter.AbstractFilter
 import org.apache.logging.log4j.core.layout.PatternLayout
 
 import org.apache.kyuubi.Logging
+
 class LogDivertAppender(
     name: String,
     layout: StringLayout,
@@ -50,7 +51,7 @@ class LogDivertAppender(
     null,
     false,
     true,
-    LogDivertAppender.writer)
+    new CharArrayWriter())
 
   addFilter(new AbstractFilter() {
     override def filter(event: LogEvent): Filter.Result = {
@@ -61,6 +62,15 @@ class LogDivertAppender(
       }
     }
   })
+
+  def initLayout(): StringLayout = {
+    LogManager.getRootLogger.asInstanceOf[org.apache.logging.log4j.core.Logger]
+      .getAppenders.values().asScala
+      .find(ap => ap.isInstanceOf[ConsoleAppender] && ap.getLayout.isInstanceOf[StringLayout])
+      .map(_.getLayout.asInstanceOf[StringLayout])
+      .getOrElse(PatternLayout.newBuilder().withPattern(
+        "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n").build())
+  }
 
   /**
    * Overrides AbstractWriterAppender.append(), which does the real logging. No need
@@ -77,8 +87,6 @@ class LogDivertAppender(
 }
 
 object LogDivertAppender {
-  val writer = new CharArrayWriter()
-
   def initLayout(): StringLayout = {
     LogManager.getRootLogger.asInstanceOf[org.apache.logging.log4j.core.Logger]
       .getAppenders.values().asScala
@@ -89,12 +97,12 @@ object LogDivertAppender {
   }
 
   def initialize(): Unit = {
-    if (Logging.isLog4j2()) {
+    if (Logging.isLog4j2) {
       val ap = new LogDivertAppender()
       org.apache.logging.log4j.LogManager.getRootLogger()
         .asInstanceOf[org.apache.logging.log4j.core.Logger].addAppender(ap)
       ap.start()
-    } else {
+    } else if (Logging.isLog4j12) {
       LogDivertAppender12.initialize()
     }
   }
