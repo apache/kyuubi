@@ -25,8 +25,6 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 
 class EngineSecureAccessor(conf: KyuubiConf, val isServer: Boolean) {
-  import EngineSecureAccessor._
-
   val cryptoKeyLengthBytes = conf.get(ENGINE_SECURE_CRYPTO_KEY_LENGTH) / java.lang.Byte.SIZE
   val cryptoIvLength = conf.get(ENGINE_SECURE_CRYPTO_IV_LENGTH)
   val cryptoKeyAlgorithm = conf.get(ENGINE_SECURE_CRYPTO_KEY_ALGORITHM)
@@ -87,21 +85,6 @@ class EngineSecureAccessor(conf: KyuubiConf, val isServer: Boolean) {
     }
     new String(normalizedSecret)
   }
-}
-
-object EngineSecureAccessor extends Logging {
-  @volatile private var _secureAccessor: EngineSecureAccessor = _
-
-  def getOrCreate(conf: KyuubiConf, isServer: Boolean): EngineSecureAccessor = {
-    if (_secureAccessor == null) {
-      _secureAccessor = new EngineSecureAccessor(conf, isServer)
-    }
-    _secureAccessor
-  }
-
-  def get(): EngineSecureAccessor = {
-    _secureAccessor
-  }
 
   private def hexStringToByteArray(str: String): Array[Byte] = {
     val len = str.length
@@ -121,5 +104,19 @@ object EngineSecureAccessor extends Logging {
     bytes.map { byte =>
       Integer.toHexString((byte >> 4) & 0xF) + Integer.toHexString(byte & 0xF)
     }.reduce(_ + _)
+  }
+}
+
+object EngineSecureAccessor extends Logging {
+  @volatile private var _secureAccessor: EngineSecureAccessor = _
+
+  def initialize(conf: KyuubiConf, isServer: Boolean): Unit = {
+    if (_secureAccessor == null) {
+      _secureAccessor = new EngineSecureAccessor(conf, isServer)
+    }
+  }
+
+  def get(): EngineSecureAccessor = {
+    _secureAccessor
   }
 }
