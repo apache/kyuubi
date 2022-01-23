@@ -17,93 +17,18 @@
 
 package org.apache.kyuubi.operation.log
 
-import java.io.CharArrayWriter
-
-import scala.collection.JavaConverters._
-
-import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.core.{Filter, LogEvent, StringLayout}
-import org.apache.logging.log4j.core.appender.{AbstractWriterAppender, ConsoleAppender, WriterManager}
-import org.apache.logging.log4j.core.config.Property
-import org.apache.logging.log4j.core.filter.AbstractFilter
-import org.apache.logging.log4j.core.layout.PatternLayout
+import org.slf4j.impl.StaticLoggerBinder
 
 import org.apache.kyuubi.Logging
 
-class LogDivertAppender(
-    name: String,
-    layout: StringLayout,
-    filter: Filter,
-    ignoreExceptions: Boolean,
-    immediateFlush: Boolean,
-    writer: CharArrayWriter)
-  extends AbstractWriterAppender[WriterManager](
-    name,
-    layout,
-    filter,
-    ignoreExceptions,
-    immediateFlush,
-    Property.EMPTY_ARRAY,
-    new WriterManager(writer, name, layout, true)) {
-  def this() = this(
-    "KyuubiEngineLogDivertAppender",
-    LogDivertAppender.initLayout(),
-    null,
-    false,
-    true,
-    new CharArrayWriter())
-
-  addFilter(new AbstractFilter() {
-    override def filter(event: LogEvent): Filter.Result = {
-      if (OperationLog.getCurrentOperationLog == null) {
-        Filter.Result.DENY
-      } else {
-        Filter.Result.NEUTRAL
-      }
-    }
-  })
-
-  def initLayout(): StringLayout = {
-    LogManager.getRootLogger.asInstanceOf[org.apache.logging.log4j.core.Logger]
-      .getAppenders.values().asScala
-      .find(ap => ap.isInstanceOf[ConsoleAppender] && ap.getLayout.isInstanceOf[StringLayout])
-      .map(_.getLayout.asInstanceOf[StringLayout])
-      .getOrElse(PatternLayout.newBuilder().withPattern(
-        "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n").build())
-  }
-
-  /**
-   * Overrides AbstractWriterAppender.append(), which does the real logging. No need
-   * to worry about concurrency since log4j calls this synchronously.
-   */
-  override def append(event: LogEvent): Unit = {
-    super.append(event)
-    // That should've gone into our writer. Notify the LogContext.
-    val logOutput = writer.toString
-    writer.reset()
-    val log = OperationLog.getCurrentOperationLog
-    if (log != null) log.write(logOutput)
-  }
-}
-
-object LogDivertAppender {
-  def initLayout(): StringLayout = {
-    LogManager.getRootLogger.asInstanceOf[org.apache.logging.log4j.core.Logger]
-      .getAppenders.values().asScala
-      .find(ap => ap.isInstanceOf[ConsoleAppender] && ap.getLayout.isInstanceOf[StringLayout])
-      .map(_.getLayout.asInstanceOf[StringLayout])
-      .getOrElse(PatternLayout.newBuilder().withPattern(
-        "%d{yy/MM/dd HH:mm:ss} %p %c{2}: %m%n").build())
-  }
-
+object LogDivertAppender extends Logging {
   def initialize(): Unit = {
     if (Logging.isLog4j2) {
-      val ap = new LogDivertAppender()
-      org.apache.logging.log4j.LogManager.getRootLogger()
-        .asInstanceOf[org.apache.logging.log4j.core.Logger].addAppender(ap)
-      ap.start()
+      Log4j2DivertAppender.initialize()
     } else if (Logging.isLog4j12) {
-      LogDivertAppender12.initialize()
+      Log4j12DivertAppender.initialize()
+    } else {
+      warn(s"Unsupported SLF4J binding ${StaticLoggerBinder.getSingleton.getLoggerFactoryClassStr}")
     }
   }
 }

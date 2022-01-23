@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import org.apache.log4j._
 import org.apache.log4j.spi.{Filter, LoggingEvent}
 
-class LogDivertAppender12 extends WriterAppender {
+class Log4j12DivertAppender extends WriterAppender {
 
   final private val writer = new CharArrayWriter
 
@@ -56,8 +56,8 @@ class LogDivertAppender12 extends WriterAppender {
   }
 }
 
-object LogDivertAppender12 {
+object Log4j12DivertAppender {
   def initialize(): Unit = {
-    org.apache.log4j.Logger.getRootLogger.addAppender(new LogDivertAppender12())
+    org.apache.log4j.Logger.getRootLogger.addAppender(new Log4j12DivertAppender())
   }
 }
