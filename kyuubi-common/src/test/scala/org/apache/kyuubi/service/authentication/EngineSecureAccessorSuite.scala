@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.service.authentication
 
-import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.{KyuubiFunSuite, KyuubiSQLException}
 import org.apache.kyuubi.config.KyuubiConf
 
 class EngineSecureAccessorSuite extends KyuubiFunSuite {
@@ -38,6 +38,7 @@ class EngineSecureAccessorSuite extends KyuubiFunSuite {
 
       val token = secureAccessor.issueToken()
       secureAccessor.authToken(token)
+      intercept[KyuubiSQLException](secureAccessor.authToken("invalidToken"))
 
       val engineSecureAccessor = new EngineSecureAccessor(newConf, false)
       engineSecureAccessor.authToken(token)

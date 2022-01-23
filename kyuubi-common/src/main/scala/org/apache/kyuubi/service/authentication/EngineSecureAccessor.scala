@@ -56,7 +56,13 @@ class EngineSecureAccessor(conf: KyuubiConf, val isServer: Boolean) {
   }
 
   def authToken(tokenStr: String): Unit = {
-    val identifier = KyuubiInternalAccessIdentifier.fromJson(decrypt(tokenStr))
+    val identifier =
+      try {
+        KyuubiInternalAccessIdentifier.fromJson(decrypt(tokenStr))
+      } catch {
+        case _: Exception =>
+          throw KyuubiSQLException("Invalid engine access token")
+      }
     if (identifier.issueDate + identifier.maxDate < System.currentTimeMillis()) {
       throw KyuubiSQLException("The engine access token is expired")
     }
