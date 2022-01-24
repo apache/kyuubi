@@ -27,7 +27,7 @@ class KyuubiOperationWithEngineSecure extends WithKyuubiServer with SparkQueryTe
   override protected val conf: KyuubiConf = {
     KyuubiConf().set(KyuubiConf.ENGINE_SECURE_ENABLED, true)
       .set(
-        KyuubiConf.ENGINE_SECURE_SECRET_PROVIDER_CLASS,
+        KyuubiConf.ENGINE_SECURE_SECRET_PROVIDER,
         classOf[ZooKeeperEngineSecureSecretProviderImpl].getCanonicalName)
   }
 }

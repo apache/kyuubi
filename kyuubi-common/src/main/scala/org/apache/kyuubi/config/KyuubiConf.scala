@@ -1084,8 +1084,8 @@ object KyuubiConf {
       .timeConf
       .createWithDefault(Duration.ofMinutes(10).toMillis)
 
-  val ENGINE_SECURE_SECRET_PROVIDER_CLASS: ConfigEntry[String] =
-    buildConf("engine.secure.secret.providerClass")
+  val ENGINE_SECURE_SECRET_PROVIDER: ConfigEntry[String] =
+    buildConf("engine.secure.secret.provider")
       .doc("The class used to manage the engine secure access secret. This class must be a " +
         "subclass of EngineSecureAccessSecretProvider.")
       .version("1.5.0")

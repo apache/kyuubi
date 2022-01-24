@@ -23,7 +23,7 @@ import org.apache.kyuubi.config.KyuubiConf
 class EngineSecureAccessorSuite extends KyuubiFunSuite {
   private val conf = KyuubiConf()
   conf.set(
-    KyuubiConf.ENGINE_SECURE_SECRET_PROVIDER_CLASS,
+    KyuubiConf.ENGINE_SECURE_SECRET_PROVIDER,
     classOf[UserDefinedEngineSecureSecretProvider].getCanonicalName)
 
   test("test encrypt/decrypt, issue token/auth token") {

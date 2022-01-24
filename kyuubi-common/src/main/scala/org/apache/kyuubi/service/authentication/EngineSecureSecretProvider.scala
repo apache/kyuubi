@@ -18,7 +18,7 @@
 package org.apache.kyuubi.service.authentication
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SECURE_SECRET_PROVIDER_CLASS
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SECURE_SECRET_PROVIDER
 
 trait EngineSecureSecretProvider {
 
@@ -35,7 +35,7 @@ trait EngineSecureSecretProvider {
 
 object EngineSecureSecretProvider {
   def create(conf: KyuubiConf): EngineSecureSecretProvider = {
-    val providerClass = Class.forName(conf.get(ENGINE_SECURE_SECRET_PROVIDER_CLASS))
+    val providerClass = Class.forName(conf.get(ENGINE_SECURE_SECRET_PROVIDER))
     val provider = providerClass.getConstructor().newInstance()
       .asInstanceOf[EngineSecureSecretProvider]
     provider.initialize(conf)
