@@ -76,11 +76,12 @@ class EngineSecureAccessor(conf: KyuubiConf, val isServer: Boolean) {
 
   private def normalizeSecret(secret: String): String = {
     val normalizedSecret = new Array[Char](cryptoKeyLengthBytes)
+    val placeHolder = ' '
     for (i <- 0 until cryptoKeyLengthBytes) {
       if (i < secret.length) {
         normalizedSecret.update(i, secret.charAt(i))
       } else {
-        normalizedSecret.update(i, ' ')
+        normalizedSecret.update(i, placeHolder)
       }
     }
     new String(normalizedSecret)
