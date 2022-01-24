@@ -42,7 +42,7 @@ private[spark] case class KyuubiSparkILoop private (
     val interpArguments = List(
       "-Yrepl-class-based",
       "-Yrepl-outdir",
-      s"${SparkSQLEngine.replOutputDir.getAbsolutePath}")
+      s"${SparkSQLEngine.replOutputDir}")
     settings.processArguments(interpArguments, processAll = true)
     settings.usejavacp.value = true
     val currentClassLoader = Thread.currentThread().getContextClassLoader

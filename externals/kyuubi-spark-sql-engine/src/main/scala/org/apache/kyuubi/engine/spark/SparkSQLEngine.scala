@@ -75,7 +75,7 @@ object SparkSQLEngine extends Logging {
 
   private val countDownLatch = new CountDownLatch(1)
 
-  val replOutputDir = Utils.createTempDir(namePrefix = "repl").toFile
+  val replOutputDir = Utils.createTempDir(namePrefix = "repl").toFile.getAbsolutePath
 
   def createSpark(): SparkSession = {
     val sparkConf = new SparkConf()
@@ -85,7 +85,7 @@ object SparkSQLEngine extends Logging {
     sparkConf.setIfMissing("spark.ui.port", "0")
     // register the repl's output dir with the file server.
     // see also `spark.repl.classdir`
-    sparkConf.set("spark.repl.class.outputDir", replOutputDir.getAbsolutePath)
+    sparkConf.set("spark.repl.class.outputDir", replOutputDir)
     sparkConf.setIfMissing(
       "spark.hadoop.mapreduce.input.fileinputformat.list-status.num-threads",
       "20")
