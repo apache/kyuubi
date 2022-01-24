@@ -87,6 +87,8 @@ object FlinkSQLEngine extends Logging {
           flinkConf.setString("kubernetes.cluster-id", appName)
         case null =>
           error("No execution.target specified for Flink engine")
+        case other =>
+          debug(s"Skip generating app name for execution target $other")
       }
 
       val engineContext = new DefaultContext(
