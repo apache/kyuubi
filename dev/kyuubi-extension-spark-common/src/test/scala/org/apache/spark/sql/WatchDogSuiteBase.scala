@@ -29,6 +29,7 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
   }
 
   case class LimitAndExpected(limit: Int, expected: Int)
+
   val limitAndExpecteds = List(LimitAndExpected(1, 1), LimitAndExpected(11, 10))
 
   private def checkMaxPartition: Unit = {
@@ -429,10 +430,10 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
             |select count(*)
             |from tmp_table1
             |where tmp_table1.key in (
-            |	select distinct tmp_table1.key
-            |	from tmp_table1
-            |	where tmp_table1.value = "aa"
-            |	)
+            |select distinct tmp_table1.key
+            |from tmp_table1
+            |where tmp_table1.value = "aa"
+            |)
             |""".stripMargin).queryExecution.optimizedPlan
         assert(!findGlobalLimit(plan))
       }
