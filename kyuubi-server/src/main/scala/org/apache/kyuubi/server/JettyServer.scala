@@ -23,12 +23,13 @@ import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.util.component.LifeCycle
 import org.eclipse.jetty.util.thread.{QueuedThreadPool, ScheduledExecutorScheduler}
 
-import org.apache.kyuubi.Utils
+import org.apache.kyuubi.Utils._
 
 class JettyServer private (
     server: Server,
     connector: ServerConnector,
     rootHandler: ContextHandlerCollection) {
+
   def start(): Unit = {
     server.start()
     connector.start()
@@ -36,10 +37,10 @@ class JettyServer private (
   }
 
   def stop(): Unit = {
-    server.stop()
-    connector.stop()
+    tryLogNonFatalError(connector.stop())
+    tryLogNonFatalError(server.stop())
     server.getThreadPool match {
-      case lifeCycle: LifeCycle => lifeCycle.stop()
+      case lifeCycle: LifeCycle => tryLogNonFatalError(lifeCycle.stop())
       case _ =>
     }
   }
@@ -81,7 +82,7 @@ object JettyServer {
       new HttpConnectionFactory(httpConf))
     connector.setHost(host)
     connector.setPort(port)
-    connector.setReuseAddress(!Utils.isWindows)
+    connector.setReuseAddress(!isWindows)
     connector.setAcceptQueueSize(math.min(connector.getAcceptors, 8))
 
     new JettyServer(server, connector, collection)
