@@ -44,6 +44,7 @@ class EventBusSuite extends KyuubiFunSuite {
     var test0EventRecievedCount = 0
     var test1EventRecievedCount = 0
     var test2EventRecievedCount = 0
+    var testEventRecievedCount = 0
     val liveBus = EventBus()
 
     liveBus.register[Test0KyuubiEvent] { e =>
@@ -60,6 +61,9 @@ class EventBusSuite extends KyuubiFunSuite {
     liveBus.register[TestKyuubiEvent] { e =>
       assert(e.eventType == "test2_kyuubi")
       test2EventRecievedCount += 1
+    }
+    liveBus.register[KyuubiEvent] { e =>
+      testEventRecievedCount += 1
     }
 
     class Test0Handler extends EventHandler[Test0KyuubiEvent] {
@@ -88,6 +92,7 @@ class EventBusSuite extends KyuubiFunSuite {
     assert(test0EventRecievedCount == 10)
     assert(test1EventRecievedCount == 20)
     assert(test2EventRecievedCount == 30)
+    assert(testEventRecievedCount == 60)
   }
 
   test("register event handler for default bus") {
