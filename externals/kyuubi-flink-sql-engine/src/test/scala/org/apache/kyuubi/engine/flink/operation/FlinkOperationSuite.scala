@@ -690,9 +690,11 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     withMultipleConnectionJdbcStatement()({ statement =>
       val resultSet = statement.executeQuery("set table.dynamic-table-options.enabled = true")
       val metadata = resultSet.getMetaData
-      assert(metadata.getColumnName(1) == "set")
+      assert(metadata.getColumnName(1) == "key")
+      assert(metadata.getColumnName(2) == "value")
       assert(resultSet.next())
-      assert(resultSet.getString(1) == "table.dynamic-table-options.enabled = true")
+      assert(resultSet.getString(1) == "table.dynamic-table-options.enabled")
+      assert(resultSet.getString(2) == "true")
     })
   }
 
@@ -700,25 +702,26 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
     withMultipleConnectionJdbcStatement()({ statement =>
       val resultSet = statement.executeQuery("set")
       val metadata = resultSet.getMetaData
-      assert(metadata.getColumnName(1) == "set")
+      assert(metadata.getColumnName(1) == "key")
+      assert(metadata.getColumnName(2) == "value")
       assert(resultSet.next())
     })
   }
 
-  test("execute statement - rest property") {
+  test("execute statement - reset property") {
     withMultipleConnectionJdbcStatement()({ statement =>
       statement.executeQuery("set pipeline.jars = my.jar")
       statement.executeQuery("reset pipeline.jars")
       val resultSet = statement.executeQuery("set")
       // Flink does not support set key without value currently,
       // thus read all rows to find the desired one
-      var found = false
+      var success = false
       while (resultSet.next()) {
-        if (resultSet.getString(1) == "pipeline.jars = ") {
-          found = true
+        if (resultSet.getString(1) == "pipeline.jars" && resultSet.getString(2) == "") {
+          success = true
         }
       }
-      assert(found)
+      assert(success)
     })
   }
 }

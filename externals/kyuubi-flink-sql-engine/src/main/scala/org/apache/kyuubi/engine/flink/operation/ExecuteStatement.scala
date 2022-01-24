@@ -50,8 +50,6 @@ class ExecuteStatement(
 
   private var statementTimeoutCleaner: Option[ScheduledExecutorService] = None
 
-  private val PROPERTY_FORMAT = "%s = %s"
-
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
   @VisibleForTesting
@@ -158,27 +156,33 @@ class ExecuteStatement(
       val value = executor.getSessionConfigMap(sessionId).getOrDefault(key, "")
       resultSet = ResultSet.builder
         .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
-        .columns(Column.physical("set", DataTypes.STRING()))
-        .data(Array(Row.of(PROPERTY_FORMAT.format(key, value))))
+        .columns(
+          Column.physical("key", DataTypes.STRING()),
+          Column.physical("value", DataTypes.STRING()))
+        .data(Array(Row.of(key, value)))
         .build
     } else {
       // show all properties if set without key
       val properties: util.Map[String, String] = executor.getSessionConfigMap(sessionId)
 
       val entries = ArrayBuffer.empty[Row]
-      properties.forEach((key, value) => entries.append(Row.of(PROPERTY_FORMAT.format(key, value))))
+      properties.forEach((key, value) => entries.append(Row.of(key, value)))
 
       if (entries.nonEmpty) {
         val prettyEntries = entries.sortBy(_.getField(0).asInstanceOf[String])
         resultSet = ResultSet.builder
           .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
-          .columns(Column.physical("set", DataTypes.STRING()))
+          .columns(
+            Column.physical("key", DataTypes.STRING()),
+            Column.physical("value", DataTypes.STRING()))
           .data(prettyEntries.toArray)
           .build
       } else {
         resultSet = ResultSet.builder
           .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
-          .columns(Column.physical("set", DataTypes.STRING()))
+          .columns(
+            Column.physical("key", DataTypes.STRING()),
+            Column.physical("value", DataTypes.STRING()))
           .data(Array[Row]())
           .build
       }
