@@ -80,11 +80,15 @@ object FlinkSQLEngine extends Logging {
       // set cluster name for per-job and application mode
       executionTarget match {
         case "yarn-per-job" | "yarn-application" =>
-          val appName = s"kyuubi_${user}_flink_${Instant.now}"
-          flinkConf.setString("yarn.application.name", appName)
+          if (!flinkConf.containsKey("yarn.application.name")) {
+            val appName = s"kyuubi_${user}_flink_${Instant.now}"
+            flinkConf.setString("yarn.application.name", appName)
+          }
         case "kubernetes-application" =>
-          val appName = s"kyuubi-${user}-flink-${Instant.now}"
-          flinkConf.setString("kubernetes.cluster-id", appName)
+          if (!flinkConf.containsKey("kubernetes.cluster-id")) {
+            val appName = s"kyuubi-${user}-flink-${Instant.now}"
+            flinkConf.setString("kubernetes.cluster-id", appName)
+          }
         case null =>
           error("No execution.target specified for Flink engine")
         case other =>
