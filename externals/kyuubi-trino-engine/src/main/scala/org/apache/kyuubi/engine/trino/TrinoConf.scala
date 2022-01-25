@@ -35,7 +35,7 @@ object TrinoConf {
 
   val CLIENT_REQUEST_TIMEOUT: ConfigEntry[Long] =
     buildConf("trino.client.request.timeout")
-      .doc("Client request will be closed when it's not accessed for this duration of time")
+      .doc("Timeout for Trino client request to trino cluster")
       .version("1.5.0")
       .timeConf
       .createWithDefault(Duration.ofMinutes(2).toMillis)

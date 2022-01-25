@@ -46,8 +46,7 @@ trait WithTrinoEngine extends KyuubiFunSuite with WithTrinoContainerServer {
       kyuubiConf.set(k, v)
     }
 
-    trino = TrinoSqlEngine.createTrinoContext()
-    TrinoSqlEngine.startEngine(trino)
+    TrinoSqlEngine.startEngine()
     engine = TrinoSqlEngine.currentEngine.get
     connectionUrl = engine.frontendServices.head.connectionUrl
   }

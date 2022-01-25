@@ -34,8 +34,6 @@ class SessionSuite extends WithTrinoEngine with HiveJDBCTestHelper {
   test("test session") {
     withJdbcStatement() { statement =>
       statement.executeQuery("create or replace view temp_view as select 1 as id")
-    }
-    withJdbcStatement() { statement =>
       val resultSet = statement.executeQuery("select * from temp_view")
       assert(resultSet.next())
     }

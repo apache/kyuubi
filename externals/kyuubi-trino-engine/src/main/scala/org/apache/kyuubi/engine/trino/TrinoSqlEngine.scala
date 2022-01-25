@@ -17,25 +17,11 @@
 
 package org.apache.kyuubi.engine.trino
 
-import java.net.URI
-import java.time.ZoneId
-import java.util.Locale
-import java.util.Optional
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
-import scala.collection.JavaConverters._
-
-import io.airlift.units.Duration
-import io.trino.client.ClientSelectedRole
-import io.trino.client.ClientSession
-import okhttp3.OkHttpClient
-
-import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.Utils.TRINO_ENGINE_SHUTDOWN_PRIORITY
 import org.apache.kyuubi.Utils.addShutdownHook
-import org.apache.kyuubi.Utils.currentUser
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.trino.TrinoSqlEngine.countDownLatch
 import org.apache.kyuubi.engine.trino.TrinoSqlEngine.currentEngine
@@ -44,10 +30,10 @@ import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.SignalRegister
 
-case class TrinoSqlEngine(trino: TrinoContext)
+case class TrinoSqlEngine()
   extends Serverable("TrinoSQLEngine") {
 
-  override val backendService = new TrinoBackendService(trino)
+  override val backendService = new TrinoBackendService()
 
   override val frontendServices = Seq(new TrinoTBinaryFrontendService(this))
 
@@ -73,24 +59,8 @@ object TrinoSqlEngine extends Logging {
 
   var currentEngine: Option[TrinoSqlEngine] = None
 
-  def createTrinoContext(): TrinoContext = {
-    val session = createClientSession()
-    val httpClient = new OkHttpClient.Builder().build()
-
-    kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
-    kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
-
-    if (logger.isDebugEnabled) {
-      kyuubiConf.getAll.foreach { case (k, v) =>
-        debug(s"KyuubiConf: $k = $v")
-      }
-    }
-
-    TrinoContext(httpClient, session)
-  }
-
-  def startEngine(trino: TrinoContext): Unit = {
-    currentEngine = Some(new TrinoSqlEngine(trino))
+  def startEngine(): Unit = {
+    currentEngine = Some(new TrinoSqlEngine())
     currentEngine.foreach { engine =>
       engine.initialize(kyuubiConf)
       engine.start()
@@ -102,43 +72,19 @@ object TrinoSqlEngine extends Logging {
     SignalRegister.registerLogger(logger)
 
     try {
-      val trino = createTrinoContext()
-      startEngine(trino)
+      kyuubiConf.setIfMissing(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+      kyuubiConf.setIfMissing(HA_ZK_CONN_RETRY_POLICY, RetryPolicies.N_TIME.toString)
+
+      startEngine()
       // blocking main thread
       countDownLatch.await()
     } catch {
-      case t: Throwable => error(s"Failed to instantiate Trino: ${t.getMessage}", t)
+      case t: Throwable if currentEngine.isDefined =>
+        currentEngine.foreach { engine =>
+          error(t)
+          engine.stop()
+        }
+      case t: Throwable => error("Create Trino Engine Failed", t)
     }
-  }
-
-  private def createClientSession(): ClientSession = {
-    val connectionUrl = kyuubiConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_URL).getOrElse(
-      throw KyuubiSQLException("Trino server url can not be null!"))
-    val catalog = kyuubiConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG).getOrElse(
-      throw KyuubiSQLException("Trino default catalog can not be null!"))
-    val user = kyuubiConf.getOption("kyuubi.trino.user").getOrElse(currentUser)
-    val clientRequestTimeout = kyuubiConf.get(TrinoConf.CLIENT_REQUEST_TIMEOUT)
-
-    new ClientSession(
-      URI.create(connectionUrl),
-      user,
-      Optional.empty(),
-      "kyuubi",
-      Optional.empty(),
-      Set[String]().asJava,
-      null,
-      catalog,
-      null,
-      null,
-      ZoneId.systemDefault(),
-      Locale.getDefault,
-      Map[String, String]().asJava,
-      Map[String, String]().asJava,
-      Map[String, String]().asJava,
-      Map[String, ClientSelectedRole]().asJava,
-      Map[String, String]().asJava,
-      null,
-      new Duration(clientRequestTimeout, TimeUnit.MILLISECONDS),
-      true)
   }
 }

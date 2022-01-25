@@ -24,9 +24,7 @@ import org.apache.kyuubi.operation.Operation
 import org.apache.kyuubi.operation.OperationManager
 import org.apache.kyuubi.session.Session
 
-class TrinoOperationManager private (name: String) extends OperationManager(name) {
-
-  def this() = this(classOf[TrinoOperationManager].getSimpleName)
+class TrinoOperationManager extends OperationManager("TrinoOperationManager") {
 
   def newExecuteStatementOperation(
       session: Session,

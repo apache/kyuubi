@@ -21,12 +21,9 @@ import org.apache.kyuubi.engine.trino.session.TrinoSessionManager
 import org.apache.kyuubi.service.AbstractBackendService
 import org.apache.kyuubi.session.SessionManager
 
-class TrinoBackendService(name: String, trinoContext: TrinoContext)
-  extends AbstractBackendService(name) {
-  def this(trino: TrinoContext) =
-    this(classOf[TrinoBackendService].getSimpleName, trino)
+class TrinoBackendService
+  extends AbstractBackendService("TrinoBackendService") {
 
-  override val sessionManager: SessionManager = new TrinoSessionManager(trinoContext)
+  override val sessionManager: SessionManager = new TrinoSessionManager()
 
-  def trinoSession: TrinoContext = trinoContext
 }
