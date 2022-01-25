@@ -190,9 +190,6 @@
                             <include>org.apache.curator:curator-client</include>
                             <include>org.apache.curator:curator-framework</include>
                             <include>org.apache.curator:curator-recipes</include>
-                            <include>org.apache.logging.log4j:log4j-1.2-api</include>
-                            <include>org.apache.logging.log4j:log4j-api</include>
-                            <include>org.apache.logging.log4j:log4j-core</include>
                         </includes>
                     </artifactSet>
                     <relocations>
