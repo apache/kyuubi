@@ -17,19 +17,22 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
+import java.util
 import java.util.concurrent.{RejectedExecutionException, ScheduledExecutorService, TimeUnit}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import com.google.common.annotations.VisibleForTesting
-import org.apache.flink.table.api.ResultKind
+import org.apache.flink.table.api.{DataTypes, ResultKind}
+import org.apache.flink.table.catalog.Column
 import org.apache.flink.table.client.gateway.{Executor, TypedResult}
 import org.apache.flink.table.operations.{Operation, QueryOperation}
+import org.apache.flink.table.operations.command.{ResetOperation, SetOperation}
 import org.apache.flink.types.Row
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.engine.flink.result.ResultSet
+import org.apache.kyuubi.engine.flink.result.{OperationUtil, ResultSet}
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -100,6 +103,8 @@ class ExecuteStatement(
       val operation = executor.parseStatement(sessionId, statement)
       operation match {
         case queryOperation: QueryOperation => runQueryOperation(queryOperation)
+        case setOperation: SetOperation => runSetOperation(setOperation)
+        case resetOperation: ResetOperation => runResetOperation(resetOperation)
         case operation: Operation => runOperation(operation)
       }
     } catch {
@@ -136,6 +141,64 @@ class ExecuteStatement(
       .columns(resultDescriptor.getResultSchema.getColumns)
       .data(rows.toArray[Row])
       .build
+    setState(OperationState.FINISHED)
+  }
+
+  private def runSetOperation(setOperation: SetOperation): Unit = {
+    if (setOperation.getKey.isPresent) {
+      val key: String = setOperation.getKey.get.trim
+
+      if (setOperation.getValue.isPresent) {
+        val newValue: String = setOperation.getValue.get.trim
+        executor.setSessionProperty(sessionId, key, newValue)
+      }
+
+      val value = executor.getSessionConfigMap(sessionId).getOrDefault(key, "")
+      resultSet = ResultSet.builder
+        .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+        .columns(
+          Column.physical("key", DataTypes.STRING()),
+          Column.physical("value", DataTypes.STRING()))
+        .data(Array(Row.of(key, value)))
+        .build
+    } else {
+      // show all properties if set without key
+      val properties: util.Map[String, String] = executor.getSessionConfigMap(sessionId)
+
+      val entries = ArrayBuffer.empty[Row]
+      properties.forEach((key, value) => entries.append(Row.of(key, value)))
+
+      if (entries.nonEmpty) {
+        val prettyEntries = entries.sortBy(_.getField(0).asInstanceOf[String])
+        resultSet = ResultSet.builder
+          .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+          .columns(
+            Column.physical("key", DataTypes.STRING()),
+            Column.physical("value", DataTypes.STRING()))
+          .data(prettyEntries.toArray)
+          .build
+      } else {
+        resultSet = ResultSet.builder
+          .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+          .columns(
+            Column.physical("key", DataTypes.STRING()),
+            Column.physical("value", DataTypes.STRING()))
+          .data(Array[Row]())
+          .build
+      }
+    }
+    setState(OperationState.FINISHED)
+  }
+
+  private def runResetOperation(resetOperation: ResetOperation): Unit = {
+    if (resetOperation.getKey.isPresent) {
+      // reset the given property
+      executor.resetSessionProperty(sessionId, resetOperation.getKey.get())
+    } else {
+      // reset all properties
+      executor.resetSessionProperties(sessionId)
+    }
+    resultSet = OperationUtil.successResultSet()
     setState(OperationState.FINISHED)
   }
 
