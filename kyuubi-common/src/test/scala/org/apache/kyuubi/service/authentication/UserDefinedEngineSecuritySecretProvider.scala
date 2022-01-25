@@ -18,27 +18,11 @@
 package org.apache.kyuubi.service.authentication
 
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.ENGINE_SECURE_SECRET_PROVIDER
 
-trait EngineSecureSecretProvider {
+class UserDefinedEngineSecuritySecretProvider extends EngineSecuritySecretProvider {
+  override def initialize(kyuubiConf: KyuubiConf): Unit = {}
 
-  /**
-   * Initialize with kyuubi conf.
-   */
-  def initialize(conf: KyuubiConf): Unit
-
-  /**
-   * Get the secret to encrypt and decrypt the secure access token.
-   */
-  def getSecret(): String
-}
-
-object EngineSecureSecretProvider {
-  def create(conf: KyuubiConf): EngineSecureSecretProvider = {
-    val providerClass = Class.forName(conf.get(ENGINE_SECURE_SECRET_PROVIDER))
-    val provider = providerClass.getConstructor().newInstance()
-      .asInstanceOf[EngineSecureSecretProvider]
-    provider.initialize(conf)
-    provider
+  override def getSecret(): String = {
+    "ENGINE____SECRET"
   }
 }

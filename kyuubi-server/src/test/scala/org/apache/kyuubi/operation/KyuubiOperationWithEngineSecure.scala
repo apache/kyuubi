@@ -19,15 +19,15 @@ package org.apache.kyuubi.operation
 
 import org.apache.kyuubi.WithKyuubiServer
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.service.authentication.ZooKeeperEngineSecureSecretProviderImpl
+import org.apache.kyuubi.service.authentication.ZooKeeperEngineSecuritySecretProviderImpl
 
 class KyuubiOperationWithEngineSecure extends WithKyuubiServer with SparkQueryTests {
   override protected def jdbcUrl: String = getJdbcUrl
 
   override protected val conf: KyuubiConf = {
-    KyuubiConf().set(KyuubiConf.ENGINE_SECURE_ENABLED, true)
+    KyuubiConf().set(KyuubiConf.ENGINE_SECURITY_ENABLED, true)
       .set(
-        KyuubiConf.ENGINE_SECURE_SECRET_PROVIDER,
-        classOf[ZooKeeperEngineSecureSecretProviderImpl].getCanonicalName)
+        KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER,
+        classOf[ZooKeeperEngineSecuritySecretProviderImpl].getCanonicalName)
   }
 }

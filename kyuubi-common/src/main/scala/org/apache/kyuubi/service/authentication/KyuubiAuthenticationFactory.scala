@@ -56,7 +56,7 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
     }
   }
 
-  if (conf.get(ENGINE_SECURE_ENABLED)) {
+  if (conf.get(ENGINE_SECURITY_ENABLED)) {
     EngineSecureAccessor.initialize(conf, isServer)
   }
 
@@ -91,7 +91,8 @@ class KyuubiAuthenticationFactory(conf: KyuubiConf, isServer: Boolean = true) ex
           transportFactory = PlainSASLHelper.getTransportFactory(
             plainAuthType.toString,
             conf,
-            Option(transportFactory)).asInstanceOf[TSaslServerTransport.Factory]
+            Option(transportFactory),
+            isServer).asInstanceOf[TSaslServerTransport.Factory]
 
         case _ =>
       }

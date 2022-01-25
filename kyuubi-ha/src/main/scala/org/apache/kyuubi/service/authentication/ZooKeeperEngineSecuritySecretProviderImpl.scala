@@ -23,7 +23,7 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ZK_ENGINE_SECURE_SECRET_NODE
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider
 
-class ZooKeeperEngineSecureSecretProviderImpl extends EngineSecureSecretProvider {
+class ZooKeeperEngineSecuritySecretProviderImpl extends EngineSecuritySecretProvider {
   import ZooKeeperClientProvider._
 
   private var conf: KyuubiConf = _

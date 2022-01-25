@@ -23,13 +23,13 @@ import org.apache.kyuubi.config.KyuubiConf
 class EngineSecureAccessorSuite extends KyuubiFunSuite {
   private val conf = KyuubiConf()
   conf.set(
-    KyuubiConf.ENGINE_SECURE_SECRET_PROVIDER,
-    classOf[UserDefinedEngineSecureSecretProvider].getCanonicalName)
+    KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER,
+    classOf[UserDefinedEngineSecuritySecretProvider].getCanonicalName)
 
   test("test encrypt/decrypt, issue token/auth token") {
     Seq("AES/CBC/PKCS5PADDING", "AES/CTR/PKCS5PADDING").foreach { cipher =>
       val newConf = conf.clone
-      newConf.set(KyuubiConf.ENGINE_SECURE_CRYPTO_CIPHER_TRANSFORMATION, cipher)
+      newConf.set(KyuubiConf.ENGINE_SECURITY_CRYPTO_CIPHER_TRANSFORMATION, cipher)
 
       val secureAccessor = new EngineSecureAccessor(newConf, true)
       val value = "tokenToEncrypt"
