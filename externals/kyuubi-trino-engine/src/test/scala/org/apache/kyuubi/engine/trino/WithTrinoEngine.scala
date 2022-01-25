@@ -53,10 +53,10 @@ trait WithTrinoEngine extends KyuubiFunSuite with WithTrinoContainerServer {
 
   override def afterAll(): Unit = {
     super.afterAll()
-    stopSparkEngine()
+    stopTrinoEngine()
   }
 
-  def stopSparkEngine(): Unit = {
+  def stopTrinoEngine(): Unit = {
     if (engine != null) {
       engine.stop()
       engine = null
