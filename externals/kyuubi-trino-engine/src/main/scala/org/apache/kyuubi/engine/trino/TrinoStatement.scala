@@ -46,7 +46,7 @@ import org.apache.kyuubi.engine.trino.TrinoStatement._
 class TrinoStatement(trinoContext: TrinoContext, kyuubiConf: KyuubiConf, sql: String) {
 
   private lazy val trino = StatementClientFactory
-    .newStatementClient(trinoContext.httpClient, trinoContext.getClientSession, sql)
+    .newStatementClient(trinoContext.httpClient, trinoContext.clientSession, sql)
 
   private lazy val dataProcessingPoolSize = kyuubiConf.get(DATA_PROCESSING_POOL_SIZE)
 
@@ -55,7 +55,7 @@ class TrinoStatement(trinoContext: TrinoContext, kyuubiConf: KyuubiConf, sql: St
 
   def getTrinoClient: StatementClient = trino
 
-  def getCurrentDatabase: String = trinoContext.getClientSession.getSchema
+  def getCurrentDatabase: String = trinoContext.clientSession.getSchema
 
   def getColumns: List[Column] = {
     while (trino.isRunning) {
@@ -142,7 +142,7 @@ class TrinoStatement(trinoContext: TrinoContext, kyuubiConf: KyuubiConf, sql: St
   }
 
   def updateTrinoContext(): Unit = {
-    val session = trinoContext.getClientSession
+    val session = trinoContext.clientSession
 
     var builder = ClientSession.builder(session)
     // update catalog and schema
@@ -165,7 +165,7 @@ class TrinoStatement(trinoContext: TrinoContext, kyuubiConf: KyuubiConf, sql: St
       builder = builder.withProperties(properties.asJava)
     }
 
-    trinoContext.clientSession.set(builder.build())
+    trinoContext.clientSession = builder.build()
   }
 
   private def drainDetectingEnd(

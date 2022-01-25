@@ -17,24 +17,9 @@
 
 package org.apache.kyuubi.engine.trino
 
-import java.util.concurrent.atomic.AtomicReference
-
 import io.trino.client.ClientSession
 import okhttp3.OkHttpClient
 
-class TrinoContext(
-    val httpClient: OkHttpClient,
-    val clientSession: AtomicReference[ClientSession]) {
-
-  def getClientSession: ClientSession = clientSession.get
-
-  def setCurrentSchema(schema: String): Unit = {
-    clientSession.set(ClientSession.builder(clientSession.get).withSchema(schema).build())
-  }
-
-}
-
-object TrinoContext {
-  def apply(httpClient: OkHttpClient, clientSession: ClientSession): TrinoContext =
-    new TrinoContext(httpClient, new AtomicReference(clientSession))
-}
+case class TrinoContext(
+    httpClient: OkHttpClient,
+    var clientSession: ClientSession)

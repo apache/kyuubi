@@ -17,8 +17,22 @@
 
 package org.apache.kyuubi.engine.trino.session
 
+import java.net.URI
+import java.time.ZoneId
+import java.util.Collections
+import java.util.Locale
+import java.util.Optional
+import java.util.concurrent.TimeUnit
+
+import io.airlift.units.Duration
+import io.trino.client.ClientSession
+import okhttp3.OkHttpClient
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
+import org.apache.kyuubi.KyuubiSQLException
+import org.apache.kyuubi.Utils.currentUser
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.trino.TrinoConf
 import org.apache.kyuubi.engine.trino.TrinoContext
 import org.apache.kyuubi.session.AbstractSession
 import org.apache.kyuubi.session.SessionHandle
@@ -30,16 +44,59 @@ class TrinoSessionImpl(
     password: String,
     ipAddress: String,
     conf: Map[String, String],
-    sessionManager: SessionManager,
-    val trinoContext: TrinoContext)
+    sessionManager: SessionManager)
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
+
+  var trinoContext: TrinoContext = _
+  private var clientSession: ClientSession = _
+
   override val handle: SessionHandle = SessionHandle(protocol)
 
   override def open(): Unit = {
     normalizedConf.foreach {
-      case ("use:database", database) => trinoContext.setCurrentSchema(database)
+      case ("use:database", database) => clientSession = createClientSession(database)
       case _ => // do nothing
     }
+
+    val httpClient = new OkHttpClient.Builder().build()
+
+    if (clientSession == null) {
+      clientSession = createClientSession()
+    }
+    trinoContext = TrinoContext(httpClient, clientSession)
+
     super.open()
+  }
+
+  private def createClientSession(schema: String = null): ClientSession = {
+    val sessionConf = sessionManager.getConf
+    val connectionUrl = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_URL).getOrElse(
+      throw KyuubiSQLException("Trino server url can not be null!"))
+    val catalog = sessionConf.get(KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG).getOrElse(
+      throw KyuubiSQLException("Trino default catalog can not be null!"))
+    val user = sessionConf.getOption("kyuubi.trino.user").getOrElse(currentUser)
+    val clientRequestTimeout = sessionConf.get(TrinoConf.CLIENT_REQUEST_TIMEOUT)
+
+    new ClientSession(
+      URI.create(connectionUrl),
+      user,
+      Optional.empty(),
+      "kyuubi",
+      Optional.empty(),
+      Collections.emptySet(),
+      null,
+      catalog,
+      schema,
+      null,
+      ZoneId.systemDefault(),
+      Locale.getDefault,
+      Collections.emptyMap(),
+      Collections.emptyMap(),
+      Collections.emptyMap(),
+      Collections.emptyMap(),
+      Collections.emptyMap(),
+      null,
+      new Duration(clientRequestTimeout, TimeUnit.MILLISECONDS),
+      true)
   }
 }
