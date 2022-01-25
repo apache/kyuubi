@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.trino
 
+import java.time.Duration
+
 import org.apache.kyuubi.config.ConfigBuilder
 import org.apache.kyuubi.config.ConfigEntry
 import org.apache.kyuubi.config.KyuubiConf
@@ -31,10 +33,10 @@ object TrinoConf {
       .intConf
       .createWithDefault(3)
 
-  val CLIENT_REQUEST_TIMEOUT: ConfigEntry[Int] =
+  val CLIENT_REQUEST_TIMEOUT: ConfigEntry[Long] =
     buildConf("trino.client.request.timeout")
       .doc("Client request will be closed when it's not accessed for this duration of time")
       .version("1.5.0")
-      .intConf
-      .createWithDefault(2)
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(2).toMillis)
 }

@@ -138,7 +138,7 @@ object TrinoSqlEngine extends Logging {
       Map[String, ClientSelectedRole]().asJava,
       Map[String, String]().asJava,
       null,
-      new Duration(clientRequestTimeout, TimeUnit.MINUTES),
+      new Duration(clientRequestTimeout, TimeUnit.MILLISECONDS),
       true)
   }
 }

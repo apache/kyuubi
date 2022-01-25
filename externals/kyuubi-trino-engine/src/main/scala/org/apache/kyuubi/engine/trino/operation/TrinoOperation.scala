@@ -87,6 +87,7 @@ abstract class TrinoOperation(opType: OperationType, session: Session)
   override def cancel(): Unit = {
     cleanup(OperationState.CANCELED)
   }
+
   protected def cleanup(targetState: OperationState): Unit = state.synchronized {
     if (!isTerminalState(state)) {
       setState(targetState)
