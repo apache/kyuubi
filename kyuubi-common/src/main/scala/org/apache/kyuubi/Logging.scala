@@ -110,7 +110,7 @@ trait Logging {
       val rootLogger = LogManager.getRootLogger
         .asInstanceOf[org.apache.logging.log4j.core.Logger]
       if (Logging.defaultRootLevel == null) {
-        Logging.defaultRootLevel = rootLogger.getLevel
+        Logging.defaultRootLevel = rootLogger.getLevel.toString
       }
 
       if (isInterpreter) {
@@ -138,7 +138,7 @@ trait Logging {
 
         val rootLogger = org.apache.log4j.LogManager.getRootLogger
         if (Logging.defaultRootLevel == null) {
-          Logging.defaultRootLevel = Level.getLevel(rootLogger.getLevel.toString)
+          Logging.defaultRootLevel = rootLogger.getLevel.toString
         }
 
         if (isInterpreter) {
@@ -160,7 +160,7 @@ trait Logging {
 
 object Logging {
   @volatile private var useDefault = false
-  @volatile private var defaultRootLevel: Level = _
+  @volatile private var defaultRootLevel: String = _
   @volatile private var initialized = false
   val initLock = new Object()
 
