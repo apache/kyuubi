@@ -28,8 +28,6 @@ import org.apache.spark.repl.SparkILoop
 import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.util.MutableURLClassLoader
 
-import org.apache.kyuubi.engine.spark.SparkSQLEngine
-
 private[spark] case class KyuubiSparkILoop private (
     spark: SparkSession,
     output: ByteArrayOutputStream)
@@ -42,7 +40,7 @@ private[spark] case class KyuubiSparkILoop private (
     val interpArguments = List(
       "-Yrepl-class-based",
       "-Yrepl-outdir",
-      s"${SparkSQLEngine.replOutputDir}")
+      s"${spark.sparkContext.getConf.get("spark.repl.class.outputDir")}")
     settings.processArguments(interpArguments, processAll = true)
     settings.usejavacp.value = true
     val currentClassLoader = Thread.currentThread().getContextClassLoader
