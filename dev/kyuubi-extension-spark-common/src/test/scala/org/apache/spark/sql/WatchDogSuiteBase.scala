@@ -425,7 +425,7 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
           "VALUES (1, 'aa'),(2,'bb'),(3, 'cc'),(4,'aa'),(5,'cc'),(6, 'aa')")
         assert(
           sql("select * from tmp_table1").queryExecution.optimizedPlan.isInstanceOf[GlobalLimit])
-        val plan = sql(
+        val testSqlText =
           """
             |select count(*)
             |from tmp_table1
@@ -434,8 +434,10 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
             |from tmp_table1
             |where tmp_table1.value = "aa"
             |)
-            |""".stripMargin).queryExecution.optimizedPlan
+            |""".stripMargin
+        val plan = sql(testSqlText).queryExecution.optimizedPlan
         assert(!findGlobalLimit(plan))
+        checkAnswer(sql(testSqlText), Row(3) :: Nil)
       }
 
       def findGlobalLimit(plan: LogicalPlan): Boolean = plan match {
