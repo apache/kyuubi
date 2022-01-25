@@ -28,13 +28,13 @@ case class ForcedMaxOutputRowsRule(sparkSession: SparkSession) extends ForcedMax
   override protected def canInsertLimitInner(p: LogicalPlan): Boolean = p match {
     case WithCTE(plan, _) => this.canInsertLimitInner(plan)
     case plan: LogicalPlan => plan match {
-      case Union(children, _, _) => !children.exists {
-        case _: DataWritingCommand => true
-        case p: CommandResult if p.commandLogicalPlan.isInstanceOf[DataWritingCommand] => true
-        case _ => false
+        case Union(children, _, _) => !children.exists {
+            case _: DataWritingCommand => true
+            case p: CommandResult if p.commandLogicalPlan.isInstanceOf[DataWritingCommand] => true
+            case _ => false
+          }
+        case _ => super.canInsertLimitInner(plan)
       }
-      case _ => super.canInsertLimitInner(plan)
-    }
   }
 
   override protected def canInsertLimit(p: LogicalPlan, maxOutputRowsOpt: Option[Int]): Boolean = {

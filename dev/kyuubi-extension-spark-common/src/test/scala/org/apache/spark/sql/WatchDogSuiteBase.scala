@@ -423,8 +423,8 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
         sql("CREATE TABLE spark_catalog.`default`.tmp_table1(KEY INT, VALUE STRING) USING PARQUET")
         sql("INSERT INTO TABLE spark_catalog.`default`.tmp_table1 " +
           "VALUES (1, 'aa'),(2,'bb'),(3, 'cc'),(4,'aa'),(5,'cc'),(6, 'aa')")
-        assert(sql("select * from tmp_table1").
-          queryExecution.optimizedPlan.isInstanceOf[GlobalLimit])
+        assert(
+          sql("select * from tmp_table1").queryExecution.optimizedPlan.isInstanceOf[GlobalLimit])
         val plan = sql(
           """
             |select count(*)
