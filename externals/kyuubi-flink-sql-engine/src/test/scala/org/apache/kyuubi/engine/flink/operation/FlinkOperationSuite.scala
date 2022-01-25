@@ -717,11 +717,21 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       // thus read all rows to find the desired one
       var success = false
       while (resultSet.next()) {
-        if (resultSet.getString(1) == "pipeline.jars" && resultSet.getString(2) == "") {
+        if (resultSet.getString(1) == "pipeline.jars" &&
+          !resultSet.getString(2).contains("my.jar")) {
           success = true
         }
       }
       assert(success)
     })
+  }
+
+  test("execute statement - select udf") {
+    withJdbcStatement() { statement =>
+      statement.execute(s"create function $GENERATED_UDF_CLASS AS '$GENERATED_UDF_CLASS'")
+      val resultSet = statement.executeQuery(s"select $GENERATED_UDF_CLASS('A')")
+      assert(resultSet.next())
+      assert(resultSet.getString(1) === "a")
+    }
   }
 }

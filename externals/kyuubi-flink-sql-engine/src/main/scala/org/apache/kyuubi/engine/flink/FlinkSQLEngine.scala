@@ -17,17 +17,24 @@
 
 package org.apache.kyuubi.engine.flink
 
+import java.io.File
+import java.net.URL
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 
 import org.apache.flink.client.cli.{CliFrontend, CustomCommandLine, DefaultCLI}
-import org.apache.flink.configuration.{DeploymentOptions, GlobalConfiguration}
+import org.apache.flink.configuration.DeploymentOptions
+import org.apache.flink.configuration.GlobalConfiguration
+import org.apache.flink.table.client.SqlClientException
 import org.apache.flink.table.client.gateway.context.DefaultContext
+import org.apache.flink.util.JarUtils
 
-import org.apache.kyuubi.Logging
-import org.apache.kyuubi.Utils.{addShutdownHook, currentUser, FLINK_ENGINE_SHUTDOWN_PRIORITY}
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
+import org.apache.kyuubi.Utils.{addShutdownHook, FLINK_ENGINE_SHUTDOWN_PRIORITY}
+import org.apache.kyuubi.Utils.currentUser
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.flink.FlinkSQLEngine.{countDownLatch, currentEngine}
 import org.apache.kyuubi.service.Serverable
@@ -93,8 +100,13 @@ object FlinkSQLEngine extends Logging {
           debug(s"Skip generating app name for execution target $other")
       }
 
+      val cliOptions = FlinkEngineUtils.parseCliOptions(args)
+      val jars = if (cliOptions.getJars != null) cliOptions.getJars.asScala else List.empty
+      val libDirs =
+        if (cliOptions.getLibraryDirs != null) cliOptions.getLibraryDirs.asScala else List.empty
+      val dependencies = discoverDependencies(jars, libDirs)
       val engineContext = new DefaultContext(
-        List.empty.asJava,
+        dependencies.asJava,
         flinkConf,
         List[CustomCommandLine](new DefaultCLI).asJava)
 
@@ -122,6 +134,39 @@ object FlinkSQLEngine extends Logging {
       engine.initialize(kyuubiConf)
       engine.start()
       addShutdownHook(() => engine.stop(), FLINK_ENGINE_SHUTDOWN_PRIORITY + 1)
+    }
+  }
+
+  private def discoverDependencies(
+      jars: Seq[URL],
+      libraries: Seq[URL]): List[URL] = {
+    try {
+      var dependencies: ListBuffer[URL] = ListBuffer()
+      // find jar files
+      jars.foreach { url =>
+        JarUtils.checkJarFile(url)
+        dependencies = dependencies += url
+      }
+      // find jar files in library directories
+      libraries.foreach { libUrl =>
+        val dir: File = new File(libUrl.toURI)
+        if (!dir.isDirectory) throw new SqlClientException("Directory expected: " + dir)
+        else if (!dir.canRead) throw new SqlClientException("Directory cannot be read: " + dir)
+        val files: Array[File] = dir.listFiles
+        if (files == null) throw new SqlClientException("Directory cannot be read: " + dir)
+        files.foreach { f =>
+          // only consider jars
+          if (f.isFile && f.getAbsolutePath.toLowerCase.endsWith(".jar")) {
+            val url: URL = f.toURI.toURL
+            JarUtils.checkJarFile(url)
+            dependencies = dependencies += url
+          }
+        }
+      }
+      dependencies.toList
+    } catch {
+      case e: Exception =>
+        throw KyuubiSQLException(s"Could not load all required JAR files.", e)
     }
   }
 }
