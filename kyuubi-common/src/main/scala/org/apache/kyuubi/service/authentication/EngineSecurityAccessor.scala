@@ -24,7 +24,7 @@ import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 
-class EngineSecureAccessor(conf: KyuubiConf, val isServer: Boolean) {
+class EngineSecurityAccessor(conf: KyuubiConf, val isServer: Boolean) {
   val cryptoKeyLengthBytes = conf.get(ENGINE_SECURITY_CRYPTO_KEY_LENGTH) / java.lang.Byte.SIZE
   val cryptoIvLength = conf.get(ENGINE_SECURITY_CRYPTO_IV_LENGTH)
   val cryptoKeyAlgorithm = conf.get(ENGINE_SECURITY_CRYPTO_KEY_ALGORITHM)
@@ -108,16 +108,16 @@ class EngineSecureAccessor(conf: KyuubiConf, val isServer: Boolean) {
   }
 }
 
-object EngineSecureAccessor extends Logging {
-  @volatile private var _secureAccessor: EngineSecureAccessor = _
+object EngineSecurityAccessor extends Logging {
+  @volatile private var _engineSecurityAccessor: EngineSecurityAccessor = _
 
   def initialize(conf: KyuubiConf, isServer: Boolean): Unit = {
-    if (_secureAccessor == null) {
-      _secureAccessor = new EngineSecureAccessor(conf, isServer)
+    if (_engineSecurityAccessor == null) {
+      _engineSecurityAccessor = new EngineSecurityAccessor(conf, isServer)
     }
   }
 
-  def get(): EngineSecureAccessor = {
-    _secureAccessor
+  def get(): EngineSecurityAccessor = {
+    _engineSecurityAccessor
   }
 }
