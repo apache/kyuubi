@@ -123,6 +123,9 @@ if [ ! "$(command -v "$MVN")" ] ; then
     exit -1;
 fi
 
+echo "MVN is set to $MVN"
+
+
 VERSION=$("$MVN" help:evaluate -Dexpression=project.version $@ 2>/dev/null\
     | grep -v "INFO"\
     | grep -v "WARNING"\
