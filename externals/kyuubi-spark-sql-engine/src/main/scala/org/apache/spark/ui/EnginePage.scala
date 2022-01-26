@@ -62,30 +62,30 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
         <strong>Started at: </strong>
         {new Date(parent.startTime)}
       </li>
-      {
-        parent.engine.map { engine =>
-          <li>
+    {
+      parent.engine.map { engine =>
+        <li>
             <strong>Latest Logout at: </strong>
             {new Date(engine.backendService.sessionManager.latestLogoutTime)}
           </li>
-        }.getOrElse(Seq.empty)
-      }
+      }.getOrElse(Seq.empty)
+    }
       <li>
         <strong>Time since start: </strong>
         {formatDurationVerbose(timeSinceStart)}
       </li>
-      {
-        parent.engine.map { engine =>
-          <li>
-            <strong>Background execution pool threads alive: </strong>
-            {engine.backendService.sessionManager.getExecPoolSize}
-          </li>
-            <li>
-              <strong>Background execution pool threads active: </strong>
-              {engine.backendService.sessionManager.getActiveCount}
-            </li>
-        }.getOrElse(Seq.empty)
-      }
+    {
+      parent.engine.map { engine =>
+        <li>
+          <strong>Background execution pool threads alive: </strong>
+          {engine.backendService.sessionManager.getExecPoolSize}
+        </li>
+        <li>
+          <strong>Background execution pool threads active: </strong>
+          {engine.backendService.sessionManager.getActiveCount}
+        </li>
+      }.getOrElse(Seq.empty)
+    }
     </ul>
   }
 

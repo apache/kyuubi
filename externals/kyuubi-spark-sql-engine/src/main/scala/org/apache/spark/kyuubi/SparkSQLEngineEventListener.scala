@@ -26,7 +26,8 @@ import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_UI_SESSION_LIMIT, ENGINE_UI_STATEMENT_LIMIT}
 import org.apache.kyuubi.engine.spark.events.{SessionEvent, SparkOperationEvent}
 
-class SparkSQLEngineEventListener(kvstore: ElementTrackingStore,
+class SparkSQLEngineEventListener(
+    kvstore: ElementTrackingStore,
     sparkConf: SparkConf,
     kyuubiConf: KyuubiConf) extends SparkListener {
 

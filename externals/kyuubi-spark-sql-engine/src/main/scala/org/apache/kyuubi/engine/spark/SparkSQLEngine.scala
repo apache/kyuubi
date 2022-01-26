@@ -48,8 +48,8 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     val listener = new SparkSQLEngineListener(this)
     spark.sparkContext.addSparkListener(listener)
     val kvStore = SparkContextHelper.getKvStore(spark.sparkContext)
-    val engineEventListener = new SparkSQLEngineEventListener(kvStore,
-      spark.sparkContext.getConf, conf)
+    val engineEventListener =
+      new SparkSQLEngineEventListener(kvStore, spark.sparkContext.getConf, conf)
     spark.sparkContext.addSparkListener(engineEventListener)
     super.initialize(conf)
   }
@@ -149,8 +149,11 @@ object SparkSQLEngine extends Logging {
         engine.start()
         val kvStore = SparkContextHelper.getKvStore(spark.sparkContext)
         val store = new EngineEventsStore(kvStore)
-        ui.EngineTab(Some(engine), SparkContextHelper.getSparkUI(spark.sparkContext),
-          store, kyuubiConf)
+        ui.EngineTab(
+          Some(engine),
+          SparkContextHelper.getSparkUI(spark.sparkContext),
+          store,
+          kyuubiConf)
         val event = EngineEvent(engine)
         info(event)
         EventLoggingService.onEvent(event)

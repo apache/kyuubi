@@ -19,6 +19,4 @@ package org.apache.kyuubi.engine.spark.events
 
 import org.apache.kyuubi.KyuubiFunSuite
 
-class EngineEventsStoreSuite extends KyuubiFunSuite {
-
-}
+class EngineEventsStoreSuite extends KyuubiFunSuite {}

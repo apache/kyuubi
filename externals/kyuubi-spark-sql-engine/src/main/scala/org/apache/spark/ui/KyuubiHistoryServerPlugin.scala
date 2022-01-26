@@ -40,8 +40,7 @@ class KyuubiHistoryServerPlugin extends AppHistoryServerPlugin {
         None,
         Some(ui),
         store,
-        kyuubiConf
-      )
+        kyuubiConf)
     }
   }
 

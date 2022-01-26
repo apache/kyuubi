@@ -55,29 +55,30 @@ case class EngineSessionPage(parent: EngineTab)
   }
 
   /** Generate basic stats of the engine server */
-  private def generateBasicStats(): Seq[Node] = if (parent.engine != null) {
-    val timeSinceStart = parent.endTime() - parent.startTime
-    <ul class ="list-unstyled">
-      <li>
-        <strong>Started at: </strong>
-        {new Date(parent.startTime)}
-      </li>
+  private def generateBasicStats(): Seq[Node] =
+    if (parent.engine != null) {
+      val timeSinceStart = parent.endTime() - parent.startTime
+      <ul class ="list-unstyled">
+        <li>
+          <strong>Started at: </strong>
+          {new Date(parent.startTime)}
+        </li>
       {
         parent.engine.map { engine =>
           <li>
-            <strong>Latest Logout at: </strong>
-            {new Date(engine.backendService.sessionManager.latestLogoutTime)}
-          </li>
+              <strong>Latest Logout at: </strong>
+              {new Date(engine.backendService.sessionManager.latestLogoutTime)}
+            </li>
         }.getOrElse(Seq.empty)
       }
-      <li>
-        <strong>Time since start: </strong>
-        {formatDurationVerbose(timeSinceStart)}
-      </li>
-    </ul>
-  } else {
-    Seq.empty
-  }
+        <li>
+          <strong>Time since start: </strong>
+          {formatDurationVerbose(timeSinceStart)}
+        </li>
+      </ul>
+    } else {
+      Seq.empty
+    }
 
   /** Generate stats of batch statements of the engine server */
   private def generateSQLStatsTable(request: HttpServletRequest, sessionID: String): Seq[Node] = {

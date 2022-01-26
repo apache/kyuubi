@@ -60,7 +60,7 @@ case class SessionEvent(
   }
 
   @JsonIgnore @KVIndex("endTime")
-  private def endTimeIndex: Long = if (endTime > 0L ) endTime else -1L
+  private def endTimeIndex: Long = if (endTime > 0L) endTime else -1L
 }
 
 object SessionEvent {

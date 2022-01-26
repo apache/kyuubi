@@ -74,7 +74,7 @@ case class SparkOperationEvent(
   }
 
   @JsonIgnore @KVIndex("completeTime")
-  private def completeTimeIndex: Long = if (completeTime > 0L ) completeTime else -1L
+  private def completeTimeIndex: Long = if (completeTime > 0L) completeTime else -1L
 }
 
 object SparkOperationEvent {
