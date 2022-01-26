@@ -42,7 +42,8 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
       }
       thread.start()
       thread.join()
-      assert(logAppender.loggingEvents.exists(_.getRenderedMessage.contains(searchString)))
+      assert(logAppender.loggingEvents.exists(
+        _.getMessage.getFormattedMessage.contains(searchString)))
     }
   }
 
@@ -66,7 +67,8 @@ class ServiceControlCliArgumentsSuite extends KyuubiFunSuite {
       }
       thread.start()
       thread.join()
-      assert(logAppender.loggingEvents.exists(_.getRenderedMessage.contains(searchString)))
+      assert(logAppender.loggingEvents.exists(
+        _.getMessage.getFormattedMessage.contains(searchString)))
     }
   }
 

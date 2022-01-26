@@ -72,6 +72,10 @@ jetty-util/9.4.41.v20210516//jetty-util-9.4.41.v20210516.jar
 jline/0.9.94//jline-0.9.94.jar
 libfb303/0.9.3//libfb303-0.9.3.jar
 libthrift/0.9.3//libthrift-0.9.3.jar
+log4j-1.2-api/2.17.1//log4j-1.2-api-2.17.1.jar
+log4j-api/2.17.1//log4j-api-2.17.1.jar
+log4j-core/2.17.1//log4j-core-2.17.1.jar
+log4j-slf4j-impl/2.17.1//log4j-slf4j-impl-2.17.1.jar
 log4j/1.2.17//log4j-1.2.17.jar
 metrics-core/4.1.1//metrics-core-4.1.1.jar
 metrics-jmx/4.1.1//metrics-jmx-4.1.1.jar
