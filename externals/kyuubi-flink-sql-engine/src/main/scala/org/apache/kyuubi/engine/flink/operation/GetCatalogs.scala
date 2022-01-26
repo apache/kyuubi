@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import scala.collection.JavaConverters._
-
 import org.apache.kyuubi.engine.flink.result.ResultSetUtil
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT

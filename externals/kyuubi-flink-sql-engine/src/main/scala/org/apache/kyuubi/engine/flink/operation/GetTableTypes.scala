@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import scala.collection.JavaConverters.seqAsJavaListConverter
-
 import org.apache.kyuubi.engine.flink.result.{Constants, ResultSetUtil}
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_TYPE
