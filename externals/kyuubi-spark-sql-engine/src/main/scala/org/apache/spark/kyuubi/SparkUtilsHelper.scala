@@ -19,6 +19,7 @@ package org.apache.spark.kyuubi
 
 import scala.util.matching.Regex
 
+import org.apache.spark.SparkConf
 import org.apache.spark.util.Utils
 
 import org.apache.kyuubi.Logging
@@ -34,5 +35,12 @@ object SparkUtilsHelper extends Logging {
    */
   def redact(regex: Option[Regex], text: String): String = {
     Utils.redact(regex, text)
+  }
+
+  /**
+   * Get the path of a temporary directory.
+   */
+  def getLocalDir(conf: SparkConf): String = {
+    Utils.getLocalDir(conf)
   }
 }

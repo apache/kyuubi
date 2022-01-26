@@ -112,6 +112,9 @@ pub   rsa4096 2021-08-30 [SC]
 uid           [ultimate] Cheng Pan <chengpan@apache.org>
 sub   rsa4096 2021-08-30 [E]
 ```
+
+> Note: To follow the [Apache's release specification](https://infra.apache.org/release-signing.html#note), all new RSA keys generated should be at least 4096 bits. Do not generate new DSA keys.
+
 Here, the key ID is the 8-digit hex string in the pub line: `29BCC75D`.
 
 To export the PGP public key, using:
@@ -128,12 +131,21 @@ The last step is to update the KEYS file with your code signing key
 https://www.apache.org/dev/openpgp.html#export-public-key
 
 ```shell
-svn checkout --depth=files "https://dist.apache.org/repos/dist/dev/incubator/kyuubi" work/svn-kyuubi
-(gpg --list-sigs "${ASF_USERNAME}@apache.org" && gpg --export --armor "${ASF_USERNAME}@apache.org") >> KEYS
+svn checkout --depth=files "https://dist.apache.org/repos/dist/release/incubator/kyuubi" work/svn-kyuubi
+
+(gpg --list-sigs "${ASF_USERNAME}@apache.org" && gpg --export --armor "${ASF_USERNAME}@apache.org") >> work/svn-kyuubi/KEYS
+
 svn commit --username "${ASF_USERNAME}" --password "${ASF_PASSWORD}" --message "Update KEYS" work/svn-kyuubi
 ```
 
-## Cut branch iff for major release
+In order to make yourself have the right permission to stage java artifacts in Apache Nexus staging repository, please submit your GPG public key to ubuntu server via
+
+```shell
+gpg --keyserver hkp://keyserver.ubuntu.com --send-keys ${PUBLIC_KEY} # send public key to ubuntu server
+gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys ${PUBLIC_KEY} # verify
+```
+
+## Cut branch if for major release
 
 Kyuubi use version pattern `{MAJOR_VERSION}.{MINOR_VERSION}.{PATCH_VERSION}[-{OPTIONAL_SUFFIX}]`, e.g. `1.3.0-incubating`.
 __Major Release__ means `MAJOR_VERSION` or `MINOR_VERSION` changed, and __Patch Release__ means `PATCH_VERSION` changed.
@@ -141,11 +153,15 @@ __Major Release__ means `MAJOR_VERSION` or `MINOR_VERSION` changed, and __Patch 
 The main step towards preparing a major release is to create a release branch. This is done via standard Git branching
 mechanism and should be announced to the community once the branch is created.
 
+> Note: If you are releasing a patch version, you can ignore this step.
+
 The release branch pattern is `branch-{MAJOR_VERSION}.{MINOR_VERSION}`, e.g. `branch-1.3`.
 
 After cutting release branch, don't forget bump version in `master` branch.
 
 ## Build a release candidate
+
+> Don't forget to switch to the release branch!  
 
 1. Set environment variables.
 
@@ -174,6 +190,8 @@ staging Maven repo.
 ```shell
 build/release/release.sh publish
 ```
+
+To make your release available in the staging repository, you must close the staging repo in the [Apache Nexus](https://repository.apache.org/#stagingRepositories). Until you close, you can re-run deploying to staging multiple times. But once closed, it will create a new staging repo. So ensure you close this, so that the next RC (if need be) is on a new repo. Once everything is good, close the staging repository on Apache Nexus.
 
 ## Vote on the release candidate
 

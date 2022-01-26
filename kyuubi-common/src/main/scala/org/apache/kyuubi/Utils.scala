@@ -24,6 +24,7 @@ import java.nio.file.{Files, Path, Paths}
 import java.util.{Properties, TimeZone, UUID}
 
 import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
 
 import org.apache.commons.lang3.SystemUtils
 import org.apache.commons.lang3.time.DateFormatUtils
@@ -256,5 +257,14 @@ object Utils extends Logging {
     e.printStackTrace(wrt)
     wrt.close()
     stm.toString
+  }
+
+  def tryLogNonFatalError(block: => Unit): Unit = {
+    try {
+      block
+    } catch {
+      case NonFatal(t) =>
+        error(s"Uncaught exception in thread ${Thread.currentThread().getName}", t)
+    }
   }
 }

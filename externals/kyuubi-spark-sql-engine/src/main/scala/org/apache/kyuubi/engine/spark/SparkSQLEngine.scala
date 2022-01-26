@@ -24,10 +24,11 @@ import scala.util.control.NonFatal
 
 import org.apache.spark.{ui, SparkConf}
 import org.apache.spark.kyuubi.{SparkContextHelper, SparkSQLEngineEventListener, SparkSQLEngineListener}
-import org.apache.spark.repl.Main
+import org.apache.spark.kyuubi.SparkSQLEngineListener
+import org.apache.spark.kyuubi.SparkUtilsHelper.getLocalDir
 import org.apache.spark.sql.SparkSession
 
-import org.apache.kyuubi.{KyuubiException, Logging}
+import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.Utils._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
@@ -80,13 +81,15 @@ object SparkSQLEngine extends Logging {
 
   def createSpark(): SparkSession = {
     val sparkConf = new SparkConf()
+    val rootDir = sparkConf.getOption("spark.repl.classdir").getOrElse(getLocalDir(sparkConf))
+    val outputDir = Utils.createTempDir(root = rootDir, namePrefix = "repl")
     sparkConf.setIfMissing("spark.sql.execution.topKSortFallbackThreshold", "10000")
     sparkConf.setIfMissing("spark.sql.legacy.castComplexTypesToString.enabled", "true")
     sparkConf.setIfMissing("spark.master", "local")
     sparkConf.setIfMissing("spark.ui.port", "0")
     // register the repl's output dir with the file server.
     // see also `spark.repl.classdir`
-    sparkConf.set("spark.repl.class.outputDir", Main.outputDir.getAbsolutePath)
+    sparkConf.set("spark.repl.class.outputDir", outputDir.toFile.getAbsolutePath)
     sparkConf.setIfMissing(
       "spark.hadoop.mapreduce.input.fileinputformat.list-status.num-threads",
       "20")
