@@ -22,11 +22,11 @@ set -e
 
 RELEASE_DIR="$(cd "$(dirname "$0")"/..; pwd)"
 ######### Please modify the variables ##########
-# release version, e.g. 1.4.0-incubating
+# release version, e.g. v1.4.0-incubating
 release_version=${release_version:-""}
-# release candidate number, e.g. 2
+# release candidate number, e.g. rc2
 release_rc_no=${release_rc_no:-""}
-# previous release candidate number, e.g. 1, could be empty if it is the first vote
+# previous release candidate number, e.g. rc1, could be empty if it is the first vote
 prev_release_rc_no=${prev_release_rc_no:-""}
 # staging repository number, check it under https://repository.apache.org/content/repositories
 repo_no=${repo_no:-""}
