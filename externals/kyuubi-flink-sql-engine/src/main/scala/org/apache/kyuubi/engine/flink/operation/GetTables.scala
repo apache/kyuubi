@@ -23,7 +23,7 @@ import scala.util.{Failure, Success, Try}
 import org.apache.commons.lang3.StringUtils
 import org.apache.flink.table.catalog.ObjectIdentifier
 
-import org.apache.kyuubi.engine.flink.result.{Constants, OperationUtil}
+import org.apache.kyuubi.engine.flink.result.{Constants, ResultSetUtil}
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.session.Session
 
@@ -65,7 +65,7 @@ class GetTables(
           }
       }
 
-      resultSet = OperationUtil.stringListToResultSet(tables.asJava, Constants.SHOW_TABLES_RESULT)
+      resultSet = ResultSetUtil.stringListToResultSet(tables.asJava, Constants.SHOW_TABLES_RESULT)
     } catch onError()
   }
 }

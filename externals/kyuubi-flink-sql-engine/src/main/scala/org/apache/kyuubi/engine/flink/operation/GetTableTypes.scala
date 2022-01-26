@@ -19,7 +19,7 @@ package org.apache.kyuubi.engine.flink.operation
 
 import scala.collection.JavaConverters.seqAsJavaListConverter
 
-import org.apache.kyuubi.engine.flink.result.{Constants, OperationUtil}
+import org.apache.kyuubi.engine.flink.result.{Constants, ResultSetUtil}
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_TYPE
 import org.apache.kyuubi.session.Session
@@ -29,6 +29,6 @@ class GetTableTypes(session: Session)
 
   override protected def runInternal(): Unit = {
     val tableTypes = Constants.SUPPORTED_TABLE_TYPES.toList.asJava
-    resultSet = OperationUtil.stringListToResultSet(tableTypes, TABLE_TYPE)
+    resultSet = ResultSetUtil.stringListToResultSet(tableTypes, TABLE_TYPE)
   }
 }

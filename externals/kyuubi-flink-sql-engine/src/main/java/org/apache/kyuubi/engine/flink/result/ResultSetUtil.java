@@ -19,14 +19,13 @@
 package org.apache.kyuubi.engine.flink.result;
 
 import java.util.List;
-
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.ResultKind;
 import org.apache.flink.table.catalog.Column;
 import org.apache.flink.types.Row;
 
-/** Utility class for flink operation. */
-public class OperationUtil {
+/** Utility class for flink result sets. */
+public class ResultSetUtil {
 
   public static ResultSet stringListToResultSet(List<String> strings, String columnName) {
     Row[] rows = strings.stream().map(Row::of).toArray(Row[]::new);
