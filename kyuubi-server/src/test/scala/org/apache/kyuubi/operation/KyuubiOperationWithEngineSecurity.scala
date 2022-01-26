@@ -28,7 +28,7 @@ import org.apache.kyuubi.ha.HighAvailabilityConf
 import org.apache.kyuubi.ha.client.ZooKeeperClientProvider
 import org.apache.kyuubi.service.authentication.{EngineSecurityAccessor, ZooKeeperEngineSecuritySecretProviderImpl}
 
-class KyuubiOperationWithEngineSecurity extends WithKyuubiServer with SparkQueryTests {
+class KyuubiOperationWithEngineSecurity extends WithKyuubiServer with HiveJDBCTestHelper {
   import ZooKeeperClientProvider._
 
   override protected def jdbcUrl: String = getJdbcUrl
@@ -59,5 +59,13 @@ class KyuubiOperationWithEngineSecurity extends WithKyuubiServer with SparkQuery
 
     conf.set(KyuubiConf.ENGINE_SECURITY_ENABLED, true)
     EngineSecurityAccessor.initialize(conf, true)
+  }
+
+  test("engine security") {
+    withJdbcStatement() { statement =>
+      val rs = statement.executeQuery(s"set spark.${KyuubiConf.ENGINE_SECURITY_ENABLED.key}")
+      assert(rs.next())
+      assert(rs.getString(2).contains("true"))
+    }
   }
 }
