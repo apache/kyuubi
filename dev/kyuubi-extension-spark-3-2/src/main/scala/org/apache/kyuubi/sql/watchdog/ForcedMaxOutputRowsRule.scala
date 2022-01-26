@@ -18,7 +18,8 @@
 package org.apache.kyuubi.sql.watchdog
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, LogicalPlan, WithCTE}
+import org.apache.spark.sql.catalyst.plans.logical.{Aggregate, CommandResult, LogicalPlan, Union, WithCTE}
+import org.apache.spark.sql.execution.command.DataWritingCommand
 
 case class ForcedMaxOutputRowsRule(sparkSession: SparkSession) extends ForcedMaxOutputRowsBase {
 
@@ -26,7 +27,14 @@ case class ForcedMaxOutputRowsRule(sparkSession: SparkSession) extends ForcedMax
 
   override protected def canInsertLimitInner(p: LogicalPlan): Boolean = p match {
     case WithCTE(plan, _) => this.canInsertLimitInner(plan)
-    case plan: LogicalPlan => super.canInsertLimitInner(plan)
+    case plan: LogicalPlan => plan match {
+        case Union(children, _, _) => !children.exists {
+            case _: DataWritingCommand => true
+            case p: CommandResult if p.commandLogicalPlan.isInstanceOf[DataWritingCommand] => true
+            case _ => false
+          }
+        case _ => super.canInsertLimitInner(plan)
+      }
   }
 
   override protected def canInsertLimit(p: LogicalPlan, maxOutputRowsOpt: Option[Int]): Boolean = {

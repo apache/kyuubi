@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.sql.watchdog
 
-import org.apache.spark.sql.catalyst.analysis.AnalysisContext
+import org.apache.spark.sql.catalyst.analysis.{AnalysisContext, MultiInstanceRelation}
 import org.apache.spark.sql.catalyst.dsl.expressions._
 import org.apache.spark.sql.catalyst.expressions.Alias
 import org.apache.spark.sql.catalyst.plans.logical._
@@ -69,6 +69,7 @@ trait ForcedMaxOutputRowsBase extends Rule[LogicalPlan] {
       } else {
         true
       }
+    case _: MultiInstanceRelation => true
     case _ => false
   }
 
