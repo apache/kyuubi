@@ -18,41 +18,22 @@
 
 package org.apache.kyuubi.engine.flink.result;
 
-import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.ResultKind;
 import org.apache.flink.table.catalog.Column;
-import org.apache.flink.table.types.DataType;
-import org.apache.flink.table.types.logical.VarCharType;
 import org.apache.flink.types.Row;
 
 /** Utility class for flink operation. */
 public class OperationUtil {
 
   public static ResultSet stringListToResultSet(List<String> strings, String columnName) {
-    List<Row> data = new ArrayList<>();
-    boolean isNullable = false;
-    int maxLength = VarCharType.DEFAULT_LENGTH;
-
-    for (String str : strings) {
-      if (str == null) {
-        isNullable = true;
-      } else {
-        maxLength = Math.max(str.length(), maxLength);
-        data.add(Row.of(str));
-      }
-    }
-
-    DataType dataType = DataTypes.VARCHAR(maxLength);
-    if (!isNullable) {
-      dataType.notNull();
-    }
-
+    Row[] rows = strings.stream().map(Row::of).toArray(Row[]::new);
     return ResultSet.builder()
         .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
-        .columns(Column.physical(columnName, dataType))
-        .data(data.toArray(new Row[0]))
+        .columns(Column.physical(columnName, DataTypes.STRING()))
+        .data(rows)
         .build();
   }
 
