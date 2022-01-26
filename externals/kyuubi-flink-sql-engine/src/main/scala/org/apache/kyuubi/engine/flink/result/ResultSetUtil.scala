@@ -22,9 +22,12 @@ import org.apache.flink.table.api.ResultKind
 import org.apache.flink.table.catalog.Column
 import org.apache.flink.types.Row
 
-/** Util for flink result sets. */
+/** Utility object for building ResultSet. */
 object ResultSetUtil {
 
+  /**
+   * Build a ResultSet with a column name and a list of String values.
+   */
   def stringListToResultSet(strings: List[String], columnName: String): ResultSet = {
     val rows: Array[Row] = strings.map(s => Row.of(s)).toArray
     ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT).columns(Column.physical(
@@ -33,11 +36,11 @@ object ResultSetUtil {
   }
 
   /**
-   * Build a simple result with OK message. Returned when SQL commands are executed successfully.
+   * Build a simple ResultSet with OK message. Returned when SQL commands are executed successfully.
    * Noted that a new ResultSet is returned each time, because ResultSet is stateful (with its
    * cursor).
    *
-   * @return A simple result with OK message.
+   * @return A simple ResultSet with OK message.
    */
   def successResultSet: ResultSet =
     ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT).columns(Column.physical(
