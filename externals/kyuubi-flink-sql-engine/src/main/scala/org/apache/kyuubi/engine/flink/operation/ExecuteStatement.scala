@@ -198,7 +198,7 @@ class ExecuteStatement(
       // reset all properties
       executor.resetSessionProperties(sessionId)
     }
-    resultSet = ResultSetUtil.successResultSet()
+    resultSet = ResultSetUtil.successResultSet
     setState(OperationState.FINISHED)
   }
 

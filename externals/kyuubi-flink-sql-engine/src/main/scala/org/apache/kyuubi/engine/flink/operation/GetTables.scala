@@ -65,7 +65,7 @@ class GetTables(
           }
       }
 
-      resultSet = ResultSetUtil.stringListToResultSet(tables.asJava, Constants.SHOW_TABLES_RESULT)
+      resultSet = ResultSetUtil.stringListToResultSet(tables.toList, Constants.SHOW_TABLES_RESULT)
     } catch onError()
   }
 }
