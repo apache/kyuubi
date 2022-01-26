@@ -33,12 +33,11 @@ class ZooKeeperEngineSecuritySecretProviderImpl extends EngineSecuritySecretProv
   }
 
   override def getSecret(): String = {
-    var secret: String = ""
     conf.get(HA_ZK_ENGINE_SECURE_SECRET_NODE).map { zkNode =>
-      withZkClient(conf) { zkClient =>
-        secret = new String(zkClient.getData.forPath(zkNode), StandardCharsets.UTF_8)
+      withZkClient[String](conf) { zkClient =>
+        new String(zkClient.getData.forPath(zkNode), StandardCharsets.UTF_8)
       }
-    }
-    secret
+    }.getOrElse(
+      throw new IllegalArgumentException(s"${HA_ZK_ENGINE_SECURE_SECRET_NODE.key} is not defined"))
   }
 }

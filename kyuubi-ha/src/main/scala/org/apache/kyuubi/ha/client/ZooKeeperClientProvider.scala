@@ -97,7 +97,7 @@ object ZooKeeperClientProvider extends Logging {
   /**
    * Creates a zookeeper client before calling `f` and close it after calling `f`.
    */
-  def withZkClient(conf: KyuubiConf)(f: CuratorFramework => Unit): Unit = {
+  def withZkClient[T](conf: KyuubiConf)(f: CuratorFramework => T): T = {
     val zkClient = buildZookeeperClient(conf)
     try {
       zkClient.start()

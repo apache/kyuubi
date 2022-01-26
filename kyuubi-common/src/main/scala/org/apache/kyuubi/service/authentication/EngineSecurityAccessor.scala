@@ -89,6 +89,7 @@ class EngineSecurityAccessor(conf: KyuubiConf, val isServer: Boolean) {
 
   private def hexStringToByteArray(str: String): Array[Byte] = {
     val len = str.length
+    assert(len % 2 == 0)
     val data = new Array[Byte](len / 2)
     var i = 0
     while (i < len) {
