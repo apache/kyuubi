@@ -17,9 +17,7 @@
 
 package org.apache.kyuubi.engine.flink.operation
 
-import scala.collection.JavaConverters._
-
-import org.apache.kyuubi.engine.flink.result.OperationUtil
+import org.apache.kyuubi.engine.flink.result.ResultSetUtil
 import org.apache.kyuubi.operation.OperationType
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
 import org.apache.kyuubi.session.Session
@@ -30,8 +28,8 @@ class GetCatalogs(session: Session)
   override protected def runInternal(): Unit = {
     try {
       val tableEnv = sessionContext.getExecutionContext.getTableEnvironment
-      val catalogs = tableEnv.listCatalogs.toList.asJava
-      resultSet = OperationUtil.stringListToResultSet(catalogs, TABLE_CAT)
+      val catalogs = tableEnv.listCatalogs.toList
+      resultSet = ResultSetUtil.stringListToResultSet(catalogs, TABLE_CAT)
     } catch onError()
   }
 }

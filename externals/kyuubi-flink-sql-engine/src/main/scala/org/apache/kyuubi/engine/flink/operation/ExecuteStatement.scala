@@ -32,7 +32,7 @@ import org.apache.flink.table.operations.command.{ResetOperation, SetOperation}
 import org.apache.flink.types.Row
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.engine.flink.result.{OperationUtil, ResultSet}
+import org.apache.kyuubi.engine.flink.result.{ResultSet, ResultSetUtil}
 import org.apache.kyuubi.operation.{OperationState, OperationType}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -198,7 +198,7 @@ class ExecuteStatement(
       // reset all properties
       executor.resetSessionProperties(sessionId)
     }
-    resultSet = OperationUtil.successResultSet()
+    resultSet = ResultSetUtil.successResultSet
     setState(OperationState.FINISHED)
   }
 
