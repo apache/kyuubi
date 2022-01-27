@@ -62,7 +62,7 @@ abstract class SparkOperation(opType: OperationType, session: Session)
   protected def cleanup(targetState: OperationState): Unit = state.synchronized {
     if (!isTerminalState(state)) {
       setState(targetState)
-      Option(getBackgroundHandle).foreach(_.cancel(true))
+      if (shouldRunAsync) Option(getBackgroundHandle).foreach(_.cancel(true))
       if (!spark.sparkContext.isStopped) spark.sparkContext.cancelJobGroup(statementId)
     }
   }

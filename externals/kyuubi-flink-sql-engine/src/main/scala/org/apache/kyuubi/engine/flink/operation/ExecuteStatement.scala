@@ -75,11 +75,18 @@ class ExecuteStatement(
       val asyncOperation = new Runnable {
         override def run(): Unit = {
           OperationLog.setCurrentOperationLog(operationLog)
+          val sessionHandle = session.sessionManager.openSession(
+            session.protocol,
+            session.user,
+            session.password,
+            session.ipAddress,
+            session.conf)
+          executeStatement()
+          session.sessionManager.closeSession(sessionHandle)
         }
       }
 
       try {
-        executeStatement()
         val flinkSQLSessionManager = session.sessionManager
         val backgroundHandle = flinkSQLSessionManager.submitBackgroundOperation(asyncOperation)
         setBackgroundHandle(backgroundHandle)

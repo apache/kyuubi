@@ -323,9 +323,6 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
 
   test("basic open | execute | close") {
     withThriftClient { client =>
-      val operationManager =
-        engine.backendService.sessionManager.operationManager.asInstanceOf[SparkSQLOperationManager]
-
       val req = new TOpenSessionReq()
       req.setUsername("kentyao")
       req.setPassword("anonymous")
