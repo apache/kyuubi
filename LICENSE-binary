@@ -285,6 +285,8 @@ javax.xml.bind:jaxb-api    https://github.com/javaee/jaxb-v2
 
 MIT License
 -----------
+org.slf4j:slf4j-api
 org.slf4j:slf4j-log4j12
+org.slf4j:jcl-over-slf4j
 com.github.scopt:scopt_*
 io.github.classgraph:classgraph
