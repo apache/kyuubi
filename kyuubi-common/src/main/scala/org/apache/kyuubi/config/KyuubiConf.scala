@@ -1070,6 +1070,59 @@ object KyuubiConf {
       .stringConf
       .createWithDefault("engine_operation_logs")
 
+  val ENGINE_SECURITY_ENABLED: ConfigEntry[Boolean] =
+    buildConf("engine.security.enabled")
+      .doc("Whether to enable the internal secure access between Kyuubi server and engine.")
+      .version("1.5.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val ENGINE_SECURITY_TOKEN_MAX_LIFETIME: ConfigEntry[Long] =
+    buildConf("engine.security.token.max.lifetime")
+      .doc("The max lifetime of the token used for secure access between Kyuubi server and engine.")
+      .version("1.5.0")
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(10).toMillis)
+
+  val ENGINE_SECURITY_SECRET_PROVIDER: ConfigEntry[String] =
+    buildConf("engine.security.secret.provider")
+      .doc("The class used to manage the engine security secret. This class must be a " +
+        "subclass of EngineSecuritySecretProvider.")
+      .version("1.5.0")
+      .stringConf
+      .createWithDefault(
+        "org.apache.kyuubi.service.authentication.ZooKeeperEngineSecuritySecretProviderImpl")
+
+  val ENGINE_SECURITY_CRYPTO_KEY_LENGTH: ConfigEntry[Int] =
+    buildConf("engine.security.crypto.keyLength")
+      .doc("The length in bits of the encryption key to generate. " +
+        "Valid values are 128, 192 and 256")
+      .version("1.5.0")
+      .intConf
+      .checkValues(Set(128, 192, 256))
+      .createWithDefault(128)
+
+  val ENGINE_SECURITY_CRYPTO_IV_LENGTH: ConfigEntry[Int] =
+    buildConf("engine.security.crypto.ivLength")
+      .doc("Initial vector length, in bytes.")
+      .version("1.5.0")
+      .intConf
+      .createWithDefault(16)
+
+  val ENGINE_SECURITY_CRYPTO_KEY_ALGORITHM: ConfigEntry[String] =
+    buildConf("engine.security.crypto.keyAlgorithm")
+      .doc("The algorithm for generated secret keys.")
+      .version("1.5.0")
+      .stringConf
+      .createWithDefault("AES")
+
+  val ENGINE_SECURITY_CRYPTO_CIPHER_TRANSFORMATION: ConfigEntry[String] =
+    buildConf("engine.security.crypto.cipher")
+      .doc("The cipher transformation to use for encrypting engine access token.")
+      .version("1.5.0")
+      .stringConf
+      .createWithDefault("AES/CBC/PKCS5PADDING")
+
   val SESSION_NAME: OptionalConfigEntry[String] =
     buildConf("session.name")
       .doc("A human readable name of session and we use empty string by default. " +

@@ -29,6 +29,17 @@ object AuthenticationProviderFactory {
   @throws[AuthenticationException]
   def getAuthenticationProvider(
       method: AuthMethod,
+      conf: KyuubiConf,
+      isServer: Boolean = true): PasswdAuthenticationProvider = {
+    if (isServer) {
+      getAuthenticationProviderForServer(method, conf)
+    } else {
+      getAuthenticationProviderForEngine(conf)
+    }
+  }
+
+  private def getAuthenticationProviderForServer(
+      method: AuthMethod,
       conf: KyuubiConf): PasswdAuthenticationProvider = method match {
     case AuthMethods.NONE => new AnonymousAuthenticationProviderImpl
     case AuthMethods.LDAP => new LdapAuthenticationProviderImpl(conf)
@@ -56,5 +67,13 @@ object AuthenticationProviderFactory {
             s"$className must extend of PasswdAuthenticationProvider.")
       }
     case _ => throw new AuthenticationException("Not a valid authentication method")
+  }
+
+  private def getAuthenticationProviderForEngine(conf: KyuubiConf): PasswdAuthenticationProvider = {
+    if (conf.get(KyuubiConf.ENGINE_SECURITY_ENABLED)) {
+      new EngineSecureAuthenticationProviderImpl
+    } else {
+      new AnonymousAuthenticationProviderImpl
+    }
   }
 }
