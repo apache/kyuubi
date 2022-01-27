@@ -27,12 +27,18 @@ object ResultSetUtil {
 
   /**
    * Build a ResultSet with a column name and a list of String values.
+   *
+   * @param strings list of String values
+   * @param columnName name of the result column
+   * @return a ResultSet with a string column
    */
   def stringListToResultSet(strings: List[String], columnName: String): ResultSet = {
     val rows: Array[Row] = strings.map(s => Row.of(s)).toArray
-    ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT).columns(Column.physical(
-      columnName,
-      DataTypes.STRING)).data(rows).build
+    ResultSet.builder
+      .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+      .columns(Column.physical(columnName, DataTypes.STRING))
+      .data(rows)
+      .build
   }
 
   /**
@@ -40,10 +46,12 @@ object ResultSetUtil {
    * Noted that a new ResultSet is returned each time, because ResultSet is stateful (with its
    * cursor).
    *
-   * @return A simple ResultSet with OK message.
+   * @return a simple ResultSet with OK message.
    */
   def successResultSet: ResultSet =
-    ResultSet.builder.resultKind(ResultKind.SUCCESS_WITH_CONTENT).columns(Column.physical(
-      "result",
-      DataTypes.STRING)).data(Array[Row](Row.of("OK"))).build
+    ResultSet.builder
+      .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+      .columns(Column.physical("result", DataTypes.STRING))
+      .data(Array[Row](Row.of("OK")))
+      .build
 }
