@@ -24,6 +24,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import com.google.common.annotations.VisibleForTesting
+import org.apache.calcite.rel.metadata.{DefaultRelMetadataProvider, JaninoRelMetadataProvider, RelMetadataQueryBase}
 import org.apache.flink.table.api.{DataTypes, ResultKind}
 import org.apache.flink.table.catalog.Column
 import org.apache.flink.table.client.gateway.{Executor, TypedResult}
@@ -75,14 +76,7 @@ class ExecuteStatement(
       val asyncOperation = new Runnable {
         override def run(): Unit = {
           OperationLog.setCurrentOperationLog(operationLog)
-          val sessionHandle = session.sessionManager.openSession(
-            session.protocol,
-            session.user,
-            session.password,
-            session.ipAddress,
-            session.conf)
           executeStatement()
-          session.sessionManager.closeSession(sessionHandle)
         }
       }
 
@@ -107,6 +101,9 @@ class ExecuteStatement(
     try {
       setState(OperationState.RUNNING)
 
+      // set the thread variable THREAD_PROVIDERS
+      RelMetadataQueryBase.THREAD_PROVIDERS.set(
+        JaninoRelMetadataProvider.of(DefaultRelMetadataProvider.INSTANCE))
       val operation = executor.parseStatement(sessionId, statement)
       operation match {
         case queryOperation: QueryOperation => runQueryOperation(queryOperation)
