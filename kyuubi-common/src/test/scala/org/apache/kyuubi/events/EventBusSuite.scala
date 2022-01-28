@@ -17,6 +17,9 @@
 
 package org.apache.kyuubi.events
 
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.atomic.AtomicInteger
+
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
 
@@ -113,6 +116,30 @@ class EventBusSuite extends KyuubiFunSuite {
 
     EventBus.post(Test0KyuubiEvent("test0"))
     EventBus.post(Test1KyuubiEvent("test1"))
+  }
+
+  test("async event handler") {
+    val countDownLatch = new CountDownLatch(4)
+    val count = new AtomicInteger(0);
+    class Test0Handler extends EventHandler[Test0KyuubiEvent] {
+      override def apply(e: Test0KyuubiEvent): Unit = {
+        Thread.sleep(10)
+        count.getAndIncrement()
+        countDownLatch.countDown()
+      }
+    }
+    class Test1Handler extends EventHandler[Test0KyuubiEvent] {
+      override def apply(e: Test0KyuubiEvent): Unit = {
+        count.getAndIncrement()
+        countDownLatch.countDown()
+      }
+    }
+    EventBus.registerAsync[Test0KyuubiEvent](new Test0Handler)
+    EventBus.registerAsync[Test0KyuubiEvent](new Test1Handler)
+    EventBus.post(Test0KyuubiEvent("test0"))
+    EventBus.post(Test0KyuubiEvent("test1"))
+    countDownLatch.await()
+    assert(count.get() == 4)
   }
 
   test("combine with logging service") {

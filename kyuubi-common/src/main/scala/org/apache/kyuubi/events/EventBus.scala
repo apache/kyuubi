@@ -18,33 +18,64 @@
 package org.apache.kyuubi.events
 
 import scala.collection.mutable
+import scala.concurrent.{ExecutionContext, Future}
 import scala.reflect.{classTag, ClassTag}
+import scala.util.Try
+
+import org.apache.kyuubi.Logging
+import org.apache.kyuubi.util.ThreadUtils
 
 sealed trait EventBus {
   def post[T <: KyuubiEvent](event: T): Unit
+
   def register[T <: KyuubiEvent: ClassTag](et: EventHandler[T]): EventBus
+
+  def registerAsync[T <: KyuubiEvent: ClassTag](et: EventHandler[T]): EventBus
 }
 
-object EventBus {
+object EventBus extends Logging {
   private val defaultEventBus = EventBusLive()
 
   def apply(): EventBus = EventBusLive()
 
   // Exposed api
   def post[T <: KyuubiEvent](event: T): Unit = defaultEventBus.post[T](event)
+
   def register[T <: KyuubiEvent: ClassTag](et: EventHandler[T]): EventBus =
     defaultEventBus.register[T](et)
 
-  // TODO: Asynchronous execution of event handler
-  private case class EventBusLive(async: Boolean = false) extends EventBus {
+  def registerAsync[T <: KyuubiEvent: ClassTag](et: EventHandler[T]): EventBus =
+    defaultEventBus.registerAsync[T](et)
+
+  private case class EventBusLive() extends EventBus {
     private[this] val eventHandlerRegistry = new Registry
+    private[this] val asyncEventHandlerRegistry = new Registry
+    implicit private[this] val ec: ExecutionContext =
+      ExecutionContext.fromExecutor(
+        ThreadUtils.newDaemonQueuedThreadPool(10, 10, 60000L, "event-bus-exec-pool"))
 
     override def post[T <: KyuubiEvent](event: T): Unit = {
-      eventHandlerRegistry.lookup[T](event).foreach(_(event))
+      asyncEventHandlerRegistry.lookup[T](event).foreach { f =>
+        Future(f(event)).recover {
+          case e: Throwable =>
+            error("An error occurred during async event handler execution", e)
+        }
+      }
+      eventHandlerRegistry.lookup[T](event).foreach { f =>
+        Try(f(event)).recover {
+          case e: Throwable =>
+            error("An error occurred during sync event handler execution", e)
+        }
+      }
     }
 
     override def register[T <: KyuubiEvent: ClassTag](et: EventHandler[T]): EventBus = {
       eventHandlerRegistry.register(et)
+      this
+    }
+
+    override def registerAsync[T <: KyuubiEvent: ClassTag](et: EventHandler[T]): EventBus = {
+      asyncEventHandlerRegistry.register(et)
       this
     }
   }
@@ -73,7 +104,5 @@ object EventBus {
       } yield parent
       clazz :: parents
     }
-
   }
-
 }
