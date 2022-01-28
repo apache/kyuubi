@@ -214,8 +214,8 @@
 
         <repository>
             <id>iceberg-staging</id>
-            <name>Iceberg 0.13.0 RC1 Staging</name>
-            <url>https://repository.apache.org/content/repositories/orgapacheiceberg-1079/</url>
+            <name>Iceberg 0.13.0 RC2 Staging</name>
+            <url>https://repository.apache.org/content/repositories/orgapacheiceberg-1080/</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
