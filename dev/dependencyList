@@ -94,7 +94,6 @@ simpleclient_tracer_common/0.14.1//simpleclient_tracer_common-0.14.1.jar
 simpleclient_tracer_otel/0.14.1//simpleclient_tracer_otel-0.14.1.jar
 simpleclient_tracer_otel_agent/0.14.1//simpleclient_tracer_otel_agent-0.14.1.jar
 slf4j-api/1.7.30//slf4j-api-1.7.30.jar
-slf4j-log4j12/1.7.30//slf4j-log4j12-1.7.30.jar
 snakeyaml/1.27//snakeyaml-1.27.jar
 swagger-annotations/2.1.11//swagger-annotations-2.1.11.jar
 swagger-core/2.1.11//swagger-core-2.1.11.jar
