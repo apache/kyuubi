@@ -115,33 +115,42 @@ class ExecuteStatement(
   }
 
   private def runQueryOperation(operation: QueryOperation): Unit = {
-    val resultDescriptor = executor.executeQuery(sessionId, operation)
+    var resultId: String = null
+    try {
+      val resultDescriptor = executor.executeQuery(sessionId, operation)
 
-    val resultID = resultDescriptor.getResultId
+      resultId = resultDescriptor.getResultId
 
-    val rows = new ArrayBuffer[Row]()
-    var loop = true
-    while (loop) {
-      Thread.sleep(50) // slow the processing down
+      val rows = new ArrayBuffer[Row]()
+      var loop = true
 
-      val result = executor.snapshotResult(sessionId, resultID, 2)
-      result.getType match {
-        case TypedResult.ResultType.PAYLOAD =>
-          rows.clear()
-          (1 to result.getPayload).foreach { page =>
-            rows ++= executor.retrieveResultPage(resultID, page).asScala
-          }
-        case TypedResult.ResultType.EOS => loop = false
-        case TypedResult.ResultType.EMPTY =>
+      while (loop) {
+        Thread.sleep(50) // slow the processing down
+
+        val result = executor.snapshotResult(sessionId, resultId, 2)
+        result.getType match {
+          case TypedResult.ResultType.PAYLOAD =>
+            rows.clear()
+            (1 to result.getPayload).foreach { page =>
+              rows ++= executor.retrieveResultPage(resultId, page).asScala
+            }
+          case TypedResult.ResultType.EOS => loop = false
+          case TypedResult.ResultType.EMPTY =>
+        }
+      }
+
+      resultSet = ResultSet.builder
+        .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+        .columns(resultDescriptor.getResultSchema.getColumns)
+        .data(rows.toArray[Row])
+        .build
+      setState(OperationState.FINISHED)
+
+    } finally {
+      if (resultId != null) {
+        cleanupQueryResult(resultId)
       }
     }
-
-    resultSet = ResultSet.builder
-      .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
-      .columns(resultDescriptor.getResultSchema.getColumns)
-      .data(rows.toArray[Row])
-      .build
-    setState(OperationState.FINISHED)
   }
 
   private def runSetOperation(setOperation: SetOperation): Unit = {
@@ -207,6 +216,15 @@ class ExecuteStatement(
     result.await()
     resultSet = ResultSet.fromTableResult(result)
     setState(OperationState.FINISHED)
+  }
+
+  private def cleanupQueryResult(resultId: String): Unit = {
+    try {
+      executor.cancelQuery(sessionId, resultId)
+    } catch {
+      case _: Throwable =>
+      // ignore further exceptions for cleanup
+    }
   }
 
   private def addTimeoutMonitor(): Unit = {
