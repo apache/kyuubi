@@ -438,16 +438,9 @@
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
                     <!--
-                      Use log4j2
+                      The module is only used in Kyuubi Spark Extensions, so we don't care about which
+                      version of Log4j it depends on.
                      -->
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -465,24 +458,10 @@
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
                     <!--
-                      Use log4j2
+                      The module is only used in Kyuubi Spark Extensions, so we don't care about which
+                      version of Log4j it depends on.
                      -->
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
                 </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.scalatestplus</groupId>
-                <artifactId>scalacheck-1-15_${scala.binary.version}</artifactId>
-                <version>${scalacheck.version}</version>
-                <scope>test</scope>
             </dependency>
 
             <dependency>
@@ -499,16 +478,9 @@
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
                     <!--
-                      Use log4j2
+                      The module is only used in Kyuubi Spark Extensions, so we don't care about which
+                      version of Log4j it depends on.
                      -->
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -822,6 +794,13 @@
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest_${scala.binary.version}</artifactId>
                 <version>${scalatest.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.scalatestplus</groupId>
+                <artifactId>scalacheck-1-15_${scala.binary.version}</artifactId>
+                <version>${scalacheck.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <dependency>
