@@ -256,6 +256,10 @@ io.prometheus:simpleclient
 io.prometheus:simpleclient_common
 io.prometheus:simpleclient_dropwizard
 io.prometheus:simpleclient_servlet
+io.prometheus:simpleclient_servlet_common
+io.prometheus:simpleclient_tracer_common
+io.prometheus:simpleclient_tracer_otel
+io.prometheus:simpleclient_tracer_otel_agent
 io.swagger.core.v3:swagger-annotations
 io.swagger.core.v3:swagger-core
 io.swagger.core.v3:swagger-integration
