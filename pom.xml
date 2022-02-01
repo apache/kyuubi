@@ -347,9 +347,23 @@
                 <artifactId>spark-repl_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
                 <exclusions>
+                    <!--
+                      Use Hadoop Shaded Client to gain more clean transitive dependencies
+                     -->
                     <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-client</artifactId>
+                    </exclusion>
+                    <!--
+                      Use log4j2
+                     -->
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -366,6 +380,9 @@
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
+                    <!--
+                      Use log4j2
+                     -->
                     <exclusion>
                         <groupId>log4j</groupId>
                         <artifactId>log4j</artifactId>
@@ -393,6 +410,17 @@
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-common</artifactId>
                     </exclusion>
+                    <!--
+                      Use log4j2
+                     -->
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -409,6 +437,10 @@
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
+                    <!--
+                      The module is only used in Kyuubi Spark Extensions, so we don't care about which
+                      version of Log4j it depends on.
+                     -->
                 </exclusions>
             </dependency>
 
@@ -425,14 +457,11 @@
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
+                    <!--
+                      The module is only used in Kyuubi Spark Extensions, so we don't care about which
+                      version of Log4j it depends on.
+                     -->
                 </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.scalatestplus</groupId>
-                <artifactId>scalacheck-1-15_${scala.binary.version}</artifactId>
-                <version>${scalacheck.version}</version>
-                <scope>test</scope>
             </dependency>
 
             <dependency>
@@ -448,6 +477,10 @@
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
+                    <!--
+                      The module is only used in Kyuubi Spark Extensions, so we don't care about which
+                      version of Log4j it depends on.
+                     -->
                 </exclusions>
             </dependency>
 
@@ -566,18 +599,6 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
-                <version>${slf4j.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
@@ -773,6 +794,13 @@
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest_${scala.binary.version}</artifactId>
                 <version>${scalatest.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.scalatestplus</groupId>
+                <artifactId>scalacheck-1-15_${scala.binary.version}</artifactId>
+                <version>${scalacheck.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <dependency>
