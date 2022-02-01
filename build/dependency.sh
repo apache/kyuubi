@@ -24,15 +24,15 @@ export LC_ALL=C
 
 PWD=$(cd "$(dirname "$0")"/.. || exit; pwd)
 
-MVN="${PWD}"/build/mvn
+MVN="${PWD}/build/mvn"
 
 
-DEP_PR="${PWD}"/dev/dependencyList.tmp
-DEP="${PWD}"/dev/dependencyList
+DEP_PR="${PWD}/dev/dependencyList.tmp"
+DEP="${PWD}/dev/dependencyList"
 
 
 function build_classpath() {
-  $MVN dependency:build-classpath -pl :kyuubi-ctl_2.12,:kyuubi-server_2.12,:kyuubi-assembly_2.12 |\
+  $MVN dependency:build-classpath -am -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly |\
     grep -v "INFO\|WARN" | \
     tail -1 | \
     tr ":" "\n" | \
@@ -49,12 +49,12 @@ function build_classpath() {
 
 function check_diff() {
     set +e
-    the_diff=$(diff ${DEP} ${DEP_PR})
+    the_diff=$(diff "${DEP}" "${DEP_PR}")
     set -e
     rm -rf "${DEP_PR}"
-    if [[ -n $the_diff ]]; then
+    if [[ -n "${the_diff}" ]]; then
         echo "Dependency List Changed Detected: "
-        echo ${the_diff}
+        echo "${the_diff}"
         echo "To update the dependency file, run './build/dependency.sh --replace'."
         exit 1
     fi
