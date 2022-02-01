@@ -397,7 +397,7 @@ Kyuubi uses [log4j](https://logging.apache.org/log4j/2.x/) for logging. You can 
 # limitations under the License.
 #
 
-# Set everything to be logged to the file target/unit-tests.log
+# Set everything to be logged to the file
 rootLogger.level = info
 rootLogger.appenderRef.stdout.ref = STDOUT
 

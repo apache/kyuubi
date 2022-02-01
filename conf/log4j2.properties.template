@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-# Set everything to be logged to the file target/unit-tests.log
+# Set everything to be logged to the file
 rootLogger.level = info
 rootLogger.appenderRef.stdout.ref = STDOUT
 
