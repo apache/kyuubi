@@ -184,6 +184,8 @@ git commit -am "[RELEASE] Bump ${RELEASE_VERSION}"
 
 The tag pattern is `v${RELEASE_VERSION}-rc${RELEASE_RC_NO}`, e.g. `v1.3.0-incubating-rc0`
 
+> NOTE: After all the voting passed, be sure to create a final tag with the pattern: `v${RELEASE_VERSION}`
+
 4. Package the release binaries & sources, and upload them to the Apache staging SVN repo. Publish jars to the Apache
 staging Maven repo.
 
@@ -199,7 +201,7 @@ Goto the [release page](https://github.com/apache/incubator-kyuubi/releases) and
 
 Filling in all the necessary information required by the form. And in the bottom of the form, choose the "This is a pre-release" checkbox. Finally, click the "Publish release" button to finish the step.
 
-> Note: the pre-release note is used for voting purposes. It would be marked with a **Pre-release** tag. After all the voting works(dev and general) are finished, do not forget to inverse the "This is a pre-release" checkbox.
+> Note: the pre-release note is used for voting purposes. It would be marked with a **Pre-release** tag. After all the voting works(dev and general) are finished, do not forget to inverse the "This is a pre-release" checkbox. The pre-release version comes from vx.y.z-incubating-rcN tags, and the final version should come from vx.y.z-incubating tags.
 
 ## Vote on the release candidate
 
