@@ -193,6 +193,14 @@ build/release/release.sh publish
 
 To make your release available in the staging repository, you must close the staging repo in the [Apache Nexus](https://repository.apache.org/#stagingRepositories). Until you close, you can re-run deploying to staging multiple times. But once closed, it will create a new staging repo. So ensure you close this, so that the next RC (if need be) is on a new repo. Once everything is good, close the staging repository on Apache Nexus.
 
+5. Generate a pre-release note from GitHub for the subsequent voting.
+
+Goto the [release page](https://github.com/apache/incubator-kyuubi/releases) and click the "Draft a new release" button, then it would jump to a new page to prepare the release.
+
+Filling in all the necessary information required by the form. And in the bottom of the form, choose the "This is a pre-release" checkbox. Finally, click the "Publish release" button to finish the step.
+
+> Note: the pre-release note is used for voting purposes. It would be marked with a **Pre-release** tag. After all the voting works(dev and general) are finished, do not forget to inverse the "This is a pre-release" checkbox.
+
 ## Vote on the release candidate
 
 The release voting takes place on the Apache Kyuubi (Incubating) developers list (the (P)PMC is voting).
