@@ -18,12 +18,10 @@
 package org.apache.kyuubi.engine
 
 import java.io.{File, IOException}
-import java.lang.ProcessBuilder.Redirect
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Path, Paths}
 
 import scala.collection.JavaConverters._
-import scala.util.matching.Regex
 
 import com.google.common.collect.EvictingQueue
 import org.apache.commons.lang3.StringUtils.containsIgnoreCase
@@ -98,7 +96,7 @@ trait ProcBuilder {
   @volatile private var error: Throwable = UNCAUGHT_ERROR
 
   private val engineLogMaxLines = conf.get(KyuubiConf.SESSION_ENGINE_STARTUP_MAX_LOG_LINES)
-  private val lastRowsOfLog: EvictingQueue[String] = EvictingQueue.create(engineLogMaxLines)
+  protected val lastRowsOfLog: EvictingQueue[String] = EvictingQueue.create(engineLogMaxLines)
   // Visible for test
   @volatile private[kyuubi] var logCaptureThreadReleased: Boolean = true
   private var logCaptureThread: Thread = _
@@ -186,28 +184,7 @@ trait ProcBuilder {
     proc
   }
 
-  val YARN_APP_NAME_REGEX: Regex = "application_\\d+_\\d+".r
-
-  def killApplication(line: String = lastRowsOfLog.toArray.mkString("\n")): String =
-    YARN_APP_NAME_REGEX.findFirstIn(line) match {
-      case Some(appId) =>
-        env.get(KyuubiConf.KYUUBI_HOME) match {
-          case Some(kyuubiHome) =>
-            val pb = new ProcessBuilder("/bin/sh", s"$kyuubiHome/bin/stop-application.sh", appId)
-            pb.environment()
-              .putAll(childProcEnv.asJava)
-            pb.redirectError(Redirect.appendTo(engineLog))
-            pb.redirectOutput(Redirect.appendTo(engineLog))
-            val process = pb.start()
-            process.waitFor() match {
-              case id if id != 0 => s"Failed to kill Application $appId, please kill it manually. "
-              case _ => s"Killed Application $appId successfully. "
-            }
-          case None =>
-            s"KYUUBI_HOME is not set! Failed to kill Application $appId, please kill it manually."
-        }
-      case None => ""
-    }
+  def killApplication(line: String = lastRowsOfLog.toArray.mkString("\n")): String = ""
 
   def close(): Unit = {
     if (logCaptureThread != null) {
