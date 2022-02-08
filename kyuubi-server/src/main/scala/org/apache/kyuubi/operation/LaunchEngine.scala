@@ -59,4 +59,14 @@ class LaunchEngine(session: KyuubiSessionImpl, override val shouldRunAsync: Bool
 
     if (!shouldRunAsync) getBackgroundHandle.get()
   }
+
+  override protected def onError(action: String): PartialFunction[Throwable, Unit] = {
+    case e: Throwable =>
+      try {
+        throw e
+      } catch super.onError(action)
+      finally {
+        session.close()
+      }
+  }
 }
