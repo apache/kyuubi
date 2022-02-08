@@ -222,8 +222,8 @@ class ExecuteStatement(
     try {
       executor.cancelQuery(sessionId, resultId)
     } catch {
-      case _: Throwable =>
-      // ignore further exceptions for cleanup
+      case t: Throwable =>
+        warn("Failed to clean result set " + resultId + " in session " + sessionId, t)
     }
   }
 
