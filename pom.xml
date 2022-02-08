@@ -121,7 +121,7 @@
         <jersey.version>2.34</jersey.version>
         <jetty.version>9.4.41.v20210516</jetty.version>
         <jline.version>0.9.94</jline.version>
-        <kubernetes-client.version>5.5.0</kubernetes-client.version>
+        <kubernetes-client.version>5.12.1</kubernetes-client.version>
         <ldapsdk.version>5.1.4</ldapsdk.version>
         <mysql.jdbc.version>8.0.27</mysql.jdbc.version>
         <netty.version>4.1.68.Final</netty.version>
