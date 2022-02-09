@@ -25,17 +25,23 @@ import org.apache.spark.status.{AppHistoryServerPlugin, ElementTrackingStore}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.events.EngineEventsStore
 
+// scalastyle:off line.size.limit
+/**
+ * HistoryServer plugin for Kyuubi, It can be used as a plugin in SparkHistoryServer to make SparkHistoryServer UI display Kyuubi's Tab.
+ * We can use it like:
+ *  - Copy the kyuubi-spark-sql-engine jar to $SPARK_HOME/jars and restart SparkHistoryServer.
+ *  - In addition, we can add kyuubi configurations to spark-defaults.conf prefixed with "spark.kyuubi.".
+ */
+// scalastyle:on line.size.limit
 class KyuubiHistoryServerPlugin extends AppHistoryServerPlugin {
 
-  private val kyuubiConf: KyuubiConf = KyuubiConf()
-
   override def createListeners(conf: SparkConf, store: ElementTrackingStore): Seq[SparkListener] = {
-    addKyuubiConfFromSpark(conf)
+    val kyuubiConf = mergedKyuubiConf(conf)
     Seq(new SparkSQLEngineEventListener(store, kyuubiConf))
   }
 
   override def setupUI(ui: SparkUI): Unit = {
-    addKyuubiConfFromSpark(ui.conf)
+    val kyuubiConf = mergedKyuubiConf(ui.conf)
     val store = new EngineEventsStore(ui.store.store)
     if (store.getSessionCount > 0) {
       EngineTab(
@@ -46,11 +52,13 @@ class KyuubiHistoryServerPlugin extends AppHistoryServerPlugin {
     }
   }
 
-  private def addKyuubiConfFromSpark(sparkConf: SparkConf): Unit = {
+  private def mergedKyuubiConf(sparkConf: SparkConf): KyuubiConf = {
+    val kyuubiConf = KyuubiConf()
     val sparkToKyuubiPrefix = "spark.kyuubi."
     sparkConf.getAllWithPrefix(sparkToKyuubiPrefix).foreach { case (k, v) =>
       kyuubiConf.set(s"kyuubi.$k", v)
     }
+    kyuubiConf
   }
 
 }

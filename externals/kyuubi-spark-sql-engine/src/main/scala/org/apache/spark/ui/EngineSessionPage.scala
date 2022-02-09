@@ -56,7 +56,7 @@ case class EngineSessionPage(parent: EngineTab)
 
   /** Generate basic stats of the engine server */
   private def generateBasicStats(): Seq[Node] =
-    if (parent.engine != null) {
+    if (parent.engine.isDefined) {
       val timeSinceStart = parent.endTime() - parent.startTime
       <ul class ="list-unstyled">
         <li>
