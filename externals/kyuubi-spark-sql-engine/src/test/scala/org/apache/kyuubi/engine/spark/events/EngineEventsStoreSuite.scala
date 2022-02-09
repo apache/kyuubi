@@ -17,8 +17,6 @@
 
 package org.apache.kyuubi.engine.spark.events
 
-import scala.collection.JavaConverters._
-
 import org.apache.spark.kyuubi.SparkContextHelper
 
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
@@ -28,20 +26,16 @@ class EngineEventsStoreSuite extends WithSparkSQLEngine with HiveJDBCTestHelper 
 
   var store: EngineEventsStore = _
 
-  override def beforeAll(): Unit = {
-    super.beforeAll()
+  override protected def beforeEach(): Unit = {
+    super.beforeEach()
+    startSparkEngine()
     val kvStore = SparkContextHelper.getKvStore(spark.sparkContext)
     store = new EngineEventsStore(kvStore)
   }
 
-  override protected def beforeEach(): Unit = {
-    val kvstore = SparkContextHelper.getKvStore(spark.sparkContext)
-    kvstore.view(classOf[SessionEvent]).closeableIterator().asScala.foreach(j => {
-      kvstore.delete(j.getClass, j.sessionId)
-    })
-    kvstore.view(classOf[SparkOperationEvent]).closeableIterator().asScala.foreach(j => {
-      kvstore.delete(j.getClass, j.statementId)
-    })
+  override protected def afterEach(): Unit = {
+    super.afterEach()
+    stopSparkEngine()
   }
 
   test("EngineEventsStore session test") {
