@@ -223,7 +223,7 @@ class ExecuteStatement(
       executor.cancelQuery(sessionId, resultId)
     } catch {
       case t: Throwable =>
-        warn("Failed to clean result set " + resultId + " in session " + sessionId, t)
+        warn(s"Failed to clean result set $resultId in session $sessionId", t)
     }
   }
 
