@@ -18,10 +18,13 @@
 package org.apache.kyuubi.engine.spark
 
 import java.io.{File, FilenameFilter, IOException}
+import java.lang.ProcessBuilder.Redirect
 import java.net.URI
 import java.nio.file.{Files, Paths}
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
+import scala.util.matching.Regex
 
 import org.apache.hadoop.security.UserGroupInformation
 
@@ -163,6 +166,8 @@ class SparkProcessBuilder(
 
   override protected def module: String = "kyuubi-spark-sql-engine"
 
+  val YARN_APP_NAME_REGEX: Regex = "application_\\d+_\\d+".r
+
   private def useKeytab(): Boolean = {
     val principal = conf.getOption(PRINCIPAL)
     val keytab = conf.getOption(KEYTAB)
@@ -200,6 +205,27 @@ class SparkProcessBuilder(
       Map()
     }
   }
+
+  override def killApplication(line: String = lastRowsOfLog.toArray.mkString("\n")): String =
+    YARN_APP_NAME_REGEX.findFirstIn(line) match {
+      case Some(appId) =>
+        env.get(KyuubiConf.KYUUBI_HOME) match {
+          case Some(kyuubiHome) =>
+            val pb = new ProcessBuilder("/bin/sh", s"$kyuubiHome/bin/stop-application.sh", appId)
+            pb.environment()
+              .putAll(childProcEnv.asJava)
+            pb.redirectError(Redirect.appendTo(engineLog))
+            pb.redirectOutput(Redirect.appendTo(engineLog))
+            val process = pb.start()
+            process.waitFor() match {
+              case id if id != 0 => s"Failed to kill Application $appId, please kill it manually. "
+              case _ => s"Killed Application $appId successfully. "
+            }
+          case None =>
+            s"KYUUBI_HOME is not set! Failed to kill Application $appId, please kill it manually."
+        }
+      case None => ""
+    }
 
 }
 
