@@ -27,7 +27,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration
 import scala.concurrent.duration.Duration
-import scala.util.control.Breaks._
 
 import com.google.common.base.Verify
 import io.trino.client.ClientSession
@@ -100,24 +99,23 @@ class TrinoStatement(trinoContext: TrinoContext, kyuubiConf: KyuubiConf, sql: St
     var bufferStart = System.nanoTime()
     val result = ArrayBuffer[List[Any]]()
 
-    breakable {
-      while (!dataProcessing.isCompleted) {
-        val atEnd = drainDetectingEnd(rowQueue, rowBuffer, MAX_BUFFERED_ROWS, END_TOKEN)
-        if (!atEnd) {
-          // Flush if needed
-          if (rowBuffer.size() >= MAX_BUFFERED_ROWS ||
-            Duration.fromNanos(bufferStart).compareTo(MAX_BUFFER_TIME) >= 0) {
-            result ++= rowBuffer.asScala
-            rowBuffer.clear()
-            bufferStart = System.nanoTime()
-          }
+    var getDataEnd = false
+    while (!dataProcessing.isCompleted && !getDataEnd) {
+      val atEnd = drainDetectingEnd(rowQueue, rowBuffer, MAX_BUFFERED_ROWS, END_TOKEN)
+      if (!atEnd) {
+        // Flush if needed
+        if (rowBuffer.size() >= MAX_BUFFERED_ROWS ||
+          Duration.fromNanos(bufferStart).compareTo(MAX_BUFFER_TIME) >= 0) {
+          result ++= rowBuffer.asScala
+          rowBuffer.clear()
+          bufferStart = System.nanoTime()
+        }
 
-          val row = rowQueue.poll(MAX_BUFFER_TIME.toMillis, duration.MILLISECONDS)
-          row match {
-            case END_TOKEN => break
-            case null =>
-            case _ => rowBuffer.add(row)
-          }
+        val row = rowQueue.poll(MAX_BUFFER_TIME.toMillis, duration.MILLISECONDS)
+        row match {
+          case END_TOKEN => getDataEnd = true
+          case null =>
+          case _ => rowBuffer.add(row)
         }
       }
     }
