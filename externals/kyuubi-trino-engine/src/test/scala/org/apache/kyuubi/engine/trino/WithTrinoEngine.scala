@@ -22,7 +22,6 @@ import org.apache.kyuubi.config.KyuubiConf
 
 trait WithTrinoEngine extends KyuubiFunSuite with WithTrinoContainerServer {
 
-  protected var trino: TrinoContext = _
   protected var engine: TrinoSqlEngine = _
   protected var connectionUrl: String = _
 
@@ -64,5 +63,4 @@ trait WithTrinoEngine extends KyuubiFunSuite with WithTrinoContainerServer {
   }
 
   protected def getJdbcUrl: String = s"jdbc:hive2://$connectionUrl/$schema;"
-  def getTrino: TrinoContext = trino
 }
