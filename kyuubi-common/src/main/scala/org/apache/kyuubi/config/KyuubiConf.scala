@@ -27,7 +27,6 @@ import scala.collection.JavaConverters._
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.engine.{EngineType, ShareLevel}
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
-import org.apache.kyuubi.util.NettyUtils.MAX_NETTY_THREADS
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   import KyuubiConf._
@@ -516,6 +515,16 @@ object KyuubiConf {
     .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
     .createWithDefault(3309)
 
+  /**
+   * Specifies an upper bound on the number of Netty threads that Kyuubi requires by default.
+   * In practice, only 2-4 cores should be required to transfer roughly 10 Gb/s, and each core
+   * that we use will have an initial overhead of roughly 32 MB of off-heap memory, which comes
+   * at a premium.
+   *
+   * Thus, this value should still retain maximum throughput and reduce wasted off-heap memory
+   * allocation.
+   */
+  val MAX_NETTY_THREADS: Int = 8
   val FRONTEND_MYSQL_NETTY_WORKER_THREADS: OptionalConfigEntry[Int] =
     buildConf("frontend.mysql.netty.worker.threads")
       .doc("Number of thread in the netty worker event loop of MySQL frontend service. " +

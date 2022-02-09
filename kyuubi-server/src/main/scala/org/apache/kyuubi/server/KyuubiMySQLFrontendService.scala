@@ -30,10 +30,10 @@ import org.apache.kyuubi._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.server.mysql._
+import org.apache.kyuubi.server.mysql.NettyUtils._
 import org.apache.kyuubi.server.mysql.authentication.MySQLAuthHandler
 import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
 import org.apache.kyuubi.util.NamedThreadFactory
-import org.apache.kyuubi.util.NettyUtils._
 
 /**
  * A frontend service implement MySQL protocol.
