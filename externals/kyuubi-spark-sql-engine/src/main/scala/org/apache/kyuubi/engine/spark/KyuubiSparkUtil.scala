@@ -31,8 +31,7 @@ object KyuubiSparkUtil {
 
   def globalSparkContext: SparkContext = SparkSession.active.sparkContext
 
-  def engineId: String =
-    globalSparkContext.applicationAttemptId.getOrElse(globalSparkContext.applicationId)
+  def engineId: String = globalSparkContext.applicationId
 
   lazy val diagnostics: String = {
     val sc = globalSparkContext
