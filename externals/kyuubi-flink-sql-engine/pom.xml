@@ -165,7 +165,6 @@
               <include>com.google.guava:failureaccess</include>
               <include>com.google.guava:guava</include>
               <include>commons-codec:commons-codec</include>
-              <include>io.netty:netty-all</include>
               <include>org.apache.commons:commons-lang3</include>
               <include>org.apache.curator:curator-client</include>
               <include>org.apache.curator:curator-framework</include>
@@ -204,13 +203,6 @@
             <relocation>
               <pattern>org.apache.commons.lang</pattern>
               <shadedPattern>${kyuubi.shade.packageName}.org.apache.commons.lang</shadedPattern>
-            </relocation>
-            <relocation>
-              <pattern>io.netty</pattern>
-              <shadedPattern>${kyuubi.shade.packageName}.io.netty</shadedPattern>
-              <includes>
-                <include>io.netty.**</include>
-              </includes>
             </relocation>
             <relocation>
               <pattern>org.apache.hive.service.rpc.thrift</pattern>
