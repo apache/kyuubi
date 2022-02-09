@@ -448,4 +448,33 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
 
     }
   }
+
+  test("test watchdog: Join for forceMaxOutputRows") {
+    withSQLConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS.key -> "1") {
+      withTable("tmp_table1", "tmp_table2") {
+        sql("CREATE TABLE spark_catalog.`default`.tmp_table1(KEY INT, VALUE STRING) USING PARQUET")
+        sql("INSERT INTO TABLE spark_catalog.`default`.tmp_table1 " +
+          "VALUES (1, 'aa'),(2,'bb'),(3, 'cc'),(4,'aa'),(5,'cc'),(6, 'aa')")
+        sql("CREATE TABLE spark_catalog.`default`.tmp_table2(KEY INT, VALUE STRING) USING PARQUET")
+        sql("INSERT INTO TABLE spark_catalog.`default`.tmp_table2 " +
+          "VALUES (1, 'aa'),(2,'bb'),(3, 'cc'),(4,'aa'),(5,'cc'),(6, 'aa')")
+        val testSqlText =
+          """
+            |select a.*,b.*
+            |from tmp_table1 a
+            |join
+            |tmp_table2 b
+            |on a.KEY = b.KEY
+            |""".stripMargin
+        val plan = sql(testSqlText).queryExecution.optimizedPlan
+        assert(findGlobalLimit(plan))
+      }
+
+      def findGlobalLimit(plan: LogicalPlan): Boolean = plan match {
+        case _: GlobalLimit => true
+        case p if p.children.isEmpty => false
+        case p => p.children.exists(findGlobalLimit)
+      }
+    }
+  }
 }

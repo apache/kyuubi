@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.sql.watchdog
 
-import org.apache.spark.sql.catalyst.analysis.{AnalysisContext, MultiInstanceRelation}
+import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.dsl.expressions._
 import org.apache.spark.sql.catalyst.expressions.Alias
 import org.apache.spark.sql.catalyst.plans.logical._
@@ -49,10 +49,6 @@ trait ForcedMaxOutputRowsBase extends Rule[LogicalPlan] {
 
   protected def isChildAggregate(a: Aggregate): Boolean
 
-  protected def isView: Boolean = {
-    val nestedViewDepth = AnalysisContext.get.nestedViewDepth
-    nestedViewDepth > 0
-  }
 
   protected def canInsertLimitInner(p: LogicalPlan): Boolean = p match {
     case Aggregate(_, Alias(_, "havingCondition") :: Nil, _) => false
@@ -70,14 +66,14 @@ trait ForcedMaxOutputRowsBase extends Rule[LogicalPlan] {
         true
       }
     case _: MultiInstanceRelation => true
+    case _: Join => true
     case _ => false
   }
 
   protected def canInsertLimit(p: LogicalPlan, maxOutputRowsOpt: Option[Int]): Boolean = {
     maxOutputRowsOpt match {
       case Some(forcedMaxOutputRows) => canInsertLimitInner(p) &&
-          !p.maxRows.exists(_ <= forcedMaxOutputRows) &&
-          !isView
+          !p.maxRows.exists(_ <= forcedMaxOutputRows)
       case None => false
     }
   }
