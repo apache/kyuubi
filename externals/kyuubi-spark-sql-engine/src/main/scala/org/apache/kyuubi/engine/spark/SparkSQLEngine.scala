@@ -48,8 +48,7 @@ case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngin
     val listener = new SparkSQLEngineListener(this)
     spark.sparkContext.addSparkListener(listener)
     val kvStore = SparkContextHelper.getKvStore(spark.sparkContext)
-    val engineEventListener =
-      new SparkSQLEngineEventListener(kvStore, spark.sparkContext.getConf, conf)
+    val engineEventListener = new SparkSQLEngineEventListener(kvStore, conf)
     spark.sparkContext.addSparkListener(engineEventListener)
     super.initialize(conf)
   }

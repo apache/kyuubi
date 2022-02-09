@@ -27,13 +27,15 @@ import org.apache.kyuubi.engine.spark.events.EngineEventsStore
 
 class KyuubiHistoryServerPlugin extends AppHistoryServerPlugin {
 
-  def kyuubiConf: KyuubiConf = KyuubiConf()
+  private val kyuubiConf: KyuubiConf = KyuubiConf()
 
   override def createListeners(conf: SparkConf, store: ElementTrackingStore): Seq[SparkListener] = {
-    Seq(new SparkSQLEngineEventListener(store, conf, kyuubiConf))
+    addKyuubiConfFromSpark(conf)
+    Seq(new SparkSQLEngineEventListener(store, kyuubiConf))
   }
 
   override def setupUI(ui: SparkUI): Unit = {
+    addKyuubiConfFromSpark(ui.conf)
     val store = new EngineEventsStore(ui.store.store)
     if (store.getSessionCount > 0) {
       EngineTab(
@@ -41,6 +43,13 @@ class KyuubiHistoryServerPlugin extends AppHistoryServerPlugin {
         Some(ui),
         store,
         kyuubiConf)
+    }
+  }
+
+  private def addKyuubiConfFromSpark(sparkConf: SparkConf): Unit = {
+    val sparkToKyuubiPrefix = "spark.kyuubi."
+    sparkConf.getAllWithPrefix(sparkToKyuubiPrefix).foreach { case (k, v) =>
+      kyuubiConf.set(s"kyuubi.$k", v)
     }
   }
 

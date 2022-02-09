@@ -17,9 +17,7 @@
 
 package org.apache.spark.kyuubi
 
-import org.apache.spark.SparkConf
 import org.apache.spark.scheduler.{SparkListener, SparkListenerEvent}
-import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.status.{ElementTrackingStore, KVUtils}
 
 import org.apache.kyuubi.config.KyuubiConf
@@ -28,28 +26,17 @@ import org.apache.kyuubi.engine.spark.events.{SessionEvent, SparkOperationEvent}
 
 class SparkSQLEngineEventListener(
     kvstore: ElementTrackingStore,
-    sparkConf: SparkConf,
     kyuubiConf: KyuubiConf) extends SparkListener {
 
   /**
    * The number of SQL client sessions kept in the Kyuubi Query Engine web UI.
    */
-  private val retainedSessions: Int = {
-    sparkConf.getOption(SQLConf.THRIFTSERVER_UI_SESSION_LIMIT.key) match {
-      case Some(s) => s.toInt
-      case _ => kyuubiConf.get(ENGINE_UI_SESSION_LIMIT)
-    }
-  }
+  private val retainedSessions: Int = kyuubiConf.get(ENGINE_UI_SESSION_LIMIT)
 
   /**
    * The number of statements kept in the Kyuubi Query Engine web UI.
    */
-  private val retainedStatements: Int = {
-    sparkConf.getOption(SQLConf.THRIFTSERVER_UI_STATEMENT_LIMIT.key) match {
-      case Some(s) => s.toInt
-      case _ => kyuubiConf.get(ENGINE_UI_STATEMENT_LIMIT)
-    }
-  }
+  private val retainedStatements: Int = kyuubiConf.get(ENGINE_UI_STATEMENT_LIMIT)
 
   kvstore.addTrigger(classOf[SessionEvent], retainedSessions) { count =>
     cleanupSession(count)
