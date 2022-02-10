@@ -203,6 +203,7 @@ object Utils extends Logging {
   // Hooks need to be invoked before the SparkContext stopped shall use a higher priority.
   val SPARK_CONTEXT_SHUTDOWN_PRIORITY = 50
   val FLINK_ENGINE_SHUTDOWN_PRIORITY = 50
+  val TRINO_ENGINE_SHUTDOWN_PRIORITY = 50
 
   /**
    * Add some operations that you want into ShutdownHook

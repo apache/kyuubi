@@ -17,16 +17,13 @@
 
 package org.apache.kyuubi.engine.trino
 
-class TrinoContextSuite extends WithTrinoContainerServer {
+import org.apache.kyuubi.engine.trino.session.TrinoSessionManager
+import org.apache.kyuubi.service.AbstractBackendService
+import org.apache.kyuubi.session.SessionManager
 
-  test("set current schema") {
-    withTrinoContainer { trinoContext =>
-      val trinoStatement = TrinoStatement(trinoContext, kyuubiConf, "select 1")
-      assert("tiny" === trinoStatement.getCurrentDatabase)
+class TrinoBackendService
+  extends AbstractBackendService("TrinoBackendService") {
 
-      trinoContext.setCurrentSchema("sf1")
-      val trinoStatement2 = TrinoStatement(trinoContext, kyuubiConf, "select 1")
-      assert("sf1" === trinoStatement2.getCurrentDatabase)
-    }
-  }
+  override val sessionManager: SessionManager = new TrinoSessionManager()
+
 }

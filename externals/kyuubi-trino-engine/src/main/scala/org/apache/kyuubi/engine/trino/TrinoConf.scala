@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.trino
 
+import java.time.Duration
+
 import org.apache.kyuubi.config.ConfigBuilder
 import org.apache.kyuubi.config.ConfigEntry
 import org.apache.kyuubi.config.KyuubiConf
@@ -30,4 +32,11 @@ object TrinoConf {
       .version("1.5.0")
       .intConf
       .createWithDefault(3)
+
+  val CLIENT_REQUEST_TIMEOUT: ConfigEntry[Long] =
+    buildConf("trino.client.request.timeout")
+      .doc("Timeout for Trino client request to trino cluster")
+      .version("1.5.0")
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(2).toMillis)
 }

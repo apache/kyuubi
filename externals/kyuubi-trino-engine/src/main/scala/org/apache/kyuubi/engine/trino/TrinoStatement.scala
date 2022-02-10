@@ -27,7 +27,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.duration
 import scala.concurrent.duration.Duration
-import scala.util.control.Breaks._
 
 import com.google.common.base.Verify
 import io.trino.client.ClientSession
@@ -46,7 +45,7 @@ import org.apache.kyuubi.engine.trino.TrinoStatement._
 class TrinoStatement(trinoContext: TrinoContext, kyuubiConf: KyuubiConf, sql: String) {
 
   private lazy val trino = StatementClientFactory
-    .newStatementClient(trinoContext.httpClient, trinoContext.getClientSession, sql)
+    .newStatementClient(trinoContext.httpClient, trinoContext.clientSession.get, sql)
 
   private lazy val dataProcessingPoolSize = kyuubiConf.get(DATA_PROCESSING_POOL_SIZE)
 
@@ -55,7 +54,7 @@ class TrinoStatement(trinoContext: TrinoContext, kyuubiConf: KyuubiConf, sql: St
 
   def getTrinoClient: StatementClient = trino
 
-  def getCurrentDatabase: String = trinoContext.getClientSession.getSchema
+  def getCurrentDatabase: String = trinoContext.clientSession.get.getSchema
 
   def getColumns: List[Column] = {
     while (trino.isRunning) {
@@ -99,50 +98,44 @@ class TrinoStatement(trinoContext: TrinoContext, kyuubiConf: KyuubiConf, sql: St
     val rowBuffer = new ArrayList[List[Any]](MAX_BUFFERED_ROWS)
     var bufferStart = System.nanoTime()
     val result = ArrayBuffer[List[Any]]()
-    try {
-      breakable {
-        while (!dataProcessing.isCompleted) {
-          val atEnd = drainDetectingEnd(rowQueue, rowBuffer, MAX_BUFFERED_ROWS, END_TOKEN)
-          if (!atEnd) {
-            // Flush if needed
-            if (rowBuffer.size() >= MAX_BUFFERED_ROWS ||
-              Duration.fromNanos(bufferStart).compareTo(MAX_BUFFER_TIME) >= 0) {
-              result ++= rowBuffer.asScala
-              rowBuffer.clear()
-              bufferStart = System.nanoTime()
-            }
 
-            val row = rowQueue.poll(MAX_BUFFER_TIME.toMillis, duration.MILLISECONDS)
-            row match {
-              case END_TOKEN => break
-              case null =>
-              case _ => rowBuffer.add(row)
-            }
-          }
+    var getDataEnd = false
+    while (!dataProcessing.isCompleted && !getDataEnd) {
+      val atEnd = drainDetectingEnd(rowQueue, rowBuffer, MAX_BUFFERED_ROWS, END_TOKEN)
+      if (!atEnd) {
+        // Flush if needed
+        if (rowBuffer.size() >= MAX_BUFFERED_ROWS ||
+          Duration.fromNanos(bufferStart).compareTo(MAX_BUFFER_TIME) >= 0) {
+          result ++= rowBuffer.asScala
+          rowBuffer.clear()
+          bufferStart = System.nanoTime()
+        }
+
+        val row = rowQueue.poll(MAX_BUFFER_TIME.toMillis, duration.MILLISECONDS)
+        row match {
+          case END_TOKEN => getDataEnd = true
+          case null =>
+          case _ => rowBuffer.add(row)
         }
       }
-      if (!rowQueue.isEmpty()) {
-        drainDetectingEnd(rowQueue, rowBuffer, Integer.MAX_VALUE, END_TOKEN)
-      }
-      result ++= rowBuffer.asScala
-
-      val finalStatus = trino.finalStatusInfo()
-      if (finalStatus.getError() != null) {
-        val exception = KyuubiSQLException(
-          s"Query ${finalStatus.getId} failed: ${finalStatus.getError.getMessage}")
-        throw exception
-      }
-
-      updateTrinoContext()
-    } catch {
-      case e: Exception =>
-        throw KyuubiSQLException(e)
     }
+    if (!rowQueue.isEmpty()) {
+      drainDetectingEnd(rowQueue, rowBuffer, Integer.MAX_VALUE, END_TOKEN)
+    }
+    result ++= rowBuffer.asScala
+
+    val finalStatus = trino.finalStatusInfo()
+    if (finalStatus.getError() != null) {
+      throw KyuubiSQLException(
+        s"Query ${finalStatus.getId} failed: ${finalStatus.getError.getMessage}")
+    }
+    updateTrinoContext()
+
     result
   }
 
   def updateTrinoContext(): Unit = {
-    val session = trinoContext.getClientSession
+    val session = trinoContext.clientSession.get
 
     var builder = ClientSession.builder(session)
     // update catalog and schema
