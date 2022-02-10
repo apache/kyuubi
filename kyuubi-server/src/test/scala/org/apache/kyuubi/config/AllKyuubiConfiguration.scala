@@ -146,23 +146,9 @@ class AllKyuubiConfiguration extends KyuubiFunSuite {
         newOutput += "--- | --- | --- | --- | ---"
 
         entries.sortBy(_.key).foreach { c =>
-          val key = {
-            val sb = new StringBuilder()
-            var curLen = 0
-            c.key.split("\\.").foreach { str =>
-              if (curLen + str.length > 21) {
-                sb.append("<br>\\." + str)
-                curLen = str.length + 1
-              } else {
-                sb.append("\\." + str)
-                curLen += (str.length + 1)
-              }
-            }
-            sb.toString().stripPrefix("\\.")
-          }
           val dft = c.defaultValStr.replace("<", "&lt;").replace(">", "&gt;")
           val seq = Seq(
-            key,
+            s"<code>${c.key}</code>",
             s"<div style='width: 65pt;word-wrap: break-word;white-space: normal'>$dft</div>",
             s"<div style='width: 170pt;word-wrap: break-word;white-space: normal'>${c.doc}</div>",
             s"<div style='width: 30pt'>${c.typ}</div>",
