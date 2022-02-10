@@ -49,7 +49,6 @@ trait ForcedMaxOutputRowsBase extends Rule[LogicalPlan] {
 
   protected def isChildAggregate(a: Aggregate): Boolean
 
-
   protected def canInsertLimitInner(p: LogicalPlan): Boolean = p match {
     case Aggregate(_, Alias(_, "havingCondition") :: Nil, _) => false
     case agg: Aggregate => !isChildAggregate(agg)
