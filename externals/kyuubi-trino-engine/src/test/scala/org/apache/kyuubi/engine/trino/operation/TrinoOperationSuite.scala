@@ -18,6 +18,7 @@
 package org.apache.kyuubi.engine.trino.operation
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hive.service.rpc.thrift.TCancelOperationReq
 import org.apache.hive.service.rpc.thrift.TCloseOperationReq
@@ -33,6 +34,7 @@ import org.apache.hive.service.rpc.thrift.TStatusCode
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG
 import org.apache.kyuubi.engine.trino.WithTrinoEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
 
 class TrinoOperationSuite extends WithTrinoEngine with HiveJDBCTestHelper {
   override def withKyuubiConf: Map[String, String] = Map(
@@ -42,6 +44,19 @@ class TrinoOperationSuite extends WithTrinoEngine with HiveJDBCTestHelper {
   override protected val schema = ""
 
   override protected def jdbcUrl: String = getJdbcUrl
+
+  test("trino - get catalogs") {
+    withJdbcStatement() { statement =>
+      val meta = statement.getConnection.getMetaData
+      val catalogs = meta.getCatalogs
+      val resultSetBuffer = ArrayBuffer[String]()
+      while (catalogs.next()) {
+        resultSetBuffer += catalogs.getString(TABLE_CAT)
+      }
+      assert(resultSetBuffer.contains("memory"))
+      assert(resultSetBuffer.contains("system"))
+    }
+  }
 
   test("execute statement -  select decimal") {
     withJdbcStatement() { statement =>
