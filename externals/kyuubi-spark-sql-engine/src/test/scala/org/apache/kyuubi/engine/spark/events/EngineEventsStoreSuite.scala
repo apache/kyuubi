@@ -17,206 +17,73 @@
 
 package org.apache.kyuubi.engine.spark.events
 
-import org.apache.kyuubi.KyuubiFunSuite
-import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_UI_SESSION_LIMIT, ENGINE_UI_STATEMENT_LIMIT}
+import org.apache.spark.kyuubi.SparkContextHelper
 
-class EngineEventsStoreSuite extends KyuubiFunSuite {
+import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
+import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
-  test("ensure that the sessions are stored in order") {
-    val store = new EngineEventsStore(KyuubiConf())
+class EngineEventsStoreSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
 
-    val s1 = SessionEvent("a", "ea", "test1", "1.1.1.1", "1.1.1.2", 1L)
-    val s2 = SessionEvent("c", "ea", "test2", "1.1.1.1", "1.1.1.2", 3L)
-    val s3 = SessionEvent("b", "ea", "test3", "1.1.1.1", "1.1.1.2", 2L)
+  var store: EngineEventsStore = _
 
-    store.saveSession(s1)
-    store.saveSession(s2)
-    store.saveSession(s3)
-
-    assert(store.getSessionList.size == 3)
-    assert(store.getSessionList.head.sessionId == "a")
-    assert(store.getSessionList.last.sessionId == "c")
+  override protected def beforeEach(): Unit = {
+    super.beforeEach()
+    startSparkEngine()
+    val kvStore = SparkContextHelper.getKvStore(spark.sparkContext)
+    store = new EngineEventsStore(kvStore)
   }
 
-  test("test drop sessions when reach the threshold ") {
-    val conf = KyuubiConf()
-    conf.set(ENGINE_UI_SESSION_LIMIT, 3)
+  override protected def afterEach(): Unit = {
+    super.afterEach()
+    stopSparkEngine()
+  }
 
-    val store = new EngineEventsStore(conf)
-    for (i <- 1 to 5) {
-      val s = SessionEvent(s"b$i", "ea", s"test$i", "1.1.1.1", "1.1.1.2", 2L)
-      store.saveSession(s)
+  test("EngineEventsStore session test") {
+    assert(store.getSessionList.isEmpty)
+    assert(store.getSessionCount == 0)
+    withJdbcStatement() { statement =>
+      statement.execute(
+        """
+          |SELECT
+          |  l.id % 100 k,
+          |  sum(l.id) sum,
+          |  count(l.id) cnt,
+          |  avg(l.id) avg,
+          |  min(l.id) min,
+          |  max(l.id) max
+          |from range(0, 100000L, 1, 100) l
+          |  left join range(0, 100000L, 2, 100) r ON l.id = r.id
+          |GROUP BY 1""".stripMargin)
     }
-
-    assert(store.getSessionList.size == 3)
+    assert(store.getSessionList.size == 1)
+    assert(store.getSessionCount == 1)
   }
 
-  test("test drop sessions when reach the threshold, and try to keep active events.") {
-    val conf = KyuubiConf()
-    conf.set(ENGINE_UI_SESSION_LIMIT, 3)
-
-    val store = new EngineEventsStore(conf)
-
-    store.saveSession(SessionEvent("s1", "ea", "test1", "1.1.1.1", "1.1.1.2", 1L, -1L))
-    store.saveSession(SessionEvent("s2", "ea", "test1", "1.1.1.1", "1.1.1.2", 2L, -1L))
-    store.saveSession(SessionEvent("s3", "ea", "test1", "1.1.1.1", "1.1.1.2", 3L, 1L))
-    store.saveSession(SessionEvent("s4", "ea", "test1", "1.1.1.1", "1.1.1.2", 4L, -1L))
-
-    assert(store.getSessionList.size == 3)
-    assert(store.getSessionList(2).sessionId == "s4")
-  }
-
-  test("test check session after update session") {
-    val store = new EngineEventsStore(KyuubiConf())
-    val s = SessionEvent("abc", "ea", "test3", "1.1.1.1", "1.1.1.2", 2L)
-    store.saveSession(s)
-
-    val finishTimestamp: Long = 456L
-    s.endTime = finishTimestamp
-    store.saveSession(s)
-
-    assert(store.getSession("abc").get.endTime == finishTimestamp)
-  }
-
-  test("ensure that the statements are stored in order") {
-    val store = new EngineEventsStore(KyuubiConf())
-
-    val s1 = SparkOperationEvent(
-      "ea1",
-      "select 1",
-      true,
-      "RUNNING",
-      1L,
-      1L,
-      1L,
-      2L,
-      None,
-      "sid1",
-      "a",
-      None)
-    val s2 = SparkOperationEvent(
-      "ea2",
-      "select 2",
-      true,
-      "RUNNING",
-      2L,
-      2L,
-      2L,
-      4L,
-      None,
-      "sid1",
-      "c",
-      None)
-    val s3 = SparkOperationEvent(
-      "ea3",
-      "select 3",
-      true,
-      "RUNNING",
-      3L,
-      3L,
-      3L,
-      6L,
-      None,
-      "sid1",
-      "b",
-      None)
-
-    store.saveStatement(s1)
-    store.saveStatement(s2)
-    store.saveStatement(s3)
-
-    assert(store.getStatementList.size == 3)
-    assert(store.getStatementList.head.statementId == "ea1")
-    assert(store.getStatementList.last.statementId == "ea3")
-  }
-
-  test("test drop statements when reach the threshold ") {
-    val conf = KyuubiConf()
-    conf.set(ENGINE_UI_STATEMENT_LIMIT, 3)
-
-    val store = new EngineEventsStore(conf)
-    for (i <- 1 to 5) {
-      val s = SparkOperationEvent(
-        s"ea1${i}",
-        "select 1",
-        true,
-        "RUNNING",
-        1L,
-        1L,
-        1L,
-        2L,
-        None,
-        "sid1",
-        "a",
-        None)
-      store.saveStatement(s)
+  test("EngineEventsStore statement test") {
+    assert(store.getStatementList.isEmpty)
+    assert(store.getStatementCount == 0)
+    val sql = """
+                |SELECT
+                |  l.id % 100 k,
+                |  sum(l.id) sum,
+                |  count(l.id) cnt,
+                |  avg(l.id) avg,
+                |  min(l.id) min,
+                |  max(l.id) max
+                |from range(0, 100000L, 1, 100) l
+                |  left join range(0, 100000L, 2, 100) r ON l.id = r.id
+                |GROUP BY 1""".stripMargin
+    withJdbcStatement() { statement =>
+      statement.execute(sql)
     }
-
-    assert(store.getStatementList.size == 3)
+    val statementList = store.getStatementList
+    assert(statementList.size == 1)
+    assert(store.getStatementCount == 1)
+    val statementId = statementList(0).statementId
+    assert(store.getStatement(statementId).get.statement === sql)
   }
 
-  test("test drop statements when reach the threshold, and try to keep active events.") {
-    val conf = KyuubiConf()
-    conf.set(ENGINE_UI_STATEMENT_LIMIT, 3)
+  override def withKyuubiConf: Map[String, String] = Map.empty
 
-    val store = new EngineEventsStore(conf)
-
-    store.saveStatement(SparkOperationEvent(
-      "s1",
-      "select 1",
-      true,
-      "RUNNING",
-      1L,
-      1L,
-      1L,
-      -1L,
-      None,
-      "sid1",
-      "a",
-      None))
-    store.saveStatement(SparkOperationEvent(
-      "s2",
-      "select 1",
-      true,
-      "RUNNING",
-      2L,
-      2L,
-      2L,
-      -1L,
-      None,
-      "sid1",
-      "a",
-      None))
-    store.saveStatement(SparkOperationEvent(
-      "s3",
-      "select 1",
-      true,
-      "RUNNING",
-      3L,
-      3L,
-      3L,
-      3L,
-      None,
-      "sid1",
-      "a",
-      None))
-    store.saveStatement(SparkOperationEvent(
-      "s4",
-      "select 1",
-      true,
-      "RUNNING",
-      4L,
-      4L,
-      4L,
-      -1L,
-      None,
-      "sid1",
-      "a",
-      None))
-
-    assert(store.getStatementList.size == 3)
-    assert(store.getStatementList(2).statementId == "s4")
-  }
-
+  override protected def jdbcUrl: String = getJdbcUrl
 }

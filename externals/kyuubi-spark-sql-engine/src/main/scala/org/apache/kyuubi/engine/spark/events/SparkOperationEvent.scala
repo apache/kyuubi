@@ -17,10 +17,13 @@
 
 package org.apache.kyuubi.engine.spark.events
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import org.apache.spark.sql.Encoders
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.util.kvstore.KVIndex
 
 import org.apache.kyuubi.Utils
+import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.KVIndexParam
 import org.apache.kyuubi.engine.spark.operation.SparkOperation
 
 /**
@@ -45,7 +48,7 @@ import org.apache.kyuubi.engine.spark.operation.SparkOperation
  * @param executionId the query execution id of this operation
  */
 case class SparkOperationEvent(
-    statementId: String,
+    @KVIndexParam statementId: String,
     statement: String,
     shouldRunAsync: Boolean,
     state: String,
@@ -69,6 +72,9 @@ case class SparkOperationEvent(
       completeTime - createTime
     }
   }
+
+  @JsonIgnore @KVIndex("completeTime")
+  private def completeTimeIndex: Long = if (completeTime > 0L) completeTime else -1L
 }
 
 object SparkOperationEvent {

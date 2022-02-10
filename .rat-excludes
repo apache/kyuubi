@@ -39,3 +39,4 @@ build/scala-*/**
 **/*.output.schema
 **/apache-kyuubi-*-bin*/**
 **/benchmarks/**
+**/org.apache.spark.status.AppHistoryServerPlugin

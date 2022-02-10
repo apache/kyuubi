@@ -23,6 +23,7 @@ import java.util.concurrent.CountDownLatch
 import scala.util.control.NonFatal
 
 import org.apache.spark.{ui, SparkConf}
+import org.apache.spark.kyuubi.{SparkContextHelper, SparkSQLEngineEventListener, SparkSQLEngineListener}
 import org.apache.spark.kyuubi.SparkSQLEngineListener
 import org.apache.spark.kyuubi.SparkUtilsHelper.getLocalDir
 import org.apache.spark.sql.SparkSession
@@ -38,16 +39,17 @@ import org.apache.kyuubi.ha.client.RetryPolicies
 import org.apache.kyuubi.service.Serverable
 import org.apache.kyuubi.util.SignalRegister
 
-case class SparkSQLEngine(
-    spark: SparkSession,
-    store: EngineEventsStore) extends Serverable("SparkSQLEngine") {
+case class SparkSQLEngine(spark: SparkSession) extends Serverable("SparkSQLEngine") {
 
   override val backendService = new SparkSQLBackendService(spark)
   override val frontendServices = Seq(new SparkTBinaryFrontendService(this))
 
   override def initialize(conf: KyuubiConf): Unit = {
-    val listener = new SparkSQLEngineListener(this, store)
+    val listener = new SparkSQLEngineListener(this)
     spark.sparkContext.addSparkListener(listener)
+    val kvStore = SparkContextHelper.getKvStore(spark.sparkContext)
+    val engineEventListener = new SparkSQLEngineEventListener(kvStore, conf)
+    spark.sparkContext.addSparkListener(engineEventListener)
     super.initialize(conf)
   }
 
@@ -122,8 +124,7 @@ object SparkSQLEngine extends Logging {
   }
 
   def startEngine(spark: SparkSession): Unit = {
-    val store = new EngineEventsStore(kyuubiConf)
-    currentEngine = Some(new SparkSQLEngine(spark, store))
+    currentEngine = Some(new SparkSQLEngine(spark))
     currentEngine.foreach { engine =>
       // start event logging ahead so that we can capture all statuses
       val eventLogging = new EventLoggingService(spark.sparkContext)
@@ -145,7 +146,13 @@ object SparkSQLEngine extends Logging {
       }
       try {
         engine.start()
-        ui.EngineTab(engine)
+        val kvStore = SparkContextHelper.getKvStore(spark.sparkContext)
+        val store = new EngineEventsStore(kvStore)
+        ui.EngineTab(
+          Some(engine),
+          SparkContextHelper.getSparkUI(spark.sparkContext),
+          store,
+          kyuubiConf)
         val event = EngineEvent(engine)
         info(event)
         EventLoggingService.onEvent(event)

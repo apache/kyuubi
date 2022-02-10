@@ -33,7 +33,7 @@ import org.apache.kyuubi.{KYUUBI_VERSION, Utils}
 import org.apache.kyuubi.engine.spark.events.{SessionEvent, SparkOperationEvent}
 
 case class EnginePage(parent: EngineTab) extends WebUIPage("") {
-  private val store = parent.engine.store
+  private val store = parent.store
 
   override def render(request: HttpServletRequest): Seq[Node] = {
     val content =
@@ -42,8 +42,8 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
         stop(request) ++
         <br/> ++
         <h4>
-        {parent.engine.backendService.sessionManager.getOpenSessionCount} session(s) are online,
-        running {parent.engine.backendService.sessionManager.operationManager.getOperationCount}
+        {store.getSessionCount} session(s) are online,
+        running {store.getStatementCount}
         operations
       </h4> ++
         generateSessionStatsTable(request) ++
@@ -52,7 +52,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
   }
 
   private def generateBasicStats(): Seq[Node] = {
-    val timeSinceStart = System.currentTimeMillis() - parent.engine.getStartTime
+    val timeSinceStart = parent.endTime() - parent.startTime
     <ul class ="list-unstyled">
       <li>
         <strong>Kyuubi Version: </strong>
@@ -60,24 +60,32 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
       </li>
       <li>
         <strong>Started at: </strong>
-        {new Date(parent.engine.getStartTime)}
+        {new Date(parent.startTime)}
       </li>
-      <li>
-        <strong>Latest Logout at: </strong>
-        {new Date(parent.engine.backendService.sessionManager.latestLogoutTime)}
-      </li>
+    {
+      parent.engine.map { engine =>
+        <li>
+            <strong>Latest Logout at: </strong>
+            {new Date(engine.backendService.sessionManager.latestLogoutTime)}
+          </li>
+      }.getOrElse(Seq.empty)
+    }
       <li>
         <strong>Time since start: </strong>
         {formatDurationVerbose(timeSinceStart)}
       </li>
-      <li>
-        <strong>Background execution pool threads alive: </strong>
-        {parent.engine.backendService.sessionManager.getExecPoolSize}
-      </li>
-      <li>
-        <strong>Background execution pool threads active: </strong>
-        {parent.engine.backendService.sessionManager.getActiveCount}
-      </li>
+    {
+      parent.engine.map { engine =>
+        <li>
+          <strong>Background execution pool threads alive: </strong>
+          {engine.backendService.sessionManager.getExecPoolSize}
+        </li>
+        <li>
+          <strong>Background execution pool threads active: </strong>
+          {engine.backendService.sessionManager.getActiveCount}
+        </li>
+      }.getOrElse(Seq.empty)
+    }
     </ul>
   }
 
