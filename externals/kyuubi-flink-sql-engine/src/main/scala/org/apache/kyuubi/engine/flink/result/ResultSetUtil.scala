@@ -17,9 +17,15 @@
 
 package org.apache.kyuubi.engine.flink.result;
 
+import java.util
+
+import scala.collection.mutable.ArrayBuffer
+
 import org.apache.flink.table.api.DataTypes
 import org.apache.flink.table.api.ResultKind
 import org.apache.flink.table.catalog.Column
+import org.apache.flink.table.client.gateway.Executor
+import org.apache.flink.table.operations.command.{ResetOperation, SetOperation}
 import org.apache.flink.types.Row
 
 /** Utility object for building ResultSet. */
@@ -54,4 +60,82 @@ object ResultSetUtil {
       .columns(Column.physical("result", DataTypes.STRING))
       .data(Array[Row](Row.of("OK")))
       .build
+
+  /**
+   * Runs a SetOperation with executor. Returns when SetOperation is executed successfully.
+   *
+   * @param setOperation Set operation.
+   * @param executor A gateway for communicating with Flink and other external systems.
+   * @param sessionId Id of the session.
+   * @return A ResultSet of SetOperation execution.
+   */
+  def runSetOperation(
+      setOperation: SetOperation,
+      executor: Executor,
+      sessionId: String): ResultSet = {
+    if (setOperation.getKey.isPresent) {
+      val key: String = setOperation.getKey.get.trim
+
+      if (setOperation.getValue.isPresent) {
+        val newValue: String = setOperation.getValue.get.trim
+        executor.setSessionProperty(sessionId, key, newValue)
+      }
+
+      val value = executor.getSessionConfigMap(sessionId).getOrDefault(key, "")
+      ResultSet.builder
+        .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+        .columns(
+          Column.physical("key", DataTypes.STRING()),
+          Column.physical("value", DataTypes.STRING()))
+        .data(Array(Row.of(key, value)))
+        .build
+    } else {
+      // show all properties if set without key
+      val properties: util.Map[String, String] = executor.getSessionConfigMap(sessionId)
+
+      val entries = ArrayBuffer.empty[Row]
+      properties.forEach((key, value) => entries.append(Row.of(key, value)))
+
+      if (entries.nonEmpty) {
+        val prettyEntries = entries.sortBy(_.getField(0).asInstanceOf[String])
+        ResultSet.builder
+          .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+          .columns(
+            Column.physical("key", DataTypes.STRING()),
+            Column.physical("value", DataTypes.STRING()))
+          .data(prettyEntries.toArray)
+          .build
+      } else {
+        ResultSet.builder
+          .resultKind(ResultKind.SUCCESS_WITH_CONTENT)
+          .columns(
+            Column.physical("key", DataTypes.STRING()),
+            Column.physical("value", DataTypes.STRING()))
+          .data(Array[Row]())
+          .build
+      }
+    }
+  }
+
+  /**
+   * Runs a ResetOperation with executor. Returns when ResetOperation is executed successfully.
+   *
+   * @param resetOperation Reset operation.
+   * @param executor A gateway for communicating with Flink and other external systems.
+   * @param sessionId Id of the session.
+   * @return A ResultSet of ResetOperation execution.
+   */
+  def runResetOperation(
+      resetOperation: ResetOperation,
+      executor: Executor,
+      sessionId: String): ResultSet = {
+    if (resetOperation.getKey.isPresent) {
+      // reset the given property
+      executor.resetSessionProperty(sessionId, resetOperation.getKey.get())
+    } else {
+      // reset all properties
+      executor.resetSessionProperties(sessionId)
+    }
+    successResultSet
+  }
 }

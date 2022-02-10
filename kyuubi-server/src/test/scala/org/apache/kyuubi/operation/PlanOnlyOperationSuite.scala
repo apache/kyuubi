@@ -40,7 +40,7 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
     }
   }
 
-  test("KYUUBI #1059: Plan only operation with with session conf") {
+  test("KYUUBI #1059: Plan only operation with session conf") {
     withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> "analyze"))(Map.empty) {
       withJdbcStatement() { statement =>
         val set = statement.executeQuery("select 1 where true")
@@ -51,7 +51,7 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
     }
   }
 
-  test("KYUUBI #1059: Plan only operation with with set command") {
+  test("KYUUBI #1059: Plan only operation with set command") {
     withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> "analyze"))(Map.empty) {
       withJdbcStatement() { statement =>
         statement.execute(s"set ${KyuubiConf.OPERATION_PLAN_ONLY.key}=parse")
