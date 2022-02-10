@@ -27,8 +27,9 @@ case class RunConfig(
     db: String = null,
     benchmarkName: String = "tpcds-v2.4-benchmark",
     filter: Option[String] = None,
+    iterations: Int = 3,
     breakdown: Boolean = false,
-    iterations: Int = 3)
+    resultsDir: String = "/spark/sql/performance")
 
 // scalastyle:off
 /**
@@ -61,6 +62,9 @@ object RunBenchmark {
       opt[Int]('i', "iterations")
         .action((x, c) => c.copy(iterations = x))
         .text("the number of iterations to run")
+      opt[String]('r',"results-dir")
+        .action((x, c) => c.copy(filter = Some(x)))
+        .text("dir to store benchmark results, e.g. hdfs://hdfs-nn:6379/pref")
       help("help")
         .text("prints this usage text")
     }
@@ -77,6 +81,8 @@ object RunBenchmark {
 
     val sparkSession = SparkSession.builder.config(conf).enableHiveSupport().getOrCreate()
     import sparkSession.implicits._
+
+    sparkSession.conf.set("spark.sql.perf.results", config.resultsDir)
 
     val benchmark = new TPCDS(sparkSession)
 

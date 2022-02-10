@@ -47,13 +47,14 @@ $SPARK_HOME/bin/spark-submit \
 
 Support options:
 
-| key        | default              | description                                              |
-|------------|----------------------|----------------------------------------------------------|
-| db         | none(required)       | the TPC-DS database                                      |
-| benchmark  | tpcds-v2.4-benchmark | the name of application                                  |
-| iterations | 3                    | the number of iterations to run                          |
-| breakdown  | false                | whether to record breakdown results of an execution      |
-| filter     | a                    | filter on the name of the queries to run, e.g. q1-v2.4   |
+| key         | default                | description                                                   |
+|-------------|------------------------|---------------------------------------------------------------|
+| db          | none(required)         | the TPC-DS database                                           |
+| benchmark   | tpcds-v2.4-benchmark   | the name of application                                       |
+| iterations  | 3                      | the number of iterations to run                               |
+| breakdown   | false                  | whether to record breakdown results of an execution           |
+| filter      | a                      | filter on the name of the queries to run, e.g. q1-v2.4        |
+| results-dir | /spark/sql/performance | dir to store benchmark results, e.g. hdfs://hdfs-nn:6379/pref |
 
 Example: the following command to benchmark TPC-DS sf10 with exists database `tpcds_sf10`.
 
