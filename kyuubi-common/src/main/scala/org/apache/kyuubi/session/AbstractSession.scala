@@ -50,7 +50,7 @@ abstract class AbstractSession(
     if (lastIdleTime > 0) System.currentTimeMillis() - _lastIdleTime else 0
   }
 
-  val normalizedConf: Map[String, String] = sessionManager.validateAndNormalizeConf(conf)
+  def normalizedConf: Map[String, String] = sessionManager.validateAndNormalizeConf(conf)
 
   final private val opHandleSet = new java.util.HashSet[OperationHandle]
 
