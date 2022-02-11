@@ -211,8 +211,15 @@ The release voting takes place on the Apache Kyuubi (Incubating) developers list
 - Recommend represent voting closing time in UTC format.
 - Make sure the email is in text format and the links are correct
 
+> Note: you can generate the voting mail content for dev ML automatically via invoke the `build/release/script/dev_kyuubi_vote.sh` script. 
+
 Once the vote is done, you should also send out a summary email with the totals, with a subject that looks
 something like __[VOTE][RESULT] ....__
+
+Then, you can move the release vote on the general incubator mailing list, and generate the voting mail content automatically via invoke the `build/release/script/general_incubator_vote.sh` script.
+Also, you should send out a summary email like dev ML voting.
+
+> Note, any reason causes voting cancel. You should re-vote on the dev ML firstly.
 
 ## Finalize the Release
 
@@ -255,6 +262,7 @@ Fork and clone [Apache Kyuubi website](https://github.com/apache/incubator-kyuub
 ### Create an Announcement
 
 Once everything is working, create an announcement on the website and then send an e-mail to the mailing list.
+You can generate the announcement via `buld/release/script/announce.sh` automatically.
 The mailing list includes: `general@incubator.apache.org`, `announce@apache.org`, `dev@kyuubi.apache.org`, `user@spark.apache.org`.
 
 Enjoy an adult beverage of your choice, and congratulations on making a Kyuubi release.
