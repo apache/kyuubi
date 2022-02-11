@@ -193,17 +193,13 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
         assert(r1.next())
         assert(r1.getString(2) == "v0")
 
-        val r2 = statement.executeQuery("set spark.k2")
+        val r2 = statement.executeQuery("set spark.k3")
         assert(r2.next())
-        assert(r2.getString(2) == "v2")
+        assert(r2.getString(2) == "v3")
 
-        val r3 = statement.executeQuery("set spark.k3")
+        val r3 = statement.executeQuery("set spark.k4")
         assert(r3.next())
-        assert(r3.getString(2) == "v3")
-
-        val r4 = statement.executeQuery("set spark.k4")
-        assert(r4.next())
-        assert(r4.getString(2) == "v4")
+        assert(r3.getString(2) == "v4")
       }
     }
   }

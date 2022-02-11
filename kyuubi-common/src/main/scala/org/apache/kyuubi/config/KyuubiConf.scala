@@ -1174,7 +1174,10 @@ object KyuubiConf {
 
   val SESSION_CONF_ADVISOR: OptionalConfigEntry[String] =
     buildConf("session.conf.advisor")
-      .doc("Choose a custom config advisor for session, the default implementation return empty.")
+      .doc("A config advisor plugin for Kyuubi Server. This plugin can provide some custom " +
+        "configs for different user or session configs and overwrite the session config before " +
+        "open a new session. This config value should be a class which is a child of " +
+        "org.apache.kyuubi.plugin.SessionConfAdvisor.")
       .version("1.5.0")
       .stringConf
       .createOptional

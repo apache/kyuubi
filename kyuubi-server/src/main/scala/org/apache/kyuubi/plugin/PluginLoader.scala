@@ -36,7 +36,7 @@ object PluginLoader {
     } catch {
       case _: ClassCastException =>
         throw new KyuubiException(
-          s"Class ${advisorClass.get} is not a child of '${classOf[SessionConfAdvisor].getName}'.'")
+          s"Class ${advisorClass.get} is not a child of '${classOf[SessionConfAdvisor].getName}'.")
       case NonFatal(e) =>
         throw new IllegalArgumentException(s"Error while instantiating '${advisorClass.get}':", e)
     }
