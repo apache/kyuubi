@@ -467,6 +467,8 @@ private class StatementStatsTableDataSource(
       case "Duration" => Ordering.by(_.duration)
       case "Statement" => Ordering.by(_.statement)
       case "State" => Ordering.by(_.state)
+      case "Query Details" => Ordering.by(_.executionId)
+      case "Failure Reason" => Ordering.by(_.exception.toString)
       case unknownColumn => throw new IllegalArgumentException(s"Unknown column: $unknownColumn")
     }
     if (desc) {
