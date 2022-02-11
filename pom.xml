@@ -112,7 +112,7 @@
         <guava.failureaccess.version>1.0.1</guava.failureaccess.version>
         <hadoop.version>3.3.1</hadoop.version>
         <hive.version>2.3.9</hive.version>
-        <hudi.version>0.10.0</hudi.version>
+        <hudi.version>0.10.1</hudi.version>
         <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
         <iceberg.version>0.13.1</iceberg.version>
         <jackson.version>2.13.1</jackson.version>
@@ -929,10 +929,10 @@
                  kyuubi-spark-sql-engine_2.12: Error creating shaded jar: Could not resolve following dependencies:
                  [jdk.tools:jdk.tools:jar:1.6 (system)]
 
-              The issue only occurs on GitHub Action environment with Hudi 0.10.0 and JDK 11.
+              The issue only occurs on GitHub Action environment with Hudi 0.10.1 and JDK 11.
               After few days digging, only found one place introduces jdk.tools,
 
-              - org.apache.hudi:hudi-common:jar:0.10.0:test
+              - org.apache.hudi:hudi-common:jar:0.10.1:test
                 - org.apache.hbase:hbase-server:jar:1.2.3:test
                   - org.apache.hadoop:hadoop-common:jar:2.5.1:test
                     - org.apache.hadoop:hadoop-annotations:jar:2.5.1:test
