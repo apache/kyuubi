@@ -54,7 +54,7 @@ Support options:
 | iterations  | 3                      | the number of iterations to run                               |
 | breakdown   | false                  | whether to record breakdown results of an execution           |
 | filter      | a                      | filter on the name of the queries to run, e.g. q1-v2.4        |
-| results-dir | /spark/sql/performance | dir to store benchmark results, e.g. hdfs://hdfs-nn:6379/pref |
+| results-dir | /spark/sql/performance | dir to store benchmark results, e.g. hdfs://hdfs-nn:9870/pref |
 
 Example: the following command to benchmark TPC-DS sf10 with exists database `tpcds_sf10`.
 
