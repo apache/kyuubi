@@ -42,7 +42,5 @@ trait IcebergSuiteMixin extends DataLakeSuiteMixin {
     s"spark.sql.catalog.$catalog" -> "org.apache.iceberg.spark.SparkCatalog",
     s"spark.sql.catalog.$catalog.type" -> "hadoop",
     s"spark.sql.catalog.$catalog.warehouse" -> warehouse.toString,
-    // https://github.com/apache/iceberg/pull/4024
-    s"spark.sql.catalog.$catalog.default-namespace" -> "default",
     "spark.jars" -> extraJars)
 }
