@@ -79,8 +79,8 @@
         <module>kyuubi-hive-jdbc</module>
         <module>kyuubi-hive-jdbc-shaded</module>
         <module>kyuubi-metrics</module>
-        <module>kyuubi-plugin</module>
         <module>kyuubi-server</module>
+        <module>kyuubi-server-plugin</module>
         <module>kyuubi-zookeeper</module>
     </modules>
 

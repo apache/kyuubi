@@ -26,16 +26,19 @@ object PluginLoader {
 
   def loadSessionConfAdvisor(conf: KyuubiConf): SessionConfAdvisor = {
     val advisorClass = conf.get(KyuubiConf.SESSION_CONF_ADVISOR)
+    if (advisorClass.isEmpty) {
+      return new DefaultSessionConfAdvisor()
+    }
 
     try {
-      Class.forName(advisorClass).getConstructor().newInstance()
+      Class.forName(advisorClass.get).getConstructor().newInstance()
         .asInstanceOf[SessionConfAdvisor]
     } catch {
       case _: ClassCastException =>
         throw new KyuubiException(
-          s"Class $advisorClass is not a child of '${classOf[SessionConfAdvisor].getName}'.'")
+          s"Class ${advisorClass.get} is not a child of '${classOf[SessionConfAdvisor].getName}'.'")
       case NonFatal(e) =>
-        throw new IllegalArgumentException(s"Error while instantiating '$advisorClass':", e)
+        throw new IllegalArgumentException(s"Error while instantiating '${advisorClass.get}':", e)
     }
   }
 }

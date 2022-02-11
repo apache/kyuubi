@@ -1172,12 +1172,12 @@ object KyuubiConf {
       .checkValues(OperationLanguages.values.map(_.toString))
       .createWithDefault(OperationLanguages.SQL.toString)
 
-  val SESSION_CONF_ADVISOR: ConfigEntry[String] =
+  val SESSION_CONF_ADVISOR: OptionalConfigEntry[String] =
     buildConf("session.conf.advisor")
       .doc("Choose a custom config advisor for session, the default implementation return empty.")
       .version("1.5.0")
       .stringConf
-      .createWithDefault("org.apache.kyuubi.plugin.DefaultSessionConfAdvisor")
+      .createOptional
 
   val SERVER_NAME: OptionalConfigEntry[String] =
     buildConf("server.name")

@@ -26,8 +26,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>kyuubi-plugin</artifactId>
-    <name>Kyuubi Project Plugin</name>
+    <artifactId>kyuubi-server-plugin</artifactId>
+    <name>Kyuubi Project Server Plugin</name>
     <packaging>jar</packaging>
 
     <build>

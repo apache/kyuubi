@@ -210,12 +210,6 @@ class KyuubiOperationPerConnectionSuite extends WithKyuubiServer with HiveJDBCTe
 }
 
 class TestSessionConfAdvisor extends SessionConfAdvisor {
-  override def getConfSuggestion(
-      user: String,
-      sessionConf: util.Map[String, String]): util.Map[String, String] = {
-    Map("spark.k1" -> "v1", "spark.k2" -> "v2").asJava
-  }
-
   override def getConfOverlay(
       user: String,
       sessionConf: util.Map[String, String]): util.Map[String, String] = {
