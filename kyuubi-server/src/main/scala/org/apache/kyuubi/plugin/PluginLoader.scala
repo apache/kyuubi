@@ -22,7 +22,7 @@ import scala.util.control.NonFatal
 import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.config.KyuubiConf
 
-object PluginLoader {
+private[kyuubi] object PluginLoader {
 
   def loadSessionConfAdvisor(conf: KyuubiConf): SessionConfAdvisor = {
     val advisorClass = conf.get(KyuubiConf.SESSION_CONF_ADVISOR)

@@ -17,13 +17,14 @@
 
 package org.apache.kyuubi.plugin;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Map;
 
 /** Provide the session configuration according to the user and session configuration. */
 public interface SessionConfAdvisor {
   /** The returned conf will overwrite the session conf */
+  @SuppressWarnings("unchecked")
   default Map<String, String> getConfOverlay(String user, Map<String, String> sessionConf) {
-    return new HashMap<>();
+    return Collections.EMPTY_MAP;
   }
 }
