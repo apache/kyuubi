@@ -100,7 +100,7 @@
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.10</commons-lang3.version>
         <curator.version>2.12.0</curator.version>
-        <delta.version>1.0.0</delta.version>
+        <delta.version>1.0.1</delta.version>
         <flink.version>1.14.3</flink.version>
         <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
         <flink.archive.mirror>https://archive.apache.org/dist/flink/flink-${flink.version}</flink.archive.mirror>
@@ -1851,7 +1851,7 @@
             <id>spark-3.1</id>
             <properties>
                 <spark.version>3.1.2</spark.version>
-                <delta.version>1.0.0</delta.version>
+                <delta.version>1.0.1</delta.version>
                 <iceberg.name>iceberg-spark-runtime-3.1_${scala.binary.version}</iceberg.name>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest</maven.plugin.scalatest.exclude.tags>
             </properties>
