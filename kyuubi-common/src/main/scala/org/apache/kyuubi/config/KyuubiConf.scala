@@ -706,7 +706,9 @@ object KyuubiConf {
   val SESSION_ENGINE_STARTUP_WAIT_COMPLETION: ConfigEntry[Boolean] =
     buildConf("session.engine.startup.waitCompletion")
       .doc("Whether to wait for completion after engine starts." +
-        " If false, the startup process will be destroyed after the engine is started.")
+        " If false, the startup process will be destroyed after the engine is started." +
+        " Note that only use it when the driver is not running locally," +
+        " such as yarn-cluster mode; Otherwise, the engine will be killed.")
       .version("1.5.0")
       .booleanConf
       .createWithDefault(true)
