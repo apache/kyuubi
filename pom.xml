@@ -93,15 +93,15 @@
 
         <antlr4.version>4.8</antlr4.version>
         <bouncycastle.version>1.67</bouncycastle.version>
-        <codahale.metrics.version>4.1.1</codahale.metrics.version>
+        <codahale.metrics.version>4.2.8</codahale.metrics.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <commons-io.version>2.8.0</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
         <commons-lang3.version>3.10</commons-lang3.version>
         <curator.version>2.12.0</curator.version>
-        <delta.version>1.0.0</delta.version>
-        <flink.version>1.14.2</flink.version>
+        <delta.version>1.0.1</delta.version>
+        <flink.version>1.14.3</flink.version>
         <flink.archive.name>flink-${flink.version}-bin-scala_${scala.binary.version}.tgz</flink.archive.name>
         <flink.archive.mirror>https://archive.apache.org/dist/flink/flink-${flink.version}</flink.archive.mirror>
         <flink.archive.download.skip>false</flink.archive.download.skip>
@@ -113,24 +113,25 @@
         <hive.version>2.3.9</hive.version>
         <hudi.version>0.10.0</hudi.version>
         <iceberg.name>iceberg-spark3-runtime</iceberg.name>
-        <iceberg.version>0.12.1</iceberg.version>
-        <jackson.version>2.12.5</jackson.version>
+        <iceberg.version>0.13.0</iceberg.version>
+        <jackson.version>2.13.1</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
-        <jaxb.version>2.2.11</jaxb.version>
-        <javax-activation.version>1.1.1</javax-activation.version>
+        <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
+        <jakarta.activation.version>1.2.1</jakarta.activation.version>
         <jersey.version>2.34</jersey.version>
         <jetty.version>9.4.41.v20210516</jetty.version>
         <jline.version>0.9.94</jline.version>
-        <kubernetes-client.version>5.5.0</kubernetes-client.version>
+        <kubernetes-client.version>5.12.1</kubernetes-client.version>
         <ldapsdk.version>5.1.4</ldapsdk.version>
         <mysql.jdbc.version>8.0.27</mysql.jdbc.version>
-        <netty.version>4.1.68.Final</netty.version>
+        <netty.version>4.1.73.Final</netty.version>
         <parquet.version>1.10.1</parquet.version>
-        <prometheus.version>0.10.0</prometheus.version>
+        <prometheus.version>0.14.1</prometheus.version>
         <scalacheck.version>3.2.9.0</scalacheck.version>
         <scalatest.version>3.2.9</scalatest.version>
         <scopt.version>4.0.1</scopt.version>
-        <slf4j.version>1.7.30</slf4j.version>
+        <slf4j.version>1.7.35</slf4j.version>
+        <log4j.version>2.17.1</log4j.version>
         <spark.version>3.1.2</spark.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop${hadoop.binary.version}.tgz</spark.archive.name>
         <spark.archive.mirror>https://archive.apache.org/dist/spark/spark-${spark.version}</spark.archive.mirror>
@@ -346,9 +347,23 @@
                 <artifactId>spark-repl_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
                 <exclusions>
+                    <!--
+                      Use Hadoop Shaded Client to gain more clean transitive dependencies
+                     -->
                     <exclusion>
-                        <groupId>*</groupId>
-                        <artifactId>*</artifactId>
+                        <groupId>org.apache.hadoop</groupId>
+                        <artifactId>hadoop-client</artifactId>
+                    </exclusion>
+                    <!--
+                      Use log4j2
+                     -->
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -364,6 +379,17 @@
                     <exclusion>
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
+                    </exclusion>
+                    <!--
+                      Use log4j2
+                     -->
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -384,6 +410,17 @@
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-common</artifactId>
                     </exclusion>
+                    <!--
+                      Use log4j2
+                     -->
+                    <exclusion>
+                        <groupId>log4j</groupId>
+                        <artifactId>log4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-log4j12</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -400,6 +437,10 @@
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
+                    <!--
+                      The module is only used in Kyuubi Spark Extensions, so we don't care about which
+                      version of Log4j it depends on.
+                     -->
                 </exclusions>
             </dependency>
 
@@ -416,14 +457,11 @@
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
+                    <!--
+                      The module is only used in Kyuubi Spark Extensions, so we don't care about which
+                      version of Log4j it depends on.
+                     -->
                 </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>org.scalatestplus</groupId>
-                <artifactId>scalacheck-1-15_${scala.binary.version}</artifactId>
-                <version>${scalacheck.version}</version>
-                <scope>test</scope>
             </dependency>
 
             <dependency>
@@ -439,6 +477,10 @@
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
+                    <!--
+                      The module is only used in Kyuubi Spark Extensions, so we don't care about which
+                      version of Log4j it depends on.
+                     -->
                 </exclusions>
             </dependency>
 
@@ -567,14 +609,30 @@
 
             <dependency>
                 <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-log4j12</artifactId>
+                <artifactId>jul-to-slf4j</artifactId>
                 <version>${slf4j.version}</version>
             </dependency>
 
             <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>jul-to-slf4j</artifactId>
-                <version>${slf4j.version}</version>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-slf4j-impl</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+            <dependency>
+                <!-- API bridge between log4j 1 and 2 -->
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-1.2-api</artifactId>
+                <version>${log4j.version}</version>
             </dependency>
 
             <dependency>
@@ -647,16 +705,6 @@
                 <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-jaxb-annotations</artifactId>
                 <version>${jackson.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>jakarta.xml.bind-api</artifactId>
-                        <groupId>jakarta.xml.bind</groupId>
-                    </exclusion>
-                    <exclusion>
-                        <artifactId>jakarta.activation-api</artifactId>
-                        <groupId>jakarta.activation</groupId>
-                    </exclusion>
-                </exclusions>
             </dependency>
 
             <dependency>
@@ -697,6 +745,80 @@
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
                 <version>${netty.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-codec-dns</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-codec-haproxy</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-codec-http</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-codec-http2</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-codec-memcache</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-codec-mqtt</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-codec-redis</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-codec-smtp</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-codec-socks</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-codec-stomp</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-codec-xml</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-handler-proxy</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-resolver-dns</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-resolver-dns-classes-macos</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-resolver-dns-native-macos</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-transport-rxtx</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-transport-sctp</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>io.netty</groupId>
+                        <artifactId>netty-transport-udt</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>
@@ -736,6 +858,13 @@
                 <groupId>org.scalatest</groupId>
                 <artifactId>scalatest_${scala.binary.version}</artifactId>
                 <version>${scalatest.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.scalatestplus</groupId>
+                <artifactId>scalacheck-1-15_${scala.binary.version}</artifactId>
+                <version>${scalacheck.version}</version>
+                <scope>test</scope>
             </dependency>
 
             <dependency>
@@ -954,9 +1083,9 @@
               we need explicitly add this dependency.
               -->
             <dependency>
-                <groupId>javax.xml.bind</groupId>
-                <artifactId>jaxb-api</artifactId>
-                <version>${jaxb.version}</version>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>${jakarta.xml-bind.version}</version>
             </dependency>
 
             <!--
@@ -964,9 +1093,9 @@
               of spark-core, thus only should explicitly add on Kyuubi Server Main test scope.
               -->
             <dependency>
-                <groupId>javax.activation</groupId>
-                <artifactId>activation</artifactId>
-                <version>${javax-activation.version}</version>
+                <groupId>jakarta.activation</groupId>
+                <artifactId>jakarta.activation-api</artifactId>
+                <version>${jakarta.activation.version}</version>
             </dependency>
 
             <!-- Zookeeper Cli required -->
@@ -1353,7 +1482,7 @@
                             <KYUUBI_WORK_DIR_ROOT>${project.build.directory}/work</KYUUBI_WORK_DIR_ROOT>
                         </environmentVariables>
                         <systemProperties>
-                            <log4j.configuration>file:src/test/resources/log4j.properties</log4j.configuration>
+                            <log4j2.configurationFile>file:src/test/resources/log4j2-test.properties</log4j2.configurationFile>
                             <java.io.tmpdir>${project.build.directory}/tmp</java.io.tmpdir>
                             <spark.driver.memory>1g</spark.driver.memory>
                             <kyuubi.metrics.json.location>${project.build.directory}/metrics</kyuubi.metrics.json.location>
@@ -1722,7 +1851,8 @@
             <id>spark-3.1</id>
             <properties>
                 <spark.version>3.1.2</spark.version>
-                <delta.version>1.0.0</delta.version>
+                <delta.version>1.0.1</delta.version>
+                <iceberg.name>iceberg-spark-runtime-3.1_${scala.binary.version}</iceberg.name>
                 <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest</maven.plugin.scalatest.exclude.tags>
             </properties>
             <modules>
@@ -1734,9 +1864,10 @@
         <profile>
             <id>spark-3.2</id>
             <properties>
-                <spark.version>3.2.0</spark.version>
+                <spark.version>3.2.1</spark.version>
                 <delta.version>1.1.0</delta.version>
-                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.IcebergTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
+                <iceberg.name>iceberg-spark-runtime-3.2_${scala.binary.version}</iceberg.name>
+                <maven.plugin.scalatest.exclude.tags>org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.HudiTest</maven.plugin.scalatest.exclude.tags>
             </properties>
             <modules>
                 <module>dev/kyuubi-extension-spark-common</module>

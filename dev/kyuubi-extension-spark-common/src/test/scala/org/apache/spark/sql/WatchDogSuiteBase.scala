@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.catalyst.plans.logical.GlobalLimit
+import org.apache.spark.sql.catalyst.plans.logical.{GlobalLimit, LogicalPlan}
 
 import org.apache.kyuubi.sql.KyuubiSQLConf
 import org.apache.kyuubi.sql.watchdog.MaxPartitionExceedException
@@ -29,6 +29,7 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
   }
 
   case class LimitAndExpected(limit: Int, expected: Int)
+
   val limitAndExpecteds = List(LimitAndExpected(1, 1), LimitAndExpected(11, 10))
 
   private def checkMaxPartition: Unit = {
@@ -100,7 +101,7 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
                |SELECT $distinct *
                |FROM t1
                |$sort
-               |""".stripMargin).queryExecution.analyzed.isInstanceOf[GlobalLimit])
+               |""".stripMargin).queryExecution.optimizedPlan.isInstanceOf[GlobalLimit])
         }
       }
 
@@ -113,7 +114,7 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
                  |FROM t1
                  |$sort
                  |LIMIT $limit
-                 |""".stripMargin).queryExecution.analyzed.maxRows.contains(expected))
+                 |""".stripMargin).queryExecution.optimizedPlan.maxRows.contains(expected))
           }
         }
       }
@@ -125,7 +126,7 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
     withSQLConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS.key -> "10") {
 
       assert(!sql("SELECT count(*) FROM t1")
-        .queryExecution.analyzed.isInstanceOf[GlobalLimit])
+        .queryExecution.optimizedPlan.isInstanceOf[GlobalLimit])
 
       val sorts = List("", "ORDER BY cnt", "ORDER BY c1", "ORDER BY cnt, c1", "ORDER BY c1, cnt")
       val havingConditions = List("", "HAVING cnt > 1")
@@ -139,7 +140,7 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
                |GROUP BY c1
                |$having
                |$sort
-               |""".stripMargin).queryExecution.analyzed.isInstanceOf[GlobalLimit])
+               |""".stripMargin).queryExecution.optimizedPlan.isInstanceOf[GlobalLimit])
         }
       }
 
@@ -154,7 +155,7 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
                  |$having
                  |$sort
                  |LIMIT $limit
-                 |""".stripMargin).queryExecution.analyzed.maxRows.contains(expected))
+                 |""".stripMargin).queryExecution.optimizedPlan.maxRows.contains(expected))
           }
         }
       }
@@ -191,7 +192,7 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
                |$withQuery
                |SELECT * FROM t2
                |$sort
-               |""".stripMargin).queryExecution.analyzed.isInstanceOf[GlobalLimit])
+               |""".stripMargin).queryExecution.optimizedPlan.isInstanceOf[GlobalLimit])
         }
       }
 
@@ -242,7 +243,7 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
                |GROUP BY c1
                |$having
                |$sort
-               |""".stripMargin).queryExecution.analyzed.isInstanceOf[GlobalLimit])
+               |""".stripMargin).queryExecution.optimizedPlan.isInstanceOf[GlobalLimit])
         }
       }
 
@@ -281,7 +282,7 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
              |UNION $x
              |SELECT c1, c2 FROM t3
              |""".stripMargin)
-          .queryExecution.analyzed.isInstanceOf[GlobalLimit])
+          .queryExecution.optimizedPlan.isInstanceOf[GlobalLimit])
       }
 
       val sorts = List("", "ORDER BY cnt", "ORDER BY c1", "ORDER BY cnt, c1", "ORDER BY c1, cnt")
@@ -308,7 +309,7 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
                  |$having
                  |$sort
                  |""".stripMargin)
-              .queryExecution.analyzed.isInstanceOf[GlobalLimit])
+              .queryExecution.optimizedPlan.isInstanceOf[GlobalLimit])
           }
         }
       }
@@ -323,7 +324,7 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
              |SELECT c1, c2 FROM t3
              |LIMIT $limit
              |""".stripMargin)
-          .queryExecution.analyzed.maxRows.contains(expected))
+          .queryExecution.optimizedPlan.maxRows.contains(expected))
       }
     }
   }
@@ -344,14 +345,14 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
                |SELECT * FROM
                |tmp_table
                |""".stripMargin)
-            .queryExecution.analyzed.isInstanceOf[GlobalLimit])
+            .queryExecution.optimizedPlan.isInstanceOf[GlobalLimit])
 
           assert(sql(
             s"""
                |SELECT * FROM
                |tmp_view
                |""".stripMargin)
-            .queryExecution.analyzed.maxRows.contains(3))
+            .queryExecution.optimizedPlan.maxRows.contains(3))
 
           assert(sql(
             s"""
@@ -359,7 +360,7 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
                |tmp_view
                |limit 11
                |""".stripMargin)
-            .queryExecution.analyzed.maxRows.contains(3))
+            .queryExecution.optimizedPlan.maxRows.contains(3))
 
           assert(sql(
             s"""
@@ -394,7 +395,7 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
              |insert into $multiInsertTableName1 select * limit 2
              |insert into $multiInsertTableName2 select *
              |""".stripMargin)
-          .queryExecution.analyzed.isInstanceOf[GlobalLimit])
+          .queryExecution.optimizedPlan.isInstanceOf[GlobalLimit])
       }
     }
   }
@@ -411,7 +412,68 @@ trait WatchDogSuiteBase extends KyuubiSparkSQLExtensionTest {
              |FROM tmp_table
              |DISTRIBUTE BY a
              |""".stripMargin)
-          .queryExecution.analyzed.isInstanceOf[GlobalLimit])
+          .queryExecution.optimizedPlan.isInstanceOf[GlobalLimit])
+      }
+    }
+  }
+
+  test("test watchdog: Subquery for forceMaxOutputRows") {
+    withSQLConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS.key -> "1") {
+      withTable("tmp_table1") {
+        sql("CREATE TABLE spark_catalog.`default`.tmp_table1(KEY INT, VALUE STRING) USING PARQUET")
+        sql("INSERT INTO TABLE spark_catalog.`default`.tmp_table1 " +
+          "VALUES (1, 'aa'),(2,'bb'),(3, 'cc'),(4,'aa'),(5,'cc'),(6, 'aa')")
+        assert(
+          sql("select * from tmp_table1").queryExecution.optimizedPlan.isInstanceOf[GlobalLimit])
+        val testSqlText =
+          """
+            |select count(*)
+            |from tmp_table1
+            |where tmp_table1.key in (
+            |select distinct tmp_table1.key
+            |from tmp_table1
+            |where tmp_table1.value = "aa"
+            |)
+            |""".stripMargin
+        val plan = sql(testSqlText).queryExecution.optimizedPlan
+        assert(!findGlobalLimit(plan))
+        checkAnswer(sql(testSqlText), Row(3) :: Nil)
+      }
+
+      def findGlobalLimit(plan: LogicalPlan): Boolean = plan match {
+        case _: GlobalLimit => true
+        case p if p.children.isEmpty => false
+        case p => p.children.exists(findGlobalLimit)
+      }
+
+    }
+  }
+
+  test("test watchdog: Join for forceMaxOutputRows") {
+    withSQLConf(KyuubiSQLConf.WATCHDOG_FORCED_MAXOUTPUTROWS.key -> "1") {
+      withTable("tmp_table1", "tmp_table2") {
+        sql("CREATE TABLE spark_catalog.`default`.tmp_table1(KEY INT, VALUE STRING) USING PARQUET")
+        sql("INSERT INTO TABLE spark_catalog.`default`.tmp_table1 " +
+          "VALUES (1, 'aa'),(2,'bb'),(3, 'cc'),(4,'aa'),(5,'cc'),(6, 'aa')")
+        sql("CREATE TABLE spark_catalog.`default`.tmp_table2(KEY INT, VALUE STRING) USING PARQUET")
+        sql("INSERT INTO TABLE spark_catalog.`default`.tmp_table2 " +
+          "VALUES (1, 'aa'),(2,'bb'),(3, 'cc'),(4,'aa'),(5,'cc'),(6, 'aa')")
+        val testSqlText =
+          """
+            |select a.*,b.*
+            |from tmp_table1 a
+            |join
+            |tmp_table2 b
+            |on a.KEY = b.KEY
+            |""".stripMargin
+        val plan = sql(testSqlText).queryExecution.optimizedPlan
+        assert(findGlobalLimit(plan))
+      }
+
+      def findGlobalLimit(plan: LogicalPlan): Boolean = plan match {
+        case _: GlobalLimit => true
+        case p if p.children.isEmpty => false
+        case p => p.children.exists(findGlobalLimit)
       }
     }
   }

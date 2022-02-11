@@ -64,7 +64,7 @@ Also, we will appreciate if you can help us to improve the document.
 JDBC URLs have the following format:
 
 ```
-jdbc:hive2://<host>:<port>/<dbName>;<sessionConfs>?<sparkConfs>#<[spark|hive]Vars>
+jdbc:hive2://<host>:<port>/<dbName>;<sessionVars>?<kyuubiConfs>#<[spark|hive]Vars>
 ```
 
 JDBC Parameter | Description
@@ -72,14 +72,14 @@ JDBC Parameter | Description
 host | The cluster node hosting Kyuubi Server.
 port | The port number to which is Kyuubi Server listening.
 dbName | Optional database name to set the current database to run the query against, use `default` if absent.
-sessionConfs | Optional `Semicolon(;)` separated `key=value` parameters for the JDBC/ODBC driver. All of these will be set to the engine by `SparkSession.conf` which only accepts [Runtime SQL Configurations](http://spark.apache.org/docs/latest/configuration.html#runtime-sql-configuration);
-sparkConfs | Optional `Semicolon(;)` separated `key=value` parameters for Kyuubi server to create the corresponding engine, dismissed if engine exists.
+sessionVars | Optional `Semicolon(;)` separated `key=value` parameters for the JDBC/ODBC driver. Such as `user`, `password` and `hive.server2.proxy.user`.
+kyuubiConfs | Optional `Semicolon(;)` separated `key=value` parameters for Kyuubi server to create the corresponding engine, dismissed if engine exists.
 [spark&#124;hive]Vars | Optional `Semicolon(;)` separated `key=value` parameters for Spark/Hive variables used for variable substitution.
 
 ## Example
 
 ```
-jdbc:hive2://localhost:10009/default;spark.sql.adaptive.enabled=true?spark.ui.enabled=false#var_x=y
+jdbc:hive2://localhost:10009/default;hive.server2.proxy.user=proxy_user?kyuubi.engine.share.level=CONNECTION;spark.ui.enabled=false#var_x=y
 ```
 
 ## Unsupported Hive Features

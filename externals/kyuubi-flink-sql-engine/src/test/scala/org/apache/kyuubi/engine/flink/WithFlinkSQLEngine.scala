@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.engine.flink
 
+import java.nio.file.Files
+
 import scala.collection.JavaConverters._
 
 import org.apache.flink.client.cli.{CustomCommandLine, DefaultCLI}
@@ -26,6 +28,7 @@ import org.apache.flink.table.client.gateway.context.DefaultContext
 
 import org.apache.kyuubi.KyuubiFunSuite
 import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.engine.flink.util.TestUserClassLoaderJar
 
 trait WithFlinkSQLEngine extends KyuubiFunSuite {
 
@@ -37,6 +40,17 @@ trait WithFlinkSQLEngine extends KyuubiFunSuite {
   val kyuubiConf: KyuubiConf = FlinkSQLEngine.kyuubiConf
 
   protected var connectionUrl: String = _
+
+  protected val GENERATED_UDF_CLASS: String = "LowerUDF"
+
+  protected val GENERATED_UDF_CODE: String =
+    s"""
+      public class $GENERATED_UDF_CLASS extends org.apache.flink.table.functions.ScalarFunction {
+        public String eval(String str) {
+          return str.toLowerCase();
+        }
+      }
+     """
 
   override def beforeAll(): Unit = {
     startMiniCluster()
@@ -55,8 +69,13 @@ trait WithFlinkSQLEngine extends KyuubiFunSuite {
       System.setProperty(k, v)
       kyuubiConf.set(k, v)
     }
+    val udfJar = TestUserClassLoaderJar.createJarFile(
+      Files.createTempDirectory("test-jar").toFile,
+      "test-classloader-udf.jar",
+      GENERATED_UDF_CLASS,
+      GENERATED_UDF_CODE)
     val engineContext = new DefaultContext(
-      List.empty.asJava,
+      List(udfJar.toURI.toURL).asJava,
       flinkConfig,
       List[CustomCommandLine](new DefaultCLI).asJava)
     FlinkSQLEngine.startEngine(engineContext)

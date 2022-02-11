@@ -15,18 +15,30 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.engine.trino
+package org.apache.kyuubi.service.authentication
 
-class TrinoContextSuite extends WithTrinoContainerServer {
+import org.apache.kyuubi.config.KyuubiConf
+import org.apache.kyuubi.config.KyuubiConf.ENGINE_SECURITY_SECRET_PROVIDER
 
-  test("set current schema") {
-    withTrinoContainer { trinoContext =>
-      val trinoStatement = TrinoStatement(trinoContext, kyuubiConf, "select 1")
-      assert("tiny" === trinoStatement.getCurrentDatabase)
+trait EngineSecuritySecretProvider {
 
-      trinoContext.setCurrentSchema("sf1")
-      val trinoStatement2 = TrinoStatement(trinoContext, kyuubiConf, "select 1")
-      assert("sf1" === trinoStatement2.getCurrentDatabase)
-    }
+  /**
+   * Initialize with kyuubi conf.
+   */
+  def initialize(conf: KyuubiConf): Unit
+
+  /**
+   * Get the secret to encrypt and decrypt the secure access token.
+   */
+  def getSecret(): String
+}
+
+object EngineSecuritySecretProvider {
+  def create(conf: KyuubiConf): EngineSecuritySecretProvider = {
+    val providerClass = Class.forName(conf.get(ENGINE_SECURITY_SECRET_PROVIDER))
+    val provider = providerClass.getConstructor().newInstance()
+      .asInstanceOf[EngineSecuritySecretProvider]
+    provider.initialize(conf)
+    provider
   }
 }

@@ -17,11 +17,7 @@
 
 package org.apache.kyuubi.server
 
-import java.net.InetAddress
-
-import org.eclipse.jetty.server.{HttpConfiguration, HttpConnectionFactory, Server, ServerConnector}
-import org.eclipse.jetty.server.handler.ErrorHandler
-import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler
+import java.util.concurrent.atomic.AtomicBoolean
 
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -36,95 +32,45 @@ import org.apache.kyuubi.service.{AbstractFrontendService, Serverable, Service}
 class KyuubiRestFrontendService(override val serverable: Serverable)
   extends AbstractFrontendService("KyuubiRestFrontendService") with Logging {
 
-  private var serverAddr: InetAddress = _
-  private var portNum: Int = _
-  private var jettyServer: Server = _
-  private var connector: ServerConnector = _
+  private var server: JettyServer = _
 
-  @volatile protected var isStarted = false
+  private val isStarted = new AtomicBoolean(false)
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
-    val serverHost = conf.get(FRONTEND_REST_BIND_HOST)
-    serverAddr = serverHost.map(InetAddress.getByName).getOrElse(Utils.findLocalInetAddress)
-    portNum = conf.get(FRONTEND_REST_BIND_PORT)
-
-    jettyServer = new Server()
-
-    // set error handler
-    val errorHandler = new ErrorHandler()
-    errorHandler.setShowStacks(true)
-    errorHandler.setServer(jettyServer)
-    jettyServer.addBean(errorHandler)
-
-    jettyServer.setHandler(ApiRootResource.getServletHandler(this))
-
-    connector = new ServerConnector(
-      jettyServer,
-      null,
-      new ScheduledExecutorScheduler(s"$getName-JettyScheduler", true),
-      null,
-      -1,
-      -1,
-      Array(new HttpConnectionFactory(new HttpConfiguration())): _*)
-    connector.setPort(portNum)
-    connector.setHost(serverAddr.getCanonicalHostName)
-    connector.setReuseAddress(!Utils.isWindows)
-    connector.setAcceptQueueSize(math.min(connector.getAcceptors, 8))
-
+    val host = conf.get(FRONTEND_REST_BIND_HOST)
+      .getOrElse(Utils.findLocalInetAddress.getHostName)
+    server = JettyServer(getName, host, conf.get(FRONTEND_REST_BIND_PORT))
     super.initialize(conf)
   }
 
   override def connectionUrl: String = {
     checkInitialized()
-    s"${serverAddr.getCanonicalHostName}:${connector.getLocalPort}"
+    server.getServerUri
   }
 
-  override def start(): Unit = {
-    if (!isStarted) {
+  private def startInternal(): Unit = {
+    server.addHandler(ApiRootResource.getServletHandler(this))
+  }
+
+  override def start(): Unit = synchronized {
+    if (!isStarted.get) {
       try {
-        connector.start()
-        jettyServer.start()
-        isStarted = true
-        info(s"Rest frontend service jetty server has started at ${jettyServer.getURI}.")
+        server.start()
+        isStarted.set(true)
+        info(s"$getName has started at ${server.getServerUri}")
+        startInternal()
       } catch {
-        case rethrow: Exception =>
-          stopHttpServer()
-          throw new KyuubiException("Cannot start rest frontend service jetty server", rethrow)
+        case e: Exception => throw new KyuubiException(s"Cannot start $getName", e)
       }
     }
-
     super.start()
   }
 
-  override def stop(): Unit = {
-    if (isStarted) {
-      stopHttpServer()
-      isStarted = false
+  override def stop(): Unit = synchronized {
+    if (isStarted.getAndSet(false)) {
+      server.stop()
     }
     super.stop()
-  }
-
-  private def stopHttpServer(): Unit = {
-    if (jettyServer != null) {
-      try {
-        connector.stop()
-        info("Rest frontend service server connector has stopped.")
-      } catch {
-        case err: Exception =>
-          error("Cannot safely stop rest frontend service server connector", err)
-      } finally {
-        connector = null
-      }
-
-      try {
-        jettyServer.stop()
-        info("Rest frontend service jetty server has stopped.")
-      } catch {
-        case err: Exception => error("Cannot safely stop rest frontend service jetty server", err)
-      } finally {
-        jettyServer = null
-      }
-    }
   }
 
   override val discoveryService: Option[Service] = None

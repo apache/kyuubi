@@ -41,12 +41,14 @@ function usage {
   echo ""
   echo "Usage:"
   echo "+--------------------------------------------------------------------------------------+"
-  echo "| ./build/dist [--name <custom_name>] [--tgz] [--flink-provided] [--spark-provided] <maven build options> |"
+  echo "| ./build/dist [--name <custom_name>] [--tgz] [--flink-provided] [--spark-provided]    |"
+  echo "|              [--mvn <maven_executable>] <maven build options>                        |"
   echo "+--------------------------------------------------------------------------------------+"
   echo "name:           -  custom binary name, using project version if undefined"
   echo "tgz:            -  whether to make a whole bundled package"
   echo "flink-provided: -  whether to make a package without Flink binary"
   echo "spark-provided: -  whether to make a package without Spark binary"
+  echo "mvn:            -  external maven executable location"
   echo ""
 }
 
@@ -67,6 +69,10 @@ while (( "$#" )); do
       ;;
     --spark-provided)
       SPARK_PROVIDED=true
+      ;;
+    --mvn)
+      MVN="$2"
+      shift
       ;;
     --name)
       NAME="$2"
@@ -111,6 +117,16 @@ if [[ $(command -v git) ]]; then
     fi
     unset GITREV
 fi
+
+
+if [ ! "$(command -v "$MVN")" ] ; then
+    echo -e "Could not locate Maven command: '$MVN'."
+    echo -e "Specify the Maven command with the --mvn flag"
+    exit -1;
+fi
+
+echo "MVN is set to $MVN"
+
 
 VERSION=$("$MVN" help:evaluate -Dexpression=project.version $@ 2>/dev/null\
     | grep -v "INFO"\
@@ -170,6 +186,7 @@ else
 fi
 
 MVN_DIST_OPT="-DskipTests"
+
 if [[ "$SPARK_PROVIDED" == "true" ]]; then
   MVN_DIST_OPT="$MVN_DIST_OPT -Pspark-provided"
 fi
@@ -177,6 +194,8 @@ fi
 if [[ "$FLINK_PROVIDED" == "true" ]]; then
   MVN_DIST_OPT="$MVN_DIST_OPT -Pflink-provided"
 fi
+
+export MAVEN_OPTS="${MAVEN_OPTS:--Xmx2g}"
 
 BUILD_COMMAND=("$MVN" clean install $MVN_DIST_OPT $@)
 

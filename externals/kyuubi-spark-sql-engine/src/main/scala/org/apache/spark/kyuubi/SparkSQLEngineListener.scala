@@ -30,7 +30,6 @@ import org.apache.kyuubi.Logging
 import org.apache.kyuubi.Utils.stringifyException
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_STATEMENT_ID_KEY
-import org.apache.kyuubi.engine.spark.events.{EngineEventsStore, SessionEvent, SparkOperationEvent}
 import org.apache.kyuubi.service.{Serverable, ServiceState}
 
 /**
@@ -38,9 +37,7 @@ import org.apache.kyuubi.service.{Serverable, ServiceState}
  *
  * @param server the corresponding engine
  */
-class SparkSQLEngineListener(
-    server: Serverable,
-    store: EngineEventsStore) extends SparkListener with Logging {
+class SparkSQLEngineListener(server: Serverable) extends SparkListener with Logging {
 
   // the conf of server is null before initialized, use lazy val here
   private lazy val deregisterExceptions: Seq[String] =
@@ -116,19 +113,4 @@ class SparkSQLEngineListener(
     case e => e
   }
 
-  override def onOtherEvent(event: SparkListenerEvent): Unit = {
-    event match {
-      case e: SessionEvent => updateSessionStore(e)
-      case e: SparkOperationEvent => updateStatementStore(e)
-      case _ => // Ignore
-    }
-  }
-
-  private def updateSessionStore(event: SessionEvent): Unit = {
-    store.saveSession(event)
-  }
-
-  private def updateStatementStore(event: SparkOperationEvent): Unit = {
-    store.saveStatement(event)
-  }
 }

@@ -22,6 +22,7 @@ import java.sql.DatabaseMetaData
 import org.apache.flink.table.api.EnvironmentSettings.DEFAULT_BUILTIN_CATALOG
 import org.apache.flink.table.api.EnvironmentSettings.DEFAULT_BUILTIN_DATABASE
 import org.apache.flink.table.types.logical.LogicalTypeRoot
+import org.apache.hive.service.rpc.thrift.{TExecuteStatementReq, TFetchResultsReq, TOpenSessionReq}
 import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.time.SpanSugar._
 
@@ -35,7 +36,7 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
   override def withKyuubiConf: Map[String, String] = Map()
 
   override protected def jdbcUrl: String =
-    s"jdbc:hive2://${engine.frontendServices.head.connectionUrl}/"
+    s"jdbc:hive2://${engine.frontendServices.head.connectionUrl}/;"
 
   ignore("release session if shared level is CONNECTION") {
     logger.info(s"jdbc url is $jdbcUrl")
@@ -684,5 +685,77 @@ class FlinkOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper {
       assert(resultSet.next())
       assert(resultSet.getLong(1) == -1L)
     })
+  }
+
+  test("execute statement - set properties") {
+    withMultipleConnectionJdbcStatement()({ statement =>
+      val resultSet = statement.executeQuery("set table.dynamic-table-options.enabled = true")
+      val metadata = resultSet.getMetaData
+      assert(metadata.getColumnName(1) == "key")
+      assert(metadata.getColumnName(2) == "value")
+      assert(resultSet.next())
+      assert(resultSet.getString(1) == "table.dynamic-table-options.enabled")
+      assert(resultSet.getString(2) == "true")
+    })
+  }
+
+  test("execute statement - show properties") {
+    withMultipleConnectionJdbcStatement()({ statement =>
+      val resultSet = statement.executeQuery("set")
+      val metadata = resultSet.getMetaData
+      assert(metadata.getColumnName(1) == "key")
+      assert(metadata.getColumnName(2) == "value")
+      assert(resultSet.next())
+    })
+  }
+
+  test("execute statement - reset property") {
+    withMultipleConnectionJdbcStatement()({ statement =>
+      statement.executeQuery("set pipeline.jars = my.jar")
+      statement.executeQuery("reset pipeline.jars")
+      val resultSet = statement.executeQuery("set")
+      // Flink does not support set key without value currently,
+      // thus read all rows to find the desired one
+      var success = false
+      while (resultSet.next()) {
+        if (resultSet.getString(1) == "pipeline.jars" &&
+          !resultSet.getString(2).contains("my.jar")) {
+          success = true
+        }
+      }
+      assert(success)
+    })
+  }
+
+  test("execute statement - select udf") {
+    withJdbcStatement() { statement =>
+      statement.execute(s"create function $GENERATED_UDF_CLASS AS '$GENERATED_UDF_CLASS'")
+      val resultSet = statement.executeQuery(s"select $GENERATED_UDF_CLASS('A')")
+      assert(resultSet.next())
+      assert(resultSet.getString(1) === "a")
+    }
+  }
+
+  test("async execute statement - select column name with dots") {
+    withThriftClient { client =>
+      val tOpenSessionReq = new TOpenSessionReq()
+      tOpenSessionReq.setUsername("kentyao")
+      tOpenSessionReq.setPassword("anonymous")
+      val tOpenSessionResp = client.OpenSession(tOpenSessionReq)
+      val tExecuteStatementReq = new TExecuteStatementReq()
+      tExecuteStatementReq.setSessionHandle(tOpenSessionResp.getSessionHandle)
+      tExecuteStatementReq.setRunAsync(true)
+      tExecuteStatementReq.setStatement("select 'tmp.hello'")
+      val tExecuteStatementResp = client.ExecuteStatement(tExecuteStatementReq)
+      val operationHandle = tExecuteStatementResp.getOperationHandle
+      waitForOperationToComplete(client, operationHandle)
+      val tFetchResultsReq = new TFetchResultsReq()
+      tFetchResultsReq.setOperationHandle(operationHandle)
+      tFetchResultsReq.setFetchType(2)
+      tFetchResultsReq.setMaxRows(1000)
+      val tFetchResultsResp = client.FetchResults(tFetchResultsReq)
+      assert(tFetchResultsResp.getResults.getColumns.get(0)
+        .getStringVal.getValues.get(0) === "tmp.hello")
+    }
   }
 }

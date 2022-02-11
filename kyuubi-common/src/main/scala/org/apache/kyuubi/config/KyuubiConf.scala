@@ -27,7 +27,6 @@ import scala.collection.JavaConverters._
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.engine.{EngineType, ShareLevel}
 import org.apache.kyuubi.service.authentication.{AuthTypes, SaslQOP}
-import org.apache.kyuubi.util.NettyUtils.MAX_NETTY_THREADS
 
 case class KyuubiConf(loadSysDefault: Boolean = true) extends Logging {
   import KyuubiConf._
@@ -516,6 +515,16 @@ object KyuubiConf {
     .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
     .createWithDefault(3309)
 
+  /**
+   * Specifies an upper bound on the number of Netty threads that Kyuubi requires by default.
+   * In practice, only 2-4 cores should be required to transfer roughly 10 Gb/s, and each core
+   * that we use will have an initial overhead of roughly 32 MB of off-heap memory, which comes
+   * at a premium.
+   *
+   * Thus, this value should still retain maximum throughput and reduce wasted off-heap memory
+   * allocation.
+   */
+  val MAX_NETTY_THREADS: Int = 8
   val FRONTEND_MYSQL_NETTY_WORKER_THREADS: OptionalConfigEntry[Int] =
     buildConf("frontend.mysql.netty.worker.threads")
       .doc("Number of thread in the netty worker event loop of MySQL frontend service. " +
@@ -1077,6 +1086,59 @@ object KyuubiConf {
       .version("1.4.0")
       .stringConf
       .createWithDefault("engine_operation_logs")
+
+  val ENGINE_SECURITY_ENABLED: ConfigEntry[Boolean] =
+    buildConf("engine.security.enabled")
+      .doc("Whether to enable the internal secure access between Kyuubi server and engine.")
+      .version("1.5.0")
+      .booleanConf
+      .createWithDefault(false)
+
+  val ENGINE_SECURITY_TOKEN_MAX_LIFETIME: ConfigEntry[Long] =
+    buildConf("engine.security.token.max.lifetime")
+      .doc("The max lifetime of the token used for secure access between Kyuubi server and engine.")
+      .version("1.5.0")
+      .timeConf
+      .createWithDefault(Duration.ofMinutes(10).toMillis)
+
+  val ENGINE_SECURITY_SECRET_PROVIDER: ConfigEntry[String] =
+    buildConf("engine.security.secret.provider")
+      .doc("The class used to manage the engine security secret. This class must be a " +
+        "subclass of EngineSecuritySecretProvider.")
+      .version("1.5.0")
+      .stringConf
+      .createWithDefault(
+        "org.apache.kyuubi.service.authentication.ZooKeeperEngineSecuritySecretProviderImpl")
+
+  val ENGINE_SECURITY_CRYPTO_KEY_LENGTH: ConfigEntry[Int] =
+    buildConf("engine.security.crypto.keyLength")
+      .doc("The length in bits of the encryption key to generate. " +
+        "Valid values are 128, 192 and 256")
+      .version("1.5.0")
+      .intConf
+      .checkValues(Set(128, 192, 256))
+      .createWithDefault(128)
+
+  val ENGINE_SECURITY_CRYPTO_IV_LENGTH: ConfigEntry[Int] =
+    buildConf("engine.security.crypto.ivLength")
+      .doc("Initial vector length, in bytes.")
+      .version("1.5.0")
+      .intConf
+      .createWithDefault(16)
+
+  val ENGINE_SECURITY_CRYPTO_KEY_ALGORITHM: ConfigEntry[String] =
+    buildConf("engine.security.crypto.keyAlgorithm")
+      .doc("The algorithm for generated secret keys.")
+      .version("1.5.0")
+      .stringConf
+      .createWithDefault("AES")
+
+  val ENGINE_SECURITY_CRYPTO_CIPHER_TRANSFORMATION: ConfigEntry[String] =
+    buildConf("engine.security.crypto.cipher")
+      .doc("The cipher transformation to use for encrypting engine access token.")
+      .version("1.5.0")
+      .stringConf
+      .createWithDefault("AES/CBC/PKCS5PADDING")
 
   val SESSION_NAME: OptionalConfigEntry[String] =
     buildConf("session.name")

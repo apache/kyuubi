@@ -17,12 +17,16 @@
 
 package org.apache.spark.ui
 
+import scala.collection.JavaConverters._
+
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.util.EntityUtils
 import org.apache.spark.SparkContext
+import org.apache.spark.kyuubi.SparkContextHelper
 
 import org.apache.kyuubi.engine.spark.WithSparkSQLEngine
+import org.apache.kyuubi.engine.spark.events.{SessionEvent, SparkOperationEvent}
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
 
 class EngineTabSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
@@ -34,6 +38,16 @@ class EngineTabSuite extends WithSparkSQLEngine with HiveJDBCTestHelper {
   override def beforeAll(): Unit = {
     SparkContext.getActive.foreach(_.stop())
     super.beforeAll()
+  }
+
+  override protected def beforeEach(): Unit = {
+    val kvstore = SparkContextHelper.getKvStore(spark.sparkContext)
+    kvstore.view(classOf[SessionEvent]).closeableIterator().asScala.foreach(j => {
+      kvstore.delete(j.getClass, j.sessionId)
+    })
+    kvstore.view(classOf[SparkOperationEvent]).closeableIterator().asScala.foreach(j => {
+      kvstore.delete(j.getClass, j.statementId)
+    })
   }
 
   test("basic stats for engine tab") {

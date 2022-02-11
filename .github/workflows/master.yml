@@ -28,7 +28,7 @@ jobs:
           - java: 8
             spark: '3.1'
             spark-hadoop: '3.2'
-            profiles: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.2.0 -Dspark.archive.name=spark-3.2.0-bin-hadoop3.2.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
+            profiles: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.2.1 -Dspark.archive.name=spark-3.2.1-bin-hadoop3.2.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
           - java: 8
             spark: '3.1'
             spark-hadoop: '3.2'
@@ -162,7 +162,7 @@ jobs:
           tags: apache/kyuubi:latest
       # from https://github.com/marketplace/actions/setup-minikube-kubernetes-cluster
       - name: Setup Minikube
-        uses: manusa/actions-setup-minikube@v2.4.2
+        uses: manusa/actions-setup-minikube@v2.4.3
         with:
           minikube version: 'v1.16.0'
           kubernetes version: 'v1.19.2'

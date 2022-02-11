@@ -109,6 +109,4 @@ abstract class TBinaryFrontendService(name: String)
     server.foreach(_.stop())
     server = None
   }
-
-  protected def isServer(): Boolean = false
 }

@@ -22,19 +22,11 @@ import java.util.concurrent.atomic.AtomicReference
 import io.trino.client.ClientSession
 import okhttp3.OkHttpClient
 
-class TrinoContext(
-    val httpClient: OkHttpClient,
-    val clientSession: AtomicReference[ClientSession]) {
-
-  def getClientSession: ClientSession = clientSession.get
-
-  def setCurrentSchema(schema: String): Unit = {
-    clientSession.set(ClientSession.builder(clientSession.get).withSchema(schema).build())
-  }
-
-}
+case class TrinoContext(
+    httpClient: OkHttpClient,
+    clientSession: AtomicReference[ClientSession])
 
 object TrinoContext {
   def apply(httpClient: OkHttpClient, clientSession: ClientSession): TrinoContext =
-    new TrinoContext(httpClient, new AtomicReference(clientSession))
+    TrinoContext(httpClient, new AtomicReference(clientSession))
 }

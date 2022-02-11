@@ -24,25 +24,42 @@ import scala.util.control.NonFatal
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.engine.spark.SparkSQLEngine
+import org.apache.kyuubi.engine.spark.events.EngineEventsStore
 import org.apache.kyuubi.service.ServiceState
 
 /**
  * Note that [[SparkUITab]] is private for Spark
  */
-case class EngineTab(engine: SparkSQLEngine)
-  extends SparkUITab(engine.spark.sparkContext.ui.orNull, "kyuubi") with Logging {
+case class EngineTab(
+    engine: Option[SparkSQLEngine],
+    sparkUI: Option[SparkUI],
+    store: EngineEventsStore,
+    kyuubiConf: KyuubiConf)
+  extends SparkUITab(sparkUI.orNull, "kyuubi") with Logging {
 
   override val name: String = "Kyuubi Query Engine"
-  val killEnabled = engine.getConf.get(KyuubiConf.ENGINE_UI_STOP_ENABLED)
+  val killEnabled = kyuubiConf.get(KyuubiConf.ENGINE_UI_STOP_ENABLED)
 
-  engine.spark.sparkContext.ui.foreach { ui =>
+  val startTime = engine.map(_.getStartTime).getOrElse {
+    sparkUI
+      .map(ui => ui.store.applicationInfo().attempts.head.startTime.getTime)
+      .getOrElse(0L)
+  }
+
+  def endTime(): Long = engine.map(_ => System.currentTimeMillis()).getOrElse {
+    sparkUI
+      .map(ui => ui.store.applicationInfo().attempts.head.endTime.getTime)
+      .getOrElse(0L)
+  }
+
+  sparkUI.foreach { ui =>
     this.attachPage(EnginePage(this))
     this.attachPage(EngineSessionPage(this))
     ui.attachTab(this)
     Utils.addShutdownHook(() => ui.detachTab(this))
   }
 
-  engine.spark.sparkContext.ui.foreach { ui =>
+  sparkUI.foreach { ui =>
     try {
       // Spark shade the jetty package so here we use reflect
       Class.forName("org.apache.spark.ui.SparkUI")
@@ -68,8 +85,8 @@ case class EngineTab(engine: SparkSQLEngine)
   }
 
   def handleKillRequest(request: HttpServletRequest): Unit = {
-    if (killEnabled && engine != null && engine.getServiceState != ServiceState.STOPPED) {
-      engine.stop()
+    if (killEnabled && engine.isDefined && engine.get.getServiceState != ServiceState.STOPPED) {
+      engine.get.stop()
     }
   }
 }

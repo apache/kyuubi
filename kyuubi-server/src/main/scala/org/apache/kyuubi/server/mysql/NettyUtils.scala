@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.kyuubi.util
+package org.apache.kyuubi.server.mysql
 
 import java.util.concurrent.ThreadFactory
 
@@ -27,18 +27,9 @@ import io.netty.channel.nio.NioEventLoopGroup
 import io.netty.channel.socket.nio.{NioServerSocketChannel, NioSocketChannel}
 import io.netty.util.concurrent.DefaultThreadFactory
 
-object NettyUtils {
+import org.apache.kyuubi.config.KyuubiConf
 
-  /**
-   * Specifies an upper bound on the number of Netty threads that Kyuubi requires by default.
-   * In practice, only 2-4 cores should be required to transfer roughly 10 Gb/s, and each core
-   * that we use will have an initial overhead of roughly 32 MB of off-heap memory, which comes
-   * at a premium.
-   *
-   * Thus, this value should still retain maximum throughput and reduce wasted off-heap memory
-   * allocation.
-   */
-  val MAX_NETTY_THREADS: Int = 8
+object NettyUtils {
 
   val EPOLL_MODE: Boolean = Epoll.isAvailable
 
@@ -65,7 +56,7 @@ object NettyUtils {
    * we will use Runtime get an approximate number of available cores.
    */
   def defaultNumThreads(numUsableCores: Option[Int]): Int = numUsableCores match {
-    case Some(num) => min(num, MAX_NETTY_THREADS)
-    case None => min(sys.runtime.availableProcessors, MAX_NETTY_THREADS)
+    case Some(num) => min(num, KyuubiConf.MAX_NETTY_THREADS)
+    case None => min(sys.runtime.availableProcessors, KyuubiConf.MAX_NETTY_THREADS)
   }
 }
