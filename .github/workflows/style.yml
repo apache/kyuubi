@@ -41,6 +41,12 @@ jobs:
         with:
           distribution: zulu
           java-version: 8
+      - name: install kyuubi with the latest commit
+        run: >-
+          build/mvn clean install -V -Pflink-provided,spark-provided -Dorg.slf4j.simpleLogger.defaultLogLevel=warn \
+              -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -DskipTests \
+              -Pflink-provided,spark-provided \
+              -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
       - name: Scalastyle with Maven
         run: build/mvn scalastyle:check ${{ matrix.profiles }}
       - name: Upload scalastyle report
@@ -49,9 +55,4 @@ jobs:
       - name: JavaStyle with Maven
         run: build/mvn spotless:check ${{ matrix.profiles }}
       - name: Check dependency list
-        run: >-
-          build/mvn clean install -V -Pflink-provided,spark-provided -Dorg.slf4j.simpleLogger.defaultLogLevel=warn \
-              -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -DskipTests \
-              -Pflink-provided,spark-provided \
-              -pl kyuubi-ctl,kyuubi-server,kyuubi-assembly -am
-          build/dependency.sh
+        run: build/dependency.sh
