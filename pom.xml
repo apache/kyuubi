@@ -113,7 +113,7 @@
         <hive.version>2.3.9</hive.version>
         <hudi.version>0.10.0</hudi.version>
         <iceberg.name>iceberg-spark3-runtime</iceberg.name>
-        <iceberg.version>0.13.0</iceberg.version>
+        <iceberg.version>0.13.1</iceberg.version>
         <jackson.version>2.13.1</jackson.version>
         <jakarta.servlet-api.version>4.0.4</jakarta.servlet-api.version>
         <jakarta.xml-bind.version>2.3.2</jakarta.xml-bind.version>
@@ -210,6 +210,12 @@
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
+        </repository>
+
+        <repository>
+            <id>iceberg-0.13.1-rc0-staging</id>
+            <name>iceberg-0.13.1-rc0-staging</name>
+            <url>https://repository.apache.org/content/repositories/orgapacheiceberg-1081/</url>
         </repository>
     </repositories>
 
