@@ -119,7 +119,7 @@
                         </goals>
                         <configuration>
                             <dataFileIncludes>
-                                <dataFileInclude>target/codecov/*.exec</dataFileInclude>
+                                <dataFileInclude>**/jacoco*.exec</dataFileInclude>
                             </dataFileIncludes>
                             <outputDirectory>${project.reporting.outputDirectory}/jacoco-aggregate-all</outputDirectory>
                         </configuration>
