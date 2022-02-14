@@ -94,7 +94,7 @@ trait Logging {
   private def initializeLogging(isInterpreter: Boolean): Unit = {
     if (Logging.isLog4j2) {
       // scalastyle:off println
-      if (Logging.islog4j2DefaultConfigured()) {
+      if (Logging.isLog4j2DefaultConfigured()) {
         Logging.useDefault = true
         val defaultLogProps = "log4j2-defaults.properties"
         Option(Thread.currentThread().getContextClassLoader.getResource(defaultLogProps)) match {
