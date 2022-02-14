@@ -47,7 +47,10 @@ class TrinoOperationManager extends OperationManager("TrinoOperationManager") {
   override def newGetSchemasOperation(
       session: Session,
       catalog: String,
-      schema: String): Operation = null
+      schema: String): Operation = {
+    val op = new GetSchemas(session, catalog, schema)
+    addOperation(op)
+  }
 
   override def newGetTablesOperation(
       session: Session,
