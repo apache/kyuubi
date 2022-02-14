@@ -186,6 +186,9 @@ object Logging {
    */
   private[kyuubi] def islog4j2DefaultConfigured(): Boolean = {
     val rootLogger = LogManager.getRootLogger.asInstanceOf[Log4jLogger]
+    // If Log4j 2 is used but is initialized by default configuration,
+    // load a default properties file
+    // (see org.apache.logging.log4j.core.config.DefaultConfiguration)
     rootLogger.getAppenders.isEmpty ||
     (rootLogger.getAppenders.size() == 1 &&
       rootLogger.getLevel == Level.ERROR &&
