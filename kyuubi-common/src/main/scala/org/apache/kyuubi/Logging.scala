@@ -187,9 +187,9 @@ object Logging {
   private[kyuubi] def islog4j2DefaultConfigured(): Boolean = {
     val rootLogger = LogManager.getRootLogger.asInstanceOf[Log4jLogger]
     rootLogger.getAppenders.isEmpty ||
-      (rootLogger.getAppenders.size() == 1 &&
-        rootLogger.getLevel == Level.ERROR &&
-        LogManager.getContext.asInstanceOf[LoggerContext]
-          .getConfiguration.isInstanceOf[DefaultConfiguration])
+    (rootLogger.getAppenders.size() == 1 &&
+      rootLogger.getLevel == Level.ERROR &&
+      LogManager.getContext.asInstanceOf[LoggerContext]
+        .getConfiguration.isInstanceOf[DefaultConfiguration])
   }
 }
