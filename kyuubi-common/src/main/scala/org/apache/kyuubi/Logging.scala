@@ -18,7 +18,8 @@
 package org.apache.kyuubi
 
 import org.apache.logging.log4j.{Level, LogManager}
-import org.apache.logging.log4j.core.LoggerContext
+import org.apache.logging.log4j.core.{Logger => Log4jLogger, LoggerContext}
+import org.apache.logging.log4j.core.config.DefaultConfiguration
 import org.slf4j.{Logger, LoggerFactory}
 import org.slf4j.impl.StaticLoggerBinder
 
@@ -92,16 +93,15 @@ trait Logging {
 
   private def initializeLogging(isInterpreter: Boolean): Unit = {
     if (Logging.isLog4j2) {
-      val log4j2Initialized = !LogManager.getRootLogger
-        .asInstanceOf[org.apache.logging.log4j.core.Logger].getAppenders.isEmpty
       // scalastyle:off println
-      if (!log4j2Initialized) {
+      if (Logging.islog4j2DefaultConfigured()) {
         Logging.useDefault = true
         val defaultLogProps = "log4j2-defaults.properties"
         Option(Thread.currentThread().getContextClassLoader.getResource(defaultLogProps)) match {
           case Some(url) =>
             val context = LogManager.getContext(false).asInstanceOf[LoggerContext]
             context.setConfigLocation(url.toURI)
+            System.err.println(s"Using Kyuubi's default log4j profile: $url")
           case None =>
             System.err.println(s"Missing $defaultLogProps")
         }
@@ -178,5 +178,18 @@ object Logging {
     // org.apache.logging.slf4j.Log4jLoggerFactory
     val binderClass = StaticLoggerBinder.getSingleton.getLoggerFactoryClassStr
     "org.apache.logging.slf4j.Log4jLoggerFactory".equals(binderClass)
+  }
+
+  /**
+   * Return true if log4j2 is initialized by default configuration which has one
+   * appender with error level. See `org.apache.logging.log4j.core.config.DefaultConfiguration`.
+   */
+  private[kyuubi] def islog4j2DefaultConfigured(): Boolean = {
+    val rootLogger = LogManager.getRootLogger.asInstanceOf[Log4jLogger]
+    rootLogger.getAppenders.isEmpty ||
+      (rootLogger.getAppenders.size() == 1 &&
+        rootLogger.getLevel == Level.ERROR &&
+        LogManager.getContext.asInstanceOf[LoggerContext]
+          .getConfiguration.isInstanceOf[DefaultConfiguration])
   }
 }
