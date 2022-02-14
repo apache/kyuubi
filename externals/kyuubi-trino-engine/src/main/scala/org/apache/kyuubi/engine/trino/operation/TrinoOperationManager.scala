@@ -19,9 +19,10 @@ package org.apache.kyuubi.engine.trino.operation
 
 import java.util
 
+import scala.collection.JavaConverters._
+
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_INCREMENTAL_COLLECT
-import org.apache.kyuubi.operation.Operation
-import org.apache.kyuubi.operation.OperationManager
+import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.Session
 
 class TrinoOperationManager extends OperationManager("TrinoOperationManager") {
@@ -57,7 +58,16 @@ class TrinoOperationManager extends OperationManager("TrinoOperationManager") {
       catalogName: String,
       schemaName: String,
       tableName: String,
-      tableTypes: util.List[String]): Operation = null
+      tableTypes: util.List[String]): Operation = {
+    val tTypes =
+      if (tableTypes == null || tableTypes.isEmpty) {
+        Set("TABLE", "VIEW")
+      } else {
+        tableTypes.asScala.toSet
+      }
+    val op = new GetTables(session, catalogName, schemaName, tableName, tTypes)
+    addOperation(op)
+  }
 
   override def newGetTableTypesOperation(session: Session): Operation = {
     val op = new GetTableTypes(session)
