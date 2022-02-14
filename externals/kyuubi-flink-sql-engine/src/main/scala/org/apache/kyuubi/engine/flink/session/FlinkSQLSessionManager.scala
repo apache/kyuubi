@@ -61,6 +61,7 @@ class FlinkSQLSessionManager(engineContext: DefaultContext)
       sessionHandle,
       sessionContext)
 
+    sessionImpl.open()
     setSession(sessionHandle, sessionImpl)
     sessionHandle
   }
