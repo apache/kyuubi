@@ -16,7 +16,7 @@ jobs:
           - branch-1.3
     steps:
     - name: Checkout repository
-      uses: actions/checkout@2.3.5
+      uses: actions/checkout@v2.3.5
       with:
         ref: ${{ matrix.branch }}
     - name: Cache Maven local repository
