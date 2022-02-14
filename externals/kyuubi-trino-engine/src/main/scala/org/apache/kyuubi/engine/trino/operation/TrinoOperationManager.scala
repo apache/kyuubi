@@ -56,7 +56,10 @@ class TrinoOperationManager extends OperationManager("TrinoOperationManager") {
       tableName: String,
       tableTypes: util.List[String]): Operation = null
 
-  override def newGetTableTypesOperation(session: Session): Operation = null
+  override def newGetTableTypesOperation(session: Session): Operation = {
+    val op = new GetTableTypes(session)
+    addOperation(op)
+  }
 
   override def newGetColumnsOperation(
       session: Session,

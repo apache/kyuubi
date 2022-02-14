@@ -34,7 +34,7 @@ import org.apache.hive.service.rpc.thrift.TStatusCode
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG
 import org.apache.kyuubi.engine.trino.WithTrinoEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.TABLE_CAT
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.{TABLE_CAT, TABLE_TYPE}
 
 class TrinoOperationSuite extends WithTrinoEngine with HiveJDBCTestHelper {
   override def withKyuubiConf: Map[String, String] = Map(
@@ -55,6 +55,19 @@ class TrinoOperationSuite extends WithTrinoEngine with HiveJDBCTestHelper {
       }
       assert(resultSetBuffer.contains("memory"))
       assert(resultSetBuffer.contains("system"))
+    }
+  }
+
+  test("trino - get table types") {
+    withJdbcStatement() { statement =>
+      val meta = statement.getConnection.getMetaData
+      val types = meta.getTableTypes
+      val expected = Set("TABLE", "VIEW").toIterator
+      while (types.next()) {
+        assert(types.getString(TABLE_TYPE) === expected.next())
+      }
+      assert(!expected.hasNext)
+      assert(!types.next())
     }
   }
 
