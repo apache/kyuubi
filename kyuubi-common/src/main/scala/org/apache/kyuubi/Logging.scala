@@ -101,7 +101,6 @@ trait Logging {
           case Some(url) =>
             val context = LogManager.getContext(false).asInstanceOf[LoggerContext]
             context.setConfigLocation(url.toURI)
-            System.err.println(s"Using Kyuubi's default log4j profile: $url")
           case None =>
             System.err.println(s"Missing $defaultLogProps")
         }
@@ -184,7 +183,7 @@ object Logging {
    * Return true if log4j2 is initialized by default configuration which has one
    * appender with error level. See `org.apache.logging.log4j.core.config.DefaultConfiguration`.
    */
-  private[kyuubi] def islog4j2DefaultConfigured(): Boolean = {
+  private def islog4j2DefaultConfigured(): Boolean = {
     val rootLogger = LogManager.getRootLogger.asInstanceOf[Log4jLogger]
     // If Log4j 2 is used but is initialized by default configuration,
     // load a default properties file
