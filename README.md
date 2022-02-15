@@ -95,7 +95,7 @@ The figure below shows our vision for the Kyuubi Ecosystem. Some of them have be
 
 Since Kyuubi 1.3.0-incubating, the Kyuubi online documentation is hosted by [https://kyuubi.apache.org/](https://kyuubi.apache.org/).
 You can find the latest Kyuubi documentation on [this web page](https://kyuubi.apache.org/docs/latest/).
-For 1.2 and earlier versions, please check the [Github Pages](https://kyuubi.readthedocs.io/en/v1.2.0/) directly.
+For 1.2 and earlier versions, please check the [Readthedocs](https://kyuubi.readthedocs.io/en/v1.2.0/) directly.
 
 ## Quick Start
 
