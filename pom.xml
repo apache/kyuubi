@@ -211,12 +211,6 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
-
-        <repository>
-            <id>iceberg-0.13.1-rc0-staging</id>
-            <name>iceberg-0.13.1-rc0-staging</name>
-            <url>https://repository.apache.org/content/repositories/orgapacheiceberg-1081/</url>
-        </repository>
     </repositories>
 
     <pluginRepositories>
