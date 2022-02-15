@@ -104,7 +104,7 @@ class KyuubiSessionImpl(
           Option(password).filter(_.nonEmpty).getOrElse("anonymous")
         }
       _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
-      _engineSessionHandle = _client.openSession(protocol, user, passwd, normalizedConf)
+      _engineSessionHandle = _client.openSession(protocol, user, passwd, optimizedConf)
       logSessionInfo(s"Connected to engine [$host:$port] with ${_engineSessionHandle}")
       sessionEvent.openedTime = System.currentTimeMillis()
       sessionEvent.remoteSessionId = _engineSessionHandle.identifier.toString
