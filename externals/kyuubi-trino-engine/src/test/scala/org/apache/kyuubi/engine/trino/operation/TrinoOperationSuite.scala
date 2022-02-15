@@ -34,7 +34,7 @@ import org.apache.hive.service.rpc.thrift.TStatusCode
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG
 import org.apache.kyuubi.engine.trino.WithTrinoEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
-import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant.{TABLE_CAT, TABLE_TYPE}
+import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 class TrinoOperationSuite extends WithTrinoEngine with HiveJDBCTestHelper {
   override def withKyuubiConf: Map[String, String] = Map(
@@ -68,6 +68,72 @@ class TrinoOperationSuite extends WithTrinoEngine with HiveJDBCTestHelper {
       }
       assert(!expected.hasNext)
       assert(!types.next())
+    }
+  }
+
+  test("trino - get schemas") {
+    case class SchemaWithCatalog(catalog: String, schema: String)
+
+    withJdbcStatement() { statement =>
+      statement.execute("CREATE SCHEMA IF NOT EXISTS memory.test_escape_1")
+      statement.execute("CREATE SCHEMA IF NOT EXISTS memory.test2escape_1")
+      statement.execute("CREATE SCHEMA IF NOT EXISTS memory.test_escape11")
+
+      val meta = statement.getConnection.getMetaData
+      val resultSetBuffer = ArrayBuffer[SchemaWithCatalog]()
+
+      val schemas1 = meta.getSchemas(null, null)
+      while (schemas1.next()) {
+        resultSetBuffer +=
+          SchemaWithCatalog(schemas1.getString(TABLE_CATALOG), schemas1.getString(TABLE_SCHEM))
+      }
+      assert(resultSetBuffer.contains(SchemaWithCatalog("memory", "information_schema")))
+      assert(resultSetBuffer.contains(SchemaWithCatalog("system", "information_schema")))
+
+      val schemas2 = meta.getSchemas("memory", null)
+      resultSetBuffer.clear()
+      while (schemas2.next()) {
+        resultSetBuffer +=
+          SchemaWithCatalog(schemas2.getString(TABLE_CATALOG), schemas2.getString(TABLE_SCHEM))
+      }
+      assert(resultSetBuffer.contains(SchemaWithCatalog("memory", "default")))
+      assert(resultSetBuffer.contains(SchemaWithCatalog("memory", "information_schema")))
+      assert(!resultSetBuffer.exists(f => f.catalog == "system"))
+
+      val schemas3 = meta.getSchemas(null, "sf_")
+      resultSetBuffer.clear()
+      while (schemas3.next()) {
+        resultSetBuffer +=
+          SchemaWithCatalog(schemas3.getString(TABLE_CATALOG), schemas3.getString(TABLE_SCHEM))
+      }
+      assert(resultSetBuffer.contains(SchemaWithCatalog("tpcds", "sf1")))
+      assert(!resultSetBuffer.contains(SchemaWithCatalog("tpcds", "sf10")))
+
+      val schemas4 = meta.getSchemas(null, "sf%")
+      resultSetBuffer.clear()
+      while (schemas4.next()) {
+        resultSetBuffer +=
+          SchemaWithCatalog(schemas4.getString(TABLE_CATALOG), schemas4.getString(TABLE_SCHEM))
+      }
+      assert(resultSetBuffer.contains(SchemaWithCatalog("tpcds", "sf1")))
+      assert(resultSetBuffer.contains(SchemaWithCatalog("tpcds", "sf10")))
+      assert(resultSetBuffer.contains(SchemaWithCatalog("tpcds", "sf100")))
+      assert(resultSetBuffer.contains(SchemaWithCatalog("tpcds", "sf1000")))
+
+      // test escape the second '_'
+      val schemas5 = meta.getSchemas("memory", "test_escape\\_1")
+      resultSetBuffer.clear()
+      while (schemas5.next()) {
+        resultSetBuffer +=
+          SchemaWithCatalog(schemas5.getString(TABLE_CATALOG), schemas5.getString(TABLE_SCHEM))
+      }
+      assert(resultSetBuffer.contains(SchemaWithCatalog("memory", "test_escape_1")))
+      assert(resultSetBuffer.contains(SchemaWithCatalog("memory", "test2escape_1")))
+      assert(!resultSetBuffer.contains(SchemaWithCatalog("memory", "test_escape11")))
+
+      statement.execute("DROP SCHEMA memory.test_escape_1")
+      statement.execute("DROP SCHEMA memory.test2escape_1")
+      statement.execute("DROP SCHEMA memory.test_escape11")
     }
   }
 
