@@ -175,7 +175,7 @@ export RELEASE_RC_NO=<RC number, e.g. 0>
 ```shell
 build/mvn versions:set -DgenerateBackupPoms=false \
   -DnewVersion="${RELEASE_VERSION}" \
-  -Pspark-3.1,spark-block-cleaner
+  -Pspark-3.2,spark-block-cleaner
 
 git commit -am "[RELEASE] Bump ${RELEASE_VERSION}"
 ```
