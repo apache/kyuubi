@@ -93,12 +93,8 @@ The figure below shows our vision for the Kyuubi Ecosystem. Some of them have be
 
 ## Online Documentation
 
-Since Kyuubi 1.3.0-incubating, the Kyuubi online documentation is hosted by [https://kyuubi.apache.org/](https://kyuubi.apache.org/docs/latest/).
-You can find the specific version of Kyuubi documentation as listed below.
-
-- [1.3.0-incubating](https://kyuubi.apache.org/docs/r1.3.0-incubating/)
-- [stable](https://kyuubi.apache.org/docs/stable/)
-
+Since Kyuubi 1.3.0-incubating, the Kyuubi online documentation is hosted by [https://kyuubi.apache.org/](https://kyuubi.apache.org/).
+You can find the latest Kyuubi documentation on [this web page](https://kyuubi.apache.org/docs/latest/).
 For 1.2 and earlier versions, please check the [Github Pages](https://kyuubi.readthedocs.io/en/v1.2.0/) directly.
 
 ## Quick Start
