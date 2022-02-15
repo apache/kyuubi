@@ -82,7 +82,10 @@ class TrinoOperationManager extends OperationManager("TrinoOperationManager") {
       catalogName: String,
       schemaName: String,
       tableName: String,
-      columnName: String): Operation = null
+      columnName: String): Operation = {
+    val op = new GetColumns(session, catalogName, schemaName, tableName, columnName)
+    addOperation(op)
+  }
 
   override def newGetFunctionsOperation(
       session: Session,
