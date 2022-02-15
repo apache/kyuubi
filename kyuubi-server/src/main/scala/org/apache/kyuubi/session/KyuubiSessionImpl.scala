@@ -17,6 +17,8 @@
 
 package org.apache.kyuubi.session
 
+import scala.collection.JavaConverters._
+
 import com.codahale.metrics.MetricRegistry
 import org.apache.hive.service.rpc.thrift._
 
@@ -45,8 +47,20 @@ class KyuubiSessionImpl(
   extends AbstractSession(protocol, user, password, ipAddress, conf, sessionManager) {
   override val handle: SessionHandle = SessionHandle(protocol)
 
+  private[kyuubi] val optimizedConf: Map[String, String] = {
+    val confOverlay = sessionManager.sessionConfAdvisor.getConfOverlay(
+      user,
+      normalizedConf.asJava)
+    if (confOverlay != null) {
+      normalizedConf ++ confOverlay.asScala
+    } else {
+      warn(s"the server plugin return null value for user: $user, ignore it")
+      normalizedConf
+    }
+  }
+
   // TODO: needs improve the hardcode
-  normalizedConf.foreach {
+  optimizedConf.foreach {
     case ("use:database", _) =>
     case ("kyuubi.engine.pool.size.threshold", _) =>
     case (key, value) => sessionConf.set(key, value)
@@ -90,7 +104,7 @@ class KyuubiSessionImpl(
           Option(password).filter(_.nonEmpty).getOrElse("anonymous")
         }
       _client = KyuubiSyncThriftClient.createClient(user, passwd, host, port, sessionConf)
-      _engineSessionHandle = _client.openSession(protocol, user, passwd, normalizedConf)
+      _engineSessionHandle = _client.openSession(protocol, user, passwd, optimizedConf)
       logSessionInfo(s"Connected to engine [$host:$port] with ${_engineSessionHandle}")
       sessionEvent.openedTime = System.currentTimeMillis()
       sessionEvent.remoteSessionId = _engineSessionHandle.identifier.toString
