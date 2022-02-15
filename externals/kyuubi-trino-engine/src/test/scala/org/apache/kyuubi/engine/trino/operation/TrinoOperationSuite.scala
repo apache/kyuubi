@@ -71,6 +71,250 @@ class TrinoOperationSuite extends WithTrinoEngine with HiveJDBCTestHelper {
     }
   }
 
+  test("trino - get tables") {
+    case class TableWithCatalogAndSchema(
+        catalog: String,
+        schema: String,
+        tableName: String,
+        tableType: String)
+
+    withJdbcStatement() { statement =>
+      val meta = statement.getConnection.getMetaData
+      val resultSetBuffer = ArrayBuffer[TableWithCatalogAndSchema]()
+
+      var tables = meta.getTables(null, null, null, null)
+      while (tables.next()) {
+        resultSetBuffer +=
+          TableWithCatalogAndSchema(
+            tables.getString(TABLE_CAT),
+            tables.getString(TABLE_SCHEM),
+            tables.getString(TABLE_NAME),
+            tables.getString(TABLE_TYPE))
+      }
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "system",
+        "information_schema",
+        "tables",
+        "TABLE")))
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "information_schema",
+        "tables",
+        "TABLE")))
+
+      statement.execute("CREATE SCHEMA IF NOT EXISTS memory.test_escape_1")
+      statement.execute("CREATE SCHEMA IF NOT EXISTS memory.test1escape_1")
+      statement.execute("CREATE SCHEMA IF NOT EXISTS memory.test_escape11")
+      statement.execute("CREATE TABLE IF NOT EXISTS memory.test_escape_1.test_escape_1(a varchar)")
+      statement.execute("CREATE TABLE IF NOT EXISTS memory.test1escape_1.test1escape_1(a varchar)")
+      statement.execute("CREATE TABLE IF NOT EXISTS memory.test_escape11.test_escape11(a varchar)")
+      statement.execute(
+        """
+          |CREATE OR REPLACE VIEW memory.test_escape_1.test_view AS
+          |SELECT  * FROM memory.test_escape_1.test_escape_1
+          |""".stripMargin)
+
+      tables = meta.getTables(null, null, null, null)
+      resultSetBuffer.clear()
+      while (tables.next()) {
+        resultSetBuffer +=
+          TableWithCatalogAndSchema(
+            tables.getString(TABLE_CAT),
+            tables.getString(TABLE_SCHEM),
+            tables.getString(TABLE_NAME),
+            tables.getString(TABLE_TYPE))
+      }
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "system",
+        "information_schema",
+        "tables",
+        "TABLE")))
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "information_schema",
+        "tables",
+        "TABLE")))
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "test_escape_1",
+        "test_escape_1",
+        "TABLE")))
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "test1escape_1",
+        "test1escape_1",
+        "TABLE")))
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "test_escape11",
+        "test_escape11",
+        "TABLE")))
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "test_escape_1",
+        "test_view",
+        "VIEW")))
+
+      tables = meta.getTables("memory", null, null, null)
+      resultSetBuffer.clear()
+      while (tables.next()) {
+        resultSetBuffer +=
+          TableWithCatalogAndSchema(
+            tables.getString(TABLE_CAT),
+            tables.getString(TABLE_SCHEM),
+            tables.getString(TABLE_NAME),
+            tables.getString(TABLE_TYPE))
+      }
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "information_schema",
+        "tables",
+        "TABLE")))
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "test_escape_1",
+        "test_escape_1",
+        "TABLE")))
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "test1escape_1",
+        "test1escape_1",
+        "TABLE")))
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "test_escape11",
+        "test_escape11",
+        "TABLE")))
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "test_escape_1",
+        "test_view",
+        "VIEW")))
+
+      tables = meta.getTables(null, "test%", null, null)
+      resultSetBuffer.clear()
+      while (tables.next()) {
+        resultSetBuffer +=
+          TableWithCatalogAndSchema(
+            tables.getString(TABLE_CAT),
+            tables.getString(TABLE_SCHEM),
+            tables.getString(TABLE_NAME),
+            tables.getString(TABLE_TYPE))
+      }
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "test_escape_1",
+        "test_escape_1",
+        "TABLE")))
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "test1escape_1",
+        "test1escape_1",
+        "TABLE")))
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "test_escape11",
+        "test_escape11",
+        "TABLE")))
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "test_escape_1",
+        "test_view",
+        "VIEW")))
+
+      tables = meta.getTables(null, null, "test_%", null)
+      resultSetBuffer.clear()
+      while (tables.next()) {
+        resultSetBuffer +=
+          TableWithCatalogAndSchema(
+            tables.getString(TABLE_CAT),
+            tables.getString(TABLE_SCHEM),
+            tables.getString(TABLE_NAME),
+            tables.getString(TABLE_TYPE))
+      }
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "test_escape_1",
+        "test_escape_1",
+        "TABLE")))
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "test_escape11",
+        "test_escape11",
+        "TABLE")))
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "test_escape_1",
+        "test_view",
+        "VIEW")))
+
+      tables = meta.getTables(null, null, null, Array("TABLE"))
+      resultSetBuffer.clear()
+      while (tables.next()) {
+        resultSetBuffer +=
+          TableWithCatalogAndSchema(
+            tables.getString(TABLE_CAT),
+            tables.getString(TABLE_SCHEM),
+            tables.getString(TABLE_NAME),
+            tables.getString(TABLE_TYPE))
+      }
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "system",
+        "information_schema",
+        "tables",
+        "TABLE")))
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "information_schema",
+        "tables",
+        "TABLE")))
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "test_escape_1",
+        "test_escape_1",
+        "TABLE")))
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "test1escape_1",
+        "test1escape_1",
+        "TABLE")))
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "test_escape11",
+        "test_escape11",
+        "TABLE")))
+
+      tables = meta.getTables(null, null, "test_escape\\_1", null)
+      resultSetBuffer.clear()
+      while (tables.next()) {
+        resultSetBuffer +=
+          TableWithCatalogAndSchema(
+            tables.getString(TABLE_CAT),
+            tables.getString(TABLE_SCHEM),
+            tables.getString(TABLE_NAME),
+            tables.getString(TABLE_TYPE))
+      }
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "test_escape_1",
+        "test_escape_1",
+        "TABLE")))
+      assert(resultSetBuffer.contains(TableWithCatalogAndSchema(
+        "memory",
+        "test1escape_1",
+        "test1escape_1",
+        "TABLE")))
+
+      statement.execute("DROP VIEW memory.test_escape_1.test_view")
+      statement.execute("DROP TABLE memory.test_escape_1.test_escape_1")
+      statement.execute("DROP TABLE memory.test1escape_1.test1escape_1")
+      statement.execute("DROP TABLE memory.test_escape11.test_escape11")
+      statement.execute("DROP SCHEMA memory.test_escape_1")
+      statement.execute("DROP SCHEMA memory.test1escape_1")
+      statement.execute("DROP SCHEMA memory.test_escape11")
+    }
+  }
+
   test("trino - get schemas") {
     case class SchemaWithCatalog(catalog: String, schema: String)
 
