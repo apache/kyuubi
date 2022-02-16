@@ -18,14 +18,20 @@
 package org.apache.kyuubi.engine.flink.operation
 
 import java.util
+import java.util.Locale
 
-import scala.collection.JavaConverters.asScalaBufferConverter
+import scala.collection.JavaConverters._
 
+import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiConf.OperationModes._
 import org.apache.kyuubi.engine.flink.result.Constants
+import org.apache.kyuubi.engine.flink.session.FlinkSessionImpl
 import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.Session
 
 class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManager") {
+
+  private lazy val operationModeDefault = getConf.get(OPERATION_PLAN_ONLY)
 
   override def newExecuteStatementOperation(
       session: Session,
@@ -33,7 +39,16 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       confOverlay: Map[String, String],
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
-    val op = new ExecuteStatement(session, statement, runAsync, queryTimeout)
+    val flinkSession = session.asInstanceOf[FlinkSessionImpl]
+    val mode = flinkSession.sessionContext.getConfigMap.getOrDefault(
+      OPERATION_PLAN_ONLY.key,
+      operationModeDefault)
+    val op = OperationModes.withName(mode.toUpperCase(Locale.ROOT)) match {
+      case NONE =>
+        new ExecuteStatement(session, statement, runAsync, queryTimeout)
+      case mode =>
+        new PlanOnlyStatement(session, statement, mode)
+    }
     addOperation(op)
   }
 

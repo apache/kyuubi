@@ -17,7 +17,7 @@
 
 package org.apache.kyuubi.engine.flink.session
 
-import org.apache.flink.table.client.gateway.Executor
+import org.apache.flink.table.client.gateway.{Executor, SqlExecutionException}
 import org.apache.flink.table.client.gateway.context.SessionContext
 import org.apache.hive.service.rpc.thrift.TProtocolVersion
 
@@ -37,4 +37,19 @@ class FlinkSessionImpl(
   def executor: Executor = sessionManager.asInstanceOf[FlinkSQLSessionManager].executor
 
   def sessionId: String = handle.identifier.toString
+
+  private def setModifiableConfig(key: String, value: String): Unit = {
+    try {
+      sessionContext.set(key, value)
+    } catch {
+      case e: SqlExecutionException => warn(e.getMessage)
+    }
+  }
+
+  override def open(): Unit = {
+    normalizedConf.foreach {
+      case (key, value) => setModifiableConfig(key, value)
+    }
+    super.open()
+  }
 }
