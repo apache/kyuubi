@@ -29,6 +29,16 @@ scala:
 jdk:
   - openjdk8
 
+matrix:
+  include:
+  - name: Linux x86_64
+    arch: amd64
+  - name: Linux aarch64
+    dist: focal
+    arch: arm64-graviton2
+    group: edge
+    virt: vm
+
 cache:
   directories:
     - $HOME/.m2
