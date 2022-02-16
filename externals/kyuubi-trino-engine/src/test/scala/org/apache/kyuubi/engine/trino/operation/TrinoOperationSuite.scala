@@ -19,7 +19,9 @@ package org.apache.kyuubi.engine.trino.operation
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.Set
 
+import io.trino.client.ClientStandardTypes._
 import org.apache.hive.service.rpc.thrift.TCancelOperationReq
 import org.apache.hive.service.rpc.thrift.TCloseOperationReq
 import org.apache.hive.service.rpc.thrift.TCloseSessionReq
@@ -44,6 +46,64 @@ class TrinoOperationSuite extends WithTrinoEngine with HiveJDBCTestHelper {
   override protected val schema = ""
 
   override protected def jdbcUrl: String = getJdbcUrl
+
+  test("trino - get type info") {
+    withJdbcStatement() { statement =>
+      val typeInfo = statement.getConnection.getMetaData.getTypeInfo
+      val types: Set[String] = Set(
+        BIGINT,
+        INTEGER,
+        SMALLINT,
+        TINYINT,
+        BOOLEAN,
+        DATE,
+        DECIMAL,
+        REAL,
+        DOUBLE,
+        HYPER_LOG_LOG,
+        QDIGEST,
+        P4_HYPER_LOG_LOG,
+        INTERVAL_DAY_TO_SECOND,
+        INTERVAL_YEAR_TO_MONTH,
+        TIMESTAMP,
+        TIMESTAMP_WITH_TIME_ZONE,
+        TIME,
+        TIME_WITH_TIME_ZONE,
+        VARBINARY,
+        VARCHAR,
+        CHAR,
+        ROW,
+        ARRAY,
+        MAP,
+        JSON,
+        IPADDRESS,
+        UUID,
+        GEOMETRY,
+        SPHERICAL_GEOGRAPHY,
+        BING_TILE,
+        "color",
+        "KdbTree",
+        "CodePoints",
+        "JsonPath",
+        "Regressor",
+        "JoniRegExp",
+        "unknown",
+        "ObjectId",
+        "SetDigest",
+        "Re2JRegExp",
+        "Model",
+        "tdigest",
+        "LikePattern",
+        "function",
+        "Classifier")
+      val typeInfos: Set[String] = Set()
+      while (typeInfo.next()) {
+        assert(types.contains(typeInfo.getString(TYPE_NAME)))
+        typeInfos += typeInfo.getString(TYPE_NAME)
+      }
+      assert(types.size === typeInfos.size)
+    }
+  }
 
   test("trino - get catalogs") {
     withJdbcStatement() { statement =>
