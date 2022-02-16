@@ -40,10 +40,9 @@ class FlinkSQLOperationManager extends OperationManager("FlinkSQLOperationManage
       runAsync: Boolean,
       queryTimeout: Long): Operation = {
     val flinkSession = session.asInstanceOf[FlinkSessionImpl]
-    val mode =
-      flinkSession.sessionContext.getConfigMap.getOrDefault(
-        OPERATION_PLAN_ONLY.key,
-        flinkSession.normalizedConf.getOrElse(OPERATION_PLAN_ONLY.key, operationModeDefault))
+    val mode = flinkSession.sessionContext.getConfigMap.getOrDefault(
+      OPERATION_PLAN_ONLY.key,
+      operationModeDefault)
     val op = OperationModes.withName(mode.toUpperCase(Locale.ROOT)) match {
       case NONE =>
         new ExecuteStatement(session, statement, runAsync, queryTimeout)
