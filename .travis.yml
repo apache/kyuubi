@@ -47,7 +47,7 @@ install:
   - ./build/mvn --version
 
 script:
-  - ./build/mvn clean install -Dmaven.javadoc.skip=true -V
+  - ./build/mvn clean install -Dmaven.javadoc.skip=true -V -B -ntp
 
 after_success:
   - echo "Travis exited with ${TRAVIS_TEST_RESULT}"
