@@ -33,6 +33,7 @@ import org.apache.hive.service.rpc.thrift.TOpenSessionReq
 import org.apache.hive.service.rpc.thrift.TOperationState
 import org.apache.hive.service.rpc.thrift.TStatusCode
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG
 import org.apache.kyuubi.engine.trino.WithTrinoEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
@@ -554,6 +555,16 @@ class TrinoOperationSuite extends WithTrinoEngine with HiveJDBCTestHelper {
 
       statement.execute("DROP TABLE memory.test_schema.test_column")
       statement.execute("DROP SCHEMA memory.test_schema")
+    }
+  }
+
+  test("trino - get functions") {
+    withJdbcStatement() { statement =>
+      val exceptionMsg = intercept[Exception](statement.getConnection.getMetaData.getFunctions(
+        null,
+        null,
+        "abs")).getMessage
+      assert(exceptionMsg === KyuubiSQLException.featureNotSupported().getMessage)
     }
   }
 

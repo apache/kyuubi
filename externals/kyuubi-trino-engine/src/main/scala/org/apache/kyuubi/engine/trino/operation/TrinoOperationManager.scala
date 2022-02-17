@@ -21,6 +21,7 @@ import java.util
 
 import scala.collection.JavaConverters._
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.OPERATION_INCREMENTAL_COLLECT
 import org.apache.kyuubi.operation.{Operation, OperationManager}
 import org.apache.kyuubi.session.Session
@@ -91,5 +92,8 @@ class TrinoOperationManager extends OperationManager("TrinoOperationManager") {
       session: Session,
       catalogName: String,
       schemaName: String,
-      functionName: String): Operation = null
+      functionName: String): Operation = {
+    // TODO: Supports the GetFunctions operation when Trino supports the query of the functions.
+    throw KyuubiSQLException.featureNotSupported()
+  }
 }
