@@ -33,10 +33,10 @@ import org.apache.hive.service.rpc.thrift.TOpenSessionReq
 import org.apache.hive.service.rpc.thrift.TOperationState
 import org.apache.hive.service.rpc.thrift.TStatusCode
 
+import org.apache.kyuubi.KyuubiSQLException
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG
 import org.apache.kyuubi.engine.trino.WithTrinoEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
-import org.apache.kyuubi.operation.OperationType.GET_FUNCTIONS
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 class TrinoOperationSuite extends WithTrinoEngine with HiveJDBCTestHelper {
@@ -564,8 +564,7 @@ class TrinoOperationSuite extends WithTrinoEngine with HiveJDBCTestHelper {
         null,
         null,
         "abs")).getMessage
-      assert(
-        exceptionMsg.contains(s"The $GET_FUNCTIONS operation doesn't support in Trino SQL engine."))
+      assert(exceptionMsg === KyuubiSQLException.featureNotSupported().getMessage)
     }
   }
 
