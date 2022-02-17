@@ -47,40 +47,42 @@ class TrinoOperationSuite extends WithTrinoEngine with HiveJDBCTestHelper {
 
   override protected def jdbcUrl: String = getJdbcUrl
 
+  private val standardTypes: Set[String] = Set(
+    BIGINT,
+    INTEGER,
+    SMALLINT,
+    TINYINT,
+    BOOLEAN,
+    DATE,
+    DECIMAL,
+    REAL,
+    DOUBLE,
+    HYPER_LOG_LOG,
+    QDIGEST,
+    P4_HYPER_LOG_LOG,
+    INTERVAL_DAY_TO_SECOND,
+    INTERVAL_YEAR_TO_MONTH,
+    TIMESTAMP,
+    TIMESTAMP_WITH_TIME_ZONE,
+    TIME,
+    TIME_WITH_TIME_ZONE,
+    VARBINARY,
+    VARCHAR,
+    CHAR,
+    ROW,
+    ARRAY,
+    MAP,
+    JSON,
+    IPADDRESS,
+    UUID,
+    GEOMETRY,
+    SPHERICAL_GEOGRAPHY,
+    BING_TILE)
+
   test("trino - get type info") {
     withJdbcStatement() { statement =>
       val typeInfo = statement.getConnection.getMetaData.getTypeInfo
-      val types: Set[String] = Set(
-        BIGINT,
-        INTEGER,
-        SMALLINT,
-        TINYINT,
-        BOOLEAN,
-        DATE,
-        DECIMAL,
-        REAL,
-        DOUBLE,
-        HYPER_LOG_LOG,
-        QDIGEST,
-        P4_HYPER_LOG_LOG,
-        INTERVAL_DAY_TO_SECOND,
-        INTERVAL_YEAR_TO_MONTH,
-        TIMESTAMP,
-        TIMESTAMP_WITH_TIME_ZONE,
-        TIME,
-        TIME_WITH_TIME_ZONE,
-        VARBINARY,
-        VARCHAR,
-        CHAR,
-        ROW,
-        ARRAY,
-        MAP,
-        JSON,
-        IPADDRESS,
-        UUID,
-        GEOMETRY,
-        SPHERICAL_GEOGRAPHY,
-        BING_TILE,
+      val expectedTypes = standardTypes ++ Set(
         "color",
         "KdbTree",
         "CodePoints",
@@ -98,10 +100,10 @@ class TrinoOperationSuite extends WithTrinoEngine with HiveJDBCTestHelper {
         "Classifier")
       val typeInfos: Set[String] = Set()
       while (typeInfo.next()) {
-        assert(types.contains(typeInfo.getString(TYPE_NAME)))
+        assert(expectedTypes.contains(typeInfo.getString(TYPE_NAME)))
         typeInfos += typeInfo.getString(TYPE_NAME)
       }
-      assert(types.size === typeInfos.size)
+      assert(expectedTypes.size === typeInfos.size)
     }
   }
 
@@ -438,6 +440,120 @@ class TrinoOperationSuite extends WithTrinoEngine with HiveJDBCTestHelper {
       statement.execute("DROP SCHEMA memory.test_escape_1")
       statement.execute("DROP SCHEMA memory.test2escape_1")
       statement.execute("DROP SCHEMA memory.test_escape11")
+    }
+  }
+
+  test("trino - get columns") {
+    case class ColumnWithTableAndCatalogAndSchema(
+        catalog: String,
+        schema: String,
+        tableName: String,
+        columnName: String,
+        typeName: String)
+
+    withJdbcStatement() { statement =>
+      val meta = statement.getConnection.getMetaData
+      val resultSetBuffer = ArrayBuffer[ColumnWithTableAndCatalogAndSchema]()
+
+      var columns = meta.getColumns(null, null, null, null)
+      while (columns.next()) {
+        resultSetBuffer +=
+          ColumnWithTableAndCatalogAndSchema(
+            columns.getString(TABLE_CAT),
+            columns.getString(TABLE_SCHEM),
+            columns.getString(TABLE_NAME),
+            columns.getString(COLUMN_NAME),
+            columns.getString(TYPE_NAME))
+      }
+      assert(resultSetBuffer.contains(ColumnWithTableAndCatalogAndSchema(
+        "memory",
+        "information_schema",
+        "columns",
+        "table_catalog",
+        VARCHAR)))
+      assert(resultSetBuffer.contains(ColumnWithTableAndCatalogAndSchema(
+        "memory",
+        "information_schema",
+        "columns",
+        "table_schema",
+        VARCHAR)))
+      assert(resultSetBuffer.contains(ColumnWithTableAndCatalogAndSchema(
+        "memory",
+        "information_schema",
+        "columns",
+        "table_name",
+        VARCHAR)))
+      assert(resultSetBuffer.contains(ColumnWithTableAndCatalogAndSchema(
+        "memory",
+        "information_schema",
+        "columns",
+        "column_name",
+        VARCHAR)))
+      assert(resultSetBuffer.contains(ColumnWithTableAndCatalogAndSchema(
+        "memory",
+        "information_schema",
+        "columns",
+        "ordinal_position",
+        BIGINT)))
+      assert(resultSetBuffer.contains(ColumnWithTableAndCatalogAndSchema(
+        "memory",
+        "information_schema",
+        "columns",
+        "column_default",
+        VARCHAR)))
+      assert(resultSetBuffer.contains(ColumnWithTableAndCatalogAndSchema(
+        "memory",
+        "information_schema",
+        "columns",
+        "is_nullable",
+        VARCHAR)))
+      assert(resultSetBuffer.contains(ColumnWithTableAndCatalogAndSchema(
+        "memory",
+        "information_schema",
+        "columns",
+        "data_type",
+        VARCHAR)))
+
+      val columnTypes = standardTypes.map {
+        case ARRAY => s"$ARRAY($VARCHAR)"
+        case MAP => s"$MAP($VARCHAR, $VARCHAR)"
+        case ROW => s"$ROW(c $VARCHAR)"
+        case QDIGEST => s"$QDIGEST($VARCHAR)"
+        case columnType => columnType
+      }
+      var schema: Seq[String] = Seq()
+      for (position <- 0 until columnTypes.size) {
+        schema = schema :+ s"c$position ${columnTypes.toSeq(position)}"
+      }
+      statement.execute(s"CREATE SCHEMA IF NOT EXISTS memory.test_schema")
+      statement.execute(
+        s"CREATE TABLE IF NOT EXISTS memory.test_schema.test_column(${schema.mkString(",")})")
+
+      columns = meta.getColumns("memory", "test_schema", "test_column", null)
+
+      var position = 0
+      while (columns.next()) {
+        assert(columns.getString(TABLE_CAT) === "memory")
+        assert(columns.getString(TABLE_SCHEM) === "test_schema")
+        assert(columns.getString(TABLE_NAME) === "test_column")
+        assert(columns.getString(COLUMN_NAME) === s"c$position")
+
+        val expectType = columnTypes.toSeq(position) match {
+          case CHAR => s"$CHAR(1)"
+          case DECIMAL => s"$DECIMAL(38,0)"
+          case TIME => s"$TIME(3)"
+          case TIME_WITH_TIME_ZONE => s"$TIME(3) with time zone"
+          case TIMESTAMP => s"$TIMESTAMP(3)"
+          case TIMESTAMP_WITH_TIME_ZONE => s"$TIMESTAMP(3) with time zone"
+          case columnType => columnType
+        }
+        assert(columns.getString(TYPE_NAME) === expectType)
+        position += 1
+      }
+      assert(position === columnTypes.size, "all columns should have been verified")
+
+      statement.execute("DROP TABLE memory.test_schema.test_column")
+      statement.execute("DROP SCHEMA memory.test_schema")
     }
   }
 
