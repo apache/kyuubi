@@ -98,7 +98,9 @@ abstract class TrinoOperation(opType: OperationType, session: Session)
   override def close(): Unit = {
     cleanup(OperationState.CLOSED)
     try {
-      trino.close()
+      if (trino != null) {
+        trino.close()
+      }
       getOperationLog.foreach(_.close())
     } catch {
       case e: IOException =>

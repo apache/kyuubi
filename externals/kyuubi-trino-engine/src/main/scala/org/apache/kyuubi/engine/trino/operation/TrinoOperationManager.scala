@@ -91,5 +91,8 @@ class TrinoOperationManager extends OperationManager("TrinoOperationManager") {
       session: Session,
       catalogName: String,
       schemaName: String,
-      functionName: String): Operation = null
+      functionName: String): Operation = {
+    val op = new GetFunctions(session, catalogName, schemaName, functionName)
+    addOperation(op)
+  }
 }

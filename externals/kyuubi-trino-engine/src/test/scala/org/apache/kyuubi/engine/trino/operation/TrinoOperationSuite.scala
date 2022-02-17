@@ -36,6 +36,7 @@ import org.apache.hive.service.rpc.thrift.TStatusCode
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_CONNECTION_CATALOG
 import org.apache.kyuubi.engine.trino.WithTrinoEngine
 import org.apache.kyuubi.operation.HiveJDBCTestHelper
+import org.apache.kyuubi.operation.OperationType.GET_FUNCTIONS
 import org.apache.kyuubi.operation.meta.ResultSetSchemaConstant._
 
 class TrinoOperationSuite extends WithTrinoEngine with HiveJDBCTestHelper {
@@ -554,6 +555,17 @@ class TrinoOperationSuite extends WithTrinoEngine with HiveJDBCTestHelper {
 
       statement.execute("DROP TABLE memory.test_schema.test_column")
       statement.execute("DROP SCHEMA memory.test_schema")
+    }
+  }
+
+  test("trino - get functions") {
+    withJdbcStatement() { statement =>
+      val exceptionMsg = intercept[Exception](statement.getConnection.getMetaData.getFunctions(
+        null,
+        null,
+        "abs")).getMessage
+      assert(
+        exceptionMsg.contains(s"The $GET_FUNCTIONS operation doesn't support in Trino SQL engine."))
     }
   }
 
