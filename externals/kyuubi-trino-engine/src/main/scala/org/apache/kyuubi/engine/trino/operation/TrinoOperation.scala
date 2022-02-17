@@ -100,6 +100,7 @@ abstract class TrinoOperation(opType: OperationType, session: Session)
     try {
       if (trino != null) {
         trino.close()
+        trino = null
       }
       getOperationLog.foreach(_.close())
     } catch {
