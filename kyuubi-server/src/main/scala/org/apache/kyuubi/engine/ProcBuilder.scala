@@ -187,13 +187,14 @@ trait ProcBuilder {
 
   def killApplication(line: String = lastRowsOfLog.toArray.mkString("\n")): String = ""
 
-  def close(): Unit = {
+  def close(): Unit = synchronized {
     if (logCaptureThread != null) {
       logCaptureThread.interrupt()
     }
     if (!waitCompletion && process != null) {
       info("Destroy the process, since waitCompletion is false.")
       process.destroyForcibly()
+      process = null
     }
   }
 
