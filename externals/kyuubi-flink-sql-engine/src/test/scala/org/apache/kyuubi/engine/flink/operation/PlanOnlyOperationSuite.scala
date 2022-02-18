@@ -37,7 +37,7 @@ class PlanOnlyOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper 
 
   test("Plan only operation with system defaults") {
     withJdbcStatement() { statement =>
-      testPlanOnlyStatement(statement)
+      testPlanOnlyStatementWithParseMode(statement)
     }
   }
 
@@ -46,7 +46,7 @@ class PlanOnlyOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper 
       withJdbcStatement() { statement =>
         val exceptionMsg = intercept[Exception](statement.executeQuery("select 1")).getMessage
         assert(exceptionMsg.contains(
-          s"The operation mode ${ANALYZE.toString} doesn't support in Flink SQL engine."))
+          s"The operation mode $ANALYZE doesn't support in Flink SQL engine."))
       }
     }
   }
@@ -55,14 +55,40 @@ class PlanOnlyOperationSuite extends WithFlinkSQLEngine with HiveJDBCTestHelper 
     withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> ANALYZE.toString))(Map.empty) {
       withJdbcStatement() { statement =>
         statement.execute(s"set ${KyuubiConf.OPERATION_PLAN_ONLY.key}=parse")
-        testPlanOnlyStatement(statement)
+        testPlanOnlyStatementWithParseMode(statement)
       }
     }
   }
 
-  private def testPlanOnlyStatement(statement: Statement): Unit = {
+  test("Plan only operation with PHYSICAL mode") {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> PHYSICAL.toString))(Map.empty) {
+      withJdbcStatement() { statement =>
+        val operationPlan = getOperationPlanWithStatement(statement)
+        assert(operationPlan.startsWith("Calc(select=[1 AS EXPR$0])") &&
+          operationPlan.contains("Values(type=[RecordType(INTEGER ZERO)], tuples=[[{ 0 }]])"))
+      }
+    }
+  }
+
+  test("Plan only operation with EXECUTION mode") {
+    withSessionConf()(Map(KyuubiConf.OPERATION_PLAN_ONLY.key -> EXECUTION.toString))(Map.empty) {
+      withJdbcStatement() { statement =>
+        val operationPlan = getOperationPlanWithStatement(statement)
+        assert(operationPlan.startsWith("Calc(select=[1 AS EXPR$0])") &&
+          operationPlan.contains("Values(tuples=[[{ 0 }]])"))
+      }
+    }
+  }
+
+  private def testPlanOnlyStatementWithParseMode(statement: Statement): Unit = {
+    val operationPlan = getOperationPlanWithStatement(statement)
+    assert(operationPlan.startsWith("LogicalProject(EXPR$0=[1])") &&
+      operationPlan.contains("LogicalValues(tuples=[[{ 0 }]])"))
+  }
+
+  private def getOperationPlanWithStatement(statement: Statement): String = {
     val resultSet = statement.executeQuery("select 1")
     assert(resultSet.next())
-    assert(resultSet.getString(1) === "LogicalProject(EXPR$0=[1])")
+    resultSet.getString(1)
   }
 }

@@ -37,6 +37,7 @@ class PlanOnlyStatement(
   extends FlinkOperation(OperationType.EXECUTE_STATEMENT, session) {
 
   private val operationLog: OperationLog = OperationLog.createOperationLog(session, getHandle)
+  private val lineSeparator: String = System.lineSeparator()
   override def getOperationLog: Option[OperationLog] = Option(operationLog)
 
   override protected def runInternal(): Unit = {
@@ -56,20 +57,20 @@ class PlanOnlyStatement(
 
   private def explainOperation(statement: String): Unit = {
     val tableEnv: TableEnvironment = sessionContext.getExecutionContext.getTableEnvironment
-    mode match {
-      case PARSE =>
-        val sqlPlan = tableEnv.explainSql(statement)
-        resultSet =
-          ResultSetUtil.stringListToResultSet(
-            List(sqlPlan.split(System.lineSeparator()).apply(1)),
-            "plan")
+    val explainPlans =
+      tableEnv.explainSql(statement).split(s"$lineSeparator$lineSeparator")
+    val operationPlan = mode match {
+      case PARSE => explainPlans(0).split(s"== Abstract Syntax Tree ==$lineSeparator")(1)
+      case PHYSICAL =>
+        explainPlans(1).split(s"== Optimized Physical Plan ==$lineSeparator")(1)
+      case EXECUTION =>
+        explainPlans(2).split(s"== Optimized Execution Plan ==$lineSeparator")(1)
       case _ =>
-        throw KyuubiSQLException(
-          s"""
-             |The operation mode ${mode.toString} doesn't support in Flink SQL engine.
-             |Flink only supports the AST and the execution plan of the sql statement.
-             |Flink engine will support EXECUTION operation plan mode in future.
-             |""".stripMargin)
+        throw KyuubiSQLException(s"The operation mode $mode doesn't support in Flink SQL engine.")
     }
+    resultSet =
+      ResultSetUtil.stringListToResultSet(
+        List(operationPlan),
+        "plan")
   }
 }
