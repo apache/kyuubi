@@ -192,6 +192,7 @@ trait ProcBuilder {
       logCaptureThread.interrupt()
     }
     if (!waitCompletion && process != null) {
+      info("Destroy the process, since waitCompletion is false.")
       process.destroyForcibly()
     }
   }
