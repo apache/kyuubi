@@ -58,6 +58,7 @@ abstract class AbstractSession(
     if (userAccess) {
       _lastAccessTime = System.currentTimeMillis
     }
+    _lastIdleTime = 0
   }
 
   private def release(userAccess: Boolean): Unit = {
@@ -66,8 +67,6 @@ abstract class AbstractSession(
     }
     if (opHandleSet.isEmpty) {
       _lastIdleTime = System.currentTimeMillis
-    } else {
-      _lastIdleTime = 0
     }
   }
 
