@@ -79,6 +79,17 @@ class PlanOnlyOperationSuite extends WithKyuubiServer with HiveJDBCTestHelper {
     }
   }
 
+  test("KYUUBI #1920: Plan only operations with skip Usestatement or SetNamespaceCommand") {
+    val createDatabaseStatement = "create database test_database"
+    val useStatement = "use test_database"
+    withDatabases("test_database") { statement =>
+      statement.execute(createDatabaseStatement)
+      statement.execute(s"set ${KyuubiConf.OPERATION_PLAN_ONLY.key}=optimize")
+      val result = statement.executeQuery(useStatement)
+      assert(!result.next(), "In contrast to PlanOnly mode, it will returns an empty result")
+    }
+  }
+
   private def getOperationPlanWithStatement(statement: Statement): String = {
     val resultSet = statement.executeQuery("select 1 where true")
     assert(resultSet.next())
