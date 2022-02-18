@@ -101,6 +101,7 @@ fi
 
 export FLINK_HOME="${FLINK_HOME:-"${FLINK_BUILTIN}"}"
 export FLINK_ENGINE_HOME="${KYUUBI_HOME}/externals/engines/flink"
+export TRINO_ENGINE_HOME="${KYUUBI_HOME}/externals/engines/trino"
 export SPARK_HOME="${SPARK_HOME:-"${SPARK_BUILTIN}"}"
 
 # Print essential environment variables to console
@@ -119,6 +120,8 @@ if [ $silent -eq 0 ]; then
 
   echo "SPARK_HOME: ${SPARK_HOME}"
   echo "SPARK_CONF_DIR: ${SPARK_CONF_DIR:-"${SPARK_HOME}/conf"}"
+
+  echo "TRINO_ENGINE_HOME: ${TRINO_ENGINE_HOME}"
 
   echo "HADOOP_CONF_DIR: ${HADOOP_CONF_DIR}"
 fi
