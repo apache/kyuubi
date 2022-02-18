@@ -703,6 +703,16 @@ object KyuubiConf {
       .checkValue(_ > 0, "the maximum must be positive integer.")
       .createWithDefault(10)
 
+  val SESSION_ENGINE_STARTUP_WAIT_COMPLETION: ConfigEntry[Boolean] =
+    buildConf("session.engine.startup.waitCompletion")
+      .doc("Whether to wait for completion after engine starts." +
+        " If false, the startup process will be destroyed after the engine is started." +
+        " Note that only use it when the driver is not running locally," +
+        " such as yarn-cluster mode; Otherwise, the engine will be killed.")
+      .version("1.5.0")
+      .booleanConf
+      .createWithDefault(true)
+
   val SESSION_ENGINE_LAUNCH_ASYNC: ConfigEntry[Boolean] =
     buildConf("session.engine.launch.async")
       .doc("When opening kyuubi session, whether to launch backend engine asynchronously." +
