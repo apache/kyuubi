@@ -23,7 +23,6 @@ jobs:
             profiles: "-Pspark-hadoop-2.7"
           - java: 8
             spark: '3.1'
-            spark-hadoop: '3.2'
           - java: 8
             spark: '3.2'
             profiles: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.0.3 -Dspark.archive.name=spark-3.0.3-bin-hadoop2.7.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
