@@ -135,7 +135,7 @@
         <log4j.version>2.17.1</log4j.version>
         <!--
           DO NOT forget to change the following properties when change the minor version of Spark:
-           `delta.version`, `iceberg.name`
+          `delta.version`, `iceberg.name`
           -->
         <spark.version>3.2.1</spark.version>
         <spark.archive.name>spark-${spark.version}-bin-hadoop${hadoop.binary.version}.tgz</spark.archive.name>
