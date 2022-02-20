@@ -20,25 +20,21 @@ jobs:
         include:
           - java: 8
             spark: '3.0'
-            spark-hadoop: '2.7'
+            profiles: "-Pspark-hadoop-2.7"
           - java: 8
             spark: '3.1'
             spark-hadoop: '3.2'
           - java: 8
             spark: '3.2'
-            spark-hadoop: '2.7'
             profiles: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.0.3 -Dspark.archive.name=spark-3.0.3-bin-hadoop2.7.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
           - java: 8
             spark: '3.2'
-            spark-hadoop: '3.2'
             profiles: '-Dspark.archive.mirror=https://archive.apache.org/dist/spark/spark-3.1.2 -Dspark.archive.name=spark-3.1.2-bin-hadoop3.2.tgz -Dmaven.plugin.scalatest.exclude.tags=org.apache.kyuubi.tags.ExtendedSQLTest,org.apache.kyuubi.tags.DeltaTest,org.apache.kyuubi.tags.HudiTest,org.apache.kyuubi.tags.IcebergTest'
           - java: 8
             spark: '3.2'
-            spark-hadoop: '3.2'
             codecov: 'true'
           - java: 11
             spark: '3.2'
-            spark-hadoop: '3.2'
             profiles: '-DskipTests -Pflink-provided,spark-provided'
 
     env:
@@ -79,7 +75,7 @@ jobs:
       - name: Build with Maven
         run: >-
           ./build/mvn clean install -Dmaven.javadoc.skip=true -Drat.skip=true -Dscalastyle.skip=true -Dspotless.check.skip -Dorg.slf4j.simpleLogger.defaultLogLevel=warn -V
-          -Pspark-${{ matrix.spark }} -Pspark-hadoop-${{ matrix.spark-hadoop }} ${{ matrix.profiles }}
+          -Pspark-${{ matrix.spark }} ${{ matrix.profiles }}
       - name: Code coverage
         if: ${{ matrix.codecov == 'true' }}
         uses: codecov/codecov-action@v2
